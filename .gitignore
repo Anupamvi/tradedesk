@@ -1,0 +1,13 @@
+tokens/
+*.zip
+*.csv
+*.parquet
+__pycache__/
+.venv/
+.env
+*.log
+out/
+raw/
+_derived/
+.tmp_uw_pkg/
+[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/

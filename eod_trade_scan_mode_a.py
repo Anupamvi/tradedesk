@@ -1,0 +1,1184 @@
+import argparse
+import datetime as dt
+import math
+import re
+import shutil
+import zipfile
+from collections import defaultdict
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import yaml
+
+from build_live_trade_table import compute_live_net
+
+
+OCC_RE = re.compile(r"^([A-Z\.]{1,10})(\d{6})([CP])(\d{8})$")
+
+
+def parse_occ(sym):
+    m = OCC_RE.match(str(sym))
+    if not m:
+        return None
+    root, yymmdd, right, strike8 = m.groups()
+    yy = int("20" + yymmdd[:2])
+    mm = int(yymmdd[2:4])
+    dd = int(yymmdd[4:6])
+    return root, dt.date(yy, mm, dd), right, int(strike8) / 1000.0
+
+
+def parse_date(x):
+    if x is None:
+        return None
+    s = str(x).strip()
+    if not s or s.lower() == "nan":
+        return None
+    try:
+        return dt.datetime.strptime(s[:10], "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def fnum(x):
+    try:
+        if pd.isna(x):
+            return math.nan
+        return float(x)
+    except Exception:
+        return math.nan
+
+
+def ensure_cols(df, name, cols):
+    missing = [c for c in cols if c not in df.columns]
+    if missing:
+        raise KeyError(f"{name} missing columns: {missing}")
+
+
+def md_tables(md_text):
+    tables = {}
+    lines = md_text.splitlines()
+    heading = "Untitled"
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if line.startswith("#"):
+            heading = line.lstrip("#").strip()
+            i += 1
+            continue
+        if line.startswith("|"):
+            block = []
+            while i < len(lines) and lines[i].strip().startswith("|"):
+                block.append(lines[i].strip())
+                i += 1
+            if len(block) >= 2:
+                hdr = [x.strip() for x in block[0].strip("|").split("|")]
+                rows = []
+                for r in block[1:]:
+                    core = r.strip("|")
+                    if re.fullmatch(r"[\s:\-\|]+", core):
+                        continue
+                    vals = [x.strip() for x in core.split("|")]
+                    vals = vals + [""] * max(0, len(hdr) - len(vals))
+                    rows.append(vals[: len(hdr)])
+                key = heading
+                n = 2
+                while key in tables:
+                    key = f"{heading} ({n})"
+                    n += 1
+                tables[key] = pd.DataFrame(rows, columns=hdr)
+            continue
+        i += 1
+    return tables
+
+
+def width_tier(spot, cfg):
+    for t in cfg["gates"]["width_tiers"]:
+        lo = float(t["min_price"])
+        hi = float(t["max_price"])
+        if lo <= spot < hi:
+            return float(t["min_width"]), float(t["max_width"]), float(t["default_width"])
+    t = cfg["gates"]["width_tiers"][-1]
+    return float(t["min_width"]), float(t["max_width"]), float(t["default_width"])
+
+
+def money(x):
+    return "N/A" if (x is None or not np.isfinite(x)) else f"${x:,.2f}"
+
+
+def px(x):
+    return "N/A" if (x is None or not np.isfinite(x)) else f"{x:.2f}"
+
+
+def yn_bool(x):
+    return str(x).strip().lower() in {"1", "t", "true", "y", "yes"}
+
+
+def find_asof(files):
+    pat = re.compile(r"(\d{4}-\d{2}-\d{2})")
+    vals = []
+    for p in files:
+        m = pat.search(p.name)
+        if m:
+            vals.append(m.group(1))
+    if not vals:
+        raise ValueError("No date found in filenames.")
+    return sorted(vals)[-1]
+
+
+def unzip_zips(zip_paths, out_dir):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = {}
+    for zp in zip_paths:
+        with zipfile.ZipFile(zp, "r") as zf:
+            csvs = [n for n in zf.namelist() if n.lower().endswith(".csv")]
+            if not csvs:
+                raise FileNotFoundError(f"No CSV in {zp.name}")
+            name = sorted(csvs)[0]
+            dst = out_dir / Path(name).name
+            with zf.open(name) as src, open(dst, "wb") as d:
+                shutil.copyfileobj(src, d)
+            out[zp.name] = dst
+    return out
+
+
+def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv):
+    h = hot_df.copy()
+    h["bid"] = pd.to_numeric(h.get("bid"), errors="coerce")
+    h["ask"] = pd.to_numeric(h.get("ask"), errors="coerce")
+    h["volume"] = pd.to_numeric(h.get("volume"), errors="coerce")
+    h["open_interest"] = pd.to_numeric(h.get("open_interest"), errors="coerce")
+    h["quote_date"] = pd.to_datetime(h.get("date"), errors="coerce").dt.date
+    h["source_csv"] = hot_csv
+    h["source_kind"] = "hot"
+    h = h[
+        [
+            "option_symbol",
+            "bid",
+            "ask",
+            "volume",
+            "open_interest",
+            "quote_date",
+            "source_csv",
+            "source_kind",
+            "next_earnings_date",
+            "issue_type",
+        ]
+    ].copy()
+
+    o = oi_df.copy()
+    o["bid"] = pd.to_numeric(o.get("last_bid"), errors="coerce")
+    o["ask"] = pd.to_numeric(o.get("last_ask"), errors="coerce")
+    o["volume"] = pd.to_numeric(o.get("volume"), errors="coerce")
+    o["open_interest"] = pd.to_numeric(o.get("curr_oi"), errors="coerce")
+    o["quote_date"] = pd.to_datetime(o.get("curr_date"), errors="coerce").dt.date
+    o["source_csv"] = oi_csv
+    o["source_kind"] = "oi"
+    o["issue_type"] = np.nan
+    o = o[
+        [
+            "option_symbol",
+            "bid",
+            "ask",
+            "volume",
+            "open_interest",
+            "quote_date",
+            "source_csv",
+            "source_kind",
+            "next_earnings_date",
+            "issue_type",
+        ]
+    ].copy()
+
+    q = pd.concat([h, o], ignore_index=True)
+    q = q[q["option_symbol"].astype(str).str.len() > 5].copy()
+    q = q[np.isfinite(q["bid"]) & np.isfinite(q["ask"]) & (q["ask"] > 0)].copy()
+    q = q[(q["quote_date"].isna()) | (q["quote_date"] == asof)].copy()
+    parsed = q["option_symbol"].map(parse_occ)
+    q = q[parsed.notna()].copy()
+    parsed = parsed[parsed.notna()]
+    q["ticker"] = parsed.map(lambda x: x[0])
+    q["expiry"] = parsed.map(lambda x: x[1])
+    q["right"] = parsed.map(lambda x: x[2])
+    q["strike"] = parsed.map(lambda x: x[3])
+    q["prio"] = np.where(q["source_kind"] == "hot", 0, 1)
+    q = q.sort_values(["option_symbol", "prio"]).drop_duplicates("option_symbol", keep="first")
+    return q.drop(columns=["prio"]).reset_index(drop=True)
+
+
+def score_norm(series):
+    s = pd.to_numeric(series, errors="coerce").replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    lo, hi = s.min(), s.max()
+    if hi <= lo:
+        return pd.Series(np.zeros(len(s)), index=s.index)
+    return (s - lo) / (hi - lo)
+
+
+def candidate_dict(
+    ticker,
+    action,
+    strategy,
+    track,
+    expiry,
+    dte,
+    long_strike,
+    short_strike,
+    width,
+    net,
+    net_type,
+    max_profit,
+    max_loss,
+    breakeven,
+    conviction,
+    tier,
+    optimal,
+    notes,
+    source,
+    thesis,
+    invalidation,
+):
+    return {
+        "ticker": ticker,
+        "action": action,
+        "strategy": strategy,
+        "track": track,
+        "expiry": expiry,
+        "dte": dte,
+        "long_strike": long_strike,
+        "short_strike": short_strike,
+        "width": width,
+        "net": net,
+        "net_type": net_type,
+        "max_profit": max_profit,
+        "max_loss": max_loss,
+        "breakeven": breakeven,
+        "conviction": conviction,
+        "tier": tier,
+        "optimal": optimal,
+        "notes": notes,
+        "source": source,
+        "thesis": thesis,
+        "invalidation": invalidation,
+    }
+
+
+def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=20):
+    gates_cfg = cfg.get("gates", {})
+    fire_cfg = cfg.get("fire", {})
+    shield_cfg = cfg.get("shield", {})
+    pricing_cfg = cfg.get("pricing", {})
+    high_beta_cfg = cfg.get("high_beta", {})
+    engine_cfg = cfg.get("engine", {}) if isinstance(cfg, dict) else {}
+
+    min_credit = float(gates_cfg["min_credit_pct_width"])
+    max_credit = fnum(gates_cfg.get("max_credit_pct_width", 1.0))
+    if not np.isfinite(max_credit) or max_credit <= 0 or max_credit > 1:
+        max_credit = 1.0
+    max_debit = float(gates_cfg["max_debit_pct_width"])
+    min_leg_open_interest = fnum(gates_cfg.get("min_leg_open_interest", 0))
+    min_leg_volume = fnum(gates_cfg.get("min_leg_volume", 0))
+    max_leg_spread_pct = fnum(gates_cfg.get("max_leg_spread_pct"))
+    max_risk_per_trade = fnum(gates_cfg.get("max_risk_per_trade"))
+    min_debit_rr = fnum(gates_cfg.get("min_debit_reward_risk"))
+    min_credit_rr = fnum(gates_cfg.get("min_credit_reward_risk"))
+    if not np.isfinite(min_leg_open_interest) or min_leg_open_interest < 0:
+        min_leg_open_interest = 0.0
+    if not np.isfinite(min_leg_volume) or min_leg_volume < 0:
+        min_leg_volume = 0.0
+    if not np.isfinite(max_leg_spread_pct) or max_leg_spread_pct <= 0:
+        max_leg_spread_pct = math.nan
+    if not np.isfinite(max_risk_per_trade) or max_risk_per_trade <= 0:
+        max_risk_per_trade = math.nan
+    if not np.isfinite(min_debit_rr) or min_debit_rr < 0:
+        min_debit_rr = 0.0
+    if not np.isfinite(min_credit_rr) or min_credit_rr < 0:
+        min_credit_rr = 0.0
+    exclude_etfs = bool(gates_cfg.get("exclude_etfs", True))
+    executable_sources = {
+        str(x).strip().lower()
+        for x in pricing_cfg.get("executable_source_kinds", ["hot"])
+        if str(x).strip()
+    } or {"hot"}
+
+    fire_lo, fire_hi = [int(x) for x in fire_cfg["dte_range"]]
+    shield_lo, shield_hi = [int(x) for x in shield_cfg["dte_range"]]
+    fire_target = int(fire_cfg["target_dte"])
+    shield_target = int(shield_cfg["target_dte"])
+    fire_long_itm_pct = float(fire_cfg.get("debit_long_itm_pct", 0.0))
+    fire_allow_both_neutral = bool(fire_cfg.get("allow_both_sides_when_neutral", False))
+    shield_otm = float(shield_cfg["credit_short_otm_pct"])
+    shield_allow_both_neutral = bool(shield_cfg.get("allow_both_sides_when_neutral", False))
+    shield_min_marketcap = fnum(shield_cfg.get("min_marketcap"))
+    shield_lotto_dte_max = int(shield_cfg.get("lotto_dte_max", 7))
+
+    max_tickers_to_scan = int(engine_cfg.get("max_tickers_to_scan", 1000))
+    max_trades_per_ticker = int(engine_cfg.get("max_trades_per_ticker", 3))
+    max_total_trades_cfg = int(engine_cfg.get("max_total_trades", 500))
+    max_total_trades = min(max_total_trades_cfg, max(1, int(top_trades)))
+    max_expiries_per_ticker = int(engine_cfg.get("max_expiries_per_ticker", 4))
+    strike_search_depth = max(1, int(engine_cfg.get("strike_search_depth", 6)))
+    min_per_track = max(1, int(engine_cfg.get("min_per_track", 1)))
+
+    high_beta_names = {
+        str(x).strip().upper()
+        for x in high_beta_cfg.get("tickers", [])
+        if str(x).strip()
+    }
+    high_beta_min_dte = int(high_beta_cfg.get("min_dte", 21))
+    high_beta_min_otm = float(high_beta_cfg.get("min_otm_pct", 0.08))
+    high_beta_iv30d_threshold = fnum(high_beta_cfg.get("iv30d_override_threshold"))
+    high_beta_require_delta = bool(high_beta_cfg.get("require_short_delta_for_core", True))
+    fire_lotto_dte_max = int(fire_cfg.get("lotto_dte_max", 10))
+
+    sc = screener.copy()
+    sc["ticker"] = sc["ticker"].astype(str).str.upper()
+    sc["close"] = pd.to_numeric(sc.get("close"), errors="coerce")
+    sc["bullish_premium"] = pd.to_numeric(sc.get("bullish_premium"), errors="coerce").fillna(0.0)
+    sc["bearish_premium"] = pd.to_numeric(sc.get("bearish_premium"), errors="coerce").fillna(0.0)
+    sc["call_premium"] = pd.to_numeric(sc.get("call_premium"), errors="coerce").fillna(0.0)
+    sc["put_premium"] = pd.to_numeric(sc.get("put_premium"), errors="coerce").fillna(0.0)
+    sc["put_call_ratio"] = pd.to_numeric(sc.get("put_call_ratio"), errors="coerce").fillna(1.0)
+    sc["iv30d"] = pd.to_numeric(sc.get("iv30d"), errors="coerce")
+    sc["implied_move"] = pd.to_numeric(sc.get("implied_move"), errors="coerce")
+    sc["implied_move_perc"] = pd.to_numeric(sc.get("implied_move_perc"), errors="coerce")
+
+    market_cap_col = ""
+    for c in ["market_cap", "marketcap", "mkt_cap", "market_capitalization"]:
+        if c in sc.columns:
+            market_cap_col = c
+            break
+    if market_cap_col:
+        sc["market_cap_rule"] = pd.to_numeric(sc.get(market_cap_col), errors="coerce")
+    else:
+        sc["market_cap_rule"] = np.nan
+
+    sc["bull_raw"] = (sc["bullish_premium"] - sc["bearish_premium"]) + 0.25 * (
+        sc["call_premium"] - sc["put_premium"]
+    )
+    sc["bull_score"] = score_norm(sc["bull_raw"])
+    sc["bear_score"] = score_norm(-sc["bull_raw"])
+    sc["interest_score"] = (
+        sc["bullish_premium"].abs()
+        + sc["bearish_premium"].abs()
+        + sc["call_premium"].abs()
+        + sc["put_premium"].abs()
+    )
+    sc = sc.sort_values("interest_score", ascending=False).head(max(1, max_tickers_to_scan))
+
+    whale_rank = {}
+    for _, df in whale_tables.items():
+        tmp = df.copy()
+        tmp.columns = [c.strip().lower().replace(" ", "_") for c in tmp.columns]
+        if "underlying_symbol" in tmp.columns:
+            for i, sym in enumerate(tmp["underlying_symbol"].astype(str).str.upper().tolist(), 1):
+                if sym and sym != "NAN":
+                    whale_rank[sym] = max(whale_rank.get(sym, 0.0), max(0.0, 1.0 - (i - 1) / 60.0))
+
+    chains = {}
+    for key, grp in quotes.groupby(["ticker", "right", "expiry"]):
+        chains[key] = grp.sort_values("strike").reset_index(drop=True)
+
+    qearn = quotes.copy()
+    qearn["earn"] = qearn["next_earnings_date"].map(parse_date)
+    qearn = qearn[qearn["earn"].notna()]
+    qearn_map = qearn.groupby("ticker")["earn"].agg(lambda s: sorted(set(s.tolist()))[0]).to_dict() if not qearn.empty else {}
+
+    def directional_flags(bull_score, bear_score, allow_both_neutral):
+        gap = float(bull_score) - float(bear_score)
+        neutral_gap = 0.05
+        if gap > neutral_gap:
+            return True, False
+        if gap < -neutral_gap:
+            return False, True
+        if allow_both_neutral:
+            return True, True
+        return (gap >= 0.0), (gap < 0.0)
+
+    def capped_expiries(exps, lo, hi, target_dte):
+        cands = [e for e in exps if lo <= (e - asof).days <= hi]
+        cands = sorted(cands, key=lambda e: (abs((e - asof).days - target_dte), (e - asof).days))
+        return cands[: max(1, max_expiries_per_ticker)]
+
+    def top_by_target(df, target):
+        if df is None or df.empty:
+            return df.iloc[0:0].copy()
+        w = df.copy()
+        w["_dist"] = (pd.to_numeric(w["strike"], errors="coerce") - float(target)).abs()
+        w = w.sort_values(["_dist", "strike"], ascending=[True, True]).head(strike_search_depth)
+        return w.drop(columns=["_dist"])
+
+    def liquid_pair_ok(short_row, long_row):
+        short_src = str(short_row.get("source_kind", "")).strip().lower()
+        long_src = str(long_row.get("source_kind", "")).strip().lower()
+        if short_src not in executable_sources or long_src not in executable_sources:
+            return False
+        if min_leg_open_interest > 0:
+            short_oi = fnum(short_row.get("open_interest"))
+            long_oi = fnum(long_row.get("open_interest"))
+            if (not np.isfinite(short_oi)) or (not np.isfinite(long_oi)):
+                return False
+            if short_oi < min_leg_open_interest or long_oi < min_leg_open_interest:
+                return False
+        if min_leg_volume > 0:
+            short_vol = fnum(short_row.get("volume"))
+            long_vol = fnum(long_row.get("volume"))
+            if (not np.isfinite(short_vol)) or (not np.isfinite(long_vol)):
+                return False
+            if short_vol < min_leg_volume or long_vol < min_leg_volume:
+                return False
+        if np.isfinite(max_leg_spread_pct):
+            for leg in (short_row, long_row):
+                bid = fnum(leg.get("bid"))
+                ask = fnum(leg.get("ask"))
+                if not (np.isfinite(bid) and np.isfinite(ask) and ask > 0):
+                    return False
+                mid = 0.5 * (bid + ask)
+                if mid <= 0:
+                    return False
+                spread_pct = (ask - bid) / mid
+                if spread_pct > max_leg_spread_pct:
+                    return False
+        return True
+
+    def sigma_move(row, spot, dte):
+        iv30 = fnum(row.get("iv30d"))
+        if np.isfinite(iv30) and iv30 > 0:
+            return float(spot * iv30 * math.sqrt(max(1.0, dte) / 365.0))
+        implied_abs = fnum(row.get("implied_move"))
+        if np.isfinite(implied_abs) and implied_abs > 0:
+            return float(implied_abs)
+        implied_pct = fnum(row.get("implied_move_perc"))
+        if np.isfinite(implied_pct) and implied_pct > 0:
+            return float(spot * implied_pct * math.sqrt(max(1.0, dte) / 30.0))
+        return math.nan
+
+    def earnings_status(earnings, expiry):
+        if earnings is None:
+            return {
+                "verified": False,
+                "crossed": False,
+                "within7": False,
+                "core_ok": False,
+                "label": "UNKNOWN",
+            }
+        days_to_er = (earnings - asof).days
+        crossed = asof <= earnings <= expiry
+        within7 = 0 <= days_to_er <= 7
+        core_ok = (not crossed) and (not within7)
+        return {
+            "verified": True,
+            "crossed": crossed,
+            "within7": within7,
+            "core_ok": core_ok,
+            "label": "PASS" if core_ok else ("CROSSED" if crossed else "WITHIN7"),
+        }
+
+    def is_high_beta(row):
+        ticker = str(row.get("ticker", "")).upper().strip()
+        if ticker in high_beta_names:
+            return True
+        iv30 = fnum(row.get("iv30d"))
+        return bool(
+            np.isfinite(high_beta_iv30d_threshold)
+            and high_beta_iv30d_threshold > 0
+            and np.isfinite(iv30)
+            and iv30 >= high_beta_iv30d_threshold
+        )
+
+    out = []
+    for _, r in sc.iterrows():
+        ticker = r["ticker"]
+        spot = fnum(r.get("close"))
+        if not np.isfinite(spot) or spot <= 0:
+            continue
+        issue = str(r.get("issue_type", "")).upper().strip()
+        if exclude_etfs and (issue in {"ETF", "INDEX", "ETN"} or yn_bool(r.get("is_index"))):
+            continue
+
+        earnings = parse_date(r.get("next_earnings_date"))
+        if earnings is None:
+            earnings = qearn_map.get(ticker)
+        hb = is_high_beta(r)
+
+        min_w, max_w, default_w = width_tier(spot, cfg)
+        bull = float(r.get("bull_score", 0.0))
+        bear = float(r.get("bear_score", 0.0))
+        whale = whale_rank.get(ticker, 0.0)
+        exps = sorted(set(quotes.loc[quotes["ticker"] == ticker, "expiry"].tolist()))
+        if not exps:
+            continue
+
+        allow_fire_bull, allow_fire_bear = directional_flags(
+            bull, bear, allow_both_neutral=fire_allow_both_neutral
+        )
+        allow_shield_bull, allow_shield_bear = directional_flags(
+            bull, bear, allow_both_neutral=shield_allow_both_neutral
+        )
+
+        shield_eligible = True
+        if shield_min_marketcap is not None and np.isfinite(shield_min_marketcap) and shield_min_marketcap > 0:
+            mcap = fnum(r.get("market_cap_rule"))
+            if not np.isfinite(mcap) or mcap < shield_min_marketcap:
+                shield_eligible = False
+        if not shield_eligible:
+            allow_shield_bull = False
+            allow_shield_bear = False
+
+        fire_exps = capped_expiries(exps, fire_lo, fire_hi, fire_target)
+        shield_exps = capped_expiries(exps, shield_lo, shield_hi, shield_target)
+
+        # Bull Call Debit + Bear Put Debit.
+        for expiry in fire_exps:
+            dte = (expiry - asof).days
+            dte_fit = 1.0 - min(1.0, abs(dte - fire_target) / max(1, fire_hi - fire_lo))
+            er = earnings_status(earnings, expiry)
+
+            calls = chains.get((ticker, "C", expiry))
+            if allow_fire_bull and calls is not None:
+                call_pool = calls[(calls["strike"] >= spot * 0.80) & (calls["strike"] <= spot * 1.10)].copy()
+                long_candidates = top_by_target(call_pool, spot * (1.0 - fire_long_itm_pct))
+                for _, lg in long_candidates.iterrows():
+                    short_pool = call_pool[call_pool["strike"] > lg["strike"]].copy()
+                    short_candidates = top_by_target(short_pool, float(lg["strike"]) + default_w)
+                    for _, sh in short_candidates.iterrows():
+                        if not liquid_pair_ok(sh, lg):
+                            continue
+                        width = float(sh["strike"] - lg["strike"])
+                        if width < min_w or width > max_w:
+                            continue
+                        net, _ = compute_live_net(
+                            net_type="debit",
+                            short_bid=fnum(sh["bid"]),
+                            short_ask=fnum(sh["ask"]),
+                            short_mark=None,
+                            long_bid=fnum(lg["bid"]),
+                            long_ask=fnum(lg["ask"]),
+                            long_mark=None,
+                        )
+                        if net is None or not np.isfinite(net) or net < 0:
+                            continue
+                        if net / width > max_debit:
+                            continue
+                        max_profit_cash = (width - net) * 100
+                        max_loss_cash = net * 100
+                        debit_rr = (width - net) / max(1e-9, net)
+                        if np.isfinite(max_risk_per_trade) and max_loss_cash > max_risk_per_trade:
+                            continue
+                        if debit_rr < min_debit_rr:
+                            continue
+                        eff = max(0.0, min(1.0, (width - net) / width))
+                        liq = min(
+                            math.log1p(max(0.0, fnum(lg["volume"]))) + math.log1p(max(0.0, fnum(lg["open_interest"]))),
+                            math.log1p(max(0.0, fnum(sh["volume"]))) + math.log1p(max(0.0, fnum(sh["open_interest"]))),
+                        )
+                        liq = max(0.0, min(1.0, liq / 20.0))
+                        score = 0.34 * bull + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.12 * whale
+                        conv = int(round(100 * score))
+                        confidence_tier = "Lotto" if dte <= fire_lotto_dte_max else "Aggressive"
+                        optimal = "Yes-Prime" if conv >= 78 else ("Yes-Good" if conv >= 65 else "Watch Only")
+                        if er["crossed"]:
+                            confidence_tier = "Lotto"
+                            if optimal == "Yes-Prime":
+                                optimal = "Yes-Good"
+                        gate_text = (
+                            f"Gates: Liquidity PASS; WidthTier PASS; DebitWidth PASS; "
+                            f"Earnings={'ER-RISK' if er['crossed'] else ('UNKNOWN' if not er['verified'] else 'PASS')}."
+                        )
+                        out.append(candidate_dict(
+                            ticker, "BUY", "Bull Call Debit", "FIRE", expiry, dte, float(lg["strike"]), float(sh["strike"]),
+                            width, net, "debit", max_profit_cash, max_loss_cash, float(lg["strike"] + net), conv,
+                            confidence_tier, optimal,
+                            f"Debit {net:.2f} on {width:.2f} ({net/width:.2%}, R/R {debit_rr:.2f}); bull={bull:.2f}, whale={whale:.2f}. {gate_text}",
+                            f"{lg['source_csv']}|{sh['source_csv']}",
+                            "Bull call debit fits bullish flow with capped downside.",
+                            f"Invalidate if close < {float(lg['strike']):.2f}."
+                        ))
+
+            puts = chains.get((ticker, "P", expiry))
+            if allow_fire_bear and puts is not None:
+                put_pool = puts[(puts["strike"] >= spot * 0.90) & (puts["strike"] <= spot * 1.20)].copy()
+                long_candidates = top_by_target(put_pool, spot * (1.0 + fire_long_itm_pct))
+                for _, lg in long_candidates.iterrows():
+                    short_pool = put_pool[put_pool["strike"] < lg["strike"]].copy()
+                    short_candidates = top_by_target(short_pool, float(lg["strike"]) - default_w)
+                    for _, sh in short_candidates.iterrows():
+                        if not liquid_pair_ok(sh, lg):
+                            continue
+                        width = float(lg["strike"] - sh["strike"])
+                        if width < min_w or width > max_w:
+                            continue
+                        net, _ = compute_live_net(
+                            net_type="debit",
+                            short_bid=fnum(sh["bid"]),
+                            short_ask=fnum(sh["ask"]),
+                            short_mark=None,
+                            long_bid=fnum(lg["bid"]),
+                            long_ask=fnum(lg["ask"]),
+                            long_mark=None,
+                        )
+                        if net is None or not np.isfinite(net) or net < 0:
+                            continue
+                        if net / width > max_debit:
+                            continue
+                        max_profit_cash = (width - net) * 100
+                        max_loss_cash = net * 100
+                        debit_rr = (width - net) / max(1e-9, net)
+                        if np.isfinite(max_risk_per_trade) and max_loss_cash > max_risk_per_trade:
+                            continue
+                        if debit_rr < min_debit_rr:
+                            continue
+                        eff = max(0.0, min(1.0, (width - net) / width))
+                        liq = min(
+                            math.log1p(max(0.0, fnum(lg["volume"]))) + math.log1p(max(0.0, fnum(lg["open_interest"]))),
+                            math.log1p(max(0.0, fnum(sh["volume"]))) + math.log1p(max(0.0, fnum(sh["open_interest"]))),
+                        )
+                        liq = max(0.0, min(1.0, liq / 20.0))
+                        score = 0.34 * bear + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.12 * whale
+                        conv = int(round(100 * score))
+                        confidence_tier = "Lotto" if dte <= fire_lotto_dte_max else "Aggressive"
+                        optimal = "Yes-Prime" if conv >= 78 else ("Yes-Good" if conv >= 65 else "Watch Only")
+                        if er["crossed"]:
+                            confidence_tier = "Lotto"
+                            if optimal == "Yes-Prime":
+                                optimal = "Yes-Good"
+                        gate_text = (
+                            f"Gates: Liquidity PASS; WidthTier PASS; DebitWidth PASS; "
+                            f"Earnings={'ER-RISK' if er['crossed'] else ('UNKNOWN' if not er['verified'] else 'PASS')}."
+                        )
+                        out.append(candidate_dict(
+                            ticker, "BUY", "Bear Put Debit", "FIRE", expiry, dte, float(lg["strike"]), float(sh["strike"]),
+                            width, net, "debit", max_profit_cash, max_loss_cash, float(lg["strike"] - net), conv,
+                            confidence_tier, optimal,
+                            f"Debit {net:.2f} on {width:.2f} ({net/width:.2%}, R/R {debit_rr:.2f}); bear={bear:.2f}, whale={whale:.2f}. {gate_text}",
+                            f"{lg['source_csv']}|{sh['source_csv']}",
+                            "Bear put debit fits bearish flow with convex downside.",
+                            f"Invalidate if close > {float(lg['strike']):.2f}."
+                        ))
+
+        # Bull Put Credit + Bear Call Credit (SHIELD with full rulebook gating).
+        for expiry in shield_exps:
+            dte = (expiry - asof).days
+            dte_fit = 1.0 - min(1.0, abs(dte - shield_target) / max(1, shield_hi - shield_lo))
+            er = earnings_status(earnings, expiry)
+            sigma = sigma_move(r, spot, dte)
+            sigma_known = np.isfinite(sigma) and sigma > 0
+            sigma_pct = (sigma / spot) if sigma_known else math.nan
+
+            puts = chains.get((ticker, "P", expiry))
+            if allow_shield_bull and puts is not None:
+                tshort = spot * (1.0 - shield_otm)
+                short_pool = puts[(puts["strike"] < spot) & (puts["strike"] >= spot * 0.70)].copy()
+                short_candidates = top_by_target(short_pool, tshort)
+                for _, sh in short_candidates.iterrows():
+                    long_pool = puts[puts["strike"] < sh["strike"]].copy()
+                    long_candidates = top_by_target(long_pool, float(sh["strike"]) - default_w)
+                    for _, lg in long_candidates.iterrows():
+                        if not liquid_pair_ok(sh, lg):
+                            continue
+                        width = float(sh["strike"] - lg["strike"])
+                        if width < min_w or width > max_w:
+                            continue
+                        net, _ = compute_live_net(
+                            net_type="credit",
+                            short_bid=fnum(sh["bid"]),
+                            short_ask=fnum(sh["ask"]),
+                            short_mark=None,
+                            long_bid=fnum(lg["bid"]),
+                            long_ask=fnum(lg["ask"]),
+                            long_mark=None,
+                        )
+                        if net is None or not np.isfinite(net) or net < 0:
+                            continue
+                        if net >= width:
+                            continue
+                        credit_ratio = net / width
+                        if credit_ratio < min_credit or credit_ratio > max_credit:
+                            continue
+                        max_profit_cash = net * 100
+                        max_loss_cash = (width - net) * 100
+                        credit_rr = net / max(1e-9, (width - net))
+                        if np.isfinite(max_risk_per_trade) and max_loss_cash > max_risk_per_trade:
+                            continue
+                        if credit_rr < min_credit_rr:
+                            continue
+                        eff = max(
+                            0.0,
+                            min(1.0, (credit_ratio - min_credit) / max(1e-9, max_credit - min_credit)),
+                        )
+                        liq = min(
+                            math.log1p(max(0.0, fnum(lg["volume"]))) + math.log1p(max(0.0, fnum(lg["open_interest"]))),
+                            math.log1p(max(0.0, fnum(sh["volume"]))) + math.log1p(max(0.0, fnum(sh["open_interest"]))),
+                        )
+                        liq = max(0.0, min(1.0, liq / 20.0))
+                        short_fit = 1.0 - min(1.0, abs(float(sh["strike"]) - tshort) / max(1.0, 0.25 * spot))
+                        score = 0.30 * bull + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.10 * whale + 0.06 * short_fit
+                        conv = int(round(100 * score))
+
+                        sigma_pass = bool(sigma_known and float(sh["strike"]) <= (spot - sigma))
+                        short_otm_pct = max(0.0, (spot - float(sh["strike"])) / spot)
+                        short_delta = fnum(sh.get("delta"))
+                        delta_ok = (not high_beta_require_delta) or (
+                            np.isfinite(short_delta) and abs(short_delta) <= 0.20
+                        )
+                        hb_otm_need = max(high_beta_min_otm, sigma_pct if sigma_known else high_beta_min_otm)
+                        hb_pass = (not hb) or (
+                            dte >= high_beta_min_dte
+                            and short_otm_pct >= hb_otm_need
+                            and sigma_pass
+                            and delta_ok
+                        )
+                        core_ok = (
+                            er["core_ok"]
+                            and sigma_pass
+                            and hb_pass
+                            and dte > shield_lotto_dte_max
+                        )
+
+                        confidence_tier = (
+                            "Core Income"
+                            if core_ok
+                            else ("Lotto" if dte <= shield_lotto_dte_max else "Aggressive")
+                        )
+                        if er["crossed"]:
+                            confidence_tier = "REJECT"
+                        elif not er["verified"]:
+                            confidence_tier = "Aggressive"
+
+                        if er["crossed"]:
+                            optimal = "REJECT"
+                        elif not er["verified"]:
+                            optimal = "Watch Only"
+                        elif conv < 65:
+                            optimal = "Watch Only"
+                        elif core_ok and conv >= 78:
+                            optimal = "Yes-Prime"
+                        else:
+                            optimal = "Yes-Good"
+
+                        if (not core_ok) and optimal == "Yes-Prime":
+                            optimal = "Yes-Good"
+
+                        gate_text = (
+                            f"Gates: Earnings={er['label']}; 1σ={'PASS' if sigma_pass else ('FAIL' if sigma_known else 'UNKNOWN')}; "
+                            f"CreditWidth=PASS; WidthTier=PASS; HighBeta={'PASS' if hb_pass else 'FAIL'}; Liquidity=PASS."
+                        )
+                        notes = (
+                            f"Credit {net:.2f} on {width:.2f} ({credit_ratio:.2%}, R/R {credit_rr:.2f}); bull={bull:.2f}, tgt={tshort:.2f}. "
+                            f"{gate_text}"
+                        )
+                        out.append(candidate_dict(
+                            ticker, "SELL", "Bull Put Credit", "SHIELD", expiry, dte, float(lg["strike"]), float(sh["strike"]),
+                            width, net, "credit", max_profit_cash, max_loss_cash, float(sh["strike"] - net), conv,
+                            confidence_tier, optimal, notes, f"{sh['source_csv']}|{lg['source_csv']}",
+                            "Bull put credit benefits from support hold and theta decay.",
+                            f"Invalidate if close < {float(sh['strike']):.2f}."
+                        ))
+
+            calls = chains.get((ticker, "C", expiry))
+            if allow_shield_bear and calls is not None:
+                tshort = spot * (1.0 + shield_otm)
+                short_pool = calls[(calls["strike"] > spot) & (calls["strike"] <= spot * 1.30)].copy()
+                short_candidates = top_by_target(short_pool, tshort)
+                for _, sh in short_candidates.iterrows():
+                    long_pool = calls[calls["strike"] > sh["strike"]].copy()
+                    long_candidates = top_by_target(long_pool, float(sh["strike"]) + default_w)
+                    for _, lg in long_candidates.iterrows():
+                        if not liquid_pair_ok(sh, lg):
+                            continue
+                        width = float(lg["strike"] - sh["strike"])
+                        if width < min_w or width > max_w:
+                            continue
+                        net, _ = compute_live_net(
+                            net_type="credit",
+                            short_bid=fnum(sh["bid"]),
+                            short_ask=fnum(sh["ask"]),
+                            short_mark=None,
+                            long_bid=fnum(lg["bid"]),
+                            long_ask=fnum(lg["ask"]),
+                            long_mark=None,
+                        )
+                        if net is None or not np.isfinite(net) or net < 0:
+                            continue
+                        if net >= width:
+                            continue
+                        credit_ratio = net / width
+                        if credit_ratio < min_credit or credit_ratio > max_credit:
+                            continue
+                        max_profit_cash = net * 100
+                        max_loss_cash = (width - net) * 100
+                        credit_rr = net / max(1e-9, (width - net))
+                        if np.isfinite(max_risk_per_trade) and max_loss_cash > max_risk_per_trade:
+                            continue
+                        if credit_rr < min_credit_rr:
+                            continue
+                        eff = max(
+                            0.0,
+                            min(1.0, (credit_ratio - min_credit) / max(1e-9, max_credit - min_credit)),
+                        )
+                        liq = min(
+                            math.log1p(max(0.0, fnum(lg["volume"]))) + math.log1p(max(0.0, fnum(lg["open_interest"]))),
+                            math.log1p(max(0.0, fnum(sh["volume"]))) + math.log1p(max(0.0, fnum(sh["open_interest"]))),
+                        )
+                        liq = max(0.0, min(1.0, liq / 20.0))
+                        short_fit = 1.0 - min(1.0, abs(float(sh["strike"]) - tshort) / max(1.0, 0.25 * spot))
+                        score = 0.30 * bear + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.10 * whale + 0.06 * short_fit
+                        conv = int(round(100 * score))
+
+                        sigma_pass = bool(sigma_known and float(sh["strike"]) >= (spot + sigma))
+                        short_otm_pct = max(0.0, (float(sh["strike"]) - spot) / spot)
+                        short_delta = fnum(sh.get("delta"))
+                        delta_ok = (not high_beta_require_delta) or (
+                            np.isfinite(short_delta) and abs(short_delta) <= 0.20
+                        )
+                        hb_otm_need = max(high_beta_min_otm, sigma_pct if sigma_known else high_beta_min_otm)
+                        hb_pass = (not hb) or (
+                            dte >= high_beta_min_dte
+                            and short_otm_pct >= hb_otm_need
+                            and sigma_pass
+                            and delta_ok
+                        )
+                        core_ok = (
+                            er["core_ok"]
+                            and sigma_pass
+                            and hb_pass
+                            and dte > shield_lotto_dte_max
+                        )
+
+                        confidence_tier = (
+                            "Core Income"
+                            if core_ok
+                            else ("Lotto" if dte <= shield_lotto_dte_max else "Aggressive")
+                        )
+                        if er["crossed"]:
+                            confidence_tier = "REJECT"
+                        elif not er["verified"]:
+                            confidence_tier = "Aggressive"
+
+                        # 40% upside gate: if consensus/upside cannot be verified from data, downgrade to Watch Only.
+                        consensus = str(r.get("analyst_consensus", "")).strip().lower()
+                        upside = fnum(r.get("analyst_upside_pct"))
+                        upside_known = bool(consensus) and np.isfinite(upside)
+                        upside_fail = False
+                        if upside_known:
+                            upside_norm = upside / 100.0 if upside > 2.0 else upside
+                            upside_fail = (consensus in {"buy", "overweight", "strong buy"}) and (upside_norm >= 0.40)
+
+                        if er["crossed"]:
+                            optimal = "REJECT"
+                        elif (not er["verified"]) or (not upside_known):
+                            optimal = "Watch Only"
+                        elif upside_fail:
+                            optimal = "REJECT"
+                        elif conv < 65:
+                            optimal = "Watch Only"
+                        elif core_ok and conv >= 78:
+                            optimal = "Yes-Prime"
+                        else:
+                            optimal = "Yes-Good"
+
+                        if (not core_ok) and optimal == "Yes-Prime":
+                            optimal = "Yes-Good"
+
+                        gate_text = (
+                            f"Gates: Earnings={er['label']}; 1σ={'PASS' if sigma_pass else ('FAIL' if sigma_known else 'UNKNOWN')}; "
+                            f"CreditWidth=PASS; WidthTier=PASS; HighBeta={'PASS' if hb_pass else 'FAIL'}; "
+                            f"Liquidity=PASS; Upside40={'PASS' if (upside_known and not upside_fail) else ('FAIL' if upside_fail else 'UNKNOWN')}."
+                        )
+                        notes = (
+                            f"Credit {net:.2f} on {width:.2f} ({credit_ratio:.2%}, R/R {credit_rr:.2f}); bear={bear:.2f}, tgt={tshort:.2f}. "
+                            f"{gate_text}"
+                        )
+                        out.append(candidate_dict(
+                            ticker, "SELL", "Bear Call Credit", "SHIELD", expiry, dte, float(lg["strike"]), float(sh["strike"]),
+                            width, net, "credit", max_profit_cash, max_loss_cash, float(sh["strike"] + net), conv,
+                            confidence_tier, optimal, notes, f"{sh['source_csv']}|{lg['source_csv']}",
+                            "Bear call credit leans on overhead resistance plus theta.",
+                            f"Invalidate if close > {float(sh['strike']):.2f}."
+                        ))
+
+    if not out:
+        return []
+
+    df = pd.DataFrame(out)
+    # Keep actionable rows only.
+    df = df[df["optimal"].isin(["Yes-Prime", "Yes-Good"])].copy()
+    if df.empty:
+        return []
+    df = df.sort_values(
+        [
+            "conviction",
+            "max_loss",
+            "max_profit",
+            "track",
+            "ticker",
+            "strategy",
+            "expiry",
+            "short_strike",
+            "long_strike",
+        ],
+        ascending=[False, True, False, True, True, True, True, True, True],
+    )
+
+    # Apply rulebook-style engine caps to avoid combinational strike spam.
+    selected_rows = []
+    used_keys = set()
+    per_ticker_count = defaultdict(int)
+    per_ticker_expiries = defaultdict(set)
+
+    def try_add(row):
+        key = (
+            row["ticker"],
+            row["strategy"],
+            row["expiry"],
+            float(row["long_strike"]),
+            float(row["short_strike"]),
+        )
+        if key in used_keys:
+            return False
+        ticker = row["ticker"]
+        expiry = row["expiry"]
+        if per_ticker_count[ticker] >= max(1, max_trades_per_ticker):
+            return False
+        if expiry not in per_ticker_expiries[ticker] and len(per_ticker_expiries[ticker]) >= max(
+            1, max_expiries_per_ticker
+        ):
+            return False
+        used_keys.add(key)
+        per_ticker_count[ticker] += 1
+        per_ticker_expiries[ticker].add(expiry)
+        selected_rows.append(row.to_dict())
+        return True
+
+    # Seed one best per track, if available, so FIRE/SHIELD both surface.
+    for track in ["FIRE", "SHIELD"]:
+        sub = df[df["track"] == track]
+        if not sub.empty:
+            added = 0
+            for _, row in sub.iterrows():
+                if len(selected_rows) >= max(1, max_total_trades):
+                    break
+                if try_add(row):
+                    added += 1
+                if added >= min_per_track:
+                    break
+
+    for _, row in df.iterrows():
+        if len(selected_rows) >= max(1, max_total_trades):
+            break
+        try_add(row)
+
+    selected_rows.sort(
+        key=lambda r: (
+            -int(r["conviction"]),
+            float(r["max_loss"]) if np.isfinite(r["max_loss"]) else 1e18,
+            -float(r["max_profit"]) if np.isfinite(r["max_profit"]) else -1e18,
+            str(r["track"]),
+            str(r["ticker"]),
+            str(r["strategy"]),
+            str(r["expiry"]),
+        )
+    )
+    return selected_rows
+
+
+def row_from_candidate(i, r):
+    if r["strategy"] == "Bull Call Debit":
+        ss = f"Buy {r['long_strike']:.2f}C / Sell {r['short_strike']:.2f}C ({r['width']:.2f}w)"
+    elif r["strategy"] == "Bear Put Debit":
+        ss = f"Buy {r['long_strike']:.2f}P / Sell {r['short_strike']:.2f}P ({r['width']:.2f}w)"
+    elif r["strategy"] == "Bull Put Credit":
+        ss = f"Sell {r['short_strike']:.2f}P / Buy {r['long_strike']:.2f}P ({r['width']:.2f}w)"
+    else:
+        ss = f"Sell {r['short_strike']:.2f}C / Buy {r['long_strike']:.2f}C ({r['width']:.2f}w)"
+
+    net = "N/A"
+    if np.isfinite(r["net"]):
+        net = f"{'Credit' if r['net_type'] == 'credit' else 'Debit'} {r['net']:.2f}"
+
+    strategy = str(r.get("strategy", "")).strip()
+    strategy_upper = strategy.upper()
+    track = str(r.get("track", "")).strip().upper()
+    optimal = str(r.get("optimal", "")).strip()
+    if optimal == "REJECT":
+        action_display = "\U0001F7E5 REJECT"
+    elif optimal == "Watch Only":
+        action_display = (
+            "\U0001F6E1\ufe0f\U0001F7E8 WATCH ONLY"
+            if track == "SHIELD"
+            else "\U0001F525\U0001F7E8 WATCH ONLY"
+        )
+    elif strategy == "Bull Put Credit":
+        action_display = "\U0001F6E1\ufe0f\U0001F7E9 BULL PUT CREDIT"
+    elif strategy == "Bear Call Credit":
+        action_display = "\U0001F6E1\ufe0f\U0001F7E5 BEAR CALL CREDIT"
+    elif strategy == "Bull Call Debit":
+        action_display = "\U0001F525\U0001F7E6 BULL CALL DEBIT"
+    elif strategy == "Bear Put Debit":
+        action_display = "\U0001F525\U0001F7E7 BEAR PUT DEBIT"
+    else:
+        action_display = strategy_upper
+
+    return {
+        "#": i,
+        "Ticker": r["ticker"],
+        "Action": action_display,
+        "Strategy Type": r["strategy"],
+        "Strike Setup": ss,
+        "Expiry": r["expiry"].isoformat() if hasattr(r["expiry"], "isoformat") else str(r["expiry"]),
+        "DTE": int(r["dte"]),
+        "Net Credit/Debit": net,
+        "Max Profit": money(r["max_profit"]),
+        "Max Loss": money(r["max_loss"]),
+        "Breakeven": px(r["breakeven"]),
+        "Conviction %": f"{int(r['conviction'])}%",
+        "Confidence Tier": str(r.get("tier", "")),
+        "Optimal": str(r.get("optimal", "")),
+        "Notes": r["notes"],
+        "Source": str(r["source"]).replace("|", " + "),
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser(description="MODE A - EOD TRADE SCAN")
+    ap.add_argument("--base-dir", default=r"c:\uw_root\2026-02-05")
+    ap.add_argument("--config", default=r"c:\uw_root\rulebook_config.yaml")
+    ap.add_argument("--output", default=r"c:\uw_root\2026-02-05\anu-expert-trade-table-2026-02-05.md")
+    ap.add_argument(
+        "--top-trades",
+        type=int,
+        default=20,
+        help="Maximum number of final trades to output (further bounded by rulebook engine.max_total_trades).",
+    )
+    args = ap.parse_args()
+
+    base = Path(args.base_dir).resolve()
+    cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
+    zips = sorted(base.glob("*.zip"))
+    if not zips:
+        raise FileNotFoundError(f"No .zip files found in {base}")
+    asof_str = find_asof(zips)
+    asof = dt.datetime.strptime(asof_str, "%Y-%m-%d").date()
+
+    csv_map = unzip_zips(zips, base / "_unzipped_mode_a")
+    print("Unzipped CSV files:")
+    for zname, cpath in csv_map.items():
+        print(f"  {zname} -> {cpath.name}")
+
+    def pick(prefix):
+        for zname, cpath in csv_map.items():
+            if zname.startswith(prefix):
+                return zname, cpath
+        raise FileNotFoundError(f"Missing required zip prefix: {prefix}")
+
+    try:
+        oi_zip, oi_csv = pick("chain-oi-changes-")
+        dp_zip, dp_csv = pick("dp-eod-report-")
+        hot_zip, hot_csv = pick("hot-chains-")
+        sc_zip, sc_csv = pick("stock-screener-")
+    except Exception as exc:
+        print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
+        raise
+
+    whale_md = base / f"whale-{asof_str}.md"
+    if not whale_md.exists():
+        alt = sorted(base.glob("whale-*.md"))
+        whale_md = alt[-1] if alt else whale_md
+    if not whale_md.exists():
+        exc = FileNotFoundError(f"Missing whale markdown file in {base}")
+        print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
+        raise exc
+
+    try:
+        hot_df = pd.read_csv(hot_csv, low_memory=False)
+        oi_df = pd.read_csv(oi_csv, low_memory=False)
+        dp_df = pd.read_csv(dp_csv, low_memory=False)
+        sc_df = pd.read_csv(sc_csv, low_memory=False)
+    except Exception as exc:
+        print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
+        raise
+
+    print(f"Loaded: {hot_csv.name} rows={len(hot_df):,}")
+    print(f"Loaded: {oi_csv.name} rows={len(oi_df):,}")
+    print(f"Loaded: {dp_csv.name} rows={len(dp_df):,}")
+    print(f"Loaded: {sc_csv.name} rows={len(sc_df):,}")
+
+    try:
+        ensure_cols(hot_df, hot_csv.name, ["option_symbol", "date", "bid", "ask", "volume", "open_interest"])
+        ensure_cols(oi_df, oi_csv.name, ["option_symbol", "curr_date", "last_bid", "last_ask", "curr_oi", "volume"])
+        ensure_cols(sc_df, sc_csv.name, ["ticker", "close", "issue_type", "is_index", "next_earnings_date", "bullish_premium", "bearish_premium", "call_premium", "put_premium", "put_call_ratio"])
+    except Exception as exc:
+        print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
+        raise
+
+    try:
+        md_text = whale_md.read_text(encoding="utf-8", errors="replace")
+        tables = md_tables(md_text)
+    except Exception as exc:
+        print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
+        raise
+    print(f"Loaded markdown: {whale_md.name}, tables={len(tables)}")
+
+    quotes = build_quotes(hot_df, oi_df, asof, hot_csv.name, oi_csv.name)
+    print(f"Loaded same-day quote rows (hot + oi): {len(quotes):,}")
+
+    best = build_best_candidates(asof, cfg, sc_df, quotes, tables, top_trades=args.top_trades)
+    if not best:
+        raise RuntimeError("No candidates produced under hard gates.")
+
+    out_rows = [row_from_candidate(i + 1, r) for i, r in enumerate(best)]
+    out_df = pd.DataFrame(
+        out_rows,
+        columns=[
+            "#",
+            "Ticker",
+            "Action",
+            "Strategy Type",
+            "Strike Setup",
+            "Expiry",
+            "DTE",
+            "Net Credit/Debit",
+            "Max Profit",
+            "Max Loss",
+            "Breakeven",
+            "Conviction %",
+            "Confidence Tier",
+            "Optimal",
+            "Notes",
+            "Source",
+        ],
+    )
+
+    files_used = [oi_zip, dp_zip, hot_zip, sc_zip, whale_md.name]
+    lines = [
+        f"As-of date used: {asof_str}",
+        f"Files used: {', '.join(files_used)}",
+        "",
+        "## Anu Expert Trade Table",
+        out_df.to_markdown(index=False),
+        "",
+        "Ticker thesis + invalidation (Yes-Prime / Yes-Good):",
+    ]
+    seen = set()
+    for r in best:
+        if r["optimal"] not in {"Yes-Prime", "Yes-Good"}:
+            continue
+        if r["ticker"] in seen:
+            continue
+        seen.add(r["ticker"])
+        lines.append(f"- {r['ticker']}: {r['thesis']} Invalidation: {r['invalidation']}")
+    if not seen:
+        lines.append("- none")
+
+    out_path = Path(args.output).resolve()
+    out_path.write_text("\n".join(lines), encoding="utf-8-sig")
+    print(f"Wrote: {out_path}")
+    print("")
+    try:
+        print("\n".join(lines))
+    except UnicodeEncodeError:
+        # Some Windows consoles default to cp1252 and cannot print emoji.
+        print("\n".join(lines).encode("ascii", "replace").decode("ascii"))
+
+
+if __name__ == "__main__":
+    main()

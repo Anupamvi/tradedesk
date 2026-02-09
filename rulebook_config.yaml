@@ -1,0 +1,82 @@
+# rulebook_config.yaml
+# Deterministic gates + scan parameters for strategy_engine.py
+
+engine:
+  max_tickers_to_scan: 400            # scan fewer symbols for higher signal concentration
+  max_trades_per_ticker: 1            # diversify across names for consistency
+  max_total_trades: 200               # scanner cap (final output may cap lower)
+  max_expiries_per_ticker: 2          # avoid overfitting across many expiries
+  strike_search_depth: 6              # enough depth without strike overfitting
+  min_per_track: 1                    # include both tracks when viable
+
+gates:
+  exclude_etfs: true
+  min_credit_pct_width: 0.30          # consistency mode: target better credit quality
+  max_credit_pct_width: 0.55          # block high-risk near-ATM credits
+  max_debit_pct_width: 0.38           # tighter debit risk
+  min_leg_open_interest: 1000         # stricter per-leg liquidity floor
+  min_leg_volume: 50                  # stricter per-leg same-day activity floor
+  max_leg_spread_pct: 0.18            # reject wide/sloppy leg quotes
+  max_risk_per_trade: 700             # cap defined risk per trade in dollars
+  min_debit_reward_risk: 1.20         # (max profit / max loss) floor for debit spreads
+  min_credit_reward_risk: 0.35        # (max profit / max loss) floor for credit spreads
+
+  # Consistency width tiers by underlying price (narrower than baseline rulebook)
+  width_tiers:
+    - {min_price: 0,   max_price: 25,  min_width: 2.5, max_width: 5,   default_width: 2.5}
+    - {min_price: 25,  max_price: 75,  min_width: 2.5, max_width: 7.5, default_width: 5}
+    - {min_price: 75,  max_price: 150, min_width: 5,   max_width: 10,  default_width: 7.5}
+    - {min_price: 150, max_price: 1.0e9, min_width: 10, max_width: 20, default_width: 10}
+
+shield:
+  # SHIELD is "income / mean reversion"
+  dte_range: [28, 56]
+  target_dte: 42
+  credit_short_otm_pct: 0.10          # farther OTM cushion for consistency
+  allow_both_sides_when_neutral: false
+  min_marketcap: 10000000000          # data-driven liquidity/quality floor (10B)
+  lotto_dte_max: 7
+
+fire:
+  # FIRE is "momentum / directional"
+  dte_range: [21, 70]
+  target_dte: 45
+  debit_long_itm_pct: 0.03            # slightly deeper ITM bias for delta support
+  allow_both_sides_when_neutral: false
+  lotto_dte_max: 10
+
+pricing:
+  # Rulebook Stage-2 executable sources only (chain-oi is discovery-only)
+  executable_source_kinds: ["hot"]
+
+high_beta:
+  # Rulebook hard override for Core Income credit trades
+  tickers: [TSLA, NVDA, MU, PLTR]
+  min_dte: 28
+  min_otm_pct: 0.10
+  iv30d_override_threshold: 0.90
+  require_short_delta_for_core: true
+
+playbook:
+  # Portfolio process controls (daily/weekly/monthly)
+  daily:
+    daily_loss_stop_cash: 1000
+    loss_streak_yellow: 3
+    loss_streak_red: 4
+    rolling_pf_yellow_floor: 1.00
+  risk_limits:
+    short_put_max_share: 0.35
+    single_symbol_max_share: 0.10
+    single_expiry_max_share_short_put: 0.25
+  weekly:
+    strategy_window_trades: 20
+    strategy_min_trades: 20
+    strategy_min_pf: 1.00
+    symbol_window_trades: 20
+    symbol_min_trades: 5
+    symbol_pause_if_net_below: 0
+    combo_min_trades: 3
+    combo_pause_if_net_below: -1000
+  monthly:
+    target_monthly_profit: 20000
+    long_call_monthly_kill_switch: -1500
