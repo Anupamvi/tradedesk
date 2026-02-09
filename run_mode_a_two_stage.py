@@ -358,6 +358,10 @@ def run():
     live_cols = key + [
         "live_status",
         "is_final_live_valid",
+        "invalidation_breached_live",
+        "invalidation_rule_op",
+        "invalidation_rule_level",
+        "invalidation_eval_price_live",
         "live_net_bid_ask",
         "live_max_profit",
         "live_max_loss",
@@ -404,7 +408,12 @@ def run():
 
     def is_approved(row):
         ok_live = bool(row.get("is_final_live_valid")) if pd.notna(row.get("is_final_live_valid")) else False
-        return ok_live and str(row.get("optimal_stage1", "")) in {"Yes-Prime", "Yes-Good"}
+        invalidated_live = (
+            bool(row.get("invalidation_breached_live"))
+            if pd.notna(row.get("invalidation_breached_live"))
+            else False
+        )
+        return (not invalidated_live) and ok_live and str(row.get("optimal_stage1", "")) in {"Yes-Prime", "Yes-Good"}
 
     mdf["approved"] = mdf.apply(is_approved, axis=1)
     mdf = mdf.sort_values(["approved", "conviction"], ascending=[False, False]).reset_index(drop=True)
@@ -446,14 +455,30 @@ def run():
             confidence_tier = "Watch Only"
             optimal = "Watch Only"
             cur_txt = f"{live_net:.2f}" if np.isfinite(live_net) else "N/A"
-            if np.isfinite(live_net) and gate_val is not None:
+            invalidated_live = (
+                bool(r.get("invalidation_breached_live"))
+                if pd.notna(r.get("invalidation_breached_live"))
+                else False
+            )
+            if invalidated_live:
+                inv_text = str(r.get("invalidation", "")).strip() or "invalidation rule not available"
+                lvl = fnum(r.get("invalidation_rule_level"))
+                px_live = fnum(r.get("invalidation_eval_price_live"))
+                lvl_txt = f"{lvl:.2f}" if np.isfinite(lvl) else "n/a"
+                px_txt = f"{px_live:.2f}" if np.isfinite(px_live) else "n/a"
+                notes = (
+                    f"Watch Only: live_status={r.get('live_status', 'missing')}; invalidation breached "
+                    f"(rule: {inv_text}; level={lvl_txt}; live spot={px_txt})."
+                )
+            elif np.isfinite(live_net) and gate_val is not None:
                 if net_type == "debit":
                     need = f"needs debit <= {gate_val:.2f}"
                 else:
                     need = f"needs credit >= {gate_val:.2f}"
+                notes = f"Watch Only: live_status={r.get('live_status', 'missing')}; {need}; current live net={cur_txt}."
             else:
                 need = f"target {r.get('entry_gate', 'N/A')}"
-            notes = f"Watch Only: live_status={r.get('live_status', 'missing')}; {need}; current live net={cur_txt}."
+                notes = f"Watch Only: live_status={r.get('live_status', 'missing')}; {need}; current live net={cur_txt}."
 
         hist_success = fnum(r.get("hist_success_pct"))
         edge_pct = fnum(r.get("edge_pct"))

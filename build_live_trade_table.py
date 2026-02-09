@@ -28,6 +28,7 @@ REQUIRED_COLUMNS = [
     "width",
 ]
 ENTRY_GATE_RE = re.compile(r"^\s*(>=|<=)\s*([0-9]*\.?[0-9]+)\s*(cr|db)\s*$", re.IGNORECASE)
+INVALIDATION_RE = re.compile(r"\bclose\s*(<=|>=|<|>)\s*([0-9]*\.?[0-9]+)\b", re.IGNORECASE)
 
 
 def safe_float(value: Any) -> Optional[float]:
@@ -56,6 +57,35 @@ def parse_entry_gate(entry_gate: Any) -> Tuple[Optional[str], Optional[float], O
         return None, None, None
     op, threshold, unit = match.groups()
     return op, safe_float(threshold), unit.lower()
+
+
+def parse_invalidation_rule(invalidation: Any) -> Tuple[Optional[str], Optional[float]]:
+    text = str(invalidation or "").strip()
+    match = INVALIDATION_RE.search(text)
+    if not match:
+        return None, None
+    op, level = match.groups()
+    return op, safe_float(level)
+
+
+def invalidation_breached(
+    op: Optional[str],
+    level: Optional[float],
+    price: Optional[float],
+) -> Optional[bool]:
+    if op is None or level is None or price is None:
+        return None
+    if not (math.isfinite(level) and math.isfinite(price)):
+        return None
+    if op == "<":
+        return price < level
+    if op == "<=":
+        return price <= level
+    if op == ">":
+        return price > level
+    if op == ">=":
+        return price >= level
+    return None
 
 
 def chain_symbol_set(payload: Dict[str, Any]) -> Set[str]:
@@ -359,6 +389,7 @@ def main() -> None:
         ticker = str(row.get("ticker", "")).strip().upper()
         net_type = str(row.get("net_type", "")).strip().lower()
         entry_op, entry_threshold, entry_unit = parse_entry_gate(row.get("entry_gate"))
+        invalidation_op, invalidation_level = parse_invalidation_rule(row.get("invalidation"))
 
         short_live_symbol = row.get("short_leg_live_symbol")
         long_live_symbol = row.get("long_leg_live_symbol")
@@ -412,6 +443,20 @@ def main() -> None:
             else:
                 gate_pass_live = live_net_bid_ask <= entry_threshold
 
+        und_payload = underlying_quotes.get(ticker, {})
+        und_quote = und_payload.get("quote", und_payload)
+        spot_live_last = safe_float(und_quote.get("lastPrice", und_quote.get("mark")))
+        spot_live_bid = safe_float(und_quote.get("bidPrice"))
+        spot_live_ask = safe_float(und_quote.get("askPrice"))
+        spot_eval_live = (
+            spot_live_last
+            if spot_live_last is not None and math.isfinite(spot_live_last)
+            else midpoint(spot_live_bid, spot_live_ask)
+        )
+        invalidation_breached_live = invalidation_breached(
+            invalidation_op, invalidation_level, spot_eval_live
+        )
+
         live_status = "ok_live"
         if chain_status == "ERROR":
             live_status = "chain_error"
@@ -421,6 +466,8 @@ def main() -> None:
             live_status = "bad_occ_symbol"
         elif short_in_chain is False or long_in_chain is False:
             live_status = "missing_leg_in_live_chain"
+        elif invalidation_breached_live is True:
+            live_status = "invalidation_breached_live"
         elif live_net_bid_ask is None:
             live_status = "missing_live_quote"
         elif gate_pass_live is False:
@@ -441,12 +488,6 @@ def main() -> None:
             else:
                 live_max_profit = (width_for_risk - live_net_bid_ask) * 100.0
                 live_max_loss = live_net_bid_ask * 100.0
-
-        und_payload = underlying_quotes.get(ticker, {})
-        und_quote = und_payload.get("quote", und_payload)
-        spot_live_last = safe_float(und_quote.get("lastPrice", und_quote.get("mark")))
-        spot_live_bid = safe_float(und_quote.get("bidPrice"))
-        spot_live_ask = safe_float(und_quote.get("askPrice"))
 
         rec.update(
             {
@@ -482,6 +523,10 @@ def main() -> None:
                 "entry_gate_threshold": entry_threshold,
                 "entry_gate_unit": entry_unit,
                 "gate_pass_live": gate_pass_live,
+                "invalidation_rule_op": invalidation_op,
+                "invalidation_rule_level": invalidation_level,
+                "invalidation_eval_price_live": spot_eval_live,
+                "invalidation_breached_live": invalidation_breached_live,
                 "live_max_profit": live_max_profit,
                 "live_max_loss": live_max_loss,
                 "spot_live_last": spot_live_last,
