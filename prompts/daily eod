@@ -1,0 +1,34 @@
+DATE = 2026-02-08
+BASE_DIR = C:\uw_root\{DATE}
+OUT_DIR = C:\uw_root\out
+OUTPUT_MD = {BASE_DIR}\anu-expert-trade-table-{DATE}.md
+
+Use MODE A two-stage with DATE token applied everywhere below (do not ask for date again):
+
+1) Ingest exactly:
+- chain-oi-changes-{DATE}.zip
+- dp-eod-report-{DATE}.zip
+- hot-chains-{DATE}.zip
+- stock-screener-{DATE}.zip
+- whale-{DATE}.md
+from {BASE_DIR}
+
+2) Stage 1:
+- Build FIRE + SHIELD candidates
+- Shortlist top 20 by conviction
+- Export shortlist CSV for build_live_trade_table.py
+
+3) Stage 2 (mandatory):
+- Run build_live_trade_table.py on the shortlist
+- Use live Schwab pricing fields from *_final.csv
+- If not live-valid, mark Watch Only (no fabrication)
+
+4) Backtesting:
+- Run setup_likelihood_backtest.py on the same shortlist
+- Add Setup Likelihood with strength (Strong/Moderate/Weak/Negative/Low Sample)
+
+5) Output:
+- Save final markdown to {OUTPUT_MD}
+- Include one table with columns:
+#, Ticker, Action, Strategy Type, Strike Setup, Expiry, DTE, Net Credit/Debit, Max Profit, Max Loss, Breakeven, Conviction %, Setup Likelihood, Confidence Tier, Optimal, Notes, Source
+- Approved first (highest conviction), then Watch Only
