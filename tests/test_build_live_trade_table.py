@@ -3,8 +3,14 @@ import sys
 import unittest
 from pathlib import Path
 
+import pandas as pd
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "build_live_trade_table.py"
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+
+SCRIPT_PATH = ROOT / "build_live_trade_table.py"
 SPEC = importlib.util.spec_from_file_location("build_live_trade_table", SCRIPT_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"Unable to load module spec from {SCRIPT_PATH}")
@@ -40,6 +46,45 @@ class TestBuildLiveTradeTable(unittest.TestCase):
     def test_invalidation_breached_handles_missing_values(self) -> None:
         self.assertIsNone(mod.invalidation_breached("<", 280.0, None))
         self.assertIsNone(mod.invalidation_breached(None, 280.0, 279.0))
+
+    def test_validate_shortlist_columns_condor_ok(self) -> None:
+        df = pd.DataFrame(
+            [
+                {
+                    "ticker": "AMZN",
+                    "strategy": "Iron Condor",
+                    "expiry": "2026-03-20",
+                    "net_type": "credit",
+                    "entry_gate": ">= 2.50 cr",
+                    "width": 10.0,
+                    "short_put_leg": "AMZN260320P00190000",
+                    "long_put_leg": "AMZN260320P00180000",
+                    "short_call_leg": "AMZN260320C00205000",
+                    "long_call_leg": "AMZN260320C00215000",
+                }
+            ]
+        )
+        mod.validate_shortlist_columns(df)
+
+    def test_validate_shortlist_columns_condor_missing_legs(self) -> None:
+        df = pd.DataFrame(
+            [
+                {
+                    "ticker": "AMZN",
+                    "strategy": "Iron Condor",
+                    "expiry": "2026-03-20",
+                    "net_type": "credit",
+                    "entry_gate": ">= 2.50 cr",
+                    "width": 10.0,
+                    "short_put_leg": "",
+                    "long_put_leg": "",
+                    "short_call_leg": "AMZN260320C00205000",
+                    "long_call_leg": "AMZN260320C00215000",
+                }
+            ]
+        )
+        with self.assertRaises(ValueError):
+            mod.validate_shortlist_columns(df)
 
 
 if __name__ == "__main__":

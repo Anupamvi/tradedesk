@@ -35,6 +35,11 @@ def _safe_float(value: Any) -> Optional[float]:
         return None
 
 
+def _is_refresh_token_error(exc: Exception) -> bool:
+    text = str(exc)
+    return ("refresh_token_authentication_error" in text) or ("unsupported_token_type" in text)
+
+
 def _to_date(value: Any) -> Optional[dt.date]:
     if value is None or value == "":
         return None
@@ -231,6 +236,12 @@ class SchwabLiveDataService:
             return self._client
 
         parsed = urlparse(self.config.callback_url)
+
+        if self.manual_auth:
+            self._client = self._manual_client_from_login()
+            self.auth_mode = "manual_login"
+            return self._client
+
         has_token_file = self.token_path.is_file()
 
         if has_token_file:
@@ -240,11 +251,6 @@ class SchwabLiveDataService:
                 return self._client
             except Exception:
                 self._client = None
-
-        if self.manual_auth:
-            self._client = self._manual_client_from_login()
-            self.auth_mode = "manual_login"
-            return self._client
 
         if parsed.port in (None, 443):
             self._client = self._manual_client_from_login()
@@ -272,7 +278,15 @@ class SchwabLiveDataService:
             raise RuntimeError("No quote symbols provided.")
 
         client = self.connect()
-        response = client.get_quotes(sym_list)
+        try:
+            response = client.get_quotes(sym_list)
+        except Exception as exc:
+            if _is_refresh_token_error(exc):
+                raise RuntimeError(
+                    "Schwab token refresh failed (stale/revoked refresh token). "
+                    "Re-auth once with: python schwab_live_quotes.py --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                ) from exc
+            raise
         response.raise_for_status()
         return response.json()
 
@@ -297,7 +311,15 @@ class SchwabLiveDataService:
         if parsed_to is not None:
             kwargs["to_date"] = parsed_to
 
-        response = client.get_option_chain(symbol, **kwargs)
+        try:
+            response = client.get_option_chain(symbol, **kwargs)
+        except Exception as exc:
+            if _is_refresh_token_error(exc):
+                raise RuntimeError(
+                    "Schwab token refresh failed (stale/revoked refresh token). "
+                    "Re-auth once with: python schwab_live_quotes.py --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                ) from exc
+            raise
         response.raise_for_status()
         return response.json()
 

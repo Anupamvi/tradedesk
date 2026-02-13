@@ -101,28 +101,40 @@ def strategy_right(strategy: str):
         return "C"
     if s in {"Bear Put Debit", "Bull Put Credit"}:
         return "P"
+    if s == "Iron Condor":
+        return "IC"
     return ""
 
 
 def action_cell(strategy: str, track: str, optimal: str):
     if optimal == "Watch Only":
-        return "🔥🟨 WATCH ONLY" if str(track).upper() == "FIRE" else "🛡️🟨 WATCH ONLY"
+        return "\U0001F525\U0001F7E8 WATCH ONLY" if str(track).upper() == "FIRE" else "\U0001F6E1\ufe0f\U0001F7E8 WATCH ONLY"
     s = str(strategy)
     if s == "Bull Call Debit":
-        return "🔥🟦 BULL CALL DEBIT"
+        return "\U0001F525\U0001F7E6 BULL CALL DEBIT"
     if s == "Bear Put Debit":
-        return "🔥🟧 BEAR PUT DEBIT"
+        return "\U0001F525\U0001F7E7 BEAR PUT DEBIT"
     if s == "Bull Put Credit":
-        return "🛡️🟩 BULL PUT CREDIT"
+        return "\U0001F6E1\ufe0f\U0001F7E9 BULL PUT CREDIT"
     if s == "Bear Call Credit":
-        return "🛡️🟥 BEAR CALL CREDIT"
+        return "\U0001F6E1\ufe0f\U0001F7E5 BEAR CALL CREDIT"
+    if s == "Iron Condor":
+        return "\U0001F6E1\ufe0f\U0001F7EA IRON CONDOR"
     return s.upper()
 
-
-def strike_setup(strategy, long_strike, short_strike, width):
-    ls = float(long_strike)
-    ss = float(short_strike)
-    w = float(width)
+def strike_setup(
+    strategy,
+    long_strike,
+    short_strike,
+    width,
+    long_put_strike=None,
+    short_put_strike=None,
+    short_call_strike=None,
+    long_call_strike=None,
+):
+    ls = float(long_strike) if np.isfinite(fnum(long_strike)) else math.nan
+    ss = float(short_strike) if np.isfinite(fnum(short_strike)) else math.nan
+    w = float(width) if np.isfinite(fnum(width)) else math.nan
     if strategy == "Bull Call Debit":
         return f"Buy {ls:.2f}C / Sell {ss:.2f}C ({w:.2f}w)"
     if strategy == "Bear Put Debit":
@@ -131,6 +143,13 @@ def strike_setup(strategy, long_strike, short_strike, width):
         return f"Sell {ss:.2f}P / Buy {ls:.2f}P ({w:.2f}w)"
     if strategy == "Bear Call Credit":
         return f"Sell {ss:.2f}C / Buy {ls:.2f}C ({w:.2f}w)"
+    if strategy == "Iron Condor":
+        lp = fnum(long_put_strike)
+        sp = fnum(short_put_strike)
+        sc = fnum(short_call_strike)
+        lc = fnum(long_call_strike)
+        if np.isfinite(lp) and np.isfinite(sp) and np.isfinite(sc) and np.isfinite(lc):
+            return f"Sell {sp:.2f}P / Buy {lp:.2f}P + Sell {sc:.2f}C / Buy {lc:.2f}C"
     return "N/A"
 
 
@@ -160,6 +179,17 @@ def calc_be(strategy, long_strike, short_strike, net):
     if strategy == "Bear Call Credit":
         return ss + net
     return math.nan
+
+
+def calc_be_text(row, net):
+    strategy = str(row.get("strategy", "")).strip()
+    if strategy == "Iron Condor":
+        sp = fnum(row.get("short_put_strike", row.get("short_strike")))
+        sc = fnum(row.get("short_call_strike"))
+        if np.isfinite(sp) and np.isfinite(sc) and np.isfinite(net):
+            return f"{(sp - net):.2f} / {(sc + net):.2f}"
+        return "N/A"
+    return px(calc_be(strategy, row.get("long_strike"), row.get("short_strike"), net))
 
 
 def money(x):
@@ -219,6 +249,7 @@ def run():
         raise FileNotFoundError(f"Missing whale markdown in {base}")
 
     cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
+    approval_cfg = cfg.get("approval", {}) if isinstance(cfg, dict) else {}
     hot_df = pd.read_csv(csvs["hot-chains-"], low_memory=False)
     oi_df = pd.read_csv(csvs["chain-oi-changes-"], low_memory=False)
     dp_df = pd.read_csv(csvs["dp-eod-report-"], low_memory=False)
@@ -259,22 +290,57 @@ def run():
     for r in best:
         ticker = str(r["ticker"]).upper()
         strategy = str(r["strategy"])
-        right = strategy_right(strategy)
         expiry = r["expiry"]
-        long_strike = round_strike(r["long_strike"])
-        short_strike = round_strike(r["short_strike"])
+        long_strike = round_strike(r.get("long_strike"))
+        short_strike = round_strike(r.get("short_strike"))
 
-        if strategy in {"Bull Call Debit", "Bear Put Debit"}:
-            long_key = (ticker, right, expiry, long_strike)
-            short_key = (ticker, right, expiry, short_strike)
+        short_leg = ""
+        long_leg = ""
+        short_put_leg = ""
+        long_put_leg = ""
+        short_call_leg = ""
+        long_call_leg = ""
+        long_put_strike = fnum(r.get("long_put_strike", long_strike))
+        short_put_strike = fnum(r.get("short_put_strike", short_strike))
+        short_call_strike = fnum(r.get("short_call_strike"))
+        long_call_strike = fnum(r.get("long_call_strike"))
+
+        if strategy == "Iron Condor":
+            short_put_leg = str(r.get("short_put_symbol", "")).strip()
+            long_put_leg = str(r.get("long_put_symbol", "")).strip()
+            short_call_leg = str(r.get("short_call_symbol", "")).strip()
+            long_call_leg = str(r.get("long_call_symbol", "")).strip()
+
+            if not short_put_leg:
+                short_put_key = (ticker, "P", expiry, round_strike(short_put_strike))
+                short_put_leg = leg_map.get(short_put_key, "")
+            if not long_put_leg:
+                long_put_key = (ticker, "P", expiry, round_strike(long_put_strike))
+                long_put_leg = leg_map.get(long_put_key, "")
+            if not short_call_leg:
+                short_call_key = (ticker, "C", expiry, round_strike(short_call_strike))
+                short_call_leg = leg_map.get(short_call_key, "")
+            if not long_call_leg:
+                long_call_key = (ticker, "C", expiry, round_strike(long_call_strike))
+                long_call_leg = leg_map.get(long_call_key, "")
+
+            if not short_put_leg or not long_put_leg or not short_call_leg or not long_call_leg:
+                continue
+            short_leg = short_put_leg
+            long_leg = long_put_leg
         else:
-            short_key = (ticker, right, expiry, short_strike)
-            long_key = (ticker, right, expiry, long_strike)
+            right = strategy_right(strategy)
+            if strategy in {"Bull Call Debit", "Bear Put Debit"}:
+                long_key = (ticker, right, expiry, long_strike)
+                short_key = (ticker, right, expiry, short_strike)
+            else:
+                short_key = (ticker, right, expiry, short_strike)
+                long_key = (ticker, right, expiry, long_strike)
 
-        long_leg = leg_map.get(long_key)
-        short_leg = leg_map.get(short_key)
-        if not long_leg or not short_leg:
-            continue
+            long_leg = leg_map.get(long_key)
+            short_leg = leg_map.get(short_key)
+            if not long_leg or not short_leg:
+                continue
 
         net = fnum(r.get("net"))
         net_type = str(r.get("net_type", "")).strip().lower()
@@ -289,6 +355,10 @@ def run():
                 "expiry": expiry.isoformat() if hasattr(expiry, "isoformat") else str(expiry),
                 "short_leg": short_leg,
                 "long_leg": long_leg,
+                "short_put_leg": short_put_leg or short_leg,
+                "long_put_leg": long_put_leg or long_leg,
+                "short_call_leg": short_call_leg,
+                "long_call_leg": long_call_leg,
                 "net_type": net_type,
                 "entry_gate": entry_gate,
                 "width": float(r["width"]),
@@ -299,16 +369,27 @@ def run():
                 "notes_stage1": str(r.get("notes", "")),
                 "thesis": str(r.get("thesis", "")),
                 "invalidation": str(r.get("invalidation", "")),
-                "long_strike": float(r["long_strike"]),
-                "short_strike": float(r["short_strike"]),
+                "long_strike": float(long_strike) if np.isfinite(fnum(long_strike)) else np.nan,
+                "short_strike": float(short_strike) if np.isfinite(fnum(short_strike)) else np.nan,
+                "long_put_strike": float(long_put_strike) if np.isfinite(long_put_strike) else np.nan,
+                "short_put_strike": float(short_put_strike) if np.isfinite(short_put_strike) else np.nan,
+                "short_call_strike": float(short_call_strike) if np.isfinite(short_call_strike) else np.nan,
+                "long_call_strike": float(long_call_strike) if np.isfinite(long_call_strike) else np.nan,
+                "put_width": float(r.get("put_width")) if np.isfinite(fnum(r.get("put_width"))) else np.nan,
+                "call_width": float(r.get("call_width")) if np.isfinite(fnum(r.get("call_width"))) else np.nan,
             }
         )
 
     shortlist = pd.DataFrame(shortlist_rows)
     if shortlist.empty:
         raise RuntimeError("No shortlist rows with valid leg symbols.")
-    shortlist = shortlist.sort_values("conviction", ascending=False).head(max(1, int(args.top_trades))).reset_index(
-        drop=True
+    stage1_rank = {"Yes-Prime": 0, "Yes-Good": 1, "Watch Only": 2}
+    shortlist["_stage1_rank"] = shortlist["optimal_stage1"].map(stage1_rank).fillna(3).astype(int)
+    shortlist = (
+        shortlist.sort_values(["_stage1_rank", "conviction"], ascending=[True, False])
+        .head(max(1, int(args.top_trades)))
+        .drop(columns=["_stage1_rank"])
+        .reset_index(drop=True)
     )
     shortlist_csv = out_dir / f"shortlist_trades_{asof_str}_mode_a.csv"
     shortlist.to_csv(shortlist_csv, index=False)
@@ -354,8 +435,20 @@ def run():
         raise FileNotFoundError(f"Missing live final output: {live_final_csv}")
 
     live = pd.read_csv(live_csv, low_memory=False)
-    key = ["ticker", "strategy", "expiry", "short_leg", "long_leg"]
-    live_cols = key + [
+    key = ["ticker", "strategy", "expiry", "short_leg", "long_leg", "short_call_leg", "long_call_leg"]
+    for col in ["short_call_leg", "long_call_leg"]:
+        if col not in shortlist.columns:
+            shortlist[col] = ""
+        if col not in live.columns:
+            live[col] = ""
+    for col in key:
+        if col not in shortlist.columns:
+            shortlist[col] = ""
+        if col not in live.columns:
+            live[col] = ""
+        shortlist[col] = shortlist[col].fillna("").astype(str)
+        live[col] = live[col].fillna("").astype(str)
+    base_live_cols = [
         "live_status",
         "is_final_live_valid",
         "invalidation_breached_live",
@@ -370,7 +463,16 @@ def run():
         "short_ask_live",
         "long_bid_live",
         "long_ask_live",
+        "short_put_bid_live",
+        "short_put_ask_live",
+        "long_put_bid_live",
+        "long_put_ask_live",
+        "short_call_bid_live",
+        "short_call_ask_live",
+        "long_call_bid_live",
+        "long_call_ask_live",
     ]
+    live_cols = [c for c in (key + base_live_cols) if c in live.columns]
     mdf = shortlist.merge(live[live_cols], on=key, how="left", suffixes=("", "_live"))
 
     if likelihood_csv.exists():
@@ -408,15 +510,40 @@ def run():
 
     def is_approved(row):
         ok_live = bool(row.get("is_final_live_valid")) if pd.notna(row.get("is_final_live_valid")) else False
-        invalidated_live = (
-            bool(row.get("invalidation_breached_live"))
-            if pd.notna(row.get("invalidation_breached_live"))
-            else False
-        )
-        return (not invalidated_live) and ok_live and str(row.get("optimal_stage1", "")) in {"Yes-Prime", "Yes-Good"}
+        if not (ok_live and str(row.get("optimal_stage1", "")) in {"Yes-Prime", "Yes-Good"}):
+            return False
+
+        require_likelihood_pass = bool(approval_cfg.get("require_likelihood_pass", True))
+        min_edge_pct = fnum(approval_cfg.get("min_edge_pct", 0.0))
+        min_signals = fnum(approval_cfg.get("min_signals", 100))
+        require_invalidation_clear = bool(approval_cfg.get("require_invalidation_clear", False))
+
+        if require_likelihood_pass:
+            verdict = str(row.get("verdict", "")).strip().upper()
+            edge = fnum(row.get("edge_pct"))
+            sig = fnum(row.get("signals"))
+            if verdict != "PASS":
+                return False
+            if np.isfinite(min_edge_pct) and (not np.isfinite(edge) or edge < min_edge_pct):
+                return False
+            if np.isfinite(min_signals) and min_signals > 0 and (not np.isfinite(sig) or sig < min_signals):
+                return False
+
+        if require_invalidation_clear:
+            invalidated_live = (
+                bool(row.get("invalidation_breached_live"))
+                if pd.notna(row.get("invalidation_breached_live"))
+                else False
+            )
+            if invalidated_live:
+                return False
+
+        return True
 
     mdf["approved"] = mdf.apply(is_approved, axis=1)
     mdf = mdf.sort_values(["approved", "conviction"], ascending=[False, False]).reset_index(drop=True)
+    inv_close_confirms = fnum(approval_cfg.get("invalidation_close_confirmations", 2))
+    inv_close_confirms = int(inv_close_confirms) if np.isfinite(inv_close_confirms) and inv_close_confirms >= 1 else 2
 
     out_rows = []
     for i, r in mdf.iterrows():
@@ -430,13 +557,13 @@ def run():
             net_txt = f"{'Credit' if net_type == 'credit' else 'Debit'} {live_net:.2f} (Target {r['entry_gate']})"
             max_profit = money(r.get("live_max_profit"))
             max_loss = money(r.get("live_max_loss"))
-            be_txt = px(calc_be(strategy, r["long_strike"], r["short_strike"], live_net))
+            be_txt = calc_be_text(r, live_net)
         elif gate_val is not None:
             tgt_max_p, tgt_max_l = calc_target_max(net_type, float(r["width"]), gate_val)
             net_txt = f"Target {r['entry_gate']}"
             max_profit = money(tgt_max_p)
             max_loss = money(tgt_max_l)
-            be_txt = px(calc_be(strategy, r["long_strike"], r["short_strike"], gate_val))
+            be_txt = calc_be_text(r, gate_val)
         else:
             net_txt = "N/A"
             max_profit = "N/A"
@@ -446,11 +573,35 @@ def run():
         if approved:
             confidence_tier = str(r.get("confidence_tier", ""))
             optimal = str(r.get("optimal_stage1", ""))
-            notes = (
-                f"Live executable; gate PASS ({r.get('entry_gate')}); short BID/ASK "
-                f"{r.get('short_bid_live')}/{r.get('short_ask_live')}, long BID/ASK "
-                f"{r.get('long_bid_live')}/{r.get('long_ask_live')}."
+            if strategy == "Iron Condor":
+                notes = (
+                    f"Live executable; gate PASS ({r.get('entry_gate')}); "
+                    f"put short BID/ASK {r.get('short_put_bid_live')}/{r.get('short_put_ask_live')}, "
+                    f"put long BID/ASK {r.get('long_put_bid_live')}/{r.get('long_put_ask_live')}, "
+                    f"call short BID/ASK {r.get('short_call_bid_live')}/{r.get('short_call_ask_live')}, "
+                    f"call long BID/ASK {r.get('long_call_bid_live')}/{r.get('long_call_ask_live')}."
+                )
+            else:
+                notes = (
+                    f"Live executable; gate PASS ({r.get('entry_gate')}); short BID/ASK "
+                    f"{r.get('short_bid_live')}/{r.get('short_ask_live')}, long BID/ASK "
+                    f"{r.get('long_bid_live')}/{r.get('long_ask_live')}."
+                )
+            invalidated_live = (
+                bool(r.get("invalidation_breached_live"))
+                if pd.notna(r.get("invalidation_breached_live"))
+                else False
             )
+            if invalidated_live:
+                inv_text = str(r.get("invalidation", "")).strip() or "invalidation rule not available"
+                lvl = fnum(r.get("invalidation_rule_level"))
+                px_live = fnum(r.get("invalidation_eval_price_live"))
+                lvl_txt = f"{lvl:.2f}" if np.isfinite(lvl) else "n/a"
+                px_txt = f"{px_live:.2f}" if np.isfinite(px_live) else "n/a"
+                notes += (
+                    f" Invalidation warning only (spot check): breached ({inv_text}; level={lvl_txt}; live spot={px_txt}). "
+                    f"Action trigger is close-confirmed: require {inv_close_confirms} daily close(s) beyond level."
+                )
         else:
             confidence_tier = "Watch Only"
             optimal = "Watch Only"
@@ -467,8 +618,9 @@ def run():
                 lvl_txt = f"{lvl:.2f}" if np.isfinite(lvl) else "n/a"
                 px_txt = f"{px_live:.2f}" if np.isfinite(px_live) else "n/a"
                 notes = (
-                    f"Watch Only: live_status={r.get('live_status', 'missing')}; invalidation breached "
-                    f"(rule: {inv_text}; level={lvl_txt}; live spot={px_txt})."
+                    f"Watch Only: live_status={r.get('live_status', 'missing')}; invalidation warning only "
+                    f"(rule: {inv_text}; level={lvl_txt}; live spot={px_txt}); "
+                    f"close-confirm policy requires {inv_close_confirms} daily close(s) beyond level."
                 )
             elif np.isfinite(live_net) and gate_val is not None:
                 if net_type == "debit":
@@ -498,7 +650,16 @@ def run():
                 "Ticker": r["ticker"],
                 "Action": action_cell(strategy, str(r.get("track", "")), optimal),
                 "Strategy Type": strategy,
-                "Strike Setup": strike_setup(strategy, r["long_strike"], r["short_strike"], r["width"]),
+                "Strike Setup": strike_setup(
+                    strategy,
+                    r["long_strike"],
+                    r["short_strike"],
+                    r["width"],
+                    long_put_strike=r.get("long_put_strike"),
+                    short_put_strike=r.get("short_put_strike"),
+                    short_call_strike=r.get("short_call_strike"),
+                    long_call_strike=r.get("long_call_strike"),
+                ),
                 "Expiry": str(r["expiry"])[:10],
                 "DTE": (dt.datetime.strptime(str(r["expiry"])[:10], "%Y-%m-%d").date() - asof).days,
                 "Net Credit/Debit": net_txt,
@@ -582,3 +743,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+

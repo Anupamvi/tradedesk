@@ -14,13 +14,17 @@ Use MODE A two-stage with DATE token applied everywhere below (do not ask for da
 from {BASE_DIR}
 
 2) Stage 1:
-- Build FIRE + SHIELD candidates
+- Build FIRE + SHIELD candidates from data-driven strategy detection (do not hard-limit to a fixed strategy list)
+- Include all supported strategies present in data, including Iron Condor when valid
 - Shortlist top 20 by conviction
 - Export shortlist CSV for build_live_trade_table.py
+- For multi-leg setups (e.g., Iron Condor), include required leg columns:
+  short_put_leg, long_put_leg, short_call_leg, long_call_leg
 
 3) Stage 2 (mandatory):
 - Run build_live_trade_table.py on the shortlist
 - Use live Schwab pricing fields from *_final.csv
+- For multi-leg setups, price all legs from executable BID/ASK and compute net/max P/L from the full structure
 - If not live-valid, mark Watch Only (no fabrication)
 
 4) Backtesting:

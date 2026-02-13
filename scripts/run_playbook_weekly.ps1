@@ -1,6 +1,8 @@
 ﻿param(
     [string]$RepoRoot = 'C:\uw_root',
     [string]$SheetCsvUrl = 'https://docs.google.com/spreadsheets/d/1CXCsBHXVh99PNd7CXjsoqTK74nQEG7BJ/export?format=csv&gid=1135109247',
+    [ValidateSet('all','yellow')]
+    [string]$SheetRowFilter = 'yellow',
     [string]$OutDir = 'C:\uw_root\out\playbook_auto',
     [string]$ConfigPath = 'C:\uw_root\rulebook_config.yaml'
 )
@@ -13,8 +15,8 @@ New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 $stamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
 $logPath = Join-Path $logDir "weekly_$stamp.log"
 
-$scriptPath = Join-Path $RepoRoot 'run_trade_playbook.py'
-$cmd = "python `"$scriptPath`" weekly --sheet-csv-url `"$SheetCsvUrl`" --config `"$ConfigPath`" --out-dir `"$OutDir`""
+$scriptPath = Join-Path $RepoRoot 'weekly_edge_report.py'
+$cmd = "python `"$scriptPath`" --sheet-csv-url `"$SheetCsvUrl`" --sheet-row-filter `"$SheetRowFilter`" --config `"$ConfigPath`" --out-dir `"$OutDir`""
 
 "[$(Get-Date -Format s)] Running: $cmd" | Out-File -FilePath $logPath -Encoding utf8
 Invoke-Expression $cmd *>> $logPath

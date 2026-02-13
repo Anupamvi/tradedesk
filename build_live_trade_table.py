@@ -17,12 +17,10 @@ from schwab_live_service import (
     compact_occ_to_schwab_symbol,
 )
 
-REQUIRED_COLUMNS = [
+BASE_REQUIRED_COLUMNS = [
     "ticker",
     "strategy",
     "expiry",
-    "short_leg",
-    "long_leg",
     "net_type",
     "entry_gate",
     "width",
@@ -66,6 +64,25 @@ def parse_invalidation_rule(invalidation: Any) -> Tuple[Optional[str], Optional[
         return None, None
     op, level = match.groups()
     return op, safe_float(level)
+
+
+def validate_shortlist_columns(df: pd.DataFrame) -> None:
+    missing = [col for col in BASE_REQUIRED_COLUMNS if col not in df.columns]
+    if missing:
+        raise ValueError(f"Shortlist CSV missing required columns: {missing}")
+
+    for _, row in df.iterrows():
+        strategy = str(row.get("strategy", "")).strip()
+        if strategy == "Iron Condor":
+            needed = ["short_put_leg", "long_put_leg", "short_call_leg", "long_call_leg"]
+        else:
+            needed = ["short_leg", "long_leg"]
+        missing_row = [c for c in needed if not str(row.get(c, "")).strip()]
+        if missing_row:
+            ticker = str(row.get("ticker", "")).strip()
+            raise ValueError(
+                f"Shortlist CSV missing required leg columns for {strategy or 'UNKNOWN'} {ticker}: {missing_row}"
+            )
 
 
 def invalidation_breached(
@@ -268,6 +285,11 @@ def parse_args() -> argparse.Namespace:
         default="",
         help="Optional directory to save fetched live chain payloads.",
     )
+    parser.add_argument(
+        "--hard-invalidation",
+        action="store_true",
+        help="If set, invalidation breach is treated as hard live failure (default: warning only).",
+    )
     return parser.parse_args()
 
 
@@ -286,9 +308,7 @@ def main() -> None:
     )
 
     df = pd.read_csv(shortlist_csv)
-    missing = [c for c in REQUIRED_COLUMNS if c not in df.columns]
-    if missing:
-        raise ValueError(f"Shortlist CSV missing required columns: {missing}")
+    validate_shortlist_columns(df)
 
     if "conviction" in df.columns:
         df = df[pd.to_numeric(df["conviction"], errors="coerce").fillna(0.0) >= float(args.min_conviction)]
@@ -301,8 +321,15 @@ def main() -> None:
 
     df["ticker"] = df["ticker"].astype(str).str.upper().str.strip()
     df["expiry_date"] = pd.to_datetime(df["expiry"], errors="coerce").dt.date
+    for col in ["short_leg", "long_leg", "short_put_leg", "long_put_leg", "short_call_leg", "long_call_leg"]:
+        if col not in df.columns:
+            df[col] = ""
     df["short_leg_live_symbol"] = df["short_leg"].map(convert_leg_symbol)
     df["long_leg_live_symbol"] = df["long_leg"].map(convert_leg_symbol)
+    df["short_put_leg_live_symbol"] = df["short_put_leg"].map(convert_leg_symbol)
+    df["long_put_leg_live_symbol"] = df["long_put_leg"].map(convert_leg_symbol)
+    df["short_call_leg_live_symbol"] = df["short_call_leg"].map(convert_leg_symbol)
+    df["long_call_leg_live_symbol"] = df["long_call_leg"].map(convert_leg_symbol)
 
     config = SchwabAuthConfig.from_env(load_dotenv_file=True)
     service = SchwabLiveDataService(config=config, interactive_login=False)
@@ -368,10 +395,17 @@ def main() -> None:
                 json.dumps(chain_error_by_ticker, indent=2, sort_keys=True), encoding="utf-8"
             )
 
-    leg_symbols = (
-        df["short_leg_live_symbol"].dropna().astype(str).tolist()
-        + df["long_leg_live_symbol"].dropna().astype(str).tolist()
-    )
+    leg_symbols = []
+    for col in [
+        "short_leg_live_symbol",
+        "long_leg_live_symbol",
+        "short_put_leg_live_symbol",
+        "long_put_leg_live_symbol",
+        "short_call_leg_live_symbol",
+        "long_call_leg_live_symbol",
+    ]:
+        leg_symbols.extend(df[col].dropna().astype(str).tolist())
+    leg_symbols = [sym for sym in leg_symbols if sym]
     option_quotes = batch_fetch_quotes(service, leg_symbols, batch_size=max(1, int(args.batch_size)))
     underlying_query_symbols = sorted(set(chain_query_symbol_by_ticker.values()))
     underlying_quotes_raw = batch_fetch_quotes(
@@ -383,65 +417,141 @@ def main() -> None:
     for ticker, query_symbol in chain_query_symbol_by_ticker.items():
         underlying_quotes[ticker] = underlying_quotes_raw.get(query_symbol, {})
 
+    def leg_payload(symbol: Any) -> Dict[str, Any]:
+        sym = str(symbol or "").strip()
+        return option_quotes.get(sym, {}) if sym else {}
+
+    def leg_fields(payload: Dict[str, Any]) -> Dict[str, Any]:
+        quote = payload.get("quote", payload)
+        ref = payload.get("reference", {})
+        return {
+            "bid": safe_float(quote.get("bidPrice")),
+            "ask": safe_float(quote.get("askPrice")),
+            "last": safe_float(quote.get("lastPrice")),
+            "mark": safe_float(quote.get("mark")),
+            "delta": safe_float(quote.get("delta")),
+            "oi": safe_float(quote.get("openInterest")),
+            "volume": safe_float(quote.get("totalVolume")),
+            "strike": safe_float(ref.get("strikePrice")),
+            "expiry": parse_reference_expiry(ref),
+        }
+
     records: List[Dict[str, Any]] = []
     for _, row in df.iterrows():
         rec = row.to_dict()
         ticker = str(row.get("ticker", "")).strip().upper()
+        strategy = str(row.get("strategy", "")).strip()
         net_type = str(row.get("net_type", "")).strip().lower()
         entry_op, entry_threshold, entry_unit = parse_entry_gate(row.get("entry_gate"))
         invalidation_op, invalidation_level = parse_invalidation_rule(row.get("invalidation"))
-
-        short_live_symbol = row.get("short_leg_live_symbol")
-        long_live_symbol = row.get("long_leg_live_symbol")
-        short_payload = option_quotes.get(short_live_symbol, {}) if short_live_symbol else {}
-        long_payload = option_quotes.get(long_live_symbol, {}) if long_live_symbol else {}
-
-        short_quote = short_payload.get("quote", short_payload)
-        long_quote = long_payload.get("quote", long_payload)
-        short_ref = short_payload.get("reference", {})
-        long_ref = long_payload.get("reference", {})
-
-        short_bid = safe_float(short_quote.get("bidPrice"))
-        short_ask = safe_float(short_quote.get("askPrice"))
-        short_last = safe_float(short_quote.get("lastPrice"))
-        short_mark = safe_float(short_quote.get("mark"))
-        short_delta = safe_float(short_quote.get("delta"))
-        short_oi = safe_float(short_quote.get("openInterest"))
-        short_volume = safe_float(short_quote.get("totalVolume"))
-        short_strike = safe_float(short_ref.get("strikePrice"))
-        short_expiry = parse_reference_expiry(short_ref)
-
-        long_bid = safe_float(long_quote.get("bidPrice"))
-        long_ask = safe_float(long_quote.get("askPrice"))
-        long_last = safe_float(long_quote.get("lastPrice"))
-        long_mark = safe_float(long_quote.get("mark"))
-        long_delta = safe_float(long_quote.get("delta"))
-        long_oi = safe_float(long_quote.get("openInterest"))
-        long_volume = safe_float(long_quote.get("totalVolume"))
-        long_strike = safe_float(long_ref.get("strikePrice"))
-        long_expiry = parse_reference_expiry(long_ref)
-
-        live_net_bid_ask, live_net_mark = compute_live_net(
-            net_type=net_type,
-            short_bid=short_bid,
-            short_ask=short_ask,
-            short_mark=short_mark,
-            long_bid=long_bid,
-            long_ask=long_ask,
-            long_mark=long_mark,
-        )
+        width_row = safe_float(row.get("width"))
 
         chain_status = chain_status_by_ticker.get(ticker, "UNKNOWN")
         chain_syms = chain_symbols_by_ticker.get(ticker, set())
-        short_in_chain = short_live_symbol in chain_syms if short_live_symbol and chain_status == "SUCCESS" else None
-        long_in_chain = long_live_symbol in chain_syms if long_live_symbol and chain_status == "SUCCESS" else None
+
+        short_live_symbol = str(row.get("short_leg_live_symbol", "")).strip()
+        long_live_symbol = str(row.get("long_leg_live_symbol", "")).strip()
+        short_call_live_symbol = str(row.get("short_call_leg_live_symbol", "")).strip()
+        long_call_live_symbol = str(row.get("long_call_leg_live_symbol", "")).strip()
+
+        # Defaults for optional 4-leg paths.
+        short_put = {}
+        long_put = {}
+        short_call = {}
+        long_call = {}
+        short_in_chain = None
+        long_in_chain = None
+        short_call_in_chain = None
+        long_call_in_chain = None
+
+        if strategy == "Iron Condor":
+            short_put = leg_fields(leg_payload(short_live_symbol))
+            long_put = leg_fields(leg_payload(long_live_symbol))
+            short_call = leg_fields(leg_payload(short_call_live_symbol))
+            long_call = leg_fields(leg_payload(long_call_live_symbol))
+
+            if chain_status == "SUCCESS":
+                short_in_chain = short_live_symbol in chain_syms if short_live_symbol else None
+                long_in_chain = long_live_symbol in chain_syms if long_live_symbol else None
+                short_call_in_chain = short_call_live_symbol in chain_syms if short_call_live_symbol else None
+                long_call_in_chain = long_call_live_symbol in chain_syms if long_call_live_symbol else None
+
+            put_net_bid_ask, put_net_mark = compute_live_net(
+                net_type="credit",
+                short_bid=short_put.get("bid"),
+                short_ask=short_put.get("ask"),
+                short_mark=short_put.get("mark"),
+                long_bid=long_put.get("bid"),
+                long_ask=long_put.get("ask"),
+                long_mark=long_put.get("mark"),
+            )
+            call_net_bid_ask, call_net_mark = compute_live_net(
+                net_type="credit",
+                short_bid=short_call.get("bid"),
+                short_ask=short_call.get("ask"),
+                short_mark=short_call.get("mark"),
+                long_bid=long_call.get("bid"),
+                long_ask=long_call.get("ask"),
+                long_mark=long_call.get("mark"),
+            )
+            live_net_bid_ask = (
+                put_net_bid_ask + call_net_bid_ask
+                if (put_net_bid_ask is not None and call_net_bid_ask is not None)
+                else None
+            )
+            live_net_mark = (
+                put_net_mark + call_net_mark
+                if (put_net_mark is not None and call_net_mark is not None)
+                else None
+            )
+
+            put_width_live = (
+                abs(short_put["strike"] - long_put["strike"])
+                if (short_put.get("strike") is not None and long_put.get("strike") is not None)
+                else None
+            )
+            call_width_live = (
+                abs(long_call["strike"] - short_call["strike"])
+                if (short_call.get("strike") is not None and long_call.get("strike") is not None)
+                else None
+            )
+            width_live = (
+                max(put_width_live, call_width_live)
+                if (put_width_live is not None and call_width_live is not None)
+                else None
+            )
+            width_for_risk = width_live if width_live is not None else width_row
+        else:
+            short_data = leg_fields(leg_payload(short_live_symbol))
+            long_data = leg_fields(leg_payload(long_live_symbol))
+            short_put = short_data
+            long_put = long_data
+            live_net_bid_ask, live_net_mark = compute_live_net(
+                net_type=net_type,
+                short_bid=short_data.get("bid"),
+                short_ask=short_data.get("ask"),
+                short_mark=short_data.get("mark"),
+                long_bid=long_data.get("bid"),
+                long_ask=long_data.get("ask"),
+                long_mark=long_data.get("mark"),
+            )
+            if chain_status == "SUCCESS":
+                short_in_chain = short_live_symbol in chain_syms if short_live_symbol else None
+                long_in_chain = long_live_symbol in chain_syms if long_live_symbol else None
+            width_live = (
+                abs(short_data["strike"] - long_data["strike"])
+                if (short_data.get("strike") is not None and long_data.get("strike") is not None)
+                else None
+            )
+            width_for_risk = width_live if width_live is not None else width_row
 
         gate_pass_live = None
         if entry_threshold is not None and live_net_bid_ask is not None:
+            gate_eps = 1e-9
             if net_type == "credit":
-                gate_pass_live = live_net_bid_ask >= entry_threshold
+                gate_pass_live = live_net_bid_ask >= (entry_threshold - gate_eps)
             else:
-                gate_pass_live = live_net_bid_ask <= entry_threshold
+                gate_pass_live = live_net_bid_ask <= (entry_threshold + gate_eps)
 
         und_payload = underlying_quotes.get(ticker, {})
         und_quote = und_payload.get("quote", und_payload)
@@ -462,27 +572,49 @@ def main() -> None:
             live_status = "chain_error"
         elif chain_status != "SUCCESS":
             live_status = "chain_not_success"
-        elif not short_live_symbol or not long_live_symbol:
+        elif strategy == "Iron Condor" and (
+            (not short_live_symbol)
+            or (not long_live_symbol)
+            or (not short_call_live_symbol)
+            or (not long_call_live_symbol)
+        ):
             live_status = "bad_occ_symbol"
-        elif short_in_chain is False or long_in_chain is False:
+        elif strategy != "Iron Condor" and ((not short_live_symbol) or (not long_live_symbol)):
+            live_status = "bad_occ_symbol"
+        elif strategy == "Iron Condor" and (
+            short_in_chain is False
+            or long_in_chain is False
+            or short_call_in_chain is False
+            or long_call_in_chain is False
+        ):
             live_status = "missing_leg_in_live_chain"
-        elif invalidation_breached_live is True:
+        elif strategy != "Iron Condor" and (short_in_chain is False or long_in_chain is False):
+            live_status = "missing_leg_in_live_chain"
+        elif args.hard_invalidation and invalidation_breached_live is True:
             live_status = "invalidation_breached_live"
         elif live_net_bid_ask is None:
             live_status = "missing_live_quote"
         elif gate_pass_live is False:
             live_status = "fails_live_entry_gate"
 
-        width_row = safe_float(row.get("width"))
-        width_live = None
-        if short_strike is not None and long_strike is not None:
-            width_live = abs(short_strike - long_strike)
-        width_for_risk = width_live if width_live is not None else width_row
-
         live_max_profit = None
         live_max_loss = None
         if live_net_bid_ask is not None and width_for_risk is not None:
-            if net_type == "credit":
+            if strategy == "Iron Condor":
+                put_width = (
+                    abs(short_put["strike"] - long_put["strike"])
+                    if (short_put.get("strike") is not None and long_put.get("strike") is not None)
+                    else None
+                )
+                call_width = (
+                    abs(long_call["strike"] - short_call["strike"])
+                    if (short_call.get("strike") is not None and long_call.get("strike") is not None)
+                    else None
+                )
+                if put_width is not None and call_width is not None:
+                    live_max_profit = live_net_bid_ask * 100.0
+                    live_max_loss = max(put_width - live_net_bid_ask, call_width - live_net_bid_ask) * 100.0
+            elif net_type == "credit":
                 live_max_profit = live_net_bid_ask * 100.0
                 live_max_loss = (width_for_risk - live_net_bid_ask) * 100.0
             else:
@@ -496,26 +628,38 @@ def main() -> None:
                 "chain_query_symbol_live": chain_query_symbol_by_ticker.get(ticker, ticker),
                 "short_leg_live_symbol": short_live_symbol,
                 "long_leg_live_symbol": long_live_symbol,
+                "short_call_leg_live_symbol": short_call_live_symbol,
+                "long_call_leg_live_symbol": long_call_live_symbol,
                 "short_leg_in_live_chain": short_in_chain,
                 "long_leg_in_live_chain": long_in_chain,
-                "short_bid_live": short_bid,
-                "short_ask_live": short_ask,
-                "short_last_live": short_last,
-                "short_mark_live": short_mark,
-                "short_delta_live": short_delta,
-                "short_oi_live": short_oi,
-                "short_volume_live": short_volume,
-                "short_strike_live": short_strike,
-                "short_expiry_live": short_expiry,
-                "long_bid_live": long_bid,
-                "long_ask_live": long_ask,
-                "long_last_live": long_last,
-                "long_mark_live": long_mark,
-                "long_delta_live": long_delta,
-                "long_oi_live": long_oi,
-                "long_volume_live": long_volume,
-                "long_strike_live": long_strike,
-                "long_expiry_live": long_expiry,
+                "short_call_leg_in_live_chain": short_call_in_chain,
+                "long_call_leg_in_live_chain": long_call_in_chain,
+                "short_bid_live": short_put.get("bid"),
+                "short_ask_live": short_put.get("ask"),
+                "short_last_live": short_put.get("last"),
+                "short_mark_live": short_put.get("mark"),
+                "short_delta_live": short_put.get("delta"),
+                "short_oi_live": short_put.get("oi"),
+                "short_volume_live": short_put.get("volume"),
+                "short_strike_live": short_put.get("strike"),
+                "short_expiry_live": short_put.get("expiry"),
+                "long_bid_live": long_put.get("bid"),
+                "long_ask_live": long_put.get("ask"),
+                "long_last_live": long_put.get("last"),
+                "long_mark_live": long_put.get("mark"),
+                "long_delta_live": long_put.get("delta"),
+                "long_oi_live": long_put.get("oi"),
+                "long_volume_live": long_put.get("volume"),
+                "long_strike_live": long_put.get("strike"),
+                "long_expiry_live": long_put.get("expiry"),
+                "short_put_bid_live": short_put.get("bid"),
+                "short_put_ask_live": short_put.get("ask"),
+                "long_put_bid_live": long_put.get("bid"),
+                "long_put_ask_live": long_put.get("ask"),
+                "short_call_bid_live": short_call.get("bid"),
+                "short_call_ask_live": short_call.get("ask"),
+                "long_call_bid_live": long_call.get("bid"),
+                "long_call_ask_live": long_call.get("ask"),
                 "width_live": width_live,
                 "live_net_bid_ask": live_net_bid_ask,
                 "live_net_mark": live_net_mark,

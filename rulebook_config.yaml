@@ -8,6 +8,7 @@ engine:
   max_expiries_per_ticker: 2          # avoid overfitting across many expiries
   strike_search_depth: 6              # enough depth without strike overfitting
   min_per_track: 1                    # include both tracks when viable
+  include_watch_candidates: true      # keep non-REJECT setups so FIRE/SHIELD gaps are visible
 
 gates:
   exclude_etfs: true
@@ -48,6 +49,15 @@ fire:
 pricing:
   # Rulebook Stage-2 executable sources only (chain-oi is discovery-only)
   executable_source_kinds: ["hot"]
+
+approval:
+  # Final approval gate after Stage-2 + backtest likelihood merge.
+  require_likelihood_pass: true
+  min_edge_pct: 0.0
+  min_signals: 100
+  require_invalidation_clear: false
+  # Exit management: spot invalidation flags are warnings unless close-confirmed.
+  invalidation_close_confirmations: 2
 
 high_beta:
   # Rulebook hard override for Core Income credit trades

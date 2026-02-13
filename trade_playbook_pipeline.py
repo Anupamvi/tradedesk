@@ -6,11 +6,13 @@ import datetime as dt
 import json
 import math
 import re
+from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+import requests
 import yaml
 
 DEFAULT_SHEET_CACHE_CSV = r"c:\uw_root\out\playbook\source_sheet_latest.csv"
@@ -131,10 +133,140 @@ def load_realized_trades(path: Path) -> pd.DataFrame:
     return out
 
 
+def parse_sheet_id_and_gid(sheet_csv_url: str) -> Tuple[str, str]:
+    url = str(sheet_csv_url or "").strip()
+    m_id = re.search(r"/spreadsheets/d/([a-zA-Z0-9\-_]+)", url)
+    if not m_id:
+        raise ValueError(f"Could not parse Google Sheet ID from URL: {sheet_csv_url}")
+    m_gid = re.search(r"[?&]gid=(\d+)", url)
+    return m_id.group(1), (m_gid.group(1) if m_gid else "")
+
+
+def normalize_headers(values: List[Any]) -> List[str]:
+    headers: List[str] = []
+    seen: Dict[str, int] = {}
+    for i, v in enumerate(values):
+        raw = str(v).strip() if v is not None else ""
+        h = raw if raw else f"Unnamed: {i}"
+        if h in seen:
+            seen[h] += 1
+            h = f"{h}.{seen[h]}"
+        else:
+            seen[h] = 0
+        headers.append(h)
+    return headers
+
+
+def _hex_to_rgb(hex_text: str) -> Optional[Tuple[int, int, int]]:
+    s = str(hex_text or "").strip().upper()
+    if not s:
+        return None
+    s = s.replace("#", "")
+    if len(s) == 8:
+        s = s[2:]
+    if not re.fullmatch(r"[0-9A-F]{6}", s):
+        return None
+    return int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16)
+
+
+def _is_yellow_rgb(rgb: Tuple[int, int, int]) -> bool:
+    r, g, b = rgb
+    return r >= 225 and g >= 185 and b <= 150 and (r - b) >= 90 and (g - b) >= 50
+
+
+def _cell_is_yellow(cell: Any) -> bool:
+    fill = getattr(cell, "fill", None)
+    if fill is None or not getattr(fill, "fill_type", None):
+        return False
+    colors = [getattr(fill, "fgColor", None), getattr(fill, "start_color", None)]
+    for color in colors:
+        rgb = _hex_to_rgb(getattr(color, "rgb", ""))
+        if rgb and _is_yellow_rgb(rgb):
+            return True
+    return False
+
+
+def _is_manual_section_header(text: Any) -> bool:
+    s = "" if text is None else str(text).strip()
+    if not s:
+        return False
+    try:
+        from analyze_trading_year import parse_manual_section_date  # local module
+
+        return pd.notna(parse_manual_section_date(s))
+    except Exception:
+        # Fallback: Month-YY / Month YYYY
+        return bool(
+            re.match(
+                r"^\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s*[- ]\s*(\d{2,4})\s*$",
+                s,
+                flags=re.I,
+            )
+        )
+
+
+def load_sheet_rows_from_xlsx(sheet_csv_url: str, row_filter: str) -> Tuple[pd.DataFrame, Dict[str, float]]:
+    try:
+        from openpyxl import load_workbook
+    except Exception as e:
+        raise RuntimeError(
+            "Row-color filtering requires openpyxl. Install with: python -m pip install openpyxl"
+        ) from e
+
+    sheet_id, gid = parse_sheet_id_and_gid(sheet_csv_url)
+    xlsx_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
+    if gid:
+        xlsx_url += f"&gid={gid}&single=true"
+
+    resp = requests.get(xlsx_url, timeout=60)
+    resp.raise_for_status()
+    wb = load_workbook(BytesIO(resp.content), data_only=True)
+    ws = wb.active
+
+    rows: List[List[Any]] = []
+    yellow_flags: List[bool] = []
+    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, max_col=ws.max_column):
+        vals = [cell.value for cell in row]
+        if all(v is None or str(v).strip() == "" for v in vals):
+            continue
+        rows.append(vals)
+        yellow_flags.append(any(_cell_is_yellow(cell) for cell in row))
+
+    if not rows:
+        raise RuntimeError("XLSX export loaded but contained no non-empty rows.")
+
+    headers = normalize_headers(rows[0])
+    data_rows = rows[1:]
+    data_yellow = yellow_flags[1:]
+
+    kept_rows: List[List[Any]] = []
+    yellow_kept = 0
+    for vals, is_yellow in zip(data_rows, data_yellow):
+        keep = True
+        if row_filter == "yellow":
+            c0 = vals[0] if vals else None
+            keep = bool(is_yellow) or _is_manual_section_header(c0)
+        if keep:
+            kept_rows.append(vals)
+            if is_yellow:
+                yellow_kept += 1
+
+    out = pd.DataFrame(kept_rows, columns=headers)
+    meta = {
+        "xlsx_nonempty_rows": float(len(rows)),
+        "xlsx_data_rows": float(len(data_rows)),
+        "xlsx_total_yellow_rows": float(sum(1 for f in data_yellow if f)),
+        "xlsx_kept_rows": float(len(kept_rows)),
+        "xlsx_kept_yellow_rows": float(yellow_kept),
+    }
+    return out, meta
+
+
 def build_realized_from_sheet_csv_url(
     sheet_csv_url: str,
     raw_cache_csv: Path,
     realized_out_csv: Path,
+    row_filter: str = "all",
 ) -> Dict[str, float]:
     """
     Pull Google Sheet CSV export URL, parse manual options log rows into standardized realized trades,
@@ -143,7 +275,12 @@ def build_realized_from_sheet_csv_url(
     raw_cache_csv.parent.mkdir(parents=True, exist_ok=True)
     realized_out_csv.parent.mkdir(parents=True, exist_ok=True)
 
-    raw_df = pd.read_csv(sheet_csv_url, low_memory=False)
+    ingest_meta: Dict[str, float] = {}
+    if str(row_filter).strip().lower() == "yellow":
+        raw_df, ingest_meta = load_sheet_rows_from_xlsx(sheet_csv_url, row_filter="yellow")
+    else:
+        raw_df = pd.read_csv(sheet_csv_url, low_memory=False)
+        ingest_meta = {"csv_rows_loaded": float(len(raw_df))}
     raw_df.to_csv(raw_cache_csv, index=False)
 
     try:
@@ -155,7 +292,9 @@ def build_realized_from_sheet_csv_url(
     if std_df.empty:
         raise RuntimeError("Sheet CSV parsed but no usable realized rows were extracted.")
     std_df.to_csv(realized_out_csv, index=False)
-    return meta or {}
+    out_meta = dict(meta or {})
+    out_meta.update(ingest_meta)
+    return out_meta
 
 
 def infer_strategy_from_text(strategy: str, description: str, side: str) -> str:
@@ -718,6 +857,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=DEFAULT_SHEET_REALIZED_CSV,
         help="Where to write standardized realized CSV when --sheet-csv-url is used.",
     )
+    ap.add_argument(
+        "--sheet-row-filter",
+        choices=["all", "yellow"],
+        default="all",
+        help="When using --sheet-csv-url, optionally keep only yellow-highlighted rows (plus month header rows).",
+    )
     ap.add_argument("--open-positions-csv", default="", help="Optional open positions CSV for daily risk concentration checks.")
     ap.add_argument("--config", default=r"c:\uw_root\rulebook_config.yaml", help="YAML config path.")
     ap.add_argument("--out-dir", default=r"c:\uw_root\out\playbook", help="Output directory.")
@@ -744,7 +889,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             if args.sheet_realized_csv == DEFAULT_SHEET_REALIZED_CSV
             else Path(args.sheet_realized_csv).resolve()
         )
-        sheet_meta = build_realized_from_sheet_csv_url(args.sheet_csv_url, raw_cache_csv, realized_csv)
+        sheet_meta = build_realized_from_sheet_csv_url(
+            args.sheet_csv_url,
+            raw_cache_csv,
+            realized_csv,
+            row_filter=args.sheet_row_filter,
+        )
     else:
         realized_csv = Path(args.realized_csv).resolve()
         if not realized_csv.exists():
@@ -810,6 +960,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"Source: {realized_csv}")
     if args.sheet_csv_url:
         print(f"Pulled sheet URL: {args.sheet_csv_url}")
+        print(f"Sheet row filter: {args.sheet_row_filter}")
     print(f"Rows loaded: {len(trades)}")
     print(f"Wrote outputs to: {out_dir}")
     return 0

@@ -257,6 +257,12 @@ Run directly from Google Sheet CSV export URL (auto-builds `cleaned_realized_tra
 python run_trade_playbook.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./rulebook_config.yaml --out-dir ./out/playbook
 ```
 
+Run from Google Sheet but only ingest yellow-highlighted rows (plus month header rows for date context):
+
+```bash
+python run_trade_playbook.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./rulebook_config.yaml --out-dir ./out/playbook
+```
+
 Or run each stage separately:
 
 ```bash
@@ -273,11 +279,22 @@ python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadshee
 python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./rulebook_config.yaml --out-dir ./out/playbook
 ```
 
+Run each stage directly from Google Sheet URL with yellow-only filtering:
+
+```bash
+python daily_risk_monitor.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./rulebook_config.yaml --out-dir ./out/playbook
+python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./rulebook_config.yaml --out-dir ./out/playbook
+python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./rulebook_config.yaml --out-dir ./out/playbook
+```
+
 Main outputs:
 - `out/playbook/daily_risk_monitor.md`
 - `out/playbook/weekly_edge_report.md`
 - `out/playbook/monthly_longitudinal_review.md`
 - `out/playbook/playbook_run_summary.md`
+
+Dependency note:
+- `--sheet-row-filter yellow` uses XLSX style parsing and requires `openpyxl` (`python -m pip install openpyxl`).
 
 ### Windows Task Scheduler (auto daily/weekly/monthly)
 
