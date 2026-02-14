@@ -1,4 +1,4 @@
-# Strategy Engine (Robot Layer)
+﻿# Strategy Engine (Robot Layer)
 
 This folder contains a deterministic filter that turns your 5 EOD files into a shortlist of mathematically valid option spreads.
 
@@ -33,7 +33,7 @@ Put the 5 files in a folder (example `./EOD`):
 Then:
 
 ```bash
-python strategy_engine.py --date 2026-01-23 --input-dir ./EOD --out-dir ./out --config rulebook_config.yaml
+python strategy_engine.py --date 2026-01-23 --input-dir ./EOD --out-dir ./out --config uwos/rulebook_config.yaml
 ```
 
 Outputs:
@@ -150,7 +150,7 @@ python -m playwright install chromium
 The script is the calculator. The AI is the risk manager.
 
 ## Customize
-Edit `rulebook_config.yaml`:
+Edit `uwos/rulebook_config.yaml`:
 - Width tiers
 - SHIELD anchor whitelist
 - DTE ranges
@@ -248,43 +248,43 @@ Use this to monitor short-term risk and long-term performance drift from your re
 Run all stages:
 
 ```bash
-python run_trade_playbook.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./rulebook_config.yaml --out-dir ./out/playbook
+python run_trade_playbook.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Run directly from Google Sheet CSV export URL (auto-builds `cleaned_realized_trades` each run):
 
 ```bash
-python run_trade_playbook.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./rulebook_config.yaml --out-dir ./out/playbook
+python run_trade_playbook.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Run from Google Sheet but only ingest yellow-highlighted rows (plus month header rows for date context):
 
 ```bash
-python run_trade_playbook.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./rulebook_config.yaml --out-dir ./out/playbook
+python run_trade_playbook.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Or run each stage separately:
 
 ```bash
-python daily_risk_monitor.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --open-positions-csv ./out/open_positions.csv --config ./rulebook_config.yaml --out-dir ./out/playbook
-python weekly_edge_report.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./rulebook_config.yaml --out-dir ./out/playbook
-python monthly_longitudinal_review.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./rulebook_config.yaml --out-dir ./out/playbook
+python daily_risk_monitor.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --open-positions-csv ./out/open_positions.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python weekly_edge_report.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python monthly_longitudinal_review.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Run each stage directly from Google Sheet URL:
 
 ```bash
-python daily_risk_monitor.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./rulebook_config.yaml --out-dir ./out/playbook
-python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./rulebook_config.yaml --out-dir ./out/playbook
-python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./rulebook_config.yaml --out-dir ./out/playbook
+python daily_risk_monitor.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Run each stage directly from Google Sheet URL with yellow-only filtering:
 
 ```bash
-python daily_risk_monitor.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./rulebook_config.yaml --out-dir ./out/playbook
-python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./rulebook_config.yaml --out-dir ./out/playbook
-python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./rulebook_config.yaml --out-dir ./out/playbook
+python daily_risk_monitor.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Main outputs:
@@ -309,3 +309,5 @@ Remove tasks:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File c:\uw_root\scripts\unregister_playbook_tasks.ps1
 ```
+
+

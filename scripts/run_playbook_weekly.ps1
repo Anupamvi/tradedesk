@@ -4,7 +4,7 @@
     [ValidateSet('all','yellow')]
     [string]$SheetRowFilter = 'yellow',
     [string]$OutDir = 'C:\uw_root\out\playbook_auto',
-    [string]$ConfigPath = 'C:\uw_root\rulebook_config.yaml'
+    [string]$ConfigPath = 'C:\uw_root\uwos\rulebook_config.yaml'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -25,3 +25,4 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 "[$(Get-Date -Format s)] DONE" | Out-File -FilePath $logPath -Append -Encoding utf8
+

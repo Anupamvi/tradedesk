@@ -1,5 +1,6 @@
-python daily_risk_monitor.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/1CXCsBHXVh99PNd7CXjsoqTK74nQEG7BJ/export?format=csv&gid=1135109247" --sheet-row-filter yellow --config C:\uw_root\rulebook_config.yaml --out-dir C:\uw_root\out\playbook_auto
+﻿python daily_risk_monitor.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/1CXCsBHXVh99PNd7CXjsoqTK74nQEG7BJ/export?format=csv&gid=1135109247" --sheet-row-filter yellow --config C:\uw_root\uwos\rulebook_config.yaml --out-dir C:\uw_root\out\playbook_auto
 
-python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/1CXCsBHXVh99PNd7CXjsoqTK74nQEG7BJ/export?format=csv&gid=1135109247" --sheet-row-filter yellow --config C:\uw_root\rulebook_config.yaml --out-dir C:\uw_root\out\playbook_auto
+python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/1CXCsBHXVh99PNd7CXjsoqTK74nQEG7BJ/export?format=csv&gid=1135109247" --sheet-row-filter yellow --config C:\uw_root\uwos\rulebook_config.yaml --out-dir C:\uw_root\out\playbook_auto
 
-python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/1CXCsBHXVh99PNd7CXjsoqTK74nQEG7BJ/export?format=csv&gid=1135109247" --sheet-row-filter yellow --config C:\uw_root\rulebook_config.yaml --out-dir C:\uw_root\out\playbook_auto
+python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/1CXCsBHXVh99PNd7CXjsoqTK74nQEG7BJ/export?format=csv&gid=1135109247" --sheet-row-filter yellow --config C:\uw_root\uwos\rulebook_config.yaml --out-dir C:\uw_root\out\playbook_auto
+

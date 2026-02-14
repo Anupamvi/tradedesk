@@ -74,6 +74,7 @@ playbook:
     loss_streak_yellow: 3
     loss_streak_red: 4
     rolling_pf_yellow_floor: 1.00
+    options_only: true
   risk_limits:
     short_put_max_share: 0.35
     single_symbol_max_share: 0.10

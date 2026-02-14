@@ -1,10 +1,9 @@
 ﻿#!/usr/bin/env python3
 from __future__ import annotations
 
-import sys
-
-from trade_playbook_pipeline import main
-
-
 if __name__ == "__main__":
-    raise SystemExit(main(["daily", *sys.argv[1:]]))
+    import runpy
+
+    runpy.run_module("uwos.daily_risk_monitor", run_name="__main__")
+else:
+    from uwos.daily_risk_monitor import *  # noqa: F401,F403
