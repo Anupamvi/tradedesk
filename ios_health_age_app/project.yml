@@ -1,0 +1,30 @@
+name: HealthAgeApp
+options:
+  bundleIdPrefix: com.example
+settings:
+  base:
+    SWIFT_VERSION: 5.10
+    IPHONEOS_DEPLOYMENT_TARGET: 17.0
+targets:
+  HealthAgeApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: ios_skeleton/HealthAgeApp
+        excludes:
+          - Resources/InfoPlistHealthKeys.md
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.healthage
+        INFOPLIST_FILE: ios_skeleton/HealthAgeApp/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ios_skeleton/HealthAgeApp/Resources/HealthAgeApp.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+        DEVELOPMENT_TEAM: ""
+schemes:
+  HealthAgeApp:
+    build:
+      targets:
+        HealthAgeApp: all
+    run:
+      config: Debug
