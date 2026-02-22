@@ -1,12 +1,14 @@
 # rulebook_config.yaml
-# Deterministic gates + scan parameters for strategy_engine.py
+# Deterministic gates + scan parameters for uwos.strategy_engine
 
 engine:
   max_tickers_to_scan: 400            # scan fewer symbols for higher signal concentration
-  max_trades_per_ticker: 1            # diversify across names for consistency
+  max_trades_per_ticker: 2            # allow top two setups per ticker before final approval
   max_total_trades: 200               # scanner cap (final output may cap lower)
-  max_expiries_per_ticker: 2          # avoid overfitting across many expiries
-  strike_search_depth: 6              # enough depth without strike overfitting
+  max_expiries_per_ticker: 8          # broader expiry coverage for robust candidate discovery
+  strike_search_depth: 12             # broader strike sweep before final pruning
+  discovery_multiplier: 5             # build wider candidate pool before final top-N cutoff
+  final_max_trades_per_ticker: 2      # final table cap to keep diversity without forcing single pick
   min_per_track: 1                    # include both tracks when viable
   include_watch_candidates: true      # keep non-REJECT setups so FIRE/SHIELD gaps are visible
 
@@ -15,9 +17,10 @@ gates:
   min_credit_pct_width: 0.30          # consistency mode: target better credit quality
   max_credit_pct_width: 0.55          # block high-risk near-ATM credits
   max_debit_pct_width: 0.38           # tighter debit risk
-  min_leg_open_interest: 1000         # stricter per-leg liquidity floor
-  min_leg_volume: 50                  # stricter per-leg same-day activity floor
+  min_leg_open_interest: 500          # relaxed per-leg liquidity floor
+  min_leg_volume: 20                  # relaxed per-leg same-day activity floor
   max_leg_spread_pct: 0.18            # reject wide/sloppy leg quotes
+  max_strike_distance_pct: 0.80       # drop setups with strikes too far from spot (>80%)
   max_risk_per_trade: 700             # cap defined risk per trade in dollars
   min_debit_reward_risk: 1.20         # (max profit / max loss) floor for debit spreads
   min_credit_reward_risk: 0.35        # (max profit / max loss) floor for credit spreads
@@ -53,8 +56,17 @@ pricing:
 approval:
   # Final approval gate after Stage-2 + backtest likelihood merge.
   require_likelihood_pass: true
-  min_edge_pct: 0.0
+  min_edge_pct: 3.0
   min_signals: 100
+  # Promote Stage-1 Watch rows when live + likelihood quality is still strong.
+  allow_stage1_watch_promotion: true
+  stage1_watch_promotion_min_conviction: 55
+  stage1_watch_promotion_min_edge_pct: 5.0
+  stage1_watch_promotion_min_signals: 200
+  # Near-miss entry tolerance: treat small misses as executable.
+  entry_tolerance_debit_abs: 0.25
+  entry_tolerance_credit_abs: 0.25
+  entry_tolerance_pct: 0.15
   require_invalidation_clear: false
   # Exit management: spot invalidation flags are warnings unless close-confirmed.
   invalidation_close_confirmations: 2
@@ -75,6 +87,34 @@ playbook:
     loss_streak_red: 4
     rolling_pf_yellow_floor: 1.00
     options_only: true
+  position_management:
+    # Profit capture thresholds
+    take_profit_pct_of_max_profit: 0.60
+    take_profit_pct_credit_max_profit: 0.60
+    take_profit_pct_debit_cost: 0.80
+    # Loss thresholds
+    stop_loss_pct_of_risk: 0.50
+    stop_loss_pct_credit_max_loss: 0.65
+    stop_loss_pct_debit_max_loss: 0.55
+    stop_loss_pct_debit_near_dte: 0.45
+    stop_loss_pct_debit_mid_dte: 0.55
+    stop_loss_pct_debit_far_dte: 0.65
+    stop_loss_pct_debit_mid_min_dte: 21
+    stop_loss_pct_debit_far_min_dte: 45
+    leaps_dte_threshold: 120
+    leaps_debit_catastrophic_stop_pct: 0.75
+    # Roll/expiry controls
+    short_roll_min_dte: 7
+    short_roll_max_dte: 35
+    short_roll_dte_threshold: 21
+    long_option_exit_dte_threshold: 14
+    near_expiry_dte_threshold: 5
+    roll_risk_draw_trigger: 0.20
+    roll_use_live_chain: true
+    roll_chain_strike_count: 20
+    roll_extend_min_days: 14
+    roll_extend_max_days: 35
+    roll_target_otm_pct: 0.08
   risk_limits:
     short_put_max_share: 0.35
     single_symbol_max_share: 0.10

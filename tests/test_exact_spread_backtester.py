@@ -6,12 +6,12 @@ from pathlib import Path
 import pandas as pd
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "exact_spread_backtester.py"
-SPEC = importlib.util.spec_from_file_location("exact_spread_backtester", SCRIPT_PATH)
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "uwos" / "exact_spread_backtester.py"
+SPEC = importlib.util.spec_from_file_location("uwos_exact_spread_backtester", SCRIPT_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"Unable to load module spec from {SCRIPT_PATH}")
 mod = importlib.util.module_from_spec(SPEC)
-sys.modules["exact_spread_backtester"] = mod
+sys.modules["uwos_exact_spread_backtester"] = mod
 SPEC.loader.exec_module(mod)
 
 

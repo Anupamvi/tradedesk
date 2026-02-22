@@ -10,12 +10,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 
-SCRIPT_PATH = ROOT / "build_live_trade_table.py"
-SPEC = importlib.util.spec_from_file_location("build_live_trade_table", SCRIPT_PATH)
+SCRIPT_PATH = ROOT / "uwos" / "pricer.py"
+SPEC = importlib.util.spec_from_file_location("uwos_pricer", SCRIPT_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"Unable to load module spec from {SCRIPT_PATH}")
 mod = importlib.util.module_from_spec(SPEC)
-sys.modules["build_live_trade_table"] = mod
+sys.modules["uwos_pricer"] = mod
 SPEC.loader.exec_module(mod)
 
 

@@ -309,7 +309,7 @@ def option_strategy_label(symbol: str, open_side: str) -> str:
 
 def build_realized_from_schwab_api(realized_out_csv: Path, lookback_days: int = 365) -> Dict[str, float]:
     try:
-        from schwab_live_service import SchwabAuthConfig, SchwabLiveDataService
+        from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
     except Exception as e:
         raise RuntimeError(f"Failed to import Schwab live service: {e}") from e
 
@@ -463,6 +463,115 @@ def build_realized_from_schwab_api(realized_out_csv: Path, lookback_days: int = 
     }
 
 
+def build_open_option_lot_metadata_from_schwab_api(
+    cli: Any,
+    account_number_to_hash: Dict[str, str],
+    lookback_days: int = 365,
+) -> pd.DataFrame:
+    end_dt = dt.datetime.now(dt.timezone.utc)
+    start_dt = end_dt - dt.timedelta(days=max(1, int(lookback_days)))
+    raw_events: List[Dict[str, Any]] = []
+    for acct_num, acc_hash in account_number_to_hash.items():
+        if not acc_hash:
+            continue
+        resp = cli.get_transactions(
+            acc_hash,
+            start_date=start_dt,
+            end_date=end_dt,
+            transaction_types=[cli.Transactions.TransactionType.TRADE],
+        )
+        resp.raise_for_status()
+        for txn in resp.json():
+            t = pd.to_datetime(txn.get("time"), errors="coerce")
+            if pd.isna(t):
+                continue
+            for it in txn.get("transferItems", []) or []:
+                inst = it.get("instrument", {}) or {}
+                if str(inst.get("assetType", "")).upper() != "OPTION":
+                    continue
+                sym = str(inst.get("symbol", "")).strip().upper()
+                if not sym:
+                    continue
+                pos_eff = str(it.get("positionEffect", "")).strip().upper()
+                if pos_eff not in {"OPENING", "CLOSING"}:
+                    continue
+                amt = parse_float(it.get("amount"))
+                qty_abs = abs(amt) if np.isfinite(amt) else math.nan
+                if not np.isfinite(qty_abs) or qty_abs <= 0:
+                    continue
+                raw_events.append(
+                    {
+                        "account_number": str(acct_num).strip(),
+                        "symbol": sym,
+                        "time": t,
+                        "position_effect": pos_eff,
+                        "qty_signed": float(amt),
+                        "qty_abs": float(qty_abs),
+                    }
+                )
+    if not raw_events:
+        return pd.DataFrame(columns=["account_number", "symbol", "side", "open_qty_est", "open_date_est", "last_open_trade_time"])
+
+    events = sorted(raw_events, key=lambda x: x["time"])
+    lots = defaultdict(lambda: {"LONG": deque(), "SHORT": deque()})
+    for ev in events:
+        key = (ev["account_number"], ev["symbol"])
+        qty = float(ev["qty_abs"])
+        qty_signed = float(ev["qty_signed"])
+        t = pd.to_datetime(ev["time"])
+        eff = ev["position_effect"]
+        if eff == "OPENING":
+            side = "LONG" if qty_signed > 0 else "SHORT"
+            lots[key][side].append({"qty": qty, "open_time": t})
+            continue
+        close_side = "SHORT" if qty_signed > 0 else "LONG"
+        qleft = qty
+        qbook = lots[key][close_side]
+        while qleft > 1e-9 and qbook:
+            lot = qbook[0]
+            used = min(qleft, float(lot["qty"]))
+            lot["qty"] = float(lot["qty"]) - used
+            qleft -= used
+            if lot["qty"] <= 1e-9:
+                qbook.popleft()
+
+    out_rows: List[Dict[str, Any]] = []
+    for (acct, sym), side_books in lots.items():
+        for side in ("LONG", "SHORT"):
+            book = side_books[side]
+            if not book:
+                continue
+            qtys = [float(x.get("qty", 0.0)) for x in book if float(x.get("qty", 0.0)) > 1e-9]
+            if not qtys:
+                continue
+            ts = [
+                pd.to_datetime(x.get("open_time"), errors="coerce")
+                for x in book
+                if float(x.get("qty", 0.0)) > 1e-9
+            ]
+            qty_ts_pairs = [(q, t) for q, t in zip(qtys, ts) if pd.notna(t)]
+            if qty_ts_pairs:
+                total_q = sum(q for q, _ in qty_ts_pairs)
+                weighted_epoch = sum(q * t.timestamp() for q, t in qty_ts_pairs) / max(1e-9, total_q)
+                open_date_est = pd.to_datetime(weighted_epoch, unit="s", utc=True).tz_convert(None)
+                _latest_t = max(t for _, t in qty_ts_pairs)
+                last_open_trade_time = _latest_t.tz_convert(None) if getattr(_latest_t, "tzinfo", None) else _latest_t
+            else:
+                open_date_est = pd.NaT
+                last_open_trade_time = pd.NaT
+            out_rows.append(
+                {
+                    "account_number": str(acct),
+                    "symbol": str(sym).upper(),
+                    "side": side,
+                    "open_qty_est": float(sum(qtys)),
+                    "open_date_est": str(open_date_est) if pd.notna(open_date_est) else "",
+                    "last_open_trade_time": str(last_open_trade_time) if pd.notna(last_open_trade_time) else "",
+                }
+            )
+    return pd.DataFrame(out_rows)
+
+
 def infer_strategy_from_text(
     strategy: str,
     description: str,
@@ -514,6 +623,7 @@ def load_open_positions(path: Path) -> pd.DataFrame:
     side_col = find_col(cols, ["side", "action", "direction"])
     desc_col = find_col(cols, ["description", "instrument", "name"])
     expiry_col = find_col(cols, ["expiry", "expiration", "exp_date", "expiration_date"])
+    open_date_col = find_col(cols, ["open_date", "open_date_est", "opened_at", "entry_date", "last_open_trade_time"])
     dte_col = find_col(cols, ["dte", "days_to_expiry", "days_to_expiration", "days_left"])
     unreal_col = find_col(cols, ["unrealized_pnl", "unrealized_pl", "open_pnl", "position_pnl"])
     day_pl_col = find_col(cols, ["current_day_profit_loss", "day_pnl", "daily_pnl"])
@@ -544,6 +654,7 @@ def load_open_positions(path: Path) -> pd.DataFrame:
     out["description"] = df[desc_col].astype(str).str.strip() if desc_col else ""
     out["side_raw"] = df[side_col].astype(str).str.strip() if side_col else ""
     out["expiry"] = pd.to_datetime(df[expiry_col], errors="coerce") if expiry_col else pd.NaT
+    out["open_date"] = pd.to_datetime(df[open_date_col], errors="coerce") if open_date_col else pd.NaT
     out["dte"] = df[dte_col].map(parse_float) if dte_col else math.nan
     out["asset_type"] = df[asset_type_col].astype(str).str.upper().str.strip() if asset_type_col else ""
     out["long_quantity"] = df[long_qty_col].map(parse_float).fillna(0.0) if long_qty_col else 0.0
@@ -627,47 +738,451 @@ def option_underlying_symbol(symbol: str) -> str:
     return ""
 
 
-def build_position_decisions(pos: pd.DataFrame, as_of_date: dt.date, cfg: Dict) -> pd.DataFrame:
+def _alloc_pro_rata(value: Any, part_qty: float, total_qty: float) -> float:
+    v = parse_float(value)
+    q_part = parse_float(part_qty)
+    q_total = parse_float(total_qty)
+    if not np.isfinite(v) or not np.isfinite(q_part) or not np.isfinite(q_total) or abs(q_total) <= 1e-9:
+        return math.nan
+    return float(v) * (abs(float(q_part)) / abs(float(q_total)))
+
+
+def _flatten_chain_contracts(chain_payload: Dict[str, Any], right: str) -> List[Dict[str, Any]]:
+    if not isinstance(chain_payload, dict):
+        return []
+    right_u = str(right or "").upper()
+    key = "putExpDateMap" if right_u == "P" else "callExpDateMap"
+    exp_map = chain_payload.get(key, {}) if isinstance(chain_payload, dict) else {}
+    out: List[Dict[str, Any]] = []
+    if not isinstance(exp_map, dict):
+        return out
+    for exp_key, strike_map in exp_map.items():
+        if not isinstance(strike_map, dict):
+            continue
+        exp_date_txt = str(exp_key).split(":")[0].strip()
+        exp_date = pd.to_datetime(exp_date_txt, errors="coerce")
+        for strike_key, contracts in strike_map.items():
+            strike = parse_float(strike_key)
+            if not isinstance(contracts, list):
+                continue
+            for c in contracts:
+                if not isinstance(c, dict):
+                    continue
+                out.append(
+                    {
+                        "symbol": str(c.get("symbol", "")).strip().upper(),
+                        "expiry": exp_date.date() if pd.notna(exp_date) else None,
+                        "strike": strike,
+                        "bid": parse_float(c.get("bid")),
+                        "ask": parse_float(c.get("ask")),
+                        "mark": parse_float(c.get("mark")),
+                    }
+                )
+    return out
+
+
+def _quote_last_price(quotes_payload: Dict[str, Any], underlying: str) -> float:
+    q = (quotes_payload or {}).get(str(underlying).upper(), {})
+    body = q.get("quote", q) if isinstance(q, dict) else {}
+    return parse_float(body.get("lastPrice", body.get("mark")))
+
+
+def _find_contract_quote(chain_payload: Dict[str, Any], option_symbol: str) -> Dict[str, Any]:
+    sym = str(option_symbol or "").strip().upper()
+    if not sym:
+        return {}
+    for right in ("P", "C"):
+        for c in _flatten_chain_contracts(chain_payload, right):
+            if str(c.get("symbol", "")).upper() == sym:
+                return c
+    return {}
+
+
+def _estimate_roll_plan(
+    structure: Dict[str, Any],
+    as_of_date: dt.date,
+    cfg: Dict,
+    live_context: Optional[Dict[str, Any]],
+) -> str:
+    if not isinstance(live_context, dict):
+        return ""
+    underlying = str(structure.get("underlying", "")).strip().upper()
+    right = str(structure.get("right", "")).strip().upper()
+    short_sym = str(structure.get("short_leg_symbol", "")).strip().upper()
+    long_sym = str(structure.get("long_leg_symbol", "")).strip().upper()
+    if (not underlying) or (right not in {"P", "C"}) or (not short_sym):
+        return ""
+
+    chains = live_context.get("option_chains", {})
+    quotes = live_context.get("quotes", {})
+    chain_payload = chains.get(underlying, {}) if isinstance(chains, dict) else {}
+    if not isinstance(chain_payload, dict) or not chain_payload:
+        return "Need live chain for roll targets."
+
+    pm = cfg.get("playbook", {}).get("position_management", {}
+    )
+    min_extend = int(pm.get("roll_extend_min_days", 14))
+    max_extend = int(pm.get("roll_extend_max_days", 35))
+    otm_pct = float(pm.get("roll_target_otm_pct", 0.08))
+    target_mid = min_extend + max(1, (max_extend - min_extend) // 2)
+
+    spot = _quote_last_price(quotes, underlying)
+    contracts = _flatten_chain_contracts(chain_payload, right)
+    if not contracts:
+        return "Need live option chain contracts for roll targets."
+
+    cur_short = _find_contract_quote(chain_payload, short_sym)
+    cur_short_ask = parse_float(cur_short.get("ask"))
+    cur_short_bid = parse_float(cur_short.get("bid"))
+    cur_short_mid = np.nanmean([cur_short_bid, cur_short_ask]) if np.isfinite(cur_short_bid) or np.isfinite(cur_short_ask) else math.nan
+
+    dte_now = parse_float(structure.get("dte", math.nan))
+    min_new_dte = int(dte_now + min_extend) if np.isfinite(dte_now) else min_extend
+    max_new_dte = int(dte_now + max_extend) if np.isfinite(dte_now) else (max_extend + 120)
+
+    candidates: List[Dict[str, Any]] = []
+    for c in contracts:
+        exp = c.get("expiry")
+        strike = parse_float(c.get("strike"))
+        bid = parse_float(c.get("bid"))
+        ask = parse_float(c.get("ask"))
+        if exp is None or not np.isfinite(strike):
+            continue
+        dte_new = (exp - as_of_date).days
+        if dte_new < min_new_dte or dte_new > max_new_dte:
+            continue
+        if right == "P":
+            desired = (spot * (1.0 - otm_pct)) if np.isfinite(spot) else strike
+            if np.isfinite(spot) and strike > desired:
+                continue
+            dist = abs(strike - desired) if np.isfinite(desired) else abs(strike)
+        else:
+            desired = (spot * (1.0 + otm_pct)) if np.isfinite(spot) else strike
+            if np.isfinite(spot) and strike < desired:
+                continue
+            dist = abs(strike - desired) if np.isfinite(desired) else abs(strike)
+        dte_penalty = abs(dte_new - (int(dte_now) + target_mid)) if np.isfinite(dte_now) else abs(dte_new - target_mid)
+        candidates.append(
+            {
+                "symbol": str(c.get("symbol", "")).strip().upper(),
+                "expiry": exp,
+                "strike": strike,
+                "bid": bid,
+                "ask": ask,
+                "rank": (dte_penalty, dist),
+            }
+        )
+
+    if not candidates:
+        return "No candidate roll strikes in target DTE window."
+    tgt = sorted(candidates, key=lambda x: x["rank"])[0]
+    new_short_bid = parse_float(tgt.get("bid"))
+    new_short_ask = parse_float(tgt.get("ask"))
+    new_short_mid = np.nanmean([new_short_bid, new_short_ask]) if np.isfinite(new_short_bid) or np.isfinite(new_short_ask) else math.nan
+
+    is_spread = bool(long_sym)
+    if not is_spread:
+        if np.isfinite(new_short_bid) and np.isfinite(cur_short_ask):
+            roll_net = new_short_bid - cur_short_ask
+            net_txt = f"{roll_net:+.2f} cr/db est"
+        elif np.isfinite(new_short_mid) and np.isfinite(cur_short_mid):
+            roll_net = new_short_mid - cur_short_mid
+            net_txt = f"{roll_net:+.2f} cr/db est(mid)"
+        else:
+            net_txt = "net n/a"
+        return (
+            f"Roll short {right} to {tgt['strike']:.2f} {right} @ {tgt['expiry']} "
+            f"(bid/ask {new_short_bid if np.isfinite(new_short_bid) else 'n/a'}/"
+            f"{new_short_ask if np.isfinite(new_short_ask) else 'n/a'}); est roll {net_txt}."
+        )
+
+    cur_long = _find_contract_quote(chain_payload, long_sym)
+    cur_long_bid = parse_float(cur_long.get("bid"))
+    cur_long_ask = parse_float(cur_long.get("ask"))
+    cur_long_mid = np.nanmean([cur_long_bid, cur_long_ask]) if np.isfinite(cur_long_bid) or np.isfinite(cur_long_ask) else math.nan
+    short_strike = parse_float(structure.get("short_strike", math.nan))
+    long_strike = parse_float(structure.get("long_strike", math.nan))
+    width = abs(short_strike - long_strike) if np.isfinite(short_strike) and np.isfinite(long_strike) else parse_float(structure.get("width", math.nan))
+    if not np.isfinite(width) or width <= 0:
+        width = 5.0
+    new_long_strike = (tgt["strike"] - width) if right == "P" else (tgt["strike"] + width)
+    same_exp = [c for c in contracts if c.get("expiry") == tgt["expiry"] and np.isfinite(parse_float(c.get("strike")))]
+    if not same_exp:
+        return f"Roll short to {tgt['strike']:.2f}{right} @ {tgt['expiry']}; no hedge leg found."
+    new_long_candidates = sorted(same_exp, key=lambda c: abs(parse_float(c.get("strike")) - new_long_strike))
+    new_long = new_long_candidates[0]
+    new_long_ask = parse_float(new_long.get("ask"))
+    new_long_bid = parse_float(new_long.get("bid"))
+    new_long_mid = np.nanmean([new_long_bid, new_long_ask]) if np.isfinite(new_long_bid) or np.isfinite(new_long_ask) else math.nan
+
+    if np.isfinite(new_short_bid) and np.isfinite(new_long_ask) and np.isfinite(cur_short_ask) and np.isfinite(cur_long_bid):
+        roll_net = (new_short_bid - new_long_ask) - (cur_short_ask - cur_long_bid)
+        net_txt = f"{roll_net:+.2f} cr/db est"
+    elif np.isfinite(new_short_mid) and np.isfinite(new_long_mid) and np.isfinite(cur_short_mid) and np.isfinite(cur_long_mid):
+        roll_net = (new_short_mid - new_long_mid) - (cur_short_mid - cur_long_mid)
+        net_txt = f"{roll_net:+.2f} cr/db est(mid)"
+    else:
+        net_txt = "net n/a"
+    return (
+        f"Roll to {tgt['strike']:.2f}{right}/{parse_float(new_long.get('strike')):.2f}{right} @ {tgt['expiry']} "
+        f"(same width {width:.2f}); est roll {net_txt}."
+    )
+
+
+def build_position_decisions(
+    pos: pd.DataFrame,
+    as_of_date: dt.date,
+    cfg: Dict,
+    live_context: Optional[Dict[str, Any]] = None,
+) -> pd.DataFrame:
     if pos.empty:
         return pd.DataFrame()
 
     pm = cfg.get("playbook", {}).get("position_management", {})
-    take_profit_pct = float(pm.get("take_profit_pct_of_max_profit", 0.60))
-    stop_loss_pct = float(pm.get("stop_loss_pct_of_risk", 0.50))
-    short_roll_dte = int(pm.get("short_roll_dte_threshold", 10))
-    long_exit_dte = int(pm.get("long_option_exit_dte_threshold", 7))
+    take_profit_default = float(pm.get("take_profit_pct_of_max_profit", 0.60))
+    stop_loss_default = float(pm.get("stop_loss_pct_of_risk", 0.50))
+    take_profit_credit = float(pm.get("take_profit_pct_credit_max_profit", take_profit_default))
+    take_profit_debit = float(pm.get("take_profit_pct_debit_cost", max(take_profit_default, 0.80)))
+    stop_loss_credit = float(pm.get("stop_loss_pct_credit_max_loss", max(stop_loss_default, 0.65)))
+    stop_loss_debit = float(pm.get("stop_loss_pct_debit_max_loss", max(stop_loss_default, 0.55)))
+    short_roll_min_dte = int(pm.get("short_roll_min_dte", 7))
+    short_roll_max_dte = int(pm.get("short_roll_max_dte", max(int(pm.get("short_roll_dte_threshold", 10)), 21)))
+    long_exit_dte = int(pm.get("long_option_exit_dte_threshold", 14))
+    near_expiry_dte = int(pm.get("near_expiry_dte_threshold", 5))
+    roll_risk_draw_trigger = float(pm.get("roll_risk_draw_trigger", 0.20))
+
+    p = pos.copy().reset_index(drop=True)
+    p["row_id"] = np.arange(len(p), dtype=int)
+    parsed = p["symbol"].map(parse_option_meta)
+    p["opt_expiry_sym"] = [x[0] for x in parsed]
+    p["option_right"] = [x[1] for x in parsed]
+    p["option_strike"] = [x[2] for x in parsed]
+    p["expiry"] = pd.to_datetime(p["expiry"], errors="coerce")
+    missing_exp = p["expiry"].isna() & p["opt_expiry_sym"].notna()
+    p.loc[missing_exp, "expiry"] = pd.to_datetime(p.loc[missing_exp, "opt_expiry_sym"], errors="coerce")
+    p["dte"] = p["dte"].map(parse_float)
+    missing_dte = p["dte"].isna() & p["expiry"].notna()
+    p.loc[missing_dte, "dte"] = (p.loc[missing_dte, "expiry"].dt.date - as_of_date).map(
+        lambda x: float(x.days) if pd.notna(x) else math.nan
+    )
+    p["net_quantity"] = p["net_quantity"].map(parse_float)
+    p["abs_qty"] = p["net_quantity"].abs()
+    p = p[p["abs_qty"].fillna(0) > 0].copy()
+    if p.empty:
+        return pd.DataFrame()
+
+    side_from_strategy = p["strategy"].astype(str).str.contains("Short", case=False, na=False).map(
+        lambda is_short: -1.0 if is_short else 1.0
+    )
+    p["side_sign"] = np.where(p["net_quantity"].notna() & (p["net_quantity"] != 0), np.sign(p["net_quantity"]), side_from_strategy)
+    p["side_sign"] = p["side_sign"].replace(0, 1)
+    p["underlying"] = p["underlying"].astype(str).str.strip().str.upper()
+    p["underlying"] = np.where(p["underlying"] == "", p["symbol"].astype(str).str.upper(), p["underlying"])
+
+    prow = p.set_index("row_id", drop=False)
+    remaining: Dict[int, float] = {int(r.row_id): float(r.abs_qty) for r in p.itertuples(index=False)}
+    structures: List[Dict[str, Any]] = []
+    sid_counter = 1
+
+    option_rows = p[p["option_right"].isin(["C", "P"])].copy()
+    option_rows["expiry_date"] = option_rows["expiry"].dt.date
+    for (underlying, expiry_date, right), g in option_rows.groupby(["underlying", "expiry_date", "option_right"], dropna=False):
+        if not isinstance(underlying, str) or not underlying:
+            continue
+        longs = [int(x) for x in g[g["side_sign"] > 0]["row_id"].tolist()]
+        shorts = [int(x) for x in g[g["side_sign"] < 0]["row_id"].tolist()]
+
+        while True:
+            candidates: List[Tuple[float, float, int, int]] = []
+            for sid in shorts:
+                if remaining.get(sid, 0.0) <= 1e-9:
+                    continue
+                srow = prow.loc[sid]
+                s_strike = parse_float(srow["option_strike"])
+                s_open = pd.to_datetime(srow.get("open_date"), errors="coerce")
+                for lid in longs:
+                    if remaining.get(lid, 0.0) <= 1e-9:
+                        continue
+                    lrow = prow.loc[lid]
+                    l_strike = parse_float(lrow["option_strike"])
+                    l_open = pd.to_datetime(lrow.get("open_date"), errors="coerce")
+                    width = abs(s_strike - l_strike) if np.isfinite(s_strike) and np.isfinite(l_strike) else 1e9
+                    if pd.notna(s_open) and pd.notna(l_open):
+                        open_gap_days = abs((s_open - l_open).total_seconds()) / 86400.0
+                    else:
+                        open_gap_days = 1e9
+                    candidates.append((open_gap_days, width, sid, lid))
+            if not candidates:
+                break
+            _, _, sid, lid = sorted(candidates, key=lambda x: (x[0], x[1]))[0]
+            pair_qty = min(float(remaining.get(sid, 0.0)), float(remaining.get(lid, 0.0)))
+            if pair_qty <= 1e-9:
+                break
+            srow = prow.loc[sid]
+            lrow = prow.loc[lid]
+            short_strike = parse_float(srow["option_strike"])
+            long_strike = parse_float(lrow["option_strike"])
+            short_avg = parse_float(srow["average_price"])
+            long_avg = parse_float(lrow["average_price"])
+            entry_net_cash = (
+                (short_avg - long_avg) * 100.0 * pair_qty
+                if np.isfinite(short_avg) and np.isfinite(long_avg)
+                else math.nan
+            )
+            orient_net = "credit" if (np.isfinite(entry_net_cash) and entry_net_cash >= 0) else "debit"
+            if right == "P":
+                orient_shape = "credit" if (
+                    np.isfinite(short_strike) and np.isfinite(long_strike) and short_strike > long_strike
+                ) else "debit"
+            else:
+                orient_shape = "credit" if (
+                    np.isfinite(short_strike) and np.isfinite(long_strike) and short_strike < long_strike
+                ) else "debit"
+            net_type = orient_net if np.isfinite(entry_net_cash) else orient_shape
+            if right == "P":
+                strategy = "Bull Put Credit" if net_type == "credit" else "Bear Put Debit"
+            else:
+                strategy = "Bear Call Credit" if net_type == "credit" else "Bull Call Debit"
+
+            width_cash = (
+                abs(short_strike - long_strike) * 100.0 * pair_qty
+                if np.isfinite(short_strike) and np.isfinite(long_strike)
+                else math.nan
+            )
+            risk_fallback = np.nansum(
+                [
+                    _alloc_pro_rata(srow["risk"], pair_qty, srow["abs_qty"]),
+                    _alloc_pro_rata(lrow["risk"], pair_qty, lrow["abs_qty"]),
+                ]
+            )
+            if net_type == "credit":
+                max_profit = max(entry_net_cash, 0.0) if np.isfinite(entry_net_cash) else math.nan
+                max_loss = (width_cash - max_profit) if np.isfinite(width_cash) and np.isfinite(max_profit) else math.nan
+            else:
+                debit_cash = abs(entry_net_cash) if np.isfinite(entry_net_cash) else math.nan
+                max_loss = debit_cash
+                max_profit = (width_cash - debit_cash) if np.isfinite(width_cash) and np.isfinite(debit_cash) else math.nan
+            if (not np.isfinite(max_loss)) or max_loss <= 0:
+                max_loss = risk_fallback if np.isfinite(risk_fallback) and risk_fallback > 0 else math.nan
+            if np.isfinite(max_profit) and max_profit < 0:
+                max_profit = math.nan
+
+            unreal = np.nansum(
+                [
+                    _alloc_pro_rata(srow["unrealized_pnl"], pair_qty, srow["abs_qty"]),
+                    _alloc_pro_rata(lrow["unrealized_pnl"], pair_qty, lrow["abs_qty"]),
+                ]
+            )
+            dte_vals = [parse_float(srow["dte"]), parse_float(lrow["dte"])]
+            dte_vals = [x for x in dte_vals if np.isfinite(x)]
+            dte = min(dte_vals) if dte_vals else math.nan
+            expiry_txt = (
+                str(expiry_date)
+                if pd.notna(expiry_date)
+                else str(pd.to_datetime(srow["expiry"]).date()) if pd.notna(srow["expiry"]) else ""
+            )
+            position_id = f"P{sid_counter:03d}-{underlying}-{right}-{expiry_txt}"
+            sid_counter += 1
+            structures.append(
+                {
+                    "position_id": position_id,
+                    "underlying": underlying,
+                    "symbol": position_id,
+                    "strategy": strategy,
+                    "legs": f"{str(srow['symbol']).strip()} (short) + {str(lrow['symbol']).strip()} (long)",
+                    "expiry": expiry_txt,
+                    "dte": int(dte) if np.isfinite(dte) else math.nan,
+                    "net_type": net_type,
+                    "entry_cost": abs(entry_net_cash) if np.isfinite(entry_net_cash) else math.nan,
+                    "unrealized_pnl": unreal if np.isfinite(unreal) else math.nan,
+                    "max_profit": max_profit if np.isfinite(max_profit) else math.nan,
+                    "risk": max_loss if np.isfinite(max_loss) else math.nan,
+                    "unrealized_source": "estimated",
+                    "right": right,
+                    "short_leg_symbol": str(srow["symbol"]).strip().upper(),
+                    "long_leg_symbol": str(lrow["symbol"]).strip().upper(),
+                    "short_strike": short_strike,
+                    "long_strike": long_strike,
+                    "width": abs(short_strike - long_strike) if np.isfinite(short_strike) and np.isfinite(long_strike) else math.nan,
+                }
+            )
+            remaining[sid] = max(0.0, float(remaining.get(sid, 0.0)) - pair_qty)
+            remaining[lid] = max(0.0, float(remaining.get(lid, 0.0)) - pair_qty)
+
+    for rid, rem_qty in remaining.items():
+        if rem_qty <= 1e-9:
+            continue
+        r = prow.loc[rid]
+        sym = str(r["symbol"]).strip().upper() or "UNKNOWN"
+        right = str(r["option_right"] or "").upper()
+        side_sign = parse_float(r["side_sign"])
+        is_short = np.isfinite(side_sign) and side_sign < 0
+        expiry = pd.to_datetime(r["expiry"], errors="coerce")
+        dte = parse_float(r["dte"])
+        if (not np.isfinite(dte)) and pd.notna(expiry):
+            dte = float((expiry.date() - as_of_date).days)
+        avg = parse_float(r["average_price"])
+        entry_cash = avg * 100.0 * rem_qty if np.isfinite(avg) else math.nan
+        unreal = _alloc_pro_rata(r["unrealized_pnl"], rem_qty, r["abs_qty"])
+        risk_alloc = _alloc_pro_rata(r["risk"], rem_qty, r["abs_qty"])
+        strike = parse_float(r["option_strike"])
+        if is_short:
+            strategy = "Short Put Option" if right == "P" else "Short Call Option"
+            net_type = "credit"
+            max_profit = entry_cash if np.isfinite(entry_cash) else math.nan
+            max_loss = risk_alloc if np.isfinite(risk_alloc) and risk_alloc > 0 else math.nan
+        else:
+            strategy = "Long Put Option" if right == "P" else "Long Call Option"
+            net_type = "debit"
+            max_loss = risk_alloc if np.isfinite(risk_alloc) and risk_alloc > 0 else entry_cash
+            if right == "P" and np.isfinite(strike) and np.isfinite(entry_cash):
+                max_profit = max(0.0, (strike * 100.0 * rem_qty) - entry_cash)
+            else:
+                max_profit = math.nan
+        position_id = f"P{sid_counter:03d}-{str(r['underlying']).strip().upper()}-{right}-{str(expiry.date()) if pd.notna(expiry) else ''}-{int(strike) if np.isfinite(strike) else 'NA'}-{('S' if is_short else 'L')}"
+        sid_counter += 1
+        structures.append(
+            {
+                "position_id": position_id,
+                "underlying": str(r["underlying"]).strip().upper() or sym,
+                "symbol": position_id,
+                "strategy": strategy,
+                "legs": f"{sym} x{rem_qty:g}",
+                "expiry": str(expiry.date()) if pd.notna(expiry) else "",
+                "dte": int(dte) if np.isfinite(dte) else math.nan,
+                "net_type": net_type,
+                "entry_cost": abs(entry_cash) if np.isfinite(entry_cash) else math.nan,
+                "unrealized_pnl": unreal if np.isfinite(unreal) else math.nan,
+                "max_profit": max_profit if np.isfinite(max_profit) else math.nan,
+                "risk": max_loss if np.isfinite(max_loss) else math.nan,
+                "unrealized_source": str(r.get("unrealized_source", "missing") if isinstance(r, pd.Series) else "estimated"),
+                "right": right,
+                "short_leg_symbol": sym if is_short else "",
+                "long_leg_symbol": "" if is_short else sym,
+                "short_strike": strike if is_short else math.nan,
+                "long_strike": strike if (not is_short) else math.nan,
+                "width": math.nan,
+            }
+        )
 
     rows: List[Dict[str, Any]] = []
-    for r in pos.itertuples(index=False):
-        sym = str(getattr(r, "symbol", "UNKNOWN")).strip().upper() or "UNKNOWN"
-        strategy = str(getattr(r, "strategy", "Unknown")).strip() or "Unknown"
-        expiry = getattr(r, "expiry", pd.NaT)
-        dte = parse_float(getattr(r, "dte", math.nan))
-        if (not np.isfinite(dte)) and pd.notna(expiry):
-            try:
-                dte = float((pd.to_datetime(expiry).date() - as_of_date).days)
-            except Exception:
-                dte = math.nan
-
-        # Derive option expiry when absent from separate field.
-        if pd.isna(expiry):
-            exp2, _, _ = parse_option_meta(sym)
-            if exp2 is not None:
-                expiry = pd.Timestamp(exp2)
-                if not np.isfinite(dte):
-                    dte = float((exp2 - as_of_date).days)
-
-        unreal = parse_float(getattr(r, "unrealized_pnl", math.nan))
-        max_profit = parse_float(getattr(r, "max_profit", math.nan))
-        risk = parse_float(getattr(r, "risk", math.nan))
-        unreal_source = str(getattr(r, "unrealized_source", "")).strip() or "missing"
+    for s in structures:
+        dte = parse_float(s.get("dte", math.nan))
+        unreal = parse_float(s.get("unrealized_pnl", math.nan))
+        max_profit = parse_float(s.get("max_profit", math.nan))
+        risk = parse_float(s.get("risk", math.nan))
+        entry_cost = parse_float(s.get("entry_cost", math.nan))
+        net_type = str(s.get("net_type", "")).strip().lower()
+        strategy = str(s.get("strategy", "Unknown")).strip() or "Unknown"
+        unreal_source = str(s.get("unrealized_source", "missing")).strip() or "missing"
 
         profit_capture = (unreal / max_profit) if (np.isfinite(unreal) and np.isfinite(max_profit) and max_profit > 0) else math.nan
+        pnl_vs_cost = (unreal / entry_cost) if (np.isfinite(unreal) and np.isfinite(entry_cost) and entry_cost > 0) else math.nan
         risk_draw = ((-unreal) / risk) if (np.isfinite(unreal) and np.isfinite(risk) and risk > 0 and unreal < 0) else 0.0
 
-        rec = "HOLD"
-        reason = "No close/roll trigger met."
-        priority = 9
+        rec = "WAIT"
+        reason = "Inside tolerance/no hard trigger; keep monitoring."
+        priority = 8
 
         if unreal_source == "day_only":
             rec = "DATA_NEEDED"
@@ -677,43 +1192,87 @@ def build_position_decisions(pos: pd.DataFrame, as_of_date: dt.date, cfg: Dict) 
             rec = "DATA_NEEDED"
             reason = "Missing unrealized P/L; cannot score recoverability."
             priority = 0
-        elif np.isfinite(profit_capture) and profit_capture >= take_profit_pct:
-            rec = "CLOSE_PROFIT"
-            reason = f"Profit capture {profit_capture:.0%} >= {take_profit_pct:.0%} of max profit."
-            priority = 1
-        elif np.isfinite(risk_draw) and risk_draw >= stop_loss_pct:
-            rec = "CLOSE_RISK"
-            reason = f"Loss uses {risk_draw:.0%} of risk budget (>= {stop_loss_pct:.0%})."
-            priority = 2
-        elif strategy.startswith("Short") and np.isfinite(dte) and dte <= short_roll_dte:
-            if unreal >= 0:
-                rec = "ROLL_OR_CLOSE"
-                reason = f"DTE {int(dte)} <= {short_roll_dte}; lock gains or roll out."
+        else:
+            # Debit stop is DTE-aware; farther-dated debits get wider breathing room.
+            debit_stop_near = float(pm.get("stop_loss_pct_debit_near_dte", 0.45))
+            debit_stop_mid = float(pm.get("stop_loss_pct_debit_mid_dte", stop_loss_debit))
+            debit_stop_far = float(pm.get("stop_loss_pct_debit_far_dte", 0.65))
+            debit_mid_min_dte = int(pm.get("stop_loss_pct_debit_mid_min_dte", 21))
+            debit_far_min_dte = int(pm.get("stop_loss_pct_debit_far_min_dte", 45))
+            leaps_dte_threshold = int(pm.get("leaps_dte_threshold", 120))
+            leaps_stop_pct = float(pm.get("leaps_debit_catastrophic_stop_pct", 0.75))
+
+            if net_type == "credit":
+                if np.isfinite(profit_capture) and profit_capture >= take_profit_credit:
+                    rec = "CLOSE_NOW"
+                    reason = f"Credit profit capture {profit_capture:.0%} >= {take_profit_credit:.0%} target."
+                    priority = 1
+                elif np.isfinite(risk_draw) and risk_draw >= stop_loss_credit:
+                    rec = "CLOSE_NOW"
+                    reason = f"Credit loss at {risk_draw:.0%} of max risk >= {stop_loss_credit:.0%} stop."
+                    priority = 1
+                elif (
+                    np.isfinite(dte)
+                    and short_roll_min_dte <= dte <= short_roll_max_dte
+                    and np.isfinite(risk_draw)
+                    and risk_draw >= roll_risk_draw_trigger
+                ):
+                    rec = "ROLL"
+                    reason = (
+                        f"Short premium in roll window ({int(dte)} DTE) with risk draw {risk_draw:.0%}; "
+                        "roll out 14-35 days and move short strike away."
+                    )
+                    priority = 3
             else:
-                rec = "ROLL_DEFENSIVE"
-                reason = f"DTE {int(dte)} <= {short_roll_dte} with loss; roll out/down to extend recovery window."
-            priority = 3
-        elif strategy in {"Long Call Option", "Long Put Option"} and np.isfinite(dte) and dte <= long_exit_dte and unreal <= 0:
-            rec = "CLOSE_DECAY"
-            reason = f"Long option near expiry (DTE {int(dte)} <= {long_exit_dte}) with non-positive P/L."
-            priority = 4
+                if np.isfinite(dte) and dte >= leaps_dte_threshold:
+                    debit_stop_use = max(leaps_stop_pct, debit_stop_far)
+                elif np.isfinite(dte) and dte >= debit_far_min_dte:
+                    debit_stop_use = debit_stop_far
+                elif np.isfinite(dte) and dte >= debit_mid_min_dte:
+                    debit_stop_use = debit_stop_mid
+                else:
+                    debit_stop_use = debit_stop_near
+
+                if np.isfinite(pnl_vs_cost) and pnl_vs_cost >= take_profit_debit:
+                    rec = "CLOSE_NOW"
+                    reason = f"Debit position return {pnl_vs_cost:.0%} >= {take_profit_debit:.0%} target."
+                    priority = 1
+                elif np.isfinite(risk_draw) and risk_draw >= debit_stop_use:
+                    rec = "CLOSE_NOW"
+                    if np.isfinite(dte) and dte >= leaps_dte_threshold:
+                        reason = (
+                            f"LEAPS catastrophic stop: loss {risk_draw:.0%} >= {debit_stop_use:.0%} "
+                            f"(DTE {int(dte)})."
+                        )
+                    else:
+                        reason = f"Debit loss at {risk_draw:.0%} of max loss >= {debit_stop_use:.0%} DTE-tier stop."
+                    priority = 1
+                elif strategy in {"Long Call Option", "Long Put Option"} and np.isfinite(dte) and dte <= long_exit_dte and unreal <= 0:
+                    rec = "CLOSE_NOW"
+                    reason = f"Long option decay risk: DTE {int(dte)} <= {long_exit_dte} and non-positive P/L."
+                    priority = 2
+
+            if rec == "WAIT" and np.isfinite(dte) and dte <= near_expiry_dte and unreal <= 0:
+                rec = "CLOSE_NOW"
+                reason = f"Near expiry (DTE {int(dte)} <= {near_expiry_dte}) with weak reward-to-risk."
+                priority = 2
 
         action = {
-            "CLOSE_PROFIT": "🟢 CLOSE (profit)",
-            "CLOSE_RISK": "🔴 CLOSE (risk)",
-            "ROLL_OR_CLOSE": "🟠 ROLL or CLOSE",
-            "ROLL_DEFENSIVE": "🟠 ROLL DEFENSIVE",
-            "CLOSE_DECAY": "🟡 CLOSE (decay)",
-            "HOLD": "⚪ HOLD",
-            "DATA_NEEDED": "⚠️ DATA NEEDED",
+            "CLOSE_NOW": "🔴 CLOSE",
+            "ROLL": "🟣 ROLL",
+            "WAIT": "🟡 WAIT",
+            "DATA_NEEDED": "⚪ NEEDS DATA",
         }.get(rec, rec)
+        roll_plan = _estimate_roll_plan(s, as_of_date, cfg, live_context) if rec == "ROLL" else ""
 
         rows.append(
             {
-                "underlying": str(getattr(r, "underlying", "")).strip().upper() or sym,
-                "symbol": sym,
+                "position_id": str(s.get("position_id", "")),
+                "underlying": str(s.get("underlying", "")).strip().upper(),
+                "symbol": str(s.get("symbol", "")),
                 "strategy": strategy,
-                "expiry": str(pd.to_datetime(expiry).date()) if pd.notna(expiry) else "",
+                "legs": str(s.get("legs", "")),
+                "expiry": str(s.get("expiry", "")),
                 "dte": int(dte) if np.isfinite(dte) else math.nan,
                 "unrealized_pnl": unreal if np.isfinite(unreal) else math.nan,
                 "risk": risk if np.isfinite(risk) else math.nan,
@@ -722,6 +1281,7 @@ def build_position_decisions(pos: pd.DataFrame, as_of_date: dt.date, cfg: Dict) 
                 "recommendation": rec,
                 "action": action,
                 "reason": reason,
+                "roll_plan": roll_plan,
                 "unrealized_source": unreal_source,
                 "_priority": priority,
             }
@@ -832,7 +1392,37 @@ def run_daily(
                 | pos["symbol"].astype(str).str.contains(r"\d{6}[CP]\d{8}", na=False)
             )
             pos = pos[is_option].copy()
-        position_decisions = build_position_decisions(pos.copy(), last_day, cfg)
+        live_context: Dict[str, Any] = {}
+        pm = cfg.get("playbook", {}).get("position_management", {})
+        if bool(pm.get("roll_use_live_chain", True)):
+            try:
+                from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+
+                chain_symbols = sorted(
+                    {
+                        str(x).strip().upper()
+                        for x in pos["underlying"].dropna().tolist()
+                        if str(x).strip()
+                    }
+                )
+                if chain_symbols:
+                    cfg_live = SchwabAuthConfig.from_env(load_dotenv_file=True)
+                    svc_live = SchwabLiveDataService(cfg_live)
+                    svc_live.connect()
+                    roll_strike_count = int(pm.get("roll_chain_strike_count", 20))
+                    snap = svc_live.snapshot(
+                        symbols=chain_symbols,
+                        chain_symbols=chain_symbols,
+                        strike_count=max(4, roll_strike_count),
+                    )
+                    live_context = {
+                        "quotes": snap.get("quotes", {}),
+                        "option_chains": snap.get("option_chains", {}),
+                    }
+                    write_json(out_dir / "daily_roll_live_context.json", snap.get("trading_query_context", {}))
+            except Exception as e:
+                actions.append(f"Roll planner live-chain unavailable: {e}")
+        position_decisions = build_position_decisions(pos.copy(), last_day, cfg, live_context=live_context)
         pos = pos[pos["risk"].notna() & (pos["risk"] > 0)].copy()
         if not pos.empty:
             total_risk = float(pos["risk"].sum())
@@ -845,7 +1435,7 @@ def run_daily(
             }
 
             symbol_risk_table = (
-                pos.groupby("symbol", dropna=False)["risk"]
+                pos.groupby("underlying", dropna=False)["risk"]
                 .sum()
                 .reset_index(name="risk")
                 .sort_values("risk", ascending=False)
@@ -862,7 +1452,7 @@ def run_daily(
 
             sym_breach = symbol_risk_table[symbol_risk_table["risk_share"] > symbol_limit]
             if not sym_breach.empty:
-                names = ", ".join(sym_breach["symbol"].head(5).tolist())
+                names = ", ".join(sym_breach["underlying"].head(5).tolist())
                 escalate(
                     "YELLOW",
                     f"Single-symbol risk concentration above {symbol_limit:.1%}: {names}",
@@ -954,7 +1544,7 @@ def run_daily(
         )
         lines.append("")
         lines.append("### Symbol Concentration")
-        lines.append(to_md_table(symbol_risk_table[["symbol", "risk", "risk_share"]], n=20))
+        lines.append(to_md_table(symbol_risk_table[["underlying", "risk", "risk_share"]], n=20))
         lines.append("")
         lines.append("### Short Put Expiry Concentration")
         if not expiry_risk_table.empty:
@@ -964,24 +1554,79 @@ def run_daily(
         lines.append("")
     if not position_decisions.empty:
         lines.append("## Position Decisions")
-        lines.append("- Recommendations prioritize locking profits, cutting risk, and rolling short positions near expiry.")
+        lines.append("- Recommendations are structure-level (spreads/legs grouped) and prioritize capital protection first.")
         lines.append("")
+        decision_cols = [
+            "underlying",
+            "strategy",
+            "legs",
+            "expiry",
+            "dte",
+            "action",
+            "reason",
+            "roll_plan",
+        ]
+        for c in decision_cols:
+            if c not in position_decisions.columns:
+                position_decisions[c] = ""
         lines.append(
             to_md_table(
-                position_decisions[
-                    [
-                        "underlying",
-                        "symbol",
-                        "strategy",
-                        "expiry",
-                        "dte",
-                        "action",
-                        "reason",
-                    ]
-                ],
+                position_decisions[decision_cols],
                 n=150,
             )
         )
+        lines.append("")
+        close_q = position_decisions[position_decisions["recommendation"] == "CLOSE_NOW"].copy()
+        roll_q = position_decisions[position_decisions["recommendation"] == "ROLL"].copy()
+        wait_q = position_decisions[position_decisions["recommendation"] == "WAIT"].copy()
+        data_q = position_decisions[position_decisions["recommendation"] == "DATA_NEEDED"].copy()
+
+        lines.append("## Close Now Queue")
+        if not close_q.empty:
+            lines.append(
+                to_md_table(
+                    close_q[["underlying", "strategy", "legs", "expiry", "dte", "reason"]],
+                    n=100,
+                )
+            )
+        else:
+            lines.append("_none_")
+        lines.append("")
+
+        lines.append("## Roll Queue")
+        if not roll_q.empty:
+            lines.append(
+                to_md_table(
+                    roll_q[["underlying", "strategy", "legs", "expiry", "dte", "roll_plan", "reason"]],
+                    n=100,
+                )
+            )
+        else:
+            lines.append("_none_")
+        lines.append("")
+
+        lines.append("## Wait / Monitor")
+        if not wait_q.empty:
+            lines.append(
+                to_md_table(
+                    wait_q[["underlying", "strategy", "legs", "expiry", "dte", "reason"]],
+                    n=150,
+                )
+            )
+        else:
+            lines.append("_none_")
+        lines.append("")
+
+        lines.append("## Data Gaps")
+        if not data_q.empty:
+            lines.append(
+                to_md_table(
+                    data_q[["underlying", "strategy", "legs", "expiry", "dte", "reason"]],
+                    n=100,
+                )
+            )
+        else:
+            lines.append("_none_")
         lines.append("")
     write_text(out_dir / "daily_risk_monitor.md", "\n".join(lines))
     return payload
@@ -1378,7 +2023,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.mode in {"daily", "all"} and args.open_positions_source == "schwab":
         try:
-            from schwab_live_service import SchwabAuthConfig, SchwabLiveDataService
+            from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
         except Exception as e:
             raise RuntimeError(f"Failed to import Schwab live service: {e}") from e
 
@@ -1390,6 +2035,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         resp.raise_for_status()
         raw = resp.json()
         accounts = raw if isinstance(raw, list) else [raw]
+        acct_map_resp = cli.get_account_numbers()
+        acct_map_resp.raise_for_status()
+        acct_map_rows = acct_map_resp.json()
+        account_number_to_hash = {
+            str(a.get("accountNumber", "")).strip(): str(a.get("hashValue", "")).strip()
+            for a in acct_map_rows
+            if str(a.get("accountNumber", "")).strip()
+        }
+        open_lot_meta = build_open_option_lot_metadata_from_schwab_api(
+            cli,
+            account_number_to_hash,
+            lookback_days=int(args.schwab_lookback_days),
+        )
 
         rows: List[Dict[str, Any]] = []
         for a in accounts:
@@ -1419,7 +2077,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             if args.open_positions_cache_csv
             else (out_dir / "open_positions_from_schwab.csv")
         )
-        pd.DataFrame(
+        pos_df = pd.DataFrame(
             rows,
             columns=[
                 "account_number",
@@ -1435,7 +2093,21 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "current_day_profit_loss",
                 "current_day_profit_loss_pct",
             ],
-        ).to_csv(cache_csv, index=False)
+        )
+        pos_df["position_side"] = np.where(
+            pos_df["long_quantity"].map(parse_float).fillna(0.0) > 0,
+            "LONG",
+            np.where(pos_df["short_quantity"].map(parse_float).fillna(0.0) > 0, "SHORT", ""),
+        )
+        if not open_lot_meta.empty:
+            pos_df = pos_df.merge(
+                open_lot_meta,
+                how="left",
+                left_on=["account_number", "symbol", "position_side"],
+                right_on=["account_number", "symbol", "side"],
+            )
+            pos_df = pos_df.drop(columns=["side"])
+        pos_df.to_csv(cache_csv, index=False)
         open_positions_csv = cache_csv
 
     if args.mode in {"daily", "all"}:

@@ -1,4 +1,4 @@
-﻿# Strategy Engine (Robot Layer)
+# Strategy Engine (Robot Layer)
 
 This folder contains a deterministic filter that turns your 5 EOD files into a shortlist of mathematically valid option spreads.
 
@@ -33,7 +33,7 @@ Put the 5 files in a folder (example `./EOD`):
 Then:
 
 ```bash
-python strategy_engine.py --date 2026-01-23 --input-dir ./EOD --out-dir ./out --config uwos/rulebook_config.yaml
+python -m uwos.strategy_engine --date 2026-01-23 --input-dir ./EOD --out-dir ./out --config uwos/rulebook_config.yaml
 ```
 
 Outputs:
@@ -45,7 +45,7 @@ Outputs:
 If your UW plan is dashboard-only, use the guided browser capture tool to export files into your daily folder:
 
 ```bash
-python scripts/uw_dashboard_capture.py --trade-date 2026-02-07 --base-dir c:\uw_root --preset mode-a-core
+python -m uwos.uw_dashboard_capture --trade-date 2026-02-07 --base-dir c:\uw_root --preset mode-a-core
 ```
 
 Default preset (`mode-a-core`) routes:
@@ -57,7 +57,7 @@ Default preset (`mode-a-core`) routes:
 For portfolio growth research (non-easy-download pages), use:
 
 ```bash
-python scripts/uw_dashboard_capture.py --trade-date 2026-02-07 --base-dir c:\uw_root --preset growth-intel
+python -m uwos.uw_dashboard_capture --trade-date 2026-02-07 --base-dir c:\uw_root --preset growth-intel
 ```
 
 `growth-intel` includes:
@@ -89,7 +89,7 @@ Notes:
 Finalize a capture day into one markdown report and remove duplicate rerun CSVs:
 
 ```bash
-python scripts/uw_capture_finalize.py --trade-date 2026-02-07 --base-dir c:\uw_root --delete-duplicates
+python -m uwos.uw_capture_finalize --trade-date 2026-02-07 --base-dir c:\uw_root --delete-duplicates
 ```
 
 This writes:
@@ -98,7 +98,7 @@ This writes:
 Build ranked growth candidates + monthly rebalance markdown:
 
 ```bash
-python scripts/build_growth_portfolio_candidates.py --trade-date 2026-02-07 --base-dir c:\uw_root --top-n 30 --portfolio-size 12 --max-per-sector 2 --min-score 10 --min-sources 2 --require-stock-screener --stock-lookback-days 0
+python -m uwos.build_growth_portfolio_candidates --trade-date 2026-02-07 --base-dir c:\uw_root --top-n 30 --portfolio-size 12 --max-per-sector 2 --min-score 10 --min-sources 2 --require-stock-screener --stock-lookback-days 0
 ```
 
 This writes:
@@ -108,15 +108,15 @@ This writes:
 Recommended final pass (capture, then finalize):
 
 ```bash
-python scripts/uw_dashboard_capture.py --trade-date 2026-02-07 --base-dir c:\uw_root --preset growth-intel --routes stock-screener analysts insiders-trades institutions news-feed earnings flow-sectors market-statistics sec-filings correlations smart-money-live market-maps --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless --no-disable-automation-flags --also-scrape --scrape-scroll-cycles 20 --wait-seconds 55
-python scripts/uw_capture_finalize.py --trade-date 2026-02-07 --base-dir c:\uw_root --delete-duplicates
-python scripts/build_growth_portfolio_candidates.py --trade-date 2026-02-07 --base-dir c:\uw_root --top-n 30 --portfolio-size 12 --max-per-sector 2 --min-score 10 --min-sources 2 --require-stock-screener --stock-lookback-days 0
+python -m uwos.uw_dashboard_capture --trade-date 2026-02-07 --base-dir c:\uw_root --preset growth-intel --routes stock-screener analysts insiders-trades institutions news-feed earnings flow-sectors market-statistics sec-filings correlations smart-money-live market-maps --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless --no-disable-automation-flags --also-scrape --scrape-scroll-cycles 20 --wait-seconds 55
+python -m uwos.uw_capture_finalize --trade-date 2026-02-07 --base-dir c:\uw_root --delete-duplicates
+python -m uwos.build_growth_portfolio_candidates --trade-date 2026-02-07 --base-dir c:\uw_root --top-n 30 --portfolio-size 12 --max-per-sector 2 --min-score 10 --min-sources 2 --require-stock-screener --stock-lookback-days 0
 ```
 
 Single-command end-to-end pipeline (capture -> finalize -> candidates -> packet):
 
 ```bash
-python scripts/run_uw_deep_research_pipeline.py --trade-date 2026-02-07 --base-dir c:\uw_root --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless --no-disable-automation-flags --wait-seconds 55 --scrape-scroll-cycles 20 --stock-lookback-days 7 --route-lookback-days 14 --artifact-lookback-days 14 --top-n 30 --packet-top-n 30
+python -m uwos.run_uw_deep_research_pipeline --trade-date 2026-02-07 --base-dir c:\uw_root --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless --no-disable-automation-flags --wait-seconds 55 --scrape-scroll-cycles 20 --stock-lookback-days 7 --route-lookback-days 14 --artifact-lookback-days 14 --top-n 30 --packet-top-n 30
 ```
 
 If the browser opens but login/session gets stuck:
@@ -125,13 +125,13 @@ If the browser opens but login/session gets stuck:
 2. Bootstrap login only (no scraping):
 
 ```bash
-python scripts/uw_dashboard_capture.py --manual-login-only --base-dir c:\uw_root --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless
+python -m uwos.uw_dashboard_capture --manual-login-only --base-dir c:\uw_root --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless
 ```
 
 3. After login works in that browser, run capture with the same profile/channel:
 
 ```bash
-python scripts/uw_dashboard_capture.py --trade-date 2026-02-07 --base-dir c:\uw_root --preset growth-intel --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless
+python -m uwos.uw_dashboard_capture --trade-date 2026-02-07 --base-dir c:\uw_root --preset growth-intel --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless
 ```
 
 Install browser dependency once:
@@ -157,18 +157,18 @@ Edit `uwos/rulebook_config.yaml`:
 - Credit/debit gates
 
 ## Live Schwab Service
-Use `schwab_live_service.py` as a reusable live data layer for trading queries.
+Use `uwos/schwab_auth.py` as a reusable live data layer for trading queries.
 
 CLI wrapper:
 
 ```bash
-python schwab_live_quotes.py --no-interactive-login --symbols-csv AAPL,MSFT,SPY --chain-symbols-csv AAPL,SPY --strike-count 8 --save-json-dir ./out/schwab
+python -m uwos.schwab_quotes --no-interactive-login --symbols-csv AAPL,MSFT,SPY --chain-symbols-csv AAPL,SPY --strike-count 8 --save-json-dir ./out/schwab
 ```
 
 Reusable import:
 
 ```python
-from schwab_live_service import SchwabAuthConfig, SchwabLiveDataService
+from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
 config = SchwabAuthConfig.from_env()
 svc = SchwabLiveDataService(config=config, interactive_login=False)
@@ -180,7 +180,7 @@ context = snapshot["trading_query_context"]
 This command takes your shortlist, extracts ticker/leg symbols, fetches live option chains for those tickers, and writes a final table priced with live option quotes.
 
 ```bash
-python build_live_trade_table.py --shortlist-csv ./out/shortlist_trades_2026-02-05.csv --out-dir ./out/live --save-chain-dir ./out/live/chains_full
+python -m uwos.pricer --shortlist-csv ./out/shortlist_trades_2026-02-05.csv --out-dir ./out/live --save-chain-dir ./out/live/chains_full
 ```
 
 Outputs:
@@ -188,12 +188,12 @@ Outputs:
 - `out/live/live_trade_table_YYYY-MM-DD_final.csv` (only `is_final_live_valid=true`)
 
 ### Exact Spread Backtest (Ticker + Exact Legs)
-Use `exact_spread_backtester.py` to replay exact spread setups (ticker, strategy, long/short OCC legs, expiry) against historical option snapshots and expiry outcomes.
+Use `uwos/exact_spread_backtester.py` to replay exact spread setups (ticker, strategy, long/short OCC legs, expiry) against historical option snapshots and expiry outcomes.
 
 Example:
 
 ```bash
-python exact_spread_backtester.py \
+python -m uwos.exact_spread_backtester \
   --setups-csv ./out/shortlist_trades_2026-02-06_mode_a.csv \
   --signal-date 2026-02-06 \
   --root-dir ./ \
@@ -221,7 +221,7 @@ Outputs:
 Optional validation against actual trades:
 
 ```bash
-python exact_spread_backtester.py \
+python -m uwos.exact_spread_backtester \
   --setups-csv ./my_exact_setups.csv \
   --root-dir ./ \
   --out-dir ./out/exact_backtest_validate \
@@ -248,43 +248,43 @@ Use this to monitor short-term risk and long-term performance drift from your re
 Run all stages:
 
 ```bash
-python run_trade_playbook.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.run_trade_playbook --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Run directly from Google Sheet CSV export URL (auto-builds `cleaned_realized_trades` each run):
 
 ```bash
-python run_trade_playbook.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.run_trade_playbook --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Run from Google Sheet but only ingest yellow-highlighted rows (plus month header rows for date context):
 
 ```bash
-python run_trade_playbook.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.run_trade_playbook --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Or run each stage separately:
 
 ```bash
-python daily_risk_monitor.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --open-positions-csv ./out/open_positions.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python weekly_edge_report.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python monthly_longitudinal_review.py --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.daily_risk_monitor --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --open-positions-csv ./out/open_positions.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.weekly_edge_report --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.monthly_longitudinal_review --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Run each stage directly from Google Sheet URL:
 
 ```bash
-python daily_risk_monitor.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.daily_risk_monitor --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.weekly_edge_report --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.monthly_longitudinal_review --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Run each stage directly from Google Sheet URL with yellow-only filtering:
 
 ```bash
-python daily_risk_monitor.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python weekly_edge_report.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python monthly_longitudinal_review.py --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.daily_risk_monitor --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.weekly_edge_report --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
+python -m uwos.monthly_longitudinal_review --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
 ```
 
 Main outputs:
@@ -309,5 +309,6 @@ Remove tasks:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File c:\uw_root\scripts\unregister_playbook_tasks.ps1
 ```
+
 
 

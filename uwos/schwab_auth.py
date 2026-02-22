@@ -284,7 +284,7 @@ class SchwabLiveDataService:
             if _is_refresh_token_error(exc):
                 raise RuntimeError(
                     "Schwab token refresh failed (stale/revoked refresh token). "
-                    "Re-auth once with: python schwab_live_quotes.py --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                    "Re-auth once with: python -m uwos.schwab_quotes --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
                 ) from exc
             raise
         response.raise_for_status()
@@ -317,7 +317,7 @@ class SchwabLiveDataService:
             if _is_refresh_token_error(exc):
                 raise RuntimeError(
                     "Schwab token refresh failed (stale/revoked refresh token). "
-                    "Re-auth once with: python schwab_live_quotes.py --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                    "Re-auth once with: python -m uwos.schwab_quotes --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
                 ) from exc
             raise
         response.raise_for_status()

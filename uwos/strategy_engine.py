@@ -16,7 +16,7 @@ IMPORTANT:
   That's the AI/Analyst layer. This script is the rule enforcer + math sieve.
 
 Usage (example):
-  python strategy_engine.py --date 2026-01-23 --input-dir ./EOD --out-dir ./out
+  python -m uwos.strategy_engine --date 2026-01-23 --input-dir ./EOD --out-dir ./out
 
 Requirements:
   pip install pandas numpy pyyaml yfinance

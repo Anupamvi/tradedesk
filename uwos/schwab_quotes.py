@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
-from schwab_live_service import (
+from uwos.schwab_auth import (
     DEFAULT_SYMBOLS,
     SchwabAuthConfig,
     SchwabLiveDataService,

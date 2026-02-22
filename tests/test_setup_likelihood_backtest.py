@@ -7,12 +7,12 @@ import numpy as np
 import pandas as pd
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "setup_likelihood_backtest.py"
-SPEC = importlib.util.spec_from_file_location("setup_likelihood_backtest", SCRIPT_PATH)
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "uwos" / "setup_likelihood_backtest.py"
+SPEC = importlib.util.spec_from_file_location("uwos_setup_likelihood_backtest", SCRIPT_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"Unable to load module spec from {SCRIPT_PATH}")
 mod = importlib.util.module_from_spec(SPEC)
-sys.modules["setup_likelihood_backtest"] = mod
+sys.modules["uwos_setup_likelihood_backtest"] = mod
 SPEC.loader.exec_module(mod)
 
 
@@ -56,6 +56,24 @@ class TestSetupLikelihoodBacktest(unittest.TestCase):
         self.assertGreater(signals, 0)
         self.assertEqual(wins, signals)
         self.assertTrue(np.isfinite(no_touch))
+
+    def test_unknown_row_contract(self) -> None:
+        row = mod.unknown_row(
+            ticker="AAPL",
+            strategy="Bull Call Debit",
+            expiry="2026-03-20",
+            dte=30,
+            entry_gate="<= 2.00 db",
+            spot_at_signal=190.0,
+            required_win_pct=40.0,
+            reason="missing_history",
+        )
+        self.assertEqual(row["verdict"], "UNKNOWN")
+        self.assertEqual(row["confidence"], "Unknown")
+        self.assertEqual(int(row["signals"]), 0)
+
+    def test_safe_symbol_for_file(self) -> None:
+        self.assertEqual(mod.safe_symbol_for_file("BRK/B"), "BRK_B")
 
 
 if __name__ == "__main__":

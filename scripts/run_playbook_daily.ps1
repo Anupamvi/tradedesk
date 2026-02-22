@@ -15,8 +15,7 @@ New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 $stamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
 $logPath = Join-Path $logDir "daily_$stamp.log"
 
-$scriptPath = Join-Path $RepoRoot 'daily_risk_monitor.py'
-$cmd = "python `"$scriptPath`" --sheet-csv-url `"$SheetCsvUrl`" --sheet-row-filter `"$SheetRowFilter`" --config `"$ConfigPath`" --out-dir `"$OutDir`""
+$cmd = "python -m uwos.daily_risk_monitor --sheet-csv-url `"$SheetCsvUrl`" --sheet-row-filter `"$SheetRowFilter`" --config `"$ConfigPath`" --out-dir `"$OutDir`""
 
 "[$(Get-Date -Format s)] Running: $cmd" | Out-File -FilePath $logPath -Encoding utf8
 Invoke-Expression $cmd *>> $logPath

@@ -3,10 +3,10 @@
 End-to-end UW -> Deep Research packet runner.
 
 Runs, in order:
-1) uw_dashboard_capture.py
-2) uw_capture_finalize.py
-3) build_growth_portfolio_candidates.py
-4) build_deep_research_packet.py
+1) uwos.uw_dashboard_capture
+2) uwos.uw_capture_finalize
+3) uwos.build_growth_portfolio_candidates
+4) uwos.build_deep_research_packet
 """
 
 from __future__ import annotations
@@ -76,7 +76,8 @@ def main() -> int:
     if not args.skip_capture:
         capture_cmd = [
             py,
-            "scripts/uw_dashboard_capture.py",
+            "-m",
+            "uwos.uw_dashboard_capture",
             "--trade-date",
             str(args.trade_date),
             "--base-dir",
@@ -101,7 +102,8 @@ def main() -> int:
 
     finalize_cmd = [
         py,
-        "scripts/uw_capture_finalize.py",
+        "-m",
+        "uwos.uw_capture_finalize",
         "--trade-date",
         str(args.trade_date),
         "--base-dir",
@@ -114,7 +116,8 @@ def main() -> int:
 
     growth_cmd = [
         py,
-        "scripts/build_growth_portfolio_candidates.py",
+        "-m",
+        "uwos.build_growth_portfolio_candidates",
         "--trade-date",
         str(args.trade_date),
         "--base-dir",
@@ -139,7 +142,8 @@ def main() -> int:
 
     packet_cmd = [
         py,
-        "scripts/build_deep_research_packet.py",
+        "-m",
+        "uwos.build_deep_research_packet",
         "--trade-date",
         str(args.trade_date),
         "--base-dir",

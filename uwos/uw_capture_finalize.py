@@ -20,9 +20,12 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 try:
-    from uw_dashboard_capture import ROUTES  # same directory import when run via python scripts/...
+    from uwos.uw_dashboard_capture import ROUTES
 except Exception:
-    ROUTES = {}
+    try:
+        from uw_dashboard_capture import ROUTES  # fallback for direct script execution
+    except Exception:
+        ROUTES = {}
 
 
 def parse_args() -> argparse.Namespace:

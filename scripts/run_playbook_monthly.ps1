@@ -15,8 +15,7 @@ New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 $stamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
 $logPath = Join-Path $logDir "monthly_$stamp.log"
 
-$scriptPath = Join-Path $RepoRoot 'monthly_longitudinal_review.py'
-$cmd = "python `"$scriptPath`" --sheet-csv-url `"$SheetCsvUrl`" --sheet-row-filter `"$SheetRowFilter`" --config `"$ConfigPath`" --out-dir `"$OutDir`""
+$cmd = "python -m uwos.monthly_longitudinal_review --sheet-csv-url `"$SheetCsvUrl`" --sheet-row-filter `"$SheetRowFilter`" --config `"$ConfigPath`" --out-dir `"$OutDir`""
 
 "[$(Get-Date -Format s)] Running: $cmd" | Out-File -FilePath $logPath -Encoding utf8
 Invoke-Expression $cmd *>> $logPath

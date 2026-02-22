@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Set,
 
 import pandas as pd
 
-from schwab_live_service import (
+from uwos.schwab_auth import (
     SchwabAuthConfig,
     SchwabLiveDataService,
     compact_occ_to_schwab_symbol,
@@ -286,6 +286,11 @@ def parse_args() -> argparse.Namespace:
         help="Optional directory to save fetched live chain payloads.",
     )
     parser.add_argument(
+        "--snapshot-out-json",
+        default="",
+        help="Optional path to write snapshot metadata (chain status/query symbols/errors).",
+    )
+    parser.add_argument(
         "--hard-invalidation",
         action="store_true",
         help="If set, invalidation breach is treated as hard live failure (default: warning only).",
@@ -305,6 +310,9 @@ def main() -> None:
     out_csv = Path(args.out_csv).expanduser().resolve() if args.out_csv else default_full_path
     out_final_csv = (
         Path(args.out_final_csv).expanduser().resolve() if args.out_final_csv else default_final_path
+    )
+    snapshot_out_json = (
+        Path(args.snapshot_out_json).expanduser().resolve() if args.snapshot_out_json else None
     )
 
     df = pd.read_csv(shortlist_csv)
@@ -693,12 +701,38 @@ def main() -> None:
     live_df.to_csv(out_csv, index=False)
     final_df.to_csv(out_final_csv, index=False)
 
+    if snapshot_out_json is not None:
+        snapshot_out_json.parent.mkdir(parents=True, exist_ok=True)
+        snapshot_payload = {
+            "generated_utc": dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            "auth_mode": service.auth_mode,
+            "shortlist_csv": str(shortlist_csv),
+            "out_csv": str(out_csv),
+            "out_final_csv": str(out_final_csv),
+            "rows_shortlist_input": int(len(df)),
+            "rows_enriched": int(len(live_df)),
+            "rows_final_live_valid": int(len(final_df)),
+            "tickers": sorted(ticker_ranges.keys()),
+            "chain_status_by_ticker": chain_status_by_ticker,
+            "chain_query_symbol_by_ticker": chain_query_symbol_by_ticker,
+            "chain_error_by_ticker": chain_error_by_ticker,
+            "underlying_query_symbols": underlying_query_symbols,
+            "chain_save_dir": str(Path(args.save_chain_dir).expanduser().resolve()) if args.save_chain_dir else "",
+            "hard_invalidation": bool(args.hard_invalidation),
+        }
+        snapshot_out_json.write_text(
+            json.dumps(snapshot_payload, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+
     print(f"Auth mode: {service.auth_mode}")
     print(f"Shortlist input rows: {len(df):,}")
     print(f"Enriched rows: {len(live_df):,}")
     print(f"Final live-valid rows: {len(final_df):,}")
     print(f"Wrote: {out_csv}")
     print(f"Wrote: {out_final_csv}")
+    if snapshot_out_json is not None:
+        print(f"Wrote: {snapshot_out_json}")
 
 
 if __name__ == "__main__":

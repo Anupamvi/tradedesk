@@ -15,8 +15,7 @@ New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 $stamp = Get-Date -Format 'yyyy-MM-dd_HHmmss'
 $logPath = Join-Path $logDir "weekly_$stamp.log"
 
-$scriptPath = Join-Path $RepoRoot 'weekly_edge_report.py'
-$cmd = "python `"$scriptPath`" --sheet-csv-url `"$SheetCsvUrl`" --sheet-row-filter `"$SheetRowFilter`" --config `"$ConfigPath`" --out-dir `"$OutDir`""
+$cmd = "python -m uwos.weekly_edge_report --sheet-csv-url `"$SheetCsvUrl`" --sheet-row-filter `"$SheetRowFilter`" --config `"$ConfigPath`" --out-dir `"$OutDir`""
 
 "[$(Get-Date -Format s)] Running: $cmd" | Out-File -FilePath $logPath -Encoding utf8
 Invoke-Expression $cmd *>> $logPath

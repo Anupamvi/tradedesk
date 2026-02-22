@@ -5,6 +5,7 @@ import argparse
 import datetime as dt
 import math
 import re
+import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -132,40 +133,106 @@ def load_spot_map(screener_csv: Optional[Path]) -> Dict[str, float]:
     return {k: float(v) for k, v in out.items() if np.isfinite(v) and v > 0}
 
 
-def yfinance_spot_on_or_before(ticker: str, asof: dt.date) -> float:
-    start = (asof - dt.timedelta(days=12)).isoformat()
-    end = (asof + dt.timedelta(days=1)).isoformat()
-    try:
-        df = yf.download(ticker, start=start, end=end, auto_adjust=False, progress=False)
-    except Exception:
-        return math.nan
-    if df is None or df.empty:
-        return math.nan
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    c = pd.to_numeric(df.get("Close"), errors="coerce").dropna()
-    if c.empty:
-        return math.nan
-    return float(c.iloc[-1])
-
-
-def get_price_history(ticker: str, asof: dt.date, lookback_years: float) -> pd.DataFrame:
-    start = (asof - dt.timedelta(days=int(round(365.25 * float(lookback_years))))).isoformat()
-    end = (asof + dt.timedelta(days=1)).isoformat()
-    try:
-        df = yf.download(ticker, start=start, end=end, auto_adjust=False, progress=False)
-    except Exception:
-        return pd.DataFrame()
+def normalize_download(df: pd.DataFrame) -> pd.DataFrame:
     if df is None or df.empty:
         return pd.DataFrame()
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    for c in ["Open", "High", "Low", "Close"]:
-        if c not in df.columns:
+    out = df.copy()
+    if isinstance(out.columns, pd.MultiIndex):
+        out.columns = out.columns.get_level_values(0)
+    needed = ["Open", "High", "Low", "Close"]
+    for col in needed:
+        if col not in out.columns:
             return pd.DataFrame()
-    out = df[["Open", "High", "Low", "Close"]].copy()
+    out = out[needed].copy()
     out = out.dropna(subset=["High", "Low", "Close"])
     return out
+
+
+def safe_symbol_for_file(ticker: str) -> str:
+    t = str(ticker or "").strip().upper()
+    t = re.sub(r"[^A-Z0-9._-]+", "_", t)
+    return t or "UNKNOWN"
+
+
+def yfinance_download_retry(
+    ticker: str,
+    start: str,
+    end: str,
+    retries: int = 3,
+    pause_sec: float = 0.8,
+) -> pd.DataFrame:
+    last = pd.DataFrame()
+    for attempt in range(max(1, int(retries))):
+        try:
+            raw = yf.download(ticker, start=start, end=end, auto_adjust=False, progress=False)
+        except Exception:
+            raw = pd.DataFrame()
+        norm = normalize_download(raw)
+        if not norm.empty:
+            return norm
+        last = norm
+        if attempt < retries - 1:
+            time.sleep(max(0.1, float(pause_sec)))
+    return last
+
+
+def load_history_cached(
+    ticker: str,
+    start: str,
+    end: str,
+    cache_dir: Optional[Path],
+    retries: int = 3,
+) -> pd.DataFrame:
+    if cache_dir is not None:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_name = f"{safe_symbol_for_file(ticker)}_{start}_{end}.csv"
+        cache_path = cache_dir / cache_name
+        if cache_path.exists():
+            try:
+                cached = pd.read_csv(cache_path, parse_dates=["Date"]).set_index("Date")
+                return normalize_download(cached)
+            except Exception:
+                pass
+
+    hist = yfinance_download_retry(ticker, start=start, end=end, retries=retries)
+    if cache_dir is not None and not hist.empty:
+        try:
+            cache_name = f"{safe_symbol_for_file(ticker)}_{start}_{end}.csv"
+            cache_path = cache_dir / cache_name
+            to_save = hist.reset_index().rename(columns={"index": "Date"})
+            if "Date" not in to_save.columns:
+                to_save.insert(0, "Date", hist.index)
+            to_save.to_csv(cache_path, index=False)
+        except Exception:
+            pass
+    return hist
+
+
+def yfinance_spot_on_or_before(
+    ticker: str,
+    asof: dt.date,
+    cache_dir: Optional[Path] = None,
+) -> float:
+    start = (asof - dt.timedelta(days=12)).isoformat()
+    end = (asof + dt.timedelta(days=1)).isoformat()
+    hist = load_history_cached(ticker=ticker, start=start, end=end, cache_dir=cache_dir)
+    if hist.empty:
+        return math.nan
+    close_series = pd.to_numeric(hist.get("Close"), errors="coerce").dropna()
+    if close_series.empty:
+        return math.nan
+    return float(close_series.iloc[-1])
+
+
+def get_price_history(
+    ticker: str,
+    asof: dt.date,
+    lookback_years: float,
+    cache_dir: Optional[Path] = None,
+) -> pd.DataFrame:
+    start = (asof - dt.timedelta(days=int(round(365.25 * float(lookback_years))))).isoformat()
+    end = (asof + dt.timedelta(days=1)).isoformat()
+    return load_history_cached(ticker=ticker, start=start, end=end, cache_dir=cache_dir)
 
 
 def simulate_setup(
@@ -274,7 +341,41 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--lookback-years", type=float, default=2.0, help="Historical lookback length for simulation.")
     ap.add_argument("--min-signals", type=int, default=100, help="Minimum historical windows for stable inference.")
     ap.add_argument("--out-dir", default=r"c:\uw_root\out", help="Output directory.")
+    ap.add_argument(
+        "--cache-dir",
+        default="",
+        help="Optional cache directory for yfinance OHLC downloads.",
+    )
     return ap.parse_args()
+
+
+def unknown_row(
+    ticker: str,
+    strategy: str,
+    expiry: str,
+    dte: int,
+    entry_gate: str,
+    spot_at_signal: float,
+    required_win_pct: float,
+    reason: str,
+) -> Dict[str, object]:
+    return {
+        "ticker": ticker,
+        "strategy": strategy,
+        "expiry": expiry,
+        "dte": int(dte),
+        "entry_gate": str(entry_gate),
+        "spot_at_signal": round(float(spot_at_signal), 4) if np.isfinite(spot_at_signal) else np.nan,
+        "required_win_pct": round(float(required_win_pct), 2) if np.isfinite(required_win_pct) else np.nan,
+        "hist_success_pct": np.nan,
+        "edge_pct": np.nan,
+        "credit_no_touch_pct": np.nan,
+        "signals": 0,
+        "wins": 0,
+        "confidence": "Unknown",
+        "verdict": "UNKNOWN",
+        "status_reason": str(reason),
+    }
 
 
 def main() -> None:
@@ -296,6 +397,7 @@ def main() -> None:
     screener_csv = Path(args.screener_csv).expanduser().resolve() if args.screener_csv.strip() else None
     if screener_csv is None:
         screener_csv = detect_default_screener(asof, root_dir)
+    cache_dir = Path(args.cache_dir).expanduser().resolve() if args.cache_dir.strip() else None
 
     spot_map = load_spot_map(screener_csv)
     setups = pd.read_csv(setups_csv, low_memory=False)
@@ -313,19 +415,68 @@ def main() -> None:
         strategy = str(r.strategy).strip()
         expiry = pd.to_datetime(r.expiry, errors="coerce")
         if pd.isna(expiry):
+            out_rows.append(
+                unknown_row(
+                    ticker=ticker,
+                    strategy=strategy,
+                    expiry="",
+                    dte=0,
+                    entry_gate=str(getattr(r, "entry_gate", "")),
+                    spot_at_signal=math.nan,
+                    required_win_pct=math.nan,
+                    reason="invalid_expiry",
+                )
+            )
             continue
+        expiry_iso = expiry.date().isoformat()
         dte = int((expiry.date() - asof).days)
         if dte <= 0:
+            out_rows.append(
+                unknown_row(
+                    ticker=ticker,
+                    strategy=strategy,
+                    expiry=expiry_iso,
+                    dte=dte,
+                    entry_gate=str(getattr(r, "entry_gate", "")),
+                    spot_at_signal=math.nan,
+                    required_win_pct=math.nan,
+                    reason="non_positive_dte",
+                )
+            )
             continue
 
         _, gate_net, _ = parse_entry_gate(r.entry_gate)
         if gate_net is None or not np.isfinite(gate_net):
+            out_rows.append(
+                unknown_row(
+                    ticker=ticker,
+                    strategy=strategy,
+                    expiry=expiry_iso,
+                    dte=dte,
+                    entry_gate=str(getattr(r, "entry_gate", "")),
+                    spot_at_signal=math.nan,
+                    required_win_pct=math.nan,
+                    reason="bad_entry_gate",
+                )
+            )
             continue
 
         spot = spot_map.get(ticker, math.nan)
         if not np.isfinite(spot) or spot <= 0:
-            spot = yfinance_spot_on_or_before(ticker, asof)
+            spot = yfinance_spot_on_or_before(ticker, asof, cache_dir=cache_dir)
         if not np.isfinite(spot) or spot <= 0:
+            out_rows.append(
+                unknown_row(
+                    ticker=ticker,
+                    strategy=strategy,
+                    expiry=expiry_iso,
+                    dte=dte,
+                    entry_gate=str(getattr(r, "entry_gate", "")),
+                    spot_at_signal=math.nan,
+                    required_win_pct=math.nan,
+                    reason="missing_spot",
+                )
+            )
             continue
 
         short_call_strike = safe_float(getattr(r, "short_call_strike", math.nan))
@@ -347,12 +498,41 @@ def main() -> None:
             call_width=call_width,
         )
         if not np.isfinite(be_low) or not np.isfinite(req):
+            out_rows.append(
+                unknown_row(
+                    ticker=ticker,
+                    strategy=strategy,
+                    expiry=expiry_iso,
+                    dte=dte,
+                    entry_gate=str(getattr(r, "entry_gate", "")),
+                    spot_at_signal=float(spot),
+                    required_win_pct=req,
+                    reason="invalid_breakeven_or_required_win",
+                )
+            )
             continue
 
         if ticker not in hist_cache:
-            hist_cache[ticker] = get_price_history(ticker, asof, float(args.lookback_years))
+            hist_cache[ticker] = get_price_history(
+                ticker,
+                asof,
+                float(args.lookback_years),
+                cache_dir=cache_dir,
+            )
         hist = hist_cache[ticker]
         if hist.empty:
+            out_rows.append(
+                unknown_row(
+                    ticker=ticker,
+                    strategy=strategy,
+                    expiry=expiry_iso,
+                    dte=dte,
+                    entry_gate=str(getattr(r, "entry_gate", "")),
+                    spot_at_signal=float(spot),
+                    required_win_pct=req,
+                    reason="missing_history",
+                )
+            )
             continue
 
         signals, wins, no_touch_pct = simulate_setup(
@@ -366,6 +546,18 @@ def main() -> None:
             upper_breakeven_level=float(be_high) if np.isfinite(be_high) else math.nan,
         )
         if signals <= 0:
+            out_rows.append(
+                unknown_row(
+                    ticker=ticker,
+                    strategy=strategy,
+                    expiry=expiry_iso,
+                    dte=dte,
+                    entry_gate=str(getattr(r, "entry_gate", "")),
+                    spot_at_signal=float(spot),
+                    required_win_pct=req,
+                    reason="no_historical_windows",
+                )
+            )
             continue
 
         hist_success_pct = 100.0 * wins / signals
@@ -380,7 +572,7 @@ def main() -> None:
             {
                 "ticker": ticker,
                 "strategy": strategy,
-                "expiry": expiry.date().isoformat(),
+                "expiry": expiry_iso,
                 "dte": dte,
                 "entry_gate": str(r.entry_gate),
                 "spot_at_signal": round(float(spot), 4),
@@ -392,6 +584,7 @@ def main() -> None:
                 "wins": int(wins),
                 "confidence": confidence,
                 "verdict": verdict,
+                "status_reason": "scored",
             }
         )
 
@@ -399,7 +592,13 @@ def main() -> None:
     if out.empty:
         raise RuntimeError("No rows scored. Check setups content and market data availability.")
 
-    out = out.sort_values(["verdict", "edge_pct", "hist_success_pct", "signals"], ascending=[True, False, False, False])
+    verdict_rank = {"PASS": 0, "LOW_SAMPLE": 1, "UNKNOWN": 2, "FAIL": 3}
+    out["_verdict_rank"] = out["verdict"].astype(str).str.upper().map(verdict_rank).fillna(9).astype(int)
+    out = out.sort_values(
+        ["_verdict_rank", "edge_pct", "hist_success_pct", "signals", "ticker", "strategy", "expiry"],
+        ascending=[True, False, False, False, True, True, True],
+    )
+    out = out.drop(columns=["_verdict_rank"])
     out = out.reset_index(drop=True)
 
     out_dir = Path(args.out_dir).expanduser().resolve()

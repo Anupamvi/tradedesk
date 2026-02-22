@@ -15,6 +15,41 @@ except ImportError as exc:
     raise SystemExit("PyYAML is required. Please install pyyaml.") from exc
 
 
+def resolve_config_path(path: Path) -> Path:
+    raw = Path(path)
+    candidates = [raw]
+
+    if raw.is_absolute():
+        candidates.append(raw.parent / "uwos" / raw.name)
+    else:
+        cwd = Path.cwd()
+        module_dir = Path(__file__).resolve().parent
+        candidates.extend(
+            [
+                cwd / raw,
+                cwd / "uwos" / raw.name,
+                module_dir / raw,
+                module_dir / raw.name,
+            ]
+        )
+
+    seen = set()
+    ordered = []
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        ordered.append(candidate)
+
+    for candidate in ordered:
+        if candidate.exists():
+            return candidate
+
+    tried = ", ".join(str(p) for p in ordered)
+    raise FileNotFoundError(f"Config file not found. Tried: {tried}")
+
+
 def load_config(path):
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
@@ -89,7 +124,7 @@ def main():
     args = parser.parse_args()
 
     input_path = Path(args.input)
-    config_path = Path(args.config)
+    config_path = resolve_config_path(Path(args.config))
     output_path = Path(args.output)
 
     config = load_config(config_path)
