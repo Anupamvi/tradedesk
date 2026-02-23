@@ -310,5 +310,45 @@ Remove tasks:
 powershell -NoProfile -ExecutionPolicy Bypass -File c:\uw_root\scripts\unregister_playbook_tasks.ps1
 ```
 
+## X Profile Scraper (Logged-in Session)
+Scrape public posts from an X profile (text, timestamps, engagement, media URLs), with per-post screenshots for later strategy analysis.
+The scraper keeps text-only, media-only (screenshot/image), and text+media posts.
+
+Manual login bootstrap (one-time or when session expires):
+
+```bash
+python -m uwos.x_profile_scraper --handle elonmusk --manual-login-only --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless
+```
+
+Run scraper:
+
+```bash
+python -m uwos.x_profile_scraper --handle elonmusk --run-date 2026-02-23 --base-dir c:\uw_root --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless --max-posts 120 --time-filter past_month --capture-screenshots --download-media
+```
+
+Use this-year filter:
+
+```bash
+python -m uwos.x_profile_scraper --handle elonmusk --run-date 2026-02-23 --base-dir c:\uw_root --time-filter this_year --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless
+```
+
+Use explicit date bounds:
+
+```bash
+python -m uwos.x_profile_scraper --handle elonmusk --run-date 2026-02-23 --base-dir c:\uw_root --since-date 2026-01-01 --until-date 2026-02-23 --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless
+```
+
+Outputs under:
+- `<base-dir>/<run-date>/x_scrapes/<handle>/posts.csv`
+- `<base-dir>/<run-date>/x_scrapes/<handle>/posts.jsonl`
+- `<base-dir>/<run-date>/x_scrapes/<handle>/scrape_summary.md`
+- `<base-dir>/<run-date>/x_scrapes/<handle>/screenshots/`
+- `<base-dir>/<run-date>/x_scrapes/<handle>/media/`
+
+Notes:
+- `--run-date` is output folder naming only.
+- Tweet filtering is controlled by `--time-filter` or `--since-date/--until-date`.
+- `--trade-date` still works as a backward-compatible alias for `--run-date`.
+
 
 
