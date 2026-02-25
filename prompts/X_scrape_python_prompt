@@ -1,0 +1,6 @@
+python -m uwos.x_profile_scraper --handle elonmusk --run-date 2026-02-23 --base-dir c:\uw_root --time-filter past_month --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless --capture-screenshots --download-media
+python -m uwos.x_profile_scraper --handle elonmusk --run-date 2026-02-23 --base-dir c:\uw_root --time-filter this_year --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless
+python -m uwos.x_profile_scraper --handle elonmusk --run-date 2026-02-23 --base-dir c:\uw_root --since-date 2026-01-01 --until-date 2026-02-23 --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless
+
+
+python -m uwos.x_range_schwab_trade_bridge --date 2026-02-23 --base-dir C:\uw_root --handle TJTheWheelDeal --rulebook-config C:\uw_root\uwos\rulebook_config.yaml

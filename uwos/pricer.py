@@ -73,7 +73,7 @@ def validate_shortlist_columns(df: pd.DataFrame) -> None:
 
     for _, row in df.iterrows():
         strategy = str(row.get("strategy", "")).strip()
-        if strategy == "Iron Condor":
+        if strategy in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}:
             needed = ["short_put_leg", "long_put_leg", "short_call_leg", "long_call_leg"]
         else:
             needed = ["short_leg", "long_leg"]
@@ -472,7 +472,7 @@ def main() -> None:
         short_call_in_chain = None
         long_call_in_chain = None
 
-        if strategy == "Iron Condor":
+        if strategy in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}:
             short_put = leg_fields(leg_payload(short_live_symbol))
             long_put = leg_fields(leg_payload(long_live_symbol))
             short_call = leg_fields(leg_payload(short_call_live_symbol))
@@ -484,8 +484,9 @@ def main() -> None:
                 short_call_in_chain = short_call_live_symbol in chain_syms if short_call_live_symbol else None
                 long_call_in_chain = long_call_live_symbol in chain_syms if long_call_live_symbol else None
 
+            condor_net_type = "debit" if strategy == "Long Iron Condor" else "credit"
             put_net_bid_ask, put_net_mark = compute_live_net(
-                net_type="credit",
+                net_type=condor_net_type,
                 short_bid=short_put.get("bid"),
                 short_ask=short_put.get("ask"),
                 short_mark=short_put.get("mark"),
@@ -494,7 +495,7 @@ def main() -> None:
                 long_mark=long_put.get("mark"),
             )
             call_net_bid_ask, call_net_mark = compute_live_net(
-                net_type="credit",
+                net_type=condor_net_type,
                 short_bid=short_call.get("bid"),
                 short_ask=short_call.get("ask"),
                 short_mark=short_call.get("mark"),
@@ -575,29 +576,192 @@ def main() -> None:
             invalidation_op, invalidation_level, spot_eval_live
         )
 
+        entry_structure_ok = True
+        entry_structure_reason = ""
+        if spot_eval_live is not None and math.isfinite(spot_eval_live):
+            if strategy == "Bull Put Credit":
+                short_put_strike = safe_float(short_put.get("strike"))
+                long_put_strike = safe_float(long_put.get("strike"))
+                reasons = []
+                if (
+                    short_put_strike is not None
+                    and math.isfinite(short_put_strike)
+                    and long_put_strike is not None
+                    and math.isfinite(long_put_strike)
+                    and not (long_put_strike < short_put_strike < spot_eval_live)
+                ):
+                    reasons.append(
+                        f"need long_put < short_put < spot (got {long_put_strike:.2f} < {short_put_strike:.2f} < {spot_eval_live:.2f})"
+                    )
+                if (
+                    live_net_bid_ask is not None
+                    and math.isfinite(live_net_bid_ask)
+                    and short_put_strike is not None
+                    and math.isfinite(short_put_strike)
+                ):
+                    be = short_put_strike - live_net_bid_ask
+                    if spot_eval_live <= be:
+                        reasons.append(
+                            f"spot {spot_eval_live:.2f} at/below breakeven {be:.2f}"
+                        )
+                if reasons:
+                    entry_structure_ok = False
+                    entry_structure_reason = "; ".join(reasons)
+            elif strategy == "Bear Call Credit":
+                short_call_strike = safe_float(short_put.get("strike"))
+                long_call_strike = safe_float(long_put.get("strike"))
+                reasons = []
+                if (
+                    short_call_strike is not None
+                    and math.isfinite(short_call_strike)
+                    and long_call_strike is not None
+                    and math.isfinite(long_call_strike)
+                    and not (spot_eval_live < short_call_strike < long_call_strike)
+                ):
+                    reasons.append(
+                        f"need spot < short_call < long_call (got {spot_eval_live:.2f} < {short_call_strike:.2f} < {long_call_strike:.2f})"
+                    )
+                if (
+                    live_net_bid_ask is not None
+                    and math.isfinite(live_net_bid_ask)
+                    and short_call_strike is not None
+                    and math.isfinite(short_call_strike)
+                ):
+                    be = short_call_strike + live_net_bid_ask
+                    if spot_eval_live >= be:
+                        reasons.append(
+                            f"spot {spot_eval_live:.2f} at/above breakeven {be:.2f}"
+                        )
+                if reasons:
+                    entry_structure_ok = False
+                    entry_structure_reason = "; ".join(reasons)
+            elif strategy in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}:
+                long_put_strike = safe_float(long_put.get("strike"))
+                short_put_strike = safe_float(short_put.get("strike"))
+                short_call_strike = safe_float(short_call.get("strike"))
+                long_call_strike = safe_float(long_call.get("strike"))
+                reasons = []
+                if strategy == "Iron Condor":
+                    if (
+                        long_put_strike is not None
+                        and math.isfinite(long_put_strike)
+                        and short_put_strike is not None
+                        and math.isfinite(short_put_strike)
+                        and short_call_strike is not None
+                        and math.isfinite(short_call_strike)
+                        and long_call_strike is not None
+                        and math.isfinite(long_call_strike)
+                        and not (long_put_strike < short_put_strike < short_call_strike < long_call_strike)
+                    ):
+                        reasons.append(
+                            "invalid wing/short ordering (need long_put < short_put < short_call < long_call)"
+                        )
+                else:
+                    if (
+                        long_put_strike is not None
+                        and math.isfinite(long_put_strike)
+                        and short_put_strike is not None
+                        and math.isfinite(short_put_strike)
+                        and short_call_strike is not None
+                        and math.isfinite(short_call_strike)
+                        and long_call_strike is not None
+                        and math.isfinite(long_call_strike)
+                        and not (
+                            long_put_strike < short_put_strike
+                            and short_put_strike == short_call_strike
+                            and short_call_strike < long_call_strike
+                        )
+                    ):
+                        reasons.append(
+                            "invalid fly ordering (need long_put < short_put == short_call < long_call)"
+                        )
+                if strategy == "Iron Condor":
+                    if (
+                        short_put_strike is not None
+                        and math.isfinite(short_put_strike)
+                        and short_call_strike is not None
+                        and math.isfinite(short_call_strike)
+                        and not (short_put_strike < spot_eval_live < short_call_strike)
+                    ):
+                        reasons.append(
+                            f"spot {spot_eval_live:.2f} outside short strikes [{short_put_strike:.2f}, {short_call_strike:.2f}]"
+                        )
+                elif strategy == "Long Iron Condor":
+                    if (
+                        long_put_strike is None
+                        or not math.isfinite(long_put_strike)
+                        or short_put_strike is None
+                        or not math.isfinite(short_put_strike)
+                        or long_call_strike is None
+                        or not math.isfinite(long_call_strike)
+                        or short_call_strike is None
+                        or not math.isfinite(short_call_strike)
+                        or not (short_put_strike < long_put_strike < long_call_strike < short_call_strike)
+                    ):
+                        reasons.append(
+                            "invalid long-condor ordering (need short_put < long_put < long_call < short_call)"
+                        )
+                    elif not (long_put_strike < spot_eval_live < long_call_strike):
+                        reasons.append(
+                            f"spot {spot_eval_live:.2f} outside long-body [{long_put_strike:.2f}, {long_call_strike:.2f}]"
+                        )
+                if live_net_bid_ask is not None and math.isfinite(live_net_bid_ask):
+                    if strategy == "Long Iron Condor":
+                        if (
+                            long_put_strike is not None
+                            and math.isfinite(long_put_strike)
+                            and long_call_strike is not None
+                            and math.isfinite(long_call_strike)
+                        ):
+                            be_low = long_put_strike - live_net_bid_ask
+                            be_high = long_call_strike + live_net_bid_ask
+                            if not (be_low < spot_eval_live < be_high):
+                                reasons.append(
+                                    f"spot {spot_eval_live:.2f} outside breakevens [{be_low:.2f}, {be_high:.2f}]"
+                                )
+                    elif (
+                        short_put_strike is not None
+                        and math.isfinite(short_put_strike)
+                        and short_call_strike is not None
+                        and math.isfinite(short_call_strike)
+                    ):
+                        be_low = short_put_strike - live_net_bid_ask
+                        be_high = short_call_strike + live_net_bid_ask
+                        if not (be_low < spot_eval_live < be_high):
+                            reasons.append(
+                                f"spot {spot_eval_live:.2f} outside breakevens [{be_low:.2f}, {be_high:.2f}]"
+                            )
+                if reasons:
+                    entry_structure_ok = False
+                    entry_structure_reason = "; ".join(reasons)
+
         live_status = "ok_live"
         if chain_status == "ERROR":
             live_status = "chain_error"
         elif chain_status != "SUCCESS":
             live_status = "chain_not_success"
-        elif strategy == "Iron Condor" and (
+        elif strategy in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"} and (
             (not short_live_symbol)
             or (not long_live_symbol)
             or (not short_call_live_symbol)
             or (not long_call_live_symbol)
         ):
             live_status = "bad_occ_symbol"
-        elif strategy != "Iron Condor" and ((not short_live_symbol) or (not long_live_symbol)):
+        elif strategy not in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"} and ((not short_live_symbol) or (not long_live_symbol)):
             live_status = "bad_occ_symbol"
-        elif strategy == "Iron Condor" and (
+        elif strategy in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"} and (
             short_in_chain is False
             or long_in_chain is False
             or short_call_in_chain is False
             or long_call_in_chain is False
         ):
             live_status = "missing_leg_in_live_chain"
-        elif strategy != "Iron Condor" and (short_in_chain is False or long_in_chain is False):
+        elif strategy not in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"} and (short_in_chain is False or long_in_chain is False):
             live_status = "missing_leg_in_live_chain"
+        elif spot_eval_live is None:
+            live_status = "missing_underlying_quote"
+        elif not entry_structure_ok:
+            live_status = "invalid_entry_structure"
         elif args.hard_invalidation and invalidation_breached_live is True:
             live_status = "invalidation_breached_live"
         elif live_net_bid_ask is None:
@@ -608,7 +772,7 @@ def main() -> None:
         live_max_profit = None
         live_max_loss = None
         if live_net_bid_ask is not None and width_for_risk is not None:
-            if strategy == "Iron Condor":
+            if strategy in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}:
                 put_width = (
                     abs(short_put["strike"] - long_put["strike"])
                     if (short_put.get("strike") is not None and long_put.get("strike") is not None)
@@ -620,8 +784,12 @@ def main() -> None:
                     else None
                 )
                 if put_width is not None and call_width is not None:
-                    live_max_profit = live_net_bid_ask * 100.0
-                    live_max_loss = max(put_width - live_net_bid_ask, call_width - live_net_bid_ask) * 100.0
+                    if strategy == "Long Iron Condor":
+                        live_max_profit = max(put_width - live_net_bid_ask, call_width - live_net_bid_ask) * 100.0
+                        live_max_loss = live_net_bid_ask * 100.0
+                    else:
+                        live_max_profit = live_net_bid_ask * 100.0
+                        live_max_loss = max(put_width - live_net_bid_ask, call_width - live_net_bid_ask) * 100.0
             elif net_type == "credit":
                 live_max_profit = live_net_bid_ask * 100.0
                 live_max_loss = (width_for_risk - live_net_bid_ask) * 100.0
@@ -679,6 +847,8 @@ def main() -> None:
                 "invalidation_rule_level": invalidation_level,
                 "invalidation_eval_price_live": spot_eval_live,
                 "invalidation_breached_live": invalidation_breached_live,
+                "entry_structure_ok_live": entry_structure_ok,
+                "entry_structure_reason_live": entry_structure_reason,
                 "live_max_profit": live_max_profit,
                 "live_max_loss": live_max_loss,
                 "spot_live_last": spot_live_last,

@@ -1,7 +1,6 @@
-DATE = YYYY-MM-DD
+DATE = 2026-02-20
 OUT_DIR = C:\uw_root\out\open_trade_monitor\{DATE}
 CONFIG = C:\uw_root\uwos\rulebook_config.yaml
-RUN_CMD = python -m uwos.daily_risk_monitor --realized-source schwab --open-positions-source schwab --schwab-lookback-days 365 --config {CONFIG} --out-dir {OUT_DIR}
 
 You are my options risk manager. Use Schwab API only (no Google Sheet), options positions only (exclude stocks), all accounts.
 
@@ -13,23 +12,23 @@ Workflow (mandatory):
 2) Reconstruct positions by trade structure (single leg, vertical, iron condor, etc.) and keep each position separate even if same ticker has multiple trades.
 3) Pull live underlying quote + option chain quotes for each leg (executable bid/ask).
 4) Compute per-position metrics:
-- ticker, strategy, legs, qty, open_date, expiry, DTE
+- position_id, ticker, strategy, legs, qty, open_date, expiry, DTE
 - entry net, live net-to-close, unrealized P/L $, P/L % of max risk
 - max profit, max loss, breakeven
-- short-strike distance, breakeven distance, 1 sigma distance
+- short-strike distance, breakeven distance, 1σ distance
 - earnings date proximity
 - invalidation level status
 5) Use fluctuation-aware decision rules (no hair-trigger exits):
 - Invalidation is confirmed only after 2 daily closes beyond level (not intraday touch).
-- Use tolerance band before action: max(0.25*ATR14, 0.15*1 sigma).
+- Use tolerance band before action: max(0.25*ATR14, 0.15*1σ).
 - CLOSE NOW if:
   a) profit target hit (credit spreads >=60% max profit; debit spreads >=80% on debit paid), or
   b) hard risk breach (>=65% max loss for credits, >=55% debit loss for debits) AND close-confirmed invalidation, or
   c) DTE <= 5 with poor reward-to-risk to continue.
 - ROLL if:
-  a) DTE in 7-21 and short strike threatened/breached,
+  a) DTE in 7–21 and short strike threatened/breached,
   b) thesis not fully broken,
-  c) roll can improve structure (move strike away, extend DTE 14-35 days, preferably net credit for credit spreads).
+  c) roll can improve structure (move strike away, extend DTE 14–35 days, preferably net credit for credit spreads).
 - WAIT if:
   a) inside fluctuation band,
   b) no close-confirmed invalidation,
@@ -40,14 +39,14 @@ Workflow (mandatory):
 Output contract:
 A) Save markdown to: {OUT_DIR}\open-trade-monitor-{DATE}.md
 B) Print one action table with columns:
-Ticker, Strategy, Legs, Expiry, DTE, Live P/L $, Live P/L %, Risk State, Recommendation, Trigger, Roll Plan, Notes
+#, Position ID, Ticker, Strategy, Legs, Expiry, DTE, Live P/L $, Live P/L %, Risk State, Recommendation, Priority, Trigger, Roll Plan, Confidence, Notes
 C) Then print:
-- Close Now Queue (ordered)
-- Roll Queue (with exact target strikes/expiry and required credit/debit)
-- Wait/Monitor (with exact invalidation and profit-taking triggers)
-- Data Gaps section
+- “Close Now Queue” (ordered)
+- “Roll Queue” (with exact target strikes/expiry and required credit/debit)
+- “Wait/Monitor” (with exact invalidation and profit-taking triggers)
+- “Data Gaps” section
 
 Style requirements:
-- Use color icons: Close, Wait, Roll, Needs Data.
+- Use color icons: 🔴 Close, 🟡 Wait, 🟣 Roll, ⚪ Needs Data.
 - No cryptic text. Plain-English recommendation per position.
 - If multiple ORCL (or same ticker) positions exist, handle each separately and state which exact one to act on.

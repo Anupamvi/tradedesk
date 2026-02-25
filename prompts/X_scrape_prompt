@@ -1,0 +1,118 @@
+DATE = 2026-02-23
+BASE_DIR = C:\uw_root
+HANDLE = TJTheWheelDeal
+SCRAPE_DIR = AUTO
+RULEBOOK_CONFIG = C:\uw_root\uwos\rulebook_config.yaml
+EOD_DIR = C:\uw_root\{DATE}
+OUT_DIR = C:\uw_root\out\x_strategy_analysis\{DATE}\{HANDLE}
+
+You are an options strategy analyst. Analyze scraped X profile content for trade signals and determine what is reusable for my trading process.
+
+Goal:
+1) Extract trade ideas from scraped X posts (text + screenshots/media).
+2) Decide if each idea is usable as-is for same ticker.
+3) Find transferable opportunities on different tickers using the same strategy logic.
+4) Show only evidence-based conclusions (no guessing).
+
+Path resolution (mandatory):
+1) If SCRAPE_DIR != AUTO, use SCRAPE_DIR.
+2) If SCRAPE_DIR = AUTO, resolve in this order:
+   a) {BASE_DIR}\{DATE}\x_scrapes\{HANDLE}
+   b) newest folder matching {BASE_DIR}\*\x_scrapes\{HANDLE} that contains posts.csv
+3) If folder not found, stop and print missing path.
+4) Required files: posts.csv and posts.jsonl. Optional: scrape_summary.md, screenshots\, media\.
+
+Data ingestion rules:
+1) Load all rows from posts.csv/posts.jsonl.
+2) Use screenshots/media to extract text (OCR) when post text is missing/partial.
+3) Keep posts even if media-only or text-only.
+4) Do not hallucinate missing strike/expiry/entry; mark UNKNOWN.
+
+Evidence rules:
+1) Every extracted trade claim must include:
+   - tweet_url or tweet_id
+   - published_at
+   - source file name(s)
+   - short evidence snippet
+2) Separate FACT vs INFERENCE for each signal.
+
+Signal extraction (mandatory fields):
+- signal_id
+- ticker
+- direction (bull/bear/neutral)
+- strategy_type (bull_call_debit, bear_put_debit, bull_put_credit, bear_call_credit, iron_condor, other)
+- strikes
+- expiry
+- entry condition/price zone
+- invalidation/stop
+- target/profit logic
+- thesis
+- confidence (0-100)
+- readiness (Ready / Watch / Not actionable)
+
+Normalization:
+1) Deduplicate multiple tweets about same idea.
+2) Build latest-state signal plus change log (what changed from earlier post).
+3) Tag each signal quality:
+   - completeness_score (0-100)
+   - clarity_score (0-100)
+   - evidence_score (0-100)
+   - execution_readiness
+
+Transferability analysis:
+1) Same ticker track:
+   - Is setup still valid now?
+   - If yes, define executable structure and entry constraints.
+2) Different ticker track:
+   - Find similar setups using same strategy logic on other tickers.
+   - Match by regime/signature (flow tilt, OI behavior, distance to key level, volatility context).
+3) If EOD files exist in {EOD_DIR} (chain-oi, dp-eod, hot-chains, stock-screener, whale), use them.
+4) If RULEBOOK_CONFIG exists, run gate checks and show exact pass/fail reasons per candidate.
+
+Risk and reliability:
+1) Flag overfit/low-sample ideas.
+2) Flag event risk (earnings proximity) if date known.
+3) Mark confidence as High/Medium/Low based on evidence + data completeness.
+
+Output contract (mandatory):
+A) Save to:
+- {OUT_DIR}\x_signal_extract.csv
+- {OUT_DIR}\x_signal_extract.md
+- {OUT_DIR}\x_strategy_transfer.csv
+- {OUT_DIR}\x_strategy_transfer.md
+- {OUT_DIR}\x_analysis_summary.md
+
+B) In chat, print:
+1) As-of date used
+2) Scrape folder used
+3) Files used
+
+C) Then print these sections in order:
+
+1) “Extracted Source Signals”
+Columns:
+#, Signal ID, Ticker, Direction, Strategy Type, Strikes, Expiry, Entry, Invalidation, Target, Readiness, Confidence, Evidence
+
+2) “Reusable Strategy Templates”
+Columns:
+Template ID, Strategy, Market Regime, Entry Rule, Exit Rule, Risk Rule, Minimum Data Needed
+
+3) “Applications (Same + Alt Tickers)”
+Columns:
+#, Source Signal ID, Candidate Ticker, Same/Alt, Proposed Setup, Gate Check, Action (Ready/Watch/Reject), Why, Evidence
+
+4) “Top 5 actionable ideas now”
+For each:
+- thesis
+- exact entry condition
+- invalidation
+- no-trade condition
+
+5) “Data Gaps”
+List exact missing fields needed to improve confidence.
+
+Style:
+- Plain English.
+- No cryptic abbreviations without explanation.
+- No fabricated numbers.
+- If data is insufficient, explicitly say “INSUFFICIENT DATA”.

@@ -60,14 +60,18 @@ def required_win_rate_pct(
     if not np.isfinite(n):
         return math.nan
     s = str(strategy).strip()
-    if s == "Iron Condor":
+    if s in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}:
         pw = safe_float(put_width)
         cw = safe_float(call_width)
         w_eff = max(pw, cw) if np.isfinite(pw) and np.isfinite(cw) else w
         if not np.isfinite(w_eff) or w_eff <= 0:
             return math.nan
-        max_profit = max(0.0, n)
-        max_loss = max(0.0, w_eff - n)
+        if s == "Long Iron Condor":
+            max_profit = max(0.0, w_eff - n)
+            max_loss = max(0.0, n)
+        else:
+            max_profit = max(0.0, n)
+            max_loss = max(0.0, w_eff - n)
     elif not np.isfinite(w) or w <= 0:
         return math.nan
     elif s in {"Bull Call Debit", "Bear Put Debit"}:
@@ -88,6 +92,7 @@ def breakeven_levels(
     short_strike: float,
     net: float,
     short_call_strike: float = math.nan,
+    long_call_strike: float = math.nan,
 ) -> Tuple[float, float]:
     s = str(strategy).strip()
     ls = safe_float(long_strike)
@@ -103,11 +108,16 @@ def breakeven_levels(
         return ss - n, ss - n
     if s == "Bear Call Credit":
         return ss + n, ss + n
-    if s == "Iron Condor":
+    if s in {"Iron Condor", "Iron Butterfly"}:
         sc = safe_float(short_call_strike)
         if not np.isfinite(sc):
             return math.nan, math.nan
         return ss - n, sc + n
+    if s == "Long Iron Condor":
+        lc = safe_float(long_call_strike)
+        if not np.isfinite(ls) or not np.isfinite(lc):
+            return math.nan, math.nan
+        return ls - n, lc + n
     return math.nan, math.nan
 
 
@@ -244,6 +254,7 @@ def simulate_setup(
     breakeven_level: float,
     short_call_strike: float = math.nan,
     upper_breakeven_level: float = math.nan,
+    long_call_strike: float = math.nan,
 ) -> Tuple[int, int, float]:
     s = str(strategy).strip()
     if dte <= 0 or hist.empty:
@@ -303,7 +314,7 @@ def simulate_setup(
             no_touch_n += 1
             if hi < sim_short:
                 no_touch += 1
-        elif s == "Iron Condor":
+        elif s in {"Iron Condor", "Iron Butterfly"}:
             if not (np.isfinite(upper_be_ratio) and np.isfinite(short_call_ratio)):
                 continue
             sim_be_high = float(entry) * upper_be_ratio
@@ -312,6 +323,11 @@ def simulate_setup(
             no_touch_n += 1
             if lo > sim_short and hi < sim_short_call:
                 no_touch += 1
+        elif s == "Long Iron Condor":
+            if not np.isfinite(upper_be_ratio):
+                continue
+            sim_be_high = float(entry) * upper_be_ratio
+            win = end_close <= sim_be or end_close >= sim_be_high
         else:
             win = False
 
@@ -480,6 +496,7 @@ def main() -> None:
             continue
 
         short_call_strike = safe_float(getattr(r, "short_call_strike", math.nan))
+        long_call_strike = safe_float(getattr(r, "long_call_strike", math.nan))
         put_width = safe_float(getattr(r, "put_width", math.nan))
         call_width = safe_float(getattr(r, "call_width", math.nan))
 
@@ -489,6 +506,7 @@ def main() -> None:
             r.short_strike,
             gate_net,
             short_call_strike=short_call_strike,
+            long_call_strike=long_call_strike,
         )
         req = required_win_rate_pct(
             strategy,
@@ -544,6 +562,7 @@ def main() -> None:
             breakeven_level=float(be_low),
             short_call_strike=short_call_strike,
             upper_breakeven_level=float(be_high) if np.isfinite(be_high) else math.nan,
+            long_call_strike=long_call_strike,
         )
         if signals <= 0:
             out_rows.append(

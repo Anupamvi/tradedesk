@@ -1,0 +1,181 @@
+﻿# rulebook_config_goal_holistic.yaml
+# Goal-focused configuration: prioritize consistency/quality over raw count,
+# while still allowing executable candidates.
+
+engine:
+  max_tickers_to_scan: 450
+  max_trades_per_ticker: 4
+  max_trades_per_ticker_per_track: 3
+  max_total_trades: 250
+  max_expiries_per_ticker: 8
+  strike_search_depth: 12
+  discovery_multiplier: 6
+  final_max_trades_per_ticker: 3
+  min_per_track: 1
+  include_watch_candidates: true
+
+gates:
+  exclude_etfs: true
+  min_credit_pct_width: 0.30
+  max_credit_pct_width: 0.55
+  max_debit_pct_width: 0.35
+  min_leg_open_interest: 100
+  min_leg_volume: 20
+  max_leg_spread_pct: 0.18
+  max_strike_distance_pct: 0.80
+  max_risk_per_trade: 700
+  min_debit_reward_risk: 1.20
+  min_credit_reward_risk: 0.35
+
+  width_tiers:
+    - {min_price: 0,   max_price: 25,  min_width: 2.5, max_width: 5,   default_width: 2.5}
+    - {min_price: 25,  max_price: 75,  min_width: 2.5, max_width: 7.5, default_width: 5}
+    - {min_price: 75,  max_price: 150, min_width: 5,   max_width: 15,  default_width: 10}
+    - {min_price: 150, max_price: 1.0e9, min_width: 10, max_width: 20, default_width: 10}
+
+fire:
+  dte_range: [21, 70]
+  target_dte: 45
+  debit_long_itm_pct: 0.03
+  debit_long_otm_pct: 0.08
+  debit_long_max_abs_moneyness_pct: 0.08
+  debit_use_dual_long_targets: true
+  call_pool_min_pct: 0.75
+  call_pool_max_pct: 1.15
+  put_pool_min_pct: 0.85
+  put_pool_max_pct: 1.30
+  max_breakeven_dist_pct: 0.12
+  invalidation_buffer_pct: 0.03
+  allow_both_sides_when_neutral: false
+  lotto_dte_max: 10
+
+shield:
+  dte_range: [28, 56]
+  target_dte: 42
+  credit_short_otm_pct: 0.10
+  allow_both_sides_when_neutral: false
+  min_marketcap: 10000000000
+  lotto_dte_max: 7
+
+strategy_selection:
+  # Debit trades tend to perform better when IV is not elevated.
+  fire_max_iv_rank: 55
+  fire_enforce_max_iv_rank: false
+  # Premium selling benefits from richer IV regimes.
+  shield_min_iv_rank: 20
+  # Range/theta structures need richer IV + neutral tape.
+  range_min_iv_rank: 35
+  range_min_neutrality: 0.72
+  enable_iron_butterfly: true
+  # Volatility breakout structure (defined-risk debit).
+  enable_long_iron_condor: true
+  breakout_min_implied_move_pct: 0.03
+  breakout_min_neutrality: 0.20
+  breakout_max_center_width_pct: 0.35
+  breakout_max_debit_pct_width: 0.50
+
+pricing:
+  executable_source_kinds: ["hot"]
+
+approval:
+  require_likelihood_pass: true
+  # If SHIELD/credit setup is live-valid (ok_live), do not hard-reject on
+  # historical quality gates; keep those as informational in notes.
+  shield_live_valid_overrides_quality: true
+  min_edge_pct: 8.0
+  min_signals: 120
+  min_credit_no_touch_pct: 60.0
+  credit_no_touch_require_data: true
+  min_likelihood_strength: Moderate
+  disallow_likelihood_strengths: [Low Sample, Negative, Negative-Strong, N/A]
+
+  allow_stage1_watch_promotion: true
+  stage1_watch_promotion_min_conviction: 60
+  stage1_watch_promotion_min_edge_pct: 8.0
+  stage1_watch_promotion_min_signals: 200
+
+  # Allow only tight near-miss tolerance.
+  entry_tolerance_debit_abs: 0.10
+  entry_tolerance_credit_abs: 0.10
+  entry_tolerance_pct: 0.04
+  require_spot_alignment: true
+  spot_alignment_require_live: true
+  max_spot_asof_drift_pct: 0.35
+  max_bull_call_long_otm_pct: 0.08
+  max_bear_put_long_otm_pct: 0.08
+  exclude_debit_moneyness_fail_from_output: true
+
+  require_invalidation_clear: true
+  block_invalidation_warning: false
+  invalidation_eval_mode: auto
+  invalidation_close_confirmations: 2
+  enable_restrike_optimizer: true
+
+  # Guard against low-quality SHIELD approvals.
+  require_shield_sigma_pass: true
+  shield_sigma_require_data: true
+  require_shield_core: false
+  require_live_shield_short_delta: false
+  max_abs_short_delta_shield: 0.20
+
+  # Keep very speculative structures out of approved set.
+  disallow_confidence_tiers: [REJECT, LOTTO]
+
+  enforce_pretrade_portfolio_caps: false
+  pretrade_caps_require_data: false
+
+high_beta:
+  tickers: [TSLA, NVDA, MU, PLTR]
+  min_dte: 28
+  min_otm_pct: 0.10
+  iv30d_override_threshold: 0.90
+  require_short_delta_for_core: true
+
+playbook:
+  daily:
+    daily_loss_stop_cash: 1000
+    loss_streak_yellow: 3
+    loss_streak_red: 4
+    rolling_pf_yellow_floor: 1.00
+    options_only: true
+  position_management:
+    take_profit_pct_of_max_profit: 0.60
+    take_profit_pct_credit_max_profit: 0.60
+    take_profit_pct_debit_cost: 0.80
+    stop_loss_pct_of_risk: 0.50
+    stop_loss_pct_credit_max_loss: 0.50
+    stop_loss_pct_debit_max_loss: 0.55
+    stop_loss_pct_debit_near_dte: 0.45
+    stop_loss_pct_debit_mid_dte: 0.55
+    stop_loss_pct_debit_far_dte: 0.65
+    stop_loss_pct_debit_mid_min_dte: 21
+    stop_loss_pct_debit_far_min_dte: 45
+    leaps_dte_threshold: 120
+    leaps_debit_catastrophic_stop_pct: 0.75
+    short_roll_min_dte: 7
+    short_roll_max_dte: 35
+    short_roll_dte_threshold: 28
+    long_option_exit_dte_threshold: 14
+    near_expiry_dte_threshold: 5
+    roll_risk_draw_trigger: 0.12
+    roll_use_live_chain: true
+    roll_chain_strike_count: 20
+    roll_extend_min_days: 14
+    roll_extend_max_days: 35
+    roll_target_otm_pct: 0.08
+  risk_limits:
+    short_put_max_share: 0.25
+    single_symbol_max_share: 0.08
+    single_expiry_max_share_short_put: 0.20
+  weekly:
+    strategy_window_trades: 20
+    strategy_min_trades: 20
+    strategy_min_pf: 1.00
+    symbol_window_trades: 20
+    symbol_min_trades: 5
+    symbol_pause_if_net_below: 0
+    combo_min_trades: 3
+    combo_pause_if_net_below: -1000
+  monthly:
+    target_monthly_profit: 20000
+    long_call_monthly_kill_switch: -1500

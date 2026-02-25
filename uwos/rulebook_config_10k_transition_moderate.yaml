@@ -1,4 +1,4 @@
-# rulebook_config.yaml
+﻿# rulebook_config.yaml
 # Deterministic gates + scan parameters for uwos.strategy_engine
 
 engine:
@@ -63,20 +63,23 @@ pricing:
 approval:
   # Final approval gate after Stage-2 + backtest likelihood merge.
   require_likelihood_pass: true
-  min_edge_pct: 3.0
-  min_signals: 100
+  min_edge_pct: 5.0
+  min_signals: 120
   # Promote Stage-1 Watch rows when live + likelihood quality is still strong.
   allow_stage1_watch_promotion: true
-  stage1_watch_promotion_min_conviction: 55
-  stage1_watch_promotion_min_edge_pct: 5.0
-  stage1_watch_promotion_min_signals: 200
+  stage1_watch_promotion_min_conviction: 58
+  stage1_watch_promotion_min_edge_pct: 4.0
+  stage1_watch_promotion_min_signals: 120
   # Near-miss entry tolerance: treat small misses as executable.
-  entry_tolerance_debit_abs: 0.25
-  entry_tolerance_credit_abs: 0.25
-  entry_tolerance_pct: 0.15
+  entry_tolerance_debit_abs: 0.15
+  entry_tolerance_credit_abs: 0.15
+  entry_tolerance_pct: 0.08
   require_invalidation_clear: false
   # Exit management: spot invalidation flags are warnings unless close-confirmed.
   invalidation_close_confirmations: 2
+  # Enforce portfolio concentration caps before approving new entries.
+  enforce_pretrade_portfolio_caps: false
+  pretrade_caps_require_data: false
 
 high_beta:
   # Rulebook hard override for Core Income credit trades
@@ -101,7 +104,7 @@ playbook:
     take_profit_pct_debit_cost: 0.80
     # Loss thresholds
     stop_loss_pct_of_risk: 0.50
-    stop_loss_pct_credit_max_loss: 0.65
+    stop_loss_pct_credit_max_loss: 0.50
     stop_loss_pct_debit_max_loss: 0.55
     stop_loss_pct_debit_near_dte: 0.45
     stop_loss_pct_debit_mid_dte: 0.55
@@ -113,19 +116,19 @@ playbook:
     # Roll/expiry controls
     short_roll_min_dte: 7
     short_roll_max_dte: 35
-    short_roll_dte_threshold: 21
+    short_roll_dte_threshold: 28
     long_option_exit_dte_threshold: 14
     near_expiry_dte_threshold: 5
-    roll_risk_draw_trigger: 0.20
+    roll_risk_draw_trigger: 0.12
     roll_use_live_chain: true
     roll_chain_strike_count: 20
     roll_extend_min_days: 14
     roll_extend_max_days: 35
     roll_target_otm_pct: 0.08
   risk_limits:
-    short_put_max_share: 0.35
-    single_symbol_max_share: 0.10
-    single_expiry_max_share_short_put: 0.25
+    short_put_max_share: 0.25
+    single_symbol_max_share: 0.08
+    single_expiry_max_share_short_put: 0.20
   weekly:
     strategy_window_trades: 20
     strategy_min_trades: 20
@@ -138,3 +141,4 @@ playbook:
   monthly:
     target_monthly_profit: 20000
     long_call_monthly_kill_switch: -1500
+
