@@ -820,8 +820,15 @@ def run():
     shield_live_valid_overrides_quality = bool(
         approval_cfg.get("shield_live_valid_overrides_quality", False)
     )
+    enable_dual_books = bool(approval_cfg.get("enable_dual_books", True))
+    core_size_mult = fnum(approval_cfg.get("core_size_mult", 1.00))
+    tactical_size_mult = fnum(approval_cfg.get("tactical_size_mult", 0.50))
+    tactical_min_conviction = fnum(approval_cfg.get("tactical_min_conviction", 60))
+    tactical_min_edge_pct = fnum(approval_cfg.get("tactical_min_edge_pct", 0.0))
+    tactical_require_verdict_pass = bool(approval_cfg.get("tactical_require_verdict_pass", True))
     min_edge_pct = fnum(approval_cfg.get("min_edge_pct", 0.0))
     min_signals = fnum(approval_cfg.get("min_signals", 100))
+    tactical_min_signals = fnum(approval_cfg.get("tactical_min_signals", min_signals))
     require_invalidation_clear = bool(approval_cfg.get("require_invalidation_clear", False))
     block_invalidation_warning = bool(approval_cfg.get("block_invalidation_warning", False))
     allow_stage1_watch_promotion = bool(approval_cfg.get("allow_stage1_watch_promotion", True))
@@ -892,6 +899,16 @@ def run():
         max_bear_put_long_otm_pct = math.nan
     if not np.isfinite(max_abs_short_delta_shield) or max_abs_short_delta_shield <= 0:
         max_abs_short_delta_shield = 0.20
+    if not np.isfinite(core_size_mult) or core_size_mult <= 0:
+        core_size_mult = 1.00
+    if not np.isfinite(tactical_size_mult) or tactical_size_mult <= 0:
+        tactical_size_mult = 0.50
+    if not np.isfinite(tactical_min_conviction) or tactical_min_conviction < 0:
+        tactical_min_conviction = 60
+    if not np.isfinite(tactical_min_edge_pct):
+        tactical_min_edge_pct = 0.0
+    if not np.isfinite(tactical_min_signals) or tactical_min_signals <= 0:
+        tactical_min_signals = min_signals
     enforce_pretrade_caps = bool(approval_cfg.get("enforce_pretrade_portfolio_caps", False))
     pretrade_caps_require_data = bool(approval_cfg.get("pretrade_caps_require_data", False))
     pretrade_open_positions_csv = str(approval_cfg.get("pretrade_open_positions_csv", "")).strip()
@@ -1211,7 +1228,7 @@ def run():
             shield_live_valid_overrides_quality and track == "SHIELD" and ok_live
         )
 
-        if require_likelihood_pass and not shield_live_quality_override:
+        if require_likelihood_pass:
             verdict = str(row.get("verdict", "")).strip().upper()
             edge = fnum(row.get("edge_pct"))
             sig = fnum(row.get("signals"))
@@ -1226,21 +1243,19 @@ def run():
         strength_rank = rank_likelihood_strength(strength)
         min_strength_rank = rank_likelihood_strength(min_likelihood_strength)
         if (
-            (not shield_live_quality_override)
-            and min_likelihood_strength
+            min_likelihood_strength
             and min_strength_rank >= 0
             and strength_rank >= 0
             and strength_rank < min_strength_rank
         ):
             blockers.append(f"likelihood_strength_below:{strength}<{min_likelihood_strength}")
         if (
-            (not shield_live_quality_override)
-            and min_likelihood_strength
+            min_likelihood_strength
             and min_strength_rank >= 0
             and strength_rank < 0
         ):
             blockers.append(f"likelihood_strength_unranked:{strength or 'N/A'}")
-        if (not shield_live_quality_override) and str(strength).strip().upper() in disallow_likelihood_strengths:
+        if str(strength).strip().upper() in disallow_likelihood_strengths:
             blockers.append(f"likelihood_strength_blocked:{strength}")
 
         invalidated_effective = (
@@ -1292,7 +1307,7 @@ def run():
         ):
             blockers.append(f"confidence_tier_blocked:{confidence_tier}")
 
-        if track == "SHIELD" and not shield_live_quality_override:
+        if track == "SHIELD":
             if require_shield_sigma_pass:
                 sigma_stage1 = bool_or_none(row.get("sigma_pass_stage1"))
                 if sigma_stage1 is None:
@@ -1335,11 +1350,72 @@ def run():
         lambda row: ";".join(approval_blockers(row)),
         axis=1,
     )
-    mdf["approved"] = mdf["approval_blockers"].astype(str).str.len().eq(0)
+    def split_blockers(raw: str):
+        items = [x for x in str(raw).split(";") if str(x).strip()]
+        quality = []
+        hard = []
+        for b in items:
+            token = str(b).strip()
+            if (
+                token.startswith("likelihood_")
+                or token.startswith("edge_below")
+                or token.startswith("signals_below")
+                or token.startswith("shield_sigma")
+                or token.startswith("credit_no_touch")
+                or token.startswith("shield_core")
+                or token.startswith("shield_delta")
+            ):
+                quality.append(token)
+            else:
+                hard.append(token)
+        return hard, quality
+
+    blockers_split = mdf["approval_blockers"].apply(split_blockers)
+    mdf["hard_blockers"] = blockers_split.apply(lambda x: ";".join(x[0]))
+    mdf["quality_blockers"] = blockers_split.apply(lambda x: ";".join(x[1]))
+
+    def execution_book(row):
+        hard_tokens = [x for x in str(row.get("hard_blockers", "")).split(";") if str(x).strip()]
+        quality_tokens = [x for x in str(row.get("quality_blockers", "")).split(";") if str(x).strip()]
+        if hard_tokens:
+            return "Watch"
+        if not quality_tokens:
+            return "Core"
+        if not enable_dual_books:
+            return "Watch"
+        live_status = str(row.get("live_status", "")).strip()
+        ok_live_raw = bool(row.get("is_final_live_valid")) if pd.notna(row.get("is_final_live_valid")) else False
+        gate_pass_effective = bool(row.get("gate_pass_effective")) if pd.notna(row.get("gate_pass_effective")) else False
+        ok_live = ok_live_raw or (live_status == "fails_live_entry_gate" and gate_pass_effective)
+        if not ok_live:
+            return "Watch"
+        if not bool(row.get("stage1_effective")):
+            return "Watch"
+        conv = fnum(row.get("conviction"))
+        if np.isfinite(tactical_min_conviction) and (not np.isfinite(conv) or conv < tactical_min_conviction):
+            return "Watch"
+        edge = fnum(row.get("edge_pct"))
+        if np.isfinite(tactical_min_edge_pct) and (not np.isfinite(edge) or edge < tactical_min_edge_pct):
+            return "Watch"
+        sig = fnum(row.get("signals"))
+        if np.isfinite(tactical_min_signals) and (not np.isfinite(sig) or sig < tactical_min_signals):
+            return "Watch"
+        verdict = str(row.get("verdict", "")).strip().upper()
+        if tactical_require_verdict_pass and verdict != "PASS":
+            return "Watch"
+        return "Tactical"
+
+    mdf["execution_book"] = mdf.apply(execution_book, axis=1)
+    mdf["approved"] = mdf["execution_book"].isin(["Core", "Tactical"])
+    mdf["size_mult"] = mdf["execution_book"].map({"Core": core_size_mult, "Tactical": tactical_size_mult})
+    mdf["_book_rank"] = mdf["execution_book"].map({"Core": 0, "Tactical": 1, "Watch": 2}).fillna(9).astype(int)
     mdf["_edge_sort"] = pd.to_numeric(mdf.get("edge_pct"), errors="coerce").fillna(-1e9)
     mdf = (
-        mdf.sort_values(["approved", "_ev_sort", "_edge_sort", "conviction"], ascending=[False, False, False, False])
-        .drop(columns=["_ev_sort", "_edge_sort"])
+        mdf.sort_values(
+            ["approved", "_book_rank", "_ev_sort", "_edge_sort", "conviction"],
+            ascending=[False, True, False, False, False],
+        )
+        .drop(columns=["_ev_sort", "_edge_sort", "_book_rank"])
         .reset_index(drop=True)
     )
     mdf["portfolio_cap_pass"] = pd.Series([pd.NA] * len(mdf), dtype="boolean")
@@ -1496,6 +1572,10 @@ def run():
         approved = bool(r["approved"])
         strategy = str(r["strategy"])
         net_type = str(r["net_type"]).lower()
+        execution_book_raw = str(r.get("execution_book", "Watch")).strip() or "Watch"
+        execution_book = execution_book_raw if approved else "Watch"
+        size_mult_val = fnum(r.get("size_mult"))
+        size_mult_txt = f"{size_mult_val:.2f}x" if approved and np.isfinite(size_mult_val) else "-"
         watch_reason_flags = []
         op, gate_val, _ = parse_gate_value(r.get("entry_gate", ""))
 
@@ -1592,6 +1672,18 @@ def run():
             restrike_reason = str(r.get("restrike_reason", "")).strip()
             if restrike_reason:
                 notes += " Stage-2 restrike optimizer selected this executable strike from the same family."
+            if str(optimal).strip().lower() == "watch only":
+                optimal = "Yes-Good" if execution_book == "Core" else "Yes-Tactical"
+            if execution_book == "Tactical":
+                quality_items = [x for x in str(r.get("quality_blockers", "")).split(";") if str(x).strip()]
+                if quality_items:
+                    notes += (
+                        " Tactical book (reduced size) due quality blockers: "
+                        + ", ".join(quality_items)
+                        + "."
+                    )
+                else:
+                    notes += " Tactical book (reduced size)."
             invalidated_effective = (
                 bool(r.get("invalidation_breached_effective"))
                 if pd.notna(r.get("invalidation_breached_effective"))
@@ -1791,7 +1883,9 @@ def run():
                 "Breakeven": be_txt,
                 "Conviction %": f"{int(r['conviction'])}%",
                 "Setup Likelihood": setup_likelihood,
-                "Confidence Tier": confidence_tier,
+                "Execution Book": execution_book,
+                "Size Mult": size_mult_txt,
+                "Signal Tier (Stage-1)": confidence_tier,
                 "Optimal": optimal,
                 "Watch Reason Flags": ", ".join(watch_reason_flags) if not approved else "",
                 "Notes": notes,
@@ -1816,7 +1910,9 @@ def run():
             "Breakeven",
             "Conviction %",
             "Setup Likelihood",
-            "Confidence Tier",
+            "Execution Book",
+            "Size Mult",
+            "Signal Tier (Stage-1)",
             "Optimal",
             "Watch Reason Flags",
             "Notes",
@@ -1835,6 +1931,9 @@ def run():
     out_df = out_df.sort_values(["_cat_rank", "#"], ascending=[True, True]).drop(columns=["_cat_rank"]).reset_index(drop=True)
     out_df["#"] = range(1, len(out_df) + 1)
     approved_count = int(mdf["approved"].sum()) if "approved" in mdf.columns else 0
+    core_count = int((out_df["Execution Book"] == "Core").sum()) if "Execution Book" in out_df.columns else 0
+    tactical_count = int((out_df["Execution Book"] == "Tactical").sum()) if "Execution Book" in out_df.columns else 0
+    watch_book_count = int((out_df["Execution Book"] == "Watch").sum()) if "Execution Book" in out_df.columns else 0
     dropped_csv = out_dir / f"dropped_trades_{asof_str}.csv"
     dropped_rows = []
     for rec in dropped_stage1:
@@ -1874,6 +1973,7 @@ def run():
         "Watch Only - UNKNOWN",
         "Approved - UNKNOWN",
     ]
+    execution_book_order = ["Core", "Tactical", "Watch"]
     table_cols = [
         c
         for c in [
@@ -1890,7 +1990,9 @@ def run():
             "Breakeven",
             "Conviction %",
             "Setup Likelihood",
-            "Confidence Tier",
+            "Execution Book",
+            "Size Mult",
+            "Signal Tier (Stage-1)",
             "Optimal",
             "Notes",
             "Source",
@@ -1898,17 +2000,27 @@ def run():
         if c in out_df.columns
     ]
     mini_tables = []
-    for cat in category_order:
-        sub = out_df[out_df["Category"] == cat].copy()
-        if sub.empty:
+    for book in execution_book_order:
+        mini_tables.append(f"### {book} Book")
+        book_df = out_df[out_df["Execution Book"] == book].copy()
+        if book_df.empty:
+            mini_tables.extend(["_No rows_", ""])
             continue
-        mini_tables.extend(
-            [
-                f"### {cat}",
-                sub[table_cols].to_markdown(index=False),
-                "",
-            ]
-        )
+        has_rows = False
+        for cat in category_order:
+            sub = book_df[book_df["Category"] == cat].copy()
+            if sub.empty:
+                continue
+            has_rows = True
+            mini_tables.extend(
+                [
+                    f"#### {cat}",
+                    sub[table_cols].to_markdown(index=False),
+                    "",
+                ]
+            )
+        if not has_rows:
+            mini_tables.extend(["_No rows_", ""])
     if not mini_tables:
         mini_tables = ["_No rows_", ""]
     watch_reason_order = [
@@ -1918,6 +2030,8 @@ def run():
         ("missing_underlying_quote", "Missing Underlying Quote"),
         ("live_entry_gate_miss", "Live Entry Gate Miss"),
         ("invalidation_warning", "Invalidation Warning (Close-Confirm)"),
+        ("spot_data_mismatch", "Spot Data Mismatch"),
+        ("debit_moneyness_fail", "Debit Moneyness Fail"),
         ("likelihood_fail", "Likelihood Fail"),
         ("shield_sigma_fail", "Shield Sigma Gate Fail"),
         ("credit_path_risk_fail", "Credit Path-Risk Fail"),
@@ -1939,6 +2053,7 @@ def run():
             "Expiry",
             "Conviction %",
             "Setup Likelihood",
+            "Execution Book",
             "Watch Reason Flags",
             "Notes",
         ]
@@ -1984,6 +2099,7 @@ def run():
             else ""
         ),
         f"Approved trades: {approved_count} / {len(out_df)}",
+        f"Execution book split: Core={core_count}, Tactical={tactical_count}, Watch={watch_book_count}",
         "Category split: "
         + ", ".join(
             [
@@ -1998,7 +2114,7 @@ def run():
          else ""),
         "",
         "## Anu Expert Trade Table",
-        "Mini tables by category:",
+        "Mini tables by execution book (Core/Tactical/Watch), then strategy family:",
         "",
         *mini_tables,
         "## Watch Only Reason Tables",
@@ -2061,6 +2177,13 @@ def run():
             "pretrade_caps_status": portfolio_guard_status,
             "pretrade_caps_error": portfolio_guard_error,
             "pretrade_caps_snapshot_csv": portfolio_guard_snapshot_csv,
+            "enable_dual_books": bool(enable_dual_books),
+            "core_size_mult": float(core_size_mult),
+            "tactical_size_mult": float(tactical_size_mult),
+            "tactical_min_conviction": float(tactical_min_conviction),
+            "tactical_min_edge_pct": float(tactical_min_edge_pct),
+            "tactical_min_signals": float(tactical_min_signals),
+            "tactical_require_verdict_pass": bool(tactical_require_verdict_pass),
         },
         "counts": {
             "stage1_candidates_raw": int(len(best)),
@@ -2071,6 +2194,9 @@ def run():
             "rows_after_final_caps": int(len(mdf)),
             "final_output_rows": int(len(out_df)),
             "approved_rows": int(approved_count),
+            "approved_core_rows": int(core_count),
+            "approved_tactical_rows": int(tactical_count),
+            "watch_rows": int(watch_book_count),
             "final_dropped": int(len(dropped_final)),
         },
     }

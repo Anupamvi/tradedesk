@@ -70,6 +70,13 @@ approval:
   stage1_watch_promotion_min_conviction: 55
   stage1_watch_promotion_min_edge_pct: 5.0
   stage1_watch_promotion_min_signals: 200
+  enable_dual_books: true
+  core_size_mult: 1.00
+  tactical_size_mult: 0.50
+  tactical_min_conviction: 55
+  tactical_min_edge_pct: 5.0
+  tactical_min_signals: 200
+  tactical_require_verdict_pass: true
   # Near-miss entry tolerance: treat small misses as executable.
   entry_tolerance_debit_abs: 0.05
   entry_tolerance_credit_abs: 0.05
