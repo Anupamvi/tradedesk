@@ -310,6 +310,50 @@ Remove tasks:
 powershell -NoProfile -ExecutionPolicy Bypass -File c:\uw_root\scripts\unregister_playbook_tasks.ps1
 ```
 
+## Historical Trend Pipeline (Daily + Weekly)
+Use this to aggregate all historical replay folders into longitudinal trend views so decisions are based on multi-day/weekly behavior, not only one-day snapshots.
+
+Run against replay compare history:
+
+```bash
+python -m uwos.historical_trend_pipeline --search-root c:\uw_root\out\replay_compare --lookback-days 45
+```
+
+Generate one consolidated recommendation file from trend history (auto-picks strongest variant in the filtered window):
+
+```bash
+python -m uwos.historical_trend_pipeline --search-root c:\uw_root\out\replay_compare --lookback-days 45 --recommendation-top-n 20
+```
+
+`final_trade_recommendations_from_trends.md` enforces `--recommendation-min-proxy-pf 1.15` by default (override if needed).
+It also enforces `--recommendation-min-shield 2` by default (if qualifying SHIELD setups exist).
+
+Run against a specific date range and only selected variants:
+
+```bash
+python -m uwos.historical_trend_pipeline --search-root c:\uw_root\out\replay_compare --start-date 2026-02-01 --end-date 2026-02-26 --variants baseline transition_moderate holistic_newstrategy_pf115_rebalanced_v3
+```
+
+Main outputs (under `<search-root>/trend_analysis/` by default):
+- `run_inventory.csv` (all discovered runs + artifact paths)
+- `daily_variant_metrics.csv` (daily metrics per variant)
+- `weekly_variant_metrics.csv` (weekly rollups + WoW deltas)
+- `ticker_raw_rows.csv` (raw ticker rows from final/gate-pass tables)
+- `ticker_daily_metrics.csv` (daily ticker aggregates)
+- `ticker_weekly_metrics.csv` (weekly ticker aggregates)
+- `ticker_persistence.csv` (recurring names + slope stats)
+- `drop_reason_daily.csv` (drop reason concentration trends)
+- `final_trade_recommendations_from_trends.csv` (single consolidated recommendation table from the past-N-day window)
+- `final_trade_recommendations_from_trends.md` (single consolidated recommendation report with Core/Tactical/Watch and FIRE/SHIELD tags)
+- `summary.md` (quick executive summary)
+- `metadata.json` (run/filter metadata)
+
+Open consolidated recommendations directly in VS Code (no browser links):
+
+```powershell
+code c:\uw_root\out\replay_compare\trend_analysis\final_trade_recommendations_from_trends.md
+```
+
 ## X Profile Scraper (Logged-in Session)
 Scrape public posts from an X profile (text, timestamps, engagement, media URLs), with per-post screenshots for later strategy analysis.
 The scraper keeps text-only, media-only (screenshot/image), and text+media posts.
