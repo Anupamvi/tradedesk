@@ -117,22 +117,31 @@ def main():
     )
     parser.add_argument(
         "--output",
-        default="whale-2026-01-30.md",
-        help="Output markdown path",
+        default=None,
+        help="Output markdown path (default: whale-{date}.md from input)",
     )
     parser.add_argument("--chunksize", type=int, default=100000)
     args = parser.parse_args()
 
     input_path = Path(args.input)
     config_path = resolve_config_path(Path(args.config))
-    output_path = Path(args.output)
+    if args.output is None:
+        date_str = infer_date_from_path(input_path)
+        output_path = Path(f"whale-{date_str}.md")
+    else:
+        output_path = Path(args.output)
 
     config = load_config(config_path)
 
     exclude_etfs = bool(config["gates"].get("exclude_etfs", True))
+    exclude_issue_types = {t.upper() for t in config["gates"].get("exclude_issue_types", ["ETF"])}
     min_credit_pct = float(config["gates"].get("min_credit_pct_width", 0.25))
+    max_credit_pct = float(config["gates"].get("max_credit_pct_width", 0.55))
     max_debit_pct = float(config["gates"].get("max_debit_pct_width", 0.55))
     width_tiers = config["gates"].get("width_tiers", [])
+    min_open_interest = int(config["gates"].get("min_leg_open_interest", 0))
+    max_strike_dist_pct = float(config["gates"].get("max_strike_distance_pct", 1.0))
+    min_premium = float(config["gates"].get("min_whale_premium", 0))
 
     shield_dte_min, shield_dte_max = config["shield"]["dte_range"]
     fire_dte_min, fire_dte_max = config["fire"]["dte_range"]
@@ -164,6 +173,8 @@ def main():
         "premium",
         "open_interest",
         "equity_type",
+        "implied_volatility",
+        "delta",
     ]
 
     dtype = {
@@ -179,6 +190,8 @@ def main():
         "premium": "float64",
         "open_interest": "float64",
         "equity_type": "string",
+        "implied_volatility": "float64",
+        "delta": "float64",
     }
 
     with open_input(input_path) as (input_handle, input_label):
@@ -213,10 +226,12 @@ def main():
             mask = ~np.isnan(width) & ~np.isnan(pct_width) & dte.notna().to_numpy()
 
             if exclude_etfs:
-                mask &= chunk["equity_type"].str.upper().to_numpy() != "ETF"
+                eq_type_upper = chunk["equity_type"].str.upper().to_numpy()
+                for issue_type in exclude_issue_types:
+                    mask &= eq_type_upper != issue_type
 
             mask &= (
-                ((net_type == "credit") & (pct_width >= min_credit_pct))
+                ((net_type == "credit") & (pct_width >= min_credit_pct) & (pct_width <= max_credit_pct))
                 | ((net_type == "debit") & (pct_width <= max_debit_pct))
             )
 
@@ -227,6 +242,20 @@ def main():
 
             if use_anchor:
                 mask &= ((track != "SHIELD") | (chunk["underlying_symbol"].isin(anchor_set).to_numpy()))
+
+            if min_premium > 0:
+                mask &= chunk["premium"].to_numpy() >= min_premium
+
+            if min_open_interest > 0:
+                oi_vals = chunk["open_interest"].to_numpy()
+                mask &= (oi_vals >= min_open_interest) | np.isnan(oi_vals)
+
+            if max_strike_dist_pct < 1.0:
+                strike_vals = chunk["strike"].to_numpy()
+                strike_dist = np.abs(strike_vals - underlying_price) / np.where(
+                    underlying_price > 0, underlying_price, 1.0
+                )
+                mask &= (strike_dist <= max_strike_dist_pct) | np.isnan(strike_dist)
 
             if not mask.any():
                 continue
@@ -268,6 +297,8 @@ def main():
                 "size",
                 "premium",
                 "open_interest",
+                "implied_volatility",
+                "delta",
                 "equity_type",
             ]
 
@@ -315,6 +346,8 @@ def main():
             ("width", 3),
             ("pct_width", 4),
             ("premium", 2),
+            ("implied_volatility", 4),
+            ("delta", 4),
         ]:
             top_trades[col] = top_trades[col].astype(float).round(digits)
 
@@ -327,11 +360,14 @@ def main():
     lines.append(f"Rulebook: `{config_path}`")
     lines.append("")
     lines.append("Filters applied:")
-    lines.append(f"- exclude_etfs: {exclude_etfs}")
-    lines.append(f"- credit_pct_width >= {min_credit_pct}")
+    lines.append(f"- exclude_issue_types: {sorted(exclude_issue_types)}")
+    lines.append(f"- credit_pct_width: {min_credit_pct} - {max_credit_pct}")
     lines.append(f"- debit_pct_width <= {max_debit_pct}")
     lines.append(f"- SHIELD DTE range: {shield_dte_min}-{shield_dte_max}")
     lines.append(f"- FIRE DTE range: {fire_dte_min}-{fire_dte_max}")
+    lines.append(f"- min_premium: ${min_premium:,.0f}")
+    lines.append(f"- min_open_interest: {min_open_interest}")
+    lines.append(f"- max_strike_distance: {max_strike_dist_pct:.0%}")
     lines.append(f"- SHIELD anchor whitelist: {use_anchor} ({len(anchor_whitelist)} tickers)")
     lines.append("")
     lines.append(f"Total rows scanned: {total_rows:,}")

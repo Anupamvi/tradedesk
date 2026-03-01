@@ -15,6 +15,7 @@ engine:
 
 gates:
   exclude_etfs: true
+  exclude_issue_types: ["ETF", "Index"]  # equity_type values to exclude from whale filter
   min_credit_pct_width: 0.30          # consistency mode: target better credit quality
   max_credit_pct_width: 0.55          # block high-risk near-ATM credits
   max_debit_pct_width: 0.38           # tighter debit risk
@@ -25,6 +26,7 @@ gates:
   max_risk_per_trade: 700             # cap defined risk per trade in dollars
   min_debit_reward_risk: 1.20         # (max profit / max loss) floor for debit spreads
   min_credit_reward_risk: 0.35        # (max profit / max loss) floor for credit spreads
+  min_whale_premium: 25000            # minimum total premium ($) for whale trade inclusion (0 = disabled)
 
   # Consistency width tiers by underlying price (narrower than baseline rulebook)
   width_tiers:
