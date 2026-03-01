@@ -1,0 +1,121 @@
+# rulebook_config_swing_trend.yaml
+# Multi-day swing trade trend analysis configuration.
+#
+# This pipeline reads the raw 4-CSV daily data (stock-screener, chain-oi-changes,
+# hot-chains, dp-eod-report) plus whale reports across N trading days to identify
+# cross-day trends and recommend swing trade setups.
+
+pipeline:
+  lookback_days: 10            # Number of most recent trading days to analyze
+  min_days_required: 3         # Minimum days a ticker must appear in to qualify
+  root_dir: "c:\\uw_root"      # Base directory containing dated folders
+  output_dir: "c:\\uw_root\\out\\swing_trend"
+
+data_loading:
+  required_prefixes:
+    - "stock-screener"
+    - "chain-oi-changes"
+    - "hot-chains"
+  optional_prefixes:
+    - "dp-eod-report"
+  # Filter dp-eod-report to only tickers present in screener (saves memory)
+  dp_filter_to_screener_tickers: true
+  whale_file_patterns:
+    - "whale-{date}.md"
+    - "whale_trades_filtered.csv"
+
+filters:
+  exclude_etfs: true
+  exclude_indices: true
+  etf_issue_types: ["ETF", "Index"]
+  min_market_cap: 2000000000     # $2B minimum
+  min_avg30_volume: 500000       # Minimum 30-day avg stock volume
+  max_tickers_to_score: 200      # Top N tickers by flow activity before trend scoring
+  earnings_buffer_days: 3         # Days before/after earnings to flag as unsafe
+  max_per_sector: 5               # Soft cap: excess sector trades overflow to separate section
+
+scoring:
+  weights:
+    flow_persistence: 0.30       # Consistent directional flow across days
+    oi_momentum: 0.20            # Sustained position building
+    iv_regime: 0.15              # Favorable vol environment for strategy
+    price_trend: 0.15            # Technical trend alignment
+    whale_consensus: 0.10        # Institutional agreement
+    dp_confirmation: 0.10        # Dark pool alignment
+
+  flow_persistence:
+    min_days_consistent: 3       # At least 3 of N days agree on direction
+    strong_bias_threshold: 0.15  # |flow_bias| > this = strong signal
+
+  oi_momentum:
+    min_net_oi_build_days: 3     # OI must build on at least N days
+    large_oi_threshold: 5000     # Single-strike OI change counts as "large"
+
+  iv_regime:
+    low_iv_rank_ceil: 40         # Below this = "low IV" (favor debit)
+    high_iv_rank_floor: 55       # Above this = "high IV" (favor credit)
+    expanding_slope_threshold: 0.5   # iv30d slope > this = expanding
+    compressing_slope_threshold: -0.5
+
+  price_trend:
+    min_slope_for_trend: 0.002   # Normalized price slope to count as trending
+    volume_surge_ratio: 1.5      # total_volume / avg30_volume > this = surge
+
+  whale_consensus:
+    min_whale_days: 2            # Ticker in whale reports on >= N days
+    min_premium_rank: 30         # Must be top-30 by premium on at least one day
+
+  dp_confirmation:
+    min_dp_days: 2               # Ticker appears in DP on >= N days
+    accumulation_threshold: 0.55 # above_mid_pct > this = accumulation
+
+strategy_selection:
+  strong_bull_low_iv:
+    strategy: "Bull Call Debit"
+    track: "FIRE"
+    dte_range: [21, 70]
+    target_dte: 45
+  strong_bear_low_iv:
+    strategy: "Bear Put Debit"
+    track: "FIRE"
+    dte_range: [21, 70]
+    target_dte: 45
+  bull_high_iv:
+    strategy: "Bull Put Credit"
+    track: "SHIELD"
+    dte_range: [28, 56]
+    target_dte: 42
+  bear_high_iv:
+    strategy: "Bear Call Credit"
+    track: "SHIELD"
+    dte_range: [28, 56]
+    target_dte: 42
+  range_bound_high_iv:
+    strategy: "Iron Condor"
+    track: "SHIELD"
+    dte_range: [28, 56]
+    target_dte: 42
+  breakout_iv_expansion:
+    strategy: "debit_on_breakout_side"
+    track: "FIRE"
+    dte_range: [28, 56]
+    target_dte: 42
+
+schwab_validation:
+  enabled: true                    # Set to false to skip live chain validation
+  max_strike_snap_pct: 3.0         # Max % distance to snap a strike to nearest real strike
+
+backtest:
+  enabled: true                    # Set to false to skip historical edge backtest
+  lookback_years: 2.0              # Years of yfinance history for analog simulation
+  min_signals: 100                 # Minimum historical windows for stable verdict
+  cache_dir: ""                    # Optional cache dir for yfinance downloads
+
+output:
+  max_recommendations: 15
+  max_per_ticker: 2
+  min_composite_score: 35        # Minimum score to include in output
+  include_evidence_table: true
+  evidence_top_n: 10             # Show detailed evidence for top N tickers
+  shortlist_csv_name: "swing_trend_shortlist_{date}.csv"
+  report_md_name: "swing-trend-report-{date}.md"
