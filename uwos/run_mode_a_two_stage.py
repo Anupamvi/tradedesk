@@ -428,6 +428,7 @@ def run():
     discovery_top = max(int(args.top_trades), int(round(int(args.top_trades) * float(discovery_multiplier))))
     final_max_per_ticker = int(engine_cfg.get("final_max_trades_per_ticker", 1))
     final_max_per_ticker = max(1, final_max_per_ticker)
+    min_shield_in_output = int(engine_cfg.get("min_shield_in_output", 0))
     backtest_min_signals = fnum(approval_cfg.get("min_signals", 100))
     if not np.isfinite(backtest_min_signals) or backtest_min_signals <= 0:
         backtest_min_signals = 100
@@ -465,6 +466,13 @@ def run():
         .map(fnum)
         .to_dict()
     )
+    _sc_norm = sc_df.assign(ticker=sc_df["ticker"].astype(str).str.upper().str.strip()).drop_duplicates("ticker")
+    sector_map = _sc_norm.set_index("ticker")["sector"].dropna().to_dict() if "sector" in sc_df.columns else {}
+    playbook_cfg = cfg.get("playbook", {}) if isinstance(cfg, dict) else {}
+    risk_limits_cfg = playbook_cfg.get("risk_limits", {}) if isinstance(playbook_cfg, dict) else {}
+    max_sector_share = fnum(risk_limits_cfg.get("max_sector_share", 1.0))
+    if not np.isfinite(max_sector_share) or max_sector_share <= 0:
+        max_sector_share = 1.0
     max_strike_distance_pct = fnum(cfg.get("gates", {}).get("max_strike_distance_pct", 0.80))
     if not np.isfinite(max_strike_distance_pct) or max_strike_distance_pct <= 0:
         max_strike_distance_pct = math.nan
@@ -1389,7 +1397,11 @@ def run():
         ok_live = ok_live_raw or (live_status == "fails_live_entry_gate" and gate_pass_effective)
         if not ok_live:
             return "Watch"
-        if not bool(row.get("stage1_effective")):
+        track_local = str(row.get("track", "")).strip().upper()
+        shield_override_live = bool(
+            shield_live_valid_overrides_quality and track_local == "SHIELD" and ok_live
+        )
+        if not bool(row.get("stage1_effective")) and not shield_override_live:
             return "Watch"
         conv = fnum(row.get("conviction"))
         if np.isfinite(tactical_min_conviction) and (not np.isfinite(conv) or conv < tactical_min_conviction):
@@ -1551,19 +1563,72 @@ def run():
         per_ticker_final[ticker] += 1
         kept_indices.append(idx)
     mdf = mdf.loc[kept_indices].reset_index(drop=True)
-    if len(mdf) > int(args.top_trades):
-        for _, row in mdf.iloc[int(args.top_trades) :].iterrows():
-            dropped_final.append(
-                {
-                    "ticker": str(row.get("ticker", "")).strip().upper(),
-                    "strategy": str(row.get("strategy", "")),
-                    "expiry": str(row.get("expiry", ""))[:10],
-                    "stage": "final",
-                    "drop_reason": "final_top_limit",
-                    "details": f"top={int(args.top_trades)}",
-                }
-            )
-        mdf = mdf.head(int(args.top_trades)).reset_index(drop=True)
+    # --- Track-diversity-aware top-N selection ---
+    # Reserve min_shield_in_output slots for SHIELD trades so they aren't
+    # buried by higher-EV FIRE trades.  Also enforce max_sector_share to
+    # prevent correlated-sector concentration.
+    _top_n = int(args.top_trades)
+    if len(mdf) > _top_n:
+        _fire_rows = mdf[mdf["track"] == "FIRE"]
+        _shield_rows = mdf[mdf["track"] == "SHIELD"]
+        _other_rows = mdf[~mdf["track"].isin(["FIRE", "SHIELD"])]
+
+        # Pick best SHIELD trades up to the reservation count.
+        _shield_reserved = _shield_rows.head(min(min_shield_in_output, len(_shield_rows)))
+        _remaining_budget = _top_n - len(_shield_reserved)
+
+        # Fill remaining budget with FIRE + leftover SHIELD + other, in rank order.
+        _leftover_shield = _shield_rows.iloc[len(_shield_reserved):]
+        _rest = pd.concat([_fire_rows, _leftover_shield, _other_rows], ignore_index=True)
+        _rest = _rest.sort_values(
+            ["approved", "conviction"],
+            ascending=[False, False],
+        ).reset_index(drop=True)
+
+        # Enforce sector cap on the merged result.
+        _selected_indices = []
+        _sector_counts = defaultdict(int)
+        _total_selected = 0
+        for _sidx, _srow in _rest.iterrows():
+            if _total_selected >= _remaining_budget:
+                break
+            _sticker = str(_srow.get("ticker", "")).strip().upper()
+            _ssector = sector_map.get(_sticker, "Unknown")
+            _sector_limit = max(1, int(round(max_sector_share * _top_n)))
+            if _sector_counts[_ssector] >= _sector_limit:
+                continue
+            _sector_counts[_ssector] += 1
+            _total_selected += 1
+            _selected_indices.append(_sidx)
+        _rest_selected = _rest.loc[_selected_indices]
+
+        _final = pd.concat([_shield_reserved, _rest_selected], ignore_index=True)
+        _final = _final.sort_values(
+            ["approved", "conviction"],
+            ascending=[False, False],
+        ).reset_index(drop=True).head(_top_n)
+
+        # Record dropped rows.
+        _kept_tickers_strats = set(
+            zip(_final["ticker"].astype(str), _final["strategy"].astype(str), _final["expiry"].astype(str).str[:10])
+        )
+        for _, row in mdf.iterrows():
+            _key = (str(row.get("ticker", "")).strip().upper(), str(row.get("strategy", "")), str(row.get("expiry", ""))[:10])
+            if _key not in _kept_tickers_strats:
+                dropped_final.append(
+                    {
+                        "ticker": _key[0],
+                        "strategy": _key[1],
+                        "expiry": _key[2],
+                        "stage": "final",
+                        "drop_reason": "final_top_limit",
+                        "details": f"top={_top_n}",
+                    }
+                )
+        mdf = _final.reset_index(drop=True)
+    else:
+        # Even under budget, tag sector for downstream use.
+        pass
     inv_close_confirms = fnum(approval_cfg.get("invalidation_close_confirmations", 2))
     inv_close_confirms = int(inv_close_confirms) if np.isfinite(inv_close_confirms) and inv_close_confirms >= 1 else 2
 

@@ -341,6 +341,12 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         fire_invalidation_buffer_pct = 0.03
     fire_allow_both_neutral = bool(fire_cfg.get("allow_both_sides_when_neutral", False))
     shield_otm = float(shield_cfg["credit_short_otm_pct"])
+    shield_sigma_relax = fnum(shield_cfg.get("sigma_relaxation_factor", 1.0))
+    if not np.isfinite(shield_sigma_relax) or shield_sigma_relax <= 0:
+        shield_sigma_relax = 1.0
+    shield_ic_sigma_relax = fnum(shield_cfg.get("iron_condor_sigma_factor", shield_sigma_relax))
+    if not np.isfinite(shield_ic_sigma_relax) or shield_ic_sigma_relax <= 0:
+        shield_ic_sigma_relax = shield_sigma_relax
     shield_allow_both_neutral = bool(shield_cfg.get("allow_both_sides_when_neutral", False))
     shield_min_marketcap = fnum(shield_cfg.get("min_marketcap"))
     shield_lotto_dte_max = int(shield_cfg.get("lotto_dte_max", 7))
@@ -871,7 +877,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         score = 0.30 * bull + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.10 * whale + 0.06 * short_fit
                         conv = int(round(100 * score))
 
-                        sigma_pass = bool(sigma_known and float(sh["strike"]) <= (spot - sigma))
+                        sigma_pass = bool(sigma_known and float(sh["strike"]) <= (spot - sigma * shield_sigma_relax))
                         short_otm_pct = max(0.0, (spot - float(sh["strike"])) / spot)
                         short_delta = fnum(sh.get("delta"))
                         delta_ok = (not high_beta_require_delta) or (
@@ -985,7 +991,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         score = 0.30 * bear + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.10 * whale + 0.06 * short_fit
                         conv = int(round(100 * score))
 
-                        sigma_pass = bool(sigma_known and float(sh["strike"]) >= (spot + sigma))
+                        sigma_pass = bool(sigma_known and float(sh["strike"]) >= (spot + sigma * shield_sigma_relax))
                         short_otm_pct = max(0.0, (float(sh["strike"]) - spot) / spot)
                         short_delta = fnum(sh.get("delta"))
                         delta_ok = (not high_beta_require_delta) or (
@@ -1099,7 +1105,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         )
                         if put_credit is None or not np.isfinite(put_credit) or put_credit <= 0 or put_credit >= put_width:
                             continue
-                        sigma_put_pass = bool(sigma_known and float(sh_put["strike"]) <= (spot - sigma))
+                        sigma_put_pass = bool(sigma_known and float(sh_put["strike"]) <= (spot - sigma * shield_ic_sigma_relax))
                         short_put_otm_pct = max(0.0, (spot - float(sh_put["strike"])) / spot)
                         short_put_delta = fnum(sh_put.get("delta"))
                         put_delta_ok = (not high_beta_require_delta) or (
@@ -1149,7 +1155,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         )
                         if call_credit is None or not np.isfinite(call_credit) or call_credit <= 0 or call_credit >= call_width:
                             continue
-                        sigma_call_pass = bool(sigma_known and float(sh_call["strike"]) >= (spot + sigma))
+                        sigma_call_pass = bool(sigma_known and float(sh_call["strike"]) >= (spot + sigma * shield_ic_sigma_relax))
                         short_call_otm_pct = max(0.0, (float(sh_call["strike"]) - spot) / spot)
                         short_call_delta = fnum(sh_call.get("delta"))
                         call_delta_ok = (not high_beta_require_delta) or (
