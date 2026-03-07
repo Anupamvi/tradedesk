@@ -479,5 +479,69 @@ class TestAssignTier(unittest.TestCase):
         self.assertEqual(mod.assign_tier(60, cfg), "core")
 
 
+class TestAllocateCapital(unittest.TestCase):
+    """Tests for allocate_capital() — capital allocation with position limits."""
+
+    def _make_cfg(self) -> dict:
+        return {
+            "allocation": {
+                "max_deployed_pct": 0.65,
+                "max_single_name_pct": 0.25,
+                "max_positions": 5,
+            }
+        }
+
+    def _make_candidate(self, ticker: str, composite: float, csp_strike: float) -> "mod.WheelCandidate":
+        wc = mod.WheelCandidate(ticker=ticker, composite=composite)
+        wc.premium = mod.PremiumScore(csp_strike=csp_strike)
+        return wc
+
+    def test_basic_allocation(self) -> None:
+        """2 candidates, $35K capital → both get contracts, total <= 65% of capital."""
+        cfg = self._make_cfg()
+        c1 = self._make_candidate("AAPL", 80, 45.0)
+        c2 = self._make_candidate("MSFT", 70, 30.0)
+        result = mod.allocate_capital([c1, c2], 35000, cfg)
+        self.assertEqual(len(result), 2)
+        total = sum(c.capital_required for c in result)
+        self.assertLessEqual(total, 35000 * 0.65)
+        for c in result:
+            self.assertGreater(c.max_contracts, 0)
+            self.assertGreater(c.capital_required, 0)
+
+    def test_single_name_limit(self) -> None:
+        """1 expensive candidate → capital_required <= 25% of total."""
+        cfg = self._make_cfg()
+        c1 = self._make_candidate("TSLA", 90, 50.0)
+        result = mod.allocate_capital([c1], 35000, cfg)
+        self.assertEqual(len(result), 1)
+        self.assertLessEqual(result[0].capital_required, 35000 * 0.25)
+
+    def test_excludes_zero_strike(self) -> None:
+        """Candidate with csp_strike=0 → excluded from result."""
+        cfg = self._make_cfg()
+        c1 = self._make_candidate("BAD", 90, 0.0)
+        c2 = self._make_candidate("GOOD", 80, 20.0)
+        result = mod.allocate_capital([c1, c2], 35000, cfg)
+        tickers = [c.ticker for c in result]
+        self.assertNotIn("BAD", tickers)
+        self.assertIn("GOOD", tickers)
+
+    def test_max_positions_limit(self) -> None:
+        """6 candidates but max_positions=5 → only 5 returned."""
+        cfg = self._make_cfg()
+        candidates = [self._make_candidate(f"T{i}", 90 - i, 15.0) for i in range(6)]
+        result = mod.allocate_capital(candidates, 100000, cfg)
+        self.assertLessEqual(len(result), 5)
+
+    def test_sorts_by_composite(self) -> None:
+        """Lower composite candidate should not get priority over higher."""
+        cfg = self._make_cfg()
+        c_low = self._make_candidate("LOW", 50, 20.0)
+        c_high = self._make_candidate("HIGH", 90, 20.0)
+        result = mod.allocate_capital([c_low, c_high], 35000, cfg)
+        self.assertEqual(result[0].ticker, "HIGH")
+
+
 if __name__ == "__main__":
     unittest.main()

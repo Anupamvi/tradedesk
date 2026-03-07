@@ -699,3 +699,68 @@ def assign_tier(composite: float, cfg: dict) -> str:
     if composite >= a["min_composite_watchlist"]:
         return "watchlist"
     return "excluded"
+
+
+# ---------------------------------------------------------------------------
+# Capital Allocator
+# ---------------------------------------------------------------------------
+
+def allocate_capital(
+    candidates: List[WheelCandidate],
+    capital: float,
+    cfg: dict,
+) -> List[WheelCandidate]:
+    """Allocate capital across wheel candidates respecting position limits.
+
+    Parameters
+    ----------
+    candidates : list of WheelCandidate objects to consider.
+    capital : total available capital (float).
+    cfg : config dict (uses ``allocation`` section).
+
+    Returns
+    -------
+    List of WheelCandidate objects that received an allocation, sorted by
+    composite score descending.  Each returned candidate has ``max_contracts``
+    and ``capital_required`` populated.
+    """
+    a = cfg["allocation"]
+    max_deployed_pct = a["max_deployed_pct"]
+    max_single_name_pct = a["max_single_name_pct"]
+    max_positions = a["max_positions"]
+
+    max_deploy = capital * max_deployed_pct
+    max_single = capital * max_single_name_pct
+
+    # Sort by composite descending
+    sorted_candidates = sorted(candidates, key=lambda c: c.composite, reverse=True)
+
+    # Filter out candidates with no valid strike
+    sorted_candidates = [c for c in sorted_candidates if c.premium.csp_strike > 0]
+
+    allocated: List[WheelCandidate] = []
+    total_deployed = 0.0
+
+    for cand in sorted_candidates:
+        if len(allocated) >= max_positions:
+            break
+
+        per_contract = cand.premium.csp_strike * 100
+        remaining = max_deploy - total_deployed
+
+        if remaining < per_contract:
+            break
+
+        max_by_single = int(max_single / per_contract)
+        max_by_remaining = int(remaining / per_contract)
+        contracts = min(max_by_single, max_by_remaining)
+
+        if contracts < 1:
+            continue
+
+        cand.max_contracts = contracts
+        cand.capital_required = contracts * per_contract
+        total_deployed += cand.capital_required
+        allocated.append(cand)
+
+    return allocated
