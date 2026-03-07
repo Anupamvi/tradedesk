@@ -574,3 +574,128 @@ def score_premium(chain_data: dict, cfg: dict) -> PremiumScore:
     )
 
     return ps
+
+
+# ---------------------------------------------------------------------------
+# Sentiment Overlay
+# ---------------------------------------------------------------------------
+
+def apply_sentiment(
+    *,
+    swing_direction: str,
+    swing_verdict: str,
+    whale_score: float,
+    dp_bearish: bool,
+    earnings_days: Optional[int],
+    oi_confirms: bool,
+    cfg: dict,
+) -> SentimentAdjustment:
+    """Apply sentiment-based adjustments and return a SentimentAdjustment.
+
+    Parameters
+    ----------
+    swing_direction : "bullish", "bearish", or "" (empty).
+    swing_verdict : "PASS", "FAIL", or "" (empty).
+    whale_score : 0-100 whale accumulation score.
+    dp_bearish : True if dark-pool flow is bearish.
+    earnings_days : days until next earnings, or None.
+    oi_confirms : True if open-interest confirms directional thesis.
+    cfg : full config dict (uses ``sentiment`` section).
+
+    Returns
+    -------
+    SentimentAdjustment dataclass with itemised adjustments and clamped total.
+    """
+    s = cfg["sentiment"]
+    sa = SentimentAdjustment()
+    sa.swing_trend_direction = swing_direction
+    sa.earnings_days_away = earnings_days
+
+    # Swing trend
+    if swing_direction == "bullish" and swing_verdict == "PASS":
+        sa.swing_trend_adj = s["swing_trend_pass_bullish"]
+        sa.notes.append(f"Swing trend bullish PASS: +{sa.swing_trend_adj}")
+    elif swing_direction == "bearish" or swing_verdict == "FAIL":
+        sa.swing_trend_adj = s["swing_trend_fail_bearish"]
+        sa.notes.append(f"Swing trend bearish/FAIL: {sa.swing_trend_adj}")
+
+    # Whale accumulation
+    if whale_score >= 70:
+        sa.whale_adj = s["whale_accumulation_boost"]
+        sa.notes.append(f"Whale accumulation (score {whale_score}): +{sa.whale_adj}")
+
+    # Dark pool bearish
+    if dp_bearish:
+        sa.dp_adj = s["dp_bearish_penalty"]
+        sa.notes.append(f"Dark-pool bearish: {sa.dp_adj}")
+
+    # Earnings proximity
+    if earnings_days is not None and earnings_days <= 14:
+        sa.earnings_adj = s["earnings_within_14d_penalty"]
+        sa.notes.append(f"Earnings in {earnings_days}d: {sa.earnings_adj}")
+
+    # OI confirmation
+    if oi_confirms:
+        sa.oi_adj = s["oi_confirms_direction"]
+        sa.notes.append(f"OI confirms direction: +{sa.oi_adj}")
+
+    raw = sa.swing_trend_adj + sa.whale_adj + sa.dp_adj + sa.earnings_adj + sa.oi_adj
+    max_adj = s["max_adjustment"]
+    sa.total = max(-max_adj, min(max_adj, raw))
+
+    return sa
+
+
+# ---------------------------------------------------------------------------
+# Composite Scoring
+# ---------------------------------------------------------------------------
+
+def compute_composite(
+    quality: float,
+    premium: float,
+    sentiment: float,
+    quality_weight: float = 0.7,
+    premium_weight: float = 0.3,
+) -> float:
+    """Compute the final composite score, clamped to 0-100.
+
+    Parameters
+    ----------
+    quality : quality composite score (0-100).
+    premium : premium composite score (0-100).
+    sentiment : sentiment adjustment (can be negative).
+    quality_weight : weight for quality score.
+    premium_weight : weight for premium score.
+
+    Returns
+    -------
+    Float composite score clamped to [0, 100].
+    """
+    raw = quality * quality_weight + premium * premium_weight + sentiment
+    return max(0.0, min(100.0, raw))
+
+
+# ---------------------------------------------------------------------------
+# Tier Assignment
+# ---------------------------------------------------------------------------
+
+def assign_tier(composite: float, cfg: dict) -> str:
+    """Map a composite score to a tier label.
+
+    Parameters
+    ----------
+    composite : composite score (0-100).
+    cfg : full config dict (uses ``allocation`` section thresholds).
+
+    Returns
+    -------
+    One of "core", "aggressive", "watchlist", or "excluded".
+    """
+    a = cfg["allocation"]
+    if composite >= a["min_composite_core"]:
+        return "core"
+    if composite >= a["min_composite_aggressive"]:
+        return "aggressive"
+    if composite >= a["min_composite_watchlist"]:
+        return "watchlist"
+    return "excluded"

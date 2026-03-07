@@ -381,5 +381,103 @@ class TestScorePremium(unittest.TestCase):
         self.assertGreater(ps.composite, 0)
 
 
+class TestSentiment(unittest.TestCase):
+    """Tests for apply_sentiment() — sentiment overlay adjustments."""
+
+    def _make_cfg(self) -> dict:
+        import yaml
+        config_path = Path(__file__).resolve().parents[1] / "uwos" / "wheel_config.yaml"
+        with open(config_path) as f:
+            return yaml.safe_load(f)
+
+    def test_bullish_boost(self) -> None:
+        cfg = self._make_cfg()
+        sa = mod.apply_sentiment(
+            swing_direction="bullish", swing_verdict="PASS",
+            whale_score=75, dp_bearish=False, earnings_days=None,
+            oi_confirms=True, cfg=cfg,
+        )
+        self.assertGreater(sa.total, 0)
+        self.assertLessEqual(sa.total, 10)
+
+    def test_bearish_penalty(self) -> None:
+        cfg = self._make_cfg()
+        sa = mod.apply_sentiment(
+            swing_direction="bearish", swing_verdict="FAIL",
+            whale_score=30, dp_bearish=True, earnings_days=10,
+            oi_confirms=False, cfg=cfg,
+        )
+        self.assertLess(sa.total, 0)
+        self.assertGreaterEqual(sa.total, -10)
+
+    def test_neutral_no_adjustment(self) -> None:
+        cfg = self._make_cfg()
+        sa = mod.apply_sentiment(
+            swing_direction="", swing_verdict="",
+            whale_score=30, dp_bearish=False, earnings_days=None,
+            oi_confirms=False, cfg=cfg,
+        )
+        self.assertEqual(sa.total, 0)
+
+    def test_clamping(self) -> None:
+        cfg = self._make_cfg()
+        sa = mod.apply_sentiment(
+            swing_direction="bullish", swing_verdict="PASS",
+            whale_score=80, dp_bearish=False, earnings_days=None,
+            oi_confirms=True, cfg=cfg,
+        )
+        self.assertEqual(sa.total, 10)
+
+
+class TestComposite(unittest.TestCase):
+    """Tests for compute_composite() — weighted composite scoring."""
+
+    def test_composite_weighting(self) -> None:
+        result = mod.compute_composite(quality=80, premium=60, sentiment=0)
+        self.assertAlmostEqual(result, 74.0, places=1)
+
+    def test_with_sentiment(self) -> None:
+        result = mod.compute_composite(quality=80, premium=60, sentiment=5)
+        self.assertAlmostEqual(result, 79.0, places=1)
+
+    def test_clamp_floor(self) -> None:
+        result = mod.compute_composite(quality=5, premium=5, sentiment=-10)
+        self.assertGreaterEqual(result, 0)
+
+    def test_clamp_ceiling(self) -> None:
+        result = mod.compute_composite(quality=100, premium=100, sentiment=10)
+        self.assertLessEqual(result, 100)
+
+
+class TestAssignTier(unittest.TestCase):
+    """Tests for assign_tier() — composite-to-tier mapping."""
+
+    def _make_cfg(self) -> dict:
+        import yaml
+        config_path = Path(__file__).resolve().parents[1] / "uwos" / "wheel_config.yaml"
+        with open(config_path) as f:
+            return yaml.safe_load(f)
+
+    def test_core(self) -> None:
+        cfg = self._make_cfg()
+        self.assertEqual(mod.assign_tier(65, cfg), "core")
+
+    def test_aggressive(self) -> None:
+        cfg = self._make_cfg()
+        self.assertEqual(mod.assign_tier(50, cfg), "aggressive")
+
+    def test_watchlist(self) -> None:
+        cfg = self._make_cfg()
+        self.assertEqual(mod.assign_tier(40, cfg), "watchlist")
+
+    def test_excluded(self) -> None:
+        cfg = self._make_cfg()
+        self.assertEqual(mod.assign_tier(30, cfg), "excluded")
+
+    def test_boundary_core(self) -> None:
+        cfg = self._make_cfg()
+        self.assertEqual(mod.assign_tier(60, cfg), "core")
+
+
 if __name__ == "__main__":
     unittest.main()
