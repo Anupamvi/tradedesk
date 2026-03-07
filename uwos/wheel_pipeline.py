@@ -90,6 +90,13 @@ class QualityScore:
     stability_score: int = 0
     mean_reversion_rate: float = 0.0
     mean_reversion_score: int = 0
+    # Forward-looking signals
+    earnings_growth_est: float = 0.0
+    earnings_growth_score: int = 0
+    analyst_upside: float = 0.0
+    analyst_upside_score: int = 0
+    institutional_pct: float = 0.0
+    institutional_score: int = 0
     composite: float = 0.0
     disqualified: bool = False
     disqualify_reason: str = ""
@@ -290,6 +297,41 @@ def score_quality(fundamentals: dict, cfg: dict) -> QualityScore:
                                          excellent=q["mr_excellent"],
                                          good=q["mr_good"], fair=q["mr_fair"])
 
+    # --- Forward-looking sub-scores ---
+    qs.earnings_growth_est = fundamentals.get("earnings_growth_est", 0.0)
+    qs.analyst_upside = fundamentals.get("analyst_upside", 0.0)
+    qs.institutional_pct = fundamentals.get("institutional_pct", 0.0)
+
+    # Earnings growth estimate: negative = bearish, high positive = bullish
+    if qs.earnings_growth_est < 0:
+        qs.earnings_growth_score = 10
+    else:
+        qs.earnings_growth_score = tier_score(
+            qs.earnings_growth_est,
+            excellent=q.get("eg_excellent", 20),
+            good=q.get("eg_good", 10),
+            fair=q.get("eg_fair", 5),
+        )
+
+    # Analyst target upside: how much room analysts see
+    if qs.analyst_upside < 0:
+        qs.analyst_upside_score = 10
+    else:
+        qs.analyst_upside_score = tier_score(
+            qs.analyst_upside,
+            excellent=q.get("au_excellent", 20),
+            good=q.get("au_good", 10),
+            fair=q.get("au_fair", 5),
+        )
+
+    # Institutional ownership: high = smart money conviction
+    qs.institutional_score = tier_score(
+        qs.institutional_pct,
+        excellent=q.get("inst_excellent", 70),
+        good=q.get("inst_good", 50),
+        fair=q.get("inst_fair", 30),
+    )
+
     # --- weighted composite ---
     qs.composite = (
         q["profitability_weight"] * qs.roe_score
@@ -299,6 +341,9 @@ def score_quality(fundamentals: dict, cfg: dict) -> QualityScore:
         + q["valuation_weight"] * qs.pe_score
         + q["stability_weight"] * qs.stability_score
         + q["mean_reversion_weight"] * qs.mean_reversion_score
+        + q.get("earnings_growth_weight", 0.0) * qs.earnings_growth_score
+        + q.get("analyst_upside_weight", 0.0) * qs.analyst_upside_score
+        + q.get("institutional_weight", 0.0) * qs.institutional_score
     )
 
     return qs
@@ -395,6 +440,9 @@ def fetch_fundamentals(ticker: str, schwab_quote: Optional[dict] = None) -> dict
         "pe_ratio": 0.0,
         "earnings_beats": 0,
         "mean_reversion_rate": 50.0,
+        "earnings_growth_est": 0.0,
+        "analyst_upside": 0.0,
+        "institutional_pct": 0.0,
         "sector": "Unknown",
         "market_cap": 0.0,
     }
@@ -461,6 +509,27 @@ def fetch_fundamentals(ticker: str, schwab_quote: Optional[dict] = None) -> dict
                 defaults["mean_reversion_rate"] = compute_mean_reversion(hist)
         except Exception:
             pass
+
+        # --- Forward-looking: earnings growth estimate ---
+        eg = info.get("earningsGrowth")
+        if eg is not None:
+            defaults["earnings_growth_est"] = eg * 100  # convert to pct
+        else:
+            # Fallback: earningsQuarterlyGrowth
+            eqg = info.get("earningsQuarterlyGrowth")
+            if eqg is not None:
+                defaults["earnings_growth_est"] = eqg * 100
+
+        # --- Forward-looking: analyst target upside ---
+        target = info.get("targetMeanPrice")
+        current = info.get("currentPrice") or info.get("previousClose")
+        if target and current and current > 0:
+            defaults["analyst_upside"] = ((target - current) / current) * 100
+
+        # --- Forward-looking: institutional ownership % ---
+        inst_pct = info.get("heldPercentInstitutions")
+        if inst_pct is not None:
+            defaults["institutional_pct"] = inst_pct * 100
 
     except Exception:
         pass
@@ -1100,14 +1169,14 @@ def generate_select_report(
     lines.append("")
 
     header = (
-        "| # | Ticker | Phase | Action | Strike | Expiry | DTE | Premium "
-        "| Ann. Yield | Quality | Premium Scr | Composite | Capital Req "
-        "| Contracts | Notes |"
+        "| # | Ticker | Sector | B/S | Type | Legs | Strike | Expiry | DTE "
+        "| Premium | Breakeven | Ann. Yield | Quality | Fwd Score | Premium Scr "
+        "| Composite | Capital | Contracts | Notes |"
     )
     sep = (
-        "|---|--------|-------|--------|--------|--------|-----|---------|"
-        "------------|---------|-------------|-----------|-------------|"
-        "-----------|-------|"
+        "|---|--------|--------|-----|------|------|--------|--------|-----"
+        "|---------|-----------|------------|---------|-----------|------------"
+        "|-----------|---------|-----------|-------|"
     )
 
     for tier_key in _TIER_ORDER:
@@ -1121,11 +1190,22 @@ def generate_select_report(
         lines.append(sep)
         for idx, c in enumerate(tier_candidates, 1):
             notes_str = "; ".join(c.notes) if c.notes else ""
+            # Breakeven for CSP = strike - premium received
+            breakeven = c.premium.csp_strike - c.premium.csp_premium
+            # Forward score = weighted avg of forward-looking sub-scores
+            fwd_score = (
+                c.quality.earnings_growth_score * 0.4
+                + c.quality.analyst_upside_score * 0.33
+                + c.quality.institutional_score * 0.27
+            )
+            sector_short = (c.sector or "Unknown")[:12]
             lines.append(
-                f"| {idx} | {c.ticker} | CSP | {c.action} "
+                f"| {idx} | {c.ticker} | {sector_short} | SELL | PUT | 1 "
                 f"| ${c.premium.csp_strike:.2f} | {c.expiry} | {c.dte} "
-                f"| ${c.premium.csp_premium:.2f} | {c.premium.csp_yield_ann:.1f}% "
-                f"| {c.quality.composite:.0f} | {c.premium.composite:.0f} "
+                f"| ${c.premium.csp_premium:.2f} | ${breakeven:.2f} "
+                f"| {c.premium.csp_yield_ann:.1f}% "
+                f"| {c.quality.composite:.0f} | {fwd_score:.0f} "
+                f"| {c.premium.composite:.0f} "
                 f"| {c.composite:.1f} | ${c.capital_required:,.0f} "
                 f"| {c.max_contracts} | {notes_str} |"
             )

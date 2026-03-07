@@ -20,13 +20,19 @@ scoring:
   quality_weight: 0.70
   premium_weight: 0.30
   quality:
-    profitability_weight: 0.25
-    balance_sheet_weight: 0.15
-    growth_weight: 0.175
-    cash_flow_weight: 0.175
+    # Backward-looking (75% of quality score)
+    profitability_weight: 0.18
+    balance_sheet_weight: 0.10
+    growth_weight: 0.12
+    cash_flow_weight: 0.12
     valuation_weight: 0.05
-    stability_weight: 0.10
+    stability_weight: 0.08
     mean_reversion_weight: 0.10
+    # Forward-looking (25% of quality score)
+    earnings_growth_weight: 0.10
+    analyst_upside_weight: 0.08
+    institutional_weight: 0.07
+    # Backward-looking thresholds
     roe_excellent: 15
     roe_good: 10
     roe_fair: 5
@@ -49,6 +55,16 @@ scoring:
     mr_lookback_years: 2
     mr_drawdown_pct: 10
     mr_recovery_days: 30
+    # Forward-looking thresholds
+    eg_excellent: 20
+    eg_good: 10
+    eg_fair: 5
+    au_excellent: 20
+    au_good: 10
+    au_fair: 5
+    inst_excellent: 70
+    inst_good: 50
+    inst_fair: 30
   premium:
     csp_yield_weight: 0.35
     cc_yield_weight: 0.25

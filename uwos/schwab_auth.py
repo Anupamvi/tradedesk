@@ -272,6 +272,133 @@ class SchwabLiveDataService:
             self.auth_mode = "manual_login"
             return self._client
 
+    def get_account_hash(self, account_index: int = 0) -> str:
+        """Return the account hash for the given account index (default: first account)."""
+        client = self.connect()
+        response = client.get_account_numbers()
+        response.raise_for_status()
+        accounts = response.json()
+        if not accounts:
+            raise RuntimeError("No accounts found for this Schwab token.")
+        if account_index >= len(accounts):
+            raise RuntimeError(
+                f"Account index {account_index} out of range "
+                f"(found {len(accounts)} account(s))."
+            )
+        return accounts[account_index]["hashValue"]
+
+    def get_account_positions(self, account_index: int = 0) -> Dict[str, Any]:
+        """Fetch current account positions and balances from Schwab."""
+        from schwab.client import Client
+
+        account_hash = self.get_account_hash(account_index)
+        client = self.connect()
+        try:
+            response = client.get_account(
+                account_hash, fields=[Client.Account.Fields.POSITIONS]
+            )
+        except Exception as exc:
+            if _is_refresh_token_error(exc):
+                raise RuntimeError(
+                    "Schwab token refresh failed (stale/revoked refresh token). "
+                    "Re-auth once with: python -m uwos.schwab_quotes --manual-auth "
+                    "--symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                ) from exc
+            raise
+        response.raise_for_status()
+        data = response.json()
+
+        acct = data.get("securitiesAccount", data)
+        balances = acct.get("currentBalances", {})
+        raw_positions = acct.get("positions", [])
+
+        positions = []
+        for pos in raw_positions:
+            instrument = pos.get("instrument", {})
+            positions.append({
+                "symbol": instrument.get("symbol", ""),
+                "asset_type": instrument.get("assetType", ""),
+                "underlying": instrument.get("underlyingSymbol", ""),
+                "put_call": instrument.get("putCall", ""),
+                "qty": pos.get("longQuantity", 0) - pos.get("shortQuantity", 0),
+                "short_qty": pos.get("shortQuantity", 0),
+                "long_qty": pos.get("longQuantity", 0),
+                "avg_cost": pos.get("averagePrice"),
+                "market_value": pos.get("marketValue"),
+                "day_pnl": pos.get("currentDayProfitLoss"),
+                "day_pnl_pct": pos.get("currentDayProfitLossPercentage"),
+            })
+
+        return {
+            "balances": {
+                "total_value": _safe_float(balances.get("liquidationValue")),
+                "cash": _safe_float(balances.get("cashBalance")),
+            },
+            "positions": positions,
+        }
+
+    def get_transactions(
+        self,
+        account_hash: str,
+        start_date: Optional[dt.date] = None,
+        end_date: Optional[dt.date] = None,
+        transaction_types: Optional[Any] = None,
+        symbol: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Fetch transactions for a single date window (max 60 days per Schwab API)."""
+        client = self.connect()
+        kwargs: Dict[str, Any] = {}
+        if start_date is not None:
+            kwargs["start_date"] = start_date
+        if end_date is not None:
+            kwargs["end_date"] = end_date
+        if transaction_types is not None:
+            kwargs["transaction_types"] = transaction_types
+        if symbol is not None:
+            kwargs["symbol"] = symbol
+        try:
+            response = client.get_transactions(account_hash, **kwargs)
+        except Exception as exc:
+            if _is_refresh_token_error(exc):
+                raise RuntimeError(
+                    "Schwab token refresh failed (stale/revoked refresh token). "
+                    "Re-auth once with: python -m uwos.schwab_quotes --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                ) from exc
+            raise
+        response.raise_for_status()
+        return response.json()
+
+    def get_trade_history(
+        self,
+        days: int = 90,
+        account_index: int = 0,
+        symbol: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Fetch TRADE transactions for the last *days* days, chunking into 60-day windows."""
+        from schwab.client import Client
+
+        account_hash = self.get_account_hash(account_index)
+        today = dt.date.today()
+        start = today - dt.timedelta(days=days)
+        trade_type = Client.Transactions.TransactionType.TRADE
+
+        all_txns: List[Dict[str, Any]] = []
+        chunk_start = start
+        while chunk_start < today:
+            chunk_end = min(chunk_start + dt.timedelta(days=59), today)
+            txns = self.get_transactions(
+                account_hash=account_hash,
+                start_date=chunk_start,
+                end_date=chunk_end,
+                transaction_types=[trade_type],
+                symbol=symbol,
+            )
+            all_txns.extend(txns)
+            chunk_start = chunk_end + dt.timedelta(days=1)
+
+        all_txns.sort(key=lambda t: t.get("transactionDate", ""), reverse=True)
+        return all_txns
+
     def get_quotes(self, symbols: Sequence[str]) -> Dict[str, Any]:
         sym_list = normalize_symbols(symbols)
         if not sym_list:

@@ -200,6 +200,8 @@ class TestScoreQuality(unittest.TestCase):
             "roe": 20, "debt_equity": 0.3, "rev_growth_yoy": 18,
             "fcf_yield": 6, "pe_ratio": 12, "earnings_beats": 4,
             "mean_reversion_rate": 80,
+            "earnings_growth_est": 25, "analyst_upside": 22,
+            "institutional_pct": 75,
         }
         qs = mod.score_quality(fundamentals, cfg)
         self.assertFalse(qs.disqualified)
