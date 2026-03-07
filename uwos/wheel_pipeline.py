@@ -1253,6 +1253,15 @@ def _load_screener(base_dir: Path) -> pd.DataFrame:
         c.strip().lower().replace(" ", "_").replace("-", "_")
         for c in df.columns
     ]
+    # Derive missing columns expected by filter_universe:
+    # 'option_volume' from call_volume + put_volume
+    if "option_volume" not in df.columns:
+        cv = pd.to_numeric(df.get("call_volume", 0), errors="coerce").fillna(0)
+        pv = pd.to_numeric(df.get("put_volume", 0), errors="coerce").fillna(0)
+        df["option_volume"] = cv + pv
+    # 'market_cap' from 'marketcap' (screener uses no underscore)
+    if "market_cap" not in df.columns and "marketcap" in df.columns:
+        df["market_cap"] = pd.to_numeric(df["marketcap"], errors="coerce").fillna(0)
     return df
 
 
