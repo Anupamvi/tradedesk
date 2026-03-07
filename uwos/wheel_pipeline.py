@@ -498,6 +498,118 @@ def compute_sigma_strike(
 
 
 # ---------------------------------------------------------------------------
+# Schwab Chain Data Extraction
+# ---------------------------------------------------------------------------
+
+def extract_chain_data(
+    chain_payload: dict,
+    spot: float,
+    iv: float,
+    dte_target: int = 30,
+    sigma: float = 1.0,
+) -> dict:
+    """Extract CSP and CC pricing from a Schwab option chain payload.
+
+    Parameters
+    ----------
+    chain_payload : raw JSON dict from Schwab ``get_option_chain``.
+    spot : current stock price.
+    iv : implied volatility (annualised, decimal).
+    dte_target : desired days to expiration.
+    sigma : number of standard deviations for strike placement.
+
+    Returns
+    -------
+    Dict with keys: csp_strike, csp_premium, cc_strike, cc_premium,
+    spot, iv_rank, spread_pct, dte.
+    """
+    zeros = {
+        "csp_strike": 0.0, "csp_premium": 0.0,
+        "cc_strike": 0.0, "cc_premium": 0.0,
+        "spot": spot, "iv_rank": 0, "spread_pct": 0.0, "dte": 0,
+    }
+
+    put_map = chain_payload.get("putExpDateMap", {})
+    call_map = chain_payload.get("callExpDateMap", {})
+
+    if not put_map and not call_map:
+        return zeros
+
+    # --- helper: pick the expiry key closest to dte_target ---
+    def _pick_expiry(exp_map: dict) -> Tuple[str, int]:
+        """Return (expiry_key, dte) for the expiry closest to dte_target."""
+        best_key, best_dte, best_diff = "", 0, float("inf")
+        for key in exp_map:
+            parts = key.split(":")
+            dte_val = int(parts[-1]) if len(parts) == 2 else 0
+            diff = abs(dte_val - dte_target)
+            if diff < best_diff:
+                best_key, best_dte, best_diff = key, dte_val, diff
+        return best_key, best_dte
+
+    # --- helper: pick the strike closest to target within an expiry ---
+    def _pick_strike(strike_map: dict, target_strike: float) -> Tuple[float, dict]:
+        """Return (strike, contract_dict) for the strike closest to target."""
+        best_strike, best_diff, best_contract = 0.0, float("inf"), {}
+        for strike_str, contracts in strike_map.items():
+            strike_val = float(strike_str)
+            diff = abs(strike_val - target_strike)
+            if diff < best_diff:
+                best_strike = strike_val
+                best_diff = diff
+                best_contract = contracts[0] if contracts else {}
+        return best_strike, best_contract
+
+    # --- CSP (put side) ---
+    csp_strike, csp_premium, csp_spread = 0.0, 0.0, 0.0
+    put_dte = 0
+    if put_map:
+        put_expiry_key, put_dte = _pick_expiry(put_map)
+        if put_expiry_key:
+            target_put = compute_sigma_strike(spot, iv, put_dte or dte_target, side="put", sigma=sigma)
+            csp_strike, contract = _pick_strike(put_map[put_expiry_key], target_put)
+            if contract:
+                bid = contract.get("bid", 0.0)
+                ask = contract.get("ask", 0.0)
+                csp_premium = (bid + ask) / 2.0
+                mid = csp_premium if csp_premium > 0 else 1.0
+                csp_spread = (ask - bid) / mid * 100.0 if mid else 0.0
+
+    # --- CC (call side) ---
+    cc_strike, cc_premium, cc_spread = 0.0, 0.0, 0.0
+    call_dte = 0
+    if call_map:
+        call_expiry_key, call_dte = _pick_expiry(call_map)
+        if call_expiry_key:
+            target_call = compute_sigma_strike(spot, iv, call_dte or dte_target, side="call", sigma=sigma)
+            cc_strike, contract = _pick_strike(call_map[call_expiry_key], target_call)
+            if contract:
+                bid = contract.get("bid", 0.0)
+                ask = contract.get("ask", 0.0)
+                cc_premium = (bid + ask) / 2.0
+                mid = cc_premium if cc_premium > 0 else 1.0
+                cc_spread = (ask - bid) / mid * 100.0 if mid else 0.0
+
+    # Average spread %
+    spreads = [s for s in [csp_spread, cc_spread] if s > 0]
+    avg_spread = sum(spreads) / len(spreads) if spreads else 0.0
+
+    # Use the put expiry DTE as canonical (or call if no puts)
+    dte = put_dte or call_dte
+
+    return {
+        "csp_strike": csp_strike,
+        "csp_premium": csp_premium,
+        "cc_strike": cc_strike,
+        "cc_premium": cc_premium,
+        "spot": spot,
+        "iv_rank": 0,
+        "spread_pct": round(avg_spread, 2),
+        "dte": dte,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Premium Scorer
 # ---------------------------------------------------------------------------
 

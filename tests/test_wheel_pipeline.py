@@ -543,5 +543,80 @@ class TestAllocateCapital(unittest.TestCase):
         self.assertEqual(result[0].ticker, "HIGH")
 
 
+class TestExtractChainData(unittest.TestCase):
+    """Tests for extract_chain_data() — Schwab chain data extraction."""
+
+    def _make_chain(self) -> dict:
+        return {
+            "underlying": {"mark": 40.0},
+            "putExpDateMap": {
+                "2026-04-17:42": {
+                    "38.0": [{"bid": 0.80, "ask": 0.90, "mark": 0.85,
+                              "openInterest": 500, "totalVolume": 100}],
+                    "36.0": [{"bid": 0.40, "ask": 0.50, "mark": 0.45,
+                              "openInterest": 200, "totalVolume": 50}],
+                }
+            },
+            "callExpDateMap": {
+                "2026-04-17:42": {
+                    "42.0": [{"bid": 0.70, "ask": 0.80, "mark": 0.75,
+                              "openInterest": 400, "totalVolume": 80}],
+                    "44.0": [{"bid": 0.30, "ask": 0.40, "mark": 0.35,
+                              "openInterest": 150, "totalVolume": 30}],
+                }
+            },
+        }
+
+    def test_extracts_csp_and_cc(self) -> None:
+        chain = self._make_chain()
+        result = mod.extract_chain_data(chain, spot=40.0, iv=0.30, dte_target=30, sigma=1.0)
+        self.assertGreater(result["csp_premium"], 0)
+        self.assertGreater(result["cc_premium"], 0)
+        self.assertEqual(result["dte"], 42)
+        self.assertIn(result["csp_strike"], [38.0, 36.0])
+        self.assertIn(result["cc_strike"], [42.0, 44.0])
+
+    def test_empty_chain(self) -> None:
+        chain = {
+            "underlying": {"mark": 40.0},
+            "putExpDateMap": {},
+            "callExpDateMap": {},
+        }
+        result = mod.extract_chain_data(chain, spot=40.0, iv=0.30, dte_target=30, sigma=1.0)
+        self.assertEqual(result["csp_premium"], 0.0)
+        self.assertEqual(result["cc_premium"], 0.0)
+        self.assertEqual(result["csp_strike"], 0.0)
+        self.assertEqual(result["cc_strike"], 0.0)
+
+    def test_picks_closest_expiry(self) -> None:
+        chain = {
+            "underlying": {"mark": 40.0},
+            "putExpDateMap": {
+                "2026-03-25:18": {
+                    "38.0": [{"bid": 0.50, "ask": 0.60, "mark": 0.55,
+                              "openInterest": 100, "totalVolume": 20}],
+                },
+                "2026-04-13:37": {
+                    "38.0": [{"bid": 0.90, "ask": 1.00, "mark": 0.95,
+                              "openInterest": 300, "totalVolume": 60}],
+                },
+            },
+            "callExpDateMap": {
+                "2026-03-25:18": {
+                    "42.0": [{"bid": 0.40, "ask": 0.50, "mark": 0.45,
+                              "openInterest": 80, "totalVolume": 15}],
+                },
+                "2026-04-13:37": {
+                    "42.0": [{"bid": 0.80, "ask": 0.90, "mark": 0.85,
+                              "openInterest": 250, "totalVolume": 50}],
+                },
+            },
+        }
+        result = mod.extract_chain_data(chain, spot=40.0, iv=0.30, dte_target=30, sigma=1.0)
+        # 37d is closer to 30 than 18d (|37-30|=7 < |18-30|=12)
+        self.assertEqual(result["dte"], 37)
+        self.assertGreater(result["csp_premium"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
