@@ -1222,3 +1222,465 @@ def generate_daily_report(
     lines.append("")
 
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Pipeline Helpers
+# ---------------------------------------------------------------------------
+
+def _load_config(config_path: Path) -> Dict:
+    """Load and return the YAML config file."""
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
+
+
+def _load_screener(base_dir: Path) -> pd.DataFrame:
+    """Find and load stock-screener-*.csv from *base_dir*.
+
+    Normalises column names to lowercase with underscores.
+    Returns an empty DataFrame if no screener file is found.
+    """
+    import glob as _glob
+
+    pattern = str(base_dir / "stock-screener-*.csv")
+    matches = sorted(_glob.glob(pattern))
+    if not matches:
+        return pd.DataFrame()
+
+    df = pd.read_csv(matches[-1])
+    # normalise column names: lowercase, spaces/dashes to underscores
+    df.columns = [
+        c.strip().lower().replace(" ", "_").replace("-", "_")
+        for c in df.columns
+    ]
+    return df
+
+
+def _load_swing_trend_signals(out_dir: Path, as_of: str) -> Dict[str, Dict]:
+    """Load swing-trend shortlist CSVs and return a dict keyed by ticker.
+
+    Checks L5 and L30 lookback files under ``out_dir/swing_trend/``.
+    For each ticker extracts direction, verdict, whale_score, oi_direction.
+    """
+    swing_dir = out_dir / "swing_trend"
+    signals: Dict[str, Dict] = {}
+    if not swing_dir.exists():
+        return signals
+
+    for lookback in ("L5", "L30"):
+        csv_path = swing_dir / f"swing_trend_shortlist_{as_of}-{lookback}.csv"
+        if not csv_path.exists():
+            continue
+        try:
+            df = pd.read_csv(csv_path)
+            # normalise columns
+            df.columns = [
+                c.strip().lower().replace(" ", "_").replace("-", "_")
+                for c in df.columns
+            ]
+            ticker_col = "ticker" if "ticker" in df.columns else "symbol"
+            if ticker_col not in df.columns:
+                continue
+            for _, row in df.iterrows():
+                tkr = str(row.get(ticker_col, "")).strip().upper()
+                if not tkr:
+                    continue
+                # later lookback overwrites earlier -- L30 overrides L5
+                signals[tkr] = {
+                    "direction": str(row.get("direction", "")).lower(),
+                    "verdict": str(row.get("verdict", "")).upper(),
+                    "whale_score": float(row.get("whale_score", 0)),
+                    "oi_direction": str(row.get("oi_direction", "")),
+                }
+        except Exception:
+            continue
+
+    return signals
+
+
+# ---------------------------------------------------------------------------
+# Pipeline Orchestration
+# ---------------------------------------------------------------------------
+
+def run_select(
+    cfg: Dict,
+    capital: float,
+    base_dir: Path,
+    out_dir: Path,
+    as_of: str,
+    no_schwab: bool = False,
+) -> List[WheelCandidate]:
+    """Run the wheel selection pipeline end-to-end.
+
+    Returns a list of scored, allocated WheelCandidate objects.
+    """
+    _err = lambda msg: print(msg, file=sys.stderr)
+
+    # --- Schwab service (optional) ---
+    schwab_svc = None
+    if not no_schwab:
+        try:
+            from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+            auth_cfg = SchwabAuthConfig.from_env()
+            schwab_svc = SchwabLiveDataService(auth_cfg)
+            _err("[wheel] Schwab live data enabled")
+        except Exception as exc:
+            _err(f"[wheel] Schwab unavailable ({exc}), continuing without live data")
+            schwab_svc = None
+
+    # --- Stage 0: load screener & filter universe ---
+    _err("[wheel] Stage 0: loading screener ...")
+    screener_df = _load_screener(base_dir)
+    if screener_df.empty:
+        _err("[wheel] No screener data found -- nothing to do")
+        return []
+
+    universe_df = filter_universe(screener_df, cfg)
+    tickers = universe_df["ticker"].tolist()
+    _err(f"[wheel] Universe: {len(tickers)} tickers after filter")
+
+    if not tickers:
+        _err("[wheel] Universe is empty after filtering")
+        return []
+
+    # --- Stage 1: fundamentals + quality scoring ---
+    _err("[wheel] Stage 1: fundamentals & quality scoring ...")
+    quality_map: Dict[str, Tuple[QualityScore, dict]] = {}
+    spots: Dict[str, float] = {}
+
+    for tkr in tickers:
+        # Schwab quote (optional)
+        schwab_quote = None
+        if schwab_svc is not None:
+            try:
+                quotes = schwab_svc.get_quotes([tkr])
+                schwab_quote = quotes.get(tkr, {})
+                last_price = schwab_quote.get("lastPrice") or schwab_quote.get("mark")
+                if last_price:
+                    spots[tkr] = float(last_price)
+            except Exception:
+                pass
+
+        # Use screener close if no live spot
+        if tkr not in spots:
+            row = universe_df.loc[universe_df["ticker"] == tkr]
+            if not row.empty:
+                spots[tkr] = float(row.iloc[0].get("close", 0))
+
+        fundamentals = fetch_fundamentals(tkr, schwab_quote=schwab_quote)
+        qs = score_quality(fundamentals, cfg)
+        if qs.disqualified:
+            _err(f"  {tkr}: disqualified -- {qs.disqualify_reason}")
+            continue
+        quality_map[tkr] = (qs, fundamentals)
+
+    surviving = list(quality_map.keys())
+    _err(f"[wheel] Stage 1 survivors: {len(surviving)}")
+
+    # --- Stage 2: option chain + premium scoring ---
+    _err("[wheel] Stage 2: option chain & premium scoring ...")
+    dte_target = cfg["management"]["dte_target"]
+    sigma_otm = cfg["management"]["sigma_otm"]
+
+    candidates: List[WheelCandidate] = []
+
+    for tkr in surviving:
+        qs, fundamentals = quality_map[tkr]
+        spot = spots.get(tkr, 0)
+        if spot <= 0:
+            continue
+
+        # default IV estimate (30% if unknown)
+        iv = 0.30
+
+        chain_data = None
+        if schwab_svc is not None:
+            try:
+                chain_payload = schwab_svc.get_option_chain(tkr)
+                chain_data = extract_chain_data(
+                    chain_payload, spot, iv,
+                    dte_target=dte_target, sigma=sigma_otm,
+                )
+            except Exception:
+                pass
+
+        if chain_data is None:
+            # Synthetic chain data when Schwab is unavailable
+            csp_strike = compute_sigma_strike(spot, iv, dte_target, side="put", sigma=sigma_otm)
+            cc_strike = compute_sigma_strike(spot, iv, dte_target, side="call", sigma=sigma_otm)
+            chain_data = {
+                "csp_strike": csp_strike,
+                "csp_premium": round(spot * 0.02, 2),
+                "cc_strike": cc_strike,
+                "cc_premium": round(spot * 0.015, 2),
+                "spot": spot,
+                "iv_rank": 0,
+                "spread_pct": 0.0,
+                "dte": dte_target,
+            }
+
+        ps = score_premium(chain_data, cfg)
+
+        cand = WheelCandidate(
+            ticker=tkr,
+            spot=spot,
+            sector=fundamentals.get("sector", "Unknown"),
+            market_cap_b=fundamentals.get("market_cap", 0) / 1e9,
+            quality=qs,
+            premium=ps,
+            action="SELL_CSP",
+            dte=chain_data["dte"] or dte_target,
+        )
+        candidates.append(cand)
+
+    _err(f"[wheel] Stage 2 candidates: {len(candidates)}")
+
+    # --- Stage 3: sentiment overlay ---
+    _err("[wheel] Stage 3: sentiment overlay ...")
+    swing_signals = _load_swing_trend_signals(out_dir, as_of)
+    _err(f"  Swing trend signals loaded for {len(swing_signals)} tickers")
+
+    qw = cfg["scoring"]["quality_weight"]
+    pw = cfg["scoring"]["premium_weight"]
+
+    final: List[WheelCandidate] = []
+    for cand in candidates:
+        sig = swing_signals.get(cand.ticker, {})
+        direction = sig.get("direction", "")
+        verdict = sig.get("verdict", "")
+        whale_score = sig.get("whale_score", 0)
+        oi_dir = sig.get("oi_direction", "")
+
+        sa = apply_sentiment(
+            swing_direction=direction,
+            swing_verdict=verdict,
+            whale_score=whale_score,
+            dp_bearish=False,
+            earnings_days=None,
+            oi_confirms=(oi_dir == direction and direction != ""),
+            cfg=cfg,
+        )
+        cand.sentiment = sa
+        cand.composite_raw = compute_composite(
+            cand.quality.composite, cand.premium.composite, 0.0,
+            quality_weight=qw, premium_weight=pw,
+        )
+        cand.composite = compute_composite(
+            cand.quality.composite, cand.premium.composite, sa.total,
+            quality_weight=qw, premium_weight=pw,
+        )
+        cand.tier = assign_tier(cand.composite, cfg)
+        if cand.tier == "excluded":
+            continue
+
+        # Compute target expiry -- snap to nearest Friday
+        as_of_date = dt.date.fromisoformat(as_of)
+        target_date = as_of_date + dt.timedelta(days=cand.dte)
+        # Snap to Friday (weekday 4)
+        days_until_friday = (4 - target_date.weekday()) % 7
+        expiry_date = target_date + dt.timedelta(days=days_until_friday)
+        cand.expiry = expiry_date.isoformat()
+
+        if sa.notes:
+            cand.notes.extend(sa.notes)
+
+        final.append(cand)
+
+    _err(f"[wheel] Non-excluded candidates: {len(final)}")
+
+    # --- Allocate capital ---
+    allocated = allocate_capital(final, capital, cfg)
+    _err(f"[wheel] Allocated positions: {len(allocated)}")
+
+    # --- Write report ---
+    out_dir_path = Path(out_dir)
+    out_dir_path.mkdir(parents=True, exist_ok=True)
+    report_name = cfg.get("output", {}).get(
+        "report_md_name", "wheel-select-{date}.md"
+    ).format(date=as_of)
+    report_path = out_dir_path / report_name
+    report_md = generate_select_report(allocated, capital, as_of, cfg)
+    report_path.write_text(report_md, encoding="utf-8")
+    _err(f"[wheel] Report written: {report_path}")
+
+    return allocated
+
+
+def run_daily(
+    cfg: Dict,
+    out_dir: Path,
+    as_of: str,
+    no_schwab: bool = False,
+) -> List[DailyAction]:
+    """Run the daily wheel management pipeline.
+
+    Loads positions from wheel_positions.json, evaluates each, and writes
+    a daily report.  Returns a list of DailyAction recommendations.
+    """
+    _err = lambda msg: print(msg, file=sys.stderr)
+
+    # --- Locate positions file ---
+    positions_file = Path(cfg["pipeline"]["root_dir"]) / cfg["pipeline"]["positions_file"]
+    if not positions_file.exists():
+        _err(f"[wheel-daily] No positions file found ({positions_file})")
+        return []
+
+    tracker = PositionTracker(positions_file)
+    if not tracker.positions:
+        _err("[wheel-daily] No active positions -- nothing to do")
+        return []
+
+    _err(f"[wheel-daily] Loaded {len(tracker.positions)} position(s)")
+
+    # --- Optional Schwab quotes ---
+    schwab_svc = None
+    live_quotes: Dict[str, dict] = {}
+    if not no_schwab:
+        try:
+            from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+            auth_cfg = SchwabAuthConfig.from_env()
+            schwab_svc = SchwabLiveDataService(auth_cfg)
+            tickers = list({p.ticker for p in tracker.positions})
+            live_quotes = schwab_svc.get_quotes(tickers)
+            _err(f"[wheel-daily] Fetched live quotes for {len(live_quotes)} tickers")
+        except Exception as exc:
+            _err(f"[wheel-daily] Schwab unavailable ({exc}), using estimates")
+
+    # --- Evaluate each position ---
+    mgr = DailyManager(cfg)
+    as_of_date = dt.date.fromisoformat(as_of)
+    actions: List[DailyAction] = []
+
+    for pos in tracker.positions:
+        # DTE remaining
+        try:
+            expiry_date = dt.date.fromisoformat(pos.expiry)
+            dte_remaining = (expiry_date - as_of_date).days
+        except (ValueError, TypeError):
+            dte_remaining = 30
+
+        # Current premium estimate
+        current_premium = pos.entry_premium * 0.5  # placeholder
+        spot = pos.strike  # default
+
+        if pos.ticker in live_quotes:
+            q = live_quotes[pos.ticker]
+            last = q.get("lastPrice") or q.get("mark")
+            if last:
+                spot = float(last)
+
+        if pos.phase == "csp":
+            action = mgr.evaluate_csp(pos, current_premium, dte_remaining)
+        elif pos.phase == "shares":
+            action = mgr.evaluate_shares(pos, spot)
+        elif pos.phase == "cc":
+            action = mgr.evaluate_cc(pos, current_premium, dte_remaining, spot)
+        else:
+            action = DailyAction(
+                ticker=pos.ticker, phase=pos.phase,
+                action="HOLD", icon="H",
+                detail=f"Unknown phase '{pos.phase}' -- holding.",
+            )
+
+        actions.append(action)
+
+    # --- Write daily report ---
+    out_dir_path = Path(out_dir)
+    out_dir_path.mkdir(parents=True, exist_ok=True)
+    daily_name = cfg.get("output", {}).get(
+        "daily_md_name", "wheel-daily-{date}.md"
+    ).format(date=as_of)
+    daily_path = out_dir_path / daily_name
+    capital = cfg["pipeline"].get("default_capital", 35000)
+    report_md = generate_daily_report(
+        actions, tracker.positions, capital, as_of, tracker.premium_journal,
+    )
+    daily_path.write_text(report_md, encoding="utf-8")
+    _err(f"[wheel-daily] Report written: {daily_path}")
+
+    return actions
+
+
+# ---------------------------------------------------------------------------
+# CLI Entry Point
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    """CLI entry point for the wheel pipeline."""
+    parser = argparse.ArgumentParser(
+        description="Wheel strategy selection and daily management pipeline.",
+    )
+    parser.add_argument(
+        "--mode", choices=["select", "daily", "full"], default="select",
+        help="Pipeline mode: select (new candidates), daily (manage positions), "
+             "full (both). Default: select.",
+    )
+    parser.add_argument(
+        "--capital", type=float, default=None,
+        help="Total available capital. Default: from config pipeline.default_capital.",
+    )
+    parser.add_argument(
+        "--config", type=str, default=None,
+        help="Path to YAML config file. Default: <module_dir>/wheel_config.yaml.",
+    )
+    parser.add_argument(
+        "--base-dir", type=str, default=None,
+        help="Base directory with screener data. Default: <root_dir>/<as_of>.",
+    )
+    parser.add_argument(
+        "--out-dir", type=str, default=None,
+        help="Output directory for reports. Default: from config pipeline.output_dir.",
+    )
+    parser.add_argument(
+        "--as-of", type=str, default=None,
+        help="Pipeline date (YYYY-MM-DD). Default: today.",
+    )
+    parser.add_argument(
+        "--no-schwab", action="store_true",
+        help="Disable Schwab live data (use synthetic estimates).",
+    )
+
+    args = parser.parse_args()
+
+    # --- Config ---
+    if args.config:
+        config_path = Path(args.config)
+    else:
+        config_path = Path(__file__).parent / "wheel_config.yaml"
+    cfg = _load_config(config_path)
+
+    # --- as_of ---
+    as_of = args.as_of or dt.date.today().isoformat()
+
+    # --- capital ---
+    capital = args.capital or cfg["pipeline"]["default_capital"]
+
+    # --- base_dir ---
+    root_dir = Path(cfg["pipeline"]["root_dir"])
+    base_dir = Path(args.base_dir) if args.base_dir else root_dir / as_of
+
+    # --- out_dir ---
+    out_dir = Path(args.out_dir) if args.out_dir else Path(cfg["pipeline"]["output_dir"])
+
+    # --- no_schwab override ---
+    if args.no_schwab:
+        cfg.setdefault("schwab_validation", {})["enabled"] = False
+
+    print(f"[wheel] mode={args.mode}  as_of={as_of}  capital=${capital:,.0f}", file=sys.stderr)
+    print(f"[wheel] base_dir={base_dir}  out_dir={out_dir}", file=sys.stderr)
+
+    # --- Run ---
+    if args.mode in ("select", "full"):
+        candidates = run_select(
+            cfg, capital, base_dir, out_dir, as_of,
+            no_schwab=args.no_schwab,
+        )
+        print(f"[wheel] Selection complete: {len(candidates)} candidates", file=sys.stderr)
+
+    if args.mode in ("daily", "full"):
+        actions = run_daily(cfg, out_dir, as_of, no_schwab=args.no_schwab)
+        print(f"[wheel] Daily complete: {len(actions)} actions", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()
