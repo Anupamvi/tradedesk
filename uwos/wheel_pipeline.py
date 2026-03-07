@@ -461,3 +461,116 @@ def fetch_fundamentals(ticker: str, schwab_quote: Optional[dict] = None) -> dict
         pass
 
     return defaults
+
+
+# ---------------------------------------------------------------------------
+# Sigma Strike Calculator
+# ---------------------------------------------------------------------------
+
+def compute_sigma_strike(
+    spot: float,
+    iv: float,
+    dte: int,
+    side: str = "put",
+    sigma: float = 1.0,
+) -> float:
+    """Compute a strike price at *sigma* standard deviations from *spot*.
+
+    Uses a Black-Scholes-style expected move estimate:
+        move = spot * iv * sqrt(dte / 365) * sigma
+
+    Parameters
+    ----------
+    spot : current stock price.
+    iv : implied volatility (annualised, as a decimal, e.g. 0.30 for 30%).
+    dte : days to expiration.
+    side : ``"put"`` (strike below spot) or ``"call"`` (strike above spot).
+    sigma : number of standard deviations.
+
+    Returns
+    -------
+    Strike price rounded to 2 decimals.
+    """
+    move = spot * iv * math.sqrt(dte / 365) * sigma
+    if side == "call":
+        return round(spot + move, 2)
+    return round(spot - move, 2)
+
+
+# ---------------------------------------------------------------------------
+# Premium Scorer
+# ---------------------------------------------------------------------------
+
+def score_premium(chain_data: dict, cfg: dict) -> PremiumScore:
+    """Score option premium attractiveness for a wheel candidate.
+
+    Parameters
+    ----------
+    chain_data : dict with keys csp_premium, csp_strike, cc_premium, cc_strike,
+                 spot, iv_rank, spread_pct, dte.
+    cfg : full config dict (uses ``scoring.premium`` section).
+
+    Returns
+    -------
+    PremiumScore dataclass with sub-scores and weighted composite.
+    """
+    p = cfg["scoring"]["premium"]
+    ps = PremiumScore()
+
+    dte = chain_data["dte"]
+    if dte <= 0:
+        dte = 30
+
+    ps.csp_strike = chain_data["csp_strike"]
+    ps.csp_premium = chain_data["csp_premium"]
+    ps.cc_strike = chain_data.get("cc_strike", 0.0)
+    ps.cc_premium = chain_data.get("cc_premium", 0.0)
+    ps.iv_rank = chain_data["iv_rank"]
+    ps.spread_pct = chain_data["spread_pct"]
+
+    # --- annualised yields ---
+    ps.csp_yield_ann = (ps.csp_premium / ps.csp_strike) * (365 / dte) * 100 if ps.csp_strike else 0.0
+    spot = chain_data["spot"]
+    ps.cc_yield_ann = (ps.cc_premium / spot) * (365 / dte) * 100 if spot else 0.0
+
+    # --- sub-scores ---
+    # CSP yield
+    if ps.csp_yield_ann < p["csp_low"]:
+        ps.csp_yield_score = 25
+    else:
+        ps.csp_yield_score = tier_score(ps.csp_yield_ann,
+                                         excellent=p["csp_excellent"],
+                                         good=p["csp_good"],
+                                         fair=p["csp_fair"])
+
+    # CC yield
+    if ps.cc_yield_ann < p["cc_low"]:
+        ps.cc_yield_score = 25
+    else:
+        ps.cc_yield_score = tier_score(ps.cc_yield_ann,
+                                        excellent=p["cc_excellent"],
+                                        good=p["cc_good"],
+                                        fair=p["cc_fair"])
+
+    # IV rank
+    ps.iv_rank_score = tier_score(ps.iv_rank,
+                                   excellent=p["ivr_excellent"],
+                                   good=p["ivr_good"],
+                                   fair=p["ivr_fair"])
+
+    # Spread quality (lower is better — tight spreads are good)
+    ps.spread_score = tier_score(ps.spread_pct,
+                                  excellent=p["spread_excellent"],
+                                  good=p["spread_good"],
+                                  fair=p["spread_fair"],
+                                  lower_is_better=True)
+
+    # --- weighted composite ---
+    ps.composite = (
+        p["csp_yield_weight"] * ps.csp_yield_score
+        + p["cc_yield_weight"] * ps.cc_yield_score
+        + p["iv_rank_weight"] * ps.iv_rank_score
+        + p["spread_quality_weight"] * ps.spread_score
+    )
+
+    return ps

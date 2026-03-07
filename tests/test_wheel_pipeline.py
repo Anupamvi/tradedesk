@@ -325,5 +325,61 @@ class TestComputeMeanReversion(unittest.TestCase):
         self.assertLessEqual(rate, 25.0)
 
 
+class TestComputeSigmaStrike(unittest.TestCase):
+    """Tests for compute_sigma_strike() — Black-Scholes-style strike placement."""
+
+    def test_put_strike_below_spot(self) -> None:
+        strike = mod.compute_sigma_strike(spot=50, iv=0.30, dte=30, side="put", sigma=1.0)
+        self.assertLess(strike, 50)
+        self.assertGreater(strike, 40)
+
+    def test_call_strike_above_spot(self) -> None:
+        strike = mod.compute_sigma_strike(spot=50, iv=0.30, dte=30, side="call", sigma=1.0)
+        self.assertGreater(strike, 50)
+        self.assertLess(strike, 60)
+
+    def test_zero_iv(self) -> None:
+        strike = mod.compute_sigma_strike(spot=50, iv=0, dte=30, side="put", sigma=1.0)
+        self.assertEqual(strike, 50)
+
+
+class TestScorePremium(unittest.TestCase):
+    """Tests for score_premium() — option premium attractiveness scoring."""
+
+    def _make_cfg(self) -> dict:
+        import yaml
+        config_path = Path(__file__).resolve().parents[1] / "uwos" / "wheel_config.yaml"
+        with open(config_path) as f:
+            return yaml.safe_load(f)
+
+    def test_high_premium_stock(self) -> None:
+        cfg = self._make_cfg()
+        chain_data = {
+            "csp_premium": 2.0, "csp_strike": 17, "cc_premium": 1.5,
+            "cc_strike": 21, "spot": 19, "iv_rank": 55, "spread_pct": 1.5, "dte": 30,
+        }
+        ps = mod.score_premium(chain_data, cfg)
+        self.assertGreater(ps.composite, 70)
+
+    def test_low_premium_stock(self) -> None:
+        cfg = self._make_cfg()
+        chain_data = {
+            "csp_premium": 0.05, "csp_strike": 50, "cc_premium": 0.03,
+            "cc_strike": 55, "spot": 52, "iv_rank": 10, "spread_pct": 8.0, "dte": 45,
+        }
+        ps = mod.score_premium(chain_data, cfg)
+        self.assertLess(ps.composite, 40)
+
+    def test_zero_dte_defaults(self) -> None:
+        cfg = self._make_cfg()
+        chain_data = {
+            "csp_premium": 1.0, "csp_strike": 20, "cc_premium": 0.8,
+            "cc_strike": 22, "spot": 21, "iv_rank": 40, "spread_pct": 3.0, "dte": 0,
+        }
+        ps = mod.score_premium(chain_data, cfg)
+        # Should not crash and should use default dte of 30
+        self.assertGreater(ps.composite, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
