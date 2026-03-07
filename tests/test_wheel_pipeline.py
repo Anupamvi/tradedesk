@@ -618,5 +618,171 @@ class TestExtractChainData(unittest.TestCase):
         self.assertGreater(result["csp_premium"], 0)
 
 
+class TestPositionTracker(unittest.TestCase):
+    """Tests for PositionTracker — JSON-backed position persistence."""
+
+    def _tmp_path(self) -> Path:
+        import tempfile
+        return Path(tempfile.mkdtemp()) / "positions.json"
+
+    def _make_position(self, ticker="AAPL", phase="csp") -> "mod.WheelPosition":
+        return mod.WheelPosition(
+            ticker=ticker, tier="core", phase=phase,
+            entry_date="2026-03-07", strike=45.0, expiry="2026-04-17",
+            contracts=1, shares=0, entry_premium=0.85,
+            cost_basis=0.0, capital_reserved=4500.0,
+            cumulative_premium=0.85, assignment_count=0, wheel_cycles=0,
+        )
+
+    def test_load_empty(self) -> None:
+        """Non-existent path => empty positions list."""
+        p = self._tmp_path()
+        tracker = mod.PositionTracker(p)
+        self.assertEqual(len(tracker.positions), 0)
+        self.assertEqual(len(tracker.premium_journal), 0)
+
+    def test_add_and_save_and_reload(self) -> None:
+        """Add position, save, reload from same path => position preserved."""
+        p = self._tmp_path()
+        tracker = mod.PositionTracker(p)
+        pos = self._make_position()
+        tracker.add_position(pos)
+        tracker.save()
+
+        tracker2 = mod.PositionTracker(p)
+        self.assertEqual(len(tracker2.positions), 1)
+        self.assertEqual(tracker2.positions[0].ticker, "AAPL")
+        self.assertEqual(tracker2.positions[0].strike, 45.0)
+        self.assertEqual(tracker2.positions[0].phase, "csp")
+
+    def test_remove_position(self) -> None:
+        """Add 2 positions, remove 1 => 1 remains."""
+        p = self._tmp_path()
+        tracker = mod.PositionTracker(p)
+        tracker.add_position(self._make_position("AAPL", "csp"))
+        tracker.add_position(self._make_position("MSFT", "shares"))
+        self.assertEqual(len(tracker.positions), 2)
+        tracker.remove_position("AAPL", "csp")
+        self.assertEqual(len(tracker.positions), 1)
+        self.assertEqual(tracker.positions[0].ticker, "MSFT")
+
+    def test_log_premium(self) -> None:
+        """Log an entry => journal length increases."""
+        p = self._tmp_path()
+        tracker = mod.PositionTracker(p)
+        tracker.log_premium("2026-03-07", "AAPL", "SELL_CSP", 0.85, notes="initial")
+        self.assertEqual(len(tracker.premium_journal), 1)
+        self.assertEqual(tracker.premium_journal[0]["ticker"], "AAPL")
+        self.assertEqual(tracker.premium_journal[0]["amount"], 0.85)
+
+
+class TestDailyManager(unittest.TestCase):
+    """Tests for DailyManager — daily decision matrix for wheel positions."""
+
+    def _make_cfg(self) -> dict:
+        return {
+            "management": {
+                "close_target_pct": 0.50,
+                "dte_target": 30,
+                "dte_roll_threshold": 14,
+                "sigma_otm": 1.0,
+                "max_unrealized_loss_pct": -0.50,
+                "max_consecutive_assignments": 2,
+                "sector_concentration_limit": 0.40,
+                "earnings_close_days": 7,
+            }
+        }
+
+    def _make_csp_pos(self, entry_premium=0.85) -> "mod.WheelPosition":
+        return mod.WheelPosition(
+            ticker="AAPL", phase="csp", entry_premium=entry_premium,
+            strike=45.0, expiry="2026-04-17", contracts=1,
+            capital_reserved=4500.0,
+        )
+
+    def _make_shares_pos(self) -> "mod.WheelPosition":
+        return mod.WheelPosition(
+            ticker="AAPL", phase="shares", strike=45.0,
+            shares=100, cost_basis=45.0, capital_reserved=4500.0,
+        )
+
+    def _make_cc_pos(self, entry_premium=0.90, strike=48.0) -> "mod.WheelPosition":
+        return mod.WheelPosition(
+            ticker="AAPL", phase="cc", entry_premium=entry_premium,
+            strike=strike, expiry="2026-04-17", contracts=1,
+            capital_reserved=4500.0,
+        )
+
+    # --- CSP tests ---
+
+    def test_csp_close_at_50pct(self) -> None:
+        """entry=0.85, current=0.40 => pnl_pct ~53% >= 50% => CLOSE."""
+        mgr = mod.DailyManager(self._make_cfg())
+        pos = self._make_csp_pos(entry_premium=0.85)
+        action = mgr.evaluate_csp(pos, current_premium=0.40, dte=25)
+        self.assertEqual(action.action, "CLOSE")
+        self.assertGreater(action.pnl_pct, 0.50)
+
+    def test_csp_hold_not_target(self) -> None:
+        """entry=0.85, current=0.70 => pnl_pct ~18% < 50% => HOLD."""
+        mgr = mod.DailyManager(self._make_cfg())
+        pos = self._make_csp_pos(entry_premium=0.85)
+        action = mgr.evaluate_csp(pos, current_premium=0.70, dte=25)
+        self.assertEqual(action.action, "HOLD")
+
+    def test_csp_roll_low_dte_losing(self) -> None:
+        """entry=0.95, current=1.20, dte=10 => losing + low DTE => ROLL."""
+        mgr = mod.DailyManager(self._make_cfg())
+        pos = self._make_csp_pos(entry_premium=0.95)
+        action = mgr.evaluate_csp(pos, current_premium=1.20, dte=10)
+        self.assertEqual(action.action, "ROLL")
+
+    def test_csp_close_low_dte_winning(self) -> None:
+        """entry=0.85, current=0.30, dte=10 => winning + low DTE => CLOSE."""
+        mgr = mod.DailyManager(self._make_cfg())
+        pos = self._make_csp_pos(entry_premium=0.85)
+        action = mgr.evaluate_csp(pos, current_premium=0.30, dte=10)
+        self.assertEqual(action.action, "CLOSE")
+
+    # --- Shares tests ---
+
+    def test_shares_bullish(self) -> None:
+        """Bullish signal => SELL_CC."""
+        mgr = mod.DailyManager(self._make_cfg())
+        pos = self._make_shares_pos()
+        action = mgr.evaluate_shares(pos, spot=46.0, signal="bullish")
+        self.assertEqual(action.action, "SELL_CC")
+
+    def test_shares_bearish(self) -> None:
+        """Bearish signal => SELL_CC."""
+        mgr = mod.DailyManager(self._make_cfg())
+        pos = self._make_shares_pos()
+        action = mgr.evaluate_shares(pos, spot=44.0, signal="bearish")
+        self.assertEqual(action.action, "SELL_CC")
+
+    # --- CC tests ---
+
+    def test_cc_close_at_target(self) -> None:
+        """entry=0.90, current=0.40 => pnl_pct ~56% >= 50% => CLOSE."""
+        mgr = mod.DailyManager(self._make_cfg())
+        pos = self._make_cc_pos(entry_premium=0.90, strike=48.0)
+        action = mgr.evaluate_cc(pos, current_premium=0.40, dte=20, spot=46.0)
+        self.assertEqual(action.action, "CLOSE")
+
+    def test_cc_called_away(self) -> None:
+        """spot >= strike, dte=5 => ALLOW_CALL_AWAY."""
+        mgr = mod.DailyManager(self._make_cfg())
+        pos = self._make_cc_pos(entry_premium=0.90, strike=48.0)
+        action = mgr.evaluate_cc(pos, current_premium=1.50, dte=5, spot=49.0)
+        self.assertEqual(action.action, "ALLOW_CALL_AWAY")
+
+    def test_cc_hold(self) -> None:
+        """Profitable but not at target => HOLD."""
+        mgr = mod.DailyManager(self._make_cfg())
+        pos = self._make_cc_pos(entry_premium=0.90, strike=48.0)
+        action = mgr.evaluate_cc(pos, current_premium=0.60, dte=20, spot=46.0)
+        self.assertEqual(action.action, "HOLD")
+
+
 if __name__ == "__main__":
     unittest.main()

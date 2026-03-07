@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import datetime as dt
 import json
 import math
@@ -876,3 +877,163 @@ def allocate_capital(
         allocated.append(cand)
 
     return allocated
+
+
+# ---------------------------------------------------------------------------
+# Position Tracker
+# ---------------------------------------------------------------------------
+
+class PositionTracker:
+    """JSON-backed tracker for active wheel positions and premium journal."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.positions: List[WheelPosition] = []
+        self.premium_journal: List[dict] = []
+        if path.exists():
+            self.load()
+
+    def load(self) -> None:
+        """Read JSON file and hydrate positions and journal."""
+        with open(self.path, "r") as f:
+            data = json.load(f)
+        self.positions = [
+            WheelPosition(**pos) for pos in data.get("positions", [])
+        ]
+        self.premium_journal = data.get("premium_journal", [])
+
+    def save(self) -> None:
+        """Persist positions and journal to JSON with a last_updated timestamp."""
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "last_updated": dt.datetime.now().isoformat(),
+            "positions": [dataclasses.asdict(p) for p in self.positions],
+            "premium_journal": self.premium_journal,
+        }
+        with open(self.path, "w") as f:
+            json.dump(data, f, indent=2)
+
+    def add_position(self, pos: WheelPosition) -> None:
+        """Append a position to the tracked list."""
+        self.positions.append(pos)
+
+    def remove_position(self, ticker: str, phase: str) -> None:
+        """Remove the first position matching *ticker* and *phase*."""
+        self.positions = [
+            p for p in self.positions
+            if not (p.ticker == ticker and p.phase == phase)
+        ]
+
+    def log_premium(self, date: str, ticker: str, action: str, amount: float,
+                    notes: str = "") -> None:
+        """Append a premium journal entry."""
+        self.premium_journal.append({
+            "date": date,
+            "ticker": ticker,
+            "action": action,
+            "amount": amount,
+            "notes": notes,
+        })
+
+    @property
+    def total_capital_reserved(self) -> float:
+        """Sum of capital_reserved across all tracked positions."""
+        return sum(p.capital_reserved for p in self.positions)
+
+
+# ---------------------------------------------------------------------------
+# Daily Manager
+# ---------------------------------------------------------------------------
+
+class DailyManager:
+    """Daily decision matrix for managing active wheel positions."""
+
+    def __init__(self, cfg: Dict) -> None:
+        self.mgmt = cfg["management"]
+
+    def evaluate_csp(self, pos: WheelPosition, current_premium: float,
+                     dte: int, signal: str = "neutral") -> DailyAction:
+        """Evaluate a cash-secured put position and recommend an action."""
+        pnl_pct = (pos.entry_premium - current_premium) / pos.entry_premium
+        close_target = self.mgmt["close_target_pct"]
+        dte_threshold = self.mgmt["dte_roll_threshold"]
+
+        action = DailyAction(
+            ticker=pos.ticker, phase="csp",
+            pnl_pct=pnl_pct, current_premium=current_premium, signal=signal,
+        )
+
+        if pnl_pct >= close_target:
+            action.action = "CLOSE"
+            action.icon = "V"
+            action.detail = f"Target reached ({pnl_pct:.0%} profit). Close to lock in gains."
+            action.reason = "profit_target"
+        elif dte <= dte_threshold and pnl_pct < 0:
+            action.action = "ROLL"
+            action.icon = "R"
+            action.detail = f"Losing ({pnl_pct:.0%}) with {dte} DTE. Roll out for more time."
+            action.reason = "low_dte_losing"
+        elif dte <= dte_threshold and pnl_pct > 0:
+            action.action = "CLOSE"
+            action.icon = "V"
+            action.detail = f"Winning ({pnl_pct:.0%}) with {dte} DTE. Close before expiry."
+            action.reason = "low_dte_winning"
+        else:
+            action.action = "HOLD"
+            action.icon = "H"
+            action.detail = f"P&L {pnl_pct:.0%}, {dte} DTE. No action needed."
+            action.reason = "hold"
+
+        return action
+
+    def evaluate_shares(self, pos: WheelPosition, spot: float,
+                        signal: str = "neutral") -> DailyAction:
+        """Evaluate a shares position and recommend covered-call parameters."""
+        action = DailyAction(
+            ticker=pos.ticker, phase="shares", signal=signal,
+            action="SELL_CC",
+        )
+
+        if signal == "bullish":
+            action.icon = "C"
+            action.detail = "Bullish signal: sell CC at 0.5 sigma (aggressive, higher strike)."
+            action.reason = "bullish_cc"
+        elif signal == "bearish":
+            action.icon = "C"
+            action.detail = "Bearish signal: sell CC at ATM/ITM for maximum premium."
+            action.reason = "bearish_cc"
+        else:
+            action.icon = "C"
+            action.detail = "Neutral: sell CC at 1 sigma, 30 DTE."
+            action.reason = "neutral_cc"
+
+        return action
+
+    def evaluate_cc(self, pos: WheelPosition, current_premium: float,
+                    dte: int, spot: float) -> DailyAction:
+        """Evaluate a covered-call position and recommend an action."""
+        pnl_pct = (pos.entry_premium - current_premium) / pos.entry_premium
+        close_target = self.mgmt["close_target_pct"]
+
+        action = DailyAction(
+            ticker=pos.ticker, phase="cc",
+            pnl_pct=pnl_pct, current_premium=current_premium,
+        )
+
+        if pnl_pct >= close_target:
+            action.action = "CLOSE"
+            action.icon = "V"
+            action.detail = f"CC target reached ({pnl_pct:.0%} profit). Close and re-sell higher."
+            action.reason = "profit_target"
+        elif spot >= pos.strike and dte <= 7:
+            action.action = "ALLOW_CALL_AWAY"
+            action.icon = "A"
+            action.detail = f"Spot ${spot:.2f} >= strike ${pos.strike:.2f} with {dte} DTE. Allow assignment."
+            action.reason = "called_away"
+        else:
+            action.action = "HOLD"
+            action.icon = "H"
+            action.detail = f"CC P&L {pnl_pct:.0%}, {dte} DTE. Hold."
+            action.reason = "hold"
+
+        return action
