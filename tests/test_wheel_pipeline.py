@@ -264,5 +264,66 @@ class TestConfigLoad(unittest.TestCase):
         )
 
 
+class TestComputeMeanReversion(unittest.TestCase):
+    """Tests for compute_mean_reversion() — drawdown recovery rate."""
+
+    def _make_uptrend(self, n: int = 100) -> "pd.DataFrame":
+        """Create a steady uptrend with no drawdowns."""
+        import pandas as pd
+        import numpy as np
+        dates = pd.date_range("2024-01-01", periods=n, freq="B")
+        closes = 100 + np.arange(n) * 0.5  # steady rise
+        return pd.DataFrame({"Close": closes}, index=dates)
+
+    def test_perfect_recovery(self) -> None:
+        """Two drawdowns that recover quickly should yield rate >= 75%."""
+        import pandas as pd
+        import numpy as np
+        n = 200
+        dates = pd.date_range("2024-01-01", periods=n, freq="B")
+        prices = np.full(n, 100.0)
+        # First drawdown at day 30: drop 15%, recover by day 45
+        for i in range(30, 40):
+            prices[i] = 100 - (15 * (i - 29) / 10)
+        for i in range(40, 50):
+            prices[i] = 85 + (15 * (i - 39) / 10)
+        # Second drawdown at day 100: drop 12%, recover by day 115
+        for i in range(100, 108):
+            prices[i] = 100 - (12 * (i - 99) / 8)
+        for i in range(108, 118):
+            prices[i] = 88 + (12 * (i - 107) / 10)
+        df = pd.DataFrame({"Close": prices}, index=dates)
+        rate = mod.compute_mean_reversion(df, drawdown_pct=10, recovery_days=30)
+        self.assertGreaterEqual(rate, 75.0)
+
+    def test_no_drawdowns(self) -> None:
+        """Steady uptrend with no drawdowns should return 100.0."""
+        df = self._make_uptrend(100)
+        rate = mod.compute_mean_reversion(df, drawdown_pct=10, recovery_days=30)
+        self.assertEqual(rate, 100.0)
+
+    def test_insufficient_data(self) -> None:
+        """Less than 30 rows should return 50.0."""
+        import pandas as pd
+        dates = pd.date_range("2024-01-01", periods=20, freq="B")
+        df = pd.DataFrame({"Close": [100.0] * 20}, index=dates)
+        rate = mod.compute_mean_reversion(df, drawdown_pct=10, recovery_days=30)
+        self.assertEqual(rate, 50.0)
+
+    def test_no_recovery(self) -> None:
+        """Drawdowns that never recover should yield a low rate."""
+        import pandas as pd
+        import numpy as np
+        n = 200
+        dates = pd.date_range("2024-01-01", periods=n, freq="B")
+        # Start at 100, drop to 80 at day 20, stay at 80 forever
+        prices = np.full(n, 80.0)
+        for i in range(20):
+            prices[i] = 100 - (i * 1.0)
+        df = pd.DataFrame({"Close": prices}, index=dates)
+        rate = mod.compute_mean_reversion(df, drawdown_pct=10, recovery_days=30)
+        self.assertLessEqual(rate, 25.0)
+
+
 if __name__ == "__main__":
     unittest.main()

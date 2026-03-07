@@ -25,6 +25,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import yaml
+import yfinance as yf
 
 
 # ---------------------------------------------------------------------------
@@ -296,3 +297,167 @@ def score_quality(fundamentals: dict, cfg: dict) -> QualityScore:
     )
 
     return qs
+
+
+# ---------------------------------------------------------------------------
+# Mean Reversion Calculator
+# ---------------------------------------------------------------------------
+
+def compute_mean_reversion(
+    price_df: pd.DataFrame,
+    drawdown_pct: float = 10,
+    recovery_days: int = 30,
+) -> float:
+    """Compute the percentage of drawdowns that recovered within *recovery_days*.
+
+    Parameters
+    ----------
+    price_df : DataFrame with a ``Close`` column (like yfinance history output).
+    drawdown_pct : minimum drawdown depth (%) from rolling peak to count.
+    recovery_days : number of trading days allowed for recovery.
+
+    Returns
+    -------
+    Float 0-100 representing the recovery rate.
+    - 100.0 if no qualifying drawdowns are found (steady uptrend).
+    - 50.0 if fewer than 30 rows of data.
+    """
+    if len(price_df) < 30:
+        return 50.0
+
+    closes = price_df["Close"].values.astype(float)
+    n = len(closes)
+
+    # Rolling peak (cumulative max)
+    rolling_peak = np.maximum.accumulate(closes)
+
+    # Drawdown percentage at each point
+    dd_pct = (rolling_peak - closes) / rolling_peak * 100
+
+    # Find drawdown events: first bar where dd crosses the threshold
+    threshold = drawdown_pct
+    in_drawdown = False
+    drawdown_events: list[dict] = []
+
+    for i in range(n):
+        if not in_drawdown and dd_pct[i] >= threshold:
+            in_drawdown = True
+            peak_val = rolling_peak[i]
+            drawdown_events.append({"start": i, "peak": peak_val})
+        elif in_drawdown:
+            # Drawdown ends when price recovers to prior peak
+            if closes[i] >= drawdown_events[-1]["peak"]:
+                drawdown_events[-1]["recovered_at"] = i
+                in_drawdown = False
+
+    if not drawdown_events:
+        return 100.0
+
+    # Count recoveries within the allowed window
+    total = len(drawdown_events)
+    recovered = 0
+    for evt in drawdown_events:
+        if "recovered_at" in evt:
+            days_to_recover = evt["recovered_at"] - evt["start"]
+            if days_to_recover <= recovery_days:
+                recovered += 1
+
+    return (recovered / total) * 100.0
+
+
+# ---------------------------------------------------------------------------
+# Fundamentals Fetcher
+# ---------------------------------------------------------------------------
+
+def fetch_fundamentals(ticker: str, schwab_quote: Optional[dict] = None) -> dict:
+    """Fetch fundamental data for a ticker using yfinance.
+
+    Parameters
+    ----------
+    ticker : stock ticker symbol.
+    schwab_quote : optional Schwab quote dict; if provided, overrides P/E ratio.
+
+    Returns
+    -------
+    Dict with keys: roe, debt_equity, rev_growth_yoy, fcf_yield, pe_ratio,
+    earnings_beats, mean_reversion_rate, sector, market_cap.
+    """
+    defaults = {
+        "roe": 0.0,
+        "debt_equity": 999.0,
+        "rev_growth_yoy": 0.0,
+        "fcf_yield": 0.0,
+        "pe_ratio": 0.0,
+        "earnings_beats": 0,
+        "mean_reversion_rate": 50.0,
+        "sector": "Unknown",
+        "market_cap": 0.0,
+    }
+
+    try:
+        stock = yf.Ticker(ticker)
+        info = stock.info or {}
+
+        # --- ROE ---
+        roe = info.get("returnOnEquity")
+        defaults["roe"] = (roe * 100) if roe is not None else 0.0
+
+        # --- Debt/Equity ---
+        de = info.get("debtToEquity")
+        defaults["debt_equity"] = (de / 100) if de is not None else 999.0
+
+        # --- Revenue growth YoY ---
+        rg = info.get("revenueGrowth")
+        defaults["rev_growth_yoy"] = (rg * 100) if rg is not None else 0.0
+
+        # --- FCF yield ---
+        fcf = info.get("freeCashflow")
+        mcap = info.get("marketCap")
+        if fcf is not None and mcap and mcap > 0:
+            defaults["fcf_yield"] = (fcf / mcap) * 100
+        else:
+            defaults["fcf_yield"] = 0.0
+
+        # --- P/E ratio ---
+        pe = info.get("trailingPE")
+        defaults["pe_ratio"] = pe if pe is not None else 0.0
+
+        # Override P/E from Schwab if provided
+        if schwab_quote is not None:
+            schwab_pe = schwab_quote.get("peRatio") or schwab_quote.get("pe_ratio")
+            if schwab_pe is not None:
+                defaults["pe_ratio"] = float(schwab_pe)
+
+        # --- Sector & market cap ---
+        defaults["sector"] = info.get("sector", "Unknown")
+        defaults["market_cap"] = float(mcap) if mcap else 0.0
+
+        # --- Earnings beats (last 4 quarters) ---
+        try:
+            earnings_dates = stock.earnings_dates
+            if earnings_dates is not None and len(earnings_dates) > 0:
+                # Filter to rows that have surprise data
+                surprise_col = None
+                for col in earnings_dates.columns:
+                    if "surprise" in col.lower():
+                        surprise_col = col
+                        break
+                if surprise_col is not None:
+                    recent = earnings_dates.head(4)
+                    beats = (recent[surprise_col].dropna() > 0).sum()
+                    defaults["earnings_beats"] = int(beats)
+        except Exception:
+            pass
+
+        # --- Mean reversion rate (2-year history) ---
+        try:
+            hist = stock.history(period="2y")
+            if hist is not None and len(hist) > 0:
+                defaults["mean_reversion_rate"] = compute_mean_reversion(hist)
+        except Exception:
+            pass
+
+    except Exception:
+        pass
+
+    return defaults
