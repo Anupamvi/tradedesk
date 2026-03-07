@@ -138,6 +138,104 @@ class TestDataclasses(unittest.TestCase):
         self.assertEqual(da.icon, "")
 
 
+class TestFilterUniverse(unittest.TestCase):
+    """Tests for filter_universe() — filters DataFrame by price, mcap, option volume."""
+
+    def _make_cfg(self) -> dict:
+        return {
+            "universe": {
+                "min_price": 10,
+                "max_price": 60,
+                "min_option_volume": 500,
+                "min_market_cap_b": 2.0,
+            }
+        }
+
+    def test_filters_by_price(self) -> None:
+        import pandas as pd
+        df = pd.DataFrame({
+            "ticker": ["A", "B", "C", "D"],
+            "close": [5.0, 25.0, 45.0, 80.0],
+            "option_volume": [1000, 1000, 1000, 1000],
+            "market_cap": [5e9, 5e9, 5e9, 5e9],
+        })
+        result = mod.filter_universe(df, self._make_cfg())
+        self.assertListEqual(list(result["ticker"]), ["B", "C"])
+
+    def test_filters_by_market_cap(self) -> None:
+        import pandas as pd
+        df = pd.DataFrame({
+            "ticker": ["A", "B", "C"],
+            "close": [30.0, 30.0, 30.0],
+            "option_volume": [1000, 1000, 1000],
+            "market_cap": [1e9, 2e9, 10e9],
+        })
+        result = mod.filter_universe(df, self._make_cfg())
+        self.assertListEqual(list(result["ticker"]), ["B", "C"])
+
+    def test_filters_by_option_volume(self) -> None:
+        import pandas as pd
+        df = pd.DataFrame({
+            "ticker": ["A", "B"],
+            "close": [30.0, 30.0],
+            "option_volume": [100, 1000],
+            "market_cap": [5e9, 5e9],
+        })
+        result = mod.filter_universe(df, self._make_cfg())
+        self.assertListEqual(list(result["ticker"]), ["B"])
+
+
+class TestScoreQuality(unittest.TestCase):
+    """Tests for score_quality() — fundamental quality scoring."""
+
+    def _make_cfg(self) -> dict:
+        import yaml
+        config_path = Path(__file__).resolve().parents[1] / "uwos" / "wheel_config.yaml"
+        with open(config_path) as f:
+            return yaml.safe_load(f)
+
+    def test_high_quality_stock(self) -> None:
+        cfg = self._make_cfg()
+        fundamentals = {
+            "roe": 20, "debt_equity": 0.3, "rev_growth_yoy": 18,
+            "fcf_yield": 6, "pe_ratio": 12, "earnings_beats": 4,
+            "mean_reversion_rate": 80,
+        }
+        qs = mod.score_quality(fundamentals, cfg)
+        self.assertFalse(qs.disqualified)
+        self.assertGreater(qs.composite, 85)
+
+    def test_disqualified_high_debt(self) -> None:
+        cfg = self._make_cfg()
+        fundamentals = {
+            "roe": 15, "debt_equity": 3.5, "rev_growth_yoy": 10,
+            "fcf_yield": 4, "pe_ratio": 20, "earnings_beats": 3,
+            "mean_reversion_rate": 60,
+        }
+        qs = mod.score_quality(fundamentals, cfg)
+        self.assertTrue(qs.disqualified)
+
+    def test_low_quality_stock(self) -> None:
+        cfg = self._make_cfg()
+        fundamentals = {
+            "roe": -5, "debt_equity": 2.5, "rev_growth_yoy": -2,
+            "fcf_yield": 0.5, "pe_ratio": 50, "earnings_beats": 0,
+            "mean_reversion_rate": 10,
+        }
+        qs = mod.score_quality(fundamentals, cfg)
+        self.assertLess(qs.composite, 35)
+
+    def test_negative_pe_handling(self) -> None:
+        cfg = self._make_cfg()
+        fundamentals = {
+            "roe": 10, "debt_equity": 1.0, "rev_growth_yoy": 5,
+            "fcf_yield": 3, "pe_ratio": -10, "earnings_beats": 2,
+            "mean_reversion_rate": 50,
+        }
+        qs = mod.score_quality(fundamentals, cfg)
+        self.assertEqual(qs.pe_score, 10)
+
+
 class TestConfigLoad(unittest.TestCase):
     """Verify the YAML config loads and has expected keys."""
 

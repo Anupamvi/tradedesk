@@ -185,3 +185,114 @@ class DailyAction:
     current_premium: float = 0.0
     signal: str = ""
     reason: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Universe Filter
+# ---------------------------------------------------------------------------
+
+def filter_universe(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
+    """Filter a DataFrame of stock candidates by price, market-cap, and option volume.
+
+    Parameters
+    ----------
+    df : DataFrame with at least columns: ticker, close, option_volume, market_cap
+    cfg : config dict containing a ``universe`` section with thresholds
+
+    Returns
+    -------
+    Filtered DataFrame with reset index.
+    """
+    u = cfg["universe"]
+    mask = (
+        (df["close"] >= u["min_price"])
+        & (df["close"] <= u["max_price"])
+        & (df["option_volume"] >= u["min_option_volume"])
+        & (df["market_cap"] >= u["min_market_cap_b"] * 1e9)
+    )
+    return df.loc[mask].reset_index(drop=True)
+
+
+# ---------------------------------------------------------------------------
+# Quality Scorer
+# ---------------------------------------------------------------------------
+
+def score_quality(fundamentals: dict, cfg: dict) -> QualityScore:
+    """Score a stock's fundamental quality for wheel suitability.
+
+    Parameters
+    ----------
+    fundamentals : dict with keys roe, debt_equity, rev_growth_yoy, fcf_yield,
+                   pe_ratio, earnings_beats, mean_reversion_rate
+    cfg : full config dict (uses ``scoring.quality`` section)
+
+    Returns
+    -------
+    QualityScore dataclass with sub-scores and weighted composite.
+    """
+    q = cfg["scoring"]["quality"]
+    qs = QualityScore()
+
+    # --- raw values ---
+    qs.roe = fundamentals["roe"]
+    qs.debt_equity = fundamentals["debt_equity"]
+    qs.rev_growth_yoy = fundamentals["rev_growth_yoy"]
+    qs.fcf_yield = fundamentals["fcf_yield"]
+    qs.pe_ratio = fundamentals["pe_ratio"]
+    qs.earnings_beats = fundamentals["earnings_beats"]
+    qs.mean_reversion_rate = fundamentals["mean_reversion_rate"]
+
+    # --- disqualification check ---
+    if qs.debt_equity > q["de_disqualify"]:
+        qs.disqualified = True
+        qs.disqualify_reason = f"D/E {qs.debt_equity:.2f} > {q['de_disqualify']}"
+
+    # --- sub-scores ---
+    # Profitability (ROE): negative ROE = 0 score
+    if qs.roe < 0:
+        qs.roe_score = 0
+    else:
+        qs.roe_score = tier_score(qs.roe, excellent=q["roe_excellent"],
+                                  good=q["roe_good"], fair=q["roe_fair"])
+
+    # Balance sheet (D/E): lower is better
+    qs.debt_equity_score = tier_score(qs.debt_equity, excellent=q["de_excellent"],
+                                      good=q["de_good"], fair=q["de_fair"],
+                                      lower_is_better=True)
+
+    # Growth
+    qs.rev_growth_score = tier_score(qs.rev_growth_yoy, excellent=q["growth_excellent"],
+                                     good=q["growth_good"], fair=q["growth_fair"])
+
+    # Cash flow
+    qs.fcf_yield_score = tier_score(qs.fcf_yield, excellent=q["fcf_excellent"],
+                                    good=q["fcf_good"], fair=q["fcf_fair"])
+
+    # Valuation (P/E): negative P/E = 10 score; otherwise lower is better
+    if qs.pe_ratio < 0:
+        qs.pe_score = 10
+    else:
+        qs.pe_score = tier_score(qs.pe_ratio, excellent=q["pe_excellent"],
+                                 good=q["pe_good"], fair=q["pe_fair"],
+                                 lower_is_better=True)
+
+    # Stability (earnings beats out of 4)
+    qs.stability_score = tier_score(qs.earnings_beats, excellent=4, good=3, fair=2)
+
+    # Mean reversion
+    qs.mean_reversion_score = tier_score(qs.mean_reversion_rate,
+                                         excellent=q["mr_excellent"],
+                                         good=q["mr_good"], fair=q["mr_fair"])
+
+    # --- weighted composite ---
+    qs.composite = (
+        q["profitability_weight"] * qs.roe_score
+        + q["balance_sheet_weight"] * qs.debt_equity_score
+        + q["growth_weight"] * qs.rev_growth_score
+        + q["cash_flow_weight"] * qs.fcf_yield_score
+        + q["valuation_weight"] * qs.pe_score
+        + q["stability_weight"] * qs.stability_score
+        + q["mean_reversion_weight"] * qs.mean_reversion_score
+    )
+
+    return qs
