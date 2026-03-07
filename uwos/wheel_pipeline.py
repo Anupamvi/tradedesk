@@ -1037,3 +1037,188 @@ class DailyManager:
             action.reason = "hold"
 
         return action
+
+
+# ---------------------------------------------------------------------------
+# Report Writers (Markdown Output)
+# ---------------------------------------------------------------------------
+
+_TIER_ICONS = {"core": "GREEN", "aggressive": "RED", "watchlist": "WHITE"}
+_TIER_ORDER = ["core", "aggressive", "watchlist"]
+
+
+def generate_select_report(
+    candidates: List[WheelCandidate],
+    capital: float,
+    as_of: str,
+    cfg: dict,
+) -> str:
+    """Generate the weekly wheel selection report in Markdown.
+
+    Parameters
+    ----------
+    candidates : scored and allocated WheelCandidate list.
+    capital : total available capital.
+    as_of : report date string (YYYY-MM-DD).
+    cfg : config dict (unused for now, reserved for future formatting knobs).
+
+    Returns
+    -------
+    Markdown string with tier tables and capital allocation summary.
+    """
+    by_tier: Dict[str, List[WheelCandidate]] = defaultdict(list)
+    for c in candidates:
+        by_tier[c.tier].append(c)
+
+    total_allocated = sum(c.capital_required for c in candidates)
+    reserve = capital - total_allocated
+    alloc_pct = (total_allocated / capital * 100) if capital else 0
+
+    lines: List[str] = []
+    lines.append(f"# Wheel Selection Report --- {as_of}")
+    lines.append("")
+    lines.append(
+        f"Capital: ${capital:,.0f} | Allocated: ${total_allocated:,.0f} "
+        f"({alloc_pct:.0f}%) | Reserve: ${reserve:,.0f} ({100 - alloc_pct:.0f}%)"
+    )
+    lines.append("")
+
+    header = (
+        "| # | Ticker | Phase | Action | Strike | Expiry | DTE | Premium "
+        "| Ann. Yield | Quality | Premium Scr | Composite | Capital Req "
+        "| Contracts | Notes |"
+    )
+    sep = (
+        "|---|--------|-------|--------|--------|--------|-----|---------|"
+        "------------|---------|-------------|-----------|-------------|"
+        "-----------|-------|"
+    )
+
+    for tier_key in _TIER_ORDER:
+        tier_candidates = by_tier.get(tier_key, [])
+        if not tier_candidates:
+            continue
+        icon = _TIER_ICONS.get(tier_key, tier_key.upper())
+        label = tier_key.upper()
+        lines.append(f"### {icon} {label} WHEEL")
+        lines.append(header)
+        lines.append(sep)
+        for idx, c in enumerate(tier_candidates, 1):
+            notes_str = "; ".join(c.notes) if c.notes else ""
+            lines.append(
+                f"| {idx} | {c.ticker} | CSP | {c.action} "
+                f"| ${c.premium.csp_strike:.2f} | {c.expiry} | {c.dte} "
+                f"| ${c.premium.csp_premium:.2f} | {c.premium.csp_yield_ann:.1f}% "
+                f"| {c.quality.composite:.0f} | {c.premium.composite:.0f} "
+                f"| {c.composite:.1f} | ${c.capital_required:,.0f} "
+                f"| {c.max_contracts} | {notes_str} |"
+            )
+        lines.append("")
+
+    # Capital allocation summary
+    lines.append("## Capital Allocation")
+    lines.append("| Tier | Ticker | Capital | % of Book | Contracts |")
+    lines.append("|------|--------|---------|-----------|-----------|")
+    for tier_key in _TIER_ORDER:
+        for c in by_tier.get(tier_key, []):
+            icon = _TIER_ICONS.get(tier_key, tier_key.upper())
+            label = tier_key.upper()
+            pct = (c.capital_required / capital * 100) if capital else 0
+            lines.append(
+                f"| {icon} {label} | {c.ticker} | ${c.capital_required:,.0f} "
+                f"| {pct:.0f}% | {c.max_contracts} |"
+            )
+    lines.append(
+        f"| CASH | Reserve | ${reserve:,.0f} "
+        f"| {(reserve / capital * 100) if capital else 0:.0f}% | --- |"
+    )
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+def generate_daily_report(
+    actions: List[DailyAction],
+    positions: List[WheelPosition],
+    capital: float,
+    as_of: str,
+    journal: List[dict],
+) -> str:
+    """Generate the daily wheel management report in Markdown.
+
+    Parameters
+    ----------
+    actions : list of DailyAction recommendations for today.
+    positions : list of active WheelPosition objects.
+    capital : total available capital.
+    as_of : report date string (YYYY-MM-DD).
+    journal : premium journal entries (list of dicts with 'amount' key).
+
+    Returns
+    -------
+    Markdown string with positions, actions, premium journal, risk dashboard.
+    """
+    lines: List[str] = []
+    lines.append(f"# Wheel Daily --- {as_of}")
+    lines.append("")
+
+    # Active Positions
+    lines.append("## Active Positions")
+    lines.append(
+        "| Ticker | Phase | Position | Strike | Expiry | P/L % | Signal | Action |"
+    )
+    lines.append(
+        "|--------|-------|----------|--------|--------|-------|--------|--------|"
+    )
+    action_map: Dict[str, DailyAction] = {}
+    for a in actions:
+        action_map[f"{a.ticker}:{a.phase}"] = a
+
+    for pos in positions:
+        key = f"{pos.ticker}:{pos.phase}"
+        act = action_map.get(key)
+        pnl_str = f"{act.pnl_pct:.0%}" if act else "---"
+        sig_str = act.signal if act else "---"
+        act_str = act.action if act else "HOLD"
+        position_str = (
+            f"{pos.contracts}x" if pos.phase in ("csp", "cc")
+            else f"{pos.shares} shares"
+        )
+        lines.append(
+            f"| {pos.ticker} | {pos.phase.upper()} | {position_str} "
+            f"| ${pos.strike:.2f} | {pos.expiry} | {pnl_str} "
+            f"| {sig_str} | {act_str} |"
+        )
+    lines.append("")
+
+    # Actions Today (non-HOLD only)
+    non_hold = [a for a in actions if a.action != "HOLD"]
+    lines.append("## Actions Today")
+    if non_hold:
+        for idx, a in enumerate(non_hold, 1):
+            lines.append(f"{idx}. **{a.action}** {a.ticker} --- {a.detail}")
+    else:
+        lines.append("No actions required today.")
+    lines.append("")
+
+    # Premium Journal
+    total_premium = sum(e.get("amount", 0) for e in journal)
+    lines.append("## Premium Journal")
+    lines.append(f"Total realized premium: **${total_premium:,.2f}**")
+    lines.append("")
+
+    # Risk Dashboard
+    total_reserved = sum(p.capital_reserved for p in positions)
+    deployed_pct = (total_reserved / capital * 100) if capital else 0
+    active_count = len(positions)
+    deployed_status = "OK" if deployed_pct <= 65 else "WARN"
+    positions_status = "OK" if active_count <= 5 else "WARN"
+
+    lines.append("## Risk Dashboard")
+    lines.append("| Metric | Value | Status |")
+    lines.append("|--------|-------|--------|")
+    lines.append(f"| Capital deployed | {deployed_pct:.0f}% | {deployed_status} |")
+    lines.append(f"| Active positions | {active_count} | {positions_status} |")
+    lines.append("")
+
+    return "\n".join(lines)

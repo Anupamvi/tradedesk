@@ -784,5 +784,88 @@ class TestDailyManager(unittest.TestCase):
         self.assertEqual(action.action, "HOLD")
 
 
+class TestGenerateSelectReport(unittest.TestCase):
+    """Tests for generate_select_report() — weekly wheel selection markdown."""
+
+    def _make_candidate(self, ticker, tier, composite, csp_strike, csp_premium,
+                        dte=42, expiry="2026-04-17", max_contracts=1,
+                        capital_required=3800.0):
+        wc = mod.WheelCandidate(
+            ticker=ticker, tier=tier, composite=composite, dte=dte,
+            expiry=expiry, max_contracts=max_contracts,
+            capital_required=capital_required,
+            action=f"Sell ${csp_strike}P",
+        )
+        wc.premium = mod.PremiumScore(
+            csp_strike=csp_strike, csp_premium=csp_premium,
+            csp_yield_ann=27.3, csp_yield_score=75,
+            composite=54.0,
+        )
+        wc.quality = mod.QualityScore(composite=75.0)
+        return wc
+
+    def test_contains_header(self) -> None:
+        candidates = [self._make_candidate("BP", "core", 68.7, 38.0, 0.85)]
+        output = mod.generate_select_report(candidates, 35000, "2026-03-07", {})
+        self.assertIn("Wheel Selection Report", output)
+
+    def test_contains_capital_line(self) -> None:
+        candidates = [self._make_candidate("BP", "core", 68.7, 38.0, 0.85)]
+        output = mod.generate_select_report(candidates, 35000, "2026-03-07", {})
+        self.assertIn("Capital: $", output)
+
+    def test_contains_tier_tables(self) -> None:
+        candidates = [
+            self._make_candidate("BP", "core", 68.7, 38.0, 0.85),
+            self._make_candidate("RIOT", "aggressive", 55.0, 12.0, 0.45,
+                                 capital_required=1200.0),
+        ]
+        output = mod.generate_select_report(candidates, 35000, "2026-03-07", {})
+        self.assertIn("CORE", output)
+        self.assertIn("AGGRESSIVE", output)
+
+
+class TestGenerateDailyReport(unittest.TestCase):
+    """Tests for generate_daily_report() — daily management markdown."""
+
+    def _make_action(self, ticker="BP", action="CLOSE", phase="csp",
+                     detail="Buy back $38P at $0.40", pnl_pct=0.53,
+                     signal="neutral"):
+        return mod.DailyAction(
+            ticker=ticker, phase=phase, action=action,
+            icon="V", detail=detail, pnl_pct=pnl_pct,
+            current_premium=0.40, signal=signal, reason="profit_target",
+        )
+
+    def _make_position(self, ticker="BP", phase="csp"):
+        return mod.WheelPosition(
+            ticker=ticker, phase=phase, strike=38.0,
+            expiry="2026-04-17", contracts=1, entry_premium=0.85,
+            capital_reserved=3800.0,
+        )
+
+    def test_contains_header(self) -> None:
+        output = mod.generate_daily_report(
+            actions=[], positions=[], capital=35000,
+            as_of="2026-03-07", journal=[],
+        )
+        self.assertIn("Wheel Daily", output)
+
+    def test_contains_actions(self) -> None:
+        actions = [self._make_action("BP", "CLOSE")]
+        output = mod.generate_daily_report(
+            actions=actions, positions=[self._make_position()],
+            capital=35000, as_of="2026-03-07", journal=[],
+        )
+        self.assertIn("CLOSE", output)
+
+    def test_contains_risk_dashboard(self) -> None:
+        output = mod.generate_daily_report(
+            actions=[], positions=[], capital=35000,
+            as_of="2026-03-07", journal=[],
+        )
+        self.assertIn("Risk Dashboard", output)
+
+
 if __name__ == "__main__":
     unittest.main()
