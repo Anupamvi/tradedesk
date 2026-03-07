@@ -1,0 +1,105 @@
+pipeline:
+  root_dir: "c:\\uw_root"
+  output_dir: "c:\\uw_root\\out\\wheel"
+  default_capital: 35000
+  positions_file: "wheel_positions.json"
+  premium_journal_file: "wheel_premium_journal.csv"
+
+universe:
+  min_price: 10
+  max_price: 60
+  min_option_volume: 500
+  max_option_spread_pct: 0.05
+  min_market_cap_b: 2.0
+  exclude_etfs: true
+
+scoring:
+  quality_weight: 0.70
+  premium_weight: 0.30
+  quality:
+    profitability_weight: 0.25
+    balance_sheet_weight: 0.15
+    growth_weight: 0.175
+    cash_flow_weight: 0.175
+    valuation_weight: 0.05
+    stability_weight: 0.10
+    mean_reversion_weight: 0.10
+    roe_excellent: 15
+    roe_good: 10
+    roe_fair: 5
+    de_excellent: 0.5
+    de_good: 1.0
+    de_fair: 2.0
+    de_disqualify: 3.0
+    growth_excellent: 15
+    growth_good: 5
+    growth_fair: 0
+    fcf_excellent: 5
+    fcf_good: 3
+    fcf_fair: 1
+    pe_excellent: 15
+    pe_good: 25
+    pe_fair: 40
+    mr_excellent: 75
+    mr_good: 50
+    mr_fair: 25
+    mr_lookback_years: 2
+    mr_drawdown_pct: 10
+    mr_recovery_days: 30
+  premium:
+    csp_yield_weight: 0.35
+    cc_yield_weight: 0.25
+    iv_rank_weight: 0.20
+    spread_quality_weight: 0.20
+    csp_excellent: 40
+    csp_good: 30
+    csp_fair: 20
+    csp_low: 10
+    cc_excellent: 30
+    cc_good: 20
+    cc_fair: 10
+    cc_low: 5
+    ivr_excellent: 60
+    ivr_good: 40
+    ivr_fair: 20
+    spread_excellent: 2
+    spread_good: 4
+    spread_fair: 6
+
+sentiment:
+  swing_trend_pass_bullish: 5
+  swing_trend_fail_bearish: -5
+  whale_accumulation_boost: 3
+  dp_bearish_penalty: -3
+  earnings_within_14d_penalty: -5
+  oi_confirms_direction: 2
+  max_adjustment: 10
+
+allocation:
+  max_deployed_pct: 0.65
+  max_single_name_pct: 0.25
+  max_positions: 5
+  core_split: 0.60
+  aggressive_split: 0.40
+  min_composite_core: 60
+  min_composite_aggressive: 45
+  min_composite_watchlist: 35
+
+management:
+  close_target_pct: 0.50
+  dte_target: 30
+  dte_roll_threshold: 14
+  sigma_otm: 1.0
+  max_unrealized_loss_pct: -0.50
+  max_consecutive_assignments: 2
+  sector_concentration_limit: 0.40
+  earnings_close_days: 7
+
+schwab_validation:
+  enabled: true
+  max_strike_snap_pct: 0.03
+
+output:
+  max_candidates: 8
+  report_md_name: "wheel-select-{date}.md"
+  daily_md_name: "wheel-daily-{date}.md"
