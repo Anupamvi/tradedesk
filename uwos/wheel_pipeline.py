@@ -855,8 +855,12 @@ def allocate_capital(
     # Filter out candidates with no valid strike
     sorted_candidates = [c for c in sorted_candidates if c.premium.csp_strike > 0]
 
+    sector_limit = a.get("sector_concentration_limit", 0.40)
+    max_per_sector = capital * sector_limit
+
     allocated: List[WheelCandidate] = []
     total_deployed = 0.0
+    sector_deployed: Dict[str, float] = defaultdict(float)
 
     for cand in sorted_candidates:
         if len(allocated) >= max_positions:
@@ -868,9 +872,16 @@ def allocate_capital(
         if remaining < per_contract:
             break
 
+        # Sector concentration check
+        sector = cand.sector or "Unknown"
+        sector_remaining = max_per_sector - sector_deployed[sector]
+        if sector_remaining < per_contract:
+            continue  # skip this candidate, sector full
+
         max_by_single = int(max_single / per_contract)
         max_by_remaining = int(remaining / per_contract)
-        contracts = min(max_by_single, max_by_remaining)
+        max_by_sector = int(sector_remaining / per_contract)
+        contracts = min(max_by_single, max_by_remaining, max_by_sector)
 
         if contracts < 1:
             continue
@@ -878,6 +889,7 @@ def allocate_capital(
         cand.max_contracts = contracts
         cand.capital_required = contracts * per_contract
         total_deployed += cand.capital_required
+        sector_deployed[sector] += cand.capital_required
         allocated.append(cand)
 
     return allocated
