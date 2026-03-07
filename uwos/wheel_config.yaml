@@ -10,8 +10,11 @@ universe:
   max_price: 60
   min_option_volume: 500
   max_option_spread_pct: 0.05
-  min_market_cap_b: 2.0
+  min_market_cap_b: 5.0
   exclude_etfs: true
+  allowed_issue_types:
+    - "Common Stock"
+    - "ADR"
 
 scoring:
   quality_weight: 0.70

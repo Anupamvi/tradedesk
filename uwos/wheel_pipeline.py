@@ -212,6 +212,10 @@ def filter_universe(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
         & (df["option_volume"] >= u["min_option_volume"])
         & (df["market_cap"] >= u["min_market_cap_b"] * 1e9)
     )
+    # Filter by issue_type (eliminate ETFs, ADRs, structured products)
+    allowed = u.get("allowed_issue_types")
+    if allowed and "issue_type" in df.columns:
+        mask = mask & df["issue_type"].isin(allowed)
     return df.loc[mask].reset_index(drop=True)
 
 
@@ -1262,6 +1266,9 @@ def _load_screener(base_dir: Path) -> pd.DataFrame:
     # 'market_cap' from 'marketcap' (screener uses no underscore)
     if "market_cap" not in df.columns and "marketcap" in df.columns:
         df["market_cap"] = pd.to_numeric(df["marketcap"], errors="coerce").fillna(0)
+    # Ensure 'close' is numeric
+    if "close" in df.columns:
+        df["close"] = pd.to_numeric(df["close"], errors="coerce").fillna(0)
     return df
 
 
