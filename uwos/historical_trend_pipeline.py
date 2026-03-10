@@ -396,7 +396,6 @@ def _build_ticker_rows(
 
     if source.empty or "ticker" not in source.columns:
         return pd.DataFrame()
-    source = _prepare_proxy_join(source)
     source["ticker"] = source["ticker"].map(lambda x: _normalize_text(x, upper=True))
     if "strategy" in source.columns:
         source["strategy"] = source["strategy"].map(_normalize_text)
@@ -1454,6 +1453,9 @@ def build_trend_recommendations(
             "Watch",
             np.where(raw.loc[missing_book, "core_ok_stage1"], "Core", "Tactical"),
         )
+
+    # Normalize strategy case to prevent cross-day case drift from splitting groups
+    raw["strategy"] = raw["strategy"].astype(str).str.strip()
 
     grouped = (
         raw.groupby(["ticker", "strategy", "track"], as_index=False)

@@ -468,6 +468,8 @@ def run():
     )
     _sc_norm = sc_df.assign(ticker=sc_df["ticker"].astype(str).str.upper().str.strip()).drop_duplicates("ticker")
     sector_map = _sc_norm.set_index("ticker")["sector"].dropna().to_dict() if "sector" in sc_df.columns else {}
+    if not sector_map:
+        print("  [warn] sector_map is empty — sector concentration cap will treat all tickers as 'Unknown'", file=sys.stderr)
     playbook_cfg = cfg.get("playbook", {}) if isinstance(cfg, dict) else {}
     risk_limits_cfg = playbook_cfg.get("risk_limits", {}) if isinstance(playbook_cfg, dict) else {}
     max_sector_share = fnum(risk_limits_cfg.get("max_sector_share", 1.0))
@@ -872,6 +874,7 @@ def run():
     )
     min_credit_no_touch_pct = fnum(approval_cfg.get("min_credit_no_touch_pct"))
     credit_no_touch_require_data = bool(approval_cfg.get("credit_no_touch_require_data", False))
+    ic_exempt_from_no_touch = bool(approval_cfg.get("ic_exempt_from_no_touch", False))
     enable_restrike_optimizer = bool(approval_cfg.get("enable_restrike_optimizer", True))
     invalidation_eval_mode = str(approval_cfg.get("invalidation_eval_mode", "auto")).strip().lower()
     if invalidation_eval_mode not in {"auto", "live", "asof_close"}:
@@ -1328,13 +1331,13 @@ def run():
                 if core_stage1 is not True:
                     blockers.append("shield_core_fail")
             if require_live_shield_short_delta:
-                if strategy in {"Bull Put Credit", "Bear Call Credit"}:
+                if strategy_local in {"Bull Put Credit", "Bear Call Credit"}:
                     short_delta = fnum(row.get("short_delta_live"))
                     if not np.isfinite(short_delta):
                         blockers.append("shield_delta_missing")
                     elif abs(short_delta) > max_abs_short_delta_shield:
                         blockers.append(f"shield_delta_fail:{short_delta:+.2f}")
-                elif strategy in {"Iron Condor", "Iron Butterfly"}:
+                elif strategy_local in {"Iron Condor", "Iron Butterfly"}:
                     put_delta = fnum(row.get("short_put_delta_live"))
                     call_delta = fnum(row.get("short_call_delta_live"))
                     if not np.isfinite(put_delta) or not np.isfinite(call_delta):
@@ -1342,7 +1345,11 @@ def run():
                     elif abs(put_delta) > max_abs_short_delta_shield or abs(call_delta) > max_abs_short_delta_shield:
                         blockers.append(f"shield_delta_fail:put={put_delta:+.2f},call={call_delta:+.2f}")
 
-            if np.isfinite(min_credit_no_touch_pct) and min_credit_no_touch_pct > 0:
+            # IC/IB profitability is terminal (expiry-zone), not path-dependent,
+            # so the no-touch metric is irrelevant for them.
+            _is_ic = strategy_local in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}
+            _skip_no_touch = _is_ic and ic_exempt_from_no_touch
+            if np.isfinite(min_credit_no_touch_pct) and min_credit_no_touch_pct > 0 and not _skip_no_touch:
                 no_touch = fnum(row.get("credit_no_touch_pct"))
                 if np.isfinite(no_touch):
                     if no_touch < min_credit_no_touch_pct:
@@ -1610,7 +1617,7 @@ def run():
 
         # Record dropped rows.
         _kept_tickers_strats = set(
-            zip(_final["ticker"].astype(str), _final["strategy"].astype(str), _final["expiry"].astype(str).str[:10])
+            zip(_final["ticker"].astype(str).str.upper().str.strip(), _final["strategy"].astype(str).str.strip(), _final["expiry"].astype(str).str[:10])
         )
         for _, row in mdf.iterrows():
             _key = (str(row.get("ticker", "")).strip().upper(), str(row.get("strategy", "")), str(row.get("expiry", ""))[:10])

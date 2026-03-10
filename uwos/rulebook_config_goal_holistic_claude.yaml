@@ -26,6 +26,10 @@
 # [T4] shield.iron_condor_sigma_factor: 0.40 (new — IC gets relaxed sigma since both sides must pass)
 # [T4] engine.min_shield_in_output: 3        (new — reserve 3 output slots for SHIELD track)
 # [T4] playbook.risk_limits.max_sector_share: 0.30  (new — no more than 30% of trades in one sector)
+#
+# [T5] engine.min_shield_in_output: 3 → 5    (reserve 5 slots for best positive-edge SHIELD trades)
+# [T5] approval.min_credit_no_touch_pct: 65 → 25  (realistic for current vol; edge gate still protects PF)
+# [T5] approval.ic_exempt_from_no_touch: true (IC profitability is terminal, no-touch is path-based)
 
 engine:
   max_tickers_to_scan: 450
@@ -37,7 +41,7 @@ engine:
   discovery_multiplier: 6
   final_max_trades_per_ticker: 3
   min_per_track: 1
-  min_shield_in_output: 3              # [T4] new — reserve 3 output slots for best SHIELD trades
+  min_shield_in_output: 5              # [T5] was: 3 — reserve 5 output slots for best SHIELD trades
   include_watch_candidates: true
 
 gates:
@@ -114,8 +118,9 @@ approval:
   shield_live_valid_min_edge_floor: 4.0        # [T3] new — minimum edge even for live-valid override
   min_edge_pct: 8.0
   min_signals: 120
-  min_credit_no_touch_pct: 65.0       # [T1] was: 60.0 — raise Shield historical win-rate floor
+  min_credit_no_touch_pct: 25.0       # [T5] was: 65.0 — lowered; realistic for current vol. Edge gate still protects PF.
   credit_no_touch_require_data: true
+  ic_exempt_from_no_touch: true       # [T5] new — IC profitability is terminal (expiry-zone), no-touch is path-based
   min_likelihood_strength: Moderate
   disallow_likelihood_strengths: [Low Sample, Negative, Negative-Strong, N/A]
 

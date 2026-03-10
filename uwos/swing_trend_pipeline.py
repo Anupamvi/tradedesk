@@ -940,8 +940,8 @@ def compute_swing_signals(
         sig.oi_consistency = 0.5
 
     # Top strikes (most frequent across days)
-    call_strikes = [of.top_strike_call for _, of in oi_series if math.isfinite(of.top_strike_call)]
-    put_strikes = [of.top_strike_put for _, of in oi_series if math.isfinite(of.top_strike_put)]
+    call_strikes = [round(of.top_strike_call, 2) for _, of in oi_series if math.isfinite(of.top_strike_call)]
+    put_strikes = [round(of.top_strike_put, 2) for _, of in oi_series if math.isfinite(of.top_strike_put)]
     if call_strikes:
         sig.top_call_strike = float(Counter(call_strikes).most_common(1)[0][0])
     if put_strikes:
@@ -975,7 +975,12 @@ def compute_swing_signals(
     finite_dp = [v for v in dp_above_mids if math.isfinite(v)]
     if finite_dp:
         accum_thresh = float(scoring_cfg.get("dp_confirmation", {}).get("accumulation_threshold", 0.55))
-        sig.dp_consistency = sum(1 for v in finite_dp if v > accum_thresh) / len(finite_dp)
+        if dp_dir == "bearish":
+            # For bearish/distribution: measure fraction BELOW (1 - threshold)
+            distrib_thresh = 1.0 - accum_thresh
+            sig.dp_consistency = sum(1 for v in finite_dp if v < distrib_thresh) / len(finite_dp)
+        else:
+            sig.dp_consistency = sum(1 for v in finite_dp if v > accum_thresh) / len(finite_dp)
     sig.dp_vwap_slope = _linear_slope(dp_vwaps)
 
     # --- Whale signals ---
@@ -1178,6 +1183,10 @@ def select_strategy(signals: SwingSignals, score: SwingScore, cfg: Dict) -> Tupl
     if iv_level == "high":
         return "Iron Condor", "SHIELD"
     if iv_level == "mid":
+        return "Iron Condor", "SHIELD"
+
+    # Neutral + low IV -> Iron Condor (range-bound, cheap premium)
+    if iv_level == "low":
         return "Iron Condor", "SHIELD"
 
     # Fallback
@@ -1610,16 +1619,11 @@ def validate_with_schwab(
             strat = s.recommended_strategy
             is_call = strat in ("Bull Call Debit", "Bear Call Credit")
             is_put = strat in ("Bear Put Debit", "Bull Put Credit")
-            if strat == "Iron Condor":
-                s.live_validated = False
-                s.live_validation_note = "Iron Condor live validation not yet supported"
-                continue
-            if not (is_call or is_put):
+            is_ic = strat in ("Iron Condor", "Iron Butterfly", "Long Iron Condor")
+            if not (is_call or is_put or is_ic):
                 s.live_validated = False
                 s.live_validation_note = f"Unknown strategy: {strat}"
                 continue
-
-            right = "C" if is_call else "P"
 
             # Find the closest expiry in the chain to our target
             try:
@@ -1645,6 +1649,116 @@ def validate_with_schwab(
                 s.live_validated = False
                 s.live_validation_note = f"No chain expiry within 7d of {s.target_expiry}"
                 continue
+
+            # --- IC / IB / Long IC: 4-leg validation ---
+            if is_ic:
+                put_contracts = chain_map.get(best_exp_str, {}).get("P", {})
+                call_contracts = chain_map.get(best_exp_str, {}).get("C", {})
+                if not put_contracts or not call_contracts:
+                    s.live_validated = False
+                    s.live_validation_note = f"Missing put or call chain for {best_exp_str}"
+                    continue
+
+                put_strikes_avail = sorted(put_contracts.keys())
+                call_strikes_avail = sorted(call_contracts.keys())
+
+                # For IC: short_strike = put_short, long_strike = call_short
+                # Reconstruct wing strikes from spread_width
+                sw = s.spread_width
+                if not math.isfinite(sw) or sw <= 0:
+                    s.live_validated = False
+                    s.live_validation_note = "spread_width is NaN/invalid; cannot reconstruct IC wings"
+                    continue
+                put_short_target = s.short_strike           # sell put
+                put_long_target = s.short_strike - sw       # buy put (wing)
+                call_short_target = s.long_strike           # sell call
+                call_long_target = s.long_strike + sw       # buy call (wing)
+
+                snap_ps = _find_nearest_strike(put_strikes_avail, put_short_target)
+                snap_pl = _find_nearest_strike(put_strikes_avail, put_long_target)
+                snap_cs = _find_nearest_strike(call_strikes_avail, call_short_target)
+                snap_cl = _find_nearest_strike(call_strikes_avail, call_long_target)
+
+                if any(v is None for v in (snap_ps, snap_pl, snap_cs, snap_cl)):
+                    s.live_validated = False
+                    s.live_validation_note = "Could not snap all 4 IC strikes to chain"
+                    continue
+
+                # Check snap distances
+                targets = [put_short_target, put_long_target, call_short_target, call_long_target]
+                snapped = [snap_ps, snap_pl, snap_cs, snap_cl]
+                labels = ["put_short", "put_long", "call_short", "call_long"]
+                snap_ok = True
+                for tgt, snp, lbl in zip(targets, snapped, labels):
+                    pct = abs(snp - tgt) / max(abs(tgt), 1.0) * 100
+                    if pct > max_snap_pct:
+                        s.live_validated = False
+                        s.live_validation_note = f"IC {lbl} snap too far: {tgt:g}->{snp:g} ({pct:.1f}%)"
+                        snap_ok = False
+                        break
+                if not snap_ok:
+                    continue
+
+                # Ordering: put_long < put_short < call_short < call_long
+                if not (snap_pl < snap_ps < snap_cs < snap_cl):
+                    s.live_validated = False
+                    s.live_validation_note = (
+                        f"IC strikes out of order: PL={snap_pl:g} PS={snap_ps:g} "
+                        f"CS={snap_cs:g} CL={snap_cl:g}"
+                    )
+                    continue
+
+                # Store inner strikes (short_strike=put_short, long_strike=call_short)
+                s.live_short_strike = snap_ps
+                s.live_long_strike = snap_cs
+
+                # Compute 4-leg cost: credit = (put_short_mid - put_long_mid) + (call_short_mid - call_long_mid)
+                ps_mid = _contract_mid_price(put_contracts.get(snap_ps, {}))
+                pl_mid = _contract_mid_price(put_contracts.get(snap_pl, {}))
+                cs_mid = _contract_mid_price(call_contracts.get(snap_cs, {}))
+                cl_mid = _contract_mid_price(call_contracts.get(snap_cl, {}))
+
+                if any(v is None for v in (ps_mid, pl_mid, cs_mid, cl_mid)):
+                    s.live_validated = False
+                    s.live_validation_note = "Missing bid/ask quotes on one or more IC legs"
+                    continue
+
+                if strat == "Long Iron Condor":
+                    # Debit: buy the inner, sell the outer
+                    net_cost = round((pl_mid - ps_mid) + (cl_mid - cs_mid), 2)
+                    s.live_spread_cost = net_cost
+                else:
+                    # Credit IC/IB: sell inner, buy outer
+                    net_credit = round((ps_mid - pl_mid) + (cs_mid - cl_mid), 2)
+                    s.live_spread_cost = net_credit
+
+                if s.live_spread_cost < 0:
+                    s.live_validated = False
+                    s.live_validation_note = f"Negative IC spread cost: ${s.live_spread_cost:.2f}"
+                    continue
+
+                # Bid/ask width (avg of all 4 legs)
+                ba_vals = [_contract_bid_ask_spread(put_contracts.get(snap_ps, {})),
+                           _contract_bid_ask_spread(put_contracts.get(snap_pl, {})),
+                           _contract_bid_ask_spread(call_contracts.get(snap_cs, {})),
+                           _contract_bid_ask_spread(call_contracts.get(snap_cl, {}))]
+                finite_ba = [v for v in ba_vals if math.isfinite(v)]
+                if finite_ba:
+                    s.live_bid_ask_width = round(sum(finite_ba) / len(finite_ba), 2)
+
+                put_w = round(snap_ps - snap_pl, 2)
+                call_w = round(snap_cl - snap_cs, 2)
+                cost_label = "credit" if strat != "Long Iron Condor" else "debit"
+                s.live_strike_setup = (
+                    f"Sell {snap_ps:g}P / Buy {snap_pl:g}P + "
+                    f"Sell {snap_cs:g}C / Buy {snap_cl:g}C "
+                    f"({put_w:g}pw/{call_w:g}cw, ${s.live_spread_cost:.2f} {cost_label})"
+                )
+                s.live_validated = True
+                continue
+
+            # --- 2-leg vertical validation ---
+            right = "C" if is_call else "P"
 
             strike_contracts = chain_map.get(best_exp_str, {}).get(right, {})
             if not strike_contracts:
@@ -1806,7 +1920,17 @@ def run_backtest(
         short_k = s.live_short_strike if (s.live_validated is True and math.isfinite(s.live_short_strike)) else s.short_strike
         if not (math.isfinite(long_k) and math.isfinite(short_k)):
             continue
-        width = abs(long_k - short_k)
+
+        _is_ic = s.recommended_strategy in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}
+        if _is_ic:
+            # For IC: short_strike=put_short, long_strike=call_short (inner strikes)
+            # spread_width is the per-side width, NOT the body width
+            # Do NOT fall back to abs(long_k - short_k) which is the body width
+            width = s.spread_width if math.isfinite(s.spread_width) else math.nan
+            if not math.isfinite(width) or width <= 0:
+                continue
+        else:
+            width = abs(long_k - short_k)
         if width <= 0:
             continue
 
@@ -1815,7 +1939,7 @@ def run_backtest(
         else:
             entry_gate = f"<= {cost:.2f} db"
 
-        bt_rows.append({
+        row = {
             "ticker": s.ticker,
             "strategy": s.recommended_strategy,
             "expiry": s.target_expiry,
@@ -1823,7 +1947,15 @@ def run_backtest(
             "short_strike": round(short_k, 2),
             "width": round(width, 2),
             "entry_gate": entry_gate,
-        })
+        }
+        if _is_ic:
+            # IC needs extra columns for breakeven_levels and required_win_rate_pct
+            # short_strike = put_short, long_strike = call_short (stored in score)
+            row["short_call_strike"] = round(long_k, 2)       # call_short
+            row["long_call_strike"] = round(long_k + width, 2) # call_long (wing)
+            row["put_width"] = round(width, 2)
+            row["call_width"] = round(width, 2)
+        bt_rows.append(row)
 
     if not bt_rows:
         print("  [backtest] No valid setups to backtest", file=sys.stderr)
