@@ -662,6 +662,7 @@ def run():
                 "long_call_strike": float(long_call_strike) if np.isfinite(long_call_strike) else np.nan,
                 "put_width": float(r.get("put_width")) if np.isfinite(fnum(r.get("put_width"))) else np.nan,
                 "call_width": float(r.get("call_width")) if np.isfinite(fnum(r.get("call_width"))) else np.nan,
+                "iv_rank": float(r["iv_rank"]) if r.get("iv_rank") is not None and np.isfinite(fnum(r.get("iv_rank"))) else np.nan,
             }
         )
 
@@ -780,6 +781,11 @@ def run():
         "short_call_delta_live",
         "long_call_bid_live",
         "long_call_ask_live",
+        "long_delta_live",
+        "net_gex",
+        "gex_regime",
+        "gex_support",
+        "gex_resistance",
         "spot_live_last",
         "spot_live_bid",
         "spot_live_ask",
@@ -826,6 +832,85 @@ def run():
         mdf["confidence"] = "Unknown"
         mdf["credit_no_touch_pct"] = np.nan
 
+    # --- GEX enrichment from saved chain snapshots ---
+    snapshot_chain_dir = out_dir / f"schwab_snapshot_{asof_str}" / "chains"
+    if snapshot_chain_dir.is_dir():
+        gex_by_ticker = {}
+        for chain_file in [p.name for p in snapshot_chain_dir.iterdir()]:
+            if not chain_file.startswith("chain_") or not chain_file.endswith(".json"):
+                continue
+            ticker = chain_file[len("chain_"):-len(".json")]
+            try:
+                with open(snapshot_chain_dir / chain_file) as _f:
+                    chain_data = json.load(_f)
+            except Exception:
+                continue
+            # Get spot price
+            ul = chain_data.get("underlying", {})
+            spot = None
+            for fld in ("mark", "last", "close"):
+                v = ul.get(fld)
+                if v is not None:
+                    try:
+                        fv = float(v)
+                        if math.isfinite(fv) and fv > 0:
+                            spot = fv
+                            break
+                    except (TypeError, ValueError):
+                        pass
+            if not spot:
+                continue
+            total_call_gex = 0.0
+            total_put_gex = 0.0
+            best_put_wall = (0.0, float("nan"))
+            best_call_wall = (0.0, float("nan"))
+            for map_name, side in [("callExpDateMap", "call"), ("putExpDateMap", "put")]:
+                exp_map = chain_data.get(map_name, {}) or {}
+                for exp_key, strike_map in exp_map.items():
+                    for strike_key, contracts in strike_map.items():
+                        if not contracts:
+                            continue
+                        c = contracts[0]
+                        gamma = c.get("gamma")
+                        oi = c.get("openInterest")
+                        if gamma is None or oi is None:
+                            continue
+                        try:
+                            g, o = float(gamma), float(oi)
+                            strike_f = float(strike_key)
+                        except (TypeError, ValueError):
+                            continue
+                        if not (math.isfinite(g) and math.isfinite(o) and g >= 0 and o >= 0):
+                            continue
+                        gex = g * o * 100.0 * spot
+                        if side == "call":
+                            total_call_gex += gex
+                            if strike_f > spot and gex > best_call_wall[0]:
+                                best_call_wall = (gex, strike_f)
+                        else:
+                            total_put_gex += gex
+                            if strike_f < spot and gex > best_put_wall[0]:
+                                best_put_wall = (gex, strike_f)
+            net = total_call_gex - total_put_gex
+            gex_by_ticker[ticker.upper()] = {
+                "net_gex": round(net, 2),
+                "gex_regime": "pinned" if net >= 0 else "volatile",
+                "gex_support": best_put_wall[1] if math.isfinite(best_put_wall[1]) else float("nan"),
+                "gex_resistance": best_call_wall[1] if math.isfinite(best_call_wall[1]) else float("nan"),
+            }
+        # Apply GEX to merged dataframe
+        if gex_by_ticker:
+            for col in ["net_gex", "gex_regime", "gex_support", "gex_resistance"]:
+                if col not in mdf.columns:
+                    mdf[col] = ""
+            for idx, row in mdf.iterrows():
+                t = str(row.get("ticker", "")).strip().upper()
+                gex_info = gex_by_ticker.get(t)
+                if gex_info:
+                    for col, val in gex_info.items():
+                        mdf.at[idx, col] = val
+            print(f"  [gex] Enriched {len(gex_by_ticker)} tickers with GEX regime data", file=sys.stderr)
+
     require_likelihood_pass = bool(approval_cfg.get("require_likelihood_pass", True))
     shield_live_valid_overrides_quality = bool(
         approval_cfg.get("shield_live_valid_overrides_quality", False)
@@ -861,6 +946,11 @@ def run():
     require_shield_core = bool(approval_cfg.get("require_shield_core", False))
     require_live_shield_short_delta = bool(approval_cfg.get("require_live_shield_short_delta", False))
     max_abs_short_delta_shield = fnum(approval_cfg.get("max_abs_short_delta_shield", 0.20))
+    # FIRE delta gate
+    require_fire_long_delta = bool(approval_cfg.get("require_fire_long_delta", False))
+    min_abs_long_delta_fire = fnum(approval_cfg.get("min_abs_long_delta_fire", 0.15))
+    # GEX regime gate
+    require_gex_regime = bool(approval_cfg.get("require_gex_regime", False))
     entry_tol_debit_abs = fnum(approval_cfg.get("entry_tolerance_debit_abs", 0.20))
     entry_tol_credit_abs = fnum(approval_cfg.get("entry_tolerance_credit_abs", 0.20))
     entry_tol_pct = fnum(approval_cfg.get("entry_tolerance_pct", 0.05))
@@ -1345,6 +1435,30 @@ def run():
                     elif abs(put_delta) > max_abs_short_delta_shield or abs(call_delta) > max_abs_short_delta_shield:
                         blockers.append(f"shield_delta_fail:put={put_delta:+.2f},call={call_delta:+.2f}")
 
+            # FIRE long-leg delta gate: reject lottery tickets
+            if track == "FIRE" and require_fire_long_delta:
+                if strategy_local in {"Bull Call Debit", "Bear Put Debit"}:
+                    long_delta = fnum(row.get("long_delta_live"))
+                    if not np.isfinite(long_delta):
+                        blockers.append("fire_delta_missing")
+                    elif abs(long_delta) < min_abs_long_delta_fire:
+                        blockers.append(f"fire_delta_low:{long_delta:+.2f}")
+
+            # GEX regime gate
+            if require_gex_regime:
+                gex_regime = str(row.get("gex_regime", "")).strip().lower()
+                if gex_regime:  # only block if GEX data is available
+                    if track == "SHIELD" and gex_regime == "volatile":
+                        blockers.append("shield_gex_volatile")
+                    elif track == "FIRE" and gex_regime == "pinned":
+                        net_gex_val = fnum(row.get("net_gex"))
+                        # Only block FIRE if GEX is strongly pinned (not marginal)
+                        if np.isfinite(net_gex_val) and net_gex_val > 0:
+                            blockers.append("fire_gex_pinned")
+                    # IC-specific: require pinned regime
+                    if strategy_local in {"Iron Condor", "Iron Butterfly"} and gex_regime != "pinned":
+                        blockers.append("ic_gex_not_pinned")
+
             # IC/IB profitability is terminal (expiry-zone), not path-dependent,
             # so the no-touch metric is irrelevant for them.
             _is_ic = strategy_local in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}
@@ -1375,10 +1489,13 @@ def run():
                 token.startswith("likelihood_")
                 or token.startswith("edge_below")
                 or token.startswith("signals_below")
-                or token.startswith("shield_sigma")
                 or token.startswith("credit_no_touch")
                 or token.startswith("shield_core")
                 or token.startswith("shield_delta")
+                or token.startswith("fire_delta")
+                or token.startswith("fire_gex")
+                or token.startswith("shield_gex")
+                or token.startswith("ic_gex")
             ):
                 quality.append(token)
             else:
@@ -1959,6 +2076,11 @@ def run():
                 "Size Mult": size_mult_txt,
                 "Signal Tier (Stage-1)": confidence_tier,
                 "Optimal": optimal,
+                "IV Rank": f"{r['iv_rank']:.0f}" if "iv_rank" in r and pd.notna(r.get("iv_rank")) else "",
+                "Short Delta": f"{fnum(r.get('short_delta_live')):.2f}" if np.isfinite(fnum(r.get("short_delta_live"))) else "",
+                "Long Delta": f"{fnum(r.get('long_delta_live')):.2f}" if np.isfinite(fnum(r.get("long_delta_live"))) else "",
+                "GEX Regime": str(r.get("gex_regime", "")) if r.get("gex_regime") else "",
+                "Net GEX ($M)": f"{fnum(r.get('net_gex')) / 1e6:.1f}" if np.isfinite(fnum(r.get("net_gex"))) else "",
                 "Watch Reason Flags": ", ".join(watch_reason_flags) if not approved else "",
                 "Notes": notes,
                 "Source": "Stage1(ChainOI+DP+HotChains+Screener+Whale) + Stage2(uwos.pricer)",
@@ -1986,6 +2108,11 @@ def run():
             "Size Mult",
             "Signal Tier (Stage-1)",
             "Optimal",
+            "IV Rank",
+            "Short Delta",
+            "Long Delta",
+            "GEX Regime",
+            "Net GEX ($M)",
             "Watch Reason Flags",
             "Notes",
             "Source",
@@ -2052,7 +2179,6 @@ def run():
             "#",
             "Ticker",
             "Action",
-            "Strategy Type",
             "Strike Setup",
             "Expiry",
             "DTE",
@@ -2062,12 +2188,14 @@ def run():
             "Breakeven",
             "Conviction %",
             "Setup Likelihood",
-            "Execution Book",
-            "Size Mult",
             "Signal Tier (Stage-1)",
             "Optimal",
+            "IV Rank",
+            "Short Delta",
+            "Long Delta",
+            "GEX Regime",
+            "Net GEX ($M)",
             "Notes",
-            "Source",
         ]
         if c in out_df.columns
     ]

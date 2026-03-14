@@ -280,6 +280,16 @@ class SwingScore:
     live_bid_ask_width: float = math.nan     # Spread bid/ask width (liquidity signal)
     live_strike_setup: str = ""              # Updated setup string with live prices
     live_validation_note: str = ""           # Error/warning message
+    # Live greeks (populated during Schwab validation)
+    short_delta_live: float = math.nan       # Short leg delta (SHIELD verticals)
+    long_delta_live: float = math.nan        # Long leg delta (FIRE verticals)
+    short_put_delta_live: float = math.nan   # IC put short delta
+    short_call_delta_live: float = math.nan  # IC call short delta
+    # GEX regime (populated during Schwab validation)
+    net_gex: float = math.nan                # Net gamma exposure (positive=pinned, negative=volatile)
+    gex_regime: str = ""                     # "pinned" or "volatile"
+    gex_support: float = math.nan            # Highest put GEX wall below spot
+    gex_resistance: float = math.nan         # Highest call GEX wall above spot
     # Backtest edge (populated when backtest is enabled)
     hist_success_pct: float = math.nan       # Historical win rate %
     required_win_pct: float = math.nan       # Breakeven win rate %
@@ -1494,6 +1504,79 @@ def _contract_bid_ask_spread(contract: Dict[str, Any]) -> float:
     return math.nan
 
 
+def _compute_ticker_gex(
+    chain_map: Dict[str, Dict[str, Dict[float, Dict[str, Any]]]],
+    spot: float,
+    target_expiry_str: str,
+) -> Dict[str, Any]:
+    """Compute net GEX and GEX walls from option chain data.
+
+    GEX = gamma x openInterest x 100 x spot
+    Calls contribute positive GEX (dealers long gamma).
+    Puts contribute negative GEX (dealers short gamma on hedge side).
+    Net GEX > 0 => mean-reverting ("pinned"), < 0 => trending ("volatile").
+    """
+    exp_data = chain_map.get(target_expiry_str)
+    if not exp_data or spot <= 0:
+        return {"net_gex": math.nan, "gex_regime": "", "gex_support": math.nan, "gex_resistance": math.nan}
+
+    call_contracts = exp_data.get("C", {})
+    put_contracts = exp_data.get("P", {})
+
+    total_call_gex = 0.0
+    total_put_gex = 0.0
+    call_gex_by_strike: Dict[float, float] = {}
+    put_gex_by_strike: Dict[float, float] = {}
+
+    for strike, contract in call_contracts.items():
+        gamma = contract.get("gamma")
+        oi = contract.get("openInterest")
+        if gamma is not None and oi is not None:
+            try:
+                g, o = float(gamma), float(oi)
+                if math.isfinite(g) and math.isfinite(o) and g >= 0 and o >= 0:
+                    gex = g * o * 100.0 * spot
+                    total_call_gex += gex
+                    call_gex_by_strike[strike] = gex
+            except (TypeError, ValueError):
+                pass
+
+    for strike, contract in put_contracts.items():
+        gamma = contract.get("gamma")
+        oi = contract.get("openInterest")
+        if gamma is not None and oi is not None:
+            try:
+                g, o = float(gamma), float(oi)
+                if math.isfinite(g) and math.isfinite(o) and g >= 0 and o >= 0:
+                    gex = g * o * 100.0 * spot
+                    total_put_gex += gex
+                    put_gex_by_strike[strike] = gex
+            except (TypeError, ValueError):
+                pass
+
+    net_gex = total_call_gex - total_put_gex
+    gex_regime = "pinned" if net_gex >= 0 else "volatile"
+
+    # GEX walls: strikes with highest gamma concentration
+    gex_support = math.nan
+    gex_resistance = math.nan
+
+    put_below = {k: v for k, v in put_gex_by_strike.items() if k < spot}
+    if put_below:
+        gex_support = max(put_below, key=put_below.get)
+
+    call_above = {k: v for k, v in call_gex_by_strike.items() if k > spot}
+    if call_above:
+        gex_resistance = max(call_above, key=call_above.get)
+
+    return {
+        "net_gex": round(net_gex, 2),
+        "gex_regime": gex_regime,
+        "gex_support": gex_support,
+        "gex_resistance": gex_resistance,
+    }
+
+
 def validate_with_schwab(
     scores: List[SwingScore],
     signals_map: Dict[str, SwingSignals],
@@ -1611,10 +1694,37 @@ def validate_with_schwab(
                     if contracts:
                         chain_map[exp_date_str][right][strike] = contracts[0]
 
+        # Compute GEX for this ticker (use the nearest expiry to first score's target)
+        gex_expiry = best_exp_str_for_gex = None
+        for s_gex in ticker_score_list:
+            try:
+                t_exp = dt.date.fromisoformat(s_gex.target_expiry)
+                for exp_str in chain_map:
+                    try:
+                        exp_d = dt.date.fromisoformat(exp_str)
+                        if abs((exp_d - t_exp).days) <= 7:
+                            gex_expiry = exp_str
+                            break
+                    except (ValueError, TypeError):
+                        continue
+                if gex_expiry:
+                    break
+            except (ValueError, TypeError):
+                continue
+
+        ticker_gex = {"net_gex": math.nan, "gex_regime": "", "gex_support": math.nan, "gex_resistance": math.nan}
+        if gex_expiry and spot is not None:
+            ticker_gex = _compute_ticker_gex(chain_map, spot, gex_expiry)
+
         # Now validate each score for this ticker
         for s in ticker_score_list:
             if spot is not None:
                 s.live_spot = spot
+
+            s.net_gex = ticker_gex["net_gex"]
+            s.gex_regime = ticker_gex["gex_regime"]
+            s.gex_support = ticker_gex["gex_support"]
+            s.gex_resistance = ticker_gex["gex_resistance"]
 
             strat = s.recommended_strategy
             is_call = strat in ("Bull Call Debit", "Bear Call Credit")
@@ -1754,6 +1864,21 @@ def validate_with_schwab(
                     f"Sell {snap_cs:g}C / Buy {snap_cl:g}C "
                     f"({put_w:g}pw/{call_w:g}cw, ${s.live_spread_cost:.2f} {cost_label})"
                 )
+                # Extract live deltas for IC short legs
+                ps_contract = put_contracts.get(snap_ps, {})
+                cs_contract = call_contracts.get(snap_cs, {})
+                ps_delta = ps_contract.get("delta")
+                cs_delta = cs_contract.get("delta")
+                if ps_delta is not None:
+                    try:
+                        s.short_put_delta_live = float(ps_delta)
+                    except (TypeError, ValueError):
+                        pass
+                if cs_delta is not None:
+                    try:
+                        s.short_call_delta_live = float(cs_delta)
+                    except (TypeError, ValueError):
+                        pass
                 s.live_validated = True
                 continue
 
@@ -1872,6 +1997,19 @@ def validate_with_schwab(
                     f"({live_width:g}w, ${s.live_spread_cost:.2f} credit)"
                 )
 
+            # Extract live deltas for vertical legs
+            short_delta_raw = short_contract.get("delta")
+            long_delta_raw = long_contract.get("delta")
+            if short_delta_raw is not None:
+                try:
+                    s.short_delta_live = float(short_delta_raw)
+                except (TypeError, ValueError):
+                    pass
+            if long_delta_raw is not None:
+                try:
+                    s.long_delta_live = float(long_delta_raw)
+                except (TypeError, ValueError):
+                    pass
             s.live_validated = True
 
     validated = sum(1 for s in scores if s.live_validated is True)
@@ -2358,6 +2496,16 @@ def generate_shortlist_csv(
             "backtest_signals": s.backtest_signals if s.backtest_signals > 0 else "",
             "backtest_verdict": s.backtest_verdict,
             "backtest_confidence": s.backtest_confidence,
+            # Live greeks
+            "short_delta_live": round(s.short_delta_live, 4) if math.isfinite(s.short_delta_live) else "",
+            "long_delta_live": round(s.long_delta_live, 4) if math.isfinite(s.long_delta_live) else "",
+            "short_put_delta_live": round(s.short_put_delta_live, 4) if math.isfinite(s.short_put_delta_live) else "",
+            "short_call_delta_live": round(s.short_call_delta_live, 4) if math.isfinite(s.short_call_delta_live) else "",
+            # GEX regime
+            "net_gex": round(s.net_gex, 2) if math.isfinite(s.net_gex) else "",
+            "gex_regime": s.gex_regime,
+            "gex_support": round(s.gex_support, 2) if math.isfinite(s.gex_support) else "",
+            "gex_resistance": round(s.gex_resistance, 2) if math.isfinite(s.gex_resistance) else "",
         })
     return pd.DataFrame(rows)
 

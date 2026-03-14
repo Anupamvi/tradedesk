@@ -710,6 +710,12 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         liq = max(0.0, min(1.0, liq / 20.0))
                         score = 0.34 * bull + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.12 * whale
                         conv = int(round(100 * score))
+                        # IVR bonus: low IV = cheap options = good for buying
+                        if np.isfinite(iv_rank):
+                            if iv_rank < 25:
+                                conv = min(100, conv + 3)
+                            elif iv_rank > 70:
+                                conv = max(0, conv - 5)
                         confidence_tier = "Lotto" if dte <= fire_lotto_dte_max else "Aggressive"
                         optimal = "Yes-Prime" if conv >= 78 else ("Yes-Good" if conv >= 65 else "Watch Only")
                         if er["crossed"]:
@@ -734,7 +740,8 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             f"Debit {net:.2f} on {width:.2f} ({net/width:.2%}, R/R {debit_rr:.2f}); bull={bull:.2f}, whale={whale:.2f}. {gate_text}",
                             f"{lg['source_csv']}|{sh['source_csv']}",
                             "Bull call debit fits bullish flow with capped downside.",
-                            f"Invalidate if close < {inv_level:.2f}."
+                            f"Invalidate if close < {inv_level:.2f}.",
+                            iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
                         ))
 
             puts = chains.get((ticker, "P", expiry))
@@ -791,6 +798,12 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         liq = max(0.0, min(1.0, liq / 20.0))
                         score = 0.34 * bear + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.12 * whale
                         conv = int(round(100 * score))
+                        # IVR bonus: low IV = cheap options = good for buying
+                        if np.isfinite(iv_rank):
+                            if iv_rank < 25:
+                                conv = min(100, conv + 3)
+                            elif iv_rank > 70:
+                                conv = max(0, conv - 5)
                         confidence_tier = "Lotto" if dte <= fire_lotto_dte_max else "Aggressive"
                         optimal = "Yes-Prime" if conv >= 78 else ("Yes-Good" if conv >= 65 else "Watch Only")
                         if er["crossed"]:
@@ -815,7 +828,8 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             f"Debit {net:.2f} on {width:.2f} ({net/width:.2%}, R/R {debit_rr:.2f}); bear={bear:.2f}, whale={whale:.2f}. {gate_text}",
                             f"{lg['source_csv']}|{sh['source_csv']}",
                             "Bear put debit fits bearish flow with convex downside.",
-                            f"Invalidate if close > {inv_level:.2f}."
+                            f"Invalidate if close > {inv_level:.2f}.",
+                            iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
                         ))
 
         # Bull Put Credit + Bear Call Credit (SHIELD with full rulebook gating).
@@ -876,6 +890,12 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         short_fit = 1.0 - min(1.0, abs(float(sh["strike"]) - tshort) / max(1.0, 0.25 * spot))
                         score = 0.30 * bull + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.10 * whale + 0.06 * short_fit
                         conv = int(round(100 * score))
+                        # IVR bonus: high IV = rich premium = good for selling
+                        if np.isfinite(iv_rank):
+                            if iv_rank > 50:
+                                conv = min(100, conv + 3)
+                            elif iv_rank < 20:
+                                conv = max(0, conv - 5)
 
                         sigma_pass = bool(sigma_known and float(sh["strike"]) <= (spot - sigma * shield_sigma_relax))
                         short_otm_pct = max(0.0, (spot - float(sh["strike"])) / spot)
@@ -935,6 +955,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             confidence_tier, optimal, notes, f"{sh['source_csv']}|{lg['source_csv']}",
                             "Bull put credit benefits from support hold and theta decay.",
                             f"Invalidate if close < {float(sh['strike']):.2f}.",
+                            iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
                             sigma_pass=bool(sigma_pass),
                             core_ok=bool(core_ok),
                             high_beta_pass=bool(hb_pass),
@@ -990,6 +1011,12 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         short_fit = 1.0 - min(1.0, abs(float(sh["strike"]) - tshort) / max(1.0, 0.25 * spot))
                         score = 0.30 * bear + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.10 * whale + 0.06 * short_fit
                         conv = int(round(100 * score))
+                        # IVR bonus: high IV = rich premium = good for selling
+                        if np.isfinite(iv_rank):
+                            if iv_rank > 50:
+                                conv = min(100, conv + 3)
+                            elif iv_rank < 20:
+                                conv = max(0, conv - 5)
 
                         sigma_pass = bool(sigma_known and float(sh["strike"]) >= (spot + sigma * shield_sigma_relax))
                         short_otm_pct = max(0.0, (float(sh["strike"]) - spot) / spot)
@@ -1061,6 +1088,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             confidence_tier, optimal, notes, f"{sh['source_csv']}|{lg['source_csv']}",
                             "Bear call credit leans on overhead resistance plus theta.",
                             f"Invalidate if close > {float(sh['strike']):.2f}.",
+                            iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
                             sigma_pass=bool(sigma_pass),
                             core_ok=bool(core_ok),
                             high_beta_pass=bool(hb_pass),
@@ -1230,6 +1258,12 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         neutrality = max(0.0, 1.0 - abs(float(bull) - float(bear)))
                         score = 0.24 * neutrality + 0.20 * eff + 0.18 * liq + 0.14 * dte_fit + 0.12 * whale + 0.12 * short_fit
                         conv = int(round(100 * score))
+                        # IVR bonus: high IV = rich premium = good for IC
+                        if np.isfinite(iv_rank):
+                            if iv_rank > 50:
+                                conv = min(100, conv + 3)
+                            elif iv_rank < 20:
+                                conv = max(0, conv - 5)
 
                         sigma_pass = bool(p_side["sigma_pass"] and c_side["sigma_pass"])
                         hb_pass = bool(p_side["hb_pass"] and c_side["hb_pass"])
@@ -1295,6 +1329,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                                 f"{sh_put['source_csv']}|{lg_put['source_csv']}|{sh_call['source_csv']}|{lg_call['source_csv']}",
                                 "Iron condor collects premium when price stays in a defined range.",
                                 f"Invalidate if close < {short_put:.2f} or close > {short_call:.2f}.",
+                                iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
                                 breakeven_low=be_low,
                                 breakeven_high=be_high,
                                 short_put_strike=short_put,
@@ -1469,6 +1504,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                                     f"{sh_put['source_csv']}|{lg_put['source_csv']}|{sh_call['source_csv']}|{lg_call['source_csv']}",
                                     "Long iron condor targets an outsized move with defined risk.",
                                     f"Invalidate if close remains between {long_put:.2f} and {long_call:.2f} into late cycle.",
+                                    iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
                                     breakeven_low=be_low,
                                     breakeven_high=be_high,
                                     short_put_strike=short_put,
@@ -1615,6 +1651,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                                         f"{sh_put['source_csv']}|{lg_put['source_csv']}|{sh_call['source_csv']}|{lg_call['source_csv']}",
                                         "Iron butterfly collects premium around a pinned center strike with defined wings.",
                                         f"Invalidate if close < {be_low:.2f} or close > {be_high:.2f}.",
+                                        iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
                                         breakeven_low=be_low,
                                         breakeven_high=be_high,
                                         short_put_strike=center_strike,

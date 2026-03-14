@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -354,9 +355,69 @@ def analyze_positions(
     chains_payload = {}
     for ul in option_underlyings:
         try:
-            chains_payload[ul] = svc.get_option_chain(ul, strike_count=12)
+            chains_payload[ul] = svc.get_option_chain(ul, strike_count=None)
         except Exception:
             pass
+
+    # 5b. Compute GEX per underlying from full chain
+    gex_by_underlying = {}
+    for ul, chain_data in chains_payload.items():
+        ul_spot = None
+        ul_quote = quotes_payload.get(ul, {})
+        ul_quote_body = ul_quote.get("quote", ul_quote)
+        for fld in ("mark", "last", "close"):
+            v = ul_quote_body.get(fld)
+            if v is not None:
+                try:
+                    fv = float(v)
+                    if math.isfinite(fv) and fv > 0:
+                        ul_spot = fv
+                        break
+                except (TypeError, ValueError):
+                    pass
+        if ul_spot is None or ul_spot <= 0:
+            continue
+
+        total_call_gex = 0.0
+        total_put_gex = 0.0
+        best_put_wall = (0.0, math.nan)   # (gex_value, strike)
+        best_call_wall = (0.0, math.nan)
+
+        for map_name, side in [("callExpDateMap", "call"), ("putExpDateMap", "put")]:
+            exp_map = chain_data.get(map_name, {}) or {}
+            for exp_key, strike_map in exp_map.items():
+                for strike_key, contracts in strike_map.items():
+                    if not contracts:
+                        continue
+                    c = contracts[0]
+                    gamma = c.get("gamma")
+                    oi = c.get("openInterest")
+                    if gamma is None or oi is None:
+                        continue
+                    try:
+                        g, o = float(gamma), float(oi)
+                        strike_f = float(strike_key)
+                    except (TypeError, ValueError):
+                        continue
+                    if not (math.isfinite(g) and math.isfinite(o) and g >= 0 and o >= 0):
+                        continue
+                    gex = g * o * 100.0 * ul_spot
+                    if side == "call":
+                        total_call_gex += gex
+                        if strike_f > ul_spot and gex > best_call_wall[0]:
+                            best_call_wall = (gex, strike_f)
+                    else:
+                        total_put_gex += gex
+                        if strike_f < ul_spot and gex > best_put_wall[0]:
+                            best_put_wall = (gex, strike_f)
+
+        net = total_call_gex - total_put_gex
+        gex_by_underlying[ul] = {
+            "net_gex": round(net, 2),
+            "gex_regime": "pinned" if net >= 0 else "volatile",
+            "gex_support": best_put_wall[1] if math.isfinite(best_put_wall[1]) else None,
+            "gex_resistance": best_call_wall[1] if math.isfinite(best_call_wall[1]) else None,
+        }
 
     # 6. Fetch yfinance context per underlying
     yf_context = {}
@@ -449,6 +510,19 @@ def analyze_positions(
             bid_ask_spread_pct = round((ask - bid) / live_quote["mark"] * 100, 1)
 
         yf_ctx = yf_context.get(underlying, {})
+        ul = pos.get("underlying", "")
+        gex_info = gex_by_underlying.get(ul, {})
+        computed = {
+            **metrics,
+            "bid_ask_spread_pct": bid_ask_spread_pct,
+            "open_interest_at_strike": live_quote.get("open_interest") if live_quote else None,
+            "volume_at_strike": live_quote.get("volume") if live_quote else None,
+            **yf_ctx,
+        }
+        computed["net_gex"] = gex_info.get("net_gex")
+        computed["gex_regime"] = gex_info.get("gex_regime")
+        computed["gex_support"] = gex_info.get("gex_support")
+        computed["gex_resistance"] = gex_info.get("gex_resistance")
         enriched.append({
             "symbol": symbol,
             "underlying": underlying,
@@ -466,13 +540,7 @@ def analyze_positions(
                 "last": underlying_price,
                 "change_pct": _safe_float(uq_body.get("netPercentChangeInDouble")),
             },
-            "computed": {
-                **metrics,
-                "bid_ask_spread_pct": bid_ask_spread_pct,
-                "open_interest_at_strike": live_quote.get("open_interest") if live_quote else None,
-                "volume_at_strike": live_quote.get("volume") if live_quote else None,
-                **yf_ctx,
-            },
+            "computed": computed,
         })
 
     return {

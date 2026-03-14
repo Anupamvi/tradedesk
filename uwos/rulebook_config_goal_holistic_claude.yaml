@@ -159,8 +159,13 @@ approval:
   require_shield_sigma_pass: true
   shield_sigma_require_data: true
   require_shield_core: false
-  require_live_shield_short_delta: false
+  require_live_shield_short_delta: true
   max_abs_short_delta_shield: 0.20
+  # FIRE delta gate: reject lottery tickets with low directional exposure
+  require_fire_long_delta: true
+  min_abs_long_delta_fire: 0.15
+  # GEX regime gate: block regime-mismatched trades
+  require_gex_regime: true
 
   # Keep very speculative structures out of approved set.
   disallow_confidence_tiers: [REJECT, LOTTO]
