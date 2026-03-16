@@ -295,6 +295,18 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="If set, invalidation breach is treated as hard live failure (default: warning only).",
     )
+    parser.add_argument(
+        "--entry-tol-width-pct",
+        type=float,
+        default=0.0,
+        help="Tolerance as %% of spread width (e.g. 0.025 = 2.5%% of width).",
+    )
+    parser.add_argument(
+        "--entry-tol-floor",
+        type=float,
+        default=0.0,
+        help="Minimum absolute tolerance floor in dollars (e.g. 0.25).",
+    )
     return parser.parse_args()
 
 
@@ -557,10 +569,14 @@ def main() -> None:
         gate_pass_live = None
         if entry_threshold is not None and live_net_bid_ask is not None:
             gate_eps = 1e-9
+            # Width-based tolerance: max(floor, width × pct)
+            w = width_for_risk if width_for_risk is not None and math.isfinite(width_for_risk) else 0.0
+            width_tol = w * args.entry_tol_width_pct if args.entry_tol_width_pct > 0 else 0.0
+            effective_tol = max(gate_eps, args.entry_tol_floor, width_tol)
             if net_type == "credit":
-                gate_pass_live = live_net_bid_ask >= (entry_threshold - gate_eps)
+                gate_pass_live = live_net_bid_ask >= (entry_threshold - effective_tol)
             else:
-                gate_pass_live = live_net_bid_ask <= (entry_threshold + gate_eps)
+                gate_pass_live = live_net_bid_ask <= (entry_threshold + effective_tol)
 
         und_payload = underlying_quotes.get(ticker, {})
         und_quote = und_payload.get("quote", und_payload)

@@ -1,4 +1,4 @@
-﻿import argparse
+import argparse
 import datetime as dt
 import hashlib
 import json
@@ -422,6 +422,13 @@ def run():
     cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
     approval_cfg = cfg.get("approval", {}) if isinstance(cfg, dict) else {}
     engine_cfg = cfg.get("engine", {}) if isinstance(cfg, dict) else {}
+    # Width-based entry gate tolerance — read early so we can pass to the pricer subprocess.
+    entry_tol_width_pct = fnum(approval_cfg.get("entry_tolerance_width_pct", 0.025))
+    entry_tol_floor = fnum(approval_cfg.get("entry_tolerance_floor", 0.25))
+    if not np.isfinite(entry_tol_width_pct) or entry_tol_width_pct < 0:
+        entry_tol_width_pct = 0.025
+    if not np.isfinite(entry_tol_floor) or entry_tol_floor < 0:
+        entry_tol_floor = 0.25
     discovery_multiplier = fnum(engine_cfg.get("discovery_multiplier", 5))
     if not np.isfinite(discovery_multiplier) or discovery_multiplier < 1:
         discovery_multiplier = 5
@@ -720,6 +727,10 @@ def run():
         str((out_dir / f"schwab_snapshot_{asof_str}" / "chains").resolve()),
         "--snapshot-out-json",
         str((out_dir / f"schwab_snapshot_{asof_str}.json").resolve()),
+        "--entry-tol-width-pct",
+        str(entry_tol_width_pct),
+        "--entry-tol-floor",
+        str(entry_tol_floor),
     ]
     stage2_reused_existing = False
     stage2_error = ""
@@ -951,9 +962,7 @@ def run():
     min_abs_long_delta_fire = fnum(approval_cfg.get("min_abs_long_delta_fire", 0.15))
     # GEX regime gate
     require_gex_regime = bool(approval_cfg.get("require_gex_regime", False))
-    entry_tol_debit_abs = fnum(approval_cfg.get("entry_tolerance_debit_abs", 0.20))
-    entry_tol_credit_abs = fnum(approval_cfg.get("entry_tolerance_credit_abs", 0.20))
-    entry_tol_pct = fnum(approval_cfg.get("entry_tolerance_pct", 0.05))
+    # entry_tol_width_pct / entry_tol_floor read earlier (before pricer subprocess)
     require_spot_alignment = bool(approval_cfg.get("require_spot_alignment", True))
     spot_alignment_require_live = bool(approval_cfg.get("spot_alignment_require_live", True))
     max_spot_asof_drift_pct = fnum(approval_cfg.get("max_spot_asof_drift_pct", 0.35))
@@ -975,12 +984,6 @@ def run():
         use_asof_close_for_invalidation = False
     else:
         use_asof_close_for_invalidation = bool(asof < dt.date.today())
-    if not np.isfinite(entry_tol_debit_abs) or entry_tol_debit_abs < 0:
-        entry_tol_debit_abs = 0.0
-    if not np.isfinite(entry_tol_credit_abs) or entry_tol_credit_abs < 0:
-        entry_tol_credit_abs = 0.0
-    if not np.isfinite(entry_tol_pct) or entry_tol_pct < 0:
-        entry_tol_pct = 0.0
     gates_cfg_local = cfg.get("gates", {}) if isinstance(cfg, dict) else {}
     min_credit_pct_width_cfg = fnum(gates_cfg_local.get("min_credit_pct_width", 0.30))
     max_credit_pct_width_cfg = fnum(gates_cfg_local.get("max_credit_pct_width", 0.55))
@@ -1030,10 +1033,12 @@ def run():
         live_net = fnum(row.get("live_net_bid_ask"))
         gate_pass_raw = bool(row.get("gate_pass_live")) if pd.notna(row.get("gate_pass_live")) else False
         _, gate_target, _ = parse_gate_value(row.get("entry_gate", ""))
-        tol_abs = entry_tol_credit_abs if net_type == "credit" else entry_tol_debit_abs
-        tol_total = tol_abs
-        if np.isfinite(gate_target) and np.isfinite(entry_tol_pct):
-            tol_total = tol_abs + abs(gate_target) * entry_tol_pct
+        # Width-based tolerance: max(floor, width × pct)
+        w = fnum(row.get("width"))
+        if not np.isfinite(w) or w <= 0:
+            w = 0.0
+        width_tol = w * entry_tol_width_pct if entry_tol_width_pct > 0 else 0.0
+        tol_total = max(entry_tol_floor, width_tol)
 
         near_miss = False
         pass_effective = gate_pass_raw

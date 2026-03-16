@@ -1615,6 +1615,9 @@ def validate_with_schwab(
         return
 
     max_snap_pct = float(schwab_cfg.get("max_strike_snap_pct", 3.0))
+    # Width-based entry gate tolerance
+    entry_tol_width_pct = float(schwab_cfg.get("entry_tolerance_width_pct", 0.025))
+    entry_tol_floor = float(schwab_cfg.get("entry_tolerance_floor", 0.25))
 
     # Group scores by ticker to minimize API calls
     ticker_scores: Dict[str, List[SwingScore]] = defaultdict(list)
@@ -1864,6 +1867,22 @@ def validate_with_schwab(
                     f"Sell {snap_cs:g}C / Buy {snap_cl:g}C "
                     f"({put_w:g}pw/{call_w:g}cw, ${s.live_spread_cost:.2f} {cost_label})"
                 )
+                # Width-based entry gate for IC
+                if math.isfinite(s.est_cost) and s.est_cost > 0:
+                    ic_width = max(put_w, call_w)
+                    gate_tol = max(entry_tol_floor, ic_width * entry_tol_width_pct)
+                    if s.cost_type == "debit":
+                        cost_miss = s.live_spread_cost - s.est_cost
+                    else:
+                        cost_miss = s.est_cost - s.live_spread_cost
+                    if cost_miss > gate_tol:
+                        s.live_validation_note = (
+                            f"IC entry gate miss: live ${s.live_spread_cost:.2f} vs est ${s.est_cost:.2f} "
+                            f"(miss ${cost_miss:.2f} > tol ${gate_tol:.2f})"
+                        )
+                        s.live_validated = False
+                        continue
+
                 # Extract live deltas for IC short legs
                 ps_contract = put_contracts.get(snap_ps, {})
                 cs_contract = call_contracts.get(snap_cs, {})
@@ -1996,6 +2015,22 @@ def validate_with_schwab(
                     f"Sell {snapped_short:g}{right_char} / Buy {snapped_long:g}{right_char} "
                     f"({live_width:g}w, ${s.live_spread_cost:.2f} credit)"
                 )
+
+            # Width-based entry gate: live cost must be within tolerance of estimated cost
+            if math.isfinite(s.est_cost) and s.est_cost > 0:
+                gate_tol = max(entry_tol_floor, live_width * entry_tol_width_pct)
+                if s.cost_type == "debit":
+                    cost_miss = s.live_spread_cost - s.est_cost
+                else:
+                    cost_miss = s.est_cost - s.live_spread_cost
+                if cost_miss > gate_tol:
+                    s.live_validation_note = (
+                        f"Entry gate miss: live ${s.live_spread_cost:.2f} vs est ${s.est_cost:.2f} "
+                        f"(miss ${cost_miss:.2f} > tol ${gate_tol:.2f} = max(${entry_tol_floor}, "
+                        f"{live_width:g}×{entry_tol_width_pct}))"
+                    )
+                    s.live_validated = False
+                    continue
 
             # Extract live deltas for vertical legs
             short_delta_raw = short_contract.get("delta")

@@ -104,6 +104,10 @@ strategy_selection:
 schwab_validation:
   enabled: true                    # Set to false to skip live chain validation
   max_strike_snap_pct: 3.0         # Max % distance to snap a strike to nearest real strike
+  # Width-based entry gate tolerance (professional swing-trade standard).
+  # Formula: tolerance = max(floor, spread_width × width_pct)
+  entry_tolerance_width_pct: 0.025   # 2.5% of spread width
+  entry_tolerance_floor: 0.25        # $0.25 minimum slippage floor
 
 backtest:
   enabled: true                    # Set to false to skip historical edge backtest

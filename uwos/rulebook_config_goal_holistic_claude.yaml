@@ -138,10 +138,11 @@ approval:
   tactical_min_signals: 150           # [T2] was: 120 — more historical validation required for tactical
   tactical_require_verdict_pass: true
 
-  # Allow only tight near-miss tolerance.
-  entry_tolerance_debit_abs: 0.10
-  entry_tolerance_credit_abs: 0.10
-  entry_tolerance_pct: 0.04
+  # Width-based entry gate tolerance (professional swing-trade standard).
+  # Formula: tolerance = max(entry_tolerance_floor, spread_width × entry_tolerance_width_pct)
+  # For a $15 spread at 2.5%: max(0.25, 15*0.025) = max(0.25, 0.375) = $0.375
+  entry_tolerance_width_pct: 0.025   # 2.5% of spread width — pro standard for swing verticals
+  entry_tolerance_floor: 0.25        # $0.25 minimum — realistic retail fill slippage floor
   require_spot_alignment: true
   spot_alignment_require_live: true
   max_spot_asof_drift_pct: 0.20       # [T2] was: 0.35 — prevent stale spot approvals
