@@ -265,6 +265,47 @@ def candidate_dict(
     return out
 
 
+def compute_macro_regime(asof):
+    """Fetch SPY 5-day return and VIX level for macro regime awareness.
+    Returns dict with spy_5d_ret, vix_level, regime ('risk_off'|'risk_on'|'neutral').
+    """
+    try:
+        import yfinance as yf
+        start = (asof - dt.timedelta(days=15)).isoformat()
+        end = (asof + dt.timedelta(days=1)).isoformat()
+        spy = yf.download("SPY", start=start, end=end, auto_adjust=True, progress=False)
+        if spy is not None and not spy.empty:
+            if isinstance(spy.columns, pd.MultiIndex):
+                spy.columns = spy.columns.get_level_values(0)
+            close = pd.to_numeric(spy.get("Close"), errors="coerce").dropna()
+            spy_5d_ret = (float(close.iloc[-1]) / float(close.iloc[-6]) - 1.0) if len(close) >= 6 else 0.0
+        else:
+            spy_5d_ret = 0.0
+    except Exception:
+        spy_5d_ret = 0.0
+
+    try:
+        import yfinance as yf
+        vix = yf.download("^VIX", start=start, end=end, auto_adjust=True, progress=False)
+        if vix is not None and not vix.empty:
+            if isinstance(vix.columns, pd.MultiIndex):
+                vix.columns = vix.columns.get_level_values(0)
+            vc = pd.to_numeric(vix.get("Close"), errors="coerce").dropna()
+            vix_level = float(vc.iloc[-1]) if not vc.empty else 20.0
+        else:
+            vix_level = 20.0
+    except Exception:
+        vix_level = 20.0
+
+    if spy_5d_ret < -0.02 and vix_level > 22:
+        regime = "risk_off"
+    elif spy_5d_ret > 0.02 and vix_level < 18:
+        regime = "risk_on"
+    else:
+        regime = "neutral"
+    return {"spy_5d_ret": spy_5d_ret, "vix_level": vix_level, "regime": regime}
+
+
 def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=20):
     gates_cfg = cfg.get("gates", {})
     fire_cfg = cfg.get("fire", {})
@@ -385,6 +426,10 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     high_beta_require_delta = bool(high_beta_cfg.get("require_short_delta_for_core", True))
     fire_lotto_dte_max = int(fire_cfg.get("lotto_dte_max", 10))
 
+    macro = compute_macro_regime(asof)
+    macro_regime = macro["regime"]
+    print(f"  [macro] SPY 5d={macro['spy_5d_ret']:+.2%}, VIX={macro['vix_level']:.1f}, regime={macro_regime}")
+
     sc = screener.copy()
     sc["ticker"] = sc["ticker"].astype(str).str.upper()
     sc["close"] = pd.to_numeric(sc.get("close"), errors="coerce")
@@ -470,7 +515,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         bias = fnum(direction_bias)
         if not np.isfinite(bias):
             return (True, True) if allow_both_neutral else (False, False)
-        neutral_gap = 0.08
+        neutral_gap = 0.04  # [T6] was: 0.08 — lowered to unblock mildly directional tickers
         if bias > neutral_gap:
             return True, False
         if bias < -neutral_gap:
@@ -716,10 +761,16 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                                 conv = min(100, conv + 3)
                             elif iv_rank > 70:
                                 conv = max(0, conv - 5)
+                        # [T6] Macro regime adjustment
+                        if macro_regime == "risk_off":
+                            conv = max(0, conv - 10)
+                        elif macro_regime == "risk_on":
+                            conv = min(100, conv + 3)
                         confidence_tier = "Lotto" if dte <= fire_lotto_dte_max else "Aggressive"
                         optimal = "Yes-Prime" if conv >= 78 else ("Yes-Good" if conv >= 65 else "Watch Only")
                         if er["crossed"]:
-                            confidence_tier = "Lotto"
+                            # [T6] Penalty instead of auto-kill: reduce conviction instead of forcing LOTTO
+                            conv = max(0, conv - 15)
                             if optimal == "Yes-Prime":
                                 optimal = "Yes-Good"
                         gate_text = (
@@ -804,10 +855,16 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                                 conv = min(100, conv + 3)
                             elif iv_rank > 70:
                                 conv = max(0, conv - 5)
+                        # [T6] Macro regime adjustment
+                        if macro_regime == "risk_off":
+                            conv = min(100, conv + 5)
+                        elif macro_regime == "risk_on":
+                            conv = max(0, conv - 10)
                         confidence_tier = "Lotto" if dte <= fire_lotto_dte_max else "Aggressive"
                         optimal = "Yes-Prime" if conv >= 78 else ("Yes-Good" if conv >= 65 else "Watch Only")
                         if er["crossed"]:
-                            confidence_tier = "Lotto"
+                            # [T6] Penalty instead of auto-kill: reduce conviction instead of forcing LOTTO
+                            conv = max(0, conv - 15)
                             if optimal == "Yes-Prime":
                                 optimal = "Yes-Good"
                         gate_text = (
@@ -896,6 +953,9 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                                 conv = min(100, conv + 3)
                             elif iv_rank < 20:
                                 conv = max(0, conv - 5)
+                        # [T6] Macro regime: selling puts in a selloff is dangerous
+                        if macro_regime == "risk_off":
+                            conv = max(0, conv - 8)
 
                         sigma_pass = bool(sigma_known and float(sh["strike"]) <= (spot - sigma * shield_sigma_relax))
                         short_otm_pct = max(0.0, (spot - float(sh["strike"])) / spot)
@@ -1017,6 +1077,9 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                                 conv = min(100, conv + 3)
                             elif iv_rank < 20:
                                 conv = max(0, conv - 5)
+                        # [T6] Macro regime: bear calls benefit from downside
+                        if macro_regime == "risk_off":
+                            conv = min(100, conv + 3)
 
                         sigma_pass = bool(sigma_known and float(sh["strike"]) >= (spot + sigma * shield_sigma_relax))
                         short_otm_pct = max(0.0, (float(sh["strike"]) - spot) / spot)

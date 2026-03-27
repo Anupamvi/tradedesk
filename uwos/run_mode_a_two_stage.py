@@ -1039,6 +1039,12 @@ def run():
             w = 0.0
         width_tol = w * entry_tol_width_pct if entry_tol_width_pct > 0 else 0.0
         tol_total = max(entry_tol_floor, width_tol)
+        # [T6] Asymmetric tolerance: puts get wider tolerance in high-IV environments
+        _strategy_local = str(row.get("strategy", "")).strip()
+        _iv_rank_val = fnum(row.get("iv_rank"))
+        if _strategy_local in {"Bear Put Debit", "Bull Put Credit"} and np.isfinite(_iv_rank_val) and _iv_rank_val > 40:
+            _vol_mult = 1.0 + 0.5 * min(1.0, (_iv_rank_val - 40) / 60.0)
+            tol_total = tol_total * _vol_mult
 
         near_miss = False
         pass_effective = gate_pass_raw
@@ -1440,30 +1446,6 @@ def run():
                     elif abs(put_delta) > max_abs_short_delta_shield or abs(call_delta) > max_abs_short_delta_shield:
                         blockers.append(f"shield_delta_fail:put={put_delta:+.2f},call={call_delta:+.2f}")
 
-            # FIRE long-leg delta gate: reject lottery tickets
-            if track == "FIRE" and require_fire_long_delta:
-                if strategy_local in {"Bull Call Debit", "Bear Put Debit"}:
-                    long_delta = fnum(row.get("long_delta_live"))
-                    if not np.isfinite(long_delta):
-                        blockers.append("fire_delta_missing")
-                    elif abs(long_delta) < min_abs_long_delta_fire:
-                        blockers.append(f"fire_delta_low:{long_delta:+.2f}")
-
-            # GEX regime gate
-            if require_gex_regime:
-                gex_regime = str(row.get("gex_regime", "")).strip().lower()
-                if gex_regime:  # only block if GEX data is available
-                    if track == "SHIELD" and gex_regime == "volatile":
-                        blockers.append("shield_gex_volatile")
-                    elif track == "FIRE" and gex_regime == "pinned":
-                        net_gex_val = fnum(row.get("net_gex"))
-                        # Only block FIRE if GEX is strongly pinned (not marginal)
-                        if np.isfinite(net_gex_val) and net_gex_val > 0:
-                            blockers.append("fire_gex_pinned")
-                    # IC-specific: require pinned regime
-                    if strategy_local in {"Iron Condor", "Iron Butterfly"} and gex_regime != "pinned":
-                        blockers.append("ic_gex_not_pinned")
-
             # IC/IB profitability is terminal (expiry-zone), not path-dependent,
             # so the no-touch metric is irrelevant for them.
             _is_ic = strategy_local in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}
@@ -1477,6 +1459,30 @@ def run():
                         )
                 elif credit_no_touch_require_data:
                     blockers.append("credit_no_touch_unknown")
+
+        # FIRE long-leg delta gate: reject lottery tickets  [B1 fix: moved out of SHIELD block]
+        if track == "FIRE" and require_fire_long_delta:
+            if strategy_local in {"Bull Call Debit", "Bear Put Debit"}:
+                long_delta = fnum(row.get("long_delta_live"))
+                if not np.isfinite(long_delta):
+                    blockers.append("fire_delta_missing")
+                elif abs(long_delta) < min_abs_long_delta_fire:
+                    blockers.append(f"fire_delta_low:{long_delta:+.2f}")
+
+        # GEX regime gate  [B1 fix: moved out of SHIELD block — applies to both tracks]
+        if require_gex_regime:
+            gex_regime = str(row.get("gex_regime", "")).strip().lower()
+            if gex_regime:  # only block if GEX data is available
+                if track == "SHIELD" and gex_regime == "volatile":
+                    blockers.append("shield_gex_volatile")
+                elif track == "FIRE" and gex_regime == "pinned":
+                    net_gex_val = fnum(row.get("net_gex"))
+                    # Only block FIRE if GEX is strongly pinned (not marginal)
+                    if np.isfinite(net_gex_val) and net_gex_val > 0:
+                        blockers.append("fire_gex_pinned")
+                # IC-specific: require pinned regime
+                if strategy_local in {"Iron Condor", "Iron Butterfly"} and gex_regime != "pinned":
+                    blockers.append("ic_gex_not_pinned")
 
         return blockers
 

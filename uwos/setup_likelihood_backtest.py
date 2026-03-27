@@ -174,7 +174,7 @@ def yfinance_download_retry(
     last = pd.DataFrame()
     for attempt in range(max(1, int(retries))):
         try:
-            raw = yf.download(ticker, start=start, end=end, auto_adjust=False, progress=False)
+            raw = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False)  # [T6] was: auto_adjust=False — caused splits to break price continuity
         except Exception:
             raw = pd.DataFrame()
         norm = normalize_download(raw)
@@ -283,12 +283,14 @@ def simulate_setup(
     no_touch_n = 0
 
     n = len(hist)
-    for i in range(0, n - dte):
+    # [T6] Convert calendar DTE to approximate trading days
+    trading_days_dte = max(1, int(round(dte * 252 / 365)))
+    for i in range(0, n - trading_days_dte):
         entry = safe_float(hist["Close"].iloc[i])
         if not np.isfinite(entry) or entry <= 0:
             continue
-        window = hist.iloc[i + 1 : i + 1 + dte]
-        if len(window) < dte:
+        window = hist.iloc[i + 1 : i + 1 + trading_days_dte]
+        if len(window) < trading_days_dte:
             continue
         end_close = safe_float(window["Close"].iloc[-1])
         hi = safe_float(window["High"].max())
@@ -583,7 +585,7 @@ def main() -> None:
         edge = hist_success_pct - req
         confidence = confidence_bucket(signals)
         if signals < int(args.min_signals):
-            verdict = "LOW_SAMPLE"
+            verdict = "FAIL" if edge < -5.0 else "LOW_SAMPLE"  # [T6] deeply negative edge is conclusive
         else:
             verdict = "PASS" if edge > 0 else "FAIL"
 

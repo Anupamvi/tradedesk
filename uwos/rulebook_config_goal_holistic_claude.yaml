@@ -30,6 +30,14 @@
 # [T5] engine.min_shield_in_output: 3 → 5    (reserve 5 slots for best positive-edge SHIELD trades)
 # [T5] approval.min_credit_no_touch_pct: 65 → 25  (realistic for current vol; edge gate still protects PF)
 # [T5] approval.ic_exempt_from_no_touch: true (IC profitability is terminal, no-touch is path-based)
+#
+# [T6] Pipeline audit fixes (backtest showed 17.5% win rate, -$3,301 P&L over 3 weeks):
+# [T6] fire.debit_long_max_abs_moneyness_pct: 0.08 → 0.06  (strikes closer to ATM)
+# [T6] fire.max_breakeven_dist_pct: 0.12 → 0.08            (reachable breakevens)
+# [T6] fire.allow_both_sides_when_neutral: false → true     (unblock bear trades)
+# [T6] shield.allow_both_sides_when_neutral: false → true   (same)
+# [T6] approval.max_spot_asof_drift_pct: 0.20 → 0.50       (less restrictive drift)
+# [T6] approval.entry_tolerance_floor: 0.25 → 0.15         (tighter for small spreads)
 
 engine:
   max_tickers_to_scan: 450
@@ -48,7 +56,7 @@ gates:
   exclude_etfs: true
   min_credit_pct_width: 0.30
   max_credit_pct_width: 0.55
-  max_debit_pct_width: 0.35
+  max_debit_pct_width: 0.45           # [T6] was: 0.35 — ATM strikes cost more; 35% was rejecting valid near-ATM setups
   min_leg_open_interest: 100
   min_leg_volume: 40                  # [T1] was: 20 — better fill quality
   max_leg_spread_pct: 0.12            # [T1] was: 0.18 — reduce bid-ask slippage impact
@@ -68,15 +76,15 @@ fire:
   target_dte: 45
   debit_long_itm_pct: 0.03
   debit_long_otm_pct: 0.08
-  debit_long_max_abs_moneyness_pct: 0.08
+  debit_long_max_abs_moneyness_pct: 0.06  # [T6] was: 0.08 — tighter OTM cap; backtest showed 17.5% win rate with 0.08
   debit_use_dual_long_targets: true
   call_pool_min_pct: 0.75
   call_pool_max_pct: 1.15
   put_pool_min_pct: 0.85
   put_pool_max_pct: 1.30
-  max_breakeven_dist_pct: 0.12
+  max_breakeven_dist_pct: 0.08            # [T6] was: 0.12 — tighter BE distance; 12% was unreachable for most 30-DTE trades
   invalidation_buffer_pct: 0.03
-  allow_both_sides_when_neutral: false
+  allow_both_sides_when_neutral: true      # [T6] was: false — allow both bull+bear in neutral zone; prevents META-like blind spots
   lotto_dte_max: 10
 
 shield:
@@ -85,7 +93,7 @@ shield:
   credit_short_otm_pct: 0.12         # [T2] was: 0.10 — ~15-20 delta short; higher prob OTM expiry
   sigma_relaxation_factor: 0.45       # [T4] new — use 0.45x sigma; allows ~8-10% OTM strikes to pass
   iron_condor_sigma_factor: 0.40      # [T4] new — IC needs both sides; more relaxed to allow any through
-  allow_both_sides_when_neutral: false
+  allow_both_sides_when_neutral: true      # [T6] was: false — same as FIRE; neutral tickers can generate both tracks
   min_marketcap: 10000000000
   lotto_dte_max: 7
 
@@ -141,11 +149,11 @@ approval:
   # Width-based entry gate tolerance (professional swing-trade standard).
   # Formula: tolerance = max(entry_tolerance_floor, spread_width × entry_tolerance_width_pct)
   # For a $15 spread at 2.5%: max(0.25, 15*0.025) = max(0.25, 0.375) = $0.375
-  entry_tolerance_width_pct: 0.025   # 2.5% of spread width — pro standard for swing verticals
-  entry_tolerance_floor: 0.25        # $0.25 minimum — realistic retail fill slippage floor
+  entry_tolerance_width_pct: 0.05    # [T6] was: 0.025 — widened to 5% to handle ATM strike premium drift
+  entry_tolerance_floor: 0.30        # [T6] was: 0.25 — slight increase; ATM strikes have larger bid-ask
   require_spot_alignment: true
   spot_alignment_require_live: true
-  max_spot_asof_drift_pct: 0.20       # [T2] was: 0.35 — prevent stale spot approvals
+  max_spot_asof_drift_pct: 0.50       # [T6] was: 0.20 — too tight, rejecting valid trades on minor drift
   max_bull_call_long_otm_pct: 0.08
   max_bear_put_long_otm_pct: 0.08
   exclude_debit_moneyness_fail_from_output: true
