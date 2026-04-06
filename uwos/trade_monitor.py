@@ -466,6 +466,62 @@ def run_dip_scan() -> List[Dict]:
     return alerts
 
 
+OPP_STATE_FILE = ROOT / "out" / "opportunities" / "opp_state.json"
+
+
+def run_opportunity_scan() -> List[Dict]:
+    """Run opportunity scanner on latest UW data and return new alerts."""
+    from uwos.opportunity_scanner import scan_opportunities, find_latest_data_dir
+
+    data_dir = find_latest_data_dir()
+    if not data_dir:
+        return []
+
+    results = scan_opportunities(data_dir, top_n=10, verbose=False)
+    if not results:
+        return []
+
+    # Load previous state
+    prev_opps = {}
+    if OPP_STATE_FILE.exists():
+        try:
+            prev_opps = json.loads(OPP_STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    alerts = []
+    new_state = {}
+    for r in results:
+        ticker = r["ticker"]
+        new_state[ticker] = {
+            "signal": r["signal"],
+            "composite": r["composite"],
+            "direction": r["direction"],
+            "timestamp": dt.datetime.now().isoformat(),
+        }
+        prev = prev_opps.get(ticker, {})
+        prev_signal = prev.get("signal", "")
+
+        # Alert on new STRONG/GOOD entries or upgrades
+        if r["signal"] in ("STRONG", "GOOD"):
+            if prev_signal != r["signal"]:
+                prem = r["total_premium"]
+                prem_str = f"${prem/1_000_000:.1f}M" if prem >= 1_000_000 else f"${prem/1000:.0f}K"
+                alerts.append({
+                    "ticker": ticker,
+                    "signal": r["signal"],
+                    "direction": r["direction"],
+                    "strategy": r["strategy"],
+                    "composite": r["composite"],
+                    "buy_pct": r["buy_pct"],
+                    "premium_str": prem_str,
+                })
+
+    OPP_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    OPP_STATE_FILE.write_text(json.dumps(new_state, indent=2), encoding="utf-8")
+    return alerts
+
+
 def should_run_dip_scan() -> bool:
     """Run dip scan twice daily: ~10:00 AM and ~1:00 PM ET."""
     try:
@@ -548,6 +604,22 @@ def run_once(force: bool = False, manual: bool = False) -> int:
                 _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No new dip opportunities")
         except Exception as e:
             _safe_print(f"  [ERROR] Dip scan failed: {e}")
+
+    # Mode 3: Opportunity scanner (runs 2x daily, same windows as dip scan)
+    if force or should_run_dip_scan():
+        _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] Running opportunity scanner...")
+        try:
+            opp_alerts = run_opportunity_scan()
+            for alert in opp_alerts:
+                title = f"[{alert['signal']}] {alert['ticker']} - {alert['direction']}"
+                body = f"{alert['strategy']} | Score:{alert['composite']:.0f} | Premium:{alert['premium_str']} | Buy:{alert['buy_pct']:.0f}%"
+                _safe_print(f"    OPP: {title}: {body}")
+                notify(title, body, priority="high", tags="chart_with_upwards_trend")
+            total_alerts += len(opp_alerts)
+            if not opp_alerts:
+                _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No new trade opportunities")
+        except Exception as e:
+            _safe_print(f"  [ERROR] Opportunity scan failed: {e}")
 
     if total_alerts == 0:
         _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No alerts")
