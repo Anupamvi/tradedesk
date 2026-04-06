@@ -591,7 +591,7 @@ def main():
                 print("\nMonitor stopped.")
                 break
     else:
-        run_once(force=args.force)
+        run_once(force=args.force, manual=args.manual)
 
 
 if __name__ == "__main__":
