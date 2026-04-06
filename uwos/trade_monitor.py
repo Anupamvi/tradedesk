@@ -127,6 +127,7 @@ def notify(title: str, body: str, priority: str = "default",
     if not sent:
         _safe_print(f"  [notify] ntfy failed, message: {_strip_emoji(title)}: {body}")
     send_sms(cfg["sms_phone"], cfg["sms_gateway"], title, body)
+    time.sleep(2)  # T-Mobile gateway throttles rapid messages
 
 
 # ---------------------------------------------------------------------------
