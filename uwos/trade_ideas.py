@@ -876,8 +876,7 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
                 "analyst_upside": round(fund.get("analyst_upside", 0), 1),
                 "roe": round(fund.get("roe", 0), 1),
             })
-            if len(stock_results) >= 3:  # cap at 3 stock buys per scan
-                break
+            # No cap — if quality criteria are met, show it
 
     # Merge: option ideas first, then stock buys
     results = option_results[:top_n] + stock_results
