@@ -922,29 +922,36 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
             "",
         ])
         if r["strategy"] == "STOCK BUY":
-            lines.append(f"**BUY at ${r['price']:.2f}** | Analyst target +{r['analyst_upside']:.0f}% | Quality {r['quality_score']:.0f}/100")
+            lines.extend([
+                f"**BUY at ${r['price']:.2f}** | Analyst target +{r['analyst_upside']:.0f}% | Quality {r['quality_score']:.0f}/100",
+                "",
+                f"**Flow (LIVE):** {prem_str} est. premium | Call%: {r['buy_pct']:.0f}% | Vol/OI {r['vol_oi']:.1f}x | {'UNUSUAL' if r.get('unusual') else 'Normal'}",
+                f"**Quality:** ROE {r['roe']:.0f}% | Analyst upside {r['analyst_upside']:+.0f}% | Score {r['quality_score']:.0f}/100",
+                "",
+            ])
         else:
-            lines.append(f"**TRADE: Sell ${r['short_strike']:.0f} / Buy ${r['long_strike']:.0f} | {r['expiry']} | {r['dte']} DTE**")
-            "",
-            "| Metric | Value |",
-            "|--------|-------|",
-            f"| Credit | ${r['credit']:.2f} |",
-            f"| Max Profit | ${r['max_profit']} |",
-            f"| Max Loss | ${r['max_loss']} |",
-            f"| Prob Profit | {r['prob_profit']:.0f}% |",
-            f"| Short Delta | {r['short_delta']:+.3f} |",
-            f"| Short Theta | {r['short_theta']:+.3f} |",
-            f"| IV | {r['short_iv']:.0f}% |",
-            f"| Buffer | {r['buffer_pct']:.1f}% from price |",
-            f"| R:R Ratio | {r.get('rr_ratio', 0):.2f} ({r.get('rr_label', '?')}) |",
-            f"| Credit/Width | {r.get('credit_width_pct', 0):.0f}% |",
-            f"| Spread Width | ${r['width']:.0f} |",
-            f"| Earnings | {r['days_to_earnings']} days away |",
-            "",
-            f"**Flow (LIVE):** {prem_str} est. premium | Call%: {r['buy_pct']:.0f}% | Vol/OI {r['vol_oi']:.1f}x | {'UNUSUAL' if r.get('unusual') else 'Normal'}",
-            f"**Quality:** ROE {r['roe']:.0f}% | Analyst upside {r['analyst_upside']:+.0f}% | Score {r['quality_score']:.0f}/100",
-            "",
-        ])
+            lines.extend([
+                f"**TRADE: Sell ${r['short_strike']:.0f} / Buy ${r['long_strike']:.0f} | {r['expiry']} | {r['dte']} DTE**",
+                "",
+                "| Metric | Value |",
+                "|--------|-------|",
+                f"| Credit | ${r['credit']:.2f} |",
+                f"| Max Profit | ${r['max_profit']} |",
+                f"| Max Loss | ${r['max_loss']} |",
+                f"| Prob Profit | {r['prob_profit']:.0f}% |",
+                f"| Short Delta | {r['short_delta']:+.3f} |",
+                f"| Short Theta | {r['short_theta']:+.3f} |",
+                f"| IV | {r['short_iv']:.0f}% |",
+                f"| Buffer | {r['buffer_pct']:.1f}% from price |",
+                f"| R:R Ratio | {r.get('rr_ratio', 0):.2f} ({r.get('rr_label', '?')}) |",
+                f"| Credit/Width | {r.get('credit_width_pct', 0):.0f}% |",
+                f"| Spread Width | ${r['width']:.0f} |",
+                f"| Earnings | {r['days_to_earnings']} days away |",
+                "",
+                f"**Flow (LIVE):** {prem_str} est. premium | Call%: {r['buy_pct']:.0f}% | Vol/OI {r['vol_oi']:.1f}x | {'UNUSUAL' if r.get('unusual') else 'Normal'}",
+                f"**Quality:** ROE {r['roe']:.0f}% | Analyst upside {r['analyst_upside']:+.0f}% | Score {r['quality_score']:.0f}/100",
+                "",
+            ])
 
     return "\n".join(lines)
 
