@@ -357,11 +357,171 @@ def quality_score(fund: Dict) -> float:
 # Step 4: Schwab chain lookup — construct trades
 # ---------------------------------------------------------------------------
 
+MIN_CREDIT_WIDTH_RATIO = 0.20  # minimum credit must be 20% of spread width
+TARGET_WIDTHS = [5, 10, 15]     # try these spread widths, pick best R:R
+
+
+def _best_credit_spread(exp_map: Dict, underlying: float, side: str,
+                        target_dte_min: int, target_dte_max: int) -> Optional[Dict]:
+    """Find the best credit spread across multiple widths and expiries.
+
+    Tries $5, $10, $15 widths. Picks the one with best R:R that meets
+    the 20% credit/width minimum. Returns None if nothing qualifies.
+    """
+    is_put = (side == "put")
+    candidates = []
+
+    for expiry_key, strikes in exp_map.items():
+        expiry_date = expiry_key.split(":")[0]
+        try:
+            dte = (dt.date.fromisoformat(expiry_date) - dt.date.today()).days
+        except ValueError:
+            continue
+        if dte < target_dte_min or dte > target_dte_max:
+            continue
+
+        # Build a lookup of strike -> contract data
+        strike_data = {}
+        for sk, contracts in strikes.items():
+            if not contracts:
+                continue
+            c = contracts[0]
+            d = c.get("delta")
+            if d is None:
+                continue
+            strike_data[float(sk)] = {
+                "strike": float(sk), "bid": c.get("bid", 0) or 0,
+                "ask": c.get("ask", 0) or 0, "delta": d,
+                "theta": c.get("theta", 0) or 0,
+                "iv": c.get("volatility", 0) or 0,
+                "oi": c.get("openInterest", 0) or 0,
+            }
+
+        # Find short strike at target delta
+        short = None
+        if is_put:
+            # Short put: -0.35 to -0.15 delta, sorted high to low
+            for sk in sorted(strike_data.keys(), reverse=True):
+                d = strike_data[sk]["delta"]
+                bid = strike_data[sk]["bid"]
+                if -0.35 <= d <= -0.15 and bid > 0.30:
+                    short = strike_data[sk]
+                    break
+        else:
+            # Short call: 0.15 to 0.35 delta, sorted low to high
+            for sk in sorted(strike_data.keys()):
+                d = strike_data[sk]["delta"]
+                bid = strike_data[sk]["bid"]
+                if 0.15 <= d <= 0.35 and bid > 0.30:
+                    short = strike_data[sk]
+                    break
+
+        if not short:
+            continue
+
+        # Try each target width, pick best R:R
+        for target_w in TARGET_WIDTHS:
+            if is_put:
+                long_strike_target = short["strike"] - target_w
+            else:
+                long_strike_target = short["strike"] + target_w
+
+            # Find closest available strike to target
+            long = None
+            best_dist = 999
+            for sk, sd in strike_data.items():
+                dist = abs(sk - long_strike_target)
+                # Must be on the correct side and within $2 of target
+                if is_put and sk < short["strike"] and dist < best_dist and dist <= 2:
+                    if sd["ask"] > 0:
+                        long = sd
+                        best_dist = dist
+                elif not is_put and sk > short["strike"] and dist < best_dist and dist <= 2:
+                    if sd["ask"] > 0:
+                        long = sd
+                        best_dist = dist
+
+            if not long:
+                continue
+
+            if is_put:
+                width = short["strike"] - long["strike"]
+            else:
+                width = long["strike"] - short["strike"]
+
+            if width <= 0:
+                continue
+
+            credit = short["bid"] - long["ask"]
+            if credit <= 0:
+                continue
+
+            credit_ratio = credit / width
+            if credit_ratio < MIN_CREDIT_WIDTH_RATIO:
+                continue  # R:R too poor
+
+            max_profit = credit * 100
+            max_loss = (width - credit) * 100
+            rr = credit / (width - credit) if (width - credit) > 0 else 0
+
+            if is_put:
+                prob_profit = (1 + short["delta"]) * 100
+                buffer_pct = (underlying - short["strike"]) / underlying * 100
+                strategy_name = "Bull Put Credit"
+            else:
+                prob_profit = (1 - short["delta"]) * 100
+                buffer_pct = (short["strike"] - underlying) / underlying * 100
+                strategy_name = "Bear Call Credit"
+
+            # Buffer warning
+            caution = ""
+            if buffer_pct < 5:
+                caution = " [TIGHT]"
+            elif buffer_pct < 7:
+                caution = " [MOD]"
+
+            # R:R label
+            if rr >= 0.50:
+                rr_label = "GOOD"
+            elif rr >= 0.30:
+                rr_label = "OK"
+            else:
+                rr_label = "THIN"
+
+            candidates.append({
+                "strategy": f"{strategy_name}{caution}",
+                "short_strike": short["strike"],
+                "long_strike": long["strike"],
+                "expiry": expiry_date,
+                "dte": dte,
+                "credit": round(credit, 2),
+                "max_profit": round(max_profit),
+                "max_loss": round(max_loss),
+                "prob_profit": round(prob_profit, 1),
+                "short_delta": round(short["delta"], 3),
+                "short_theta": round(short["theta"], 3),
+                "short_iv": round(short["iv"], 1),
+                "buffer_pct": round(buffer_pct, 1),
+                "width": width,
+                "rr_ratio": round(rr, 2),
+                "rr_label": rr_label,
+                "credit_width_pct": round(credit_ratio * 100, 1),
+            })
+
+    if not candidates:
+        return None
+
+    # Pick best R:R
+    candidates.sort(key=lambda x: x["rr_ratio"], reverse=True)
+    return candidates[0]
+
+
 def construct_trades(svc, ticker: str, price: float, direction: str,
                      avg_iv: float) -> List[Dict]:
     """Fetch Schwab option chain and construct specific trade ideas.
 
-    Returns list of trade constructions with specific strikes, credits, Greeks.
+    Tries multiple spread widths ($5, $10, $15) and picks the best
+    risk/reward ratio that meets minimum credit/width of 20%.
     """
     trades = []
     target_dte_min = 25
@@ -371,7 +531,7 @@ def construct_trades(svc, ticker: str, price: float, direction: str,
     to_date = dt.date.today() + dt.timedelta(days=target_dte_max)
 
     try:
-        chain = svc.get_option_chain(ticker, strike_count=10,
+        chain = svc.get_option_chain(ticker, strike_count=14,
                                       from_date=from_date, to_date=to_date)
     except Exception:
         return []
@@ -379,169 +539,20 @@ def construct_trades(svc, ticker: str, price: float, direction: str,
     underlying = chain.get("underlyingPrice", price)
 
     if direction == "bullish" or direction == "neutral":
-        # Strategy 1: Bull Put Credit Spread (sell put spread below price)
         puts = chain.get("putExpDateMap", {})
-        for expiry_key, strikes in puts.items():
-            expiry_date = expiry_key.split(":")[0]
-            try:
-                dte = (dt.date.fromisoformat(expiry_date) - dt.date.today()).days
-            except ValueError:
-                continue
-            if dte < target_dte_min or dte > target_dte_max:
-                continue
-
-            sorted_strikes = sorted(strikes.keys(), key=float, reverse=True)
-            # Find short put at ~-0.25 delta (OTM)
-            short_put = None
-            long_put = None
-            for sk in sorted_strikes:
-                contracts = strikes[sk]
-                if not contracts:
-                    continue
-                c = contracts[0]
-                d = c.get("delta", 0)
-                bid = c.get("bid", 0)
-                if d is None:
-                    continue
-                if -0.35 <= d <= -0.15 and bid > 0.50:
-                    short_put = {"strike": float(sk), "bid": bid, "ask": c.get("ask", 0),
-                                 "delta": d, "theta": c.get("theta", 0),
-                                 "iv": c.get("volatility", 0), "oi": c.get("openInterest", 0)}
-                    break
-
-            if not short_put:
-                continue
-
-            # Long put: $5-10 below short
-            for sk in sorted_strikes:
-                sk_f = float(sk)
-                if sk_f < short_put["strike"] - 4 and sk_f >= short_put["strike"] - 15:
-                    contracts = strikes[sk]
-                    if contracts:
-                        c = contracts[0]
-                        if c.get("ask", 0) > 0:
-                            long_put = {"strike": sk_f, "bid": c.get("bid", 0),
-                                        "ask": c.get("ask", 0), "delta": c.get("delta", 0)}
-                            break
-
-            if not long_put:
-                continue
-
-            width = short_put["strike"] - long_put["strike"]
-            credit = short_put["bid"] - long_put["ask"]
-            if credit <= 0.20:
-                continue
-
-            max_profit = credit * 100
-            max_loss = (width - credit) * 100
-            prob_profit = (1 + short_put["delta"]) * 100  # approx from delta
-            buffer_pct = (underlying - short_put["strike"]) / underlying * 100
-
-            # Buffer warning
-            caution = ""
-            if buffer_pct < 5:
-                caution = " [TIGHT BUFFER]"
-            elif buffer_pct < 7:
-                caution = " [MODERATE BUFFER]"
-
-            trades.append({
-                "strategy": f"Bull Put Credit{caution}",
-                "short_strike": short_put["strike"],
-                "long_strike": long_put["strike"],
-                "expiry": expiry_date,
-                "dte": dte,
-                "credit": round(credit, 2),
-                "max_profit": round(max_profit),
-                "max_loss": round(max_loss),
-                "prob_profit": round(prob_profit, 1),
-                "short_delta": round(short_put["delta"], 3),
-                "short_theta": round(short_put["theta"], 3),
-                "short_iv": round(short_put["iv"], 1),
-                "buffer_pct": round(buffer_pct, 1),
-                "width": width,
-            })
-            break  # one trade per expiry
+        best_put_trade = _best_credit_spread(
+            exp_map=puts, underlying=underlying, side="put",
+            target_dte_min=target_dte_min, target_dte_max=target_dte_max)
+        if best_put_trade:
+            trades.append(best_put_trade)
 
     if direction == "bearish" or direction == "neutral":
-        # Strategy 2: Bear Call Credit Spread (sell call spread above price)
         calls = chain.get("callExpDateMap", {})
-        for expiry_key, strikes in calls.items():
-            expiry_date = expiry_key.split(":")[0]
-            try:
-                dte = (dt.date.fromisoformat(expiry_date) - dt.date.today()).days
-            except ValueError:
-                continue
-            if dte < target_dte_min or dte > target_dte_max:
-                continue
-
-            sorted_strikes = sorted(strikes.keys(), key=float)
-            short_call = None
-            long_call = None
-            for sk in sorted_strikes:
-                contracts = strikes[sk]
-                if not contracts:
-                    continue
-                c = contracts[0]
-                d = c.get("delta", 0)
-                bid = c.get("bid", 0)
-                if d is None:
-                    continue
-                if 0.15 <= d <= 0.35 and bid > 0.50:
-                    short_call = {"strike": float(sk), "bid": bid, "ask": c.get("ask", 0),
-                                  "delta": d, "theta": c.get("theta", 0),
-                                  "iv": c.get("volatility", 0)}
-                    break
-
-            if not short_call:
-                continue
-
-            for sk in sorted_strikes:
-                sk_f = float(sk)
-                if sk_f > short_call["strike"] + 4 and sk_f <= short_call["strike"] + 15:
-                    contracts = strikes[sk]
-                    if contracts:
-                        c = contracts[0]
-                        if c.get("ask", 0) > 0:
-                            long_call = {"strike": sk_f, "ask": c.get("ask", 0),
-                                         "delta": c.get("delta", 0)}
-                            break
-
-            if not long_call:
-                continue
-
-            width = long_call["strike"] - short_call["strike"]
-            credit = short_call["bid"] - long_call["ask"]
-            if credit <= 0.20:
-                continue
-
-            max_profit = credit * 100
-            max_loss = (width - credit) * 100
-            prob_profit = (1 - short_call["delta"]) * 100
-            buffer_pct = (short_call["strike"] - underlying) / underlying * 100
-
-            caution = ""
-            if buffer_pct < 5:
-                caution = " [TIGHT BUFFER]"
-            elif buffer_pct < 7:
-                caution = " [MODERATE BUFFER]"
-
-            trades.append({
-                "strategy": f"Bear Call Credit{caution}",
-                "short_strike": short_call["strike"],
-                "long_strike": long_call["strike"],
-                "expiry": expiry_date,
-                "dte": dte,
-                "credit": round(credit, 2),
-                "max_profit": round(max_profit),
-                "max_loss": round(max_loss),
-                "prob_profit": round(prob_profit, 1),
-                "short_delta": round(short_call["delta"], 3),
-                "short_theta": round(short_call["theta"], 3),
-                "short_iv": round(short_call["iv"], 1),
-                "buffer_pct": round(buffer_pct, 1),
-                "width": width,
-            })
-            break
+        best_call_trade = _best_credit_spread(
+            exp_map=calls, underlying=underlying, side="call",
+            target_dte_min=target_dte_min, target_dte_max=target_dte_max)
+        if best_call_trade:
+            trades.append(best_call_trade)
 
     # Strategy 3: Bull Call Debit — for strongly bullish flow + low IV
     if direction == "bullish" and avg_iv < 0.40:
@@ -817,6 +828,9 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
             "buy_pct": cand["flow"].get("call_pct", 50),
             "vol_oi": cand["flow"].get("max_vol_oi", 0),
             "unusual": cand["flow"].get("unusual", False),
+            "rr_ratio": best_trade.get("rr_ratio", 0),
+            "rr_label": best_trade.get("rr_label", "?"),
+            "credit_width_pct": best_trade.get("credit_width_pct", 0),
             "days_to_earnings": fund.get("days_to_earnings", 999),
             "analyst_upside": round(fund.get("analyst_upside", 0), 1),
             "roe": round(fund.get("roe", 0), 1),
@@ -835,15 +849,15 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
         "",
         "## Summary",
         "",
-        "| # | Ticker | Strategy | Strikes | Expiry | DTE | Credit | MaxP | MaxL | Prob | Delta | Score |",
-        "|---|--------|----------|---------|--------|-----|--------|------|------|------|-------|-------|",
+        "| # | Ticker | Strategy | Strikes | Expiry | DTE | Credit | MaxP | MaxL | R:R | Prob | Score |",
+        "|---|--------|----------|---------|--------|-----|--------|------|------|-----|------|-------|",
     ]
     for i, r in enumerate(results):
         lines.append(
             f"| {i+1} | **{r['ticker']}** | {r['strategy']} | "
             f"${r['short_strike']:.0f}/${r['long_strike']:.0f} | {r['expiry']} | {r['dte']} | "
             f"${r['credit']:.2f} | ${r['max_profit']} | ${r['max_loss']} | "
-            f"{r['prob_profit']:.0f}% | {r['short_delta']:+.2f} | {r['composite']:.0f} |"
+            f"{r.get('rr_ratio', 0):.2f} | {r['prob_profit']:.0f}% | {r['composite']:.0f} |"
         )
 
     lines.extend(["", "## Trade Cards", ""])
@@ -865,6 +879,8 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
             f"| Short Theta | {r['short_theta']:+.3f} |",
             f"| IV | {r['short_iv']:.0f}% |",
             f"| Buffer | {r['buffer_pct']:.1f}% from price |",
+            f"| R:R Ratio | {r.get('rr_ratio', 0):.2f} ({r.get('rr_label', '?')}) |",
+            f"| Credit/Width | {r.get('credit_width_pct', 0):.0f}% |",
             f"| Spread Width | ${r['width']:.0f} |",
             f"| Earnings | {r['days_to_earnings']} days away |",
             "",
