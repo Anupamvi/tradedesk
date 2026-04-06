@@ -172,7 +172,34 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
     sym = pos.get("symbol", "")
 
     if atype == "EQUITY":
-        return ("HOLD", "equity position")
+        # Equity verdicts based on P&L thresholds
+        pnl = safe(c.get("unrealized_pnl"))
+        market_val = safe(pos.get("market_value"))
+        cost_basis = safe(pos.get("avg_cost"))
+        price = ul_price if ul_price > 0 else safe((pos.get("underlying_quote") or {}).get("last"))
+
+        # Check most severe first (order matters)
+        # Near worthless: down > 60%
+        if pnl_pct <= -60:
+            return ("CLOSE", f"equity down {pnl_pct:.0f}% (${pnl:.0f}) — tax-loss harvest")
+
+        # Deep loss: down > 40%
+        if pnl_pct <= -40:
+            return ("CLOSE", f"equity down {pnl_pct:.0f}% (${pnl:.0f}) — deep loss, cut or justify")
+
+        # Stop-loss: down > 25%
+        if pnl_pct <= -25:
+            return ("ASSESS", f"equity down {pnl_pct:.0f}% (${pnl:.0f}) — review thesis")
+
+        # Take profit: up > 100%
+        if pnl_pct >= 100:
+            return ("ASSESS", f"equity up +{pnl_pct:.0f}% (+${pnl:.0f}) — consider trimming")
+
+        # Strong gain: up > 50%
+        if pnl_pct >= 50:
+            return ("HOLD", f"equity +{pnl_pct:.0f}% — strong, trail stop")
+
+        return ("HOLD", f"equity {pnl_pct:+.0f}%")
 
     category = classify_position(pos)
 
@@ -286,9 +313,6 @@ def run_scan() -> List[Dict]:
 
     for pos in positions:
         key = position_key(pos)
-        if pos["asset_type"] == "EQUITY":
-            continue  # skip equity monitoring for now
-
         verdict, reason = compute_verdict(pos)
         category = classify_position(pos)
         pct_max = safe(pos["computed"].get("pct_of_max_profit"))
