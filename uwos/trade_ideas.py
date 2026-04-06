@@ -785,48 +785,45 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
         _safe_print(f"  [ideas] Step 4: Schwab chains for top {min(top_n, len(deep))} ideas...")
 
     results = []
-    for cand in deep[:top_n]:
+    for cand in deep[:top_n * 2]:  # scan more candidates since some become stock buys
         ticker = cand["ticker"]
         avg_iv = cand["flow"].get("avg_iv", 0.3)
-        trades = construct_trades(svc, ticker, cand["price"], cand["direction"], avg_iv)
-
-        if not trades:
-            continue
-
-        best_trade = trades[0]
         fund = cand["fundamentals"]
 
-        results.append({
-            "ticker": ticker,
-            "name": fund.get("name", cand.get("name", ticker)),
-            "sector": fund.get("sector", cand.get("sector", "")),
-            "price": cand["price"],
-            "pct_from_high": round(cand["pct_from_high"], 1),
-            "direction": cand["direction"],
-            "composite": cand["composite"],
-            "quality_score": cand["quality_score"],
-            "drop_score": cand["drop_score"],
-            "flow_score": cand["flow_score"],
-            "macro_score": cand["macro_score"],
-            # Trade specifics
-            "strategy": best_trade["strategy"],
-            "short_strike": best_trade["short_strike"],
-            "long_strike": best_trade["long_strike"],
-            "expiry": best_trade["expiry"],
-            "dte": best_trade["dte"],
-            "credit": best_trade["credit"],
-            "max_profit": best_trade["max_profit"],
-            "max_loss": best_trade["max_loss"],
-            "prob_profit": best_trade["prob_profit"],
-            "short_delta": best_trade["short_delta"],
-            "short_theta": best_trade["short_theta"],
-            "short_iv": best_trade["short_iv"],
-            "buffer_pct": best_trade["buffer_pct"],
-            "width": best_trade["width"],
-            # Context
-            "total_premium": cand["flow"].get("total_premium", 0),
-            "buy_pct": cand["flow"].get("call_pct", 50),
-            "vol_oi": cand["flow"].get("max_vol_oi", 0),
+        # Try option spread first
+        trades = construct_trades(svc, ticker, cand["price"], cand["direction"], avg_iv)
+
+        if trades:
+            best_trade = trades[0]
+            results.append({
+                "ticker": ticker,
+                "name": fund.get("name", cand.get("name", ticker)),
+                "sector": fund.get("sector", cand.get("sector", "")),
+                "price": cand["price"],
+                "pct_from_high": round(cand["pct_from_high"], 1),
+                "direction": cand["direction"],
+                "composite": cand["composite"],
+                "quality_score": cand["quality_score"],
+                "drop_score": cand["drop_score"],
+                "flow_score": cand["flow_score"],
+                "macro_score": cand["macro_score"],
+                "strategy": best_trade["strategy"],
+                "short_strike": best_trade["short_strike"],
+                "long_strike": best_trade["long_strike"],
+                "expiry": best_trade["expiry"],
+                "dte": best_trade["dte"],
+                "credit": best_trade["credit"],
+                "max_profit": best_trade["max_profit"],
+                "max_loss": best_trade["max_loss"],
+                "prob_profit": best_trade["prob_profit"],
+                "short_delta": best_trade["short_delta"],
+                "short_theta": best_trade["short_theta"],
+                "short_iv": best_trade["short_iv"],
+                "buffer_pct": best_trade["buffer_pct"],
+                "width": best_trade["width"],
+                "total_premium": cand["flow"].get("total_premium", 0),
+                "buy_pct": cand["flow"].get("call_pct", 50),
+                "vol_oi": cand["flow"].get("max_vol_oi", 0),
             "unusual": cand["flow"].get("unusual", False),
             "rr_ratio": best_trade.get("rr_ratio", 0),
             "rr_label": best_trade.get("rr_label", "?"),
@@ -835,6 +832,55 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
             "analyst_upside": round(fund.get("analyst_upside", 0), 1),
             "roe": round(fund.get("roe", 0), 1),
         })
+        else:
+            # No valid option spread — check if it qualifies as a STOCK BUY
+            # Criteria: deep value (>20% off high), high quality (>65), bullish direction,
+            # analyst upside >15%, and not about to report earnings
+            if (cand["pct_from_high"] <= -20
+                    and cand["quality_score"] >= 65
+                    and cand["direction"] in ("bullish", "neutral")
+                    and fund.get("analyst_upside", 0) >= 15
+                    and fund.get("days_to_earnings", 999) > 14):
+                results.append({
+                    "ticker": ticker,
+                    "name": fund.get("name", cand.get("name", ticker)),
+                    "sector": fund.get("sector", cand.get("sector", "")),
+                    "price": cand["price"],
+                    "pct_from_high": round(cand["pct_from_high"], 1),
+                    "direction": cand["direction"],
+                    "composite": cand["composite"],
+                    "quality_score": cand["quality_score"],
+                    "drop_score": cand["drop_score"],
+                    "flow_score": cand["flow_score"],
+                    "macro_score": cand["macro_score"],
+                    "strategy": "STOCK BUY",
+                    "short_strike": 0,
+                    "long_strike": 0,
+                    "expiry": "N/A",
+                    "dte": 0,
+                    "credit": 0,
+                    "max_profit": 0,
+                    "max_loss": round(cand["price"] * 100),  # 100 shares
+                    "prob_profit": 0,
+                    "short_delta": 1.0,  # stock = delta 1
+                    "short_theta": 0,
+                    "short_iv": 0,
+                    "buffer_pct": 0,
+                    "width": 0,
+                    "total_premium": cand["flow"].get("total_premium", 0),
+                    "buy_pct": cand["flow"].get("call_pct", 50),
+                    "vol_oi": cand["flow"].get("max_vol_oi", 0),
+                    "unusual": cand["flow"].get("unusual", False),
+                    "rr_ratio": 0,
+                    "rr_label": "N/A",
+                    "credit_width_pct": 0,
+                    "days_to_earnings": fund.get("days_to_earnings", 999),
+                    "analyst_upside": round(fund.get("analyst_upside", 0), 1),
+                    "roe": round(fund.get("roe", 0), 1),
+                })
+
+        if len(results) >= top_n:
+            break
 
     return results
 
@@ -853,11 +899,18 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
         "|---|--------|----------|---------|--------|-----|--------|------|------|-----|------|-------|",
     ]
     for i, r in enumerate(results):
-        lines.append(
-            f"| {i+1} | **{r['ticker']}** | {r['strategy']} | "
-            f"${r['short_strike']:.0f}/${r['long_strike']:.0f} | {r['expiry']} | {r['dte']} | "
-            f"${r['credit']:.2f} | ${r['max_profit']} | ${r['max_loss']} | "
-            f"{r.get('rr_ratio', 0):.2f} | {r['prob_profit']:.0f}% | {r['composite']:.0f} |"
+        if r["strategy"] == "STOCK BUY":
+            lines.append(
+                f"| {i+1} | **{r['ticker']}** | **STOCK BUY** | "
+                f"${r['price']:.2f} | N/A | -- | "
+                f"-- | -- | ${r['price']:.0f}/sh | "
+                f"-- | +{r['analyst_upside']:.0f}% | {r['composite']:.0f} |")
+        else:
+            lines.append(
+                f"| {i+1} | **{r['ticker']}** | {r['strategy']} | "
+                f"${r['short_strike']:.0f}/${r['long_strike']:.0f} | {r['expiry']} | {r['dte']} | "
+                f"${r['credit']:.2f} | ${r['max_profit']} | ${r['max_loss']} | "
+                f"{r.get('rr_ratio', 0):.2f} | {r['prob_profit']:.0f}% | {r['composite']:.0f} |"
         )
 
     lines.extend(["", "## Trade Cards", ""])
@@ -867,7 +920,11 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
             f"### {r['ticker']} -- {r['strategy']} | Score: {r['composite']:.0f}",
             f"**{r['name']}** | {r['sector']} | ${r['price']:.2f} ({r['pct_from_high']:+.0f}% from 52w high)",
             "",
-            f"**TRADE: Sell ${r['short_strike']:.0f} / Buy ${r['long_strike']:.0f} | {r['expiry']} | {r['dte']} DTE**",
+        ])
+        if r["strategy"] == "STOCK BUY":
+            lines.append(f"**BUY at ${r['price']:.2f}** | Analyst target +{r['analyst_upside']:.0f}% | Quality {r['quality_score']:.0f}/100")
+        else:
+            lines.append(f"**TRADE: Sell ${r['short_strike']:.0f} / Buy ${r['long_strike']:.0f} | {r['expiry']} | {r['dte']} DTE**")
             "",
             "| Metric | Value |",
             "|--------|-------|",
@@ -895,6 +952,13 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
 def format_alert(r: Dict) -> str:
     """Format a single trade idea as a notification body."""
     prem_str = f"${r['total_premium']/1e6:.1f}M" if r['total_premium'] >= 1e6 else f"${r['total_premium']/1e3:.0f}K"
+    if r["strategy"] == "STOCK BUY":
+        return (
+            f"BUY {r['ticker']} at ${r['price']:.2f} | "
+            f"{r['pct_from_high']:+.0f}% from high | "
+            f"Quality {r['quality_score']:.0f} | Analyst +{r['analyst_upside']:.0f}% | "
+            f"{prem_str} flow"
+        )
     return (
         f"{r['strategy']}: Sell ${r['short_strike']:.0f}/Buy ${r['long_strike']:.0f} "
         f"{r['expiry']} | Cr ${r['credit']:.2f} | MaxP ${r['max_profit']} | "
