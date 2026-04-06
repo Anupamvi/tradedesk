@@ -177,6 +177,29 @@ def _extract_from_dict(data, tokens):
     return tokens
 
 
+def _save_refreshed_token(token_path, tokens):
+    """Save refreshed tokens back to the token file."""
+    path = Path(token_path)
+    if path.is_dir():
+        token_file = path / 'schwab_token.json'
+    elif path.is_file():
+        token_file = path
+    else:
+        return
+    
+    try:
+        with open(token_file, 'r') as f:
+            data = json.load(f)
+        data['access_token'] = tokens['access_token']
+        if tokens.get('refresh_token'):
+            data['refresh_token'] = tokens['refresh_token']
+        with open(token_file, 'w') as f:
+            json.dump(data, f, indent=2)
+        print(f"  💾 Token saved to {token_file.name}")
+    except Exception as e:
+        print(f"  ⚠️ Could not save token: {e}")
+
+
 def refresh_access_token(tokens):
     """Use refresh_token to get a new access_token."""
     if not tokens.get('refresh_token'):
@@ -487,15 +510,19 @@ def main():
     if access_token:
         print("\nTesting access token...")
         test = get_accounts(access_token)
-        if test.get('error') == 'UNAUTHORIZED':
+        if isinstance(test, list):
+            print("✅ Access token valid")
+        elif isinstance(test, dict) and test.get('error') == 'UNAUTHORIZED':
             print("Access token expired. Attempting refresh...")
             tokens = refresh_access_token(tokens)
             if tokens:
                 access_token = tokens['access_token']
+                # Save refreshed token back to disk
+                _save_refreshed_token(args.token_path, tokens)
             else:
                 print("❌ Could not refresh token. You may need to re-authenticate.")
                 sys.exit(1)
-        elif 'error' in test:
+        elif isinstance(test, dict) and 'error' in test:
             print(f"❌ API error: {test['error']}")
             sys.exit(1)
     else:

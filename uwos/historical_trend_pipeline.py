@@ -1631,7 +1631,129 @@ def build_trend_recommendations(
         + (0.15 * quality_norm)
         + (0.10 * exp_norm)
     )
-    grouped["book_priority"] = grouped["book_recommendation"].map({"Core": 0, "Tactical": 1, "Watch": 2}).fillna(3)
+    # ── FIX T7: staleness, invalidation, and direction-conflict filters ──────
+    #
+    # Problem: the pipeline groups by [ticker, strategy, track], so a ticker
+    # can have both "Bull Call Debit" (from 2 weeks ago when it was bullish)
+    # and "Bear Put Debit" (from today when it turned bearish).  The old
+    # bullish group has more persistence days => higher trend_score => gets
+    # recommended even though the stock already blew past its invalidation.
+    #
+    # Fix 1 – snapshot staleness: drop rows whose latest snapshot is older
+    #         than 5 trading days (7 calendar days) from the window end.
+    # Fix 2 – invalidation breach: parse ALL invalidation conditions and drop
+    #         rows where spot_live_last violates ANY of them.
+    # Fix 3 – direction conflict: if a ticker has both bullish and bearish
+    #         setups, keep only the direction from the most recent day,
+    #         but only if the new direction has non-negative avg edge.
+
+    _SNAPSHOT_MAX_CALENDAR_DAYS = 7  # 5 trading days ~ 7 calendar days
+
+    staleness_rows_before = int(len(grouped))
+    if not grouped.empty and "snapshot_trade_date" in grouped.columns:
+        window_end = pd.to_datetime(grouped["snapshot_trade_date"], errors="coerce").max()
+        if pd.notna(window_end):
+            cutoff = window_end - pd.Timedelta(days=_SNAPSHOT_MAX_CALENDAR_DAYS)
+            snap_ts = pd.to_datetime(grouped["snapshot_trade_date"], errors="coerce")
+            # Preserve rows with NaT snapshot dates (don't silently drop)
+            grouped = grouped[(snap_ts >= cutoff) | snap_ts.isna()].copy()
+    staleness_rows_after = int(len(grouped))
+
+    import re as _re
+    _INVALIDATION_RE = _re.compile(
+        r"close\s*(<=|>=|<|>)\s*([\d]+(?:\.\d+)?)", _re.IGNORECASE
+    )
+
+    def _parse_invalidation_breach(row: pd.Series) -> bool:
+        """Return True if spot breaches ANY invalidation condition."""
+        inv = str(row.get("invalidation", "") or "")
+        spot = pd.to_numeric(row.get("spot_live_last"), errors="coerce")
+        if pd.isna(spot) or not inv:
+            return False
+        # Find ALL conditions (handles IC dual: "close < 280 or close > 320")
+        for m in _INVALIDATION_RE.finditer(inv):
+            op, level = m.group(1), float(m.group(2))
+            if op == "<" and spot < level:
+                return True
+            if op == "<=" and spot <= level:
+                return True
+            if op == ">" and spot > level:
+                return True
+            if op == ">=" and spot >= level:
+                return True
+        return False
+
+    inval_rows_before = int(len(grouped))
+    if not grouped.empty:
+        breach_mask = grouped.apply(_parse_invalidation_breach, axis=1)
+        grouped = grouped[~breach_mask].copy()
+    inval_rows_after = int(len(grouped))
+
+    def _infer_direction(strategy: str) -> str:
+        s = str(strategy).lower()
+        if "bear" in s:
+            return "bearish"
+        if "bull" in s:
+            return "bullish"
+        return "neutral"
+
+    direction_rows_before = int(len(grouped))
+    if not grouped.empty:
+        grouped["_direction"] = grouped["strategy"].map(_infer_direction)
+        # For each ticker, find which direction appeared on the most recent day
+        # Break ties by conviction (higher conviction = more reliable signal)
+        ticker_latest_dir = (
+            grouped.sort_values(
+                ["latest_trade_date", "avg_conviction"],
+                ascending=[False, False],
+            )
+            .drop_duplicates(subset=["ticker"], keep="first")
+            [["ticker", "_direction", "avg_edge_pct"]]
+            .rename(columns={
+                "_direction": "_latest_direction",
+                "avg_edge_pct": "_latest_edge",
+            })
+        )
+        grouped = grouped.merge(ticker_latest_dir, on="ticker", how="left")
+
+        # Only trust a direction flip if the new direction has non-negative edge.
+        # If the latest direction has negative edge, fall back to allowing both
+        # directions so we don't throw away strong bullish history for a weak
+        # bearish blip (or vice versa).
+        direction_ok = (
+            (grouped["_direction"] == grouped["_latest_direction"])
+            | (grouped["_direction"] == "neutral")
+            | (grouped["_latest_direction"] == "neutral")
+            | (grouped["_latest_edge"] < 0)  # untrusted flip: keep all
+        )
+        grouped = grouped[direction_ok].copy()
+        grouped.drop(
+            columns=["_direction", "_latest_direction", "_latest_edge"],
+            inplace=True, errors="ignore",
+        )
+    direction_rows_after = int(len(grouped))
+
+    # Recompute book_recommendation AFTER T7 filters so labels reflect
+    # the filtered dataset, not the pre-filter persistence counts.
+    grouped["book_recommendation"] = "Watch"
+    tactical_mask_post = (
+        (grouped["avg_conviction"] >= 65.0)
+        & (grouped["avg_edge_pct"] >= 4.0)
+        & (grouped["watch_share"] <= 0.50)
+    )
+    grouped.loc[tactical_mask_post, "book_recommendation"] = "Tactical"
+    core_mask_post = (
+        (grouped["days_present"] >= min_days)
+        & (grouped["avg_conviction"] >= 78.0)
+        & (grouped["avg_edge_pct"] >= 8.0)
+        & (grouped["watch_share"] <= 0.25)
+    )
+    grouped.loc[core_mask_post, "book_recommendation"] = "Core"
+    grouped.loc[grouped["watch_share"] >= 0.80, "book_recommendation"] = "Watch"
+    grouped["book_priority"] = grouped["book_recommendation"].map(
+        {"Core": 0, "Tactical": 1, "Watch": 2}
+    ).fillna(3)
+    # ── END FIX T7 ───────────────────────────────────────────────────────────
 
     ordered = grouped.sort_values(
         ["book_priority", "trend_score", "days_present", "avg_conviction", "avg_edge_pct"],
@@ -1691,6 +1813,18 @@ def build_trend_recommendations(
         if len(keep_rows) >= top_n:
             break
     rec_df = pd.DataFrame(keep_rows).reset_index(drop=True)
+    # Re-sort so Core > Tactical > Watch, with trend_score within each tier.
+    # SHIELD quota items were pre-inserted but should appear in their correct
+    # book tier, not forced to the top.
+    if not rec_df.empty and "book_recommendation" in rec_df.columns:
+        rec_df["_bp"] = rec_df["book_recommendation"].map(
+            {"Core": 0, "Tactical": 1, "Watch": 2}
+        ).fillna(3)
+        rec_df = rec_df.sort_values(
+            ["_bp", "trend_score"],
+            ascending=[True, False],
+        ).reset_index(drop=True)
+        rec_df.drop(columns=["_bp"], inplace=True, errors="ignore")
     if rec_df.empty:
         return rec_df, {
             "selected_variant": selected_variant,
@@ -1920,7 +2054,6 @@ def build_final_recommendations_markdown(
                 "Avg Edge %": _fmt_pct(r.get("avg_edge_pct")),
                 "Invalidation": str(r.get("invalidation", "")),
                 "Snapshot": snapshot_txt,
-                "Source File": source_path,
             }
         )
     lines.append(
@@ -1945,7 +2078,6 @@ def build_final_recommendations_markdown(
                 "Avg Edge %",
                 "Invalidation",
                 "Snapshot",
-                "Source File",
             ],
         )
     )

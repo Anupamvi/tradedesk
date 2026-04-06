@@ -919,7 +919,7 @@ def run():
                 gex_info = gex_by_ticker.get(t)
                 if gex_info:
                     for col, val in gex_info.items():
-                        mdf.at[idx, col] = val
+                        mdf.at[idx, col] = str(val) if val is not None else ""
             print(f"  [gex] Enriched {len(gex_by_ticker)} tickers with GEX regime data", file=sys.stderr)
 
     require_likelihood_pass = bool(approval_cfg.get("require_likelihood_pass", True))
