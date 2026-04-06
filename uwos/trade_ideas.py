@@ -784,18 +784,70 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
     if verbose:
         _safe_print(f"  [ideas] Step 4: Schwab chains for top {min(top_n, len(deep))} ideas...")
 
-    results = []
-    for cand in deep[:top_n * 2]:  # scan more candidates since some become stock buys
+    # Build option spread ideas
+    option_results = []
+    for cand in deep[:top_n]:
         ticker = cand["ticker"]
         avg_iv = cand["flow"].get("avg_iv", 0.3)
         fund = cand["fundamentals"]
-
-        # Try option spread first
         trades = construct_trades(svc, ticker, cand["price"], cand["direction"], avg_iv)
+        if not trades:
+            continue
+        best_trade = trades[0]
+        option_results.append({
+            "ticker": ticker,
+            "name": fund.get("name", cand.get("name", ticker)),
+            "sector": fund.get("sector", cand.get("sector", "")),
+            "price": cand["price"],
+            "pct_from_high": round(cand["pct_from_high"], 1),
+            "direction": cand["direction"],
+            "composite": cand["composite"],
+            "quality_score": cand["quality_score"],
+            "drop_score": cand["drop_score"],
+            "flow_score": cand["flow_score"],
+            "macro_score": cand["macro_score"],
+            "strategy": best_trade["strategy"],
+            "short_strike": best_trade["short_strike"],
+            "long_strike": best_trade["long_strike"],
+            "expiry": best_trade["expiry"],
+            "dte": best_trade["dte"],
+            "credit": best_trade["credit"],
+            "max_profit": best_trade["max_profit"],
+            "max_loss": best_trade["max_loss"],
+            "prob_profit": best_trade["prob_profit"],
+            "short_delta": best_trade["short_delta"],
+            "short_theta": best_trade["short_theta"],
+            "short_iv": best_trade["short_iv"],
+            "buffer_pct": best_trade["buffer_pct"],
+            "width": best_trade["width"],
+            "total_premium": cand["flow"].get("total_premium", 0),
+            "buy_pct": cand["flow"].get("call_pct", 50),
+            "vol_oi": cand["flow"].get("max_vol_oi", 0),
+            "unusual": cand["flow"].get("unusual", False),
+            "rr_ratio": best_trade.get("rr_ratio", 0),
+            "rr_label": best_trade.get("rr_label", "?"),
+            "credit_width_pct": best_trade.get("credit_width_pct", 0),
+            "days_to_earnings": fund.get("days_to_earnings", 999),
+            "analyst_upside": round(fund.get("analyst_upside", 0), 1),
+            "roe": round(fund.get("roe", 0), 1),
+        })
 
-        if trades:
-            best_trade = trades[0]
-            results.append({
+    # Build stock buy ideas INDEPENDENTLY (not fallback)
+    # Criteria: deep value (>20% off high), high quality (>65), bullish,
+    # analyst upside >15%, not within 14 days of earnings
+    stock_results = []
+    tickers_in_options = {r["ticker"] for r in option_results}
+    for cand in deep:
+        ticker = cand["ticker"]
+        if ticker in tickers_in_options:
+            continue  # already have an option trade for this ticker
+        fund = cand["fundamentals"]
+        if (cand["pct_from_high"] <= -20
+                and cand["quality_score"] >= 65
+                and cand["direction"] in ("bullish", "neutral")
+                and fund.get("analyst_upside", 0) >= 15
+                and fund.get("days_to_earnings", 999) > 14):
+            stock_results.append({
                 "ticker": ticker,
                 "name": fund.get("name", cand.get("name", ticker)),
                 "sector": fund.get("sector", cand.get("sector", "")),
@@ -807,81 +859,28 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
                 "drop_score": cand["drop_score"],
                 "flow_score": cand["flow_score"],
                 "macro_score": cand["macro_score"],
-                "strategy": best_trade["strategy"],
-                "short_strike": best_trade["short_strike"],
-                "long_strike": best_trade["long_strike"],
-                "expiry": best_trade["expiry"],
-                "dte": best_trade["dte"],
-                "credit": best_trade["credit"],
-                "max_profit": best_trade["max_profit"],
-                "max_loss": best_trade["max_loss"],
-                "prob_profit": best_trade["prob_profit"],
-                "short_delta": best_trade["short_delta"],
-                "short_theta": best_trade["short_theta"],
-                "short_iv": best_trade["short_iv"],
-                "buffer_pct": best_trade["buffer_pct"],
-                "width": best_trade["width"],
+                "strategy": "STOCK BUY",
+                "short_strike": 0, "long_strike": 0,
+                "expiry": "N/A", "dte": 0, "credit": 0,
+                "max_profit": 0,
+                "max_loss": round(cand["price"] * 100),
+                "prob_profit": 0, "short_delta": 1.0,
+                "short_theta": 0, "short_iv": 0,
+                "buffer_pct": 0, "width": 0,
                 "total_premium": cand["flow"].get("total_premium", 0),
                 "buy_pct": cand["flow"].get("call_pct", 50),
                 "vol_oi": cand["flow"].get("max_vol_oi", 0),
-            "unusual": cand["flow"].get("unusual", False),
-            "rr_ratio": best_trade.get("rr_ratio", 0),
-            "rr_label": best_trade.get("rr_label", "?"),
-            "credit_width_pct": best_trade.get("credit_width_pct", 0),
-            "days_to_earnings": fund.get("days_to_earnings", 999),
-            "analyst_upside": round(fund.get("analyst_upside", 0), 1),
-            "roe": round(fund.get("roe", 0), 1),
-        })
-        else:
-            # No valid option spread — check if it qualifies as a STOCK BUY
-            # Criteria: deep value (>20% off high), high quality (>65), bullish direction,
-            # analyst upside >15%, and not about to report earnings
-            if (cand["pct_from_high"] <= -20
-                    and cand["quality_score"] >= 65
-                    and cand["direction"] in ("bullish", "neutral")
-                    and fund.get("analyst_upside", 0) >= 15
-                    and fund.get("days_to_earnings", 999) > 14):
-                results.append({
-                    "ticker": ticker,
-                    "name": fund.get("name", cand.get("name", ticker)),
-                    "sector": fund.get("sector", cand.get("sector", "")),
-                    "price": cand["price"],
-                    "pct_from_high": round(cand["pct_from_high"], 1),
-                    "direction": cand["direction"],
-                    "composite": cand["composite"],
-                    "quality_score": cand["quality_score"],
-                    "drop_score": cand["drop_score"],
-                    "flow_score": cand["flow_score"],
-                    "macro_score": cand["macro_score"],
-                    "strategy": "STOCK BUY",
-                    "short_strike": 0,
-                    "long_strike": 0,
-                    "expiry": "N/A",
-                    "dte": 0,
-                    "credit": 0,
-                    "max_profit": 0,
-                    "max_loss": round(cand["price"] * 100),  # 100 shares
-                    "prob_profit": 0,
-                    "short_delta": 1.0,  # stock = delta 1
-                    "short_theta": 0,
-                    "short_iv": 0,
-                    "buffer_pct": 0,
-                    "width": 0,
-                    "total_premium": cand["flow"].get("total_premium", 0),
-                    "buy_pct": cand["flow"].get("call_pct", 50),
-                    "vol_oi": cand["flow"].get("max_vol_oi", 0),
-                    "unusual": cand["flow"].get("unusual", False),
-                    "rr_ratio": 0,
-                    "rr_label": "N/A",
-                    "credit_width_pct": 0,
-                    "days_to_earnings": fund.get("days_to_earnings", 999),
-                    "analyst_upside": round(fund.get("analyst_upside", 0), 1),
-                    "roe": round(fund.get("roe", 0), 1),
-                })
+                "unusual": cand["flow"].get("unusual", False),
+                "rr_ratio": 0, "rr_label": "N/A", "credit_width_pct": 0,
+                "days_to_earnings": fund.get("days_to_earnings", 999),
+                "analyst_upside": round(fund.get("analyst_upside", 0), 1),
+                "roe": round(fund.get("roe", 0), 1),
+            })
+            if len(stock_results) >= 3:  # cap at 3 stock buys per scan
+                break
 
-        if len(results) >= top_n:
-            break
-
+    # Merge: option ideas first, then stock buys
+    results = option_results[:top_n] + stock_results
     return results
 
 
