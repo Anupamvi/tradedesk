@@ -501,8 +501,7 @@ def run_once(force: bool = False) -> int:
         priority = "urgent" if alert.get("critical") else "default"
         tags = "rotating_light" if alert.get("critical") else "chart_with_upwards_trend"
         _safe_print(f"    {title}: {body}")
-        notify(title, body, priority=priority, tags=tags,
-               critical=alert.get("critical", False))
+        notify(title, body, priority=priority, tags=tags, critical=True)
     total_alerts += len(alerts)
 
     # Mode 2: Dip scanner (runs 2x daily)
@@ -517,7 +516,7 @@ def run_once(force: bool = False) -> int:
                 priority = "urgent" if is_critical else "high"
                 tags = "money_with_wings" if is_critical else "chart_with_upwards_trend"
                 _safe_print(f"    DIP: {title}: {body}")
-                notify(title, body, priority=priority, tags=tags, critical=is_critical)
+                notify(title, body, priority=priority, tags=tags, critical=True)
             total_alerts += len(dip_alerts)
             if not dip_alerts:
                 _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No new dip opportunities")
