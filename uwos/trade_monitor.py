@@ -134,6 +134,23 @@ def notify(title: str, body: str, priority: str = "default",
 # Verdict engine — mirrors the trade-history skill rules
 # ---------------------------------------------------------------------------
 
+_spy_change_cache = None
+
+
+def _get_spy_change() -> float:
+    """Get SPY 5-day % change. Cached per session to avoid repeated API calls."""
+    global _spy_change_cache
+    if _spy_change_cache is not None:
+        return _spy_change_cache
+    try:
+        from uwos.eod_trade_scan_mode_a import compute_macro_regime
+        macro = compute_macro_regime(dt.date.today())
+        _spy_change_cache = macro["spy_5d_ret"] * 100
+    except Exception:
+        _spy_change_cache = 0.0
+    return _spy_change_cache
+
+
 def classify_position(pos: Dict) -> str:
     """Classify as CREDIT, DEBIT, or EQUITY."""
     if pos["asset_type"] == "EQUITY":
@@ -172,24 +189,41 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
     sym = pos.get("symbol", "")
 
     if atype == "EQUITY":
-        # Equity verdicts based on P&L thresholds
         pnl = safe(c.get("unrealized_pnl"))
-        market_val = safe(pos.get("market_value"))
-        cost_basis = safe(pos.get("avg_cost"))
-        price = ul_price if ul_price > 0 else safe((pos.get("underlying_quote") or {}).get("last"))
+        change_today = safe((pos.get("underlying_quote") or {}).get("change_pct"))
+        spy_corr = safe(c.get("spy_correlation_20d"), 0.5)
 
-        # Check most severe first (order matters)
-        # Near worthless: down > 60%
-        if pnl_pct <= -60:
+        # Intraday rapid-drop alert (Schwab netPercentChange)
+        if change_today <= -7:
+            return ("CLOSE", f"equity CRASHED {change_today:+.1f}% TODAY (${pnl:.0f} total) — emergency")
+        if change_today <= -5:
+            return ("ASSESS", f"equity dropped {change_today:+.1f}% TODAY (${pnl:.0f} total) — rapid drop")
+
+        # Context-aware thresholds: compare stock drop to market
+        # If SPY also dropped hard (via spy_correlation), widen thresholds
+        # In a broad crash, stocks dropping WITH the market is normal
+        # In a stock-specific drop, tighter thresholds apply
+        spy_5d = _get_spy_change()
+        in_broad_selloff = spy_5d < -3.0  # SPY down >3% in 5 days
+
+        # Adjust thresholds: in a crash, allow more drawdown before alerting
+        close_threshold = -55 if in_broad_selloff else -40
+        assess_threshold = -35 if in_broad_selloff else -25
+        tax_harvest_threshold = -60  # always harvest at -60%
+
+        # Near worthless: always
+        if pnl_pct <= tax_harvest_threshold:
             return ("CLOSE", f"equity down {pnl_pct:.0f}% (${pnl:.0f}) — tax-loss harvest")
 
-        # Deep loss: down > 40%
-        if pnl_pct <= -40:
-            return ("CLOSE", f"equity down {pnl_pct:.0f}% (${pnl:.0f}) — deep loss, cut or justify")
+        # Deep loss: tighter if stock-specific, wider if market crash
+        if pnl_pct <= close_threshold:
+            ctx = "broad selloff" if in_broad_selloff else "stock-specific"
+            return ("CLOSE", f"equity down {pnl_pct:.0f}% (${pnl:.0f}) — {ctx}, cut or justify")
 
-        # Stop-loss: down > 25%
-        if pnl_pct <= -25:
-            return ("ASSESS", f"equity down {pnl_pct:.0f}% (${pnl:.0f}) — review thesis")
+        # Review: same context logic
+        if pnl_pct <= assess_threshold:
+            ctx = "market-wide" if in_broad_selloff else "underperforming"
+            return ("ASSESS", f"equity down {pnl_pct:.0f}% (${pnl:.0f}) — {ctx}, review thesis")
 
         # Take profit: up > 100%
         if pnl_pct >= 100:
@@ -543,20 +577,40 @@ def run_once(force: bool = False, manual: bool = False) -> int:
         notify(title, body, priority=priority, tags=tags, critical=True)
     total_alerts += len(alerts)
 
-    # Mode 2: Trade ideas scanner (runs 2x daily — unified dip + flow + chains)
-    if force or should_run_ideas_scan():
+    # Mode 2: Trade ideas scanner (runs 2x daily OR on manual)
+    if force or manual or should_run_ideas_scan():
         _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] Running trade ideas scanner...")
         try:
             from uwos.trade_ideas import format_alert as fmt_idea
             idea_alerts = run_trade_ideas_scan()
+
+            # In manual mode, send ALL current ideas (not just new transitions)
+            if manual and not idea_alerts:
+                ideas_state = {}
+                if IDEAS_STATE_FILE.exists():
+                    try:
+                        ideas_state = json.loads(IDEAS_STATE_FILE.read_text(encoding="utf-8"))
+                    except Exception:
+                        pass
+                for ticker, val in ideas_state.items():
+                    idea_alerts.append({
+                        "ticker": ticker,
+                        "strategy": val.get("strategy", "?"),
+                        "short_strike": val.get("short_strike", 0),
+                        "composite": val.get("composite", 0),
+                    })
+
             for r in idea_alerts:
-                title = f"NEW TRADE: {r['ticker']} {r['strategy']}"
-                body = fmt_idea(r)
+                title = f"NEW TRADE: {r['ticker']} {r.get('strategy', '?')}"
+                try:
+                    body = fmt_idea(r)
+                except Exception:
+                    body = f"{r.get('strategy','?')} | Score: {r.get('composite',0):.0f}"
                 _safe_print(f"    IDEA: {title}: {body}")
                 notify(title, body, priority="high", tags="chart_with_upwards_trend")
             total_alerts += len(idea_alerts)
             if not idea_alerts:
-                _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No new trade ideas")
+                _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No trade ideas")
         except Exception as e:
             _safe_print(f"  [ERROR] Trade ideas scan failed: {e}")
 

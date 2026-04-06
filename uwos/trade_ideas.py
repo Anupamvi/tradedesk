@@ -43,6 +43,34 @@ JUNK_TICKERS = {
     "ARKK", "ARKG", "ARKW", "ARKF",  # thematic ETFs
 }
 
+def load_sp500_universe() -> pd.DataFrame:
+    """Load S&P 500 constituents from Wikipedia (with User-Agent) or cached file."""
+    cache_path = ROOT / "out" / "dip_scanner" / "sp500_universe.csv"
+    try:
+        import io as _io
+        req = urllib.request.Request(
+            "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+            headers={"User-Agent": "Mozilla/5.0 (trade-desk-scanner)"},
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            html = resp.read().decode("utf-8")
+        tables = pd.read_html(_io.StringIO(html), attrs={"id": "constituents"})
+        df = tables[0]
+        df = df.rename(columns={"Symbol": "ticker", "GICS Sector": "sector",
+                                "GICS Sub-Industry": "sub_industry",
+                                "Security": "name"})
+        df["ticker"] = df["ticker"].str.replace(".", "-", regex=False)
+        result = df[["ticker", "name", "sector", "sub_industry"]].copy()
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        result.to_csv(cache_path, index=False)
+        return result
+    except Exception:
+        pass
+    if cache_path.exists():
+        return pd.read_csv(cache_path)
+    return pd.DataFrame(columns=["ticker", "name", "sector", "sub_industry"])
+
+
 SECTOR_ETF = {
     "Technology": "XLK", "Financial Services": "XLF", "Healthcare": "XLV",
     "Consumer Cyclical": "XLY", "Consumer Defensive": "XLP", "Energy": "XLE",
@@ -460,6 +488,12 @@ def _best_credit_spread(exp_map: Dict, underlying: float, side: str,
             if credit_ratio < MIN_CREDIT_WIDTH_RATIO:
                 continue  # R:R too poor
 
+            # Bid-ask spread filter: reject if short leg spread > 15% of mid
+            short_mid = (short["bid"] + short["ask"]) / 2
+            short_spread_pct = ((short["ask"] - short["bid"]) / short_mid * 100) if short_mid > 0 else 999
+            if short_spread_pct > 15:
+                continue  # too illiquid
+
             max_profit = credit * 100
             max_loss = (width - credit) * 100
             rr = credit / (width - credit) if (width - credit) > 0 else 0
@@ -516,6 +550,24 @@ def _best_credit_spread(exp_map: Dict, underlying: float, side: str,
     return candidates[0]
 
 
+def _check_exdiv_risk(svc, ticker: str, dte: int) -> bool:
+    """Check if ex-dividend falls within the trade window. Returns True if safe."""
+    try:
+        quotes = svc.get_quotes([ticker])
+        fund = quotes.get(ticker, {}).get("fundamental", {})
+        ex_date_str = fund.get("divExDate") or fund.get("nextDivExDate")
+        if not ex_date_str:
+            return True  # no div info = safe
+        ex_date = dt.date.fromisoformat(ex_date_str[:10])
+        days_to_exdiv = (ex_date - dt.date.today()).days
+        # Risky if ex-div is within the trade window AND within 10 days
+        if 0 < days_to_exdiv <= min(dte, 10):
+            return False  # ex-div too close
+    except Exception:
+        pass
+    return True
+
+
 def construct_trades(svc, ticker: str, price: float, direction: str,
                      avg_iv: float) -> List[Dict]:
     """Fetch Schwab option chain and construct specific trade ideas.
@@ -544,7 +596,12 @@ def construct_trades(svc, ticker: str, price: float, direction: str,
             exp_map=puts, underlying=underlying, side="put",
             target_dte_min=target_dte_min, target_dte_max=target_dte_max)
         if best_put_trade:
-            trades.append(best_put_trade)
+            # Ex-dividend check: skip put sells if ex-div is within trade window
+            if _check_exdiv_risk(svc, ticker, best_put_trade.get("dte", 45)):
+                trades.append(best_put_trade)
+            else:
+                best_put_trade["strategy"] += " [EX-DIV RISK]"
+                trades.append(best_put_trade)  # still show but flagged
 
     if direction == "bearish" or direction == "neutral":
         calls = chain.get("callExpDateMap", {})
@@ -645,7 +702,7 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
     """Full pipeline: drops + flow + fundamentals + chain → trade ideas."""
     from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
     from uwos.eod_trade_scan_mode_a import compute_macro_regime
-    from uwos.dip_scanner import load_sp500_universe
+    # load_sp500_universe is now defined in this file
 
     config = SchwabAuthConfig.from_env(load_dotenv_file=True)
     svc = SchwabLiveDataService(config=config, interactive_login=False)
@@ -780,7 +837,13 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
 
     deep.sort(key=lambda x: x["composite"], reverse=True)
 
-    # Step 4: Chain lookup for top candidates — construct trades
+    # Step 3b: Sector concentration check
+    # Count sectors in current portfolio (from excluded tickers) + new recommendations
+    portfolio_sectors = {}
+    for cand in deep:
+        sector = cand.get("sector", "Unknown")
+        portfolio_sectors[sector] = portfolio_sectors.get(sector, 0) + 1
+
     if verbose:
         _safe_print(f"  [ideas] Step 4: Schwab chains for top {min(top_n, len(deep))} ideas...")
 
@@ -835,22 +898,47 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
     # Build stock buy ideas INDEPENDENTLY (not fallback)
     # Criteria: deep value (>20% off high), high quality (>65), bullish,
     # analyst upside >15%, not within 14 days of earnings
+    # Position sizing: 2% of portfolio per stock buy (assuming $600K portfolio)
+    PORTFOLIO_VALUE = 600_000  # approximate — could be read from account
+    MAX_POSITION_PCT = 0.02   # 2% per stock buy
+    MAX_SECTOR_RECS = 3       # max recommendations per sector
+
     stock_results = []
     tickers_in_options = {r["ticker"] for r in option_results}
+    sector_rec_count = {}  # track sector concentration
+    for r in option_results:
+        sec = r.get("sector", "Unknown")
+        sector_rec_count[sec] = sector_rec_count.get(sec, 0) + 1
+
     for cand in deep:
         ticker = cand["ticker"]
         if ticker in tickers_in_options:
             continue  # already have an option trade for this ticker
         fund = cand["fundamentals"]
+        sector = fund.get("sector", cand.get("sector", "Unknown"))
+
+        # Sector concentration: skip if already 3+ recs in this sector
+        if sector_rec_count.get(sector, 0) >= MAX_SECTOR_RECS:
+            continue
+
         if (cand["pct_from_high"] <= -20
                 and cand["quality_score"] >= 65
                 and cand["direction"] in ("bullish", "neutral")
                 and fund.get("analyst_upside", 0) >= 15
                 and fund.get("days_to_earnings", 999) > 14):
+
+            # Position sizing: 2% of portfolio / price = shares
+            max_dollars = PORTFOLIO_VALUE * MAX_POSITION_PCT
+            shares = int(max_dollars / cand["price"]) if cand["price"] > 0 else 0
+            if shares < 1:
+                continue
+
+            sector_rec_count[sector] = sector_rec_count.get(sector, 0) + 1
+
             stock_results.append({
                 "ticker": ticker,
                 "name": fund.get("name", cand.get("name", ticker)),
-                "sector": fund.get("sector", cand.get("sector", "")),
+                "sector": sector,
                 "price": cand["price"],
                 "pct_from_high": round(cand["pct_from_high"], 1),
                 "direction": cand["direction"],
@@ -863,10 +951,12 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
                 "short_strike": 0, "long_strike": 0,
                 "expiry": "N/A", "dte": 0, "credit": 0,
                 "max_profit": 0,
-                "max_loss": round(cand["price"] * 100),
+                "max_loss": round(shares * cand["price"]),
                 "prob_profit": 0, "short_delta": 1.0,
                 "short_theta": 0, "short_iv": 0,
                 "buffer_pct": 0, "width": 0,
+                "shares": shares,
+                "position_dollars": round(shares * cand["price"]),
                 "total_premium": cand["flow"].get("total_premium", 0),
                 "buy_pct": cand["flow"].get("call_pct", 50),
                 "vol_oi": cand["flow"].get("max_vol_oi", 0),
@@ -898,10 +988,12 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
     ]
     for i, r in enumerate(results):
         if r["strategy"] == "STOCK BUY":
+            shares = r.get("shares", 0)
+            pos_dollars = r.get("position_dollars", 0)
             lines.append(
                 f"| {i+1} | **{r['ticker']}** | **STOCK BUY** | "
-                f"${r['price']:.2f} | N/A | -- | "
-                f"-- | -- | ${r['price']:.0f}/sh | "
+                f"${r['price']:.2f} | {shares} shares | ${pos_dollars:,.0f} | "
+                f"-- | -- | -- | "
                 f"-- | +{r['analyst_upside']:.0f}% | {r['composite']:.0f} |")
         else:
             lines.append(
@@ -920,8 +1012,10 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
             "",
         ])
         if r["strategy"] == "STOCK BUY":
+            shares = r.get("shares", 0)
+            pos_dollars = r.get("position_dollars", 0)
             lines.extend([
-                f"**BUY at ${r['price']:.2f}** | Analyst target +{r['analyst_upside']:.0f}% | Quality {r['quality_score']:.0f}/100",
+                f"**BUY {shares} shares at ${r['price']:.2f}** (${pos_dollars:,.0f} = 2% of portfolio) | Analyst +{r['analyst_upside']:.0f}% | Quality {r['quality_score']:.0f}/100",
                 "",
                 f"**Flow (LIVE):** {prem_str} est. premium | Call%: {r['buy_pct']:.0f}% | Vol/OI {r['vol_oi']:.1f}x | {'UNUSUAL' if r.get('unusual') else 'Normal'}",
                 f"**Quality:** ROE {r['roe']:.0f}% | Analyst upside {r['analyst_upside']:+.0f}% | Score {r['quality_score']:.0f}/100",
@@ -958,11 +1052,13 @@ def format_alert(r: Dict) -> str:
     """Format a single trade idea as a notification body."""
     prem_str = f"${r['total_premium']/1e6:.1f}M" if r['total_premium'] >= 1e6 else f"${r['total_premium']/1e3:.0f}K"
     if r["strategy"] == "STOCK BUY":
+        shares = r.get("shares", 0)
+        pos_dollars = r.get("position_dollars", 0)
+        sizing = f"{shares} shares (${pos_dollars:,.0f})" if shares else "check sizing"
         return (
-            f"BUY {r['ticker']} at ${r['price']:.2f} | "
+            f"BUY {r['ticker']} at ${r['price']:.2f} | {sizing} | "
             f"{r['pct_from_high']:+.0f}% from high | "
-            f"Quality {r['quality_score']:.0f} | Analyst +{r['analyst_upside']:.0f}% | "
-            f"{prem_str} flow"
+            f"Quality {r['quality_score']:.0f} | Analyst +{r['analyst_upside']:.0f}%"
         )
     return (
         f"{r['strategy']}: Sell ${r['short_strike']:.0f}/Buy ${r['long_strike']:.0f} "
