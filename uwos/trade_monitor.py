@@ -478,9 +478,13 @@ def should_run_dip_scan() -> bool:
     return (hour == 10 and minute < 30) or (hour == 13 and minute < 30)
 
 
-def run_once(force: bool = False) -> int:
-    """Run a single scan and notify. Returns number of alerts."""
-    if not force and not is_market_hours():
+def run_once(force: bool = False, manual: bool = False) -> int:
+    """Run a single scan and notify. Returns number of alerts.
+
+    manual=True: notify ALL actionable verdicts (CLOSE/ROLL/ASSESS), not just transitions.
+    manual=False (scheduled): only notify on state transitions.
+    """
+    if not force and not manual and not is_market_hours():
         _safe_print(f"  [{dt.datetime.now():%H:%M}] Market closed, skipping scan")
         return 0
 
@@ -494,6 +498,28 @@ def run_once(force: bool = False) -> int:
         _safe_print(f"  [ERROR] Position scan failed: {e}")
         notify("Monitor Error", str(e)[:200], priority="high", tags="warning")
         alerts = []
+
+    # In manual mode, send ALL current CLOSE/ROLL/ASSESS verdicts (not just transitions)
+    if manual:
+        state = load_state()  # freshly written by run_scan above
+        for key, val in state.items():
+            verdict = val.get("verdict", "HOLD")
+            if verdict in ("CLOSE", "ROLL", "ASSESS"):
+                already_alerted = any(a["symbol"] == key for a in alerts)
+                if not already_alerted:
+                    alerts.append({
+                        "symbol": key,
+                        "underlying": key,
+                        "transition": f"CURRENT: {verdict}",
+                        "verdict": verdict,
+                        "reason": val.get("reason", ""),
+                        "category": val.get("category", ""),
+                        "pct_max": val.get("pct_max", 0),
+                        "pnl": val.get("pnl", 0),
+                        "dte": val.get("dte", 0),
+                        "ul_price": val.get("ul_price", 0),
+                        "critical": True,
+                    })
 
     for alert in alerts:
         title, body = format_alert(alert)
@@ -536,6 +562,8 @@ def main():
                         help="Send a test notification and exit")
     parser.add_argument("--force", action="store_true",
                         help="Run even outside market hours")
+    parser.add_argument("--manual", action="store_true",
+                        help="Manual run — notify ALL current verdicts (not just transitions)")
     args = parser.parse_args()
 
     if args.test:
@@ -556,7 +584,7 @@ def main():
         print(f"  Press Ctrl+C to stop")
         while True:
             try:
-                run_once(force=args.force)
+                run_once(force=args.force, manual=args.manual)
                 time.sleep(args.loop * 60)
             except KeyboardInterrupt:
                 print("\nMonitor stopped.")
