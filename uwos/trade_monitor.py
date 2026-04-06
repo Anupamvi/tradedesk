@@ -403,89 +403,32 @@ def is_market_hours() -> bool:
     return market_open <= now <= market_close
 
 
-DIP_STATE_FILE = ROOT / "out" / "dip_scanner" / "dip_state.json"
+IDEAS_STATE_FILE = ROOT / "out" / "trade_ideas" / "ideas_state.json"
 
 
-def run_dip_scan() -> List[Dict]:
-    """Run dip scanner and return alerts for new opportunities."""
-    from uwos.dip_scanner import scan_dips, format_results_md
+def run_trade_ideas_scan() -> List[Dict]:
+    """Run unified trade ideas scanner and return alerts for new ideas."""
+    from uwos.trade_ideas import scan_trade_ideas, format_results_md, format_alert, find_latest_data_dir
     from uwos.eod_trade_scan_mode_a import compute_macro_regime
 
-    results = scan_dips(top_n=10, verbose=False)
+    data_dir = find_latest_data_dir()
+    results = scan_trade_ideas(data_dir=data_dir, top_n=8, verbose=False)
     if not results:
         return []
 
     # Save report
     macro = compute_macro_regime(dt.date.today())
     report = format_results_md(results, macro)
-    out_dir = ROOT / "out" / "dip_scanner"
+    out_dir = ROOT / "out" / "trade_ideas"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"dip-scanner-{dt.date.today().isoformat()}.md"
+    out_path = out_dir / f"trade-ideas-{dt.date.today().isoformat()}.md"
     out_path.write_text(report, encoding="utf-8")
 
-    # Load previous dip state
-    prev_dips = {}
-    if DIP_STATE_FILE.exists():
-        try:
-            prev_dips = json.loads(DIP_STATE_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-
-    alerts = []
-    new_state = {}
-    for r in results:
-        ticker = r["ticker"]
-        new_state[ticker] = {
-            "signal": r["signal"],
-            "composite": r["composite"],
-            "price": r["price"],
-            "ret_5d": r["ret_5d"],
-            "timestamp": dt.datetime.now().isoformat(),
-        }
-        prev = prev_dips.get(ticker, {})
-        prev_signal = prev.get("signal", "")
-
-        # Alert on new BUY/STRONG BUY entries, or upgrades (WATCH->BUY)
-        if r["signal"] in ("STRONG BUY", "BUY"):
-            if prev_signal != r["signal"]:
-                alerts.append({
-                    "symbol": ticker,
-                    "underlying": ticker,
-                    "transition": f"{prev_signal or 'NEW'} -> {r['signal']}",
-                    "verdict": r["signal"],
-                    "reason": f"Score {r['composite']:.0f} | 5d {r['ret_5d']:+.1f}% | RSI {r['rsi_14']:.0f} | {r['context']}",
-                    "category": "DIP",
-                    "pct_max": r["composite"],
-                    "pnl": 0,
-                    "dte": 0,
-                    "ul_price": r["price"],
-                    "critical": r["signal"] == "STRONG BUY",
-                })
-
-    DIP_STATE_FILE.write_text(json.dumps(new_state, indent=2), encoding="utf-8")
-    return alerts
-
-
-OPP_STATE_FILE = ROOT / "out" / "opportunities" / "opp_state.json"
-
-
-def run_opportunity_scan() -> List[Dict]:
-    """Run opportunity scanner on latest UW data and return new alerts."""
-    from uwos.opportunity_scanner import scan_opportunities, find_latest_data_dir
-
-    data_dir = find_latest_data_dir()
-    if not data_dir:
-        return []
-
-    results = scan_opportunities(data_dir, top_n=10, verbose=False)
-    if not results:
-        return []
-
     # Load previous state
-    prev_opps = {}
-    if OPP_STATE_FILE.exists():
+    prev = {}
+    if IDEAS_STATE_FILE.exists():
         try:
-            prev_opps = json.loads(OPP_STATE_FILE.read_text(encoding="utf-8"))
+            prev = json.loads(IDEAS_STATE_FILE.read_text(encoding="utf-8"))
         except Exception:
             pass
 
@@ -494,36 +437,26 @@ def run_opportunity_scan() -> List[Dict]:
     for r in results:
         ticker = r["ticker"]
         new_state[ticker] = {
-            "signal": r["signal"],
+            "strategy": r["strategy"],
             "composite": r["composite"],
-            "direction": r["direction"],
+            "short_strike": r["short_strike"],
+            "expiry": r["expiry"],
             "timestamp": dt.datetime.now().isoformat(),
         }
-        prev = prev_opps.get(ticker, {})
-        prev_signal = prev.get("signal", "")
 
-        # Alert on new STRONG/GOOD entries or upgrades
-        if r["signal"] in ("STRONG", "GOOD"):
-            if prev_signal != r["signal"]:
-                prem = r["total_premium"]
-                prem_str = f"${prem/1_000_000:.1f}M" if prem >= 1_000_000 else f"${prem/1000:.0f}K"
-                alerts.append({
-                    "ticker": ticker,
-                    "signal": r["signal"],
-                    "direction": r["direction"],
-                    "strategy": r["strategy"],
-                    "composite": r["composite"],
-                    "buy_pct": r["buy_pct"],
-                    "premium_str": prem_str,
-                })
+        # Alert if this is a new ticker or the trade changed
+        prev_entry = prev.get(ticker, {})
+        if (prev_entry.get("strategy") != r["strategy"] or
+                prev_entry.get("short_strike") != r["short_strike"]):
+            alerts.append(r)
 
-    OPP_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    OPP_STATE_FILE.write_text(json.dumps(new_state, indent=2), encoding="utf-8")
+    IDEAS_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    IDEAS_STATE_FILE.write_text(json.dumps(new_state, indent=2), encoding="utf-8")
     return alerts
 
 
-def should_run_dip_scan() -> bool:
-    """Run dip scan twice daily: ~10:00 AM and ~1:00 PM ET."""
+def should_run_ideas_scan() -> bool:
+    """Run trade ideas scan twice daily: ~10:00 AM and ~1:00 PM ET."""
     try:
         from zoneinfo import ZoneInfo
     except ImportError:
@@ -586,40 +519,22 @@ def run_once(force: bool = False, manual: bool = False) -> int:
         notify(title, body, priority=priority, tags=tags, critical=True)
     total_alerts += len(alerts)
 
-    # Mode 2: Dip scanner (runs 2x daily)
-    if force or should_run_dip_scan():
-        _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] Running dip scanner...")
+    # Mode 2: Trade ideas scanner (runs 2x daily — unified dip + flow + chains)
+    if force or should_run_ideas_scan():
+        _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] Running trade ideas scanner...")
         try:
-            dip_alerts = run_dip_scan()
-            for alert in dip_alerts:
-                title = f"[{alert['verdict']}] {alert['underlying']}"
-                body = alert["reason"]
-                is_critical = alert.get("critical", False)
-                priority = "urgent" if is_critical else "high"
-                tags = "money_with_wings" if is_critical else "chart_with_upwards_trend"
-                _safe_print(f"    DIP: {title}: {body}")
-                notify(title, body, priority=priority, tags=tags, critical=True)
-            total_alerts += len(dip_alerts)
-            if not dip_alerts:
-                _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No new dip opportunities")
-        except Exception as e:
-            _safe_print(f"  [ERROR] Dip scan failed: {e}")
-
-    # Mode 3: Opportunity scanner (runs 2x daily, same windows as dip scan)
-    if force or should_run_dip_scan():
-        _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] Running opportunity scanner...")
-        try:
-            opp_alerts = run_opportunity_scan()
-            for alert in opp_alerts:
-                title = f"[{alert['signal']}] {alert['ticker']} - {alert['direction']}"
-                body = f"{alert['strategy']} | Score:{alert['composite']:.0f} | Premium:{alert['premium_str']} | Buy:{alert['buy_pct']:.0f}%"
-                _safe_print(f"    OPP: {title}: {body}")
+            from uwos.trade_ideas import format_alert as fmt_idea
+            idea_alerts = run_trade_ideas_scan()
+            for r in idea_alerts:
+                title = f"NEW TRADE: {r['ticker']} {r['strategy']}"
+                body = fmt_idea(r)
+                _safe_print(f"    IDEA: {title}: {body}")
                 notify(title, body, priority="high", tags="chart_with_upwards_trend")
-            total_alerts += len(opp_alerts)
-            if not opp_alerts:
-                _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No new trade opportunities")
+            total_alerts += len(idea_alerts)
+            if not idea_alerts:
+                _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No new trade ideas")
         except Exception as e:
-            _safe_print(f"  [ERROR] Opportunity scan failed: {e}")
+            _safe_print(f"  [ERROR] Trade ideas scan failed: {e}")
 
     if total_alerts == 0:
         _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No alerts")
