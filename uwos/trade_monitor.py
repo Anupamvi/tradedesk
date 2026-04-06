@@ -121,13 +121,12 @@ def send_sms(phone: str, gateway: str, subject: str, body: str) -> bool:
 
 def notify(title: str, body: str, priority: str = "default",
            tags: str = "", critical: bool = False) -> None:
-    """Send notification via all configured channels."""
+    """Send notification via all configured channels. Always sends both ntfy + SMS."""
     cfg = load_notify_config()
     sent = send_ntfy(cfg["ntfy_topic"], title, body, priority, tags)
     if not sent:
         _safe_print(f"  [notify] ntfy failed, message: {_strip_emoji(title)}: {body}")
-    if critical:
-        send_sms(cfg["sms_phone"], cfg["sms_gateway"], title, body)
+    send_sms(cfg["sms_phone"], cfg["sms_gateway"], title, body)
 
 
 # ---------------------------------------------------------------------------
