@@ -1,21 +1,24 @@
 """
-Trade Ideas — unified scanner combining dip quality, UW flow, and Schwab chains
-into specific, actionable trade recommendations.
+Trade Ideas — real-time scanner using Schwab API + fundamentals + news.
 
-Produces alerts like:
-  SELL ADBE $220P/$210P May 15 | Credit $2.50 | Max $250 | Prob 72% | Delta -0.22
+ALL primary signals are LIVE from Schwab:
+  - Quotes: price, 52w high/low, PE, volume (real-time)
+  - Option chains: bid/ask, delta, theta, IV, OI, volume per strike (real-time)
+  - Unusual activity: volume/OI ratio computed from live chains (real-time)
+
+UW EOD data is OPTIONAL supplementary context (when available, not depended on).
 
 Pipeline:
-  1. Schwab quotes: screen S&P 500 for drops from 52w high (fast, 502 tickers)
-  2. UW flow: layer institutional flow signals on drop candidates
-  3. Fundamentals: quality score from yfinance (only top 20 candidates)
-  4. Chain lookup: Schwab option chains for top 8 → construct specific trades
-  5. Filter: no ETFs, no already-held, no earnings within 7 days
-  6. Output: actionable trade cards with strikes, expiry, credit, Greeks
+  1. Schwab quotes: screen S&P 500 for drops from 52w high (LIVE, 502 tickers)
+  2. Schwab chains: detect unusual option activity on top drops (LIVE)
+  3. Fundamentals: quality + earnings filter from yfinance (top 20 candidates)
+  4. Trade construction: specific credit/debit spreads from live chains
+  5. News check: WebSearch for recent catalysts (when available)
+  6. UW EOD flow: supplementary signal if zip files exist (OPTIONAL)
 
 Usage:
-    python -m uwos.trade_ideas                    # latest data
-    python -m uwos.trade_ideas --date 2026-03-27  # specific date
+    python -m uwos.trade_ideas                    # real-time scan
+    python -m uwos.trade_ideas --date 2026-03-27  # add UW EOD overlay
 """
 
 import argparse
@@ -118,37 +121,132 @@ def screen_drops(svc, tickers: List[str], min_drop_pct: float = 8.0,
 
 
 # ---------------------------------------------------------------------------
-# Step 2: UW flow overlay
+# Step 2: Live unusual activity from Schwab chains
 # ---------------------------------------------------------------------------
 
+def detect_unusual_activity(svc, ticker: str) -> Dict:
+    """Detect unusual option activity from LIVE Schwab chain data.
+
+    Checks volume vs OI ratio, total option volume, put/call skew,
+    and IV levels across all strikes — all real-time from Schwab API.
+    """
+    try:
+        chain = svc.get_option_chain(ticker, strike_count=12,
+                                      from_date=dt.date.today() + dt.timedelta(days=7),
+                                      to_date=dt.date.today() + dt.timedelta(days=60))
+    except Exception:
+        return {"unusual": False, "total_premium": 0, "call_pct": 50,
+                "max_vol_oi": 0, "avg_iv": 0, "buy_pct": 50, "hot_strikes": []}
+
+    call_vol = 0
+    put_vol = 0
+    call_oi = 0
+    put_oi = 0
+    max_vol_oi = 0
+    iv_values = []
+    hot_strikes = []
+    total_premium_est = 0
+
+    for map_name, is_call in [("callExpDateMap", True), ("putExpDateMap", False)]:
+        exp_map = chain.get(map_name, {})
+        for expiry_key, strikes in exp_map.items():
+            for strike_key, contracts in strikes.items():
+                if not contracts:
+                    continue
+                c = contracts[0]
+                vol = c.get("totalVolume", 0) or 0
+                oi = c.get("openInterest", 0) or 0
+                bid = c.get("bid", 0) or 0
+                ask = c.get("ask", 0) or 0
+                iv = c.get("volatility", 0) or 0
+                mid = (bid + ask) / 2
+
+                if is_call:
+                    call_vol += vol
+                    call_oi += oi
+                else:
+                    put_vol += vol
+                    put_oi += oi
+
+                if iv > 0:
+                    iv_values.append(iv)
+
+                # Estimate premium from volume * mid price * 100
+                total_premium_est += vol * mid * 100
+
+                # Detect unusual: volume >> OI
+                if oi > 10 and vol > 50:
+                    ratio = vol / oi
+                    if ratio > max_vol_oi:
+                        max_vol_oi = ratio
+                    if ratio > 2.0:
+                        hot_strikes.append({
+                            "strike": float(strike_key),
+                            "type": "call" if is_call else "put",
+                            "volume": vol,
+                            "oi": oi,
+                            "ratio": round(ratio, 1),
+                            "iv": round(iv, 1),
+                        })
+
+    total_vol = call_vol + put_vol
+    total_oi = call_oi + put_oi
+    call_pct = (call_vol / total_vol * 100) if total_vol > 0 else 50
+    avg_iv = np.mean(iv_values) if iv_values else 0
+
+    # "Buy side" approximation: if call volume > put volume in a dropped stock,
+    # someone is buying calls = bullish. Not perfect but real-time.
+    buy_pct = call_pct  # simplified: call-heavy = buying
+
+    unusual = max_vol_oi > 2.0 or total_vol > total_oi * 1.5 or len(hot_strikes) >= 2
+
+    return {
+        "unusual": unusual,
+        "total_premium": total_premium_est,
+        "call_pct": round(call_pct, 1),
+        "put_pct": round(100 - call_pct, 1),
+        "max_vol_oi": round(max_vol_oi, 1),
+        "avg_iv": avg_iv,
+        "buy_pct": round(buy_pct, 1),
+        "total_vol": total_vol,
+        "total_oi": total_oi,
+        "hot_strikes": sorted(hot_strikes, key=lambda x: x["ratio"], reverse=True)[:5],
+    }
+
+
 def load_uw_flow(data_dir: Path) -> Dict[str, Dict]:
-    """Load UW bot-eod-report and aggregate flow by ticker."""
+    """OPTIONAL: Load UW bot-eod-report as supplementary context.
+
+    This is stale EOD data — used only to enrich, never as primary signal.
+    """
+    if data_dir is None:
+        return {}
     zips = list(data_dir.glob("bot-eod-report-*.zip"))
     if not zips:
         return {}
 
-    with zipfile.ZipFile(zips[0]) as zf:
-        csv_names = [n for n in zf.namelist() if n.endswith(".csv")]
-        if not csv_names:
-            return {}
-        with zf.open(csv_names[0]) as f:
-            df = pd.read_csv(io.TextIOWrapper(f, encoding="utf-8"), low_memory=False)
+    try:
+        with zipfile.ZipFile(zips[0]) as zf:
+            csv_names = [n for n in zf.namelist() if n.endswith(".csv")]
+            if not csv_names:
+                return {}
+            with zf.open(csv_names[0]) as f:
+                df = pd.read_csv(io.TextIOWrapper(f, encoding="utf-8"), low_memory=False)
+    except Exception:
+        return {}
 
     df["premium"] = pd.to_numeric(df.get("premium"), errors="coerce").fillna(0)
     df["size"] = pd.to_numeric(df.get("size"), errors="coerce").fillna(0)
     df["volume"] = pd.to_numeric(df.get("volume"), errors="coerce").fillna(0)
     df["open_interest"] = pd.to_numeric(df.get("open_interest"), errors="coerce").fillna(0)
     df["implied_volatility"] = pd.to_numeric(df.get("implied_volatility"), errors="coerce").fillna(0)
-    df["delta"] = pd.to_numeric(df.get("delta"), errors="coerce").fillna(0)
 
-    # Only significant trades
     df = df[df.get("canceled", "f").astype(str) != "t"]
     df = df[(df["premium"] >= 25000) | (df["size"] >= 100)]
     if df.empty:
         return {}
 
     df["is_buy"] = df["side"].str.lower().str.strip() == "ask"
-    df["vol_oi_ratio"] = np.where(df["open_interest"] > 0, df["volume"] / df["open_interest"], 0)
 
     result = {}
     for ticker, group in df.groupby("underlying_symbol"):
@@ -157,12 +255,9 @@ def load_uw_flow(data_dir: Path) -> Dict[str, Dict]:
         call_prem = group.loc[group["option_type"].str.lower() == "call", "premium"].sum()
 
         result[ticker] = {
-            "total_premium": total_prem,
-            "buy_pct": (buy_prem / total_prem * 100) if total_prem > 0 else 50,
-            "call_pct": (call_prem / total_prem * 100) if total_prem > 0 else 50,
-            "max_vol_oi": group["vol_oi_ratio"].max(),
-            "avg_iv": group["implied_volatility"].mean(),
-            "trade_count": len(group),
+            "uw_total_premium": total_prem,
+            "uw_buy_pct": (buy_prem / total_prem * 100) if total_prem > 0 else 50,
+            "uw_call_pct": (call_prem / total_prem * 100) if total_prem > 0 else 50,
         }
     return result
 
@@ -566,43 +661,54 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
     # Remove already-held
     drops = [d for d in drops if d["ticker"] not in exclude]
 
-    # Step 2: UW flow overlay
-    flow_data = {}
-    if data_dir and data_dir.exists():
-        if verbose:
-            _safe_print(f"  [ideas] Step 2: UW flow from {data_dir.name}...")
-        flow_data = load_uw_flow(data_dir)
-        if verbose:
-            _safe_print(f"  [ideas] Flow data for {len(flow_data)} tickers")
+    # Step 2: Live unusual activity from Schwab chains (top 25 drops)
+    if verbose:
+        _safe_print(f"  [ideas] Step 2: Schwab live chain scan for top {min(25, len(drops))} drops...")
 
-    # Score and rank: combine drop magnitude + flow signals
+    # Optional: load UW EOD as supplementary (never primary)
+    uw_flow = {}
+    if data_dir and data_dir.exists():
+        uw_flow = load_uw_flow(data_dir)
+        if verbose and uw_flow:
+            _safe_print(f"  [ideas] UW EOD supplement: {len(uw_flow)} tickers (stale, context only)")
+
     scored = []
-    for d in drops[:50]:  # top 50 drops by magnitude
+    for i, d in enumerate(drops[:25]):
         ticker = d["ticker"]
-        flow = flow_data.get(ticker, {})
+        if verbose and (i + 1) % 5 == 0:
+            _safe_print(f"    Scanning chains {i+1}/25...")
+
+        # LIVE: detect unusual activity from Schwab chains
+        live_flow = detect_unusual_activity(svc, ticker)
+
+        # STALE (optional): UW EOD supplement
+        uw = uw_flow.get(ticker, {})
 
         # Drop score (0-40)
         drop_score = min(40, abs(d["pct_from_high"]) * 1.2)
 
-        # Flow score (0-30)
+        # Flow score (0-30) — PRIMARY from live Schwab chains
         flow_score = 0
-        total_prem = flow.get("total_premium", 0)
-        buy_pct = flow.get("buy_pct", 50)
-        vol_oi = flow.get("max_vol_oi", 0)
+        total_prem = live_flow.get("total_premium", 0)
+        vol_oi = live_flow.get("max_vol_oi", 0)
+        call_pct = live_flow.get("call_pct", 50)
 
-        if total_prem >= 1_000_000: flow_score += 12
-        elif total_prem >= 500_000: flow_score += 8
-        elif total_prem >= 100_000: flow_score += 4
+        if total_prem >= 5_000_000: flow_score += 12
+        elif total_prem >= 1_000_000: flow_score += 8
+        elif total_prem >= 200_000: flow_score += 4
 
-        if buy_pct >= 65: flow_score += 10
-        elif buy_pct >= 55: flow_score += 5
-
-        if vol_oi >= 3: flow_score += 8
+        if vol_oi >= 5: flow_score += 10
+        elif vol_oi >= 3: flow_score += 8
         elif vol_oi >= 2: flow_score += 4
 
-        # Macro alignment (0-30)
-        # Determine direction from flow
-        call_pct = flow.get("call_pct", 50)
+        if live_flow.get("unusual"):
+            flow_score += 6  # bonus for flagged unusual activity
+
+        # UW supplement: small bonus if UW EOD confirms direction
+        if uw.get("uw_buy_pct", 50) >= 65:
+            flow_score += 2  # confirmed buy-side from yesterday
+
+        # Direction from live chain call/put volume skew
         if call_pct >= 60:
             direction = "bullish"
         elif call_pct <= 40:
@@ -610,6 +716,7 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
         else:
             direction = "neutral"
 
+        # Macro alignment (0-30)
         macro_score = {"risk_off": {"bearish": 28, "neutral": 18, "bullish": 8},
                        "neutral": {"bearish": 18, "neutral": 22, "bullish": 18},
                        "risk_on": {"bearish": 8, "neutral": 18, "bullish": 28},
@@ -624,7 +731,7 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
             "flow_score": round(flow_score, 1),
             "macro_score": round(macro_score, 1),
             "pre_score": round(total, 1),
-            "flow": flow,
+            "flow": live_flow,
             "name": name_map.get(ticker, ticker),
             "sector": sector_map.get(ticker, "Unknown"),
         })
@@ -707,8 +814,9 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
             "width": best_trade["width"],
             # Context
             "total_premium": cand["flow"].get("total_premium", 0),
-            "buy_pct": cand["flow"].get("buy_pct", 50),
+            "buy_pct": cand["flow"].get("call_pct", 50),
             "vol_oi": cand["flow"].get("max_vol_oi", 0),
+            "unusual": cand["flow"].get("unusual", False),
             "days_to_earnings": fund.get("days_to_earnings", 999),
             "analyst_upside": round(fund.get("analyst_upside", 0), 1),
             "roe": round(fund.get("roe", 0), 1),
@@ -760,7 +868,7 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
             f"| Spread Width | ${r['width']:.0f} |",
             f"| Earnings | {r['days_to_earnings']} days away |",
             "",
-            f"**Flow:** {prem_str} premium | {r['buy_pct']:.0f}% buy-side | Vol/OI {r['vol_oi']:.1f}x",
+            f"**Flow (LIVE):** {prem_str} est. premium | Call%: {r['buy_pct']:.0f}% | Vol/OI {r['vol_oi']:.1f}x | {'UNUSUAL' if r.get('unusual') else 'Normal'}",
             f"**Quality:** ROE {r['roe']:.0f}% | Analyst upside {r['analyst_upside']:+.0f}% | Score {r['quality_score']:.0f}/100",
             "",
         ])
