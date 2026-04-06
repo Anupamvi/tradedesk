@@ -342,8 +342,15 @@ def construct_trades(svc, ticker: str, price: float, direction: str,
             prob_profit = (1 + short_put["delta"]) * 100  # approx from delta
             buffer_pct = (underlying - short_put["strike"]) / underlying * 100
 
+            # Buffer warning
+            caution = ""
+            if buffer_pct < 5:
+                caution = " [TIGHT BUFFER]"
+            elif buffer_pct < 7:
+                caution = " [MODERATE BUFFER]"
+
             trades.append({
-                "strategy": "Bull Put Credit",
+                "strategy": f"Bull Put Credit{caution}",
                 "short_strike": short_put["strike"],
                 "long_strike": long_put["strike"],
                 "expiry": expiry_date,
@@ -417,8 +424,14 @@ def construct_trades(svc, ticker: str, price: float, direction: str,
             prob_profit = (1 - short_call["delta"]) * 100
             buffer_pct = (short_call["strike"] - underlying) / underlying * 100
 
+            caution = ""
+            if buffer_pct < 5:
+                caution = " [TIGHT BUFFER]"
+            elif buffer_pct < 7:
+                caution = " [MODERATE BUFFER]"
+
             trades.append({
-                "strategy": "Bear Call Credit",
+                "strategy": f"Bear Call Credit{caution}",
                 "short_strike": short_call["strike"],
                 "long_strike": long_call["strike"],
                 "expiry": expiry_date,
@@ -431,6 +444,84 @@ def construct_trades(svc, ticker: str, price: float, direction: str,
                 "short_theta": round(short_call["theta"], 3),
                 "short_iv": round(short_call["iv"], 1),
                 "buffer_pct": round(buffer_pct, 1),
+                "width": width,
+            })
+            break
+
+    # Strategy 3: Bull Call Debit — for strongly bullish flow + low IV
+    if direction == "bullish" and avg_iv < 0.40:
+        calls = chain.get("callExpDateMap", {})
+        for expiry_key, strikes in calls.items():
+            expiry_date = expiry_key.split(":")[0]
+            try:
+                dte = (dt.date.fromisoformat(expiry_date) - dt.date.today()).days
+            except ValueError:
+                continue
+            if dte < target_dte_min or dte > target_dte_max:
+                continue
+
+            sorted_strikes = sorted(strikes.keys(), key=float)
+            long_call = None
+            short_call = None
+
+            # Long call: near ATM (~0.40-0.50 delta)
+            for sk in sorted_strikes:
+                contracts = strikes[sk]
+                if not contracts:
+                    continue
+                c = contracts[0]
+                d = c.get("delta", 0)
+                ask = c.get("ask", 0)
+                if d is None:
+                    continue
+                if 0.35 <= d <= 0.55 and ask > 0.50:
+                    long_call = {"strike": float(sk), "bid": c.get("bid", 0), "ask": ask,
+                                 "delta": d, "theta": c.get("theta", 0),
+                                 "iv": c.get("volatility", 0)}
+                    break
+
+            if not long_call:
+                continue
+
+            # Short call: $5-15 above long
+            for sk in sorted_strikes:
+                sk_f = float(sk)
+                if sk_f > long_call["strike"] + 4 and sk_f <= long_call["strike"] + 15:
+                    contracts = strikes[sk]
+                    if contracts:
+                        c = contracts[0]
+                        if c.get("bid", 0) > 0:
+                            short_call = {"strike": sk_f, "bid": c.get("bid", 0),
+                                          "delta": c.get("delta", 0)}
+                            break
+
+            if not short_call:
+                continue
+
+            width = short_call["strike"] - long_call["strike"]
+            debit = long_call["ask"] - short_call["bid"]
+            if debit <= 0 or debit >= width * 0.60:
+                continue  # don't pay more than 60% of width
+
+            max_profit = (width - debit) * 100
+            max_loss = debit * 100
+            # Approx prob based on long delta
+            otm_pct = (long_call["strike"] - underlying) / underlying * 100 if underlying > 0 else 0
+
+            trades.append({
+                "strategy": "Bull Call Debit",
+                "short_strike": short_call["strike"],
+                "long_strike": long_call["strike"],
+                "expiry": expiry_date,
+                "dte": dte,
+                "credit": round(-debit, 2),  # negative = debit
+                "max_profit": round(max_profit),
+                "max_loss": round(max_loss),
+                "prob_profit": round(long_call["delta"] * 100, 1),
+                "short_delta": round(long_call["delta"], 3),
+                "short_theta": round(long_call["theta"], 3),
+                "short_iv": round(long_call["iv"], 1),
+                "buffer_pct": round(-otm_pct, 1),  # negative = OTM distance
                 "width": width,
             })
             break
