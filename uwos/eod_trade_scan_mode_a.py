@@ -267,35 +267,50 @@ def candidate_dict(
 
 def compute_macro_regime(asof):
     """Fetch SPY 5-day return and VIX level for macro regime awareness.
+    Uses Schwab API (fast, reliable) with yfinance fallback.
     Returns dict with spy_5d_ret, vix_level, regime ('risk_off'|'risk_on'|'neutral').
     """
-    try:
-        import yfinance as yf
-        start = (asof - dt.timedelta(days=15)).isoformat()
-        end = (asof + dt.timedelta(days=1)).isoformat()
-        spy = yf.download("SPY", start=start, end=end, auto_adjust=True, progress=False)
-        if spy is not None and not spy.empty:
-            if isinstance(spy.columns, pd.MultiIndex):
-                spy.columns = spy.columns.get_level_values(0)
-            close = pd.to_numeric(spy.get("Close"), errors="coerce").dropna()
-            spy_5d_ret = (float(close.iloc[-1]) / float(close.iloc[-6]) - 1.0) if len(close) >= 6 else 0.0
-        else:
-            spy_5d_ret = 0.0
-    except Exception:
-        spy_5d_ret = 0.0
+    spy_5d_ret = 0.0
+    vix_level = 20.0
 
+    # Try Schwab first (fast, no timeouts)
     try:
-        import yfinance as yf
-        vix = yf.download("^VIX", start=start, end=end, auto_adjust=True, progress=False)
-        if vix is not None and not vix.empty:
-            if isinstance(vix.columns, pd.MultiIndex):
-                vix.columns = vix.columns.get_level_values(0)
-            vc = pd.to_numeric(vix.get("Close"), errors="coerce").dropna()
-            vix_level = float(vc.iloc[-1]) if not vc.empty else 20.0
-        else:
-            vix_level = 20.0
+        from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+        config = SchwabAuthConfig.from_env(load_dotenv_file=True)
+        svc = SchwabLiveDataService(config=config, interactive_login=False)
+        client = svc.connect()
+
+        # SPY 5-day return from price history
+        end_dt = dt.datetime.combine(asof + dt.timedelta(days=1), dt.time())
+        start_dt = dt.datetime.combine(asof - dt.timedelta(days=10), dt.time())
+        resp = client.get_price_history_every_day("SPY", start_datetime=start_dt, end_datetime=end_dt)
+        resp.raise_for_status()
+        candles = resp.json().get("candles", [])
+        if len(candles) >= 6:
+            spy_5d_ret = candles[-1]["close"] / candles[-6]["close"] - 1.0
+
+        # VIX from quote
+        quotes = svc.get_quotes(["$VIX"])
+        vix_data = quotes.get("$VIX", {})
+        vix_quote = vix_data.get("quote", {})
+        vl = vix_quote.get("lastPrice") or vix_quote.get("closePrice")
+        if vl and vl > 0:
+            vix_level = float(vl)
     except Exception:
-        vix_level = 20.0
+        # Fallback to yfinance
+        try:
+            import yfinance as yf
+            start = (asof - dt.timedelta(days=15)).isoformat()
+            end = (asof + dt.timedelta(days=1)).isoformat()
+            spy = yf.download("SPY", start=start, end=end, auto_adjust=True, progress=False)
+            if spy is not None and not spy.empty:
+                if isinstance(spy.columns, pd.MultiIndex):
+                    spy.columns = spy.columns.get_level_values(0)
+                close = pd.to_numeric(spy.get("Close"), errors="coerce").dropna()
+                if len(close) >= 6:
+                    spy_5d_ret = float(close.iloc[-1]) / float(close.iloc[-6]) - 1.0
+        except Exception:
+            pass
 
     if spy_5d_ret < -0.02 and vix_level > 22:
         regime = "risk_off"
