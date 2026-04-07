@@ -14,12 +14,10 @@ import argparse
 import datetime as dt
 import json
 import os
-import smtplib
 import sys
 import time
 import urllib.request
 import urllib.error
-from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -41,10 +39,6 @@ def load_notify_config() -> Dict[str, str]:
     env = dotenv_values(ROOT / ".env")
     return {
         "ntfy_topic": env.get("NTFY_TOPIC", ""),
-        "sms_phone": env.get("SMS_PHONE", ""),
-        "sms_gateway": env.get("SMS_GATEWAY", ""),
-        "gmail_user": env.get("GMAIL_USER", ""),
-        "gmail_password": env.get("GMAIL_APP_PASSWORD", ""),
     }
 
 
@@ -94,40 +88,13 @@ def _safe_print(msg: str) -> None:
         print(msg.encode("ascii", "replace").decode("ascii"))
 
 
-def send_sms(phone: str, gateway: str, subject: str, body: str) -> bool:
-    """Send SMS via T-Mobile email-to-SMS gateway using Gmail SMTP."""
-    cfg = load_notify_config()
-    gmail_user = cfg.get("gmail_user", "")
-    gmail_pass = cfg.get("gmail_password", "")
-    if not phone or not gateway or not gmail_user or not gmail_pass:
-        _safe_print("  [sms] Missing config (phone/gateway/gmail)")
-        return False
-    to_addr = f"{phone}@{gateway}"
-    sms_body = body[:155] + "..." if len(body) > 160 else body
-    try:
-        msg = MIMEText(sms_body)
-        msg["Subject"] = subject[:30]
-        msg["From"] = gmail_user
-        msg["To"] = to_addr
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as smtp:
-            smtp.starttls()
-            smtp.login(gmail_user, gmail_pass)
-            smtp.sendmail(gmail_user, [to_addr], msg.as_string())
-        return True
-    except Exception as e:
-        _safe_print(f"  [sms] FAILED: {e}")
-        return False
-
-
 def notify(title: str, body: str, priority: str = "default",
            tags: str = "", critical: bool = False) -> None:
-    """Send notification via all configured channels. Always sends both ntfy + SMS."""
+    """Send notification via ntfy push."""
     cfg = load_notify_config()
     sent = send_ntfy(cfg["ntfy_topic"], title, body, priority, tags)
     if not sent:
         _safe_print(f"  [notify] ntfy failed, message: {_strip_emoji(title)}: {body}")
-    send_sms(cfg["sms_phone"], cfg["sms_gateway"], title, body)
-    time.sleep(2)  # T-Mobile gateway throttles rapid messages
 
 
 # ---------------------------------------------------------------------------
