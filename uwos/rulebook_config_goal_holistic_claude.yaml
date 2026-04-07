@@ -90,7 +90,7 @@ fire:
 shield:
   dte_range: [28, 56]
   target_dte: 42
-  credit_short_otm_pct: 0.12         # [T2] was: 0.10 — ~15-20 delta short; higher prob OTM expiry
+  credit_short_otm_pct: 0.18         # [T7] was: 0.12 — targets 0.20-0.30 delta short (professional standard); 0.12 gave 0.40-0.50
   sigma_relaxation_factor: 0.45       # [T4] new — use 0.45x sigma; allows ~8-10% OTM strikes to pass
   iron_condor_sigma_factor: 0.40      # [T4] new — IC needs both sides; more relaxed to allow any through
   allow_both_sides_when_neutral: true      # [T6] was: false — same as FIRE; neutral tickers can generate both tracks
@@ -169,7 +169,8 @@ approval:
   shield_sigma_require_data: true
   require_shield_core: false
   require_live_shield_short_delta: true
-  max_abs_short_delta_shield: 0.20
+  max_abs_short_delta_shield: 0.20       # static fallback (used when shield_delta_dynamic: false)
+  shield_delta_dynamic: true             # dynamic cap: IVR/DTE/VIX/GEX-aware (professional practice)
   # FIRE delta gate: reject lottery tickets with low directional exposure
   require_fire_long_delta: true
   min_abs_long_delta_fire: 0.15

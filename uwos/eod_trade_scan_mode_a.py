@@ -444,6 +444,8 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     macro = compute_macro_regime(asof)
     macro_regime = macro["regime"]
     print(f"  [macro] SPY 5d={macro['spy_5d_ret']:+.2%}, VIX={macro['vix_level']:.1f}, regime={macro_regime}")
+    # Stash macro on function for Stage-2 reuse (avoids duplicate API call)
+    build_best_candidates._last_macro = macro
 
     sc = screener.copy()
     sc["ticker"] = sc["ticker"].astype(str).str.upper()

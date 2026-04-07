@@ -17,11 +17,76 @@ import yaml
 from uwos.eod_trade_scan_mode_a import (
     build_best_candidates,
     build_quotes,
+    compute_macro_regime,
     ensure_cols,
     fnum,
     md_tables,
 )
 from uwos.report import load_open_positions
+
+
+def _safe_delta(val):
+    """Normalize delta values: treat sentinel -999/999 and out-of-range as NaN."""
+    d = fnum(val)
+    if not np.isfinite(d) or abs(d) > 1.0:
+        return float("nan")
+    return d
+
+
+def dynamic_shield_delta_cap(ivr, dte, gex_regime="", vix=20.0, strategy="credit_spread"):
+    """Compute max allowed short delta for SHIELD trades.
+
+    Based on professional credit-spread practice (Tastytrade / Option Alpha research):
+    - IVR drives base delta: high IV → sell closer to ATM (more premium collected)
+    - DTE adjusts: shorter DTE → further OTM (gamma risk)
+    - VIX crisis (>35) → pull back despite rich premium (tail risk)
+    - Negative GEX → further OTM (amplified moves)
+    - Iron condors → slightly tighter per side
+
+    Returns max abs(delta) for the short leg, or 0.0 if trade should be skipped.
+    """
+    # IVR base: how much delta the premium environment supports
+    if ivr >= 50:
+        base = 0.35
+    elif ivr >= 35:
+        base = 0.30
+    elif ivr >= 25:
+        base = 0.25
+    elif ivr >= 15:
+        base = 0.20
+    else:
+        return 0.0  # IVR too low — skip credit spreads
+
+    # DTE adjustment: 45 DTE is the sweet spot
+    if 45 <= dte <= 60:
+        dte_adj = 0.0
+    elif 30 <= dte < 45:
+        dte_adj = -0.03
+    elif 21 <= dte < 30:
+        dte_adj = -0.06
+    elif dte < 21:
+        dte_adj = -0.10
+    else:  # > 60
+        dte_adj = -0.02
+
+    # VIX crisis adjustment: rich premium but tail risk
+    if vix > 40:
+        vix_adj = -0.08
+    elif vix > 30:
+        vix_adj = -0.03
+    elif vix < 15:
+        vix_adj = -0.05  # low vol = thin premium, go further OTM
+    else:
+        vix_adj = 0.0
+
+    # GEX overlay: negative GEX amplifies moves
+    gex_adj = -0.05 if str(gex_regime).strip().lower() == "volatile" else 0.0
+
+    # Iron condors: tighter per side (two legs exposed)
+    ic_adj = -0.03 if strategy == "iron_condor" else 0.0
+
+    cap = base + dte_adj + vix_adj + gex_adj + ic_adj
+    return max(0.10, min(0.40, cap))
 
 
 REQ_CSV_PREFIXES = [
@@ -922,6 +987,17 @@ def run():
                         mdf.at[idx, col] = str(val) if val is not None else ""
             print(f"  [gex] Enriched {len(gex_by_ticker)} tickers with GEX regime data", file=sys.stderr)
 
+    # Reuse Stage-1 macro data if available; otherwise fetch fresh
+    _macro = getattr(build_best_candidates, "_last_macro", None)
+    if _macro is None:
+        try:
+            _macro = compute_macro_regime(asof)
+            print(f"  [macro] SPY 5d={_macro['spy_5d_ret']:+.2%}, VIX={_macro['vix_level']:.1f}, regime={_macro['regime']}", file=sys.stderr)
+        except Exception:
+            _macro = {"spy_5d_ret": 0.0, "vix_level": 20.0, "regime": "neutral"}
+    _vix_level = _macro.get("vix_level", 20.0)
+    _macro_regime = _macro.get("regime", "neutral")
+
     require_likelihood_pass = bool(approval_cfg.get("require_likelihood_pass", True))
     shield_live_valid_overrides_quality = bool(
         approval_cfg.get("shield_live_valid_overrides_quality", False)
@@ -957,6 +1033,7 @@ def run():
     require_shield_core = bool(approval_cfg.get("require_shield_core", False))
     require_live_shield_short_delta = bool(approval_cfg.get("require_live_shield_short_delta", False))
     max_abs_short_delta_shield = fnum(approval_cfg.get("max_abs_short_delta_shield", 0.20))
+    shield_delta_dynamic = bool(approval_cfg.get("shield_delta_dynamic", False))
     # FIRE delta gate
     require_fire_long_delta = bool(approval_cfg.get("require_fire_long_delta", False))
     min_abs_long_delta_fire = fnum(approval_cfg.get("min_abs_long_delta_fire", 0.15))
@@ -1432,19 +1509,41 @@ def run():
                 if core_stage1 is not True:
                     blockers.append("shield_core_fail")
             if require_live_shield_short_delta:
-                if strategy_local in {"Bull Put Credit", "Bear Call Credit"}:
-                    short_delta = fnum(row.get("short_delta_live"))
-                    if not np.isfinite(short_delta):
-                        blockers.append("shield_delta_missing")
-                    elif abs(short_delta) > max_abs_short_delta_shield:
-                        blockers.append(f"shield_delta_fail:{short_delta:+.2f}")
-                elif strategy_local in {"Iron Condor", "Iron Butterfly"}:
-                    put_delta = fnum(row.get("short_put_delta_live"))
-                    call_delta = fnum(row.get("short_call_delta_live"))
-                    if not np.isfinite(put_delta) or not np.isfinite(call_delta):
-                        blockers.append("shield_delta_missing")
-                    elif abs(put_delta) > max_abs_short_delta_shield or abs(call_delta) > max_abs_short_delta_shield:
-                        blockers.append(f"shield_delta_fail:put={put_delta:+.2f},call={call_delta:+.2f}")
+                # Compute per-trade delta cap: dynamic (IVR/DTE/VIX/GEX-aware) or static
+                if shield_delta_dynamic:
+                    _ivr = fnum(row.get("iv_rank"))
+                    if not np.isfinite(_ivr):
+                        _ivr = 30.0  # conservative fallback
+                    _dte_val = fnum(row.get("dte"))
+                    if not np.isfinite(_dte_val):
+                        _dte_val = 45
+                    _gex_r = str(row.get("gex_regime", "")).strip().lower()
+                    _strat_type = "iron_condor" if strategy_local in {"Iron Condor", "Iron Butterfly"} else "credit_spread"
+                    _delta_cap = dynamic_shield_delta_cap(
+                        ivr=_ivr, dte=int(_dte_val), gex_regime=_gex_r,
+                        vix=_vix_level, strategy=_strat_type,
+                    )
+                    if _delta_cap <= 0.0:
+                        # IVR too low for credit spreads in dynamic mode
+                        blockers.append(f"shield_delta_insufficient_ivr:{_ivr:.0f}")
+                        _delta_cap = None  # skip further delta checks
+                else:
+                    _delta_cap = max_abs_short_delta_shield
+
+                if _delta_cap is not None:
+                    if strategy_local in {"Bull Put Credit", "Bear Call Credit"}:
+                        short_delta = _safe_delta(row.get("short_delta_live"))
+                        if not np.isfinite(short_delta):
+                            blockers.append("shield_delta_missing")
+                        elif abs(short_delta) > _delta_cap:
+                            blockers.append(f"shield_delta_fail:{short_delta:+.2f}>{_delta_cap:.2f}")
+                    elif strategy_local in {"Iron Condor", "Iron Butterfly"}:
+                        put_delta = _safe_delta(row.get("short_put_delta_live"))
+                        call_delta = _safe_delta(row.get("short_call_delta_live"))
+                        if not np.isfinite(put_delta) or not np.isfinite(call_delta):
+                            blockers.append("shield_delta_missing")
+                        elif abs(put_delta) > _delta_cap or abs(call_delta) > _delta_cap:
+                            blockers.append(f"shield_delta_fail:put={put_delta:+.2f},call={call_delta:+.2f}>{_delta_cap:.2f}")
 
             # IC/IB profitability is terminal (expiry-zone), not path-dependent,
             # so the no-touch metric is irrelevant for them.
@@ -1463,7 +1562,7 @@ def run():
         # FIRE long-leg delta gate: reject lottery tickets  [B1 fix: moved out of SHIELD block]
         if track == "FIRE" and require_fire_long_delta:
             if strategy_local in {"Bull Call Debit", "Bear Put Debit"}:
-                long_delta = fnum(row.get("long_delta_live"))
+                long_delta = _safe_delta(row.get("long_delta_live"))
                 if not np.isfinite(long_delta):
                     blockers.append("fire_delta_missing")
                 elif abs(long_delta) < min_abs_long_delta_fire:
