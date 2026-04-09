@@ -1,398 +1,314 @@
-# Strategy Engine (Robot Layer)
+# UW Trade Desk
 
-This folder contains a deterministic filter that turns your 5 EOD files into a shortlist of mathematically valid option spreads.
+An automated options trading pipeline that generates, validates, and monitors spread trades using data from [UnusualWhales](https://unusualwhales.com) and live [Schwab](https://developer.schwab.com) quotes.
 
-## What it does
-- Loads **Hot Chains**, **OI Changes**, **Dark Pool EOD**, **Stock Screener**, **Whale Trades**
-- Applies deterministic gates:
-  - ETFs excluded (Rule #5) by default
-  - Width tiers by price
-  - Credit >= 25% of width (credit spreads)
-  - Debit <= 55% of width (debit spreads)
-  - SHIELD trades cannot cross earnings
-  - Ticker must appear in Hot/Whale/OI
+---
 
-- Prices spreads using your preference:
-  - **C:** Web chain snapshot (Yahoo via `yfinance`)
-  - **B:** Fallback to UnusualWhales bid/ask as *indicative* if web is unavailable
+## What You Need
 
-## Install
+1. **UnusualWhales subscription** — provides the 5 daily EOD data files (hot chains, OI changes, dark pool, screener, whale trades)
+2. **Schwab developer account** — provides live option chain quotes for trade validation and position monitoring
+3. **Python 3.12+** with: `pip install pandas numpy pyyaml yfinance schwab-py python-dotenv tabulate`
+4. **ntfy.sh account** (free) — for push notifications from the trade monitor
+
+### Environment Setup
+
+Create `c:\uw_root\.env`:
+```env
+SCHWAB_API_KEY=your_api_key
+SCHWAB_APP_SECRET=your_app_secret
+SCHWAB_TOKEN_PATH=./tokens/schwab_token.json
+NTFY_TOPIC=your_ntfy_topic_name
+```
+
+Authenticate Schwab (one-time, opens browser):
 ```bash
-pip install pandas numpy pyyaml yfinance
+cd c:\uw_root
+python -m uwos.schwab_position_analyzer --manual-auth
 ```
 
-## Run
-Put the 5 files in a folder (example `./EOD`):
+---
 
-- hot-chains-YYYY-MM-DD.zip
-- chain-oi-changes-YYYY-MM-DD.zip
-- dp-eod-report-YYYY-MM-DD.zip
-- stock-screener-YYYY-MM-DD.zip
-- whale_trades_filtered-YYYY-MM-DD.csv
+## 1. Daily Pipeline — Generate Today's Trades
 
-Then:
+**What:** Takes 5 EOD data files from UnusualWhales and produces a ranked table of option spread trades, validated against live Schwab quotes.
 
+**How it works:**
+1. **Stage-1 Discovery** — scans hot chains, whale trades, and dark pool data to find the best debit spreads (FIRE track) and credit spreads (SHIELD track). Scores each by conviction (direction bias, efficiency, liquidity, whale activity).
+2. **Stage-2 Validation** — fetches live Schwab option chains, checks entry prices, runs a historical backtest for each setup, and applies quality gates (delta, GEX regime, macro regime, sigma).
+3. **Output** — an expert trade table sorted into Core (best), Tactical (good with caveats), and Watch (blocked).
+
+**Run:**
 ```bash
-python -m uwos.strategy_engine --date 2026-01-23 --input-dir ./EOD --out-dir ./out --config uwos/rulebook_config.yaml
+# Place your 5 UW files in c:\uw_root\2026-04-08\
+python -m uwos.run_mode_a_two_stage \
+  --base-dir "c:/uw_root/2026-04-08" \
+  --config "c:/uw_root/uwos/rulebook_config_goal_holistic_claude.yaml" \
+  --out-dir "c:/uw_root/out/2026-04-08" \
+  --top-trades 20
 ```
 
-Outputs:
-- `shortlist_trades_YYYY-MM-DD.csv`
-- `reject_log_YYYY-MM-DD.csv`
-- `SHORTLIST_YYYY-MM-DD.md`  (copy/paste into AI and ask it to roast the trades)
+**Or via Claude Code:** `/daily-pipeline 2026-04-08`
 
-## Guided UW Dashboard Capture (No API)
-If your UW plan is dashboard-only, use the guided browser capture tool to export files into your daily folder:
+**Input files** (download from UW, place in `c:\uw_root\YYYY-MM-DD\`):
+- `hot-chains-YYYY-MM-DD.zip`
+- `chain-oi-changes-YYYY-MM-DD.zip`
+- `dp-eod-report-YYYY-MM-DD.zip`
+- `stock-screener-YYYY-MM-DD.zip`
+- `whale-YYYY-MM-DD.md` (generated from `dp-eod-report` via `generate_whale_summary.py`)
 
+**Output files:**
+| File | What |
+|------|------|
+| `YYYY-MM-DD/anu-expert-trade-table-YYYY-MM-DD.md` | The main trade table — Core / Tactical / Watch |
+| `out/YYYY-MM-DD/setup_likelihood_YYYY-MM-DD.md` | Backtest win rate and edge for each setup |
+| `out/YYYY-MM-DD/live_trade_table_YYYY-MM-DD_final.csv` | Full CSV with live Schwab pricing |
+| `out/YYYY-MM-DD/dropped_trades_YYYY-MM-DD.csv` | Why each rejected trade was dropped |
+
+**Key concepts:**
+- **FIRE** = debit spreads (Bull Call Debit, Bear Put Debit) — you pay upfront, profit if stock moves your way
+- **SHIELD** = credit spreads (Bull Put Credit, Bear Call Credit, Iron Condor) — you collect premium, profit if stock stays in range
+- **Core** = all quality gates passed → trade at full size
+- **Tactical** = minor blockers (e.g., GEX pinned) → trade at reduced size
+- **Watch** = hard blockers (likelihood FAIL, delta fail) → do not trade, monitor only
+
+---
+
+## 2. Swing Trend Pipeline — Multi-Day Trend Analysis
+
+**What:** Looks across multiple days of data to find tickers with persistent bullish or bearish signals, validated against Schwab live quotes and backtested.
+
+**Run:**
 ```bash
-python -m uwos.uw_dashboard_capture --trade-date 2026-02-07 --base-dir c:\uw_root --preset mode-a-core
+python -m uwos.swing_trend_pipeline --lookback 5 --as-of 2026-04-08         # 5-day lookback
+python -m uwos.swing_trend_pipeline --lookback 30 --as-of 2026-04-08        # 30-day lookback
+python -m uwos.swing_trend_pipeline --lookback 5 --as-of 2026-04-08 --no-schwab  # skip live validation
 ```
 
-Default preset (`mode-a-core`) routes:
-- `stock-screener`
-- `hot-chains`
-- `chain-oi-changes`
-- `dp-eod-report`
+**Or via Claude Code:** `/swing-trend`
 
-For portfolio growth research (non-easy-download pages), use:
+**Output:** `out/swing_trend/swing-trend-report-YYYY-MM-DD-LN.md`
 
+---
+
+## 3. Trade Desk — Position Monitoring & Push Alerts
+
+**What:** Monitors your open option positions every 30 minutes during market hours. Applies verdict rules (CLOSE, ROLL, ASSESS, HOLD) and sends push notifications via [ntfy.sh](https://ntfy.sh) when action is needed.
+
+**How it works:**
+1. Fetches current positions from Schwab API
+2. Evaluates each position against rules:
+   - **Credit spreads** (patience rules): close at 50% profit, roll at 21 DTE, close if tested
+   - **Debit spreads** (urgency rules): close at 100%+ profit, stop-loss at breakeven, close if momentum lost
+3. Compares current verdicts against previous scan (state diff)
+4. Sends ntfy push notification only on **transitions** (HOLD → CLOSE, HOLD → ROLL)
+
+**Run:**
 ```bash
-python -m uwos.uw_dashboard_capture --trade-date 2026-02-07 --base-dir c:\uw_root --preset growth-intel
+python -m uwos.trade_monitor --force              # single scan, notify on transitions
+python -m uwos.trade_monitor --force --manual      # notify ALL actionable verdicts
+python -m uwos.trade_monitor --test                # send a test notification
 ```
 
-`growth-intel` includes:
-- `stock-screener`
-- `news-feed`
-- `earnings`
-- `analysts`
-- `insiders-trades`
-- `institutions`
-- `flow-sectors`
-- `market-statistics`
-- `sec-filings`
-- `correlations`
-- `smart-money-live`
-- `market-maps`
-
-Notes:
-- The script opens a persistent browser profile (`tokens/uw_playwright_profile`) so your login is reused.
-- You can set filters manually on each page.
-- It captures downloads, CSV responses, and network JSON payloads (for non-downloadable pages).
-- If a page has no direct download, it can scrape the largest visible table/grid to CSV.
-- It also stores per-route snapshots under `<day-folder>/_snapshots/<route>/`:
-  - full-page `.png`
-  - rendered `.html`
-  - plain-text `.txt`
-- ZIP downloads are extracted to `<day-folder>\_unzipped_mode_a`.
-- A manifest is written to `<day-folder>/uw_capture_manifest_YYYY-MM-DD.csv`.
-
-Finalize a capture day into one markdown report and remove duplicate rerun CSVs:
-
+**Automated scheduling (Windows Task Scheduler):**
 ```bash
-python -m uwos.uw_capture_finalize --trade-date 2026-02-07 --base-dir c:\uw_root --delete-duplicates
+uwos\setup_trade_monitor.bat
 ```
+Runs every 30 min, Mon-Fri 9:30 AM – 4:05 PM.
 
-This writes:
-- `<day-folder>/uw_capture_final_report_YYYY-MM-DD.md`
+**Notifications go to:** `https://ntfy.sh/your_topic` (install ntfy app on phone for push alerts)
 
-Build ranked growth candidates + monthly rebalance markdown:
+---
 
+## 4. Trade History & Performance Review
+
+**What:** Analyzes your realized trade log to track win rate, profit factor, edge drift, and identify which strategy types are working.
+
+**Run all stages:**
 ```bash
-python -m uwos.build_growth_portfolio_candidates --trade-date 2026-02-07 --base-dir c:\uw_root --top-n 30 --portfolio-size 12 --max-per-sector 2 --min-score 10 --min-sources 2 --require-stock-screener --stock-lookback-days 0
+python -m uwos.run_trade_playbook \
+  --realized-csv ./out/cleaned_realized_trades.csv \
+  --config ./uwos/rulebook_config.yaml \
+  --out-dir ./out/playbook
 ```
 
-This writes:
-- `<day-folder>/growth_portfolio_candidates_YYYY-MM-DD.md`
-- `<day-folder>/growth_portfolio_candidates_YYYY-MM-DD.csv`
-
-Recommended final pass (capture, then finalize):
-
+**Or from Google Sheets (auto-downloads):**
 ```bash
-python -m uwos.uw_dashboard_capture --trade-date 2026-02-07 --base-dir c:\uw_root --preset growth-intel --routes stock-screener analysts insiders-trades institutions news-feed earnings flow-sectors market-statistics sec-filings correlations smart-money-live market-maps --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless --no-disable-automation-flags --also-scrape --scrape-scroll-cycles 20 --wait-seconds 55
-python -m uwos.uw_capture_finalize --trade-date 2026-02-07 --base-dir c:\uw_root --delete-duplicates
-python -m uwos.build_growth_portfolio_candidates --trade-date 2026-02-07 --base-dir c:\uw_root --top-n 30 --portfolio-size 12 --max-per-sector 2 --min-score 10 --min-sources 2 --require-stock-screener --stock-lookback-days 0
+python -m uwos.run_trade_playbook \
+  --sheet-csv-url "https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=GID" \
+  --config ./uwos/rulebook_config.yaml \
+  --out-dir ./out/playbook
 ```
 
-Single-command end-to-end pipeline (capture -> finalize -> candidates -> packet):
+**Output:**
+| File | What |
+|------|------|
+| `daily_risk_monitor.md` | Current open position risk assessment |
+| `weekly_edge_report.md` | Weekly win rate, P&L, strategy breakdown |
+| `monthly_longitudinal_review.md` | Monthly trends and edge drift |
 
+---
+
+## 5. Stock Dip Scanner — Equity Buying Opportunities
+
+**What:** Screens the S&P 500 for stocks that have dropped significantly and scores them for recovery potential. Useful for finding stock (not options) buying opportunities during selloffs.
+
+**How it works:**
+1. Fetches bulk S&P 500 quotes from Schwab
+2. Deep-dives on top candidates with yfinance fundamentals
+3. 4-layer scoring: quality (30%), drop magnitude (20%), broad-vs-stock-specific context (20%), recovery potential (30%)
+4. Alerts on BUY / STRONG BUY signals
+
+**Run:**
 ```bash
-python -m uwos.run_uw_deep_research_pipeline --trade-date 2026-02-07 --base-dir c:\uw_root --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless --no-disable-automation-flags --wait-seconds 55 --scrape-scroll-cycles 20 --stock-lookback-days 7 --route-lookback-days 14 --artifact-lookback-days 14 --top-n 30 --packet-top-n 30
+python -m uwos.dip_scanner
 ```
 
-If the browser opens but login/session gets stuck:
+Integrated into the trade monitor — runs automatically at 10 AM and 1 PM ET.
 
-1. Start with a fresh Playwright profile folder.
-2. Bootstrap login only (no scraping):
+---
 
+## 6. Historical Trend & Replay Analysis
+
+**What:** Aggregates historical pipeline runs into longitudinal trend views. Shows which tickers and strategies persist across days/weeks, not just single-day snapshots.
+
+**Run:**
 ```bash
-python -m uwos.uw_dashboard_capture --manual-login-only --base-dir c:\uw_root --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless
+python -m uwos.historical_trend_pipeline \
+  --search-root c:\uw_root\out\replay_compare \
+  --lookback-days 45 \
+  --recommendation-top-n 20
 ```
 
-3. After login works in that browser, run capture with the same profile/channel:
+**Or via Claude Code:** `/trend-analysis`
 
+**Output:** `out/replay_compare/trend_analysis/final_trade_recommendations_from_trends.md`
+
+---
+
+## 7. UW Dashboard Capture (Browser-Based)
+
+**What:** If your UnusualWhales plan doesn't include API/CSV export, this tool opens a browser, logs into UW, and captures the data you need by scraping dashboard pages.
+
+**Run:**
 ```bash
-python -m uwos.uw_dashboard_capture --trade-date 2026-02-07 --base-dir c:\uw_root --preset growth-intel --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless
+# One-time login
+python -m uwos.uw_dashboard_capture --manual-login-only --base-dir c:\uw_root \
+  --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge --no-headless
+
+# Capture daily data
+python -m uwos.uw_dashboard_capture --trade-date 2026-04-08 --base-dir c:\uw_root \
+  --preset mode-a-core --profile-dir tokens\uw_playwright_profile_v2 --browser-channel msedge
 ```
 
-Install browser dependency once:
+**Requires:** `pip install playwright && python -m playwright install chromium`
 
+---
+
+## 8. Schwab Utilities
+
+### Live Quotes
 ```bash
-pip install playwright
-python -m playwright install chromium
+python -m uwos.schwab_quotes --symbols-csv AAPL,SPY --chain-symbols-csv AAPL --strike-count 8
 ```
 
-## How to use with AI (best workflow)
-1) Run the script -> get `SHORTLIST_YYYY-MM-DD.md`
-2) Upload/paste that into AI and ask:
-   - "Audit these trades under the rulebook. Which 3 are most likely to fail and why?"
-   - "Which 3 are highest quality Prime and which are Tactical?"
-
-The script is the calculator. The AI is the risk manager.
-
-## Customize
-Edit `uwos/rulebook_config.yaml`:
-- Width tiers
-- SHIELD anchor whitelist
-- DTE ranges
-- Credit/debit gates
-
-## Live Schwab Service
-Use `uwos/schwab_auth.py` as a reusable live data layer for trading queries.
-
-CLI wrapper:
-
+### Position Analysis
 ```bash
-python -m uwos.schwab_quotes --no-interactive-login --symbols-csv AAPL,MSFT,SPY --chain-symbols-csv AAPL,SPY --strike-count 8 --save-json-dir ./out/schwab
+python -m uwos.schwab_position_analyzer
 ```
 
-Reusable import:
-
-```python
-from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
-
-config = SchwabAuthConfig.from_env()
-svc = SchwabLiveDataService(config=config, interactive_login=False)
-snapshot = svc.snapshot(symbols=["AAPL", "SPY"], chain_symbols=["AAPL"], strike_count=8)
-context = snapshot["trading_query_context"]
-```
-
-### Build Final Live Strategy Table From Shortlist
-This command takes your shortlist, extracts ticker/leg symbols, fetches live option chains for those tickers, and writes a final table priced with live option quotes.
-
+### Token Refresh (when expired)
 ```bash
-python -m uwos.pricer --shortlist-csv ./out/shortlist_trades_2026-02-05.csv --out-dir ./out/live --save-chain-dir ./out/live/chains_full
+del "c:\uw_root\tokens\schwab_token.json"
+python -m uwos.schwab_position_analyzer --manual-auth
 ```
 
-Outputs:
-- `out/live/live_trade_table_YYYY-MM-DD.csv` (enriched, all rows)
-- `out/live/live_trade_table_YYYY-MM-DD_final.csv` (only `is_final_live_valid=true`)
+---
 
-### Exact Spread Backtest (Ticker + Exact Legs)
-Use `uwos/exact_spread_backtester.py` to replay exact spread setups (ticker, strategy, long/short OCC legs, expiry) against historical option snapshots and expiry outcomes.
+## Claude Code Integration
 
-Example:
+### Slash Commands
 
-```bash
-python -m uwos.exact_spread_backtester \
-  --setups-csv ./out/shortlist_trades_2026-02-06_mode_a.csv \
-  --signal-date 2026-02-06 \
-  --root-dir ./ \
-  --out-dir ./out/exact_backtest_2026-02-06 \
-  --entry-source auto \
-  --entry-price-model conservative \
-  --exit-mode quotes_then_expiry \
-  --exit-price-model conservative
+| Command | What |
+|---------|------|
+| `/daily-pipeline YYYY-MM-DD` | Run full 2-stage pipeline for a date |
+| `/swing-trend` | Multi-day swing trend analysis |
+| `/trend-analysis` | Historical replay trend analysis |
+| `/wheel` | Wheel strategy pipeline (CSP/CC) |
+
+### Skills (auto-triggered)
+
+| Skill | Triggers On |
+|-------|------------|
+| `daily-pipeline` | "run pipeline", "daily analysis", "best trades for" |
+| `swing-trend` | "swing trend", "lookback", "weekly trend" |
+| `trade-desk` | Trade monitoring and position management |
+
+Commands: `.claude/commands/` — Skills: `.claude/skills/`
+
+---
+
+## Configuration
+
+Main config: `uwos/rulebook_config_goal_holistic_claude.yaml`
+
+| Section | What It Controls |
+|---------|-----------------|
+| `fire:` | Debit spread DTE range, width tiers, OTM caps, breakeven distance |
+| `shield:` | Credit spread DTE, short strike OTM% (0.18 targets 20-30δ), sigma factors |
+| `gates:` | Width bounds, credit/debit ratios, max risk per trade |
+| `approval:` | Likelihood thresholds, dynamic delta cap, GEX regime, entry tolerance |
+| `high_beta:` | Special rules for TSLA/NVDA/MU/PLTR |
+
+### Tuning History
+
+| Version | Date | Key Changes |
+|---------|------|-------------|
+| T6 | Mar 2026 | Macro regime gate (SPY/VIX), bear trade unblock, entry tolerance |
+| T7 | Apr 2026 | Dynamic SHIELD delta cap (IVR/DTE/VIX/GEX-aware), OTM 0.12→0.18, macro reuse, sentinel normalization |
+
+---
+
+## Project Structure
+
+```
+c:\uw_root/
+├── .claude/commands/          # Slash commands (/daily-pipeline, /swing-trend, etc.)
+├── .claude/skills/            # Auto-triggered skills (daily-pipeline, trade-desk, etc.)
+├── .env                       # API credentials (gitignored)
+├── tokens/                    # OAuth tokens (gitignored)
+├── uwos/                      # Python package
+│   ├── run_mode_a_two_stage.py       # Daily pipeline (Stage-1 + Stage-2)
+│   ├── eod_trade_scan_mode_a.py      # Stage-1 discovery engine
+│   ├── setup_likelihood_backtest.py  # Historical backtest
+│   ├── trade_monitor.py              # Position monitoring + ntfy alerts
+│   ├── dip_scanner.py                # S&P 500 dip screener
+│   ├── schwab_auth.py                # Schwab OAuth + live data
+│   ├── schwab_position_analyzer.py   # Position enrichment
+│   ├── swing_trend_pipeline.py       # Multi-day trend pipeline
+│   ├── pricer.py                     # Live spread pricer
+│   ├── generate_whale_summary.py     # Whale trade summarizer
+│   └── rulebook_config_goal_holistic_claude.yaml  # Main config
+├── YYYY-MM-DD/                # Daily data folders (5 UW files + expert trade table)
+└── out/                       # Pipeline outputs
 ```
 
-Core behavior:
-- Entry pricing from historical `hot-chains` / `chain-oi-changes` snapshots (or input `entry_net`).
-- Entry gate enforcement from `entry_gate` (rows failing the gate are marked skipped).
-- Exit valuation via:
-  - `quotes_then_expiry`: use `exit_date` leg quotes if provided, otherwise expiry intrinsic.
-  - `expiry_intrinsic`: settle from underlying close on/before expiry.
-- Status flags per row (`completed`, `skipped_gate_fail`, `open_not_expired`, `failed_missing_exit_price`).
+---
 
-Outputs:
-- `trade_level_results.csv`
-- `summary.json`
-- `summary_by_strategy.csv`
-- `summary_by_ticker_setup.csv`
+## Glossary
 
-Optional validation against actual trades:
-
-```bash
-python -m uwos.exact_spread_backtester \
-  --setups-csv ./my_exact_setups.csv \
-  --root-dir ./ \
-  --out-dir ./out/exact_backtest_validate \
-  --actual-trades-csv ./my_actual_trades.csv
-```
-
-Validation output files:
-- `validation_matches.csv`
-- `validation_summary.json`
-
-Expected setup columns (minimum):
-- `ticker`, `strategy`, `expiry`, `short_leg`, `long_leg`
-- plus either `signal_date` (or `--signal-date`)
-- optional: `entry_gate`, `entry_net`, `exit_date`, `exit_net`, `qty`, `trade_id`
-
-Expected actual-trades validation columns:
-- `realized_pnl`
-- and either `trade_id` for direct matching, or shared keys such as
-  `ticker`, `strategy`, `signal_date`, `expiry`, `short_leg`, `long_leg`
-
-## Trade Playbook Pipeline
-Use this to monitor short-term risk and long-term performance drift from your realized trade log.
-
-Run all stages:
-
-```bash
-python -m uwos.run_trade_playbook --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-```
-
-Run directly from Google Sheet CSV export URL (auto-builds `cleaned_realized_trades` each run):
-
-```bash
-python -m uwos.run_trade_playbook --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-```
-
-Run from Google Sheet but only ingest yellow-highlighted rows (plus month header rows for date context):
-
-```bash
-python -m uwos.run_trade_playbook --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-```
-
-Or run each stage separately:
-
-```bash
-python -m uwos.daily_risk_monitor --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --open-positions-csv ./out/open_positions.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python -m uwos.weekly_edge_report --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python -m uwos.monthly_longitudinal_review --realized-csv ./out/trade_performance_review_manual_options_full/cleaned_realized_trades.csv --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-```
-
-Run each stage directly from Google Sheet URL:
-
-```bash
-python -m uwos.daily_risk_monitor --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python -m uwos.weekly_edge_report --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python -m uwos.monthly_longitudinal_review --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-```
-
-Run each stage directly from Google Sheet URL with yellow-only filtering:
-
-```bash
-python -m uwos.daily_risk_monitor --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python -m uwos.weekly_edge_report --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-python -m uwos.monthly_longitudinal_review --sheet-csv-url "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID>" --sheet-row-filter yellow --config ./uwos/rulebook_config.yaml --out-dir ./out/playbook
-```
-
-Main outputs:
-- `out/playbook/daily_risk_monitor.md`
-- `out/playbook/weekly_edge_report.md`
-- `out/playbook/monthly_longitudinal_review.md`
-- `out/playbook/playbook_run_summary.md`
-
-Dependency note:
-- `--sheet-row-filter yellow` uses XLSX style parsing and requires `openpyxl` (`python -m pip install openpyxl`).
-
-### Windows Task Scheduler (auto daily/weekly/monthly)
-
-Register tasks (default: daily 16:45, weekly Friday 17:15, monthly day-1 18:00):
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File c:\uw_root\scripts\register_playbook_tasks.ps1
-```
-
-Remove tasks:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File c:\uw_root\scripts\unregister_playbook_tasks.ps1
-```
-
-## Historical Trend Pipeline (Daily + Weekly)
-Use this to aggregate all historical replay folders into longitudinal trend views so decisions are based on multi-day/weekly behavior, not only one-day snapshots.
-
-Run against replay compare history:
-
-```bash
-python -m uwos.historical_trend_pipeline --search-root c:\uw_root\out\replay_compare --lookback-days 45
-```
-
-Generate one consolidated recommendation file from trend history (auto-picks strongest variant in the filtered window):
-
-```bash
-python -m uwos.historical_trend_pipeline --search-root c:\uw_root\out\replay_compare --lookback-days 45 --recommendation-top-n 20
-```
-
-`final_trade_recommendations_from_trends.md` enforces `--recommendation-min-proxy-pf 1.15` by default (override if needed).
-It also enforces `--recommendation-min-shield 2` by default (if qualifying SHIELD setups exist).
-
-Run against a specific date range and only selected variants:
-
-```bash
-python -m uwos.historical_trend_pipeline --search-root c:\uw_root\out\replay_compare --start-date 2026-02-01 --end-date 2026-02-26 --variants baseline transition_moderate holistic_newstrategy_pf115_rebalanced_v3
-```
-
-Main outputs (under `<search-root>/trend_analysis/` by default):
-- `run_inventory.csv` (all discovered runs + artifact paths)
-- `daily_variant_metrics.csv` (daily metrics per variant)
-- `weekly_variant_metrics.csv` (weekly rollups + WoW deltas)
-- `ticker_raw_rows.csv` (raw ticker rows from final/gate-pass tables)
-- `ticker_daily_metrics.csv` (daily ticker aggregates)
-- `ticker_weekly_metrics.csv` (weekly ticker aggregates)
-- `ticker_persistence.csv` (recurring names + slope stats)
-- `drop_reason_daily.csv` (drop reason concentration trends)
-- `final_trade_recommendations_from_trends.csv` (single consolidated recommendation table from the past-N-day window)
-- `final_trade_recommendations_from_trends.md` (single consolidated recommendation report with Core/Tactical/Watch and FIRE/SHIELD tags)
-- `summary.md` (quick executive summary)
-- `metadata.json` (run/filter metadata)
-
-Open consolidated recommendations directly in VS Code (no browser links):
-
-```powershell
-code c:\uw_root\out\replay_compare\trend_analysis\final_trade_recommendations_from_trends.md
-```
-
-## X Profile Scraper (Logged-in Session)
-Scrape public posts from an X profile (text, timestamps, engagement, media URLs), with per-post screenshots for later strategy analysis.
-The scraper keeps text-only, media-only (screenshot/image), and text+media posts.
-
-Manual login bootstrap (one-time or when session expires):
-
-```bash
-python -m uwos.x_profile_scraper --handle elonmusk --manual-login-only --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless
-```
-
-Run scraper:
-
-```bash
-python -m uwos.x_profile_scraper --handle elonmusk --run-date 2026-02-23 --base-dir c:\uw_root --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless --max-posts 120 --time-filter past_month --capture-screenshots --download-media
-```
-
-Use this-year filter:
-
-```bash
-python -m uwos.x_profile_scraper --handle elonmusk --run-date 2026-02-23 --base-dir c:\uw_root --time-filter this_year --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless
-```
-
-Use explicit date bounds:
-
-```bash
-python -m uwos.x_profile_scraper --handle elonmusk --run-date 2026-02-23 --base-dir c:\uw_root --since-date 2026-01-01 --until-date 2026-02-23 --profile-dir tokens/x_playwright_profile --browser-channel msedge --no-headless
-```
-
-Outputs under:
-- `<base-dir>/<run-date>/x_scrapes/<handle>/posts.csv`
-- `<base-dir>/<run-date>/x_scrapes/<handle>/posts.jsonl`
-- `<base-dir>/<run-date>/x_scrapes/<handle>/scrape_summary.md`
-- `<base-dir>/<run-date>/x_scrapes/<handle>/screenshots/`
-- `<base-dir>/<run-date>/x_scrapes/<handle>/media/`
-
-Notes:
-- `--run-date` is output folder naming only.
-- Tweet filtering is controlled by `--time-filter` or `--since-date/--until-date`.
-- `--trade-date` still works as a backward-compatible alias for `--run-date`.
-
-
-
+| Term | Meaning |
+|------|---------|
+| **FIRE** | Debit spread track — Bull Call Debit, Bear Put Debit |
+| **SHIELD** | Credit spread track — Bull Put Credit, Bear Call Credit, Iron Condor |
+| **Core / Tactical / Watch** | Trade quality tiers: full size / reduced / don't trade |
+| **IVR** | IV Rank (0–100) — how high current IV is vs its 52-week range |
+| **GEX** | Gamma Exposure — dealer hedging creates pinning or amplification |
+| **Pinned** | Positive GEX — suppresses moves (good for credit spreads) |
+| **Volatile** | Negative GEX — amplifies moves (bad for credit spreads) |
+| **Conviction** | 0–100 composite score (direction, efficiency, liquidity, whale) |
+| **Edge** | Backtest-derived expected profit percentage |
+| **Macro Regime** | SPY 5d return + VIX level → risk_off / neutral / risk_on |
+| **Entry Gate** | Max debit or min credit threshold to enter a trade |
+| **ntfy** | Push notification service — phone alerts for position verdicts |
+| **UW** | UnusualWhales — options flow data provider |
