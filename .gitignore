@@ -11,6 +11,8 @@ raw/
 _derived/
 .tmp_uw_pkg/
 [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
-.claude/
+.claude/*
+!.claude/commands/
+!.claude/skills/
 .agents/
 skills-lock.json
