@@ -209,8 +209,8 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
         # Near max profit
         if pct_max >= 85:
             return ("CLOSE", f"{pct_max:.0f}% of max profit — nothing left to harvest")
-        # ITM with low DTE
-        # ITM detection for credit positions
+
+        # ITM detection
         is_itm = False
         itm_pct = 0.0
         if strike > 0 and ul_price > 0:
@@ -221,15 +221,38 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
                 is_itm = True
                 itm_pct = (ul_price - strike) / strike * 100
 
-        # ITM + DTE < 14: ROLL immediately
+        # Assignment risk: deep ITM + DTE < 5 = likely assigned
+        if is_itm and dte >= 0 and dte <= 5 and abs(delta) > 0.85:
+            return ("CLOSE", f"ASSIGNMENT RISK: ITM {itm_pct:.0f}%%, delta {delta:+.2f}, {dte:.0f} DTE — close or roll NOW")
+
+        # ITM + DTE < 14: ROLL
         if is_itm and dte >= 0 and dte <= 14:
             return ("ROLL", f"ITM by {itm_pct:.1f}%% with {dte:.0f} DTE — roll now")
-        # ITM + deep (>5% ITM or delta > 0.50): ASSESS regardless of DTE
+
+        # Pin risk: within 1% of strike with DTE < 3
+        if not is_itm and dte >= 0 and dte <= 3 and strike > 0 and ul_price > 0:
+            dist = abs(ul_price - strike) / strike * 100
+            if dist < 1.5:
+                return ("CLOSE", f"PIN RISK: {dist:.1f}%% from strike, {dte:.0f} DTE — close to avoid assignment")
+
+        # ITM + deep (>5% or delta > 0.50): ASSESS regardless of DTE
         if is_itm and (itm_pct > 5 or abs(delta) > 0.50):
             return ("ASSESS", f"ITM by {itm_pct:.1f}%% (delta {delta:+.2f}) {dte:.0f} DTE — review, consider rolling")
         # ITM at all: ASSESS
         if is_itm:
             return ("ASSESS", f"ITM by {itm_pct:.1f}%% with {dte:.0f} DTE — monitor closely")
+
+        # Expiration week: DTE < 7 with less than 50% max = gamma risk
+        if dte >= 0 and dte <= 7 and pct_max < 50:
+            return ("CLOSE", f"{pct_max:.0f}%% max with {dte:.0f} DTE — expiration week gamma risk")
+
+        # Earnings proximity: CLOSE or ASSESS if earnings within 7 days
+        earnings_days = safe(c.get("days_to_earnings"), 999)
+        if 0 < earnings_days <= 7:
+            if pct_max > 0:
+                return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take {pct_max:.0f}%% profit before binary event")
+            else:
+                return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — at {pct_max:.0f}%% max, assess hold vs close")
 
         # Approaching max (>75%)
         if pct_max >= 75:
@@ -352,8 +375,13 @@ def run_scan() -> List[Dict]:
         prev = prev_state.get(key, {})
         prev_verdict = prev.get("verdict", "NEW")
 
-        # Detect transitions
-        if prev_verdict != verdict:
+        # Detect transitions OR significant worsening within same verdict
+        prev_pnl = prev.get("pnl", 0)
+        worsened = (verdict in ("ASSESS", "CLOSE") and
+                    prev_verdict == verdict and
+                    pnl < prev_pnl - 500)  # re-alert if loss grew by $500+
+
+        if prev_verdict != verdict or worsened:
             alert = {
                 "symbol": key,
                 "underlying": underlying,
@@ -497,16 +525,24 @@ def run_trade_ideas_scan() -> List[Dict]:
 
 
 def should_run_ideas_scan() -> bool:
-    """Run trade ideas scan twice daily: ~10:00 AM and ~1:00 PM ET."""
+    """Run trade ideas scan every hour during market hours (on the hour)."""
     try:
         from zoneinfo import ZoneInfo
     except ImportError:
         from backports.zoneinfo import ZoneInfo
     now = dt.datetime.now(ZoneInfo("America/New_York"))
-    hour = now.hour
-    minute = now.minute
-    # Run at 10:00-10:30 and 13:00-13:30 windows
-    return (hour == 10 and minute < 30) or (hour == 13 and minute < 30)
+    # Run at the top of each hour during market hours: 10, 11, 12, 1, 2, 3 PM
+    return 10 <= now.hour <= 15 and now.minute < 30
+
+
+def _is_market_open_window() -> bool:
+    """True during the first 30 min after market open (9:30-10:00 ET)."""
+    try:
+        from zoneinfo import ZoneInfo
+    except ImportError:
+        from backports.zoneinfo import ZoneInfo
+    now = dt.datetime.now(ZoneInfo("America/New_York"))
+    return now.hour == 9 and 30 <= now.minute <= 59
 
 
 def run_once(force: bool = False, manual: bool = False) -> int:
@@ -522,12 +558,28 @@ def run_once(force: bool = False, manual: bool = False) -> int:
     _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] Running position scan...")
     total_alerts = 0
 
+    # Heartbeat: send once at market open (9:30-10:00 ET)
+    if _is_market_open_window():
+        state = load_state()
+        close_count = sum(1 for v in state.values() if v.get("verdict") == "CLOSE")
+        assess_count = sum(1 for v in state.values() if v.get("verdict") == "ASSESS")
+        notify("Trade Desk Active",
+               f"Monitor running. {close_count} CLOSE, {assess_count} ASSESS positions.",
+               priority="low", tags="white_check_mark")
+
     # Mode 1: Position monitor
     try:
         alerts = run_scan()
     except Exception as e:
+        err_msg = str(e)[:200]
         _safe_print(f"  [ERROR] Position scan failed: {e}")
-        notify("Monitor Error", str(e)[:200], priority="high", tags="warning")
+        # Specific auth failure detection
+        if "token" in err_msg.lower() or "auth" in err_msg.lower() or "401" in err_msg:
+            notify("AUTH EXPIRED",
+                   "Schwab token expired. Run in terminal: del c:\\uw_root\\tokens\\schwab_token.json && python -m uwos.schwab_position_analyzer --manual-auth",
+                   priority="urgent", tags="rotating_light")
+        else:
+            notify("Monitor Error", err_msg, priority="high", tags="warning")
         alerts = []
 
     # In manual mode, send ALL current CLOSE/ROLL/ASSESS verdicts (not just transitions)
