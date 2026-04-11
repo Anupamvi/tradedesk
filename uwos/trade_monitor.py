@@ -375,11 +375,30 @@ def run_scan() -> List[Dict]:
         prev = prev_state.get(key, {})
         prev_verdict = prev.get("verdict", "NEW")
 
-        # Detect transitions OR significant worsening within same verdict
+        # Detect transitions with hysteresis to prevent flip-flopping
+        # Once escalated (HOLD->ASSESS or ASSESS->CLOSE), require significant
+        # improvement to de-escalate — prevents noisy ASSESS->HOLD->ASSESS cycles
         prev_pnl = prev.get("pnl", 0)
+
+        # Hysteresis: suppress de-escalation unless improvement is significant
+        VERDICT_RANK = {"HOLD": 0, "ASSESS": 1, "ROLL": 2, "CLOSE": 3}
+        cur_rank = VERDICT_RANK.get(verdict, 0)
+        prev_rank = VERDICT_RANK.get(prev_verdict, 0)
+        is_escalation = cur_rank > prev_rank
+        is_deescalation = cur_rank < prev_rank
+
+        # Allow de-escalation only if P&L improved by $300+ or 10%+ from when it escalated
+        if is_deescalation:
+            pnl_improvement = pnl - prev_pnl
+            if pnl_improvement < 300:
+                # Suppress de-escalation — not enough improvement to justify
+                verdict = prev_verdict
+                reason = prev.get("reason", reason) + " (sticky)"
+
+        # Re-alert if worsening within same ASSESS/CLOSE verdict by $500+
         worsened = (verdict in ("ASSESS", "CLOSE") and
                     prev_verdict == verdict and
-                    pnl < prev_pnl - 500)  # re-alert if loss grew by $500+
+                    pnl < prev_pnl - 500)
 
         if prev_verdict != verdict or worsened:
             alert = {
