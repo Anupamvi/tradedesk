@@ -293,6 +293,13 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
         # OTM 3-5% with DTE < 35
         if otm_pct > 3 and dte >= 0 and dte < 35:
             return ("ASSESS", f"OTM {otm_pct:.1f}%% with {dte:.0f} DTE")
+        # Earnings proximity for debit: IV crush risk
+        earnings_days = safe(c.get("days_to_earnings"), 999)
+        if 0 < earnings_days <= 5:
+            if pnl_pct > 0:
+                return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take profit, IV crush risk after")
+            else:
+                return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — IV crush risk, assess exit")
         return ("HOLD", f"{'ITM' if otm_pct <= 0 else f'OTM {otm_pct:.1f}%%'}, {dte:.0f} DTE")
 
     return ("HOLD", "unknown")
