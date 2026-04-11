@@ -210,20 +210,36 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
         if pct_max >= 85:
             return ("CLOSE", f"{pct_max:.0f}% of max profit — nothing left to harvest")
         # ITM with low DTE
-        if dte >= 0 and dte <= 14 and strike > 0 and ul_price > 0:
-            is_itm = False
+        # ITM detection for credit positions
+        is_itm = False
+        itm_pct = 0.0
+        if strike > 0 and ul_price > 0:
             if pc == "PUT" and qty < 0 and ul_price < strike:
                 is_itm = True
+                itm_pct = (strike - ul_price) / strike * 100
             elif pc == "CALL" and qty < 0 and ul_price > strike:
                 is_itm = True
-            if is_itm:
-                return ("ROLL", f"ITM with {dte:.0f} DTE — roll to extend duration")
+                itm_pct = (ul_price - strike) / strike * 100
+
+        # ITM + DTE < 14: ROLL immediately
+        if is_itm and dte >= 0 and dte <= 14:
+            return ("ROLL", f"ITM by {itm_pct:.1f}%% with {dte:.0f} DTE — roll now")
+        # ITM + deep (>5% ITM or delta > 0.50): ASSESS regardless of DTE
+        if is_itm and (itm_pct > 5 or abs(delta) > 0.50):
+            return ("ASSESS", f"ITM by {itm_pct:.1f}%% (delta {delta:+.2f}) {dte:.0f} DTE — review, consider rolling")
+        # ITM at all: ASSESS
+        if is_itm:
+            return ("ASSESS", f"ITM by {itm_pct:.1f}%% with {dte:.0f} DTE — monitor closely")
+
         # Approaching max (>75%)
         if pct_max >= 75:
             return ("CLOSE", f"{pct_max:.0f}% of max — past 75%% target")
         # Good profit, low DTE
         if pct_max >= 50 and dte >= 0 and dte <= 10:
             return ("CLOSE", f"{pct_max:.0f}% max with {dte:.0f} DTE — diminishing returns")
+        # High delta without being ITM (approaching ATM)
+        if abs(delta) > 0.45:
+            return ("ASSESS", f"delta {delta:+.2f} — approaching ATM, {pct_max:.0f}%% max, {dte:.0f} DTE")
         # Deep loss on credit
         if pct_max <= -80:
             return ("ASSESS", f"{pct_max:.0f}% — deep loss, review thesis")
