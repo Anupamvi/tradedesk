@@ -44,31 +44,31 @@ def load_notify_config() -> Dict[str, str]:
 
 def send_ntfy(topic: str, title: str, body: str, priority: str = "default",
               tags: str = "") -> bool:
-    """Push notification via ntfy.sh."""
+    """Push notification via ntfy.sh. Retries once on failure."""
     if not topic:
         return False
-    try:
-        # Use JSON publish to avoid header encoding issues on Windows
-        payload = {
-            "topic": topic,
-            "title": _strip_emoji(title),
-            "message": body,
-            "priority": _priority_int(priority),
-        }
-        if tags:
-            payload["tags"] = [t.strip() for t in tags.split(",")]
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            "https://ntfy.sh",
-            data=data,
-            method="POST",
-        )
-        req.add_header("Content-Type", "application/json")
-        urllib.request.urlopen(req, timeout=10)
-        return True
-    except Exception as e:
-        _safe_print(f"  [ntfy] FAILED: {e}")
-        return False
+    payload = {
+        "topic": topic,
+        "title": _strip_emoji(title),
+        "message": body,
+        "priority": _priority_int(priority),
+    }
+    if tags:
+        payload["tags"] = [t.strip() for t in tags.split(",")]
+    data = json.dumps(payload).encode("utf-8")
+
+    for attempt in range(2):  # retry once
+        try:
+            req = urllib.request.Request("https://ntfy.sh", data=data, method="POST")
+            req.add_header("Content-Type", "application/json")
+            urllib.request.urlopen(req, timeout=10)
+            return True
+        except Exception as e:
+            if attempt == 0:
+                time.sleep(2)  # brief pause before retry
+            else:
+                _safe_print(f"  [ntfy] FAILED after retry: {e}")
+    return False
 
 
 def _strip_emoji(text: str) -> str:
@@ -102,19 +102,23 @@ def notify(title: str, body: str, priority: str = "default",
 # ---------------------------------------------------------------------------
 
 _spy_change_cache = None
+_spy_change_ts = None
 
 
 def _get_spy_change() -> float:
-    """Get SPY 5-day % change. Cached per session to avoid repeated API calls."""
-    global _spy_change_cache
-    if _spy_change_cache is not None:
+    """Get SPY 5-day % change. Cached for 10 min to avoid repeated API calls."""
+    global _spy_change_cache, _spy_change_ts
+    now = dt.datetime.now()
+    if _spy_change_cache is not None and _spy_change_ts and (now - _spy_change_ts).seconds < 600:
         return _spy_change_cache
     try:
         from uwos.eod_trade_scan_mode_a import compute_macro_regime
         macro = compute_macro_regime(dt.date.today())
         _spy_change_cache = macro["spy_5d_ret"] * 100
+        _spy_change_ts = now
     except Exception:
         _spy_change_cache = 0.0
+        _spy_change_ts = now
     return _spy_change_cache
 
 
@@ -396,13 +400,16 @@ def run_scan() -> List[Dict]:
         is_escalation = cur_rank > prev_rank
         is_deescalation = cur_rank < prev_rank
 
-        # Allow de-escalation only if P&L improved by $300+ or 10%+ from when it escalated
+        # Allow de-escalation only if P&L improved by $300+
         if is_deescalation:
             pnl_improvement = pnl - prev_pnl
             if pnl_improvement < 300:
-                # Suppress de-escalation — not enough improvement to justify
                 verdict = prev_verdict
                 reason = prev.get("reason", reason) + " (sticky)"
+
+        # Update state with the FINAL verdict (after hysteresis), not the raw one
+        new_state[key]["verdict"] = verdict
+        new_state[key]["reason"] = reason
 
         # Re-alert if worsening within same ASSESS/CLOSE verdict by $500+
         worsened = (verdict in ("ASSESS", "CLOSE") and

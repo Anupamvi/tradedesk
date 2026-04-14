@@ -192,6 +192,31 @@ check("up 99%",                "HOLD",   equity(9900, 99))
 check("up 55%",                "HOLD",   equity(5500, 55))
 
 # ================================================================
+# BOUNDARY TESTS (audit v6)
+# ================================================================
+print("\n--- BOUNDARY TESTS ---", flush=True)
+
+# Credit: 50% max at DTE boundary
+check("50% max 10 DTE",        "CLOSE",  credit_put(100, 110, -0.20, 50, 10))
+check("50% max 11 DTE",        "HOLD",   credit_put(100, 110, -0.20, 50, 11))
+
+# Credit call: ITM assignment risk
+check("call ITM delta+0.90 3DTE","CLOSE", credit_call(100, 115, 0.90, -200, 3))
+check("call pin risk 2 DTE",    "CLOSE", credit_call(100, 99.5, 0.48, 40, 2))
+
+# Debit: OTM 4% with DTE 30 = ASSESS (3-5% range)
+check("debit OTM 4% 30 DTE",   "ASSESS", debit_call(200, 192, 0.25, 30, -150, -30))
+
+# Debit: exactly -60% = CLOSE (boundary)
+check("debit exactly -60%",    "CLOSE",  debit_call(200, 180, 0.10, 50, -600, -60))
+
+# Equity: exactly -40% = CLOSE
+check("equity exactly -40%",   "CLOSE",  equity(-4000, -40))
+
+# Equity: exactly -25% = ASSESS
+check("equity exactly -25%",   "ASSESS", equity(-2500, -25))
+
+# ================================================================
 # NULL/EDGE CASES
 # ================================================================
 print("\n--- NULL/EDGE ---", flush=True)

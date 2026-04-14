@@ -22,11 +22,11 @@ Usage:
 """
 
 import argparse
-import csv
 import datetime as dt
 import io
 import json
 import sys
+import urllib.request
 import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -899,7 +899,12 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
     # Criteria: deep value (>20% off high), high quality (>65), bullish,
     # analyst upside >15%, not within 14 days of earnings
     # Position sizing: 2% of portfolio per stock buy (assuming $600K portfolio)
-    PORTFOLIO_VALUE = 600_000  # approximate — could be read from account
+    # Read actual portfolio value from Schwab account
+    try:
+        acct = svc.get_account_positions(account_index=0)
+        PORTFOLIO_VALUE = acct.get("balances", {}).get("total_value", 600_000)
+    except Exception:
+        PORTFOLIO_VALUE = 600_000  # fallback
     MAX_POSITION_PCT = 0.02   # 2% per stock buy
     MAX_SECTOR_RECS = 3       # max recommendations per sector
 
