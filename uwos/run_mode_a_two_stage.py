@@ -458,7 +458,7 @@ def candidate_uses_short_put_risk(strategy: str) -> bool:
 def run():
     ap = argparse.ArgumentParser(description="MODE A two-stage runner (discovery + live execution)")
     ap.add_argument("--base-dir", default=r"c:\uw_root\2026-02-05")
-    ap.add_argument("--config", default=str((Path(__file__).resolve().parent / "rulebook_config.yaml")))
+    ap.add_argument("--config", default=str((Path(__file__).resolve().parent / "rulebook_config_goal_holistic.yaml")))
     ap.add_argument("--out-dir", default=r"c:\uw_root\out")
     ap.add_argument("--top-trades", type=int, default=20)
     ap.add_argument("--output", default="")
@@ -985,13 +985,23 @@ def run():
         if gex_by_ticker:
             for col in ["net_gex", "gex_regime", "gex_support", "gex_resistance"]:
                 if col not in mdf.columns:
-                    mdf[col] = ""
+                    if col == "gex_regime":
+                        mdf[col] = ""
+                    else:
+                        mdf[col] = float("nan")
             for idx, row in mdf.iterrows():
                 t = str(row.get("ticker", "")).strip().upper()
                 gex_info = gex_by_ticker.get(t)
                 if gex_info:
                     for col, val in gex_info.items():
-                        mdf.at[idx, col] = str(val) if val is not None else ""
+                        if col == "gex_regime":
+                            mdf.at[idx, col] = str(val) if val is not None else ""
+                        else:
+                            # net_gex, gex_support, gex_resistance are numeric
+                            try:
+                                mdf.at[idx, col] = float(val) if val is not None else float("nan")
+                            except (TypeError, ValueError):
+                                mdf.at[idx, col] = float("nan")
             print(f"  [gex] Enriched {len(gex_by_ticker)} tickers with GEX regime data", file=sys.stderr)
 
     # Reuse Stage-1 macro data if available; otherwise fetch fresh
@@ -1026,6 +1036,8 @@ def run():
         min_edge_pct_shield = min_edge_pct
     min_signals = fnum(approval_cfg.get("min_signals", 100))
     tactical_min_signals = fnum(approval_cfg.get("tactical_min_signals", min_signals))
+    max_same_direction_pct = fnum(engine_cfg.get("max_same_direction_pct", 0.70))
+    max_same_expiry_count = int(engine_cfg.get("max_same_expiry_count", 8))
     require_invalidation_clear = bool(approval_cfg.get("require_invalidation_clear", False))
     block_invalidation_warning = bool(approval_cfg.get("block_invalidation_warning", False))
     allow_stage1_watch_promotion = bool(approval_cfg.get("allow_stage1_watch_promotion", True))
@@ -1079,6 +1091,8 @@ def run():
     else:
         use_asof_close_for_invalidation = bool(asof < dt.date.today())
     gates_cfg_local = cfg.get("gates", {}) if isinstance(cfg, dict) else {}
+    tactical_max_debit_pct_width = fnum(gates_cfg_local.get("tactical_max_debit_pct_width", 0.35))
+    min_live_reward_risk = fnum(gates_cfg_local.get("min_live_reward_risk", 1.50))
     min_credit_pct_width_cfg = fnum(gates_cfg_local.get("min_credit_pct_width", 0.30))
     max_credit_pct_width_cfg = fnum(gates_cfg_local.get("max_credit_pct_width", 0.55))
     if not np.isfinite(min_credit_pct_width_cfg) or min_credit_pct_width_cfg <= 0:
@@ -1434,6 +1448,14 @@ def run():
             shield_live_valid_overrides_quality and track == "SHIELD" and ok_live
         )
 
+        # [T9] Live R/R quality check — catch trades where live price degrades the payoff
+        _live_max_profit = fnum(row.get("live_max_profit"))
+        _live_max_loss = fnum(row.get("live_max_loss"))
+        if np.isfinite(_live_max_profit) and np.isfinite(_live_max_loss) and _live_max_loss > 0:
+            _live_rr = _live_max_profit / _live_max_loss
+            if np.isfinite(min_live_reward_risk) and _live_rr < min_live_reward_risk:
+                blockers.append(f"live_rr_weak:{_live_rr:.2f}<{min_live_reward_risk:.2f}")
+
         if require_likelihood_pass:
             verdict = str(row.get("verdict", "")).strip().upper()
             edge = fnum(row.get("edge_pct"))
@@ -1498,7 +1520,9 @@ def run():
                     blockers.append("spot_live_missing")
             elif np.isfinite(spot_asof) and spot_asof > 0:
                 drift = fnum(row.get("spot_asof_live_drift_pct"))
-                if np.isfinite(drift) and drift > max_spot_asof_drift_pct:
+                if not np.isfinite(drift):
+                    blockers.append("spot_drift_unknown")
+                elif drift > max_spot_asof_drift_pct:
                     blockers.append(f"spot_drift:{drift:.2%}>{max_spot_asof_drift_pct:.2%}")
 
         long_strike = fnum(row.get("long_strike"))
@@ -1692,6 +1716,14 @@ def run():
         )
         if np.isfinite(_tac_edge) and (not np.isfinite(edge) or edge < _tac_edge):
             return "Watch"
+        # [T9] Tactical debit/width cap — block expensive-for-width Tactical trades
+        if _strat in {"Bull Call Debit", "Bear Put Debit"}:
+            _tac_width = fnum(row.get("width_live")) or fnum(row.get("width"))
+            _tac_net = fnum(row.get("live_net_bid_ask")) or fnum(row.get("live_net_mark"))
+            if np.isfinite(_tac_width) and _tac_width > 0 and np.isfinite(_tac_net):
+                _tac_debit_pct = _tac_net / _tac_width
+                if np.isfinite(tactical_max_debit_pct_width) and _tac_debit_pct > tactical_max_debit_pct_width:
+                    return "Watch"
         sig = fnum(row.get("signals"))
         if np.isfinite(tactical_min_signals) and (not np.isfinite(sig) or sig < tactical_min_signals):
             return "Watch"
@@ -1875,9 +1907,11 @@ def run():
             ascending=[False, False],
         ).reset_index(drop=True)
 
-        # Enforce sector cap on the merged result.
+        # Enforce sector cap, expiry concentration, and direction balance.
         _selected_indices = []
         _sector_counts = defaultdict(int)
+        _expiry_counts = defaultdict(int)
+        _direction_counts = {"bull": 0, "bear": 0}
         _total_selected = 0
         for _sidx, _srow in _rest.iterrows():
             if _total_selected >= _remaining_budget:
@@ -1887,7 +1921,19 @@ def run():
             _sector_limit = max(1, int(round(max_sector_share * _top_n)))
             if _sector_counts[_ssector] >= _sector_limit:
                 continue
+            # [T9] Expiry concentration cap
+            _sexpiry = str(_srow.get("expiry", _srow.get("expiry_date", ""))).strip()
+            if _sexpiry and _expiry_counts[_sexpiry] >= max_same_expiry_count:
+                continue
+            # [T9] Direction balance cap
+            _sstrat = str(_srow.get("strategy", "")).strip()
+            _sdir = "bear" if _sstrat in {"Bear Put Debit", "Bear Call Credit"} else "bull"
+            _dir_limit = max(1, int(round(max_same_direction_pct * _top_n)))
+            if _direction_counts[_sdir] >= _dir_limit:
+                continue
             _sector_counts[_ssector] += 1
+            _expiry_counts[_sexpiry] += 1
+            _direction_counts[_sdir] += 1
             _total_selected += 1
             _selected_indices.append(_sidx)
         _rest_selected = _rest.loc[_selected_indices]
@@ -2080,6 +2126,8 @@ def run():
                     watch_reason_flags.append("shield_core_fail")
                 elif b.startswith("shield_delta"):
                     watch_reason_flags.append("shield_delta_fail")
+                elif b.startswith("live_rr_weak"):
+                    watch_reason_flags.append("live_rr_weak")
                 elif b.startswith("fire_delta"):
                     watch_reason_flags.append("fire_delta_fail")
                 elif b.startswith("fire_gex"):
@@ -2581,7 +2629,10 @@ def run():
             "final_dropped": int(len(dropped_final)),
         },
     }
-    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    # Atomic write: write to temp file then rename to prevent corruption from parallel runs
+    manifest_tmp = manifest_path.with_suffix(".json.tmp")
+    manifest_tmp.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    manifest_tmp.replace(manifest_path)
     print(f"Wrote: {output_path}")
     print(f"Wrote: {manifest_path}")
     print(f"Wrote: {dropped_csv}")

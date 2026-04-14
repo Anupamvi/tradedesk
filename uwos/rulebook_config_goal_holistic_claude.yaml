@@ -51,6 +51,8 @@ engine:
   min_per_track: 1
   min_shield_in_output: 5              # [T5] was: 3 — reserve 5 output slots for best SHIELD trades
   min_bear_in_output: 2                # [T8] reserve 2 output slots for bear FIRE trades
+  max_same_direction_pct: 0.70         # [T9] max 70% of approved can be same direction (bull or bear)
+  max_same_expiry_count: 8             # [T9] max 8 trades sharing one expiry date — forces DTE diversification
   include_watch_candidates: true
 
 gates:
@@ -58,6 +60,8 @@ gates:
   min_credit_pct_width: 0.30
   max_credit_pct_width: 0.55
   max_debit_pct_width: 0.45           # [T6] was: 0.35 — ATM strikes cost more; 35% was rejecting valid near-ATM setups
+  tactical_max_debit_pct_width: 0.35  # [T9] Tactical trades must have tighter cost/width — prevents 50%+ debit/width from leaking P&L
+  min_live_reward_risk: 1.50          # [T9] Stage-2 live R/R floor — CORZ at 0.94x would have been blocked
   min_leg_open_interest: 100
   min_leg_volume: 40                  # [T1] was: 20 — better fill quality
   max_leg_spread_pct: 0.12            # [T1] was: 0.18 — reduce bid-ask slippage impact
@@ -126,7 +130,7 @@ approval:
   shield_live_valid_min_no_touch_floor: 50.0  # [T3] new — floor even for live-valid override path
   shield_live_valid_min_edge_floor: 4.0        # [T3] new — minimum edge even for live-valid override
   min_edge_pct: 8.0
-  min_edge_pct_bear: 5.0              # [T8] bears get lower edge from bull-trained backtest; 5% prevents false FAIL
+  min_edge_pct_bear: 7.0              # [T9] was: 5.0 — backtest shows bears are net losers at 5%; raised to 7% for real edge
   min_edge_pct_shield: 5.0            # [T8] credit spreads/ICs same; backtest model is directional-agnostic for credits
   min_signals: 120
   min_credit_no_touch_pct: 25.0       # [T5] was: 65.0 — lowered; realistic for current vol. Edge gate still protects PF.
