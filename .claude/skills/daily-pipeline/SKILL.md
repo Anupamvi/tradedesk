@@ -61,8 +61,8 @@ One-line bullets explaining why each was blocked.
 
 The pipeline uses **width-based entry gate tolerance** (professional swing-trade standard):
 - Formula: `tolerance = max(floor, spread_width × width_pct)`
-- Config: `entry_tolerance_width_pct: 0.025` (2.5%), `entry_tolerance_floor: 0.25` ($0.25)
-- Example: $15 spread → tolerance = max($0.25, $15 × 0.025) = **$0.375**
+- Config: `entry_tolerance_width_pct: 0.05` (5%), `entry_tolerance_floor: 0.30` ($0.30)
+- Example: $15 spread → tolerance = max($0.30, $15 × 0.05) = **$0.75**
 - Near-miss trades within tolerance are approved as normal — no penalty for small slippage
 - Applied consistently in both the pricer (Stage-2) and the approval stage
 

@@ -47,7 +47,7 @@ One-line bullets explaining why each was blocked.
 ## Entry Gate Tolerance
 
 Width-based entry gate tolerance (pro swing-trade standard):
-- `tolerance = max(floor, spread_width × width_pct)` — config: 2.5% width, $0.25 floor
+- `tolerance = max(floor, spread_width × width_pct)` — config: 5% width, $0.30 floor
 - Near-miss trades within tolerance are approved — no penalty for small slippage
 
 ## Error Handling

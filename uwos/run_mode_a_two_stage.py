@@ -121,12 +121,19 @@ def safe_git_commit() -> str:
 
 def unzip_inputs_if_needed(base_dir: Path, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
-    existing = sorted(out_dir.glob("*.csv"))
-    if existing:
-        return
     zips = sorted(base_dir.glob("*.zip"))
     if not zips:
         raise FileNotFoundError(f"No input CSV/ZIP files found in {base_dir}")
+    # Re-extract if any ZIP is newer than the oldest extracted CSV
+    existing = sorted(out_dir.glob("*.csv"))
+    if existing:
+        oldest_csv = min(p.stat().st_mtime for p in existing)
+        newest_zip = max(p.stat().st_mtime for p in zips)
+        if newest_zip <= oldest_csv:
+            return  # cache is fresh
+        # Stale cache — clear and re-extract
+        for p in existing:
+            p.unlink()
     for zp in zips:
         with zipfile.ZipFile(zp, "r") as zf:
             names = sorted([n for n in zf.namelist() if n.lower().endswith(".csv")])
