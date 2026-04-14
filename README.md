@@ -161,10 +161,8 @@ python -m uwos.run_trade_playbook \
 
 **Run:**
 ```bash
-python -m uwos.dip_scanner
+python -m uwos.trade_ideas
 ```
-
-Integrated into the trade monitor — runs automatically at 10 AM and 1 PM ET.
 
 ---
 

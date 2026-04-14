@@ -1009,6 +1009,8 @@ def run():
     shield_live_valid_overrides_quality = bool(
         approval_cfg.get("shield_live_valid_overrides_quality", False)
     )
+    shield_live_valid_min_no_touch = fnum(approval_cfg.get("shield_live_valid_min_no_touch_floor", 0.0))
+    shield_live_valid_min_edge = fnum(approval_cfg.get("shield_live_valid_min_edge_floor", 0.0))
     enable_dual_books = bool(approval_cfg.get("enable_dual_books", True))
     core_size_mult = fnum(approval_cfg.get("core_size_mult", 1.00))
     tactical_size_mult = fnum(approval_cfg.get("tactical_size_mult", 0.50))
@@ -1665,13 +1667,30 @@ def run():
         shield_override_live = bool(
             shield_live_valid_overrides_quality and track_local == "SHIELD" and ok_live
         )
+        # T3 floor: even with live-valid override, enforce minimum quality floors
+        if shield_override_live:
+            _no_touch = fnum(row.get("credit_no_touch_pct"))
+            _edge = fnum(row.get("edge_pct"))
+            if np.isfinite(shield_live_valid_min_no_touch) and shield_live_valid_min_no_touch > 0:
+                if not np.isfinite(_no_touch) or _no_touch < shield_live_valid_min_no_touch:
+                    shield_override_live = False
+            if np.isfinite(shield_live_valid_min_edge) and shield_live_valid_min_edge > 0:
+                if not np.isfinite(_edge) or _edge < shield_live_valid_min_edge:
+                    shield_override_live = False
         if not bool(row.get("stage1_effective")) and not shield_override_live:
             return "Watch"
         conv = fnum(row.get("conviction"))
         if np.isfinite(tactical_min_conviction) and (not np.isfinite(conv) or conv < tactical_min_conviction):
             return "Watch"
         edge = fnum(row.get("edge_pct"))
-        if np.isfinite(tactical_min_edge_pct) and (not np.isfinite(edge) or edge < tactical_min_edge_pct):
+        _strat = str(row.get("strategy", "")).strip()
+        _is_bear_tac = _strat in {"Bear Put Debit", "Bear Call Credit"}
+        _tac_edge = (
+            min(tactical_min_edge_pct, min_edge_pct_bear) if _is_bear_tac
+            else min(tactical_min_edge_pct, min_edge_pct_shield) if track_local == "SHIELD"
+            else tactical_min_edge_pct
+        )
+        if np.isfinite(_tac_edge) and (not np.isfinite(edge) or edge < _tac_edge):
             return "Watch"
         sig = fnum(row.get("signals"))
         if np.isfinite(tactical_min_signals) and (not np.isfinite(sig) or sig < tactical_min_signals):
@@ -2061,6 +2080,14 @@ def run():
                     watch_reason_flags.append("shield_core_fail")
                 elif b.startswith("shield_delta"):
                     watch_reason_flags.append("shield_delta_fail")
+                elif b.startswith("fire_delta"):
+                    watch_reason_flags.append("fire_delta_fail")
+                elif b.startswith("fire_gex"):
+                    watch_reason_flags.append("fire_gex_blocked")
+                elif b.startswith("shield_gex"):
+                    watch_reason_flags.append("shield_gex_blocked")
+                elif b.startswith("ic_gex"):
+                    watch_reason_flags.append("ic_gex_blocked")
                 elif b.startswith("confidence_tier_blocked"):
                     watch_reason_flags.append("confidence_tier_blocked")
                 elif b.startswith("live_entry_gate_fail") or b.startswith("live_status:"):

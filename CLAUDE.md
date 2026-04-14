@@ -99,7 +99,7 @@ Automated options trading platform that screens, analyzes, and monitors trades u
 ### Critical Rules
 
 1. **Always read `.env` before giving credential/token file paths** — never guess
-2. **Run `python -m uwos.test_verdicts` before shipping any verdict engine changes** — 63 test cases must pass
+2. **Run `python -m uwos.test_verdicts` before shipping any verdict engine changes** — 64 test cases must pass
 3. **Schwab API is the primary real-time data source** — not yfinance. yfinance is fallback only for fundamentals
 4. **Credit trades get patience, debit trades get urgency** — different verdict matrices
 5. **Verdicts use hysteresis** — once escalated (HOLD→ASSESS), requires $300+ P&L improvement to de-escalate. Prevents flip-flopping
@@ -118,7 +118,7 @@ Automated options trading platform that screens, analyzes, and monitors trades u
 - ITM + (>5% or delta > 0.50) → ASSESS
 - ITM at all → ASSESS
 - DTE ≤ 7 + < 50% max → CLOSE (expiration week gamma)
-- Earnings ≤ 7 days + profitable → CLOSE
+- Earnings ≤ 7 days + ≥25% of max profit → CLOSE
 - ≥75% max → CLOSE
 - Delta > 0.45 → ASSESS (approaching ATM)
 - ≤ -80% max → ASSESS (deep loss)
@@ -135,8 +135,8 @@ Automated options trading platform that screens, analyzes, and monitors trades u
 - Today -7%+ → CLOSE (crash)
 - Today -5%+ → ASSESS (rapid drop)
 - Down > 60% → CLOSE (tax harvest)
-- Down > 40% → CLOSE (deep loss, context-adjusted in selloffs)
-- Down > 25% → ASSESS (review thesis, context-adjusted)
+- Down > 40% → CLOSE (deep loss; widens to 55% in broad selloffs — compares stock drop to SPY 5d)
+- Down > 25% → ASSESS (review thesis; widens to 35% in broad selloffs)
 - Up > 100% → ASSESS (trim candidate)
 
 ### Output Conventions
