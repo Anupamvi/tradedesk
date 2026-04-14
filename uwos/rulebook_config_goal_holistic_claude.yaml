@@ -125,11 +125,15 @@ approval:
   shield_live_valid_min_no_touch_floor: 50.0  # [T3] new — floor even for live-valid override path
   shield_live_valid_min_edge_floor: 4.0        # [T3] new — minimum edge even for live-valid override
   min_edge_pct: 8.0
+  min_edge_pct_bear: 5.0              # [T8] bears get lower edge from bull-trained backtest; 5% prevents false FAIL
+  min_edge_pct_shield: 5.0            # [T8] credit spreads/ICs same; backtest model is directional-agnostic for credits
   min_signals: 120
   min_credit_no_touch_pct: 25.0       # [T5] was: 65.0 — lowered; realistic for current vol. Edge gate still protects PF.
   credit_no_touch_require_data: true
   ic_exempt_from_no_touch: true       # [T5] new — IC profitability is terminal (expiry-zone), no-touch is path-based
   min_likelihood_strength: Moderate
+  min_likelihood_strength_bear: Weak   # [T8] bears rarely reach Moderate in bull-trained model; Weak is still informative
+  min_likelihood_strength_shield: Weak # [T8] same for credit spreads
   disallow_likelihood_strengths: [Low Sample, Negative, Negative-Strong, N/A]
 
   allow_stage1_watch_promotion: true

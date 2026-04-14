@@ -1009,6 +1009,12 @@ def run():
     tactical_min_edge_pct = fnum(approval_cfg.get("tactical_min_edge_pct", 0.0))
     tactical_require_verdict_pass = bool(approval_cfg.get("tactical_require_verdict_pass", True))
     min_edge_pct = fnum(approval_cfg.get("min_edge_pct", 0.0))
+    min_edge_pct_bear = fnum(approval_cfg.get("min_edge_pct_bear", min_edge_pct))
+    min_edge_pct_shield = fnum(approval_cfg.get("min_edge_pct_shield", min_edge_pct))
+    if not np.isfinite(min_edge_pct_bear):
+        min_edge_pct_bear = min_edge_pct
+    if not np.isfinite(min_edge_pct_shield):
+        min_edge_pct_shield = min_edge_pct
     min_signals = fnum(approval_cfg.get("min_signals", 100))
     tactical_min_signals = fnum(approval_cfg.get("tactical_min_signals", min_signals))
     require_invalidation_clear = bool(approval_cfg.get("require_invalidation_clear", False))
@@ -1018,6 +1024,8 @@ def run():
     stage1_promote_min_edge = fnum(approval_cfg.get("stage1_watch_promotion_min_edge_pct", 5.0))
     stage1_promote_min_signals = fnum(approval_cfg.get("stage1_watch_promotion_min_signals", min_signals))
     min_likelihood_strength = str(approval_cfg.get("min_likelihood_strength", "")).strip()
+    min_likelihood_strength_bear = str(approval_cfg.get("min_likelihood_strength_bear", min_likelihood_strength)).strip()
+    min_likelihood_strength_shield = str(approval_cfg.get("min_likelihood_strength_shield", min_likelihood_strength)).strip()
     disallow_likelihood_strengths = {
         str(x).strip().upper()
         for x in approval_cfg.get("disallow_likelihood_strengths", [])
@@ -1423,24 +1431,38 @@ def run():
             sig = fnum(row.get("signals"))
             if verdict != "PASS":
                 blockers.append(f"likelihood_verdict:{verdict or 'UNKNOWN'}")
-            if np.isfinite(min_edge_pct) and (not np.isfinite(edge) or edge < min_edge_pct):
-                blockers.append(f"edge_below:{edge if np.isfinite(edge) else 'nan'}<{min_edge_pct}")
+            # Per-strategy edge threshold: bears and SHIELD get lower bar
+            _is_bear = strategy_local in {"Bear Put Debit", "Bear Call Credit"}
+            _eff_edge_min = (
+                min_edge_pct_bear if _is_bear
+                else min_edge_pct_shield if track == "SHIELD"
+                else min_edge_pct
+            )
+            if np.isfinite(_eff_edge_min) and (not np.isfinite(edge) or edge < _eff_edge_min):
+                blockers.append(f"edge_below:{edge if np.isfinite(edge) else 'nan'}<{_eff_edge_min}")
             if np.isfinite(min_signals) and min_signals > 0 and (not np.isfinite(sig) or sig < min_signals):
                 blockers.append(f"signals_below:{sig if np.isfinite(sig) else 'nan'}<{min_signals}")
 
         strength = str(row.get("likelihood_strength", "")).strip()
         strength_rank = rank_likelihood_strength(strength)
-        min_strength_rank = rank_likelihood_strength(min_likelihood_strength)
+        # Per-strategy strength threshold: bears and SHIELD accept Weak
+        _is_bear = strategy_local in {"Bear Put Debit", "Bear Call Credit"}
+        _eff_strength = (
+            min_likelihood_strength_bear if _is_bear
+            else min_likelihood_strength_shield if track == "SHIELD"
+            else min_likelihood_strength
+        )
+        _eff_strength_rank = rank_likelihood_strength(_eff_strength)
         if (
-            min_likelihood_strength
-            and min_strength_rank >= 0
+            _eff_strength
+            and _eff_strength_rank >= 0
             and strength_rank >= 0
-            and strength_rank < min_strength_rank
+            and strength_rank < _eff_strength_rank
         ):
-            blockers.append(f"likelihood_strength_below:{strength}<{min_likelihood_strength}")
+            blockers.append(f"likelihood_strength_below:{strength}<{_eff_strength}")
         if (
-            min_likelihood_strength
-            and min_strength_rank >= 0
+            _eff_strength
+            and _eff_strength_rank >= 0
             and strength_rank < 0
         ):
             blockers.append(f"likelihood_strength_unranked:{strength or 'N/A'}")
@@ -1579,9 +1601,10 @@ def run():
                     # Only block FIRE if GEX is strongly pinned (not marginal)
                     if np.isfinite(net_gex_val) and net_gex_val > 0:
                         blockers.append("fire_gex_pinned")
-                # IC-specific: require pinned regime
-                if strategy_local in {"Iron Condor", "Iron Butterfly"} and gex_regime != "pinned":
-                    blockers.append("ic_gex_not_pinned")
+                # IC-specific: block in volatile regime (amplified moves break IC range)
+                # [T8] was: require pinned — too strict, ICs work in neutral too
+                if strategy_local in {"Iron Condor", "Iron Butterfly"} and gex_regime == "volatile":
+                    blockers.append("ic_gex_volatile")
 
         return blockers
 
