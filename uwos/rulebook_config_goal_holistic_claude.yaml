@@ -37,7 +37,7 @@
 # [T6] fire.allow_both_sides_when_neutral: false → true     (unblock bear trades)
 # [T6] shield.allow_both_sides_when_neutral: false → true   (same)
 # [T6] approval.max_spot_asof_drift_pct: 0.20 → 0.50       (less restrictive drift)
-# [T6] approval.entry_tolerance_floor: 0.25 → 0.15         (tighter for small spreads)
+# [T6] approval.entry_tolerance_floor: 0.25 → 0.30         (ATM strikes have larger bid-ask)
 
 engine:
   max_tickers_to_scan: 450
@@ -50,6 +50,7 @@ engine:
   final_max_trades_per_ticker: 3
   min_per_track: 1
   min_shield_in_output: 5              # [T5] was: 3 — reserve 5 output slots for best SHIELD trades
+  min_bear_in_output: 2                # [T8] reserve 2 output slots for bear FIRE trades
   include_watch_candidates: true
 
 gates:

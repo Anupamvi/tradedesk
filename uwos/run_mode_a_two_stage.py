@@ -1851,7 +1851,7 @@ def run():
     # aren't buried by higher-EV bull calls.  Also enforce max_sector_share.
     _top_n = int(args.top_trades)
     _bear_strategies = {"Bear Put Debit", "Bear Call Credit"}
-    _min_bear_in_output = max(1, int(approval_cfg.get("min_bear_in_output", 2)))
+    _min_bear_in_output = max(1, int(engine_cfg.get("min_bear_in_output", approval_cfg.get("min_bear_in_output", 2))))
     if len(mdf) > _top_n:
         _fire_rows = mdf[mdf["track"] == "FIRE"]
         _shield_rows = mdf[mdf["track"] == "SHIELD"]
@@ -2112,7 +2112,14 @@ def run():
             verdict_now = str(r.get("verdict", "")).strip().upper()
             edge_now = fnum(r.get("edge_pct"))
             sig_now = fnum(r.get("signals"))
-            min_edge_req = fnum(approval_cfg.get("min_edge_pct", 0.0))
+            _strat_w = str(r.get("strategy", "")).strip()
+            _is_bear_w = _strat_w in {"Bear Put Debit", "Bear Call Credit"}
+            _track_w = str(r.get("track", "")).strip().upper()
+            min_edge_req = (
+                min_edge_pct_bear if _is_bear_w
+                else min_edge_pct_shield if _track_w == "SHIELD"
+                else fnum(approval_cfg.get("min_edge_pct", 0.0))
+            )
             min_sig_req = fnum(approval_cfg.get("min_signals", 100))
             require_lk = bool(approval_cfg.get("require_likelihood_pass", True))
             invalidated_effective = (
