@@ -502,6 +502,8 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     sc["direction_bias"] = pd.to_numeric(sc["direction_bias"], errors="coerce").fillna(0.0).clip(-1.0, 1.0)
     sc["bull_score"] = sc["direction_bias"].clip(lower=0.0, upper=1.0)
     sc["bear_score"] = (-sc["direction_bias"]).clip(lower=0.0, upper=1.0)
+    # Directional strength (unsigned) — so bear trades score equally to bulls
+    sc["dir_strength"] = sc["direction_bias"].abs().clip(upper=1.0)
     sc["interest_score"] = (
         sc["bullish_premium"].abs()
         + sc["bearish_premium"].abs()
@@ -668,6 +670,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         min_w, max_w, default_w = width_tier(spot, cfg)
         bull = float(r.get("bull_score", 0.0))
         bear = float(r.get("bear_score", 0.0))
+        dir_str = float(r.get("dir_strength", max(bull, bear)))
         whale = whale_rank.get(ticker, 0.0)
         exps = sorted(set(quotes.loc[quotes["ticker"] == ticker, "expiry"].tolist()))
         if not exps:
@@ -770,7 +773,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             math.log1p(max(0.0, fnum(sh["volume"]))) + math.log1p(max(0.0, fnum(sh["open_interest"]))),
                         )
                         liq = max(0.0, min(1.0, liq / 20.0))
-                        score = 0.34 * bull + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.12 * whale
+                        score = 0.34 * dir_str + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.12 * whale
                         conv = int(round(100 * score))
                         # IVR bonus: low IV = cheap options = good for buying
                         if np.isfinite(iv_rank):
@@ -864,7 +867,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             math.log1p(max(0.0, fnum(sh["volume"]))) + math.log1p(max(0.0, fnum(sh["open_interest"]))),
                         )
                         liq = max(0.0, min(1.0, liq / 20.0))
-                        score = 0.34 * bear + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.12 * whale
+                        score = 0.34 * dir_str + 0.22 * eff + 0.18 * liq + 0.14 * dte_fit + 0.12 * whale
                         conv = int(round(100 * score))
                         # IVR bonus: low IV = cheap options = good for buying
                         if np.isfinite(iv_rank):
@@ -1822,12 +1825,28 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         selected_rows.append(row.to_dict())
         return True
 
-    # Seed one best per track, if available, so FIRE/SHIELD both surface.
+    # Seed best per track AND direction, so bears surface even when bulls dominate.
+    bear_strategies = {"Bear Put Debit", "Bear Call Credit"}
     for track in ["FIRE", "SHIELD"]:
         sub = df[df["track"] == track]
-        if not sub.empty:
+        if sub.empty:
+            continue
+        # Seed best bull candidate
+        sub_bull = sub[~sub["strategy"].isin(bear_strategies)]
+        if not sub_bull.empty:
             added = 0
-            for _, row in sub.iterrows():
+            for _, row in sub_bull.iterrows():
+                if len(selected_rows) >= max(1, max_total_trades):
+                    break
+                if try_add(row):
+                    added += 1
+                if added >= min_per_track:
+                    break
+        # Seed best bear candidate (ensures bears always surface if available)
+        sub_bear = sub[sub["strategy"].isin(bear_strategies)]
+        if not sub_bear.empty:
+            added = 0
+            for _, row in sub_bear.iterrows():
                 if len(selected_rows) >= max(1, max_total_trades):
                     break
                 if try_add(row):

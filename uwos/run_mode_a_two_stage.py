@@ -1798,10 +1798,11 @@ def run():
         kept_indices.append(idx)
     mdf = mdf.loc[kept_indices].reset_index(drop=True)
     # --- Track-diversity-aware top-N selection ---
-    # Reserve min_shield_in_output slots for SHIELD trades so they aren't
-    # buried by higher-EV FIRE trades.  Also enforce max_sector_share to
-    # prevent correlated-sector concentration.
+    # Reserve slots for SHIELD trades AND bear-direction FIRE trades so they
+    # aren't buried by higher-EV bull calls.  Also enforce max_sector_share.
     _top_n = int(args.top_trades)
+    _bear_strategies = {"Bear Put Debit", "Bear Call Credit"}
+    _min_bear_in_output = max(1, int(approval_cfg.get("min_bear_in_output", 2)))
     if len(mdf) > _top_n:
         _fire_rows = mdf[mdf["track"] == "FIRE"]
         _shield_rows = mdf[mdf["track"] == "SHIELD"]
@@ -1809,11 +1810,17 @@ def run():
 
         # Pick best SHIELD trades up to the reservation count.
         _shield_reserved = _shield_rows.head(min(min_shield_in_output, len(_shield_rows)))
-        _remaining_budget = _top_n - len(_shield_reserved)
 
-        # Fill remaining budget with FIRE + leftover SHIELD + other, in rank order.
+        # Reserve best bear FIRE trades so bearish signals always surface.
+        _bear_fire = _fire_rows[_fire_rows["strategy"].isin(_bear_strategies)]
+        _bear_reserved = _bear_fire.head(min(_min_bear_in_output, len(_bear_fire)))
+        _remaining_budget = _top_n - len(_shield_reserved) - len(_bear_reserved)
+
+        # Fill remaining budget with bull FIRE + leftover bear + leftover SHIELD + other.
+        _bull_fire = _fire_rows[~_fire_rows["strategy"].isin(_bear_strategies)]
+        _leftover_bear = _bear_fire.iloc[len(_bear_reserved):]
         _leftover_shield = _shield_rows.iloc[len(_shield_reserved):]
-        _rest = pd.concat([_fire_rows, _leftover_shield, _other_rows], ignore_index=True)
+        _rest = pd.concat([_bull_fire, _leftover_bear, _leftover_shield, _other_rows], ignore_index=True)
         _rest = _rest.sort_values(
             ["approved", "conviction"],
             ascending=[False, False],
@@ -1836,7 +1843,7 @@ def run():
             _selected_indices.append(_sidx)
         _rest_selected = _rest.loc[_selected_indices]
 
-        _final = pd.concat([_shield_reserved, _rest_selected], ignore_index=True)
+        _final = pd.concat([_shield_reserved, _bear_reserved, _rest_selected], ignore_index=True)
         _final = _final.sort_values(
             ["approved", "conviction"],
             ascending=[False, False],
