@@ -97,6 +97,7 @@ check("55% max 5 DTE",         "CLOSE",  credit_put(100, 108, -0.25, 55, 5))  # 
 
 # Earnings proximity
 check("40% max earnings 5d",   "CLOSE",  credit_put(100, 110, -0.20, 40, 30, earn=5))
+check("4% max earnings 3d",    "ASSESS", credit_put(100, 105, -0.30, 4, 30, earn=3))  # too little profit for CLOSE
 check("40% max earnings 7d",   "CLOSE",  credit_put(100, 110, -0.20, 40, 30, earn=7))
 check("40% max earnings 8d",   "HOLD",   credit_put(100, 110, -0.20, 40, 30, earn=8))
 check("-20% max earnings 5d",  "ASSESS", credit_put(100, 103, -0.35, -20, 30, earn=5))

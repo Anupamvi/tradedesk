@@ -249,8 +249,10 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
         # Earnings proximity: CLOSE or ASSESS if earnings within 7 days
         earnings_days = safe(c.get("days_to_earnings"), 999)
         if 0 < earnings_days <= 7:
-            if pct_max > 0:
+            if pct_max >= 25:
                 return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take {pct_max:.0f}%% profit before binary event")
+            elif pct_max > 0:
+                return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — only {pct_max:.0f}%% profit, assess risk vs reward")
             else:
                 return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — at {pct_max:.0f}%% max, assess hold vs close")
 
@@ -296,8 +298,8 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
         # Earnings proximity for debit: IV crush risk
         earnings_days = safe(c.get("days_to_earnings"), 999)
         if 0 < earnings_days <= 5:
-            if pnl_pct > 0:
-                return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take profit, IV crush risk after")
+            if pnl_pct >= 20:
+                return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take +{pnl_pct:.0f}%% profit, IV crush risk after")
             else:
                 return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — IV crush risk, assess exit")
         return ("HOLD", f"{'ITM' if otm_pct <= 0 else f'OTM {otm_pct:.1f}%%'}, {dte:.0f} DTE")
