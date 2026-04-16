@@ -1647,7 +1647,7 @@ def build_trend_recommendations(
     #         setups, keep only the direction from the most recent day,
     #         but only if the new direction has non-negative avg edge.
 
-    _SNAPSHOT_MAX_CALENDAR_DAYS = 7  # 5 trading days ~ 7 calendar days
+    _SNAPSHOT_MAX_CALENDAR_DAYS = 10  # ~5 trading days with holiday buffer
 
     staleness_rows_before = int(len(grouped))
     if not grouped.empty and "snapshot_trade_date" in grouped.columns:
@@ -1664,13 +1664,18 @@ def build_trend_recommendations(
         r"close\s*(<=|>=|<|>)\s*([\d]+(?:\.\d+)?)", _re.IGNORECASE
     )
 
+    _BETWEEN_RE = _re.compile(
+        r"close\s+remains?\s+between\s+([\d]+(?:\.\d+)?)\s+and\s+([\d]+(?:\.\d+)?)",
+        _re.IGNORECASE,
+    )
+
     def _parse_invalidation_breach(row: pd.Series) -> bool:
         """Return True if spot breaches ANY invalidation condition."""
         inv = str(row.get("invalidation", "") or "")
         spot = pd.to_numeric(row.get("spot_live_last"), errors="coerce")
         if pd.isna(spot) or not inv:
             return False
-        # Find ALL conditions (handles IC dual: "close < 280 or close > 320")
+        # Standard conditions: "close < 280 or close > 320"
         for m in _INVALIDATION_RE.finditer(inv):
             op, level = m.group(1), float(m.group(2))
             if op == "<" and spot < level:
@@ -1680,6 +1685,13 @@ def build_trend_recommendations(
             if op == ">" and spot > level:
                 return True
             if op == ">=" and spot >= level:
+                return True
+        # Between-range: "close remains between X and Y" (Long IC)
+        # Invalidated when price IS inside the range (profit requires breakout)
+        bm = _BETWEEN_RE.search(inv)
+        if bm:
+            lo, hi = float(bm.group(1)), float(bm.group(2))
+            if lo <= spot <= hi:
                 return True
         return False
 
@@ -1733,8 +1745,13 @@ def build_trend_recommendations(
         )
     direction_rows_after = int(len(grouped))
 
-    # Recompute book_recommendation AFTER T7 filters so labels reflect
-    # the filtered dataset, not the pre-filter persistence counts.
+    # Recompute watch_share and book_recommendation AFTER T7 filters so
+    # labels reflect the filtered dataset, not pre-filter state.
+    grouped["watch_share"] = np.where(
+        grouped["appearances"] > 0,
+        grouped["watch_rows"] / grouped["appearances"],
+        np.nan,
+    )
     grouped["book_recommendation"] = "Watch"
     tactical_mask_post = (
         (grouped["avg_conviction"] >= 65.0)
@@ -1762,8 +1779,11 @@ def build_trend_recommendations(
 
     keep_rows: List[Dict[str, Any]] = []
     per_ticker_counts: Dict[str, int] = {}
-    max_per_ticker = 2
     top_n = max(1, int(recommendation_top_n))
+    n_unique_tickers = int(grouped["ticker"].nunique()) if not grouped.empty else 0
+    # Dynamic: allow 2 slots per ticker if enough tickers, else allow more
+    # to fill the top_n. Minimum 2, scales up if ticker universe is thin.
+    max_per_ticker = max(2, min(4, top_n // max(1, n_unique_tickers) + 1))
     min_shield = max(0, int(recommendation_min_shield))
 
     def _try_add_row(r: pd.Series) -> bool:
@@ -2098,7 +2118,7 @@ def build_final_recommendations_markdown(
                 "Strategy": str(r.get("strategy", "")),
                 "Days": int(_safe_int(r.get("days_present"))),
                 "Presence": f"{presence:.0%}" if math.isfinite(presence) else "",
-                "Avg Conviction": f"{_safe_float(r.get('avg_conviction')):.1f}",
+                "Avg Conv": f"{_safe_float(r.get('avg_conviction')):.1f}",
                 "Avg Edge %": f"{_safe_float(r.get('avg_edge_pct')):.2f}",
                 "Trend Score": f"{_safe_float(r.get('trend_score')):.3f}",
                 "Latest Seen": latest_txt,
@@ -2115,7 +2135,7 @@ def build_final_recommendations_markdown(
                 "Strategy",
                 "Days",
                 "Presence",
-                "Avg Conviction",
+                "Avg Conv",
                 "Avg Edge %",
                 "Trend Score",
                 "Latest Seen",
@@ -2533,7 +2553,13 @@ def _parse_opt_date(txt: str) -> Optional[pd.Timestamp]:
     dt = pd.to_datetime(s, errors="coerce")
     if pd.isna(dt):
         raise ValueError(f"Invalid date: {txt}")
-    return dt.normalize()
+    dt = dt.normalize()
+    # Roll weekends to nearest Friday (markets closed Sat/Sun)
+    if dt.weekday() == 5:  # Saturday
+        dt = dt - pd.Timedelta(days=1)
+    elif dt.weekday() == 6:  # Sunday
+        dt = dt - pd.Timedelta(days=2)
+    return dt
 
 
 def run_pipeline(args: argparse.Namespace) -> Dict[str, Path]:

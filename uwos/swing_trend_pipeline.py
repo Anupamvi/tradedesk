@@ -1123,6 +1123,12 @@ def score_ticker(signals: SwingSignals, cfg: Dict) -> SwingScore:
     score.dp_confirmation_score = _clip(dp_base)
 
     # --- Composite ---
+    _expected_weight_keys = {"flow_persistence", "oi_momentum", "iv_regime",
+                             "price_trend", "whale_consensus", "dp_confirmation"}
+    _missing_keys = _expected_weight_keys - set(weights.keys())
+    if _missing_keys:
+        import warnings
+        warnings.warn(f"[swing_trend] Missing weight keys in config (using defaults): {_missing_keys}")
     w = {
         "flow_persistence": float(weights.get("flow_persistence", 0.30)),
         "oi_momentum": float(weights.get("oi_momentum", 0.20)),
@@ -1131,6 +1137,10 @@ def score_ticker(signals: SwingSignals, cfg: Dict) -> SwingScore:
         "whale_consensus": float(weights.get("whale_consensus", 0.10)),
         "dp_confirmation": float(weights.get("dp_confirmation", 0.10)),
     }
+    _wsum = sum(w.values())
+    if abs(_wsum - 1.0) > 0.01:
+        import warnings
+        warnings.warn(f"[swing_trend] Score weights sum to {_wsum:.3f}, expected 1.0 — results may be skewed")
     score.composite_score = _clip(
         w["flow_persistence"] * score.flow_persistence_score
         + w["oi_momentum"] * score.oi_momentum_score
@@ -2314,7 +2324,11 @@ def generate_report_markdown(
         rows = []
         for i, s in enumerate(items, 1):
             sig = signals_map.get(s.ticker, SwingSignals())
-            ticker_display = s.ticker if s.earnings_safe else f"{s.ticker} \u26a0\ufe0f"
+            ticker_display = s.ticker
+            if not s.earnings_safe:
+                ticker_display += " \u26a0\ufe0f"
+            if s.live_validated is False:
+                ticker_display += " \u274c"
             # Prefer live strike setup when Schwab validation succeeded
             setup_display = s.strike_setup or "-"
             if s.live_validated is True and s.live_strike_setup:
@@ -2844,6 +2858,11 @@ def main():
     as_of: Optional[dt.date] = None
     if args.as_of:
         as_of = dt.date.fromisoformat(args.as_of)
+        # Roll weekends back to Friday — markets are closed Sat/Sun
+        if as_of.weekday() == 5:  # Saturday
+            as_of = as_of - dt.timedelta(days=1)
+        elif as_of.weekday() == 6:  # Sunday
+            as_of = as_of - dt.timedelta(days=2)
 
     print(f"Swing Trend Pipeline", file=sys.stderr)
     print(f"  Config: {config_path}", file=sys.stderr)

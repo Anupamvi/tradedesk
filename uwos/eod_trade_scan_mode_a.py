@@ -312,7 +312,9 @@ def compute_macro_regime(asof):
         except Exception:
             pass
 
-    if spy_5d_ret < -0.02 and vix_level > 22:
+    # Use OR logic: either indicator alone can signal regime shift.
+    # AND was too strict — SPY -3% + VIX 20 was classified as "neutral".
+    if spy_5d_ret < -0.02 or vix_level > 25:
         regime = "risk_off"
     elif spy_5d_ret > 0.02 and vix_level < 18:
         regime = "risk_on"
@@ -976,6 +978,8 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         # [T6] Macro regime: selling puts in a selloff is dangerous
                         if macro_regime == "risk_off":
                             conv = max(0, conv - 8)
+                        elif macro_regime == "risk_on":
+                            conv = min(100, conv + 3)  # risk_on = safe to sell puts
 
                         sigma_pass = bool(sigma_known and float(sh["strike"]) <= (spot - sigma * shield_sigma_relax))
                         short_otm_pct = max(0.0, (spot - float(sh["strike"])) / spot)
@@ -1100,6 +1104,8 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         # [T6] Macro regime: bear calls benefit from downside
                         if macro_regime == "risk_off":
                             conv = min(100, conv + 3)
+                        elif macro_regime == "risk_on":
+                            conv = max(0, conv - 5)  # risk_on = dangerous to sell calls
 
                         sigma_pass = bool(sigma_known and float(sh["strike"]) >= (spot + sigma * shield_sigma_relax))
                         short_otm_pct = max(0.0, (float(sh["strike"]) - spot) / spot)

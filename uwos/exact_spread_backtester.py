@@ -401,7 +401,7 @@ class UnderlyingCloseStore:
                 query_t,
                 start=query_start.isoformat(),
                 end=(query_end + dt.timedelta(days=1)).isoformat(),
-                auto_adjust=False,
+                auto_adjust=True,  # Match setup_likelihood_backtest; prevents split-induced price breaks
                 progress=False,
                 actions=False,
                 threads=False,
