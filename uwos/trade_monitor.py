@@ -359,6 +359,23 @@ def run_scan() -> List[Dict]:
     json_path = out_dir / f"position_data_{today_str}.json"
     json_path.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
 
+    # Detect spread pairs: same underlying + same expiry + opposite qty sign
+    # Mark short legs that are paired with a long leg — skip independent verdicts
+    spread_short_keys = set()
+    option_positions = [p for p in positions if p["asset_type"] == "OPTION"]
+    for i, p1 in enumerate(option_positions):
+        for p2 in option_positions[i+1:]:
+            ul1 = p1.get("underlying") or p1["symbol"].split()[0]
+            ul2 = p2.get("underlying") or p2["symbol"].split()[0]
+            exp1 = p1.get("expiry") or p1["symbol"][6:12] if len(p1["symbol"]) > 12 else ""
+            exp2 = p2.get("expiry") or p2["symbol"][6:12] if len(p2["symbol"]) > 12 else ""
+            if (ul1 == ul2 and p1.get("put_call") == p2.get("put_call")
+                    and exp1 == exp2
+                    and p1.get("qty", 0) * p2.get("qty", 0) < 0):  # opposite signs, same expiry
+                # Same underlying, same type, same expiry, opposite direction = spread
+                short_pos = p1 if p1.get("qty", 0) < 0 else p2
+                spread_short_keys.add(position_key(short_pos))
+
     # Compute verdicts
     prev_state = load_state()
     new_state = {}
@@ -366,7 +383,13 @@ def run_scan() -> List[Dict]:
 
     for pos in positions:
         key = position_key(pos)
-        verdict, reason = compute_verdict(pos)
+
+        # Skip independent verdict for short legs of spreads
+        if key in spread_short_keys:
+            verdict = "HOLD"
+            reason = "spread leg — evaluate with paired long leg"
+        else:
+            verdict, reason = compute_verdict(pos)
         category = classify_position(pos)
         pct_max = safe(pos["computed"].get("pct_of_max_profit"))
         pnl = safe(pos["computed"].get("unrealized_pnl"))
