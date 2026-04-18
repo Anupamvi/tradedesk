@@ -245,6 +245,31 @@ class TestMatchEntryDetails(unittest.TestCase):
         self.assertEqual(entry["entry_date"], "2026-02-20")
         self.assertAlmostEqual(entry["entry_price"], 3.50)
 
+    def test_matches_trade_date_payload(self):
+        from uwos.schwab_position_analyzer import match_entry_details
+
+        positions = [
+            {"symbol": "INTC  260417P00044000", "qty": -1, "asset_type": "OPTION"},
+        ]
+        transactions = [
+            {
+                "tradeDate": "2026-03-17T15:36:25+0000",
+                "transferItems": [
+                    {
+                        "instrument": {"symbol": "INTC  260417P00044000"},
+                        "amount": -1.0,
+                        "price": 2.88,
+                        "positionEffect": "OPENING",
+                    }
+                ],
+            }
+        ]
+
+        result = match_entry_details(positions, transactions)
+        entry = result["INTC  260417P00044000"]
+        self.assertEqual(entry["entry_date"], "2026-03-17")
+        self.assertAlmostEqual(entry["entry_price"], 2.88)
+
     def test_no_match_returns_empty(self):
         from uwos.schwab_position_analyzer import match_entry_details
 
@@ -253,6 +278,46 @@ class TestMatchEntryDetails(unittest.TestCase):
         ]
         result = match_entry_details(positions, [])
         self.assertNotIn("XYZ  260417P00050000", result)
+
+
+class TestAnalyzePositionsDataSources(unittest.TestCase):
+    """Test trade-desk analysis defaults to Schwab-only context."""
+
+    def test_yfinance_context_is_opt_in(self):
+        from uwos.schwab_position_analyzer import analyze_positions
+
+        svc = MagicMock()
+        svc.get_account_positions.return_value = {
+            "balances": {"total_value": 10000.0, "cash": 1000.0},
+            "positions": [
+                {
+                    "symbol": "MSFT",
+                    "underlying": "MSFT",
+                    "asset_type": "EQUITY",
+                    "put_call": "",
+                    "qty": 10,
+                    "avg_cost": 300.0,
+                    "market_value": 3500.0,
+                }
+            ],
+        }
+        svc.get_trade_history.return_value = []
+        svc.get_quotes.return_value = {
+            "MSFT": {"quote": {"lastPrice": 350.0, "netPercentChangeInDouble": 0.1}}
+        }
+
+        with patch("uwos.schwab_position_analyzer.fetch_yfinance_context") as mock_yf:
+            result = analyze_positions(svc=svc, days=90)
+
+        mock_yf.assert_not_called()
+        self.assertFalse(result["context_sources"]["external_yfinance"])
+        self.assertEqual(result["context_sources"]["positions"], "schwab")
+
+        with patch("uwos.schwab_position_analyzer.fetch_yfinance_context", return_value={}) as mock_yf:
+            result = analyze_positions(svc=svc, days=90, include_yfinance=True)
+
+        mock_yf.assert_called_once()
+        self.assertTrue(result["context_sources"]["external_yfinance"])
 
 
 if __name__ == "__main__":

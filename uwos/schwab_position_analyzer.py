@@ -11,7 +11,10 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import yfinance as yf
+try:
+    import yfinance as yf
+except Exception:  # pragma: no cover - optional context provider
+    yf = None
 
 from uwos.schwab_auth import (
     SchwabAuthConfig,
@@ -19,6 +22,7 @@ from uwos.schwab_auth import (
     occ_underlying_symbol,
     _safe_float,
 )
+from uwos.paths import project_root
 
 
 def compute_risk_metrics(
@@ -169,6 +173,9 @@ def fetch_yfinance_context(
         "spy_correlation_20d": None,
     }
 
+    if yf is None:
+        return result
+
     try:
         tk = yf.Ticker(ticker)
 
@@ -259,7 +266,11 @@ def match_entry_details(
     Returns a dict keyed by position symbol with entry_date and entry_price.
     """
     entries: Dict[str, Dict[str, Any]] = {}
-    sorted_txns = sorted(transactions, key=lambda t: t.get("transactionDate", ""))
+
+    def txn_date_text(txn: Dict[str, Any]) -> str:
+        return str(txn.get("transactionDate") or txn.get("tradeDate") or txn.get("time") or "")
+
+    sorted_txns = sorted(transactions, key=txn_date_text)
 
     position_symbols = {p["symbol"] for p in positions}
 
@@ -269,7 +280,7 @@ def match_entry_details(
             symbol = instrument.get("symbol", "")
             effect = (item.get("positionEffect") or "").upper()
             if symbol in position_symbols and effect == "OPENING" and symbol not in entries:
-                txn_date = str(txn.get("transactionDate", ""))[:10]
+                txn_date = txn_date_text(txn)[:10]
                 entries[symbol] = {
                     "entry_date": txn_date,
                     "entry_price": _safe_float(item.get("price")),
@@ -299,6 +310,7 @@ def analyze_positions(
     days: int = 90,
     account_index: int = 0,
     symbol_filter: Optional[str] = None,
+    include_yfinance: bool = False,
 ) -> Dict[str, Any]:
     """Full orchestrator: fetch positions, enrich, compute metrics."""
     today = dt.date.today()
@@ -419,16 +431,18 @@ def analyze_positions(
             "gex_resistance": best_call_wall[1] if math.isfinite(best_call_wall[1]) else None,
         }
 
-    # 6. Fetch yfinance context per underlying
+    # 6. Optional external context. Trade-desk defaults to Schwab-only; this is
+    # opt-in for older workflows that still want Yahoo/yfinance enrichment.
     yf_context = {}
-    for ul in underlyings:
-        current_iv = None
-        if ul in chains_payload:
-            chain = chains_payload[ul]
-            iv_val = _safe_float(chain.get("volatility"))
-            if iv_val:
-                current_iv = iv_val / 100.0 if iv_val > 1 else iv_val
-        yf_context[ul] = fetch_yfinance_context(ul, current_iv=current_iv, today=today)
+    if include_yfinance:
+        for ul in underlyings:
+            current_iv = None
+            if ul in chains_payload:
+                chain = chains_payload[ul]
+                iv_val = _safe_float(chain.get("volatility"))
+                if iv_val:
+                    current_iv = iv_val / 100.0 if iv_val > 1 else iv_val
+            yf_context[ul] = fetch_yfinance_context(ul, current_iv=current_iv, today=today)
 
     # 7. Enrich each position
     enriched = []
@@ -546,6 +560,13 @@ def analyze_positions(
     return {
         "as_of": dt.datetime.now(dt.timezone.utc).isoformat(),
         "account_summary": balances,
+        "context_sources": {
+            "positions": "schwab",
+            "transactions": "schwab",
+            "quotes": "schwab",
+            "option_chains": "schwab",
+            "external_yfinance": bool(include_yfinance),
+        },
         "positions": enriched,
     }
 
@@ -557,8 +578,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--days", type=int, default=90, help="Days of trade history for entry matching (default: 90).")
     parser.add_argument("--symbol", default=None, help="Filter to a specific underlying symbol.")
     parser.add_argument("--account-index", type=int, default=0, help="Account index (default: 0).")
-    parser.add_argument("--out-dir", default="", help="Output directory (default: c:/uw_root/out/trade_analysis).")
+    parser.add_argument("--out-dir", default="", help="Output directory (default: repo out/trade_analysis).")
     parser.add_argument("--manual-auth", action="store_true", help="Use manual OAuth flow.")
+    parser.add_argument("--with-yfinance-context", action="store_true", help="Opt in to Yahoo/yfinance enrichment.")
     return parser.parse_args()
 
 
@@ -573,13 +595,14 @@ def main() -> None:
         days=args.days,
         account_index=args.account_index,
         symbol_filter=args.symbol,
+        include_yfinance=bool(args.with_yfinance_context),
     )
 
     n_pos = len(result["positions"])
     print(f"  Auth mode: {svc.auth_mode}")
     print(f"  Open positions found: {n_pos}")
 
-    out_dir = Path(args.out_dir) if args.out_dir else Path("c:/uw_root/out/trade_analysis")
+    out_dir = Path(args.out_dir) if args.out_dir else project_root() / "out" / "trade_analysis"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     today_str = dt.date.today().isoformat()

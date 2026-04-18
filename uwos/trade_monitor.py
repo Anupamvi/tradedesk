@@ -21,10 +21,13 @@ import urllib.error
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from uwos.paths import project_root
+from uwos.spread_positions import build_position_review_items, compute_spread_verdict, current_leg_keys
+
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-ROOT = Path("c:/uw_root")
+ROOT = project_root()
 STATE_FILE = ROOT / "out" / "trade_analysis" / "monitor_state.json"
 LOG_FILE = ROOT / "out" / "trade_analysis" / "monitor_log.jsonl"
 
@@ -123,9 +126,12 @@ def _get_spy_change() -> float:
 
 
 def classify_position(pos: Dict) -> str:
-    """Classify as CREDIT, DEBIT, or EQUITY."""
-    if pos["asset_type"] == "EQUITY":
+    """Classify as CREDIT, DEBIT, EQUITY, or OTHER."""
+    asset_type = pos.get("asset_type", "")
+    if asset_type == "EQUITY":
         return "EQUITY"
+    if asset_type != "OPTION":
+        return "OTHER"
     qty = pos.get("qty", 0)
     if qty < 0:
         return "CREDIT"
@@ -206,6 +212,9 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
 
         return ("HOLD", f"equity {pnl_pct:+.0f}%")
 
+    if atype != "OPTION":
+        return ("HOLD", f"{atype or 'asset'} not covered by option verdict rules")
+
     category = classify_position(pos)
 
     # ---- CREDIT rules ----
@@ -227,48 +236,48 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
 
         # Assignment risk: deep ITM + DTE < 5 = likely assigned
         if is_itm and dte >= 0 and dte <= 5 and abs(delta) > 0.85:
-            return ("CLOSE", f"ASSIGNMENT RISK: ITM {itm_pct:.0f}%%, delta {delta:+.2f}, {dte:.0f} DTE — close or roll NOW")
+            return ("CLOSE", f"ASSIGNMENT RISK: ITM {itm_pct:.0f}%, delta {delta:+.2f}, {dte:.0f} DTE — close or roll NOW")
 
         # ITM + DTE < 14: ROLL
         if is_itm and dte >= 0 and dte <= 14:
-            return ("ROLL", f"ITM by {itm_pct:.1f}%% with {dte:.0f} DTE — roll now")
+            return ("ROLL", f"ITM by {itm_pct:.1f}% with {dte:.0f} DTE — roll now")
 
         # Pin risk: within 1% of strike with DTE < 3
         if not is_itm and dte >= 0 and dte <= 3 and strike > 0 and ul_price > 0:
             dist = abs(ul_price - strike) / strike * 100
             if dist < 1.5:
-                return ("CLOSE", f"PIN RISK: {dist:.1f}%% from strike, {dte:.0f} DTE — close to avoid assignment")
+                return ("CLOSE", f"PIN RISK: {dist:.1f}% from strike, {dte:.0f} DTE — close to avoid assignment")
 
         # ITM + deep (>5% or delta > 0.50): ASSESS regardless of DTE
         if is_itm and (itm_pct > 5 or abs(delta) > 0.50):
-            return ("ASSESS", f"ITM by {itm_pct:.1f}%% (delta {delta:+.2f}) {dte:.0f} DTE — review, consider rolling")
+            return ("ASSESS", f"ITM by {itm_pct:.1f}% (delta {delta:+.2f}) {dte:.0f} DTE — review, consider rolling")
         # ITM at all: ASSESS
         if is_itm:
-            return ("ASSESS", f"ITM by {itm_pct:.1f}%% with {dte:.0f} DTE — monitor closely")
+            return ("ASSESS", f"ITM by {itm_pct:.1f}% with {dte:.0f} DTE — monitor closely")
 
         # Expiration week: DTE < 7 with less than 50% max = gamma risk
         if dte >= 0 and dte <= 7 and pct_max < 50:
-            return ("CLOSE", f"{pct_max:.0f}%% max with {dte:.0f} DTE — expiration week gamma risk")
+            return ("CLOSE", f"{pct_max:.0f}% max with {dte:.0f} DTE — expiration week gamma risk")
 
         # Earnings proximity: CLOSE or ASSESS if earnings within 7 days
         earnings_days = safe(c.get("days_to_earnings"), 999)
         if 0 < earnings_days <= 7:
             if pct_max >= 25:
-                return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take {pct_max:.0f}%% profit before binary event")
+                return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take {pct_max:.0f}% profit before binary event")
             elif pct_max > 0:
-                return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — only {pct_max:.0f}%% profit, assess risk vs reward")
+                return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — only {pct_max:.0f}% profit, assess risk vs reward")
             else:
-                return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — at {pct_max:.0f}%% max, assess hold vs close")
+                return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — at {pct_max:.0f}% max, assess hold vs close")
 
         # Approaching max (>75%)
         if pct_max >= 75:
-            return ("CLOSE", f"{pct_max:.0f}% of max — past 75%% target")
+            return ("CLOSE", f"{pct_max:.0f}% of max — past 75% target")
         # Good profit, low DTE
         if pct_max >= 50 and dte >= 0 and dte <= 10:
             return ("CLOSE", f"{pct_max:.0f}% max with {dte:.0f} DTE — diminishing returns")
         # High delta without being ITM (approaching ATM)
         if abs(delta) > 0.45:
-            return ("ASSESS", f"delta {delta:+.2f} — approaching ATM, {pct_max:.0f}%% max, {dte:.0f} DTE")
+            return ("ASSESS", f"delta {delta:+.2f} — approaching ATM, {pct_max:.0f}% max, {dte:.0f} DTE")
         # Deep loss on credit
         if pct_max <= -80:
             return ("ASSESS", f"{pct_max:.0f}% — deep loss, review thesis")
@@ -286,27 +295,27 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
 
         # Down > 60% = CLOSE
         if pnl_pct <= -60:
-            return ("CLOSE", f"down {pnl_pct:.0f}%% — debit rule >60%% loss")
+            return ("CLOSE", f"down {pnl_pct:.0f}% — debit rule >60% loss")
         # OTM > 5% with DTE < 35
         if otm_pct > 5 and dte >= 0 and dte < 35:
-            return ("CLOSE", f"OTM {otm_pct:.1f}%% with {dte:.0f} DTE — debit rule")
+            return ("CLOSE", f"OTM {otm_pct:.1f}% with {dte:.0f} DTE — debit rule")
         # Any amount OTM with DTE < 14
         if otm_pct > 0 and dte >= 0 and dte < 14:
             return ("CLOSE", f"OTM with {dte:.0f} DTE — theta acceleration")
         # Down > 40% = ASSESS
         if pnl_pct <= -40:
-            return ("ASSESS", f"down {pnl_pct:.0f}%% — escalated review")
+            return ("ASSESS", f"down {pnl_pct:.0f}% — escalated review")
         # OTM 3-5% with DTE < 35
         if otm_pct > 3 and dte >= 0 and dte < 35:
-            return ("ASSESS", f"OTM {otm_pct:.1f}%% with {dte:.0f} DTE")
+            return ("ASSESS", f"OTM {otm_pct:.1f}% with {dte:.0f} DTE")
         # Earnings proximity for debit: IV crush risk
         earnings_days = safe(c.get("days_to_earnings"), 999)
         if 0 < earnings_days <= 5:
             if pnl_pct >= 20:
-                return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take +{pnl_pct:.0f}%% profit, IV crush risk after")
+                return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take +{pnl_pct:.0f}% profit, IV crush risk after")
             else:
                 return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — IV crush risk, assess exit")
-        return ("HOLD", f"{'ITM' if otm_pct <= 0 else f'OTM {otm_pct:.1f}%%'}, {dte:.0f} DTE")
+        return ("HOLD", f"{'ITM' if otm_pct <= 0 else f'OTM {otm_pct:.1f}%'}, {dte:.0f} DTE")
 
     return ("HOLD", "unknown")
 
@@ -359,43 +368,34 @@ def run_scan() -> List[Dict]:
     json_path = out_dir / f"position_data_{today_str}.json"
     json_path.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
 
-    # Detect spread pairs: same underlying + same expiry + opposite qty sign
-    # Mark short legs that are paired with a long leg — skip independent verdicts
-    spread_short_keys = set()
-    option_positions = [p for p in positions if p["asset_type"] == "OPTION"]
-    for i, p1 in enumerate(option_positions):
-        for p2 in option_positions[i+1:]:
-            ul1 = p1.get("underlying") or p1["symbol"].split()[0]
-            ul2 = p2.get("underlying") or p2["symbol"].split()[0]
-            exp1 = p1.get("expiry") or p1["symbol"][6:12] if len(p1["symbol"]) > 12 else ""
-            exp2 = p2.get("expiry") or p2["symbol"][6:12] if len(p2["symbol"]) > 12 else ""
-            if (ul1 == ul2 and p1.get("put_call") == p2.get("put_call")
-                    and exp1 == exp2
-                    and p1.get("qty", 0) * p2.get("qty", 0) < 0):  # opposite signs, same expiry
-                # Same underlying, same type, same expiry, opposite direction = spread
-                short_pos = p1 if p1.get("qty", 0) < 0 else p2
-                spread_short_keys.add(position_key(short_pos))
+    review_items = build_position_review_items(positions)
+    active_leg_keys = current_leg_keys(positions)
 
     # Compute verdicts
     prev_state = load_state()
     new_state = {}
     alerts = []
 
-    for pos in positions:
-        key = position_key(pos)
-
-        # Skip independent verdict for short legs of spreads
-        if key in spread_short_keys:
-            verdict = "HOLD"
-            reason = "spread leg — evaluate with paired long leg"
+    for item in review_items:
+        if item["kind"] == "SPREAD":
+            key = item["key"]
+            verdict, reason, metrics = compute_spread_verdict(item["group"])
+            category = metrics["strategy"]
+            pct_max = safe(metrics.get("pct_of_max_profit"))
+            pnl = safe(metrics.get("unrealized_pnl"))
+            dte = safe(metrics.get("dte"), -1)
+            ul_price = safe(metrics.get("underlying_price"))
+            underlying = metrics.get("underlying", key)
         else:
+            pos = item["position"]
+            key = position_key(pos)
             verdict, reason = compute_verdict(pos)
-        category = classify_position(pos)
-        pct_max = safe(pos["computed"].get("pct_of_max_profit"))
-        pnl = safe(pos["computed"].get("unrealized_pnl"))
-        dte = safe(pos["computed"].get("dte"), -1)
-        ul_price = safe((pos.get("underlying_quote") or {}).get("last"))
-        underlying = pos.get("underlying", "") or pos.get("symbol", "")
+            category = classify_position(pos)
+            pct_max = safe(pos["computed"].get("pct_of_max_profit"))
+            pnl = safe(pos["computed"].get("unrealized_pnl"))
+            dte = safe(pos["computed"].get("dte"), -1)
+            ul_price = safe((pos.get("underlying_quote") or {}).get("last"))
+            underlying = pos.get("underlying", "") or pos.get("symbol", "")
 
         new_state[key] = {
             "verdict": verdict,
@@ -457,6 +457,10 @@ def run_scan() -> List[Dict]:
 
     # Detect closed positions (in prev but not in new)
     for key, prev in prev_state.items():
+        # If a previous single leg is now represented by a spread-level state
+        # row, do not emit a false "closed" alert for that still-open leg.
+        if key in active_leg_keys:
+            continue
         if key not in new_state and prev.get("verdict") != "CLOSED":
             alerts.append({
                 "symbol": key,
