@@ -77,7 +77,23 @@ def build_width(prices, tiers):
 def format_markdown_table(df):
     if df.empty:
         return "(no rows)"
-    return df.to_markdown(index=False)
+    try:
+        return df.to_markdown(index=False)
+    except ImportError as exc:
+        if "tabulate" not in str(exc).lower():
+            raise
+
+    def cell(value):
+        if pd.isna(value):
+            return ""
+        return str(value).replace("|", "\\|")
+
+    cols = [str(col).replace("|", "\\|") for col in df.columns]
+    rows = ["| " + " | ".join(cols) + " |"]
+    rows.append("| " + " | ".join(["---"] * len(cols)) + " |")
+    for _, row in df.iterrows():
+        rows.append("| " + " | ".join(cell(row[col]) for col in df.columns) + " |")
+    return "\n".join(rows)
 
 
 @contextmanager
@@ -401,4 +417,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

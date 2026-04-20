@@ -74,20 +74,52 @@ python -m uwos.run_mode_a_two_stage \
 
 ---
 
-## 2. Swing Trend Pipeline — Multi-Day Trend Analysis
+## 2. Trend Analysis — Multi-Day UW Pattern Scanner
 
-**What:** Looks across multiple days of data to find tickers with persistent bullish or bearish signals, validated against Schwab live quotes and backtested.
+**What:** Looks across dated UW folders to find a small set of persistent bullish, bearish, or range-bound option candidates to work on. The command reads stock screener, chain OI, hot chains, dark pool, and whale files across the lookback window, then separates high-conviction candidates from backtest/live-gated actionable trades.
 
 **Run:**
 ```bash
-python -m uwos.swing_trend_pipeline --lookback 5 --as-of 2026-04-08         # 5-day lookback
-python -m uwos.swing_trend_pipeline --lookback 30 --as-of 2026-04-08        # 30-day lookback
-python -m uwos.swing_trend_pipeline --lookback 5 --as-of 2026-04-08 --no-schwab  # skip live validation
+python -m uwos.trend_analysis 2026-04-17          # default 90 usable market-data-day lookback
+python -m uwos.trend_analysis 2026-04-17 45       # 45 usable market-data days ending 2026-04-17
+python -m uwos.trend_analysis 2026-04-17 90 --top 20
+python -m uwos.trend_analysis 2026-04-17 30 --quote-replay diagnostic
+python -m uwos.trend_analysis 2026-04-17 30 --walk-forward-samples 8
+python -m uwos.trend_analysis 2026-04-17 30 --walk-forward-samples 31 --reuse-walk-forward-raw --reuse-walk-forward-outcomes --reuse-research-outcomes
 ```
 
-**Or via Claude Code:** `/swing-trend`
+**Or via Claude/Codex:** `trend-analysis 2026-04-17`
 
-**Output:** `out/swing_trend/swing-trend-report-YYYY-MM-DD-LN.md`
+The numeric lookback counts weekday folders with usable `stock-screener` data. Weekend folders or partial dated folders do not consume a lookback day.
+
+**Output:** `out/trend_analysis/trend-analysis-YYYY-MM-DD-LN.md`
+
+The **Walk-Forward Audit** is the confidence layer. It reruns older signal dates, selects historical trades using only signal-date evidence, and then scores future option-quote outcomes over configured market-day horizons. A supportive audit raises trust; an empty, low-sample, or negative audit is a confidence penalty even when the current trade list has actionable rows.
+
+The **Backtest-Supported Candidate Shortlist** is the primary output for backtest-supported names: a few high-conviction tickers with high swing score, multiple independent confirmations, few contradictory signals, and at least one structure that passed the backtest gate. Directional price confirmation is preferred; price divergence is shown only when backtest support exists, and it is labeled as a confirmation risk rather than an entry. These are names to work on, not automatic trades.
+
+The **Current Trade Setups** section is the practical workbench. It surfaces conditional setups even when no order-ready trade exists. `TRADE_SETUP` means the current structure is clean enough to research but lacks enough analog sample support; `REBUILD` means the thesis has support but the shown spread needs better liquidity, flow, expiry, or strike construction before entry.
+
+Only rows with swing score >= `60.0`, positive historical support, daily option quote replay `PASS`, `PARTIAL_PASS`, or current-day `ENTRY_OK`, Schwab live validation, no earnings through expiry, acceptable bid/ask width, short delta <= `0.30`, and no volatile-GEX iron condor regime are shown as actionable trades. Historical support means either backtest `PASS` with sufficient analog signals or a LOW_SAMPLE/PASS-shortfall setup backed by a `promotable` ticker playbook. The professional-quality gate also blocks low-priced lotto setups by default: underlying price must be >= `$20`, debit spreads must price >= `$0.75`, directional trend trades need strong whale/institutional coverage scaled to the lookback and capped at `8` mention days, options flow cannot conflict with the trade direction, directional debit spreads need price/flow scores >= `60`, the debit must be <= `50%` of spread width, and the long strike cannot be more than `2%` OTM. Rows that pass historical support/quote replay/Schwab but fail tradeability are separated as Risk-Blocked; weaker rows stay Pattern Candidates.
+
+The **Max Conviction / Max Planned Risk** section is the highest tier. These rows already pass Actionable Now, then also require strong score, edge, backtest sample support, whale coverage, tight liquidity, and price/flow/OI/dark-pool alignment. This means max pre-defined risk for one defined-risk trade, not all account capital.
+
+The **Trade Workup** section is the middle lane. It surfaces quality setups that pass professional, live, quote, and research-support gates but have positive LOW_SAMPLE or sample-shortfall evidence. They are not entries, but they are the names to research, build a thesis around, and rerun for confirmation instead of hiding them in generic Pattern Candidates. Family-negative rows can still advance only when a ticker-specific playbook is promotable.
+
+The **Research Confidence Audit** is a fixed-bucket sanity check, not a parameter search. It groups historical candidates by predeclared gates, such as entry-available, backtest-pass, and professional-quality, then reports whether those groups had positive future option-quote P&L. The summary requires enough unique historical setups, so repeated 5/10/20-day exits cannot masquerade as independent evidence. The companion **Research Horizon Audit** splits those same buckets by holding horizon. If no bucket/horizon is supportive, the pipeline blocks Actionable Now trades rather than tuning thresholds until a trade appears. The detailed research outcomes CSV lists the ticker, setup, horizon, entry/exit marks, P&L, and gate reasons behind the bucket summary.
+
+The **Strategy Family Audit** is the broad trade-generation layer. It evaluates predeclared setup families, such as growth bull call debits, energy/materials bull call debits, and bearish momentum put debits, using earlier dates for training and later dates for validation. Mixed, negative, validation-negative, or low-sample families are research targets only.
+
+The **Ticker Playbook Audit** is the narrow trade-generation layer. It checks ticker/direction/strategy/horizon playbooks with the same train/validation discipline so a profitable ticker setup is not buried inside a broad losing family. A current setup can unlock Actionable Now when either the matching broad family or the matching ticker playbook is `promotable`, while all live quote, Schwab, earnings, liquidity, trend-quality, and max-risk gates still apply.
+
+Daily option quote replay is on by default. It prices every spread leg from local UW `hot-chains` / `chain-oi-changes` snapshots at the signal date and the latest later option snapshot. If there is no later snapshot yet, same-day entry coverage is marked `ENTRY_OK`; if any required leg is missing, the row is blocked. Defined-risk spread marks must stay inside valid `[0, spread width]` economics; impossible entry/exit marks are treated as bad quotes, not real outcomes. Use `--quote-replay diagnostic` only when you want to inspect candidates without making replay a trade gate.
+
+Before the final gate, the pipeline also repairs strong blocked candidates by trying pre-earnings expiries, more liquid debit structures, farther-OTM credit spreads, and safer condor/directional alternatives. Repaired variants still need to pass Schwab validation and the historical likelihood backtest before they can appear as actionable trades.
+
+The lower-level swing scanner is still available:
+```bash
+python -m uwos.swing_trend_pipeline --lookback 30 --as-of 2026-04-17
+```
 
 ---
 
@@ -166,9 +198,9 @@ python -m uwos.trade_ideas
 
 ---
 
-## 6. Historical Trend & Replay Analysis
+## 6. Historical Replay Analysis
 
-**What:** Aggregates historical pipeline runs into longitudinal trend views. Shows which tickers and strategies persist across days/weeks, not just single-day snapshots.
+**What:** Aggregates manifest-backed historical pipeline runs into longitudinal replay views. This is useful for audit/replay comparisons, but it is not the primary dated-folder trend command.
 
 **Run:**
 ```bash
@@ -178,7 +210,7 @@ python -m uwos.historical_trend_pipeline \
   --recommendation-top-n 20
 ```
 
-**Or via Claude Code:** `/trend-analysis`
+For dated-folder trade recommendations, use `python -m uwos.trend_analysis` instead.
 
 **Output:** `out/replay_compare/trend_analysis/final_trade_recommendations_from_trends.md`
 
@@ -240,6 +272,7 @@ python -m uwos.schwab_position_analyzer --manual-auth
 |-------|------------|
 | `daily-pipeline` | "run pipeline", "daily analysis", "best trades for" |
 | `swing-trend` | "swing trend", "lookback", "weekly trend" |
+| `trend-analysis` | "trend-analysis 2026-04-17", "historical UW trends", "backtest-gated trend trades" |
 | `trade-desk` | Trade monitoring and position management |
 
 Commands: `.claude/commands/` — Skills: `.claude/skills/`

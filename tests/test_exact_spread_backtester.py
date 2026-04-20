@@ -33,6 +33,11 @@ class TestExactSpreadBacktester(unittest.TestCase):
         self.assertAlmostEqual(thr, 3.95, places=6)
         self.assertEqual(unit, "db")
 
+    def test_yfinance_symbol_for_class_share(self) -> None:
+        self.assertEqual(mod.yfinance_symbol("BRKB"), "BRK-B")
+        self.assertEqual(mod.yfinance_symbol("BRK/B"), "BRK-B")
+        self.assertEqual(mod.yfinance_symbol("AAPL"), "AAPL")
+
     def test_spread_value_at_expiry(self) -> None:
         long_leg = "AAPL260320C00295000"
         short_leg = "AAPL260320C00305000"
@@ -66,6 +71,100 @@ class TestExactSpreadBacktester(unittest.TestCase):
         mp2, ml2 = mod.max_profit_max_loss(10.0, 3.0, "credit")
         self.assertAlmostEqual(mp2, 300.0, places=6)
         self.assertAlmostEqual(ml2, 700.0, places=6)
+
+    def test_rejects_impossible_entry_debit_above_width(self) -> None:
+        class DummyQuoteStore:
+            def get_leg_quote(self, *_args, **_kwargs):
+                return None
+
+        class DummyCloseStore:
+            def get_close_on_or_before(self, *_args, **_kwargs):
+                return 110.0
+
+        setups = pd.DataFrame(
+            [
+                {
+                    "trade_id": "BADENTRY",
+                    "signal_date": dt.date(2020, 1, 2),
+                    "ticker": "AAPL",
+                    "strategy": "Bull Call Debit",
+                    "expiry": dt.date(2020, 1, 17),
+                    "short_leg": "AAPL200117C00105000",
+                    "long_leg": "AAPL200117C00100000",
+                    "short_strike": 105.0,
+                    "long_strike": 100.0,
+                    "width": 5.0,
+                    "net_type": "debit",
+                    "qty": 1.0,
+                    "entry_gate": "",
+                    "entry_net": 6.0,
+                    "exit_date": dt.date(2020, 1, 10),
+                    "exit_net": 2.0,
+                }
+            ]
+        )
+
+        out = mod.run_backtest(
+            setups=setups,
+            quote_store=DummyQuoteStore(),
+            close_store=DummyCloseStore(),
+            entry_source="input_only",
+            entry_price_model="conservative",
+            exit_mode="input_then_quotes_then_expiry",
+            exit_price_model="conservative",
+            close_lookback_days=7,
+        )
+
+        row = out.iloc[0]
+        self.assertEqual(row["status"], "skipped_invalid_entry_economics")
+        self.assertEqual(row["status_reason"], "entry_net_exceeds_width")
+
+    def test_rejects_impossible_exit_value_outside_width(self) -> None:
+        class DummyQuoteStore:
+            def get_leg_quote(self, *_args, **_kwargs):
+                return None
+
+        class DummyCloseStore:
+            def get_close_on_or_before(self, *_args, **_kwargs):
+                return 110.0
+
+        setups = pd.DataFrame(
+            [
+                {
+                    "trade_id": "BADEXIT",
+                    "signal_date": dt.date(2020, 1, 2),
+                    "ticker": "AAPL",
+                    "strategy": "Bull Call Debit",
+                    "expiry": dt.date(2020, 1, 17),
+                    "short_leg": "AAPL200117C00105000",
+                    "long_leg": "AAPL200117C00100000",
+                    "short_strike": 105.0,
+                    "long_strike": 100.0,
+                    "width": 5.0,
+                    "net_type": "debit",
+                    "qty": 1.0,
+                    "entry_gate": "",
+                    "entry_net": 2.0,
+                    "exit_date": dt.date(2020, 1, 10),
+                    "exit_net": 6.0,
+                }
+            ]
+        )
+
+        out = mod.run_backtest(
+            setups=setups,
+            quote_store=DummyQuoteStore(),
+            close_store=DummyCloseStore(),
+            entry_source="input_only",
+            entry_price_model="conservative",
+            exit_mode="input_then_quotes_then_expiry",
+            exit_price_model="conservative",
+            close_lookback_days=7,
+        )
+
+        row = out.iloc[0]
+        self.assertEqual(row["status"], "failed_invalid_exit_economics")
+        self.assertEqual(row["status_reason"], "exit_net_exceeds_width")
 
     def test_expiry_intrinsic_ignores_input_exit_net(self) -> None:
         class DummyQuoteStore:

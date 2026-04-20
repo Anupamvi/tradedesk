@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import inspect
 import json
 import os
 import re
@@ -11,13 +12,12 @@ from urllib.parse import urlparse
 
 from authlib.oauth2.rfc6749.errors import MismatchingStateException
 from dotenv import load_dotenv
-from schwab.auth import (
-    RedirectServerExitedError,
-    RedirectTimeoutError,
-    client_from_manual_flow,
-    client_from_token_file,
-    easy_client,
-)
+from schwab.auth import RedirectTimeoutError, client_from_manual_flow, client_from_token_file, easy_client
+
+try:
+    from schwab.auth import RedirectServerExitedError
+except ImportError:
+    RedirectServerExitedError = RedirectTimeoutError
 
 DEFAULT_CALLBACK_URL = "https://127.0.0.1"
 DEFAULT_TOKEN_PATH = "./tokens/schwab_token.json"
@@ -182,7 +182,9 @@ class SchwabAuthConfig:
     @classmethod
     def from_env(cls, load_dotenv_file: bool = True) -> "SchwabAuthConfig":
         if load_dotenv_file:
-            load_dotenv()
+            from uwos.paths import project_root
+
+            load_dotenv(project_root() / ".env")
         return cls(
             api_key=require_env("SCHWAB_API_KEY"),
             app_secret=require_env("SCHWAB_APP_SECRET"),
@@ -206,7 +208,12 @@ class SchwabLiveDataService:
 
     @property
     def token_path(self) -> Path:
-        token_path = Path(self.config.token_path).expanduser().resolve()
+        token_path = Path(self.config.token_path).expanduser()
+        if not token_path.is_absolute():
+            from uwos.paths import project_root
+
+            token_path = project_root() / token_path
+        token_path = token_path.resolve()
         token_path.parent.mkdir(parents=True, exist_ok=True)
         return token_path
 
@@ -258,13 +265,15 @@ class SchwabLiveDataService:
             return self._client
 
         try:
-            self._client = easy_client(
-                api_key=self.config.api_key,
-                app_secret=self.config.app_secret,
-                callback_url=self.config.callback_url,
-                token_path=str(self.token_path),
-                interactive=self.interactive_login,
-            )
+            easy_client_kwargs = {
+                "api_key": self.config.api_key,
+                "app_secret": self.config.app_secret,
+                "callback_url": self.config.callback_url,
+                "token_path": str(self.token_path),
+            }
+            if "interactive" in inspect.signature(easy_client).parameters:
+                easy_client_kwargs["interactive"] = self.interactive_login
+            self._client = easy_client(**easy_client_kwargs)
             self.auth_mode = "browser_login"
             return self._client
         except (RedirectServerExitedError, RedirectTimeoutError, ValueError):
@@ -396,7 +405,10 @@ class SchwabLiveDataService:
             all_txns.extend(txns)
             chunk_start = chunk_end + dt.timedelta(days=1)
 
-        all_txns.sort(key=lambda t: t.get("transactionDate", ""), reverse=True)
+        all_txns.sort(
+            key=lambda t: t.get("transactionDate") or t.get("tradeDate") or t.get("time") or "",
+            reverse=True,
+        )
         return all_txns
 
     def get_quotes(self, symbols: Sequence[str]) -> Dict[str, Any]:

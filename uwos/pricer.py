@@ -892,7 +892,7 @@ def main() -> None:
     if snapshot_out_json is not None:
         snapshot_out_json.parent.mkdir(parents=True, exist_ok=True)
         snapshot_payload = {
-            "generated_utc": dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            "generated_utc": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "auth_mode": service.auth_mode,
             "shortlist_csv": str(shortlist_csv),
             "out_csv": str(out_csv),

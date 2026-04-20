@@ -34,7 +34,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-ROOT = Path("c:/uw_root")
+from uwos.paths import project_root
+
+ROOT = project_root()
 
 # Exclude leveraged, inverse, and non-equity tickers
 JUNK_TICKERS = {

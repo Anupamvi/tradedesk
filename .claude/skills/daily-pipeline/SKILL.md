@@ -13,13 +13,13 @@ The user provides a **date** (YYYY-MM-DD). If no date given, use today's date fr
 
 ## Execution Steps
 
-1. **Verify data exists**: Check `c:/uw_root/{date}/` has the required zip files
+1. **Verify data exists**: Use the current repo root. On macOS this repo is usually `/Users/anuppamvi/uw_root/tradedesk`; on Windows it is usually `c:/uw_root`. Check `{repo_root}/{date}/` has the required zip files.
 2. **Run pipeline**:
 ```bash
-cd "c:/uw_root" && python -m uwos.run_mode_a_two_stage \
-  --base-dir "c:/uw_root/{date}" \
-  --config "c:/uw_root/uwos/rulebook_config_goal_holistic_claude.yaml" \
-  --out-dir "c:/uw_root/out/{date}" \
+cd "{repo_root}" && python -m uwos.run_mode_a_two_stage \
+  --base-dir "{repo_root}/{date}" \
+  --config "{repo_root}/uwos/rulebook_config_goal_holistic_claude.yaml" \
+  --out-dir "{repo_root}/out/{date}" \
   --top-trades 20
 ```
    Use timeout of 300000ms (5 min) as Schwab API calls take time.
@@ -68,6 +68,6 @@ The pipeline uses **width-based entry gate tolerance** (professional swing-trade
 
 ## Error Handling
 
-- If data dir missing: tell user `c:/uw_root/{date}/` not found
+- If data dir missing: tell user `{repo_root}/{date}/` not found
 - If pipeline fails: show full error output
 - If Schwab auth fails: suggest checking `.env` token or running `python -m uwos.schwab_auth`

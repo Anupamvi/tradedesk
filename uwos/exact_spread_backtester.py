@@ -29,6 +29,9 @@ STRATEGY_TO_NET = {
     "Bear Put Debit": "debit",
     "Bull Put Credit": "credit",
     "Bear Call Credit": "credit",
+    "Iron Condor": "credit",
+    "Short Iron Condor": "credit",
+    "Long Iron Condor": "debit",
 }
 
 STRATEGY_TO_RIGHT = {
@@ -46,6 +49,10 @@ DEFAULT_SETUPS_ALIASES = {
     "expiry": ["expiry", "expiration", "exp_date", "expiration_date"],
     "short_leg": ["short_leg", "short_symbol", "short_option"],
     "long_leg": ["long_leg", "long_symbol", "long_option"],
+    "short_put_leg": ["short_put_leg", "short_put_symbol", "short_put_option"],
+    "long_put_leg": ["long_put_leg", "long_put_symbol", "long_put_option"],
+    "short_call_leg": ["short_call_leg", "short_call_symbol", "short_call_option"],
+    "long_call_leg": ["long_call_leg", "long_call_symbol", "long_call_option"],
     "short_strike": ["short_strike", "short_k", "short"],
     "long_strike": ["long_strike", "long_k", "long"],
     "net_type": ["net_type", "debit_credit", "entry_type"],
@@ -55,6 +62,8 @@ DEFAULT_SETUPS_ALIASES = {
     "exit_net": ["exit_net", "exit_price", "close_price"],
     "qty": ["qty", "quantity", "contracts", "size"],
 }
+
+CONDOR_STRATEGIES = {"Iron Condor", "Short Iron Condor", "Long Iron Condor"}
 
 DEFAULT_ACTUAL_ALIASES = {
     "trade_id": ["trade_id", "id", "row_id"],
@@ -92,6 +101,11 @@ def safe_float(x: object) -> float:
         return float(x)
     except Exception:
         return math.nan
+
+
+def yfinance_symbol(ticker: str) -> str:
+    t = str(ticker or "").strip().upper().replace("/", "-").replace(".", "-")
+    return {"BRKA": "BRK-A", "BRKB": "BRK-B"}.get(t, t)
 
 
 def parse_date(x: object) -> Optional[dt.date]:
@@ -154,6 +168,23 @@ def max_profit_max_loss(width: float, entry_net: float, net_type: str) -> Tuple[
     if nt == "credit":
         return n * 100.0, max(0.0, (w - n) * 100.0)
     return max(0.0, (w - n) * 100.0), max(0.0, n * 100.0)
+
+
+def invalid_spread_value_reason(value: float, width: float, label: str) -> str:
+    v = safe_float(value)
+    w = safe_float(width)
+    if not np.isfinite(v):
+        return f"missing_{label}_net"
+    if not np.isfinite(w) or w <= 0:
+        return "invalid_spread_width"
+    eps = 1e-9
+    if v <= 0 and label == "entry":
+        return f"non_positive_{label}_net"
+    if v < -eps:
+        return f"{label}_net_below_zero"
+    if v > w + eps:
+        return f"{label}_net_exceeds_width"
+    return ""
 
 
 @dataclass(frozen=True)
@@ -395,7 +426,7 @@ class UnderlyingCloseStore:
             query_end = max(query_end, hi)
 
         df_new = pd.DataFrame()
-        query_t = "^VIX" if t == "VIX" else t
+        query_t = "^VIX" if t == "VIX" else yfinance_symbol(t)
         try:
             tmp = yf.download(
                 query_t,
@@ -486,10 +517,10 @@ def _normalize_setups_df(df: pd.DataFrame, default_signal_date: Optional[dt.date
     out["short_strike"] = pd.to_numeric(out["short_strike"], errors="coerce")
     out["long_strike"] = pd.to_numeric(out["long_strike"], errors="coerce")
 
-    out["short_leg"] = out["short_leg"].astype(str).str.upper().str.strip()
-    out["long_leg"] = out["long_leg"].astype(str).str.upper().str.strip()
-    out["short_leg"] = out["short_leg"].replace({"NAN": "", "NONE": ""})
-    out["long_leg"] = out["long_leg"].replace({"NAN": "", "NONE": ""})
+    leg_cols = ["short_leg", "long_leg", "short_put_leg", "long_put_leg", "short_call_leg", "long_call_leg"]
+    for leg_col in leg_cols:
+        out[leg_col] = out[leg_col].astype(str).str.upper().str.strip()
+        out[leg_col] = out[leg_col].replace({"NAN": "", "NONE": ""})
 
     for leg_col, strike_col in [("short_leg", "short_strike"), ("long_leg", "long_strike")]:
         parsed = out[leg_col].map(parse_occ_symbol)
@@ -502,6 +533,17 @@ def _normalize_setups_df(df: pd.DataFrame, default_signal_date: Optional[dt.date
             )
             out.loc[has & out["expiry"].isna(), "expiry"] = parsed_ok.map(lambda x: x[1])
             out.loc[has & out[strike_col].isna(), strike_col] = parsed_ok.map(lambda x: x[3])
+
+    for leg_col in ["short_put_leg", "long_put_leg", "short_call_leg", "long_call_leg"]:
+        parsed = out[leg_col].map(parse_occ_symbol)
+        has = parsed.notna()
+        if has.any():
+            parsed_ok = parsed[has]
+            out.loc[has, "ticker"] = out.loc[has, "ticker"].mask(
+                out.loc[has, "ticker"].isna() | (out.loc[has, "ticker"].astype(str).str.len() == 0),
+                parsed_ok.map(lambda x: x[0]),
+            )
+            out.loc[has & out["expiry"].isna(), "expiry"] = parsed_ok.map(lambda x: x[1])
 
     for idx, row in out.iterrows():
         ticker = str(row.get("ticker", "")).upper().strip()
@@ -527,18 +569,35 @@ def _normalize_setups_df(df: pd.DataFrame, default_signal_date: Optional[dt.date
     out["trade_id"] = out["trade_id"].astype(str).replace({"nan": ""}).str.strip()
     out["width"] = (out["short_strike"] - out["long_strike"]).abs()
 
+    is_condor = out["strategy"].isin(CONDOR_STRATEGIES)
+    has_two_leg = (out["short_leg"].astype(str).str.len() > 0) & (out["long_leg"].astype(str).str.len() > 0)
+    has_condor_legs = (
+        (out["short_put_leg"].astype(str).str.len() > 0)
+        & (out["long_put_leg"].astype(str).str.len() > 0)
+        & (out["short_call_leg"].astype(str).str.len() > 0)
+        & (out["long_call_leg"].astype(str).str.len() > 0)
+    )
+
     valid = (
         out["ticker"].astype(str).str.len() > 0
     ) & (
         out["strategy"].astype(str).str.len() > 0
     ) & out["signal_date"].notna() & out["expiry"].notna() & (
-        out["short_leg"].astype(str).str.len() > 0
-    ) & (
-        out["long_leg"].astype(str).str.len() > 0
+        has_two_leg | (is_condor & has_condor_legs)
     ) & (
         out["net_type"].isin(["debit", "credit"])
     )
     out = out[valid].copy().reset_index(drop=True)
+
+    for idx, row in out.iterrows():
+        if str(row.get("strategy", "")).strip() not in CONDOR_STRATEGIES:
+            continue
+        parsed = {c: parse_occ_symbol(row.get(c)) for c in ["short_put_leg", "long_put_leg", "short_call_leg", "long_call_leg"]}
+        if any(v is None for v in parsed.values()):
+            continue
+        put_width = abs(float(parsed["short_put_leg"][3]) - float(parsed["long_put_leg"][3]))
+        call_width = abs(float(parsed["long_call_leg"][3]) - float(parsed["short_call_leg"][3]))
+        out.at[idx, "width"] = max(put_width, call_width)
 
     out["entry_gate_op"], out["entry_gate_threshold"], out["entry_gate_unit"] = zip(
         *out["entry_gate"].map(parse_entry_gate)
@@ -589,6 +648,65 @@ def _spread_value_at_expiry(long_leg: str, short_leg: str, spot: float, net_type
     return float(long_intr - short_intr)
 
 
+def _condor_entry_from_quotes(
+    net_type: str,
+    short_put_q: LegQuote,
+    long_put_q: LegQuote,
+    short_call_q: LegQuote,
+    long_call_q: LegQuote,
+    price_model: str,
+) -> float:
+    mode = str(price_model).lower()
+    if mode == "mid":
+        short_value = float(short_put_q.mid + short_call_q.mid)
+        long_value = float(long_put_q.mid + long_call_q.mid)
+    else:
+        short_value = float(short_put_q.bid + short_call_q.bid)
+        long_value = float(long_put_q.ask + long_call_q.ask)
+    if str(net_type).lower() == "credit":
+        return float(short_value - long_value)
+    return float(long_value - short_value)
+
+
+def _condor_exit_from_quotes(
+    net_type: str,
+    short_put_q: LegQuote,
+    long_put_q: LegQuote,
+    short_call_q: LegQuote,
+    long_call_q: LegQuote,
+    price_model: str,
+) -> float:
+    mode = str(price_model).lower()
+    if mode == "mid":
+        short_value = float(short_put_q.mid + short_call_q.mid)
+        long_value = float(long_put_q.mid + long_call_q.mid)
+    else:
+        short_value = float(short_put_q.ask + short_call_q.ask)
+        long_value = float(long_put_q.bid + long_call_q.bid)
+    if str(net_type).lower() == "credit":
+        return float(short_value - long_value)
+    return float(long_value - short_value)
+
+
+def _condor_value_at_expiry(
+    long_put_leg: str,
+    short_put_leg: str,
+    short_call_leg: str,
+    long_call_leg: str,
+    spot: float,
+    net_type: str,
+) -> Optional[float]:
+    parsed = [parse_occ_symbol(x) for x in [long_put_leg, short_put_leg, short_call_leg, long_call_leg]]
+    if any(p is None for p in parsed):
+        return None
+    (_, _, right_lp, strike_lp), (_, _, right_sp, strike_sp), (_, _, right_sc, strike_sc), (_, _, right_lc, strike_lc) = parsed
+    long_intr = intrinsic_value(right_lp, strike_lp, spot) + intrinsic_value(right_lc, strike_lc, spot)
+    short_intr = intrinsic_value(right_sp, strike_sp, spot) + intrinsic_value(right_sc, strike_sc, spot)
+    if str(net_type).lower() == "credit":
+        return float(short_intr - long_intr)
+    return float(long_intr - short_intr)
+
+
 def _pnl_from_spread(entry_net: float, exit_spread_value: float, net_type: str, qty: float) -> float:
     q = float(qty)
     if str(net_type).lower() == "credit":
@@ -615,6 +733,13 @@ def run_backtest(
         net_type = str(r.net_type).lower().strip()
         short_leg = str(r.short_leg).upper().strip()
         long_leg = str(r.long_leg).upper().strip()
+        short_put_leg = str(getattr(r, "short_put_leg", "") or "").upper().strip()
+        long_put_leg = str(getattr(r, "long_put_leg", "") or "").upper().strip()
+        short_call_leg = str(getattr(r, "short_call_leg", "") or "").upper().strip()
+        long_call_leg = str(getattr(r, "long_call_leg", "") or "").upper().strip()
+        is_condor = strategy in CONDOR_STRATEGIES and all(
+            [short_put_leg, long_put_leg, short_call_leg, long_call_leg]
+        )
         entry_gate = str(r.entry_gate or "").strip()
         qty = float(r.qty) if np.isfinite(safe_float(r.qty)) else 1.0
         width = float(r.width) if np.isfinite(safe_float(r.width)) else abs(float(r.short_strike) - float(r.long_strike))
@@ -629,6 +754,10 @@ def run_backtest(
             "expiry": expiry,
             "short_leg": short_leg,
             "long_leg": long_leg,
+            "short_put_leg": short_put_leg,
+            "long_put_leg": long_put_leg,
+            "short_call_leg": short_call_leg,
+            "long_call_leg": long_call_leg,
             "short_strike": short_strike,
             "long_strike": long_strike,
             "width": float(width),
@@ -642,14 +771,33 @@ def run_backtest(
         short_q_entry: Optional[LegQuote] = None
         long_q_entry: Optional[LegQuote] = None
         if str(entry_source).lower() == "quotes_only" or (str(entry_source).lower() == "auto" and not np.isfinite(entry_net)):
-            short_q_entry = quote_store.get_leg_quote(signal_date, short_leg)
-            long_q_entry = quote_store.get_leg_quote(signal_date, long_leg)
-            if short_q_entry is not None and long_q_entry is not None:
-                entry_net = _spread_entry_from_quotes(net_type, short_q_entry, long_q_entry, entry_price_model)
-                entry_src = f"quotes:{entry_price_model}"
+            if is_condor:
+                short_put_q_entry = quote_store.get_leg_quote(signal_date, short_put_leg)
+                long_put_q_entry = quote_store.get_leg_quote(signal_date, long_put_leg)
+                short_call_q_entry = quote_store.get_leg_quote(signal_date, short_call_leg)
+                long_call_q_entry = quote_store.get_leg_quote(signal_date, long_call_leg)
+                if all([short_put_q_entry, long_put_q_entry, short_call_q_entry, long_call_q_entry]):
+                    entry_net = _condor_entry_from_quotes(
+                        net_type,
+                        short_put_q_entry,
+                        long_put_q_entry,
+                        short_call_q_entry,
+                        long_call_q_entry,
+                        entry_price_model,
+                    )
+                    entry_src = f"quotes:{entry_price_model}"
+                else:
+                    entry_net = math.nan
+                    entry_src = "missing_quotes"
             else:
-                entry_net = math.nan
-                entry_src = "missing_quotes"
+                short_q_entry = quote_store.get_leg_quote(signal_date, short_leg)
+                long_q_entry = quote_store.get_leg_quote(signal_date, long_leg)
+                if short_q_entry is not None and long_q_entry is not None:
+                    entry_net = _spread_entry_from_quotes(net_type, short_q_entry, long_q_entry, entry_price_model)
+                    entry_src = f"quotes:{entry_price_model}"
+                else:
+                    entry_net = math.nan
+                    entry_src = "missing_quotes"
         elif str(entry_source).lower() == "input_only":
             entry_src = "input"
         else:
@@ -663,6 +811,20 @@ def run_backtest(
                     "entry_source": entry_src,
                     "status": "skipped_missing_entry",
                     "status_reason": "missing_entry_net_or_quotes",
+                    "gate_pass": False if entry_gate else np.nan,
+                }
+            )
+            continue
+
+        invalid_entry_reason = invalid_spread_value_reason(float(entry_net), width, "entry")
+        if invalid_entry_reason:
+            rows.append(
+                {
+                    **base_row,
+                    "entry_net": float(entry_net),
+                    "entry_source": entry_src,
+                    "status": "skipped_invalid_entry_economics",
+                    "status_reason": invalid_entry_reason,
                     "gate_pass": False if entry_gate else np.nan,
                 }
             )
@@ -705,13 +867,31 @@ def run_backtest(
             exit_src = "input"
         else:
             if mode in {"quotes_then_expiry", "input_then_quotes_then_expiry"} and close_date:
-                short_q_exit = quote_store.get_leg_quote(close_date, short_leg)
-                long_q_exit = quote_store.get_leg_quote(close_date, long_leg)
-                if short_q_exit is not None and long_q_exit is not None:
-                    exit_value = _spread_exit_from_quotes(net_type, short_q_exit, long_q_exit, exit_price_model)
-                    exit_src = f"quotes:{exit_price_model}"
+                if is_condor:
+                    short_put_q_exit = quote_store.get_leg_quote(close_date, short_put_leg)
+                    long_put_q_exit = quote_store.get_leg_quote(close_date, long_put_leg)
+                    short_call_q_exit = quote_store.get_leg_quote(close_date, short_call_leg)
+                    long_call_q_exit = quote_store.get_leg_quote(close_date, long_call_leg)
+                    if all([short_put_q_exit, long_put_q_exit, short_call_q_exit, long_call_q_exit]):
+                        exit_value = _condor_exit_from_quotes(
+                            net_type,
+                            short_put_q_exit,
+                            long_put_q_exit,
+                            short_call_q_exit,
+                            long_call_q_exit,
+                            exit_price_model,
+                        )
+                        exit_src = f"quotes:{exit_price_model}"
+                    else:
+                        exit_value = math.nan
                 else:
-                    exit_value = math.nan
+                    short_q_exit = quote_store.get_leg_quote(close_date, short_leg)
+                    long_q_exit = quote_store.get_leg_quote(close_date, long_leg)
+                    if short_q_exit is not None and long_q_exit is not None:
+                        exit_value = _spread_exit_from_quotes(net_type, short_q_exit, long_q_exit, exit_price_model)
+                        exit_src = f"quotes:{exit_price_model}"
+                    else:
+                        exit_value = math.nan
 
             if not np.isfinite(exit_value):
                 today = dt.date.today()
@@ -730,7 +910,17 @@ def run_backtest(
 
                 spot = close_store.get_close_on_or_before(ticker, expiry, lookback_days=close_lookback_days)
                 if spot is not None and np.isfinite(spot):
-                    v = _spread_value_at_expiry(long_leg, short_leg, float(spot), net_type=net_type)
+                    if is_condor:
+                        v = _condor_value_at_expiry(
+                            long_put_leg,
+                            short_put_leg,
+                            short_call_leg,
+                            long_call_leg,
+                            float(spot),
+                            net_type=net_type,
+                        )
+                    else:
+                        v = _spread_value_at_expiry(long_leg, short_leg, float(spot), net_type=net_type)
                     if v is not None and np.isfinite(v):
                         exit_value = float(v)
                         exit_src = "expiry_intrinsic"
@@ -744,6 +934,22 @@ def run_backtest(
                     "gate_pass": True,
                     "status": "failed_missing_exit_price",
                     "status_reason": "no_exit_quotes_or_expiry_spot",
+                }
+            )
+            continue
+
+        invalid_exit_reason = invalid_spread_value_reason(float(exit_value), width, "exit")
+        if invalid_exit_reason:
+            rows.append(
+                {
+                    **base_row,
+                    "entry_net": float(entry_net),
+                    "entry_source": entry_src,
+                    "exit_net": float(exit_value),
+                    "exit_source": exit_src,
+                    "gate_pass": True,
+                    "status": "failed_invalid_exit_economics",
+                    "status_reason": invalid_exit_reason,
                 }
             )
             continue

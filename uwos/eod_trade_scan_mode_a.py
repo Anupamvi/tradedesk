@@ -148,6 +148,17 @@ def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv):
     h["ask"] = pd.to_numeric(h.get("ask"), errors="coerce")
     h["volume"] = pd.to_numeric(h.get("volume"), errors="coerce")
     h["open_interest"] = pd.to_numeric(h.get("open_interest"), errors="coerce")
+    h["delta"] = pd.to_numeric(h["delta"], errors="coerce") if "delta" in h.columns else np.nan
+    h["iv"] = pd.to_numeric(h["iv"], errors="coerce") if "iv" in h.columns else np.nan
+    for _side_col in [
+        "ask_side_volume",
+        "bid_side_volume",
+        "mid_volume",
+        "sweep_volume",
+        "multileg_volume",
+        "stock_multi_leg_volume",
+    ]:
+        h[_side_col] = pd.to_numeric(h[_side_col], errors="coerce") if _side_col in h.columns else 0.0
     h["quote_date"] = pd.to_datetime(h.get("date"), errors="coerce").dt.date
     h["source_csv"] = hot_csv
     h["source_kind"] = "hot"
@@ -158,6 +169,14 @@ def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv):
             "ask",
             "volume",
             "open_interest",
+            "delta",
+            "iv",
+            "ask_side_volume",
+            "bid_side_volume",
+            "mid_volume",
+            "sweep_volume",
+            "multileg_volume",
+            "stock_multi_leg_volume",
             "quote_date",
             "source_csv",
             "source_kind",
@@ -171,6 +190,18 @@ def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv):
     o["ask"] = pd.to_numeric(o.get("last_ask"), errors="coerce")
     o["volume"] = pd.to_numeric(o.get("volume"), errors="coerce")
     o["open_interest"] = pd.to_numeric(o.get("curr_oi"), errors="coerce")
+    if "delta" in o.columns:
+        o["delta"] = pd.to_numeric(o["delta"], errors="coerce")
+    elif "curr_delta" in o.columns:
+        o["delta"] = pd.to_numeric(o["curr_delta"], errors="coerce")
+    else:
+        o["delta"] = np.nan
+    if "iv" in o.columns:
+        o["iv"] = pd.to_numeric(o["iv"], errors="coerce")
+    elif "curr_iv" in o.columns:
+        o["iv"] = pd.to_numeric(o["curr_iv"], errors="coerce")
+    else:
+        o["iv"] = np.nan
     o["quote_date"] = pd.to_datetime(o.get("curr_date"), errors="coerce").dt.date
     o["source_csv"] = oi_csv
     o["source_kind"] = "oi"
@@ -182,6 +213,8 @@ def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv):
             "ask",
             "volume",
             "open_interest",
+            "delta",
+            "iv",
             "quote_date",
             "source_csv",
             "source_kind",
@@ -212,6 +245,9 @@ def score_norm(series):
     if hi <= lo:
         return pd.Series(np.zeros(len(s)), index=s.index)
     return (s - lo) / (hi - lo)
+
+
+FLOW_CONTEXT_BY_TICKER = {}
 
 
 def candidate_dict(
@@ -261,8 +297,96 @@ def candidate_dict(
         "thesis": thesis,
         "invalidation": invalidation,
     }
+    flow_context = FLOW_CONTEXT_BY_TICKER.get(str(ticker).upper().strip(), {})
+    if flow_context:
+        out.update(flow_context)
     out.update(extras)
     return out
+
+
+def _leg_flow_metrics(row):
+    ask_v = fnum(row.get("ask_side_volume"))
+    bid_v = fnum(row.get("bid_side_volume"))
+    mid_v = fnum(row.get("mid_volume"))
+    multi_v = fnum(row.get("multileg_volume")) + fnum(row.get("stock_multi_leg_volume"))
+    vol_v = fnum(row.get("volume"))
+    den = ask_v + bid_v
+    ask_bid_bias = (ask_v - bid_v) / den if den > 0 else float("nan")
+    multi_share = multi_v / vol_v if vol_v > 0 else float("nan")
+    return {
+        "ask_side_volume": ask_v,
+        "bid_side_volume": bid_v,
+        "mid_volume": mid_v,
+        "multileg_volume": multi_v,
+        "volume": vol_v,
+        "ask_bid_bias": ask_bid_bias,
+        "multileg_share": multi_share,
+    }
+
+
+def contract_flow_for_spread(strategy, long_row=None, short_row=None, short_put_row=None, short_call_row=None):
+    strategy = str(strategy).strip()
+
+    def _confirm_debit(row, right):
+        m = _leg_flow_metrics(row)
+        bias = m["ask_bid_bias"]
+        if not np.isfinite(bias):
+            return "unknown", "no_contract_side_data", m
+        if bias >= 0.10:
+            return "confirmed", f"ask_side_{'call_buying' if right == 'C' else 'put_buying'}", m
+        if bias <= -0.10:
+            return "contra", f"bid_side_{'call_selling' if right == 'C' else 'put_selling'}", m
+        return "weak_or_ambiguous", "balanced_bid_ask", m
+
+    def _confirm_credit_short(row, right):
+        m = _leg_flow_metrics(row)
+        bias = m["ask_bid_bias"]
+        if not np.isfinite(bias):
+            return "unknown", "no_contract_side_data", m
+        if bias <= -0.10:
+            return "confirmed", f"bid_side_{'call_selling' if right == 'C' else 'put_selling'}", m
+        if bias >= 0.10:
+            return "contra", f"ask_side_{'call_buying' if right == 'C' else 'put_buying'}", m
+        return "weak_or_ambiguous", "balanced_bid_ask", m
+
+    if strategy == "Bull Call Debit" and long_row is not None:
+        status, driver, metrics = _confirm_debit(long_row, "C")
+    elif strategy == "Bear Put Debit" and long_row is not None:
+        status, driver, metrics = _confirm_debit(long_row, "P")
+    elif strategy == "Bull Put Credit" and short_row is not None:
+        status, driver, metrics = _confirm_credit_short(short_row, "P")
+    elif strategy == "Bear Call Credit" and short_row is not None:
+        status, driver, metrics = _confirm_credit_short(short_row, "C")
+    elif strategy in {"Iron Condor", "Iron Butterfly"} and short_put_row is not None and short_call_row is not None:
+        put_metrics = _leg_flow_metrics(short_put_row)
+        call_metrics = _leg_flow_metrics(short_call_row)
+        put_bias = put_metrics["ask_bid_bias"]
+        call_bias = call_metrics["ask_bid_bias"]
+        directional = (
+            (np.isfinite(put_bias) and abs(put_bias) >= 0.25)
+            or (np.isfinite(call_bias) and abs(call_bias) >= 0.25)
+        )
+        status = "directional" if directional else "confirmed_neutral"
+        driver = f"short_put_bias={put_bias:+.2f};short_call_bias={call_bias:+.2f}"
+        metrics = {
+            "ask_bid_bias": max(
+                abs(put_bias) if np.isfinite(put_bias) else 0.0,
+                abs(call_bias) if np.isfinite(call_bias) else 0.0,
+            ),
+            "multileg_share": max(
+                put_metrics["multileg_share"] if np.isfinite(put_metrics["multileg_share"]) else 0.0,
+                call_metrics["multileg_share"] if np.isfinite(call_metrics["multileg_share"]) else 0.0,
+            ),
+        }
+    else:
+        status, driver, metrics = "unknown", "no_contract_side_data", {}
+
+    return {
+        "contract_flow_confirmation": status,
+        "contract_flow_driver": driver,
+        "contract_flow_ask_bid_bias": metrics.get("ask_bid_bias", float("nan")),
+        "contract_flow_multileg_share": metrics.get("multileg_share", float("nan")),
+    }
 
 
 def compute_macro_regime(asof):
@@ -273,30 +397,35 @@ def compute_macro_regime(asof):
     spy_5d_ret = 0.0
     vix_level = 20.0
 
-    # Try Schwab first (fast, no timeouts)
+    # Try Schwab only for same-day runs. Historical replay must not use a
+    # current $VIX quote for an old signal date.
     try:
-        from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
-        config = SchwabAuthConfig.from_env(load_dotenv_file=True)
-        svc = SchwabLiveDataService(config=config, interactive_login=False)
-        client = svc.connect()
+        if asof >= dt.date.today():
+            from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+            config = SchwabAuthConfig.from_env(load_dotenv_file=True)
+            svc = SchwabLiveDataService(config=config, interactive_login=False)
+            client = svc.connect()
 
-        # SPY 5-day return from price history
-        end_dt = dt.datetime.combine(asof + dt.timedelta(days=1), dt.time())
-        start_dt = dt.datetime.combine(asof - dt.timedelta(days=10), dt.time())
-        resp = client.get_price_history_every_day("SPY", start_datetime=start_dt, end_datetime=end_dt)
-        resp.raise_for_status()
-        candles = resp.json().get("candles", [])
-        if len(candles) >= 6:
-            spy_5d_ret = candles[-1]["close"] / candles[-6]["close"] - 1.0
+            # SPY 5-day return from price history
+            end_dt = dt.datetime.combine(asof + dt.timedelta(days=1), dt.time())
+            start_dt = dt.datetime.combine(asof - dt.timedelta(days=10), dt.time())
+            resp = client.get_price_history_every_day("SPY", start_datetime=start_dt, end_datetime=end_dt)
+            resp.raise_for_status()
+            candles = resp.json().get("candles", [])
+            if len(candles) >= 6:
+                spy_5d_ret = candles[-1]["close"] / candles[-6]["close"] - 1.0
 
-        # VIX from quote
-        quotes = svc.get_quotes(["$VIX"])
-        vix_data = quotes.get("$VIX", {})
-        vix_quote = vix_data.get("quote", {})
-        vl = vix_quote.get("lastPrice") or vix_quote.get("closePrice")
-        if vl and vl > 0:
-            vix_level = float(vl)
+            # VIX from quote
+            quotes = svc.get_quotes(["$VIX"])
+            vix_data = quotes.get("$VIX", {})
+            vix_quote = vix_data.get("quote", {})
+            vl = vix_quote.get("lastPrice") or vix_quote.get("closePrice")
+            if vl and vl > 0:
+                vix_level = float(vl)
     except Exception:
+        pass
+
+    if asof < dt.date.today() or not np.isfinite(vix_level) or vix_level == 20.0:
         # Fallback to yfinance
         try:
             import yfinance as yf
@@ -309,6 +438,13 @@ def compute_macro_regime(asof):
                 close = pd.to_numeric(spy.get("Close"), errors="coerce").dropna()
                 if len(close) >= 6:
                     spy_5d_ret = float(close.iloc[-1]) / float(close.iloc[-6]) - 1.0
+            vix = yf.download("^VIX", start=start, end=end, auto_adjust=True, progress=False)
+            if vix is not None and not vix.empty:
+                if isinstance(vix.columns, pd.MultiIndex):
+                    vix.columns = vix.columns.get_level_values(0)
+                vix_close = pd.to_numeric(vix.get("Close"), errors="coerce").dropna()
+                if len(vix_close) >= 1:
+                    vix_level = float(vix_close.iloc[-1])
         except Exception:
             pass
 
@@ -462,6 +598,21 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     sc["implied_move_perc"] = pd.to_numeric(sc.get("implied_move_perc"), errors="coerce")
     sc["iv_rank"] = pd.to_numeric(sc.get("iv_rank"), errors="coerce")
 
+    def _num_sc_col(name, default=0.0):
+        if name in sc.columns:
+            return pd.to_numeric(sc.get(name), errors="coerce").fillna(default)
+        return pd.Series(default, index=sc.index, dtype=float)
+
+    for _flow_col in [
+        "call_volume_ask_side",
+        "call_volume_bid_side",
+        "put_volume_ask_side",
+        "put_volume_bid_side",
+        "net_call_premium",
+        "net_put_premium",
+    ]:
+        sc[_flow_col] = _num_sc_col(_flow_col)
+
     market_cap_col = ""
     for c in ["market_cap", "marketcap", "mkt_cap", "market_capitalization"]:
         if c in sc.columns:
@@ -486,22 +637,79 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
             is_index_mask = is_index_series.map(yn_bool)
         sc = sc[~(issue.isin({"ETF", "INDEX", "ETN"}) | is_index_mask)].copy()
 
-    sc["bull_raw"] = (sc["bullish_premium"] - sc["bearish_premium"]) + 0.25 * (
-        sc["call_premium"] - sc["put_premium"]
-    )
-    # Direction bias should be ticker-local, not cross-ticker normalized.
-    # Using normalized ranks here misclassifies many net-bull names as "bearish"
-    # when mega-cap notional dominates the global scale.
-    bull_den = (
-        (sc["bullish_premium"] - sc["bearish_premium"]).abs()
-        + 0.25 * (sc["call_premium"] - sc["put_premium"]).abs()
-    )
-    sc["direction_bias"] = np.where(
-        bull_den > 0,
-        sc["bull_raw"] / bull_den,
-        0.0,
-    )
-    sc["direction_bias"] = pd.to_numeric(sc["direction_bias"], errors="coerce").fillna(0.0).clip(-1.0, 1.0)
+    # Direction semantics:
+    #   bullish premium = ask-side calls + bid-side puts
+    #   bearish premium = ask-side puts + bid-side calls
+    # Raw call-minus-put premium is only supporting color. It must not saturate a
+    # marginal side-aware read into a perfect directional score.
+    flow_premium_den = (sc["bullish_premium"].abs() + sc["bearish_premium"].abs()).replace(0, np.nan)
+    sc["flow_premium_bias"] = (
+        (sc["bullish_premium"] - sc["bearish_premium"]) / flow_premium_den
+    ).replace([np.inf, -np.inf], np.nan).fillna(0.0).clip(-1.0, 1.0)
+    sc["flow_bull_volume"] = sc["call_volume_ask_side"] + sc["put_volume_bid_side"]
+    sc["flow_bear_volume"] = sc["put_volume_ask_side"] + sc["call_volume_bid_side"]
+    flow_volume_den = (sc["flow_bull_volume"].abs() + sc["flow_bear_volume"].abs()).replace(0, np.nan)
+    sc["flow_volume_bias"] = (
+        (sc["flow_bull_volume"] - sc["flow_bear_volume"]) / flow_volume_den
+    ).replace([np.inf, -np.inf], np.nan).fillna(0.0).clip(-1.0, 1.0)
+    call_put_den = (sc["call_premium"].abs() + sc["put_premium"].abs()).replace(0, np.nan)
+    sc["call_put_premium_bias"] = (
+        (sc["call_premium"] - sc["put_premium"]) / call_put_den
+    ).replace([np.inf, -np.inf], np.nan).fillna(0.0).clip(-1.0, 1.0)
+    sc["direction_bias"] = (
+        0.70 * sc["flow_premium_bias"]
+        + 0.20 * sc["flow_volume_bias"]
+        + 0.10 * sc["call_put_premium_bias"]
+    ).replace([np.inf, -np.inf], np.nan).fillna(0.0).clip(-1.0, 1.0)
+
+    def _flow_direction_label(v):
+        v = fnum(v)
+        if not np.isfinite(v) or abs(v) < 0.08:
+            return "neutral_or_ambiguous"
+        return "bullish" if v > 0 else "bearish"
+
+    def _flow_confidence_label(v):
+        v = abs(fnum(v))
+        if not np.isfinite(v):
+            return "unknown"
+        if v >= 0.30:
+            return "strong"
+        if v >= 0.15:
+            return "moderate"
+        if v >= 0.08:
+            return "weak"
+        return "ambiguous"
+
+    def _flow_primary_driver(row):
+        direction = str(row.get("flow_direction", "")).strip().lower()
+        if direction == "bullish":
+            call_ask = fnum(row.get("call_volume_ask_side"))
+            put_bid = fnum(row.get("put_volume_bid_side"))
+            return "ask_call_buying" if call_ask >= put_bid else "bid_put_selling"
+        if direction == "bearish":
+            put_ask = fnum(row.get("put_volume_ask_side"))
+            call_bid = fnum(row.get("call_volume_bid_side"))
+            return "ask_put_buying" if put_ask >= call_bid else "bid_call_selling"
+        return "mixed_or_ambiguous"
+
+    def _flow_confirmation_label(row):
+        direction_bias = fnum(row.get("direction_bias"))
+        premium_bias = fnum(row.get("flow_premium_bias"))
+        volume_bias = fnum(row.get("flow_volume_bias"))
+        if not (np.isfinite(direction_bias) and np.isfinite(premium_bias)):
+            return "weak_or_ambiguous"
+        if abs(direction_bias) < 0.15 or abs(premium_bias) < 0.08:
+            return "weak_or_ambiguous"
+        if np.sign(direction_bias) != np.sign(premium_bias):
+            return "conflicted"
+        if np.isfinite(volume_bias) and abs(volume_bias) >= 0.10 and np.sign(volume_bias) != np.sign(direction_bias):
+            return "conflicted"
+        return "confirmed"
+
+    sc["flow_direction"] = sc["direction_bias"].apply(_flow_direction_label)
+    sc["flow_confidence"] = sc["direction_bias"].apply(_flow_confidence_label)
+    sc["flow_primary_driver"] = sc.apply(_flow_primary_driver, axis=1)
+    sc["flow_confirmation"] = sc.apply(_flow_confirmation_label, axis=1)
     sc["bull_score"] = sc["direction_bias"].clip(lower=0.0, upper=1.0)
     sc["bear_score"] = (-sc["direction_bias"]).clip(lower=0.0, upper=1.0)
     # Directional strength (unsigned) — so bear trades score equally to bulls
@@ -512,6 +720,39 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         + sc["call_premium"].abs()
         + sc["put_premium"].abs()
     )
+    global FLOW_CONTEXT_BY_TICKER
+    flow_context_cols = [
+        "bullish_premium",
+        "bearish_premium",
+        "call_premium",
+        "put_premium",
+        "call_volume_ask_side",
+        "call_volume_bid_side",
+        "put_volume_ask_side",
+        "put_volume_bid_side",
+        "net_call_premium",
+        "net_put_premium",
+        "flow_bull_volume",
+        "flow_bear_volume",
+        "flow_premium_bias",
+        "flow_volume_bias",
+        "call_put_premium_bias",
+        "direction_bias",
+        "flow_direction",
+        "flow_confidence",
+        "flow_primary_driver",
+        "flow_confirmation",
+    ]
+    FLOW_CONTEXT_BY_TICKER = {}
+    for _, _flow_row in sc.iterrows():
+        _ticker = str(_flow_row.get("ticker", "")).upper().strip()
+        if not _ticker:
+            continue
+        FLOW_CONTEXT_BY_TICKER[_ticker] = {
+            col: _flow_row.get(col)
+            for col in flow_context_cols
+            if col in sc.columns
+        }
     sc = sc.sort_values("interest_score", ascending=False).head(max(1, max_tickers_to_scan))
 
     whale_rank = {}
@@ -522,6 +763,69 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
             for i, sym in enumerate(tmp["underlying_symbol"].astype(str).str.upper().tolist(), 1):
                 if sym and sym != "NAN":
                     whale_rank[sym] = max(whale_rank.get(sym, 0.0), max(0.0, 1.0 - (i - 1) / 60.0))
+
+    # UW historical exports often include IV but not option delta. Stage-1
+    # SHIELD generation uses delta gates; if delta is missing it can select
+    # high-delta short legs that Stage-2 later rejects. Estimate missing deltas
+    # from dated spot/IV so discovery and approval use aligned risk geometry.
+    def _norm_cdf(x):
+        return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+    sc_close_by_ticker = {}
+    if "ticker" in sc.columns and "close" in sc.columns:
+        sc_close_by_ticker = {
+            str(t).strip().upper(): fnum(c)
+            for t, c in zip(sc["ticker"], sc["close"])
+            if str(t).strip()
+        }
+
+    def _estimate_missing_delta(row):
+        current = fnum(row.get("delta"))
+        if np.isfinite(current) and abs(current) <= 1.0:
+            return current
+        ticker_local = str(row.get("ticker", "")).strip().upper()
+        spot_local = fnum(FLOW_CONTEXT_BY_TICKER.get(ticker_local, {}).get("close"))
+        if not np.isfinite(spot_local):
+            spot_local = fnum(sc_close_by_ticker.get(ticker_local))
+        strike_local = fnum(row.get("strike"))
+        iv_local = fnum(row.get("iv"))
+        right_local = str(row.get("right", "")).strip().upper()
+        expiry_local = row.get("expiry")
+        if not isinstance(expiry_local, dt.date):
+            expiry_local = parse_date(expiry_local)
+        if not (
+            np.isfinite(spot_local)
+            and spot_local > 0
+            and np.isfinite(strike_local)
+            and strike_local > 0
+            and np.isfinite(iv_local)
+            and iv_local > 0
+            and right_local in {"C", "P"}
+            and isinstance(expiry_local, dt.date)
+        ):
+            return math.nan
+        if iv_local > 5.0:
+            iv_local = iv_local / 100.0
+        if iv_local <= 0 or iv_local > 5.0:
+            return math.nan
+        dte_local = max(1, (expiry_local - asof).days)
+        t_local = dte_local / 365.0
+        r_local = 0.04
+        try:
+            d1 = (
+                math.log(spot_local / strike_local)
+                + (r_local + 0.5 * iv_local * iv_local) * t_local
+            ) / (iv_local * math.sqrt(t_local))
+        except (ValueError, ZeroDivisionError):
+            return math.nan
+        if not np.isfinite(d1):
+            return math.nan
+        return _norm_cdf(d1) if right_local == "C" else _norm_cdf(d1) - 1.0
+
+    quotes = quotes.copy()
+    if "delta" not in quotes.columns:
+        quotes["delta"] = np.nan
+    quotes["delta"] = quotes.apply(_estimate_missing_delta, axis=1)
 
     chains = {}
     for key, grp in quotes.groupby(["ticker", "right", "expiry"]):
@@ -557,6 +861,59 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         w["_dist"] = (pd.to_numeric(w["strike"], errors="coerce") - float(target)).abs()
         w = w.sort_values(["_dist", "strike"], ascending=[True, True]).head(strike_search_depth)
         return w.drop(columns=["_dist"])
+
+    def stage1_shield_delta_cap(ivr, dte, strategy):
+        if not np.isfinite(ivr):
+            ivr = 30.0
+        if ivr >= 50:
+            base = 0.35
+        elif ivr >= 35:
+            base = 0.30
+        elif ivr >= 25:
+            base = 0.25
+        elif ivr >= 15:
+            base = 0.20
+        else:
+            return 0.0
+        if 45 <= dte <= 60:
+            dte_adj = 0.0
+        elif 30 <= dte < 45:
+            dte_adj = -0.03
+        elif 21 <= dte < 30:
+            dte_adj = -0.06
+        elif dte < 21:
+            dte_adj = -0.10
+        else:
+            dte_adj = -0.02
+        vix = fnum(macro.get("vix_level"))
+        if vix > 40:
+            vix_adj = -0.08
+        elif vix > 30:
+            vix_adj = -0.03
+        elif vix < 15:
+            vix_adj = -0.05
+        else:
+            vix_adj = 0.0
+        ic_adj = -0.03 if strategy == "iron_condor" else 0.0
+        return max(0.10, min(0.40, base + dte_adj + vix_adj + ic_adj))
+
+    def top_shield_shorts_by_gate(df, target, right, dte, sigma, sigma_factor, strategy):
+        if df is None or df.empty:
+            return df.iloc[0:0].copy()
+        pool = df.copy()
+        cap = stage1_shield_delta_cap(iv_rank, dte, strategy)
+        if cap <= 0:
+            return df.iloc[0:0].copy()
+        if cap > 0:
+            delta = pd.to_numeric(pool.get("delta"), errors="coerce").abs()
+            pool = pool[np.isfinite(delta) & (delta <= cap)].copy()
+        sigma_known = np.isfinite(sigma) and sigma > 0
+        if sigma_known:
+            if str(right).upper() == "P":
+                pool = pool[pd.to_numeric(pool["strike"], errors="coerce") <= (spot - sigma * sigma_factor)].copy()
+            else:
+                pool = pool[pd.to_numeric(pool["strike"], errors="coerce") >= (spot + sigma * sigma_factor)].copy()
+        return top_by_target(pool, target)
 
     def merge_target_candidates(df, targets):
         if df is None or df.empty:
@@ -815,6 +1172,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             "Bull call debit fits bullish flow with capped downside.",
                             f"Invalidate if close < {inv_level:.2f}.",
                             iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
+                            **contract_flow_for_spread("Bull Call Debit", long_row=lg, short_row=sh),
                         ))
 
             puts = chains.get((ticker, "P", expiry))
@@ -909,6 +1267,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             "Bear put debit fits bearish flow with convex downside.",
                             f"Invalidate if close > {inv_level:.2f}.",
                             iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
+                            **contract_flow_for_spread("Bear Put Debit", long_row=lg, short_row=sh),
                         ))
 
         # Bull Put Credit + Bear Call Credit (SHIELD with full rulebook gating).
@@ -924,7 +1283,9 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
             if allow_shield_bull and puts is not None:
                 tshort = spot * (1.0 - shield_otm)
                 short_pool = puts[(puts["strike"] < spot) & (puts["strike"] >= spot * 0.70)].copy()
-                short_candidates = top_by_target(short_pool, tshort)
+                short_candidates = top_shield_shorts_by_gate(
+                    short_pool, tshort, "P", dte, sigma, shield_sigma_relax, "credit_spread"
+                )
                 for _, sh in short_candidates.iterrows():
                     long_pool = puts[puts["strike"] < sh["strike"]].copy()
                     long_candidates = top_by_target(long_pool, float(sh["strike"]) - default_w)
@@ -1044,13 +1405,16 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             core_ok=bool(core_ok),
                             high_beta_pass=bool(hb_pass),
                             earnings_label=str(er.get("label", "")),
+                            **contract_flow_for_spread("Bull Put Credit", short_row=sh, long_row=lg),
                         ))
 
             calls = chains.get((ticker, "C", expiry))
             if allow_shield_bear and calls is not None:
                 tshort = spot * (1.0 + shield_otm)
                 short_pool = calls[(calls["strike"] > spot) & (calls["strike"] <= spot * 1.30)].copy()
-                short_candidates = top_by_target(short_pool, tshort)
+                short_candidates = top_shield_shorts_by_gate(
+                    short_pool, tshort, "C", dte, sigma, shield_sigma_relax, "credit_spread"
+                )
                 for _, sh in short_candidates.iterrows():
                     long_pool = calls[calls["strike"] > sh["strike"]].copy()
                     long_candidates = top_by_target(long_pool, float(sh["strike"]) + default_w)
@@ -1182,6 +1546,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             core_ok=bool(core_ok),
                             high_beta_pass=bool(hb_pass),
                             earnings_label=str(er.get("label", "")),
+                            **contract_flow_for_spread("Bear Call Credit", short_row=sh, long_row=lg),
                         ))
 
             # Iron Condor (SHIELD neutral income), built directly from live executable put/call legs.
@@ -1198,8 +1563,12 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                     (calls_for_condor["strike"] > spot) & (calls_for_condor["strike"] <= spot * 1.30)
                 ].copy()
 
-                put_short_candidates = top_by_target(put_short_pool, tshort_put)
-                call_short_candidates = top_by_target(call_short_pool, tshort_call)
+                put_short_candidates = top_shield_shorts_by_gate(
+                    put_short_pool, tshort_put, "P", dte, sigma, shield_ic_sigma_relax, "iron_condor"
+                )
+                call_short_candidates = top_shield_shorts_by_gate(
+                    call_short_pool, tshort_call, "C", dte, sigma, shield_ic_sigma_relax, "iron_condor"
+                )
 
                 put_sides = []
                 for _, sh_put in put_short_candidates.iterrows():
@@ -1436,6 +1805,11 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                                 high_beta_pass=bool(hb_pass),
                                 earnings_label=str(er.get("label", "")),
                                 range_neutrality=float(neutrality),
+                                **contract_flow_for_spread(
+                                    "Iron Condor",
+                                    short_put_row=sh_put,
+                                    short_call_row=sh_call,
+                                ),
                             )
                         )
 
@@ -2107,5 +2481,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

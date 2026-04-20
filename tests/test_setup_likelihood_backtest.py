@@ -75,6 +75,65 @@ class TestSetupLikelihoodBacktest(unittest.TestCase):
     def test_safe_symbol_for_file(self) -> None:
         self.assertEqual(mod.safe_symbol_for_file("BRK/B"), "BRK_B")
 
+    def test_yfinance_symbol_for_class_share(self) -> None:
+        self.assertEqual(mod.yfinance_symbol("BRKB"), "BRK-B")
+        self.assertEqual(mod.yfinance_symbol("BRK/B"), "BRK-B")
+        self.assertEqual(mod.yfinance_symbol("BABA"), "BABA")
+
+    def test_price_conditioning_uses_same_trend_bucket(self) -> None:
+        closes = [100 + i for i in range(70)] + [170 - i for i in range(30)]
+        hist = pd.DataFrame(
+            {
+                "Open": closes,
+                "High": [c + 1 for c in closes],
+                "Low": [c - 1 for c in closes],
+                "Close": closes,
+            }
+        )
+        thresholds = mod.context_thresholds(hist)
+        up_ctx = mod.price_context_at(hist, 40, thresholds=thresholds)
+        down_ctx = mod.price_context_at(hist, 95, thresholds=thresholds)
+        profile = {
+            "trend_bucket": "up",
+            "vol_bucket": "unknown",
+            "range_bucket": "unknown",
+            "require_range_neutral": False,
+        }
+        self.assertTrue(mod.context_matches_profile(up_ctx, profile, "same_trend"))
+        self.assertFalse(mod.context_matches_profile(down_ctx, profile, "same_trend"))
+
+    def test_unknown_row_includes_base_rate_transparency_columns(self) -> None:
+        row = mod.unknown_row(
+            ticker="AAPL",
+            strategy="Bull Call Debit",
+            expiry="2026-03-20",
+            dte=30,
+            entry_gate="<= 2.00 db",
+            spot_at_signal=190.0,
+            required_win_pct=40.0,
+            reason="missing_history",
+        )
+        self.assertIn("base_hist_success_pct", row)
+        self.assertIn("conditioning_level", row)
+        self.assertIn("unsupported_context", row)
+
+    def test_unknown_row_preserves_setup_id_for_precise_merge(self) -> None:
+        row = mod.unknown_row(
+            ticker="AAPL",
+            strategy="Bull Call Debit",
+            expiry="2026-03-20",
+            dte=30,
+            entry_gate="<= 2.00 db",
+            spot_at_signal=190.0,
+            required_win_pct=40.0,
+            reason="missing_history",
+            setup_id="AAPL|Bull Call Debit|2026-03-20|190|200|10|<= 2.00 db",
+        )
+        self.assertEqual(
+            row["setup_id"],
+            "AAPL|Bull Call Debit|2026-03-20|190|200|10|<= 2.00 db",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

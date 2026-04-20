@@ -130,27 +130,63 @@ approval:
   shield_live_valid_min_no_touch_floor: 50.0  # [T3] new — floor even for live-valid override path
   shield_live_valid_min_edge_floor: 4.0        # [T3] new — minimum edge even for live-valid override
   min_edge_pct: 8.0
-  min_edge_pct_bear: 7.0              # [T9] was: 5.0 — backtest shows bears are net losers at 5%; raised to 7% for real edge
-  min_edge_pct_shield: 5.0            # [T8] credit spreads/ICs same; backtest model is directional-agnostic for credits
+  min_edge_pct_bear: 12.0             # [BT] bear debit approvals scored only ~59% breakeven hit; require stronger edge
+  min_edge_pct_shield: 8.0            # [BT] full-GEX replay: credit/IC approvals below 8% had poor realized quality
   min_signals: 120
   min_credit_no_touch_pct: 25.0       # [T5] was: 65.0 — lowered; realistic for current vol. Edge gate still protects PF.
   credit_no_touch_require_data: true
   ic_exempt_from_no_touch: true       # [T5] new — IC profitability is terminal (expiry-zone), no-touch is path-based
   min_likelihood_strength: Moderate
-  min_likelihood_strength_bear: Weak   # [T8] bears rarely reach Moderate in bull-trained model; Weak is still informative
+  min_likelihood_strength_bear: Moderate # [BT] Weak bear debits were the main loser cluster; require stronger evidence
   min_likelihood_strength_shield: Weak # [T8] same for credit spreads
   disallow_likelihood_strengths: [Low Sample, Negative, Negative-Strong, N/A]
 
   allow_stage1_watch_promotion: true
-  stage1_watch_promotion_min_conviction: 60
+  stage1_watch_promotion_min_conviction: 55
   stage1_watch_promotion_min_edge_pct: 8.0
-  stage1_watch_promotion_min_signals: 200
+  stage1_watch_promotion_min_signals: 150
+  allow_fire_breakout_exception: true
+  fire_breakout_min_conviction: 40
+  fire_breakout_min_edge_pct: 12.0
+  fire_breakout_min_signals: 120
+  fire_breakout_min_long_delta: 0.35
+  fire_breakout_require_risk_on: true
+  fire_breakout_max_wall_distance_pct: 0.01
+  # Backtest-calibrated bull-call evidence lane.
+  # This does not broadly approve Watch rows: it only promotes FIRE bull-call
+  # debits with PASS likelihood, enough samples, <=35 DTE, acceptable live
+  # delta/entry/reward-risk, no confirmed bearish ticker flow, and confirmed
+  # contract-neighborhood flow. Missing UW GEX keeps the trade Tactical rather
+  # than Core.
+  allow_bull_call_evidence_lane: true
+  bull_call_evidence_min_edge_pct: 8.0
+  bull_call_evidence_min_signals: 120
+  bull_call_evidence_min_conviction: 30
+  bull_call_evidence_min_long_delta: 0.30
+  bull_call_evidence_max_dte: 35
+  bull_call_evidence_min_reward_risk: 2.0
+  bull_call_evidence_require_contract_confirmed: true
+  bull_call_evidence_allow_gex_missing: true
+  # Apply the same professional execution-quality guard to all approved
+  # bull-call debit trades, not just evidence-lane promotions.
+  bull_call_approval_max_dte: 35
+  bull_call_approval_min_reward_risk: 2.0
+  bull_call_approval_require_contract_confirmed: true
+  # Regime throttle:
+  # High = eligible for Core if all other gates are clean.
+  # Medium = Tactical only.
+  # Low = Watch/blocked for bull-call debits.
+  bull_call_market_regime_enabled: true
+  bull_call_low_regime_blocks: true
+  bull_call_medium_regime_tactical: true
+  bull_call_regime_low_score: 50
+  bull_call_regime_high_score: 75
   # Dual-book approvals:
   # Core = full size, Tactical = reduced size when only quality blockers fail.
   enable_dual_books: true
   core_size_mult: 1.00
   tactical_size_mult: 0.50
-  tactical_min_conviction: 60
+  tactical_min_conviction: 55
   tactical_min_edge_pct: 6.5          # [T2] was: 5.0 — half-size trades must clear higher edge bar
   tactical_min_signals: 150           # [T2] was: 120 — more historical validation required for tactical
   tactical_require_verdict_pass: true
@@ -185,11 +221,12 @@ approval:
   min_abs_long_delta_fire: 0.15
   # GEX regime gate: block regime-mismatched trades
   require_gex_regime: true
+  min_fire_pinned_gex_abs: 10000000   # require at least $10M pinned GEX before downgrading FIRE out of Core
 
   # Keep very speculative structures out of approved set.
   disallow_confidence_tiers: [REJECT, LOTTO]
 
-  enforce_pretrade_portfolio_caps: false
+  enforce_pretrade_portfolio_caps: true
   pretrade_caps_require_data: false
 
 high_beta:

@@ -6,6 +6,7 @@ import math
 import re
 import subprocess
 import sys
+import urllib.parse
 import zipfile
 from collections import defaultdict
 from pathlib import Path
@@ -171,6 +172,64 @@ def pick_csvs(base_dir: Path):
             raise FileNotFoundError(f"Missing required CSV prefix: {pref}")
         out[pref] = sorted(matches)[-1]
     return out
+
+
+def ensure_whale_markdown(base_dir: Path, out_dir: Path, asof_str: str, cfg_path: Path, dp_eod_csv: Path) -> Path:
+    whale_md = base_dir / f"whale-{asof_str}.md"
+    if whale_md.exists():
+        return whale_md
+
+    alt = sorted(base_dir.glob("whale-*.md"))
+    if alt:
+        return alt[-1]
+
+    generated = out_dir / f"whale-{asof_str}.md"
+    if generated.exists():
+        return generated
+
+    input_candidates = []
+    for candidate in [
+        base_dir / f"whale_trades_filtered-{asof_str}.csv",
+        base_dir / f"whale_trades_filtered-{asof_str}.zip",
+        *sorted(base_dir.glob("whale_trades_filtered*.csv")),
+        *sorted(base_dir.glob("whale_trades_filtered*.zip")),
+        dp_eod_csv,
+    ]:
+        if candidate not in input_candidates:
+            input_candidates.append(candidate)
+    repo_root = Path(__file__).resolve().parents[1]
+    failures = []
+    for input_path in input_candidates:
+        if not input_path.exists():
+            continue
+        cp = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "uwos.generate_whale_summary",
+                "--input",
+                str(input_path),
+                "--config",
+                str(cfg_path),
+                "--output",
+                str(generated),
+            ],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if cp.returncode == 0 and generated.exists():
+            print(f"  [whale] Generated missing whale summary from {input_path.name}: {generated}")
+            return generated
+        details = "\n".join(part for part in [(cp.stdout or "").strip(), (cp.stderr or "").strip()] if part)
+        failures.append(f"{input_path.name}: {details}")
+    if not generated.exists():
+        raise FileNotFoundError(
+            f"Missing whale markdown in {base_dir}; auto-generation did not create {generated}. "
+            + " | ".join(failures)
+        )
+    return generated
 
 
 def round_strike(x):
@@ -455,6 +514,338 @@ def candidate_uses_short_put_risk(strategy: str) -> bool:
     return s in {"Bull Put Credit", "Iron Condor", "Iron Butterfly"}
 
 
+def _hist_quote_map(quotes: pd.DataFrame) -> pd.DataFrame:
+    q = quotes.copy()
+    if "option_symbol" not in q.columns:
+        return pd.DataFrame()
+    q["option_symbol"] = q["option_symbol"].astype(str).str.strip()
+    q = q[q["option_symbol"] != ""].copy()
+    if q.empty:
+        return pd.DataFrame()
+    return q.drop_duplicates("option_symbol", keep="last").set_index("option_symbol", drop=False)
+
+
+def _hist_leg(qmap: pd.DataFrame, symbol: object) -> dict:
+    sym = str(symbol or "").strip()
+    if not sym or qmap.empty or sym not in qmap.index:
+        return {
+            "symbol": sym,
+            "missing": True,
+            "bid": math.nan,
+            "ask": math.nan,
+            "delta": math.nan,
+            "delta_source": "",
+            "iv": math.nan,
+            "right": "",
+            "strike": math.nan,
+            "expiry": "",
+            "volume": math.nan,
+            "open_interest": math.nan,
+        }
+    row = qmap.loc[sym]
+    if isinstance(row, pd.DataFrame):
+        row = row.iloc[-1]
+    return {
+        "symbol": sym,
+        "missing": False,
+        "bid": fnum(row.get("bid")),
+        "ask": fnum(row.get("ask")),
+        "delta": _safe_delta(row.get("delta")),
+        "delta_source": "quoted" if np.isfinite(_safe_delta(row.get("delta"))) else "",
+        "iv": fnum(row.get("iv")),
+        "right": str(row.get("right", "") or "").strip().upper(),
+        "strike": fnum(row.get("strike")),
+        "expiry": str(row.get("expiry", ""))[:10],
+        "volume": fnum(row.get("volume")),
+        "open_interest": fnum(row.get("open_interest")),
+    }
+
+
+def _hist_norm_cdf(x: float) -> float:
+    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+
+def _hist_estimate_delta(leg: dict, spot: float, asof: dt.date) -> dict:
+    if np.isfinite(fnum(leg.get("delta"))):
+        return leg
+    if bool(leg.get("missing")) or not np.isfinite(spot) or spot <= 0:
+        return leg
+    strike = fnum(leg.get("strike"))
+    iv = fnum(leg.get("iv"))
+    right = str(leg.get("right", "") or "").upper().strip()
+    expiry_raw = str(leg.get("expiry", "") or "")[:10]
+    try:
+        expiry = dt.datetime.strptime(expiry_raw, "%Y-%m-%d").date()
+    except Exception:
+        return leg
+    if not (np.isfinite(strike) and strike > 0 and np.isfinite(iv) and iv > 0 and right in {"C", "P"}):
+        return leg
+    if iv > 5.0:
+        iv = iv / 100.0
+    if iv <= 0 or iv > 5.0:
+        return leg
+    dte = max(1, (expiry - asof).days)
+    t = dte / 365.0
+    r = 0.04
+    try:
+        d1 = (math.log(spot / strike) + (r + 0.5 * iv * iv) * t) / (iv * math.sqrt(t))
+    except (ValueError, ZeroDivisionError):
+        return leg
+    if not np.isfinite(d1):
+        return leg
+    est = _hist_norm_cdf(d1) if right == "C" else _hist_norm_cdf(d1) - 1.0
+    if not np.isfinite(est) or abs(est) > 1.0:
+        return leg
+    out = dict(leg)
+    out["delta"] = float(est)
+    out["delta_source"] = "bs_iv_estimate"
+    return out
+
+
+def _hist_valid_bid_ask(leg: dict, need_bid: bool, need_ask: bool) -> bool:
+    if bool(leg.get("missing")):
+        return False
+    if need_bid and not np.isfinite(fnum(leg.get("bid"))):
+        return False
+    if need_ask and not np.isfinite(fnum(leg.get("ask"))):
+        return False
+    return True
+
+
+def _hist_spread_net(net_type: str, short_leg: dict, long_leg: dict) -> float:
+    nt = str(net_type or "").strip().lower()
+    if nt == "credit":
+        if not (_hist_valid_bid_ask(short_leg, True, False) and _hist_valid_bid_ask(long_leg, False, True)):
+            return math.nan
+        return fnum(short_leg.get("bid")) - fnum(long_leg.get("ask"))
+    if nt == "debit":
+        if not (_hist_valid_bid_ask(long_leg, False, True) and _hist_valid_bid_ask(short_leg, True, False)):
+            return math.nan
+        return fnum(long_leg.get("ask")) - fnum(short_leg.get("bid"))
+    return math.nan
+
+
+def _hist_parse_invalidation(text: object):
+    raw = str(text or "")
+    m = re.search(r"(<=|>=|<|>)\s*(-?[0-9]+(?:\.[0-9]+)?)", raw)
+    if not m:
+        return "", math.nan
+    try:
+        return m.group(1), float(m.group(2))
+    except (TypeError, ValueError):
+        return "", math.nan
+
+
+def _hist_invalidation_breached(op: str, level: float, price: float) -> bool:
+    if not op or not np.isfinite(level) or not np.isfinite(price):
+        return False
+    if op == "<":
+        return price < level
+    if op == "<=":
+        return price <= level
+    if op == ">":
+        return price > level
+    if op == ">=":
+        return price >= level
+    return False
+
+
+def _hist_entry_structure(strategy: str, row: pd.Series, spot: float, live_net: float) -> tuple:
+    s = str(strategy or "").strip()
+    if not np.isfinite(spot) or spot <= 0:
+        return False, "missing_asof_underlying_close"
+
+    long_strike = fnum(row.get("long_strike"))
+    short_strike = fnum(row.get("short_strike"))
+    long_put = fnum(row.get("long_put_strike"))
+    short_put = fnum(row.get("short_put_strike"))
+    short_call = fnum(row.get("short_call_strike"))
+    long_call = fnum(row.get("long_call_strike"))
+
+    if s == "Bull Call Debit":
+        if not (np.isfinite(long_strike) and np.isfinite(short_strike) and long_strike < short_strike):
+            return False, "bull_call_strike_order_invalid"
+        return True, "ok"
+    if s == "Bear Put Debit":
+        if not (np.isfinite(long_strike) and np.isfinite(short_strike) and long_strike > short_strike):
+            return False, "bear_put_strike_order_invalid"
+        return True, "ok"
+    if s == "Bull Put Credit":
+        if not (np.isfinite(long_strike) and np.isfinite(short_strike) and long_strike < short_strike):
+            return False, "bull_put_strike_order_invalid"
+        if np.isfinite(live_net) and spot <= (short_strike - live_net):
+            return False, "spot_below_bull_put_breakeven"
+        return True, "ok"
+    if s == "Bear Call Credit":
+        if not (np.isfinite(short_strike) and np.isfinite(long_strike) and short_strike < long_strike):
+            return False, "bear_call_strike_order_invalid"
+        if np.isfinite(live_net) and spot >= (short_strike + live_net):
+            return False, "spot_above_bear_call_breakeven"
+        return True, "ok"
+    if s == "Long Iron Condor":
+        if not (
+            np.isfinite(long_put)
+            and np.isfinite(short_put)
+            and np.isfinite(short_call)
+            and np.isfinite(long_call)
+            and short_put < long_put < long_call < short_call
+        ):
+            return False, "long_condor_strike_order_invalid"
+        return True, "ok"
+    if s in {"Iron Condor", "Iron Butterfly"}:
+        if not (
+            np.isfinite(long_put)
+            and np.isfinite(short_put)
+            and np.isfinite(short_call)
+            and np.isfinite(long_call)
+            and long_put < short_put <= short_call < long_call
+        ):
+            return False, "condor_strike_order_invalid"
+        if not (short_put < spot < short_call):
+            return False, "spot_outside_short_strikes"
+        if np.isfinite(live_net):
+            lower_be = short_put - live_net
+            upper_be = short_call + live_net
+            if not (lower_be < spot < upper_be):
+                return False, "spot_outside_condor_breakevens"
+        return True, "ok"
+    return True, "ok"
+
+
+def build_historical_replay_live_table(
+    shortlist: pd.DataFrame,
+    quotes: pd.DataFrame,
+    spot_map: dict,
+    asof_str: str,
+    live_csv: Path,
+    live_final_csv: Path,
+) -> int:
+    """Build a Stage-2-compatible table from dated local UW files.
+
+    This is for audit/backtest replay only. It deliberately does not call Schwab
+    or yfinance for current quotes, because that would mix today's market state
+    into an old-date decision review.
+    """
+    qmap = _hist_quote_map(quotes)
+    asof = dt.datetime.strptime(asof_str, "%Y-%m-%d").date()
+    rows = []
+    for _, row in shortlist.iterrows():
+        rec = row.to_dict()
+        ticker = str(row.get("ticker", "")).strip().upper()
+        strategy = str(row.get("strategy", "")).strip()
+        net_type = str(row.get("net_type", "")).strip().lower()
+        spot = fnum(spot_map.get(ticker))
+        width = fnum(row.get("width"))
+
+        short_leg = _hist_estimate_delta(_hist_leg(qmap, row.get("short_leg")), spot, asof)
+        long_leg = _hist_estimate_delta(_hist_leg(qmap, row.get("long_leg")), spot, asof)
+        short_put_leg = _hist_estimate_delta(_hist_leg(qmap, row.get("short_put_leg")), spot, asof)
+        long_put_leg = _hist_estimate_delta(_hist_leg(qmap, row.get("long_put_leg")), spot, asof)
+        short_call_leg = _hist_estimate_delta(_hist_leg(qmap, row.get("short_call_leg")), spot, asof)
+        long_call_leg = _hist_estimate_delta(_hist_leg(qmap, row.get("long_call_leg")), spot, asof)
+
+        live_net = math.nan
+        missing_quote = False
+        if strategy in {"Iron Condor", "Iron Butterfly", "Long Iron Condor"}:
+            condor_type = "debit" if strategy == "Long Iron Condor" else "credit"
+            put_net = _hist_spread_net(condor_type, short_put_leg, long_put_leg)
+            call_net = _hist_spread_net(condor_type, short_call_leg, long_call_leg)
+            if np.isfinite(put_net) and np.isfinite(call_net):
+                live_net = put_net + call_net
+            else:
+                missing_quote = True
+            put_width = abs(fnum(short_put_leg.get("strike")) - fnum(long_put_leg.get("strike")))
+            call_width = abs(fnum(long_call_leg.get("strike")) - fnum(short_call_leg.get("strike")))
+            width_live = max(put_width if np.isfinite(put_width) else math.nan, call_width if np.isfinite(call_width) else math.nan)
+            if not np.isfinite(width_live):
+                width_live = width
+        else:
+            live_net = _hist_spread_net(net_type, short_leg, long_leg)
+            missing_quote = not np.isfinite(live_net)
+            width_live = abs(fnum(short_leg.get("strike")) - fnum(long_leg.get("strike")))
+            if not np.isfinite(width_live):
+                width_live = width
+
+        entry_ok, entry_reason = _hist_entry_structure(strategy, row, spot, live_net)
+        _, gate_target, _ = parse_gate_value(str(row.get("entry_gate", "")))
+        gate_pass = False
+        if np.isfinite(live_net) and np.isfinite(gate_target):
+            gate_pass = live_net <= gate_target if net_type == "debit" else live_net >= gate_target
+
+        if not np.isfinite(spot):
+            live_status = "missing_underlying_quote"
+        elif not entry_ok:
+            live_status = "invalid_entry_structure"
+        elif missing_quote:
+            live_status = "missing_live_quote"
+        elif not gate_pass:
+            live_status = "fails_live_entry_gate"
+        else:
+            live_status = "ok_live"
+
+        width_for_max = width_live if np.isfinite(width_live) else width
+        if strategy in {"Iron Condor", "Iron Butterfly"} and np.isfinite(width_for_max) and np.isfinite(live_net):
+            live_max_profit = live_net * 100.0
+            live_max_loss = max(0.0, width_for_max - live_net) * 100.0
+        elif strategy == "Long Iron Condor" and np.isfinite(width_for_max) and np.isfinite(live_net):
+            live_max_profit = max(0.0, width_for_max - live_net) * 100.0
+            live_max_loss = live_net * 100.0
+        else:
+            live_max_profit, live_max_loss = calc_target_max(net_type, width_for_max, live_net)
+
+        inv_op, inv_level = _hist_parse_invalidation(row.get("invalidation", ""))
+        rec.update(
+            {
+                "live_status": live_status,
+                "is_final_live_valid": bool(live_status == "ok_live"),
+                "invalidation_breached_live": bool(_hist_invalidation_breached(inv_op, inv_level, spot)),
+                "invalidation_rule_op": inv_op,
+                "invalidation_rule_level": inv_level,
+                "invalidation_eval_price_live": spot,
+                "live_net_bid_ask": live_net,
+                "live_max_profit": live_max_profit,
+                "live_max_loss": live_max_loss,
+                "gate_pass_live": bool(gate_pass),
+                "short_bid_live": short_leg.get("bid"),
+                "short_ask_live": short_leg.get("ask"),
+                "short_delta_live": short_leg.get("delta"),
+                "short_delta_source_live": short_leg.get("delta_source"),
+                "long_bid_live": long_leg.get("bid"),
+                "long_ask_live": long_leg.get("ask"),
+                "long_delta_live": long_leg.get("delta"),
+                "long_delta_source_live": long_leg.get("delta_source"),
+                "short_put_bid_live": short_put_leg.get("bid"),
+                "short_put_ask_live": short_put_leg.get("ask"),
+                "short_put_delta_live": short_put_leg.get("delta"),
+                "short_put_delta_source_live": short_put_leg.get("delta_source"),
+                "long_put_bid_live": long_put_leg.get("bid"),
+                "long_put_ask_live": long_put_leg.get("ask"),
+                "short_call_bid_live": short_call_leg.get("bid"),
+                "short_call_ask_live": short_call_leg.get("ask"),
+                "short_call_delta_live": short_call_leg.get("delta"),
+                "short_call_delta_source_live": short_call_leg.get("delta_source"),
+                "long_call_bid_live": long_call_leg.get("bid"),
+                "long_call_ask_live": long_call_leg.get("ask"),
+                "spot_live_last": spot,
+                "spot_live_bid": math.nan,
+                "spot_live_ask": math.nan,
+                "width_live": width_live,
+                "entry_structure_ok_live": bool(entry_ok),
+                "entry_structure_reason_live": entry_reason,
+                "historical_replay": True,
+                "historical_replay_asof": asof_str,
+                "chain_status_live": "HISTORICAL_REPLAY",
+                "chain_query_symbol_live": ticker,
+            }
+        )
+        rows.append(rec)
+
+    replay = pd.DataFrame(rows)
+    replay.to_csv(live_csv, index=False)
+    replay.to_csv(live_final_csv, index=False)
+    return int(len(replay))
+
+
 def run():
     ap = argparse.ArgumentParser(description="MODE A two-stage runner (discovery + live execution)")
     ap.add_argument("--base-dir", default=r"c:\uw_root\2026-02-05")
@@ -465,10 +856,42 @@ def run():
     ap.add_argument(
         "--strict-stage2",
         action="store_true",
-        help="Fail if Stage-2 live pricing fails. Default behavior reuses existing same-date live files if present.",
+        help="Deprecated compatibility flag; Stage-2 is strict by default unless --allow-stale-stage2 is passed.",
+    )
+    ap.add_argument(
+        "--allow-stale-stage2",
+        action="store_true",
+        help="Opt in to reusing existing same-date live files if Stage-2 live pricing fails.",
+    )
+    ap.add_argument(
+        "--historical-replay",
+        action="store_true",
+        help="Replay an old daily folder using dated local UW quotes and as-of stock close instead of current Schwab live quotes.",
+    )
+    ap.add_argument(
+        "--no-auto-collect-uw-gex",
+        action="store_true",
+        help="Skip authenticated browser collection of UW GEX before approval.",
+    )
+    ap.add_argument(
+        "--uw-remote-debugging-url",
+        default="http://127.0.0.1:9222",
+        help="Chrome/Atlas remote debugging URL used for authenticated UW GEX collection.",
+    )
+    ap.add_argument(
+        "--uw-gex-wait-sec",
+        type=float,
+        default=1.0,
+        help="Seconds to wait after each UW GEX ticker navigation.",
+    )
+    ap.add_argument(
+        "--uw-gex-max-tickers",
+        type=int,
+        default=0,
+        help="Maximum shortlist tickers to collect UW GEX for; 0 means all missing shortlist tickers.",
     )
     args = ap.parse_args()
-    run_started_utc = dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    run_started_utc = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
     base = Path(args.base_dir).resolve()
     out_dir = Path(args.out_dir).resolve()
@@ -484,14 +907,8 @@ def run():
     else:
         output_path = Path(args.output).resolve()
 
-    whale_md = base / f"whale-{asof_str}.md"
-    if not whale_md.exists():
-        alt = sorted(base.glob("whale-*.md"))
-        whale_md = alt[-1] if alt else whale_md
-    if not whale_md.exists():
-        raise FileNotFoundError(f"Missing whale markdown in {base}")
-
     cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+    whale_md = ensure_whale_markdown(base, out_dir, asof_str, cfg_path, csvs["dp-eod-report-"])
     approval_cfg = cfg.get("approval", {}) if isinstance(cfg, dict) else {}
     engine_cfg = cfg.get("engine", {}) if isinstance(cfg, dict) else {}
     # Width-based entry gate tolerance — read early so we can pass to the pricer subprocess.
@@ -551,6 +968,19 @@ def run():
         print("  [warn] sector_map is empty — sector concentration cap will treat all tickers as 'Unknown'", file=sys.stderr)
     playbook_cfg = cfg.get("playbook", {}) if isinstance(cfg, dict) else {}
     risk_limits_cfg = playbook_cfg.get("risk_limits", {}) if isinstance(playbook_cfg, dict) else {}
+    position_mgmt_cfg = playbook_cfg.get("position_management", {}) if isinstance(playbook_cfg, dict) else {}
+    take_profit_credit_pct = fnum(position_mgmt_cfg.get("take_profit_pct_credit_max_profit", 0.50))
+    take_profit_debit_pct = fnum(position_mgmt_cfg.get("take_profit_pct_debit_cost", 0.80))
+    stop_loss_credit_pct = fnum(position_mgmt_cfg.get("stop_loss_pct_credit_max_loss", 0.50))
+    stop_loss_debit_pct = fnum(position_mgmt_cfg.get("stop_loss_pct_debit_max_loss", 0.45))
+    if not np.isfinite(take_profit_credit_pct) or take_profit_credit_pct <= 0:
+        take_profit_credit_pct = 0.50
+    if not np.isfinite(take_profit_debit_pct) or take_profit_debit_pct <= 0:
+        take_profit_debit_pct = 0.80
+    if not np.isfinite(stop_loss_credit_pct) or stop_loss_credit_pct <= 0:
+        stop_loss_credit_pct = 0.50
+    if not np.isfinite(stop_loss_debit_pct) or stop_loss_debit_pct <= 0:
+        stop_loss_debit_pct = 0.45
     max_sector_share = fnum(risk_limits_cfg.get("max_sector_share", 1.0))
     if not np.isfinite(max_sector_share) or max_sector_share <= 0:
         max_sector_share = 1.0
@@ -707,43 +1137,51 @@ def run():
             continue
         entry_gate = f">= {net:.2f} cr" if net_type == "credit" else f"<= {net:.2f} db"
 
-        shortlist_rows.append(
-            {
-                "ticker": ticker,
-                "strategy": strategy,
-                "expiry": expiry.isoformat() if hasattr(expiry, "isoformat") else str(expiry),
-                "short_leg": short_leg,
-                "long_leg": long_leg,
-                "short_put_leg": short_put_leg or short_leg,
-                "long_put_leg": long_put_leg or long_leg,
-                "short_call_leg": short_call_leg,
-                "long_call_leg": long_call_leg,
-                "net_type": net_type,
-                "entry_gate": entry_gate,
-                "width": float(r["width"]),
-                "conviction": int(r["conviction"]),
-                "track": str(r.get("track", "")),
-                "confidence_tier": str(r.get("tier", "")),
-                "optimal_stage1": str(r.get("optimal", "")),
-                "notes_stage1": str(r.get("notes", "")),
-                "thesis": str(r.get("thesis", "")),
-                "invalidation": str(r.get("invalidation", "")),
-                "sigma_pass_stage1": r.get("sigma_pass", np.nan),
-                "core_ok_stage1": r.get("core_ok", np.nan),
-                "high_beta_pass_stage1": r.get("high_beta_pass", np.nan),
-                "earnings_label_stage1": str(r.get("earnings_label", "")),
-                "range_neutrality_stage1": r.get("range_neutrality", np.nan),
-                "long_strike": float(long_strike) if np.isfinite(fnum(long_strike)) else np.nan,
-                "short_strike": float(short_strike) if np.isfinite(fnum(short_strike)) else np.nan,
-                "long_put_strike": float(long_put_strike) if np.isfinite(long_put_strike) else np.nan,
-                "short_put_strike": float(short_put_strike) if np.isfinite(short_put_strike) else np.nan,
-                "short_call_strike": float(short_call_strike) if np.isfinite(short_call_strike) else np.nan,
-                "long_call_strike": float(long_call_strike) if np.isfinite(long_call_strike) else np.nan,
-                "put_width": float(r.get("put_width")) if np.isfinite(fnum(r.get("put_width"))) else np.nan,
-                "call_width": float(r.get("call_width")) if np.isfinite(fnum(r.get("call_width"))) else np.nan,
-                "iv_rank": float(r["iv_rank"]) if r.get("iv_rank") is not None and np.isfinite(fnum(r.get("iv_rank"))) else np.nan,
-            }
-        )
+        shortlist_row = {
+            "ticker": ticker,
+            "strategy": strategy,
+            "expiry": expiry.isoformat() if hasattr(expiry, "isoformat") else str(expiry),
+            "short_leg": short_leg,
+            "long_leg": long_leg,
+            "short_put_leg": short_put_leg or short_leg,
+            "long_put_leg": long_put_leg or long_leg,
+            "short_call_leg": short_call_leg,
+            "long_call_leg": long_call_leg,
+            "net_type": net_type,
+            "entry_gate": entry_gate,
+            "width": float(r["width"]),
+            "conviction": int(r["conviction"]),
+            "track": str(r.get("track", "")),
+            "confidence_tier": str(r.get("tier", "")),
+            "optimal_stage1": str(r.get("optimal", "")),
+            "notes_stage1": str(r.get("notes", "")),
+            "thesis": str(r.get("thesis", "")),
+            "invalidation": str(r.get("invalidation", "")),
+            "sigma_pass_stage1": r.get("sigma_pass", np.nan),
+            "core_ok_stage1": r.get("core_ok", np.nan),
+            "high_beta_pass_stage1": r.get("high_beta_pass", np.nan),
+            "earnings_label_stage1": str(r.get("earnings_label", "")),
+            "range_neutrality_stage1": r.get("range_neutrality", np.nan),
+            "long_strike": float(long_strike) if np.isfinite(fnum(long_strike)) else np.nan,
+            "short_strike": float(short_strike) if np.isfinite(fnum(short_strike)) else np.nan,
+            "long_put_strike": float(long_put_strike) if np.isfinite(long_put_strike) else np.nan,
+            "short_put_strike": float(short_put_strike) if np.isfinite(short_put_strike) else np.nan,
+            "short_call_strike": float(short_call_strike) if np.isfinite(short_call_strike) else np.nan,
+            "long_call_strike": float(long_call_strike) if np.isfinite(long_call_strike) else np.nan,
+            "put_width": float(r.get("put_width")) if np.isfinite(fnum(r.get("put_width"))) else np.nan,
+            "call_width": float(r.get("call_width")) if np.isfinite(fnum(r.get("call_width"))) else np.nan,
+            "iv_rank": float(r["iv_rank"]) if r.get("iv_rank") is not None and np.isfinite(fnum(r.get("iv_rank"))) else np.nan,
+        }
+        for extra_key, extra_value in r.items():
+            if extra_key in shortlist_row:
+                continue
+            if extra_value is None:
+                shortlist_row[extra_key] = np.nan
+            elif isinstance(extra_value, (str, int, float, bool, np.integer, np.floating, np.bool_)):
+                shortlist_row[extra_key] = extra_value
+            elif hasattr(extra_value, "isoformat"):
+                shortlist_row[extra_key] = extra_value.isoformat()
+        shortlist_rows.append(shortlist_row)
 
     shortlist = pd.DataFrame(shortlist_rows)
     if shortlist.empty:
@@ -758,6 +1196,92 @@ def run():
     )
     shortlist_csv = out_dir / f"shortlist_trades_{asof_str}_mode_a.csv"
     shortlist.to_csv(shortlist_csv, index=False)
+
+    # Keep GEX enrichment inside the daily pipeline. Historical replay still uses
+    # the dated folder as the source of truth, but if the authenticated UW browser
+    # is open we opportunistically fill any missing shortlist tickers before
+    # approval. If UW is unavailable, approval still blocks on gex_missing when
+    # the rulebook requires GEX rather than silently accepting an under-enriched
+    # trade.
+    auto_gex_required = bool(approval_cfg.get("require_gex_regime", False))
+    if auto_gex_required and not args.no_auto_collect_uw_gex:
+        uw_gex_dir = base / "enrichments" / "uw"
+        uw_gex_summary_csv = uw_gex_dir / f"uw_gex_summary_{asof_str}.csv"
+        shortlist_tickers = sorted(
+            {
+                str(t).strip().upper()
+                for t in shortlist.get("ticker", pd.Series(dtype=str)).tolist()
+                if str(t).strip()
+            }
+        )
+        existing_gex_tickers = set()
+        if uw_gex_summary_csv.exists():
+            try:
+                existing_gex_df = pd.read_csv(uw_gex_summary_csv)
+                if "date" in existing_gex_df.columns:
+                    existing_gex_df = existing_gex_df[
+                        existing_gex_df["date"].astype(str).str[:10].eq(asof_str)
+                    ]
+                elif "uw_time" in existing_gex_df.columns:
+                    existing_gex_df = existing_gex_df[
+                        existing_gex_df["uw_time"].astype(str).str.startswith(asof_str)
+                    ]
+                if "ticker" in existing_gex_df.columns:
+                    existing_gex_tickers = {
+                        str(t).strip().upper()
+                        for t in existing_gex_df["ticker"].tolist()
+                        if str(t).strip()
+                    }
+            except Exception as exc:
+                print(f"  [gex] WARN: could not inspect existing UW GEX summary: {exc}", file=sys.stderr)
+
+        missing_gex_tickers = [t for t in shortlist_tickers if t not in existing_gex_tickers]
+        if args.uw_gex_max_tickers and args.uw_gex_max_tickers > 0:
+            missing_gex_tickers = missing_gex_tickers[: args.uw_gex_max_tickers]
+
+        if missing_gex_tickers:
+            preview = ", ".join(missing_gex_tickers[:12])
+            suffix = "..." if len(missing_gex_tickers) > 12 else ""
+            print(f"  [gex] collecting UW GEX for {len(missing_gex_tickers)} missing shortlist tickers ({preview}{suffix})")
+            try:
+                from uwos.collect_uw_enrichments_mac import (
+                    collect_gex_with_cdp,
+                    ensure_uw_cdp_browser,
+                    normalize_gex_files,
+                )
+
+                browser_state = ensure_uw_cdp_browser(
+                    remote_debugging_url=args.uw_remote_debugging_url,
+                    browser_app="ChatGPT Atlas",
+                    wait_sec=8.0,
+                )
+                if not browser_state.get("ok"):
+                    raise RuntimeError(f"Could not start UW CDP browser: {browser_state}")
+                if browser_state.get("browser_app") not in {"existing", ""}:
+                    print(
+                        f"  [gex] CDP browser ready: {browser_state.get('browser_app')} "
+                        f"profile={browser_state.get('profile_dir')}"
+                    )
+
+                raw_files = collect_gex_with_cdp(
+                    out_dir=uw_gex_dir,
+                    date_str=asof_str,
+                    tickers=missing_gex_tickers,
+                    remote_debugging_url=args.uw_remote_debugging_url,
+                    wait_sec=args.uw_gex_wait_sec,
+                )
+                normalized_gex = normalize_gex_files(uw_gex_dir, asof_str)
+                summary_path_text = str(normalized_gex.get("summary_path", ""))
+                strikes_path_text = str(normalized_gex.get("strikes_path", ""))
+                print(
+                    f"  [gex] UW GEX collected raw={len(raw_files)} "
+                    f"summary={Path(summary_path_text).name if summary_path_text else 'missing'} "
+                    f"strikes={Path(strikes_path_text).name if strikes_path_text else 'missing'}"
+                )
+            except Exception as exc:
+                print(f"  [gex] WARN: auto UW GEX collection failed: {exc}", file=sys.stderr)
+        else:
+            print(f"  [gex] UW GEX already present for all {len(shortlist_tickers)} shortlist tickers")
 
     likelihood_csv = out_dir / f"setup_likelihood_{asof_str}.csv"
     likelihood_cmd = [
@@ -783,41 +1307,56 @@ def run():
 
     live_csv = out_dir / f"live_trade_table_{asof_str}.csv"
     live_final_csv = out_dir / f"live_trade_table_{asof_str}_final.csv"
-    cmd = [
-        sys.executable,
-        "-m",
-        "uwos.pricer",
-        "--shortlist-csv",
-        str(shortlist_csv),
-        "--out-dir",
-        str(out_dir),
-        "--top",
-        str(int(discovery_top)),
-        "--min-conviction",
-        "0",
-        "--save-chain-dir",
-        str((out_dir / f"schwab_snapshot_{asof_str}" / "chains").resolve()),
-        "--snapshot-out-json",
-        str((out_dir / f"schwab_snapshot_{asof_str}.json").resolve()),
-        "--entry-tol-width-pct",
-        str(entry_tol_width_pct),
-        "--entry-tol-floor",
-        str(entry_tol_floor),
-    ]
+    stage2_mode = "historical_replay" if args.historical_replay else "schwab_live"
     stage2_reused_existing = False
     stage2_error = ""
-    try:
-        subprocess.run(cmd, check=True)
-    except subprocess.CalledProcessError as exc:
-        stage2_error = str(exc)
-        if (not args.strict_stage2) and live_csv.exists() and live_final_csv.exists():
-            stage2_reused_existing = True
-            print(
-                "WARN: Stage-2 live pricing failed; reusing existing same-date live outputs: "
-                f"{live_csv.name}, {live_final_csv.name}"
-            )
-        else:
-            raise
+    if args.historical_replay:
+        replay_rows = build_historical_replay_live_table(
+            shortlist=shortlist,
+            quotes=quotes,
+            spot_map=spot_map,
+            asof_str=asof_str,
+            live_csv=live_csv,
+            live_final_csv=live_final_csv,
+        )
+        print(
+            f"  [stage2] Historical replay wrote {replay_rows} dated-quote rows; Schwab live pricing skipped",
+            file=sys.stderr,
+        )
+    else:
+        cmd = [
+            sys.executable,
+            "-m",
+            "uwos.pricer",
+            "--shortlist-csv",
+            str(shortlist_csv),
+            "--out-dir",
+            str(out_dir),
+            "--top",
+            str(int(discovery_top)),
+            "--min-conviction",
+            "0",
+            "--save-chain-dir",
+            str((out_dir / f"schwab_snapshot_{asof_str}" / "chains").resolve()),
+            "--snapshot-out-json",
+            str((out_dir / f"schwab_snapshot_{asof_str}.json").resolve()),
+            "--entry-tol-width-pct",
+            str(entry_tol_width_pct),
+            "--entry-tol-floor",
+            str(entry_tol_floor),
+        ]
+        try:
+            subprocess.run(cmd, check=True)
+        except subprocess.CalledProcessError as exc:
+            stage2_error = str(exc)
+            if args.allow_stale_stage2 and live_csv.exists() and live_final_csv.exists():
+                stage2_reused_existing = True
+                print(
+                    "WARN: Stage-2 live pricing failed; reusing existing same-date live outputs: "
+                    f"{live_csv.name}, {live_final_csv.name}"
+                )
+            else:
+                raise
 
     if not live_csv.exists():
         raise FileNotFoundError(f"Missing live output: {live_csv}")
@@ -895,7 +1434,15 @@ def run():
             "verdict",
             "confidence",
             "credit_no_touch_pct",
+            "base_hist_success_pct",
+            "base_edge_pct",
+            "base_signals",
+            "base_wins",
+            "conditioning_level",
+            "conditioning_profile",
+            "unsupported_context",
         ]
+        like_keep = [c for c in like_keep if c in like_df.columns]
         like_df = like_df[like_keep].drop_duplicates(subset=["ticker", "strategy", "expiry", "entry_gate"])
         mdf["entry_gate"] = mdf["entry_gate"].astype(str).str.strip()
         mdf["expiry"] = mdf["expiry"].astype(str).str[:10]
@@ -915,14 +1462,129 @@ def run():
         mdf["confidence"] = "Unknown"
         mdf["credit_no_touch_pct"] = np.nan
 
-    # --- GEX enrichment from saved chain snapshots ---
+    # --- GEX enrichment ---
+    # Prefer explicit Unusual Whales dashboard captures from the dated input folder.
+    # Schwab-derived chain-snapshot GEX remains a fallback for tickers without UW data.
+    gex_by_ticker = {}
+    gex_source_counts = {}
+    uw_gex_summary_csv = base / "enrichments" / "uw" / f"uw_gex_summary_{asof_str}.csv"
+    uw_gex_strikes_csv = base / "enrichments" / "uw" / f"uw_gex_strikes_{asof_str}.csv"
+
+    def _record_gex_source(source: str) -> None:
+        gex_source_counts[source] = int(gex_source_counts.get(source, 0)) + 1
+
+    if uw_gex_summary_csv.exists():
+        try:
+            uw_summary = pd.read_csv(uw_gex_summary_csv, low_memory=False)
+            uw_strikes = pd.read_csv(uw_gex_strikes_csv, low_memory=False) if uw_gex_strikes_csv.exists() else pd.DataFrame()
+            def _url_date_matches(value: object) -> bool:
+                raw = str(value or "").strip()
+                if not raw:
+                    return False
+                try:
+                    parsed = urllib.parse.urlparse(raw)
+                    qs = urllib.parse.parse_qs(parsed.query)
+                    dates = qs.get("date") or []
+                    return bool(dates and str(dates[0]) == asof_str)
+                except Exception:
+                    return False
+
+            if "source_url" in uw_summary.columns:
+                before_rows = len(uw_summary)
+                uw_summary = uw_summary[uw_summary["source_url"].map(_url_date_matches)].copy()
+                dropped_rows = before_rows - len(uw_summary)
+                if dropped_rows:
+                    print(
+                        f"  [gex] WARN: ignored {dropped_rows} UW GEX summary rows with non-{asof_str} source dates",
+                        file=sys.stderr,
+                    )
+            if "uw_time" in uw_summary.columns:
+                before_rows = len(uw_summary)
+                uw_summary = uw_summary[uw_summary["uw_time"].astype(str).str.startswith(asof_str)].copy()
+                dropped_rows = before_rows - len(uw_summary)
+                if dropped_rows:
+                    print(
+                        f"  [gex] WARN: ignored {dropped_rows} UW GEX summary rows with non-{asof_str} payload times",
+                        file=sys.stderr,
+                    )
+            if not uw_strikes.empty and "source_url" in uw_strikes.columns:
+                before_rows = len(uw_strikes)
+                uw_strikes = uw_strikes[uw_strikes["source_url"].map(_url_date_matches)].copy()
+                dropped_rows = before_rows - len(uw_strikes)
+                if dropped_rows:
+                    print(
+                        f"  [gex] WARN: ignored {dropped_rows} UW GEX strike rows with non-{asof_str} source dates",
+                        file=sys.stderr,
+                    )
+            if not uw_strikes.empty and "uw_time" in uw_strikes.columns:
+                before_rows = len(uw_strikes)
+                uw_strikes = uw_strikes[uw_strikes["uw_time"].astype(str).str.startswith(asof_str)].copy()
+                dropped_rows = before_rows - len(uw_strikes)
+                if dropped_rows:
+                    print(
+                        f"  [gex] WARN: ignored {dropped_rows} UW GEX strike rows with non-{asof_str} payload times",
+                        file=sys.stderr,
+                    )
+            uw_support_resistance = {}
+            if not uw_strikes.empty and {"ticker", "strike"}.issubset(uw_strikes.columns):
+                uw_strikes["ticker"] = uw_strikes["ticker"].astype(str).str.upper().str.strip()
+                uw_strikes["_strike_num"] = pd.to_numeric(uw_strikes["strike"], errors="coerce")
+                uw_strikes["_spot_num"] = pd.to_numeric(uw_strikes.get("spot"), errors="coerce")
+                uw_strikes["_put_wall_abs"] = pd.to_numeric(uw_strikes.get("put_gamma_oi"), errors="coerce").abs()
+                uw_strikes["_call_wall_abs"] = pd.to_numeric(uw_strikes.get("call_gamma_oi"), errors="coerce").abs()
+                for ticker, grp in uw_strikes.groupby("ticker", dropna=False):
+                    spot_vals = pd.to_numeric(grp["_spot_num"], errors="coerce").dropna()
+                    spot_v = float(spot_vals.iloc[-1]) if not spot_vals.empty else math.nan
+                    support = math.nan
+                    resistance = math.nan
+                    if np.isfinite(spot_v):
+                        puts = grp[(grp["_strike_num"] < spot_v) & np.isfinite(grp["_put_wall_abs"])]
+                        calls = grp[(grp["_strike_num"] > spot_v) & np.isfinite(grp["_call_wall_abs"])]
+                        if not puts.empty:
+                            support = float(puts.sort_values("_put_wall_abs", ascending=False).iloc[0]["_strike_num"])
+                        if not calls.empty:
+                            resistance = float(calls.sort_values("_call_wall_abs", ascending=False).iloc[0]["_strike_num"])
+                    uw_support_resistance[str(ticker).upper()] = {
+                        "gex_support": support,
+                        "gex_resistance": resistance,
+                    }
+
+            if not uw_summary.empty and "ticker" in uw_summary.columns:
+                for _, row in uw_summary.iterrows():
+                    ticker = str(row.get("ticker", "")).strip().upper()
+                    if not ticker:
+                        continue
+                    net = fnum(row.get("gamma_oi_per_1pct"))
+                    if not np.isfinite(net):
+                        net = fnum(row.get("gamma_dir_per_1pct"))
+                    if not np.isfinite(net):
+                        continue
+                    sr = uw_support_resistance.get(ticker, {})
+                    gex_by_ticker[ticker] = {
+                        "net_gex": round(float(net), 2),
+                        "gex_regime": "pinned" if net >= 0 else "volatile",
+                        "gex_support": sr.get("gex_support", float("nan")),
+                        "gex_resistance": sr.get("gex_resistance", float("nan")),
+                        "gex_source": "unusual_whales_dashboard_cdp",
+                        "gex_time": str(row.get("uw_time", "") or ""),
+                    }
+                    _record_gex_source("unusual_whales_dashboard_cdp")
+            if gex_by_ticker:
+                print(
+                    f"  [gex] Loaded {len(gex_by_ticker)} tickers from UW dashboard capture: {uw_gex_summary_csv.name}",
+                    file=sys.stderr,
+                )
+        except Exception as exc:
+            print(f"  [gex] WARN: failed reading UW GEX capture {uw_gex_summary_csv}: {exc}", file=sys.stderr)
+
     snapshot_chain_dir = out_dir / f"schwab_snapshot_{asof_str}" / "chains"
-    if snapshot_chain_dir.is_dir():
-        gex_by_ticker = {}
+    if (not args.historical_replay) and snapshot_chain_dir.is_dir():
         for chain_file in [p.name for p in snapshot_chain_dir.iterdir()]:
             if not chain_file.startswith("chain_") or not chain_file.endswith(".json"):
                 continue
             ticker = chain_file[len("chain_"):-len(".json")]
+            if ticker.upper() in gex_by_ticker:
+                continue
             try:
                 with open(snapshot_chain_dir / chain_file) as _f:
                     chain_data = json.load(_f)
@@ -980,29 +1642,38 @@ def run():
                 "gex_regime": "pinned" if net >= 0 else "volatile",
                 "gex_support": best_put_wall[1] if math.isfinite(best_put_wall[1]) else float("nan"),
                 "gex_resistance": best_call_wall[1] if math.isfinite(best_call_wall[1]) else float("nan"),
+                "gex_source": "schwab_snapshot_fallback",
+                "gex_time": "",
             }
-        # Apply GEX to merged dataframe
-        if gex_by_ticker:
-            for col in ["net_gex", "gex_regime", "gex_support", "gex_resistance"]:
-                if col not in mdf.columns:
-                    if col == "gex_regime":
-                        mdf[col] = ""
+            _record_gex_source("schwab_snapshot_fallback")
+    elif args.historical_replay:
+        print(
+            "  [gex] Historical replay: current Schwab snapshot fallback disabled; "
+            "only date-matched UW GEX captures are used",
+            file=sys.stderr,
+        )
+
+    # Apply GEX to merged dataframe
+    if gex_by_ticker:
+        for col in ["net_gex", "gex_regime", "gex_support", "gex_resistance", "gex_source", "gex_time"]:
+            if col not in mdf.columns:
+                if col in {"gex_regime", "gex_source", "gex_time"}:
+                    mdf[col] = ""
+                else:
+                    mdf[col] = float("nan")
+        for idx, row in mdf.iterrows():
+            t = str(row.get("ticker", "")).strip().upper()
+            gex_info = gex_by_ticker.get(t)
+            if gex_info:
+                for col, val in gex_info.items():
+                    if col in {"gex_regime", "gex_source", "gex_time"}:
+                        mdf.at[idx, col] = str(val) if val is not None else ""
                     else:
-                        mdf[col] = float("nan")
-            for idx, row in mdf.iterrows():
-                t = str(row.get("ticker", "")).strip().upper()
-                gex_info = gex_by_ticker.get(t)
-                if gex_info:
-                    for col, val in gex_info.items():
-                        if col == "gex_regime":
-                            mdf.at[idx, col] = str(val) if val is not None else ""
-                        else:
-                            # net_gex, gex_support, gex_resistance are numeric
-                            try:
-                                mdf.at[idx, col] = float(val) if val is not None else float("nan")
-                            except (TypeError, ValueError):
-                                mdf.at[idx, col] = float("nan")
-            print(f"  [gex] Enriched {len(gex_by_ticker)} tickers with GEX regime data", file=sys.stderr)
+                        try:
+                            mdf.at[idx, col] = float(val) if val is not None else float("nan")
+                        except (TypeError, ValueError):
+                            mdf.at[idx, col] = float("nan")
+        print(f"  [gex] Enriched {len(gex_by_ticker)} tickers with GEX regime data ({gex_source_counts})", file=sys.stderr)
 
     # Reuse Stage-1 macro data if available; otherwise fetch fresh
     _macro = getattr(build_best_candidates, "_last_macro", None)
@@ -1044,6 +1715,55 @@ def run():
     stage1_promote_min_conv = fnum(approval_cfg.get("stage1_watch_promotion_min_conviction", 58))
     stage1_promote_min_edge = fnum(approval_cfg.get("stage1_watch_promotion_min_edge_pct", 5.0))
     stage1_promote_min_signals = fnum(approval_cfg.get("stage1_watch_promotion_min_signals", min_signals))
+    allow_fire_breakout_exception = bool(approval_cfg.get("allow_fire_breakout_exception", True))
+    fire_breakout_min_conviction = fnum(approval_cfg.get("fire_breakout_min_conviction", 40))
+    fire_breakout_min_edge = fnum(approval_cfg.get("fire_breakout_min_edge_pct", 12.0))
+    fire_breakout_min_signals = fnum(approval_cfg.get("fire_breakout_min_signals", min_signals))
+    fire_breakout_min_long_delta = fnum(approval_cfg.get("fire_breakout_min_long_delta", 0.35))
+    fire_breakout_require_risk_on = bool(approval_cfg.get("fire_breakout_require_risk_on", True))
+    fire_breakout_max_wall_distance_pct = fnum(approval_cfg.get("fire_breakout_max_wall_distance_pct", 0.01))
+    allow_bull_call_evidence_lane = bool(approval_cfg.get("allow_bull_call_evidence_lane", True))
+    bull_call_evidence_min_edge = fnum(approval_cfg.get("bull_call_evidence_min_edge_pct", 8.0))
+    bull_call_evidence_min_signals = fnum(approval_cfg.get("bull_call_evidence_min_signals", 120))
+    bull_call_evidence_min_conviction = fnum(approval_cfg.get("bull_call_evidence_min_conviction", 30))
+    bull_call_evidence_min_long_delta = fnum(approval_cfg.get("bull_call_evidence_min_long_delta", 0.30))
+    bull_call_evidence_max_dte = fnum(approval_cfg.get("bull_call_evidence_max_dte", 35))
+    bull_call_evidence_min_reward_risk = fnum(approval_cfg.get("bull_call_evidence_min_reward_risk", 2.0))
+    bull_call_evidence_require_contract_confirmed = bool(
+        approval_cfg.get("bull_call_evidence_require_contract_confirmed", True)
+    )
+    bull_call_evidence_allow_gex_missing = bool(
+        approval_cfg.get("bull_call_evidence_allow_gex_missing", True)
+    )
+    bull_call_approval_max_dte = fnum(
+        approval_cfg.get("bull_call_approval_max_dte", bull_call_evidence_max_dte)
+    )
+    bull_call_approval_min_reward_risk = fnum(
+        approval_cfg.get("bull_call_approval_min_reward_risk", bull_call_evidence_min_reward_risk)
+    )
+    bull_call_approval_require_contract_confirmed = bool(
+        approval_cfg.get("bull_call_approval_require_contract_confirmed", True)
+    )
+    bull_call_market_regime_enabled = bool(
+        approval_cfg.get("bull_call_market_regime_enabled", True)
+    )
+    bull_call_low_regime_blocks = bool(
+        approval_cfg.get("bull_call_low_regime_blocks", True)
+    )
+    bull_call_medium_regime_tactical = bool(
+        approval_cfg.get("bull_call_medium_regime_tactical", True)
+    )
+    bull_call_regime_low_score = fnum(approval_cfg.get("bull_call_regime_low_score", 50))
+    bull_call_regime_high_score = fnum(approval_cfg.get("bull_call_regime_high_score", 75))
+    bull_call_block_downtrend_without_high_vix = bool(
+        approval_cfg.get("bull_call_block_downtrend_without_high_vix", True)
+    )
+    bull_call_missing_gex_requires_uptrend = bool(
+        approval_cfg.get("bull_call_missing_gex_requires_uptrend", True)
+    )
+    bull_call_trend_vix_floor = fnum(approval_cfg.get("bull_call_trend_vix_floor", 22.0))
+    if not np.isfinite(bull_call_trend_vix_floor) or bull_call_trend_vix_floor <= 0:
+        bull_call_trend_vix_floor = 22.0
     min_likelihood_strength = str(approval_cfg.get("min_likelihood_strength", "")).strip()
     min_likelihood_strength_bear = str(approval_cfg.get("min_likelihood_strength_bear", min_likelihood_strength)).strip()
     min_likelihood_strength_shield = str(approval_cfg.get("min_likelihood_strength_shield", min_likelihood_strength)).strip()
@@ -1068,6 +1788,9 @@ def run():
     min_abs_long_delta_fire = fnum(approval_cfg.get("min_abs_long_delta_fire", 0.15))
     # GEX regime gate
     require_gex_regime = bool(approval_cfg.get("require_gex_regime", False))
+    min_fire_pinned_gex_abs = fnum(approval_cfg.get("min_fire_pinned_gex_abs", 10_000_000))
+    if not np.isfinite(min_fire_pinned_gex_abs) or min_fire_pinned_gex_abs < 0:
+        min_fire_pinned_gex_abs = 10_000_000.0
     # entry_tol_width_pct / entry_tol_floor read earlier (before pricer subprocess)
     require_spot_alignment = bool(approval_cfg.get("require_spot_alignment", True))
     spot_alignment_require_live = bool(approval_cfg.get("spot_alignment_require_live", True))
@@ -1093,8 +1816,14 @@ def run():
     gates_cfg_local = cfg.get("gates", {}) if isinstance(cfg, dict) else {}
     tactical_max_debit_pct_width = fnum(gates_cfg_local.get("tactical_max_debit_pct_width", 0.35))
     min_live_reward_risk = fnum(gates_cfg_local.get("min_live_reward_risk", 1.50))
+    min_debit_reward_risk = fnum(gates_cfg_local.get("min_debit_reward_risk", min_live_reward_risk))
+    min_credit_reward_risk = fnum(gates_cfg_local.get("min_credit_reward_risk", min_live_reward_risk))
     min_credit_pct_width_cfg = fnum(gates_cfg_local.get("min_credit_pct_width", 0.30))
     max_credit_pct_width_cfg = fnum(gates_cfg_local.get("max_credit_pct_width", 0.55))
+    if not np.isfinite(min_debit_reward_risk) or min_debit_reward_risk < 0:
+        min_debit_reward_risk = min_live_reward_risk
+    if not np.isfinite(min_credit_reward_risk) or min_credit_reward_risk < 0:
+        min_credit_reward_risk = min_live_reward_risk
     if not np.isfinite(min_credit_pct_width_cfg) or min_credit_pct_width_cfg <= 0:
         min_credit_pct_width_cfg = 0.30
     if not np.isfinite(max_credit_pct_width_cfg) or max_credit_pct_width_cfg <= 0:
@@ -1124,6 +1853,9 @@ def run():
     enforce_pretrade_caps = bool(approval_cfg.get("enforce_pretrade_portfolio_caps", False))
     pretrade_caps_require_data = bool(approval_cfg.get("pretrade_caps_require_data", False))
     pretrade_open_positions_csv = str(approval_cfg.get("pretrade_open_positions_csv", "")).strip()
+    if args.historical_replay and enforce_pretrade_caps and not pretrade_open_positions_csv:
+        enforce_pretrade_caps = False
+        pretrade_caps_require_data = False
     risk_cfg = cfg.get("playbook", {}).get("risk_limits", {}) if isinstance(cfg, dict) else {}
     short_put_limit = fnum(risk_cfg.get("short_put_max_share", 0.35))
     symbol_limit = fnum(risk_cfg.get("single_symbol_max_share", 0.10))
@@ -1147,13 +1879,6 @@ def run():
             w = 0.0
         width_tol = w * entry_tol_width_pct if entry_tol_width_pct > 0 else 0.0
         tol_total = max(entry_tol_floor, width_tol)
-        # [T6] Asymmetric tolerance: puts get wider tolerance in high-IV environments
-        _strategy_local = str(row.get("strategy", "")).strip()
-        _iv_rank_val = fnum(row.get("iv_rank"))
-        if _strategy_local in {"Bear Put Debit", "Bull Put Credit"} and np.isfinite(_iv_rank_val) and _iv_rank_val > 40:
-            _vol_mult = 1.0 + 0.5 * min(1.0, (_iv_rank_val - 40) / 60.0)
-            tol_total = tol_total * _vol_mult
-
         near_miss = False
         pass_effective = gate_pass_raw
         miss_abs = math.nan
@@ -1177,6 +1902,254 @@ def run():
 
     gate_ctx_df = pd.DataFrame([gate_context(r) for _, r in mdf.iterrows()])
     mdf = pd.concat([mdf.reset_index(drop=True), gate_ctx_df], axis=1)
+    mdf["live_reward_risk"] = mdf.apply(
+        lambda row: (
+            fnum(row.get("live_max_profit")) / fnum(row.get("live_max_loss"))
+            if np.isfinite(fnum(row.get("live_max_profit")))
+            and np.isfinite(fnum(row.get("live_max_loss")))
+            and fnum(row.get("live_max_loss")) > 0
+            else math.nan
+        ),
+        axis=1,
+    )
+
+    _spy_5d_ret = fnum(_macro.get("spy_5d_ret", 0.0))
+    if not np.isfinite(_spy_5d_ret):
+        _spy_5d_ret = 0.0
+    if not np.isfinite(_vix_level):
+        _vix_level = 20.0
+
+    def _conditioning_token(profile: str, key: str) -> str:
+        for part in str(profile or "").split(";"):
+            if "=" not in part:
+                continue
+            k, v = part.split("=", 1)
+            if k.strip().lower() == key.lower():
+                return v.strip().lower()
+        return ""
+
+    def market_regime_context(row):
+        strategy_local = str(row.get("strategy", "")).strip()
+        macro_regime = str(_macro_regime or "neutral").strip().lower()
+        profile = str(row.get("conditioning_profile", "") or "")
+        trend = _conditioning_token(profile, "trend")
+        range_neutral = _conditioning_token(profile, "range_neutral")
+        flow_dir = str(row.get("flow_direction", "")).strip().lower()
+        flow_conf = str(row.get("flow_confirmation", "")).strip().lower()
+        contract_flow = str(row.get("contract_flow_confirmation", "")).strip().lower()
+        gex_regime = str(row.get("gex_regime", "")).strip().lower()
+
+        spot_ref = fnum(row.get("spot_live_effective"))
+        if not np.isfinite(spot_ref) or spot_ref <= 0:
+            spot_ref = fnum(row.get("spot_asof_close"))
+        breakeven = fnum(row.get("breakeven"))
+        if not np.isfinite(breakeven) and strategy_local in {"Bull Call Debit", "Bear Put Debit"}:
+            long_strike = fnum(row.get("long_strike"))
+            live_net = fnum(row.get("live_net_bid_ask"))
+            if np.isfinite(long_strike) and np.isfinite(live_net):
+                breakeven = long_strike + live_net if strategy_local == "Bull Call Debit" else long_strike - live_net
+        be_distance_pct = math.nan
+        if np.isfinite(spot_ref) and spot_ref > 0 and np.isfinite(breakeven):
+            if strategy_local == "Bear Put Debit":
+                be_distance_pct = (spot_ref - breakeven) / spot_ref
+            else:
+                be_distance_pct = (breakeven - spot_ref) / spot_ref
+
+        score = 55.0
+        reasons = []
+        if macro_regime == "risk_on":
+            score += 10.0
+            reasons.append("macro risk_on")
+        elif macro_regime == "risk_off":
+            score -= 5.0
+            reasons.append("macro risk_off")
+        else:
+            reasons.append(f"macro {macro_regime or 'neutral'}")
+
+        if _spy_5d_ret >= 0.02:
+            score += 10.0
+            reasons.append(f"SPY5d {_spy_5d_ret:+.1%}")
+        elif _spy_5d_ret >= 0.01:
+            score += 5.0
+            reasons.append(f"SPY5d {_spy_5d_ret:+.1%}")
+        elif _spy_5d_ret <= -0.03:
+            score -= 10.0
+            reasons.append(f"SPY5d {_spy_5d_ret:+.1%}")
+        elif _spy_5d_ret <= -0.015:
+            score -= 5.0
+            reasons.append(f"SPY5d {_spy_5d_ret:+.1%}")
+
+        if _vix_level > 25:
+            score -= 10.0
+            reasons.append(f"VIX {_vix_level:.1f}")
+        elif _vix_level > 20:
+            score -= 5.0
+            reasons.append(f"VIX {_vix_level:.1f}")
+
+        if strategy_local == "Bull Call Debit":
+            if trend == "up":
+                score += 10.0
+                reasons.append("ticker trend up")
+            elif trend == "down":
+                score -= 10.0
+                reasons.append("ticker trend down")
+            elif trend:
+                reasons.append(f"ticker trend {trend}")
+            if range_neutral == "true":
+                score -= 3.0
+                reasons.append("range-neutral")
+            if gex_regime == "volatile":
+                score += 5.0
+                reasons.append("GEX volatile")
+            elif gex_regime == "pinned":
+                score -= 8.0
+                reasons.append("GEX pinned")
+            if np.isfinite(be_distance_pct):
+                if be_distance_pct <= 0.03:
+                    score += 10.0
+                elif be_distance_pct <= 0.05:
+                    score += 4.0
+                elif be_distance_pct > 0.10:
+                    score -= 12.0
+                elif be_distance_pct > 0.07:
+                    score -= 8.0
+                elif be_distance_pct > 0.05:
+                    score -= 4.0
+                reasons.append(f"BE {be_distance_pct:+.1%}")
+            if contract_flow == "confirmed":
+                score += 10.0
+                reasons.append("contract flow confirmed")
+            elif contract_flow in {"contra", "directional"}:
+                score -= 15.0
+                reasons.append(f"contract flow {contract_flow}")
+            if flow_conf == "confirmed" and flow_dir == "bullish":
+                score += 8.0
+                reasons.append("ticker flow bullish")
+            elif flow_conf == "confirmed" and flow_dir == "bearish":
+                score -= 25.0
+                reasons.append("ticker flow bearish")
+
+        score = max(0.0, min(100.0, score))
+        if np.isfinite(bull_call_regime_high_score) and score >= bull_call_regime_high_score:
+            confidence = "High"
+        elif np.isfinite(bull_call_regime_low_score) and score < bull_call_regime_low_score:
+            confidence = "Low"
+        else:
+            confidence = "Medium"
+        return {
+            "market_regime": macro_regime or "neutral",
+            "market_regime_score": round(score, 1),
+            "market_regime_confidence": confidence,
+            "market_regime_reason": "; ".join(reasons[:8]),
+            "spy_5d_ret": _spy_5d_ret,
+            "vix_level": _vix_level,
+            "breakeven_distance_pct": be_distance_pct,
+        }
+
+    market_ctx_df = pd.DataFrame([market_regime_context(r) for _, r in mdf.iterrows()])
+    mdf = pd.concat([mdf.reset_index(drop=True), market_ctx_df], axis=1)
+
+    def fire_breakout_exception(row) -> bool:
+        if not allow_fire_breakout_exception:
+            return False
+        if str(row.get("track", "")).strip().upper() != "FIRE":
+            return False
+        if str(row.get("strategy", "")).strip() != "Bull Call Debit":
+            return False
+        if fire_breakout_require_risk_on and str(_macro_regime).strip().lower() != "risk_on":
+            return False
+        if str(row.get("verdict", "")).strip().upper() != "PASS":
+            return False
+        conv = fnum(row.get("conviction"))
+        edge = fnum(row.get("edge_pct"))
+        sig = fnum(row.get("signals"))
+        long_delta = abs(_safe_delta(row.get("long_delta_live")))
+        if np.isfinite(fire_breakout_min_conviction) and (not np.isfinite(conv) or conv < fire_breakout_min_conviction):
+            return False
+        if np.isfinite(fire_breakout_min_edge) and (not np.isfinite(edge) or edge < fire_breakout_min_edge):
+            return False
+        if np.isfinite(fire_breakout_min_signals) and (not np.isfinite(sig) or sig < fire_breakout_min_signals):
+            return False
+        if np.isfinite(fire_breakout_min_long_delta) and (not np.isfinite(long_delta) or long_delta < fire_breakout_min_long_delta):
+            return False
+        flow_dir = str(row.get("flow_direction", "")).strip().lower()
+        flow_conf = str(row.get("flow_confirmation", "")).strip().lower()
+        if flow_conf == "confirmed" and flow_dir != "bullish":
+            return False
+        if flow_dir != "bullish":
+            return False
+        if str(row.get("contract_flow_confirmation", "")).strip().lower() != "confirmed":
+            return False
+        live_status = str(row.get("live_status", "")).strip()
+        ok_live_raw = bool(row.get("is_final_live_valid")) if pd.notna(row.get("is_final_live_valid")) else False
+        gate_pass_effective = bool(row.get("gate_pass_effective")) if pd.notna(row.get("gate_pass_effective")) else False
+        if not (ok_live_raw or (live_status == "fails_live_entry_gate" and gate_pass_effective)):
+            return False
+        gex_regime = str(row.get("gex_regime", "")).strip().lower()
+        if not gex_regime:
+            return False
+        if gex_regime == "pinned":
+            spot_ref = fnum(row.get("spot_live_effective"))
+            if not np.isfinite(spot_ref) or spot_ref <= 0:
+                spot_ref = fnum(row.get("spot_live_last"))
+            if not np.isfinite(spot_ref) or spot_ref <= 0:
+                spot_ref = fnum(row.get("spot_asof_close"))
+            resistance = fnum(row.get("gex_resistance"))
+            if not (np.isfinite(spot_ref) and spot_ref > 0 and np.isfinite(resistance)):
+                return False
+            wall_dist = abs(resistance / spot_ref - 1.0)
+            if np.isfinite(fire_breakout_max_wall_distance_pct) and wall_dist > fire_breakout_max_wall_distance_pct:
+                return False
+        return True
+
+    def bull_call_evidence_lane(row) -> bool:
+        if not allow_bull_call_evidence_lane:
+            return False
+        if str(row.get("track", "")).strip().upper() != "FIRE":
+            return False
+        if str(row.get("strategy", "")).strip() != "Bull Call Debit":
+            return False
+        if str(row.get("verdict", "")).strip().upper() != "PASS":
+            return False
+        edge = fnum(row.get("edge_pct"))
+        sig = fnum(row.get("signals"))
+        conv = fnum(row.get("conviction"))
+        long_delta = abs(_safe_delta(row.get("long_delta_live")))
+        dte = fnum(row.get("dte"))
+        reward_risk = fnum(row.get("live_reward_risk"))
+        if np.isfinite(bull_call_evidence_min_edge) and (not np.isfinite(edge) or edge < bull_call_evidence_min_edge):
+            return False
+        if np.isfinite(bull_call_evidence_min_signals) and (not np.isfinite(sig) or sig < bull_call_evidence_min_signals):
+            return False
+        if np.isfinite(bull_call_evidence_min_conviction) and (not np.isfinite(conv) or conv < bull_call_evidence_min_conviction):
+            return False
+        if np.isfinite(bull_call_evidence_max_dte) and (not np.isfinite(dte) or dte > bull_call_evidence_max_dte):
+            return False
+        if (
+            np.isfinite(bull_call_evidence_min_reward_risk)
+            and (not np.isfinite(reward_risk) or reward_risk < bull_call_evidence_min_reward_risk)
+        ):
+            return False
+        if (
+            np.isfinite(bull_call_evidence_min_long_delta)
+            and (not np.isfinite(long_delta) or long_delta < bull_call_evidence_min_long_delta)
+        ):
+            return False
+        flow_dir = str(row.get("flow_direction", "")).strip().lower()
+        flow_conf = str(row.get("flow_confirmation", "")).strip().lower()
+        if flow_conf == "confirmed" and flow_dir == "bearish":
+            return False
+        contract_flow = str(row.get("contract_flow_confirmation", "")).strip().lower()
+        if bull_call_evidence_require_contract_confirmed and contract_flow != "confirmed":
+            return False
+        if contract_flow in {"contra", "directional"}:
+            return False
+        live_status = str(row.get("live_status", "")).strip()
+        ok_live_raw = bool(row.get("is_final_live_valid")) if pd.notna(row.get("is_final_live_valid")) else False
+        gate_pass_effective = bool(row.get("gate_pass_effective")) if pd.notna(row.get("gate_pass_effective")) else False
+        if not (ok_live_raw or (live_status == "fails_live_entry_gate" and gate_pass_effective)):
+            return False
+        return True
 
     def stage1_context(row):
         opt = str(row.get("optimal_stage1", "")).strip()
@@ -1202,11 +2175,19 @@ def run():
             )
             promoted = bool(cond)
             reason = "stage1_promoted" if promoted else "stage1_watch_blocked"
+            if (not promoted) and fire_breakout_exception(row):
+                promoted = True
+                reason = "stage1_breakout_exception"
+            if (not promoted) and bull_call_evidence_lane(row):
+                promoted = True
+                reason = "bull_call_evidence_lane"
         else:
             reason = "stage1_watch_blocked"
         return {
             "stage1_is_yes": bool(is_yes),
             "stage1_promoted": bool(promoted),
+            "fire_breakout_exception": bool(fire_breakout_exception(row)),
+            "bull_call_evidence_lane": bool(bull_call_evidence_lane(row)),
             "stage1_effective": bool(is_yes or promoted),
             "stage1_blocked": bool((not is_yes) and (not promoted)),
             "stage1_eval_reason": reason,
@@ -1448,13 +2429,19 @@ def run():
             shield_live_valid_overrides_quality and track == "SHIELD" and ok_live
         )
 
-        # [T9] Live R/R quality check — catch trades where live price degrades the payoff
-        _live_max_profit = fnum(row.get("live_max_profit"))
-        _live_max_loss = fnum(row.get("live_max_loss"))
-        if np.isfinite(_live_max_profit) and np.isfinite(_live_max_loss) and _live_max_loss > 0:
-            _live_rr = _live_max_profit / _live_max_loss
-            if np.isfinite(min_live_reward_risk) and _live_rr < min_live_reward_risk:
-                blockers.append(f"live_rr_weak:{_live_rr:.2f}<{min_live_reward_risk:.2f}")
+        # [T9] Live R/R quality check — use debit/credit-specific floors.
+        # A global 1.50x floor is appropriate for debit spreads, but it
+        # mechanically rejects normal premium-selling spreads where collecting
+        # 30-40% of width implies reward/risk of roughly 0.43-0.67.
+        _live_rr = fnum(row.get("live_reward_risk"))
+        _net_type_for_rr = str(row.get("net_type", "")).strip().lower()
+        _rr_floor = (
+            min_credit_reward_risk if _net_type_for_rr == "credit"
+            else min_debit_reward_risk if _net_type_for_rr == "debit"
+            else min_live_reward_risk
+        )
+        if np.isfinite(_live_rr) and np.isfinite(_rr_floor) and _live_rr < _rr_floor:
+            blockers.append(f"live_rr_weak:{_live_rr:.2f}<{_rr_floor:.2f}")
 
         if require_likelihood_pass:
             verdict = str(row.get("verdict", "")).strip().upper()
@@ -1511,6 +2498,8 @@ def run():
         stage1_effective = bool(row.get("stage1_effective")) if pd.notna(row.get("stage1_effective")) else False
         if not stage1_effective and not shield_live_quality_override:
             blockers.append("stage1_not_actionable")
+        elif bool(row.get("bull_call_evidence_lane")) and not bool(row.get("stage1_is_yes")):
+            blockers.append("bull_call_evidence_lane_tactical")
 
         if require_spot_alignment:
             spot_asof = fnum(row.get("spot_asof_close"))
@@ -1543,6 +2532,61 @@ def run():
                         f"bear_put_otm_too_far:{long_otm:.1%}>{max_bear_put_long_otm_pct:.1%}"
                     )
 
+        if strategy_local == "Bull Call Debit":
+            bull_call_dte = fnum(row.get("dte"))
+            bull_call_rr = fnum(row.get("live_reward_risk"))
+            bull_call_contract_flow = str(row.get("contract_flow_confirmation", "")).strip().lower()
+            bull_call_regime_conf = str(row.get("market_regime_confidence", "")).strip()
+            if (
+                np.isfinite(bull_call_approval_max_dte)
+                and (not np.isfinite(bull_call_dte) or bull_call_dte > bull_call_approval_max_dte)
+            ):
+                blockers.append(
+                    f"bull_call_dte_too_long:{bull_call_dte if np.isfinite(bull_call_dte) else 'nan'}>{bull_call_approval_max_dte}"
+                )
+            if (
+                np.isfinite(bull_call_approval_min_reward_risk)
+                and (not np.isfinite(bull_call_rr) or bull_call_rr < bull_call_approval_min_reward_risk)
+            ):
+                blockers.append(
+                    f"bull_call_rr_weak:{bull_call_rr if np.isfinite(bull_call_rr) else 'nan'}<{bull_call_approval_min_reward_risk}"
+                )
+            if bull_call_approval_require_contract_confirmed and bull_call_contract_flow != "confirmed":
+                blockers.append(f"bull_call_contract_flow_not_confirmed:{bull_call_contract_flow or 'missing'}")
+            if bull_call_market_regime_enabled:
+                if bull_call_regime_conf == "Low" and bull_call_low_regime_blocks:
+                    blockers.append("market_regime_block:Low")
+                elif bull_call_regime_conf == "Medium" and bull_call_medium_regime_tactical:
+                    blockers.append("market_regime_caution:Medium")
+            bull_call_regime_reason = str(row.get("market_regime_reason", "")).strip().lower()
+            bull_call_vix = fnum(row.get("vix_level"))
+            if not np.isfinite(bull_call_vix):
+                bull_call_vix = fnum(row.get("market_vix_level"))
+            if not np.isfinite(bull_call_vix):
+                bull_call_vix = _vix_level
+            bull_call_gex_context = str(row.get("gex_wall_context", "")).strip()
+            bull_call_trend_down = "ticker trend down" in bull_call_regime_reason
+            bull_call_trend_up = "ticker trend up" in bull_call_regime_reason
+            if (
+                bull_call_block_downtrend_without_high_vix
+                and bull_call_trend_down
+                and np.isfinite(bull_call_vix)
+                and bull_call_vix < bull_call_trend_vix_floor
+            ):
+                blockers.append(
+                    f"bull_call_downtrend_without_high_vix:{bull_call_vix:.1f}<{bull_call_trend_vix_floor:.1f}"
+                )
+            if (
+                bull_call_missing_gex_requires_uptrend
+                and not bull_call_gex_context
+                and not bull_call_trend_up
+                and np.isfinite(bull_call_vix)
+                and bull_call_vix < bull_call_trend_vix_floor
+            ):
+                blockers.append(
+                    f"bull_call_missing_gex_without_uptrend:{bull_call_vix:.1f}<{bull_call_trend_vix_floor:.1f}"
+                )
+
         confidence_tier = str(row.get("confidence_tier", "")).strip().upper()
         if (
             confidence_tier
@@ -1550,6 +2594,57 @@ def run():
             and not shield_live_quality_override
         ):
             blockers.append(f"confidence_tier_blocked:{confidence_tier}")
+
+        flow_dir = str(row.get("flow_direction", "")).strip().lower()
+        flow_conf = str(row.get("flow_confirmation", "")).strip().lower()
+        flow_premium_bias = fnum(row.get("flow_premium_bias"))
+        contract_flow = str(row.get("contract_flow_confirmation", "")).strip().lower()
+        if flow_conf:
+            def directional_flow_ok(expected_direction: str) -> bool:
+                # If ticker-level flow is strongly confirmed against the trade,
+                # respect that veto.  Otherwise allow selected-contract flow to
+                # confirm the actual leg being traded; aggregate ticker flow is
+                # often mixed around large hedges and multi-leg prints.
+                if flow_conf == "confirmed":
+                    return flow_dir == expected_direction
+                return contract_flow == "confirmed"
+
+            if strategy_local == "Bull Call Debit":
+                if not directional_flow_ok("bullish"):
+                    blockers.append(
+                        f"flow_not_confirmed:{flow_dir or 'unknown'}/{flow_conf}"
+                    )
+            elif strategy_local == "Bear Put Debit":
+                if not directional_flow_ok("bearish"):
+                    blockers.append(
+                        f"flow_not_confirmed:{flow_dir or 'unknown'}/{flow_conf}"
+                    )
+            elif strategy_local == "Bull Put Credit":
+                if flow_dir == "bearish" and flow_conf == "confirmed":
+                    blockers.append(
+                        f"flow_contra_bull_put:{flow_premium_bias:+.2f}"
+                    )
+            elif strategy_local == "Bear Call Credit":
+                if flow_dir == "bullish" and flow_conf == "confirmed":
+                    blockers.append(
+                        f"flow_contra_bear_call:{flow_premium_bias:+.2f}"
+                    )
+            elif strategy_local in {"Iron Condor", "Iron Butterfly"}:
+                if flow_dir in {"bullish", "bearish"} and flow_conf == "confirmed":
+                    blockers.append(
+                        f"flow_too_directional_for_ic:{flow_dir}"
+                    )
+
+        if contract_flow:
+            if strategy_local in {"Bull Call Debit", "Bear Put Debit"}:
+                if contract_flow in {"contra", "weak_or_ambiguous", "unknown"}:
+                    blockers.append(f"contract_flow_{contract_flow}")
+            elif strategy_local in {"Bull Put Credit", "Bear Call Credit"}:
+                if contract_flow == "contra":
+                    blockers.append(f"contract_flow_{contract_flow}")
+            elif strategy_local in {"Iron Condor", "Iron Butterfly"}:
+                if contract_flow == "directional":
+                    blockers.append("contract_flow_directional")
 
         if track == "SHIELD":
             if require_shield_sigma_pass:
@@ -1626,14 +2721,39 @@ def run():
         # GEX regime gate  [B1 fix: moved out of SHIELD block — applies to both tracks]
         if require_gex_regime:
             gex_regime = str(row.get("gex_regime", "")).strip().lower()
-            if gex_regime:  # only block if GEX data is available
+            if not gex_regime:
+                if bool(row.get("bull_call_evidence_lane")) and bull_call_evidence_allow_gex_missing:
+                    blockers.append("gex_missing_evidence_lane")
+                else:
+                    blockers.append("gex_missing")
+            else:
                 if track == "SHIELD" and gex_regime == "volatile":
                     blockers.append("shield_gex_volatile")
                 elif track == "FIRE" and gex_regime == "pinned":
                     net_gex_val = fnum(row.get("net_gex"))
                     # Only block FIRE if GEX is strongly pinned (not marginal)
-                    if np.isfinite(net_gex_val) and net_gex_val > 0:
-                        blockers.append("fire_gex_pinned")
+                    if np.isfinite(net_gex_val) and abs(net_gex_val) >= min_fire_pinned_gex_abs:
+                        live_net_val = fnum(row.get("live_net_bid_ask"))
+                        long_strike_val = fnum(row.get("long_strike"))
+                        resistance_val = fnum(row.get("gex_resistance"))
+                        support_val = fnum(row.get("gex_support"))
+                        wall_supportive = False
+                        if (
+                            strategy_local == "Bull Call Debit"
+                            and np.isfinite(live_net_val)
+                            and np.isfinite(long_strike_val)
+                            and np.isfinite(resistance_val)
+                        ):
+                            wall_supportive = (long_strike_val + live_net_val) <= resistance_val
+                        elif (
+                            strategy_local == "Bear Put Debit"
+                            and np.isfinite(live_net_val)
+                            and np.isfinite(long_strike_val)
+                            and np.isfinite(support_val)
+                        ):
+                            wall_supportive = (long_strike_val - live_net_val) >= support_val
+                        if not wall_supportive and not bool(row.get("fire_breakout_exception")):
+                            blockers.append("fire_gex_pinned")
                 # IC-specific: block in volatile regime (amplified moves break IC range)
                 # [T8] was: require pinned — too strict, ICs work in neutral too
                 if strategy_local in {"Iron Condor", "Iron Butterfly"} and gex_regime == "volatile":
@@ -1641,34 +2761,93 @@ def run():
 
         return blockers
 
+    def gex_wall_context(row):
+        gex_regime = str(row.get("gex_regime", "")).strip().lower()
+        strategy_local = str(row.get("strategy", "")).strip()
+        live_net_val = fnum(row.get("live_net_bid_ask"))
+        long_strike_val = fnum(row.get("long_strike"))
+        support_val = fnum(row.get("gex_support"))
+        resistance_val = fnum(row.get("gex_resistance"))
+        if not gex_regime:
+            return ""
+        if gex_regime == "volatile":
+            return "volatile_avoid_credit" if str(row.get("track", "")).strip().upper() == "SHIELD" else "volatile_breakout_possible"
+        if strategy_local == "Bull Call Debit" and np.isfinite(live_net_val) and np.isfinite(long_strike_val):
+            be = long_strike_val + live_net_val
+            if np.isfinite(resistance_val):
+                return "pinned_supportive_below_call_wall" if be <= resistance_val else "pinned_resistance_above_call_wall"
+            return "pinned_no_call_wall"
+        if strategy_local == "Bear Put Debit" and np.isfinite(live_net_val) and np.isfinite(long_strike_val):
+            be = long_strike_val - live_net_val
+            if np.isfinite(support_val):
+                return "pinned_supportive_above_put_wall" if be >= support_val else "pinned_support_below_put_wall"
+            return "pinned_no_put_wall"
+        if strategy_local in {"Iron Condor", "Iron Butterfly"}:
+            return "pinned_income_constructive"
+        return "pinned"
+
+    mdf["gex_wall_context"] = mdf.apply(gex_wall_context, axis=1)
+
     mdf["approval_blockers"] = mdf.apply(
         lambda row: ";".join(approval_blockers(row)),
         axis=1,
     )
-    def split_blockers(raw: str):
+    def split_blockers(row):
+        raw = row.get("approval_blockers", "")
         items = [x for x in str(raw).split(";") if str(x).strip()]
+        strategy_local = str(row.get("strategy", "")).strip()
+        gex_context_local = str(row.get("gex_wall_context", "")).strip()
+        ic_income_constructive = (
+            strategy_local in {"Iron Condor", "Iron Butterfly"}
+            and gex_context_local == "pinned_income_constructive"
+        )
         quality = []
         hard = []
+        hard_prefixes = (
+            "contract_flow_contra",
+            "contract_flow_directional",
+            "shield_gex",
+            "ic_gex",
+            "flow_too_directional_for_ic",
+            "shield_delta",
+            "gex_missing",
+            "market_regime_block",
+        )
         for b in items:
             token = str(b).strip()
+            if token == "gex_missing_evidence_lane" or token.startswith("bull_call_evidence"):
+                quality.append(token)
+                continue
+            if token.startswith("market_regime_caution"):
+                quality.append(token)
+                continue
+            if ic_income_constructive and (
+                token.startswith("contract_flow_directional")
+                or token.startswith("flow_too_directional_for_ic")
+            ):
+                quality.append(token)
+                continue
+            if token.startswith(hard_prefixes):
+                hard.append(token)
+                continue
             if (
                 token.startswith("likelihood_")
                 or token.startswith("edge_below")
                 or token.startswith("signals_below")
                 or token.startswith("credit_no_touch")
                 or token.startswith("shield_core")
-                or token.startswith("shield_delta")
+                or token.startswith("shield_sigma")
                 or token.startswith("fire_delta")
                 or token.startswith("fire_gex")
-                or token.startswith("shield_gex")
-                or token.startswith("ic_gex")
+                or token.startswith("flow_")
+                or token.startswith("contract_flow_")
             ):
                 quality.append(token)
             else:
                 hard.append(token)
         return hard, quality
 
-    blockers_split = mdf["approval_blockers"].apply(split_blockers)
+    blockers_split = mdf.apply(split_blockers, axis=1)
     mdf["hard_blockers"] = blockers_split.apply(lambda x: ";".join(x[0]))
     mdf["quality_blockers"] = blockers_split.apply(lambda x: ";".join(x[1]))
 
@@ -1704,31 +2883,60 @@ def run():
         if not bool(row.get("stage1_effective")) and not shield_override_live:
             return "Watch"
         conv = fnum(row.get("conviction"))
-        if np.isfinite(tactical_min_conviction) and (not np.isfinite(conv) or conv < tactical_min_conviction):
+        evidence_lane = bool(row.get("bull_call_evidence_lane"))
+        _strat = str(row.get("strategy", "")).strip()
+        ic_income_constructive = (
+            _strat in {"Iron Condor", "Iron Butterfly"}
+            and str(row.get("gex_wall_context", "")).strip() == "pinned_income_constructive"
+        )
+        if (
+            not evidence_lane
+            and not ic_income_constructive
+            and np.isfinite(tactical_min_conviction)
+            and (not np.isfinite(conv) or conv < tactical_min_conviction)
+        ):
             return "Watch"
         edge = fnum(row.get("edge_pct"))
-        _strat = str(row.get("strategy", "")).strip()
         _is_bear_tac = _strat in {"Bear Put Debit", "Bear Call Credit"}
         _tac_edge = (
-            min(tactical_min_edge_pct, min_edge_pct_bear) if _is_bear_tac
-            else min(tactical_min_edge_pct, min_edge_pct_shield) if track_local == "SHIELD"
+            max(tactical_min_edge_pct, min_edge_pct_bear) if _is_bear_tac
+            else max(tactical_min_edge_pct, min_edge_pct_shield) if track_local == "SHIELD"
             else tactical_min_edge_pct
         )
-        if np.isfinite(_tac_edge) and (not np.isfinite(edge) or edge < _tac_edge):
+        if (
+            not ic_income_constructive
+            and np.isfinite(_tac_edge)
+            and (not np.isfinite(edge) or edge < _tac_edge)
+        ):
             return "Watch"
         # [T9] Tactical debit/width cap — block expensive-for-width Tactical trades
         if _strat in {"Bull Call Debit", "Bear Put Debit"}:
-            _tac_width = fnum(row.get("width_live")) or fnum(row.get("width"))
-            _tac_net = fnum(row.get("live_net_bid_ask")) or fnum(row.get("live_net_mark"))
+            _tac_width = fnum(row.get("width_live"))
+            if not np.isfinite(_tac_width):
+                _tac_width = fnum(row.get("width"))
+            _tac_net = fnum(row.get("live_net_bid_ask"))
+            if not np.isfinite(_tac_net):
+                _tac_net = fnum(row.get("live_net_mark"))
             if np.isfinite(_tac_width) and _tac_width > 0 and np.isfinite(_tac_net):
                 _tac_debit_pct = _tac_net / _tac_width
                 if np.isfinite(tactical_max_debit_pct_width) and _tac_debit_pct > tactical_max_debit_pct_width:
                     return "Watch"
         sig = fnum(row.get("signals"))
-        if np.isfinite(tactical_min_signals) and (not np.isfinite(sig) or sig < tactical_min_signals):
+        if (
+            (not shield_override_live)
+            and (not evidence_lane)
+            and (not ic_income_constructive)
+            and np.isfinite(tactical_min_signals)
+            and (not np.isfinite(sig) or sig < tactical_min_signals)
+        ):
             return "Watch"
         verdict = str(row.get("verdict", "")).strip().upper()
-        if tactical_require_verdict_pass and verdict != "PASS":
+        if (
+            (not shield_override_live)
+            and (not ic_income_constructive)
+            and tactical_require_verdict_pass
+            and verdict != "PASS"
+        ):
             return "Watch"
         return "Tactical"
 
@@ -1747,7 +2955,7 @@ def run():
     )
     mdf["portfolio_cap_pass"] = pd.Series([pd.NA] * len(mdf), dtype="boolean")
     mdf["portfolio_cap_reason"] = ""
-    portfolio_guard_status = "disabled"
+    portfolio_guard_status = "disabled_historical_replay_no_snapshot" if args.historical_replay else "disabled"
     portfolio_guard_error = ""
     portfolio_guard_snapshot_csv = ""
     portfolio_guard_base = {}
@@ -1799,6 +3007,8 @@ def run():
                             add_risk = fnum(tgt_max_loss)
                     if not np.isfinite(add_risk) or add_risk <= 0:
                         mdf.at[idx, "approved"] = False
+                        mdf.at[idx, "execution_book"] = "Watch"
+                        mdf.at[idx, "size_mult"] = float("nan")
                         mdf.at[idx, "portfolio_cap_pass"] = False
                         mdf.at[idx, "portfolio_cap_reason"] = "missing_trade_risk"
                         continue
@@ -1834,6 +3044,8 @@ def run():
 
                     if reasons:
                         mdf.at[idx, "approved"] = False
+                        mdf.at[idx, "execution_book"] = "Watch"
+                        mdf.at[idx, "size_mult"] = float("nan")
                         mdf.at[idx, "portfolio_cap_pass"] = False
                         mdf.at[idx, "portfolio_cap_reason"] = "; ".join(reasons)
                     else:
@@ -1858,6 +3070,66 @@ def run():
         if moneyness_fail_mask.any():
             mdf = mdf.loc[~moneyness_fail_mask].copy()
     merged_rows_pre_filter = int(len(mdf))
+
+    def _token_count(value: object) -> int:
+        return len([x for x in str(value or "").split(";") if str(x).strip()])
+
+    def _display_rank_score(row) -> float:
+        score = 0.0
+        if bool(row.get("approved")):
+            score += 100000.0
+        book = str(row.get("execution_book", "")).strip()
+        score += {"Core": 3000.0, "Tactical": 2000.0, "Watch": 0.0}.get(book, 0.0)
+        live_status = str(row.get("live_status", "")).strip()
+        if bool(row.get("is_final_live_valid")) or live_status == "ok_live":
+            score += 300.0
+        verdict = str(row.get("verdict", "")).strip().upper()
+        if verdict == "PASS":
+            score += 450.0
+        elif verdict == "LOW_SAMPLE":
+            score += 50.0
+        elif verdict == "FAIL":
+            score -= 450.0
+        edge_val = fnum(row.get("edge_pct"))
+        if np.isfinite(edge_val):
+            score += edge_val * 10.0
+        signals_val = fnum(row.get("signals"))
+        if np.isfinite(signals_val):
+            score += min(signals_val, 300.0)
+        conv_val = fnum(row.get("conviction"))
+        if np.isfinite(conv_val):
+            score += conv_val
+        if bool(row.get("stage1_effective")):
+            score += 120.0
+        else:
+            score -= 50.0
+        flow_confirm = str(row.get("flow_confirmation", "")).strip().lower()
+        if flow_confirm == "confirmed":
+            score += 160.0
+        elif flow_confirm in {"weak_or_ambiguous", "conflicted"}:
+            score -= 35.0
+        contract_confirm = str(row.get("contract_flow_confirmation", "")).strip().lower()
+        if contract_confirm == "confirmed":
+            score += 200.0
+        elif contract_confirm == "weak_or_ambiguous":
+            score -= 80.0
+        elif contract_confirm in {"contra", "directional", "unknown"}:
+            score -= 260.0
+        gex_ctx = str(row.get("gex_wall_context", "")).strip().lower()
+        if gex_ctx == "volatile_breakout_possible":
+            score += 60.0
+        elif "pinned" in gex_ctx:
+            score -= 120.0
+        score -= 500.0 * _token_count(row.get("hard_blockers"))
+        score -= 75.0 * _token_count(row.get("quality_blockers"))
+        return score
+
+    mdf["_display_rank_score"] = mdf.apply(_display_rank_score, axis=1)
+    decision_audit_all = mdf.sort_values(
+        ["approved", "_display_rank_score", "conviction"],
+        ascending=[False, False, False],
+    ).reset_index(drop=True).copy()
+    mdf = decision_audit_all.copy()
     dropped_final = []
     kept_indices = []
     per_ticker_final = defaultdict(int)
@@ -1889,59 +3161,81 @@ def run():
         _shield_rows = mdf[mdf["track"] == "SHIELD"]
         _other_rows = mdf[~mdf["track"].isin(["FIRE", "SHIELD"])]
 
-        # Pick best SHIELD trades up to the reservation count.
-        _shield_reserved = _shield_rows.head(min(min_shield_in_output, len(_shield_rows)))
-
-        # Reserve best bear FIRE trades so bearish signals always surface.
         _bear_fire = _fire_rows[_fire_rows["strategy"].isin(_bear_strategies)]
-        _bear_reserved = _bear_fire.head(min(_min_bear_in_output, len(_bear_fire)))
-        _remaining_budget = _top_n - len(_shield_reserved) - len(_bear_reserved)
-
-        # Fill remaining budget with bull FIRE + leftover bear + leftover SHIELD + other.
         _bull_fire = _fire_rows[~_fire_rows["strategy"].isin(_bear_strategies)]
-        _leftover_bear = _bear_fire.iloc[len(_bear_reserved):]
-        _leftover_shield = _shield_rows.iloc[len(_shield_reserved):]
-        _rest = pd.concat([_bull_fire, _leftover_bear, _leftover_shield, _other_rows], ignore_index=True)
-        _rest = _rest.sort_values(
-            ["approved", "conviction"],
-            ascending=[False, False],
-        ).reset_index(drop=True)
 
-        # Enforce sector cap, expiry concentration, and direction balance.
-        _selected_indices = []
+        # Enforce sector cap, expiry concentration, and direction balance across
+        # reserved rows too. Reservations express preference, not cap exemption.
+        _selected_rows = []
+        _selected_keys = set()
         _sector_counts = defaultdict(int)
         _expiry_counts = defaultdict(int)
         _direction_counts = {"bull": 0, "bear": 0}
-        _total_selected = 0
-        for _sidx, _srow in _rest.iterrows():
-            if _total_selected >= _remaining_budget:
-                break
+        _sector_limit = max(1, int(round(max_sector_share * _top_n)))
+        _dir_limit = max(1, int(round(max_same_direction_pct * _top_n)))
+
+        def _try_select_final_row(_srow) -> bool:
+            if len(_selected_rows) >= _top_n:
+                return False
+            _row_key = (
+                str(_srow.get("ticker", "")).strip().upper(),
+                str(_srow.get("strategy", "")).strip(),
+                str(_srow.get("expiry", "")).strip()[:10],
+                str(_srow.get("long_strike", "")).strip(),
+                str(_srow.get("short_strike", "")).strip(),
+                str(_srow.get("long_put_strike", "")).strip(),
+                str(_srow.get("short_put_strike", "")).strip(),
+                str(_srow.get("short_call_strike", "")).strip(),
+                str(_srow.get("long_call_strike", "")).strip(),
+            )
+            if _row_key in _selected_keys:
+                return False
             _sticker = str(_srow.get("ticker", "")).strip().upper()
             _ssector = sector_map.get(_sticker, "Unknown")
-            _sector_limit = max(1, int(round(max_sector_share * _top_n)))
             if _sector_counts[_ssector] >= _sector_limit:
-                continue
+                return False
             # [T9] Expiry concentration cap
             _sexpiry = str(_srow.get("expiry", _srow.get("expiry_date", ""))).strip()
             if _sexpiry and _expiry_counts[_sexpiry] >= max_same_expiry_count:
-                continue
+                return False
             # [T9] Direction balance cap
             _sstrat = str(_srow.get("strategy", "")).strip()
             _sdir = "bear" if _sstrat in {"Bear Put Debit", "Bear Call Credit"} else "bull"
-            _dir_limit = max(1, int(round(max_same_direction_pct * _top_n)))
             if _direction_counts[_sdir] >= _dir_limit:
-                continue
+                return False
             _sector_counts[_ssector] += 1
             _expiry_counts[_sexpiry] += 1
             _direction_counts[_sdir] += 1
-            _total_selected += 1
-            _selected_indices.append(_sidx)
-        _rest_selected = _rest.loc[_selected_indices]
+            _selected_keys.add(_row_key)
+            _selected_rows.append(_srow.to_dict())
+            return True
 
-        _final = pd.concat([_shield_reserved, _bear_reserved, _rest_selected], ignore_index=True)
+        def _take_from(_df, _limit):
+            _added = 0
+            for _, _srow in _df.iterrows():
+                if _added >= _limit or len(_selected_rows) >= _top_n:
+                    break
+                if _try_select_final_row(_srow):
+                    _added += 1
+
+        # Pick best SHIELD trades up to the reservation count, subject to caps.
+        _take_from(_shield_rows, min(min_shield_in_output, len(_shield_rows)))
+
+        # Reserve best bear FIRE trades so bearish signals always surface, subject to caps.
+        _take_from(_bear_fire, min(_min_bear_in_output, len(_bear_fire)))
+
+        # Fill remaining budget with bull FIRE + leftover bear + leftover SHIELD + other.
+        _rest = pd.concat([_bull_fire, _bear_fire, _shield_rows, _other_rows], ignore_index=True)
+        _rest = _rest.sort_values(
+            ["approved", "_display_rank_score", "conviction"],
+            ascending=[False, False, False],
+        ).reset_index(drop=True)
+        _take_from(_rest, _top_n)
+
+        _final = pd.DataFrame(_selected_rows)
         _final = _final.sort_values(
-            ["approved", "conviction"],
-            ascending=[False, False],
+            ["approved", "_display_rank_score", "conviction"],
+            ascending=[False, False, False],
         ).reset_index(drop=True).head(_top_n)
 
         # Record dropped rows.
@@ -1978,6 +3272,22 @@ def run():
         size_mult_val = fnum(r.get("size_mult"))
         size_mult_txt = f"{size_mult_val:.2f}x" if approved and np.isfinite(size_mult_val) else "-"
         watch_reason_flags = []
+        flow_bias_txt = ""
+        flow_bias_val = fnum(r.get("flow_premium_bias"))
+        if np.isfinite(flow_bias_val):
+            flow_bias_txt = f", side-prem {flow_bias_val:+.1%}"
+        flow_read_txt = (
+            f"{str(r.get('flow_direction', '') or 'unknown')}/"
+            f"{str(r.get('flow_confidence', '') or 'unknown')}"
+            f" ({str(r.get('flow_primary_driver', '') or 'n/a')}; "
+            f"{str(r.get('flow_confirmation', '') or 'n/a')}{flow_bias_txt})"
+        )
+        contract_flow_txt = str(r.get("contract_flow_confirmation", "") or "").strip()
+        contract_driver_txt = str(r.get("contract_flow_driver", "") or "").strip()
+        if contract_flow_txt:
+            flow_read_txt += f"; leg={contract_flow_txt}"
+            if contract_driver_txt:
+                flow_read_txt += f" ({contract_driver_txt})"
         op, gate_val, _ = parse_gate_value(r.get("entry_gate", ""))
 
         live_net = fnum(r.get("live_net_bid_ask"))
@@ -2057,6 +3367,15 @@ def run():
                         f" Ideal credit guide: {ideal_low:.2f}-{ideal_high:.2f} "
                         f"({ideal_credit_low_pct:.0%}-{ideal_credit_high_pct:.0%} of {width_eff:.2f}w)."
                     )
+                notes += (
+                    f" Exit plan: take profit near {take_profit_credit_pct:.0%} of max profit; "
+                    f"stop/adjust near {stop_loss_credit_pct:.0%} of max defined risk or on confirmed breakeven breach."
+                )
+            else:
+                notes += (
+                    f" Exit plan: take profit near +{take_profit_debit_pct:.0%} of debit paid or when target/breakeven is hit; "
+                    f"stop near -{stop_loss_debit_pct:.0%} of debit risk or on close-confirmed invalidation."
+                )
             spot_asof = fnum(r.get("spot_asof_close"))
             spot_live = fnum(r.get("spot_live_effective"))
             spot_drift = fnum(r.get("spot_asof_live_drift_pct"))
@@ -2130,6 +3449,10 @@ def run():
                     watch_reason_flags.append("live_rr_weak")
                 elif b.startswith("fire_delta"):
                     watch_reason_flags.append("fire_delta_fail")
+                elif b.startswith("flow_"):
+                    watch_reason_flags.append("flow_confirmation_fail")
+                elif b.startswith("contract_flow_"):
+                    watch_reason_flags.append("contract_flow_fail")
                 elif b.startswith("fire_gex"):
                     watch_reason_flags.append("fire_gex_blocked")
                 elif b.startswith("shield_gex"):
@@ -2270,6 +3593,9 @@ def run():
             n_txt = f"{int(signals)}" if np.isfinite(signals) else "n/a"
             verdict_txt = verdict if verdict else "N/A"
             setup_likelihood = f"{hist_success:.1f}% {verdict_txt} ({strength}, edge {edge_pct:+.1f}%, n={n_txt})"
+            conditioning_level = str(r.get("conditioning_level", "") or "").strip()
+            if conditioning_level and conditioning_level not in {"unscored", "base_unconditioned"}:
+                setup_likelihood += f"; ctx={conditioning_level}"
         else:
             if verdict == "UNKNOWN":
                 setup_likelihood = "Unknown"
@@ -2303,13 +3629,21 @@ def run():
                 "Setup Likelihood": setup_likelihood,
                 "Execution Book": execution_book,
                 "Size Mult": size_mult_txt,
+                "UW Flow Read": flow_read_txt,
                 "Signal Tier (Stage-1)": confidence_tier,
                 "Optimal": optimal,
                 "IV Rank": f"{r['iv_rank']:.0f}" if "iv_rank" in r and pd.notna(r.get("iv_rank")) else "",
                 "Short Delta": f"{fnum(r.get('short_delta_live')):.2f}" if np.isfinite(fnum(r.get("short_delta_live"))) else "",
                 "Long Delta": f"{fnum(r.get('long_delta_live')):.2f}" if np.isfinite(fnum(r.get("long_delta_live"))) else "",
+                "Market Regime": (
+                    f"{r.get('market_regime_confidence', '')} {fnum(r.get('market_regime_score')):.0f}"
+                    if np.isfinite(fnum(r.get("market_regime_score")))
+                    else str(r.get("market_regime_confidence", "") or "")
+                ),
                 "GEX Regime": str(r.get("gex_regime", "")) if r.get("gex_regime") else "",
                 "Net GEX ($M)": f"{fnum(r.get('net_gex')) / 1e6:.1f}" if np.isfinite(fnum(r.get("net_gex"))) else "",
+                "Regime Notes": str(r.get("market_regime_reason", "") or ""),
+                "GEX Wall Context": str(r.get("gex_wall_context", "") or ""),
                 "Watch Reason Flags": ", ".join(watch_reason_flags) if not approved else "",
                 "Notes": notes,
                 "Source": "Stage1(ChainOI+DP+HotChains+Screener+Whale) + Stage2(uwos.pricer)",
@@ -2335,13 +3669,17 @@ def run():
             "Setup Likelihood",
             "Execution Book",
             "Size Mult",
+            "UW Flow Read",
             "Signal Tier (Stage-1)",
             "Optimal",
             "IV Rank",
-            "Short Delta",
-            "Long Delta",
-            "GEX Regime",
-            "Net GEX ($M)",
+                "Short Delta",
+                "Long Delta",
+                "Market Regime",
+                "GEX Regime",
+                "Net GEX ($M)",
+                "Regime Notes",
+                "GEX Wall Context",
             "Watch Reason Flags",
             "Notes",
             "Source",
@@ -2391,6 +3729,10 @@ def run():
         columns=["ticker", "strategy", "expiry", "stage", "drop_reason", "details"],
     )
     dropped_df.to_csv(dropped_csv, index=False)
+    decision_audit_csv = out_dir / f"trade_decision_book_all_{asof_str}.csv"
+    decision_audit_all.to_csv(decision_audit_csv, index=False)
+    decision_book_csv = out_dir / f"trade_decision_book_{asof_str}.csv"
+    mdf.to_csv(decision_book_csv, index=False)
 
     manifest_path = out_dir / f"run_manifest_{asof_str}.json"
     category_order = [
@@ -2417,17 +3759,70 @@ def run():
             "Breakeven",
             "Conviction %",
             "Setup Likelihood",
+            "UW Flow Read",
             "Signal Tier (Stage-1)",
             "Optimal",
             "IV Rank",
             "Short Delta",
             "Long Delta",
+            "Market Regime",
             "GEX Regime",
             "Net GEX ($M)",
+            "Regime Notes",
+            "GEX Wall Context",
             "Notes",
         ]
         if c in out_df.columns
     ]
+
+    def markdown_table(df: pd.DataFrame, cols: list[str]) -> str:
+        cols = [c for c in cols if c in df.columns]
+        if df.empty or not cols:
+            return "_No rows_"
+        return df[cols].fillna("").to_markdown(index=False)
+
+    def bullets_from_rows(df: pd.DataFrame, value_col: str, prefix_col: str = "Ticker") -> list[str]:
+        if value_col not in df.columns:
+            return []
+        bullets = []
+        for _, row in df.iterrows():
+            value = str(row.get(value_col, "") or "").strip()
+            if not value:
+                continue
+            number = str(row.get("#", "") or "").strip()
+            prefix = str(row.get(prefix_col, "") or "").strip()
+            label = f"#{number} {prefix}".strip()
+            bullets.append(f"- {label}: {value}")
+        return bullets
+
+    plan_cols = ["#", "Ticker", "Action", "Expiry", "DTE", "Net Credit/Debit", "Breakeven"]
+    strike_cols = ["#", "Ticker", "Strike Setup"]
+    risk_cols = [
+        "#",
+        "Ticker",
+        "Max Profit",
+        "Max Loss",
+        "Conviction %",
+        "Setup Likelihood",
+        "Signal Tier (Stage-1)",
+        "Optimal",
+        "IV Rank",
+        "Short Delta",
+        "Long Delta",
+        "Market Regime",
+        "GEX Regime",
+        "Net GEX ($M)",
+    ]
+    reason_summary_cols = [
+        "#",
+        "Ticker",
+        "Strategy Type",
+        "Expiry",
+        "Conviction %",
+        "Setup Likelihood",
+        "Execution Book",
+    ]
+
     mini_tables = []
     for book in execution_book_order:
         mini_tables.append(f"### {book} Book")
@@ -2444,10 +3839,20 @@ def run():
             mini_tables.extend(
                 [
                     f"#### {cat}",
-                    sub[table_cols].to_markdown(index=False),
+                    "**Trade plan**",
+                    markdown_table(sub, plan_cols),
+                    "",
+                    "**Strike setup**",
+                    markdown_table(sub, strike_cols),
+                    "",
+                    "**Risk / edge**",
+                    markdown_table(sub, risk_cols),
                     "",
                 ]
             )
+            notes = bullets_from_rows(sub, "Notes")
+            if notes:
+                mini_tables.extend(["**Notes**", *notes, ""])
         if not has_rows:
             mini_tables.extend(["_No rows_", ""])
     if not mini_tables:
@@ -2497,12 +3902,109 @@ def run():
         watch_reason_tables.extend(
             [
                 f"### {title}",
-                sub[reason_cols].to_markdown(index=False),
+                markdown_table(sub, reason_summary_cols),
                 "",
             ]
         )
+        flags = bullets_from_rows(sub, "Watch Reason Flags")
+        if flags:
+            watch_reason_tables.extend(["**Reason flags**", *flags, ""])
+        notes = bullets_from_rows(sub, "Notes")
+        if notes:
+            watch_reason_tables.extend(["**Notes**", *notes, ""])
     if not watch_reason_tables:
         watch_reason_tables = ["_No watch-only reason rows_", ""]
+
+    gate_diagnostics = []
+    if "approval_blockers" in mdf.columns and not mdf.empty:
+        diag_rows = []
+        for _, row in mdf.iterrows():
+            raw = str(row.get("approval_blockers", "") or "")
+            tokens = [x.strip() for x in raw.split(";") if x.strip()]
+            if not tokens:
+                tokens = ["none"]
+            for token in tokens:
+                diag_rows.append(
+                    {
+                        "Track": normalize_track(row.get("track", ""), row.get("strategy", "")),
+                        "Strategy": str(row.get("strategy", "")).strip(),
+                        "Execution Book": str(row.get("execution_book", "")).strip(),
+                        "Blocker": token,
+                    }
+                )
+        if diag_rows:
+            diag_df = pd.DataFrame(diag_rows)
+            top_blockers = (
+                diag_df.groupby(["Track", "Execution Book", "Blocker"], dropna=False)
+                .size()
+                .reset_index(name="Count")
+                .sort_values(["Count", "Track", "Execution Book", "Blocker"], ascending=[False, True, True, True])
+                .head(20)
+            )
+            gate_diagnostics.extend(
+                [
+                    "## Daily Gate Diagnostics",
+                    "",
+                    "**Top blockers in final output**",
+                    markdown_table(top_blockers, ["Track", "Execution Book", "Blocker", "Count"]),
+                    "",
+                ]
+            )
+    if not gate_diagnostics:
+        gate_diagnostics = ["## Daily Gate Diagnostics", "", "_No blocker diagnostics available._", ""]
+
+    data_source_provenance = [
+        "## Data Source Provenance",
+        "",
+        markdown_table(
+            pd.DataFrame(
+                [
+                    {
+                        "Field Family": "Live option bid/ask, deltas, live spot",
+                        "Source": "dated local UW option-chain exports" if args.historical_replay else "Schwab API token_file",
+                        "Freshness": asof_str if args.historical_replay else "run-time Stage-2",
+                    },
+                    {
+                        "Field Family": "Stage-1 flow, OI changes, screener fields",
+                        "Source": "dated local UW exports",
+                        "Freshness": asof_str,
+                    },
+                    {
+                        "Field Family": "GEX regime, net GEX, GEX walls",
+                        "Source": (
+                            "UW dashboard CDP capture"
+                            if gex_source_counts.get("unusual_whales_dashboard_cdp")
+                            else "Schwab snapshot fallback"
+                            if (not args.historical_replay) and gex_source_counts.get("schwab_snapshot_fallback")
+                            else "date-matched UW capture required; no current fallback"
+                            if args.historical_replay
+                            else "not available"
+                        ),
+                        "Freshness": (
+                            asof_str
+                            if gex_source_counts.get("unusual_whales_dashboard_cdp")
+                            else "run-time fallback"
+                            if (not args.historical_replay) and gex_source_counts.get("schwab_snapshot_fallback")
+                            else "n/a"
+                            if args.historical_replay
+                            else "n/a"
+                        ),
+                    },
+                    {
+                        "Field Family": "Setup likelihood",
+                        "Source": "conditioned local/yfinance OHLC analog model",
+                        "Freshness": "historical/cache",
+                    },
+                ]
+            ),
+            ["Field Family", "Source", "Freshness"],
+        ),
+        "",
+        f"GEX source counts: {gex_source_counts if gex_source_counts else 'none'}",
+        f"UW GEX summary file: {uw_gex_summary_csv if uw_gex_summary_csv.exists() else 'not found'}",
+        f"UW GEX strikes file: {uw_gex_strikes_csv if uw_gex_strikes_csv.exists() else 'not found'}",
+        "",
+    ]
 
     lines = [
         f"As-of date used: {asof_str}",
@@ -2527,6 +4029,11 @@ def run():
             if stage2_reused_existing
             else ""
         ),
+        (
+            "Stage-2 note: HISTORICAL REPLAY mode used dated UW chain quotes and dated stock close; current Schwab live pricing was not used."
+            if args.historical_replay
+            else ""
+        ),
         f"Approved trades: {approved_count} / {len(out_df)}",
         f"Execution book split: Core={core_count}, Tactical={tactical_count}, Watch={watch_book_count}",
         "Category split: "
@@ -2542,6 +4049,7 @@ def run():
          if approved_count == 0
          else ""),
         "",
+        *data_source_provenance,
         "## Anu Expert Trade Table",
         "Mini tables by execution book (Core/Tactical/Watch), then strategy family:",
         "",
@@ -2549,6 +4057,7 @@ def run():
         "## Watch Only Reason Tables",
         "",
         *watch_reason_tables,
+        *gate_diagnostics,
         "Ticker thesis + invalidation (Yes-Prime / Yes-Good):",
     ]
 
@@ -2565,7 +4074,7 @@ def run():
         lines.append("- none")
 
     output_path.write_text("\n".join(lines), encoding="utf-8-sig")
-    run_completed_utc = dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    run_completed_utc = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     manifest = {
         "asof_date": asof_str,
         "run_started_utc": run_started_utc,
@@ -2589,16 +4098,22 @@ def run():
             "live_csv": str(live_csv),
             "live_final_csv": str(live_final_csv),
             "dropped_csv": str(dropped_csv),
+            "decision_book_csv": str(decision_book_csv),
             "manifest_json": str(manifest_path),
             "snapshot_json": str((out_dir / f"schwab_snapshot_{asof_str}.json").resolve()),
             "snapshot_chain_dir": str((out_dir / f"schwab_snapshot_{asof_str}" / "chains").resolve()),
+            "uw_gex_summary_csv": str(uw_gex_summary_csv) if uw_gex_summary_csv.exists() else "",
+            "uw_gex_strikes_csv": str(uw_gex_strikes_csv) if uw_gex_strikes_csv.exists() else "",
         },
         "settings": {
             "top_trades_requested": int(args.top_trades),
             "discovery_multiplier": float(discovery_multiplier),
             "discovery_top": int(discovery_top),
             "final_max_per_ticker": int(final_max_per_ticker),
-            "strict_stage2": bool(args.strict_stage2),
+            "stage2_mode": stage2_mode,
+            "historical_replay": bool(args.historical_replay),
+            "strict_stage2": not bool(args.allow_stale_stage2),
+            "allow_stale_stage2": bool(args.allow_stale_stage2),
             "stage2_reused_existing_live": bool(stage2_reused_existing),
             "stage2_error": stage2_error,
             "enforce_pretrade_portfolio_caps": bool(enforce_pretrade_caps),
@@ -2613,6 +4128,7 @@ def run():
             "tactical_min_edge_pct": float(tactical_min_edge_pct),
             "tactical_min_signals": float(tactical_min_signals),
             "tactical_require_verdict_pass": bool(tactical_require_verdict_pass),
+            "gex_source_counts": gex_source_counts,
         },
         "counts": {
             "stage1_candidates_raw": int(len(best)),
@@ -2644,7 +4160,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-
-
-
-
