@@ -47,6 +47,8 @@ python3 -m uwos.trend_analysis_batch --start 2025-12-01 --end 2026-04-17 --lookb
 
 Use local UW option quote replay for batch proof. Do not use Schwab current/live chains to score old signal dates because that would introduce look-ahead leakage.
 
+In batch proof reports, read **Live-Eligible Playbooks** first. Only supportive or emerging prior-only rolling playbooks can be worked live; negative or recently decaying rolling playbooks are blocked. The report also writes prior-only playbook trades and gap diagnostics CSVs.
+
 ## Output
 
 Read and summarize:
@@ -68,7 +70,9 @@ Read and summarize:
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-metadata-{date}-L{lookback}.json`
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis_batch/trend-analysis-batch-proof-START_END-L{lookback}.md`
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis_batch/trend-analysis-batch-strict-trades-START_END-L{lookback}.csv`
+- `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis_batch/trend-analysis-batch-prior-only-playbook-trades-START_END-L{lookback}.csv`
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis_batch/trend-analysis-batch-research-outcomes-START_END-L{lookback}.csv`
+- `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis_batch/trend-analysis-batch-gap-diagnostics-START_END-L{lookback}.csv`
 
 ## Reporting Rules
 
@@ -78,7 +82,8 @@ Read and summarize:
 - Review **Research Confidence Audit** and **Research Horizon Audit** next. They are fixed-bucket sanity checks, not parameter searches; if no bucket/horizon is supportive, do not treat current candidates as Actionable Now. Use the research outcomes CSV when debugging the ticker/setup rows behind a negative bucket.
 - Review **Strategy Family Audit** next. This is the broad trade-generation layer: predeclared setup families are split into training and later validation dates. Mixed, negative, validation-negative, and low-sample families are research-only unless a narrower ticker playbook overrides them.
 - Review **Ticker Playbook Audit** next. This is the narrow trade-generation layer: ticker/direction/strategy/horizon playbooks are split into training and later validation dates. A `promotable` ticker playbook can unlock Actionable Now even when the broad family is negative, but all live quote, Schwab, earnings, liquidity, trend-quality, and max-risk gates still apply.
-- Review **Rolling Ticker Playbook Forward Validation** next. It checks whether a ticker playbook continued to work after it first became promotable using prior data only. Negative rolling validation blocks matching actionable trades; insufficient validation is allowed only with lower position-size tiers.
+- Review **Rolling Ticker Playbook Forward Validation** next. It checks whether a ticker playbook continued to work after it first became promotable using prior data only. Negative or recently decaying rolling validation blocks matching actionable trades; insufficient validation is allowed only with lower position-size tiers.
+- In batch proof reports, summarize **Live-Eligible Playbooks** before broad research outcomes. Treat full-period ticker playbooks as diagnostic unless they also survive prior-only rolling validation.
 - If a batch proof was requested, read the batch proof report first and answer the proof question before discussing individual candidates.
 - In every trade summary, show the trade setup up front: strategy, legs, and expiry.
 - Backtest-Supported Candidate Shortlist is the primary output: a few strong bullish/bearish candidates or patterns with at least one backtest-supported structure to work on. It is acceptable for a run to produce zero actionable trades.
@@ -95,7 +100,7 @@ Read and summarize:
 - Research Confidence Audit rows show whether fixed historical candidate buckets made money. The summary requires enough unique historical setups; repeated 5/10/20-day exits cannot masquerade as independent evidence.
 - Research Horizon Audit rows split the same buckets by holding horizon. If the aggregate table and the horizon table are negative, keep Actionable Now blocked even if a current setup looks interesting.
 - Strategy Family Audit rows are train/validation checks for predeclared setup families. A family with validation wins but negative training is `mixed`, not promotable.
-- Ticker Playbook Audit rows are train/validation checks for ticker-specific setup behavior. A promotable ticker playbook can override a broad family block, but it must never override live quote, Schwab, earnings, liquidity, price/flow quality, market regime, open-position awareness, negative rolling-forward validation, or lotto gates.
+- Ticker Playbook Audit rows are train/validation checks for ticker-specific setup behavior. Same-day ticker variants are deduped before validation so one ticker/day cannot inflate confidence. A promotable ticker playbook can override a broad family block, but it must never override live quote, Schwab, earnings, liquidity, price/flow quality, market regime, open-position awareness, negative/decaying rolling-forward validation, or lotto gates.
 - Every Actionable Trade must show a position-size tier. `PROBE_ONLY`, `STARTER_RISK`, `STANDARD_RISK`, and `MAX_PLANNED_RISK` are caps; low-sample or insufficient-forward-validation rows should remain starter/probe-sized.
 - Post-trade tracking should show whether prior tracked ideas are `OPEN_WIN`, `OPEN_LOSS`, `CLOSED_WIN`, `CLOSED_LOSS`, or unavailable based on local UW option replay. Do not call the pipeline profitable until tracker outcomes support that claim.
 - Present rows that pass backtest/Schwab but fail tradeability gates as **Risk-Blocked**, not actionable.

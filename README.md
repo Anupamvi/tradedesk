@@ -106,6 +106,8 @@ python -m uwos.trend_analysis_batch \
 
 This answers the harder question: had the command run on every eligible historical date, what trades would it have emitted, what happened afterward, and which playbooks made money? Historical proof intentionally uses local UW option quote replay instead of Schwab live chains, because Schwab current chains would leak today’s prices into old signal dates. Batch output is written to `out/trend_analysis_batch/trend-analysis-batch-proof-START_END-LN.md`.
 
+The batch report is also a gap-fix map. Read **Live-Eligible Playbooks** first; only supportive or emerging prior-only rolling playbooks can be worked live, and negative or decaying playbooks are blocked. The audit dedupes same-day ticker variants before playbook validation so one ticker/day cannot inflate confidence, writes a prior-only playbook trades CSV, and writes a gap diagnostics CSV showing which gates lost money and what to fix.
+
 The **Walk-Forward Audit** is the confidence layer. It reruns older signal dates, selects historical trades using only signal-date evidence, and then scores future option-quote outcomes over configured market-day horizons. A supportive audit raises trust; an empty, low-sample, or negative audit is a confidence penalty even when the current trade list has actionable rows.
 
 The **Backtest-Supported Candidate Shortlist** is the primary output for backtest-supported names: a few high-conviction tickers with high swing score, multiple independent confirmations, few contradictory signals, and at least one structure that passed the backtest gate. Directional price confirmation is preferred; price divergence is shown only when backtest support exists, and it is labeled as a confirmation risk rather than an entry. These are names to work on, not automatic trades.
@@ -124,7 +126,7 @@ The **Strategy Family Audit** is the broad trade-generation layer. It evaluates 
 
 The **Ticker Playbook Audit** is the narrow trade-generation layer. It checks ticker/direction/strategy/horizon playbooks with the same train/validation discipline so a profitable ticker setup is not buried inside a broad losing family. A current setup can unlock Actionable Now when either the matching broad family or the matching ticker playbook is `promotable`, while all live quote, Schwab, earnings, liquidity, trend-quality, and max-risk gates still apply.
 
-The **Rolling Ticker Playbook Forward Validation** section retests ticker playbooks chronologically after they first become promotable using prior-only evidence. Negative rolling validation blocks matching actionable trades. Insufficient or emerging rolling evidence is allowed only with lower position-size tiers.
+The **Rolling Ticker Playbook Forward Validation** section retests ticker playbooks chronologically after they first become promotable using prior-only evidence. Negative or recently decaying rolling validation blocks matching actionable trades. Insufficient or emerging rolling evidence is allowed only with lower position-size tiers.
 
 Every Actionable Trade includes a position-size tier and writes to `out/trend_analysis/trend-analysis-trade-tracker.csv` for post-trade outcome review. Later runs refresh tracker outcomes from local UW option snapshots and mark ideas as `OPEN_WIN`, `OPEN_LOSS`, `CLOSED_WIN`, `CLOSED_LOSS`, or unavailable. `PROBE_ONLY`, `STARTER_RISK`, `STANDARD_RISK`, and `MAX_PLANNED_RISK` are risk caps; low-sample or insufficient-forward-validation trades should remain starter/probe-sized.
 

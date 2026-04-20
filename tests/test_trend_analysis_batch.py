@@ -63,6 +63,31 @@ class TestTrendAnalysisBatch(unittest.TestCase):
 
         self.assertEqual(list(out["pnl"]), [2])
 
+    def test_gap_diagnostics_explain_negative_policy_and_blockers(self) -> None:
+        df = pd.DataFrame(
+            [
+                {
+                    "policy": "entry_available_score_gate",
+                    "pnl": -100.0,
+                    "base_gate_reasons": "backtest UNKNOWN, signals 0",
+                    "quality_reject_reasons": "expensive debit: entry 70% of spread width > 50%",
+                },
+                {
+                    "policy": "entry_available_score_gate",
+                    "pnl": 25.0,
+                    "base_gate_reasons": "",
+                    "quality_reject_reasons": "",
+                },
+            ]
+        )
+
+        gaps = trend_analysis_batch.build_gap_diagnostics(df)
+
+        self.assertIn("broad_policy", set(gaps["area"]))
+        self.assertTrue(gaps["gap"].astype(str).str.contains("expensive debit").any())
+        expensive = gaps[gaps["gap"].astype(str).str.contains("expensive debit")].iloc[0]
+        self.assertIn("Repair strikes", expensive["fix"])
+
 
 if __name__ == "__main__":
     unittest.main()

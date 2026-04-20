@@ -5,6 +5,7 @@ import argparse
 import datetime as dt
 import json
 import math
+from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -308,6 +309,116 @@ def _group_summary_table(df: pd.DataFrame, by: str, *, limit: int = 16) -> str:
     )
 
 
+def _rolling_playbook_table(df: pd.DataFrame, *, limit: int = 12) -> str:
+    if df.empty:
+        return "_none_"
+    return _render_table(
+        ["ticker", "direction", "strategy", "tests", "dates", "hit", "avg", "PF", "recent avg", "verdict"],
+        [
+            [
+                str(row.get("ticker", "")),
+                str(row.get("direction", "")),
+                str(row.get("strategy", "")),
+                str(trend_analysis._safe_int(row.get("forward_tests"))),
+                str(trend_analysis._safe_int(row.get("forward_dates"))),
+                _fmt_pct(row.get("forward_hit_rate")),
+                _fmt_money(row.get("forward_avg_pnl")),
+                _fmt_num(row.get("forward_profit_factor"), 2),
+                _fmt_money(row.get("recent_forward_avg_pnl")),
+                str(row.get("verdict", "")),
+            ]
+            for _, row in df.head(limit).iterrows()
+        ],
+    )
+
+
+def _split_reasons(value: Any) -> List[str]:
+    text = str(value or "").strip()
+    if not text or text.lower() == "nan":
+        return []
+    return [part.strip() for part in text.split(";") if part.strip() and part.strip().lower() != "nan"]
+
+
+def build_gap_diagnostics(research_outcomes: pd.DataFrame) -> pd.DataFrame:
+    columns = ["area", "gap", "rows", "avg_pnl", "total_pnl", "fix"]
+    if research_outcomes.empty:
+        return pd.DataFrame(columns=columns)
+
+    rows: List[Dict[str, Any]] = []
+    overall = summarize_outcomes(research_outcomes)
+    if trend_analysis._safe_float(overall.get("avg_pnl")) < 0:
+        rows.append(
+            {
+                "area": "broad_policy",
+                "gap": "Broad entry_available_score_gate pool has negative expectancy",
+                "rows": int(overall.get("trades", 0) or 0),
+                "avg_pnl": overall.get("avg_pnl"),
+                "total_pnl": overall.get("total_pnl"),
+                "fix": "Do not use broad pattern candidates as trades; require a prior-only ticker playbook or supportive strategy family.",
+            }
+        )
+
+    for policy, group in research_outcomes.groupby("policy", dropna=False):
+        summary = summarize_outcomes(group)
+        if trend_analysis._safe_float(summary.get("avg_pnl")) < 0:
+            rows.append(
+                {
+                    "area": "policy",
+                    "gap": f"{policy} is negative",
+                    "rows": int(summary.get("trades", 0) or 0),
+                    "avg_pnl": summary.get("avg_pnl"),
+                    "total_pnl": summary.get("total_pnl"),
+                    "fix": "Keep this policy blocked until train/validation and rolling-forward evidence turn positive.",
+                }
+            )
+
+    for column, area in (
+        ("base_gate_reasons", "base_gate"),
+        ("quality_reject_reasons", "quality_gate"),
+    ):
+        if column not in research_outcomes.columns:
+            continue
+        stats: Dict[str, List[float]] = {}
+        counts: Counter[str] = Counter()
+        for _, row in research_outcomes.iterrows():
+            pnl = trend_analysis._safe_float(row.get("pnl"))
+            for reason in _split_reasons(row.get(column)):
+                counts[reason] += 1
+                stats.setdefault(reason, []).append(pnl if math.isfinite(pnl) else 0.0)
+        for reason, count in counts.most_common(8):
+            values = stats.get(reason, [])
+            total = float(sum(values)) if values else 0.0
+            avg = total / len(values) if values else math.nan
+            fix = "Treat as blocker; only relax after a separate positive A/B proof."
+            lower = reason.lower()
+            if "backtest unknown" in lower:
+                fix = "Route only through prior-only ticker playbooks; do not let UNKNOWN broad setups through."
+            elif "expensive debit" in lower:
+                fix = "Repair strikes so debit is <= 50% of width or skip the setup."
+            elif "flow conflict" in lower:
+                fix = "Block unless the ticker playbook has prior-only forward support and live flow flips back."
+            elif "thin institutional" in lower:
+                fix = "Keep as watchlist unless ticker-specific playbook support is strong."
+            elif "price not confirming" in lower or "weak directional price" in lower:
+                fix = "Use as trigger condition, not entry; require price to confirm before order-ready status."
+            rows.append(
+                {
+                    "area": area,
+                    "gap": reason,
+                    "rows": int(count),
+                    "avg_pnl": avg,
+                    "total_pnl": total,
+                    "fix": fix,
+                }
+            )
+
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    out = pd.DataFrame(rows, columns=columns)
+    out["_abs_total"] = pd.to_numeric(out["total_pnl"], errors="coerce").abs().fillna(0)
+    return out.sort_values(["area", "_abs_total"], ascending=[True, False]).drop(columns=["_abs_total"])
+
+
 def build_report(
     *,
     start: dt.date,
@@ -315,15 +426,18 @@ def build_report(
     lookback: int,
     horizons: Sequence[int],
     strict_outcomes: pd.DataFrame,
+    forward_playbook_outcomes: pd.DataFrame,
     research_outcomes: pd.DataFrame,
     research_summary: pd.DataFrame,
     horizon_summary: pd.DataFrame,
     strategy_family_audit: pd.DataFrame,
     ticker_playbook_audit: pd.DataFrame,
     rolling_ticker_playbook_audit: pd.DataFrame,
+    gap_diagnostics: pd.DataFrame,
     output_paths: Dict[str, Path],
 ) -> str:
     strict_summary = summarize_outcomes(strict_outcomes)
+    forward_playbook_summary = summarize_outcomes(forward_playbook_outcomes)
     research_summary_all = summarize_outcomes(research_outcomes)
     verdict = _summary_verdict(strict_summary)
 
@@ -354,11 +468,46 @@ def build_report(
             ["scope", "trades", "dates", "win", "avg", "total", "PF", "drawdown", "verdict"],
             [
                 _summary_table_row("strict emitted trades", strict_summary),
+                _summary_table_row("prior-only playbook trades", forward_playbook_summary),
                 _summary_table_row("all research outcomes", research_summary_all),
             ],
         )
     )
     lines.append("")
+    lines.append("## Actionable Repair Map")
+    lines.append("- Broad trend candidates are not a trade source until the broad policy turns positive.")
+    lines.append("- Use only the prior-only ticker playbook lane for live candidates; full-period playbook results are diagnostic because they can contain hindsight.")
+    lines.append("- Same-day ticker/expiry variants are deduped before playbook validation, so one ticker/day cannot inflate confidence.")
+    lines.append("- Rolling playbooks with recent negative decay are blocked even if older forward tests were profitable.")
+    lines.append("- Live action remains: matching current setup, clean quotes, no open-position conflict, no earnings/liquidity hard block, and starter sizing unless rolling-forward support is mature.")
+    lines.append("")
+
+    eligible_playbooks = rolling_ticker_playbook_audit[
+        rolling_ticker_playbook_audit.get("verdict", pd.Series(dtype=str)).fillna("").astype(str).isin(
+            ["supportive", "emerging_forward"]
+        )
+    ].copy()
+    blocked_playbooks = rolling_ticker_playbook_audit[
+        rolling_ticker_playbook_audit.get("verdict", pd.Series(dtype=str)).fillna("").astype(str).isin(
+            ["negative", "decaying"]
+        )
+    ].copy()
+    lines.append("## Live-Eligible Playbooks")
+    if eligible_playbooks.empty:
+        lines.append("No rolling playbook is live-eligible yet. Keep current trend-analysis outputs as research/watchlist only.")
+    else:
+        lines.append(
+            "Only these playbooks can be worked live from this proof, and only when the current single-date report also passes quote, Schwab, earnings, open-position, and sizing gates."
+        )
+        lines.append("")
+        lines.append(_rolling_playbook_table(eligible_playbooks))
+    if not blocked_playbooks.empty:
+        lines.append("")
+        lines.append("Blocked rolling playbooks:")
+        lines.append("")
+        lines.append(_rolling_playbook_table(blocked_playbooks))
+    lines.append("")
+
     lines.append("## Strict Emitted Trades")
     if strict_outcomes.empty:
         lines.append(
@@ -368,6 +517,19 @@ def build_report(
         lines.append(_group_summary_table(strict_outcomes, "horizon_market_days"))
         lines.append("")
         lines.append(_group_summary_table(strict_outcomes, "ticker"))
+    lines.append("")
+
+    lines.append("## Prior-Only Playbook Lane")
+    if forward_playbook_outcomes.empty:
+        lines.append(
+            "No ticker playbook produced completed forward trades after becoming promotable using prior data only. Do not use full-period playbooks as live entries yet."
+        )
+    else:
+        lines.append(
+            "These are the trades the ticker-playbook lane would have taken only after the playbook was already promotable from earlier dates. The live-eligible section above decides which of those playbooks still survives after rolling validation."
+        )
+        lines.append("")
+        lines.append(_group_summary_table(forward_playbook_outcomes, "ticker"))
     lines.append("")
 
     lines.append("## Research Policy Expectancy")
@@ -419,6 +581,28 @@ def build_report(
         )
     lines.append("")
 
+    lines.append("## Gap Diagnostics")
+    if gap_diagnostics.empty:
+        lines.append("_no diagnostic gaps found_")
+    else:
+        lines.append(
+            _render_table(
+                ["area", "gap", "rows", "avg", "total", "fix"],
+                [
+                    [
+                        str(row.get("area", "")),
+                        trend_analysis._clip_text(row.get("gap", ""), 80),
+                        str(int(row.get("rows", 0) or 0)),
+                        _fmt_money(row.get("avg_pnl")),
+                        _fmt_money(row.get("total_pnl")),
+                        trend_analysis._clip_text(row.get("fix", ""), 100),
+                    ]
+                    for _, row in gap_diagnostics.head(18).iterrows()
+                ],
+            )
+        )
+    lines.append("")
+
     lines.append("## Playbook Validation")
     lines.append("### Strategy Families")
     lines.extend(trend_analysis._strategy_family_report_lines(strategy_family_audit))
@@ -448,12 +632,14 @@ def _output_paths(out_dir: Path, start: dt.date, end: dt.date, lookback: int) ->
     return {
         "Report": out_dir / f"trend-analysis-batch-proof-{suffix}.md",
         "Strict emitted trades CSV": out_dir / f"trend-analysis-batch-strict-trades-{suffix}.csv",
+        "Prior-only playbook trades CSV": out_dir / f"trend-analysis-batch-prior-only-playbook-trades-{suffix}.csv",
         "Research outcomes CSV": out_dir / f"trend-analysis-batch-research-outcomes-{suffix}.csv",
         "Research summary CSV": out_dir / f"trend-analysis-batch-research-summary-{suffix}.csv",
         "Horizon summary CSV": out_dir / f"trend-analysis-batch-horizon-summary-{suffix}.csv",
         "Strategy family audit CSV": out_dir / f"trend-analysis-batch-strategy-family-audit-{suffix}.csv",
         "Ticker playbook audit CSV": out_dir / f"trend-analysis-batch-ticker-playbook-audit-{suffix}.csv",
         "Rolling ticker playbook audit CSV": out_dir / f"trend-analysis-batch-rolling-ticker-playbook-audit-{suffix}.csv",
+        "Gap diagnostics CSV": out_dir / f"trend-analysis-batch-gap-diagnostics-{suffix}.csv",
         "Metadata JSON": out_dir / f"trend-analysis-batch-metadata-{suffix}.json",
     }
 
@@ -553,14 +739,21 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         research_outcomes,
         ticker_playbook_audit,
     )
+    forward_playbook_outcomes = trend_analysis.rolling_ticker_playbook_forward_outcomes(
+        research_outcomes,
+        ticker_playbook_audit,
+    )
+    gap_diagnostics = build_gap_diagnostics(research_outcomes)
 
     strict_outcomes.to_csv(paths["Strict emitted trades CSV"], index=False)
+    forward_playbook_outcomes.to_csv(paths["Prior-only playbook trades CSV"], index=False)
     research_outcomes.to_csv(paths["Research outcomes CSV"], index=False)
     research_summary.to_csv(paths["Research summary CSV"], index=False)
     horizon_summary.to_csv(paths["Horizon summary CSV"], index=False)
     strategy_family_audit.to_csv(paths["Strategy family audit CSV"], index=False)
     ticker_playbook_audit.to_csv(paths["Ticker playbook audit CSV"], index=False)
     rolling_ticker_playbook_audit.to_csv(paths["Rolling ticker playbook audit CSV"], index=False)
+    gap_diagnostics.to_csv(paths["Gap diagnostics CSV"], index=False)
 
     metadata = {
         "root_dir": str(root),
@@ -574,6 +767,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         "samples": int(args.samples),
         "candidate_pool": int(args.candidate_pool),
         "strict_summary": summarize_outcomes(strict_outcomes),
+        "prior_only_playbook_summary": summarize_outcomes(forward_playbook_outcomes),
         "research_summary": summarize_outcomes(research_outcomes),
         "verdict": _summary_verdict(summarize_outcomes(strict_outcomes)),
         "schwab_live_validation": "skipped_for_historical_proof",
@@ -585,12 +779,14 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         lookback=lookback,
         horizons=horizons,
         strict_outcomes=strict_outcomes,
+        forward_playbook_outcomes=forward_playbook_outcomes,
         research_outcomes=research_outcomes,
         research_summary=research_summary,
         horizon_summary=horizon_summary,
         strategy_family_audit=strategy_family_audit,
         ticker_playbook_audit=ticker_playbook_audit,
         rolling_ticker_playbook_audit=rolling_ticker_playbook_audit,
+        gap_diagnostics=gap_diagnostics,
         output_paths=paths,
     )
     paths["Report"].write_text(report, encoding="utf-8")

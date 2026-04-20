@@ -59,6 +59,8 @@ ROLLING_PLAYBOOK_MIN_FORWARD_TESTS = 3
 ROLLING_PLAYBOOK_MIN_FORWARD_DATES = 2
 ROLLING_PLAYBOOK_MIN_PROFIT_FACTOR = 1.05
 ROLLING_PLAYBOOK_MIN_HIT_RATE = 0.50
+ROLLING_PLAYBOOK_RECENT_TESTS = 5
+ROLLING_PLAYBOOK_MIN_RECENT_TESTS = 3
 DEFAULT_TRACKING_FILE_NAME = "trend-analysis-trade-tracker.csv"
 WALK_FORWARD_COLUMNS = [
     "signal_date",
@@ -213,6 +215,10 @@ ROLLING_TICKER_PLAYBOOK_AUDIT_COLUMNS = [
     "forward_avg_pnl",
     "forward_profit_factor",
     "forward_worst_pnl",
+    "recent_forward_tests",
+    "recent_forward_hit_rate",
+    "recent_forward_avg_pnl",
+    "recent_forward_profit_factor",
     "first_forward_date",
     "last_forward_date",
     "verdict",
@@ -1900,6 +1906,8 @@ def annotate_position_sizing(actionable: pd.DataFrame) -> pd.DataFrame:
             reason_parts.append("rolling forward validation is emerging, not mature")
         elif rolling_verdict == "negative":
             reason_parts.append("rolling forward validation negative")
+        elif rolling_verdict == "decaying":
+            reason_parts.append("rolling forward validation recently decayed")
 
         if (
             verdict == "PASS"
@@ -3191,6 +3199,65 @@ def _family_period_summary(df: pd.DataFrame, prefix: str) -> Dict[str, Any]:
     }
 
 
+def _playbook_verdict_rank(value: Any) -> int:
+    verdict = str(value or "").strip().upper()
+    return {
+        "PASS": 4,
+        "LOW_SAMPLE": 3,
+        "UNKNOWN": 2,
+        "FAIL": 1,
+    }.get(verdict, 0)
+
+
+def _dedupe_playbook_outcomes(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep one pre-trade-selectable setup per ticker/day playbook.
+
+    The playbook audit is meant to answer "would I take this ticker setup
+    today?", not "how many expiries could I have scored after the fact?".  Sort
+    only on signal-date information so duplicate same-day variants cannot
+    inflate train/validation evidence with hindsight.
+    """
+    if df.empty:
+        return df.copy()
+    required = ["ticker", "direction", "strategy", "horizon_market_days", "signal_date"]
+    if not all(col in df.columns for col in required):
+        return df.copy()
+    out = df.copy()
+    out["_playbook_quality_ok"] = out.get("quality_reject_reasons", pd.Series("", index=out.index)).fillna("").astype(str).str.strip().eq("")
+    out["_playbook_base_ok"] = out.get("base_gate_reasons", pd.Series("", index=out.index)).fillna("").astype(str).str.strip().eq("")
+    out["_playbook_verdict_rank"] = out.get("backtest_verdict", pd.Series("", index=out.index)).apply(_playbook_verdict_rank)
+    out["_playbook_score"] = pd.to_numeric(out.get("swing_score", pd.Series(np.nan, index=out.index)), errors="coerce").fillna(-1)
+    out["_playbook_edge"] = pd.to_numeric(out.get("edge_pct", pd.Series(np.nan, index=out.index)), errors="coerce").fillna(-999)
+    out["_playbook_signals"] = pd.to_numeric(out.get("backtest_signals", pd.Series(0, index=out.index)), errors="coerce").fillna(0)
+    out["_playbook_original_order"] = range(len(out))
+    out = out.sort_values(
+        [
+            "_playbook_quality_ok",
+            "_playbook_base_ok",
+            "_playbook_verdict_rank",
+            "_playbook_score",
+            "_playbook_edge",
+            "_playbook_signals",
+            "_playbook_original_order",
+        ],
+        ascending=[False, False, False, False, False, False, True],
+        kind="mergesort",
+    )
+    out = out.drop_duplicates(subset=required, keep="first")
+    return out.drop(
+        columns=[
+            "_playbook_quality_ok",
+            "_playbook_base_ok",
+            "_playbook_verdict_rank",
+            "_playbook_score",
+            "_playbook_edge",
+            "_playbook_signals",
+            "_playbook_original_order",
+        ],
+        errors="ignore",
+    ).reset_index(drop=True)
+
+
 def _strategy_family_verdict(row: Dict[str, Any]) -> str:
     train_setups = _safe_int(row.get("train_unique_setups"))
     validation_setups = _safe_int(row.get("validation_unique_setups"))
@@ -3470,8 +3537,7 @@ def _ticker_playbook_audit_from_outcomes(outcomes: pd.DataFrame) -> pd.DataFrame
     df = df[df["pnl"].notna()].copy()
     if df.empty:
         return pd.DataFrame(columns=TICKER_PLAYBOOK_AUDIT_COLUMNS)
-    dedupe_cols = ["ticker", "direction", "strategy", "horizon_market_days", "signal_date", "trade_setup"]
-    df = df.drop_duplicates(subset=dedupe_cols, keep="first")
+    df = _dedupe_playbook_outcomes(df)
 
     rows: List[Dict[str, Any]] = []
     group_cols = ["ticker", "direction", "strategy", "horizon_market_days"]
@@ -3601,9 +3667,26 @@ def _rolling_forward_verdict(row: Dict[str, Any]) -> str:
     avg = _safe_float(row.get("forward_avg_pnl"))
     pf = _safe_float(row.get("forward_profit_factor"))
     hit = _safe_float(row.get("forward_hit_rate"))
+    recent_tests = _safe_int(row.get("recent_forward_tests"))
+    recent_avg = _safe_float(row.get("recent_forward_avg_pnl"))
+    recent_pf = _safe_float(row.get("recent_forward_profit_factor"))
     pf_ok = (math.isfinite(pf) and pf >= ROLLING_PLAYBOOK_MIN_PROFIT_FACTOR) or pf == math.inf
     if tests <= 0:
         return "insufficient_forward"
+    if (
+        tests >= ROLLING_PLAYBOOK_MIN_FORWARD_TESTS
+        and dates >= ROLLING_PLAYBOOK_MIN_FORWARD_DATES
+        and math.isfinite(avg)
+        and avg < 0
+    ):
+        return "negative"
+    if (
+        recent_tests >= ROLLING_PLAYBOOK_MIN_RECENT_TESTS
+        and math.isfinite(recent_avg)
+        and recent_avg < 0
+        and (not math.isfinite(recent_pf) or recent_pf < 1.0)
+    ):
+        return "decaying"
     if tests < ROLLING_PLAYBOOK_MIN_FORWARD_TESTS or dates < ROLLING_PLAYBOOK_MIN_FORWARD_DATES:
         return "emerging_forward" if math.isfinite(avg) and avg > 0 else "insufficient_forward"
     if (
@@ -3637,6 +3720,10 @@ def _rolling_ticker_playbook_audit_from_outcomes(
                 "forward_avg_pnl": math.nan,
                 "forward_profit_factor": math.nan,
                 "forward_worst_pnl": math.nan,
+                "recent_forward_tests": 0,
+                "recent_forward_hit_rate": math.nan,
+                "recent_forward_avg_pnl": math.nan,
+                "recent_forward_profit_factor": math.nan,
                 "first_forward_date": "",
                 "last_forward_date": "",
             }
@@ -3655,10 +3742,7 @@ def _rolling_ticker_playbook_audit_from_outcomes(
             return pd.DataFrame(columns=ROLLING_TICKER_PLAYBOOK_AUDIT_COLUMNS)
     df["pnl"] = pd.to_numeric(df["pnl"], errors="coerce")
     df["horizon_market_days"] = pd.to_numeric(df["horizon_market_days"], errors="coerce")
-    df = df[df["pnl"].notna()].drop_duplicates(
-        subset=["ticker", "direction", "strategy", "horizon_market_days", "signal_date", "trade_setup"],
-        keep="first",
-    )
+    df = _dedupe_playbook_outcomes(df[df["pnl"].notna()].copy())
 
     for _, playbook in playbook_audit.iterrows():
         ticker = str(playbook.get("ticker", "") or "").strip().upper()
@@ -3686,8 +3770,12 @@ def _rolling_ticker_playbook_audit_from_outcomes(
                     forward_parts.append(current)
         if forward_parts:
             forward = pd.concat(forward_parts, ignore_index=True)
+            forward = _dedupe_playbook_outcomes(forward)
+            forward = forward.sort_values("signal_date", kind="mergesort").reset_index(drop=True)
             pnl = pd.to_numeric(forward["pnl"], errors="coerce").dropna()
             dates = sorted(str(d) for d in forward["signal_date"].dropna().unique())
+            recent = forward.tail(ROLLING_PLAYBOOK_RECENT_TESTS).copy()
+            recent_pnl = pd.to_numeric(recent.get("pnl", pd.Series(np.nan, index=recent.index)), errors="coerce").dropna()
             row = {
                 "ticker": ticker,
                 "direction": direction,
@@ -3699,6 +3787,10 @@ def _rolling_ticker_playbook_audit_from_outcomes(
                 "forward_avg_pnl": float(pnl.mean()) if len(pnl) else math.nan,
                 "forward_profit_factor": _profit_factor(pnl) if len(pnl) else math.nan,
                 "forward_worst_pnl": float(pnl.min()) if len(pnl) else math.nan,
+                "recent_forward_tests": int(len(recent_pnl)),
+                "recent_forward_hit_rate": float(recent_pnl.gt(0).mean()) if len(recent_pnl) else math.nan,
+                "recent_forward_avg_pnl": float(recent_pnl.mean()) if len(recent_pnl) else math.nan,
+                "recent_forward_profit_factor": _profit_factor(recent_pnl) if len(recent_pnl) else math.nan,
                 "first_forward_date": dates[0] if dates else "",
                 "last_forward_date": dates[-1] if dates else "",
             }
@@ -3714,6 +3806,10 @@ def _rolling_ticker_playbook_audit_from_outcomes(
                 "forward_avg_pnl": math.nan,
                 "forward_profit_factor": math.nan,
                 "forward_worst_pnl": math.nan,
+                "recent_forward_tests": 0,
+                "recent_forward_hit_rate": math.nan,
+                "recent_forward_avg_pnl": math.nan,
+                "recent_forward_profit_factor": math.nan,
                 "first_forward_date": "",
                 "last_forward_date": "",
             }
@@ -3721,13 +3817,87 @@ def _rolling_ticker_playbook_audit_from_outcomes(
         rows.append(row)
 
     out = pd.DataFrame(rows, columns=ROLLING_TICKER_PLAYBOOK_AUDIT_COLUMNS)
-    verdict_rank = {"supportive": 0, "emerging_forward": 1, "insufficient_forward": 2, "negative": 3}
+    verdict_rank = {"supportive": 0, "emerging_forward": 1, "decaying": 2, "negative": 3, "insufficient_forward": 4}
     out["_rank"] = out["verdict"].map(verdict_rank).fillna(9)
     out["_avg"] = pd.to_numeric(out["forward_avg_pnl"], errors="coerce").fillna(-999999)
     return out.sort_values(["_rank", "_avg"], ascending=[True, False]).drop(
         columns=["_rank", "_avg"],
         errors="ignore",
     ).reset_index(drop=True)
+
+
+def rolling_ticker_playbook_forward_outcomes(
+    outcomes: pd.DataFrame,
+    playbook_audit: pd.DataFrame,
+) -> pd.DataFrame:
+    """Detailed prior-only playbook trades.
+
+    Rows are emitted only when that ticker/direction/strategy playbook was
+    already promotable using dates strictly before the signal date. Same-day
+    expiry/strike variants are deduped by signal-date information first.
+    """
+    extra_cols = [
+        "prior_playbook_verdict",
+        "prior_train_setups",
+        "prior_validation_setups",
+        "prior_validation_hit_rate",
+        "prior_validation_avg_pnl",
+        "prior_validation_profit_factor",
+    ]
+    columns = RESEARCH_OUTCOME_COLUMNS + extra_cols
+    if outcomes.empty or playbook_audit.empty:
+        return pd.DataFrame(columns=columns)
+    df = outcomes.copy()
+    if "policy" in df.columns:
+        df = df[df["policy"].fillna("").astype(str).eq("entry_available_score_gate")].copy()
+    required = ["ticker", "direction", "strategy", "horizon_market_days", "signal_date", "trade_setup", "pnl"]
+    if df.empty or not all(col in df.columns for col in required):
+        return pd.DataFrame(columns=columns)
+    df["pnl"] = pd.to_numeric(df["pnl"], errors="coerce")
+    df["horizon_market_days"] = pd.to_numeric(df["horizon_market_days"], errors="coerce")
+    df = _dedupe_playbook_outcomes(df[df["pnl"].notna()].copy())
+
+    rows: List[Dict[str, Any]] = []
+    for _, playbook in playbook_audit.iterrows():
+        ticker = str(playbook.get("ticker", "") or "").strip().upper()
+        direction = str(playbook.get("direction", "") or "").strip().lower()
+        strategy = str(playbook.get("strategy", "") or "").strip()
+        horizon = _safe_int(playbook.get("horizon_market_days"))
+        group = df[
+            df["ticker"].fillna("").astype(str).str.upper().eq(ticker)
+            & df["direction"].fillna("").astype(str).str.lower().eq(direction)
+            & df["strategy"].fillna("").astype(str).eq(strategy)
+            & pd.to_numeric(df["horizon_market_days"], errors="coerce").fillna(0).astype(int).eq(horizon)
+        ].copy()
+        if group.empty:
+            continue
+        for signal_date in sorted(str(d) for d in group["signal_date"].dropna().unique()):
+            prior = group[group["signal_date"].astype(str) < signal_date].copy()
+            current = group[group["signal_date"].astype(str).eq(signal_date)].copy()
+            if prior.empty or current.empty:
+                continue
+            prior_audit = _ticker_playbook_audit_from_outcomes(prior.assign(policy="entry_available_score_gate"))
+            if prior_audit.empty:
+                continue
+            prior_row = prior_audit.iloc[0]
+            if str(prior_row.get("verdict", "") or "") != "promotable":
+                continue
+            for _, current_row in current.iterrows():
+                payload = {col: current_row.get(col, math.nan) for col in RESEARCH_OUTCOME_COLUMNS}
+                payload.update(
+                    {
+                        "prior_playbook_verdict": str(prior_row.get("verdict", "") or ""),
+                        "prior_train_setups": _safe_int(prior_row.get("train_unique_setups")),
+                        "prior_validation_setups": _safe_int(prior_row.get("validation_unique_setups")),
+                        "prior_validation_hit_rate": _safe_float(prior_row.get("validation_hit_rate")),
+                        "prior_validation_avg_pnl": _safe_float(prior_row.get("validation_avg_pnl")),
+                        "prior_validation_profit_factor": _safe_float(prior_row.get("validation_profit_factor")),
+                    }
+                )
+                rows.append(payload)
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    return pd.DataFrame(rows, columns=columns)
 
 
 def _rolling_summary_text(row: pd.Series) -> str:
@@ -3737,12 +3907,16 @@ def _rolling_summary_text(row: pd.Series) -> str:
     hit = _safe_float(row.get("forward_hit_rate"))
     avg = _fmt_money(row.get("forward_avg_pnl"))
     pf = _safe_float(row.get("forward_profit_factor"))
+    recent_tests = _safe_int(row.get("recent_forward_tests"))
+    recent_avg = _fmt_money(row.get("recent_forward_avg_pnl"))
     parts = [verdict, f"{tests} forward tests", f"{dates} dates"]
     if math.isfinite(hit):
         parts.append(f"hit {hit:.0%}")
     parts.append(f"avg {avg}")
     if math.isfinite(pf):
         parts.append(f"PF {pf:.2f}")
+    if recent_tests:
+        parts.append(f"recent {recent_tests} avg {recent_avg}")
     return ", ".join(parts)
 
 
@@ -3773,13 +3947,13 @@ def annotate_rolling_playbook_gate(candidates: pd.DataFrame, rolling_audit: pd.D
             out.at[idx, "rolling_playbook_verdict"] = "no_match"
             out.at[idx, "rolling_playbook_summary"] = "no rolling ticker playbook match"
             continue
-        verdict_rank = {"supportive": 0, "emerging_forward": 1, "insufficient_forward": 2, "negative": 3}
+        verdict_rank = {"supportive": 0, "emerging_forward": 1, "decaying": 2, "negative": 3, "insufficient_forward": 4}
         subset["_rank"] = subset["verdict"].map(verdict_rank).fillna(9)
         subset["_avg"] = pd.to_numeric(subset["forward_avg_pnl"], errors="coerce").fillna(-999999)
         best = subset.sort_values(["_rank", "_avg"], ascending=[True, False]).iloc[0]
         verdict = str(best.get("verdict", "") or "").strip()
         out.at[idx, "rolling_playbook_verdict"] = verdict
-        out.at[idx, "rolling_playbook_gate_pass"] = verdict != "negative"
+        out.at[idx, "rolling_playbook_gate_pass"] = verdict not in {"negative", "decaying"}
         out.at[idx, "rolling_playbook_summary"] = _rolling_summary_text(best)
     return out
 
@@ -3856,6 +4030,7 @@ def _rolling_ticker_playbook_report_lines(df: pd.DataFrame) -> List[str]:
                 "avg",
                 "PF",
                 "worst",
+                "recent avg",
                 "window",
                 "verdict",
             ],
@@ -3873,6 +4048,7 @@ def _rolling_ticker_playbook_report_lines(df: pd.DataFrame) -> List[str]:
                     _fmt_money(row.get("forward_avg_pnl")),
                     _fmt_num(row.get("forward_profit_factor"), 2),
                     _fmt_money(row.get("forward_worst_pnl")),
+                    _fmt_money(row.get("recent_forward_avg_pnl")),
                     (
                         f"{row.get('first_forward_date', '')} to {row.get('last_forward_date', '')}"
                         if str(row.get("first_forward_date", "") or "").strip()
@@ -3885,11 +4061,11 @@ def _rolling_ticker_playbook_report_lines(df: pd.DataFrame) -> List[str]:
         ),
     ]
     verdicts = df.get("verdict", pd.Series(dtype=str)).fillna("").astype(str)
-    if verdicts.eq("negative").any():
+    if verdicts.isin(["negative", "decaying"]).any():
         lines.extend(
             [
                 "",
-                "**Confidence impact:** negative rolling playbooks block matching actionable trades.",
+                "**Confidence impact:** negative or decaying rolling playbooks block matching actionable trades.",
             ]
         )
     return lines

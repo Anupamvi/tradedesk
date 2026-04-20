@@ -1179,6 +1179,50 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(row["verdict"], "promotable")
         self.assertEqual(int(row["validation_unique_setups"]), 6)
 
+    def test_ticker_playbook_audit_dedupes_same_day_variants_without_hindsight(self) -> None:
+        rows = []
+        for setup_idx in range(20):
+            signal_day = dt.date(2026, 1, 1) + dt.timedelta(days=setup_idx)
+            rows.append(
+                {
+                    "policy": "entry_available_score_gate",
+                    "signal_date": signal_day.isoformat(),
+                    "horizon_market_days": 20,
+                    "ticker": "NVDA",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "trade_setup": f"higher-score setup {setup_idx}",
+                    "swing_score": 80.0,
+                    "edge_pct": 10.0,
+                    "backtest_signals": 120,
+                    "backtest_verdict": "PASS",
+                    "pnl": -100.0,
+                }
+            )
+            rows.append(
+                {
+                    "policy": "entry_available_score_gate",
+                    "signal_date": signal_day.isoformat(),
+                    "horizon_market_days": 20,
+                    "ticker": "NVDA",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "trade_setup": f"lower-score winner {setup_idx}",
+                    "swing_score": 60.0,
+                    "edge_pct": 0.0,
+                    "backtest_signals": 0,
+                    "backtest_verdict": "UNKNOWN",
+                    "pnl": 500.0,
+                }
+            )
+
+        audit = trend_analysis._ticker_playbook_audit_from_outcomes(pd.DataFrame(rows))
+        row = audit[audit["ticker"].eq("NVDA")].iloc[0]
+
+        self.assertEqual(int(row["overall_outcomes"]), 20)
+        self.assertEqual(float(row["overall_avg_pnl"]), -100.0)
+        self.assertEqual(row["verdict"], "validation_negative")
+
     def test_ticker_playbook_support_can_override_broad_family_block(self) -> None:
         candidate = pd.DataFrame(
             [
@@ -1265,6 +1309,62 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(row["verdict"], "negative")
         self.assertGreaterEqual(int(row["forward_tests"]), 3)
         self.assertLess(float(row["forward_avg_pnl"]), 0)
+
+    def test_rolling_ticker_playbook_forward_validation_flags_recent_decay(self) -> None:
+        rows = []
+        for setup_idx in range(28):
+            signal_day = dt.date(2026, 1, 1) + dt.timedelta(days=setup_idx)
+            if setup_idx < 20:
+                pnl = 100.0
+            elif setup_idx < 23:
+                pnl = 1000.0
+            else:
+                pnl = -200.0
+            rows.append(
+                {
+                    "policy": "entry_available_score_gate",
+                    "signal_date": signal_day.isoformat(),
+                    "horizon_market_days": 20,
+                    "ticker": "CVX",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "trade_setup": f"CVX setup {setup_idx}",
+                    "pnl": pnl,
+                    "return_on_risk": 0.20,
+                }
+            )
+        playbook_audit = pd.DataFrame(
+            [
+                {
+                    "ticker": "CVX",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "horizon_market_days": 20,
+                    "verdict": "promotable",
+                }
+            ]
+        )
+
+        rolling = trend_analysis._rolling_ticker_playbook_audit_from_outcomes(
+            pd.DataFrame(rows),
+            playbook_audit,
+        )
+        row = rolling[rolling["ticker"].eq("CVX")].iloc[0]
+        candidate = pd.DataFrame(
+            [
+                {
+                    "ticker": "CVX",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "ticker_playbook_horizon": 20,
+                }
+            ]
+        )
+        annotated = trend_analysis.annotate_rolling_playbook_gate(candidate, rolling)
+
+        self.assertEqual(row["verdict"], "decaying")
+        self.assertLess(float(row["recent_forward_avg_pnl"]), 0)
+        self.assertFalse(bool(annotated.iloc[0]["rolling_playbook_gate_pass"]))
 
     def test_regime_filter_blocks_bullish_debit_in_risk_off(self) -> None:
         candidate = pd.DataFrame(
