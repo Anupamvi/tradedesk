@@ -20,7 +20,7 @@ import re
 import sys
 import zipfile
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
@@ -297,6 +297,9 @@ class SwingScore:
     backtest_signals: int = 0                # Number of historical analog windows
     backtest_verdict: str = ""               # PASS, FAIL, LOW_SAMPLE, UNKNOWN
     backtest_confidence: str = ""            # High, Medium, Low, Very Low
+    # Optimizer / repair metadata
+    variant_tag: str = "base"                # base, pre_earnings, liquid_debit, safer_credit, etc.
+    repair_source: str = ""                  # Human-readable reason this variant was generated.
 
 
 # ---------------------------------------------------------------------------
@@ -306,7 +309,7 @@ class SwingScore:
 def discover_trading_days(
     root: Path, lookback: int, as_of: Optional[dt.date] = None,
 ) -> List[Tuple[dt.date, Path]]:
-    """Find the N most recent dated folders up to as_of date."""
+    """Find the N most recent usable market-data days up to as_of date."""
     if as_of is None:
         as_of = dt.date.today()
     days: List[Tuple[dt.date, Path]] = []
@@ -320,12 +323,17 @@ def discover_trading_days(
             d = dt.date.fromisoformat(name)
         except ValueError:
             continue
-        if d <= as_of:
+        if d <= as_of and d.weekday() < 5 and has_market_day_data(entry, d):
             days.append((d, entry))
     days.sort(key=lambda x: x[0], reverse=True)
     selected = days[:lookback]
     selected.reverse()  # chronological order
     return selected
+
+
+def has_market_day_data(day_dir: Path, trade_date: dt.date) -> bool:
+    """Return True when a dated folder has enough data to count as a market day."""
+    return resolve_csv_for_day(day_dir, trade_date.isoformat(), "stock-screener") is not None
 
 
 def resolve_csv_for_day(
@@ -1379,6 +1387,298 @@ def _round_strike(raw: float, width: float) -> float:
     return round(raw / width) * width
 
 
+def _width_for_spot(spot: float) -> float:
+    if spot < 25:
+        return 2.5
+    if spot < 75:
+        return 5.0
+    if spot < 500:
+        return 10.0
+    return 20.0
+
+
+def _friday_on_or_before(value: dt.date) -> dt.date:
+    return value - dt.timedelta(days=(value.weekday() - 4) % 7)
+
+
+def _friday_on_or_after(value: dt.date) -> dt.date:
+    return value + dt.timedelta(days=(4 - value.weekday()) % 7)
+
+
+def _reset_live_and_backtest_fields(score: SwingScore) -> None:
+    score.live_validated = None
+    score.live_spot = math.nan
+    score.live_long_strike = math.nan
+    score.live_short_strike = math.nan
+    score.live_spread_cost = math.nan
+    score.live_bid_ask_width = math.nan
+    score.live_strike_setup = ""
+    score.live_validation_note = ""
+    score.short_delta_live = math.nan
+    score.long_delta_live = math.nan
+    score.short_put_delta_live = math.nan
+    score.short_call_delta_live = math.nan
+    score.net_gex = math.nan
+    score.gex_regime = ""
+    score.gex_support = math.nan
+    score.gex_resistance = math.nan
+    score.hist_success_pct = math.nan
+    score.required_win_pct = math.nan
+    score.edge_pct = math.nan
+    score.backtest_signals = 0
+    score.backtest_verdict = ""
+    score.backtest_confidence = ""
+
+
+def _score_variant(base: SwingScore, tag: str, source: str) -> SwingScore:
+    variant = replace(base)
+    variant.variant_tag = tag
+    variant.repair_source = source
+    _reset_live_and_backtest_fields(variant)
+    return variant
+
+
+def _set_expiry(score: SwingScore, signals: SwingSignals, expiry: dt.date) -> None:
+    latest = signals.latest_date or dt.date.today()
+    score.target_expiry = expiry.isoformat()
+    score.target_dte = max(0, int((expiry - latest).days))
+    # Repaired structures are live-priced by Schwab; avoid rejecting them against
+    # the rough heuristic estimate that was built for the original expiry.
+    score.est_cost = math.nan
+
+
+def _set_vertical_structure(
+    score: SwingScore,
+    *,
+    strategy: str,
+    spot: float,
+    width: float,
+    long_mult: float,
+    short_mult: Optional[float] = None,
+) -> bool:
+    if not math.isfinite(spot) or spot <= 0 or width <= 0:
+        return False
+
+    score.recommended_strategy = strategy
+    score.cost_type = "credit" if "Credit" in strategy else "debit"
+    score.est_cost = math.nan
+
+    if strategy == "Bull Call Debit":
+        long_k = _round_strike(spot * long_mult, width)
+        short_k = _round_strike(long_k + width, width)
+        if short_k <= long_k:
+            short_k = long_k + width
+        score.long_strike = long_k
+        score.short_strike = short_k
+        score.spread_width = short_k - long_k
+        score.strike_setup = f"Buy {long_k:g}C / Sell {short_k:g}C ({score.spread_width:g}w, live-priced debit)"
+        return True
+
+    if strategy == "Bear Put Debit":
+        long_k = _round_strike(spot * long_mult, width)
+        short_k = _round_strike(long_k - width, width)
+        if short_k >= long_k:
+            short_k = long_k - width
+        score.long_strike = long_k
+        score.short_strike = short_k
+        score.spread_width = long_k - short_k
+        score.strike_setup = f"Buy {long_k:g}P / Sell {short_k:g}P ({score.spread_width:g}w, live-priced debit)"
+        return True
+
+    if strategy == "Bull Put Credit":
+        short_k = _round_strike(spot * float(short_mult or 0.88), width)
+        long_k = _round_strike(short_k - width, width)
+        if long_k >= short_k:
+            long_k = short_k - width
+        score.short_strike = short_k
+        score.long_strike = long_k
+        score.spread_width = short_k - long_k
+        score.strike_setup = f"Sell {short_k:g}P / Buy {long_k:g}P ({score.spread_width:g}w, live-priced credit)"
+        return True
+
+    if strategy == "Bear Call Credit":
+        short_k = _round_strike(spot * float(short_mult or 1.12), width)
+        long_k = _round_strike(short_k + width, width)
+        if long_k <= short_k:
+            long_k = short_k + width
+        score.short_strike = short_k
+        score.long_strike = long_k
+        score.spread_width = long_k - short_k
+        score.strike_setup = f"Sell {short_k:g}C / Buy {long_k:g}C ({score.spread_width:g}w, live-priced credit)"
+        return True
+
+    return False
+
+
+def _set_iron_condor_structure(
+    score: SwingScore,
+    *,
+    spot: float,
+    width: float,
+    put_mult: float = 0.84,
+    call_mult: float = 1.16,
+) -> bool:
+    if not math.isfinite(spot) or spot <= 0 or width <= 0:
+        return False
+    put_short = _round_strike(spot * put_mult, width)
+    call_short = _round_strike(spot * call_mult, width)
+    put_long = _round_strike(put_short - width, width)
+    call_long = _round_strike(call_short + width, width)
+    if not (put_long < put_short < call_short < call_long):
+        return False
+
+    score.recommended_strategy = "Iron Condor"
+    score.cost_type = "credit"
+    score.short_strike = put_short
+    score.long_strike = call_short
+    score.spread_width = width
+    score.est_cost = math.nan
+    score.strike_setup = (
+        f"Sell {put_short:g}P / Buy {put_long:g}P + "
+        f"Sell {call_short:g}C / Buy {call_long:g}C "
+        f"({width:g}w, live-priced credit)"
+    )
+    return True
+
+
+def generate_trade_repair_variants(
+    scores: List[SwingScore],
+    signals_map: Dict[str, SwingSignals],
+    cfg: Dict,
+) -> List[SwingScore]:
+    """Create alternate trade structures before Schwab/backtest gates run.
+
+    The base scorer intentionally creates one simple structure per ticker. This
+    optimizer adds a small set of alternatives that may avoid earnings, reduce
+    short-leg delta, or use a more liquid debit spread. All variants still have
+    to pass Schwab validation and the historical likelihood backtest.
+    """
+    opt_cfg = cfg.get("trade_repair", {})
+    if opt_cfg.get("enabled", True) is False:
+        return []
+
+    max_variants_per_score = int(opt_cfg.get("max_variants_per_score", 3))
+    min_dte = int(opt_cfg.get("min_repair_dte", 7))
+    max_total_variants = int(opt_cfg.get("max_total_variants", 150))
+    variants: List[SwingScore] = []
+    seen: Set[Tuple[str, str, str, float, float, float, str]] = set()
+
+    def add_variant(v: SwingScore, sig: SwingSignals) -> None:
+        if len(variants) >= max_total_variants:
+            return
+        key = (
+            v.ticker,
+            v.recommended_strategy,
+            v.target_expiry,
+            round(v.long_strike, 4) if math.isfinite(v.long_strike) else math.nan,
+            round(v.short_strike, 4) if math.isfinite(v.short_strike) else math.nan,
+            round(v.spread_width, 4) if math.isfinite(v.spread_width) else math.nan,
+            v.variant_tag,
+        )
+        if key in seen:
+            return
+        _check_earnings_safety(sig, v, cfg)
+        seen.add(key)
+        variants.append(v)
+
+    for base in scores:
+        if len(variants) >= max_total_variants:
+            break
+        sig = signals_map.get(base.ticker)
+        if sig is None:
+            continue
+        latest = sig.latest_date or dt.date.today()
+        spot = sig.latest_close
+        if not math.isfinite(spot) or spot <= 0:
+            continue
+        width = base.spread_width if math.isfinite(base.spread_width) and base.spread_width > 0 else _width_for_spot(spot)
+        per_score = 0
+
+        # 1. If earnings blocks the original expiry, try the Friday before the
+        # configured earnings buffer. This is the most direct repair.
+        earn = sig.next_earnings_date
+        if earn is not None:
+            buffer_days = int(cfg.get("filters", {}).get("earnings_buffer_days", 3))
+            pre_earn_expiry = _friday_on_or_before(earn - dt.timedelta(days=buffer_days))
+            if (pre_earn_expiry - latest).days >= min_dte and pre_earn_expiry != dt.date.fromisoformat(base.target_expiry):
+                v = _score_variant(base, "pre_earnings", "expiry moved before earnings window")
+                _set_expiry(v, sig, pre_earn_expiry)
+                add_variant(v, sig)
+                per_score += 1
+
+        if per_score >= max_variants_per_score:
+            continue
+
+        strat = base.recommended_strategy
+        base_expiry = dt.date.fromisoformat(base.target_expiry)
+
+        # 2. Debit spreads blocked by tiny debit / wide markets get a more
+        # intrinsic live-priced structure, which often improves bid/ask-to-debit.
+        if strat == "Bull Call Debit":
+            v = _score_variant(base, "liquid_debit", "more intrinsic call debit spread for liquidity")
+            _set_expiry(v, sig, base_expiry)
+            if _set_vertical_structure(v, strategy=strat, spot=spot, width=width, long_mult=0.97):
+                add_variant(v, sig)
+                per_score += 1
+        elif strat == "Bear Put Debit":
+            v = _score_variant(base, "liquid_debit", "more intrinsic put debit spread for liquidity")
+            _set_expiry(v, sig, base_expiry)
+            if _set_vertical_structure(v, strategy=strat, spot=spot, width=width, long_mult=1.03):
+                add_variant(v, sig)
+                per_score += 1
+
+        if per_score >= max_variants_per_score:
+            continue
+
+        # 3. Credit spreads / condors get a farther-OTM version to reduce short
+        # delta. Volatile neutral condors also get directional alternatives when
+        # the underlying signals lean one way.
+        if strat == "Bull Put Credit":
+            v = _score_variant(base, "safer_credit", "put credit spread moved farther OTM for delta")
+            _set_expiry(v, sig, base_expiry)
+            if _set_vertical_structure(v, strategy=strat, spot=spot, width=width, long_mult=1.0, short_mult=0.84):
+                add_variant(v, sig)
+                per_score += 1
+        elif strat == "Bear Call Credit":
+            v = _score_variant(base, "safer_credit", "call credit spread moved farther OTM for delta")
+            _set_expiry(v, sig, base_expiry)
+            if _set_vertical_structure(v, strategy=strat, spot=spot, width=width, long_mult=1.0, short_mult=1.16):
+                add_variant(v, sig)
+                per_score += 1
+        elif strat == "Iron Condor":
+            v = _score_variant(base, "wide_condor", "iron condor moved farther OTM for short-delta risk")
+            _set_expiry(v, sig, base_expiry)
+            if _set_iron_condor_structure(v, spot=spot, width=width):
+                add_variant(v, sig)
+                per_score += 1
+
+            if per_score < max_variants_per_score:
+                if sig.price_direction == "bullish" or sig.flow_direction == "bullish":
+                    v = _score_variant(base, "directional_repair", "neutral condor converted to bullish credit spread")
+                    _set_expiry(v, sig, base_expiry)
+                    if _set_vertical_structure(v, strategy="Bull Put Credit", spot=spot, width=width, long_mult=1.0, short_mult=0.84):
+                        add_variant(v, sig)
+                        per_score += 1
+                elif sig.price_direction == "bearish" or sig.flow_direction == "bearish":
+                    v = _score_variant(base, "directional_repair", "neutral condor converted to bearish credit spread")
+                    _set_expiry(v, sig, base_expiry)
+                    if _set_vertical_structure(v, strategy="Bear Call Credit", spot=spot, width=width, long_mult=1.0, short_mult=1.16):
+                        add_variant(v, sig)
+                        per_score += 1
+
+        # 4. A listed-expiry repair: try a shorter standard Friday if the base
+        # expiry is too far out or not listed in Schwab. Keep this after the
+        # main repairs to avoid over-expanding the batch.
+        if per_score < max_variants_per_score:
+            alt_expiry = _friday_on_or_after(latest + dt.timedelta(days=28))
+            if (alt_expiry - latest).days >= min_dte and alt_expiry != base_expiry:
+                v = _score_variant(base, "listed_expiry", "alternate standard expiry for live chain availability")
+                _set_expiry(v, sig, alt_expiry)
+                add_variant(v, sig)
+
+    return variants
+
+
 def _check_earnings_safety(
     signals: SwingSignals, score: SwingScore, cfg: Dict,
 ) -> None:
@@ -1402,18 +1702,28 @@ def _check_earnings_safety(
     earn_cfg = cfg.get("filters", {})
     buffer_days = int(earn_cfg.get("earnings_buffer_days", 3))
 
-    earn_start = earn - dt.timedelta(days=buffer_days)
-    earn_end = earn + dt.timedelta(days=buffer_days)
+    days_to_earn = (earn - latest).days
+    days_before_expiry = (expiry_date - earn).days
+    days_after_expiry = (earn - expiry_date).days
 
-    # Unsafe if earnings window overlaps with [latest_date, expiry]
-    if earn_start <= expiry_date and earn_end >= latest:
-        days_to_earn = (earn - latest).days
-        days_before_expiry = (expiry_date - earn).days
+    # Unsafe if earnings occurs before/on expiry. Also unsafe when the trade
+    # expires inside the configured pre-earnings buffer. Expiring exactly on
+    # the buffer boundary is allowed so a Friday expiry three calendar days
+    # before a Monday report does not get mislabeled as "earnings in window."
+    earnings_through_expiry = latest <= earn <= expiry_date
+    buffer_overlap = (
+        expiry_date < earn
+        and 0 < days_after_expiry < buffer_days
+        and earn >= latest
+    )
+
+    if earnings_through_expiry or buffer_overlap:
         score.earnings_safe = False
-        score.earnings_label = (
-            f"EARNINGS {earn.isoformat()} "
-            f"({days_to_earn}d away, {days_before_expiry}d before expiry)"
-        )
+        if earnings_through_expiry:
+            timing = f"{days_before_expiry}d before expiry"
+        else:
+            timing = f"{days_after_expiry}d after expiry, inside {buffer_days}d buffer"
+        score.earnings_label = f"EARNINGS {earn.isoformat()} ({days_to_earn}d away, {timing})"
     else:
         score.earnings_safe = True
         score.earnings_label = ""
@@ -2091,6 +2401,32 @@ def run_backtest(
     print("  [backtest] Building backtest setups...", file=sys.stderr)
 
     # Build a backtest-compatible CSV
+    def _entry_gate_for_score(score: SwingScore, cost: float) -> str:
+        if score.cost_type == "credit":
+            return f">= {cost:.2f} cr"
+        return f"<= {cost:.2f} db"
+
+    def _setup_id_for_score(
+        score: SwingScore,
+        *,
+        entry_gate: str,
+        long_strike: float,
+        short_strike: float,
+        width: float,
+    ) -> str:
+        return "|".join(
+            [
+                str(score.ticker).upper().strip(),
+                str(score.recommended_strategy).strip(),
+                str(score.target_expiry).strip(),
+                f"{long_strike:.4f}",
+                f"{short_strike:.4f}",
+                f"{width:.4f}",
+                str(entry_gate).strip(),
+            ]
+        )
+
+    score_keys: Dict[int, str] = {}
     bt_rows = []
     for s in scores:
         sig = signals_map.get(s.ticker, SwingSignals())
@@ -2117,12 +2453,18 @@ def run_backtest(
         if width <= 0:
             continue
 
-        if s.cost_type == "credit":
-            entry_gate = f">= {cost:.2f} cr"
-        else:
-            entry_gate = f"<= {cost:.2f} db"
+        entry_gate = _entry_gate_for_score(s, cost)
+        setup_id = _setup_id_for_score(
+            s,
+            entry_gate=entry_gate,
+            long_strike=float(long_k),
+            short_strike=float(short_k),
+            width=float(width),
+        )
+        score_keys[id(s)] = setup_id
 
         row = {
+            "setup_id": setup_id,
             "ticker": s.ticker,
             "strategy": s.recommended_strategy,
             "expiry": s.target_expiry,
@@ -2130,6 +2472,8 @@ def run_backtest(
             "short_strike": round(short_k, 2),
             "width": round(width, 2),
             "entry_gate": entry_gate,
+            "_sort_score": s.composite_score,
+            "_sort_live": 1 if s.live_validated is True else 0,
         }
         if _is_ic:
             # IC needs extra columns for breakeven_levels and required_win_rate_pct
@@ -2145,6 +2489,24 @@ def run_backtest(
         return
 
     bt_df = pd.DataFrame(bt_rows)
+    max_setups = int(bt_cfg.get("max_setups", 160) or 0)
+    if max_setups > 0 and len(bt_df) > max_setups:
+        bt_df = (
+            bt_df.sort_values(["_sort_live", "_sort_score"], ascending=[False, False])
+            .head(max_setups)
+            .copy()
+        )
+        kept_ids = set(bt_df["setup_id"].astype(str))
+        score_keys = {
+            score_obj_id: setup_id
+            for score_obj_id, setup_id in score_keys.items()
+            if setup_id in kept_ids
+        }
+        print(
+            f"  [backtest] Capped setup batch to top {len(bt_df)} by score/live validation",
+            file=sys.stderr,
+        )
+    bt_df = bt_df.drop(columns=["_sort_score", "_sort_live"], errors="ignore")
     bt_input_csv = out_dir / "_backtest_setups_tmp.csv"
     bt_df.to_csv(bt_input_csv, index=False)
 
@@ -2164,7 +2526,7 @@ def run_backtest(
     if cache_dir:
         cmd.extend(["--cache-dir", str(cache_dir)])
 
-    print(f"  [backtest] Running backtest on {len(bt_rows)} setups (~{lookback_years}yr lookback)...", file=sys.stderr)
+    print(f"  [backtest] Running backtest on {len(bt_df)} setups (~{lookback_years}yr lookback)...", file=sys.stderr)
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
@@ -2187,18 +2549,39 @@ def run_backtest(
     like_df["ticker"] = like_df["ticker"].astype(str).str.upper().str.strip()
     like_df["strategy"] = like_df["strategy"].astype(str).str.strip()
 
-    # Build lookup: (ticker, strategy) -> row (take best verdict per ticker+strategy)
-    like_map: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    # Build lookup per concrete setup. Ticker+strategy alone is unsafe once the
+    # optimizer tests multiple expiries/strikes for the same symbol.
+    like_map: Dict[str, Dict[str, Any]] = {}
+    fallback_map: Dict[Tuple[str, str, str, str], Dict[str, Any]] = {}
     for _, row in like_df.iterrows():
-        key = (str(row["ticker"]).strip(), str(row["strategy"]).strip())
-        if key not in like_map:
-            like_map[key] = row.to_dict()
+        setup_id = str(row.get("setup_id", "") or "").strip()
+        if setup_id and setup_id not in like_map:
+            like_map[setup_id] = row.to_dict()
+        fallback_key = (
+            str(row["ticker"]).strip(),
+            str(row["strategy"]).strip(),
+            str(row.get("expiry", "")).strip(),
+            str(row.get("entry_gate", "")).strip(),
+        )
+        if fallback_key not in fallback_map:
+            fallback_map[fallback_key] = row.to_dict()
 
     # Merge into SwingScore objects
     merged = 0
     for s in scores:
-        key = (s.ticker, s.recommended_strategy)
-        row = like_map.get(key)
+        setup_id = score_keys.get(id(s))
+        if setup_id is None:
+            continue
+        row = like_map.get(setup_id)
+        if row is None:
+            # Compatibility with older likelihood CSVs that did not preserve
+            # setup_id. This is less precise and should only be a fallback.
+            cost = s.live_spread_cost if (s.live_validated is True and math.isfinite(s.live_spread_cost)) else s.est_cost
+            if not math.isfinite(cost) or cost <= 0:
+                continue
+            entry_gate = _entry_gate_for_score(s, cost)
+            fallback_key = (s.ticker, s.recommended_strategy, s.target_expiry, entry_gate)
+            row = fallback_map.get(fallback_key)
         if row is None:
             continue
         s.hist_success_pct = _fnum(row.get("hist_success_pct"))
@@ -2496,6 +2879,8 @@ def generate_shortlist_csv(
         rows.append({
             "ticker": s.ticker,
             "strategy": s.recommended_strategy,
+            "variant_tag": s.variant_tag,
+            "repair_source": s.repair_source,
             "strike_setup": s.strike_setup,
             "target_expiry": s.target_expiry,
             "target_dte": s.target_dte,
@@ -2746,11 +3131,17 @@ def run_pipeline(
         file=sys.stderr,
     )
 
-    # Phase 6b: Schwab live validation (optional)
-    all_to_validate = final_scores + sector_overflow
+    # Phase 6b: Generate repaired alternatives before live validation/backtest.
+    base_to_validate = final_scores + sector_overflow
+    repair_variants = generate_trade_repair_variants(base_to_validate, signals_map, cfg)
+    if repair_variants:
+        print(f"  Trade repair variants generated: {len(repair_variants)}", file=sys.stderr)
+
+    # Phase 6c: Schwab live validation (optional)
+    all_to_validate = base_to_validate + repair_variants
     validate_with_schwab(all_to_validate, signals_map, cfg)
 
-    # Phase 6c: Historical backtest (optional)
+    # Phase 6d: Historical backtest (optional)
     as_of_resolved = trading_days[-1][0]
     run_backtest(all_to_validate, signals_map, cfg, out_dir, as_of_resolved, root)
 
@@ -2770,15 +3161,24 @@ def run_pipeline(
     report_md = generate_report_markdown(
         final_scores, signals_map, date_range, len(ticker_universe), cfg,
         report_path=report_path, csv_path=csv_path,
-        sector_overflow=sector_overflow,
+        sector_overflow=sector_overflow + repair_variants,
     )
     report_path.write_text(report_md, encoding="utf-8")
     print(f"  Report written: {report_path}", file=sys.stderr)
 
     # CSV includes both main and overflow — marked with sector_overflow column
-    all_for_csv = final_scores + sector_overflow
+    all_for_csv = final_scores + sector_overflow + repair_variants
     shortlist_df = generate_shortlist_csv(all_for_csv, signals_map)
-    shortlist_df["sector_overflow"] = [False] * len(final_scores) + [True] * len(sector_overflow)
+    shortlist_df["sector_overflow"] = (
+        [False] * len(final_scores)
+        + [True] * len(sector_overflow)
+        + [False] * len(repair_variants)
+    )
+    shortlist_df["repair_variant"] = (
+        [False] * len(final_scores)
+        + [False] * len(sector_overflow)
+        + [True] * len(repair_variants)
+    )
     shortlist_df.to_csv(csv_path, index=False)
     print(f"  Shortlist CSV written: {csv_path}", file=sys.stderr)
 
