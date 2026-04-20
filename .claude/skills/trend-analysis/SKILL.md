@@ -22,6 +22,7 @@ Run the dated-folder UW trend pipeline, not the old replay-manifest-only histori
 - **no-trade-tracking**: Skip appending actionable trades to the tracker.
 - **no-outcome-update**: Skip refreshing tracked trade outcomes from local UW option snapshots.
 - **reuse-walk-forward-raw / reuse-walk-forward-outcomes / reuse-research-outcomes**: Reuse completed historical audit files when rerunning a large walk-forward audit in the same output directory.
+- **batch proof**: Use `python3 -m uwos.trend_analysis_batch --start YYYY-MM-DD --end YYYY-MM-DD --lookback N --horizons 20 --reuse-raw` when the user asks whether the engine is profitable, proven, a money printer, or wants historical replay across all dated folders.
 
 ## Execution
 
@@ -37,6 +38,14 @@ python3 -m uwos.trend_analysis 2026-04-17
 python3 -m uwos.trend_analysis 2026-04-17 90
 python3 -m uwos.trend_analysis 2026-04-17 90 --top 20
 ```
+
+Batch proof example:
+
+```bash
+python3 -m uwos.trend_analysis_batch --start 2025-12-01 --end 2026-04-17 --lookback 30 --horizons 20 --reuse-raw
+```
+
+Use local UW option quote replay for batch proof. Do not use Schwab current/live chains to score old signal dates because that would introduce look-ahead leakage.
 
 ## Output
 
@@ -57,6 +66,9 @@ Read and summarize:
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-research-outcomes-{date}-L{lookback}.csv`
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-trade-tracker.csv` with outcome fields refreshed on each run unless `--no-outcome-update` is used
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-metadata-{date}-L{lookback}.json`
+- `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis_batch/trend-analysis-batch-proof-START_END-L{lookback}.md`
+- `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis_batch/trend-analysis-batch-strict-trades-START_END-L{lookback}.csv`
+- `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis_batch/trend-analysis-batch-research-outcomes-START_END-L{lookback}.csv`
 
 ## Reporting Rules
 
@@ -67,6 +79,7 @@ Read and summarize:
 - Review **Strategy Family Audit** next. This is the broad trade-generation layer: predeclared setup families are split into training and later validation dates. Mixed, negative, validation-negative, and low-sample families are research-only unless a narrower ticker playbook overrides them.
 - Review **Ticker Playbook Audit** next. This is the narrow trade-generation layer: ticker/direction/strategy/horizon playbooks are split into training and later validation dates. A `promotable` ticker playbook can unlock Actionable Now even when the broad family is negative, but all live quote, Schwab, earnings, liquidity, trend-quality, and max-risk gates still apply.
 - Review **Rolling Ticker Playbook Forward Validation** next. It checks whether a ticker playbook continued to work after it first became promotable using prior data only. Negative rolling validation blocks matching actionable trades; insufficient validation is allowed only with lower position-size tiers.
+- If a batch proof was requested, read the batch proof report first and answer the proof question before discussing individual candidates.
 - In every trade summary, show the trade setup up front: strategy, legs, and expiry.
 - Backtest-Supported Candidate Shortlist is the primary output: a few strong bullish/bearish candidates or patterns with at least one backtest-supported structure to work on. It is acceptable for a run to produce zero actionable trades.
 - Candidate rows require high swing score, multiple independent confirmations, few contradictory signals, and at least one structure that passed the backtest gate. Directional price confirmation is preferred; if price diverges, label it clearly and do not treat it as an entry until price starts confirming.

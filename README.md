@@ -94,6 +94,18 @@ The numeric lookback counts weekday folders with usable `stock-screener` data. W
 
 **Output:** `out/trend_analysis/trend-analysis-YYYY-MM-DD-LN.md`
 
+**Batch proof / money-engine audit:**
+```bash
+python -m uwos.trend_analysis_batch \
+  --start 2025-12-01 \
+  --end 2026-04-17 \
+  --lookback 30 \
+  --horizons 20 \
+  --reuse-raw
+```
+
+This answers the harder question: had the command run on every eligible historical date, what trades would it have emitted, what happened afterward, and which playbooks made money? Historical proof intentionally uses local UW option quote replay instead of Schwab live chains, because Schwab current chains would leak today’s prices into old signal dates. Batch output is written to `out/trend_analysis_batch/trend-analysis-batch-proof-START_END-LN.md`.
+
 The **Walk-Forward Audit** is the confidence layer. It reruns older signal dates, selects historical trades using only signal-date evidence, and then scores future option-quote outcomes over configured market-day horizons. A supportive audit raises trust; an empty, low-sample, or negative audit is a confidence penalty even when the current trade list has actionable rows.
 
 The **Backtest-Supported Candidate Shortlist** is the primary output for backtest-supported names: a few high-conviction tickers with high swing score, multiple independent confirmations, few contradictory signals, and at least one structure that passed the backtest gate. Directional price confirmation is preferred; price divergence is shown only when backtest support exists, and it is labeled as a confirmation risk rather than an entry. These are names to work on, not automatic trades.

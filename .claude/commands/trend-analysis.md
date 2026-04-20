@@ -28,6 +28,8 @@ It can also run a walk-forward audit with `--walk-forward-samples N`. The audit 
 
 It also writes a Research Confidence Audit from fixed historical buckets, a Research Horizon Audit split by holding period, a Strategy Family Audit with train/validation results for broad predeclared setup families, a Ticker Playbook Audit with train/validation results for ticker-specific setup behavior, a Rolling Ticker Playbook Forward Validation audit, plus a detailed research outcomes CSV with ticker/setup/horizon/P&L rows. This is not a parameter search; if no bucket/horizon is supportive and no broad family or ticker playbook is promotable, keep blocking Actionable Now trades.
 
+When the user asks whether the trend engine is profitable, proven, a money printer, or asks to keep backtesting across all historical dated folders, run the batch proof command instead of only the single-date report. The batch proof asks: had `trend-analysis` run on every eligible historical date, what trades would it have emitted, what happened afterward, and which playbooks actually made money? Historical proof uses local UW option quote replay; do not use Schwab current chains for old as-of dates because that would leak current/live data into historical decisions.
+
 The final gate is now also regime-aware and position-aware. It blocks directional debit trades that fight the latest broad market regime, blocks candidates when trade-desk already shows open option exposure in the same underlying, assigns a minimum confidence/position-size tier to every actionable trade, appends actionable trades to a post-trade tracker CSV, and refreshes tracked outcomes from local UW option snapshots on later runs.
 
 Before the final Schwab/backtest gate, it also runs a repair optimizer:
@@ -69,8 +71,15 @@ python3 -m uwos.trend_analysis 2026-04-17 90 --top 20
    Use `--walk-forward-samples N` when the user asks for confidence validation across older signal dates.
    Use `--reuse-walk-forward-raw`, `--reuse-walk-forward-outcomes`, and `--reuse-research-outcomes` when rerunning a large walk-forward audit against the same output directory so completed historical audit files are reused.
 
+   For a full historical profit proof:
+```bash
+cd /Users/anuppamvi/uw_root/tradedesk
+python3 -m uwos.trend_analysis_batch --start 2025-12-01 --end {date} --lookback {lookback} --horizons 20 --reuse-raw
+```
+
 3. Read output files and present results:
    - Read `trend-analysis-{date}-L{lookback}.md`.
+   - If the batch proof was run, read `out/trend_analysis_batch/trend-analysis-batch-proof-START_END-L{lookback}.md` first and state the strict emitted-trade verdict before discussing candidates.
    - Review **Walk-Forward Audit** before trusting the trade list.
    - Review **Research Confidence Audit**, **Research Horizon Audit**, **Strategy Family Audit**, **Ticker Playbook Audit**, and **Rolling Ticker Playbook Forward Validation** next; do not tune thresholds inside the same run to make a bucket look good.
    - Present **Backtest-Supported Candidate Shortlist** first.
@@ -97,6 +106,7 @@ python3 -m uwos.trend_analysis 2026-04-17 90 --top 20
 - Research Outcomes CSV: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-research-outcomes-{date}-L{lookback}.csv`
 - Post-Trade Tracker CSV: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-trade-tracker.csv` with outcome fields refreshed on each run unless `--no-outcome-update` is used
 - Metadata: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-metadata-{date}-L{lookback}.json`
+- Batch Proof Report: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis_batch/trend-analysis-batch-proof-START_END-L{lookback}.md`
 
 ## Backtest Gate
 
