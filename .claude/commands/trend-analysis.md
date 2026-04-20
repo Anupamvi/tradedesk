@@ -26,7 +26,9 @@ It also runs daily option quote replay by default. This uses local UW `hot-chain
 
 It can also run a walk-forward audit with `--walk-forward-samples N`. The audit reruns older signal dates, selects historical trades using signal-date evidence only, then scores future 5/10/20 market-day option-quote outcomes. Future P&L is never used as an entry gate.
 
-It also writes a Research Confidence Audit from fixed historical buckets, a Research Horizon Audit split by holding period, a Strategy Family Audit with train/validation results for broad predeclared setup families, a Ticker Playbook Audit with train/validation results for ticker-specific setup behavior, plus a detailed research outcomes CSV with ticker/setup/horizon/P&L rows. This is not a parameter search; if no bucket/horizon is supportive and no broad family or ticker playbook is promotable, keep blocking Actionable Now trades.
+It also writes a Research Confidence Audit from fixed historical buckets, a Research Horizon Audit split by holding period, a Strategy Family Audit with train/validation results for broad predeclared setup families, a Ticker Playbook Audit with train/validation results for ticker-specific setup behavior, a Rolling Ticker Playbook Forward Validation audit, plus a detailed research outcomes CSV with ticker/setup/horizon/P&L rows. This is not a parameter search; if no bucket/horizon is supportive and no broad family or ticker playbook is promotable, keep blocking Actionable Now trades.
+
+The final gate is now also regime-aware and position-aware. It blocks directional debit trades that fight the latest broad market regime, blocks candidates when trade-desk already shows open option exposure in the same underlying, assigns a minimum confidence/position-size tier to every actionable trade, appends actionable trades to a post-trade tracker CSV, and refreshes tracked outcomes from local UW option snapshots on later runs.
 
 Before the final Schwab/backtest gate, it also runs a repair optimizer:
 - try an expiry before earnings when the original setup crosses earnings
@@ -70,7 +72,7 @@ python3 -m uwos.trend_analysis 2026-04-17 90 --top 20
 3. Read output files and present results:
    - Read `trend-analysis-{date}-L{lookback}.md`.
    - Review **Walk-Forward Audit** before trusting the trade list.
-   - Review **Research Confidence Audit**, **Research Horizon Audit**, **Strategy Family Audit**, and **Ticker Playbook Audit** next; do not tune thresholds inside the same run to make a bucket look good.
+   - Review **Research Confidence Audit**, **Research Horizon Audit**, **Strategy Family Audit**, **Ticker Playbook Audit**, and **Rolling Ticker Playbook Forward Validation** next; do not tune thresholds inside the same run to make a bucket look good.
    - Present **Backtest-Supported Candidate Shortlist** first.
    - Present **Actionable Trades** second.
    - Present **Max Conviction / Max Planned Risk** third as the highest-confidence actionable subset.
@@ -91,7 +93,9 @@ python3 -m uwos.trend_analysis 2026-04-17 90 --top 20
 - Research Horizon Audit CSV: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-research-audit-by-horizon-{date}-L{lookback}.csv`
 - Strategy Family Audit CSV: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-strategy-family-audit-{date}-L{lookback}.csv`
 - Ticker Playbook Audit CSV: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-ticker-playbook-audit-{date}-L{lookback}.csv`
+- Rolling Ticker Playbook Audit CSV: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-rolling-ticker-playbook-audit-{date}-L{lookback}.csv`
 - Research Outcomes CSV: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-research-outcomes-{date}-L{lookback}.csv`
+- Post-Trade Tracker CSV: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-trade-tracker.csv` with outcome fields refreshed on each run unless `--no-outcome-update` is used
 - Metadata: `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-metadata-{date}-L{lookback}.json`
 
 ## Backtest Gate
@@ -126,6 +130,9 @@ A trade is actionable only when:
 - bid/ask width is within the tradeability caps
 - short-leg delta is at or below `0.30`
 - iron condors are not in a volatile GEX regime
+- market regime does not conflict with the trade direction
+- trade-desk has no open option exposure in the same underlying
+- rolling ticker-playbook validation is not negative
 
 Rows that pass backtest/Schwab but fail tradeability are Risk-Blocked. Rows that fail the base gate are Pattern Candidates only.
 
@@ -135,7 +142,9 @@ Max Conviction / Max Planned Risk rows are the highest tier. They must already b
 
 Walk-Forward Audit is the confidence layer. A supportive audit raises trust; an empty, low-sample, or negative audit lowers trust even if the current trade list has Actionable rows.
 
-Research Confidence Audit is the fixed-bucket sanity layer. Research Horizon Audit prevents repeated 5/10/20-day exits from looking like independent evidence. Strategy Family Audit is the broad trade-generation layer; Ticker Playbook Audit is the narrow ticker-specific layer. A current setup needs either a promotable broad family or promotable ticker playbook, and that support cannot override live quote, Schwab, earnings, liquidity, price/flow quality, or lotto gates.
+Research Confidence Audit is the fixed-bucket sanity layer. Research Horizon Audit prevents repeated 5/10/20-day exits from looking like independent evidence. Strategy Family Audit is the broad trade-generation layer; Ticker Playbook Audit is the narrow ticker-specific layer. Rolling Ticker Playbook Forward Validation tests whether a ticker playbook would have kept working after it first became promotable using only prior data. A current setup needs either a promotable broad family or promotable ticker playbook, and that support cannot override live quote, Schwab, earnings, liquidity, price/flow quality, market regime, open-position awareness, rolling-forward failure, or lotto gates.
+
+Every actionable trade must show a position-size tier. `PROBE_ONLY`, `STARTER_RISK`, `STANDARD_RISK`, and `MAX_PLANNED_RISK` are risk caps, not encouragement to scale. Low-sample or insufficient-forward-validation trades should stay at `STARTER_RISK` or lower.
 
 ## Error Handling
 - If no dated folders are found: tell the user the root path is wrong or the daily UW captures are missing.

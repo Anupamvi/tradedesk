@@ -228,6 +228,10 @@ TRACKING_COLUMNS = [
     "variant_tag",
     "trade_setup",
     "target_expiry",
+    "long_strike",
+    "short_strike",
+    "spread_width",
+    "cost_type",
     "entry_price",
     "max_risk",
     "max_profit",
@@ -235,7 +239,37 @@ TRACKING_COLUMNS = [
     "position_size_guidance",
     "entry_trigger",
     "source_report",
+    "outcome_as_of",
+    "outcome_exit_date",
+    "outcome_final",
+    "outcome_status",
+    "outcome_verdict",
+    "outcome_entry_price",
+    "outcome_exit_price",
+    "outcome_pnl",
+    "outcome_return_on_risk",
+    "outcome_days_held",
+    "outcome_reason",
+    "outcome_source",
 ]
+MIN_CONFIDENCE_TIERS = {
+    "PROBE_ONLY": {
+        "risk_units": 0.10,
+        "guidance": "Probe only: 0.10R / paper or smallest defined-risk test; evidence is still thin.",
+    },
+    "STARTER_RISK": {
+        "risk_units": 0.25,
+        "guidance": "Starter only: 0.25R / 1 defined-risk spread max until forward validation improves.",
+    },
+    "STANDARD_RISK": {
+        "risk_units": 0.50,
+        "guidance": "Standard: 0.50R max for one defined-risk spread; do not add without a fresh catalyst.",
+    },
+    "MAX_PLANNED_RISK": {
+        "risk_units": 1.00,
+        "guidance": "Max planned tier: 1.00R max for one defined-risk trade; never all account capital.",
+    },
+}
 
 STRATEGY_FAMILY_DESCRIPTIONS = {
     "bull_energy_materials_debit": (
@@ -536,6 +570,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="Do not append actionable trades to the post-trade tracker CSV.",
     )
     parser.add_argument(
+        "--no-outcome-update",
+        action="store_true",
+        help="Do not refresh post-trade tracker outcomes from local option snapshots.",
+    )
+    parser.add_argument(
         "--walk-forward-samples",
         type=int,
         default=DEFAULT_WALK_FORWARD_SAMPLES,
@@ -656,6 +695,20 @@ def _safe_pct_return(close: Any, prev_close: Any) -> float:
     if not math.isfinite(c) or not math.isfinite(p) or p == 0:
         return math.nan
     return (c - p) / p
+
+
+def _parse_tracker_date(value: Any) -> Optional[dt.date]:
+    if isinstance(value, dt.datetime):
+        return value.date()
+    if isinstance(value, dt.date):
+        return value
+    text = str(value or "").strip()
+    if not text or text.lower() in {"nan", "none", "nat"}:
+        return None
+    try:
+        return dt.date.fromisoformat(text[:10])
+    except Exception:
+        return None
 
 
 def _latest_position_json(root: Path) -> Optional[Path]:
@@ -1777,12 +1830,474 @@ def build_max_conviction(actionable: pd.DataFrame, *, top_n: int) -> pd.DataFram
     if out.empty:
         return pd.DataFrame()
     out["position_size_tier"] = "MAX_PLANNED_RISK"
+    out["max_planned_risk_units"] = float(MIN_CONFIDENCE_TIERS["MAX_PLANNED_RISK"]["risk_units"])
+    out["position_size_guidance"] = str(MIN_CONFIDENCE_TIERS["MAX_PLANNED_RISK"]["guidance"])
     out["max_conviction_instruction"] = (
         "Highest conviction tier: use only the pre-defined max risk budget for one defined-risk trade; not all account capital."
     )
     out = _sort_trade_rows(out)
     out = _dedupe_trade_rows(out, by_ticker=True).head(max(1, int(top_n)))
     return out.reset_index(drop=True)
+
+
+def _confidence_score(row: pd.Series) -> float:
+    score = 0.0
+    swing_score = _safe_float(row.get("swing_score"))
+    edge = _safe_float(row.get("edge_pct"))
+    signals = _safe_int(row.get("backtest_signals"))
+    playbook_validation = _safe_int(row.get("ticker_playbook_validation_setups"))
+    rolling_verdict = str(row.get("rolling_playbook_verdict", "") or "").strip()
+
+    if math.isfinite(swing_score):
+        score += min(25.0, max(0.0, swing_score) * 0.25)
+    if math.isfinite(edge):
+        score += min(15.0, max(0.0, edge) * 0.5)
+    if signals >= DEFAULT_MAX_CONVICTION_MIN_SIGNALS:
+        score += 20.0
+    elif signals >= DEFAULT_MIN_WORKUP_SIGNALS:
+        score += 10.0
+    if _truthy(row.get("ticker_playbook_gate_pass")):
+        score += 15.0
+    if playbook_validation >= TICKER_PLAYBOOK_MIN_VALIDATION_SETUPS:
+        score += 5.0
+    if rolling_verdict == "supportive":
+        score += 15.0
+    elif rolling_verdict == "emerging_forward":
+        score += 7.0
+    if _truthy(row.get("quote_replay_gate_pass")):
+        score += 3.0
+    if _truthy(row.get("schwab_gate_pass")):
+        score += 2.0
+    return round(min(100.0, score), 1)
+
+
+def annotate_position_sizing(actionable: pd.DataFrame) -> pd.DataFrame:
+    if actionable.empty:
+        return actionable.copy()
+    out = actionable.copy()
+    tiers: List[str] = []
+    scores: List[float] = []
+    notes: List[str] = []
+    risk_units: List[float] = []
+    guidance: List[str] = []
+    for _, row in out.iterrows():
+        confidence = _confidence_score(row)
+        scores.append(confidence)
+        signals = _safe_int(row.get("backtest_signals"))
+        swing_score = _safe_float(row.get("swing_score"))
+        edge = _safe_float(row.get("edge_pct"))
+        playbook_validation = _safe_int(row.get("ticker_playbook_validation_setups"))
+        rolling_verdict = str(row.get("rolling_playbook_verdict", "") or "").strip()
+        verdict = str(row.get("backtest_verdict", "") or "").strip().upper()
+
+        tier = "PROBE_ONLY"
+        reason_parts: List[str] = []
+        if signals < DEFAULT_MIN_WORKUP_SIGNALS and playbook_validation < TICKER_PLAYBOOK_MIN_VALIDATION_SETUPS:
+            reason_parts.append("thin historical sample")
+        if rolling_verdict in {"", "no_match", "no_audit", "insufficient_forward"}:
+            reason_parts.append("rolling forward validation not proven")
+        elif rolling_verdict == "emerging_forward":
+            reason_parts.append("rolling forward validation is emerging, not mature")
+        elif rolling_verdict == "negative":
+            reason_parts.append("rolling forward validation negative")
+
+        if (
+            verdict == "PASS"
+            and signals >= DEFAULT_MAX_CONVICTION_MIN_SIGNALS
+            and math.isfinite(swing_score)
+            and swing_score >= DEFAULT_CANDIDATE_MIN_SCORE
+            and math.isfinite(edge)
+            and edge >= 0
+            and rolling_verdict == "supportive"
+        ):
+            tier = "STANDARD_RISK"
+            reason_parts.append("PASS sample plus supportive rolling forward validation")
+        elif (
+            _truthy(row.get("ticker_playbook_gate_pass"))
+            and playbook_validation >= TICKER_PLAYBOOK_MIN_VALIDATION_SETUPS
+            and rolling_verdict in {"supportive", "emerging_forward"}
+            and math.isfinite(swing_score)
+            and swing_score >= DEFAULT_CANDIDATE_MIN_SCORE
+        ):
+            tier = "STARTER_RISK"
+            reason_parts.append("ticker playbook is promotable but still below standard-size evidence")
+        elif _truthy(row.get("ticker_playbook_gate_pass")) or signals >= DEFAULT_MIN_WORKUP_SIGNALS:
+            tier = "STARTER_RISK"
+            reason_parts.append("actionable but below standard-size confidence")
+
+        cfg = MIN_CONFIDENCE_TIERS[tier]
+        tiers.append(tier)
+        risk_units.append(float(cfg["risk_units"]))
+        guidance.append(str(cfg["guidance"]))
+        notes.append("; ".join(dict.fromkeys(p for p in reason_parts if p)) or "minimum confidence tier applied")
+
+    out["confidence_score"] = scores
+    out["position_size_tier"] = tiers
+    out["max_planned_risk_units"] = risk_units
+    out["position_size_guidance"] = guidance
+    out["position_size_reason"] = notes
+    return out
+
+
+def _spread_width_value(row: pd.Series) -> float:
+    width = abs(_safe_float(row.get("spread_width")))
+    if math.isfinite(width) and width > 0:
+        return width
+    long_strike = _first_finite(row, ("live_long_strike", "long_strike"))
+    short_strike = _first_finite(row, ("live_short_strike", "short_strike"))
+    if math.isfinite(long_strike) and math.isfinite(short_strike):
+        return abs(long_strike - short_strike)
+    return math.nan
+
+
+def _entry_price_value(row: pd.Series) -> float:
+    price = _first_finite(row, ("live_spread_cost", "quote_replay_entry_net", "est_cost"))
+    return abs(price) if math.isfinite(price) else math.nan
+
+
+def _strategy_cost_type(strategy: str, fallback: str = "") -> str:
+    text = str(strategy or "").strip().lower()
+    if "credit" in text or "condor" in text:
+        return "credit"
+    if "debit" in text:
+        return "debit"
+    fallback_text = str(fallback or "").strip().lower()
+    if fallback_text in {"credit", "debit"}:
+        return fallback_text
+    return fallback_text
+
+
+def _parse_tracker_vertical_legs(row: pd.Series) -> Dict[str, Any]:
+    long_strike = _first_finite(row, ("long_strike", "live_long_strike"))
+    short_strike = _first_finite(row, ("short_strike", "live_short_strike"))
+    setup = str(row.get("trade_setup", "") or row.get("strike_setup", "") or "").strip()
+    matches = re.findall(r"\b(Buy|Sell)\s+([0-9]+(?:\.[0-9]+)?)([CP])\b", setup, flags=re.IGNORECASE)
+    right = ""
+    if matches:
+        for action, strike, option_right in matches:
+            right = option_right.upper()
+            parsed = _safe_float(strike)
+            if not math.isfinite(parsed):
+                continue
+            if action.lower() == "buy" and not math.isfinite(long_strike):
+                long_strike = parsed
+            elif action.lower() == "sell" and not math.isfinite(short_strike):
+                short_strike = parsed
+    return {
+        "long_strike": long_strike,
+        "short_strike": short_strike,
+        "right": right,
+    }
+
+
+def _tracker_row_to_candidate(row: pd.Series) -> Optional[Dict[str, Any]]:
+    signal_date = _parse_tracker_date(row.get("signal_date"))
+    expiry = _parse_tracker_date(row.get("target_expiry"))
+    ticker = str(row.get("ticker", "") or "").strip().upper()
+    strategy = str(row.get("strategy", "") or "").strip()
+    if signal_date is None or expiry is None or not ticker or not strategy:
+        return None
+    legs = _parse_tracker_vertical_legs(row)
+    long_strike = _safe_float(legs.get("long_strike"))
+    short_strike = _safe_float(legs.get("short_strike"))
+    if not math.isfinite(long_strike) or not math.isfinite(short_strike):
+        return None
+    width = abs(short_strike - long_strike)
+    if width <= 0:
+        return None
+    return {
+        "ticker": ticker,
+        "strategy": strategy,
+        "target_expiry": expiry.isoformat(),
+        "long_strike": long_strike,
+        "short_strike": short_strike,
+        "spread_width": width,
+        "cost_type": _strategy_cost_type(strategy, str(row.get("cost_type", "") or "")),
+        "live_validated": False,
+    }
+
+
+def _trade_tracking_id(as_of: dt.date, row: pd.Series) -> str:
+    parts = [
+        as_of.isoformat(),
+        str(row.get("ticker", "") or "").strip().upper(),
+        str(row.get("direction", "") or "").strip().lower(),
+        str(row.get("strategy", "") or "").strip(),
+        str(row.get("target_expiry", "") or "").strip(),
+        _entry_text(row),
+    ]
+    return "|".join(parts)
+
+
+def update_trade_tracking(
+    actionable: pd.DataFrame,
+    tracking_csv: Path,
+    *,
+    report_path: Path,
+    as_of: dt.date,
+    enabled: bool,
+) -> Dict[str, Any]:
+    summary: Dict[str, Any] = {
+        "enabled": bool(enabled),
+        "tracking_csv": str(tracking_csv),
+        "added": 0,
+        "updated": 0,
+        "total": 0,
+    }
+    if not enabled:
+        summary["status"] = "skipped"
+        return summary
+    tracking_csv.parent.mkdir(parents=True, exist_ok=True)
+    if tracking_csv.exists():
+        try:
+            tracker = pd.read_csv(tracking_csv, low_memory=False)
+        except Exception:
+            tracker = pd.DataFrame(columns=TRACKING_COLUMNS)
+    else:
+        tracker = pd.DataFrame(columns=TRACKING_COLUMNS)
+    for col in TRACKING_COLUMNS:
+        if col not in tracker.columns:
+            tracker[col] = ""
+        tracker[col] = tracker[col].astype(object)
+        tracker[col] = tracker[col].astype(object)
+    tracker["trade_id"] = tracker["trade_id"].fillna("").astype(str)
+    existing_ids = set(tracker["trade_id"].tolist())
+    added_rows: List[Dict[str, Any]] = []
+    updated = 0
+    if not actionable.empty:
+        for _, row in actionable.iterrows():
+            trade_id = _trade_tracking_id(as_of, row)
+            if trade_id in existing_ids:
+                tracker.loc[tracker["trade_id"].eq(trade_id), "last_seen_as_of"] = as_of.isoformat()
+                updated += 1
+                continue
+            entry_price = _entry_price_value(row)
+            width = _spread_width_value(row)
+            cost_type = str(row.get("cost_type", "") or "").strip().lower()
+            long_strike = _first_finite(row, ("live_long_strike", "long_strike"))
+            short_strike = _first_finite(row, ("live_short_strike", "short_strike"))
+            max_risk = math.nan
+            max_profit = math.nan
+            if math.isfinite(entry_price) and math.isfinite(width) and width > 0:
+                if "credit" in cost_type:
+                    max_risk = max(0.0, (width - entry_price) * 100.0)
+                    max_profit = entry_price * 100.0
+                else:
+                    max_risk = entry_price * 100.0
+                    max_profit = max(0.0, (width - entry_price) * 100.0)
+            added_rows.append(
+                {
+                    "trade_id": trade_id,
+                    "status": "OPEN_TRACKED",
+                    "signal_date": as_of.isoformat(),
+                    "last_seen_as_of": as_of.isoformat(),
+                    "ticker": str(row.get("ticker", "") or "").strip().upper(),
+                    "direction": str(row.get("direction", "") or "").strip().lower(),
+                    "strategy": str(row.get("strategy", "") or "").strip(),
+                    "variant_tag": str(row.get("variant_tag", "") or "base").strip() or "base",
+                    "trade_setup": _trade_setup_text(row),
+                    "target_expiry": str(row.get("target_expiry", "") or "").strip(),
+                    "long_strike": long_strike,
+                    "short_strike": short_strike,
+                    "spread_width": width,
+                    "cost_type": cost_type,
+                    "entry_price": entry_price,
+                    "max_risk": max_risk,
+                    "max_profit": max_profit,
+                    "position_size_tier": str(row.get("position_size_tier", "") or "").strip(),
+                    "position_size_guidance": str(row.get("position_size_guidance", "") or "").strip(),
+                    "entry_trigger": str(row.get("setup_entry_trigger", "") or "").strip() or _entry_trigger(row),
+                    "source_report": str(report_path),
+                }
+            )
+            existing_ids.add(trade_id)
+    if added_rows:
+        added_df = pd.DataFrame(added_rows)
+        tracker = added_df if tracker.empty else pd.concat([tracker, added_df], ignore_index=True)
+    for col in TRACKING_COLUMNS:
+        if col not in tracker.columns:
+            tracker[col] = ""
+        tracker[col] = tracker[col].astype(object)
+    tracker = tracker[TRACKING_COLUMNS]
+    tracker.to_csv(tracking_csv, index=False)
+    summary.update(
+        {
+            "status": "ok",
+            "added": int(len(added_rows)),
+            "updated": int(updated),
+            "total": int(len(tracker)),
+        }
+    )
+    return summary
+
+
+def refresh_trade_tracking_outcomes(
+    tracking_csv: Path,
+    *,
+    root: Path,
+    as_of: dt.date,
+    enabled: bool,
+    replay_fn: Any = None,
+) -> Dict[str, Any]:
+    summary: Dict[str, Any] = {
+        "enabled": bool(enabled),
+        "tracking_csv": str(tracking_csv),
+        "updated": 0,
+        "scored": 0,
+        "unavailable": 0,
+        "wins": 0,
+        "losses": 0,
+        "open": 0,
+        "total": 0,
+    }
+    if not enabled:
+        summary["status"] = "skipped"
+        return summary
+    if not tracking_csv.exists():
+        summary["status"] = "missing_tracker"
+        return summary
+    tracker = pd.read_csv(tracking_csv, low_memory=False)
+    for col in TRACKING_COLUMNS:
+        if col not in tracker.columns:
+            tracker[col] = ""
+        tracker[col] = tracker[col].astype(object)
+    if tracker.empty:
+        tracker.to_csv(tracking_csv, index=False)
+        summary["status"] = "empty"
+        return summary
+
+    replay = replay_fn or trend_quote_replay.annotate_quote_replay
+    candidates_by_signal_date: Dict[dt.date, List[Tuple[int, Dict[str, Any]]]] = {}
+    unavailable = 0
+    for idx, row in tracker.iterrows():
+        signal_date = _parse_tracker_date(row.get("signal_date"))
+        if signal_date is None or signal_date > as_of:
+            unavailable += 1
+            continue
+        candidate = _tracker_row_to_candidate(row)
+        if candidate is None:
+            tracker.at[idx, "outcome_as_of"] = as_of.isoformat()
+            tracker.at[idx, "outcome_status"] = "UNAVAILABLE"
+            tracker.at[idx, "outcome_verdict"] = "UNAVAILABLE"
+            tracker.at[idx, "outcome_reason"] = "could not rebuild tracked option spread"
+            unavailable += 1
+            continue
+        candidates_by_signal_date.setdefault(signal_date, []).append((idx, candidate))
+
+    updated = 0
+    scored = 0
+    wins = 0
+    losses = 0
+    open_count = 0
+    for signal_date, items in candidates_by_signal_date.items():
+        indexes = [idx for idx, _ in items]
+        candidates = pd.DataFrame([candidate for _, candidate in items])
+        try:
+            annotated, _ = replay(
+                candidates,
+                root=root,
+                signal_date=signal_date,
+                mode="diagnostic",
+                exit_date_override=as_of,
+                allow_web_fallback=False,
+            )
+        except Exception as exc:
+            for idx in indexes:
+                tracker.at[idx, "outcome_as_of"] = as_of.isoformat()
+                tracker.at[idx, "outcome_status"] = "UNAVAILABLE"
+                tracker.at[idx, "outcome_verdict"] = "UNAVAILABLE"
+                tracker.at[idx, "outcome_reason"] = f"outcome replay failed: {exc}"
+                unavailable += 1
+            continue
+
+        for row_pos, idx in enumerate(indexes):
+            replay_row = annotated.iloc[row_pos]
+            exit_net = _safe_float(replay_row.get("quote_replay_exit_net"))
+            entry_price = _safe_float(tracker.at[idx, "entry_price"])
+            if not math.isfinite(entry_price) or entry_price <= 0:
+                entry_price = _safe_float(replay_row.get("quote_replay_entry_net"))
+            width = _safe_float(tracker.at[idx, "spread_width"])
+            if not math.isfinite(width) or width <= 0:
+                width = _safe_float(replay_row.get("spread_width"))
+            net_type = _strategy_cost_type(
+                str(tracker.at[idx, "strategy"] or ""),
+                str(tracker.at[idx, "cost_type"] or ""),
+            )
+            final = _truthy(replay_row.get("quote_replay_final"))
+            replay_status = str(replay_row.get("quote_replay_status", "") or "").strip()
+            replay_reason = str(replay_row.get("quote_replay_reason", "") or "").strip()
+            outcome_status = "UNAVAILABLE"
+            outcome_verdict = "UNAVAILABLE"
+            pnl = math.nan
+            return_on_risk = math.nan
+            if math.isfinite(exit_net) and math.isfinite(entry_price) and entry_price > 0:
+                if net_type == "credit":
+                    pnl = (entry_price - exit_net) * 100.0
+                else:
+                    pnl = (exit_net - entry_price) * 100.0
+                max_loss = _safe_float(tracker.at[idx, "max_risk"])
+                if not math.isfinite(max_loss) or max_loss <= 0:
+                    if net_type == "credit":
+                        max_loss = max(0.0, (width - entry_price) * 100.0)
+                    else:
+                        max_loss = entry_price * 100.0
+                return_on_risk = pnl / max_loss if math.isfinite(max_loss) and max_loss > 0 else math.nan
+                if final:
+                    outcome_status = "CLOSED_WIN" if pnl > 0 else "CLOSED_LOSS"
+                    outcome_verdict = "WIN" if pnl > 0 else "LOSS"
+                elif pnl > 0:
+                    outcome_status = "OPEN_WIN"
+                    outcome_verdict = "PARTIAL_WIN"
+                elif pnl < 0:
+                    outcome_status = "OPEN_LOSS"
+                    outcome_verdict = "PARTIAL_LOSS"
+                else:
+                    outcome_status = "OPEN_FLAT"
+                    outcome_verdict = "FLAT"
+                scored += 1
+                if pnl > 0:
+                    wins += 1
+                elif pnl < 0:
+                    losses += 1
+                if not final:
+                    open_count += 1
+            elif replay_status == "entry_only_no_later_snapshot":
+                outcome_status = "OPEN_TRACKED"
+                outcome_verdict = "ENTRY_OK"
+                open_count += 1
+            else:
+                unavailable += 1
+
+            tracker.at[idx, "status"] = outcome_status if outcome_status != "UNAVAILABLE" else tracker.at[idx, "status"]
+            tracker.at[idx, "outcome_as_of"] = as_of.isoformat()
+            tracker.at[idx, "outcome_exit_date"] = str(replay_row.get("quote_replay_exit_date", "") or "")
+            tracker.at[idx, "outcome_final"] = bool(final)
+            tracker.at[idx, "outcome_status"] = outcome_status
+            tracker.at[idx, "outcome_verdict"] = outcome_verdict
+            tracker.at[idx, "outcome_entry_price"] = entry_price
+            tracker.at[idx, "outcome_exit_price"] = exit_net
+            tracker.at[idx, "outcome_pnl"] = pnl
+            tracker.at[idx, "outcome_return_on_risk"] = return_on_risk
+            tracker.at[idx, "outcome_days_held"] = _safe_int(replay_row.get("quote_replay_days_held"))
+            tracker.at[idx, "outcome_reason"] = replay_reason
+            tracker.at[idx, "outcome_source"] = "local_uw_option_replay"
+            updated += 1
+
+    tracker = tracker[TRACKING_COLUMNS]
+    tracker.to_csv(tracking_csv, index=False)
+    summary.update(
+        {
+            "status": "ok",
+            "updated": int(updated),
+            "scored": int(scored),
+            "unavailable": int(unavailable),
+            "wins": int(wins),
+            "losses": int(losses),
+            "open": int(open_count),
+            "total": int(len(tracker)),
+        }
+    )
+    return summary
 
 
 def _parse_walk_forward_horizons(value: str) -> List[int]:
@@ -3042,6 +3557,10 @@ def annotate_ticker_playbook_gate(candidates: pd.DataFrame, playbook_audit: pd.D
     out = candidates.copy()
     defaults = {
         "ticker_playbook_horizon": 0,
+        "ticker_playbook_train_setups": 0,
+        "ticker_playbook_validation_setups": 0,
+        "ticker_playbook_validation_hit_rate": math.nan,
+        "ticker_playbook_validation_avg_pnl": math.nan,
         "ticker_playbook_verdict": "no_match",
         "ticker_playbook_gate_pass": False,
         "ticker_playbook_summary": "",
@@ -3060,6 +3579,10 @@ def annotate_ticker_playbook_gate(candidates: pd.DataFrame, playbook_audit: pd.D
             continue
         verdict = str(best.get("verdict", "") or "").strip()
         out.at[idx, "ticker_playbook_horizon"] = _safe_int(best.get("horizon_market_days"))
+        out.at[idx, "ticker_playbook_train_setups"] = _safe_int(best.get("train_unique_setups"))
+        out.at[idx, "ticker_playbook_validation_setups"] = _safe_int(best.get("validation_unique_setups"))
+        out.at[idx, "ticker_playbook_validation_hit_rate"] = _safe_float(best.get("validation_hit_rate"))
+        out.at[idx, "ticker_playbook_validation_avg_pnl"] = _safe_float(best.get("validation_avg_pnl"))
         out.at[idx, "ticker_playbook_verdict"] = verdict
         out.at[idx, "ticker_playbook_gate_pass"] = verdict == "promotable"
         out.at[idx, "ticker_playbook_summary"] = _family_summary_text(best)
@@ -3310,6 +3833,63 @@ def _ticker_playbook_report_lines(df: pd.DataFrame) -> List[str]:
             [
                 "",
                 "**Confidence impact:** no ticker playbook is promotable yet, so order-ready trades stay blocked.",
+            ]
+        )
+    return lines
+
+
+def _rolling_ticker_playbook_report_lines(df: pd.DataFrame) -> List[str]:
+    if df.empty:
+        return ["_no rolling ticker-playbook forward validation rows were available_"]
+    lines = [
+        "This replays ticker playbooks chronologically: a playbook must become promotable using only earlier dates before the next date is scored as forward validation.",
+        "",
+        _render_table(
+            [
+                "ticker",
+                "direction",
+                "strategy",
+                "horizon",
+                "forward tests",
+                "dates",
+                "hit",
+                "avg",
+                "PF",
+                "worst",
+                "window",
+                "verdict",
+            ],
+            [
+                [
+                    str(row.get("ticker", "")),
+                    str(row.get("direction", "")),
+                    str(row.get("strategy", "")),
+                    str(_safe_int(row.get("horizon_market_days"))),
+                    str(_safe_int(row.get("forward_tests"))),
+                    str(_safe_int(row.get("forward_dates"))),
+                    f"{_safe_float(row.get('forward_hit_rate')):.0%}"
+                    if math.isfinite(_safe_float(row.get("forward_hit_rate")))
+                    else "-",
+                    _fmt_money(row.get("forward_avg_pnl")),
+                    _fmt_num(row.get("forward_profit_factor"), 2),
+                    _fmt_money(row.get("forward_worst_pnl")),
+                    (
+                        f"{row.get('first_forward_date', '')} to {row.get('last_forward_date', '')}"
+                        if str(row.get("first_forward_date", "") or "").strip()
+                        else "-"
+                    ),
+                    str(row.get("verdict", "")),
+                ]
+                for _, row in df.head(16).iterrows()
+            ],
+        ),
+    ]
+    verdicts = df.get("verdict", pd.Series(dtype=str)).fillna("").astype(str)
+    if verdicts.eq("negative").any():
+        lines.extend(
+            [
+                "",
+                "**Confidence impact:** negative rolling playbooks block matching actionable trades.",
             ]
         )
     return lines
@@ -3922,6 +4502,11 @@ def _actionable_blocks(
         )
         _append_field(lines, "Family audit", row.get("strategy_family_summary", ""), limit=360)
         _append_field(lines, "Ticker playbook", row.get("ticker_playbook_summary", ""), limit=360)
+        _append_field(lines, "Rolling forward", row.get("rolling_playbook_summary", ""), limit=360)
+        _append_field(lines, "Regime", row.get("market_regime_summary", ""), limit=320)
+        _append_field(lines, "Open positions", row.get("open_position_summary", "") or "clear", limit=320)
+        _append_field(lines, "Position tier", row.get("position_size_tier", ""), limit=160)
+        _append_field(lines, "Sizing", row.get("position_size_guidance", ""), limit=260)
         lines.append("")
     return lines
 
@@ -4027,6 +4612,7 @@ def _current_setup_blocks(df: pd.DataFrame, *, limit: int = DEFAULT_CANDIDATE_TO
         )
         _append_field(lines, "Family audit", row.get("strategy_family_summary", ""), limit=360)
         _append_field(lines, "Ticker playbook", row.get("ticker_playbook_summary", ""), limit=360)
+        _append_field(lines, "Rolling forward", row.get("rolling_playbook_summary", ""), limit=360)
         _append_field(lines, "Why not order-ready", row.get("setup_reason", ""), limit=420)
         _append_field(lines, "Next step", row.get("setup_next_step", ""), limit=320)
         lines.append("")
@@ -4134,6 +4720,10 @@ def build_report(
     research_horizon_audit: pd.DataFrame,
     strategy_family_audit: pd.DataFrame,
     ticker_playbook_audit: pd.DataFrame,
+    rolling_ticker_playbook_audit: pd.DataFrame,
+    market_regime: Dict[str, Any],
+    open_position_summary: Dict[str, Any],
+    tracking_summary: Dict[str, Any],
     out_dir: Path,
     raw_report: Path,
     raw_csv: Path,
@@ -4150,6 +4740,8 @@ def build_report(
     research_outcomes_csv: Path,
     strategy_family_audit_csv: Path,
     ticker_playbook_audit_csv: Path,
+    rolling_ticker_playbook_audit_csv: Path,
+    trade_tracker_csv: Path,
     schwab_enabled: bool,
     backtest_enabled: bool,
     quote_replay_mode: str,
@@ -4212,6 +4804,44 @@ def build_report(
         "- Data sources: trends=local UW dated folders; likelihood backtest=yfinance OHLC analogs; "
         "option P&L replay=local UW option snapshots; live validation=Schwab API"
     )
+    regime_label = str(market_regime.get("regime", "unknown") or "unknown")
+    regime_reason = str(market_regime.get("reason", "") or "").strip()
+    lines.append(
+        f"- Market regime filter: {regime_label}"
+        + (f" ({regime_reason})" if regime_reason else "")
+    )
+    open_status = "skipped" if open_position_summary.get("skipped") else (
+        "checked" if open_position_summary.get("checked") else "not checked"
+    )
+    lines.append(
+        "- Open-position awareness: "
+        + f"{open_status}; open underlyings={int(open_position_summary.get('open_underlyings', 0) or 0)}; "
+        + f"blocked rows={int(open_position_summary.get('blocked_rows', 0) or 0)}"
+    )
+    if not rolling_ticker_playbook_audit.empty:
+        rolling_counts = (
+            rolling_ticker_playbook_audit.get("verdict", pd.Series(dtype=str))
+            .fillna("")
+            .astype(str)
+            .value_counts()
+            .to_dict()
+        )
+        rolling_text = ", ".join(f"{k}={v}" for k, v in sorted(rolling_counts.items()))
+        lines.append(f"- Rolling ticker-playbook forward validation: {rolling_text}")
+    else:
+        lines.append("- Rolling ticker-playbook forward validation: no completed rows")
+    if tracking_summary.get("enabled"):
+        outcome_summary = tracking_summary.get("outcomes", {}) if isinstance(tracking_summary.get("outcomes"), dict) else {}
+        lines.append(
+            "- Post-trade tracking: "
+            + f"added {int(tracking_summary.get('added', 0) or 0)}, "
+            + f"updated {int(tracking_summary.get('updated', 0) or 0)}, "
+            + f"outcomes refreshed {int(outcome_summary.get('updated', 0) or 0)}, "
+            + f"wins/losses {int(outcome_summary.get('wins', 0) or 0)}/{int(outcome_summary.get('losses', 0) or 0)}, "
+            + f"total {int(tracking_summary.get('total', 0) or 0)}"
+        )
+    else:
+        lines.append("- Post-trade tracking: skipped")
     if risk_blocked_count:
         base_gate_label = "backtest/Schwab" if schwab_enabled else "backtest"
         lines.append(f"- Risk-blocked {base_gate_label} passes: {risk_blocked_count}")
@@ -4321,6 +4951,13 @@ def build_report(
     lines.append("## Ticker Playbook Audit")
     if research_audit_requested:
         lines.extend(_ticker_playbook_report_lines(ticker_playbook_audit))
+    else:
+        lines.append("_skipped because walk-forward audit was skipped_")
+    lines.append("")
+
+    lines.append("## Rolling Ticker Playbook Forward Validation")
+    if research_audit_requested:
+        lines.extend(_rolling_ticker_playbook_report_lines(rolling_ticker_playbook_audit))
     else:
         lines.append("_skipped because walk-forward audit was skipped_")
     lines.append("")
@@ -4443,6 +5080,22 @@ def build_report(
         lines.extend(_pattern_blocks(pattern_only))
     lines.append("")
 
+    lines.append("## Post-Trade Tracking")
+    if tracking_summary.get("enabled"):
+        outcome_summary = tracking_summary.get("outcomes", {}) if isinstance(tracking_summary.get("outcomes"), dict) else {}
+        lines.append(
+            f"Tracking CSV: {_file_link(trade_tracker_csv)}. "
+            f"Added {int(tracking_summary.get('added', 0) or 0)} new row(s), "
+            f"updated {int(tracking_summary.get('updated', 0) or 0)} existing row(s), "
+            f"refreshed outcomes for {int(outcome_summary.get('updated', 0) or 0)} row(s), "
+            f"scored {int(outcome_summary.get('scored', 0) or 0)}, "
+            f"unavailable {int(outcome_summary.get('unavailable', 0) or 0)}, "
+            f"total tracked rows {int(tracking_summary.get('total', 0) or 0)}."
+        )
+    else:
+        lines.append("_skipped for this run_")
+    lines.append("")
+
     lines.append("## Files")
     report_path = out_dir / f"trend-analysis-{as_of.isoformat()}-L{lookback}.md"
     lines.append(f"- This report: {_file_link(report_path)}")
@@ -4462,6 +5115,9 @@ def build_report(
         lines.append(f"- Research outcomes CSV: {_file_link(research_outcomes_csv)}")
         lines.append(f"- Strategy family audit CSV: {_file_link(strategy_family_audit_csv)}")
         lines.append(f"- Ticker playbook audit CSV: {_file_link(ticker_playbook_audit_csv)}")
+        lines.append(f"- Rolling ticker playbook audit CSV: {_file_link(rolling_ticker_playbook_audit_csv)}")
+    if tracking_summary.get("enabled"):
+        lines.append(f"- Post-trade tracker CSV: {_file_link(trade_tracker_csv)}")
     lines.append(f"- Raw swing report: {_file_link(raw_report)}")
     lines.append(f"- Raw swing CSV: {_file_link(raw_csv)}")
     return "\n".join(lines)
@@ -4493,6 +5149,7 @@ def _output_names(as_of: dt.date, lookback: int) -> Dict[str, str]:
         "research_outcomes_csv": f"trend-analysis-research-outcomes-{suffix}.csv",
         "strategy_family_audit_csv": f"trend-analysis-strategy-family-audit-{suffix}.csv",
         "ticker_playbook_audit_csv": f"trend-analysis-ticker-playbook-audit-{suffix}.csv",
+        "rolling_ticker_playbook_audit_csv": f"trend-analysis-rolling-ticker-playbook-audit-{suffix}.csv",
         "metadata": f"trend-analysis-metadata-{suffix}.json",
         "raw_report": f"trend-analysis-raw-{as_of.isoformat()}-L{lookback}.md",
         "raw_csv": f"trend_analysis_raw_{as_of.isoformat()}-L{lookback}.csv",
@@ -4559,6 +5216,12 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
     research_outcomes_csv = out_dir / names["research_outcomes_csv"]
     strategy_family_audit_csv = out_dir / names["strategy_family_audit_csv"]
     ticker_playbook_audit_csv = out_dir / names["ticker_playbook_audit_csv"]
+    rolling_ticker_playbook_audit_csv = out_dir / names["rolling_ticker_playbook_audit_csv"]
+    trade_tracker_csv = (
+        Path(args.trade_tracker).expanduser().resolve()
+        if args.trade_tracker
+        else out_dir / DEFAULT_TRACKING_FILE_NAME
+    )
     report_path = out_dir / names["report"]
     metadata_path = out_dir / names["metadata"]
 
@@ -4591,6 +5254,36 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
             allow_web_fallback=bool(args.quote_replay_web_fallback),
         )
         candidates.to_csv(quote_replay_csv, index=False)
+
+    if bool(args.no_regime_filter):
+        market_regime: Dict[str, Any] = {"regime": "skipped", "reason": "regime filter skipped"}
+        candidates = candidates.copy()
+        candidates["market_regime"] = "skipped"
+        candidates["market_regime_gate_pass"] = True
+        candidates["market_regime_summary"] = "regime filter skipped"
+    else:
+        market_regime = compute_market_regime(root, trading_days)
+        candidates = annotate_regime_filter(candidates, market_regime)
+
+    if bool(args.no_position_check):
+        open_position_summary: Dict[str, Any] = {
+            "checked": False,
+            "skipped": True,
+            "position_json": "",
+            "open_underlyings": 0,
+            "blocked_rows": 0,
+        }
+        candidates = candidates.copy()
+        candidates["open_position_gate_pass"] = True
+        candidates["open_position_status"] = "skipped"
+        candidates["open_position_summary"] = "position check skipped"
+    else:
+        position_json = (
+            Path(args.position_json).expanduser().resolve()
+            if args.position_json
+            else _latest_position_json(root)
+        )
+        candidates, open_position_summary = annotate_open_position_awareness(candidates, position_json)
 
     actionable, patterns = split_actionable_candidates(
         candidates,
@@ -4642,6 +5335,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         min_workup_signals=int(args.min_workup_signals),
         min_swing_score=float(args.candidate_min_score),
     )
+    actionable = annotate_position_sizing(actionable)
     max_conviction = build_max_conviction(actionable, top_n=top_n)
     if bool(args.reuse_walk_forward_outcomes) and walk_forward_csv.exists():
         walk_forward = pd.read_csv(walk_forward_csv, low_memory=False)
@@ -4701,10 +5395,15 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
     research_horizon_audit = _research_summary_by_horizon_from_outcomes(research_outcomes)
     strategy_family_audit = _strategy_family_audit_from_outcomes(research_outcomes)
     ticker_playbook_audit = _ticker_playbook_audit_from_outcomes(research_outcomes)
+    rolling_ticker_playbook_audit = _rolling_ticker_playbook_audit_from_outcomes(
+        research_outcomes,
+        ticker_playbook_audit,
+    )
     research_requested = max(0, int(args.walk_forward_samples)) > 0
     if research_requested:
         candidates = annotate_strategy_family_gate(candidates, strategy_family_audit)
         candidates = annotate_ticker_playbook_gate(candidates, ticker_playbook_audit)
+        candidates = annotate_rolling_playbook_gate(candidates, rolling_ticker_playbook_audit)
         actionable, patterns = split_actionable_candidates(
             candidates,
             top_n=top_n,
@@ -4755,6 +5454,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
             min_workup_signals=int(args.min_workup_signals),
             min_swing_score=float(args.candidate_min_score),
         )
+        actionable = annotate_position_sizing(actionable)
         max_conviction = build_max_conviction(actionable, top_n=top_n)
     if (
         research_requested
@@ -4815,6 +5515,23 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         )
         max_conviction = build_max_conviction(actionable, top_n=top_n)
 
+    actionable = annotate_position_sizing(actionable)
+    max_conviction = build_max_conviction(actionable, top_n=top_n)
+    tracking_summary = update_trade_tracking(
+        actionable,
+        trade_tracker_csv,
+        report_path=report_path,
+        as_of=as_of,
+        enabled=not bool(args.no_trade_tracking),
+    )
+    outcome_summary = refresh_trade_tracking_outcomes(
+        trade_tracker_csv,
+        root=root,
+        as_of=as_of,
+        enabled=not bool(args.no_trade_tracking) and not bool(args.no_outcome_update),
+    )
+    tracking_summary["outcomes"] = outcome_summary
+
     if str(quote_replay_mode or "off").lower() != "off":
         candidates.to_csv(quote_replay_csv, index=False)
     fallback_candidate_columns = list(candidates.columns)
@@ -4842,6 +5559,11 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         ticker_playbook_audit_csv,
         TICKER_PLAYBOOK_AUDIT_COLUMNS,
     )
+    _write_csv_with_fallback_columns(
+        rolling_ticker_playbook_audit,
+        rolling_ticker_playbook_audit_csv,
+        ROLLING_TICKER_PLAYBOOK_AUDIT_COLUMNS,
+    )
     report_text = build_report(
         as_of=as_of,
         lookback=lookback,
@@ -4858,6 +5580,10 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         research_horizon_audit=research_horizon_audit,
         strategy_family_audit=strategy_family_audit,
         ticker_playbook_audit=ticker_playbook_audit,
+        rolling_ticker_playbook_audit=rolling_ticker_playbook_audit,
+        market_regime=market_regime,
+        open_position_summary=open_position_summary,
+        tracking_summary=tracking_summary,
         out_dir=out_dir,
         raw_report=raw_report,
         raw_csv=raw_csv,
@@ -4874,6 +5600,8 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         research_outcomes_csv=research_outcomes_csv,
         strategy_family_audit_csv=strategy_family_audit_csv,
         ticker_playbook_audit_csv=ticker_playbook_audit_csv,
+        rolling_ticker_playbook_audit_csv=rolling_ticker_playbook_audit_csv,
+        trade_tracker_csv=trade_tracker_csv,
         schwab_enabled=not bool(args.no_schwab),
         backtest_enabled=not bool(args.no_backtest),
         quote_replay_mode=quote_replay_mode,
@@ -4929,6 +5657,12 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         "strategy_family_audit_csv": str(strategy_family_audit_csv),
         "ticker_playbook_audit_rows": int(len(ticker_playbook_audit)),
         "ticker_playbook_audit_csv": str(ticker_playbook_audit_csv),
+        "rolling_ticker_playbook_audit_rows": int(len(rolling_ticker_playbook_audit)),
+        "rolling_ticker_playbook_audit_csv": str(rolling_ticker_playbook_audit_csv),
+        "market_regime": market_regime,
+        "open_position_summary": open_position_summary,
+        "trade_tracking": tracking_summary,
+        "trade_tracker_csv": str(trade_tracker_csv),
         "research_audit_verdicts": research_audit.get("verdict", pd.Series(dtype=str)).fillna("").astype(str).value_counts().to_dict()
         if not research_audit.empty
         else {},
@@ -4941,12 +5675,18 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         "ticker_playbook_audit_verdicts": ticker_playbook_audit.get("verdict", pd.Series(dtype=str)).fillna("").astype(str).value_counts().to_dict()
         if not ticker_playbook_audit.empty
         else {},
+        "rolling_ticker_playbook_audit_verdicts": rolling_ticker_playbook_audit.get("verdict", pd.Series(dtype=str)).fillna("").astype(str).value_counts().to_dict()
+        if not rolling_ticker_playbook_audit.empty
+        else {},
         "research_audit_min_outcomes": RESEARCH_AUDIT_MIN_OUTCOMES,
         "research_audit_min_unique_setups": RESEARCH_AUDIT_MIN_UNIQUE_SETUPS,
         "family_audit_min_train_setups": FAMILY_AUDIT_MIN_TRAIN_SETUPS,
         "family_audit_min_validation_setups": FAMILY_AUDIT_MIN_VALIDATION_SETUPS,
         "ticker_playbook_min_train_setups": TICKER_PLAYBOOK_MIN_TRAIN_SETUPS,
         "ticker_playbook_min_validation_setups": TICKER_PLAYBOOK_MIN_VALIDATION_SETUPS,
+        "rolling_ticker_playbook_min_forward_tests": ROLLING_PLAYBOOK_MIN_FORWARD_TESTS,
+        "rolling_ticker_playbook_min_forward_dates": ROLLING_PLAYBOOK_MIN_FORWARD_DATES,
+        "rolling_ticker_playbook_min_profit_factor": ROLLING_PLAYBOOK_MIN_PROFIT_FACTOR,
         "reuse_walk_forward_raw": bool(args.reuse_walk_forward_raw),
         "reuse_walk_forward_outcomes": bool(args.reuse_walk_forward_outcomes),
         "reuse_research_outcomes": bool(args.reuse_research_outcomes),
@@ -4992,6 +5732,9 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
     print(f"Wrote: {research_outcomes_csv}")
     print(f"Wrote: {strategy_family_audit_csv}")
     print(f"Wrote: {ticker_playbook_audit_csv}")
+    print(f"Wrote: {rolling_ticker_playbook_audit_csv}")
+    if not bool(args.no_trade_tracking):
+        print(f"Wrote: {trade_tracker_csv}")
     return {
         "report": report_path,
         "candidate_csv": candidate_csv,
@@ -5007,6 +5750,8 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         "research_outcomes_csv": research_outcomes_csv,
         "strategy_family_audit_csv": strategy_family_audit_csv,
         "ticker_playbook_audit_csv": ticker_playbook_audit_csv,
+        "rolling_ticker_playbook_audit_csv": rolling_ticker_playbook_audit_csv,
+        "trade_tracker_csv": trade_tracker_csv,
         "metadata": metadata_path,
         "raw_report": raw_report,
         "raw_csv": raw_csv,

@@ -15,6 +15,12 @@ Run the dated-folder UW trend pipeline, not the old replay-manifest-only histori
 - **no-schwab**: Skip Schwab live validation only if requested or auth fails.
 - **no-backtest**: Skip backtesting only if explicitly requested.
 - **quote-replay**: Defaults to `gate`. Uses local daily UW option snapshots to replay both spread legs before any trade is actionable.
+- **no-regime-filter**: Skip broad market regime compatibility checks only when explicitly requested.
+- **position-json**: Optional trade-desk `position_data_*.json`; defaults to the latest `out/trade_analysis/position_data_*.json`.
+- **no-position-check**: Skip open-position duplicate/conflict checks only when explicitly requested.
+- **trade-tracker**: Optional post-trade tracking CSV. Defaults to `out/trend_analysis/trend-analysis-trade-tracker.csv`.
+- **no-trade-tracking**: Skip appending actionable trades to the tracker.
+- **no-outcome-update**: Skip refreshing tracked trade outcomes from local UW option snapshots.
 - **reuse-walk-forward-raw / reuse-walk-forward-outcomes / reuse-research-outcomes**: Reuse completed historical audit files when rerunning a large walk-forward audit in the same output directory.
 
 ## Execution
@@ -47,7 +53,9 @@ Read and summarize:
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-research-audit-by-horizon-{date}-L{lookback}.csv`
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-strategy-family-audit-{date}-L{lookback}.csv`
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-ticker-playbook-audit-{date}-L{lookback}.csv`
+- `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-rolling-ticker-playbook-audit-{date}-L{lookback}.csv`
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-research-outcomes-{date}-L{lookback}.csv`
+- `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-trade-tracker.csv` with outcome fields refreshed on each run unless `--no-outcome-update` is used
 - `/Users/anuppamvi/uw_root/tradedesk/out/trend_analysis/trend-analysis-metadata-{date}-L{lookback}.json`
 
 ## Reporting Rules
@@ -58,11 +66,12 @@ Read and summarize:
 - Review **Research Confidence Audit** and **Research Horizon Audit** next. They are fixed-bucket sanity checks, not parameter searches; if no bucket/horizon is supportive, do not treat current candidates as Actionable Now. Use the research outcomes CSV when debugging the ticker/setup rows behind a negative bucket.
 - Review **Strategy Family Audit** next. This is the broad trade-generation layer: predeclared setup families are split into training and later validation dates. Mixed, negative, validation-negative, and low-sample families are research-only unless a narrower ticker playbook overrides them.
 - Review **Ticker Playbook Audit** next. This is the narrow trade-generation layer: ticker/direction/strategy/horizon playbooks are split into training and later validation dates. A `promotable` ticker playbook can unlock Actionable Now even when the broad family is negative, but all live quote, Schwab, earnings, liquidity, trend-quality, and max-risk gates still apply.
+- Review **Rolling Ticker Playbook Forward Validation** next. It checks whether a ticker playbook continued to work after it first became promotable using prior data only. Negative rolling validation blocks matching actionable trades; insufficient validation is allowed only with lower position-size tiers.
 - In every trade summary, show the trade setup up front: strategy, legs, and expiry.
 - Backtest-Supported Candidate Shortlist is the primary output: a few strong bullish/bearish candidates or patterns with at least one backtest-supported structure to work on. It is acceptable for a run to produce zero actionable trades.
 - Candidate rows require high swing score, multiple independent confirmations, few contradictory signals, and at least one structure that passed the backtest gate. Directional price confirmation is preferred; if price diverges, label it clearly and do not treat it as an entry until price starts confirming.
 - Treat Actionable Trades as trade ideas only when historical support is positive: either the backtest gate passed with enough signals, or a LOW_SAMPLE/PASS-shortfall row has a matching `promotable` ticker playbook. The matching broad strategy family or narrow ticker playbook must be promotable.
-- Also require swing score >= `60.0`, enough historical support, daily option quote replay `PASS`, `PARTIAL_PASS`, or current-day `ENTRY_OK`, Schwab live validation, no earnings through expiry, acceptable bid/ask width, short delta <= `0.30`, and no volatile-GEX iron condors. Enough support means `100` historical analog signals for ordinary PASS rows, or a matching promotable ticker playbook for LOW_SAMPLE/PASS-shortfall rows.
+- Also require swing score >= `60.0`, enough historical support, daily option quote replay `PASS`, `PARTIAL_PASS`, or current-day `ENTRY_OK`, Schwab live validation, no earnings through expiry, acceptable bid/ask width, short delta <= `0.30`, no volatile-GEX iron condors, compatible market regime, no same-underlying open option exposure from trade-desk, and no negative rolling ticker-playbook validation. Enough support means `100` historical analog signals for ordinary PASS rows, or a matching promotable ticker playbook for LOW_SAMPLE/PASS-shortfall rows.
 - Also require the professional-quality gate: underlying price >= `$20`, debit spread price >= `$0.75`, strong whale/institutional coverage scaled to the lookback and capped at `8` mention days, no bullish/bearish trade whose direction conflicts with options flow, directional debit price/flow scores >= `60`, debit <= `50%` of spread width, and long strike no more than `2%` OTM. Do not override this unless the user explicitly asks for speculative/lotto ideas.
 - Max Conviction / Max Planned Risk rows are the highest tier. They must already be Actionable Now, then also require strong score, edge, backtest sample support, whale coverage, tight liquidity, and price/flow/OI/dark-pool alignment. Present this as max pre-defined risk for one defined-risk trade, never as all account capital.
 - Daily option quote replay prices both legs from local `hot-chains` / `chain-oi-changes` snapshots on the signal date and a later option snapshot. Missing entry/exit leg quotes block actionability by default; use `--quote-replay diagnostic` only when the user asks to see what would have passed without this gate. For the latest available data date, no later snapshot exists yet, so both-leg entry quote coverage is reported as `ENTRY_OK`.
@@ -73,7 +82,9 @@ Read and summarize:
 - Research Confidence Audit rows show whether fixed historical candidate buckets made money. The summary requires enough unique historical setups; repeated 5/10/20-day exits cannot masquerade as independent evidence.
 - Research Horizon Audit rows split the same buckets by holding horizon. If the aggregate table and the horizon table are negative, keep Actionable Now blocked even if a current setup looks interesting.
 - Strategy Family Audit rows are train/validation checks for predeclared setup families. A family with validation wins but negative training is `mixed`, not promotable.
-- Ticker Playbook Audit rows are train/validation checks for ticker-specific setup behavior. A promotable ticker playbook can override a broad family block, but it must never override live quote, Schwab, earnings, liquidity, price/flow quality, or lotto gates.
+- Ticker Playbook Audit rows are train/validation checks for ticker-specific setup behavior. A promotable ticker playbook can override a broad family block, but it must never override live quote, Schwab, earnings, liquidity, price/flow quality, market regime, open-position awareness, negative rolling-forward validation, or lotto gates.
+- Every Actionable Trade must show a position-size tier. `PROBE_ONLY`, `STARTER_RISK`, `STANDARD_RISK`, and `MAX_PLANNED_RISK` are caps; low-sample or insufficient-forward-validation rows should remain starter/probe-sized.
+- Post-trade tracking should show whether prior tracked ideas are `OPEN_WIN`, `OPEN_LOSS`, `CLOSED_WIN`, `CLOSED_LOSS`, or unavailable based on local UW option replay. Do not call the pipeline profitable until tracker outcomes support that claim.
 - Present rows that pass backtest/Schwab but fail tradeability gates as **Risk-Blocked**, not actionable.
 - Pattern Candidates are not trades; summarize them separately.
 - If there are no actionable trades, say so clearly.

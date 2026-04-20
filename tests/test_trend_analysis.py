@@ -1227,6 +1227,238 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(list(actionable["ticker"]), ["NBIS"])
         self.assertTrue(patterns.empty)
 
+    def test_rolling_ticker_playbook_forward_validation_flags_negative(self) -> None:
+        rows = []
+        for setup_idx in range(21):
+            signal_day = dt.date(2026, 1, 1) + dt.timedelta(days=setup_idx)
+            rows.append(
+                {
+                    "policy": "entry_available_score_gate",
+                    "signal_date": signal_day.isoformat(),
+                    "horizon_market_days": 20,
+                    "ticker": "XYZ",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "trade_setup": f"XYZ setup {setup_idx}",
+                    "pnl": 100.0 if setup_idx < 16 else -150.0,
+                    "return_on_risk": 0.20,
+                }
+            )
+        playbook_audit = pd.DataFrame(
+            [
+                {
+                    "ticker": "XYZ",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "horizon_market_days": 20,
+                    "verdict": "promotable",
+                }
+            ]
+        )
+
+        rolling = trend_analysis._rolling_ticker_playbook_audit_from_outcomes(
+            pd.DataFrame(rows),
+            playbook_audit,
+        )
+        row = rolling[rolling["ticker"].eq("XYZ")].iloc[0]
+
+        self.assertEqual(row["verdict"], "negative")
+        self.assertGreaterEqual(int(row["forward_tests"]), 3)
+        self.assertLess(float(row["forward_avg_pnl"]), 0)
+
+    def test_regime_filter_blocks_bullish_debit_in_risk_off(self) -> None:
+        candidate = pd.DataFrame(
+            [
+                {
+                    "ticker": "AAPL",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "swing_score": 70.0,
+                    "backtest_verdict": "PASS",
+                    "edge_pct": 8.0,
+                    "backtest_signals": 150,
+                }
+            ]
+        )
+
+        annotated = trend_analysis.annotate_regime_filter(
+            candidate,
+            {"regime": "risk_off", "reason": "breadth weak"},
+        )
+        actionable, patterns = trend_analysis.split_actionable_candidates(
+            annotated,
+            top_n=1,
+            backtest_enabled=True,
+            min_edge=0.0,
+            min_signals=100,
+            allow_low_sample=False,
+            schwab_enabled=False,
+            quote_replay_mode="off",
+            min_swing_score=60.0,
+        )
+
+        self.assertTrue(actionable.empty)
+        self.assertIn("market regime conflict", patterns.iloc[0]["base_gate_reasons"])
+
+    def test_open_position_awareness_blocks_existing_underlying(self) -> None:
+        candidate = pd.DataFrame(
+            [
+                {
+                    "ticker": "NVDA",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "swing_score": 70.0,
+                    "backtest_verdict": "PASS",
+                    "edge_pct": 8.0,
+                    "backtest_signals": 150,
+                }
+            ]
+        )
+        with tempfile.TemporaryDirectory() as td:
+            position_json = Path(td) / "position_data_2026-04-17.json"
+            position_json.write_text(
+                '{"positions":[{"asset_type":"OPTION","underlying":"NVDA","symbol":"NVDA 260515C00200000","put_call":"CALL","qty":1}]}',
+                encoding="utf-8",
+            )
+            annotated, summary = trend_analysis.annotate_open_position_awareness(candidate, position_json)
+
+        actionable, patterns = trend_analysis.split_actionable_candidates(
+            annotated,
+            top_n=1,
+            backtest_enabled=True,
+            min_edge=0.0,
+            min_signals=100,
+            allow_low_sample=False,
+            schwab_enabled=False,
+            quote_replay_mode="off",
+            min_swing_score=60.0,
+        )
+
+        self.assertEqual(summary["open_underlyings"], 1)
+        self.assertTrue(actionable.empty)
+        self.assertIn("open position conflict", patterns.iloc[0]["base_gate_reasons"])
+
+    def test_position_sizing_starter_for_low_sample_playbook(self) -> None:
+        actionable = pd.DataFrame(
+            [
+                {
+                    "ticker": "NBIS",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "swing_score": 69.0,
+                    "backtest_verdict": "LOW_SAMPLE",
+                    "edge_pct": 29.0,
+                    "backtest_signals": 64,
+                    "ticker_playbook_gate_pass": True,
+                    "ticker_playbook_validation_setups": 7,
+                    "rolling_playbook_verdict": "insufficient_forward",
+                }
+            ]
+        )
+
+        sized = trend_analysis.annotate_position_sizing(actionable)
+
+        self.assertEqual(sized.iloc[0]["position_size_tier"], "STARTER_RISK")
+        self.assertEqual(float(sized.iloc[0]["max_planned_risk_units"]), 0.25)
+        self.assertIn("Starter", sized.iloc[0]["position_size_guidance"])
+
+    def test_trade_tracking_appends_unique_actionable_trade(self) -> None:
+        actionable = pd.DataFrame(
+            [
+                {
+                    "ticker": "AAPL",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "variant_tag": "base",
+                    "strike_setup": "Buy 200C / Sell 210C",
+                    "target_expiry": "2026-05-15",
+                    "live_spread_cost": 3.0,
+                    "spread_width": 10.0,
+                    "cost_type": "debit",
+                    "position_size_tier": "STARTER_RISK",
+                    "position_size_guidance": "Starter only",
+                }
+            ]
+        )
+        with tempfile.TemporaryDirectory() as td:
+            tracking_csv = Path(td) / "tracker.csv"
+            report_path = Path(td) / "report.md"
+            first = trend_analysis.update_trade_tracking(
+                actionable,
+                tracking_csv,
+                report_path=report_path,
+                as_of=dt.date(2026, 4, 17),
+                enabled=True,
+            )
+            second = trend_analysis.update_trade_tracking(
+                actionable,
+                tracking_csv,
+                report_path=report_path,
+                as_of=dt.date(2026, 4, 17),
+                enabled=True,
+            )
+            tracker = pd.read_csv(tracking_csv)
+
+        self.assertEqual(first["added"], 1)
+        self.assertEqual(second["added"], 0)
+        self.assertEqual(len(tracker), 1)
+        self.assertEqual(tracker.iloc[0]["ticker"], "AAPL")
+
+    def test_trade_tracking_refreshes_outcomes_from_replay(self) -> None:
+        actionable = pd.DataFrame(
+            [
+                {
+                    "ticker": "AAPL",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "variant_tag": "base",
+                    "strike_setup": "Buy 200C / Sell 210C",
+                    "target_expiry": "2026-05-15",
+                    "live_spread_cost": 3.0,
+                    "spread_width": 10.0,
+                    "cost_type": "debit",
+                    "position_size_tier": "STARTER_RISK",
+                    "position_size_guidance": "Starter only",
+                }
+            ]
+        )
+
+        def fake_replay(candidates: pd.DataFrame, **_: object):
+            annotated = candidates.copy()
+            annotated["quote_replay_exit_net"] = 6.0
+            annotated["quote_replay_entry_net"] = 3.0
+            annotated["quote_replay_exit_date"] = "2026-04-10"
+            annotated["quote_replay_final"] = False
+            annotated["quote_replay_status"] = "completed"
+            annotated["quote_replay_reason"] = "ok"
+            annotated["quote_replay_days_held"] = 9
+            return annotated, pd.DataFrame()
+
+        with tempfile.TemporaryDirectory() as td:
+            tracking_csv = Path(td) / "tracker.csv"
+            report_path = Path(td) / "report.md"
+            trend_analysis.update_trade_tracking(
+                actionable,
+                tracking_csv,
+                report_path=report_path,
+                as_of=dt.date(2026, 4, 1),
+                enabled=True,
+            )
+            summary = trend_analysis.refresh_trade_tracking_outcomes(
+                tracking_csv,
+                root=Path(td),
+                as_of=dt.date(2026, 4, 10),
+                enabled=True,
+                replay_fn=fake_replay,
+            )
+            tracker = pd.read_csv(tracking_csv)
+
+        self.assertEqual(summary["updated"], 1)
+        self.assertEqual(summary["wins"], 1)
+        self.assertEqual(tracker.iloc[0]["status"], "OPEN_WIN")
+        self.assertEqual(tracker.iloc[0]["outcome_verdict"], "PARTIAL_WIN")
+        self.assertAlmostEqual(float(tracker.iloc[0]["outcome_pnl"]), 300.0)
+
 
 if __name__ == "__main__":
     unittest.main()
