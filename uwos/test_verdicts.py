@@ -236,4 +236,11 @@ if FAIL == 0:
 else:
     print(f"  {FAIL} FAILURES — FIX BEFORE SHIPPING", flush=True)
 print(f"{'=' * 60}", flush=True)
-sys.exit(1 if FAIL else 0)
+
+
+def test_verdict_suite_passed():
+    assert FAIL == 0
+
+
+if __name__ == "__main__":
+    sys.exit(1 if FAIL else 0)
