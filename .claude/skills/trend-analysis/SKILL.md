@@ -47,7 +47,7 @@ python3 -m uwos.trend_analysis_batch --start 2025-12-01 --end 2026-04-17 --lookb
 
 Use local UW option quote replay for batch proof. Do not use Schwab current/live chains to score old signal dates because that would introduce look-ahead leakage.
 
-In batch proof reports, read **Live-Eligible Playbooks** first. Only supportive or emerging prior-only rolling playbooks can be worked live; negative or recently decaying rolling playbooks are blocked. The report also writes prior-only playbook trades and gap diagnostics CSVs.
+In batch proof reports, read **Live-Eligible Playbooks** first. Supportive or emerging prior-only rolling playbooks are only whitelisted to feed a current single-date trade search. They are not order tickets unless the single-date report gives exact legs, expiry, price, quote validation, Schwab validation, and no open-position conflict. Negative or recently decaying rolling playbooks are blocked. The report also writes prior-only playbook trades and gap diagnostics CSVs.
 
 ## Output
 

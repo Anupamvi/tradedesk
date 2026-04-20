@@ -332,6 +332,49 @@ def _rolling_playbook_table(df: pd.DataFrame, *, limit: int = 12) -> str:
     )
 
 
+def _playbook_example_lines(
+    forward_playbook_outcomes: pd.DataFrame,
+    playbooks: pd.DataFrame,
+    *,
+    limit_per_playbook: int = 4,
+) -> List[str]:
+    if forward_playbook_outcomes.empty or playbooks.empty:
+        return ["_none_"]
+    required = {"ticker", "direction", "strategy", "horizon_market_days", "signal_date", "trade_setup"}
+    if not required.issubset(set(forward_playbook_outcomes.columns)):
+        return ["_none_"]
+
+    lines: List[str] = []
+    outcomes = forward_playbook_outcomes.copy()
+    outcomes["_horizon"] = pd.to_numeric(outcomes["horizon_market_days"], errors="coerce").fillna(0).astype(int)
+    for _, playbook in playbooks.iterrows():
+        ticker = str(playbook.get("ticker", "") or "").strip().upper()
+        direction = str(playbook.get("direction", "") or "").strip().lower()
+        strategy = str(playbook.get("strategy", "") or "").strip()
+        horizon = trend_analysis._safe_int(playbook.get("horizon_market_days"))
+        subset = outcomes[
+            outcomes["ticker"].fillna("").astype(str).str.upper().eq(ticker)
+            & outcomes["direction"].fillna("").astype(str).str.lower().eq(direction)
+            & outcomes["strategy"].fillna("").astype(str).eq(strategy)
+            & outcomes["_horizon"].eq(horizon)
+        ].copy()
+        if subset.empty:
+            continue
+        subset = subset.sort_values("signal_date", ascending=False, kind="mergesort").head(limit_per_playbook)
+        lines.append(f"**{ticker} {direction} {strategy}, {horizon}d historical hold examples:**")
+        for _, row in subset.iterrows():
+            setup = trend_analysis._clip_text(row.get("trade_setup", ""), 140)
+            parts = [
+                f"{row.get('signal_date', '')}",
+                setup,
+                f"entry {_fmt_money(row.get('entry_net'))}",
+                f"exit {_fmt_money(row.get('exit_net'))}",
+                f"P&L {_fmt_money(row.get('pnl'))}",
+            ]
+            lines.append(f"- {'; '.join(parts)}")
+    return lines or ["_none_"]
+
+
 def _split_reasons(value: Any) -> List[str]:
     text = str(value or "").strip()
     if not text or text.lower() == "nan":
@@ -479,7 +522,7 @@ def build_report(
     lines.append("- Use only the prior-only ticker playbook lane for live candidates; full-period playbook results are diagnostic because they can contain hindsight.")
     lines.append("- Same-day ticker/expiry variants are deduped before playbook validation, so one ticker/day cannot inflate confidence.")
     lines.append("- Rolling playbooks with recent negative decay are blocked even if older forward tests were profitable.")
-    lines.append("- Live action remains: matching current setup, clean quotes, no open-position conflict, no earnings/liquidity hard block, and starter sizing unless rolling-forward support is mature.")
+    lines.append("- Live action requires an exact current option ticket from the single-date report: setup legs, expiry, clean quotes, no open-position conflict, no earnings/liquidity hard block, and starter sizing unless rolling-forward support is mature.")
     lines.append("")
 
     eligible_playbooks = rolling_ticker_playbook_audit[
@@ -497,15 +540,21 @@ def build_report(
         lines.append("No rolling playbook is live-eligible yet. Keep current trend-analysis outputs as research/watchlist only.")
     else:
         lines.append(
-            "Only these playbooks can be worked live from this proof, and only when the current single-date report also passes quote, Schwab, earnings, open-position, and sizing gates."
+            "These playbooks are allowed to feed a current trade search. They are not order tickets by themselves; a trade exists only when the current single-date report gives exact legs, expiry, price, quote validation, Schwab validation, and no open-position conflict."
         )
         lines.append("")
         lines.append(_rolling_playbook_table(eligible_playbooks))
+        lines.append("")
+        lines.append("Latest prior-only setup examples. These are historical structures that made the playbook eligible, not current order tickets:")
+        lines.extend(_playbook_example_lines(forward_playbook_outcomes, eligible_playbooks))
     if not blocked_playbooks.empty:
         lines.append("")
         lines.append("Blocked rolling playbooks:")
         lines.append("")
         lines.append(_rolling_playbook_table(blocked_playbooks))
+        lines.append("")
+        lines.append("Blocked prior-only setup examples:")
+        lines.extend(_playbook_example_lines(forward_playbook_outcomes, blocked_playbooks, limit_per_playbook=3))
     lines.append("")
 
     lines.append("## Strict Emitted Trades")

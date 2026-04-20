@@ -88,6 +88,39 @@ class TestTrendAnalysisBatch(unittest.TestCase):
         expensive = gaps[gaps["gap"].astype(str).str.contains("expensive debit")].iloc[0]
         self.assertIn("Repair strikes", expensive["fix"])
 
+    def test_playbook_example_lines_include_specific_trade_setup(self) -> None:
+        outcomes = pd.DataFrame(
+            [
+                {
+                    "ticker": "NFLX",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "horizon_market_days": 20,
+                    "signal_date": "2026-03-19",
+                    "trade_setup": "Bull Call Debit | Buy 90C / Sell 100C | exp 2026-04-10",
+                    "entry_net": 6.68,
+                    "exit_net": 9.80,
+                    "pnl": 312.0,
+                }
+            ]
+        )
+        playbooks = pd.DataFrame(
+            [
+                {
+                    "ticker": "NFLX",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "horizon_market_days": 20,
+                }
+            ]
+        )
+
+        lines = trend_analysis_batch._playbook_example_lines(outcomes, playbooks)
+
+        text = "\n".join(lines)
+        self.assertIn("Buy 90C / Sell 100C", text)
+        self.assertIn("P&L $312.00", text)
+
 
 if __name__ == "__main__":
     unittest.main()
