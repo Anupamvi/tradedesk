@@ -21,6 +21,8 @@ from uwos.schwab_auth import (  # noqa: E402
     SchwabLiveDataService,
     compact_occ_to_schwab_symbol,
 )
+from uwos.exact_spread_backtester import HistoricalOptionQuoteStore  # noqa: E402
+from uwos.swing_trend_pipeline import read_csv_from_path, resolve_csv_for_day  # noqa: E402
 
 
 COMPACT_OCC_RE = re.compile(r"^([A-Z\.]{1,6})(\d{6})([CP])(\d{8})$")
@@ -108,6 +110,11 @@ def parse_args() -> argparse.Namespace:
         default="NFLX,ONDS,ASTS",
         help="Comma-separated tickers to always audit even if excluded.",
     )
+    ap.add_argument(
+        "--historical-replay",
+        action="store_true",
+        help="Use local dated UW option quotes instead of live Schwab quotes. Intended for backtesting older dates.",
+    )
     return ap.parse_args()
 
 
@@ -135,7 +142,7 @@ def _parse_compact_option(symbol: str) -> Optional[Tuple[str, dt.date, str, floa
 
 
 def _load_chain(path: Path, min_dte: int, max_dte: int) -> pd.DataFrame:
-    df = pd.read_csv(path, low_memory=False)
+    df = read_csv_from_path(path)
     parsed = df["option_symbol"].map(_parse_compact_option)
     df = df[parsed.notna()].copy()
     df["parsed"] = parsed
@@ -266,7 +273,7 @@ def _pick_pair(rows: pd.DataFrame, lead_row: pd.Series, strategy: str, spot: flo
 
 
 def _quote_setup(
-    svc: SchwabLiveDataService,
+    svc: Optional[SchwabLiveDataService],
     ticker: str,
     strategy: str,
     lead_row: pd.Series,
@@ -275,22 +282,46 @@ def _quote_setup(
     conviction_score: int,
     gross_directional_notional: float,
     include_reason: str,
+    historical_replay: bool,
+    quote_store: Optional[HistoricalOptionQuoteStore],
+    signal_date: dt.date,
 ) -> Optional[Candidate]:
-    lead_sym = compact_occ_to_schwab_symbol(str(lead_row["option_symbol"]))
-    pair_sym = compact_occ_to_schwab_symbol(str(pair_row["option_symbol"]))
-    quotes = svc.get_quotes([ticker, lead_sym, pair_sym])
-    stock_payload = quotes.get(ticker)
-    lead_payload = quotes.get(lead_sym)
-    pair_payload = quotes.get(pair_sym)
-    if not stock_payload or not lead_payload or not pair_payload:
-        return None
-    spot = _underlying_last(stock_payload) or fallback_spot
-    if not spot:
-        return None
-    lead_bid = _quote_field(lead_payload, "bidPrice")
-    lead_ask = _quote_field(lead_payload, "askPrice")
-    pair_bid = _quote_field(pair_payload, "bidPrice")
-    pair_ask = _quote_field(pair_payload, "askPrice")
+    compact_lead_sym = str(lead_row["option_symbol"]).upper().strip()
+    compact_pair_sym = str(pair_row["option_symbol"]).upper().strip()
+    if historical_replay:
+        if quote_store is None:
+            return None
+        lead_quote = quote_store.get_leg_quote(signal_date, compact_lead_sym)
+        pair_quote = quote_store.get_leg_quote(signal_date, compact_pair_sym)
+        if lead_quote is None or pair_quote is None:
+            return None
+        spot = fallback_spot
+        if not spot:
+            return None
+        lead_bid = _safe_float(lead_quote.bid)
+        lead_ask = _safe_float(lead_quote.ask)
+        pair_bid = _safe_float(pair_quote.bid)
+        pair_ask = _safe_float(pair_quote.ask)
+        lead_sym = compact_lead_sym
+        pair_sym = compact_pair_sym
+    else:
+        if svc is None:
+            return None
+        lead_sym = compact_occ_to_schwab_symbol(compact_lead_sym)
+        pair_sym = compact_occ_to_schwab_symbol(compact_pair_sym)
+        quotes = svc.get_quotes([ticker, lead_sym, pair_sym])
+        stock_payload = quotes.get(ticker)
+        lead_payload = quotes.get(lead_sym)
+        pair_payload = quotes.get(pair_sym)
+        if not stock_payload or not lead_payload or not pair_payload:
+            return None
+        spot = _underlying_last(stock_payload) or fallback_spot
+        if not spot:
+            return None
+        lead_bid = _quote_field(lead_payload, "bidPrice")
+        lead_ask = _quote_field(lead_payload, "askPrice")
+        pair_bid = _quote_field(pair_payload, "bidPrice")
+        pair_ask = _quote_field(pair_payload, "askPrice")
     if None in (lead_bid, lead_ask, pair_bid, pair_ask):
         return None
     lead_mid = _mid(lead_bid, lead_ask)
@@ -377,12 +408,15 @@ def _ticker_summary(rows: pd.DataFrame) -> Dict[str, Any]:
 
 
 def _build_candidate_for_ticker(
-    svc: SchwabLiveDataService,
+    svc: Optional[SchwabLiveDataService],
     ticker: str,
     rows: pd.DataFrame,
+    historical_replay: bool,
+    quote_store: Optional[HistoricalOptionQuoteStore],
 ) -> Tuple[Optional[Candidate], Optional[Exclusion]]:
     summary = _ticker_summary(rows)
     spot_fallback = _safe_float(rows["stock_price"].dropna().iloc[0] if rows["stock_price"].notna().any() else None, 0.0) or 0.0
+    signal_date = dt.date.fromisoformat(str(rows["curr_date"].iloc[0]))
     dominant = summary["dominant"]
     conviction = int(summary["conviction"])
 
@@ -416,6 +450,9 @@ def _build_candidate_for_ticker(
             conviction_score=conviction,
             gross_directional_notional=float(summary["gross_directional_notional"]),
             include_reason="Top bullish exact-leg flow was call ask-side buying and paired cleanly into a debit spread.",
+            historical_replay=historical_replay,
+            quote_store=quote_store,
+            signal_date=signal_date,
         )
         if candidate is None:
             return None, Exclusion(
@@ -452,6 +489,9 @@ def _build_candidate_for_ticker(
             conviction_score=conviction,
             gross_directional_notional=float(summary["gross_directional_notional"]),
             include_reason="Top bearish exact-leg flow was put ask-side buying and paired cleanly into a debit spread.",
+            historical_replay=historical_replay,
+            quote_store=quote_store,
+            signal_date=signal_date,
         )
         if candidate is None:
             return None, Exclusion(
@@ -481,6 +521,9 @@ def _build_candidate_for_ticker(
             conviction_score=conviction,
             gross_directional_notional=float(summary["gross_directional_notional"]),
             include_reason="Top bearish exact-leg flow was call bid-side selling and paired into a call credit spread.",
+            historical_replay=historical_replay,
+            quote_store=quote_store,
+            signal_date=signal_date,
         )
         if candidate is None:
             return None, Exclusion(
@@ -585,7 +628,13 @@ def main() -> int:
     run_date = dt.date.fromisoformat(args.date)
     base_dir = Path(args.base_dir).expanduser().resolve()
     day_dir = base_dir / run_date.isoformat()
-    chain_csv = Path(args.chain_csv).expanduser().resolve() if args.chain_csv else day_dir / f"chain-oi-changes-{run_date.isoformat()}.csv"
+    if args.chain_csv:
+        chain_csv = Path(args.chain_csv).expanduser().resolve()
+    else:
+        resolved = resolve_csv_for_day(day_dir, run_date.isoformat(), "chain-oi-changes")
+        if resolved is None:
+            raise FileNotFoundError(f"Missing chain-oi file for {run_date.isoformat()} under {day_dir}")
+        chain_csv = resolved
     output_md = Path(args.output_md).expanduser().resolve() if args.output_md else day_dir / f"morning-watch-setups-{run_date.isoformat()}.md"
     output_csv = Path(args.output_csv).expanduser().resolve() if args.output_csv else day_dir / f"morning-watch-setups-{run_date.isoformat()}.csv"
     output_md.parent.mkdir(parents=True, exist_ok=True)
@@ -596,7 +645,12 @@ def main() -> int:
     if df.empty:
         raise SystemExit(f"No chain rows found in DTE range for {chain_csv}")
 
-    svc = SchwabLiveDataService(SchwabAuthConfig.from_env())
+    svc: Optional[SchwabLiveDataService] = None
+    quote_store: Optional[HistoricalOptionQuoteStore] = None
+    if args.historical_replay:
+        quote_store = HistoricalOptionQuoteStore(root_dir=base_dir, use_hot=True, use_oi=True)
+    else:
+        svc = SchwabLiveDataService(SchwabAuthConfig.from_env())
 
     grouped_rows: Dict[str, pd.DataFrame] = {ticker: rows.copy() for ticker, rows in df.groupby("ticker", sort=False)}
     ranked_tickers = sorted(
@@ -618,7 +672,13 @@ def main() -> int:
         rows = grouped_rows.get(ticker)
         if rows is None:
             continue
-        candidate, exclusion = _build_candidate_for_ticker(svc, ticker, rows)
+        candidate, exclusion = _build_candidate_for_ticker(
+            svc,
+            ticker,
+            rows,
+            historical_replay=bool(args.historical_replay),
+            quote_store=quote_store,
+        )
         if candidate is not None:
             included.append(candidate)
         elif exclusion is not None:
