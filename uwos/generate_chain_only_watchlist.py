@@ -62,6 +62,27 @@ class Exclusion:
     exact_flow_note: str = ""
 
 
+MORNING_WATCH_COLUMNS = [
+    "ticker",
+    "direction",
+    "strategy",
+    "expiry",
+    "dte",
+    "spot",
+    "lead_symbol",
+    "pair_symbol",
+    "target_value",
+    "stretch_value",
+    "breakeven",
+    "move_needed_pct",
+    "flow_conviction",
+    "flow_conviction_label",
+    "geometry_label",
+    "include_reason",
+    "exact_flow_note",
+]
+
+
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Build a deterministic chain-only morning watchlist using local UW chain-OI plus live Schwab quotes."
@@ -713,7 +734,7 @@ def main() -> int:
         }
         for c in included
     ]
-    pd.DataFrame(included_rows).to_csv(output_csv, index=False)
+    pd.DataFrame(included_rows, columns=MORNING_WATCH_COLUMNS).to_csv(output_csv, index=False)
 
     focus_audit: List[Exclusion] = []
     included_map = {c.ticker: c for c in included}

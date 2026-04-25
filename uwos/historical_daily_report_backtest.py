@@ -400,6 +400,11 @@ def main() -> None:
     summary = summarize(results)
     summary["reports_scanned"] = len(selected)
     summary["setups_loaded"] = int(len(setups))
+    summary["backtest_scope"] = "published_markdown_reports"
+    summary["scope_note"] = (
+        "This script scans anu-expert-trade-table-*.md reports only; "
+        "use the dated-folder replay harness for full pipeline replay."
+    )
     summary["valuation_date"] = valuation_date.isoformat()
     summary["start_date"] = start_date.isoformat()
     summary["end_date"] = end_date.isoformat()
@@ -435,6 +440,7 @@ def main() -> None:
     summary_json.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     print(f"Reports scanned: {len(selected)}")
+    print("Scope: published markdown reports only; not full dated-folder replay.")
     print(f"Setups loaded: {len(setups)}")
     print(f"Completed trades: {summary.get('completed_trades', 0)}")
     print(f"Status counts: {summary.get('status_counts', {})}")

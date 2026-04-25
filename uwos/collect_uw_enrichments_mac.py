@@ -446,6 +446,55 @@ def cdp_collect_ticker_gex(
             "mime_type": response.get("mimeType"),
         }
 
+    def has_parseable_requested_payload(rows: List[Dict[str, object]]) -> bool:
+        for row in rows:
+            if not response_matches_requested_date(str(row.get("url", "")), date_str):
+                continue
+            parsed = parse_json_body(str(row.get("body", "")))
+            if parsed is not None:
+                return True
+        return False
+
+    def append_runtime_rows(out: List[Dict[str, object]], request_id: str, expr: str, timeout_sec: float) -> None:
+        try:
+            res = client.call(
+                "Runtime.evaluate",
+                {
+                    "expression": expr,
+                    "awaitPromise": True,
+                    "returnByValue": True,
+                },
+                timeout_sec=timeout_sec,
+            )
+            value = res.get("result", {}).get("result", {}).get("value", [])
+            if isinstance(value, list):
+                for item in value:
+                    if not isinstance(item, dict):
+                        continue
+                    out.append(
+                        {
+                            "request_id": request_id,
+                            "url": item.get("url", ""),
+                            "status": item.get("status", 0),
+                            "mime_type": "application/json",
+                            "body": item.get("body", ""),
+                            "base64_encoded": False,
+                            "body_error": item.get("error", ""),
+                        }
+                    )
+        except Exception as exc:
+            out.append(
+                {
+                    "request_id": request_id,
+                    "url": f"https://phx.unusualwhales.com/api/greek_exposures/{ticker}/spot?date={date_str}",
+                    "status": 0,
+                    "mime_type": "application/json",
+                    "body": "",
+                    "base64_encoded": False,
+                    "body_error": str(exc),
+                }
+            )
+
     page_url = f"{UW_BASE_URL}/stock/{ticker}/greek-exposure?type=exposure&greek=gamma&date={date_str}"
     client.call("Page.navigate", {"url": page_url}, timeout_sec=5, response_collector=collect_event)
     end = time.time() + float(wait_sec)
@@ -456,7 +505,7 @@ def cdp_collect_ticker_gex(
             break
         collect_event(msg)
 
-    out = []
+    out: List[Dict[str, object]] = []
     for request_id, item in list(captured.items()):
         status = item.get("status")
         body = ""
@@ -475,11 +524,38 @@ def cdp_collect_ticker_gex(
         item["body"] = body
         item["base64_encoded"] = base64_encoded
         out.append(item)
-    if not out or not any(response_matches_requested_date(str(item.get("url", "")), date_str) for item in out):
+
+    summary_url = f"https://phx.unusualwhales.com/api/greek_exposures/{ticker}/spot?date={date_str}"
+    strikes_url = f"https://phx.unusualwhales.com/api/greek_exposures/{ticker}/spot/strikes?date={date_str}"
+    urls_json = json.dumps([summary_url, strikes_url])
+    if not has_parseable_requested_payload(out):
+        fetch_expr = f"""
+(async () => {{
+  const urls = {urls_json};
+  const rows = [];
+  for (const url of urls) {{
+    try {{
+      const res = await fetch(url, {{
+        credentials: "include",
+        headers: {{"accept": "application/json, text/plain, */*"}},
+        cache: "no-store"
+      }});
+      const body = await res.text();
+      rows.push({{url, status: res.status, body}});
+    }} catch (err) {{
+      rows.push({{url, status: 0, error: String((err && err.message) || err || "unknown")}});
+    }}
+  }}
+  return rows;
+}})()
+"""
+        append_runtime_rows(out, "runtime_fetch", fetch_expr, 30)
+
+    if not has_parseable_requested_payload(out):
         summary_path = f"/api/greek_exposures/{ticker}/spot?date={date_str}"
         strikes_path = f"/api/greek_exposures/{ticker}/spot/strikes?date={date_str}"
         paths_json = json.dumps([summary_path, strikes_path])
-        expr = f"""
+        webpack_expr = f"""
 (async () => {{
   let req = null;
   if (!window.webpackChunk_N_E) {{
@@ -515,50 +591,8 @@ def cdp_collect_ticker_gex(
   return rows;
 }})()
 """
-        try:
-            res = client.call(
-                "Runtime.evaluate",
-                {
-                    "expression": expr,
-                    "awaitPromise": True,
-                    "returnByValue": True,
-                },
-                timeout_sec=30,
-            )
-            value = (
-                res.get("result", {})
-                .get("result", {})
-                .get("value", [])
-            )
-            if isinstance(value, list):
-                for item in value:
-                    if not isinstance(item, dict):
-                        continue
-                    out.append(
-                        {
-                            "request_id": "runtime_api",
-                            "url": item.get("url", ""),
-                            "status": item.get("status", 0),
-                            "mime_type": "application/json",
-                            "body": item.get("body", ""),
-                            "base64_encoded": False,
-                            "body_error": item.get("error", ""),
-                        }
-                    )
-        except Exception as exc:
-            out.append(
-                {
-                    "request_id": "runtime_api",
-                    "url": f"https://phx.unusualwhales.com{summary_path}",
-                    "status": 0,
-                    "mime_type": "application/json",
-                    "body": "",
-                    "base64_encoded": False,
-                    "body_error": str(exc),
-                }
-            )
+        append_runtime_rows(out, "runtime_api", webpack_expr, 30)
     return out
-
 
 def classify_gex_endpoint(url: str) -> str:
     if "/one_minute" in url:
@@ -595,6 +629,55 @@ def parse_json_body(body: str) -> object:
         return json.loads(body)
     except Exception:
         return None
+
+
+def gex_payload_has_data(kind: str, payload: object) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    data = payload.get("data", {})
+    if isinstance(data, dict) and "data" in data:
+        data = data.get("data")
+    if kind == "summary":
+        return isinstance(data, dict) and bool(data)
+    if kind == "strikes":
+        return isinstance(data, list) and len(data) > 0
+    return data not in ({}, [], None, "")
+
+
+def summarize_gex_response_payloads(responses: List[Dict[str, object]], date_str: str) -> Dict[str, object]:
+    endpoint_kinds = []
+    statuses = []
+    errors = []
+    summary_found = False
+    strikes_found = False
+    parseable_count = 0
+    for response in responses:
+        url = str(response.get("url", ""))
+        if not response_matches_requested_date(url, date_str):
+            continue
+        kind = classify_gex_endpoint(url)
+        if kind not in endpoint_kinds:
+            endpoint_kinds.append(kind)
+        statuses.append(str(response.get("status", "")))
+        err = str(response.get("body_error", "") or "").strip()
+        if err:
+            errors.append(err[:180])
+        parsed = parse_json_body(str(response.get("body", "")))
+        if parsed is None:
+            continue
+        parseable_count += 1
+        if kind == "summary" and gex_payload_has_data(kind, parsed):
+            summary_found = True
+        if kind == "strikes" and gex_payload_has_data(kind, parsed):
+            strikes_found = True
+    return {
+        "endpoint_kinds": sorted(endpoint_kinds),
+        "statuses": sorted(set([x for x in statuses if x])),
+        "errors": errors,
+        "summary_found": bool(summary_found),
+        "strikes_found": bool(strikes_found),
+        "parseable_response_count": int(parseable_count),
+    }
 
 
 def write_json(path: Path, payload: object) -> None:
@@ -739,12 +822,15 @@ def collect_gex_with_cdp(
     tickers: Sequence[str],
     remote_debugging_url: str,
     wait_sec: float,
+    attempts: int = 3,
 ) -> List[Dict[str, object]]:
     raw_dir = out_dir / "uw_gex_raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
     ws_url = find_uw_page_ws(remote_debugging_url)
     client = CdpClient(ws_url)
     collected = []
+    status_rows = []
+    max_attempts = max(1, int(attempts or 1))
     try:
         client.call("Runtime.enable", timeout_sec=5)
         client.call("Page.enable", timeout_sec=5)
@@ -752,44 +838,102 @@ def collect_gex_with_cdp(
         client.call("Network.setCacheDisabled", {"cacheDisabled": True}, timeout_sec=5)
         for idx, ticker in enumerate(tickers, start=1):
             print(f"[{idx}/{len(tickers)}] UW GEX {ticker}")
-            responses = cdp_collect_ticker_gex(client, ticker, date_str, wait_sec=wait_sec)
+            all_responses: List[Dict[str, object]] = []
             by_kind: Dict[str, Dict[str, object]] = {}
-            for response in responses:
-                if not response_matches_requested_date(str(response.get("url", "")), date_str):
-                    continue
-                kind = classify_gex_endpoint(str(response.get("url", "")))
-                body = str(response.get("body", ""))
-                parsed = parse_json_body(body)
-                if parsed is not None:
-                    by_kind[kind] = {
-                        "url": response.get("url"),
-                        "status": response.get("status"),
-                        "captured_utc": utc_now_iso(),
-                        "payload": parsed,
-                    }
+            summary_found = False
+            strikes_found = False
+            summary_url = f"https://phx.unusualwhales.com/api/greek_exposures/{ticker}/spot?date={date_str}"
+            strikes_url = f"https://phx.unusualwhales.com/api/greek_exposures/{ticker}/spot/strikes?date={date_str}"
+            for attempt_idx in range(1, max_attempts + 1):
+                responses = cdp_collect_ticker_gex(client, ticker, date_str, wait_sec=wait_sec)
+                all_responses.extend(responses)
+                for response in responses:
+                    if not response_matches_requested_date(str(response.get("url", "")), date_str):
+                        continue
+                    kind = classify_gex_endpoint(str(response.get("url", "")))
+                    body = str(response.get("body", ""))
+                    parsed = parse_json_body(body)
+                    if parsed is not None:
+                        by_kind[kind] = {
+                            "url": response.get("url"),
+                            "status": response.get("status"),
+                            "captured_utc": utc_now_iso(),
+                            "payload": parsed,
+                        }
+                        if kind == "summary" and gex_payload_has_data(kind, parsed):
+                            summary_found = True
+                        if kind == "strikes" and gex_payload_has_data(kind, parsed):
+                            strikes_found = True
+                if summary_found and strikes_found:
+                    break
+                if attempt_idx < max_attempts:
+                    time.sleep(0.75)
+            response_summary = summarize_gex_response_payloads(all_responses, date_str)
             ticker_payload = {
                 "ticker": ticker,
                 "date": date_str,
                 "captured_utc": utc_now_iso(),
                 "source": "unusual_whales_dashboard_cdp",
                 "page_url": f"{UW_BASE_URL}/stock/{ticker}/greek-exposure?type=exposure&greek=gamma&date={date_str}",
+                "summary_url": summary_url,
+                "strikes_url": strikes_url,
                 "endpoints": by_kind,
-                "raw_response_count": len(responses),
+                "raw_response_count": len(all_responses),
+                "attempts": max_attempts,
+                "summary_found": bool(summary_found),
+                "strikes_found": bool(strikes_found),
+                "collection_ok": bool(summary_found and strikes_found),
+                "response_summary": response_summary,
             }
             path = raw_dir / f"uw_gex_{date_str}_{ticker}.json"
             write_json(path, ticker_payload)
+            ok = bool(summary_found and strikes_found)
             collected.append(
                 {
                     "ticker": ticker,
                     "path": str(path),
                     "endpoint_kinds": sorted(by_kind.keys()),
-                    "raw_response_count": len(responses),
-                    "ok": bool(by_kind),
+                    "raw_response_count": len(all_responses),
+                    "attempts": max_attempts,
+                    "summary_found": bool(summary_found),
+                    "strikes_found": bool(strikes_found),
+                    "ok": ok,
                 }
             )
-            print(f"  -> {'ok' if by_kind else 'missing'} {sorted(by_kind.keys())}", flush=True)
+            status_rows.append(
+                {
+                    "date": date_str,
+                    "ticker": ticker,
+                    "attempts": max_attempts,
+                    "ok": "yes" if ok else "no",
+                    "summary_found": "yes" if summary_found else "no",
+                    "strikes_found": "yes" if strikes_found else "no",
+                    "endpoint_kinds": ",".join(sorted(by_kind.keys())),
+                    "raw_response_count": len(all_responses),
+                    "parseable_response_count": response_summary.get("parseable_response_count", 0),
+                    "statuses": ",".join(response_summary.get("statuses", [])),
+                    "errors": " | ".join(response_summary.get("errors", [])),
+                    "page_url": ticker_payload["page_url"],
+                    "summary_url": summary_url,
+                    "strikes_url": strikes_url,
+                    "raw_path": str(path),
+                    "captured_utc": ticker_payload["captured_utc"],
+                }
+            )
+            print(
+                f"  -> {'ok' if ok else 'missing'} {sorted(by_kind.keys())} "
+                f"summary={summary_found} strikes={strikes_found} responses={len(all_responses)}",
+                flush=True,
+            )
     finally:
         client.close()
+    status_path = out_dir / f"gex_collection_status_{date_str}.csv"
+    if status_rows:
+        status_path.parent.mkdir(parents=True, exist_ok=True)
+        with status_path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(status_rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(status_rows)
     return collected
 
 
@@ -810,6 +954,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--remote-debugging-url", default="http://127.0.0.1:9222")
     ap.add_argument("--browser-profile-dir", default="", help="Dedicated browser profile directory for CDP collection.")
     ap.add_argument("--wait-sec", type=float, default=8.0, help="Seconds to wait per UW ticker dashboard page.")
+    ap.add_argument("--attempts", type=int, default=3, help="Browser/API attempts per ticker before falling back.")
     ap.add_argument("--max-tickers", type=int, default=0, help="Optional cap for collection trials.")
     return ap.parse_args()
 
@@ -929,6 +1074,7 @@ def main() -> None:
             tickers=tickers,
             remote_debugging_url=str(args.remote_debugging_url),
             wait_sec=float(args.wait_sec),
+            attempts=int(args.attempts),
         )
         normalized = normalize_gex_files(out_dir, date_str, tickers=tickers)
         payload = dict(manifest)

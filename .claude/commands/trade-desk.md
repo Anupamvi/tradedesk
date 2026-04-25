@@ -18,7 +18,7 @@ cd "/Users/anuppamvi/uw_root/tradedesk" && python3 -m uwos.trade_desk {days} {sy
 ```
    - Baseline data source is Schwab API only: positions, transactions, quotes, and option chains.
    - Do not use yfinance unless the user explicitly asks for `--with-yfinance-context`.
-   - Treat Unusual Whales browser research as a separate follow-up layer after the Schwab position review.
+   - Treat Unusual Whales research as a separate follow-up layer after the Schwab position review. If that follow-up uses local UW trend context, use full `bot-eod-report-YYYY-MM-DD.zip`/`.csv` first and `whale-YYYY-MM-DD.md` only as a legacy fallback for older folders with no bot EOD export.
    - The report is options-only; omit equities/funds from the recommendation summary.
    - Show option legs in readable form, e.g. `Short 1 HOOD 2027-01-15 $65 PUT`, not raw OCC symbols.
    - Preserve theta/gamma-aware recommendations: close positions where remaining premium is mostly risk, and close or set stops where theta decay makes recovery unlikely.

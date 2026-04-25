@@ -3,6 +3,9 @@ tokens/
 *.csv
 *.parquet
 __pycache__/
+.pytest_cache/
+.DS_Store
+**/.DS_Store
 .venv/
 .env
 *.log
@@ -10,6 +13,10 @@ out/
 raw/
 _derived/
 .tmp_uw_pkg/
+.codex_chrome_uw_profile/
+c:\\uw_root\\out/
+schwab_positions_*.json
+*/schwab_positions_*.json
 [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 .claude/*
 !.claude/commands/

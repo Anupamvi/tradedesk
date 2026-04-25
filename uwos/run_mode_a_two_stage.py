@@ -1,6 +1,8 @@
 import argparse
+import copy
 import datetime as dt
 import hashlib
+import io
 import json
 import math
 import re
@@ -16,14 +18,16 @@ import pandas as pd
 import yaml
 
 from uwos.eod_trade_scan_mode_a import (
+    apply_chain_oi_overlay_to_screener,
     build_best_candidates,
     build_quotes,
     compute_macro_regime,
     ensure_cols,
     fnum,
-    md_tables,
+    parse_occ,
 )
 from uwos.report import load_open_positions
+from uwos.whale_source import BOT_EOD_PREFIX, find_bot_eod_source, load_yes_prime_whale_flow
 
 
 def _safe_delta(val):
@@ -96,6 +100,31 @@ REQ_CSV_PREFIXES = [
     "hot-chains-",
     "stock-screener-",
 ]
+CSV_PREFIX_ALIASES = {}
+DATE_TOKEN_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _date_token_from_name(path: Path) -> str:
+    match = DATE_TOKEN_RE.search(Path(path).name)
+    return match.group(0) if match else ""
+
+
+def _expected_input_date(base_dir: Path) -> str:
+    name = Path(base_dir).name
+    return name if DATE_TOKEN_RE.fullmatch(name) else ""
+
+
+def _names_have_required_prefixes(paths: list[Path], expected_date: str = "") -> bool:
+    names = [p.name for p in paths]
+    for pref in REQ_CSV_PREFIXES:
+        prefixes = [pref] + list(CSV_PREFIX_ALIASES.get(pref, []))
+        if not any(
+            any(name.startswith(pfx) for pfx in prefixes)
+            and (not expected_date or expected_date in name)
+            for name in names
+        ):
+            return False
+    return True
 
 
 def sha256_file(path: Path) -> str:
@@ -122,15 +151,17 @@ def safe_git_commit() -> str:
 
 def unzip_inputs_if_needed(base_dir: Path, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
-    zips = sorted(base_dir.glob("*.zip"))
+    zips = sorted(p for p in base_dir.glob("*.zip") if not p.name.startswith(BOT_EOD_PREFIX))
     if not zips:
         raise FileNotFoundError(f"No input CSV/ZIP files found in {base_dir}")
+    expected_date = _expected_input_date(base_dir)
     # Re-extract if any ZIP is newer than the oldest extracted CSV
     existing = sorted(out_dir.glob("*.csv"))
     if existing:
         oldest_csv = min(p.stat().st_mtime for p in existing)
         newest_zip = max(p.stat().st_mtime for p in zips)
-        if newest_zip <= oldest_csv:
+        has_required = _names_have_required_prefixes(existing, expected_date)
+        if newest_zip <= oldest_csv and has_required:
             return  # cache is fresh
         # Stale cache — clear and re-extract
         for p in existing:
@@ -138,12 +169,30 @@ def unzip_inputs_if_needed(base_dir: Path, out_dir: Path):
     for zp in zips:
         with zipfile.ZipFile(zp, "r") as zf:
             names = sorted([n for n in zf.namelist() if n.lower().endswith(".csv")])
-            if not names:
+            if names:
+                date_matches = [n for n in names if not expected_date or expected_date in Path(n).name]
+                name = date_matches[0] if date_matches else names[0]
+                target = out_dir / Path(name).name
+                with zf.open(name, "r") as src:
+                    target.write_bytes(src.read())
                 continue
-            name = names[0]
-            target = out_dir / Path(name).name
-            with zf.open(name, "r") as src:
-                target.write_bytes(src.read())
+            nested_zips = sorted([n for n in zf.namelist() if n.lower().endswith(".zip")])
+            for nested_name in nested_zips:
+                with zf.open(nested_name, "r") as nested_src:
+                    nested_bytes = nested_src.read()
+                with zipfile.ZipFile(io.BytesIO(nested_bytes), "r") as nested_zf:
+                    nested_csvs = sorted(
+                        [n for n in nested_zf.namelist() if n.lower().endswith(".csv")]
+                    )
+                    if not nested_csvs:
+                        continue
+                    date_matches = [
+                        n for n in nested_csvs if not expected_date or expected_date in Path(n).name
+                    ]
+                    nested_csv = date_matches[0] if date_matches else nested_csvs[0]
+                    target = out_dir / Path(nested_csv).name
+                    with nested_zf.open(nested_csv, "r") as src:
+                        target.write_bytes(src.read())
 
 
 def detect_asof_from_names(paths):
@@ -158,78 +207,363 @@ def detect_asof_from_names(paths):
     return sorted(vals)[-1]
 
 
+def _parse_external_scanner_leg(text: str):
+    m = re.search(
+        r"\b([A-Z][A-Z0-9.\-]{0,9})\s+(\d{4}-\d{2}-\d{2})\s+([0-9]+(?:\.[0-9]+)?)([CP])\b",
+        str(text or "").upper(),
+    )
+    if not m:
+        return None
+    return {
+        "ticker": m.group(1).replace(".", ""),
+        "expiry": m.group(2),
+        "strike": float(m.group(3)),
+        "right": m.group(4),
+    }
+
+
+def _external_scanner_quote_row(quotes: pd.DataFrame, leg: dict):
+    if not isinstance(leg, dict) or quotes is None or quotes.empty:
+        return None
+    expiry = str(leg.get("expiry", "")).strip()
+    strike = fnum(leg.get("strike"))
+    if not expiry or not np.isfinite(strike):
+        return None
+    q = quotes[
+        (quotes["ticker"].astype(str).str.upper() == str(leg.get("ticker", "")).upper())
+        & (quotes["right"].astype(str).str.upper() == str(leg.get("right", "")).upper())
+        & (quotes["expiry"].astype(str) == expiry)
+        & (pd.to_numeric(quotes["strike"], errors="coerce").sub(float(strike)).abs() < 0.0001)
+    ].copy()
+    if q.empty:
+        return None
+    q["_liq"] = (
+        pd.to_numeric(q.get("volume"), errors="coerce").fillna(0)
+        + pd.to_numeric(q.get("open_interest"), errors="coerce").fillna(0)
+    )
+    return q.sort_values("_liq", ascending=False).iloc[0].to_dict()
+
+
+def _external_scanner_contract_flow(long_q: dict, short_q: dict) -> str:
+    """Conservative exact-leg flow check for external scanner candidates."""
+    if not long_q:
+        return "unknown"
+    long_ask = fnum(long_q.get("ask_side_volume"))
+    long_bid = fnum(long_q.get("bid_side_volume"))
+    short_ask = fnum(short_q.get("ask_side_volume")) if short_q else math.nan
+    short_bid = fnum(short_q.get("bid_side_volume")) if short_q else math.nan
+    if not np.isfinite(long_ask):
+        long_ask = 0.0
+    if not np.isfinite(long_bid):
+        long_bid = 0.0
+    if not np.isfinite(short_ask):
+        short_ask = 0.0
+    if not np.isfinite(short_bid):
+        short_bid = 0.0
+    long_confirmed = long_ask >= 10 and long_ask >= max(1.0, 1.20 * long_bid)
+    long_contra = long_bid >= 10 and long_bid >= max(1.0, 1.50 * long_ask)
+    short_adverse = short_ask >= 25 and short_ask >= max(1.0, 1.50 * short_bid)
+    if long_contra:
+        return "contra"
+    if long_confirmed and not short_adverse:
+        return "confirmed"
+    return "weak_or_ambiguous"
+
+
+def _external_scanner_stage1_diag(conviction, contract_flow: str) -> str:
+    tokens = []
+    conv = fnum(conviction)
+    if not np.isfinite(conv) or conv < 65:
+        cv = "nan" if not np.isfinite(conv) else f"{conv:.0f}"
+        tokens.append(f"stage1_conviction_below_yes_good:{cv}<65")
+    flow = str(contract_flow or "").strip().lower()
+    if flow == "contra":
+        tokens.append("stage1_contract_flow_contra")
+    elif flow in {"", "unknown", "weak_or_ambiguous"}:
+        tokens.append("stage1_flow_weak_or_ambiguous")
+        tokens.append(f"stage1_contract_flow_{flow or 'unknown'}")
+    return ";".join(tokens)
+
+
+def load_external_scanner_candidates(
+    base: Path,
+    asof_str: str,
+    asof: dt.date,
+    quotes: pd.DataFrame,
+    screener=None,
+) -> list[dict]:
+    """Import local audited scanner structures into the daily candidate universe.
+
+    These rows are not approvals.  They simply stop externally discovered,
+    positive-EV structures from disappearing before Stage-2/live validation.
+    """
+    source_frames = []
+    rec_path = base / f"options_scan_{asof_str}_audited_recommendations.csv"
+    if rec_path.exists():
+        rec_df = pd.read_csv(rec_path, low_memory=False)
+        if not rec_df.empty:
+            rec_df = rec_df.copy()
+            rec_df["_coverage_source"] = "audited_recommendations"
+            source_frames.append(rec_df)
+
+    built_path = base / f"options_scan_{asof_str}_audited_built_rows.csv"
+    if built_path.exists():
+        built_df = pd.read_csv(built_path, low_memory=False)
+        if not built_df.empty:
+            built_df = built_df.copy()
+            built_df["_ev_num"] = pd.to_numeric(built_df.get("EV/ML"), errors="coerce")
+            built_df["_pop_num"] = pd.to_numeric(built_df.get("POP"), errors="coerce")
+            built_df["_conv_num"] = pd.to_numeric(built_df.get("Conviction"), errors="coerce")
+            action_s = built_df.get("Action", pd.Series("", index=built_df.index)).astype(str)
+            built_df = built_df[
+                action_s.str.contains("BUY", case=False, na=False)
+                & built_df["_ev_num"].notna()
+                & (built_df["_ev_num"] >= 0.50)
+                & (built_df["_pop_num"].fillna(0) >= 0.10)
+                & (built_df["_conv_num"].fillna(0) >= 40)
+            ].copy()
+            if not built_df.empty:
+                built_df = built_df.sort_values(
+                    ["_ev_num", "_pop_num", "_conv_num"],
+                    ascending=[False, False, False],
+                ).head(60)
+                built_df["_coverage_source"] = "audited_built_rows_top_ev"
+                source_frames.append(built_df)
+
+    if not source_frames:
+        return []
+
+    screener_map = {}
+    if screener is not None and not screener.empty and "ticker" in screener.columns:
+        sc_tmp = screener.copy()
+        sc_tmp["ticker"] = sc_tmp["ticker"].astype(str).str.upper().str.replace(".", "", regex=False)
+        for _, sc_row in sc_tmp.drop_duplicates("ticker", keep="last").iterrows():
+            screener_map[str(sc_row.get("ticker", "")).upper()] = sc_row.to_dict()
+
+    raw = pd.concat(source_frames, ignore_index=True, sort=False)
+    rows = []
+    seen = set()
+    excluded_tickers = {"SPY", "QQQ", "IWM", "DIA", "VIX", "SPX", "NDX", "RUT"}
+    for _, r in raw.iterrows():
+        buy_leg = str(r.get("Buy leg", "") or r.get("Buy Leg", "") or "").strip()
+        sell_leg = str(r.get("Sell leg", "") or r.get("Sell Leg", "") or "").strip()
+        buy = _parse_external_scanner_leg(buy_leg)
+        sell = _parse_external_scanner_leg(sell_leg)
+        if not buy or not sell:
+            continue
+        if buy["ticker"] != sell["ticker"] or buy["expiry"] != sell["expiry"] or buy["right"] != sell["right"]:
+            continue
+        ticker = buy["ticker"]
+        if ticker in excluded_tickers:
+            continue
+        right = buy["right"]
+        long_strike = fnum(buy["strike"])
+        short_strike = fnum(sell["strike"])
+        if right == "C" and short_strike > long_strike:
+            strategy = "Bull Call Debit"
+            flow_direction = "bullish"
+            breakeven = long_strike
+        elif right == "P" and short_strike < long_strike:
+            strategy = "Bear Put Debit"
+            flow_direction = "bearish"
+            breakeven = long_strike
+        else:
+            continue
+        expiry = buy["expiry"]
+        key = (ticker, expiry, right, round(float(long_strike), 4), round(float(short_strike), 4))
+        if key in seen:
+            continue
+        seen.add(key)
+        long_q = _external_scanner_quote_row(quotes, buy)
+        short_q = _external_scanner_quote_row(quotes, sell)
+        if not long_q or not short_q:
+            continue
+        width = abs(short_strike - long_strike)
+        net_text = str(r.get("Net", "") or "")
+        net_match = re.search(r"-?[0-9]+(?:\.[0-9]+)?", net_text)
+        net = fnum(net_match.group(0)) if net_match else math.nan
+        if not np.isfinite(net) or net <= 0 or not np.isfinite(width) or width <= 0:
+            continue
+        debit_frac = net / width
+        if debit_frac > 0.45:
+            continue
+        exp_date = dt.datetime.strptime(expiry, "%Y-%m-%d").date()
+        dte = (exp_date - asof).days
+        if dte <= 0:
+            continue
+        sc_meta = screener_map.get(ticker, {})
+        if strategy == "Bull Call Debit":
+            breakeven = long_strike + net
+        else:
+            breakeven = long_strike - net
+        max_profit = max(0.0, (width - net) * 100.0)
+        max_loss = net * 100.0
+        conviction = fnum(r.get("Conviction"))
+        if not np.isfinite(conviction):
+            conviction = fnum(r.get("Conv"))
+        optimal = "Yes-Prime" if conviction >= 80 else "Yes-Good" if conviction >= 65 else "Watch Only"
+        contract_flow = _external_scanner_contract_flow(long_q, short_q)
+        flow_confirmation = "confirmed" if contract_flow == "confirmed" else "weak_or_ambiguous"
+        diag = _external_scanner_stage1_diag(conviction, contract_flow)
+        source_name = str(r.get("_coverage_source", "external_scanner"))
+        rows.append(
+            {
+                "ticker": ticker,
+                "action": "BUY",
+                "strategy": strategy,
+                "track": "FIRE",
+                "expiry": exp_date,
+                "dte": dte,
+                "long_leg": str(long_q.get("option_symbol", "")),
+                "short_leg": str(short_q.get("option_symbol", "")),
+                "long_strike": float(long_strike),
+                "short_strike": float(short_strike),
+                "width": float(width),
+                "net": float(net),
+                "net_type": "debit",
+                "max_profit": float(max_profit),
+                "max_loss": float(max_loss),
+                "breakeven": float(breakeven),
+                "conviction": int(round(conviction)) if np.isfinite(conviction) else 0,
+                "tier": str(r.get("Size", "") or r.get("Sizing", "") or "External"),
+                "optimal": optimal,
+                "notes": (
+                    f"External scanner candidate from {source_name}; "
+                    f"EV/ML={r.get('EV/ML', '')}; POP={r.get('POP', '')}; "
+                    f"execution={r.get('Execution', '')}"
+                ),
+                "source": f"external_scanner:{source_name}",
+                "coverage_source": source_name,
+                "thesis": "External audited scanner candidate; requires daily live/risk approval.",
+                "invalidation": "Follow daily live invalidation and entry gate.",
+                "flow_direction": flow_direction,
+                "flow_confirmation": flow_confirmation,
+                "flow_premium_bias": 0.25 if flow_direction == "bullish" else -0.25,
+                "contract_flow_confirmation": contract_flow,
+                "stage1_diagnostics": diag,
+                "stage1_not_actionable_reason": diag,
+                "stage1_flow_diagnostic": ";".join([t for t in diag.split(";") if t.startswith("stage1_flow_")]),
+                "stage1_contract_flow_diagnostic": ";".join(
+                    [t for t in diag.split(";") if t.startswith("stage1_contract_flow_")]
+                ),
+                "spot_asof_close": fnum(sc_meta.get("close")),
+                "iv_rank": fnum(sc_meta.get("iv_rank")),
+                "iv30d": fnum(sc_meta.get("iv30d")),
+                "implied_move": fnum(sc_meta.get("implied_move")),
+                "implied_move_perc": fnum(sc_meta.get("implied_move_perc")),
+                "bullish_premium": fnum(sc_meta.get("bullish_premium")),
+                "bearish_premium": fnum(sc_meta.get("bearish_premium")),
+                "call_premium": fnum(sc_meta.get("call_premium")),
+                "put_premium": fnum(sc_meta.get("put_premium")),
+                "external_ev_ml": fnum(r.get("EV/ML")),
+                "external_pop": fnum(r.get("POP")),
+            }
+        )
+    return rows
+
+
 def pick_csvs(base_dir: Path):
     unz = base_dir / "_unzipped_mode_a"
     unzip_inputs_if_needed(base_dir, unz)
     csvs = sorted(unz.glob("*.csv"))
     if not csvs:
         raise FileNotFoundError(f"No CSV files in {unz}")
+    expected_date = _expected_input_date(base_dir)
 
     out = {}
     for pref in REQ_CSV_PREFIXES:
-        matches = [p for p in csvs if p.name.startswith(pref)]
+        prefixes = [pref] + list(CSV_PREFIX_ALIASES.get(pref, []))
+        matches = [p for p in csvs if any(p.name.startswith(pfx) for pfx in prefixes)]
+        if expected_date:
+            matches = [p for p in matches if expected_date in p.name]
         if not matches:
-            raise FileNotFoundError(f"Missing required CSV prefix: {pref}")
+            suffix = f" for {expected_date}" if expected_date else ""
+            raise FileNotFoundError(f"Missing required CSV prefix: {pref}{suffix}")
         out[pref] = sorted(matches)[-1]
+    selected_dates = {_date_token_from_name(p) for p in out.values()}
+    selected_dates.discard("")
+    if len(selected_dates) > 1:
+        detail = ", ".join(f"{k}{v.name}" for k, v in out.items())
+        raise ValueError(f"Mixed daily input dates selected: {sorted(selected_dates)} from {detail}")
     return out
 
 
-def ensure_whale_markdown(base_dir: Path, out_dir: Path, asof_str: str, cfg_path: Path, dp_eod_csv: Path) -> Path:
-    whale_md = base_dir / f"whale-{asof_str}.md"
-    if whale_md.exists():
-        return whale_md
-
-    alt = sorted(base_dir.glob("whale-*.md"))
-    if alt:
-        return alt[-1]
-
-    generated = out_dir / f"whale-{asof_str}.md"
-    if generated.exists():
-        return generated
-
-    input_candidates = []
-    for candidate in [
-        base_dir / f"whale_trades_filtered-{asof_str}.csv",
-        base_dir / f"whale_trades_filtered-{asof_str}.zip",
-        *sorted(base_dir.glob("whale_trades_filtered*.csv")),
-        *sorted(base_dir.glob("whale_trades_filtered*.zip")),
-        dp_eod_csv,
-    ]:
-        if candidate not in input_candidates:
-            input_candidates.append(candidate)
-    repo_root = Path(__file__).resolve().parents[1]
-    failures = []
-    for input_path in input_candidates:
-        if not input_path.exists():
-            continue
-        cp = subprocess.run(
+def resolve_chain_oi_overlay(path_text: str, out_dir: Path) -> Path:
+    path = Path(path_text).expanduser().resolve()
+    if path.is_dir():
+        candidates = sorted(
             [
-                sys.executable,
-                "-m",
-                "uwos.generate_whale_summary",
-                "--input",
-                str(input_path),
-                "--config",
-                str(cfg_path),
-                "--output",
-                str(generated),
-            ],
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            check=False,
+                *path.glob("chain-oi-changes-*.csv"),
+                *path.glob("chain-oi-changes-*.zip"),
+            ]
         )
-        if cp.returncode == 0 and generated.exists():
-            print(f"  [whale] Generated missing whale summary from {input_path.name}: {generated}")
-            return generated
-        details = "\n".join(part for part in [(cp.stdout or "").strip(), (cp.stderr or "").strip()] if part)
-        failures.append(f"{input_path.name}: {details}")
-    if not generated.exists():
-        raise FileNotFoundError(
-            f"Missing whale markdown in {base_dir}; auto-generation did not create {generated}. "
-            + " | ".join(failures)
-        )
-    return generated
+        if not candidates:
+            raise FileNotFoundError(f"No chain-oi-changes CSV/ZIP found in overlay dir: {path}")
+        path = candidates[-1]
+    if not path.exists():
+        raise FileNotFoundError(f"Missing chain OI overlay path: {path}")
+    if path.suffix.lower() == ".csv":
+        return path
+    if path.suffix.lower() != ".zip":
+        raise ValueError(f"Unsupported chain OI overlay path; expected CSV or ZIP: {path}")
+    overlay_dir = out_dir / "_overlay_inputs"
+    overlay_dir.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(path, "r") as zf:
+        names = sorted([n for n in zf.namelist() if n.lower().endswith(".csv")])
+        if not names:
+            raise FileNotFoundError(f"No CSV inside chain OI overlay ZIP: {path}")
+        preferred = [n for n in names if Path(n).name.startswith("chain-oi-changes-")]
+        name = preferred[0] if preferred else names[0]
+        target = overlay_dir / Path(name).name
+        with zf.open(name, "r") as src:
+            target.write_bytes(src.read())
+    return target
+
+
+def overlay_tickers_from_chain_oi(oi_df: pd.DataFrame) -> list[str]:
+    if oi_df is None or oi_df.empty or "option_symbol" not in oi_df.columns:
+        return []
+    parsed = oi_df["option_symbol"].astype(str).map(parse_occ)
+    tickers = set()
+    for val in parsed[parsed.notna()]:
+        if not val:
+            continue
+        ticker = str(val[0]).upper().strip()
+        if ticker:
+            tickers.add(ticker)
+    return sorted(tickers)
+
+
+def fetch_schwab_underlying_spots(tickers: list[str]) -> dict[str, float]:
+    symbols = [str(t).upper().strip() for t in tickers if str(t).strip()]
+    if not symbols:
+        return {}
+    try:
+        from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService, extract_quote_fields
+    except Exception as exc:
+        print(f"  [overlay] Schwab spot fetch unavailable: {exc}", file=sys.stderr)
+        return {}
+    try:
+        cfg_live = SchwabAuthConfig.from_env(load_dotenv_file=True)
+        svc = SchwabLiveDataService(config=cfg_live, interactive_login=False)
+        out = {}
+        for i in range(0, len(symbols), 80):
+            batch = symbols[i : i + 80]
+            payload = svc.get_quotes(batch)
+            for requested in batch:
+                raw = payload.get(requested) or payload.get(requested.upper()) or {}
+                last, bid, ask = extract_quote_fields(raw)
+                spot = last
+                if (spot is None or not np.isfinite(fnum(spot))) and bid is not None and ask is not None:
+                    if bid > 0 and ask > 0:
+                        spot = 0.5 * (bid + ask)
+                spot = fnum(spot)
+                if np.isfinite(spot) and spot > 0:
+                    out[requested.upper()] = spot
+        return out
+    except Exception as exc:
+        print(f"  [overlay] Schwab spot fetch failed: {exc}", file=sys.stderr)
+        return {}
 
 
 def round_strike(x):
@@ -849,6 +1183,11 @@ def build_historical_replay_live_table(
 def run():
     ap = argparse.ArgumentParser(description="MODE A two-stage runner (discovery + live execution)")
     ap.add_argument("--base-dir", default=r"c:\uw_root\2026-02-05")
+    ap.add_argument(
+        "--chain-oi-overlay",
+        default="",
+        help="Optional next-day chain-oi-changes CSV/ZIP/dir overlay. Keeps the base EOD date, but allows OI rows from the overlay date.",
+    )
     ap.add_argument("--config", default=str((Path(__file__).resolve().parent / "rulebook_config_goal_holistic.yaml")))
     ap.add_argument("--out-dir", default=r"c:\uw_root\out")
     ap.add_argument("--top-trades", type=int, default=20)
@@ -900,6 +1239,16 @@ def run():
 
     csvs = pick_csvs(base)
     asof_str = detect_asof_from_names(list(csvs.values()))
+    chain_oi_overlay_csv = ""
+    chain_oi_overlay_date = ""
+    if str(args.chain_oi_overlay or "").strip():
+        overlay_csv = resolve_chain_oi_overlay(str(args.chain_oi_overlay), out_dir)
+        csvs["chain-oi-changes-"] = overlay_csv
+        chain_oi_overlay_csv = str(overlay_csv)
+        try:
+            chain_oi_overlay_date = detect_asof_from_names([overlay_csv])
+        except Exception:
+            chain_oi_overlay_date = ""
     asof = dt.datetime.strptime(asof_str, "%Y-%m-%d").date()
 
     if not args.output:
@@ -908,7 +1257,20 @@ def run():
         output_path = Path(args.output).resolve()
 
     cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
-    whale_md = ensure_whale_markdown(base, out_dir, asof_str, cfg_path, csvs["dp-eod-report-"])
+    bot_eod_source = find_bot_eod_source(base, asof_str)
+    whale_flow = load_yes_prime_whale_flow(bot_eod_source, cfg)
+    whale_source_name = bot_eod_source.name
+    whale_tables = whale_flow.as_rank_tables()
+    whale_symbol_summary_csv = out_dir / f"whale-symbol-summary-{asof_str}.csv"
+    whale_top_trades_csv = out_dir / f"whale-top-trades-{asof_str}.csv"
+    whale_flow.symbol_summary.to_csv(whale_symbol_summary_csv, index=False)
+    whale_flow.top_trades.to_csv(whale_top_trades_csv, index=False)
+    print(
+        "Loaded bot EOD whale source: "
+        f"{whale_source_name}; scanned={whale_flow.total_rows:,}; "
+        f"yes_prime={whale_flow.yes_prime_rows:,}; symbols={len(whale_flow.symbol_summary):,}",
+        file=sys.stderr,
+    )
     approval_cfg = cfg.get("approval", {}) if isinstance(cfg, dict) else {}
     engine_cfg = cfg.get("engine", {}) if isinstance(cfg, dict) else {}
     # Width-based entry gate tolerance — read early so we can pass to the pricer subprocess.
@@ -932,6 +1294,34 @@ def run():
     oi_df = pd.read_csv(csvs["chain-oi-changes-"], low_memory=False)
     dp_df = pd.read_csv(csvs["dp-eod-report-"], low_memory=False)
     sc_df = pd.read_csv(csvs["stock-screener-"], low_memory=False)
+    overlay_spot_map = {}
+    if chain_oi_overlay_csv:
+        overlay_tickers = overlay_tickers_from_chain_oi(oi_df)
+        existing_spots = {}
+        if "ticker" in sc_df.columns and "close" in sc_df.columns:
+            existing_spots = (
+                sc_df.assign(ticker=sc_df["ticker"].astype(str).str.upper().str.strip())
+                .drop_duplicates("ticker")
+                .set_index("ticker")["close"]
+                .map(fnum)
+                .to_dict()
+            )
+        missing_spot_tickers = [
+            t for t in overlay_tickers
+            if (not np.isfinite(fnum(existing_spots.get(t)))) or fnum(existing_spots.get(t)) <= 0
+        ]
+        if missing_spot_tickers and not args.historical_replay:
+            overlay_spot_map = fetch_schwab_underlying_spots(missing_spot_tickers)
+            print(
+                f"  [overlay] fetched Schwab spots for {len(overlay_spot_map)}/{len(missing_spot_tickers)} missing overlay tickers",
+                file=sys.stderr,
+            )
+        elif missing_spot_tickers:
+            print(
+                f"  [overlay] historical replay: {len(missing_spot_tickers)} overlay tickers lack dated spot and will stay diagnostic-only",
+                file=sys.stderr,
+            )
+        sc_df = apply_chain_oi_overlay_to_screener(sc_df, oi_df, overlay_spot_map=overlay_spot_map)
 
     ensure_cols(hot_df, csvs["hot-chains-"].name, ["option_symbol", "date", "bid", "ask", "volume", "open_interest"])
     ensure_cols(
@@ -989,9 +1379,37 @@ def run():
         max_strike_distance_pct = math.nan
     _ = dp_df  # loaded intentionally; stage-1 model already relies on screener + quotes + whale tables.
 
-    whale_tables = md_tables(whale_md.read_text(encoding="utf-8", errors="replace"))
-    quotes = build_quotes(hot_df, oi_df, asof, csvs["hot-chains-"].name, csvs["chain-oi-changes-"].name)
-    best = build_best_candidates(asof, cfg, sc_df, quotes, whale_tables, top_trades=discovery_top)
+    oi_quote_asof = dt.datetime.strptime(chain_oi_overlay_date, "%Y-%m-%d").date() if chain_oi_overlay_date else asof
+    quotes = build_quotes(
+        hot_df,
+        oi_df,
+        asof,
+        csvs["hot-chains-"].name,
+        csvs["chain-oi-changes-"].name,
+        hot_asof=asof,
+        oi_asof=oi_quote_asof,
+    )
+    discovery_cfg = copy.deepcopy(cfg)
+    if chain_oi_overlay_csv:
+        discovery_pricing_cfg = discovery_cfg.setdefault("pricing", {})
+        source_kinds = list(discovery_pricing_cfg.get("executable_source_kinds") or [])
+        if "oi" not in source_kinds:
+            source_kinds.append("oi")
+        discovery_pricing_cfg["executable_source_kinds"] = source_kinds
+    best = build_best_candidates(asof, discovery_cfg, sc_df, quotes, whale_tables, top_trades=discovery_top)
+
+    external_scanner_candidates = load_external_scanner_candidates(base, asof_str, asof, quotes, sc_df)
+    if external_scanner_candidates:
+        print(
+            f"  [coverage] Added {len(external_scanner_candidates)} external scanner candidates to daily universe",
+            file=sys.stderr,
+        )
+        discovery_top = int(discovery_top) + len(external_scanner_candidates)
+        if isinstance(best, pd.DataFrame):
+            best = pd.concat([best, pd.DataFrame(external_scanner_candidates)], ignore_index=True, sort=False)
+        else:
+            best = list(best) + external_scanner_candidates
+
     if not best:
         raise RuntimeError("No stage-1 candidates produced.")
 
@@ -1188,10 +1606,22 @@ def run():
         raise RuntimeError("No shortlist rows with valid leg symbols.")
     stage1_rank = {"Yes-Prime": 0, "Yes-Good": 1, "Watch Only": 2}
     shortlist["_stage1_rank"] = shortlist["optimal_stage1"].map(stage1_rank).fillna(3).astype(int)
+    shortlist["_external_rank"] = np.where(
+        shortlist.get("source", pd.Series("", index=shortlist.index)).astype(str).str.startswith("external_scanner:"),
+        0,
+        1,
+    )
+    shortlist["_external_ev_sort"] = pd.to_numeric(
+        shortlist.get("external_ev_ml", pd.Series(np.nan, index=shortlist.index)),
+        errors="coerce",
+    ).fillna(-999.0)
     shortlist = (
-        shortlist.sort_values(["_stage1_rank", "conviction"], ascending=[True, False])
+        shortlist.sort_values(
+            ["_stage1_rank", "_external_rank", "conviction", "_external_ev_sort"],
+            ascending=[True, True, False, False],
+        )
         .head(max(1, int(discovery_top)))
-        .drop(columns=["_stage1_rank"])
+        .drop(columns=["_stage1_rank", "_external_rank", "_external_ev_sort"])
         .reset_index(drop=True)
     )
     shortlist_csv = out_dir / f"shortlist_trades_{asof_str}_mode_a.csv"
@@ -1273,10 +1703,12 @@ def run():
                 normalized_gex = normalize_gex_files(uw_gex_dir, asof_str)
                 summary_path_text = str(normalized_gex.get("summary_path", ""))
                 strikes_path_text = str(normalized_gex.get("strikes_path", ""))
+                status_path = uw_gex_dir / f"gex_collection_status_{asof_str}.csv"
                 print(
                     f"  [gex] UW GEX collected raw={len(raw_files)} "
                     f"summary={Path(summary_path_text).name if summary_path_text else 'missing'} "
-                    f"strikes={Path(strikes_path_text).name if strikes_path_text else 'missing'}"
+                    f"strikes={Path(strikes_path_text).name if strikes_path_text else 'missing'} "
+                    f"status={status_path.name if status_path.exists() else 'missing'}"
                 )
             except Exception as exc:
                 print(f"  [gex] WARN: auto UW GEX collection failed: {exc}", file=sys.stderr)
@@ -1469,6 +1901,7 @@ def run():
     gex_source_counts = {}
     uw_gex_summary_csv = base / "enrichments" / "uw" / f"uw_gex_summary_{asof_str}.csv"
     uw_gex_strikes_csv = base / "enrichments" / "uw" / f"uw_gex_strikes_{asof_str}.csv"
+    uw_gex_status_csv = base / "enrichments" / "uw" / f"gex_collection_status_{asof_str}.csv"
 
     def _record_gex_source(source: str) -> None:
         gex_source_counts[source] = int(gex_source_counts.get(source, 0)) + 1
@@ -1679,7 +2112,7 @@ def run():
     _macro = getattr(build_best_candidates, "_last_macro", None)
     if _macro is None:
         try:
-            _macro = compute_macro_regime(asof)
+            _macro = compute_macro_regime(asof, force_historical=bool(args.historical_replay))
             print(f"  [macro] SPY 5d={_macro['spy_5d_ret']:+.2%}, VIX={_macro['vix_level']:.1f}, regime={_macro['regime']}", file=sys.stderr)
         except Exception:
             _macro = {"spy_5d_ret": 0.0, "vix_level": 20.0, "regime": "neutral"}
@@ -1695,9 +2128,99 @@ def run():
     enable_dual_books = bool(approval_cfg.get("enable_dual_books", True))
     core_size_mult = fnum(approval_cfg.get("core_size_mult", 1.00))
     tactical_size_mult = fnum(approval_cfg.get("tactical_size_mult", 0.50))
+    enable_scout_book = bool(approval_cfg.get("enable_scout_book", False))
+    scout_size_mult = fnum(approval_cfg.get("scout_size_mult", 0.25))
+    scout_min_edge_pct = fnum(
+        approval_cfg.get(
+            "scout_min_edge_pct",
+            approval_cfg.get("bull_call_evidence_min_edge_pct", 5.0),
+        )
+    )
+    scout_max_edge_pct = fnum(
+        approval_cfg.get(
+            "scout_max_edge_pct",
+            approval_cfg.get("stage1_watch_promotion_min_edge_pct", 8.0),
+        )
+    )
+    scout_block_gex_volatile_breakout = bool(
+        approval_cfg.get("scout_block_gex_volatile_breakout", False)
+    )
+    allow_bear_put_scout_lane = bool(approval_cfg.get("allow_bear_put_scout_lane", False))
+    bear_put_scout_likelihood_strengths = {
+        str(x).strip().upper()
+        for x in approval_cfg.get("bear_put_scout_likelihood_strengths", ["Negative"])
+        if str(x).strip()
+    }
+    bear_put_scout_require_negative_edge = bool(
+        approval_cfg.get("bear_put_scout_require_negative_edge", True)
+    )
+    bear_put_scout_min_signals = fnum(approval_cfg.get("bear_put_scout_min_signals", 60))
+    bear_put_scout_min_dte = fnum(approval_cfg.get("bear_put_scout_min_dte", 14))
+    bear_put_scout_max_dte = fnum(approval_cfg.get("bear_put_scout_max_dte", 35))
+    bear_put_scout_max_iv_rank = fnum(approval_cfg.get("bear_put_scout_max_iv_rank", 30))
+    bear_put_scout_max_vix = fnum(approval_cfg.get("bear_put_scout_max_vix", 20))
+    bear_put_scout_require_spy_5d_nonnegative = bool(
+        approval_cfg.get("bear_put_scout_require_spy_5d_nonnegative", True)
+    )
+    bear_put_scout_min_reward_risk = fnum(approval_cfg.get("bear_put_scout_min_reward_risk", 2.0))
+    bear_put_scout_max_debit_frac = fnum(approval_cfg.get("bear_put_scout_max_debit_frac", 0.35))
     tactical_min_conviction = fnum(approval_cfg.get("tactical_min_conviction", 60))
     tactical_min_edge_pct = fnum(approval_cfg.get("tactical_min_edge_pct", 0.0))
     tactical_require_verdict_pass = bool(approval_cfg.get("tactical_require_verdict_pass", True))
+    enable_event_momentum_scout = bool(approval_cfg.get("enable_event_momentum_scout", False))
+    event_momentum_scout_min_conviction = fnum(
+        approval_cfg.get("event_momentum_scout_min_conviction", 30)
+    )
+    event_momentum_scout_max_dte = fnum(approval_cfg.get("event_momentum_scout_max_dte", 35))
+    event_momentum_scout_min_reward_risk = fnum(
+        approval_cfg.get("event_momentum_scout_min_reward_risk", 1.8)
+    )
+    event_momentum_scout_max_debit_frac = fnum(
+        approval_cfg.get("event_momentum_scout_max_debit_frac", 0.35)
+    )
+    event_momentum_scout_require_contract_confirmed = bool(
+        approval_cfg.get("event_momentum_scout_require_contract_confirmed", True)
+    )
+    event_momentum_scout_require_breakeven_cross = bool(
+        approval_cfg.get("event_momentum_scout_require_breakeven_cross", True)
+    )
+    allow_debit_momentum_scout_lane = bool(
+        approval_cfg.get("allow_debit_momentum_scout_lane", False)
+    )
+    debit_momentum_scout_min_conviction = fnum(approval_cfg.get("debit_momentum_scout_min_conviction", 40))
+    debit_momentum_scout_min_edge_pct = fnum(approval_cfg.get("debit_momentum_scout_min_edge_pct", 8.0))
+    debit_momentum_scout_bear_min_edge_pct = fnum(
+        approval_cfg.get(
+            "debit_momentum_scout_bear_min_edge_pct",
+            approval_cfg.get("min_edge_pct_bear", approval_cfg.get("min_edge_pct", 12.0)),
+        )
+    )
+    debit_momentum_scout_min_signals = fnum(approval_cfg.get("debit_momentum_scout_min_signals", 100))
+    debit_momentum_scout_min_dte = fnum(approval_cfg.get("debit_momentum_scout_min_dte", 14))
+    debit_momentum_scout_max_dte = fnum(approval_cfg.get("debit_momentum_scout_max_dte", 45))
+    debit_momentum_scout_min_reward_risk = fnum(approval_cfg.get("debit_momentum_scout_min_reward_risk", 2.0))
+    debit_momentum_scout_max_debit_frac = fnum(approval_cfg.get("debit_momentum_scout_max_debit_frac", 0.35))
+    debit_momentum_scout_max_iv_rank = fnum(approval_cfg.get("debit_momentum_scout_max_iv_rank", 80))
+    debit_momentum_scout_require_contract_confirmed = bool(
+        approval_cfg.get("debit_momentum_scout_require_contract_confirmed", True)
+    )
+    debit_momentum_scout_require_verdict_pass = bool(
+        approval_cfg.get("debit_momentum_scout_require_verdict_pass", True)
+    )
+    debit_momentum_scout_min_regime_score = fnum(
+        approval_cfg.get("debit_momentum_scout_min_regime_score", 55)
+    )
+    debit_momentum_scout_bear_require_flow_confirmed = bool(
+        approval_cfg.get("debit_momentum_scout_bear_require_flow_confirmed", True)
+    )
+    debit_momentum_scout_block_gex_volatile_breakout = bool(
+        approval_cfg.get("debit_momentum_scout_block_gex_volatile_breakout", True)
+    )
+    debit_momentum_scout_bear_likelihood_strengths = {
+        str(x).strip().upper()
+        for x in approval_cfg.get("debit_momentum_scout_bear_likelihood_strengths", ["Moderate", "Strong"])
+        if str(x).strip()
+    }
     min_edge_pct = fnum(approval_cfg.get("min_edge_pct", 0.0))
     min_edge_pct_bear = fnum(approval_cfg.get("min_edge_pct_bear", min_edge_pct))
     min_edge_pct_shield = fnum(approval_cfg.get("min_edge_pct_shield", min_edge_pct))
@@ -1735,11 +2258,33 @@ def run():
     bull_call_evidence_allow_gex_missing = bool(
         approval_cfg.get("bull_call_evidence_allow_gex_missing", True)
     )
+    allow_bear_put_evidence_lane = bool(approval_cfg.get("allow_bear_put_evidence_lane", True))
+    bear_put_evidence_min_edge = fnum(approval_cfg.get("bear_put_evidence_min_edge_pct", 12.0))
+    bear_put_evidence_min_signals = fnum(approval_cfg.get("bear_put_evidence_min_signals", 120))
+    bear_put_evidence_min_conviction = fnum(approval_cfg.get("bear_put_evidence_min_conviction", 30))
+    bear_put_evidence_min_long_delta = fnum(approval_cfg.get("bear_put_evidence_min_long_delta", 0.25))
+    bear_put_evidence_min_dte = fnum(approval_cfg.get("bear_put_evidence_min_dte", 14))
+    bear_put_evidence_max_dte = fnum(approval_cfg.get("bear_put_evidence_max_dte", 60))
+    bear_put_evidence_min_reward_risk = fnum(approval_cfg.get("bear_put_evidence_min_reward_risk", 1.5))
+    bear_put_evidence_max_debit_frac = fnum(approval_cfg.get("bear_put_evidence_max_debit_frac", 0.45))
+    bear_put_evidence_max_iv_rank = fnum(approval_cfg.get("bear_put_evidence_max_iv_rank", 60))
+    bear_put_evidence_require_contract_confirmed = bool(
+        approval_cfg.get("bear_put_evidence_require_contract_confirmed", True)
+    )
     bull_call_approval_max_dte = fnum(
         approval_cfg.get("bull_call_approval_max_dte", bull_call_evidence_max_dte)
     )
     bull_call_approval_min_reward_risk = fnum(
         approval_cfg.get("bull_call_approval_min_reward_risk", bull_call_evidence_min_reward_risk)
+    )
+    bull_call_short_dte_high_edge_block = bool(
+        approval_cfg.get("bull_call_short_dte_high_edge_block", False)
+    )
+    bull_call_short_dte_high_edge_max_dte = fnum(
+        approval_cfg.get("bull_call_short_dte_high_edge_max_dte", 31)
+    )
+    bull_call_short_dte_high_edge_min_edge = fnum(
+        approval_cfg.get("bull_call_short_dte_high_edge_min_edge_pct", 13.2)
     )
     bull_call_approval_require_contract_confirmed = bool(
         approval_cfg.get("bull_call_approval_require_contract_confirmed", True)
@@ -1791,6 +2336,21 @@ def run():
     min_fire_pinned_gex_abs = fnum(approval_cfg.get("min_fire_pinned_gex_abs", 10_000_000))
     if not np.isfinite(min_fire_pinned_gex_abs) or min_fire_pinned_gex_abs < 0:
         min_fire_pinned_gex_abs = 10_000_000.0
+    fire_volatile_breakout_tactical_only = bool(
+        approval_cfg.get("fire_volatile_breakout_tactical_only", True)
+    )
+    fire_missing_gex_context_tactical_only = bool(
+        approval_cfg.get("fire_missing_gex_context_tactical_only", True)
+    )
+    fire_pinned_no_wall_tactical_only = bool(
+        approval_cfg.get("fire_pinned_no_wall_tactical_only", True)
+    )
+    gex_fallback_tactical_only = bool(
+        approval_cfg.get("gex_fallback_tactical_only", True)
+    )
+    gex_fallback_requires_clean_non_gex = bool(
+        approval_cfg.get("gex_fallback_requires_clean_non_gex", True)
+    )
     # entry_tol_width_pct / entry_tol_floor read earlier (before pricer subprocess)
     require_spot_alignment = bool(approval_cfg.get("require_spot_alignment", True))
     spot_alignment_require_live = bool(approval_cfg.get("spot_alignment_require_live", True))
@@ -1844,10 +2404,78 @@ def run():
         core_size_mult = 1.00
     if not np.isfinite(tactical_size_mult) or tactical_size_mult <= 0:
         tactical_size_mult = 0.50
+    if not np.isfinite(scout_size_mult) or scout_size_mult <= 0:
+        scout_size_mult = 0.25
+    if not np.isfinite(scout_min_edge_pct):
+        scout_min_edge_pct = (
+            bull_call_evidence_min_edge
+            if np.isfinite(bull_call_evidence_min_edge)
+            else 5.0
+        )
+    if not np.isfinite(scout_max_edge_pct):
+        scout_max_edge_pct = max(tactical_min_edge_pct, scout_min_edge_pct)
+    if scout_max_edge_pct < scout_min_edge_pct:
+        scout_max_edge_pct = scout_min_edge_pct
+    if (
+        not np.isfinite(bull_call_short_dte_high_edge_max_dte)
+        or bull_call_short_dte_high_edge_max_dte <= 0
+    ):
+        bull_call_short_dte_high_edge_max_dte = 31
+    if (
+        not np.isfinite(bull_call_short_dte_high_edge_min_edge)
+        or bull_call_short_dte_high_edge_min_edge <= 0
+    ):
+        bull_call_short_dte_high_edge_min_edge = 13.2
+    if not bear_put_scout_likelihood_strengths:
+        bear_put_scout_likelihood_strengths = {"NEGATIVE"}
+    if not np.isfinite(bear_put_scout_min_signals) or bear_put_scout_min_signals < 0:
+        bear_put_scout_min_signals = 60
+    if not np.isfinite(bear_put_scout_min_dte) or bear_put_scout_min_dte < 0:
+        bear_put_scout_min_dte = 14
+    if not np.isfinite(bear_put_scout_max_dte) or bear_put_scout_max_dte <= 0:
+        bear_put_scout_max_dte = 35
+    if not np.isfinite(bear_put_scout_max_iv_rank) or bear_put_scout_max_iv_rank <= 0:
+        bear_put_scout_max_iv_rank = 30
+    if not np.isfinite(bear_put_scout_max_vix) or bear_put_scout_max_vix <= 0:
+        bear_put_scout_max_vix = 20
+    if not np.isfinite(bear_put_scout_min_reward_risk) or bear_put_scout_min_reward_risk < 0:
+        bear_put_scout_min_reward_risk = 2.0
+    if not np.isfinite(bear_put_scout_max_debit_frac) or bear_put_scout_max_debit_frac <= 0:
+        bear_put_scout_max_debit_frac = 0.35
     if not np.isfinite(tactical_min_conviction) or tactical_min_conviction < 0:
         tactical_min_conviction = 60
     if not np.isfinite(tactical_min_edge_pct):
         tactical_min_edge_pct = 0.0
+    if not np.isfinite(event_momentum_scout_min_conviction):
+        event_momentum_scout_min_conviction = 30
+    if not np.isfinite(event_momentum_scout_max_dte) or event_momentum_scout_max_dte <= 0:
+        event_momentum_scout_max_dte = 35
+    if not np.isfinite(event_momentum_scout_min_reward_risk):
+        event_momentum_scout_min_reward_risk = 1.8
+    if not np.isfinite(event_momentum_scout_max_debit_frac) or event_momentum_scout_max_debit_frac <= 0:
+        event_momentum_scout_max_debit_frac = 0.35
+    if not np.isfinite(debit_momentum_scout_min_conviction):
+        debit_momentum_scout_min_conviction = 40
+    if not np.isfinite(debit_momentum_scout_min_edge_pct):
+        debit_momentum_scout_min_edge_pct = 8.0
+    if not np.isfinite(debit_momentum_scout_bear_min_edge_pct):
+        debit_momentum_scout_bear_min_edge_pct = max(12.0, debit_momentum_scout_min_edge_pct)
+    if not np.isfinite(debit_momentum_scout_min_signals) or debit_momentum_scout_min_signals < 0:
+        debit_momentum_scout_min_signals = 100
+    if not np.isfinite(debit_momentum_scout_min_dte) or debit_momentum_scout_min_dte < 0:
+        debit_momentum_scout_min_dte = 14
+    if not np.isfinite(debit_momentum_scout_max_dte) or debit_momentum_scout_max_dte <= 0:
+        debit_momentum_scout_max_dte = 45
+    if not np.isfinite(debit_momentum_scout_min_reward_risk):
+        debit_momentum_scout_min_reward_risk = 2.0
+    if not np.isfinite(debit_momentum_scout_max_debit_frac) or debit_momentum_scout_max_debit_frac <= 0:
+        debit_momentum_scout_max_debit_frac = 0.35
+    if not np.isfinite(debit_momentum_scout_max_iv_rank) or debit_momentum_scout_max_iv_rank <= 0:
+        debit_momentum_scout_max_iv_rank = 80
+    if not np.isfinite(debit_momentum_scout_min_regime_score):
+        debit_momentum_scout_min_regime_score = 55
+    if not debit_momentum_scout_bear_likelihood_strengths:
+        debit_momentum_scout_bear_likelihood_strengths = {"MODERATE", "STRONG"}
     if not np.isfinite(tactical_min_signals) or tactical_min_signals <= 0:
         tactical_min_signals = min_signals
     enforce_pretrade_caps = bool(approval_cfg.get("enforce_pretrade_portfolio_caps", False))
@@ -2028,6 +2656,71 @@ def run():
             elif flow_conf == "confirmed" and flow_dir == "bearish":
                 score -= 25.0
                 reasons.append("ticker flow bearish")
+        elif strategy_local == "Bear Put Debit":
+            # The generic macro block above is intentionally bull-biased.
+            # Invert its net effect for bearish debit spreads so bear setups
+            # are not scored through a bullish lens.
+            if macro_regime == "risk_on":
+                score -= 20.0
+                reasons.append("bear setup vs risk_on")
+            elif macro_regime == "risk_off":
+                score += 15.0
+                reasons.append("bear setup risk_off")
+
+            if _spy_5d_ret >= 0.02:
+                score -= 20.0
+                reasons.append("bear setup vs strong SPY")
+            elif _spy_5d_ret >= 0.01:
+                score -= 10.0
+                reasons.append("bear setup vs SPY up")
+            elif _spy_5d_ret <= -0.03:
+                score += 20.0
+                reasons.append("SPY breakdown")
+            elif _spy_5d_ret <= -0.015:
+                score += 10.0
+                reasons.append("SPY weak")
+
+            if trend == "down":
+                score += 10.0
+                reasons.append("ticker trend down")
+            elif trend == "up":
+                score -= 10.0
+                reasons.append("ticker trend up")
+            elif trend:
+                reasons.append(f"ticker trend {trend}")
+            if range_neutral == "true":
+                score -= 3.0
+                reasons.append("range-neutral")
+            if gex_regime == "volatile":
+                score += 5.0
+                reasons.append("GEX volatile")
+            elif gex_regime == "pinned":
+                score -= 8.0
+                reasons.append("GEX pinned")
+            if np.isfinite(be_distance_pct):
+                if be_distance_pct <= 0.03:
+                    score += 10.0
+                elif be_distance_pct <= 0.05:
+                    score += 4.0
+                elif be_distance_pct > 0.10:
+                    score -= 12.0
+                elif be_distance_pct > 0.07:
+                    score -= 8.0
+                elif be_distance_pct > 0.05:
+                    score -= 4.0
+                reasons.append(f"BE {be_distance_pct:+.1%}")
+            if contract_flow == "confirmed":
+                score += 10.0
+                reasons.append("contract flow confirmed")
+            elif contract_flow in {"contra", "directional"}:
+                score -= 15.0
+                reasons.append(f"contract flow {contract_flow}")
+            if flow_conf == "confirmed" and flow_dir == "bearish":
+                score += 8.0
+                reasons.append("ticker flow bearish")
+            elif flow_conf == "confirmed" and flow_dir == "bullish":
+                score -= 25.0
+                reasons.append("ticker flow bullish")
 
         score = max(0.0, min(100.0, score))
         if np.isfinite(bull_call_regime_high_score) and score >= bull_call_regime_high_score:
@@ -2151,6 +2844,83 @@ def run():
             return False
         return True
 
+    def bear_put_evidence_lane(row) -> bool:
+        """Positive-edge bearish debit lane; not a mirror of the contrarian Scout lane."""
+        if not allow_bear_put_evidence_lane:
+            return False
+        if str(row.get("track", "")).strip().upper() != "FIRE":
+            return False
+        if str(row.get("strategy", "")).strip() != "Bear Put Debit":
+            return False
+        if str(row.get("verdict", "")).strip().upper() != "PASS":
+            return False
+        edge = fnum(row.get("edge_pct"))
+        sig = fnum(row.get("signals"))
+        conv = fnum(row.get("conviction"))
+        long_delta = abs(_safe_delta(row.get("long_delta_live")))
+        dte = fnum(row.get("dte"))
+        reward_risk = fnum(row.get("live_reward_risk"))
+        iv_rank = fnum(row.get("iv_rank"))
+        width = fnum(row.get("width_live"))
+        if not np.isfinite(width):
+            width = fnum(row.get("width"))
+        net = fnum(row.get("live_net_bid_ask"))
+        if not np.isfinite(net):
+            net = fnum(row.get("live_net_mark"))
+        debit_frac = (
+            net / width
+            if np.isfinite(net) and np.isfinite(width) and width > 0
+            else math.nan
+        )
+        if np.isfinite(bear_put_evidence_min_edge) and (not np.isfinite(edge) or edge < bear_put_evidence_min_edge):
+            return False
+        if np.isfinite(bear_put_evidence_min_signals) and (not np.isfinite(sig) or sig < bear_put_evidence_min_signals):
+            return False
+        if (
+            np.isfinite(bear_put_evidence_min_conviction)
+            and (not np.isfinite(conv) or conv < bear_put_evidence_min_conviction)
+        ):
+            return False
+        if np.isfinite(bear_put_evidence_min_dte) and (not np.isfinite(dte) or dte < bear_put_evidence_min_dte):
+            return False
+        if np.isfinite(bear_put_evidence_max_dte) and (not np.isfinite(dte) or dte > bear_put_evidence_max_dte):
+            return False
+        if (
+            np.isfinite(bear_put_evidence_min_reward_risk)
+            and (not np.isfinite(reward_risk) or reward_risk < bear_put_evidence_min_reward_risk)
+        ):
+            return False
+        if (
+            np.isfinite(bear_put_evidence_min_long_delta)
+            and (not np.isfinite(long_delta) or long_delta < bear_put_evidence_min_long_delta)
+        ):
+            return False
+        if (
+            np.isfinite(bear_put_evidence_max_debit_frac)
+            and (not np.isfinite(debit_frac) or debit_frac > bear_put_evidence_max_debit_frac)
+        ):
+            return False
+        if (
+            np.isfinite(bear_put_evidence_max_iv_rank)
+            and (not np.isfinite(iv_rank) or iv_rank > bear_put_evidence_max_iv_rank)
+        ):
+            return False
+        flow_dir = str(row.get("flow_direction", "")).strip().lower()
+        flow_conf = str(row.get("flow_confirmation", "")).strip().lower()
+        if flow_conf == "confirmed" and flow_dir == "bullish":
+            return False
+        contract_flow = str(row.get("contract_flow_confirmation", "")).strip().lower()
+        if bear_put_evidence_require_contract_confirmed and contract_flow != "confirmed":
+            return False
+        if contract_flow in {"contra", "directional", "weak_or_ambiguous", "unknown"}:
+            return False
+        live_status = str(row.get("live_status", "")).strip()
+        ok_live_raw = bool(row.get("is_final_live_valid")) if pd.notna(row.get("is_final_live_valid")) else False
+        gate_pass_effective = bool(row.get("gate_pass_effective")) if pd.notna(row.get("gate_pass_effective")) else False
+        if not (ok_live_raw or (live_status == "fails_live_entry_gate" and gate_pass_effective)):
+            return False
+        return True
+
     def stage1_context(row):
         opt = str(row.get("optimal_stage1", "")).strip()
         is_yes = opt in {"Yes-Prime", "Yes-Good"}
@@ -2181,6 +2951,9 @@ def run():
             if (not promoted) and bull_call_evidence_lane(row):
                 promoted = True
                 reason = "bull_call_evidence_lane"
+            if (not promoted) and bear_put_evidence_lane(row):
+                promoted = True
+                reason = "bear_put_evidence_lane"
         else:
             reason = "stage1_watch_blocked"
         return {
@@ -2188,6 +2961,7 @@ def run():
             "stage1_promoted": bool(promoted),
             "fire_breakout_exception": bool(fire_breakout_exception(row)),
             "bull_call_evidence_lane": bool(bull_call_evidence_lane(row)),
+            "bear_put_evidence_lane": bool(bear_put_evidence_lane(row)),
             "stage1_effective": bool(is_yes or promoted),
             "stage1_blocked": bool((not is_yes) and (not promoted)),
             "stage1_eval_reason": reason,
@@ -2497,9 +3271,16 @@ def run():
 
         stage1_effective = bool(row.get("stage1_effective")) if pd.notna(row.get("stage1_effective")) else False
         if not stage1_effective and not shield_live_quality_override:
-            blockers.append("stage1_not_actionable")
+            stage1_diag_raw = str(row.get("stage1_diagnostics", "") or row.get("stage1_not_actionable_reason", "")).strip()
+            stage1_diag_tokens = [x.strip() for x in stage1_diag_raw.split(";") if x.strip()]
+            if stage1_diag_tokens:
+                blockers.extend(stage1_diag_tokens)
+            else:
+                blockers.append("stage1_not_actionable")
         elif bool(row.get("bull_call_evidence_lane")) and not bool(row.get("stage1_is_yes")):
             blockers.append("bull_call_evidence_lane_tactical")
+        elif bool(row.get("bear_put_evidence_lane")) and not bool(row.get("stage1_is_yes")):
+            blockers.append("bear_put_evidence_lane_tactical")
 
         if require_spot_alignment:
             spot_asof = fnum(row.get("spot_asof_close"))
@@ -2534,9 +3315,22 @@ def run():
 
         if strategy_local == "Bull Call Debit":
             bull_call_dte = fnum(row.get("dte"))
+            bull_call_edge = fnum(row.get("edge_pct"))
             bull_call_rr = fnum(row.get("live_reward_risk"))
             bull_call_contract_flow = str(row.get("contract_flow_confirmation", "")).strip().lower()
             bull_call_regime_conf = str(row.get("market_regime_confidence", "")).strip()
+            if (
+                bull_call_short_dte_high_edge_block
+                and np.isfinite(bull_call_dte)
+                and np.isfinite(bull_call_edge)
+                and bull_call_dte < bull_call_short_dte_high_edge_max_dte
+                and bull_call_edge > bull_call_short_dte_high_edge_min_edge
+            ):
+                blockers.append(
+                    "bull_call_short_dte_high_edge:"
+                    f"dte={bull_call_dte:g}<{bull_call_short_dte_high_edge_max_dte:g},"
+                    f"edge={bull_call_edge:.2f}>{bull_call_short_dte_high_edge_min_edge:.2f}"
+                )
             if (
                 np.isfinite(bull_call_approval_max_dte)
                 and (not np.isfinite(bull_call_dte) or bull_call_dte > bull_call_approval_max_dte)
@@ -2721,12 +3515,52 @@ def run():
         # GEX regime gate  [B1 fix: moved out of SHIELD block — applies to both tracks]
         if require_gex_regime:
             gex_regime = str(row.get("gex_regime", "")).strip().lower()
+            gex_wall_ctx = str(row.get("gex_wall_context", "")).strip()
             if not gex_regime:
                 if bool(row.get("bull_call_evidence_lane")) and bull_call_evidence_allow_gex_missing:
                     blockers.append("gex_missing_evidence_lane")
                 else:
                     blockers.append("gex_missing")
             else:
+                gex_source = str(row.get("gex_source", "")).strip().lower()
+                if gex_source == "schwab_snapshot_fallback":
+                    if gex_fallback_tactical_only:
+                        blockers.append("gex_source_fallback_tactical_only")
+                    if gex_fallback_requires_clean_non_gex:
+                        fallback_reasons = []
+                        verdict_fb = str(row.get("verdict", "")).strip().upper()
+                        edge_fb = fnum(row.get("edge_pct"))
+                        signals_fb = fnum(row.get("signals"))
+                        _is_bear_fb = strategy_local in {"Bear Put Debit", "Bear Call Credit"}
+                        edge_min_fb = (
+                            min_edge_pct_bear if _is_bear_fb
+                            else min_edge_pct_shield if track == "SHIELD"
+                            else min_edge_pct
+                        )
+                        flow_confirm_fb = str(row.get("flow_confirmation", "")).strip().lower()
+                        contract_confirm_fb = str(row.get("contract_flow_confirmation", "")).strip().lower()
+                        if not stage1_effective:
+                            fallback_reasons.append("stage1")
+                        if not ok_live:
+                            fallback_reasons.append("live")
+                        if verdict_fb != "PASS":
+                            fallback_reasons.append("verdict")
+                        if np.isfinite(edge_min_fb) and (not np.isfinite(edge_fb) or edge_fb < edge_min_fb):
+                            fallback_reasons.append("edge")
+                        if (
+                            np.isfinite(min_signals)
+                            and min_signals > 0
+                            and (not np.isfinite(signals_fb) or signals_fb < min_signals)
+                        ):
+                            fallback_reasons.append("signals")
+                        if flow_confirm_fb != "confirmed":
+                            fallback_reasons.append("flow")
+                        if contract_confirm_fb != "confirmed":
+                            fallback_reasons.append("contract_flow")
+                        if fallback_reasons:
+                            blockers.append(
+                                "gex_source_fallback_uncertain:" + ",".join(fallback_reasons)
+                            )
                 if track == "SHIELD" and gex_regime == "volatile":
                     blockers.append("shield_gex_volatile")
                 elif track == "FIRE" and gex_regime == "pinned":
@@ -2758,6 +3592,19 @@ def run():
                 # [T8] was: require pinned — too strict, ICs work in neutral too
                 if strategy_local in {"Iron Condor", "Iron Butterfly"} and gex_regime == "volatile":
                     blockers.append("ic_gex_volatile")
+
+            # GEX context quality overlays. These are not always hard vetoes,
+            # but they should prevent a trade from being treated as Core:
+            # - volatile breakout buckets have had low hit-rate in audit
+            # - missing wall context makes pinned GEX less actionable
+            # - no clear GEX context should stay reduced-size at most
+            if track == "FIRE" and strategy_local in {"Bull Call Debit", "Bear Put Debit"}:
+                if fire_volatile_breakout_tactical_only and gex_wall_ctx == "volatile_breakout_possible":
+                    blockers.append("gex_volatile_breakout_tactical_only")
+                if fire_pinned_no_wall_tactical_only and gex_wall_ctx in {"pinned_no_call_wall", "pinned_no_put_wall"}:
+                    blockers.append(f"gex_wall_missing:{gex_wall_ctx}")
+                if fire_missing_gex_context_tactical_only and gex_regime and not gex_wall_ctx:
+                    blockers.append("gex_context_missing_tactical_only")
 
         return blockers
 
@@ -2797,37 +3644,77 @@ def run():
         items = [x for x in str(raw).split(";") if str(x).strip()]
         strategy_local = str(row.get("strategy", "")).strip()
         gex_context_local = str(row.get("gex_wall_context", "")).strip()
+        iv_rank_local = fnum(row.get("iv_rank"))
         ic_income_constructive = (
             strategy_local in {"Iron Condor", "Iron Butterfly"}
             and gex_context_local == "pinned_income_constructive"
         )
+        high_iv_ic_income_constructive = (
+            ic_income_constructive
+            and np.isfinite(iv_rank_local)
+            and iv_rank_local >= 60.0
+        )
         quality = []
         hard = []
-        hard_prefixes = (
-            "contract_flow_contra",
-            "contract_flow_directional",
-            "shield_gex",
-            "ic_gex",
-            "flow_too_directional_for_ic",
-            "shield_delta",
-            "gex_missing",
-            "market_regime_block",
-        )
         for b in items:
             token = str(b).strip()
-            if token == "gex_missing_evidence_lane" or token.startswith("bull_call_evidence"):
+            if (
+                token == "gex_missing_evidence_lane"
+                or token.startswith("bull_call_evidence")
+                or token.startswith("bear_put_evidence")
+            ):
+                quality.append(token)
+                continue
+            if token == "gex_source_fallback_tactical_only":
+                quality.append(token)
+                continue
+            if (
+                token.startswith("stage1_conviction_below_yes_good")
+                or token == "stage1_flow_weak_or_ambiguous"
+                or token.startswith("stage1_contract_flow_weak_or_ambiguous")
+                or token.startswith("stage1_contract_flow_unknown")
+                or token.startswith("stage1_high_iv_debit_watch_only")
+            ):
                 quality.append(token)
                 continue
             if token.startswith("market_regime_caution"):
                 quality.append(token)
                 continue
-            if ic_income_constructive and (
+            if ic_income_constructive and not high_iv_ic_income_constructive and (
                 token.startswith("contract_flow_directional")
                 or token.startswith("flow_too_directional_for_ic")
             ):
                 quality.append(token)
                 continue
-            if token.startswith(hard_prefixes):
+            # Hard blockers are reserved for structural or safety-critical failures.
+            # Everything else should degrade to Tactical if the trade still clears
+            # the tactical floors below.
+            if (
+                token.startswith("live_status:")
+                or token == "live_entry_gate_fail"
+                or token == "invalidation_warning"
+                or token == "spot_live_missing"
+                or token == "spot_drift_unknown"
+                or token.startswith("spot_drift:")
+                or token.startswith("bull_call_otm_too_far")
+                or token.startswith("bear_put_otm_too_far")
+                or token.startswith("fire_delta")
+                or token.startswith("shield_gex")
+                or token.startswith("ic_gex")
+                or token.startswith("gex_source_fallback_uncertain")
+                or token == "gex_missing"
+                or token.startswith("shield_delta")
+                or token.startswith("flow_too_directional_for_ic")
+                or token.startswith("contract_flow_directional")
+                or token.startswith("contract_flow_contra")
+                or token.startswith("stage1_contract_flow_contra")
+                or token.startswith("flow_contra_bull_put")
+                or token.startswith("flow_contra_bear_call")
+                or token.startswith("market_regime_block")
+                or token.startswith("confidence_tier_blocked")
+                or token.startswith("stage1_")
+                or token.startswith("bull_call_")
+            ):
                 hard.append(token)
                 continue
             if (
@@ -2837,10 +3724,14 @@ def run():
                 or token.startswith("credit_no_touch")
                 or token.startswith("shield_core")
                 or token.startswith("shield_sigma")
-                or token.startswith("fire_delta")
                 or token.startswith("fire_gex")
+                or token.startswith("gex_context")
+                or token.startswith("gex_volatile")
+                or token.startswith("gex_wall")
                 or token.startswith("flow_")
                 or token.startswith("contract_flow_")
+                or token.startswith("live_rr_weak")
+                or token.startswith("market_regime_caution")
             ):
                 quality.append(token)
             else:
@@ -2854,8 +3745,250 @@ def run():
     def execution_book(row):
         hard_tokens = [x for x in str(row.get("hard_blockers", "")).split(";") if str(x).strip()]
         quality_tokens = [x for x in str(row.get("quality_blockers", "")).split(";") if str(x).strip()]
+        live_status = str(row.get("live_status", "")).strip()
+        ok_live_raw = bool(row.get("is_final_live_valid")) if pd.notna(row.get("is_final_live_valid")) else False
+        gate_pass_effective = bool(row.get("gate_pass_effective")) if pd.notna(row.get("gate_pass_effective")) else False
+        ok_live = ok_live_raw or (live_status == "fails_live_entry_gate" and gate_pass_effective)
+        _strat_for_scout = str(row.get("strategy", "")).strip()
+        _edge_for_scout = fnum(row.get("edge_pct"))
+        _signals_for_scout = fnum(row.get("signals"))
+        _dte_for_scout = fnum(row.get("dte"))
+        _iv_rank_for_scout = fnum(row.get("iv_rank"))
+        _vix_for_scout = fnum(row.get("vix_level"))
+        _spy_5d_for_scout = fnum(row.get("spy_5d_ret"))
+        _rr_for_scout = fnum(row.get("live_reward_risk"))
+        _width_for_scout = fnum(row.get("width_live"))
+        if not np.isfinite(_width_for_scout):
+            _width_for_scout = fnum(row.get("width"))
+        _net_for_scout = fnum(row.get("live_net_bid_ask"))
+        if not np.isfinite(_net_for_scout):
+            _net_for_scout = fnum(row.get("live_net_mark"))
+        _debit_frac_for_scout = (
+            _net_for_scout / _width_for_scout
+            if np.isfinite(_net_for_scout) and np.isfinite(_width_for_scout) and _width_for_scout > 0
+            else math.nan
+        )
+        _likelihood_strength_for_scout = str(row.get("likelihood_strength", "") or "").strip().upper()
+        def _bear_put_scout_allows_hard_tokens(tokens):
+            """Scout can downsize weak evidence, but must not override safety/contra vetoes."""
+            allowed_exact = {
+                "stage1_flow_weak_or_ambiguous",
+            }
+            allowed_prefixes = (
+                "stage1_conviction_below_yes_good:",
+            )
+            for token in tokens:
+                token = str(token).strip()
+                if not token:
+                    continue
+                if token in allowed_exact:
+                    continue
+                if any(token.startswith(prefix) for prefix in allowed_prefixes):
+                    continue
+                return False
+            return True
+
+        def _event_momentum_allows_hard_tokens(tokens):
+            """Event Scout can forgive Stage-1/high-IV discovery blocks only."""
+            allowed_exact = {
+                "stage1_flow_weak_or_ambiguous",
+            }
+            allowed_prefixes = (
+                "stage1_conviction_below_yes_good:",
+                "stage1_high_iv_debit_watch_only:",
+            )
+            for token in tokens:
+                token = str(token).strip()
+                if not token:
+                    continue
+                if token in allowed_exact:
+                    continue
+                if any(token.startswith(prefix) for prefix in allowed_prefixes):
+                    continue
+                return False
+            return True
+
+        def _debit_momentum_allows_hard_tokens(tokens):
+            """Debit Scout can forgive only discovery/sample weakness.
+
+            Core/Tactical still require the full sample/verdict gates.  Scout has
+            its own lower min-signal and low-sample rules, so do not let the
+            higher Core/Tactical `signals_below` or LOW_SAMPLE tokens kill Scout
+            before those Scout-specific checks run.
+            """
+            allowed_exact = {
+                "stage1_flow_weak_or_ambiguous",
+                "likelihood_verdict:LOW_SAMPLE",
+                "likelihood_strength_unranked:Low Sample",
+                "likelihood_strength_blocked:Low Sample",
+            }
+            allowed_prefixes = (
+                "stage1_conviction_below_yes_good:",
+                "stage1_high_iv_debit_watch_only:",
+                "signals_below:",
+            )
+            for token in tokens:
+                token = str(token).strip()
+                if not token:
+                    continue
+                if token in allowed_exact:
+                    continue
+                if any(token.startswith(prefix) for prefix in allowed_prefixes):
+                    continue
+                return False
+            return True
+
+        _conv_for_event = fnum(row.get("conviction"))
+        _breakeven_for_event = fnum(row.get("breakeven"))
+        _spot_for_event = fnum(row.get("spot_live_effective"))
+        if not np.isfinite(_spot_for_event):
+            _spot_for_event = fnum(row.get("spot_live"))
+        _notes_for_event = str(row.get("notes_stage1", "") or row.get("notes", "") or "").upper()
+        _earnings_for_event = str(row.get("earnings_label_stage1", "") or "").upper()
+        _has_event_context = (
+            "ER-RISK" in _notes_for_event
+            or "EARN" in _notes_for_event
+            or "ER" in _earnings_for_event
+            or any(str(t).startswith("stage1_high_iv_debit_watch_only:") for t in hard_tokens)
+        )
+        _contract_flow_for_event = str(row.get("contract_flow_confirmation", "") or "").strip().lower()
+        _event_direction_ok = True
+        if event_momentum_scout_require_breakeven_cross:
+            if _strat_for_scout == "Bull Call Debit":
+                _event_direction_ok = (
+                    np.isfinite(_spot_for_event)
+                    and np.isfinite(_breakeven_for_event)
+                    and _spot_for_event >= _breakeven_for_event
+                )
+            elif _strat_for_scout == "Bear Put Debit":
+                _event_direction_ok = (
+                    np.isfinite(_spot_for_event)
+                    and np.isfinite(_breakeven_for_event)
+                    and _spot_for_event <= _breakeven_for_event
+                )
+        event_momentum_scout_candidate = (
+            enable_scout_book
+            and enable_event_momentum_scout
+            and _strat_for_scout in {"Bull Call Debit", "Bear Put Debit"}
+            and ok_live
+            and _has_event_context
+            and _event_momentum_allows_hard_tokens(hard_tokens)
+            and np.isfinite(_conv_for_event)
+            and _conv_for_event >= event_momentum_scout_min_conviction
+            and np.isfinite(_dte_for_scout)
+            and _dte_for_scout <= event_momentum_scout_max_dte
+            and np.isfinite(_rr_for_scout)
+            and _rr_for_scout >= event_momentum_scout_min_reward_risk
+            and np.isfinite(_debit_frac_for_scout)
+            and _debit_frac_for_scout <= event_momentum_scout_max_debit_frac
+            and (
+                (not event_momentum_scout_require_contract_confirmed)
+                or _contract_flow_for_event == "confirmed"
+            )
+            and _event_direction_ok
+        )
+
+        _contract_flow_for_debit = str(row.get("contract_flow_confirmation", "") or "").strip().lower()
+        _flow_dir_for_debit = str(row.get("flow_direction", "") or "").strip().lower()
+        _flow_conf_for_debit = str(row.get("flow_confirmation", "") or "").strip().lower()
+        _verdict_for_debit = str(row.get("verdict", "") or "").strip().upper()
+        _regime_score_for_debit = fnum(row.get("market_regime_score"))
+        _quality_for_debit = [str(t).strip() for t in quality_tokens if str(t).strip()]
+        _scout_quality_blocked = scout_block_gex_volatile_breakout and any(
+            t.startswith("gex_volatile_breakout") for t in _quality_for_debit
+        )
+        _debit_edge_floor = debit_momentum_scout_min_edge_pct
+        if _strat_for_scout == "Bear Put Debit":
+            _debit_edge_floor = max(debit_momentum_scout_min_edge_pct, debit_momentum_scout_bear_min_edge_pct)
+        _debit_direction_ok = True
+        if _flow_conf_for_debit == "confirmed":
+            if _strat_for_scout == "Bull Call Debit" and _flow_dir_for_debit == "bearish":
+                _debit_direction_ok = False
+            elif _strat_for_scout == "Bear Put Debit" and _flow_dir_for_debit == "bullish":
+                _debit_direction_ok = False
+        _debit_bear_quality_ok = True
+        if _strat_for_scout == "Bear Put Debit":
+            if (
+                debit_momentum_scout_bear_require_flow_confirmed
+                and not (_flow_conf_for_debit == "confirmed" and _flow_dir_for_debit == "bearish")
+            ):
+                _debit_bear_quality_ok = False
+            if _likelihood_strength_for_scout not in debit_momentum_scout_bear_likelihood_strengths:
+                _debit_bear_quality_ok = False
+            if debit_momentum_scout_block_gex_volatile_breakout and any(
+                t.startswith("gex_volatile_breakout") for t in _quality_for_debit
+            ):
+                _debit_bear_quality_ok = False
+        debit_momentum_scout_candidate = (
+            enable_scout_book
+            and allow_debit_momentum_scout_lane
+            and _strat_for_scout in {"Bull Call Debit", "Bear Put Debit"}
+            and not _scout_quality_blocked
+            and ok_live
+            and _debit_momentum_allows_hard_tokens(hard_tokens)
+            and _debit_direction_ok
+            and _debit_bear_quality_ok
+            and (
+                (not debit_momentum_scout_require_verdict_pass)
+                or _verdict_for_debit == "PASS"
+            )
+            and np.isfinite(_conv_for_event)
+            and _conv_for_event >= debit_momentum_scout_min_conviction
+            and np.isfinite(_edge_for_scout)
+            and _edge_for_scout >= _debit_edge_floor
+            and np.isfinite(_signals_for_scout)
+            and _signals_for_scout >= debit_momentum_scout_min_signals
+            and np.isfinite(_dte_for_scout)
+            and _dte_for_scout >= debit_momentum_scout_min_dte
+            and _dte_for_scout <= debit_momentum_scout_max_dte
+            and np.isfinite(_rr_for_scout)
+            and _rr_for_scout >= debit_momentum_scout_min_reward_risk
+            and np.isfinite(_debit_frac_for_scout)
+            and _debit_frac_for_scout <= debit_momentum_scout_max_debit_frac
+            and np.isfinite(_iv_rank_for_scout)
+            and _iv_rank_for_scout <= debit_momentum_scout_max_iv_rank
+            and (
+                (not debit_momentum_scout_require_contract_confirmed)
+                or _contract_flow_for_debit == "confirmed"
+            )
+            and _contract_flow_for_debit not in {"contra", "directional"}
+            and np.isfinite(_regime_score_for_debit)
+            and _regime_score_for_debit >= debit_momentum_scout_min_regime_score
+        )
+
+        bear_put_scout_candidate = (
+            enable_scout_book
+            and allow_bear_put_scout_lane
+            and _strat_for_scout == "Bear Put Debit"
+            and not _scout_quality_blocked
+            and ok_live
+            and _bear_put_scout_allows_hard_tokens(hard_tokens)
+            and _likelihood_strength_for_scout in bear_put_scout_likelihood_strengths
+            and (not bear_put_scout_require_negative_edge or (np.isfinite(_edge_for_scout) and _edge_for_scout < 0))
+            and np.isfinite(_signals_for_scout)
+            and _signals_for_scout >= bear_put_scout_min_signals
+            and np.isfinite(_dte_for_scout)
+            and _dte_for_scout >= bear_put_scout_min_dte
+            and _dte_for_scout <= bear_put_scout_max_dte
+            and np.isfinite(_iv_rank_for_scout)
+            and _iv_rank_for_scout <= bear_put_scout_max_iv_rank
+            and np.isfinite(_vix_for_scout)
+            and _vix_for_scout < bear_put_scout_max_vix
+            and (
+                (not bear_put_scout_require_spy_5d_nonnegative)
+                or (np.isfinite(_spy_5d_for_scout) and _spy_5d_for_scout >= 0)
+            )
+            and np.isfinite(_rr_for_scout)
+            and _rr_for_scout >= bear_put_scout_min_reward_risk
+            and np.isfinite(_debit_frac_for_scout)
+            and _debit_frac_for_scout <= bear_put_scout_max_debit_frac
+        )
         if hard_tokens:
-            return "Watch"
+            if debit_momentum_scout_candidate:
+                return "Scout"
+            if event_momentum_scout_candidate:
+                return "Scout"
+            return "Scout" if bear_put_scout_candidate else "Watch"
         if not quality_tokens:
             return "Core"
         if not enable_dual_books:
@@ -2881,10 +4014,24 @@ def run():
                 if not np.isfinite(_edge) or _edge < shield_live_valid_min_edge:
                     shield_override_live = False
         if not bool(row.get("stage1_effective")) and not shield_override_live:
-            return "Watch"
+            if debit_momentum_scout_candidate:
+                return "Scout"
+            if event_momentum_scout_candidate:
+                return "Scout"
+            return "Scout" if bear_put_scout_candidate else "Watch"
         conv = fnum(row.get("conviction"))
-        evidence_lane = bool(row.get("bull_call_evidence_lane"))
+        evidence_lane = bool(row.get("bull_call_evidence_lane")) or bool(row.get("bear_put_evidence_lane"))
         _strat = str(row.get("strategy", "")).strip()
+        edge = fnum(row.get("edge_pct"))
+        scout_candidate = (
+            enable_scout_book
+            and evidence_lane
+            and _strat == "Bull Call Debit"
+            and not _scout_quality_blocked
+            and np.isfinite(edge)
+            and edge >= scout_min_edge_pct
+            and edge < scout_max_edge_pct
+        )
         ic_income_constructive = (
             _strat in {"Iron Condor", "Iron Butterfly"}
             and str(row.get("gex_wall_context", "")).strip() == "pinned_income_constructive"
@@ -2895,8 +4042,11 @@ def run():
             and np.isfinite(tactical_min_conviction)
             and (not np.isfinite(conv) or conv < tactical_min_conviction)
         ):
-            return "Watch"
-        edge = fnum(row.get("edge_pct"))
+            if debit_momentum_scout_candidate:
+                return "Scout"
+            if event_momentum_scout_candidate:
+                return "Scout"
+            return "Scout" if bear_put_scout_candidate else "Watch"
         _is_bear_tac = _strat in {"Bear Put Debit", "Bear Call Credit"}
         _tac_edge = (
             max(tactical_min_edge_pct, min_edge_pct_bear) if _is_bear_tac
@@ -2908,7 +4058,11 @@ def run():
             and np.isfinite(_tac_edge)
             and (not np.isfinite(edge) or edge < _tac_edge)
         ):
-            return "Watch"
+            if debit_momentum_scout_candidate:
+                return "Scout"
+            if event_momentum_scout_candidate:
+                return "Scout"
+            return "Scout" if (scout_candidate or bear_put_scout_candidate) else "Watch"
         # [T9] Tactical debit/width cap — block expensive-for-width Tactical trades
         if _strat in {"Bull Call Debit", "Bear Put Debit"}:
             _tac_width = fnum(row.get("width_live"))
@@ -2929,7 +4083,11 @@ def run():
             and np.isfinite(tactical_min_signals)
             and (not np.isfinite(sig) or sig < tactical_min_signals)
         ):
-            return "Watch"
+            if debit_momentum_scout_candidate:
+                return "Scout"
+            if event_momentum_scout_candidate:
+                return "Scout"
+            return "Scout" if bear_put_scout_candidate else "Watch"
         verdict = str(row.get("verdict", "")).strip().upper()
         if (
             (not shield_override_live)
@@ -2937,13 +4095,29 @@ def run():
             and tactical_require_verdict_pass
             and verdict != "PASS"
         ):
-            return "Watch"
+            if debit_momentum_scout_candidate:
+                return "Scout"
+            if event_momentum_scout_candidate:
+                return "Scout"
+            return "Scout" if bear_put_scout_candidate else "Watch"
+        if debit_momentum_scout_candidate:
+            return "Scout"
+        if event_momentum_scout_candidate:
+            return "Scout"
+        if bear_put_scout_candidate:
+            return "Scout"
+        if scout_candidate:
+            return "Scout"
         return "Tactical"
 
     mdf["execution_book"] = mdf.apply(execution_book, axis=1)
-    mdf["approved"] = mdf["execution_book"].isin(["Core", "Tactical"])
-    mdf["size_mult"] = mdf["execution_book"].map({"Core": core_size_mult, "Tactical": tactical_size_mult})
-    mdf["_book_rank"] = mdf["execution_book"].map({"Core": 0, "Tactical": 1, "Watch": 2}).fillna(9).astype(int)
+    mdf["approved"] = mdf["execution_book"].isin(["Core", "Tactical", "Scout"])
+    mdf["size_mult"] = mdf["execution_book"].map({
+        "Core": core_size_mult,
+        "Tactical": tactical_size_mult,
+        "Scout": scout_size_mult,
+    })
+    mdf["_book_rank"] = mdf["execution_book"].map({"Core": 0, "Tactical": 1, "Scout": 2, "Watch": 3}).fillna(9).astype(int)
     mdf["_edge_sort"] = pd.to_numeric(mdf.get("edge_pct"), errors="coerce").fillna(-1e9)
     mdf = (
         mdf.sort_values(
@@ -3262,6 +4436,36 @@ def run():
     inv_close_confirms = fnum(approval_cfg.get("invalidation_close_confirmations", 2))
     inv_close_confirms = int(inv_close_confirms) if np.isfinite(inv_close_confirms) and inv_close_confirms >= 1 else 2
 
+    def live_entry_action(row, approved: bool) -> tuple[str, str]:
+        if not approved:
+            return "SKIP", "Not approved by daily pipeline."
+        if args.historical_replay:
+            return "WAIT", "Historical replay only; rerun without --historical-replay for live entry."
+        if auto_gex_required:
+            gex_source_live = str(row.get("gex_source", "") or "").strip().lower()
+            if gex_source_live != "unusual_whales_dashboard_cdp":
+                return "WAIT", f"UW dashboard GEX required before live entry; current GEX source={gex_source_live or 'missing'}."
+        live_status = str(row.get("live_status", "")).strip()
+        ok_live_raw = bool(row.get("is_final_live_valid")) if pd.notna(row.get("is_final_live_valid")) else False
+        gate_pass_effective = bool(row.get("gate_pass_effective")) if pd.notna(row.get("gate_pass_effective")) else False
+        ok_live = ok_live_raw or (live_status == "fails_live_entry_gate" and gate_pass_effective)
+        if ok_live:
+            return "ENTER", "Live Schwab quote passed the entry gate."
+        if live_status in {
+            "chain_error",
+            "chain_not_success",
+            "missing_underlying_quote",
+            "missing_live_quote",
+            "missing_leg_in_live_chain",
+        }:
+            return "WAIT", f"Live pricing incomplete: {live_status or 'unknown'}."
+        if live_status == "fails_live_entry_gate":
+            return "SKIP", "Live entry gate failed."
+        if live_status == "invalid_entry_structure":
+            reason = str(row.get("entry_structure_reason_live", "") or "").strip()
+            return "SKIP", f"Invalid live structure{': ' + reason if reason else ''}."
+        return "SKIP", f"Live status is not executable: {live_status or 'unknown'}."
+
     out_rows = []
     for i, r in mdf.iterrows():
         approved = bool(r["approved"])
@@ -3307,6 +4511,7 @@ def run():
             max_profit = "N/A"
             max_loss = "N/A"
             be_txt = "N/A"
+        live_action, live_action_reason = live_entry_action(r, approved)
 
         if approved:
             confidence_tier = str(r.get("confidence_tier", ""))
@@ -3449,6 +4654,12 @@ def run():
                     watch_reason_flags.append("live_rr_weak")
                 elif b.startswith("fire_delta"):
                     watch_reason_flags.append("fire_delta_fail")
+                elif b.startswith("stage1_conviction") or b.startswith("stage1_watch") or b.startswith("stage1_not_actionable"):
+                    watch_reason_flags.append("stage1_conviction_watch")
+                elif b.startswith("stage1_flow_"):
+                    watch_reason_flags.append("stage1_flow_fail")
+                elif b.startswith("stage1_contract_flow_"):
+                    watch_reason_flags.append("stage1_contract_flow_fail")
                 elif b.startswith("flow_"):
                     watch_reason_flags.append("flow_confirmation_fail")
                 elif b.startswith("contract_flow_"):
@@ -3459,6 +4670,8 @@ def run():
                     watch_reason_flags.append("shield_gex_blocked")
                 elif b.startswith("ic_gex"):
                     watch_reason_flags.append("ic_gex_blocked")
+                elif b.startswith("gex_source_fallback"):
+                    watch_reason_flags.append("gex_fallback")
                 elif b.startswith("confidence_tier_blocked"):
                     watch_reason_flags.append("confidence_tier_blocked")
                 elif b.startswith("live_entry_gate_fail") or b.startswith("live_status:"):
@@ -3467,7 +4680,7 @@ def run():
                     watch_reason_flags.append("spot_data_mismatch")
                 elif b.startswith("bull_call_otm_too_far") or b.startswith("bear_put_otm_too_far"):
                     watch_reason_flags.append("debit_moneyness_fail")
-                elif b.startswith("stage1_not_actionable"):
+                elif b.startswith("stage1_"):
                     watch_reason_flags.append("stage1_conviction_watch")
                 else:
                     watch_reason_flags.append("other_watch")
@@ -3558,7 +4771,11 @@ def run():
                         f"entry near-miss tolerated (target {r.get('entry_gate')}, live {cur_txt}, tol {gate_tol_now:.2f})"
                     )
                 if stage1_blocked:
-                    stage1_eval = str(r.get("stage1_eval_reason", "")).strip() or "stage1_watch_blocked"
+                    stage1_eval = (
+                        str(r.get("stage1_diagnostics", "") or r.get("stage1_not_actionable_reason", "")).strip()
+                        or str(r.get("stage1_eval_reason", "")).strip()
+                        or "stage1_watch_blocked"
+                    )
                     reasons.append(f"stage1 blocked ({stage1_eval})")
                 restrike_reason = str(r.get("restrike_reason", "")).strip()
                 if restrike_reason:
@@ -3621,6 +4838,9 @@ def run():
                 ),
                 "Expiry": str(r["expiry"])[:10],
                 "DTE": (dt.datetime.strptime(str(r["expiry"])[:10], "%Y-%m-%d").date() - asof).days,
+                "Live Action": live_action,
+                "Live Check Reason": live_action_reason,
+                "Entry Gate": str(r.get("entry_gate", "") or ""),
                 "Net Credit/Debit": net_txt,
                 "Max Profit": max_profit,
                 "Max Loss": max_loss,
@@ -3630,6 +4850,7 @@ def run():
                 "Execution Book": execution_book,
                 "Size Mult": size_mult_txt,
                 "UW Flow Read": flow_read_txt,
+                "Stage-1 Diagnostics": str(r.get("stage1_diagnostics", "") or r.get("stage1_not_actionable_reason", "") or ""),
                 "Signal Tier (Stage-1)": confidence_tier,
                 "Optimal": optimal,
                 "IV Rank": f"{r['iv_rank']:.0f}" if "iv_rank" in r and pd.notna(r.get("iv_rank")) else "",
@@ -3641,6 +4862,7 @@ def run():
                     else str(r.get("market_regime_confidence", "") or "")
                 ),
                 "GEX Regime": str(r.get("gex_regime", "")) if r.get("gex_regime") else "",
+                "GEX Source": str(r.get("gex_source", "") or ""),
                 "Net GEX ($M)": f"{fnum(r.get('net_gex')) / 1e6:.1f}" if np.isfinite(fnum(r.get("net_gex"))) else "",
                 "Regime Notes": str(r.get("market_regime_reason", "") or ""),
                 "GEX Wall Context": str(r.get("gex_wall_context", "") or ""),
@@ -3661,6 +4883,9 @@ def run():
             "Strike Setup",
             "Expiry",
             "DTE",
+            "Live Action",
+            "Live Check Reason",
+            "Entry Gate",
             "Net Credit/Debit",
             "Max Profit",
             "Max Loss",
@@ -3670,6 +4895,7 @@ def run():
             "Execution Book",
             "Size Mult",
             "UW Flow Read",
+            "Stage-1 Diagnostics",
             "Signal Tier (Stage-1)",
             "Optimal",
             "IV Rank",
@@ -3677,6 +4903,7 @@ def run():
                 "Long Delta",
                 "Market Regime",
                 "GEX Regime",
+                "GEX Source",
                 "Net GEX ($M)",
                 "Regime Notes",
                 "GEX Wall Context",
@@ -3699,6 +4926,7 @@ def run():
     approved_count = int(mdf["approved"].sum()) if "approved" in mdf.columns else 0
     core_count = int((out_df["Execution Book"] == "Core").sum()) if "Execution Book" in out_df.columns else 0
     tactical_count = int((out_df["Execution Book"] == "Tactical").sum()) if "Execution Book" in out_df.columns else 0
+    scout_count = int((out_df["Execution Book"] == "Scout").sum()) if "Execution Book" in out_df.columns else 0
     watch_book_count = int((out_df["Execution Book"] == "Watch").sum()) if "Execution Book" in out_df.columns else 0
     dropped_csv = out_dir / f"dropped_trades_{asof_str}.csv"
     dropped_rows = []
@@ -3734,6 +4962,48 @@ def run():
     decision_book_csv = out_dir / f"trade_decision_book_{asof_str}.csv"
     mdf.to_csv(decision_book_csv, index=False)
 
+    def output_approved_mask(df: pd.DataFrame) -> pd.Series:
+        if df.empty:
+            return pd.Series(False, index=df.index)
+        if "Approved" in df.columns:
+            return df["Approved"].astype(str).str.upper().eq("YES")
+        if "Execution Book" in df.columns:
+            return df["Execution Book"].astype(str).isin(["Core", "Tactical", "Scout"])
+        if "Category" in df.columns:
+            return df["Category"].astype(str).str.startswith("Approved")
+        return pd.Series(False, index=df.index)
+
+    planned_journal_csv = out_dir / f"planned_trade_journal_{asof_str}.csv"
+    planned_journal_cols = [
+        c
+        for c in [
+            "#",
+            "Ticker",
+            "Execution Book",
+            "Live Action",
+            "Live Check Reason",
+            "Entry Gate",
+            "Action",
+            "Strike Setup",
+            "Expiry",
+            "DTE",
+            "Net Credit/Debit",
+            "Max Profit",
+            "Max Loss",
+            "Breakeven",
+            "Conviction %",
+            "Setup Likelihood",
+            "UW Flow Read",
+            "GEX Regime",
+            "GEX Source",
+            "GEX Wall Context",
+            "Notes",
+        ]
+        if c in out_df.columns
+    ]
+    planned_journal_df = out_df[output_approved_mask(out_df)].copy()
+    planned_journal_df.loc[:, planned_journal_cols].to_csv(planned_journal_csv, index=False)
+
     manifest_path = out_dir / f"run_manifest_{asof_str}.json"
     category_order = [
         "Approved - FIRE",
@@ -3743,7 +5013,7 @@ def run():
         "Watch Only - UNKNOWN",
         "Approved - UNKNOWN",
     ]
-    execution_book_order = ["Core", "Tactical", "Watch"]
+    execution_book_order = ["Core", "Tactical", "Scout", "Watch"]
     table_cols = [
         c
         for c in [
@@ -3760,6 +5030,7 @@ def run():
             "Conviction %",
             "Setup Likelihood",
             "UW Flow Read",
+            "Stage-1 Diagnostics",
             "Signal Tier (Stage-1)",
             "Optimal",
             "IV Rank",
@@ -3767,6 +5038,7 @@ def run():
             "Long Delta",
             "Market Regime",
             "GEX Regime",
+            "GEX Source",
             "Net GEX ($M)",
             "Regime Notes",
             "GEX Wall Context",
@@ -3776,10 +5048,248 @@ def run():
     ]
 
     def markdown_table(df: pd.DataFrame, cols: list[str]) -> str:
-        cols = [c for c in cols if c in df.columns]
+        cols = list(dict.fromkeys([c for c in cols if c in df.columns]))
         if df.empty or not cols:
             return "_No rows_"
-        return df[cols].fillna("").to_markdown(index=False)
+        compact_limits = {
+            "Stage-1 Diagnostics": 95,
+            "Watch Reason Flags": 95,
+            "Reject Reasons": 110,
+            "Reject / Action Reason": 110,
+            "Notes": 120,
+            "Live Check Reason": 100,
+            "Regime Notes": 100,
+            "GEX Wall Context": 110,
+            "UW Flow Read": 100,
+            "Daily Blockers": 110,
+            "Daily Notes": 120,
+            "Morning Reason": 120,
+            "Escalation Decision": 120,
+            "Source": 80,
+            "Setup": 78,
+            "Why": 90,
+            "Edge / Sample": 70,
+        }
+        table_df = df[cols].fillna("").copy()
+        def _compact_text(value: object, limit: int) -> str:
+            text = str(value or "").strip()
+            if len(text) <= limit:
+                return text
+            return text[: max(0, limit - 3)].rstrip() + "..."
+
+        for col, limit in compact_limits.items():
+            if col in table_df.columns:
+                table_df[col] = table_df[col].map(lambda value: _compact_text(value, limit))
+        return table_df.to_markdown(index=False)
+
+    def event_momentum_candidates_section(source_df: pd.DataFrame) -> list[str]:
+        def _event_short_text(value: object, limit: int = 150) -> str:
+            text = str(value or "").strip()
+            if len(text) <= limit:
+                return text
+            return text[: max(0, limit - 3)].rstrip() + "..."
+
+        def _event_compact_likelihood(value: object) -> str:
+            text = str(value or "").strip()
+            verdict = "LS" if "LOW_SAMPLE" in text else "FAIL" if "FAIL" in text else "PASS" if "PASS" in text else ""
+            edge_match = re.search(r"edge\s+([+-]?\d+(?:\.\d+)?)%", text)
+            n_match = re.search(r"n=(\d+)", text)
+            parts = [verdict]
+            if edge_match:
+                parts.append(f"{float(edge_match.group(1)):+.1f}%")
+            if n_match:
+                parts.append(f"n{n_match.group(1)}")
+            return " ".join([p for p in parts if p]) or _event_short_text(text, 28)
+
+        def _event_compact_blockers(value: object) -> str:
+            text = str(value or "").strip()
+            if not text:
+                return ""
+            tokens = [x.strip() for x in re.split(r"[;,]", text) if x.strip()]
+            labels: list[str] = []
+            for token in tokens:
+                label = ""
+                if "stage1_conviction_below_yes_good" in token:
+                    match = re.search(r"(\d+)<(\d+)", token)
+                    label = f"S1 {match.group(1)}<{match.group(2)}" if match else "S1 low"
+                elif "stage1_flow_weak_or_ambiguous" in token:
+                    label = "weak flow"
+                elif "stage1_contract_flow_contra" in token or "contract_flow_contra" in token:
+                    label = "contract contra"
+                elif "stage1_contract_flow_weak_or_ambiguous" in token or "contract_flow_weak_or_ambiguous" in token:
+                    label = "contract weak"
+                elif "stage1_high_iv_debit_watch_only" in token:
+                    label = "high IV"
+                elif "LOW_SAMPLE" in token or "Low Sample" in token:
+                    label = "low sample"
+                elif token.startswith("signals_below"):
+                    label = "n<min"
+                elif token.startswith("edge_below"):
+                    label = "edge<thresh"
+                elif token.startswith("likelihood_verdict:FAIL"):
+                    label = "likelihood fail"
+                elif "gex" in token.lower():
+                    label = "GEX"
+                elif token:
+                    label = token.replace("_", " ")
+                if label and label not in labels:
+                    labels.append(label)
+                if len(labels) >= 3:
+                    break
+            return "; ".join(labels) if labels else _event_short_text(text, 35)
+
+        def _event_strategy(value: object) -> str:
+            text = str(value or "").strip()
+            return {
+                "Bull Call Debit": "Bull Call",
+                "Bear Put Debit": "Bear Put",
+                "Iron Condor": "IC",
+                "Long Iron Condor": "Long IC",
+            }.get(text, text)
+
+        section = [
+            "## Event Momentum / High-IV Candidates",
+            "",
+            "These rows come from the full decision book, not just the final display cap. They are shown so high-interest/event names cannot silently disappear. Scout is allowed only when live entry, reward/risk, contract flow, and breakeven confirmation are acceptable.",
+            "",
+        ]
+        if source_df.empty:
+            section.extend(["_No event/high-IV candidates available._", ""])
+            return section
+        ev = source_df.copy()
+        diag = ev.get("stage1_not_actionable_reason", pd.Series("", index=ev.index)).astype(str)
+        notes = ev.get("notes_stage1", pd.Series("", index=ev.index)).astype(str)
+        ev = ev[
+            diag.str.contains("stage1_high_iv_debit_watch_only", na=False)
+            | notes.str.contains("ER-RISK|EARN", case=False, regex=True, na=False)
+        ].copy()
+        if ev.empty:
+            section.extend(["_No event/high-IV candidates available._", ""])
+            return section
+
+        for c in ["call_premium", "put_premium", "bullish_premium", "bearish_premium"]:
+            if c not in ev.columns:
+                ev[c] = 0.0
+            ev[c] = pd.to_numeric(ev[c], errors="coerce").fillna(0.0)
+        ev["_event_interest"] = (
+            ev["call_premium"].abs()
+            + ev["put_premium"].abs()
+            + ev["bullish_premium"].abs()
+            + ev["bearish_premium"].abs()
+        )
+
+        def _strike_setup(row):
+            strat = str(row.get("strategy", "")).strip()
+            long_strike = fnum(row.get("long_strike"))
+            short_strike = fnum(row.get("short_strike"))
+            if strat == "Bull Call Debit" and np.isfinite(long_strike) and np.isfinite(short_strike):
+                return f"Buy {long_strike:.2f}C / Sell {short_strike:.2f}C"
+            if strat == "Bear Put Debit" and np.isfinite(long_strike) and np.isfinite(short_strike):
+                return f"Buy {long_strike:.2f}P / Sell {short_strike:.2f}P"
+            return str(row.get("strategy", "")).strip()
+
+        ev["Strike Setup"] = ev.apply(_strike_setup, axis=1)
+        ev["Event Interest $M"] = ev["_event_interest"].map(lambda x: f"{x / 1_000_000:.1f}")
+        ev["Live Debit/Credit"] = ev.apply(
+            lambda r: (
+                f"{fnum(r.get('live_net_bid_ask')):.2f} vs {str(r.get('entry_gate', '')).strip()}"
+                if np.isfinite(fnum(r.get("live_net_bid_ask")))
+                else str(r.get("entry_gate", "")).strip()
+            ),
+            axis=1,
+        )
+        ev["Spot vs BE"] = ev.apply(
+            lambda r: (
+                f"{fnum(r.get('spot_live_effective')):.2f} / {fnum(r.get('breakeven')):.2f}"
+                if np.isfinite(fnum(r.get("spot_live_effective"))) and np.isfinite(fnum(r.get("breakeven")))
+                else ""
+            ),
+            axis=1,
+        )
+        ev["RR"] = ev["live_reward_risk"].map(lambda x: f"{fnum(x):.2f}" if np.isfinite(fnum(x)) else "")
+
+        def _fmt_event_num(value):
+            v = fnum(value)
+            if not np.isfinite(v):
+                return ""
+            if abs(v - round(v)) < 1e-9:
+                return str(int(round(v)))
+            return f"{v:.1f}"
+
+        ev["Likelihood"] = ev.apply(
+            lambda r: (
+                f"{str(r.get('verdict', '')).strip()} edge {fnum(r.get('edge_pct')):.1f}% n={_fmt_event_num(r.get('signals'))}"
+                if np.isfinite(fnum(r.get("edge_pct")))
+                else str(r.get("verdict", "")).strip()
+            ),
+            axis=1,
+        )
+        ev["Reject / Action Reason"] = ev.apply(
+            lambda r: "; ".join(
+                [x.strip() for x in str(r.get("approval_blockers", "")).split(";") if x.strip()][:4]
+            ),
+            axis=1,
+        )
+        def _book_status(value: object) -> str:
+            book = str(value or "").strip()
+            if book == "Core":
+                return "🟢 CORE"
+            if book == "Tactical":
+                return "🟦 TACT"
+            if book == "Scout":
+                return "🟡 SCOUT"
+            return "🔴 WATCH"
+
+        ev["Status"] = ev.get("execution_book", pd.Series("", index=ev.index)).map(_book_status)
+        ev["St"] = ev["Status"].map(lambda x: str(x).split()[0] if str(x).strip() else "🔴")
+        ev["Ticker"] = ev["ticker"].astype(str).str.upper().str.strip()
+        ev["Strat"] = ev["strategy"].map(_event_strategy)
+        ev["Legs"] = ev["Strike Setup"].map(lambda v: _event_short_text(v, 34))
+        ev["Exp"] = ev["expiry"].astype(str).str[:10]
+        ev["Conv"] = ev["conviction"].map(lambda x: f"{fnum(x):.0f}%" if np.isfinite(fnum(x)) else "")
+        ev["Entry"] = ev["Live Debit/Credit"].map(lambda v: str(v).replace(" vs <=", "<=").replace(" vs >=", ">="))
+        ev["Entry"] = ev["Entry"].map(lambda v: re.sub(r"\s+", " ", str(v)).strip())
+        ev["Edge"] = ev["Likelihood"].map(_event_compact_likelihood)
+        ev["GEX"] = ev.get("gex_regime", pd.Series("", index=ev.index)).astype(str).str.replace("_", " ")
+        ev["Why"] = ev.apply(
+            lambda r: (
+                str(r.get("Reject / Action Reason", "")).strip()
+                or str(r.get("stage1_not_actionable_reason", "")).strip()
+                or str(r.get("contract_flow_confirmation", "")).strip()
+            ),
+            axis=1,
+        )
+        ev["Why"] = ev["Why"].map(_event_compact_blockers)
+        ev = ev.sort_values(["_event_interest", "_display_rank_score"], ascending=[False, False]).head(25)
+        section.append("**Top event/high-IV candidates**")
+        section.append(
+            markdown_table(
+                ev,
+                ["St", "Ticker", "Strat", "Legs", "Exp", "Conv", "Entry", "Edge", "GEX", "Why"],
+            )
+        )
+        section.append("")
+        def _compact_event_text(value: object, limit: int = 150) -> str:
+            text = str(value or "").strip()
+            if len(text) <= limit:
+                return text
+            return text[: max(0, limit - 3)].rstrip() + "..."
+
+        section.append("**Event candidate details**")
+        for _, row in ev.iterrows():
+            ticker = str(row.get("ticker", "") or "").strip().upper()
+            strategy = str(row.get("strategy", "") or "").strip()
+            setup = str(row.get("Strike Setup", "") or "").strip()
+            expiry = str(row.get("expiry", "") or "").strip()[:10]
+            entry = str(row.get("Entry", "") or "").strip()
+            edge = str(row.get("Edge", "") or "").strip()
+            gex = str(row.get("GEX", "") or "").strip()
+            why = _compact_event_text(row.get("Reject / Action Reason", "") or row.get("stage1_not_actionable_reason", ""), 180)
+            section.append(
+                f"- {ticker}: {strategy} {setup} {expiry}. Entry {entry}; {edge}; GEX {gex}; {why}"
+            )
+        section.append("")
+        return section
 
     def bullets_from_rows(df: pd.DataFrame, value_col: str, prefix_col: str = "Ticker") -> list[str]:
         if value_col not in df.columns:
@@ -3795,6 +5305,37 @@ def run():
             bullets.append(f"- {label}: {value}")
         return bullets
 
+    live_entry_summary = ["## Live Entry Summary", ""]
+    if out_df.empty:
+        live_entry_summary.append("- No recommendation rows were produced.")
+    else:
+        approved_for_entry = out_df[output_approved_mask(out_df)].copy()
+        if approved_for_entry.empty:
+            live_entry_summary.append("- SKIP: No approved trades.")
+        else:
+            if "Live Action" in approved_for_entry.columns:
+                action_series = approved_for_entry["Live Action"].astype(str).replace("", "UNKNOWN")
+            else:
+                action_series = pd.Series(["UNKNOWN"] * len(approved_for_entry), index=approved_for_entry.index)
+            action_counts = action_series.value_counts().to_dict()
+            live_entry_summary.append(
+                "- Approved live-action split: "
+                + ", ".join([f"{k}={int(v)}" for k, v in sorted(action_counts.items())])
+            )
+            for action in ["ENTER", "WAIT", "SKIP", "UNKNOWN"]:
+                subset = approved_for_entry[action_series.eq(action)]
+                if subset.empty:
+                    continue
+                live_entry_summary.append(f"- {action}:")
+                for _, rr in subset.iterrows():
+                    live_entry_summary.append(
+                        "  - "
+                        + f"{rr.get('Ticker', '')} {rr.get('Action', '')} "
+                        + f"{rr.get('Strike Setup', '')} {rr.get('Expiry', '')}: "
+                        + str(rr.get("Live Check Reason", "")).strip()
+                    )
+    live_entry_summary.append("")
+
     plan_cols = ["#", "Ticker", "Action", "Expiry", "DTE", "Net Credit/Debit", "Breakeven"]
     strike_cols = ["#", "Ticker", "Strike Setup"]
     risk_cols = [
@@ -3804,8 +5345,6 @@ def run():
         "Max Loss",
         "Conviction %",
         "Setup Likelihood",
-        "Signal Tier (Stage-1)",
-        "Optimal",
         "IV Rank",
         "Short Delta",
         "Long Delta",
@@ -3821,6 +5360,7 @@ def run():
         "Conviction %",
         "Setup Likelihood",
         "Execution Book",
+        "Stage-1 Diagnostics",
     ]
 
     mini_tables = []
@@ -3859,6 +5399,8 @@ def run():
         mini_tables = ["_No rows_", ""]
     watch_reason_order = [
         ("stage1_conviction_watch", "Stage-1 Conviction Watch"),
+        ("stage1_flow_fail", "Stage-1 Flow Weak/Contra"),
+        ("stage1_contract_flow_fail", "Stage-1 Contract Flow Weak/Contra"),
         ("portfolio_cap_breach", "Portfolio Cap Breach"),
         ("invalid_entry_structure", "Invalid Entry Structure"),
         ("missing_underlying_quote", "Missing Underlying Quote"),
@@ -3866,6 +5408,7 @@ def run():
         ("invalidation_warning", "Invalidation Warning (Close-Confirm)"),
         ("spot_data_mismatch", "Spot Data Mismatch"),
         ("debit_moneyness_fail", "Debit Moneyness Fail"),
+        ("gex_fallback", "GEX Fallback / Unverified Wall Context"),
         ("likelihood_fail", "Likelihood Fail"),
         ("shield_sigma_fail", "Shield Sigma Gate Fail"),
         ("credit_path_risk_fail", "Credit Path-Risk Fail"),
@@ -3953,6 +5496,455 @@ def run():
     if not gate_diagnostics:
         gate_diagnostics = ["## Daily Gate Diagnostics", "", "_No blocker diagnostics available._", ""]
 
+    event_momentum_section = event_momentum_candidates_section(decision_audit_all)
+
+    near_miss_rejected = [
+        "## Near-Miss But Rejected",
+        "",
+        "These are the tempting Watch rows. They remain rejected because forcing trades through failed Stage-1, contract-flow, likelihood, live-entry, or GEX gates is how the model degrades.",
+        "",
+    ]
+    if out_df.empty or "Execution Book" not in out_df.columns:
+        near_miss_rejected.extend(["_No near-miss rows available._", ""])
+    else:
+        nm = out_df[out_df["Execution Book"].astype(str).eq("Watch")].copy()
+        if nm.empty:
+            near_miss_rejected.extend(["_No rejected near-misses._", ""])
+        else:
+            nm["_conv_num"] = pd.to_numeric(
+                nm["Conviction %"].astype(str).str.replace("%", "", regex=False),
+                errors="coerce",
+            ).fillna(-1)
+            stage1_detail_col = nm.get("Stage-1 Diagnostics", pd.Series("", index=nm.index))
+            if isinstance(stage1_detail_col, pd.DataFrame):
+                stage1_detail_col = stage1_detail_col.iloc[:, 0]
+            nm["_has_stage1_detail"] = stage1_detail_col.astype(str).str.len() > 0
+            nm = nm.sort_values(["_conv_num", "_has_stage1_detail", "#"], ascending=[False, False, True]).head(10)
+            near_cols = [
+                "#",
+                "Ticker",
+                "Strategy Type",
+                "Conviction %",
+                "Setup Likelihood",
+                "UW Flow Read",
+                "GEX Wall Context",
+                "Stage-1 Diagnostics",
+                "Watch Reason Flags",
+                "Notes",
+            ]
+            near_miss_rejected.extend([markdown_table(nm, near_cols), ""])
+
+    def candidate_report_key(row) -> str:
+        parts = [
+            str(row.get("ticker", row.get("Ticker", "")) or "").strip().upper(),
+            str(row.get("strategy", row.get("Strategy Type", row.get("Action", ""))) or "").strip(),
+            str(row.get("expiry", row.get("Expiry", "")) or "").strip(),
+        ]
+        for col in [
+            "long_strike",
+            "short_strike",
+            "long_put_strike",
+            "short_put_strike",
+            "short_call_strike",
+            "long_call_strike",
+            "Strike Setup",
+        ]:
+            sval = str(row.get(col, "") or "").strip()
+            if sval:
+                parts.append(f"{col}={sval}")
+        return "|".join(parts)
+
+    rejected_trade_reasons = [
+        "## Rejected Trades and Exact Reasons",
+        "",
+        "These are all gated-out Watch candidates from the full daily candidate set, including rows trimmed out of the main display after ranking.",
+        "",
+    ]
+    if mdf.empty or "execution_book" not in mdf.columns:
+        rejected_trade_reasons.extend(["_No rejected trade rows available._", ""])
+    else:
+        shown_keys = set()
+        if not out_df.empty:
+            shown_keys = {candidate_report_key(row) for _, row in out_df.iterrows()}
+        rejected_df = mdf[mdf["execution_book"].astype(str).eq("Watch")].copy()
+        if rejected_df.empty:
+            rejected_trade_reasons.extend(["_No rejected trade rows available._", ""])
+        else:
+            rejected_df["Report Visibility"] = rejected_df.apply(
+                lambda row: "Shown in main report" if candidate_report_key(row) in shown_keys else "Trimmed from main report",
+                axis=1,
+            )
+            rejected_df["Ticker"] = rejected_df["ticker"].fillna("").astype(str)
+            rejected_df["Strategy Type"] = rejected_df["strategy"].fillna("").astype(str)
+            rejected_df["Expiry"] = rejected_df["expiry"].fillna("").astype(str)
+            rejected_df["Conviction %"] = rejected_df["conviction"].apply(
+                lambda v: f"{float(v):.0f}%" if np.isfinite(fnum(v)) else ""
+            )
+            rejected_df["Setup Likelihood"] = rejected_df["likelihood_strength"].fillna("").astype(str)
+            rejected_df["Stage-1 Diagnostics"] = rejected_df["stage1_diagnostics"].fillna("").astype(str)
+            rejected_df["Reject Reasons"] = rejected_df["approval_blockers"].fillna("").astype(str)
+            rejected_df["Notes"] = rejected_df["notes"].fillna("").astype(str)
+            rejected_df["_conv_num"] = pd.to_numeric(rejected_df["conviction"], errors="coerce").fillna(-1.0)
+            rejected_df = rejected_df.sort_values(
+                ["Report Visibility", "_conv_num", "Ticker", "Expiry"],
+                ascending=[True, False, True, True],
+            )
+            reject_cols = [
+                "Report Visibility",
+                "Ticker",
+                "Strategy Type",
+                "Expiry",
+                "Conviction %",
+                "Setup Likelihood",
+                "Reject Reasons",
+            ]
+            rejected_trade_reasons.extend([markdown_table(rejected_df, reject_cols), ""])
+
+    def _approved_count_from_decision_csv(path: Path):
+        try:
+            df = pd.read_csv(path, low_memory=False)
+        except Exception:
+            return None
+        if df.empty:
+            return 0
+        cols = {str(c).strip().lower(): c for c in df.columns}
+        book_col = cols.get("execution_book") or cols.get("execution book")
+        if book_col:
+            return int(df[book_col].astype(str).str.strip().isin(["Core", "Tactical"]).sum())
+        approved_col = cols.get("approved")
+        if approved_col:
+            return int(df[approved_col].astype(str).str.upper().eq("YES").sum())
+        category_col = cols.get("category")
+        if category_col:
+            return int(df[category_col].astype(str).str.startswith("Approved").sum())
+        return None
+
+    def _trailing_skip_streak_dates() -> list[str]:
+        root_dir = base.parent
+        candidates: list[Path] = []
+        collect_root = root_dir / "out" / "daily_pipeline_collect_baseline"
+        if collect_root.exists():
+            candidates.extend(collect_root.glob("20??-??-??/trade_decision_book_all_*.csv"))
+        legacy_out = root_dir / r"c:\uw_root\out"
+        if legacy_out.exists():
+            candidates.extend(legacy_out.glob("trade_decision_book_all_*.csv"))
+        if out_dir.exists():
+            candidates.extend(out_dir.glob("trade_decision_book_all_*.csv"))
+        date_to_approved: dict[str, int] = {}
+        for path in sorted(candidates):
+            match = re.search(r"(20\d{2}-\d{2}-\d{2})", str(path))
+            if not match:
+                continue
+            dtext = match.group(1)
+            if dtext > asof_str:
+                continue
+            count = _approved_count_from_decision_csv(path)
+            if count is None:
+                continue
+            date_to_approved[dtext] = int(count)
+        date_to_approved[asof_str] = int(approved_count)
+        streak: list[str] = []
+        for dtext in sorted(date_to_approved.keys(), reverse=True):
+            if date_to_approved[dtext] == 0:
+                streak.append(dtext)
+                continue
+            break
+        return list(reversed(streak))
+
+    def _short_text(value: object, limit: int = 150) -> str:
+        text = str(value or "").strip()
+        if len(text) <= limit:
+            return text
+        return text[: max(0, limit - 3)].rstrip() + "..."
+
+    def _compact_likelihood(value: object) -> str:
+        text = str(value or "").strip()
+        verdict = "LS" if "LOW_SAMPLE" in text else "FAIL" if "FAIL" in text else "PASS" if "PASS" in text else ""
+        edge_match = re.search(r"edge\s+([+-]?\d+(?:\.\d+)?)%", text)
+        n_match = re.search(r"n=(\d+)", text)
+        parts = [verdict]
+        if edge_match:
+            parts.append(f"{float(edge_match.group(1)):+.1f}%")
+        if n_match:
+            parts.append(f"n{n_match.group(1)}")
+        return " ".join([p for p in parts if p]) or _short_text(text, 28)
+
+    def _compact_blockers(value: object) -> str:
+        text = str(value or "").strip()
+        if not text:
+            return ""
+        tokens = [x.strip() for x in re.split(r"[;,]", text) if x.strip()]
+        labels: list[str] = []
+        for token in tokens:
+            label = ""
+            if "stage1_conviction_below_yes_good" in token:
+                match = re.search(r"(\d+)<(\d+)", token)
+                label = f"S1 {match.group(1)}<{match.group(2)}" if match else "S1 low"
+            elif "stage1_flow_weak_or_ambiguous" in token:
+                label = "weak flow"
+            elif "stage1_contract_flow_contra" in token or "contract_flow_contra" in token:
+                label = "contract contra"
+            elif "stage1_contract_flow_weak_or_ambiguous" in token or "contract_flow_weak_or_ambiguous" in token:
+                label = "contract weak"
+            elif "stage1_high_iv_debit_watch_only" in token:
+                label = "high IV"
+            elif "likelihood_verdict:LOW_SAMPLE" in token or "likelihood_strength_unranked:Low Sample" in token:
+                label = "low sample"
+            elif token.startswith("signals_below"):
+                label = "n<min"
+            elif token.startswith("edge_below") or token == "edge_below_threshold":
+                label = "edge<thresh"
+            elif token.startswith("likelihood_verdict:FAIL") or token == "likelihood_fail":
+                label = "likelihood fail"
+            elif "fire_gex_pinned" in token:
+                label = "GEX pinned"
+            elif "gex_volatile" in token:
+                label = "GEX volatile"
+            elif "gex_missing" in token:
+                label = "GEX missing"
+            elif "dte_too_long" in token:
+                label = "DTE long"
+            elif "rr_weak" in token:
+                label = "RR weak"
+            elif "market_regime_caution" in token:
+                label = "market caution"
+            elif token:
+                label = token.replace("_", " ")
+            if label and label not in labels:
+                labels.append(label)
+            if len(labels) >= 3:
+                break
+        return "; ".join(labels) if labels else _short_text(text, 35)
+
+    def _compact_strategy(value: object) -> str:
+        text = str(value or "").strip()
+        return {
+            "Bull Call Debit": "Bull Call",
+            "Bear Put Debit": "Bear Put",
+            "Iron Condor": "IC",
+            "Long Iron Condor": "Long IC",
+        }.get(text, text)
+
+    def _daily_near_miss_frame(limit: int = 5) -> pd.DataFrame:
+        if out_df.empty or "Execution Book" not in out_df.columns:
+            return pd.DataFrame()
+        nm = out_df[out_df["Execution Book"].astype(str).eq("Watch")].copy()
+        if nm.empty:
+            return pd.DataFrame()
+        nm["_conv_num"] = pd.to_numeric(
+            nm.get("Conviction %", pd.Series("", index=nm.index)).astype(str).str.replace("%", "", regex=False),
+            errors="coerce",
+        ).fillna(-1.0)
+        nm = nm.sort_values(["_conv_num", "#"], ascending=[False, True]).head(limit)
+        rows = []
+        for _, row in nm.iterrows():
+            ticker = str(row.get("Ticker", "") or "").strip().upper()
+            rows.append(
+                {
+                    "#": str(row.get("#", "") or "").strip(),
+                    "St": "🔴",
+                    "Ticker": ticker,
+                    "Strategy": _compact_strategy(row.get("Strategy Type", "")),
+                    "Legs": _short_text(row.get("Strike Setup", ""), 44),
+                    "Exp": str(row.get("Expiry", "") or "").strip(),
+                    "Conv": str(row.get("Conviction %", "") or "").strip(),
+                    "Edge": _compact_likelihood(row.get("Setup Likelihood", "")),
+                    "Why": _compact_blockers(row.get("Stage-1 Diagnostics", "") or row.get("Watch Reason Flags", "")),
+                    "Detail": " ".join(
+                        [
+                            str(row.get("Strategy Type", "") or "").strip(),
+                            str(row.get("Strike Setup", "") or "").strip(),
+                            str(row.get("Expiry", "") or "").strip(),
+                        ]
+                    ).strip(),
+                    "Daily Setup": " ".join(
+                        [
+                            str(row.get("Strategy Type", "") or "").strip(),
+                            str(row.get("Strike Setup", "") or "").strip(),
+                            str(row.get("Expiry", "") or "").strip(),
+                        ]
+                    ).strip(),
+                    "Daily Blockers": str(row.get("Stage-1 Diagnostics", "") or row.get("Watch Reason Flags", "") or ""),
+                }
+            )
+        return pd.DataFrame(rows)
+
+    def _daily_near_miss_detail_bullets(df: pd.DataFrame) -> list[str]:
+        if df.empty:
+            return ["_No daily near-miss rows available._"]
+        bullets = []
+        for _, row in df.iterrows():
+            ticker = str(row.get("Ticker", "") or "").strip().upper()
+            detail = _short_text(row.get("Detail", ""), 130)
+            why = str(row.get("Why", "") or "").strip()
+            bullets.append(f"- {ticker}: {detail}. Why: {why}")
+        return bullets
+
+    def _overlay_focus_tickers(limit: int = 15) -> list[str]:
+        if not chain_oi_overlay_csv or sc_df.empty or "chain_oi_overlay_contracts" not in sc_df.columns:
+            return []
+        focus_df = sc_df.copy()
+        focus_df["ticker"] = focus_df["ticker"].astype(str).str.upper().str.strip()
+        focus_df["_overlay_contracts"] = pd.to_numeric(
+            focus_df.get("chain_oi_overlay_contracts"), errors="coerce"
+        ).fillna(0.0)
+        focus_df = focus_df[focus_df["_overlay_contracts"] > 0].copy()
+        if focus_df.empty:
+            return []
+        issue = focus_df.get("issue_type", pd.Series("", index=focus_df.index)).astype(str).str.upper().str.strip()
+        is_index = focus_df.get("is_index", pd.Series(False, index=focus_df.index)).map(
+            lambda x: str(x).strip().lower() in {"1", "t", "true", "y", "yes"}
+        )
+        focus_df = focus_df[~(issue.isin({"ETF", "INDEX", "ETN"}) | is_index)].copy()
+        focus_df = focus_df.sort_values("_overlay_contracts", ascending=False)
+        return focus_df["ticker"].dropna().astype(str).head(limit).tolist()
+
+    def _run_or_load_morning_watch(focus_tickers: list[str]) -> tuple[pd.DataFrame, str, str]:
+        morning_date = chain_oi_overlay_date or asof_str
+        morning_base = base.parent / morning_date
+        morning_csv = morning_base / f"morning-watch-setups-{morning_date}.csv"
+        morning_md = morning_base / f"morning-watch-setups-{morning_date}.md"
+        generator = Path(__file__).resolve().with_name("generate_chain_only_watchlist.py")
+        status = "not run"
+        if generator.exists():
+            cmd = [
+                sys.executable,
+                str(generator),
+                "--date",
+                morning_date,
+                "--base-dir",
+                str(base.parent),
+                "--limit",
+                "12",
+                "--focus-tickers",
+                ",".join([t for t in focus_tickers if t]) or "NFLX,ONDS,ASTS",
+            ]
+            if args.historical_replay:
+                cmd.append("--historical-replay")
+            try:
+                cp = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=240)
+                if cp.returncode == 0:
+                    status = "generated"
+                else:
+                    status = _short_text((cp.stderr or cp.stdout or f"exit {cp.returncode}").strip(), 240)
+            except Exception as exc:
+                status = _short_text(f"generator failed: {exc}", 240)
+        if morning_csv.exists():
+            try:
+                return pd.read_csv(morning_csv, low_memory=False), status, str(morning_md if morning_md.exists() else morning_csv)
+            except Exception as exc:
+                return pd.DataFrame(), _short_text(f"read failed: {exc}", 240), str(morning_csv)
+        return pd.DataFrame(), status, str(morning_csv)
+
+    skip_streak_dates = _trailing_skip_streak_dates()
+    skip_escalation = []
+    if approved_count == 0 and len(skip_streak_dates) >= 3:
+        daily_nm = _daily_near_miss_frame(limit=5)
+        focus = daily_nm["Ticker"].dropna().astype(str).str.upper().tolist() if not daily_nm.empty else []
+        focus = list(dict.fromkeys([*focus, *_overlay_focus_tickers(limit=15)]))
+        morning_df, morning_status, morning_artifact = _run_or_load_morning_watch(focus)
+        skip_escalation.extend(
+            [
+                "## Skip-Streak Escalation",
+                "",
+                f"Triggered because the daily pipeline has `0` approved trades and the trailing skip streak is `{len(skip_streak_dates)}` market days: "
+                + ", ".join(skip_streak_dates)
+                + ".",
+                "",
+                "This section is not a gate-loosening override. It forces a trader-review packet: daily near-misses, deterministic chain-only morning-watch names, and the overlap/disagreement between them.",
+                "",
+                f"Morning-watch generator status: `{morning_status}`",
+                f"Morning-watch artifact: {morning_artifact}",
+                "",
+                "### Daily Pipeline Top Rejected Setups",
+                markdown_table(daily_nm, ["#", "St", "Ticker", "Strategy", "Legs", "Exp", "Conv", "Edge", "Why"]),
+                "",
+                "**Rejected setup details**",
+                *_daily_near_miss_detail_bullets(daily_nm),
+                "",
+                "### Deterministic Morning-Watch Setups",
+            ]
+        )
+        if morning_df.empty:
+            skip_escalation.extend(["_No morning-watch rows available._", ""])
+        else:
+            mw = morning_df.copy().head(12)
+            mw["Ticker"] = mw.get("ticker", "").astype(str).str.upper()
+            mw["Morning Setup"] = (
+                mw.get("strategy", "").astype(str)
+                + " "
+                + mw.get("expiry", "").astype(str)
+                + " "
+                + mw.get("lead_symbol", "").astype(str)
+                + " / "
+                + mw.get("pair_symbol", "").astype(str)
+            )
+            mw["Target"] = mw.get("target_value", "").astype(str)
+            mw["Stretch/Floor"] = mw.get("stretch_value", "").astype(str)
+            mw["Flow Conviction"] = mw.get("flow_conviction_label", "").astype(str) + " " + mw.get("flow_conviction", "").astype(str)
+            mw["Breakeven Difficulty"] = mw.get("geometry_label", "").astype(str)
+            mw["Morning Reason"] = mw.get("include_reason", "").astype(str)
+            skip_escalation.extend(
+                [
+                    markdown_table(
+                        mw,
+                        [
+                            "Ticker",
+                            "Morning Setup",
+                            "Target",
+                            "Stretch/Floor",
+                            "Flow Conviction",
+                            "Breakeven Difficulty",
+                            "Morning Reason",
+                        ],
+                    ),
+                    "",
+                    "### Daily vs Morning-Watch Comparison",
+                ]
+            )
+            daily_by_ticker = {str(r.get("Ticker", "")).upper(): r for _, r in daily_nm.iterrows()} if not daily_nm.empty else {}
+            morning_by_ticker = {str(r.get("Ticker", "")).upper(): r for _, r in mw.iterrows()}
+            tickers = sorted(set(daily_by_ticker.keys()) | set(morning_by_ticker.keys()))
+            comp_rows = []
+            for ticker in tickers:
+                drow = daily_by_ticker.get(ticker)
+                mrow = morning_by_ticker.get(ticker)
+                if drow is not None and mrow is not None:
+                    decision = "Trader-review only: morning-watch confirms interest, but daily gates still veto."
+                elif drow is not None:
+                    decision = "Daily near-miss only: chain-only morning-watch did not independently confirm in top set."
+                else:
+                    decision = "Morning-watch only: not approved by full daily pipeline; needs full gate review before any trade."
+                comp_rows.append(
+                    {
+                        "Ticker": ticker,
+                        "Daily Pipeline": _short_text(drow.get("Daily Setup", "") if drow is not None else "", 130),
+                        "Daily Blockers": _short_text(drow.get("Daily Blockers", "") if drow is not None else "", 150),
+                        "Morning Watch": _short_text(mrow.get("Morning Setup", "") if mrow is not None else "", 130),
+                        "Escalation Decision": decision,
+                    }
+                )
+            skip_escalation.extend(
+                [
+                    markdown_table(
+                        pd.DataFrame(comp_rows),
+                        ["Ticker", "Daily Pipeline", "Daily Blockers", "Morning Watch", "Escalation Decision"],
+                    ),
+                    "",
+                    "**Operator rule:** if this section shows a compelling overlap, do not auto-enter; run a focused near-miss audit and live entry check on that exact ticker/structure.",
+                    "",
+                ]
+            )
+    elif approved_count == 0:
+        skip_escalation = [
+            "## Skip-Streak Escalation",
+            "",
+            f"Not triggered yet. Current trailing skip streak is `{len(skip_streak_dates)}` market day(s): "
+            + (", ".join(skip_streak_dates) if skip_streak_dates else "none")
+            + ".",
+            "",
+        ]
+
     data_source_provenance = [
         "## Data Source Provenance",
         "",
@@ -3966,13 +5958,21 @@ def run():
                     },
                     {
                         "Field Family": "Stage-1 flow, OI changes, screener fields",
-                        "Source": "dated local UW exports",
-                        "Freshness": asof_str,
+                        "Source": (
+                            "dated local UW exports; chain OI overlay"
+                            if chain_oi_overlay_csv
+                            else "dated local UW exports"
+                        ),
+                        "Freshness": (
+                            f"EOD {asof_str}; OI {chain_oi_overlay_date or 'unknown'}"
+                            if chain_oi_overlay_csv
+                            else asof_str
+                        ),
                     },
                     {
                         "Field Family": "GEX regime, net GEX, GEX walls",
                         "Source": (
-                            "UW dashboard CDP capture"
+                            "UW dashboard browser/CDP capture"
                             if gex_source_counts.get("unusual_whales_dashboard_cdp")
                             else "Schwab snapshot fallback"
                             if (not args.historical_replay) and gex_source_counts.get("schwab_snapshot_fallback")
@@ -4003,8 +6003,170 @@ def run():
         f"GEX source counts: {gex_source_counts if gex_source_counts else 'none'}",
         f"UW GEX summary file: {uw_gex_summary_csv if uw_gex_summary_csv.exists() else 'not found'}",
         f"UW GEX strikes file: {uw_gex_strikes_csv if uw_gex_strikes_csv.exists() else 'not found'}",
+        f"UW GEX collection status file: {uw_gex_status_csv if uw_gex_status_csv.exists() else 'not found'}",
         "",
     ]
+
+    def _external_scanner_coverage_section() -> list[str]:
+        """Show old/audited scanner recommendations that daily did not cover.
+
+        This is intentionally not an approval override. It is a coverage guard:
+        if another local dated scanner produced a recommendation, the daily
+        report must either cover it in the daily book or explicitly show that it
+        was absent so a human is not left to discover the miss manually.
+        """
+        source_frames = []
+        read_errors = []
+        rec_path = base / f"options_scan_{asof_str}_audited_recommendations.csv"
+        if rec_path.exists():
+            try:
+                rec_df = pd.read_csv(rec_path, low_memory=False)
+                if not rec_df.empty and "Ticker" in rec_df.columns:
+                    rec_df = rec_df.copy()
+                    rec_df["_Coverage Source"] = "audited_recommendations"
+                    source_frames.append(rec_df)
+            except Exception as exc:
+                read_errors.append(f"{rec_path.name}: {_short_text(exc, 160)}")
+
+        built_path = base / f"options_scan_{asof_str}_audited_built_rows.csv"
+        if built_path.exists():
+            try:
+                built_df = pd.read_csv(built_path, low_memory=False)
+                if not built_df.empty and "Ticker" in built_df.columns:
+                    built_df = built_df.copy()
+                    built_df["_ev_num"] = pd.to_numeric(built_df.get("EV/ML"), errors="coerce")
+                    built_df["_pop_num"] = pd.to_numeric(built_df.get("POP"), errors="coerce")
+                    action_s = built_df.get("Action", pd.Series("", index=built_df.index)).astype(str)
+                    # Keep the external scanner's highest-EV positive debit ideas
+                    # even when they did not make its final recommendations file.
+                    built_df = built_df[
+                        action_s.str.contains("BUY", case=False, na=False)
+                        & built_df["_ev_num"].notna()
+                        & (built_df["_ev_num"] >= 0.50)
+                    ].copy()
+                    if not built_df.empty:
+                        built_df = built_df.sort_values(["_ev_num", "_pop_num"], ascending=[False, False]).head(40)
+                        built_df["_Coverage Source"] = "audited_built_rows_top_ev"
+                        source_frames.append(built_df)
+            except Exception as exc:
+                read_errors.append(f"{built_path.name}: {_short_text(exc, 160)}")
+
+        if not source_frames:
+            if read_errors:
+                return [
+                    "## External Scanner Coverage Reconciliation",
+                    "",
+                    "Could not read external scanner coverage files: " + "; ".join(read_errors),
+                    "",
+                ]
+            return []
+        rec_df = pd.concat(source_frames, ignore_index=True, sort=False)
+        rec_df["_dedupe_key"] = (
+            rec_df.get("Ticker", "").astype(str).str.upper().str.strip()
+            + "|"
+            + rec_df.get("Buy leg", "").astype(str)
+            + "|"
+            + rec_df.get("Sell leg", "").astype(str)
+            + "|"
+            + rec_df.get("Expiry", "").astype(str)
+        )
+        rec_df = rec_df.drop_duplicates("_dedupe_key", keep="first")
+
+        def _parse_leg_key(text: str):
+            m = re.search(
+                r"\b([A-Z][A-Z0-9.\-]{0,9})\s+(\d{4}-\d{2}-\d{2})\s+([0-9]+(?:\.[0-9]+)?)([CP])\b",
+                str(text or "").upper(),
+            )
+            if not m:
+                return None
+            return (m.group(1), m.group(2), round(float(m.group(3)), 4), m.group(4))
+
+        daily_tickers = {
+            str(x).strip().upper()
+            for x in mdf.get("ticker", pd.Series(dtype=str)).dropna().tolist()
+            if str(x).strip()
+        }
+        daily_keys = set()
+        for _, drow in mdf.iterrows():
+            ticker = str(drow.get("ticker", "")).strip().upper()
+            expiry = str(drow.get("expiry", "")).strip()
+            strategy = str(drow.get("strategy", "")).strip()
+            if not ticker or not expiry:
+                continue
+            if strategy == "Bull Call Debit":
+                long_s = fnum(drow.get("long_strike"))
+                short_s = fnum(drow.get("short_strike"))
+                if np.isfinite(long_s) and np.isfinite(short_s):
+                    daily_keys.add((ticker, expiry, round(float(long_s), 4), "C", round(float(short_s), 4), "C"))
+            elif strategy == "Bear Put Debit":
+                long_s = fnum(drow.get("long_strike"))
+                short_s = fnum(drow.get("short_strike"))
+                if np.isfinite(long_s) and np.isfinite(short_s):
+                    daily_keys.add((ticker, expiry, round(float(long_s), 4), "P", round(float(short_s), 4), "P"))
+
+        rows = []
+        for _, r in rec_df.iterrows():
+            ticker = str(r.get("Ticker", "")).strip().upper()
+            buy_leg = str(r.get("Buy leg", "") or r.get("Buy Leg", "") or "").strip()
+            sell_leg = str(r.get("Sell leg", "") or r.get("Sell Leg", "") or "").strip()
+            buy_key = _parse_leg_key(buy_leg)
+            sell_key = _parse_leg_key(sell_leg)
+            exact_in_daily = False
+            if buy_key and sell_key and buy_key[0] == sell_key[0]:
+                exact_in_daily = (
+                    buy_key[0],
+                    buy_key[1],
+                    buy_key[2],
+                    buy_key[3],
+                    sell_key[2],
+                    sell_key[3],
+                ) in daily_keys
+            if exact_in_daily:
+                continue
+            if ticker not in daily_tickers:
+                status = "Missing from daily book"
+                action = "Coverage audit required"
+            else:
+                status = "Ticker covered; structure absent"
+                action = "Compare structures"
+            rows.append(
+                {
+                    "Status": status,
+                    "Source": str(r.get("_Coverage Source", "")),
+                    "Ticker": ticker,
+                    "Setup": _short_text(f"{buy_leg} / {sell_leg}", 80),
+                    "Exp": str(r.get("Expiry", "")),
+                    "Net": str(r.get("Net", "")),
+                    "EV/ML": str(r.get("EV/ML", "")),
+                    "POP": str(r.get("POP", "")),
+                    "Conv": str(r.get("Conviction", "")),
+                    "Action": action,
+                }
+            )
+
+        if not rows:
+            return []
+        coverage_df = pd.DataFrame(rows)
+        coverage_csv = out_dir / f"external_scanner_coverage_misses_{asof_str}.csv"
+        try:
+            coverage_df.to_csv(coverage_csv, index=False)
+        except Exception:
+            pass
+        return [
+            "## External Scanner Coverage Reconciliation",
+            "",
+            "These rows came from local audited scanner recommendations/built-row files but were not exact matches in the daily-pipeline book. This section is a coverage guard, not an approval override.",
+            "",
+            markdown_table(
+                coverage_df.head(12),
+                ["Status", "Source", "Ticker", "Setup", "Exp", "Net", "EV/ML", "POP", "Conv", "Action"],
+            ),
+            "",
+            f"Coverage CSV: {coverage_csv}",
+            "",
+        ]
+
+    external_scanner_coverage = _external_scanner_coverage_section()
 
     lines = [
         f"As-of date used: {asof_str}",
@@ -4015,7 +6177,7 @@ def run():
                 csvs["dp-eod-report-"].name,
                 csvs["hot-chains-"].name,
                 csvs["stock-screener-"].name,
-                whale_md.name,
+                bot_eod_source.name,
                 shortlist_csv.name,
                 likelihood_csv.name,
                 live_csv.name,
@@ -4035,7 +6197,7 @@ def run():
             else ""
         ),
         f"Approved trades: {approved_count} / {len(out_df)}",
-        f"Execution book split: Core={core_count}, Tactical={tactical_count}, Watch={watch_book_count}",
+        f"Execution book split: Core={core_count}, Tactical={tactical_count}, Scout={scout_count}, Watch={watch_book_count}",
         "Category split: "
         + ", ".join(
             [
@@ -4049,11 +6211,17 @@ def run():
          if approved_count == 0
          else ""),
         "",
+        *live_entry_summary,
         *data_source_provenance,
+        *external_scanner_coverage,
+        *skip_escalation,
+        *event_momentum_section,
         "## Anu Expert Trade Table",
-        "Mini tables by execution book (Core/Tactical/Watch), then strategy family:",
+        "Mini tables by execution book (Core/Tactical/Scout/Watch), then strategy family:",
         "",
         *mini_tables,
+        *near_miss_rejected,
+        *rejected_trade_reasons,
         "## Watch Only Reason Tables",
         "",
         *watch_reason_tables,
@@ -4073,6 +6241,7 @@ def run():
     if not seen:
         lines.append("- none")
 
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text("\n".join(lines), encoding="utf-8-sig")
     run_completed_utc = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     manifest = {
@@ -4087,23 +6256,30 @@ def run():
         "output_md": str(output_path),
         "input_files": {
             "chain_oi_changes_csv": str(csvs["chain-oi-changes-"]),
+            "chain_oi_overlay_csv": chain_oi_overlay_csv,
+            "chain_oi_overlay_date": chain_oi_overlay_date,
             "dp_eod_report_csv": str(csvs["dp-eod-report-"]),
             "hot_chains_csv": str(csvs["hot-chains-"]),
             "stock_screener_csv": str(csvs["stock-screener-"]),
-            "whale_md": str(whale_md),
+            "bot_eod_report": str(bot_eod_source),
+            "whale_markdown_ignored": True,
         },
         "artifacts": {
             "shortlist_csv": str(shortlist_csv),
+            "whale_symbol_summary_csv": str(whale_symbol_summary_csv),
+            "whale_top_trades_csv": str(whale_top_trades_csv),
             "likelihood_csv": str(likelihood_csv),
             "live_csv": str(live_csv),
             "live_final_csv": str(live_final_csv),
             "dropped_csv": str(dropped_csv),
             "decision_book_csv": str(decision_book_csv),
+            "planned_trade_journal_csv": str(planned_journal_csv),
             "manifest_json": str(manifest_path),
             "snapshot_json": str((out_dir / f"schwab_snapshot_{asof_str}.json").resolve()),
             "snapshot_chain_dir": str((out_dir / f"schwab_snapshot_{asof_str}" / "chains").resolve()),
             "uw_gex_summary_csv": str(uw_gex_summary_csv) if uw_gex_summary_csv.exists() else "",
             "uw_gex_strikes_csv": str(uw_gex_strikes_csv) if uw_gex_strikes_csv.exists() else "",
+            "uw_gex_collection_status_csv": str(uw_gex_status_csv) if uw_gex_status_csv.exists() else "",
         },
         "settings": {
             "top_trades_requested": int(args.top_trades),
@@ -4124,6 +6300,89 @@ def run():
             "enable_dual_books": bool(enable_dual_books),
             "core_size_mult": float(core_size_mult),
             "tactical_size_mult": float(tactical_size_mult),
+            "enable_scout_book": bool(enable_scout_book),
+            "scout_size_mult": float(scout_size_mult) if np.isfinite(scout_size_mult) else None,
+            "scout_min_edge_pct": float(scout_min_edge_pct) if np.isfinite(scout_min_edge_pct) else None,
+            "scout_max_edge_pct": float(scout_max_edge_pct) if np.isfinite(scout_max_edge_pct) else None,
+            "bull_call_short_dte_high_edge_block": bool(bull_call_short_dte_high_edge_block),
+            "bull_call_short_dte_high_edge_max_dte": (
+                float(bull_call_short_dte_high_edge_max_dte)
+                if np.isfinite(bull_call_short_dte_high_edge_max_dte)
+                else None
+            ),
+            "bull_call_short_dte_high_edge_min_edge_pct": (
+                float(bull_call_short_dte_high_edge_min_edge)
+                if np.isfinite(bull_call_short_dte_high_edge_min_edge)
+                else None
+            ),
+            "allow_bear_put_evidence_lane": bool(allow_bear_put_evidence_lane),
+            "bear_put_evidence_min_edge_pct": (
+                float(bear_put_evidence_min_edge) if np.isfinite(bear_put_evidence_min_edge) else None
+            ),
+            "bear_put_evidence_min_signals": (
+                float(bear_put_evidence_min_signals) if np.isfinite(bear_put_evidence_min_signals) else None
+            ),
+            "bear_put_evidence_min_conviction": (
+                float(bear_put_evidence_min_conviction) if np.isfinite(bear_put_evidence_min_conviction) else None
+            ),
+            "bear_put_evidence_min_long_delta": (
+                float(bear_put_evidence_min_long_delta) if np.isfinite(bear_put_evidence_min_long_delta) else None
+            ),
+            "bear_put_evidence_dte_range": [
+                float(bear_put_evidence_min_dte) if np.isfinite(bear_put_evidence_min_dte) else None,
+                float(bear_put_evidence_max_dte) if np.isfinite(bear_put_evidence_max_dte) else None,
+            ],
+            "bear_put_evidence_min_reward_risk": (
+                float(bear_put_evidence_min_reward_risk)
+                if np.isfinite(bear_put_evidence_min_reward_risk)
+                else None
+            ),
+            "bear_put_evidence_max_debit_frac": (
+                float(bear_put_evidence_max_debit_frac)
+                if np.isfinite(bear_put_evidence_max_debit_frac)
+                else None
+            ),
+            "bear_put_evidence_max_iv_rank": (
+                float(bear_put_evidence_max_iv_rank) if np.isfinite(bear_put_evidence_max_iv_rank) else None
+            ),
+            "bear_put_evidence_require_contract_confirmed": bool(
+                bear_put_evidence_require_contract_confirmed
+            ),
+            "allow_bear_put_scout_lane": bool(allow_bear_put_scout_lane),
+            "bear_put_scout_likelihood_strengths": sorted(bear_put_scout_likelihood_strengths),
+            "bear_put_scout_require_negative_edge": bool(bear_put_scout_require_negative_edge),
+            "bear_put_scout_min_signals": float(bear_put_scout_min_signals) if np.isfinite(bear_put_scout_min_signals) else None,
+            "bear_put_scout_dte_range": [
+                float(bear_put_scout_min_dte) if np.isfinite(bear_put_scout_min_dte) else None,
+                float(bear_put_scout_max_dte) if np.isfinite(bear_put_scout_max_dte) else None,
+            ],
+            "bear_put_scout_max_iv_rank": float(bear_put_scout_max_iv_rank) if np.isfinite(bear_put_scout_max_iv_rank) else None,
+            "bear_put_scout_max_vix": float(bear_put_scout_max_vix) if np.isfinite(bear_put_scout_max_vix) else None,
+            "bear_put_scout_require_spy_5d_nonnegative": bool(bear_put_scout_require_spy_5d_nonnegative),
+            "bear_put_scout_min_reward_risk": float(bear_put_scout_min_reward_risk) if np.isfinite(bear_put_scout_min_reward_risk) else None,
+            "bear_put_scout_max_debit_frac": float(bear_put_scout_max_debit_frac) if np.isfinite(bear_put_scout_max_debit_frac) else None,
+            "bear_put_scout_hard_blocker_policy": "may forgive stage1_conviction_below_yes_good only; never overrides live, invalidation, safety, or contra-flow blockers",
+            "allow_debit_momentum_scout_lane": bool(allow_debit_momentum_scout_lane),
+            "debit_momentum_scout_min_conviction": float(debit_momentum_scout_min_conviction) if np.isfinite(debit_momentum_scout_min_conviction) else None,
+            "debit_momentum_scout_min_edge_pct": float(debit_momentum_scout_min_edge_pct) if np.isfinite(debit_momentum_scout_min_edge_pct) else None,
+            "debit_momentum_scout_bear_min_edge_pct": float(debit_momentum_scout_bear_min_edge_pct) if np.isfinite(debit_momentum_scout_bear_min_edge_pct) else None,
+            "debit_momentum_scout_min_signals": float(debit_momentum_scout_min_signals) if np.isfinite(debit_momentum_scout_min_signals) else None,
+            "debit_momentum_scout_dte_range": [
+                float(debit_momentum_scout_min_dte) if np.isfinite(debit_momentum_scout_min_dte) else None,
+                float(debit_momentum_scout_max_dte) if np.isfinite(debit_momentum_scout_max_dte) else None,
+            ],
+            "debit_momentum_scout_min_reward_risk": float(debit_momentum_scout_min_reward_risk) if np.isfinite(debit_momentum_scout_min_reward_risk) else None,
+            "debit_momentum_scout_max_debit_frac": float(debit_momentum_scout_max_debit_frac) if np.isfinite(debit_momentum_scout_max_debit_frac) else None,
+            "debit_momentum_scout_max_iv_rank": float(debit_momentum_scout_max_iv_rank) if np.isfinite(debit_momentum_scout_max_iv_rank) else None,
+            "debit_momentum_scout_min_regime_score": float(debit_momentum_scout_min_regime_score) if np.isfinite(debit_momentum_scout_min_regime_score) else None,
+            "debit_momentum_scout_bear_likelihood_strengths": sorted(debit_momentum_scout_bear_likelihood_strengths),
+            "debit_momentum_scout_bear_require_flow_confirmed": bool(debit_momentum_scout_bear_require_flow_confirmed),
+            "debit_momentum_scout_block_gex_volatile_breakout": bool(debit_momentum_scout_block_gex_volatile_breakout),
+            "debit_momentum_scout_hard_blocker_policy": "may forgive Stage-1 low conviction / weak ambiguous flow / high-IV watch-only only; never overrides live entry, invalidation, delta, GEX uncertainty, or contra contract flow",
+            "scout_size_mult": float(scout_size_mult),
+            "scout_min_edge_pct": float(scout_min_edge_pct),
+            "scout_max_edge_pct": float(scout_max_edge_pct),
+            "scout_block_gex_volatile_breakout": bool(scout_block_gex_volatile_breakout),
             "tactical_min_conviction": float(tactical_min_conviction),
             "tactical_min_edge_pct": float(tactical_min_edge_pct),
             "tactical_min_signals": float(tactical_min_signals),
@@ -4141,6 +6400,7 @@ def run():
             "approved_rows": int(approved_count),
             "approved_core_rows": int(core_count),
             "approved_tactical_rows": int(tactical_count),
+            "approved_scout_rows": int(scout_count),
             "watch_rows": int(watch_book_count),
             "final_dropped": int(len(dropped_final)),
         },

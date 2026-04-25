@@ -4,8 +4,9 @@ Run dated-folder UW trend analysis and return high-conviction option candidates 
 - Arguments: $ARGUMENTS
 - Format: `{as-of-date}` or `{as-of-date} {lookback}` or `{lookback}`
 - Examples: `2026-04-17`, `2026-04-17 90`, `30`
-- Default lookback: 90 usable market-data days
+- Default lookback: 30 usable market-data days
 - Default top actionable trades: 15
+- Default walk-forward audit: off for single-date trend scans; only run it with `--walk-forward-samples N` when explicitly requested
 
 ## What This Runs
 
@@ -18,13 +19,14 @@ It analyzes:
 - `chain-oi-changes`
 - `hot-chains`
 - `dp-eod-report`
-- whale summaries / whale CSVs when present
+- full `bot-eod-report-YYYY-MM-DD.zip` / `.csv` whale flow when present
+- cached `whale-symbol-summary-YYYY-MM-DD.csv`, or legacy `whale-YYYY-MM-DD.md` only when older folders lack bot EOD exports
 
 It then runs historical likelihood backtesting before marking anything actionable.
 
 It also runs daily option quote replay by default. This uses local UW `hot-chains` / `chain-oi-changes` snapshots to price every spread leg at the signal date and the latest later option snapshot. If a later snapshot does not exist yet, both-leg entry quote coverage is reported as `ENTRY_OK`. If any required entry/exit leg cannot be priced, or if the spread mark violates defined-risk economics, the setup is blocked instead of marked actionable.
 
-It can also run a walk-forward audit with `--walk-forward-samples N`. The audit reruns older signal dates, selects historical trades using signal-date evidence only, then scores future 5/10/20 market-day option-quote outcomes. Future P&L is never used as an entry gate.
+It can also run a walk-forward audit with `--walk-forward-samples N`, but do not add that flag to a normal `trend-analysis {date} {lookback}` request. The audit reruns older signal dates, selects historical trades using signal-date evidence only, then scores future 5/10/20 market-day option-quote outcomes. Future P&L is never used as an entry gate.
 
 It also writes a Research Confidence Audit from fixed historical buckets, a Research Horizon Audit split by holding period, a Strategy Family Audit with train/validation results for broad predeclared setup families, a Ticker Playbook Audit with train/validation results for ticker-specific setup behavior, a Rolling Ticker Playbook Forward Validation audit, plus a detailed research outcomes CSV with ticker/setup/horizon/P&L rows. This is not a parameter search; if no bucket/horizon is supportive and no broad family or ticker playbook is promotable, keep blocking Actionable Now trades.
 
@@ -48,7 +50,7 @@ The default professional-quality gate blocks lotto setups: underlying price must
    - If first argument is `YYYY-MM-DD`, use it as the as-of date.
    - If a number follows the date, use it as usable market-data-day lookback.
    - If only a number is supplied, use it as lookback and infer the latest available market-data folder.
-   - If no arguments are supplied, use the latest available market-data date and 90 usable market-data days.
+   - If no arguments are supplied, use the latest available market-data date and 30 usable market-data days.
    - Weekend folders and dated folders missing `stock-screener` data do not count toward the lookback.
 
 2. Run pipeline:
@@ -68,7 +70,7 @@ python3 -m uwos.trend_analysis 2026-04-17 90 --top 20
    Only add `--no-backtest` if the user explicitly asks to skip backtesting.
    Only add `--no-schwab` if Schwab validation fails or the user asks to skip live validation.
    Only add `--quote-replay diagnostic` or `--quote-replay off` if the user explicitly asks to bypass the replay gate.
-   Use `--walk-forward-samples N` when the user asks for confidence validation across older signal dates.
+   Use `--walk-forward-samples N` only when the user asks for confidence validation across older signal dates. Do not run it for a plain "trend-analysis DATE LOOKBACK"; that request means analyze the lookback window ending on DATE.
    Use `--reuse-walk-forward-raw`, `--reuse-walk-forward-outcomes`, and `--reuse-research-outcomes` when rerunning a large walk-forward audit against the same output directory so completed historical audit files are reused.
 
    For a full historical profit proof:
@@ -80,8 +82,8 @@ python3 -m uwos.trend_analysis_batch --start 2025-12-01 --end {date} --lookback 
 3. Read output files and present results:
    - Read `trend-analysis-{date}-L{lookback}.md`.
    - If the batch proof was run, read `out/trend_analysis_batch/trend-analysis-batch-proof-START_END-L{lookback}.md` first. State the strict emitted-trade verdict, the Live-Eligible Playbooks, and any blocked rolling playbooks before discussing candidates.
-   - Review **Walk-Forward Audit** before trusting the trade list.
-   - Review **Research Confidence Audit**, **Research Horizon Audit**, **Strategy Family Audit**, **Ticker Playbook Audit**, and **Rolling Ticker Playbook Forward Validation** next; do not tune thresholds inside the same run to make a bucket look good.
+   - For a normal `trend-analysis DATE LOOKBACK` request, Walk-Forward Audit is expected to be skipped. If the user explicitly requested confidence validation, review **Walk-Forward Audit** before trusting the trade list.
+   - If the user explicitly requested confidence validation, review **Research Confidence Audit**, **Research Horizon Audit**, **Strategy Family Audit**, **Ticker Playbook Audit**, and **Rolling Ticker Playbook Forward Validation** next; do not tune thresholds inside the same run to make a bucket look good.
    - Present **Backtest-Supported Candidate Shortlist** first.
    - Present **Actionable Trades** second.
    - Present **Max Conviction / Max Planned Risk** third as the highest-confidence actionable subset.

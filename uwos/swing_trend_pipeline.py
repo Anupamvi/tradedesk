@@ -28,13 +28,20 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from uwos.whale_source import (
+    find_bot_eod_source,
+    find_whale_markdown_source,
+    load_whale_markdown_symbols,
+    load_yes_prime_whale_flow,
+)
+
 # ---------------------------------------------------------------------------
 # Regex patterns
 # ---------------------------------------------------------------------------
 DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 OCC_RE = re.compile(r"^([A-Z]{1,6})\d{6}[CP]\d{8}$")
 OCC_FULL_RE = re.compile(r"^([A-Z]{1,6})(\d{6})([CP])(\d{8})$")
-WHALE_TICKER_RE = re.compile(r"\|\s*([A-Z]{1,6})\s*\|")
+DEFAULT_WHALE_RULEBOOK_CONFIG = Path(__file__).resolve().parent / "rulebook_config_goal_holistic_claude.yaml"
 
 # ---------------------------------------------------------------------------
 # Utility helpers (self-contained to avoid import issues)
@@ -121,6 +128,53 @@ def _clip(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, v))
 
 
+def _ticker_chain_candidates(ticker: str) -> List[str]:
+    t = str(ticker or "").strip().upper()
+    if not t:
+        return []
+    candidates = [t]
+    if "." in t:
+        candidates.append(t.replace(".", "/"))
+    compact_class_share_aliases = {
+        "BRKA": "BRK/A",
+        "BRKB": "BRK/B",
+    }
+    alias = compact_class_share_aliases.get(t)
+    if alias and alias not in candidates:
+        candidates.append(alias)
+    deduped: List[str] = []
+    seen: Set[str] = set()
+    for item in candidates:
+        if item not in seen:
+            seen.add(item)
+            deduped.append(item)
+    return deduped
+
+
+def _fetch_option_chain_with_alias_fallback(
+    service: Any,
+    *,
+    ticker: str,
+    from_date: dt.date,
+    to_date: dt.date,
+) -> Tuple[Optional[Dict[str, Any]], str, Optional[Exception], List[str]]:
+    attempted = _ticker_chain_candidates(ticker)
+    last_exc: Optional[Exception] = None
+    for query_symbol in attempted:
+        try:
+            chain = service.get_option_chain(
+                symbol=query_symbol,
+                strike_count=None,
+                include_underlying_quote=True,
+                from_date=from_date,
+                to_date=to_date,
+            )
+            return chain, query_symbol, None, attempted
+        except Exception as exc:
+            last_exc = exc
+    return None, "", last_exc, attempted
+
+
 def _parse_occ_underlying(sym: str) -> Optional[str]:
     """Extract underlying ticker from OCC symbol like NVDA260306P00170000."""
     m = OCC_RE.match(str(sym).strip().upper())
@@ -202,6 +256,8 @@ class SwingSignals:
     price_slope: float = math.nan
     price_direction: str = "neutral"
     price_r_squared: float = math.nan
+    latest_return_pct: float = math.nan
+    latest_return_direction: str = "neutral"
 
     # IV regime
     iv30d_slope: float = math.nan
@@ -255,6 +311,11 @@ class SwingScore:
     whale_consensus_score: float = 0.0
     dp_confirmation_score: float = 0.0
     direction: str = "neutral"
+    direction_bull_score: float = 0.0
+    direction_bear_score: float = 0.0
+    direction_margin: float = 0.0
+    direction_status: str = "normal"
+    direction_note: str = ""
     recommended_strategy: str = ""
     recommended_track: str = ""
     confidence_tier: str = "Low"
@@ -427,65 +488,162 @@ def load_screeners(
     return result
 
 
+def _filter_universe_frame(
+    df: pd.DataFrame,
+    *,
+    filters: Dict[str, Any],
+    min_mcap: float,
+    min_vol: float,
+) -> pd.DataFrame:
+    sub = df.copy()
+    sub["ticker"] = sub["ticker"].astype(str).str.strip().str.upper()
+    sub = sub[sub["ticker"].str.len().between(1, 6)]
+
+    exclude_etfs = filters.get("exclude_etfs", True)
+    etf_types = set(filters.get("etf_issue_types", ["ETF", "Index"]))
+    if exclude_etfs and "issue_type" in sub.columns:
+        sub = sub[~sub["issue_type"].astype(str).str.strip().isin(etf_types)]
+    if filters.get("exclude_indices", True) and "is_index" in sub.columns:
+        sub = sub[~sub["is_index"].astype(str).str.strip().str.lower().isin({"t", "true", "1", "yes"})]
+
+    mcap_col = "marketcap" if "marketcap" in sub.columns else "market_cap"
+    if mcap_col in sub.columns and math.isfinite(min_mcap) and min_mcap > 0:
+        sub[mcap_col] = pd.to_numeric(sub[mcap_col], errors="coerce").fillna(0)
+        sub = sub[sub[mcap_col] >= min_mcap]
+
+    if "avg30_volume" in sub.columns and math.isfinite(min_vol) and min_vol > 0:
+        sub["avg30_volume"] = pd.to_numeric(sub["avg30_volume"], errors="coerce").fillna(0)
+        sub = sub[sub["avg30_volume"] >= min_vol]
+
+    return sub
+
+
+def _add_flow_column(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    for col in ("bullish_premium", "bearish_premium", "call_volume", "put_volume"):
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").fillna(0)
+        else:
+            out[col] = 0.0
+    out["_flow"] = (
+        out["bullish_premium"].abs()
+        + out["bearish_premium"].abs()
+        + out["call_volume"]
+        + out["put_volume"]
+    )
+    return out
+
+
 def build_ticker_universe(
     screeners: Dict[dt.date, pd.DataFrame],
     cfg: Dict,
 ) -> Set[str]:
-    """Build the set of tickers to analyze based on cumulative flow activity."""
+    """Build the ticker set from cumulative flow plus fresh latest-day/catalyst flow."""
     filters = cfg.get("filters", {})
-    exclude_etfs = filters.get("exclude_etfs", True)
-    etf_types = set(filters.get("etf_issue_types", ["ETF", "Index"]))
     min_mcap = _fnum(filters.get("min_market_cap", 0))
     min_vol = _fnum(filters.get("min_avg30_volume", 0))
     max_tickers = int(filters.get("max_tickers_to_score", 200))
+    max_latest = int(filters.get("max_latest_day_tickers", 150))
+    max_catalyst = int(filters.get("max_catalyst_tickers", 100))
+    max_earnings = int(filters.get("max_earnings_tickers", 150))
+    max_total = int(filters.get("max_total_tickers_to_score", max_tickers + max_latest + max_catalyst + max_earnings))
+    catalyst_min_mcap = _fnum(filters.get("catalyst_min_market_cap", min_mcap))
+    catalyst_min_vol = _fnum(filters.get("catalyst_min_avg30_volume", min_vol))
+    catalyst_earnings_days = int(filters.get("catalyst_earnings_days", 2))
+    catalyst_iv_rank = _fnum(filters.get("catalyst_iv_rank_floor", 70))
+    catalyst_volume_surge = _fnum(filters.get("catalyst_volume_surge_ratio", 1.5))
 
-    # Aggregate flow activity across all days using vectorized pandas
     frames = []
-    for d, df in screeners.items():
-        sub = df.copy()
-        sub["ticker"] = sub["ticker"].astype(str).str.strip().str.upper()
-        # Filter: valid ticker length
-        sub = sub[sub["ticker"].str.len().between(1, 6)]
-
-        # Filter ETFs
-        if exclude_etfs and "issue_type" in sub.columns:
-            sub = sub[~sub["issue_type"].astype(str).str.strip().isin(etf_types)]
-
-        # Market cap filter
-        mcap_col = "marketcap" if "marketcap" in sub.columns else "market_cap"
-        if mcap_col in sub.columns and math.isfinite(min_mcap) and min_mcap > 0:
-            sub[mcap_col] = pd.to_numeric(sub[mcap_col], errors="coerce").fillna(0)
-            sub = sub[sub[mcap_col] >= min_mcap]
-
-        # Volume filter
-        if "avg30_volume" in sub.columns and math.isfinite(min_vol) and min_vol > 0:
-            sub["avg30_volume"] = pd.to_numeric(sub["avg30_volume"], errors="coerce").fillna(0)
-            sub = sub[sub["avg30_volume"] >= min_vol]
-
+    for _, df in screeners.items():
+        sub = _filter_universe_frame(df, filters=filters, min_mcap=min_mcap, min_vol=min_vol)
         if not sub.empty:
             frames.append(sub)
 
     if not frames:
         return set()
 
-    combined = pd.concat(frames, ignore_index=True)
-
-    # Compute flow activity per ticker
-    for col in ("bullish_premium", "bearish_premium", "call_volume", "put_volume"):
-        if col in combined.columns:
-            combined[col] = pd.to_numeric(combined[col], errors="coerce").fillna(0)
-        else:
-            combined[col] = 0.0
-
-    combined["_flow"] = (
-        combined["bullish_premium"].abs()
-        + combined["bearish_premium"].abs()
-        + combined["call_volume"]
-        + combined["put_volume"]
-    )
+    combined = _add_flow_column(pd.concat(frames, ignore_index=True))
     activity = combined.groupby("ticker")["_flow"].sum()
-    ranked = activity.sort_values(ascending=False).head(max_tickers)
-    return set(ranked.index)
+    selected: List[str] = activity.sort_values(ascending=False).head(max_tickers).index.tolist()
+    selected_set: Set[str] = set(selected)
+
+    latest_date = max(screeners)
+    latest_raw = screeners.get(latest_date, pd.DataFrame())
+    if not latest_raw.empty:
+        latest = _filter_universe_frame(latest_raw, filters=filters, min_mcap=min_mcap, min_vol=min_vol)
+        latest = _add_flow_column(latest)
+        for ticker in latest.groupby("ticker")["_flow"].sum().sort_values(ascending=False).head(max_latest).index:
+            if ticker not in selected_set:
+                selected.append(ticker)
+                selected_set.add(ticker)
+
+        catalyst = _filter_universe_frame(
+            latest_raw,
+            filters=filters,
+            min_mcap=catalyst_min_mcap,
+            min_vol=catalyst_min_vol,
+        )
+        if not catalyst.empty:
+            catalyst = _add_flow_column(catalyst)
+            catalyst_mask = pd.Series(False, index=catalyst.index)
+            earnings_mask = pd.Series(False, index=catalyst.index)
+            if "next_earnings_date" in catalyst.columns:
+                earnings_dates = pd.to_datetime(catalyst["next_earnings_date"], errors="coerce").dt.date
+                days_to_earnings = earnings_dates.map(
+                    lambda value: (value - latest_date).days
+                    if isinstance(value, dt.date) and not pd.isna(value)
+                    else math.nan
+                )
+                earnings_mask = days_to_earnings.map(
+                    lambda value: math.isfinite(_fnum(value)) and -1 <= _fnum(value) <= catalyst_earnings_days
+                )
+                catalyst_mask |= earnings_mask
+                earnings_rank_frame = catalyst[earnings_mask].copy()
+                if not earnings_rank_frame.empty:
+                    mcap_col = "marketcap" if "marketcap" in earnings_rank_frame.columns else "market_cap"
+                    if mcap_col in earnings_rank_frame.columns:
+                        earnings_rank_frame["_mcap_sort"] = pd.to_numeric(
+                            earnings_rank_frame[mcap_col], errors="coerce"
+                        ).fillna(0)
+                    else:
+                        earnings_rank_frame["_mcap_sort"] = 0
+                    earnings_rank_frame["_iv_sort"] = (
+                        pd.to_numeric(earnings_rank_frame.get("iv_rank", 0), errors="coerce").fillna(0)
+                    )
+                    earnings_rank_frame["_volume_sort"] = (
+                        pd.to_numeric(earnings_rank_frame.get("total_volume", 0), errors="coerce").fillna(0)
+                    )
+                    earnings_ranked = (
+                        earnings_rank_frame.sort_values(
+                            ["_mcap_sort", "_iv_sort", "_volume_sort", "_flow"],
+                            ascending=[False, False, False, False],
+                        )
+                        .drop_duplicates("ticker")
+                        .head(max_earnings)
+                    )
+                    for ticker in earnings_ranked["ticker"]:
+                        if ticker not in selected_set:
+                            selected.append(ticker)
+                            selected_set.add(ticker)
+            if "iv_rank" in catalyst.columns and math.isfinite(catalyst_iv_rank):
+                catalyst_mask |= pd.to_numeric(catalyst["iv_rank"], errors="coerce").fillna(0).ge(catalyst_iv_rank)
+            if (
+                "total_volume" in catalyst.columns
+                and "avg30_volume" in catalyst.columns
+                and math.isfinite(catalyst_volume_surge)
+                and catalyst_volume_surge > 0
+            ):
+                total_volume = pd.to_numeric(catalyst["total_volume"], errors="coerce").fillna(0)
+                avg_volume = pd.to_numeric(catalyst["avg30_volume"], errors="coerce").replace(0, np.nan)
+                catalyst_mask |= (total_volume / avg_volume).fillna(0).ge(catalyst_volume_surge)
+
+            catalyst_ranked = catalyst[catalyst_mask].groupby("ticker")["_flow"].sum().sort_values(ascending=False)
+            for ticker in catalyst_ranked.head(max_catalyst).index:
+                if ticker not in selected_set:
+                    selected.append(ticker)
+                    selected_set.add(ticker)
+
+    return set(selected[:max_total])
 
 
 # ---------------------------------------------------------------------------
@@ -580,47 +738,99 @@ def load_dp_eod(
     return result
 
 
+def _whale_source_config(cfg: Dict) -> Dict:
+    if isinstance(cfg, dict) and all(k in cfg for k in ("gates", "fire", "shield")):
+        return cfg
+
+    data_cfg = cfg.get("data_loading", {}) if isinstance(cfg, dict) else {}
+    configured = data_cfg.get("whale_source_config") or data_cfg.get("whale_rulebook_config")
+    candidates: List[Path] = []
+    if configured:
+        configured_path = Path(str(configured))
+        if not configured_path.is_absolute():
+            configured_path = Path(__file__).resolve().parent / configured_path
+        candidates.append(configured_path)
+    candidates.append(DEFAULT_WHALE_RULEBOOK_CONFIG)
+
+    for path in candidates:
+        if not path.exists():
+            continue
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(loaded, dict) and all(k in loaded for k in ("gates", "fire", "shield")):
+            return loaded
+
+    return cfg if isinstance(cfg, dict) else {}
+
+
+def _load_cached_whale_summary_symbols(
+    day_dir: Path,
+    day: dt.date,
+    ticker_set: Set[str],
+) -> Set[str]:
+    date_str = day.isoformat()
+    candidates = [
+        day_dir / f"whale-symbol-summary-{date_str}.csv",
+        day_dir / "_unzipped_mode_a" / f"whale-symbol-summary-{date_str}.csv",
+    ]
+    for path in candidates:
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_csv(path, low_memory=False)
+        except Exception:
+            continue
+        for col in ("underlying_symbol", "ticker", "symbol"):
+            if col not in df.columns:
+                continue
+            return {
+                str(t).strip().upper()
+                for t in df[col].dropna()
+                if str(t).strip().upper() in ticker_set
+            }
+    return set()
+
+
 def load_whale_mentions(
     trading_days: List[Tuple[dt.date, Path]],
     ticker_set: Set[str],
+    cfg: Optional[Dict] = None,
 ) -> Dict[dt.date, Set[str]]:
-    """Parse whale reports to find which tickers are mentioned each day."""
+    """Load daily whale ticker coverage.
+
+    Preferred source is the full bot-eod-report CSV/ZIP so ticker-level premium
+    coverage is not truncated to the old markdown Top-200 trade table. Legacy
+    whale markdown is used only when an older folder has no bot EOD export.
+    """
     result: Dict[dt.date, Set[str]] = {}
+    whale_cfg = _whale_source_config(cfg or {})
     for d, day_dir in trading_days:
         tickers_found: Set[str] = set()
 
-        # Try markdown whale file
-        whale_md = day_dir / f"whale-{d.isoformat()}.md"
-        if whale_md.exists():
-            try:
-                text = whale_md.read_text(encoding="utf-8", errors="ignore")
-                # Extract tickers from markdown table rows
-                for m in WHALE_TICKER_RE.finditer(text):
-                    t = m.group(1).strip().upper()
-                    if t in ticker_set and len(t) <= 6 and t.isalpha():
-                        tickers_found.add(t)
-            except Exception:
-                pass
+        try:
+            bot_eod = find_bot_eod_source(day_dir, d.isoformat())
+        except FileNotFoundError:
+            bot_eod = None
 
-        # Try CSV whale file
-        if not tickers_found:
-            for pattern in [
-                f"whale_trades_filtered-{d.isoformat()}.csv",
-                "whale_trades_filtered.csv",
-            ]:
-                whale_csv = day_dir / pattern
-                if whale_csv.exists():
-                    try:
-                        wdf = pd.read_csv(whale_csv, low_memory=False)
-                        for c in wdf.columns:
-                            if c.strip().lower() in ("underlying_symbol", "ticker", "symbol"):
-                                for t in wdf[c].astype(str).str.strip().str.upper().unique():
-                                    if t in ticker_set:
-                                        tickers_found.add(t)
-                                break
-                    except Exception:
-                        pass
-                    break
+        if bot_eod is not None:
+            flow = load_yes_prime_whale_flow(bot_eod, whale_cfg)
+            if "underlying_symbol" in flow.symbol_summary.columns:
+                tickers_found = {
+                    str(t).strip().upper()
+                    for t in flow.symbol_summary["underlying_symbol"].dropna()
+                    if str(t).strip().upper() in ticker_set
+                }
+
+        if not tickers_found and bot_eod is None:
+            tickers_found = _load_cached_whale_summary_symbols(day_dir, d, ticker_set)
+
+        if not tickers_found and bot_eod is None:
+            try:
+                whale_md = find_whale_markdown_source(day_dir, d.isoformat())
+            except FileNotFoundError:
+                whale_md = None
+
+            if whale_md is not None:
+                tickers_found = load_whale_markdown_symbols(whale_md, ticker_set)
 
         if tickers_found:
             result[d] = tickers_found
@@ -875,6 +1085,17 @@ def compute_swing_signals(
 
     # --- Price trend ---
     closes = [sf.close for _, sf in screener_series]
+    if len(closes) >= 2 and math.isfinite(closes[-2]) and closes[-2] > 0 and math.isfinite(closes[-1]):
+        sig.latest_return_pct = (closes[-1] / closes[-2]) - 1.0
+        latest_return_min = float(
+            scoring_cfg.get("direction_inference", {}).get("latest_return_min_abs", 0.015)
+        )
+        if sig.latest_return_pct >= latest_return_min:
+            sig.latest_return_direction = "bullish"
+        elif sig.latest_return_pct <= -latest_return_min:
+            sig.latest_return_direction = "bearish"
+        else:
+            sig.latest_return_direction = "neutral"
     if closes and math.isfinite(closes[0]) and closes[0] > 0:
         norm_closes = [c / closes[0] for c in closes]
         sig.price_slope = _linear_slope(norm_closes)
@@ -1011,6 +1232,203 @@ def compute_swing_signals(
 # Scoring
 # ---------------------------------------------------------------------------
 
+def _weighted_direction_scores(signals: SwingSignals, cfg: Dict) -> Tuple[float, float]:
+    """Infer directional bias from multiple noisy sources without letting one
+    ambiguous feature dominate.
+
+    OI is intentionally only a light tie-breaker. Historical replay showed that
+    treating raw call-vs-put OI build as a primary directional vote skewed the
+    engine bullish and hurt bearish debit selection.
+    """
+    direction_cfg = cfg.get("scoring", {}).get("direction_inference", {})
+    price_weight_base = float(direction_cfg.get("price_weight_base", 1.35))
+    price_r2_bonus = float(direction_cfg.get("price_r2_bonus", 0.65))
+    flow_weight_base = float(direction_cfg.get("flow_weight_base", 1.05))
+    hot_flow_weight_base = float(direction_cfg.get("hot_flow_weight_base", 0.85))
+    pcr_weight = float(direction_cfg.get("pcr_weight", 0.40))
+    oi_tiebreak_weight = float(direction_cfg.get("oi_tiebreak_weight", 0.25))
+    dp_accumulation_weight = float(direction_cfg.get("dp_accumulation_weight", 0.75))
+    dp_distribution_weight = float(direction_cfg.get("dp_distribution_weight", 0.60))
+    dp_min_consistency = float(direction_cfg.get("dp_min_consistency", 0.55))
+    latest_return_weight = float(direction_cfg.get("latest_return_weight", 0.75))
+    latest_return_scale = float(direction_cfg.get("latest_return_scale", 0.04))
+
+    bull_score = 0.0
+    bear_score = 0.0
+
+    price_direction = str(signals.price_direction or "").strip().lower()
+    flow_direction = str(signals.flow_direction or "").strip().lower()
+    hot_flow_direction = str(signals.hot_flow_direction or "").strip().lower()
+    oi_direction = str(signals.oi_direction or "").strip().lower()
+    pcr_direction = str(signals.pcr_direction or "").strip().lower()
+    dp_direction = str(signals.dp_direction or "").strip().lower()
+    latest_return_direction = str(signals.latest_return_direction or "").strip().lower()
+
+    if price_direction in {"bullish", "bearish"}:
+        price_weight = price_weight_base + price_r2_bonus * max(
+            0.0, min(1.0, signals.price_r_squared if math.isfinite(signals.price_r_squared) else 0.0)
+        )
+        if price_direction == "bullish":
+            bull_score += price_weight
+        else:
+            bear_score += price_weight
+
+    if flow_direction in {"bullish", "bearish"}:
+        flow_weight = flow_weight_base * max(0.5, float(signals.flow_consistency or 0.0))
+        if flow_direction == "bullish":
+            bull_score += flow_weight
+        else:
+            bear_score += flow_weight
+
+    hot_confirms = hot_flow_direction in {
+        d for d in (price_direction, flow_direction) if d in {"bullish", "bearish"}
+    }
+    if hot_flow_direction in {"bullish", "bearish"} and hot_confirms:
+        hot_weight = hot_flow_weight_base * max(0.5, float(signals.hot_flow_consistency or 0.0))
+        if hot_flow_direction == "bullish":
+            bull_score += hot_weight
+        else:
+            bear_score += hot_weight
+
+    if pcr_direction == "declining":
+        bull_score += pcr_weight
+    elif pcr_direction == "rising":
+        bear_score += pcr_weight
+
+    # The last completed trading day matters for setup timing. A 30-day trend
+    # can be stale around catalysts, so give a bounded vote to the freshest
+    # close-to-close move without letting a single gap dominate the whole read.
+    latest_ret = abs(float(signals.latest_return_pct)) if math.isfinite(signals.latest_return_pct) else 0.0
+    if latest_return_direction in {"bullish", "bearish"} and latest_return_scale > 0:
+        latest_weight = latest_return_weight * min(2.0, latest_ret / latest_return_scale)
+        if latest_return_direction == "bullish":
+            bull_score += latest_weight
+        else:
+            bear_score += latest_weight
+
+    # OI is a tie-breaker, not a lead vote. Let it help only when price is not
+    # already opposing the thesis and OI itself is reasonably consistent.
+    oi_weight = oi_tiebreak_weight * max(0.5, float(signals.oi_consistency or 0.0))
+    oi_can_help_bull = (
+        (price_direction == "bullish" and flow_direction != "bearish")
+        or (flow_direction == "bullish" and price_direction == "range_bound")
+    )
+    oi_can_help_bear = (
+        (price_direction == "bearish" and flow_direction != "bullish")
+        or (flow_direction == "bearish" and price_direction == "range_bound")
+    )
+    if oi_direction == "bullish" and oi_can_help_bull:
+        bull_score += oi_weight
+    elif oi_direction == "bearish" and oi_can_help_bear:
+        bear_score += oi_weight
+
+    # Dark-pool distribution is a meaningful bearish signal. Accumulation is
+    # far more common and historically works better as early support/reversal
+    # evidence than as a late bullish breakout vote.
+    if float(signals.dp_consistency or 0.0) >= dp_min_consistency:
+        if dp_direction == "distribution":
+            bear_score += dp_distribution_weight * float(signals.dp_consistency or 0.0)
+        elif dp_direction == "accumulation" and price_direction != "bullish":
+            bull_score += dp_accumulation_weight * float(signals.dp_consistency or 0.0)
+
+    return bull_score, bear_score
+
+
+def _event_direction_guard_reason(signals: SwingSignals, cfg: Dict, direction: str) -> str:
+    direction_cfg = cfg.get("scoring", {}).get("direction_inference", {})
+    guard_days = int(direction_cfg.get("event_direction_guard_days", 1))
+    if guard_days < 0 or direction not in {"bullish", "bearish"}:
+        return ""
+    if signals.latest_date is None or signals.next_earnings_date is None:
+        return ""
+    days_to_earn = (signals.next_earnings_date - signals.latest_date).days
+    if not (0 <= days_to_earn <= guard_days):
+        return ""
+    latest_dir = str(signals.latest_return_direction or "").strip().lower()
+    latest_min = float(direction_cfg.get("event_same_day_reaction_min_abs", 0.03))
+    latest_move = abs(float(signals.latest_return_pct)) if math.isfinite(signals.latest_return_pct) else 0.0
+    if days_to_earn == 0 and latest_dir == direction and latest_move >= latest_min:
+        return ""
+    return (
+        f"event direction pending: earnings/catalyst {signals.next_earnings_date.isoformat()} "
+        f"is {days_to_earn}d from the signal date; wait for post-event price/flow confirmation"
+    )
+
+
+def _latest_reversal_guard_reason(signals: SwingSignals, cfg: Dict, direction: str) -> str:
+    direction_cfg = cfg.get("scoring", {}).get("direction_inference", {})
+    min_abs = float(direction_cfg.get("latest_reversal_guard_min_abs", 0.035))
+    latest_dir = str(signals.latest_return_direction or "").strip().lower()
+    if direction not in {"bullish", "bearish"} or latest_dir not in {"bullish", "bearish"}:
+        return ""
+    if latest_dir == direction:
+        return ""
+    latest_move = abs(float(signals.latest_return_pct)) if math.isfinite(signals.latest_return_pct) else 0.0
+    if latest_move < min_abs:
+        return ""
+    return (
+        f"latest-day reversal conflict: last close moved {signals.latest_return_pct:+.1%} "
+        f"({latest_dir}) against the {direction} trend setup"
+    )
+
+
+def _direction_guard(signals: SwingSignals, cfg: Dict, direction: str) -> Tuple[str, str]:
+    event_reason = _event_direction_guard_reason(signals, cfg, direction)
+    if event_reason:
+        return "event_pending", event_reason
+    reversal_reason = _latest_reversal_guard_reason(signals, cfg, direction)
+    if reversal_reason:
+        return "latest_reversal", reversal_reason
+    return "normal", ""
+
+
+def _infer_direction(signals: SwingSignals, cfg: Dict) -> Tuple[str, float, float, float, str, str]:
+    direction_cfg = cfg.get("scoring", {}).get("direction_inference", {})
+    min_direction_score = float(direction_cfg.get("min_direction_score", 1.6))
+    min_margin = float(direction_cfg.get("min_margin", 0.60))
+    conflict_margin_penalty = float(direction_cfg.get("conflict_margin_penalty", 0.80))
+    range_reversal_min_score = float(direction_cfg.get("range_reversal_min_score", 0.95))
+    range_reversal_max_oppose = float(direction_cfg.get("range_reversal_max_oppose", 0.85))
+    bull_score, bear_score = _weighted_direction_scores(signals, cfg)
+    price_direction = str(signals.price_direction or "").strip().lower()
+    flow_direction = str(signals.flow_direction or "").strip().lower()
+    hot_flow_direction = str(signals.hot_flow_direction or "").strip().lower()
+    dp_direction = str(signals.dp_direction or "").strip().lower()
+    core_conflict = (
+        price_direction in {"bullish", "bearish"}
+        and flow_direction in {"bullish", "bearish"}
+        and price_direction != flow_direction
+    )
+    if core_conflict and hot_flow_direction not in {price_direction, flow_direction}:
+        min_margin += conflict_margin_penalty
+    margin = bull_score - bear_score
+    if (
+        price_direction == "range_bound"
+        and flow_direction == "bullish"
+        and dp_direction == "accumulation"
+        and bull_score >= range_reversal_min_score
+        and bear_score <= range_reversal_max_oppose
+    ):
+        status, reason = _direction_guard(signals, cfg, "bullish")
+        return "bullish", bull_score, bear_score, margin, status, reason
+    if (
+        price_direction == "range_bound"
+        and flow_direction == "bearish"
+        and dp_direction == "distribution"
+        and bear_score >= range_reversal_min_score
+        and bull_score <= range_reversal_max_oppose
+    ):
+        status, reason = _direction_guard(signals, cfg, "bearish")
+        return "bearish", bull_score, bear_score, margin, status, reason
+    if bull_score >= min_direction_score and margin >= min_margin:
+        status, reason = _direction_guard(signals, cfg, "bullish")
+        return "bullish", bull_score, bear_score, margin, status, reason
+    if bear_score >= min_direction_score and -margin >= min_margin:
+        status, reason = _direction_guard(signals, cfg, "bearish")
+        return "bearish", bull_score, bear_score, margin, status, reason
+    return "neutral", bull_score, bear_score, margin, "normal", ""
+
+
 def score_ticker(signals: SwingSignals, cfg: Dict) -> SwingScore:
     """Score a ticker based on its cross-day swing signals."""
     scoring_cfg = cfg.get("scoring", {})
@@ -1018,27 +1436,16 @@ def score_ticker(signals: SwingSignals, cfg: Dict) -> SwingScore:
 
     score = SwingScore(ticker=signals.ticker)
 
-    # Determine primary direction from multiple sources
-    dir_votes = []
-    if signals.flow_direction in ("bullish", "bearish"):
-        dir_votes.append(signals.flow_direction)
-    if signals.price_direction in ("bullish", "bearish"):
-        dir_votes.append(signals.price_direction)
-    if signals.oi_direction in ("bullish", "bearish"):
-        dir_votes.append("bullish" if signals.oi_direction == "bullish" else "bearish")
-    if signals.pcr_direction == "declining":
-        dir_votes.append("bullish")
-    elif signals.pcr_direction == "rising":
-        dir_votes.append("bearish")
-
-    bull_count = sum(1 for v in dir_votes if v == "bullish")
-    bear_count = sum(1 for v in dir_votes if v == "bearish")
-    if bull_count > bear_count and bull_count >= 2:
-        score.direction = "bullish"
-    elif bear_count > bull_count and bear_count >= 2:
-        score.direction = "bearish"
-    else:
-        score.direction = "neutral"
+    (
+        score.direction,
+        score.direction_bull_score,
+        score.direction_bear_score,
+        score.direction_margin,
+        score.direction_status,
+        score.direction_note,
+    ) = (
+        _infer_direction(signals, cfg)
+    )
 
     is_directional = score.direction in ("bullish", "bearish")
 
@@ -1062,13 +1469,6 @@ def score_ticker(signals: SwingSignals, cfg: Dict) -> SwingScore:
     # Strike clustering bonus: if top strike repeats, OI is concentrated
     if math.isfinite(signals.top_call_strike) or math.isfinite(signals.top_put_strike):
         oi_base += 15.0
-    # Direction alignment bonus / contradiction penalty
-    if (score.direction == "bullish" and signals.oi_direction == "bullish") or \
-       (score.direction == "bearish" and signals.oi_direction == "bearish"):
-        oi_base += 5.0
-    elif (score.direction == "bullish" and signals.oi_direction == "bearish") or \
-         (score.direction == "bearish" and signals.oi_direction == "bullish"):
-        oi_base = max(0.0, oi_base - 10.0)
     score.oi_momentum_score = _clip(oi_base)
 
     # --- IV regime score (0-100) ---
@@ -1119,15 +1519,22 @@ def score_ticker(signals: SwingSignals, cfg: Dict) -> SwingScore:
 
     # --- DP confirmation score (0-100) ---
     dp_base = signals.dp_consistency * 60.0
-    if (score.direction == "bullish" and signals.dp_direction == "accumulation") or \
-       (score.direction == "bearish" and signals.dp_direction == "distribution"):
-        dp_base += 40.0
+    if score.direction == "bullish":
+        if signals.dp_direction == "accumulation":
+            dp_base += 35.0 if signals.price_direction in {"bearish", "range_bound"} else 12.0
+        elif signals.dp_direction == "neutral":
+            dp_base += 12.0
+        elif signals.dp_direction == "distribution":
+            dp_base = max(0.0, dp_base - 20.0)
+    elif score.direction == "bearish":
+        if signals.dp_direction == "distribution":
+            dp_base += 35.0 if signals.price_direction in {"bearish", "range_bound"} else 15.0
+        elif signals.dp_direction == "neutral":
+            dp_base += 18.0
+        elif signals.dp_direction == "accumulation":
+            dp_base = max(0.0, dp_base - 20.0)
     elif signals.dp_direction == "neutral":
         dp_base += 10.0
-    elif (score.direction == "bullish" and signals.dp_direction == "distribution") or \
-         (score.direction == "bearish" and signals.dp_direction == "accumulation"):
-        # DP contradicts the directional thesis — penalize
-        dp_base = max(0.0, dp_base - 20.0)
     score.dp_confirmation_score = _clip(dp_base)
 
     # --- Composite ---
@@ -1897,6 +2304,481 @@ def _compute_ticker_gex(
     }
 
 
+def _contract_delta(contract: Dict[str, Any]) -> float:
+    value = contract.get("delta")
+    if value is None:
+        return math.nan
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return math.nan
+    return parsed if math.isfinite(parsed) else math.nan
+
+
+def _build_occ_symbol(ticker: str, expiry: dt.date, right: str, strike: float) -> str:
+    strike_i = int(round(float(strike) * 1000))
+    return f"{str(ticker or '').strip().upper()}{expiry.strftime('%y%m%d')}{str(right).upper()}{strike_i:08d}"
+
+
+def _strategy_dte_settings(strategy: str, cfg: Dict[str, Any]) -> Tuple[int, Tuple[int, int]]:
+    target_dte = 45
+    dte_range = (21, 70)
+    normalized = str(strategy or "").lower().replace(" ", "_")
+    for block in cfg.get("strategy_selection", {}).values():
+        if not isinstance(block, dict):
+            continue
+        block_strategy = str(block.get("strategy", "")).lower().replace(" ", "_")
+        if block_strategy and block_strategy in normalized:
+            rng = block.get("dte_range", dte_range)
+            if isinstance(rng, (list, tuple)) and len(rng) == 2:
+                try:
+                    lo = int(rng[0])
+                    hi = int(rng[1])
+                    if lo > 0 and hi >= lo:
+                        dte_range = (lo, hi)
+                except Exception:
+                    pass
+            try:
+                target_dte = int(block.get("target_dte", target_dte))
+            except Exception:
+                pass
+            break
+    return target_dte, dte_range
+
+
+def _local_quote_hits(
+    quote_store: Any,
+    *,
+    signal_date: Optional[dt.date],
+    ticker: str,
+    expiry: dt.date,
+    right: str,
+    strikes: Sequence[float],
+    cache: Dict[Tuple[dt.date, str, float], bool],
+) -> int:
+    if quote_store is None or signal_date is None:
+        return 0
+    hits = 0
+    for strike in strikes:
+        key = (expiry, right, float(strike))
+        present = cache.get(key)
+        if present is None:
+            symbol = _build_occ_symbol(ticker, expiry, right, float(strike))
+            try:
+                present = quote_store.get_leg_quote(signal_date, symbol) is not None
+            except Exception:
+                present = False
+            cache[key] = bool(present)
+        if present:
+            hits += 1
+    return hits
+
+
+def _expiry_candidates_for_score(
+    score: SwingScore,
+    signal: SwingSignals,
+    chain_map: Dict[str, Dict[str, Dict[float, Dict[str, Any]]]],
+    cfg: Dict[str, Any],
+    *,
+    max_candidates: int,
+) -> List[dt.date]:
+    latest = signal.latest_date or dt.date.today()
+    target_dte_cfg, dte_range = _strategy_dte_settings(score.recommended_strategy, cfg)
+    target_dte = int(score.target_dte or target_dte_cfg or 45)
+    try:
+        target_expiry = dt.date.fromisoformat(str(score.target_expiry))
+    except Exception:
+        target_expiry = latest + dt.timedelta(days=target_dte)
+    min_dte, max_dte = dte_range
+    buffer_days = int(cfg.get("filters", {}).get("earnings_buffer_days", 3) or 3)
+    earnings = signal.next_earnings_date
+    ranked: List[Tuple[float, dt.date]] = []
+    for exp_str in chain_map.keys():
+        try:
+            expiry = dt.date.fromisoformat(exp_str)
+        except Exception:
+            continue
+        dte = (expiry - latest).days
+        if dte <= 0:
+            continue
+        outside_window = 0.0
+        if dte < min_dte:
+            outside_window += (min_dte - dte) * 0.5
+        elif dte > max_dte:
+            outside_window += (dte - max_dte) * 0.25
+        earnings_penalty = 0.0
+        if earnings is not None:
+            if latest <= earnings <= expiry:
+                earnings_penalty += 4.0
+            elif expiry < earnings and (earnings - expiry).days < buffer_days:
+                earnings_penalty += 1.5
+        score_key = (
+            outside_window
+            + earnings_penalty
+            + abs(dte - target_dte) / 7.0
+            + abs((expiry - target_expiry).days) / 14.0
+        )
+        ranked.append((score_key, expiry))
+    ranked.sort(key=lambda item: (item[0], item[1]))
+    return [expiry for _, expiry in ranked[: max(1, int(max_candidates))]]
+
+
+def _vertical_live_setup_text(
+    strategy: str,
+    *,
+    long_strike: float,
+    short_strike: float,
+    width: float,
+    live_cost: float,
+    right: str,
+) -> str:
+    if strategy in {"Bull Call Debit", "Bear Put Debit"}:
+        return (
+            f"Buy {long_strike:g}{right} / Sell {short_strike:g}{right} "
+            f"({width:g}w, ${live_cost:.2f} debit)"
+        )
+    return (
+        f"Sell {short_strike:g}{right} / Buy {long_strike:g}{right} "
+        f"({width:g}w, ${live_cost:.2f} credit)"
+    )
+
+
+def _best_vertical_live_candidate(
+    score: SwingScore,
+    signal: SwingSignals,
+    chain_map: Dict[str, Dict[str, Dict[float, Dict[str, Any]]]],
+    *,
+    spot: float,
+    cfg: Dict[str, Any],
+    quote_store: Any = None,
+    max_candidates: int = 6,
+) -> Optional[Dict[str, Any]]:
+    strategy = str(score.recommended_strategy or "").strip()
+    if strategy not in {"Bull Call Debit", "Bear Put Debit", "Bull Put Credit", "Bear Call Credit"}:
+        return None
+    if not math.isfinite(spot) or spot <= 0:
+        return None
+
+    latest = signal.latest_date or dt.date.today()
+    target_dte_cfg, _ = _strategy_dte_settings(strategy, cfg)
+    target_dte = int(score.target_dte or target_dte_cfg or 45)
+    target_long = float(score.long_strike) if math.isfinite(score.long_strike) else math.nan
+    target_short = float(score.short_strike) if math.isfinite(score.short_strike) else math.nan
+    base_width = abs(float(score.spread_width)) if math.isfinite(score.spread_width) and score.spread_width > 0 else _width_for_spot(spot)
+    cost_type = "debit" if "Debit" in strategy else "credit"
+    right = "C" if strategy in {"Bull Call Debit", "Bear Call Credit"} else "P"
+    quote_cache: Dict[Tuple[dt.date, str, float], bool] = {}
+    expiries = _expiry_candidates_for_score(
+        score,
+        signal,
+        chain_map,
+        cfg,
+        max_candidates=max_candidates,
+    )
+    best: Optional[Dict[str, Any]] = None
+    best_rank = math.inf
+
+    for expiry in expiries:
+        contracts = chain_map.get(expiry.isoformat(), {}).get(right, {})
+        if not contracts:
+            continue
+        rows: List[Tuple[float, Dict[str, Any], float, float, float]] = []
+        for strike, contract in contracts.items():
+            mid = _contract_mid_price(contract)
+            ba = _contract_bid_ask_spread(contract)
+            if mid is None or not math.isfinite(mid) or mid < 0:
+                continue
+            if not math.isfinite(ba) or ba < 0:
+                continue
+            strike_f = float(strike)
+            if strike_f < spot * 0.60 or strike_f > spot * 1.40:
+                continue
+            rows.append((strike_f, contract, float(mid), float(ba), _contract_delta(contract)))
+        if len(rows) < 2:
+            continue
+        rows.sort(key=lambda item: item[0])
+        dte = max(1, int((expiry - latest).days))
+
+        def _row_rank(
+            item: Tuple[float, Dict[str, Any], float, float, float],
+            *,
+            target_delta: float,
+            target_strike: float,
+            prefer_above: Optional[float] = None,
+            prefer_below: Optional[float] = None,
+        ) -> float:
+            strike_v, _, _, ba_v, delta_v = item
+            rank_v = abs(strike_v - target_strike) / max(base_width, 1.0)
+            if math.isfinite(delta_v):
+                rank_v += abs(abs(delta_v) - target_delta) * 4.0
+            else:
+                rank_v += 1.0
+            if math.isfinite(ba_v):
+                rank_v += ba_v / max(base_width, 1.0)
+            if prefer_above is not None and strike_v < prefer_above:
+                rank_v += (prefer_above - strike_v) / max(base_width, 1.0) * 2.0
+            if prefer_below is not None and strike_v > prefer_below:
+                rank_v += (strike_v - prefer_below) / max(base_width, 1.0) * 2.0
+            return rank_v
+
+        max_leg_candidates = 12
+        if strategy == "Bull Call Debit":
+            long_candidates = sorted(
+                rows,
+                key=lambda item: _row_rank(
+                    item,
+                    target_delta=0.55,
+                    target_strike=target_long if math.isfinite(target_long) else spot,
+                    prefer_below=spot * 1.02,
+                ),
+            )[:max_leg_candidates]
+            short_candidates = sorted(
+                rows,
+                key=lambda item: _row_rank(
+                    item,
+                    target_delta=0.30,
+                    target_strike=target_short if math.isfinite(target_short) else (spot + base_width),
+                    prefer_above=spot * 0.98,
+                ),
+            )[:max_leg_candidates]
+            pair_iter = ((long_item, short_item) for long_item in long_candidates for short_item in short_candidates)
+        elif strategy == "Bear Put Debit":
+            long_candidates = sorted(
+                rows,
+                key=lambda item: _row_rank(
+                    item,
+                    target_delta=0.55,
+                    target_strike=target_long if math.isfinite(target_long) else spot,
+                    prefer_above=spot * 0.98,
+                ),
+            )[:max_leg_candidates]
+            short_candidates = sorted(
+                rows,
+                key=lambda item: _row_rank(
+                    item,
+                    target_delta=0.30,
+                    target_strike=target_short if math.isfinite(target_short) else (spot - base_width),
+                    prefer_below=spot * 1.02,
+                ),
+            )[:max_leg_candidates]
+            pair_iter = ((long_item, short_item) for long_item in long_candidates for short_item in short_candidates)
+        elif strategy == "Bull Put Credit":
+            short_candidates = sorted(
+                rows,
+                key=lambda item: _row_rank(
+                    item,
+                    target_delta=0.22,
+                    target_strike=target_short if math.isfinite(target_short) else (spot * 0.95),
+                    prefer_below=spot * 1.01,
+                ),
+            )[:max_leg_candidates]
+            long_candidates = sorted(
+                rows,
+                key=lambda item: _row_rank(
+                    item,
+                    target_delta=0.10,
+                    target_strike=target_long if math.isfinite(target_long) else (spot * 0.88),
+                    prefer_below=spot * 0.96,
+                ),
+            )[:max_leg_candidates]
+            pair_iter = ((long_item, short_item) for short_item in short_candidates for long_item in long_candidates)
+        else:
+            short_candidates = sorted(
+                rows,
+                key=lambda item: _row_rank(
+                    item,
+                    target_delta=0.22,
+                    target_strike=target_short if math.isfinite(target_short) else (spot * 1.05),
+                    prefer_above=spot * 0.99,
+                ),
+            )[:max_leg_candidates]
+            long_candidates = sorted(
+                rows,
+                key=lambda item: _row_rank(
+                    item,
+                    target_delta=0.10,
+                    target_strike=target_long if math.isfinite(target_long) else (spot * 1.12),
+                    prefer_above=spot * 1.04,
+                ),
+            )[:max_leg_candidates]
+            pair_iter = ((long_item, short_item) for short_item in short_candidates for long_item in long_candidates)
+
+        seen_pairs: Set[Tuple[float, float]] = set()
+        for long_item, short_item in pair_iter:
+            long_k = float(long_item[0])
+            short_k = float(short_item[0])
+            pair_key = (long_k, short_k)
+            if pair_key in seen_pairs:
+                continue
+            seen_pairs.add(pair_key)
+
+            if strategy == "Bull Call Debit":
+                if not short_k > long_k or long_k > spot * 1.08:
+                    continue
+                long_contract, long_mid, long_ba, long_delta = long_item[1], long_item[2], long_item[3], long_item[4]
+                short_contract, short_mid, short_ba, short_delta = short_item[1], short_item[2], short_item[3], short_item[4]
+            elif strategy == "Bear Put Debit":
+                if not long_k > short_k or long_k < spot * 0.92:
+                    continue
+                long_contract, long_mid, long_ba, long_delta = long_item[1], long_item[2], long_item[3], long_item[4]
+                short_contract, short_mid, short_ba, short_delta = short_item[1], short_item[2], short_item[3], short_item[4]
+            elif strategy == "Bull Put Credit":
+                if not short_k > long_k or short_k >= spot * 1.03:
+                    continue
+                long_contract, long_mid, long_ba, long_delta = long_item[1], long_item[2], long_item[3], long_item[4]
+                short_contract, short_mid, short_ba, short_delta = short_item[1], short_item[2], short_item[3], short_item[4]
+            else:
+                if not long_k > short_k or short_k <= spot * 0.97:
+                    continue
+                long_contract, long_mid, long_ba, long_delta = long_item[1], long_item[2], long_item[3], long_item[4]
+                short_contract, short_mid, short_ba, short_delta = short_item[1], short_item[2], short_item[3], short_item[4]
+
+            width = abs(long_k - short_k)
+            if width <= 0 or width > max(base_width * 2.5, 30.0):
+                continue
+
+            if strategy in {"Bull Call Debit", "Bear Put Debit"}:
+                live_cost = round(long_mid - short_mid, 2)
+            else:
+                live_cost = round(short_mid - long_mid, 2)
+            if live_cost <= 0 or live_cost > width:
+                continue
+
+            avg_ba = (long_ba + short_ba) / 2.0
+            if not math.isfinite(avg_ba):
+                continue
+
+            quote_hits = _local_quote_hits(
+                quote_store,
+                signal_date=latest,
+                ticker=score.ticker,
+                expiry=expiry,
+                right=right,
+                strikes=(long_k, short_k),
+                cache=quote_cache,
+            )
+            price_rank = 0.0
+            if strategy == "Bull Call Debit" and long_k > spot:
+                price_rank += ((long_k - spot) / spot) * 25.0
+            elif strategy == "Bear Put Debit" and long_k < spot:
+                price_rank += ((spot - long_k) / spot) * 25.0
+            elif strategy == "Bull Put Credit" and short_k > spot:
+                price_rank += ((short_k - spot) / spot) * 40.0
+            elif strategy == "Bear Call Credit" and short_k < spot:
+                price_rank += ((spot - short_k) / spot) * 40.0
+
+            target_long_penalty = (
+                abs(long_k - target_long) / max(base_width, 1.0)
+                if math.isfinite(target_long)
+                else 0.0
+            )
+            target_short_penalty = (
+                abs(short_k - target_short) / max(base_width, 1.0)
+                if math.isfinite(target_short)
+                else 0.0
+            )
+            width_penalty = abs(width - base_width) / max(base_width, 1.0)
+            dte_penalty = abs(dte - target_dte) / 7.0
+            liquidity_penalty = (avg_ba / max(abs(live_cost), 0.05)) * 2.0 + (avg_ba / max(width, 0.5)) * 2.0
+
+            if strategy in {"Bull Call Debit", "Bear Put Debit"}:
+                long_delta_target = 0.55
+                short_delta_target = 0.30
+            else:
+                long_delta_target = 0.10
+                short_delta_target = 0.22
+            delta_penalty = 0.0
+            if math.isfinite(long_delta):
+                delta_penalty += abs(abs(long_delta) - long_delta_target) * 2.0
+            else:
+                delta_penalty += 0.5
+            if math.isfinite(short_delta):
+                delta_penalty += abs(abs(short_delta) - short_delta_target) * 3.0
+            else:
+                delta_penalty += 0.75
+
+            quote_bonus = 3.0 if quote_hits == 2 else (1.0 if quote_hits == 1 else 0.0)
+            rank = (
+                width_penalty
+                + dte_penalty
+                + target_long_penalty
+                + target_short_penalty
+                + liquidity_penalty
+                + delta_penalty
+                + price_rank
+                - quote_bonus
+            )
+            if rank >= best_rank:
+                continue
+
+            best_rank = rank
+            best = {
+                "target_expiry": expiry.isoformat(),
+                "target_dte": dte,
+                "long_strike": long_k,
+                "short_strike": short_k,
+                "spread_width": round(width, 2),
+                "live_long_strike": long_k,
+                "live_short_strike": short_k,
+                "live_spread_cost": live_cost,
+                "live_bid_ask_width": round(avg_ba, 2),
+                "live_strike_setup": _vertical_live_setup_text(
+                    strategy,
+                    long_strike=long_k,
+                    short_strike=short_k,
+                    width=round(width, 2),
+                    live_cost=live_cost,
+                    right=right,
+                ),
+                "long_delta_live": float(long_delta) if math.isfinite(long_delta) else math.nan,
+                "short_delta_live": float(short_delta) if math.isfinite(short_delta) else math.nan,
+                "quote_hits": quote_hits,
+                "rank": rank,
+            }
+    return best
+
+
+def _apply_live_candidate(score: SwingScore, candidate: Dict[str, Any], *, note: str = "") -> None:
+    score.target_expiry = str(candidate.get("target_expiry", "") or score.target_expiry)
+    score.target_dte = int(candidate.get("target_dte", score.target_dte or 0) or 0)
+    if math.isfinite(_fnum(candidate.get("long_strike"))):
+        score.long_strike = float(candidate["long_strike"])
+    if math.isfinite(_fnum(candidate.get("short_strike"))):
+        score.short_strike = float(candidate["short_strike"])
+    if math.isfinite(_fnum(candidate.get("spread_width"))):
+        score.spread_width = float(candidate["spread_width"])
+    score.live_long_strike = _fnum(candidate.get("live_long_strike"))
+    score.live_short_strike = _fnum(candidate.get("live_short_strike"))
+    score.live_spread_cost = _fnum(candidate.get("live_spread_cost"))
+    score.live_bid_ask_width = _fnum(candidate.get("live_bid_ask_width"))
+    score.live_strike_setup = str(candidate.get("live_strike_setup", "") or "")
+    score.long_delta_live = _fnum(candidate.get("long_delta_live"))
+    score.short_delta_live = _fnum(candidate.get("short_delta_live"))
+    score.live_validated = True
+    score.live_validation_note = note
+
+
+def _optimize_score_with_live_chain(
+    score: SwingScore,
+    signal: SwingSignals,
+    chain_map: Dict[str, Dict[str, Dict[float, Dict[str, Any]]]],
+    *,
+    spot: float,
+    cfg: Dict[str, Any],
+    quote_store: Any = None,
+    max_candidates: int = 6,
+) -> Optional[Dict[str, Any]]:
+    return _best_vertical_live_candidate(
+        score,
+        signal,
+        chain_map,
+        spot=spot,
+        cfg=cfg,
+        quote_store=quote_store,
+        max_candidates=max_candidates,
+    )
+
+
 def validate_with_schwab(
     scores: List[SwingScore],
     signals_map: Dict[str, SwingSignals],
@@ -1938,6 +2820,19 @@ def validate_with_schwab(
     # Width-based entry gate tolerance
     entry_tol_width_pct = float(schwab_cfg.get("entry_tolerance_width_pct", 0.025))
     entry_tol_floor = float(schwab_cfg.get("entry_tolerance_floor", 0.25))
+    chain_optimizer_enabled = bool(schwab_cfg.get("optimize_structures_with_chain", True))
+    chain_optimizer_candidates = max(1, int(schwab_cfg.get("chain_optimizer_expiry_candidates", 6)))
+    quote_store = None
+    if chain_optimizer_enabled and bool(schwab_cfg.get("prefer_local_quote_coverage", True)):
+        root_text = str(cfg.get("pipeline", {}).get("root_dir", "") or "").strip()
+        root_path = Path(root_text).expanduser() if root_text else None
+        if root_path and root_path.exists():
+            try:
+                from uwos.exact_spread_backtester import HistoricalOptionQuoteStore
+
+                quote_store = HistoricalOptionQuoteStore(root_dir=root_path, use_hot=True, use_oi=True)
+            except Exception as exc:
+                print(f"  [schwab] Local quote coverage preference unavailable: {exc}", file=sys.stderr)
 
     # Group scores by ticker to minimize API calls
     ticker_scores: Dict[str, List[SwingScore]] = defaultdict(list)
@@ -1964,19 +2859,18 @@ def validate_with_schwab(
         from_date = min(expiry_dates) - dt.timedelta(days=3)
         to_date = max(expiry_dates) + dt.timedelta(days=3)
 
-        # Fetch chain
-        try:
-            chain = service.get_option_chain(
-                symbol=ticker,
-                strike_count=None,  # All strikes
-                include_underlying_quote=True,
-                from_date=from_date,
-                to_date=to_date,
-            )
-        except Exception as exc:
+        # Fetch chain, retrying common Schwab alias forms like BRK/B.
+        chain, _query_symbol, chain_exc, attempted_symbols = _fetch_option_chain_with_alias_fallback(
+            service,
+            ticker=ticker,
+            from_date=from_date,
+            to_date=to_date,
+        )
+        if chain is None:
+            attempted = ", ".join(attempted_symbols) or ticker
             for s in ticker_score_list:
                 s.live_validated = False
-                s.live_validation_note = f"Chain fetch failed: {exc}"
+                s.live_validation_note = f"Chain fetch failed for {attempted}: {chain_exc}"
             continue
 
         status = chain.get("status", "UNKNOWN")
@@ -2048,6 +2942,30 @@ def validate_with_schwab(
             s.gex_regime = ticker_gex["gex_regime"]
             s.gex_support = ticker_gex["gex_support"]
             s.gex_resistance = ticker_gex["gex_resistance"]
+
+            sig = signals_map.get(s.ticker, SwingSignals(ticker=s.ticker))
+            if chain_optimizer_enabled and spot is not None:
+                optimized = _optimize_score_with_live_chain(
+                    s,
+                    sig,
+                    chain_map,
+                    spot=float(spot),
+                    cfg=cfg,
+                    quote_store=quote_store,
+                    max_candidates=chain_optimizer_candidates,
+                )
+                if optimized is not None:
+                    previous_expiry = str(s.target_expiry or "")
+                    note = ""
+                    if str(optimized.get("target_expiry", "") or "") != previous_expiry:
+                        note = (
+                            f"chain-optimized to listed expiry {optimized.get('target_expiry', '')} "
+                            f"from {previous_expiry}"
+                        )
+                    elif int(optimized.get("quote_hits", 0) or 0) >= 2:
+                        note = "chain-optimized to quoted strikes with local UW snapshot coverage"
+                    _apply_live_candidate(s, optimized, note=note)
+                    continue
 
             strat = s.recommended_strategy
             is_call = strat in ("Bull Call Debit", "Bear Call Credit")
@@ -2891,6 +3809,11 @@ def generate_shortlist_csv(
             "cost_type": s.cost_type,
             "track": s.recommended_track,
             "direction": s.direction,
+            "direction_bull_score": round(s.direction_bull_score, 3),
+            "direction_bear_score": round(s.direction_bear_score, 3),
+            "direction_margin": round(s.direction_margin, 3),
+            "direction_status": s.direction_status,
+            "direction_note": s.direction_note,
             "swing_score": round(s.composite_score, 1),
             "flow_persistence": round(s.flow_persistence_score, 1),
             "oi_momentum": round(s.oi_momentum_score, 1),
@@ -2905,7 +3828,11 @@ def generate_shortlist_csv(
             "iv_level": sig.iv_level,
             "iv_regime_label": sig.iv_regime,
             "price_direction": sig.price_direction,
+            "latest_return_pct": round(sig.latest_return_pct, 4) if math.isfinite(sig.latest_return_pct) else "",
+            "latest_return_direction": sig.latest_return_direction,
             "flow_direction": sig.flow_direction,
+            "hot_flow_direction": sig.hot_flow_direction,
+            "pcr_direction": sig.pcr_direction,
             "oi_direction": sig.oi_direction,
             "dp_direction": sig.dp_direction,
             "whale_appearances": sig.whale_appearances,
@@ -3008,7 +3935,7 @@ def run_pipeline(
     print(f"  Loaded DP data for {len(dp_eod)} days", file=sys.stderr)
 
     print("  Loading whale mentions ...", file=sys.stderr)
-    whale_mentions = load_whale_mentions(trading_days, ticker_universe)
+    whale_mentions = load_whale_mentions(trading_days, ticker_universe, cfg=cfg)
     print(f"  Loaded whale data for {len(whale_mentions)} days", file=sys.stderr)
 
     # Phase 4: Feature extraction
@@ -3067,8 +3994,14 @@ def run_pipeline(
 
     # Phase 5: Compute swing signals
     signals_map: Dict[str, SwingSignals] = {}
+    latest_signal_date = trading_days[-1][0] if trading_days else None
     for ticker in ticker_universe:
-        if len(ticker_screener[ticker]) < min_days:
+        has_latest_screener = (
+            latest_signal_date is not None
+            and bool(ticker_screener[ticker])
+            and ticker_screener[ticker][-1][0] == latest_signal_date
+        )
+        if len(ticker_screener[ticker]) < min_days and not has_latest_screener:
             continue
         signals = compute_swing_signals(
             ticker=ticker,

@@ -55,7 +55,7 @@ python -m uwos.run_mode_a_two_stage \
 - `chain-oi-changes-YYYY-MM-DD.zip`
 - `dp-eod-report-YYYY-MM-DD.zip`
 - `stock-screener-YYYY-MM-DD.zip`
-- `whale-YYYY-MM-DD.md` (generated from `dp-eod-report` via `generate_whale_summary.py`)
+- `bot-eod-report-YYYY-MM-DD.zip` or `.csv` (full UW whale flow; daily pipeline does not use `whale-YYYY-MM-DD.md`)
 
 **Output files:**
 | File | What |
@@ -84,13 +84,13 @@ python -m uwos.trend_analysis 2026-04-17          # default 90 usable market-dat
 python -m uwos.trend_analysis 2026-04-17 45       # 45 usable market-data days ending 2026-04-17
 python -m uwos.trend_analysis 2026-04-17 90 --top 20
 python -m uwos.trend_analysis 2026-04-17 30 --quote-replay diagnostic
-python -m uwos.trend_analysis 2026-04-17 30 --walk-forward-samples 8
-python -m uwos.trend_analysis 2026-04-17 30 --walk-forward-samples 31 --reuse-walk-forward-raw --reuse-walk-forward-outcomes --reuse-research-outcomes
+python -m uwos.trend_analysis 2026-04-17 30 --walk-forward-samples 8  # optional confidence replay
+python -m uwos.trend_analysis 2026-04-17 30 --walk-forward-samples 31 --reuse-walk-forward-raw --reuse-walk-forward-outcomes --reuse-research-outcomes  # optional confidence replay
 ```
 
 **Or via Claude/Codex:** `trend-analysis 2026-04-17`
 
-The numeric lookback counts weekday folders with usable `stock-screener` data. Weekend folders or partial dated folders do not consume a lookback day.
+The numeric lookback counts weekday folders with usable `stock-screener` data walking backward from the as-of date. Weekend folders or partial dated folders do not consume a lookback day. A normal `trend-analysis DATE N` scan does not replay older signal dates; add `--walk-forward-samples N` only when you explicitly want confidence validation across earlier as-of dates.
 
 **Output:** `out/trend_analysis/trend-analysis-YYYY-MM-DD-LN.md`
 
@@ -361,3 +361,35 @@ c:\uw_root/
 | **Entry Gate** | Max debit or min credit threshold to enter a trade |
 | **ntfy** | Push notification service — phone alerts for position verdicts |
 | **UW** | UnusualWhales — options flow data provider |
+
+## Current daily-pipeline operating model
+
+The daily pipeline is the trade-decision workflow for dated UW folders. It should stay separate from trend analysis.
+
+Daily inputs:
+
+- Dated UW EOD/report zip files under `/Users/anuppamvi/uw_root/tradedesk/YYYY-MM-DD`.
+- Local chain/OI overlays when available.
+- Schwab quotes and positions for live pricing and account context.
+- UW/GEX enrichment when available from local files or browser capture.
+
+Daily outputs:
+
+- Markdown trade report: `/Users/anuppamvi/uw_root/tradedesk/out/daily_pipeline_YYYY-MM-DD/anu-expert-trade-table-YYYY-MM-DD.md`.
+- Machine-readable decision CSV beside the Markdown report.
+- Near-miss and skip-streak sections when the approved book is thin or empty.
+
+Decision tiers:
+
+- Core: best-quality actionable setups.
+- Tactical: actionable but reduced-size setups with quality blockers.
+- Scout: tiny/pilot tier for high-quality near-misses; never size as Core or Tactical.
+- Watch: no trade.
+
+Candidate coverage rule:
+
+External scanner, morning-watch, and deterministic chain-only opportunities must not be report-only afterthoughts. If they produce a plausible structure, the daily pipeline should feed that structure into the candidate book before Stage-2/live approval, then approve, Scout, or reject it with explicit reasons.
+
+Replay rule:
+
+Historical replay is for validation and bug finding. A historical `WAIT` or replay-only row is not a live entry. Rerun with live Schwab pricing before placing any order.

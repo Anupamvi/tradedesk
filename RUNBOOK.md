@@ -4,6 +4,12 @@ This runbook is written as simple commands you can give Codex.
 
 You do not need to remember Python commands. Tell Codex what to do in plain English, and Codex should run the correct pipeline command, inspect the output, and summarize the decision.
 
+This runbook does not make the pipeline profitable by itself. It helps by keeping the operating workflow consistent:
+
+- it prevents mixing historical replay with live entry runs
+- it keeps the same validated output path every day
+- it reduces avoidable mistakes like stale inputs, missing unzip, or wrong run mode
+
 ## The Operating Rhythm
 
 ```text
@@ -46,13 +52,16 @@ What Codex should do:
 - Collect or refresh UW GEX if needed.
 - Generate the candidate trade Markdown.
 - Generate the machine-readable decision CSV.
-- Summarize Core, Tactical, and Watch trades.
+- Summarize Core, Tactical, Scout, and Watch trades.
+- Write the report to `/Users/anuppamvi/uw_root/tradedesk/out/daily_pipeline_YYYY-MM-DD/anu-expert-trade-table-YYYY-MM-DD.md`.
+- Surface missing external-scanner or morning-watch setups so they can be evaluated by the same daily gates instead of disappearing silently.
 
 Expected answer from Codex:
 
 ```text
 Core: X
 Tactical: Y
+Scout: Z
 Watch: Z
 
 Approved trades:
@@ -194,34 +203,6 @@ What Codex should do:
 - Capture the callback automatically if possible.
 - Confirm the new token window.
 
-## Monday 2026-04-20 Plan
-
-For Monday, we are using Friday `2026-04-17` UW data.
-
-Say:
-
-```text
-run live entry check from 2026-04-17
-```
-
-Current Friday-derived Tactical candidates:
-
-| Ticker | Strategy | Gate |
-|---|---|---|
-| CCL | Bull Call Debit | enter only if debit `<= 0.91` |
-| MRVL | Bull Call Debit | enter only if debit `<= 4.20` |
-| MU | Iron Condor | enter only if credit `>= 4.10` |
-
-Expected decision style:
-
-```text
-CCL: ENTER / SKIP / WAIT
-MRVL: ENTER / SKIP / WAIT
-MU: ENTER / SKIP / WAIT
-```
-
-Use Tactical size only.
-
 ## Non-Negotiable Rules
 
 - Do not trade Watch rows.
@@ -229,45 +210,75 @@ Use Tactical size only.
 - Do not enter if the live entry gate fails.
 - Do not manually override the gate.
 - Do not size Tactical trades as Core trades.
+- Do not size Scout trades as Tactical or Core trades.
 - Do not average down.
 - Do not mix trend-analysis into daily-pipeline runs.
 - Do not treat historical replay output as live entry approval.
+- Do not promote a trade just because an external scanner likes it; feed it into the daily candidate book and let the daily rules approve, Scout, or reject it.
 
 ## Sizing Guide
 
 ```text
 Core:      normal risk size
 Tactical: 0.25x to 0.50x normal risk size
+Scout:    0.10x to 0.25x normal risk size
 Watch:    no trade
 ```
 
 If there are no Core trades, do not force one.
 
-## Current Confidence Benchmark
+Scout is a controlled pilot tier for high-quality near-misses. It is useful when the setup has enough live price/edge/contract evidence to watch actively, but not enough quality to become Tactical or Core.
 
-Latest fixed full-window replay:
+## Skip-Streak Escalation
+
+If the daily pipeline produces no Core, Tactical, or Scout trades for three market days in a row, do not loosen the gates by hand. Ask Codex:
 
 ```text
-Usable replay days: 80
-Candidate rows tested: 5,286
-Approved completed trades: 40
-Wins / losses: 28 / 12
-Win rate: 70.0%
-Net P/L: +$14,210
-Profit factor: 6.50
-Rejected completed trades: 4,281
-Rejected win rate: 32.2%
-Rejected net P/L: -$111,255
-Rejected profit factor: 0.86
+run near-miss audit on YYYY-MM-DD
+```
+
+Then ask:
+
+```text
+run daily-pipeline replay audit for the last two weeks
+```
+
+The escalation should identify whether the skip streak is caused by market-quality issues or by a pipeline bug. The audit must specifically check Stage-1 flow blockers, GEX availability, IV, Schwab live pricing, external scanner coverage, and whether high-EV structures were dropped before approval.
+
+## Current Confidence Benchmark
+
+Latest validated full-window replay after the high-IV directional SHIELD fix:
+
+```text
+Market days replayed: 74
+Days with approved trades: 47
+Days with zero approved trades: 27
+Completed approved trades: 66
+Win rate: 64.6%
+Net P/L: +$16,177
+Profit factor: 4.54
+Average approved trades per day: 1.07
+Median approved trades per day: 1
 ```
 
 Confidence:
 
 ```text
-Decision-support pipeline: 74 / 100
-Reduced-size Tactical execution: 72 / 100
-Blind auto-trading: 55 / 100
+Decision-support pipeline: 70 / 100
+Reduced-size Tactical execution: 68 / 100
+Blind auto-trading: 45 / 100
 ```
+
+Use replay metrics as a guardrail, not a promise. No policy change should stay unless old-data replay shows it does not degrade profit factor, win quality, or trade discipline.
 
 Use the pipeline as disciplined decision support, not blind auto-trading.
 
+Recent validated examples:
+
+```text
+2026-04-17 historical replay: 2 Tactical FIRE trades (CCL, MRVL)
+2026-04-20 live/current-day run: SKIP
+2026-04-21 live/current-day run: SKIP
+```
+
+Today a SKIP does not mean the pipeline is dead. The validated replay shows approvals on 47 of 74 market days, so a no-trade day is normal when flow, likelihood, and live entry quality do not line up.

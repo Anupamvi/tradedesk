@@ -42,6 +42,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from uwos.whale_source import find_bot_eod_source, load_yes_prime_whale_flow
+
 
 OCC_RE = re.compile(r"^([A-Z\.]{1,10})(\d{6})([CP])(\d{8})$")
 
@@ -156,7 +158,7 @@ def infer_date_from_filenames(input_dir: Path) -> Optional[str]:
     return None
 
 
-def load_eod_bundle(input_dir: Path, date_str: str) -> Dict[str, pd.DataFrame]:
+def load_eod_bundle(input_dir: Path, date_str: str, cfg: dict) -> Dict[str, pd.DataFrame]:
     """
     Load the five EOD files for date_str.
     Expected filenames (flexible):
@@ -164,7 +166,7 @@ def load_eod_bundle(input_dir: Path, date_str: str) -> Dict[str, pd.DataFrame]:
       - chain-oi-changes-{date}.zip
       - dp-eod-report-{date}.zip
       - stock-screener-{date}.zip
-      - whale-{date}.md (Top 200 Yes-Prime table), OR whale_trades_filtered-{date}.csv
+      - bot-eod-report-{date}.zip/.csv
     """
     def find_one(glob_pat: str) -> Path:
         matches = sorted(input_dir.glob(glob_pat))
@@ -177,26 +179,11 @@ def load_eod_bundle(input_dir: Path, date_str: str) -> Dict[str, pd.DataFrame]:
         "oi": find_one(f"chain-oi-changes-{date_str}.*"),
         "dp": find_one(f"dp-eod-report-{date_str}.*"),
         "screener": find_one(f"stock-screener-{date_str}.*"),
+        "whale": find_bot_eod_source(input_dir, date_str),
     }
-    # whale file can be a Yes-Prime markdown summary or a CSV
-    whale_md_matches = sorted(input_dir.glob(f"whale-{date_str}.md"))
-    whale_csv_matches = sorted(input_dir.glob(f"whale_trades_filtered-{date_str}*.csv")) or \
-                        sorted(input_dir.glob("whale_trades_filtered*.csv"))
 
-    if whale_md_matches:
-        files["whale"] = whale_md_matches[0]
-        dfs = {k: read_csv_maybe_zipped(v) for k, v in files.items() if k != "whale"}
-        whale_df = read_markdown_table(files["whale"], "Top 200 Yes-Prime Trades by Premium")
-        if whale_df.empty:
-            raise FileNotFoundError(f"No whale table found in {files['whale']}")
-        dfs["whale"] = whale_df
-        return dfs
-
-    if not whale_csv_matches:
-        raise FileNotFoundError(f"Missing whale trades file in {input_dir}")
-    files["whale"] = whale_csv_matches[0]
-
-    dfs = {k: read_csv_maybe_zipped(v) for k, v in files.items()}
+    dfs = {k: read_csv_maybe_zipped(v) for k, v in files.items() if k != "whale"}
+    dfs["whale"] = load_yes_prime_whale_flow(files["whale"], cfg).symbol_summary
     return dfs
 
 
@@ -585,19 +572,32 @@ def build_signals(dfs: Dict[str, pd.DataFrame], cfg: dict) -> pd.DataFrame:
         oi_earnings=("next_earnings_date", lambda s: s.dropna().iloc[0] if len(s.dropna()) else np.nan),
     ).reset_index()
 
-    # Whale trades
-    whale["symbol"] = whale.get("underlying_symbol")
-    whale["premium"] = pd.to_numeric(whale.get("premium", 0), errors="coerce").fillna(0.0)
-    whale["call_prem"] = np.where(whale.get("option_type") == "call", whale["premium"], 0.0)
-    whale["put_prem"] = np.where(whale.get("option_type") == "put", whale["premium"], 0.0)
-    whale["equity_type"] = whale.get("equity_type")
+    # Whale trades. Daily runs now feed a bot-eod Yes-Prime symbol summary,
+    # not the old Top-200 markdown. Keep row-level CSV compatibility.
+    whale["symbol"] = whale.get("underlying_symbol", whale.get("symbol"))
+    if {"total_premium", "call_premium", "put_premium"}.issubset(set(whale.columns)):
+        whale["whale_total_prem"] = pd.to_numeric(whale.get("total_premium", 0), errors="coerce").fillna(0.0)
+        whale["call_prem"] = pd.to_numeric(whale.get("call_premium", 0), errors="coerce").fillna(0.0)
+        whale["put_prem"] = pd.to_numeric(whale.get("put_premium", 0), errors="coerce").fillna(0.0)
+        whale["equity_type"] = whale.get("equity_type")
+        whale_agg = whale.groupby("symbol", dropna=True).agg(
+            whale_premium=("whale_total_prem", "sum"),
+            whale_call_premium=("call_prem", "sum"),
+            whale_put_premium=("put_prem", "sum"),
+            whale_equity_type=("equity_type", lambda s: s.dropna().iloc[0] if len(s.dropna()) else np.nan),
+        ).reset_index()
+    else:
+        whale["premium"] = pd.to_numeric(whale.get("premium", 0), errors="coerce").fillna(0.0)
+        whale["call_prem"] = np.where(whale.get("option_type") == "call", whale["premium"], 0.0)
+        whale["put_prem"] = np.where(whale.get("option_type") == "put", whale["premium"], 0.0)
+        whale["equity_type"] = whale.get("equity_type")
 
-    whale_agg = whale.groupby("symbol", dropna=True).agg(
-        whale_premium=("premium", "sum"),
-        whale_call_premium=("call_prem", "sum"),
-        whale_put_premium=("put_prem", "sum"),
-        whale_equity_type=("equity_type", lambda s: s.dropna().iloc[0] if len(s.dropna()) else np.nan),
-    ).reset_index()
+        whale_agg = whale.groupby("symbol", dropna=True).agg(
+            whale_premium=("premium", "sum"),
+            whale_call_premium=("call_prem", "sum"),
+            whale_put_premium=("put_prem", "sum"),
+            whale_equity_type=("equity_type", lambda s: s.dropna().iloc[0] if len(s.dropna()) else np.nan),
+        ).reset_index()
 
     # Dark pool aggregation
     dp["symbol"] = dp.get("ticker")
@@ -1343,7 +1343,7 @@ def main():
         raise ValueError("Could not infer date. Pass --date YYYY-MM-DD")
     asof = dt.datetime.strptime(date_str, "%Y-%m-%d").date()
 
-    dfs = load_eod_bundle(input_dir, date_str)
+    dfs = load_eod_bundle(input_dir, date_str, cfg)
 
     # Build signals
     signals = build_signals(dfs, cfg)
@@ -1416,4 +1416,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -10,7 +10,7 @@ Use MODE A two-stage with DATE token applied everywhere below (do not ask for da
 - dp-eod-report-{DATE}.zip
 - hot-chains-{DATE}.zip
 - stock-screener-{DATE}.zip
-- whale-{DATE}.md
+- bot-eod-report-{DATE}.zip or bot-eod-report-{DATE}.csv
 from {BASE_DIR}
 
 2) Stage 1:
@@ -36,4 +36,3 @@ from {BASE_DIR}
 - Include one table with columns:
 #, Ticker, Action, Strategy Type, Strike Setup, Expiry, DTE, Net Credit/Debit, Max Profit, Max Loss, Breakeven, Conviction %, Setup Likelihood, Confidence Tier, Optimal, Notes, Source
 - Approved first (highest conviction), then Watch Only
-

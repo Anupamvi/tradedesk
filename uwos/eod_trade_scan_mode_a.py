@@ -12,6 +12,7 @@ import pandas as pd
 import yaml
 
 from uwos.pricer import compute_live_net
+from uwos.whale_source import BOT_EOD_PREFIX, find_bot_eod_source, load_yes_prime_whale_flow
 
 
 OCC_RE = re.compile(r"^([A-Z\.]{1,10})(\d{6})([CP])(\d{8})$")
@@ -126,10 +127,32 @@ def find_asof(files):
     return sorted(vals)[-1]
 
 
+def non_bot_input_zips(base_dir: Path):
+    return sorted(p for p in base_dir.glob("*.zip") if not p.name.startswith(BOT_EOD_PREFIX))
+
+
+def expected_input_date(base_dir: Path) -> str:
+    name = Path(base_dir).name
+    return name if re.fullmatch(r"\d{4}-\d{2}-\d{2}", name) else ""
+
+
+def pick_csv_map_entry(csv_map, prefix: str, asof_str: str):
+    matches = [
+        (zname, cpath)
+        for zname, cpath in csv_map.items()
+        if zname.startswith(prefix) and asof_str in zname and asof_str in cpath.name
+    ]
+    if not matches:
+        raise FileNotFoundError(f"Missing required zip prefix/date: {prefix}{asof_str}")
+    return sorted(matches, key=lambda item: item[0])[-1]
+
+
 def unzip_zips(zip_paths, out_dir):
     out_dir.mkdir(parents=True, exist_ok=True)
     out = {}
     for zp in zip_paths:
+        if zp.name.startswith(BOT_EOD_PREFIX):
+            continue
         with zipfile.ZipFile(zp, "r") as zf:
             csvs = [n for n in zf.namelist() if n.lower().endswith(".csv")]
             if not csvs:
@@ -142,7 +165,9 @@ def unzip_zips(zip_paths, out_dir):
     return out
 
 
-def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv):
+def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv, hot_asof=None, oi_asof=None):
+    hot_asof = hot_asof or asof
+    oi_asof = oi_asof or asof
     h = hot_df.copy()
     h["bid"] = pd.to_numeric(h.get("bid"), errors="coerce")
     h["ask"] = pd.to_numeric(h.get("ask"), errors="coerce")
@@ -184,6 +209,7 @@ def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv):
             "issue_type",
         ]
     ].copy()
+    h = h[(h["quote_date"].isna()) | (h["quote_date"] == hot_asof)].copy()
 
     o = oi_df.copy()
     o["bid"] = pd.to_numeric(o.get("last_bid"), errors="coerce")
@@ -222,11 +248,11 @@ def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv):
             "issue_type",
         ]
     ].copy()
+    o = o[(o["quote_date"].isna()) | (o["quote_date"] == oi_asof)].copy()
 
     q = pd.concat([h, o], ignore_index=True)
     q = q[q["option_symbol"].astype(str).str.len() > 5].copy()
     q = q[np.isfinite(q["bid"]) & np.isfinite(q["ask"]) & (q["ask"] > 0)].copy()
-    q = q[(q["quote_date"].isna()) | (q["quote_date"] == asof)].copy()
     parsed = q["option_symbol"].map(parse_occ)
     q = q[parsed.notna()].copy()
     parsed = parsed[parsed.notna()]
@@ -239,6 +265,142 @@ def build_quotes(hot_df, oi_df, asof, hot_csv, oi_csv):
     return q.drop(columns=["prio"]).reset_index(drop=True)
 
 
+def apply_chain_oi_overlay_to_screener(screener, oi_df, overlay_spot_map=None):
+    """Blend a next-day chain-OI overlay into screener-level flow scores.
+
+    Stage-1 candidate discovery is ticker-driven. Without this overlay merge,
+    a next-day chain OI file can supply leg quotes but still fail to introduce
+    newly active tickers into the candidate universe. This keeps gates strict;
+    it only makes the overlay visible to discovery and diagnostics.
+    """
+    if screener is None or screener.empty or oi_df is None or oi_df.empty:
+        return screener
+    overlay_spot_map = {
+        str(k).upper().strip(): fnum(v)
+        for k, v in (overlay_spot_map or {}).items()
+        if str(k).strip()
+    }
+    oi = oi_df.copy()
+    if "option_symbol" not in oi.columns:
+        return screener
+    parsed = oi["option_symbol"].astype(str).map(parse_occ)
+    oi = oi[parsed.notna()].copy()
+    if oi.empty:
+        return screener
+    parsed = parsed[parsed.notna()]
+    oi["ticker"] = parsed.map(lambda x: x[0])
+    oi["right"] = parsed.map(lambda x: x[2])
+    oi["_oi_diff"] = pd.to_numeric(oi.get("oi_diff_plain"), errors="coerce").fillna(0.0)
+    oi = oi[oi["_oi_diff"] > 0].copy()
+    if oi.empty:
+        return screener
+
+    for col in [
+        "volume",
+        "prev_ask_volume",
+        "prev_bid_volume",
+        "prev_total_premium",
+        "avg_price",
+        "stock_price",
+    ]:
+        oi[col] = pd.to_numeric(oi.get(col), errors="coerce").fillna(0.0)
+    oi["_vol_eff"] = oi["volume"].clip(lower=1.0)
+    oi["_premium_eff"] = oi["prev_total_premium"]
+    missing_premium = ~np.isfinite(oi["_premium_eff"]) | (oi["_premium_eff"] <= 0)
+    oi.loc[missing_premium, "_premium_eff"] = (
+        oi.loc[missing_premium, "avg_price"].abs() * oi.loc[missing_premium, "_vol_eff"] * 100.0
+    )
+    side_den = (oi["prev_ask_volume"] + oi["prev_bid_volume"]).replace(0, np.nan)
+    oi["_ask_premium"] = (oi["_premium_eff"] * oi["prev_ask_volume"] / side_den).replace(
+        [np.inf, -np.inf], np.nan
+    ).fillna(0.0)
+    oi["_bid_premium"] = (oi["_premium_eff"] * oi["prev_bid_volume"] / side_den).replace(
+        [np.inf, -np.inf], np.nan
+    ).fillna(0.0)
+
+    is_call = oi["right"].eq("C")
+    is_put = oi["right"].eq("P")
+    oi["_bullish_premium_overlay"] = 0.0
+    oi["_bearish_premium_overlay"] = 0.0
+    oi.loc[is_call, "_bullish_premium_overlay"] = oi.loc[is_call, "_ask_premium"]
+    oi.loc[is_put, "_bullish_premium_overlay"] = oi.loc[is_put, "_bid_premium"]
+    oi.loc[is_put, "_bearish_premium_overlay"] = oi.loc[is_put, "_ask_premium"]
+    oi.loc[is_call, "_bearish_premium_overlay"] = oi.loc[is_call, "_bid_premium"]
+    oi["_call_premium_overlay"] = np.where(is_call, oi["_premium_eff"], 0.0)
+    oi["_put_premium_overlay"] = np.where(is_put, oi["_premium_eff"], 0.0)
+    oi["_call_ask_overlay"] = np.where(is_call, oi["prev_ask_volume"], 0.0)
+    oi["_call_bid_overlay"] = np.where(is_call, oi["prev_bid_volume"], 0.0)
+    oi["_put_ask_overlay"] = np.where(is_put, oi["prev_ask_volume"], 0.0)
+    oi["_put_bid_overlay"] = np.where(is_put, oi["prev_bid_volume"], 0.0)
+
+    agg = oi.groupby("ticker", as_index=False).agg(
+        bullish_premium_overlay=("_bullish_premium_overlay", "sum"),
+        bearish_premium_overlay=("_bearish_premium_overlay", "sum"),
+        call_premium_overlay=("_call_premium_overlay", "sum"),
+        put_premium_overlay=("_put_premium_overlay", "sum"),
+        call_volume_ask_side_overlay=("_call_ask_overlay", "sum"),
+        call_volume_bid_side_overlay=("_call_bid_overlay", "sum"),
+        put_volume_ask_side_overlay=("_put_ask_overlay", "sum"),
+        put_volume_bid_side_overlay=("_put_bid_overlay", "sum"),
+        overlay_oi_contracts=("_oi_diff", "sum"),
+        overlay_rows=("option_symbol", "size"),
+        overlay_stock_price=("stock_price", "max"),
+    )
+
+    out = screener.copy()
+    out["ticker"] = out["ticker"].astype(str).str.upper().str.strip()
+    missing = sorted(set(agg["ticker"]) - set(out["ticker"]))
+    if missing:
+        templates = []
+        for ticker in missing:
+            arow = agg[agg["ticker"] == ticker].iloc[0]
+            spot = fnum(arow.get("overlay_stock_price"))
+            if (not np.isfinite(spot) or spot <= 0) and ticker in overlay_spot_map:
+                spot = fnum(overlay_spot_map.get(ticker))
+            if not np.isfinite(spot) or spot <= 0:
+                continue
+            rec = {c: np.nan for c in out.columns}
+            rec["ticker"] = ticker
+            rec["close"] = spot
+            if "issue_type" in rec:
+                rec["issue_type"] = ""
+            if "is_index" in rec:
+                rec["is_index"] = False
+            templates.append(rec)
+        if templates:
+            out = pd.concat([out, pd.DataFrame(templates)], ignore_index=True)
+
+    out = out.merge(agg, on="ticker", how="left")
+    for col in [
+        "bullish_premium",
+        "bearish_premium",
+        "call_premium",
+        "put_premium",
+        "call_volume_ask_side",
+        "call_volume_bid_side",
+        "put_volume_ask_side",
+        "put_volume_bid_side",
+    ]:
+        if col not in out.columns:
+            out[col] = 0.0
+        overlay_col = f"{col}_overlay"
+        if overlay_col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").fillna(0.0) + pd.to_numeric(
+                out[overlay_col], errors="coerce"
+            ).fillna(0.0)
+    if overlay_spot_map and "close" in out.columns:
+        live_spot = out["ticker"].astype(str).str.upper().str.strip().map(overlay_spot_map).map(fnum)
+        close_val = pd.to_numeric(out["close"], errors="coerce")
+        fill_mask = ((~np.isfinite(close_val)) | (close_val <= 0)) & np.isfinite(live_spot) & (live_spot > 0)
+        out.loc[fill_mask, "close"] = live_spot[fill_mask]
+    out["chain_oi_overlay_contracts"] = pd.to_numeric(
+        out.get("overlay_oi_contracts"), errors="coerce"
+    ).fillna(0.0)
+    out["chain_oi_overlay_rows"] = pd.to_numeric(out.get("overlay_rows"), errors="coerce").fillna(0.0)
+    drop_cols = [c for c in out.columns if c.endswith("_overlay") or c in {"overlay_oi_contracts", "overlay_rows", "overlay_stock_price"}]
+    return out.drop(columns=drop_cols, errors="ignore")
+
+
 def score_norm(series):
     s = pd.to_numeric(series, errors="coerce").replace([np.inf, -np.inf], np.nan).fillna(0.0)
     lo, hi = s.min(), s.max()
@@ -249,6 +411,89 @@ def score_norm(series):
 
 FLOW_CONTEXT_BY_TICKER = {}
 
+
+
+STAGE1_YES_GOOD_MIN = 65
+STAGE1_YES_PRIME_MIN = 78
+STAGE1_LONG_IC_YES_GOOD_MIN = 60
+
+
+def stage1_optimal_from_conv(conv, yes_good_min=STAGE1_YES_GOOD_MIN, yes_prime_min=STAGE1_YES_PRIME_MIN):
+    c = fnum(conv)
+    if not np.isfinite(c):
+        return "Watch Only"
+    if c >= yes_prime_min:
+        return "Yes-Prime"
+    if c >= yes_good_min:
+        return "Yes-Good"
+    return "Watch Only"
+
+
+def _stage1_fmt_num(value):
+    v = fnum(value)
+    if not np.isfinite(v):
+        return "nan"
+    if abs(v - round(v)) < 1e-9:
+        return str(int(round(v)))
+    return f"{v:.2f}"
+
+
+def add_stage1_diagnostics(out):
+    strategy = str(out.get("strategy", "")).strip()
+    optimal = str(out.get("optimal", "")).strip()
+    conv = fnum(out.get("conviction"))
+    yes_good_min = STAGE1_LONG_IC_YES_GOOD_MIN if strategy == "Long Iron Condor" else STAGE1_YES_GOOD_MIN
+    out["stage1_yes_good_threshold"] = yes_good_min
+    out["stage1_yes_prime_threshold"] = STAGE1_YES_PRIME_MIN
+
+    tokens = []
+    extra_diag = str(out.get("stage1_extra_diagnostics", "") or "").strip()
+    if extra_diag:
+        tokens.extend([x.strip() for x in extra_diag.split(";") if x.strip()])
+    if optimal == "Watch Only" and (not np.isfinite(conv) or conv < yes_good_min):
+        tokens.append(f"stage1_conviction_below_yes_good:{_stage1_fmt_num(conv)}<{_stage1_fmt_num(yes_good_min)}")
+
+    flow_dir = str(out.get("flow_direction", "")).strip().lower()
+    flow_conf = str(out.get("flow_confirmation", "")).strip().lower()
+    expected = {
+        "Bull Call Debit": "bullish",
+        "Bull Put Credit": "bullish",
+        "Bear Put Debit": "bearish",
+        "Bear Call Credit": "bearish",
+    }.get(strategy, "")
+    if expected:
+        if flow_conf in {"", "unknown", "weak_or_ambiguous"}:
+            tokens.append("stage1_flow_weak_or_ambiguous")
+        elif flow_conf == "conflicted":
+            tokens.append("stage1_flow_conflicted")
+        elif flow_conf == "confirmed" and flow_dir and flow_dir != expected:
+            tokens.append(f"stage1_flow_direction_mismatch:{flow_dir}!={expected}")
+    elif strategy in {"Iron Condor", "Iron Butterfly"}:
+        if flow_conf == "confirmed" and flow_dir in {"bullish", "bearish"}:
+            tokens.append(f"stage1_flow_too_directional_for_income:{flow_dir}")
+
+    contract_flow = str(out.get("contract_flow_confirmation", "")).strip().lower()
+    if contract_flow == "contra":
+        tokens.append("stage1_contract_flow_contra")
+    elif contract_flow in {"weak_or_ambiguous", "unknown"}:
+        tokens.append(f"stage1_contract_flow_{contract_flow}")
+    elif strategy in {"Iron Condor", "Iron Butterfly"} and contract_flow == "directional":
+        tokens.append("stage1_contract_flow_directional")
+
+    if optimal == "Watch Only" and not tokens:
+        tokens.append("stage1_watch_unclassified")
+
+    seen = set()
+    deduped = []
+    for token in tokens:
+        if token and token not in seen:
+            seen.add(token)
+            deduped.append(token)
+    out["stage1_diagnostics"] = ";".join(deduped)
+    out["stage1_not_actionable_reason"] = out["stage1_diagnostics"]
+    out["stage1_flow_diagnostic"] = ";".join([t for t in deduped if t.startswith("stage1_flow_")])
+    out["stage1_contract_flow_diagnostic"] = ";".join([t for t in deduped if t.startswith("stage1_contract_flow_")])
+    return out
 
 def candidate_dict(
     ticker,
@@ -301,6 +546,7 @@ def candidate_dict(
     if flow_context:
         out.update(flow_context)
     out.update(extras)
+    add_stage1_diagnostics(out)
     return out
 
 
@@ -389,7 +635,7 @@ def contract_flow_for_spread(strategy, long_row=None, short_row=None, short_put_
     }
 
 
-def compute_macro_regime(asof):
+def compute_macro_regime(asof, force_historical=False):
     """Fetch SPY 5-day return and VIX level for macro regime awareness.
     Uses Schwab API (fast, reliable) with yfinance fallback.
     Returns dict with spy_5d_ret, vix_level, regime ('risk_off'|'risk_on'|'neutral').
@@ -397,10 +643,10 @@ def compute_macro_regime(asof):
     spy_5d_ret = 0.0
     vix_level = 20.0
 
-    # Try Schwab only for same-day runs. Historical replay must not use a
-    # current $VIX quote for an old signal date.
+    # Try Schwab only for same-day non-replay runs. Historical replay must not
+    # use a current SPY/$VIX quote even when replaying today's dated files.
     try:
-        if asof >= dt.date.today():
+        if (not force_historical) and asof >= dt.date.today():
             from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
             config = SchwabAuthConfig.from_env(load_dotenv_file=True)
             svc = SchwabLiveDataService(config=config, interactive_login=False)
@@ -425,7 +671,7 @@ def compute_macro_regime(asof):
     except Exception:
         pass
 
-    if asof < dt.date.today() or not np.isfinite(vix_level) or vix_level == 20.0:
+    if force_historical or asof < dt.date.today() or not np.isfinite(vix_level) or vix_level == 20.0:
         # Fallback to yfinance
         try:
             import yfinance as yf
@@ -546,6 +792,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     shield_lotto_dte_max = int(shield_cfg.get("lotto_dte_max", 7))
     fire_max_iv_rank = fnum(strategy_sel_cfg.get("fire_max_iv_rank"))
     fire_enforce_max_iv_rank = bool(strategy_sel_cfg.get("fire_enforce_max_iv_rank", True))
+    fire_surface_high_iv_watch = bool(strategy_sel_cfg.get("fire_surface_high_iv_watch", True))
     shield_min_iv_rank = fnum(strategy_sel_cfg.get("shield_min_iv_rank"))
     range_min_iv_rank = fnum(strategy_sel_cfg.get("range_min_iv_rank", shield_min_iv_rank))
     range_min_neutrality = fnum(strategy_sel_cfg.get("range_min_neutrality", 0.70))
@@ -840,7 +1087,12 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         bias = fnum(direction_bias)
         if not np.isfinite(bias):
             return (True, True) if allow_both_neutral else (False, False)
-        neutral_gap = 0.04  # [T6] was: 0.08 — lowered to unblock mildly directional tickers
+        # Keep generation aligned with the public flow label threshold.  If
+        # flow_direction says neutral_or_ambiguous (<0.08), both bull and bear
+        # FIRE candidates should be allowed through discovery; otherwise names
+        # like NFLX can be labeled neutral while bear-put candidates are silently
+        # suppressed.
+        neutral_gap = 0.08
         if bias > neutral_gap:
             return True, False
         if bias < -neutral_gap:
@@ -1054,7 +1306,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
             and np.isfinite(iv_rank)
             and iv_rank > fire_max_iv_rank
         )
-        if fire_enforce_max_iv_rank and fire_iv_high:
+        if fire_enforce_max_iv_rank and fire_iv_high and not fire_surface_high_iv_watch:
             # Enforce debit-IV discipline for FIRE; allow SHIELD to proceed independently.
             allow_fire_bull = False
             allow_fire_bear = False
@@ -1146,12 +1398,19 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         elif macro_regime == "risk_on":
                             conv = min(100, conv + 3)
                         confidence_tier = "Lotto" if dte <= fire_lotto_dte_max else "Aggressive"
-                        optimal = "Yes-Prime" if conv >= 78 else ("Yes-Good" if conv >= 65 else "Watch Only")
                         if er["crossed"]:
-                            # [T6] Penalty instead of auto-kill: reduce conviction instead of forcing LOTTO
+                            # [T6] Penalty instead of auto-kill: reduce conviction instead of forcing LOTTO.
+                            # Recompute the final Stage-1 label after the penalty so a post-ER-risk
+                            # 50s conviction cannot remain Yes-Good by accident.
                             conv = max(0, conv - 15)
-                            if optimal == "Yes-Prime":
-                                optimal = "Yes-Good"
+                        optimal = stage1_optimal_from_conv(conv)
+                        stage1_extra_diag = ""
+                        if fire_enforce_max_iv_rank and fire_iv_high and fire_surface_high_iv_watch:
+                            optimal = "Watch Only"
+                            stage1_extra_diag = (
+                                "stage1_high_iv_debit_watch_only:"
+                                f"{_stage1_fmt_num(iv_rank)}>{_stage1_fmt_num(fire_max_iv_rank)}"
+                            )
                         gate_text = (
                             f"Gates: Liquidity PASS; WidthTier PASS; DebitWidth PASS; "
                             f"Earnings={'ER-RISK' if er['crossed'] else ('UNKNOWN' if not er['verified'] else 'PASS')}; "
@@ -1172,6 +1431,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             "Bull call debit fits bullish flow with capped downside.",
                             f"Invalidate if close < {inv_level:.2f}.",
                             iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
+                            stage1_extra_diagnostics=stage1_extra_diag,
                             **contract_flow_for_spread("Bull Call Debit", long_row=lg, short_row=sh),
                         ))
 
@@ -1241,12 +1501,19 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                         elif macro_regime == "risk_on":
                             conv = max(0, conv - 10)
                         confidence_tier = "Lotto" if dte <= fire_lotto_dte_max else "Aggressive"
-                        optimal = "Yes-Prime" if conv >= 78 else ("Yes-Good" if conv >= 65 else "Watch Only")
                         if er["crossed"]:
-                            # [T6] Penalty instead of auto-kill: reduce conviction instead of forcing LOTTO
+                            # [T6] Penalty instead of auto-kill: reduce conviction instead of forcing LOTTO.
+                            # Recompute the final Stage-1 label after the penalty so a post-ER-risk
+                            # 50s conviction cannot remain Yes-Good by accident.
                             conv = max(0, conv - 15)
-                            if optimal == "Yes-Prime":
-                                optimal = "Yes-Good"
+                        optimal = stage1_optimal_from_conv(conv)
+                        stage1_extra_diag = ""
+                        if fire_enforce_max_iv_rank and fire_iv_high and fire_surface_high_iv_watch:
+                            optimal = "Watch Only"
+                            stage1_extra_diag = (
+                                "stage1_high_iv_debit_watch_only:"
+                                f"{_stage1_fmt_num(iv_rank)}>{_stage1_fmt_num(fire_max_iv_rank)}"
+                            )
                         gate_text = (
                             f"Gates: Liquidity PASS; WidthTier PASS; DebitWidth PASS; "
                             f"Earnings={'ER-RISK' if er['crossed'] else ('UNKNOWN' if not er['verified'] else 'PASS')}; "
@@ -1267,6 +1534,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             "Bear put debit fits bearish flow with convex downside.",
                             f"Invalidate if close > {inv_level:.2f}.",
                             iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
+                            stage1_extra_diagnostics=stage1_extra_diag,
                             **contract_flow_for_spread("Bear Put Debit", long_row=lg, short_row=sh),
                         ))
 
@@ -2352,22 +2620,19 @@ def main():
 
     base = Path(args.base_dir).resolve()
     cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
-    zips = sorted(base.glob("*.zip"))
-    if not zips:
-        raise FileNotFoundError(f"No .zip files found in {base}")
-    asof_str = find_asof(zips)
+    input_zips = non_bot_input_zips(base)
+    if not input_zips:
+        raise FileNotFoundError(f"No non-bot input .zip files found in {base}")
+    asof_str = expected_input_date(base) or find_asof(input_zips)
     asof = dt.datetime.strptime(asof_str, "%Y-%m-%d").date()
 
-    csv_map = unzip_zips(zips, base / "_unzipped_mode_a")
+    csv_map = unzip_zips(input_zips, base / "_unzipped_mode_a")
     print("Unzipped CSV files:")
     for zname, cpath in csv_map.items():
         print(f"  {zname} -> {cpath.name}")
 
     def pick(prefix):
-        for zname, cpath in csv_map.items():
-            if zname.startswith(prefix):
-                return zname, cpath
-        raise FileNotFoundError(f"Missing required zip prefix: {prefix}")
+        return pick_csv_map_entry(csv_map, prefix, asof_str)
 
     try:
         oi_zip, oi_csv = pick("chain-oi-changes-")
@@ -2378,14 +2643,19 @@ def main():
         print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
         raise
 
-    whale_md = base / f"whale-{asof_str}.md"
-    if not whale_md.exists():
-        alt = sorted(base.glob("whale-*.md"))
-        whale_md = alt[-1] if alt else whale_md
-    if not whale_md.exists():
-        exc = FileNotFoundError(f"Missing whale markdown file in {base}")
-        print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
-        raise exc
+    bot_eod_source = find_bot_eod_source(base, asof_str)
+    whale_flow = load_yes_prime_whale_flow(bot_eod_source, cfg)
+    whale_source_name = bot_eod_source.name
+    tables = whale_flow.as_rank_tables()
+    whale_symbol_summary_csv = base / "_unzipped_mode_a" / f"whale-symbol-summary-{asof_str}.csv"
+    whale_top_trades_csv = base / "_unzipped_mode_a" / f"whale-top-trades-{asof_str}.csv"
+    whale_flow.symbol_summary.to_csv(whale_symbol_summary_csv, index=False)
+    whale_flow.top_trades.to_csv(whale_top_trades_csv, index=False)
+    print(
+        "Loaded bot EOD whale source: "
+        f"{whale_source_name}; scanned={whale_flow.total_rows:,}; "
+        f"yes_prime={whale_flow.yes_prime_rows:,}; symbols={len(whale_flow.symbol_summary):,}"
+    )
 
     try:
         hot_df = pd.read_csv(hot_csv, low_memory=False)
@@ -2408,14 +2678,6 @@ def main():
     except Exception as exc:
         print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
         raise
-
-    try:
-        md_text = whale_md.read_text(encoding="utf-8", errors="replace")
-        tables = md_tables(md_text)
-    except Exception as exc:
-        print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
-        raise
-    print(f"Loaded markdown: {whale_md.name}, tables={len(tables)}")
 
     quotes = build_quotes(hot_df, oi_df, asof, hot_csv.name, oi_csv.name)
     print(f"Loaded same-day quote rows (hot + oi): {len(quotes):,}")
@@ -2447,7 +2709,7 @@ def main():
         ],
     )
 
-    files_used = [oi_zip, dp_zip, hot_zip, sc_zip, whale_md.name]
+    files_used = [oi_zip, dp_zip, hot_zip, sc_zip, bot_eod_source.name]
     lines = [
         f"As-of date used: {asof_str}",
         f"Files used: {', '.join(files_used)}",

@@ -172,6 +172,83 @@ def extract_quote_fields(quote_payload: Dict[str, Any]) -> Tuple[Optional[float]
     return last_price, bid_price, ask_price
 
 
+def normalize_schwab_news_items(payload: Any, symbols: Sequence[str]) -> List[Dict[str, Any]]:
+    """Normalize Schwab/broker news payloads with unknown exact schema."""
+    wanted = {str(s or "").strip().upper() for s in symbols if str(s or "").strip()}
+    raw_items: List[Any] = []
+
+    def visit(node: Any) -> None:
+        if isinstance(node, list):
+            for item in node:
+                visit(item)
+            return
+        if not isinstance(node, dict):
+            return
+        keys = {str(k).lower() for k in node.keys()}
+        if keys & {"headline", "title", "summary", "description", "story", "article"}:
+            raw_items.append(node)
+            return
+        for value in node.values():
+            if isinstance(value, (list, dict)):
+                visit(value)
+
+    visit(payload)
+    out: List[Dict[str, Any]] = []
+    seen = set()
+    for item in raw_items:
+        headline = (
+            item.get("headline")
+            or item.get("title")
+            or item.get("storyHeadline")
+            or item.get("name")
+            or ""
+        )
+        summary = (
+            item.get("summary")
+            or item.get("description")
+            or item.get("teaser")
+            or item.get("story")
+            or item.get("article")
+            or ""
+        )
+        url = item.get("url") or item.get("link") or item.get("articleUrl") or item.get("storyUrl") or ""
+        published = (
+            item.get("publishedDate")
+            or item.get("datetime")
+            or item.get("date")
+            or item.get("time")
+            or item.get("storyDate")
+            or ""
+        )
+        provider = item.get("source") or item.get("provider") or item.get("vendor") or item.get("publisher") or "Schwab"
+        symbols_raw = item.get("symbols") or item.get("tickers") or item.get("symbol") or item.get("relatedSymbols") or []
+        if isinstance(symbols_raw, str):
+            related = normalize_symbols([symbols_raw])
+        elif isinstance(symbols_raw, list):
+            related = normalize_symbols(str(x.get("symbol", x)) if isinstance(x, dict) else str(x) for x in symbols_raw)
+        else:
+            related = []
+        if not related:
+            text = f"{headline} {summary}".upper()
+            related = sorted(s for s in wanted if re.search(rf"(?<![A-Z0-9]){re.escape(s)}(?![A-Z0-9])", text))
+        key = (str(headline), str(url), str(published))
+        if key in seen or (not str(headline).strip() and not str(summary).strip()):
+            continue
+        seen.add(key)
+        out.append(
+            {
+                "headline": str(headline).strip(),
+                "summary": str(summary).strip(),
+                "url": str(url).strip(),
+                "published_at": str(published).strip(),
+                "source": str(provider).strip(),
+                "symbols": related,
+                "raw": item,
+            }
+        )
+    return out
+
+
 @dataclass(frozen=True)
 class SchwabAuthConfig:
     api_key: str
@@ -428,6 +505,81 @@ class SchwabLiveDataService:
             raise
         response.raise_for_status()
         return response.json()
+
+    def get_news(self, symbols: Sequence[str], *, limit: int = 20) -> Dict[str, Any]:
+        """Best-effort Schwab news fetch.
+
+        schwab-py does not currently expose a news wrapper. Some Schwab API
+        products/accounts may expose broker news through market-data routes,
+        so try likely route shapes through the authenticated client and return
+        a structured unsupported/error payload when unavailable.
+        """
+        sym_list = normalize_symbols(symbols)
+        if not sym_list:
+            return {"status": "empty_symbols", "symbols": [], "items": []}
+        client = self.connect()
+        max_items = max(1, int(limit))
+        candidate_requests: List[Tuple[str, Dict[str, Any]]] = [
+            ("/marketdata/v1/news", {"symbols": ",".join(sym_list), "limit": max_items}),
+            ("/marketdata/v1/news", {"symbol": ",".join(sym_list), "limit": max_items}),
+        ]
+        if len(sym_list) == 1:
+            symbol = sym_list[0]
+            candidate_requests.extend(
+                [
+                    (f"/marketdata/v1/{symbol}/news", {"limit": max_items}),
+                    (f"/marketdata/v1/news/{symbol}", {"limit": max_items}),
+                ]
+            )
+
+        errors: List[Dict[str, Any]] = []
+        for path, params in candidate_requests:
+            try:
+                if hasattr(client, "_get_request"):
+                    response = client._get_request(path, params)
+                    endpoint = path
+                elif hasattr(client, "get_news"):
+                    response = client.get_news(sym_list, limit=max_items)
+                    endpoint = "client.get_news"
+                else:
+                    return {
+                        "status": "unsupported_client",
+                        "symbols": sym_list,
+                        "items": [],
+                        "errors": [{"reason": "client exposes no get_news or _get_request"}],
+                    }
+            except Exception as exc:
+                if _is_refresh_token_error(exc):
+                    raise RuntimeError(
+                        "Schwab token refresh failed (stale/revoked refresh token). "
+                        "Re-auth once with: python -m uwos.schwab_quotes --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                    ) from exc
+                errors.append({"endpoint": path, "error": str(exc)})
+                continue
+
+            status_code = getattr(response, "status_code", None)
+            if status_code is not None and int(status_code) >= 400:
+                errors.append(
+                    {
+                        "endpoint": endpoint,
+                        "status_code": int(status_code),
+                        "body": str(getattr(response, "text", ""))[:500],
+                    }
+                )
+                continue
+            try:
+                data = response.json()
+            except Exception as exc:
+                errors.append({"endpoint": endpoint, "error": f"invalid JSON: {exc}"})
+                continue
+            return {
+                "status": "ok",
+                "symbols": sym_list,
+                "endpoint": endpoint,
+                "raw": data,
+                "items": normalize_schwab_news_items(data, sym_list),
+            }
+        return {"status": "unsupported_or_unavailable", "symbols": sym_list, "items": [], "errors": errors}
 
     def get_option_chain(
         self,

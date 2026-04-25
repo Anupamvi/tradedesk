@@ -2,8 +2,9 @@
 # Multi-day swing trade trend analysis configuration.
 #
 # This pipeline reads the raw 4-CSV daily data (stock-screener, chain-oi-changes,
-# hot-chains, dp-eod-report) plus whale reports across N trading days to identify
-# cross-day trends and recommend swing trade setups.
+# hot-chains, dp-eod-report) plus full bot-eod-report whale flow across N trading
+# days to identify cross-day trends and recommend swing trade setups. Legacy
+# whale markdown is only a fallback for old folders that lack bot EOD exports.
 
 pipeline:
   lookback_days: 10            # Number of most recent trading days to analyze
@@ -20,9 +21,12 @@ data_loading:
     - "dp-eod-report"
   # Filter dp-eod-report to only tickers present in screener (saves memory)
   dp_filter_to_screener_tickers: true
+  whale_source_config: "rulebook_config_goal_holistic_claude.yaml"
   whale_file_patterns:
-    - "whale-{date}.md"
-    - "whale_trades_filtered.csv"
+    - "bot-eod-report-{date}.zip"
+    - "bot-eod-report-{date}.csv"
+    - "whale-symbol-summary-{date}.csv"
+    - "whale-{date}.md"  # legacy fallback only
 
 filters:
   exclude_etfs: true
@@ -30,7 +34,16 @@ filters:
   etf_issue_types: ["ETF", "Index"]
   min_market_cap: 2000000000     # $2B minimum
   min_avg30_volume: 500000       # Minimum 30-day avg stock volume
-  max_tickers_to_score: 200      # Top N tickers by flow activity before trend scoring
+  max_tickers_to_score: 200      # Top N tickers by cumulative flow activity before trend scoring
+  max_latest_day_tickers: 150     # Supplement with fresh same-day flow so new catalysts are not missed
+  max_earnings_tickers: 250       # Include near-earnings names even before option flow ranks high
+  max_catalyst_tickers: 250       # Supplement high-IV/earnings/volume-surge names from the signal date
+  max_total_tickers_to_score: 750 # Hard cap after cumulative + latest-day + earnings + catalyst supplements
+  catalyst_min_market_cap: 1000000000
+  catalyst_min_avg30_volume: 250000
+  catalyst_earnings_days: 2
+  catalyst_iv_rank_floor: 70
+  catalyst_volume_surge_ratio: 1.5
   earnings_buffer_days: 3         # Days before/after earnings to flag as unsafe
   max_per_sector: 5               # Soft cap: excess sector trades overflow to separate section
 
@@ -42,6 +55,28 @@ scoring:
     price_trend: 0.15            # Technical trend alignment
     whale_consensus: 0.10        # Institutional agreement
     dp_confirmation: 0.10        # Dark pool alignment
+
+  direction_inference:
+    min_direction_score: 1.6
+    min_margin: 0.6
+    price_weight_base: 1.35
+    price_r2_bonus: 0.65
+    flow_weight_base: 1.05
+    hot_flow_weight_base: 0.85
+    pcr_weight: 0.40
+    oi_tiebreak_weight: 0.25
+    dp_accumulation_weight: 0.75
+    dp_distribution_weight: 0.60
+    dp_min_consistency: 0.55
+    latest_return_weight: 0.75
+    latest_return_scale: 0.04
+    latest_return_min_abs: 0.015
+    latest_reversal_guard_min_abs: 0.035
+    event_direction_guard_days: 1
+    event_same_day_reaction_min_abs: 0.03
+    conflict_margin_penalty: 0.80
+    range_reversal_min_score: 0.95
+    range_reversal_max_oppose: 0.85
 
   flow_persistence:
     min_days_consistent: 3       # At least 3 of N days agree on direction
@@ -104,6 +139,9 @@ strategy_selection:
 schwab_validation:
   enabled: true                    # Set to false to skip live chain validation
   max_strike_snap_pct: 3.0         # Max % distance to snap a strike to nearest real strike
+  optimize_structures_with_chain: true   # Prefer listed expiries + quoted chain-aware verticals before heuristic snap fallback
+  chain_optimizer_expiry_candidates: 6   # Number of nearby listed expiries to test per ticker/strategy
+  prefer_local_quote_coverage: true      # Prefer legs that also exist in local UW option snapshots when available
   # Width-based entry gate tolerance (professional swing-trade standard).
   # Formula: tolerance = max(floor, spread_width × width_pct)
   entry_tolerance_width_pct: 0.025   # 2.5% of spread width

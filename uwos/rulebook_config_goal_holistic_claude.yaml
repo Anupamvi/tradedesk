@@ -106,6 +106,10 @@ strategy_selection:
   # Debit trades tend to perform better when IV is not elevated.
   fire_max_iv_rank: 55
   fire_enforce_max_iv_rank: true      # [T1] was: false — enforce so debit spreads skip high-IV regimes
+  # Do not silently drop high-IV/event FIRE names. Generate them as Watch/Scout
+  # candidates with explicit high-IV blockers so the approval layer can allow
+  # only post-event, live-confirmed Event Scout trades.
+  fire_surface_high_iv_watch: true
   # Premium selling benefits from richer IV regimes.
   shield_min_iv_rank: 20
   # Range/theta structures need richer IV + neutral tape.
@@ -159,7 +163,7 @@ approval:
   # contract-neighborhood flow. Missing UW GEX keeps the trade Tactical rather
   # than Core.
   allow_bull_call_evidence_lane: true
-  bull_call_evidence_min_edge_pct: 8.0
+  bull_call_evidence_min_edge_pct: 5.0
   bull_call_evidence_min_signals: 120
   bull_call_evidence_min_conviction: 30
   bull_call_evidence_min_long_delta: 0.30
@@ -167,11 +171,38 @@ approval:
   bull_call_evidence_min_reward_risk: 2.0
   bull_call_evidence_require_contract_confirmed: true
   bull_call_evidence_allow_gex_missing: true
+  # Positive-edge bearish evidence lane:
+  # This is the practical middle lane for live-valid bear-put debit spreads
+  # that the old Stage-1 conviction score under-rates. It is still gated by
+  # PASS likelihood, positive edge, contract-flow confirmation, IV, DTE, and
+  # debit/width quality. It does not reuse the contrarian Bear Scout model.
+  # Disabled after 84-day replay on 2026-04-24:
+  # the broad positive-edge bear-put lane increased opportunity but regressed
+  # PF from 7.18 to 3.86 and win rate from 75.8% to 61.8%.
+  # Keep the code path available for narrower calibration, but do not trade it.
+  allow_bear_put_evidence_lane: false
+  bear_put_evidence_min_edge_pct: 12.0
+  bear_put_evidence_min_signals: 120
+  bear_put_evidence_min_conviction: 30
+  bear_put_evidence_min_long_delta: 0.25
+  bear_put_evidence_min_dte: 14
+  bear_put_evidence_max_dte: 60
+  bear_put_evidence_min_reward_risk: 1.5
+  bear_put_evidence_max_debit_frac: 0.45
+  bear_put_evidence_max_iv_rank: 60
+  bear_put_evidence_require_contract_confirmed: true
   # Apply the same professional execution-quality guard to all approved
   # bull-call debit trades, not just evidence-lane promotions.
-  bull_call_approval_max_dte: 35
+  bull_call_approval_max_dte: 45
   bull_call_approval_min_reward_risk: 2.0
   bull_call_approval_require_contract_confirmed: true
+  # Precision guard from full-folder replay audit:
+  # Short-dated bull-call debits with very high historical edge behaved like
+  # tail/momentum chases: 40% win rate in replay. Keep Core/Tactical bull calls
+  # either longer-dated or more repeatable/moderate-edge.
+  bull_call_short_dte_high_edge_block: true
+  bull_call_short_dte_high_edge_max_dte: 31
+  bull_call_short_dte_high_edge_min_edge_pct: 13.2
   # Regime throttle:
   # High = eligible for Core if all other gates are clean.
   # Medium = Tactical only.
@@ -186,10 +217,67 @@ approval:
   enable_dual_books: true
   core_size_mult: 1.00
   tactical_size_mult: 0.50
+  enable_scout_book: true
+  scout_size_mult: 0.25
+  scout_min_edge_pct: 8.0
+  scout_max_edge_pct: 20.0
+  scout_block_gex_volatile_breakout: false
+  # Backtest-calibrated bearish Scout lane.
+  # This is deliberately not a mirrored bull-call rule. The 5-month replay
+  # showed broad bear-put rows lose, while a small low-IV / low-VIX pullback
+  # subset worked. Keep this Scout-sized only until it earns larger samples.
+  allow_bear_put_scout_lane: false
+  bear_put_scout_likelihood_strengths: [Moderate, Strong]
+  bear_put_scout_require_negative_edge: false
+  bear_put_scout_min_signals: 60
+  bear_put_scout_min_dte: 14
+  bear_put_scout_max_dte: 35
+  bear_put_scout_max_iv_rank: 30
+  bear_put_scout_max_vix: 20
+  bear_put_scout_require_spy_5d_nonnegative: true
+  bear_put_scout_min_reward_risk: 2.0
+  bear_put_scout_max_debit_frac: 0.35
   tactical_min_conviction: 55
   tactical_min_edge_pct: 6.5          # [T2] was: 5.0 — half-size trades must clear higher edge bar
   tactical_min_signals: 150           # [T2] was: 120 — more historical validation required for tactical
   tactical_require_verdict_pass: true
+
+  # Event Momentum Scout:
+  # Controlled tiny-size lane for high-IV/event debit spreads after live
+  # confirmation. This is not Core/Tactical and never overrides live entry,
+  # contra contract flow, or bad debit/width. It exists so INTC-style post-event
+  # breakouts can become actionable instead of hidden or permanently Watch.
+  enable_event_momentum_scout: true
+  event_momentum_scout_min_conviction: 30
+  event_momentum_scout_max_dte: 35
+  event_momentum_scout_min_reward_risk: 1.8
+  event_momentum_scout_max_debit_frac: 0.35
+  event_momentum_scout_require_contract_confirmed: true
+  event_momentum_scout_require_breakeven_cross: true
+
+  # Debit Momentum Scout:
+  # Controlled middle lane for high-quality FIRE debit near-misses that were
+  # blocked only by Stage-1 discovery weakness. This is not a Core/Tactical
+  # loosening. It stays tiny-size and still requires live entry, positive edge,
+  # contract-flow confirmation, acceptable reward/risk, IV discipline, and a
+  # supportive strategy-aware regime score. It never overrides contra flow,
+  # live-entry failure, invalidation, delta, GEX uncertainty, or bad debit/width.
+  allow_debit_momentum_scout_lane: true
+  debit_momentum_scout_min_conviction: 40
+  debit_momentum_scout_min_edge_pct: 8.0
+  debit_momentum_scout_bear_min_edge_pct: 12.0
+  debit_momentum_scout_min_signals: 100
+  debit_momentum_scout_min_dte: 14
+  debit_momentum_scout_max_dte: 45
+  debit_momentum_scout_min_reward_risk: 2.0
+  debit_momentum_scout_max_debit_frac: 0.35
+  debit_momentum_scout_max_iv_rank: 80
+  debit_momentum_scout_require_contract_confirmed: true
+  debit_momentum_scout_require_verdict_pass: false
+  debit_momentum_scout_min_regime_score: 50
+  debit_momentum_scout_bear_likelihood_strengths: [Moderate, Strong]
+  debit_momentum_scout_bear_require_flow_confirmed: true
+  debit_momentum_scout_block_gex_volatile_breakout: false
 
   # Width-based entry gate tolerance (professional swing-trade standard).
   # Formula: tolerance = max(entry_tolerance_floor, spread_width × entry_tolerance_width_pct)
@@ -222,6 +310,11 @@ approval:
   # GEX regime gate: block regime-mismatched trades
   require_gex_regime: true
   min_fire_pinned_gex_abs: 10000000   # require at least $10M pinned GEX before downgrading FIRE out of Core
+  fire_volatile_breakout_tactical_only: true
+  fire_missing_gex_context_tactical_only: true
+  fire_pinned_no_wall_tactical_only: true
+  gex_fallback_tactical_only: true        # fallback GEX can never produce Core
+  gex_fallback_requires_clean_non_gex: true # fallback GEX needs clean non-GEX evidence to stay Tactical
 
   # Keep very speculative structures out of approved set.
   disallow_confidence_tiers: [REJECT, LOTTO]

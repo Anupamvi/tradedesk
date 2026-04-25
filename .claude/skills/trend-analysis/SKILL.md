@@ -7,10 +7,13 @@ description: Use when the user says "trend-analysis", "historical UW trends", "t
 
 Run the dated-folder UW trend pipeline, not the old replay-manifest-only historical pipeline.
 
+Whale/institutional coverage uses full `bot-eod-report-YYYY-MM-DD.zip` / `.csv` when present, or a cached `whale-symbol-summary-YYYY-MM-DD.csv` produced from that full source. Use `whale-YYYY-MM-DD.md` only as a legacy fallback for older dated folders with no bot EOD export.
+
 ## Parameters
 
 - **date**: As-of date, `YYYY-MM-DD`. Defaults to latest available dated folder.
 - **lookback**: Usable market-data-day lookback. Defaults to `90`.
+- **DATE N semantics**: `trend-analysis DATE N` means use `DATE` as the end date and walk backward `N` usable trading-data days from that date. Do not run older signal-date walk-forward replay for this command unless the user explicitly asks for confidence validation, historical proof, or walk-forward audit.
 - **top**: Maximum actionable trades. Defaults to `15`.
 - **no-schwab**: Skip Schwab live validation only if requested or auth fails.
 - **no-backtest**: Skip backtesting only if explicitly requested.
@@ -78,7 +81,7 @@ Read and summarize:
 
 - Present **Backtest-Supported Candidate Shortlist** first, then **Actionable Trades**, then **Max Conviction / Max Planned Risk**, then **Trade Workup**.
 - Present **Current Trade Setups** as the practical workbench: `TRADE_SETUP` means research/conditional entry only; `REBUILD` means supported thesis but the spread needs better liquidity, flow, expiry, or strikes before entry.
-- Review **Walk-Forward Audit** before trusting the trade list. It replays older signal dates selected without future P&L leakage, then scores future option-quote outcomes.
+- For a normal `trend-analysis DATE N` request, Walk-Forward Audit should be skipped unless explicitly requested. If the user explicitly asks for confidence validation, run with `--walk-forward-samples N` and then review **Walk-Forward Audit** before trusting the trade list. The walk-forward audit replays older signal dates selected without future P&L leakage, then scores future option-quote outcomes.
 - Review **Research Confidence Audit** and **Research Horizon Audit** next. They are fixed-bucket sanity checks, not parameter searches; if no bucket/horizon is supportive, do not treat current candidates as Actionable Now. Use the research outcomes CSV when debugging the ticker/setup rows behind a negative bucket.
 - Review **Strategy Family Audit** next. This is the broad trade-generation layer: predeclared setup families are split into training and later validation dates. Mixed, negative, validation-negative, and low-sample families are research-only unless a narrower ticker playbook overrides them.
 - Review **Ticker Playbook Audit** next. This is the narrow trade-generation layer: ticker/direction/strategy/horizon playbooks are split into training and later validation dates. A `promotable` ticker playbook can unlock Actionable Now even when the broad family is negative, but all live quote, Schwab, earnings, liquidity, trend-quality, and max-risk gates still apply.

@@ -10,7 +10,7 @@ Run the daily 2-stage options pipeline on macOS (Stage-1 discovery + Stage-2 Sch
    - `chain-oi-changes-{date}.zip`
    - `dp-eod-report-{date}.zip`
    - `stock-screener-{date}.zip`
-   - `whale-{date}.md`
+   - `bot-eod-report-{date}.zip` or `bot-eod-report-{date}.csv`
 
 2. Run the pipeline:
 ```bash
