@@ -1,36 +1,20 @@
 @echo off
-REM Trade Monitor — Windows Task Scheduler setup
-REM Creates a scheduled task that runs every 30 min during market hours (Mon-Fri 9:30-16:00 ET)
+REM Trade Monitor — Windows Task Scheduler decommission
+REM The active monitor now runs on the GCP VM via systemd timer.
+REM Running this script deletes the old Windows task so ntfy alerts do not duplicate.
 
-echo Setting up Trade Monitor scheduled task...
+echo Decommissioning old Windows TradeMonitor scheduled task...
 
-REM Delete existing task if present
-schtasks /delete /tn "TradeMonitor" /f >nul 2>&1
-
-REM Create task: runs every 30 minutes
-schtasks /create ^
-  /tn "TradeMonitor" ^
-  /tr "python -m uwos.trade_monitor --force" ^
-  /sc minute /mo 30 ^
-  /st 09:30 ^
-  /et 16:05 ^
-  /sd %date% ^
-  /d MON,TUE,WED,THU,FRI ^
-  /rl HIGHEST ^
-  /f
-
+schtasks /query /tn "TradeMonitor" >nul 2>&1
 if %errorlevel% equ 0 (
+    schtasks /delete /tn "TradeMonitor" /f
     echo.
-    echo Trade Monitor scheduled task created successfully!
-    echo   Frequency: Every 30 minutes
-    echo   Hours: 9:30 AM - 4:05 PM
-    echo   Days: Monday - Friday
-    echo   Working dir: c:\uw_root
-    echo.
-    echo To test: schtasks /run /tn "TradeMonitor"
-    echo To remove: schtasks /delete /tn "TradeMonitor" /f
+    echo Deleted old Windows TradeMonitor task.
 ) else (
     echo.
-    echo FAILED - try running this script as Administrator
+    echo No Windows TradeMonitor task was found.
 )
+echo.
+echo Active monitor should be the GCP systemd timer only:
+echo   trade-monitor.timer on tradedesk-monitor
 pause
