@@ -168,9 +168,18 @@ def _is_stock_buy_strategy(strategy: str) -> bool:
 def _format_trade_legs(r: Dict) -> str:
     """Readable option legs in action order."""
     strategy = str(r.get("strategy", ""))
+    option_suffix = str(r.get("option_type") or "").upper()
+    if option_suffix not in {"C", "P"}:
+        option_suffix = "P" if "Put" in strategy else "C"
     if "Debit" in strategy:
-        return f"Buy ${r['long_strike']:.0f} / Sell ${r['short_strike']:.0f}"
-    return f"Sell ${r['short_strike']:.0f} / Buy ${r['long_strike']:.0f}"
+        return (
+            f"Buy ${r['long_strike']:.0f}{option_suffix} / "
+            f"Sell ${r['short_strike']:.0f}{option_suffix}"
+        )
+    return (
+        f"Sell ${r['short_strike']:.0f}{option_suffix} / "
+        f"Buy ${r['long_strike']:.0f}{option_suffix}"
+    )
 
 
 def _state_underlying(key: str, value: Any) -> Optional[str]:

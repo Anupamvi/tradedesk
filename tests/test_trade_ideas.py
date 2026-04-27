@@ -60,14 +60,24 @@ def test_screen_momentum_breakouts_filters_and_scores_large_optionable_stocks():
     assert results[0]["rel_volume"] == 2.0
 
 
-def test_format_trade_legs_uses_debit_action_order():
+def test_format_trade_legs_uses_debit_call_action_order():
     legs = _format_trade_legs({
         "strategy": "Bull Call Debit",
         "long_strike": 100,
         "short_strike": 110,
     })
 
-    assert legs == "Buy $100 / Sell $110"
+    assert legs == "Buy $100C / Sell $110C"
+
+
+def test_format_trade_legs_uses_credit_put_action_order():
+    legs = _format_trade_legs({
+        "strategy": "Bull Put Credit",
+        "long_strike": 450,
+        "short_strike": 460,
+    })
+
+    assert legs == "Sell $460P / Buy $450P"
 
 
 def test_state_underlying_handles_spreads_and_saved_values():

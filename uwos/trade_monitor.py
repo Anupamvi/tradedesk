@@ -741,10 +741,11 @@ def run_once(force: bool = False, manual: bool = False) -> int:
                     strategy = r.get("strategy", "?")
                     short_strike = r.get("short_strike", 0)
                     long_strike = r.get("long_strike", 0)
+                    option_suffix = "P" if "Put" in strategy else "C"
                     if "Debit" in strategy:
-                        legs = f"Buy ${long_strike:.0f}/Sell ${short_strike:.0f}"
+                        legs = f"Buy ${long_strike:.0f}{option_suffix} / Sell ${short_strike:.0f}{option_suffix}"
                     else:
-                        legs = f"Sell ${short_strike:.0f}/Buy ${long_strike:.0f}"
+                        legs = f"Sell ${short_strike:.0f}{option_suffix} / Buy ${long_strike:.0f}{option_suffix}"
                     body = (
                         f"[{r.get('setup_lane') or 'IDEA'}] {strategy}: "
                         f"{legs} {r.get('expiry', '')} | Score: {r.get('composite',0):.0f}"
@@ -781,7 +782,7 @@ def main():
             "TEST ONLY - Trade Monitor",
             (
                 "Notification path OK. Example setup format: "
-                "[BREAKOUT] Bull Put Credit: Sell $460 / Buy $450 2026-06-18 | "
+                "[BREAKOUT] Bull Put Credit: Sell $460P / Buy $450P 2026-06-18 | "
                 "Cr $3.40 | MaxP $340 | Prob 66% | Tech 8/10 | TEST ONLY, do not trade."
             ),
             priority="default",
