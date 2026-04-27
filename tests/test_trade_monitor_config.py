@@ -25,6 +25,24 @@ class TestTradeMonitorConfig(unittest.TestCase):
         self.assertEqual(_masked_secret_status("abc"), "set")
         self.assertEqual(_masked_secret_status("secret-topic"), "set (12 chars)")
 
+    def test_trade_ideas_excludes_current_underlyings(self):
+        from uwos.trade_monitor import run_trade_ideas_scan
+
+        state = {
+            "SPREAD:C:2026-05-15:CALL:C1|C2": {"underlying": "C"},
+            "AAPL  260515C00200000": {"underlying": "AAPL"},
+            "MSFT": {},
+        }
+        with patch("uwos.trade_monitor.load_state", return_value=state):
+            with patch("uwos.trade_ideas.find_latest_data_dir", return_value=None):
+                with patch("uwos.trade_ideas.scan_trade_ideas", return_value=[]) as scan:
+                    self.assertEqual(run_trade_ideas_scan(), [])
+
+        exclude = scan.call_args.kwargs["exclude_tickers"]
+        self.assertIn("C", exclude)
+        self.assertIn("AAPL", exclude)
+        self.assertIn("MSFT", exclude)
+
 
 if __name__ == "__main__":
     unittest.main()

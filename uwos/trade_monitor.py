@@ -551,7 +551,25 @@ def run_trade_ideas_scan() -> List[Dict]:
     from uwos.eod_trade_scan_mode_a import compute_macro_regime
 
     data_dir = find_latest_data_dir()
-    results = scan_trade_ideas(data_dir=data_dir, top_n=8, verbose=False)
+
+    excluded_underlyings = set()
+    for key, state in load_state().items():
+        underlying = str(state.get("underlying") or "").strip().upper()
+        if not underlying and key.startswith("SPREAD:"):
+            parts = key.split(":")
+            if len(parts) > 1:
+                underlying = parts[1].strip().upper()
+        if not underlying:
+            underlying = key.strip().split()[0].upper()
+        if underlying:
+            excluded_underlyings.add(underlying)
+
+    results = scan_trade_ideas(
+        data_dir=data_dir,
+        top_n=8,
+        exclude_tickers=excluded_underlyings,
+        verbose=False,
+    )
     if not results:
         return []
 
@@ -579,6 +597,7 @@ def run_trade_ideas_scan() -> List[Dict]:
             "strategy": r["strategy"],
             "composite": r["composite"],
             "short_strike": r["short_strike"],
+            "long_strike": r.get("long_strike"),
             "expiry": r["expiry"],
             "timestamp": dt.datetime.now().isoformat(),
         }
@@ -586,7 +605,9 @@ def run_trade_ideas_scan() -> List[Dict]:
         # Alert if this is a new ticker or the trade changed
         prev_entry = prev.get(ticker, {})
         if (prev_entry.get("strategy") != r["strategy"] or
-                prev_entry.get("short_strike") != r["short_strike"]):
+                prev_entry.get("short_strike") != r["short_strike"] or
+                prev_entry.get("long_strike") != r.get("long_strike") or
+                prev_entry.get("expiry") != r["expiry"]):
             alerts.append(r)
 
     IDEAS_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
