@@ -37,11 +37,11 @@ LOG_FILE = ROOT / "out" / "trade_analysis" / "monitor_log.jsonl"
 # ---------------------------------------------------------------------------
 
 def load_notify_config() -> Dict[str, str]:
-    """Read notification config from .env."""
+    """Read notification config from cloud env, falling back to local .env."""
     from dotenv import dotenv_values
     env = dotenv_values(ROOT / ".env")
     return {
-        "ntfy_topic": env.get("NTFY_TOPIC", ""),
+        "ntfy_topic": os.environ.get("NTFY_TOPIC") or env.get("NTFY_TOPIC", ""),
     }
 
 
@@ -81,6 +81,14 @@ def _strip_emoji(text: str) -> str:
 
 def _priority_int(p: str) -> int:
     return {"min": 1, "low": 2, "default": 3, "high": 4, "urgent": 5}.get(p, 3)
+
+
+def _masked_secret_status(value: str) -> str:
+    if not value:
+        return "unset"
+    if len(value) <= 4:
+        return "set"
+    return f"set ({len(value)} chars)"
 
 
 def _safe_print(msg: str) -> None:
@@ -742,7 +750,7 @@ def main():
 
     if args.loop > 0:
         print(f"Trade Monitor starting — scanning every {args.loop} min during market hours")
-        print(f"  ntfy topic: {load_notify_config()['ntfy_topic']}")
+        print(f"  ntfy topic: {_masked_secret_status(load_notify_config()['ntfy_topic'])}")
         print(f"  State file: {STATE_FILE}")
         print(f"  Press Ctrl+C to stop")
         while True:

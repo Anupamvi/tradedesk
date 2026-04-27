@@ -1,0 +1,16 @@
+[Unit]
+Description=UW Trade Monitor single-shot scan
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=tradedesk
+Group=tradedesk
+WorkingDirectory=/opt/tradedesk/current
+EnvironmentFile=/etc/tradedesk/tradedesk.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/tradedesk/venv/bin/python -m uwos.trade_monitor
+NoNewPrivileges=true
+PrivateTmp=true
+

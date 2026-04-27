@@ -1,0 +1,9 @@
+authlib
+numpy
+pandas
+python-dotenv
+pyyaml
+schwab-py
+tabulate
+yfinance
+

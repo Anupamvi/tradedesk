@@ -1,0 +1,11 @@
+[Unit]
+Description=Run UW Trade Monitor hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=60
+Unit=trade-monitor.service
+
+[Install]
+WantedBy=timers.target
