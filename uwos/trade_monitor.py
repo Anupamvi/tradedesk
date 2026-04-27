@@ -594,6 +594,7 @@ def run_trade_ideas_scan() -> List[Dict]:
     for r in results:
         ticker = r["ticker"]
         new_state[ticker] = {
+            "setup_lane": r.get("setup_lane", ""),
             "strategy": r["strategy"],
             "composite": r["composite"],
             "short_strike": r["short_strike"],
@@ -604,7 +605,8 @@ def run_trade_ideas_scan() -> List[Dict]:
 
         # Alert if this is a new ticker or the trade changed
         prev_entry = prev.get(ticker, {})
-        if (prev_entry.get("strategy") != r["strategy"] or
+        if (prev_entry.get("setup_lane") != r.get("setup_lane", "") or
+                prev_entry.get("strategy") != r["strategy"] or
                 prev_entry.get("short_strike") != r["short_strike"] or
                 prev_entry.get("long_strike") != r.get("long_strike") or
                 prev_entry.get("expiry") != r["expiry"]):
@@ -721,17 +723,32 @@ def run_once(force: bool = False, manual: bool = False) -> int:
                 for ticker, val in ideas_state.items():
                     idea_alerts.append({
                         "ticker": ticker,
+                        "setup_lane": val.get("setup_lane", ""),
                         "strategy": val.get("strategy", "?"),
                         "short_strike": val.get("short_strike", 0),
+                        "long_strike": val.get("long_strike", 0),
+                        "expiry": val.get("expiry", ""),
                         "composite": val.get("composite", 0),
                     })
 
             for r in idea_alerts:
-                title = f"NEW TRADE: {r['ticker']} {r.get('strategy', '?')}"
+                lane = r.get("setup_lane", "")
+                lane_text = f" {lane}" if lane else ""
+                title = f"NEW TRADE: {r['ticker']}{lane_text} {r.get('strategy', '?')}"
                 try:
                     body = fmt_idea(r)
                 except Exception:
-                    body = f"{r.get('strategy','?')} | Score: {r.get('composite',0):.0f}"
+                    strategy = r.get("strategy", "?")
+                    short_strike = r.get("short_strike", 0)
+                    long_strike = r.get("long_strike", 0)
+                    if "Debit" in strategy:
+                        legs = f"Buy ${long_strike:.0f}/Sell ${short_strike:.0f}"
+                    else:
+                        legs = f"Sell ${short_strike:.0f}/Buy ${long_strike:.0f}"
+                    body = (
+                        f"[{r.get('setup_lane') or 'IDEA'}] {strategy}: "
+                        f"{legs} {r.get('expiry', '')} | Score: {r.get('composite',0):.0f}"
+                    )
                 _safe_print(f"    IDEA: {title}: {body}")
                 notify(title, body, priority="high", tags="chart_with_upwards_trend")
             total_alerts += len(idea_alerts)
@@ -761,8 +778,12 @@ def main():
     if args.test:
         print("Sending test notification...")
         notify(
-            "Trade Monitor Test",
-            "If you see this, notifications are working! Monitor will send alerts for HOLD->CLOSE, ROLL, and other transitions.",
+            "TEST ONLY - Trade Monitor",
+            (
+                "Notification path OK. Example setup format: "
+                "[BREAKOUT] Bull Put Credit: Sell $460 / Buy $450 2026-06-18 | "
+                "Cr $3.40 | MaxP $340 | Prob 66% | Tech 8/10 | TEST ONLY, do not trade."
+            ),
             priority="default",
             tags="white_check_mark",
         )
