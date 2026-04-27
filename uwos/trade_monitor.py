@@ -91,6 +91,20 @@ def _masked_secret_status(value: str) -> str:
     return f"set ({len(value)} chars)"
 
 
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
 def _safe_print(msg: str) -> None:
     """Print without crashing on Windows cp1252 encoding."""
     try:
@@ -545,6 +559,134 @@ def is_market_hours() -> bool:
 IDEAS_STATE_FILE = ROOT / "out" / "trade_ideas" / "ideas_state.json"
 
 
+def is_after_hours_watch_window() -> bool:
+    """True from 4:00 PM to 8:00 PM ET on weekdays."""
+    try:
+        from zoneinfo import ZoneInfo
+    except ImportError:
+        from backports.zoneinfo import ZoneInfo
+    now = dt.datetime.now(ZoneInfo("America/New_York"))
+    if now.weekday() >= 5:
+        return False
+    after_open = now.replace(hour=16, minute=0, second=0)
+    after_close = now.replace(hour=20, minute=0, second=0)
+    return after_open < now <= after_close
+
+
+def _state_underlying(key: str, value: Any) -> Optional[str]:
+    if isinstance(value, dict) and value.get("underlying"):
+        return str(value["underlying"]).strip().upper()
+    text = str(key).strip()
+    if text.startswith("SPREAD:"):
+        parts = text.split(":")
+        if len(parts) > 1 and parts[1]:
+            return parts[1].strip().upper()
+    parts = text.split()
+    if parts:
+        return parts[0].upper()
+    return None
+
+
+def _watched_underlyings() -> List[str]:
+    tickers = {"SPY", "QQQ"}
+    try:
+        for key, value in load_state().items():
+            underlying = _state_underlying(key, value)
+            if underlying:
+                tickers.add(underlying)
+    except Exception:
+        pass
+    try:
+        if IDEAS_STATE_FILE.exists():
+            ideas_state = json.loads(IDEAS_STATE_FILE.read_text(encoding="utf-8"))
+            tickers.update(str(t).strip().upper() for t in ideas_state if str(t).strip())
+    except Exception:
+        pass
+    max_watch = _env_int("AFTER_HOURS_MAX_WATCH", 60)
+    return sorted(tickers)[:max_watch]
+
+
+def _quote_move_pct(qdata: Dict[str, Any]) -> float:
+    q = qdata.get("quote", qdata)
+    candidates = []
+    for field in (
+        "postMarketPercentChange",
+        "extendedMarketPercentChange",
+        "markPercentChange",
+        "netPercentChange",
+        "regularMarketPercentChange",
+    ):
+        if field in q:
+            candidates.append(safe(q.get(field)))
+
+    last = safe(q.get("lastPrice") or q.get("mark") or q.get("markPrice"))
+    close = safe(q.get("closePrice") or q.get("regularMarketLastPrice"))
+    if last > 0 and close > 0:
+        candidates.append((last - close) / close * 100)
+
+    if not candidates:
+        return 0.0
+    return max(candidates, key=lambda x: abs(x))
+
+
+def _after_hours_movement_from_quotes(quotes: Dict[str, Any],
+                                      watched: List[str]) -> Tuple[bool, str]:
+    market_threshold = _env_float("AFTER_HOURS_MARKET_MOVE_PCT", 0.6)
+    watch_threshold = _env_float("AFTER_HOURS_WATCH_MOVE_PCT", 2.0)
+    market_movers = []
+    watch_movers = []
+    all_moves = []
+
+    for ticker, payload in quotes.items():
+        move = _quote_move_pct(payload)
+        if abs(move) <= 0:
+            continue
+        all_moves.append((ticker, move))
+        threshold = market_threshold if ticker in {"SPY", "QQQ"} else watch_threshold
+        if abs(move) >= threshold:
+            if ticker in {"SPY", "QQQ"}:
+                market_movers.append((ticker, move))
+            elif ticker in watched:
+                watch_movers.append((ticker, move))
+
+    movers = market_movers + sorted(watch_movers, key=lambda x: abs(x[1]), reverse=True)[:5]
+    if movers:
+        summary = ", ".join(f"{ticker} {move:+.1f}%" for ticker, move in movers)
+        return True, f"after-hours movement gate passed: {summary}"
+
+    if all_moves:
+        ticker, move = max(all_moves, key=lambda x: abs(x[1]))
+        return False, f"after-hours quiet: max watched move {ticker} {move:+.1f}%"
+    return False, "after-hours quiet: no quote movement available"
+
+
+def has_after_hours_movement() -> Tuple[bool, str]:
+    """Check whether an after-hours scan is justified."""
+    if not is_after_hours_watch_window():
+        return False, "outside after-hours watch window"
+    watched = _watched_underlyings()
+    try:
+        from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+        config = SchwabAuthConfig.from_env(load_dotenv_file=True)
+        svc = SchwabLiveDataService(config=config, interactive_login=False)
+        quotes = {}
+        for i in range(0, len(watched), 100):
+            quotes.update(svc.get_quotes(watched[i:i + 100]))
+    except Exception as exc:
+        return False, f"after-hours movement check failed: {str(exc)[:160]}"
+    return _after_hours_movement_from_quotes(quotes, watched)
+
+
+def should_run_monitor_now(force: bool = False, manual: bool = False) -> Tuple[bool, str]:
+    if force:
+        return True, "force run"
+    if manual:
+        return True, "manual run"
+    if is_market_hours():
+        return True, "regular market hours"
+    return has_after_hours_movement()
+
+
 def run_trade_ideas_scan() -> List[Dict]:
     """Run unified trade ideas scanner and return alerts for new ideas."""
     from uwos.trade_ideas import scan_trade_ideas, format_results_md, format_alert, find_latest_data_dir
@@ -554,13 +696,7 @@ def run_trade_ideas_scan() -> List[Dict]:
 
     excluded_underlyings = set()
     for key, state in load_state().items():
-        underlying = str(state.get("underlying") or "").strip().upper()
-        if not underlying and key.startswith("SPREAD:"):
-            parts = key.split(":")
-            if len(parts) > 1:
-                underlying = parts[1].strip().upper()
-        if not underlying:
-            underlying = key.strip().split()[0].upper()
+        underlying = _state_underlying(key, state)
         if underlying:
             excluded_underlyings.add(underlying)
 
@@ -617,8 +753,10 @@ def run_trade_ideas_scan() -> List[Dict]:
     return alerts
 
 
-def should_run_ideas_scan() -> bool:
-    """Run trade ideas scan every hour during market hours (on the hour)."""
+def should_run_ideas_scan(after_hours_moving: bool = False) -> bool:
+    """Run trade ideas scan during market hours, plus moving after-hours windows."""
+    if after_hours_moving:
+        return True
     try:
         from zoneinfo import ZoneInfo
     except ImportError:
@@ -644,11 +782,12 @@ def run_once(force: bool = False, manual: bool = False) -> int:
     manual=True: notify ALL actionable verdicts (CLOSE/ROLL/ASSESS), not just transitions.
     manual=False (scheduled): only notify on state transitions.
     """
-    if not force and not manual and not is_market_hours():
-        _safe_print(f"  [{dt.datetime.now():%H:%M}] Market closed, skipping scan")
+    should_run, run_reason = should_run_monitor_now(force=force, manual=manual)
+    if not should_run:
+        _safe_print(f"  [{dt.datetime.now():%H:%M}] Market closed, skipping scan ({run_reason})")
         return 0
 
-    _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] Running position scan...")
+    _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] Running position scan ({run_reason})...")
     total_alerts = 0
 
     # Heartbeat: send once at market open (9:30-10:00 ET)
@@ -705,8 +844,9 @@ def run_once(force: bool = False, manual: bool = False) -> int:
         notify(title, body, priority=priority, tags=tags, critical=True)
     total_alerts += len(alerts)
 
-    # Mode 2: Trade ideas scanner (runs 2x daily OR on manual)
-    if force or manual or should_run_ideas_scan():
+    # Mode 2: Trade ideas scanner during market hours, plus moving after-hours windows.
+    after_hours_moving = run_reason.startswith("after-hours movement gate passed")
+    if force or manual or should_run_ideas_scan(after_hours_moving=after_hours_moving):
         _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] Running trade ideas scanner...")
         try:
             from uwos.trade_ideas import format_alert as fmt_idea

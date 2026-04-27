@@ -1,6 +1,6 @@
 # Trade Monitor Cloud Runner
 
-This deploys the hourly `ntfy` trade monitor on a persistent Linux VM.
+This deploys the `ntfy` trade monitor on a persistent Linux VM.
 
 The runner is intentionally simple:
 
@@ -9,7 +9,7 @@ The runner is intentionally simple:
 - secret env file: `/etc/tradedesk/tradedesk.env`
 - mutable Schwab token: `/var/lib/tradedesk/tokens/schwab_token.json`
 - monitor state/output: `/opt/tradedesk/current/out/...`
-- scheduler: `systemd` timer, hourly
+- scheduler: `systemd` timer for US trading hours plus after-hours watch checks
 
 Do not put Schwab secrets, ntfy topic, token JSON, or `out/` state in git.
 
@@ -66,6 +66,9 @@ SCHWAB_APP_SECRET=
 SCHWAB_CALLBACK_URL=
 SCHWAB_TOKEN_PATH=/var/lib/tradedesk/tokens/schwab_token.json
 NTFY_TOPIC=
+AFTER_HOURS_MARKET_MOVE_PCT=0.6
+AFTER_HOURS_WATCH_MOVE_PCT=2.0
+AFTER_HOURS_MAX_WATCH=60
 ```
 
 Then copy the existing Schwab token JSON to:
@@ -94,10 +97,11 @@ sudo systemctl start trade-monitor.service
 
 The first command sends an ntfy test without exposing secrets to the
 `tradedesk` user's shell profile. The second command uses the exact systemd
-service path that the timer will run; it should either scan during US market
-hours or print that the market is closed.
+service path that the timer will run; it should scan during US market hours,
+scan after close only if movement thresholds are crossed, or print why it
+skipped.
 
-## Start Hourly Runner
+## Start Runner
 
 ```bash
 sudo systemctl enable --now trade-monitor.timer

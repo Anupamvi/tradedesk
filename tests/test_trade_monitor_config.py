@@ -43,6 +43,40 @@ class TestTradeMonitorConfig(unittest.TestCase):
         self.assertIn("AAPL", exclude)
         self.assertIn("MSFT", exclude)
 
+    def test_after_hours_movement_gate_detects_market_and_watch_moves(self):
+        from uwos.trade_monitor import _after_hours_movement_from_quotes
+
+        quotes = {
+            "SPY": {"quote": {"netPercentChange": 0.7}},
+            "AAPL": {"quote": {"lastPrice": 103, "closePrice": 100}},
+            "MSFT": {"quote": {"netPercentChange": 0.5}},
+        }
+        with patch.dict(os.environ, {
+            "AFTER_HOURS_MARKET_MOVE_PCT": "0.6",
+            "AFTER_HOURS_WATCH_MOVE_PCT": "2.0",
+        }, clear=False):
+            should_run, reason = _after_hours_movement_from_quotes(quotes, ["AAPL", "MSFT"])
+
+        self.assertTrue(should_run)
+        self.assertIn("SPY +0.7%", reason)
+        self.assertIn("AAPL +3.0%", reason)
+
+    def test_after_hours_movement_gate_skips_quiet_quotes(self):
+        from uwos.trade_monitor import _after_hours_movement_from_quotes
+
+        quotes = {
+            "SPY": {"quote": {"netPercentChange": 0.2}},
+            "AAPL": {"quote": {"lastPrice": 101, "closePrice": 100}},
+        }
+        with patch.dict(os.environ, {
+            "AFTER_HOURS_MARKET_MOVE_PCT": "0.6",
+            "AFTER_HOURS_WATCH_MOVE_PCT": "2.0",
+        }, clear=False):
+            should_run, reason = _after_hours_movement_from_quotes(quotes, ["AAPL"])
+
+        self.assertFalse(should_run)
+        self.assertIn("after-hours quiet", reason)
+
 
 if __name__ == "__main__":
     unittest.main()

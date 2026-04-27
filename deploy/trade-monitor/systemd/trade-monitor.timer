@@ -1,8 +1,13 @@
 [Unit]
-Description=Run UW Trade Monitor hourly
+Description=Run UW Trade Monitor during market and after-hours watch windows
 
 [Timer]
-OnCalendar=hourly
+# Regular session: market open, then hourly through the trading day.
+OnCalendar=Mon..Fri *-*-* 09:30:00 America/New_York
+OnCalendar=Mon..Fri *-*-* 10..15:00:00 America/New_York
+# After close: run only if the code sees meaningful movement in SPY/QQQ,
+# open-position underlyings, or recent trade-idea tickers.
+OnCalendar=Mon..Fri *-*-* 16,17,18,19:30:00 America/New_York
 Persistent=true
 RandomizedDelaySec=60
 Unit=trade-monitor.service
