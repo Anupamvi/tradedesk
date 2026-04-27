@@ -48,6 +48,7 @@ JUNK_TICKERS = {
 def load_sp500_universe() -> pd.DataFrame:
     """Load S&P 500 constituents from Wikipedia (with User-Agent) or cached file."""
     cache_path = ROOT / "out" / "dip_scanner" / "sp500_universe.csv"
+    load_errors = []
     try:
         import io as _io
         req = urllib.request.Request(
@@ -66,11 +67,14 @@ def load_sp500_universe() -> pd.DataFrame:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         result.to_csv(cache_path, index=False)
         return result
-    except Exception:
-        pass
+    except Exception as exc:
+        load_errors.append(f"live Wikipedia load failed: {type(exc).__name__}: {exc}")
     if cache_path.exists():
-        return pd.read_csv(cache_path)
-    return pd.DataFrame(columns=["ticker", "name", "sector", "sub_industry"])
+        cached = pd.read_csv(cache_path)
+        if not cached.empty:
+            return cached
+        load_errors.append(f"cache exists but is empty: {cache_path}")
+    raise RuntimeError("Could not load S&P 500 universe; " + "; ".join(load_errors))
 
 
 SECTOR_ETF = {
@@ -241,6 +245,148 @@ def detect_unusual_activity(svc, ticker: str) -> Dict:
         "total_vol": total_vol,
         "total_oi": total_oi,
         "hot_strikes": sorted(hot_strikes, key=lambda x: x["ratio"], reverse=True)[:5],
+    }
+
+
+def _rsi(series: pd.Series, period: int = 14) -> float:
+    delta = series.diff()
+    gains = delta.clip(lower=0)
+    losses = -delta.clip(upper=0)
+    avg_gain = gains.rolling(period).mean()
+    avg_loss = losses.rolling(period).mean()
+    if avg_loss.empty or not avg_loss.iloc[-1]:
+        return 100.0 if avg_gain.iloc[-1] else 50.0
+    rs = avg_gain.iloc[-1] / avg_loss.iloc[-1]
+    return float(100 - (100 / (1 + rs)))
+
+
+def get_technical_context(svc, ticker: str, direction: str) -> Dict:
+    """Price-action timing layer from Schwab daily candles.
+
+    Uses anchored VWAP from recent swing low/high, SMA20/SMA50, RSI14, and ATR%.
+    Returns a small score used as confirmation, not as the primary signal.
+    """
+    empty = {
+        "technical_score": 0,
+        "anchor_vwap": 0.0,
+        "above_anchor_vwap": False,
+        "close": 0.0,
+        "sma20": 0.0,
+        "sma50": 0.0,
+        "rsi14": 50.0,
+        "atr14_pct": 0.0,
+        "price_vs_sma20_pct": 0.0,
+        "technical_note": "price history unavailable",
+    }
+    try:
+        client = svc.connect()
+        end_dt = dt.datetime.combine(dt.date.today() + dt.timedelta(days=1), dt.time.min)
+        start_dt = end_dt - dt.timedelta(days=150)
+        response = client.get_price_history_every_day(
+            ticker,
+            start_datetime=start_dt,
+            end_datetime=end_dt,
+        )
+        response.raise_for_status()
+        candles = response.json().get("candles", [])
+    except Exception:
+        return empty
+    if len(candles) < 50:
+        out = dict(empty)
+        out["technical_note"] = "insufficient price history"
+        return out
+
+    df = pd.DataFrame(candles).copy()
+    for col in ["open", "high", "low", "close", "volume"]:
+        df[col] = pd.to_numeric(df.get(col), errors="coerce")
+    df = df.dropna(subset=["high", "low", "close", "volume"])
+    if len(df) < 50:
+        out = dict(empty)
+        out["technical_note"] = "insufficient clean price history"
+        return out
+
+    close = df["close"]
+    high = df["high"]
+    low = df["low"]
+    volume = df["volume"].clip(lower=0)
+    typical = (high + low + close) / 3
+    last_close = float(close.iloc[-1])
+    sma20 = float(close.rolling(20).mean().iloc[-1])
+    sma50 = float(close.rolling(50).mean().iloc[-1])
+    rsi14 = _rsi(close, 14)
+    prev_close = close.shift(1)
+    true_range = pd.concat(
+        [(high - low), (high - prev_close).abs(), (low - prev_close).abs()],
+        axis=1,
+    ).max(axis=1)
+    atr14 = float(true_range.rolling(14).mean().iloc[-1])
+    atr14_pct = (atr14 / last_close * 100) if last_close else 0.0
+
+    recent = df.tail(60)
+    if direction == "bearish":
+        anchor_idx = recent["high"].idxmax()
+        anchor_label = "swing-high"
+        above_anchor = last_close >= 0
+    else:
+        anchor_idx = recent["low"].idxmin()
+        anchor_label = "swing-low"
+        above_anchor = last_close >= 0
+
+    anchor_slice = df.loc[anchor_idx:]
+    anchor_vol = volume.loc[anchor_idx:]
+    vol_sum = float(anchor_vol.sum())
+    if vol_sum > 0:
+        anchor_vwap = float((typical.loc[anchor_idx:] * anchor_vol).sum() / vol_sum)
+    else:
+        anchor_vwap = float(typical.loc[anchor_idx:].mean())
+
+    score = 0
+    if direction == "bearish":
+        below_anchor = last_close <= anchor_vwap
+        above_anchor = not below_anchor
+        if below_anchor:
+            score += 4
+        elif last_close <= anchor_vwap * 1.01:
+            score += 2
+        if last_close <= sma20:
+            score += 3
+        if sma20 <= sma50:
+            score += 1
+        if 30 <= rsi14 <= 60:
+            score += 2
+        elif rsi14 <= 70:
+            score += 1
+    else:
+        above_anchor = last_close >= anchor_vwap
+        if above_anchor:
+            score += 4
+        elif last_close >= anchor_vwap * 0.99:
+            score += 2
+        if last_close >= sma20:
+            score += 3
+        if sma20 >= sma50:
+            score += 1
+        if 40 <= rsi14 <= 70:
+            score += 2
+        elif 35 <= rsi14 < 40:
+            score += 1
+
+    price_vs_sma20_pct = ((last_close - sma20) / sma20 * 100) if sma20 else 0.0
+    return {
+        "technical_score": int(max(0, min(10, score))),
+        "anchor_vwap": round(anchor_vwap, 2),
+        "anchor_label": anchor_label,
+        "above_anchor_vwap": bool(above_anchor),
+        "close": round(last_close, 2),
+        "sma20": round(sma20, 2),
+        "sma50": round(sma50, 2),
+        "rsi14": round(rsi14, 1),
+        "atr14_pct": round(atr14_pct, 1),
+        "price_vs_sma20_pct": round(price_vs_sma20_pct, 1),
+        "technical_note": (
+            f"{anchor_label} AVWAP {anchor_vwap:.2f}; "
+            f"SMA20 {sma20:.2f}; RSI {rsi14:.1f}"
+        ),
     }
 
 
@@ -786,13 +932,16 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
         else:
             direction = "neutral"
 
+        technical = get_technical_context(svc, ticker, direction)
+        technical_score = technical.get("technical_score", 0)
+
         # Macro alignment (0-30)
         macro_score = {"risk_off": {"bearish": 28, "neutral": 18, "bullish": 8},
                        "neutral": {"bearish": 18, "neutral": 22, "bullish": 18},
                        "risk_on": {"bearish": 8, "neutral": 18, "bullish": 28},
                        }.get(regime, {}).get(direction, 15)
 
-        total = drop_score + flow_score + macro_score
+        total = min(100, drop_score + flow_score + macro_score + technical_score)
 
         scored.append({
             **d,
@@ -800,8 +949,10 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
             "drop_score": round(drop_score, 1),
             "flow_score": round(flow_score, 1),
             "macro_score": round(macro_score, 1),
+            "technical_score": round(technical_score, 1),
             "pre_score": round(total, 1),
             "flow": live_flow,
+            "technical": technical,
             "name": name_map.get(ticker, ticker),
             "sector": sector_map.get(ticker, "Unknown"),
         })
@@ -871,6 +1022,7 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
             "drop_score": cand["drop_score"],
             "flow_score": cand["flow_score"],
             "macro_score": cand["macro_score"],
+            "technical_score": cand["technical_score"],
             "strategy": best_trade["strategy"],
             "short_strike": best_trade["short_strike"],
             "long_strike": best_trade["long_strike"],
@@ -895,6 +1047,11 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
             "days_to_earnings": fund.get("days_to_earnings", 999),
             "analyst_upside": round(fund.get("analyst_upside", 0), 1),
             "roe": round(fund.get("roe", 0), 1),
+            "rsi14": cand["technical"].get("rsi14", 50),
+            "anchor_vwap": cand["technical"].get("anchor_vwap", 0),
+            "above_anchor_vwap": cand["technical"].get("above_anchor_vwap", False),
+            "price_vs_sma20_pct": cand["technical"].get("price_vs_sma20_pct", 0),
+            "technical_note": cand["technical"].get("technical_note", ""),
         })
 
     # Build stock buy ideas INDEPENDENTLY (not fallback)
@@ -930,6 +1087,7 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
 
         if (cand["pct_from_high"] <= -20
                 and cand["quality_score"] >= 65
+                and cand["technical_score"] >= 5
                 and cand["direction"] in ("bullish", "neutral")
                 and fund.get("analyst_upside", 0) >= 15
                 and fund.get("days_to_earnings", 999) > 14):
@@ -954,6 +1112,7 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
                 "drop_score": cand["drop_score"],
                 "flow_score": cand["flow_score"],
                 "macro_score": cand["macro_score"],
+                "technical_score": cand["technical_score"],
                 "strategy": "STOCK BUY",
                 "short_strike": 0, "long_strike": 0,
                 "expiry": "N/A", "dte": 0, "credit": 0,
@@ -972,6 +1131,11 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
                 "days_to_earnings": fund.get("days_to_earnings", 999),
                 "analyst_upside": round(fund.get("analyst_upside", 0), 1),
                 "roe": round(fund.get("roe", 0), 1),
+                "rsi14": cand["technical"].get("rsi14", 50),
+                "anchor_vwap": cand["technical"].get("anchor_vwap", 0),
+                "above_anchor_vwap": cand["technical"].get("above_anchor_vwap", False),
+                "price_vs_sma20_pct": cand["technical"].get("price_vs_sma20_pct", 0),
+                "technical_note": cand["technical"].get("technical_note", ""),
             })
             # No cap — if quality criteria are met, show it
 
@@ -1025,6 +1189,7 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
                 f"**BUY {shares} shares at ${r['price']:.2f}** (${pos_dollars:,.0f} = 2% of portfolio) | Analyst +{r['analyst_upside']:.0f}% | Quality {r['quality_score']:.0f}/100",
                 "",
                 f"**Flow (LIVE):** {prem_str} est. premium | Call%: {r['buy_pct']:.0f}% | Vol/OI {r['vol_oi']:.1f}x | {'UNUSUAL' if r.get('unusual') else 'Normal'}",
+                f"**Technical:** score {r.get('technical_score', 0):.0f}/10 | AVWAP ${r.get('anchor_vwap', 0):.2f} | RSI {r.get('rsi14', 50):.0f} | vs SMA20 {r.get('price_vs_sma20_pct', 0):+.1f}%",
                 f"**Quality:** ROE {r['roe']:.0f}% | Analyst upside {r['analyst_upside']:+.0f}% | Score {r['quality_score']:.0f}/100",
                 "",
             ])
@@ -1048,6 +1213,7 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
                 f"| Earnings | {r['days_to_earnings']} days away |",
                 "",
                 f"**Flow (LIVE):** {prem_str} est. premium | Call%: {r['buy_pct']:.0f}% | Vol/OI {r['vol_oi']:.1f}x | {'UNUSUAL' if r.get('unusual') else 'Normal'}",
+                f"**Technical:** score {r.get('technical_score', 0):.0f}/10 | AVWAP ${r.get('anchor_vwap', 0):.2f} | RSI {r.get('rsi14', 50):.0f} | vs SMA20 {r.get('price_vs_sma20_pct', 0):+.1f}%",
                 f"**Quality:** ROE {r['roe']:.0f}% | Analyst upside {r['analyst_upside']:+.0f}% | Score {r['quality_score']:.0f}/100",
                 "",
             ])
@@ -1065,12 +1231,12 @@ def format_alert(r: Dict) -> str:
         return (
             f"BUY {r['ticker']} at ${r['price']:.2f} | {sizing} | "
             f"{r['pct_from_high']:+.0f}% from high | "
-            f"Quality {r['quality_score']:.0f} | Analyst +{r['analyst_upside']:.0f}%"
+            f"Tech {r.get('technical_score', 0):.0f}/10 | Quality {r['quality_score']:.0f} | Analyst +{r['analyst_upside']:.0f}%"
         )
     return (
         f"{r['strategy']}: Sell ${r['short_strike']:.0f}/Buy ${r['long_strike']:.0f} "
         f"{r['expiry']} | Cr ${r['credit']:.2f} | MaxP ${r['max_profit']} | "
-        f"Prob {r['prob_profit']:.0f}% | {prem_str} flow"
+        f"Prob {r['prob_profit']:.0f}% | Tech {r.get('technical_score', 0):.0f}/10 | {prem_str} flow"
     )
 
 
