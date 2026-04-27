@@ -84,10 +84,9 @@ Next Step 2 on VM:
   sudo install -o tradedesk -g tradedesk -m 600 /path/to/schwab_token.json /var/lib/tradedesk/tokens/schwab_token.json
 
 Then smoke test:
-  sudo -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor --test
-  sudo -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor
+  sudo bash -lc 'cd /opt/tradedesk/current; set -a; . /etc/tradedesk/tradedesk.env; set +a; sudo -E -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor --test'
+  sudo systemctl start trade-monitor.service
 
 Start hourly timer:
   sudo systemctl enable --now trade-monitor.timer
 MSG
-

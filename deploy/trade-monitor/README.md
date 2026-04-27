@@ -88,12 +88,14 @@ sudo chmod 600 /etc/tradedesk/tradedesk.env
 After secrets are present:
 
 ```bash
-sudo -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor --test
-sudo -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor
+sudo bash -lc 'cd /opt/tradedesk/current; set -a; . /etc/tradedesk/tradedesk.env; set +a; sudo -E -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor --test'
+sudo systemctl start trade-monitor.service
 ```
 
-The first command sends an ntfy test. The second command should either scan
-during US market hours or print that the market is closed.
+The first command sends an ntfy test without exposing secrets to the
+`tradedesk` user's shell profile. The second command uses the exact systemd
+service path that the timer will run; it should either scan during US market
+hours or print that the market is closed.
 
 ## Start Hourly Runner
 
