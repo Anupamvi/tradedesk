@@ -33,6 +33,22 @@ The install script creates the `tradedesk` service user, Python venv, systemd
 unit files, `/etc/tradedesk/tradedesk.env`, and persistent token directory.
 It does not start the timer until secrets are installed.
 
+### GCP Shortcut
+
+After `gcloud auth login` and `gcloud config set project YOUR_PROJECT_ID`,
+run this locally from the repo root:
+
+```bash
+deploy/trade-monitor/gcp_create_vm.sh
+```
+
+Default GCP shape is `e2-micro` in `us-west1-b` with a `30GB` standard
+persistent disk. Override with env vars:
+
+```bash
+VM_NAME=tradedesk-monitor ZONE=us-central1-a deploy/trade-monitor/gcp_create_vm.sh
+```
+
 ## Step 2: Secrets
 
 Edit the env file on the VM:
@@ -104,4 +120,3 @@ Stop:
 ```bash
 sudo systemctl disable --now trade-monitor.timer
 ```
-
