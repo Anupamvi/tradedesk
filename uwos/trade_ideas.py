@@ -9,7 +9,7 @@ ALL primary signals are LIVE from Schwab:
 UW EOD data is OPTIONAL supplementary context (when available, not depended on).
 
 Pipeline:
-  1. Schwab quotes: screen S&P 500 for drops from 52w high (LIVE, 502 tickers)
+  1. Schwab quotes: screen S&P 500 for recovery drops and momentum breakouts
   2. Schwab chains: detect unusual option activity on top drops (LIVE)
   3. Fundamentals: quality + earnings filter from yfinance (top 20 candidates)
   4. Trade construction: specific credit/debit spreads from live chains
@@ -92,6 +92,101 @@ def _safe_print(msg: str) -> None:
         print(msg.encode("ascii", "replace").decode("ascii"))
 
 
+def _num(value: Any, default: float = 0.0) -> float:
+    try:
+        if value is None:
+            return default
+        out = float(value)
+        return out if out == out else default
+    except (TypeError, ValueError):
+        return default
+
+
+def _score_live_flow(live_flow: Dict, uw: Optional[Dict] = None) -> float:
+    """Score option-flow confirmation from live Schwab chains."""
+    uw = uw or {}
+    flow_score = 0
+    total_prem = live_flow.get("total_premium", 0)
+    vol_oi = live_flow.get("max_vol_oi", 0)
+
+    if total_prem >= 5_000_000:
+        flow_score += 12
+    elif total_prem >= 1_000_000:
+        flow_score += 8
+    elif total_prem >= 200_000:
+        flow_score += 4
+
+    if vol_oi >= 5:
+        flow_score += 10
+    elif vol_oi >= 3:
+        flow_score += 8
+    elif vol_oi >= 2:
+        flow_score += 4
+
+    if live_flow.get("unusual"):
+        flow_score += 6
+
+    # UW EOD is only a small stale-data confirmation bonus.
+    if uw.get("uw_buy_pct", 50) >= 65:
+        flow_score += 2
+
+    return min(30, float(flow_score))
+
+
+def _direction_from_flow(live_flow: Dict) -> str:
+    call_pct = live_flow.get("call_pct", 50)
+    if call_pct >= 60:
+        return "bullish"
+    if call_pct <= 40:
+        return "bearish"
+    return "neutral"
+
+
+def _macro_alignment_score(regime: str, direction: str) -> float:
+    return {
+        "risk_off": {"bearish": 28, "neutral": 18, "bullish": 8},
+        "neutral": {"bearish": 18, "neutral": 22, "bullish": 18},
+        "risk_on": {"bearish": 8, "neutral": 18, "bullish": 28},
+    }.get(regime, {}).get(direction, 15)
+
+
+def _dedupe_scored_by_ticker(scored: List[Dict]) -> List[Dict]:
+    """Keep the strongest lane when recovery and breakout both hit a ticker."""
+    best_by_ticker: Dict[str, Dict] = {}
+    for cand in scored:
+        ticker = cand["ticker"]
+        existing = best_by_ticker.get(ticker)
+        if not existing or cand["pre_score"] > existing["pre_score"]:
+            best_by_ticker[ticker] = cand
+    return list(best_by_ticker.values())
+
+
+def _is_stock_buy_strategy(strategy: str) -> bool:
+    return strategy in {"STOCK BUY", "BREAKOUT STOCK BUY"}
+
+
+def _format_trade_legs(r: Dict) -> str:
+    """Readable option legs in action order."""
+    strategy = str(r.get("strategy", ""))
+    if "Debit" in strategy:
+        return f"Buy ${r['long_strike']:.0f} / Sell ${r['short_strike']:.0f}"
+    return f"Sell ${r['short_strike']:.0f} / Buy ${r['long_strike']:.0f}"
+
+
+def _state_underlying(key: str, value: Any) -> Optional[str]:
+    if isinstance(value, dict) and value.get("underlying"):
+        return str(value["underlying"]).upper()
+    text = str(key).strip()
+    if text.startswith("SPREAD:"):
+        parts = text.split(":")
+        if len(parts) > 1 and parts[1]:
+            return parts[1].upper()
+    parts = text.split()
+    if parts:
+        return parts[0].upper()
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Step 1: Schwab quotes — fast screen for drops
 # ---------------------------------------------------------------------------
@@ -151,6 +246,96 @@ def screen_drops(svc, tickers: List[str], min_drop_pct: float = 8.0,
         })
 
     candidates.sort(key=lambda x: x["pct_from_high"])
+    return candidates
+
+
+def screen_momentum_breakouts(svc, tickers: List[str],
+                              min_market_cap: float = 10e9) -> List[Dict]:
+    """Batch Schwab quotes and find bullish momentum/breakout candidates.
+
+    This is a separate lane from the dip scanner. It looks for optionable
+    large-cap stocks near 52-week highs, printing strong daily gains, or
+    pushing above recent highs on elevated volume.
+    """
+    all_quotes = {}
+    for i in range(0, len(tickers), 100):
+        batch = tickers[i:i + 100]
+        try:
+            all_quotes.update(svc.get_quotes(batch))
+        except Exception:
+            pass
+
+    candidates = []
+    for ticker, qdata in all_quotes.items():
+        if ticker in JUNK_TICKERS:
+            continue
+        q = qdata.get("quote", {})
+        f = qdata.get("fundamental", {})
+        ref = qdata.get("reference", {})
+
+        price = _num(q.get("lastPrice") or q.get("closePrice"))
+        high_52w = _num(q.get("52WeekHigh"))
+        day_high = _num(q.get("highPrice"))
+        net_pct = _num(q.get("netPercentChange") or q.get("markPercentChange"))
+        volume = _num(q.get("totalVolume"))
+        avg_vol = _num(f.get("avg10DaysVolume") or f.get("avg1YearVolume"))
+        shares = _num(f.get("sharesOutstanding"))
+        eps = f.get("eps")
+        pe = _num(f.get("peRatio"))
+
+        if price < 20 or high_52w <= 0:
+            continue
+        market_cap = price * shares if shares else 0
+        if 0 < market_cap < min_market_cap:
+            continue
+        if ref.get("optionable") is False:
+            continue
+
+        desc = str(ref.get("description", "")).lower()
+        if any(x in desc for x in ["etf", "fund", "trust", "index", "proshares", "direxion"]):
+            continue
+
+        pct_from_high = (price - high_52w) / high_52w * 100
+        high_touch_pct = (day_high - high_52w) / high_52w * 100 if day_high > 0 else pct_from_high
+        rel_volume = (volume / avg_vol) if avg_vol > 0 else 1.0
+
+        near_high = pct_from_high >= -8.0
+        high_touch = high_touch_pct >= -1.0
+        volume_breakout = net_pct >= 2.0 and rel_volume >= 1.2
+        if not (near_high or high_touch or volume_breakout):
+            continue
+
+        proximity_score = max(0.0, min(18.0, 18.0 + pct_from_high * 1.8))
+        day_score = max(0.0, min(10.0, net_pct * 2.5))
+        volume_score = 0.0
+        if rel_volume >= 2.5:
+            volume_score = 8.0
+        elif rel_volume >= 1.5:
+            volume_score = 6.0
+        elif rel_volume >= 1.1:
+            volume_score = 3.0
+        touch_score = 4.0 if high_touch else 0.0
+        breakout_score = min(40.0, proximity_score + day_score + volume_score + touch_score)
+
+        candidates.append({
+            "ticker": ticker,
+            "price": price,
+            "high_52w": high_52w,
+            "pct_from_high": pct_from_high,
+            "pe": pe,
+            "eps": _num(eps),
+            "market_cap": market_cap,
+            "shares": shares,
+            "net_pct": net_pct,
+            "rel_volume": rel_volume,
+            "breakout_score": round(breakout_score, 1),
+            "day_high": day_high,
+        })
+
+    candidates.sort(
+        key=lambda x: (x["breakout_score"], x["net_pct"], x["rel_volume"]),
+        reverse=True,
+    )
     return candidates
 
 
@@ -717,7 +902,7 @@ def _check_exdiv_risk(svc, ticker: str, dte: int) -> bool:
 
 
 def construct_trades(svc, ticker: str, price: float, direction: str,
-                     avg_iv: float) -> List[Dict]:
+                     avg_iv: float, debit_iv_cap: float = 0.40) -> List[Dict]:
     """Fetch Schwab option chain and construct specific trade ideas.
 
     Tries multiple spread widths ($5, $10, $15) and picks the best
@@ -759,8 +944,9 @@ def construct_trades(svc, ticker: str, price: float, direction: str,
         if best_call_trade:
             trades.append(best_call_trade)
 
-    # Strategy 3: Bull Call Debit — for strongly bullish flow + low IV
-    if direction == "bullish" and avg_iv < 0.40:
+    # Strategy 3: Bull Call Debit — for strongly bullish flow + acceptable IV.
+    # Breakout setups can tolerate a higher IV cap than slow recovery setups.
+    if direction == "bullish" and avg_iv < debit_iv_cap:
         calls = chain.get("callExpDateMap", {})
         for expiry_key, strikes in calls.items():
             expiry_date = expiry_key.split(":")[0]
@@ -862,24 +1048,30 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
     if verbose:
         _safe_print(f"  [ideas] Macro: SPY 5d={macro['spy_5d_ret']:+.2%}, VIX={macro['vix_level']:.1f}, regime={regime}")
 
-    # Step 1: Screen drops via Schwab
+    # Step 1: Screen recovery and momentum lanes via Schwab quotes
     if verbose:
-        _safe_print("  [ideas] Step 1: Schwab quote screen...")
+        _safe_print("  [ideas] Step 1: Schwab quote screens...")
     universe = load_sp500_universe()
     tickers = universe["ticker"].tolist()
     name_map = dict(zip(universe["ticker"], universe.get("name", universe["ticker"])))
     sector_map = dict(zip(universe["ticker"], universe.get("sector", "Unknown")))
 
     drops = screen_drops(svc, tickers)
+    breakouts = screen_momentum_breakouts(svc, tickers)
     if verbose:
         _safe_print(f"  [ideas] Found {len(drops)} stocks down >8% from 52w high")
+        _safe_print(f"  [ideas] Found {len(breakouts)} momentum/breakout candidates")
 
     # Remove already-held
     drops = [d for d in drops if d["ticker"] not in exclude]
+    breakouts = [b for b in breakouts if b["ticker"] not in exclude]
 
-    # Step 2: Live unusual activity from Schwab chains (top 25 drops)
+    # Step 2: Live unusual activity from Schwab chains
     if verbose:
-        _safe_print(f"  [ideas] Step 2: Schwab live chain scan for top {min(25, len(drops))} drops...")
+        _safe_print(
+            "  [ideas] Step 2: Schwab live chain scan for "
+            f"{min(25, len(drops))} recovery + {min(25, len(breakouts))} breakout names..."
+        )
 
     # Optional: load UW EOD as supplementary (never primary)
     uw_flow = {}
@@ -903,50 +1095,24 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
         # Drop score (0-40)
         drop_score = min(40, abs(d["pct_from_high"]) * 1.2)
 
-        # Flow score (0-30) — PRIMARY from live Schwab chains
-        flow_score = 0
-        total_prem = live_flow.get("total_premium", 0)
-        vol_oi = live_flow.get("max_vol_oi", 0)
-        call_pct = live_flow.get("call_pct", 50)
-
-        if total_prem >= 5_000_000: flow_score += 12
-        elif total_prem >= 1_000_000: flow_score += 8
-        elif total_prem >= 200_000: flow_score += 4
-
-        if vol_oi >= 5: flow_score += 10
-        elif vol_oi >= 3: flow_score += 8
-        elif vol_oi >= 2: flow_score += 4
-
-        if live_flow.get("unusual"):
-            flow_score += 6  # bonus for flagged unusual activity
-
-        # UW supplement: small bonus if UW EOD confirms direction
-        if uw.get("uw_buy_pct", 50) >= 65:
-            flow_score += 2  # confirmed buy-side from yesterday
-
-        # Direction from live chain call/put volume skew
-        if call_pct >= 60:
-            direction = "bullish"
-        elif call_pct <= 40:
-            direction = "bearish"
-        else:
-            direction = "neutral"
+        flow_score = _score_live_flow(live_flow, uw)
+        direction = _direction_from_flow(live_flow)
 
         technical = get_technical_context(svc, ticker, direction)
         technical_score = technical.get("technical_score", 0)
 
-        # Macro alignment (0-30)
-        macro_score = {"risk_off": {"bearish": 28, "neutral": 18, "bullish": 8},
-                       "neutral": {"bearish": 18, "neutral": 22, "bullish": 18},
-                       "risk_on": {"bearish": 8, "neutral": 18, "bullish": 28},
-                       }.get(regime, {}).get(direction, 15)
+        macro_score = _macro_alignment_score(regime, direction)
 
         total = min(100, drop_score + flow_score + macro_score + technical_score)
 
         scored.append({
             **d,
+            "setup_lane": "RECOVERY",
             "direction": direction,
             "drop_score": round(drop_score, 1),
+            "breakout_score": 0,
+            "price_move_pct": 0,
+            "rel_volume": 0,
             "flow_score": round(flow_score, 1),
             "macro_score": round(macro_score, 1),
             "technical_score": round(technical_score, 1),
@@ -957,6 +1123,56 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
             "sector": sector_map.get(ticker, "Unknown"),
         })
 
+    for i, b in enumerate(breakouts[:25]):
+        ticker = b["ticker"]
+        if verbose and (i + 1) % 5 == 0:
+            _safe_print(f"    Scanning breakout chains {i+1}/25...")
+
+        live_flow = detect_unusual_activity(svc, ticker)
+        uw = uw_flow.get(ticker, {})
+        flow_direction = _direction_from_flow(live_flow)
+        total_prem = live_flow.get("total_premium", 0)
+        call_pct = live_flow.get("call_pct", 50)
+
+        # Do not fight strong bearish option flow on a bullish breakout.
+        if flow_direction == "bearish" and total_prem >= 1_000_000:
+            continue
+
+        direction = "bullish"
+        flow_score = _score_live_flow(live_flow, uw)
+        if call_pct >= 60:
+            flow_score = min(30, flow_score + 4)
+
+        technical = get_technical_context(svc, ticker, direction)
+        technical_score = technical.get("technical_score", 0)
+
+        # Require price-action confirmation unless the quote breakout is very strong.
+        if technical_score < 5 and b["breakout_score"] < 32:
+            continue
+
+        macro_score = _macro_alignment_score(regime, direction)
+        breakout_score = b["breakout_score"]
+        total = min(100, breakout_score + flow_score + macro_score + technical_score)
+
+        scored.append({
+            **b,
+            "setup_lane": "BREAKOUT",
+            "direction": direction,
+            "drop_score": round(breakout_score, 1),
+            "breakout_score": round(breakout_score, 1),
+            "price_move_pct": round(b.get("net_pct", 0), 1),
+            "rel_volume": round(b.get("rel_volume", 0), 2),
+            "flow_score": round(flow_score, 1),
+            "macro_score": round(macro_score, 1),
+            "technical_score": round(technical_score, 1),
+            "pre_score": round(total, 1),
+            "flow": live_flow,
+            "technical": technical,
+            "name": name_map.get(ticker, ticker),
+            "sector": sector_map.get(ticker, "Unknown"),
+        })
+
+    scored = _dedupe_scored_by_ticker(scored)
     scored.sort(key=lambda x: x["pre_score"], reverse=True)
 
     # Step 3: Deep dive top candidates — fundamentals + earnings
@@ -1006,16 +1222,29 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
         ticker = cand["ticker"]
         avg_iv = cand["flow"].get("avg_iv", 0.3)
         fund = cand["fundamentals"]
-        trades = construct_trades(svc, ticker, cand["price"], cand["direction"], avg_iv)
+        debit_iv_cap = 0.65 if cand.get("setup_lane") == "BREAKOUT" else 0.40
+        trades = construct_trades(
+            svc, ticker, cand["price"], cand["direction"], avg_iv,
+            debit_iv_cap=debit_iv_cap,
+        )
         if not trades:
             continue
         best_trade = trades[0]
+        if cand.get("setup_lane") == "BREAKOUT":
+            best_trade = next(
+                (trade for trade in trades if trade["strategy"] == "Bull Call Debit"),
+                trades[0],
+            )
         option_results.append({
             "ticker": ticker,
+            "setup_lane": cand.get("setup_lane", "RECOVERY"),
             "name": fund.get("name", cand.get("name", ticker)),
             "sector": fund.get("sector", cand.get("sector", "")),
             "price": cand["price"],
             "pct_from_high": round(cand["pct_from_high"], 1),
+            "price_move_pct": cand.get("price_move_pct", 0),
+            "rel_volume": cand.get("rel_volume", 0),
+            "breakout_score": cand.get("breakout_score", 0),
             "direction": cand["direction"],
             "composite": cand["composite"],
             "quality_score": cand["quality_score"],
@@ -1085,12 +1314,26 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
         if sector_rec_count.get(sector, 0) >= MAX_SECTOR_RECS:
             continue
 
-        if (cand["pct_from_high"] <= -20
-                and cand["quality_score"] >= 65
-                and cand["technical_score"] >= 5
-                and cand["direction"] in ("bullish", "neutral")
-                and fund.get("analyst_upside", 0) >= 15
-                and fund.get("days_to_earnings", 999) > 14):
+        is_recovery_stock = (
+            cand.get("setup_lane") == "RECOVERY"
+            and cand["pct_from_high"] <= -20
+            and cand["quality_score"] >= 65
+            and cand["technical_score"] >= 5
+            and cand["direction"] in ("bullish", "neutral")
+            and fund.get("analyst_upside", 0) >= 15
+            and fund.get("days_to_earnings", 999) > 14
+        )
+        is_breakout_stock = (
+            cand.get("setup_lane") == "BREAKOUT"
+            and cand["quality_score"] >= 55
+            and cand["technical_score"] >= 6
+            and cand["direction"] == "bullish"
+            and cand.get("pct_from_high", -999) >= -8
+            and cand.get("price_move_pct", 0) >= 1.5
+            and fund.get("days_to_earnings", 999) > 14
+        )
+
+        if is_recovery_stock or is_breakout_stock:
 
             # Position sizing: 2% of portfolio / price = shares
             max_dollars = PORTFOLIO_VALUE * MAX_POSITION_PCT
@@ -1102,10 +1345,14 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
 
             stock_results.append({
                 "ticker": ticker,
+                "setup_lane": cand.get("setup_lane", "RECOVERY"),
                 "name": fund.get("name", cand.get("name", ticker)),
                 "sector": sector,
                 "price": cand["price"],
                 "pct_from_high": round(cand["pct_from_high"], 1),
+                "price_move_pct": cand.get("price_move_pct", 0),
+                "rel_volume": cand.get("rel_volume", 0),
+                "breakout_score": cand.get("breakout_score", 0),
                 "direction": cand["direction"],
                 "composite": cand["composite"],
                 "quality_score": cand["quality_score"],
@@ -1113,7 +1360,7 @@ def scan_trade_ideas(data_dir: Optional[Path] = None, top_n: int = 8,
                 "flow_score": cand["flow_score"],
                 "macro_score": cand["macro_score"],
                 "technical_score": cand["technical_score"],
-                "strategy": "STOCK BUY",
+                "strategy": "BREAKOUT STOCK BUY" if is_breakout_stock else "STOCK BUY",
                 "short_strike": 0, "long_strike": 0,
                 "expiry": "N/A", "dte": 0, "credit": 0,
                 "max_profit": 0,
@@ -1154,35 +1401,44 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
         "",
         "## Summary",
         "",
-        "| # | Ticker | Strategy | Strikes | Expiry | DTE | Credit | MaxP | MaxL | R:R | Prob | Score |",
-        "|---|--------|----------|---------|--------|-----|--------|------|------|-----|------|-------|",
+        "| # | Lane | Ticker | Strategy | Legs | Expiry | DTE | Cr/Db | MaxP | MaxL | Prob | Score |",
+        "|---|------|--------|----------|------|--------|-----|-------|------|------|------|-------|",
     ]
     for i, r in enumerate(results):
-        if r["strategy"] == "STOCK BUY":
+        lane = r.get("setup_lane", "RECOVERY")
+        if _is_stock_buy_strategy(r["strategy"]):
             shares = r.get("shares", 0)
             pos_dollars = r.get("position_dollars", 0)
             lines.append(
-                f"| {i+1} | **{r['ticker']}** | **STOCK BUY** | "
-                f"${r['price']:.2f} | {shares} shares | ${pos_dollars:,.0f} | "
-                f"-- | -- | -- | "
-                f"-- | +{r['analyst_upside']:.0f}% | {r['composite']:.0f} |")
+                f"| {i+1} | **{lane}** | **{r['ticker']}** | **{r['strategy']}** | "
+                f"@ ${r['price']:.2f} | {shares} sh | -- | "
+                f"${pos_dollars:,.0f} | -- | ${pos_dollars:,.0f} | "
+                f"+{r['analyst_upside']:.0f}% | {r['composite']:.0f} |")
         else:
+            debit_credit = f"${r['credit']:.2f}"
+            if r["credit"] < 0:
+                debit_credit = f"Db ${abs(r['credit']):.2f}"
+            else:
+                debit_credit = f"Cr ${r['credit']:.2f}"
             lines.append(
-                f"| {i+1} | **{r['ticker']}** | {r['strategy']} | "
-                f"${r['short_strike']:.0f}/${r['long_strike']:.0f} | {r['expiry']} | {r['dte']} | "
-                f"${r['credit']:.2f} | ${r['max_profit']} | ${r['max_loss']} | "
-                f"{r.get('rr_ratio', 0):.2f} | {r['prob_profit']:.0f}% | {r['composite']:.0f} |"
+                f"| {i+1} | **{lane}** | **{r['ticker']}** | {r['strategy']} | "
+                f"{_format_trade_legs(r)} | {r['expiry']} | {r['dte']} | "
+                f"{debit_credit} | ${r['max_profit']} | ${r['max_loss']} | "
+                f"{r['prob_profit']:.0f}% | {r['composite']:.0f} |"
         )
 
     lines.extend(["", "## Trade Cards", ""])
     for r in results:
         prem_str = f"${r['total_premium']/1e6:.1f}M" if r['total_premium'] >= 1e6 else f"${r['total_premium']/1e3:.0f}K"
+        lane = r.get("setup_lane", "RECOVERY")
+        move = r.get("price_move_pct", 0)
+        rel_vol = r.get("rel_volume", 0)
         lines.extend([
-            f"### {r['ticker']} -- {r['strategy']} | Score: {r['composite']:.0f}",
-            f"**{r['name']}** | {r['sector']} | ${r['price']:.2f} ({r['pct_from_high']:+.0f}% from 52w high)",
+            f"### {r['ticker']} -- {lane} | {r['strategy']} | Score: {r['composite']:.0f}",
+            f"**{r['name']}** | {r['sector']} | ${r['price']:.2f} ({r['pct_from_high']:+.0f}% from 52w high, day {move:+.1f}%, rel vol {rel_vol:.1f}x)",
             "",
         ])
-        if r["strategy"] == "STOCK BUY":
+        if _is_stock_buy_strategy(r["strategy"]):
             shares = r.get("shares", 0)
             pos_dollars = r.get("position_dollars", 0)
             lines.extend([
@@ -1194,12 +1450,13 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
                 "",
             ])
         else:
+            debit_credit = "Debit" if r["credit"] < 0 else "Credit"
             lines.extend([
-                f"**TRADE: Sell ${r['short_strike']:.0f} / Buy ${r['long_strike']:.0f} | {r['expiry']} | {r['dte']} DTE**",
+                f"**TRADE: {_format_trade_legs(r)} | {r['expiry']} | {r['dte']} DTE**",
                 "",
                 "| Metric | Value |",
                 "|--------|-------|",
-                f"| Credit | ${r['credit']:.2f} |",
+                f"| {debit_credit} | ${abs(r['credit']):.2f} |",
                 f"| Max Profit | ${r['max_profit']} |",
                 f"| Max Loss | ${r['max_loss']} |",
                 f"| Prob Profit | {r['prob_profit']:.0f}% |",
@@ -1224,18 +1481,20 @@ def format_results_md(results: List[Dict], macro: Dict) -> str:
 def format_alert(r: Dict) -> str:
     """Format a single trade idea as a notification body."""
     prem_str = f"${r['total_premium']/1e6:.1f}M" if r['total_premium'] >= 1e6 else f"${r['total_premium']/1e3:.0f}K"
-    if r["strategy"] == "STOCK BUY":
+    lane = r.get("setup_lane", "RECOVERY")
+    if _is_stock_buy_strategy(r["strategy"]):
         shares = r.get("shares", 0)
         pos_dollars = r.get("position_dollars", 0)
         sizing = f"{shares} shares (${pos_dollars:,.0f})" if shares else "check sizing"
         return (
-            f"BUY {r['ticker']} at ${r['price']:.2f} | {sizing} | "
+            f"[{lane}] BUY {r['ticker']} at ${r['price']:.2f} | {sizing} | "
             f"{r['pct_from_high']:+.0f}% from high | "
             f"Tech {r.get('technical_score', 0):.0f}/10 | Quality {r['quality_score']:.0f} | Analyst +{r['analyst_upside']:.0f}%"
         )
+    debit_credit = f"Db ${abs(r['credit']):.2f}" if r["credit"] < 0 else f"Cr ${r['credit']:.2f}"
     return (
-        f"{r['strategy']}: Sell ${r['short_strike']:.0f}/Buy ${r['long_strike']:.0f} "
-        f"{r['expiry']} | Cr ${r['credit']:.2f} | MaxP ${r['max_profit']} | "
+        f"[{lane}] {r['strategy']}: {_format_trade_legs(r)} "
+        f"{r['expiry']} | {debit_credit} | MaxP ${r['max_profit']} | "
         f"Prob {r['prob_profit']:.0f}% | Tech {r.get('technical_score', 0):.0f}/10 | {prem_str} flow"
     )
 
@@ -1268,11 +1527,10 @@ def main():
         state_file = ROOT / "out" / "trade_analysis" / "monitor_state.json"
         if state_file.exists():
             state = json.loads(state_file.read_text())
-            for key in state:
-                # Extract ticker from option symbol
-                parts = key.strip().split()
-                if parts:
-                    exclude.add(parts[0].upper())
+            for key, value in state.items():
+                underlying = _state_underlying(key, value)
+                if underlying:
+                    exclude.add(underlying)
     except Exception:
         pass
 
@@ -1299,10 +1557,19 @@ def main():
     _safe_print(f"\n  Report: {out_path}")
     _safe_print(f"  Top {len(results)} ideas:\n")
     for i, r in enumerate(results):
-        _safe_print(
-            f"  {i+1}. {r['ticker']:6s} {r['strategy']:20s} "
-            f"${r['short_strike']:.0f}/${r['long_strike']:.0f} {r['expiry']} "
-            f"Cr:${r['credit']:.2f} Prob:{r['prob_profit']:.0f}% Score:{r['composite']:.0f}")
+        lane = r.get("setup_lane", "RECOVERY")
+        if _is_stock_buy_strategy(r["strategy"]):
+            _safe_print(
+                f"  {i+1}. {r['ticker']:6s} {lane:8s} {r['strategy']:20s} "
+                f"@${r['price']:.2f} shares:{r.get('shares', 0)} Score:{r['composite']:.0f}"
+            )
+        else:
+            debit_credit = f"Db:${abs(r['credit']):.2f}" if r["credit"] < 0 else f"Cr:${r['credit']:.2f}"
+            _safe_print(
+                f"  {i+1}. {r['ticker']:6s} {lane:8s} {r['strategy']:20s} "
+                f"{_format_trade_legs(r)} {r['expiry']} "
+                f"{debit_credit} Prob:{r['prob_profit']:.0f}% Score:{r['composite']:.0f}"
+            )
 
 
 if __name__ == "__main__":
