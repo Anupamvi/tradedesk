@@ -18,6 +18,10 @@ if [[ "$(id -u)" -ne 0 ]]; then
   exit 1
 fi
 
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y python3 python3-venv python3-pip ca-certificates
+
 if ! id "$SERVICE_USER" >/dev/null 2>&1; then
   useradd --system --create-home --shell /usr/sbin/nologin "$SERVICE_USER"
 fi
@@ -53,4 +57,3 @@ Next:
 
 The timer was installed but not started.
 MSG
-
