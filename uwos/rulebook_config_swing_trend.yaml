@@ -71,7 +71,13 @@ scoring:
     latest_return_weight: 0.75
     latest_return_scale: 0.04
     latest_return_min_abs: 0.015
+    recent_return_weight: 0.85
+    recent_return_scale: 0.10
+    recent_return_min_abs: 0.04
     latest_reversal_guard_min_abs: 0.035
+    shock_reaction_min_abs: 0.08
+    shock_reaction_strong_abs: 0.12
+    shock_reaction_min_confirming_votes: 2
     event_direction_guard_days: 1
     event_same_day_reaction_min_abs: 0.03
     conflict_margin_penalty: 0.80
@@ -95,6 +101,10 @@ scoring:
   price_trend:
     min_slope_for_trend: 0.002   # Normalized price slope to count as trending
     volume_surge_ratio: 1.5      # total_volume / avg30_volume > this = surge
+    recent_return_window: 5       # Recent market days used to catch acceleration inside a choppy 30d window
+    recent_return_min_abs: 0.04   # 5d move required before recent momentum can override range-bound slope
+    recent_return_score_scale: 0.10
+    recent_return_score_max: 40
 
   whale_consensus:
     min_whale_days: 2            # Ticker in whale reports on >= N days
@@ -151,7 +161,7 @@ backtest:
   enabled: true                    # Set to false to skip historical edge backtest
   lookback_years: 2.0              # Years of yfinance history for analog simulation
   min_signals: 100                 # Minimum historical windows for stable verdict
-  cache_dir: ""                    # Optional cache dir for yfinance downloads
+  cache_dir: ""                    # Blank uses shared date-keyed out/cache/setup_likelihood_yf/<date>
 
 output:
   max_recommendations: 15

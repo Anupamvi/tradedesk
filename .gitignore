@@ -3,6 +3,7 @@ tokens/
 *.csv
 *.parquet
 __pycache__/
+.pycache_tmp/
 .pytest_cache/
 .DS_Store
 **/.DS_Store

@@ -85,6 +85,83 @@ def _write_bot_eod(day_dir: Path, date_str: str, symbol: str) -> None:
 
 
 class TestSwingTrendPipelineDirection(unittest.TestCase):
+    def test_local_quote_snapshot_validation_uses_replayable_legs(self) -> None:
+        as_of = dt.date(2026, 4, 23)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            day_dir = root / as_of.isoformat()
+            day_dir.mkdir()
+            quote_csv = day_dir / f"hot-chains-{as_of.isoformat()}.csv"
+            pd.DataFrame(
+                [
+                    {
+                        "option_symbol": "TEST260529C00100000",
+                        "date": as_of.isoformat(),
+                        "bid": 5.00,
+                        "ask": 5.20,
+                        "volume": 100,
+                        "open_interest": 1000,
+                    },
+                    {
+                        "option_symbol": "TEST260529C00105000",
+                        "date": as_of.isoformat(),
+                        "bid": 2.20,
+                        "ask": 2.40,
+                        "volume": 100,
+                        "open_interest": 1000,
+                    },
+                    {
+                        "option_symbol": "TEST260529C00110000",
+                        "date": as_of.isoformat(),
+                        "bid": 0.80,
+                        "ask": 1.00,
+                        "volume": 100,
+                        "open_interest": 1000,
+                    },
+                ]
+            ).to_csv(quote_csv, index=False)
+            with zipfile.ZipFile(day_dir / f"hot-chains-{as_of.isoformat()}.zip", "w") as zf:
+                zf.write(quote_csv, arcname=quote_csv.name)
+
+            score = swing.SwingScore(
+                ticker="TEST",
+                recommended_strategy="Bull Call Debit",
+                target_expiry="2026-05-29",
+                target_dte=36,
+                long_strike=100.0,
+                short_strike=105.0,
+                spread_width=5.0,
+                est_cost=3.00,
+                cost_type="debit",
+                live_validated=None,
+            )
+            sig = _signals(
+                ticker="TEST",
+                latest_close=101.0,
+                latest_date=as_of,
+            )
+
+            swing.validate_with_local_quote_snapshots(
+                [score],
+                {"TEST": sig},
+                {
+                    "pipeline": {"root_dir": str(root)},
+                    "schwab_validation": {"enabled": False},
+                    "historical_quote_validation": {"enabled": True},
+                    "fire": {"dte_range": [21, 70]},
+                },
+                root,
+                as_of=as_of,
+            )
+
+            self.assertIs(score.live_validated, True)
+            self.assertEqual(score.live_validation_note, "local UW quote snapshot optimized to listed expiry/quoted strikes")
+            self.assertEqual(score.target_expiry, "2026-05-29")
+            self.assertEqual(score.live_long_strike, 100.0)
+            self.assertEqual(score.live_short_strike, 105.0)
+            self.assertGreater(score.live_spread_cost, 0)
+            self.assertIn("Buy 100C / Sell 105C", score.live_strike_setup)
+
     def test_run_pipeline_keeps_latest_day_short_history_ticker_in_radar_signals(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -158,6 +235,25 @@ class TestSwingTrendPipelineDirection(unittest.TestCase):
         self.assertGreater(score.direction_bull_score, 1.0)
         self.assertGreater(score.direction_bear_score, 0.5)
 
+    def test_recent_acceleration_can_rescue_choppy_bullish_price_trend(self) -> None:
+        sig = _signals(
+            price_direction="bullish",
+            price_r_squared=0.10,
+            flow_direction="bearish",
+            flow_consistency=0.62,
+            hot_flow_direction="mixed",
+            latest_return_pct=0.02,
+            latest_return_direction="bullish",
+            recent_return_pct=0.09,
+            recent_return_direction="bullish",
+            volume_surge_days=0,
+        )
+
+        score = swing.score_ticker(sig, {})
+
+        self.assertEqual(score.direction, "bullish")
+        self.assertGreaterEqual(score.price_trend_score, 65.0)
+
     def test_bearish_price_and_flow_can_win_even_if_oi_is_bullish(self) -> None:
         sig = _signals(
             price_direction="bearish",
@@ -171,6 +267,24 @@ class TestSwingTrendPipelineDirection(unittest.TestCase):
 
         self.assertEqual(score.direction, "bearish")
         self.assertGreater(score.direction_bear_score, score.direction_bull_score)
+
+    def test_large_latest_day_shock_can_override_stale_trend_direction(self) -> None:
+        sig = _signals(
+            price_direction="bullish",
+            flow_direction="bullish",
+            hot_flow_direction="bearish",
+            oi_direction="bearish",
+            pcr_direction="rising",
+            dp_direction="accumulation",
+            latest_return_pct=-0.18,
+            latest_return_direction="bearish",
+        )
+
+        score = swing.score_ticker(sig, {})
+
+        self.assertEqual(score.direction, "bearish")
+        self.assertEqual(score.direction_status, "shock_reaction")
+        self.assertIn("shock reaction", score.direction_note)
 
     def test_range_bound_bullish_flow_and_accumulation_can_form_reversal_bull_bias(self) -> None:
         sig = _signals(
@@ -382,6 +496,16 @@ class TestSwingTrendPipelineDirection(unittest.TestCase):
             )
 
         self.assertNotIn(day, mentions)
+
+    def test_default_setup_likelihood_cache_is_date_keyed_under_root_out(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = swing.default_setup_likelihood_cache(root, swing.dt.date(2026, 4, 26))
+
+        self.assertEqual(
+            cache,
+            root.resolve() / "out" / "cache" / "setup_likelihood_yf" / "2026-04-26",
+        )
 
 
 if __name__ == "__main__":

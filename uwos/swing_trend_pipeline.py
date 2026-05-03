@@ -33,6 +33,7 @@ from uwos.whale_source import (
     find_whale_markdown_source,
     load_whale_markdown_symbols,
     load_yes_prime_whale_flow,
+    open_bot_eod,
 )
 
 # ---------------------------------------------------------------------------
@@ -187,6 +188,24 @@ def _parse_occ_right(sym: str) -> Optional[str]:
     return m.group(3) if m else None
 
 
+def _parse_occ_parts(sym: str) -> Optional[Tuple[str, dt.date, str, float]]:
+    """Parse OCC symbol into ticker, expiry, right, and strike."""
+    m = OCC_FULL_RE.match(str(sym).strip().upper())
+    if not m:
+        return None
+    root, yymmdd, right, strike8 = m.groups()
+    try:
+        expiry = dt.date(
+            int("20" + yymmdd[:2]),
+            int(yymmdd[2:4]),
+            int(yymmdd[4:6]),
+        )
+        strike = int(strike8) / 1000.0
+    except Exception:
+        return None
+    return root, expiry, right, float(strike)
+
+
 # ---------------------------------------------------------------------------
 # Dataclasses
 # ---------------------------------------------------------------------------
@@ -258,6 +277,8 @@ class SwingSignals:
     price_r_squared: float = math.nan
     latest_return_pct: float = math.nan
     latest_return_direction: str = "neutral"
+    recent_return_pct: float = math.nan
+    recent_return_direction: str = "neutral"
 
     # IV regime
     iv30d_slope: float = math.nan
@@ -769,9 +790,18 @@ def _load_cached_whale_summary_symbols(
 ) -> Set[str]:
     date_str = day.isoformat()
     candidates = [
+        day_dir / "_trend_cache" / f"trend-whale-symbols-{date_str}.csv",
         day_dir / f"whale-symbol-summary-{date_str}.csv",
         day_dir / "_unzipped_mode_a" / f"whale-symbol-summary-{date_str}.csv",
     ]
+    out_dir = day_dir.parent / "out"
+    if out_dir.exists():
+        out_matches = sorted(
+            out_dir.glob(f"*/whale-symbol-summary-{date_str}.csv"),
+            key=lambda p: p.stat().st_mtime if p.exists() else 0,
+            reverse=True,
+        )
+        candidates.extend(out_matches)
     for path in candidates:
         if not path.exists():
             continue
@@ -790,6 +820,63 @@ def _load_cached_whale_summary_symbols(
     return set()
 
 
+def _write_cached_whale_summary_symbols(day_dir: Path, day: dt.date, symbols: Set[str]) -> None:
+    cache_dir = day_dir / "_trend_cache"
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame({"underlying_symbol": sorted(symbols)}).to_csv(
+            cache_dir / f"trend-whale-symbols-{day.isoformat()}.csv",
+            index=False,
+        )
+    except Exception:
+        return
+
+
+def _load_bot_eod_whale_symbols_fast(
+    source: Path,
+    ticker_set: Set[str],
+    whale_cfg: Dict,
+    *,
+    chunksize: int = 250_000,
+) -> Set[str]:
+    """Load ticker coverage from a bot-eod file without building full whale ranks.
+
+    Trend-analysis only needs daily ticker presence for the whale-consensus score.
+    Building the full Yes-Prime whale tables for every lookback day is much more
+    expensive and can dominate the whole scan, so this keeps the read narrow.
+    """
+    gates = whale_cfg.get("gates", {}) if isinstance(whale_cfg, dict) else {}
+    min_premium = float(gates.get("min_whale_premium", 0) or 0)
+    exclude_etfs = bool(gates.get("exclude_etfs", True))
+    exclude_issue_types = {str(t).upper() for t in gates.get("exclude_issue_types", ["ETF"])}
+    wanted = {"underlying_symbol", "premium", "equity_type"}
+    found: Set[str] = set()
+    try:
+        with open_bot_eod(source) as (handle, _label):
+            for chunk in pd.read_csv(
+                handle,
+                chunksize=max(1, int(chunksize)),
+                usecols=lambda col: str(col) in wanted,
+                low_memory=False,
+            ):
+                if "underlying_symbol" not in chunk.columns:
+                    continue
+                symbols = chunk["underlying_symbol"].fillna("").astype(str).str.strip().str.upper()
+                mask = symbols.isin(ticker_set)
+                if min_premium > 0 and "premium" in chunk.columns:
+                    premium = pd.to_numeric(chunk["premium"], errors="coerce").fillna(0.0)
+                    mask &= premium.ge(min_premium)
+                if exclude_etfs and "equity_type" in chunk.columns:
+                    eq_type = chunk["equity_type"].fillna("").astype(str).str.upper()
+                    for issue_type in exclude_issue_types:
+                        mask &= eq_type.ne(issue_type)
+                if mask.any():
+                    found.update(symbols.loc[mask].tolist())
+    except Exception:
+        return set()
+    return found
+
+
 def load_whale_mentions(
     trading_days: List[Tuple[dt.date, Path]],
     ticker_set: Set[str],
@@ -804,21 +891,27 @@ def load_whale_mentions(
     result: Dict[dt.date, Set[str]] = {}
     whale_cfg = _whale_source_config(cfg or {})
     for d, day_dir in trading_days:
-        tickers_found: Set[str] = set()
-
+        bot_eod = None
         try:
             bot_eod = find_bot_eod_source(day_dir, d.isoformat())
         except FileNotFoundError:
             bot_eod = None
 
+        tickers_found: Set[str] = set()
         if bot_eod is not None:
-            flow = load_yes_prime_whale_flow(bot_eod, whale_cfg)
-            if "underlying_symbol" in flow.symbol_summary.columns:
-                tickers_found = {
-                    str(t).strip().upper()
-                    for t in flow.symbol_summary["underlying_symbol"].dropna()
-                    if str(t).strip().upper() in ticker_set
-                }
+            tickers_found = _load_bot_eod_whale_symbols_fast(bot_eod, ticker_set, whale_cfg)
+            if tickers_found:
+                _write_cached_whale_summary_symbols(day_dir, d, tickers_found)
+            if not tickers_found and bool((cfg or {}).get("data_loading", {}).get("full_whale_flow_for_mentions", False)):
+                flow = load_yes_prime_whale_flow(bot_eod, whale_cfg)
+                if "underlying_symbol" in flow.symbol_summary.columns:
+                    tickers_found = {
+                        str(t).strip().upper()
+                        for t in flow.symbol_summary["underlying_symbol"].dropna()
+                        if str(t).strip().upper() in ticker_set
+                    }
+                    if tickers_found:
+                        _write_cached_whale_summary_symbols(day_dir, d, tickers_found)
 
         if not tickers_found and bot_eod is None:
             tickers_found = _load_cached_whale_summary_symbols(day_dir, d, ticker_set)
@@ -1096,6 +1189,21 @@ def compute_swing_signals(
             sig.latest_return_direction = "bearish"
         else:
             sig.latest_return_direction = "neutral"
+    recent_window = max(2, int(price_cfg.get("recent_return_window", 5)))
+    if (
+        len(closes) > recent_window
+        and math.isfinite(closes[-recent_window - 1])
+        and closes[-recent_window - 1] > 0
+        and math.isfinite(closes[-1])
+    ):
+        sig.recent_return_pct = (closes[-1] / closes[-recent_window - 1]) - 1.0
+        recent_return_min = float(price_cfg.get("recent_return_min_abs", 0.04))
+        if sig.recent_return_pct >= recent_return_min:
+            sig.recent_return_direction = "bullish"
+        elif sig.recent_return_pct <= -recent_return_min:
+            sig.recent_return_direction = "bearish"
+        else:
+            sig.recent_return_direction = "neutral"
     if closes and math.isfinite(closes[0]) and closes[0] > 0:
         norm_closes = [c / closes[0] for c in closes]
         sig.price_slope = _linear_slope(norm_closes)
@@ -1112,6 +1220,14 @@ def compute_swing_signals(
             sig.price_direction = "bearish"
         else:
             sig.price_direction = "range_bound"
+    if sig.recent_return_direction in {"bullish", "bearish"} and math.isfinite(sig.price_slope):
+        slope_not_opposed = (
+            sig.price_direction == "range_bound"
+            or sig.price_direction == sig.recent_return_direction
+            or abs(sig.price_slope) <= min_slope * 2.0
+        )
+        if slope_not_opposed:
+            sig.price_direction = sig.recent_return_direction
 
     # --- IV regime ---
     iv_values = [sf.iv30d for _, sf in screener_series]
@@ -1252,6 +1368,9 @@ def _weighted_direction_scores(signals: SwingSignals, cfg: Dict) -> Tuple[float,
     dp_min_consistency = float(direction_cfg.get("dp_min_consistency", 0.55))
     latest_return_weight = float(direction_cfg.get("latest_return_weight", 0.75))
     latest_return_scale = float(direction_cfg.get("latest_return_scale", 0.04))
+    recent_return_weight = float(direction_cfg.get("recent_return_weight", 0.85))
+    recent_return_scale = float(direction_cfg.get("recent_return_scale", 0.10))
+    recent_return_min_abs = float(direction_cfg.get("recent_return_min_abs", 0.04))
 
     bull_score = 0.0
     bear_score = 0.0
@@ -1263,6 +1382,7 @@ def _weighted_direction_scores(signals: SwingSignals, cfg: Dict) -> Tuple[float,
     pcr_direction = str(signals.pcr_direction or "").strip().lower()
     dp_direction = str(signals.dp_direction or "").strip().lower()
     latest_return_direction = str(signals.latest_return_direction or "").strip().lower()
+    recent_return_direction = str(signals.recent_return_direction or "").strip().lower()
 
     if price_direction in {"bullish", "bearish"}:
         price_weight = price_weight_base + price_r2_bonus * max(
@@ -1305,6 +1425,18 @@ def _weighted_direction_scores(signals: SwingSignals, cfg: Dict) -> Tuple[float,
             bull_score += latest_weight
         else:
             bear_score += latest_weight
+
+    recent_ret = abs(float(signals.recent_return_pct)) if math.isfinite(signals.recent_return_pct) else 0.0
+    if (
+        recent_return_direction in {"bullish", "bearish"}
+        and recent_return_scale > 0
+        and recent_ret >= recent_return_min_abs
+    ):
+        recent_weight = recent_return_weight * min(1.5, recent_ret / recent_return_scale)
+        if recent_return_direction == "bullish":
+            bull_score += recent_weight
+        else:
+            bear_score += recent_weight
 
     # OI is a tie-breaker, not a lead vote. Let it help only when price is not
     # already opposing the thesis and OI itself is reasonably consistent.
@@ -1372,6 +1504,48 @@ def _latest_reversal_guard_reason(signals: SwingSignals, cfg: Dict, direction: s
     )
 
 
+def _shock_reaction_direction(signals: SwingSignals, cfg: Dict) -> Tuple[str, str]:
+    """Promote large latest-day reactions when options-side evidence confirms.
+
+    The slower 30-day trend can remain bullish after an earnings/catalyst break
+    down, or bearish after a squeeze. For trade generation, that stale direction
+    is worse than no direction, so a large same-day move with confirming flow/OI
+    becomes the working reaction direction.
+    """
+    direction_cfg = cfg.get("scoring", {}).get("direction_inference", {})
+    min_abs = float(direction_cfg.get("shock_reaction_min_abs", 0.08))
+    strong_abs = float(direction_cfg.get("shock_reaction_strong_abs", 0.12))
+    min_confirming_votes = int(direction_cfg.get("shock_reaction_min_confirming_votes", 2))
+    latest_dir = str(signals.latest_return_direction or "").strip().lower()
+    if latest_dir not in {"bullish", "bearish"}:
+        return "", ""
+    latest_move = abs(float(signals.latest_return_pct)) if math.isfinite(signals.latest_return_pct) else 0.0
+    if latest_move < min_abs:
+        return "", ""
+
+    pcr_direction = str(signals.pcr_direction or "").strip().lower()
+    pcr_vote = "bullish" if pcr_direction == "declining" else "bearish" if pcr_direction == "rising" else ""
+    dp_direction = str(signals.dp_direction or "").strip().lower()
+    dp_vote = "bullish" if dp_direction == "accumulation" else "bearish" if dp_direction == "distribution" else ""
+    votes = [
+        latest_dir,
+        str(signals.hot_flow_direction or "").strip().lower(),
+        str(signals.flow_direction or "").strip().lower(),
+        str(signals.oi_direction or "").strip().lower(),
+        pcr_vote,
+        dp_vote,
+    ]
+    confirming = sum(1 for vote in votes if vote == latest_dir)
+    if confirming < min_confirming_votes and latest_move < strong_abs:
+        return "", ""
+
+    return (
+        latest_dir,
+        f"shock reaction: latest close moved {signals.latest_return_pct:+.1%} "
+        f"with {confirming} confirming direction votes; using {latest_dir} reaction setup"
+    )
+
+
 def _direction_guard(signals: SwingSignals, cfg: Dict, direction: str) -> Tuple[str, str]:
     event_reason = _event_direction_guard_reason(signals, cfg, direction)
     if event_reason:
@@ -1390,6 +1564,13 @@ def _infer_direction(signals: SwingSignals, cfg: Dict) -> Tuple[str, float, floa
     range_reversal_min_score = float(direction_cfg.get("range_reversal_min_score", 0.95))
     range_reversal_max_oppose = float(direction_cfg.get("range_reversal_max_oppose", 0.85))
     bull_score, bear_score = _weighted_direction_scores(signals, cfg)
+    shock_direction, shock_reason = _shock_reaction_direction(signals, cfg)
+    if shock_direction == "bullish":
+        margin = bull_score - bear_score
+        return "bullish", bull_score, bear_score, margin, "shock_reaction", shock_reason
+    if shock_direction == "bearish":
+        margin = bull_score - bear_score
+        return "bearish", bull_score, bear_score, margin, "shock_reaction", shock_reason
     price_direction = str(signals.price_direction or "").strip().lower()
     flow_direction = str(signals.flow_direction or "").strip().lower()
     hot_flow_direction = str(signals.hot_flow_direction or "").strip().lower()
@@ -1495,6 +1676,13 @@ def score_ticker(signals: SwingSignals, cfg: Dict) -> SwingScore:
     r2 = signals.price_r_squared if math.isfinite(signals.price_r_squared) else 0.0
     price_base = r2 * 50.0
     price_base += min(20.0, signals.volume_surge_days * 5.0)
+    recent_ret = abs(float(signals.recent_return_pct)) if math.isfinite(signals.recent_return_pct) else 0.0
+    recent_dir = str(signals.recent_return_direction or "").strip().lower()
+    recent_min = float(scoring_cfg.get("price_trend", {}).get("recent_return_min_abs", 0.04))
+    recent_scale = float(scoring_cfg.get("price_trend", {}).get("recent_return_score_scale", 0.10))
+    recent_max = float(scoring_cfg.get("price_trend", {}).get("recent_return_score_max", 40.0))
+    if recent_scale > 0 and recent_ret >= recent_min and recent_dir in {"bullish", "bearish"}:
+        price_base += min(recent_max, (recent_ret / recent_scale) * recent_max)
     # Direction alignment bonus
     if is_directional:
         if (score.direction == "bullish" and signals.price_direction == "bullish") or \
@@ -1966,13 +2154,20 @@ def generate_trade_repair_variants(
 
     max_variants_per_score = int(opt_cfg.get("max_variants_per_score", 3))
     min_dte = int(opt_cfg.get("min_repair_dte", 7))
-    max_total_variants = int(opt_cfg.get("max_total_variants", 150))
+    max_total_variants = int(opt_cfg.get("max_total_variants", 500))
+    max_pre_earnings_variants = int(
+        opt_cfg.get(
+            "max_pre_earnings_variants",
+            max(25, int(max_total_variants * 0.35)),
+        )
+    )
     variants: List[SwingScore] = []
     seen: Set[Tuple[str, str, str, float, float, float, str]] = set()
+    pre_earnings_count = 0
 
-    def add_variant(v: SwingScore, sig: SwingSignals) -> None:
+    def add_variant(v: SwingScore, sig: SwingSignals) -> bool:
         if len(variants) >= max_total_variants:
-            return
+            return False
         key = (
             v.ticker,
             v.recommended_strategy,
@@ -1983,10 +2178,72 @@ def generate_trade_repair_variants(
             v.variant_tag,
         )
         if key in seen:
-            return
+            return False
         _check_earnings_safety(sig, v, cfg)
         seen.add(key)
         variants.append(v)
+        return True
+
+    def add_pre_earnings_variant(base: SwingScore, sig: SwingSignals, latest: dt.date) -> bool:
+        nonlocal pre_earnings_count
+        if pre_earnings_count >= max_pre_earnings_variants:
+            return False
+        earn = sig.next_earnings_date
+        if earn is None:
+            return False
+        try:
+            base_expiry = dt.date.fromisoformat(base.target_expiry)
+        except (TypeError, ValueError):
+            return False
+        buffer_days = int(cfg.get("filters", {}).get("earnings_buffer_days", 3))
+        pre_earn_expiry = _friday_on_or_before(earn - dt.timedelta(days=buffer_days))
+        if (pre_earn_expiry - latest).days < min_dte or pre_earn_expiry == base_expiry:
+            return False
+        v = _score_variant(base, "pre_earnings", "expiry moved before earnings window")
+        _set_expiry(v, sig, pre_earn_expiry)
+        added = add_variant(v, sig)
+        if added:
+            pre_earnings_count += 1
+        return added
+
+    def add_momentum_debit_variant(
+        base: SwingScore,
+        sig: SwingSignals,
+        base_expiry: dt.date,
+        spot: float,
+        width: float,
+    ) -> bool:
+        """Also test a debit spread when high IV made a momentum setup a credit spread."""
+        strat = str(base.recommended_strategy or "").strip()
+        direction = str(base.direction or "").strip().lower()
+        if strat == "Bull Put Credit" and direction == "bullish":
+            if sig.price_direction != "bullish" or base.price_trend_score < 65.0:
+                return False
+            v = _score_variant(base, "momentum_debit", "bullish momentum credit also tested as call debit")
+            _set_expiry(v, sig, base_expiry)
+            if _set_vertical_structure(v, strategy="Bull Call Debit", spot=spot, width=width, long_mult=0.99):
+                v.recommended_track = "FIRE"
+                return add_variant(v, sig)
+        if strat == "Bear Call Credit" and direction == "bearish":
+            if sig.price_direction != "bearish" or base.price_trend_score < 65.0:
+                return False
+            v = _score_variant(base, "momentum_debit", "bearish momentum credit also tested as put debit")
+            _set_expiry(v, sig, base_expiry)
+            if _set_vertical_structure(v, strategy="Bear Put Debit", spot=spot, width=width, long_mult=1.01):
+                v.recommended_track = "FIRE"
+                return add_variant(v, sig)
+        return False
+
+    # First pass: do not let liquidity/delta repairs consume the entire global
+    # variant budget before later tickers get their earnings-risk repair.
+    for base in scores:
+        if len(variants) >= max_total_variants:
+            break
+        sig = signals_map.get(base.ticker)
+        if sig is None:
+            continue
+        latest = sig.latest_date or dt.date.today()
+        add_pre_earnings_variant(base, sig, latest)
 
     for base in scores:
         if len(variants) >= max_total_variants:
@@ -2003,15 +2260,8 @@ def generate_trade_repair_variants(
 
         # 1. If earnings blocks the original expiry, try the Friday before the
         # configured earnings buffer. This is the most direct repair.
-        earn = sig.next_earnings_date
-        if earn is not None:
-            buffer_days = int(cfg.get("filters", {}).get("earnings_buffer_days", 3))
-            pre_earn_expiry = _friday_on_or_before(earn - dt.timedelta(days=buffer_days))
-            if (pre_earn_expiry - latest).days >= min_dte and pre_earn_expiry != dt.date.fromisoformat(base.target_expiry):
-                v = _score_variant(base, "pre_earnings", "expiry moved before earnings window")
-                _set_expiry(v, sig, pre_earn_expiry)
-                add_variant(v, sig)
-                per_score += 1
+        if add_pre_earnings_variant(base, sig, latest):
+            per_score += 1
 
         if per_score >= max_variants_per_score:
             continue
@@ -2019,59 +2269,68 @@ def generate_trade_repair_variants(
         strat = base.recommended_strategy
         base_expiry = dt.date.fromisoformat(base.target_expiry)
 
-        # 2. Debit spreads blocked by tiny debit / wide markets get a more
+        # 2. High-IV selection can turn a strong directional trend into a credit
+        # spread. Also test the directional debit expression before safer-credit
+        # repairs consume the per-ticker budget.
+        if add_momentum_debit_variant(base, sig, base_expiry, spot, width):
+            per_score += 1
+
+        if per_score >= max_variants_per_score:
+            continue
+
+        # 3. Debit spreads blocked by tiny debit / wide markets get a more
         # intrinsic live-priced structure, which often improves bid/ask-to-debit.
         if strat == "Bull Call Debit":
             v = _score_variant(base, "liquid_debit", "more intrinsic call debit spread for liquidity")
             _set_expiry(v, sig, base_expiry)
             if _set_vertical_structure(v, strategy=strat, spot=spot, width=width, long_mult=0.97):
-                add_variant(v, sig)
-                per_score += 1
+                if add_variant(v, sig):
+                    per_score += 1
         elif strat == "Bear Put Debit":
             v = _score_variant(base, "liquid_debit", "more intrinsic put debit spread for liquidity")
             _set_expiry(v, sig, base_expiry)
             if _set_vertical_structure(v, strategy=strat, spot=spot, width=width, long_mult=1.03):
-                add_variant(v, sig)
-                per_score += 1
+                if add_variant(v, sig):
+                    per_score += 1
 
         if per_score >= max_variants_per_score:
             continue
 
-        # 3. Credit spreads / condors get a farther-OTM version to reduce short
+        # 4. Credit spreads / condors get a farther-OTM version to reduce short
         # delta. Volatile neutral condors also get directional alternatives when
         # the underlying signals lean one way.
         if strat == "Bull Put Credit":
             v = _score_variant(base, "safer_credit", "put credit spread moved farther OTM for delta")
             _set_expiry(v, sig, base_expiry)
             if _set_vertical_structure(v, strategy=strat, spot=spot, width=width, long_mult=1.0, short_mult=0.84):
-                add_variant(v, sig)
-                per_score += 1
+                if add_variant(v, sig):
+                    per_score += 1
         elif strat == "Bear Call Credit":
             v = _score_variant(base, "safer_credit", "call credit spread moved farther OTM for delta")
             _set_expiry(v, sig, base_expiry)
             if _set_vertical_structure(v, strategy=strat, spot=spot, width=width, long_mult=1.0, short_mult=1.16):
-                add_variant(v, sig)
-                per_score += 1
+                if add_variant(v, sig):
+                    per_score += 1
         elif strat == "Iron Condor":
             v = _score_variant(base, "wide_condor", "iron condor moved farther OTM for short-delta risk")
             _set_expiry(v, sig, base_expiry)
             if _set_iron_condor_structure(v, spot=spot, width=width):
-                add_variant(v, sig)
-                per_score += 1
+                if add_variant(v, sig):
+                    per_score += 1
 
             if per_score < max_variants_per_score:
                 if sig.price_direction == "bullish" or sig.flow_direction == "bullish":
                     v = _score_variant(base, "directional_repair", "neutral condor converted to bullish credit spread")
                     _set_expiry(v, sig, base_expiry)
                     if _set_vertical_structure(v, strategy="Bull Put Credit", spot=spot, width=width, long_mult=1.0, short_mult=0.84):
-                        add_variant(v, sig)
-                        per_score += 1
+                        if add_variant(v, sig):
+                            per_score += 1
                 elif sig.price_direction == "bearish" or sig.flow_direction == "bearish":
                     v = _score_variant(base, "directional_repair", "neutral condor converted to bearish credit spread")
                     _set_expiry(v, sig, base_expiry)
                     if _set_vertical_structure(v, strategy="Bear Call Credit", spot=spot, width=width, long_mult=1.0, short_mult=1.16):
-                        add_variant(v, sig)
-                        per_score += 1
+                        if add_variant(v, sig):
+                            per_score += 1
 
         # 4. A listed-expiry repair: try a shorter standard Friday if the base
         # expiry is too far out or not listed in Schwab. Keep this after the
@@ -2779,6 +3038,147 @@ def _optimize_score_with_live_chain(
     )
 
 
+def _local_quote_chain_index(
+    quote_store: Any,
+    *,
+    signal_date: dt.date,
+    tickers: Set[str],
+    max_dte: int = 120,
+) -> Dict[str, Dict[str, Dict[str, Dict[float, Dict[str, Any]]]]]:
+    """Build Schwab-like chain maps from local UW option quote snapshots."""
+    ticker_set = {str(t).strip().upper() for t in tickers if str(t).strip()}
+    if not ticker_set:
+        return {}
+    try:
+        quotes = quote_store.get_quotes_for_date(signal_date)
+    except Exception:
+        return {}
+    if quotes is None or quotes.empty or "option_symbol" not in quotes.columns:
+        return {}
+
+    out: Dict[str, Dict[str, Dict[str, Dict[float, Dict[str, Any]]]]] = defaultdict(
+        lambda: defaultdict(lambda: {"C": {}, "P": {}})
+    )
+    for row in quotes.itertuples(index=False):
+        symbol = str(getattr(row, "option_symbol", "") or "").upper().strip()
+        parsed = _parse_occ_parts(symbol)
+        if parsed is None:
+            continue
+        ticker, expiry, right, strike = parsed
+        if ticker not in ticker_set or right not in {"C", "P"}:
+            continue
+        dte = (expiry - signal_date).days
+        if dte <= 0 or dte > int(max_dte):
+            continue
+        bid = _fnum(getattr(row, "bid", math.nan))
+        ask = _fnum(getattr(row, "ask", math.nan))
+        mid = _fnum(getattr(row, "mid", math.nan))
+        if not (math.isfinite(bid) and math.isfinite(ask) and ask > 0 and ask >= bid):
+            continue
+        contract = {
+            "symbol": symbol,
+            "bid": float(bid),
+            "ask": float(ask),
+            "mark": float(mid) if math.isfinite(mid) else (float(bid) + float(ask)) / 2.0,
+            "volume": _fnum(getattr(row, "volume", math.nan)),
+            "openInterest": _fnum(getattr(row, "open_interest", math.nan)),
+        }
+        out[ticker][expiry.isoformat()][right][float(strike)] = contract
+
+    return {ticker: {exp: sides for exp, sides in chain.items()} for ticker, chain in out.items()}
+
+
+def validate_with_local_quote_snapshots(
+    scores: List[SwingScore],
+    signals_map: Dict[str, SwingSignals],
+    cfg: Dict,
+    root: Path,
+    *,
+    as_of: dt.date,
+) -> None:
+    """Optimize historical tickets against local UW option quotes before backtest.
+
+    Historical trend-analysis runs cannot use today's Schwab chain without leaking
+    future information. This pass uses only the as-of day's local UW option
+    snapshot, so the generated legs are actually replayable and then backtested.
+    """
+    local_cfg = cfg.get("historical_quote_validation", {})
+    if local_cfg.get("enabled", True) is False:
+        return
+    schwab_enabled = bool(cfg.get("schwab_validation", {}).get("enabled", False))
+    if schwab_enabled:
+        return
+    if not scores:
+        return
+
+    try:
+        from uwos.exact_spread_backtester import HistoricalOptionQuoteStore
+
+        quote_store = HistoricalOptionQuoteStore(root_dir=Path(root), use_hot=True, use_oi=True)
+    except Exception as exc:
+        print(f"  [quotes] Local quote validation unavailable: {exc}", file=sys.stderr)
+        return
+
+    tickers = {s.ticker for s in scores if s.recommended_strategy in {
+        "Bull Call Debit",
+        "Bear Put Debit",
+        "Bull Put Credit",
+        "Bear Call Credit",
+    }}
+    if not tickers:
+        return
+    max_dte = int(local_cfg.get("max_dte", 120) or 120)
+    chain_index = _local_quote_chain_index(
+        quote_store,
+        signal_date=as_of,
+        tickers={str(t).upper().strip() for t in tickers},
+        max_dte=max_dte,
+    )
+    if not chain_index:
+        return
+
+    max_candidates = max(1, int(local_cfg.get("chain_optimizer_expiry_candidates", 8) or 8))
+    validated = 0
+    for score in scores:
+        if score.live_validated is True:
+            continue
+        if score.recommended_strategy not in {
+            "Bull Call Debit",
+            "Bear Put Debit",
+            "Bull Put Credit",
+            "Bear Call Credit",
+        }:
+            continue
+        signal = signals_map.get(score.ticker, SwingSignals(ticker=score.ticker))
+        spot = _fnum(signal.latest_close)
+        if not math.isfinite(spot) or spot <= 0:
+            continue
+        chain_map = chain_index.get(str(score.ticker).upper().strip())
+        if not chain_map:
+            continue
+        optimized = _optimize_score_with_live_chain(
+            score,
+            signal,
+            chain_map,
+            spot=float(spot),
+            cfg=cfg,
+            quote_store=quote_store,
+            max_candidates=max_candidates,
+        )
+        if optimized is None:
+            continue
+        score.live_spot = float(spot)
+        _apply_live_candidate(
+            score,
+            optimized,
+            note="local UW quote snapshot optimized to listed expiry/quoted strikes",
+        )
+        validated += 1
+
+    if validated:
+        print(f"  [quotes] Local quote validation complete: {validated} valid", file=sys.stderr)
+
+
 def validate_with_schwab(
     scores: List[SwingScore],
     signals_map: Dict[str, SwingSignals],
@@ -3294,6 +3694,10 @@ def validate_with_schwab(
 # Historical backtest (edge)
 # ---------------------------------------------------------------------------
 
+def default_setup_likelihood_cache(root: Path, as_of: dt.date) -> Path:
+    return Path(root).resolve() / "out" / "cache" / "setup_likelihood_yf" / as_of.isoformat()
+
+
 def run_backtest(
     scores: List[SwingScore],
     signals_map: Dict[str, SwingSignals],
@@ -3430,7 +3834,7 @@ def run_backtest(
 
     lookback_years = float(bt_cfg.get("lookback_years", 2.0))
     min_signals = int(bt_cfg.get("min_signals", 100))
-    cache_dir = bt_cfg.get("cache_dir", "")
+    cache_dir = bt_cfg.get("cache_dir", "") or str(default_setup_likelihood_cache(root, as_of))
 
     cmd = [
         sys.executable, "-m", "uwos.setup_likelihood_backtest",
@@ -3830,6 +4234,8 @@ def generate_shortlist_csv(
             "price_direction": sig.price_direction,
             "latest_return_pct": round(sig.latest_return_pct, 4) if math.isfinite(sig.latest_return_pct) else "",
             "latest_return_direction": sig.latest_return_direction,
+            "recent_return_pct": round(sig.recent_return_pct, 4) if math.isfinite(sig.recent_return_pct) else "",
+            "recent_return_direction": sig.recent_return_direction,
             "flow_direction": sig.flow_direction,
             "hot_flow_direction": sig.hot_flow_direction,
             "pcr_direction": sig.pcr_direction,
@@ -3947,39 +4353,49 @@ def run_pipeline(
     ticker_hot: Dict[str, List[Tuple[dt.date, HotChainFeatures]]] = defaultdict(list)
     ticker_dp: Dict[str, List[Tuple[dt.date, DPFeatures]]] = defaultdict(list)
     ticker_whale_count: Dict[str, int] = defaultdict(int)
+    screener_spots: Dict[dt.date, Dict[str, float]] = {}
 
     for d, df in screeners.items():
+        day_spots: Dict[str, float] = {}
         for _, row in df.iterrows():
             ticker = str(row.get("ticker", "")).strip().upper()
             if ticker not in ticker_universe:
                 continue
             features = extract_screener_features(row)
             ticker_screener[ticker].append((d, features))
+            day_spots[ticker] = features.close
+        screener_spots[d] = day_spots
 
     for d, df in chain_oi.items():
-        for ticker in ticker_universe:
-            if ticker in df["underlying_symbol"].values:
-                # Get spot price from screener for this day if available
-                spot = math.nan
-                if d in screeners:
-                    scr = screeners[d]
-                    scr_row = scr[scr["ticker"] == ticker]
-                    if not scr_row.empty:
-                        spot = _fnum(scr_row.iloc[0].get("close", math.nan))
-                features = extract_oi_features(df, ticker, spot=spot)
-                ticker_oi[ticker].append((d, features))
+        if "underlying_symbol" not in df.columns or df.empty:
+            continue
+        for ticker, sub in df.groupby("underlying_symbol", sort=False):
+            ticker = str(ticker).strip().upper()
+            if ticker not in ticker_universe:
+                continue
+            spot = screener_spots.get(d, {}).get(ticker, math.nan)
+            features = extract_oi_features(sub, ticker, spot=spot)
+            ticker_oi[ticker].append((d, features))
 
     for d, df in hot_chains.items():
-        for ticker in ticker_universe:
-            if ticker in df["_underlying"].values:
-                features = extract_hot_chain_features(df, ticker)
-                ticker_hot[ticker].append((d, features))
+        if "_underlying" not in df.columns or df.empty:
+            continue
+        for ticker, sub in df.groupby("_underlying", sort=False):
+            ticker = str(ticker).strip().upper()
+            if ticker not in ticker_universe:
+                continue
+            features = extract_hot_chain_features(sub, ticker)
+            ticker_hot[ticker].append((d, features))
 
     for d, df in dp_eod.items():
-        for ticker in ticker_universe:
-            if "ticker" in df.columns and ticker in df["ticker"].values:
-                features = extract_dp_features(df, ticker)
-                ticker_dp[ticker].append((d, features))
+        if "ticker" not in df.columns or df.empty:
+            continue
+        for ticker, sub in df.groupby("ticker", sort=False):
+            ticker = str(ticker).strip().upper()
+            if ticker not in ticker_universe:
+                continue
+            features = extract_dp_features(sub, ticker)
+            ticker_dp[ticker].append((d, features))
 
     for d, tickers in whale_mentions.items():
         for ticker in tickers:
@@ -4074,8 +4490,18 @@ def run_pipeline(
     all_to_validate = base_to_validate + repair_variants
     validate_with_schwab(all_to_validate, signals_map, cfg)
 
-    # Phase 6d: Historical backtest (optional)
+    # Phase 6c.5: Historical runs cannot use current Schwab chains. Use only the
+    # as-of day's UW option snapshots so the ticket can be replayed and backtested.
     as_of_resolved = trading_days[-1][0]
+    validate_with_local_quote_snapshots(
+        all_to_validate,
+        signals_map,
+        cfg,
+        root,
+        as_of=as_of_resolved,
+    )
+
+    # Phase 6d: Historical backtest (optional)
     run_backtest(all_to_validate, signals_map, cfg, out_dir, as_of_resolved, root)
 
     # Phase 7: Write output

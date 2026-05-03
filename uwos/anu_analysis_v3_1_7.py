@@ -3,7 +3,7 @@
 """Anu Options Engine audited no-GEX FIRE+SHIELD replacement.
 
 Canonical upload filename: anu_analysis_v3_1_7.py
-Internal engine version: 3.2.7-full-source-routing-audit
+Internal engine version: 3.2.9-r7.2-exec-shortlist
 
 This script is a drop-in audited replacement for the project analysis file.
 It removes automated GEX usage, builds spreads from actual hot-chain quotes,
@@ -22,7 +22,7 @@ alternate structures from actual hot-chain legs, and forces high-premium earning
 names into a blocked catalyst watch section instead of silently dropping them,
 streams optional full bot EOD source ZIPs without loading 1GB into memory,
 routes mid-cap/ETF/mixed-flow candidates into explicit lanes instead of hard-deleting them,
-and emits blocked-positive-EV, alternates, top-symbol-gap, ETF-lane outputs, and conditional mixed-flow rescue rather than hard-deleting neutral-conflict debit rows.
+and emits blocked-positive-EV, alternates, top-symbol-gap, ETF-lane outputs, conditional mixed-flow rescue, and a separate native Execution Shortlist so idea-stage tables are not mistaken for executable recommendations.
 """
 from __future__ import annotations
 
@@ -57,6 +57,7 @@ INPUT_PATTERNS = {
     "dp": re.compile(r"^dp-eod-report-(\d{4}-\d{2}-\d{2})\.zip$"),
     "schwab": re.compile(r"^schwab_positions_(\d{4}-\d{2}-\d{2})\.json$"),
     "bot": re.compile(r"^(?:bot-eod-report|eod-flow-report|flow-eod-report)-(\d{4}-\d{2}-\d{2})\.zip$"),
+    "bot_part": re.compile(r"^(?:bot-eod-report|eod-flow-report|flow-eod-report)-(\d{4}-\d{2}-\d{2})\.part-\d+-of-\d+\.zip$"),
 }
 INDEX_SHIELD_ALLOW = {"VIX", "SPX", "NDX", "RUT"}
 ETF_TICKERS = {"SPY", "QQQ", "IWM", "DIA", "VIX", "SPX", "SPXW", "NDX", "RUT", "GLD", "SLV", "USO", "XLE", "XLF", "XLK", "XLY", "XLP", "XLV", "XLI", "XLB", "XLU", "XOP", "SMH", "KRE", "TLT", "HYG", "LQD"}
@@ -66,7 +67,7 @@ FULL_SOURCE_MAX_PER_SYMBOL_FAMILY = 8
 FULL_SOURCE_RESERVOIR_CAP = 20_000
 
 
-ENGINE_VERSION = "3.2.7-full-source-routing-audit"
+ENGINE_VERSION = "3.2.9-r7.2-exec-shortlist"
 CANONICAL_MARKDOWN_FILES = [
     "Anu_Options_Engine_RULEBOOK_v3_0_6.md",
     "Anu_Options_Engine_RULEBOOK_v3_1_4_BROWSER.md",
@@ -246,7 +247,7 @@ def resolve_input_paths(base_dir: Path, asof: Optional[date] = None, use_next_da
     still supporting a deliberate follow-through overlay.
     """
     found = collect_dated_inputs(base_dir)
-    flow_dates = set(found.get("whale", {})) | set(found.get("bot", {}))
+    flow_dates = set(found.get("whale", {})) | set(found.get("bot", {})) | set(found.get("bot_part", {}))
     base_dates = sorted(flow_dates & set(found["hot"]) & set(found["screen"]) & set(found["dp"]))
     if not base_dates:
         raise FileNotFoundError(
@@ -272,7 +273,7 @@ def resolve_input_paths(base_dir: Path, asof: Optional[date] = None, use_next_da
         raise FileNotFoundError(f"No chain OI file available on or before {scan_date.isoformat()}")
     oi_prev_date = max((d for d in oi_dates if d < oi_curr_date), default=oi_curr_date)
 
-    flow_path = found.get("bot", {}).get(scan_date) or found.get("whale", {}).get(scan_date)
+    flow_path = found.get("bot", {}).get(scan_date) or found.get("bot_part", {}).get(scan_date) or found.get("whale", {}).get(scan_date)
     if flow_path is None:
         raise FileNotFoundError(f"No whale markdown or full bot EOD flow source found for {scan_date.isoformat()}")
     return scan_date, [
@@ -847,6 +848,36 @@ def prune_full_source_reservoir(frames: List[pd.DataFrame]) -> List[pd.DataFrame
     return [keep]
 
 
+
+
+def full_bot_source_paths(path: Path) -> List[Path]:
+    """Return one full bot ZIP or all split part ZIPs in numeric order.
+
+    The uploaded split files use zero-padded totals such as part-01-of-05.
+    The original r7 draft parsed total as int(5) and then globbed for of-5,
+    which missed of-05. Keep the raw total token for discovery and validate
+    all parts by numeric part number.
+    """
+    name = path.name
+    m = re.match(r"^((?:bot-eod-report|eod-flow-report|flow-eod-report)-\d{4}-\d{2}-\d{2})\.part-(\d+)-of-(\d+)\.zip$", name)
+    if not m:
+        return [path]
+    prefix, _part_text, total_text = m.group(1), m.group(2), m.group(3)
+    total = int(total_text)
+    candidates = list(path.parent.glob(f"{prefix}.part-*-of-{total_text}.zip"))
+    # Be tolerant of non-padded totals as well, but keep exact padded match first.
+    if len(candidates) != total:
+        candidates = list(path.parent.glob(f"{prefix}.part-*-of-*.zip"))
+    def part_no(p: Path) -> int:
+        mm = re.search(r"\.part-(\d+)-of-(\d+)\.zip$", p.name)
+        return int(mm.group(1)) if mm and int(mm.group(2)) == total else 999999
+    candidates = sorted([p for p in candidates if part_no(p) != 999999], key=part_no)
+    expected = set(range(1, total + 1))
+    found = {part_no(p) for p in candidates}
+    if len(candidates) != total or found != expected:
+        raise FileNotFoundError(f"Expected split bot parts 1..{total} for {prefix}, found part numbers {sorted(found)}")
+    return candidates
+
 def parse_full_bot_eod_zip(path: Path, scan_date: date) -> pd.DataFrame:
     """Stream a large bot/eod ZIP and keep a bounded candidate reservoir.
 
@@ -860,39 +891,35 @@ def parse_full_bot_eod_zip(path: Path, scan_date: date) -> pd.DataFrame:
     schema_errors_sample: List[str] = []
     reservoir: List[pd.DataFrame] = []
     symbol_parts: List[pd.DataFrame] = []
-    with zipfile.ZipFile(path) as zf:
-        names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
-        if not names:
-            raise FileNotFoundError(f"No CSV file found inside {path}")
-        csv_name = max(names, key=lambda n: zf.getinfo(n).file_size)
-        with zf.open(csv_name) as fh:
-            for chunk in pd.read_csv(fh, chunksize=FULL_SOURCE_CHUNK_ROWS, low_memory=False):
-                rows_scanned += int(len(chunk))
-                try:
-                    fc = normalize_flow_candidates(chunk, scan_date)
-                except Exception as exc:
-                    # Schema drift in the full 1GB source should not crash before
-                    # the markdown fallback path can run. Keep scanning/fallback
-                    # diagnostics instead.
-                    if "schema_errors_sample" not in locals():
-                        schema_errors_sample = []
-                    if len(schema_errors_sample) < 5:
-                        schema_errors_sample.append(str(exc))
-                    continue
-                if fc.empty:
-                    continue
-                yes_candidates += int(len(fc))
-                # Accumulate symbol and direction totals from the whole filtered source.
-                symbol_parts.append(fc.groupby(["underlying_symbol", "thesis_direction"], as_index=False).agg(
-                    premium=("premium", "sum"), count=("seed_key", "count")
-                ))
-                top = fc.sort_values("premium", ascending=False).head(min(FULL_SOURCE_MAX_GLOBAL_SEEDS, len(fc)))
-                per = fc.sort_values("premium", ascending=False).groupby(
-                    ["underlying_symbol", "seed_family", "thesis_direction"], group_keys=False
-                ).head(FULL_SOURCE_MAX_PER_SYMBOL_FAMILY)
-                reservoir.append(pd.concat([top, per], ignore_index=True, sort=False))
-                if sum(len(x) for x in reservoir) > FULL_SOURCE_RESERVOIR_CAP * 2:
-                    reservoir = prune_full_source_reservoir(reservoir)
+    source_paths = full_bot_source_paths(path)
+    for source_path in source_paths:
+        with zipfile.ZipFile(source_path) as zf:
+            names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
+            if not names:
+                raise FileNotFoundError(f"No CSV file found inside {source_path}")
+            csv_name = max(names, key=lambda n: zf.getinfo(n).file_size)
+            with zf.open(csv_name) as fh:
+                for chunk in pd.read_csv(fh, chunksize=FULL_SOURCE_CHUNK_ROWS, low_memory=False):
+                    rows_scanned += int(len(chunk))
+                    try:
+                        fc = normalize_flow_candidates(chunk, scan_date)
+                    except Exception as exc:
+                        if len(schema_errors_sample) < 5:
+                            schema_errors_sample.append(f"{source_path.name}: {exc}")
+                        continue
+                    if fc.empty:
+                        continue
+                    yes_candidates += int(len(fc))
+                    symbol_parts.append(fc.groupby(["underlying_symbol", "thesis_direction"], as_index=False).agg(
+                        premium=("premium", "sum"), count=("seed_key", "count")
+                    ))
+                    top = fc.sort_values("premium", ascending=False).head(min(FULL_SOURCE_MAX_GLOBAL_SEEDS, len(fc)))
+                    per = fc.sort_values("premium", ascending=False).groupby(
+                        ["underlying_symbol", "seed_family", "thesis_direction"], group_keys=False
+                    ).head(FULL_SOURCE_MAX_PER_SYMBOL_FAMILY)
+                    reservoir.append(pd.concat([top, per], ignore_index=True, sort=False))
+                    if sum(len(x) for x in reservoir) > FULL_SOURCE_RESERVOIR_CAP * 2:
+                        reservoir = prune_full_source_reservoir(reservoir)
     selected = pd.concat(reservoir, ignore_index=True, sort=False) if reservoir else pd.DataFrame()
     selected = prune_full_source_reservoir([selected])[0] if not selected.empty else selected
     if not selected.empty:
@@ -927,6 +954,7 @@ def parse_full_bot_eod_zip(path: Path, scan_date: date) -> pd.DataFrame:
     selected.attrs["full_source_summary"] = {
         "source_mode": "full_bot_stream",
         "source_file": path.name,
+        "source_files": [p.name for p in full_bot_source_paths(path)],
         "rows_scanned": int(rows_scanned),
         "yes_prime_candidates": int(yes_candidates),
         "selected_seed_rows": int(len(selected)),
@@ -2589,13 +2617,322 @@ def build_etf_lane_table(built: pd.DataFrame, max_rows: int = 25) -> pd.DataFram
     return table_round(df.sort_values(["EV/ML", "Conviction", "premium"], ascending=[False, False, False]).head(max_rows)[PRIMARY_COLS])
 
 
+
+
+def build_all_primary_eligible_ideas(built: pd.DataFrame) -> pd.DataFrame:
+    """One best primary-eligible trade idea per ticker.
+
+    This is not the official EV/ML primary table cap. It is the full idea pool
+    that passed the same primary eligibility gates, used to prevent high-
+    conviction candidates from being hidden behind the top-10 EV/ML cut.
+    """
+    if built.empty or "is_primary_eligible" not in built.columns:
+        return pd.DataFrame(columns=PRIMARY_COLS)
+    df = built[
+        built["is_primary_eligible"].fillna(False)
+        & built["has_executable_size"].fillna(False)
+        & (built["EV/ML"].fillna(-999) > 0)
+        & (~built["inside_event_block"].fillna(False))
+        & (~built["minority_flow"].fillna(False))
+        & (~built["split_flow_watch"].fillna(False))
+        & (~built["liquidity_tier"].eq("ETF_INDEX"))
+    ].copy()
+    if df.empty:
+        return pd.DataFrame(columns=PRIMARY_COLS)
+    df = (
+        df.sort_values(["Ticker", "EV/ML", "Conviction", "POP"], ascending=[True, False, False, False])
+        .drop_duplicates("Ticker", keep="first")
+        .sort_values(["EV/ML", "Conviction", "POP"], ascending=[False, False, False])
+    )
+    return table_round(df)
+
+
+def build_high_conviction_ideas(built: pd.DataFrame, conviction_threshold: int = 62) -> pd.DataFrame:
+    """All primary-eligible rows above the conviction threshold.
+
+    This lane intentionally does not use the EV/ML one-per-ticker primary cap,
+    because the whole point is to avoid hiding high-conviction rows behind the
+    official EV/ML ranking. Default threshold 62 equals user wording `>61`.
+    """
+    if built.empty or "is_primary_eligible" not in built.columns:
+        return pd.DataFrame(columns=PRIMARY_COLS)
+    df = built[
+        built["is_primary_eligible"].fillna(False)
+        & built["has_executable_size"].fillna(False)
+        & (built["EV/ML"].fillna(-999) > 0)
+        & (~built["inside_event_block"].fillna(False))
+        & (~built["minority_flow"].fillna(False))
+        & (~built["split_flow_watch"].fillna(False))
+        & (~built["liquidity_tier"].eq("ETF_INDEX"))
+        & (pd.to_numeric(built["Conviction"], errors="coerce") >= int(conviction_threshold))
+    ].copy()
+    if df.empty:
+        return pd.DataFrame(columns=built.columns)
+    df = df.sort_values(["Conviction", "EV/ML", "POP"], ascending=[False, False, False])
+    return table_round(df)
+
+
+def order_entry_limits_from_ideas(ideas: pd.DataFrame) -> pd.DataFrame:
+    """Build a human order-entry sheet with dollar risk per one-lot.
+
+    Live quotes are an execution check, not an idea-stage blocker.
+    """
+    cols = [
+        "Ticker", "Action", "Expiry", "Buy leg", "Sell leg", "Entry limit", "EV/ML", "POP", "Conviction",
+        "Max loss / 1-lot", "Max gain / 1-lot", "Size", "Execution", "Live quote rule", "Notice",
+    ]
+    if ideas.empty:
+        return pd.DataFrame(columns=cols)
+    rows: List[Dict[str, Any]] = []
+    for _, r in ideas.iterrows():
+        net = abs(float(r.get("actual_net", np.nan))) if pd.notna(r.get("actual_net", np.nan)) else np.nan
+        rr = float(r.get("reward_risk", np.nan)) if pd.notna(r.get("reward_risk", np.nan)) else np.nan
+        net_txt = str(r.get("Net", ""))
+        is_credit = "credit" in net_txt.lower()
+        if pd.notna(net):
+            entry = f"collect >= ${net:.2f} credit" if is_credit else f"pay <= ${net:.2f} debit"
+            if is_credit:
+                max_gain = net * 100.0
+                max_loss = (net / rr) * 100.0 if pd.notna(rr) and rr > 0 else np.nan
+            else:
+                max_loss = net * 100.0
+                max_gain = net * rr * 100.0 if pd.notna(rr) and rr > 0 else np.nan
+        else:
+            entry = net_txt
+            max_loss = np.nan
+            max_gain = np.nan
+        rows.append({
+            "Ticker": r.get("Ticker"),
+            "Action": r.get("Action"),
+            "Expiry": r.get("Expiry"),
+            "Buy leg": r.get("Buy leg"),
+            "Sell leg": r.get("Sell leg"),
+            "Entry limit": entry,
+            "EV/ML": round(float(r.get("EV/ML")), 3) if pd.notna(r.get("EV/ML")) else r.get("EV/ML"),
+            "POP": round(float(r.get("POP")), 3) if pd.notna(r.get("POP")) else r.get("POP"),
+            "Conviction": r.get("Conviction"),
+            "Max loss / 1-lot": None if pd.isna(max_loss) else f"${max_loss:,.0f}",
+            "Max gain / 1-lot": None if pd.isna(max_gain) else f"${max_gain:,.0f}",
+            "Size": r.get("Size"),
+            "Execution": r.get("Execution"),
+            "Live quote rule": "Use live quote only to confirm/reprice final order; do not treat missing live quote as idea-stage block.",
+            "Notice": r.get("Notice"),
+        })
+    return pd.DataFrame(rows)[cols]
+
 def markdown_table(df: pd.DataFrame) -> str:
     if df.empty:
         return "_none_"
     return df.to_markdown(index=False)
 
 
-def run(base_dir: Path, out_dir: Path, asof: Optional[date] = None, allow_project_version_mismatch: bool = False, project_dir: Optional[Path] = None, allow_markdown_seed_fallback: bool = False, use_next_day_oi: bool = False) -> None:
+# r7.2: execution-shortlist / preferred trade ideas layer.
+def priority_score_values(ev_ml: Any, pop: Any, conviction: Any) -> Tuple[float, str]:
+    try:
+        ev = float(ev_ml)
+    except Exception:
+        ev = 0.0
+    try:
+        pp = float(pop)
+    except Exception:
+        pp = 0.0
+    try:
+        cv = float(conviction)
+    except Exception:
+        cv = 0.0
+    ev_component = 0.0 if ev <= 0 else min(100.0, 100.0 * math.log1p(ev) / math.log1p(3.0))
+    pop_component = min(100.0, 100.0 * max(pp, 0.0) / 0.35)
+    conv_component = max(0.0, min(cv, 100.0))
+    score = round(0.45 * ev_component + 0.30 * pop_component + 0.25 * conv_component, 1)
+    if score >= 75:
+        tier = "A - first quote"
+    elif score >= 65:
+        tier = "B - strong"
+    elif score >= 55:
+        tier = "C - selective"
+    else:
+        tier = "D - watch/defer"
+    return score, tier
+
+
+def add_priority_columns(df: pd.DataFrame) -> pd.DataFrame:
+    if df is None or df.empty:
+        out = pd.DataFrame() if df is None else df.copy()
+        out["Priority Score"] = pd.Series(dtype="float64")
+        out["Priority Tier"] = pd.Series(dtype="object")
+        return out
+    out = df.copy()
+    scores = [priority_score_values(r.get("EV/ML", 0), r.get("POP", 0), r.get("Conviction", 0)) for _, r in out.iterrows()]
+    out["Priority Score"] = [s for s, _ in scores]
+    out["Priority Tier"] = [t for _, t in scores]
+    return out
+
+
+def build_priority_overlay(ideas: pd.DataFrame) -> pd.DataFrame:
+    cols = PRIMARY_COLS + ["Priority Score", "Priority Tier"]
+    if ideas is None or ideas.empty:
+        return pd.DataFrame(columns=cols)
+    out = add_priority_columns(ideas)
+    for c in PRIMARY_COLS:
+        if c not in out.columns:
+            out[c] = np.nan
+    return table_round(out.sort_values(["Priority Score", "EV/ML", "POP", "Conviction"], ascending=[False, False, False, False])[cols])
+
+
+def is_adr_issue(issue_type: Any) -> bool:
+    return "adr" in str(issue_type or "").lower()
+
+
+def execution_row_status(
+    row: pd.Series,
+    min_dte: int = 21,
+    min_pop: float = 0.20,
+    min_conviction: int = 55,
+    allow_adr_execution: bool = False,
+) -> Tuple[Optional[str], List[str]]:
+    """Return Quote Candidate/Potential/None plus reasons.
+
+    r7.2 deliberately separates audit ideas from executable recommendations.
+    Hard failures return None. Soft failures can become Potential only when all
+    hard gates pass and the row is still worth quoting/monitoring.
+    """
+    reasons: List[str] = []
+    notice = str(row.get("Notice", "") or "").lower()
+    ev = float(row.get("EV/ML", -999) or -999)
+    pop = float(row.get("POP", 0) or 0)
+    conv = float(row.get("Conviction", 0) or 0)
+    dte = int(float(row.get("dte", 0) or 0))
+    er_days_val = row.get("er_days")
+    er_days = int(er_days_val) if pd.notna(er_days_val) else None
+    tier = str(row.get("liquidity_tier", ""))
+
+    hard_checks = [
+        (bool(row.get("is_primary_eligible", False)), "not primary-eligible"),
+        (bool(row.get("has_executable_size", False)), "Size=None"),
+        (ev > 0, "negative/nonpositive EV/ML"),
+        (not bool(row.get("minority_flow", False)), "minority flow"),
+        (not bool(row.get("split_flow_watch", False)), "split-flow watch"),
+        (not bool(row.get("inside_event_block", False)), "event block 0-10d"),
+        (not bool(row.get("neutral_conflict", False)), "neutral conflict"),
+        (not bool(row.get("mixed_flow_rescue", False)), "mixed-flow rescue"),
+        (not bool(row.get("is_family_flex", False)), "family-flex"),
+        ("expiry rescued" not in notice, "expiry rescue"),
+        (tier in {"MAJOR", "MID_PILOT"}, f"not common-stock execution tier ({tier})"),
+        (tier != "ETF_INDEX", "ETF/index lane"),
+        (dte >= int(min_dte), f"DTE<{min_dte}"),
+    ]
+    failed = [reason for ok, reason in hard_checks if not ok]
+    if failed:
+        return None, failed
+
+    soft = []
+    if er_days is not None and 11 <= er_days <= 14:
+        soft.append("earnings/catalyst 11-14d")
+    if er_days is not None and er_days < 15:
+        soft.append("earnings/catalyst <15d")
+    if pop < float(min_pop):
+        soft.append(f"POP<{min_pop:.2f}")
+    if conv < int(min_conviction):
+        soft.append(f"Conviction<{min_conviction}")
+    if is_adr_issue(row.get("issue_type")) and not allow_adr_execution:
+        soft.append("ADR default potential-only")
+
+    if soft:
+        # Potential rows still need some minimum quality so diagnostics do not
+        # leak into the recommendation table.
+        if pop >= 0.15 and conv >= 50 and (er_days is None or er_days >= 11):
+            return "Potential", soft
+        return None, soft
+    return "Quote Candidate", ["live exact-spread quote required before order entry"]
+
+
+def build_execution_shortlist(
+    built: pd.DataFrame,
+    min_dte: int = 21,
+    min_pop: float = 0.20,
+    min_conviction: int = 55,
+    max_rows: int = 12,
+    allow_adr_execution: bool = False,
+) -> pd.DataFrame:
+    if built is None or built.empty:
+        return pd.DataFrame(columns=PRIMARY_COLS + ["Priority Score", "Priority Tier"])
+    rows: List[Dict[str, Any]] = []
+    for _, r in built.iterrows():
+        status, reasons = execution_row_status(r, min_dte=min_dte, min_pop=min_pop, min_conviction=min_conviction, allow_adr_execution=allow_adr_execution)
+        if status is None:
+            continue
+        rec = r.to_dict()
+        rec["Execution"] = status
+        rec["Notice"] = add_notice_text(rec.get("Notice"), "execution shortlist")
+        rec["Notice"] = add_notice_text(rec.get("Notice"), "; ".join(reasons))
+        rows.append(rec)
+    if not rows:
+        return pd.DataFrame(columns=PRIMARY_COLS + ["Priority Score", "Priority Tier"])
+    df = pd.DataFrame(rows)
+    df = add_priority_columns(df)
+    # Quote Candidate first, then Potential; one preferred structure per ticker.
+    df["execution_sort"] = df["Execution"].map({"Quote Candidate": 0, "Potential": 1}).fillna(9)
+    df = (
+        df.sort_values(["Ticker", "execution_sort", "Priority Score", "EV/ML", "POP", "Conviction"], ascending=[True, True, False, False, False, False])
+        .drop_duplicates("Ticker", keep="first")
+        .sort_values(["execution_sort", "Priority Score", "EV/ML", "POP", "Conviction"], ascending=[True, False, False, False, False])
+        .head(int(max_rows))
+    )
+    cols = PRIMARY_COLS + ["Priority Score", "Priority Tier"]
+    return table_round(df[cols])
+
+
+# Override r7.1 order-entry sheet so r7.2 includes native Priority Score/Tier.
+def order_entry_limits_from_ideas(ideas: pd.DataFrame) -> pd.DataFrame:
+    cols = [
+        "Ticker", "Action", "Expiry", "Buy leg", "Sell leg", "Entry limit", "EV/ML", "POP", "Conviction",
+        "Priority Score", "Priority Tier", "Max loss / 1-lot", "Max gain / 1-lot", "Size", "Execution",
+        "Live quote rule", "Notice",
+    ]
+    if ideas is None or ideas.empty:
+        return pd.DataFrame(columns=cols)
+    ideas2 = add_priority_columns(ideas)
+    rows: List[Dict[str, Any]] = []
+    for _, r in ideas2.iterrows():
+        net = abs(float(r.get("actual_net", np.nan))) if pd.notna(r.get("actual_net", np.nan)) else np.nan
+        rr = float(r.get("reward_risk", np.nan)) if pd.notna(r.get("reward_risk", np.nan)) else np.nan
+        net_txt = str(r.get("Net", ""))
+        is_credit = "credit" in net_txt.lower()
+        if pd.notna(net):
+            entry = f"collect >= ${net:.2f} credit" if is_credit else f"pay <= ${net:.2f} debit"
+            if is_credit:
+                max_gain = net * 100.0
+                max_loss = (net / rr) * 100.0 if pd.notna(rr) and rr > 0 else np.nan
+            else:
+                max_loss = net * 100.0
+                max_gain = net * rr * 100.0 if pd.notna(rr) and rr > 0 else np.nan
+        else:
+            entry = net_txt
+            max_loss = np.nan
+            max_gain = np.nan
+        rows.append({
+            "Ticker": r.get("Ticker"),
+            "Action": r.get("Action"),
+            "Expiry": r.get("Expiry"),
+            "Buy leg": r.get("Buy leg"),
+            "Sell leg": r.get("Sell leg"),
+            "Entry limit": entry,
+            "EV/ML": round(float(r.get("EV/ML")), 3) if pd.notna(r.get("EV/ML")) else r.get("EV/ML"),
+            "POP": round(float(r.get("POP")), 3) if pd.notna(r.get("POP")) else r.get("POP"),
+            "Conviction": r.get("Conviction"),
+            "Priority Score": r.get("Priority Score"),
+            "Priority Tier": r.get("Priority Tier"),
+            "Max loss / 1-lot": None if pd.isna(max_loss) else f"${max_loss:,.0f}",
+            "Max gain / 1-lot": None if pd.isna(max_gain) else f"${max_gain:,.0f}",
+            "Size": r.get("Size"),
+            "Execution": r.get("Execution"),
+            "Live quote rule": "Quote exact spread live; debit pay <= limit / credit collect >= limit. Missing live quote means not Live OK.",
+            "Notice": r.get("Notice"),
+        })
+    return pd.DataFrame(rows)[cols]
+
+
+def run(base_dir: Path, out_dir: Path, asof: Optional[date] = None, allow_project_version_mismatch: bool = False, project_dir: Optional[Path] = None, allow_markdown_seed_fallback: bool = False, use_next_day_oi: bool = False, conviction_threshold: int = 62, enforce_health_gate: bool = False, execution_min_dte: int = 21, execution_min_pop: float = 0.20, execution_min_conviction: int = 55, execution_max_rows: int = 12, allow_adr_execution: bool = False) -> None:
     global ASOF
     ASOF, required_paths = resolve_input_paths(base_dir, asof, use_next_day_oi=use_next_day_oi)
     scan_date = ASOF.isoformat()
@@ -2613,6 +2950,10 @@ def run(base_dir: Path, out_dir: Path, asof: Optional[date] = None, allow_projec
         )
     whale_path, hot_path, oi_prev_path, oi_curr_path, screen_path, dp_path = required_paths
     schwab = load_schwab_context(base_dir, ASOF)
+    schwab["enforced"] = bool(enforce_health_gate)
+    if not enforce_health_gate and str(schwab.get("status", "UNKNOWN")).upper() not in {"PASS"}:
+        schwab["execution_label"] = "Bootstrap"
+        schwab["note"] = add_notice_text(schwab.get("note"), "Health Gate advisory only; not enforced")
 
     whale = parse_flow_source(whale_path, ASOF)
     source_mode = whale.attrs.get("source_mode", "unknown")
@@ -2755,6 +3096,19 @@ def run(base_dir: Path, out_dir: Path, asof: Optional[date] = None, allow_projec
     )
     primary = primary_candidates.sort_values(["EV/ML", "Conviction"], ascending=[False, False]).head(10)
     primary_table = table_round(primary[PRIMARY_COLS])
+    priority_overlay = build_priority_overlay(primary)
+    all_primary_eligible_ideas = build_all_primary_eligible_ideas(built)
+    high_conviction_ideas = build_high_conviction_ideas(built, conviction_threshold=conviction_threshold)
+    execution_shortlist = build_execution_shortlist(
+        built,
+        min_dte=execution_min_dte,
+        min_pop=execution_min_pop,
+        min_conviction=execution_min_conviction,
+        max_rows=execution_max_rows,
+        allow_adr_execution=allow_adr_execution,
+    )
+    execution_order_entry_sheet = order_entry_limits_from_ideas(execution_shortlist)
+    order_entry_sheet = order_entry_limits_from_ideas(all_primary_eligible_ideas)
 
     top_gap = top_symbol_gap_table(top_symbols_source, raw_seed_rows, source_mode)
     top_gap_watch = build_top_symbol_gap_watch_rows(top_gap)
@@ -2766,10 +3120,19 @@ def run(base_dir: Path, out_dir: Path, asof: Optional[date] = None, allow_projec
     ordinary_watch = build_watch_rows(built, primary, rejected, condor_attempts)
     watch_table = table_round(pd.concat([catalyst_watch, top_gap_watch, ordinary_watch], ignore_index=True, sort=False).drop_duplicates())
     primary_table = apply_schwab_execution_and_notices(primary_table, schwab)
+    priority_overlay = apply_schwab_execution_and_notices(priority_overlay, schwab)
     watch_table = apply_schwab_execution_and_notices(watch_table, schwab)
     etf_lane_table = apply_schwab_execution_and_notices(etf_lane_table, schwab)
 
-    inputs_table = summarize_inputs(required_paths)
+    # Hash every raw artifact actually consumed. For split bot uploads, the
+    # flow source is all part ZIPs, not only the first path returned by
+    # resolve_input_paths. This satisfies the audit requirement that all raw
+    # artifact hashes be disclosed.
+    input_hash_paths = list(required_paths)
+    if whale_path.suffix.lower() == ".zip" and re.search(r"(?:bot-eod-report|eod-flow-report|flow-eod-report)", whale_path.name):
+        split_paths = full_bot_source_paths(whale_path)
+        input_hash_paths = split_paths + list(required_paths[1:])
+    inputs_table = summarize_inputs(input_hash_paths)
     if schwab.get("input_record"):
         inputs_table = pd.concat([inputs_table, pd.DataFrame([schwab["input_record"]])], ignore_index=True)
     dup_summary = raw_seed_rows.groupby("seed_key", as_index=False).size().rename(columns={"size": "count"})
@@ -2801,7 +3164,7 @@ def run(base_dir: Path, out_dir: Path, asof: Optional[date] = None, allow_projec
         dp_focus = dp_focus[dp_focus["ticker"].isin(tickers)]
 
     audit_json = {
-        "engine_version": "3.2.7-full-source-routing-audit",
+        "engine_version": ENGINE_VERSION,
         "scan_date": scan_date,
         "gex_enabled": False,
         "project_alignment": project_alignment,
@@ -2812,6 +3175,7 @@ def run(base_dir: Path, out_dir: Path, asof: Optional[date] = None, allow_projec
             "issue_count": schwab.get("issue_count"),
             "source": schwab.get("path"),
             "note": schwab.get("note"),
+            "enforced": bool(enforce_health_gate),
         },
         "oi_overlay": {
             "previous_oi_file": oi_prev_path.name,
@@ -2847,6 +3211,20 @@ def run(base_dir: Path, out_dir: Path, asof: Optional[date] = None, allow_projec
         "rejected_rows": int(len(rejected)),
         "primary_rows": int(len(primary_table)),
         "watch_rows": int(len(watch_table)),
+        "all_primary_eligible_ideas_rows": int(len(all_primary_eligible_ideas)),
+        "high_conviction_ideas_rows": int(len(high_conviction_ideas)),
+        "execution_shortlist_rows": int(len(execution_shortlist)),
+        "execution_quote_candidate_rows": int((execution_shortlist.get("Execution", pd.Series(dtype=str)).astype(str) == "Quote Candidate").sum()) if not execution_shortlist.empty else 0,
+        "execution_potential_rows": int((execution_shortlist.get("Execution", pd.Series(dtype=str)).astype(str) == "Potential").sum()) if not execution_shortlist.empty else 0,
+        "execution_min_dte": int(execution_min_dte),
+        "execution_min_pop": float(execution_min_pop),
+        "execution_min_conviction": int(execution_min_conviction),
+        "allow_adr_execution": bool(allow_adr_execution),
+        "priority_score_mode": "ENGINE_NATIVE",
+        "priority_overlay_rows": int(len(priority_overlay)),
+        "conviction_threshold": int(conviction_threshold),
+        "order_entry_sheet_rows": int(len(order_entry_sheet)),
+        "execution_order_entry_sheet_rows": int(len(execution_order_entry_sheet)),
         "blocked_minority_rows": int(len(minority_rows)),
         "split_flow_watch_rows": int(len(split_rows)),
         "neutral_conflict_rows": int(len(neutral_rows)),
@@ -2858,9 +3236,33 @@ def run(base_dir: Path, out_dir: Path, asof: Optional[date] = None, allow_projec
     report_md = "\n".join([
         f"# Options scan report — audited FIRE + SHIELD no-GEX run ({scan_date})",
         "",
-        "## Primary inline table",
+        "## Execution Shortlist / Preferred Trade Ideas",
+        "",
+        "Only this table may be treated as executable quote candidates or preferred trade ideas. Exact live-spread quote validation is still required before order entry.",
+        "",
+        markdown_table(execution_shortlist),
+        "",
+        "## Execution order-entry sheet",
+        "",
+        markdown_table(execution_order_entry_sheet.head(50)),
+        "",
+        "## Official EV/ML primary table — audit/discovery, not execution approval",
         "",
         markdown_table(primary_table),
+        "",
+        "## Priority Overlay",
+        "",
+        "Priority Score is a quote/order sequencing overlay. Official primary remains EV/ML-first; Execution Shortlist is the user-facing recommendation layer.",
+        "",
+        markdown_table(priority_overlay),
+        "",
+        f"## High-conviction idea lane (Conviction >= {conviction_threshold}) — not execution approval",
+        "",
+        markdown_table(table_round(high_conviction_ideas[PRIMARY_COLS]) if not high_conviction_ideas.empty else high_conviction_ideas),
+        "",
+        "## Full idea order-entry sheet for live quote check — diagnostics, not preferred trades",
+        "",
+        markdown_table(order_entry_sheet.head(50)),
         "",
         "## Watch table",
         "",
@@ -2949,8 +3351,23 @@ This payload keeps automated GEX disabled, preserves the FIRE/SHIELD/condor path
 ## Rejected rows and reasons
 {markdown_table(rejected[["underlying_symbol", "track", "net_type", "expiry", "cp", "strike", "premium", "reason"]].sort_values("premium", ascending=False).head(20))}
 
-## Primary table after fixes
+## Execution Shortlist / Preferred Trade Ideas
+{markdown_table(execution_shortlist)}
+
+## Execution order-entry sheet
+{markdown_table(execution_order_entry_sheet.head(50))}
+
+## Primary table after fixes — audit/discovery, not execution approval
 {markdown_table(primary_table)}
+
+## Priority Overlay
+{markdown_table(priority_overlay)}
+
+## High-conviction idea lane — not execution approval
+{markdown_table(table_round(high_conviction_ideas[PRIMARY_COLS]) if not high_conviction_ideas.empty else high_conviction_ideas)}
+
+## Full idea order-entry sheet — diagnostics, not preferred trades
+{markdown_table(order_entry_sheet.head(50))}
 
 ## Watch table after fixes
 {markdown_table(watch_table)}
@@ -2977,8 +3394,10 @@ This payload keeps automated GEX disabled, preserves the FIRE/SHIELD/condor path
 - Market cap no longer hard-deletes $10B-$80B liquid names; they route to mid-cap Pilot tier. Sub-$10B and unknown-cap rows are watch-only unless a future lane explicitly enables them.
 - ETF/index candidates route to a separate ETF/index lane and do not contaminate the common-stock primary table.
 - Low-POP candidates are tagged as convexity/lottery structures.
-- The primary table is ranked by **EV/ML first**.
+- The Execution Shortlist is the only user-facing executable/potential trade recommendation table.
+- The primary table is ranked by **EV/ML first** and is audit/discovery only.
 - Conviction is secondary context only.
+- Priority Score mode is ENGINE_NATIVE in r7.2 and remains quote/order sequencing only.
 - Browser / Atlas GEX is **not called** and has no effect on promotion, blocking, ranking, strike placement, notes, or sizing.
 - SHIELD auto-promotion requires a file-native non-GEX anchor from whale side, actual hot-chain protection, and OI/liquidity support.
 - Iron condors require two anchored SHIELD sides on the same ticker and expiry; no fabricated or inferred opposite side is allowed.
@@ -2986,6 +3405,12 @@ This payload keeps automated GEX disabled, preserves the FIRE/SHIELD/condor path
 
     out_dir.mkdir(parents=True, exist_ok=True)
     primary_table.to_csv(out_dir / f"options_scan_{scan_date}_audited_recommendations.csv", index=False)
+    priority_overlay.to_csv(out_dir / f"options_scan_{scan_date}_priority_overlay.csv", index=False)
+    execution_shortlist.to_csv(out_dir / f"options_scan_{scan_date}_audited_execution_shortlist.csv", index=False)
+    execution_order_entry_sheet.to_csv(out_dir / f"options_scan_{scan_date}_audited_execution_order_entry_sheet.csv", index=False)
+    all_primary_eligible_ideas.to_csv(out_dir / f"options_scan_{scan_date}_audited_all_primary_eligible_ideas.csv", index=False)
+    high_conviction_ideas.to_csv(out_dir / f"options_scan_{scan_date}_audited_high_conviction_ideas.csv", index=False)
+    order_entry_sheet.to_csv(out_dir / f"options_scan_{scan_date}_audited_order_entry_sheet.csv", index=False)
     watch_table.to_csv(out_dir / f"options_scan_{scan_date}_audited_watch.csv", index=False)
     etf_lane_table.to_csv(out_dir / f"options_scan_{scan_date}_audited_etf_lane.csv", index=False)
     blocked_positive_ev.to_csv(out_dir / f"options_scan_{scan_date}_audited_blocked_positive_ev.csv", index=False)
@@ -3008,8 +3433,8 @@ This payload keeps automated GEX disabled, preserves the FIRE/SHIELD/condor path
 
     print(
         f"PASS {ENGINE_VERSION} scan_date={scan_date} "
-        f"source_mode={source_mode} primary_rows={len(primary_table)} "
-        f"watch_rows={len(watch_table)} health_gate={schwab.get('status', 'UNKNOWN')} "
+        f"source_mode={source_mode} primary_rows={len(primary_table)} execution_shortlist={len(execution_shortlist)} "
+        f"watch_rows={len(watch_table)} high_conviction_ideas={len(high_conviction_ideas)} health_gate={schwab.get('status', 'UNKNOWN')} "
         f"oi_current={oi_curr_path.name}"
     )
     print(f"Wrote report: {report_path}")
@@ -3140,6 +3565,13 @@ def main() -> None:
     parser.add_argument("--diagnose-full-source", action="store_true", help="Inspect the streamed full bot/EOD ZIP schema and filter counts, then exit")
     parser.add_argument("--allow-markdown-seed-fallback", action="store_true", help="Emergency/dev only: if full bot ZIP yields zero seeds, fallback to whale markdown Top-200 instead of failing")
     parser.add_argument("--use-next-day-oi", action="store_true", help="Explicit follow-through mode: allow current OI to use the next calendar day's chain-oi file when present. Default is scan-date OI only.")
+    parser.add_argument("--conviction-threshold", type=int, default=62, help="High-conviction idea lane threshold; default 62 equals >61.")
+    parser.add_argument("--enforce-health-gate", action="store_true", help="Explicitly enforce broker Health Gate blocking. Default is advisory/Bootstrap so missing or failing Schwab logs do not suppress trade ideas.")
+    parser.add_argument("--execution-min-dte", type=int, default=21, help="r7.2 Execution Shortlist minimum DTE. Default 21.")
+    parser.add_argument("--execution-min-pop", type=float, default=0.20, help="r7.2 Execution Shortlist POP floor. Default 0.20.")
+    parser.add_argument("--execution-min-conviction", type=int, default=55, help="r7.2 Execution Shortlist conviction floor. Default 55.")
+    parser.add_argument("--execution-max-rows", type=int, default=12, help="Max rows in user-facing Execution Shortlist. Default 12.")
+    parser.add_argument("--allow-adr-execution", action="store_true", help="Allow ADRs to be Quote Candidate instead of Potential-only.")
     parser.add_argument("--allow-project-version-mismatch", action="store_true", help="Diagnostic only: allow run when canonical markdown/Python versions do not match")
     args = parser.parse_args()
     asof = date.fromisoformat(args.asof) if args.asof else None
@@ -3157,6 +3589,13 @@ def main() -> None:
         project_dir=args.project_dir,
         allow_markdown_seed_fallback=args.allow_markdown_seed_fallback,
         use_next_day_oi=args.use_next_day_oi,
+        conviction_threshold=args.conviction_threshold,
+        enforce_health_gate=args.enforce_health_gate,
+        execution_min_dte=args.execution_min_dte,
+        execution_min_pop=args.execution_min_pop,
+        execution_min_conviction=args.execution_min_conviction,
+        execution_max_rows=args.execution_max_rows,
+        allow_adr_execution=args.allow_adr_execution,
     )
 
 

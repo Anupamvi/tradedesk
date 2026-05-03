@@ -21,6 +21,8 @@ DEFAULT_START = dt.date(2025, 12, 1)
 DEFAULT_BATCH_TOP = 3
 DEFAULT_BATCH_SAMPLES = 10000
 DEFAULT_BATCH_HORIZONS = "5,10,20"
+DEFAULT_BATCH_CANDIDATE_POOL = trend_analysis.DEFAULT_CANDIDATE_POOL
+DEFAULT_BATCH_MAX_BACKTEST_SETUPS = trend_analysis.DEFAULT_MAX_BACKTEST_SETUPS
 
 BATCH_OUTCOME_COLUMNS = [
     "signal_date",
@@ -92,8 +94,17 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--candidate-pool",
         type=_positive_int,
-        default=45,
-        help="Historical raw candidate pool per signal date. Default: 45.",
+        default=DEFAULT_BATCH_CANDIDATE_POOL,
+        help=f"Historical raw candidate pool per signal date. Default: {DEFAULT_BATCH_CANDIDATE_POOL}.",
+    )
+    parser.add_argument(
+        "--max-backtest-setups",
+        type=_positive_int,
+        default=DEFAULT_BATCH_MAX_BACKTEST_SETUPS,
+        help=(
+            "Maximum setup structures sent to the likelihood backtest for each "
+            f"historical signal date. Default: {DEFAULT_BATCH_MAX_BACKTEST_SETUPS}."
+        ),
     )
     parser.add_argument(
         "--root-dir",
@@ -188,6 +199,18 @@ def _filter_signal_dates(df: pd.DataFrame, start: dt.date, end: dt.date) -> pd.D
     out = df.copy()
     dates = pd.to_datetime(out["signal_date"], errors="coerce").dt.date
     return out[dates.ge(start) & dates.le(end)].copy().reset_index(drop=True)
+
+
+def _filter_outcome_dates(df: pd.DataFrame, start: dt.date, end: dt.date) -> pd.DataFrame:
+    if df.empty:
+        return df.copy()
+    out = df.copy()
+    date_column = "exit_date" if "exit_date" in out.columns else "signal_date"
+    if date_column not in out.columns:
+        return out
+    dates = pd.to_datetime(out[date_column], errors="coerce").dt.date
+    filtered = out[dates.ge(start) & dates.le(end)].copy().reset_index(drop=True)
+    return filtered
 
 
 def _profit_factor(pnl: pd.Series) -> float:
@@ -707,7 +730,7 @@ def build_report(
     playbook_verdict = _summary_verdict(forward_playbook_summary)
 
     lines: List[str] = []
-    lines.append(f"# Trend Analysis Batch Proof - {start.isoformat()} to {end.isoformat()} / L{lookback}")
+    lines.append(f"# Trend Analysis Batch Proof - outcomes {start.isoformat()} to {end.isoformat()} / L{lookback}")
     lines.append("")
     lines.append("## The Question")
     lines.append(
@@ -1089,6 +1112,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
     cfg.setdefault("schwab_validation", {})["enabled"] = False
     cfg.setdefault("backtest", {})["enabled"] = True
     cfg.setdefault("backtest", {})["min_signals"] = int(args.min_backtest_signals)
+    cfg.setdefault("backtest", {})["max_setups"] = int(args.max_backtest_setups)
     if args.cache_dir:
         cfg.setdefault("backtest", {})["cache_dir"] = args.cache_dir
     rules_fingerprint = _rules_fingerprint(cfg, args)
@@ -1101,7 +1125,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
 
     print("Trend Analysis Batch Proof", flush=True)
     print(f"  Root: {root}", flush=True)
-    print(f"  Window: {start.isoformat()} to {end.isoformat()}", flush=True)
+    print(f"  Outcome window: {start.isoformat()} to {end.isoformat()}", flush=True)
     print(f"  Lookback: {lookback} market-data days", flush=True)
     print(f"  Horizons: {','.join(map(str, horizons))} market days", flush=True)
     print(f"  Raw cache: {raw_cache_dir}", flush=True)
@@ -1134,7 +1158,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         schwab_actual_trades=schwab_actual_trades,
         reuse_raw=bool(args.reuse_raw),
     )
-    strict_outcomes = _filter_signal_dates(strict_outcomes, start, end)
+    strict_outcomes = _filter_outcome_dates(strict_outcomes, start, end)
 
     research_outcomes = trend_analysis.collect_research_confidence_outcomes(
         root=root,
@@ -1159,7 +1183,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
         min_whale_appearances=int(args.min_whale_appearances),
         schwab_actual_trades=schwab_actual_trades,
     )
-    research_outcomes = _filter_signal_dates(research_outcomes, start, end)
+    research_outcomes = _filter_outcome_dates(research_outcomes, start, end)
     research_summary = trend_analysis._research_summary_from_outcomes(research_outcomes)
     horizon_summary = trend_analysis._research_summary_by_horizon_from_outcomes(research_outcomes)
     regime_summary = summarize_group_expectancy(

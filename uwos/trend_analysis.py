@@ -30,9 +30,13 @@ BATCH_PROOF_RE = re.compile(
     r"^trend-analysis-batch-(?P<kind>.+)-(?P<start>\d{4}-\d{2}-\d{2})_"
     r"(?P<end>\d{4}-\d{2}-\d{2})-L(?P<lookback>\d+)\.(?P<ext>csv|json|md)$"
 )
+POSITION_DATA_RE = re.compile(r"^position_data_(?P<date>\d{4}-\d{2}-\d{2})\.json$")
 DEFAULT_LOOKBACK = 30
 DEFAULT_TOP = 15
 DEFAULT_CANDIDATE_TOP = 10
+DEFAULT_CANDIDATE_POOL = 250
+DEFAULT_EVENT_WATCH_TOP = 40
+DEFAULT_MAX_BACKTEST_SETUPS = 300
 DEFAULT_REPO_ROOT = Path("/Users/anuppamvi/uw_root/tradedesk")
 DEFAULT_MAX_BID_ASK_TO_PRICE_PCT = 0.30
 DEFAULT_MAX_BID_ASK_TO_WIDTH_PCT = 0.10
@@ -50,6 +54,8 @@ DEFAULT_MIN_REVERSAL_DP_SCORE = 60.0
 DEFAULT_MAX_DEBIT_TO_WIDTH_PCT = 0.50
 DEFAULT_MAX_LONG_STRIKE_OTM_PCT = 0.02
 DEFAULT_MIN_WORKUP_SIGNALS = 50
+DEFAULT_EMERGING_ACTIONABLE_MIN_SIGNALS = 75
+DEFAULT_EMERGING_ACTIONABLE_MIN_EDGE = 7.5
 DEFAULT_MAX_CONVICTION_MIN_SCORE = 75.0
 DEFAULT_MAX_CONVICTION_MIN_EDGE = 15.0
 DEFAULT_MAX_CONVICTION_MIN_SIGNALS = 100
@@ -61,6 +67,34 @@ DEFAULT_EVENT_WATCH_MIN_PRICE_SCORE = 65.0
 DEFAULT_EVENT_WATCH_MIN_WHALE_CONSENSUS = 80.0
 DEFAULT_EVENT_WATCH_MIN_IV_RANK = 85.0
 DEFAULT_UNIVERSE_RADAR_MIN_SCORE = 35.0
+HOT_TICKER_RECALL_UNIVERSE = (
+    "AAPL",
+    "GOOG",
+    "GOOGL",
+    "AMZN",
+    "MSFT",
+    "META",
+    "NVDA",
+    "TSLA",
+    "AMD",
+    "AVGO",
+    "MU",
+    "INTC",
+    "PLTR",
+    "PLT",
+    "NFLX",
+    "ORCL",
+    "BABA",
+    "SMCI",
+    "MSTR",
+    "CRWV",
+    "SNOW",
+    "ARM",
+    "CRM",
+    "COIN",
+    "HOOD",
+    "SOFI",
+)
 DEFAULT_WALK_FORWARD_SAMPLES = 0
 DEFAULT_WALK_FORWARD_HORIZONS = "5,10,20"
 DEFAULT_WALK_FORWARD_TOP = 3
@@ -129,6 +163,7 @@ RESEARCH_OUTCOME_COLUMNS = [
     "policy",
     "signal_date",
     "horizon_market_days",
+    "exit_date",
     "ticker",
     "direction",
     "strategy",
@@ -1026,6 +1061,27 @@ def filter_schwab_closed_trade_history_asof(
     return out.loc[mask].reset_index(drop=True)
 
 
+def schwab_actual_audits_asof(
+    closed_trades: pd.DataFrame,
+    summary: Dict[str, Any],
+    as_of: dt.date,
+) -> Tuple[pd.DataFrame, Dict[str, Any], pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    asof_trades = filter_schwab_closed_trade_history_asof(closed_trades, as_of)
+    asof_summary = dict(summary or {})
+    total_parsed = int(asof_summary.get("parsed_closed_trades", len(closed_trades)) or 0)
+    asof_summary["audit_as_of"] = as_of.isoformat()
+    asof_summary["parsed_closed_trades_total"] = total_parsed
+    asof_summary["parsed_closed_trades_asof"] = int(len(asof_trades))
+    asof_summary["parsed_closed_trades"] = int(len(asof_trades))
+    return (
+        asof_trades,
+        asof_summary,
+        build_schwab_actual_strategy_audit(asof_trades),
+        build_schwab_actual_playbook_audit(asof_trades),
+        build_schwab_actual_shape_audit(asof_trades),
+    )
+
+
 def annotate_schwab_actual_evidence(
     candidates: pd.DataFrame,
     playbook_audit: pd.DataFrame,
@@ -1447,6 +1503,10 @@ def _positive_int(value: str) -> int:
     return parsed
 
 
+def _default_candidate_pool(top_n: int) -> int:
+    return max(DEFAULT_CANDIDATE_POOL, int(top_n) * 3, int(top_n) + 10)
+
+
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
@@ -1511,7 +1571,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         default=None,
         help=(
             "Number of high-scoring pattern candidates to backtest before the "
-            "actionable filter is applied. Default: max(top*3, top+10)."
+            f"actionable filter is applied. Default: max({DEFAULT_CANDIDATE_POOL}, top*3, top+10)."
         ),
     )
     parser.add_argument(
@@ -1547,6 +1607,15 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--no-schwab",
         action="store_true",
         help="Skip Schwab live chain validation.",
+    )
+    parser.add_argument(
+        "--force-live-schwab",
+        action="store_true",
+        help=(
+            "Allow current Schwab live-chain validation even when --as-of is older "
+            "than the latest local dated folder. This is for manual debugging only "
+            "because it leaks current chain data into a historical run."
+        ),
     )
     parser.add_argument(
         "--no-backtest",
@@ -1587,10 +1656,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--max-backtest-setups",
         type=_positive_int,
-        default=160,
+        default=DEFAULT_MAX_BACKTEST_SETUPS,
         help=(
             "Maximum concrete trade structures sent to the expensive "
-            "likelihood backtest. Default: 160."
+            f"likelihood backtest. Default: {DEFAULT_MAX_BACKTEST_SETUPS}."
         ),
     )
     parser.add_argument(
@@ -1849,6 +1918,42 @@ def resolve_invocation(args: argparse.Namespace) -> Tuple[Optional[dt.date], int
     return as_of, int(lookback or DEFAULT_LOOKBACK)
 
 
+def _live_schwab_mode(
+    *,
+    no_schwab: bool,
+    force_live_schwab: bool,
+    as_of: dt.date,
+    latest_data_date: Optional[dt.date],
+    today: Optional[dt.date] = None,
+) -> Tuple[bool, str]:
+    if bool(no_schwab):
+        return False, "disabled by --no-schwab"
+    if bool(force_live_schwab):
+        return True, "forced by --force-live-schwab"
+    current_date = today or dt.date.today()
+    if as_of < current_date:
+        return (
+            False,
+            f"historical as-of {as_of.isoformat()} is before current date {current_date.isoformat()}",
+        )
+    if as_of > current_date:
+        return (
+            False,
+            f"future as-of {as_of.isoformat()} is after current date {current_date.isoformat()}",
+        )
+    if latest_data_date is not None and as_of < latest_data_date:
+        return (
+            False,
+            f"historical as-of {as_of.isoformat()} is before latest local data {latest_data_date.isoformat()}",
+        )
+    if latest_data_date is not None and as_of > latest_data_date:
+        return (
+            True,
+            f"current as-of {as_of.isoformat()} uses latest completed local data {latest_data_date.isoformat()} for trend detection",
+        )
+    return True, "latest local as-of"
+
+
 def _safe_float(value: Any) -> float:
     try:
         if value is None:
@@ -1915,6 +2020,27 @@ def _latest_position_json(root: Path) -> Optional[Path]:
         return None
     paths = sorted(trade_dir.glob("position_data_*.json"))
     return paths[-1] if paths else None
+
+
+def _position_json_for_asof(root: Path, as_of: dt.date) -> Optional[Path]:
+    trade_dir = root / "out" / "trade_analysis"
+    if not trade_dir.exists():
+        return None
+    candidates: List[Tuple[dt.date, Path]] = []
+    for path in trade_dir.glob("position_data_*.json"):
+        match = POSITION_DATA_RE.match(path.name)
+        if not match:
+            continue
+        try:
+            snapshot_date = dt.date.fromisoformat(match.group("date"))
+        except ValueError:
+            continue
+        if snapshot_date <= as_of:
+            candidates.append((snapshot_date, path))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda item: (item[0], str(item[1])))
+    return candidates[-1][1]
 
 
 def _position_direction(pos: Dict[str, Any]) -> str:
@@ -2305,9 +2431,142 @@ def _has_alternative_historical_support(row: pd.Series) -> bool:
     )
 
 
+def _strategy_family_blocks_current_support(row: pd.Series) -> bool:
+    if "strategy_family_gate_pass" not in row.index:
+        return False
+    if _truthy(row.get("strategy_family_gate_pass")):
+        return False
+    if (
+        _truthy(row.get("ticker_playbook_gate_pass"))
+        or _truthy(row.get("batch_family_gate_pass"))
+        or _truthy(row.get("schwab_actual_playbook_supportive"))
+        or _truthy(row.get("schwab_actual_shape_supportive"))
+    ):
+        return False
+    family = str(row.get("strategy_family", "") or "").strip()
+    verdict = str(row.get("strategy_family_verdict", "") or "").strip().lower()
+    if not family or verdict in {"", "no_match", "no_promoted_match", "no_audit"}:
+        return False
+    return verdict != "promotable"
+
+
 def _batch_playbook_hard_blocked(row: pd.Series) -> bool:
     verdict = str(row.get("batch_playbook_verdict", "") or "").strip().lower()
     return verdict in {"negative", "decaying", "validation_negative", "mixed_negative"}
+
+
+def _current_backtest_support_passes(
+    row: pd.Series,
+    *,
+    min_edge: float = 0.0,
+    min_signals: int = 100,
+) -> bool:
+    if _batch_playbook_hard_blocked(row):
+        return False
+    if backtest_passes(
+        row,
+        min_edge=float(min_edge),
+        min_signals=int(min_signals),
+        allow_low_sample=False,
+    ):
+        return True
+    return _strong_emerging_low_sample_support(row, min_edge=float(min_edge))
+
+
+def _strong_directional_backtest_override(
+    row: pd.Series,
+    *,
+    min_edge: float,
+    min_signals: int,
+    min_swing_score: float,
+) -> bool:
+    """Allow a near-threshold swing score when exact ticket evidence is strong."""
+    direction = str(row.get("direction", "") or "").strip().lower()
+    if direction not in {"bullish", "bearish"}:
+        return False
+    score = _safe_float(row.get("swing_score"))
+    floor = max(0.0, float(min_swing_score) - 3.0)
+    if not math.isfinite(score) or score < floor:
+        return False
+    if not backtest_passes(
+        row,
+        min_edge=max(float(min_edge), 5.0),
+        min_signals=max(int(min_signals), 200),
+        allow_low_sample=False,
+    ):
+        return False
+    price_direction = str(row.get("price_direction", "") or "").strip().lower()
+    flow_direction = str(row.get("flow_direction", "") or "").strip().lower()
+    price_score = _safe_float(row.get("price_trend"))
+    flow_score = _safe_float(row.get("flow_persistence"))
+    whales = _safe_int(row.get("whale_appearances"))
+    return (
+        price_direction == direction
+        and flow_direction == direction
+        and math.isfinite(price_score)
+        and price_score >= DEFAULT_MIN_DIRECTIONAL_PRICE_SCORE
+        and math.isfinite(flow_score)
+        and flow_score >= DEFAULT_MIN_DIRECTIONAL_FLOW_SCORE
+        and whales >= DEFAULT_MIN_WHALE_APPEARANCES
+    )
+
+
+def _strong_emerging_low_sample_support(
+    row: pd.Series,
+    *,
+    min_edge: float,
+    min_swing_score: float = DEFAULT_CANDIDATE_MIN_SCORE,
+) -> bool:
+    """Promote unusually clean LOW_SAMPLE exact tickets to starter-size action."""
+    if _batch_playbook_hard_blocked(row):
+        return False
+    direction = str(row.get("direction", "") or "").strip().lower()
+    if direction not in {"bullish", "bearish"}:
+        return False
+    verdict = str(row.get("backtest_verdict", "") or "").strip().upper()
+    if verdict != "LOW_SAMPLE":
+        return False
+
+    edge = _safe_float(row.get("edge_pct"))
+    signals = _safe_int(row.get("backtest_signals"))
+    score = _safe_float(row.get("swing_score"))
+    price_direction = str(row.get("price_direction", "") or "").strip().lower()
+    flow_direction = str(row.get("flow_direction", "") or "").strip().lower()
+    price_score = _safe_float(row.get("price_trend"))
+    flow_score = _safe_float(row.get("flow_persistence"))
+    whales = _safe_int(row.get("whale_appearances"))
+    if not math.isfinite(edge) or edge < max(float(min_edge), DEFAULT_EMERGING_ACTIONABLE_MIN_EDGE):
+        return False
+    if not math.isfinite(score) or score < max(0.0, float(min_swing_score) - 3.0):
+        return False
+    if price_direction != direction or flow_direction != direction:
+        return False
+    if not math.isfinite(price_score) or price_score < DEFAULT_MIN_DIRECTIONAL_PRICE_SCORE:
+        return False
+    if not math.isfinite(flow_score) or flow_score < DEFAULT_MIN_DIRECTIONAL_FLOW_SCORE:
+        return False
+    full_emerging_sample = signals >= DEFAULT_EMERGING_ACTIONABLE_MIN_SIGNALS
+    high_quality_smaller_sample = (
+        signals >= 55
+        and score >= float(min_swing_score)
+        and edge >= 5.0
+        and price_score >= 70.0
+        and flow_score >= 70.0
+    )
+    if not (full_emerging_sample or high_quality_smaller_sample):
+        return False
+    return (
+        whales >= _effective_min_whale_appearances(row, DEFAULT_MIN_WHALE_APPEARANCES)
+    )
+
+
+def _strong_current_setup_overrides_broad_strategy_negative(row: pd.Series) -> bool:
+    return _strong_directional_backtest_override(
+        row,
+        min_edge=0.0,
+        min_signals=100,
+        min_swing_score=DEFAULT_CANDIDATE_MIN_SCORE,
+    )
 
 
 def historical_support_passes(
@@ -2324,6 +2583,8 @@ def historical_support_passes(
         allow_low_sample=allow_low_sample,
     ):
         return True
+    if _strong_emerging_low_sample_support(row, min_edge=min_edge):
+        return True
     if _ticker_playbook_support_passes(row, min_edge=min_edge):
         return True
     if _batch_playbook_support_passes(row, min_edge=min_edge):
@@ -2335,30 +2596,41 @@ def historical_support_passes(
     return _schwab_actual_shape_support_passes(row, min_edge=min_edge)
 
 
-def research_gate_passes(row: pd.Series) -> bool:
+def research_gate_passes(row: pd.Series, *, min_edge: float = 0.0, min_signals: int = 100) -> bool:
+    if _batch_playbook_hard_blocked(row):
+        return False
+    if "rolling_playbook_gate_pass" in row.index and not _truthy(row.get("rolling_playbook_gate_pass")):
+        return False
     batch_family_pass = _truthy(row.get("batch_family_gate_pass"))
     broker_support = (
         _truthy(row.get("schwab_actual_playbook_supportive"))
         or _truthy(row.get("schwab_actual_shape_supportive"))
     )
+    current_support = _current_backtest_support_passes(
+        row,
+        min_edge=float(min_edge),
+        min_signals=int(min_signals),
+    )
+    if _strategy_family_blocks_current_support(row):
+        return False
     if (
         "batch_playbook_gate_pass" in row.index
         and not _truthy(row.get("batch_playbook_gate_pass"))
         and not batch_family_pass
         and not broker_support
+        and not current_support
     ):
         return False
     family_present = "strategy_family_gate_pass" in row.index
     playbook_present = "ticker_playbook_gate_pass" in row.index
     if not family_present and not playbook_present:
-        return broker_support or True
-    if "rolling_playbook_gate_pass" in row.index and not _truthy(row.get("rolling_playbook_gate_pass")):
-        return False
+        return broker_support or current_support or True
     return (
         _truthy(row.get("strategy_family_gate_pass"))
         or _truthy(row.get("ticker_playbook_gate_pass"))
         or batch_family_pass
         or broker_support
+        or current_support
     )
 
 
@@ -2376,7 +2648,20 @@ def base_gate_reasons(
     reasons: List[str] = []
     score = _safe_float(row.get("swing_score"))
     if float(min_swing_score) > 0:
-        if not math.isfinite(score) or score < float(min_swing_score):
+        if (
+            (not math.isfinite(score) or score < float(min_swing_score))
+            and not _strong_directional_backtest_override(
+                row,
+                min_edge=min_edge,
+                min_signals=min_signals,
+                min_swing_score=min_swing_score,
+            )
+            and not _strong_emerging_low_sample_support(
+                row,
+                min_edge=min_edge,
+                min_swing_score=min_swing_score,
+            )
+        ):
             reasons.append(f"swing score {_fmt_num(score, 1)} < min {float(min_swing_score):.1f}")
 
     if not backtest_enabled:
@@ -2428,6 +2713,11 @@ def base_gate_reasons(
     if (
         "batch_playbook_gate_pass" in row.index
         and not _truthy(row.get("batch_playbook_gate_pass"))
+        and not _current_backtest_support_passes(
+            row,
+            min_edge=min_edge,
+            min_signals=min_signals,
+        )
         and (_batch_playbook_hard_blocked(row) or not _has_alternative_historical_support(row))
     ):
         summary = str(row.get("batch_playbook_summary", "") or "").strip()
@@ -2445,7 +2735,11 @@ def base_gate_reasons(
 
     if (
         ("strategy_family_gate_pass" in row.index or "ticker_playbook_gate_pass" in row.index)
-        and not research_gate_passes(row)
+        and not research_gate_passes(
+            row,
+            min_edge=min_edge,
+            min_signals=min_signals,
+        )
     ):
         family = str(row.get("strategy_family", "") or "no matching family").strip()
         verdict = str(row.get("strategy_family_verdict", "") or "not_promotable").strip()
@@ -2630,7 +2924,11 @@ def quality_gate_reasons(
             reasons.append("volatile GEX regime for iron condor")
 
     actual_strategy_verdict = str(row.get("schwab_actual_strategy_verdict", "") or "").strip().lower()
-    if actual_strategy_verdict == "negative" and not _exact_playbook_supportive(row):
+    if (
+        actual_strategy_verdict == "negative"
+        and not _exact_playbook_supportive(row)
+        and not _strong_current_setup_overrides_broad_strategy_negative(row)
+    ):
         summary = str(row.get("schwab_actual_strategy_summary", "") or "").strip()
         reasons.append(f"actual Schwab strategy audit negative{': ' + summary if summary else ''}")
     actual_shape_verdict = str(row.get("schwab_actual_shape_verdict", "") or "").strip().lower()
@@ -2855,21 +3153,30 @@ def _sort_trade_rows(df: pd.DataFrame) -> pd.DataFrame:
 def _dedupe_trade_rows(df: pd.DataFrame, *, by_ticker: bool = False) -> pd.DataFrame:
     if df.empty:
         return df
-    preferred = (
-        ("ticker",)
-        if by_ticker
-        else (
-            "ticker",
-            "strategy",
-            "target_expiry",
-            "live_strike_setup",
-            "strike_setup",
-        )
+    if by_ticker:
+        dedupe_cols = [c for c in ("ticker",) if c in df.columns]
+        return df.drop_duplicates(subset=dedupe_cols, keep="first") if dedupe_cols else df
+    work = df.copy()
+    live = (
+        work.get("live_strike_setup", pd.Series("", index=work.index))
+        .fillna("")
+        .astype(str)
+        .str.strip()
     )
-    dedupe_cols = [c for c in preferred if c in df.columns]
+    base = (
+        work.get("strike_setup", pd.Series("", index=work.index))
+        .fillna("")
+        .astype(str)
+        .str.strip()
+    )
+    work["_dedupe_entry_setup"] = live.mask(live.eq(""), base)
+    dedupe_cols = [c for c in ("ticker", "strategy", "target_expiry", "_dedupe_entry_setup") if c in work.columns]
     if not dedupe_cols:
         return df
-    return df.drop_duplicates(subset=dedupe_cols, keep="first")
+    return work.drop_duplicates(subset=dedupe_cols, keep="first").drop(
+        columns=["_dedupe_entry_setup"],
+        errors="ignore",
+    )
 
 
 HARD_QUALITY_REJECTS = (
@@ -3407,6 +3714,19 @@ def _event_watch_live_move_pct(row: pd.Series) -> float:
     return (live - latest) / latest
 
 
+def _earnings_days_away(row: pd.Series) -> float:
+    label = _clean_cell_text(row.get("earnings_label", ""))
+    match = re.search(r"(-?\d+(?:\.\d+)?)d\s+away", label, flags=re.IGNORECASE)
+    if not match:
+        return math.nan
+    return _safe_float(match.group(1))
+
+
+def _earnings_is_active_catalyst(row: pd.Series, *, max_abs_days: int = 2) -> bool:
+    days = _earnings_days_away(row)
+    return math.isfinite(days) and abs(days) <= int(max_abs_days)
+
+
 def _event_watch_catalyst_items(row: pd.Series) -> List[str]:
     items: List[str] = []
     direction = str(row.get("direction", "") or "").strip().lower()
@@ -3426,7 +3746,8 @@ def _event_watch_catalyst_items(row: pd.Series) -> List[str]:
 
     earnings = _clean_cell_text(row.get("earnings_label", "")) or _clean_cell_text(row.get("next_earnings_date", ""))
     if earnings:
-        items.append(f"earnings/catalyst window: {earnings}")
+        label = "earnings/catalyst window" if _earnings_is_active_catalyst(row) else "upcoming earnings"
+        items.append(f"{label}: {earnings}")
 
     iv_rank = _safe_float(row.get("latest_iv_rank"))
     if math.isfinite(iv_rank) and iv_rank >= DEFAULT_EVENT_WATCH_MIN_IV_RANK:
@@ -3575,8 +3896,31 @@ def _event_watch_trigger(row: pd.Series) -> str:
                 f"spread only if the stock stays below {_fmt_money(fail)}, both legs quote cleanly, and put/call flow remains bearish."
             )
 
+    latest_return = _safe_float(row.get("latest_return_pct"))
+    latest_return_direction = str(row.get("latest_return_direction", "") or "").strip().lower()
+    if (
+        math.isfinite(latest_return)
+        and abs(latest_return) >= DEFAULT_EVENT_WATCH_MIN_LIVE_MOVE_PCT
+        and latest_return_direction == direction
+        and math.isfinite(latest)
+    ):
+        if direction == "bullish":
+            hold = latest * 0.97
+            return (
+                f"Watch only: latest completed day already moved {latest_return:+.1%}. "
+                f"Do not chase the first spike. Rebuild/reprice from the current chain and consider a defined-risk bullish "
+                f"spread only if the stock holds above {_fmt_money(hold)}, both legs quote cleanly, and call/put flow remains bullish."
+            )
+        if direction == "bearish":
+            fail = latest * 1.03
+            return (
+                f"Watch only: latest completed day already moved {latest_return:+.1%}. "
+                f"Do not chase the first break. Rebuild/reprice from the current chain and consider a defined-risk bearish "
+                f"spread only if the stock stays below {_fmt_money(fail)}, both legs quote cleanly, and put/call flow remains bearish."
+            )
+
     earnings = _clean_cell_text(row.get("next_earnings_date", ""))
-    if earnings:
+    if earnings and _earnings_is_active_catalyst(row):
         if direction == "bullish" and math.isfinite(latest):
             return (
                 f"Watch only: wait for the first full post-catalyst dated folder after {earnings}; "
@@ -3631,14 +3975,18 @@ def build_event_momentum_watch(
     direction = df.get("direction", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
     score = pd.to_numeric(df.get("swing_score", pd.Series(np.nan, index=df.index)), errors="coerce")
     price = pd.to_numeric(df.get("price_trend", pd.Series(np.nan, index=df.index)), errors="coerce")
+    flow = pd.to_numeric(df.get("flow_persistence", pd.Series(np.nan, index=df.index)), errors="coerce")
     whale = pd.to_numeric(df.get("whale_consensus", pd.Series(np.nan, index=df.index)), errors="coerce")
     iv_rank = pd.to_numeric(df.get("latest_iv_rank", pd.Series(np.nan, index=df.index)), errors="coerce")
+    latest_return_abs = pd.to_numeric(
+        df.get("latest_return_pct", pd.Series(np.nan, index=df.index)),
+        errors="coerce",
+    ).abs()
     live_move = df.apply(_event_watch_live_move_pct, axis=1)
     event_score = df.apply(_event_watch_score, axis=1)
     df["_event_score"] = event_score
     df["_event_live_move_abs"] = live_move.abs().fillna(0)
-    df["_event_catalysts"] = df.apply(_event_watch_catalyst_items, axis=1)
-    catalyst_count = df["_event_catalysts"].apply(len)
+    df["_event_latest_abs"] = latest_return_abs.fillna(0)
     action_reasons = (
         df.get("actionability_reject_reasons", pd.Series("", index=df.index)).fillna("").astype(str)
         + "; "
@@ -3655,19 +4003,78 @@ def build_event_momentum_watch(
         | pd.to_numeric(df.get("whale_appearances", pd.Series(0, index=df.index)), errors="coerce").fillna(0).ge(8)
     )
     has_price = price.ge(DEFAULT_EVENT_WATCH_MIN_PRICE_SCORE)
+    price_direction = df.get("price_direction", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
+    dp_direction = df.get("dp_direction", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
+    dp_confirms_price = (
+        ((price_direction == "bullish") & (dp_direction == "accumulation"))
+        | ((price_direction == "bearish") & (dp_direction == "distribution"))
+    )
+    provisional_direction = (
+        ~direction.isin({"bullish", "bearish"})
+        & price_direction.isin({"bullish", "bearish"})
+        & has_price
+        & has_institutional
+        & (has_catalyst | latest_return_abs.ge(0.03))
+        & dp_confirms_price
+    )
+    df["_event_original_direction_raw"] = direction
+    if provisional_direction.any() and "direction" in df.columns:
+        df.loc[provisional_direction, "direction"] = price_direction[provisional_direction]
+        direction = df.get("direction", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
+    df["_event_catalysts"] = df.apply(_event_watch_catalyst_items, axis=1)
+    catalyst_count = df["_event_catalysts"].apply(len)
+    has_event_shock = (
+        latest_return_abs.ge(DEFAULT_EVENT_WATCH_MIN_LIVE_MOVE_PCT)
+        & catalyst_count.ge(1)
+        & (
+            price.ge(45)
+            | flow.ge(45)
+            | iv_rank.ge(55)
+            | live_move.abs().ge(DEFAULT_EVENT_WATCH_MIN_LIVE_MOVE_PCT)
+        )
+    )
+    df["_event_shock"] = has_event_shock
+    confirmed_momentum_watch = (
+        event_score.ge(DEFAULT_EVENT_WATCH_MIN_EVENT_SCORE - 3.0)
+        & catalyst_count.ge(3)
+        & has_catalyst
+        & has_institutional
+        & price.ge(DEFAULT_EVENT_WATCH_MIN_PRICE_SCORE)
+        & score.ge(DEFAULT_EVENT_WATCH_MIN_SCORE)
+    )
+    df["_event_confirmed_momentum"] = confirmed_momentum_watch
+    strict_event = (
+        event_score.ge(DEFAULT_EVENT_WATCH_MIN_EVENT_SCORE)
+        & catalyst_count.ge(3)
+        & has_catalyst
+        & has_institutional
+        & has_price
+    )
     mask = ticker.str.strip().ne("")
     mask &= direction.isin({"bullish", "bearish"})
-    mask &= score.ge(DEFAULT_EVENT_WATCH_MIN_SCORE)
-    mask &= event_score.ge(DEFAULT_EVENT_WATCH_MIN_EVENT_SCORE)
-    mask &= catalyst_count.ge(3)
-    mask &= has_catalyst & has_institutional & has_price
-    mask &= ~action_reasons.str.contains("lotto underlying|flow conflict", regex=True)
+    mask &= score.ge(DEFAULT_EVENT_WATCH_MIN_SCORE) | has_event_shock
+    mask &= strict_event | has_event_shock | confirmed_momentum_watch
+    lotto_blocked = action_reasons.str.contains("lotto underlying", regex=False)
+    flow_blocked = action_reasons.str.contains("flow conflict", regex=False)
+    actual_negative = (
+        action_reasons.str.contains("actual schwab strategy audit negative", regex=False)
+        | action_reasons.str.contains("actual schwab playbook negative", regex=False)
+        | action_reasons.str.contains("actual schwab shape negative", regex=False)
+    )
+    df["_event_actual_negative"] = actual_negative
+    mask &= ~lotto_blocked
+    mask &= ~(flow_blocked & ~(has_event_shock | confirmed_momentum_watch))
 
     watch = df[mask].copy()
     if watch.empty:
         return pd.DataFrame()
 
-    original_direction = watch.get("direction", pd.Series("", index=watch.index)).fillna("").astype(str).str.lower()
+    original_direction = (
+        watch.get("_event_original_direction_raw", watch.get("direction", pd.Series("", index=watch.index)))
+        .fillna("")
+        .astype(str)
+        .str.lower()
+    )
     reaction_direction = watch.apply(_event_reaction_direction, axis=1)
     reaction_strategy = watch.apply(lambda r: _event_reaction_strategy(r, _event_reaction_direction(r)), axis=1)
     watch["event_watch_original_direction"] = original_direction
@@ -3710,12 +4117,32 @@ def build_event_momentum_watch(
     if "strike_setup" in watch.columns:
         watch.loc[live_ok & live_setup.ne(""), "strike_setup"] = live_setup[live_ok & live_setup.ne("")]
     watch = watch.sort_values(
-        ["_event_score", "_event_live_move_abs", "swing_score"],
-        ascending=[False, False, False],
+        [
+            "_event_confirmed_momentum",
+            "_event_shock",
+            "_event_actual_negative",
+            "_event_score",
+            "_event_latest_abs",
+            "_event_live_move_abs",
+            "swing_score",
+        ],
+        ascending=[False, False, True, False, False, False, False],
         kind="mergesort",
     )
     watch = _dedupe_trade_rows(watch, by_ticker=True).head(max(1, int(top_n)))
-    return watch.drop(columns=["_event_score", "_event_live_move_abs", "_event_catalysts"], errors="ignore").reset_index(drop=True)
+    return watch.drop(
+        columns=[
+            "_event_score",
+            "_event_live_move_abs",
+            "_event_latest_abs",
+            "_event_catalysts",
+            "_event_shock",
+            "_event_confirmed_momentum",
+            "_event_actual_negative",
+            "_event_original_direction_raw",
+        ],
+        errors="ignore",
+    ).reset_index(drop=True)
 
 
 def _max_conviction_reasons(
@@ -4880,16 +5307,67 @@ def _signal_dates_by_horizon(
     samples: int,
     horizons: Sequence[int],
 ) -> Dict[int, List[dt.date]]:
+    valid_horizons = sorted(set(int(h) for h in horizons if int(h) > 0))
+    if samples <= 0 or not valid_horizons:
+        return {h: [] for h in valid_horizons}
+
+    index_by_day = {day: idx for idx, (day, _) in enumerate(all_days)}
+    eligible: List[dt.date] = []
+    for idx, (day, _) in enumerate(all_days):
+        if day >= as_of:
+            continue
+        if idx < max(0, int(lookback) - 1):
+            continue
+        if not any(idx + horizon < len(all_days) for horizon in valid_horizons):
+            continue
+        eligible.append(day)
+
+    selected = eligible[-int(samples):]
     return {
-        int(horizon): _walk_forward_signal_dates(
-            all_days,
-            lookback=lookback,
-            as_of=as_of,
-            samples=samples,
-            max_horizon=int(horizon),
-        )
-        for horizon in sorted(set(int(h) for h in horizons if int(h) > 0))
+        horizon: [
+            day
+            for day in selected
+            if index_by_day.get(day, len(all_days)) + horizon < len(all_days)
+        ]
+        for horizon in valid_horizons
     }
+
+
+def _raw_candidate_cache_reusable(raw_csv: Path, *, candidate_pool: int) -> Tuple[bool, str]:
+    try:
+        cached = pd.read_csv(
+            raw_csv,
+            usecols=lambda col: col in {"ticker", "variant_tag"},
+            low_memory=False,
+        )
+        cached_unique = cached["ticker"].fillna("").astype(str).str.upper().str.strip().nunique()
+        variant_tags = (
+            cached.get("variant_tag", pd.Series(dtype=str))
+            .fillna("base")
+            .astype(str)
+            .str.strip()
+            .replace("", "base")
+        )
+        variant_count = int(variant_tags.nunique())
+        structural_variant_seen = bool(
+            variant_tags.isin(
+                [
+                    "momentum_debit",
+                    "liquid_debit",
+                    "safer_credit",
+                    "listed_expiry",
+                    "wide_condor",
+                    "directional_repair",
+                ]
+            ).any()
+        )
+    except Exception:
+        return False, "cached raw read failed"
+    if cached_unique < int(candidate_pool):
+        return False, f"cached universe {cached_unique} < requested pool {int(candidate_pool)}"
+    if variant_count < 3 or not structural_variant_seen:
+        return False, "cached trade-structure variants are stale"
+    return True, ""
 
 
 def _market_day_after(
@@ -5061,8 +5539,20 @@ def run_walk_forward_audit(
         audit_out.mkdir(parents=True, exist_ok=True)
         raw_csv = audit_out / names["raw_csv"]
 
+        reuse_existing_raw = False
+        raw_refresh_reason = ""
         if reuse_raw and raw_csv.exists():
+            reuse_existing_raw, raw_refresh_reason = _raw_candidate_cache_reusable(
+                raw_csv,
+                candidate_pool=int(candidate_pool),
+            )
+        if reuse_existing_raw:
             print(f"      reuse raw candidates: {raw_csv}", flush=True)
+        elif reuse_raw and raw_csv.exists():
+            print(
+                f"      refresh raw candidates: {raw_refresh_reason or 'cache no longer matches current generator'}",
+                flush=True,
+            )
         else:
             audit_cfg = copy.deepcopy(cfg_template)
             audit_cfg.setdefault("pipeline", {})["root_dir"] = str(root)
@@ -5575,6 +6065,7 @@ def collect_research_confidence_outcomes(
                             "policy": policy,
                             "signal_date": signal_date.isoformat(),
                             "horizon_market_days": int(horizon),
+                            "exit_date": exit_date.isoformat(),
                             "ticker": str(row.get("ticker", "") or "").upper().strip(),
                             "direction": str(row.get("direction", "") or "").strip().lower(),
                             "strategy": str(row.get("strategy", "") or "").strip(),
@@ -7803,7 +8294,16 @@ def _compact_ticket_decision(status: str) -> str:
         return "Do not open"
     if normalized == "WATCH ONLY":
         return "Watch only"
+    if normalized == "EVENT WATCH":
+        return "No order; rebuild only"
     return normalized or "-"
+
+
+def _actionable_entry_status(row: pd.Series) -> str:
+    tier = str(row.get("position_size_tier", "") or "").strip().upper()
+    if tier in {"STANDARD_RISK", "MAX_PLANNED_RISK"}:
+        return "MAKE NOW"
+    return "TACTICAL PROBE"
 
 
 def _status_badge_html(status: str) -> str:
@@ -7813,6 +8313,7 @@ def _status_badge_html(status: str) -> str:
         "TACTICAL PROBE": ("#fef3c7", "#92400e", "#facc15"),
         "PROBE ONLY": ("#dbeafe", "#1d4ed8", "#93c5fd"),
         "WATCH ONLY": ("#e0f2fe", "#075985", "#7dd3fc"),
+        "EVENT WATCH": ("#ccfbf1", "#115e59", "#5eead4"),
         "DO NOT OPEN": ("#fee2e2", "#991b1b", "#fca5a5"),
         "CLOSE": ("#fee2e2", "#991b1b", "#fca5a5"),
         "ROLL": ("#dbeafe", "#1d4ed8", "#93c5fd"),
@@ -7851,12 +8352,12 @@ def _compact_entry_trigger(row: pd.Series, *, status: str, why: str) -> str:
         if math.isfinite(long_strike) and math.isfinite(latest) and long_strike > latest:
             clauses.append(f"Close > ${long_strike:.2f}")
         elif math.isfinite(latest):
-            clauses.append(f"Hold > ${latest * 0.99:.2f}")
+            clauses.append(f"Hold > ${latest:.2f}")
         else:
             clauses.append("Price confirms bullish")
     elif direction == "bearish":
         if math.isfinite(long_strike) and math.isfinite(latest) and long_strike < latest:
-            clauses.append(f"Stay < ${latest * 1.01:.2f}")
+            clauses.append(f"Stay < ${latest:.2f}")
         elif math.isfinite(latest):
             clauses.append(f"Stay < ${latest:.2f}")
         else:
@@ -7898,6 +8399,8 @@ def _blocker_badges_html(why: str) -> str:
         badges.append(("Weak/mixed flow", "#fee2e2", "#991b1b"))
     if "open position conflict" in lowered:
         badges.append(("Open position", "#fee2e2", "#991b1b"))
+    if "actual schwab" in lowered and "negative" in lowered:
+        badges.append(("Bad Schwab history", "#fee2e2", "#991b1b"))
     if "earnings in trade window" in lowered:
         badges.append(("Earnings risk", "#fee2e2", "#991b1b"))
     if "low_sample" in lowered or "low-sample" in lowered:
@@ -7914,55 +8417,75 @@ def _blocker_badges_html(why: str) -> str:
     )
 
 
+def _status_text(status: str) -> str:
+    normalized = str(status or "").strip().upper() or "-"
+    labels = {
+        "MAKE NOW": "GREEN MAKE NOW",
+        "TACTICAL PROBE": "YELLOW TACTICAL PROBE",
+        "PROBE ONLY": "BLUE PROBE ONLY",
+        "TRADE SETUP": "BLUE TRADE SETUP",
+        "REBUILD": "BLUE REBUILD",
+        "PATTERN": "GRAY PATTERN",
+        "EVENT WATCH": "WATCH ONLY - NO ORDER",
+        "WATCH ONLY": "BLUE WATCH ONLY",
+        "DO NOT OPEN": "RED DO NOT OPEN",
+    }
+    return labels.get(normalized, normalized)
+
+
+def _blocker_text(why: str) -> str:
+    lowered = str(why or "").lower()
+    labels: List[str] = []
+    if "batch proof playbook gate blocked" in lowered:
+        labels.append("batch proof")
+    if "market regime conflict" in lowered:
+        labels.append("regime")
+    if "weak directional price trend" in lowered:
+        labels.append("weak price")
+    if "weak directional flow" in lowered or "directional flow not confirming" in lowered:
+        labels.append("weak flow")
+    if "open position conflict" in lowered:
+        labels.append("open position")
+    if "actual schwab" in lowered and "negative" in lowered:
+        labels.append("bad Schwab history")
+    if "earnings in trade window" in lowered:
+        labels.append("earnings")
+    if "low_sample" in lowered or "low-sample" in lowered:
+        labels.append("low sample")
+    if "swing score" in lowered:
+        labels.append("score")
+    return ", ".join(labels[:5]) if labels else "-"
+
+
 def _render_trade_ticket_html_table(rows: List[Dict[str, str]]) -> str:
     if not rows:
         return "- No final trade tickets surfaced."
-    lines = [
-        '<table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px;line-height:1.25;">',
-        "<colgroup>",
-        '<col style="width:7%;">',
-        '<col style="width:13%;">',
-        '<col style="width:28%;">',
-        '<col style="width:12%;">',
-        '<col style="width:20%;">',
-        '<col style="width:20%;">',
-        "</colgroup>",
-        "<thead>",
-        '<tr style="background:#f8fafc;border-bottom:1px solid #cbd5e1;">',
-        '<th style="padding:8px;text-align:left;white-space:nowrap;">Ticker</th>',
-        '<th style="padding:8px;text-align:left;white-space:nowrap;">Status</th>',
-        '<th style="padding:8px;text-align:left;">Trade setup</th>',
-        '<th style="padding:8px;text-align:left;">Action</th>',
-        '<th style="padding:8px;text-align:left;">Entry trigger</th>',
-        '<th style="padding:8px;text-align:left;">Blockers</th>',
-        "</tr>",
-        "</thead>",
-        "<tbody>",
-    ]
+    table_rows: List[List[str]] = []
     for row in rows:
-        lines.extend(
+        table_rows.append(
             [
-                '<tr style="border-bottom:1px solid #e2e8f0;vertical-align:top;">',
-                f'<td style="padding:8px;font-weight:800;white-space:nowrap;">{html.escape(row["ticker"])}</td>',
-                f'<td style="padding:8px;white-space:nowrap;">{row["status_html"]}</td>',
-                f'<td style="padding:8px;overflow-wrap:anywhere;">{row["setup_html"]}</td>',
-                f'<td style="padding:8px;">{html.escape(row["decision"])}</td>',
-                f'<td style="padding:8px;overflow-wrap:anywhere;">{html.escape(row["entry"])}</td>',
-                f'<td style="padding:8px;">{row["blockers_html"]}</td>',
-                "</tr>",
+                _clip_text(row.get("ticker", ""), 12),
+                _clip_text(row.get("status", ""), 24),
+                _clip_text(row.get("setup", ""), 120),
+                _clip_text(row.get("entry", ""), 120),
             ]
         )
-    lines.extend(["</tbody>", "</table>"])
-    return "\n".join(lines)
+    return _render_table(
+        ["Ticker", "Color / Status", "Trade Setup", "Enter / Act Only When"],
+        table_rows,
+    )
 
 
 def _final_trade_ticket_lines(
     *,
+    actionable: Optional[pd.DataFrame] = None,
     proven_tickets: pd.DataFrame,
     current_setups: pd.DataFrame,
     tactical_probes: Optional[pd.DataFrame] = None,
+    event_watch: Optional[pd.DataFrame] = None,
 ) -> List[str]:
     lines: List[str] = []
+    actionable_source = actionable if actionable is not None else pd.DataFrame()
     current_lookup: Dict[str, pd.Series] = {}
     if not current_setups.empty:
         for _, row in current_setups.iterrows():
@@ -7987,14 +8510,28 @@ def _final_trade_ticket_lines(
         table_rows.append(
             {
                 "ticker": ticker,
-                "status_html": _status_badge_html(status),
-                "setup_html": _trade_setup_html(row),
+                "status": _status_text(status),
+                "setup": (
+                    _clean_cell_text(row.get("strategy", ""))
+                    + "; "
+                    + _entry_text(row)
+                    + "; exp "
+                    + (_clean_cell_text(row.get("target_expiry", "")) or "-")
+                ),
+                "expiry": _clean_cell_text(row.get("target_expiry", "")) or "-",
                 "decision": _compact_ticket_decision(status),
                 "entry": _compact_entry_trigger(row, status=status, why=why),
-                "blockers_html": _blocker_badges_html(why),
+                "blockers": _blocker_text(why),
             }
         )
 
+    for _, row in actionable_source.iterrows():
+        status = _actionable_entry_status(row)
+        add_table_row(
+            row,
+            status=status,
+            why=str(row.get("actionability_reject_reasons", "") or "").strip(),
+        )
     for _, row in proven_tickets.iterrows():
         if str(row.get("proven_ticket_status", "") or "").strip().upper() == "MAKE NOW":
             add_table_row(
@@ -8020,15 +8557,26 @@ def _final_trade_ticket_lines(
             continue
         add_table_row(row, status=status, why=str(row.get("proven_ticket_why", "") or "").strip())
 
-    lines.append("### Trade Table")
+    lines.append("### Tradeable Tickets")
     if table_rows:
         lines.append(_render_trade_ticket_html_table(table_rows))
     else:
         lines.append("- No final trade tickets surfaced.")
     lines.append("")
+    lines.append(
+        "Status key: GREEN MAKE NOW = standard-size entry; "
+        "YELLOW TACTICAL PROBE = tradeable starter ticket, max 0.25R; "
+        "BLUE WATCH ONLY = no order; RED DO NOT OPEN = blocked."
+    )
+    event_count = len(event_watch) if event_watch is not None else 0
+    if event_count:
+        lines.append(
+            f"Event-watch names: {event_count}. These are excluded from the trade table because they are no-order catalyst/momentum watches."
+        )
+    lines.append("")
     lines.append("### Details")
     lines.append(
-        "Full-gate trades are listed first. Tactical probes are small defined-risk tickets with exact legs, live/quote/backtest evidence, and unresolved blockers."
+        "Full-gate trades are listed first. Tactical probes are still trade tickets, but only at starter size because one or more soft gates has not cleared."
     )
     lines.append("")
 
@@ -8067,7 +8615,14 @@ def _final_trade_ticket_lines(
 
         blocker_items = _reason_items(why, limit=10)
         if blocker_items:
-            target_lines.append("- **Blocking gates:**")
+            lowered_why = str(why or "").strip().lower()
+            label = (
+                "Why"
+                if str(status or "").strip().upper() == "MAKE NOW"
+                or "passed the trend-analysis entry gate" in lowered_why
+                else "Blocking gates"
+            )
+            target_lines.append(f"- **{label}:**")
             for item in blocker_items:
                 target_lines.extend(_wrap_markdown_source_line(f"  - {_clip_text(item, 260)}"))
 
@@ -8076,32 +8631,89 @@ def _final_trade_ticket_lines(
 
     make_now_lines: List[str] = ["### Make Now"]
     make_now_count = 0
-    if proven_tickets.empty:
-        make_now_lines.append("- No trade passed every gate for full-size entry today.")
-        make_now_lines.append("")
-    else:
-        for _, row in proven_tickets.iterrows():
-            if str(row.get("proven_ticket_status", "") or "").strip().upper() != "MAKE NOW":
-                continue
-            ticker = str(row.get("ticker", "") or "").strip().upper()
-            if not ticker or ticker in seen_tickers:
-                continue
-            seen_tickers.add(ticker)
-            add_block(
-                make_now_lines,
-                row,
-                status="MAKE NOW",
-                what_to_do=str(row.get("proven_ticket_what_to_do", "") or "").strip(),
-                why=str(row.get("proven_ticket_why", "") or "").strip(),
-                next_step=str(row.get("proven_ticket_next", "") or "").strip(),
-            )
-            make_now_count += 1
-    if make_now_count == 0 and not proven_tickets.empty:
-        make_now_lines.append("- No proven playbook lane passed every gate for full-size entry today.")
+    for _, row in actionable_source.iterrows():
+        if _actionable_entry_status(row) != "MAKE NOW":
+            continue
+        ticker = str(row.get("ticker", "") or "").strip().upper()
+        if not ticker or ticker in seen_tickers:
+            continue
+        seen_tickers.add(ticker)
+        tier = str(row.get("position_size_tier", "") or "STARTER_RISK").strip()
+        guidance = str(row.get("position_size_guidance", "") or "").strip()
+        verdict = _verdict_text(row.get("backtest_verdict", ""))
+        edge = _safe_float(row.get("edge_pct"))
+        signals = _safe_int(row.get("backtest_signals"))
+        support_bits = [f"backtest {verdict}"]
+        if math.isfinite(edge):
+            support_bits.append(f"edge {edge:.1f}%")
+        support_bits.append(f"signals {signals}")
+        if verdict == "LOW_SAMPLE":
+            support_bits.append("starter-size only because sample support is not yet standard-size")
+        add_block(
+            make_now_lines,
+            row,
+            status="MAKE NOW",
+            what_to_do=f"Can be opened now under the {tier} size tier. {guidance}".strip(),
+            why="Passed the trend-analysis entry gate at the listed size tier: exact replayable ticket, "
+            + ", ".join(support_bits)
+            + ", quote replay, and professional-quality filters.",
+            next_step="Reprice both legs and place only if the entry trigger is still true; do not exceed the sizing tier.",
+        )
+        make_now_count += 1
+    for _, row in proven_tickets.iterrows():
+        if str(row.get("proven_ticket_status", "") or "").strip().upper() != "MAKE NOW":
+            continue
+        ticker = str(row.get("ticker", "") or "").strip().upper()
+        if not ticker or ticker in seen_tickers:
+            continue
+        seen_tickers.add(ticker)
+        add_block(
+            make_now_lines,
+            row,
+            status="MAKE NOW",
+            what_to_do=str(row.get("proven_ticket_what_to_do", "") or "").strip(),
+            why=str(row.get("proven_ticket_why", "") or "").strip(),
+            next_step=str(row.get("proven_ticket_next", "") or "").strip(),
+        )
+        make_now_count += 1
+    if make_now_count == 0:
+        make_now_lines.append(
+            "- No standard/full-gate trade passed every gate today. This does not mean no trade exists; "
+            "use the Probe / Starter Trades section for exact small-risk tickets."
+        )
         make_now_lines.append("")
 
-    probe_lines: List[str] = ["### Probe"]
+    probe_lines: List[str] = ["### Probe / Starter Trades"]
     probe_count = 0
+    for _, row in actionable_source.iterrows():
+        if _actionable_entry_status(row) != "TACTICAL PROBE":
+            continue
+        ticker = str(row.get("ticker", "") or "").strip().upper()
+        if not ticker or ticker in seen_tickers:
+            continue
+        seen_tickers.add(ticker)
+        tier = str(row.get("position_size_tier", "") or "STARTER_RISK").strip()
+        guidance = str(row.get("position_size_guidance", "") or "").strip()
+        verdict = _verdict_text(row.get("backtest_verdict", ""))
+        edge = _safe_float(row.get("edge_pct"))
+        signals = _safe_int(row.get("backtest_signals"))
+        support_bits = [f"backtest {verdict}"]
+        if math.isfinite(edge):
+            support_bits.append(f"edge {edge:.1f}%")
+        support_bits.append(f"signals {signals}")
+        if verdict == "LOW_SAMPLE":
+            support_bits.append("sample support is not yet standard-size")
+        add_block(
+            probe_lines,
+            row,
+            status="TACTICAL PROBE",
+            what_to_do=f"Can be opened only under the {tier} size tier. {guidance}".strip(),
+            why="Passed the trend-analysis entry gate, but only as a starter ticket: exact replayable ticket, "
+            + ", ".join(support_bits)
+            + ", quote replay, and professional-quality filters.",
+            next_step="Reprice both legs and place only if the entry trigger is still true; do not exceed starter size.",
+        )
+        probe_count += 1
     probe_source = tactical_probes if tactical_probes is not None else pd.DataFrame()
     for _, row in probe_source.iterrows():
         ticker = str(row.get("ticker", "") or "").strip().upper()
@@ -8454,20 +9066,292 @@ def _current_setup_blocks(df: pd.DataFrame, *, limit: int = DEFAULT_CANDIDATE_TO
     return lines
 
 
+def _trend_board_read(row: pd.Series, source: str) -> str:
+    direction = str(row.get("direction", "") or "-").strip().lower()
+    price_dir = str(row.get("price_direction", "") or "-").strip().lower()
+    flow_dir = str(row.get("flow_direction", "") or "-").strip().lower()
+    score = _safe_float(row.get("event_watch_score"))
+    if not math.isfinite(score):
+        score = _safe_float(row.get("swing_score"))
+    parts = [str(source or "trend")]
+    if direction and direction != "-":
+        parts.append(direction)
+    if math.isfinite(score):
+        parts.append(f"score {_fmt_num(score, 1)}")
+    parts.append(f"price {price_dir} {_fmt_num(row.get('price_trend'), 0)}")
+    parts.append(f"flow {flow_dir} {_fmt_num(row.get('flow_persistence'), 0)}")
+    verdict = _verdict_text(row.get("backtest_verdict", ""))
+    edge = _safe_float(row.get("edge_pct"))
+    signals = _safe_int(row.get("backtest_signals"))
+    if verdict:
+        bt = f"{verdict}"
+        if math.isfinite(edge):
+            bt += f" {edge:+.1f}%"
+        if signals:
+            bt += f" n{signals}"
+        parts.append(bt)
+    return "; ".join(p for p in parts if str(p).strip())
+
+
+def _trend_board_trigger(row: pd.Series) -> str:
+    for column in (
+        "setup_entry_trigger",
+        "event_watch_trigger",
+        "candidate_next_step",
+        "proven_ticket_next",
+    ):
+        value = _clean_cell_text(row.get(column, ""))
+        if value:
+            return value
+    return _entry_trigger(row)
+
+
+def _trend_board_blocker(row: pd.Series) -> str:
+    for column in (
+        "actionability_reject_reasons",
+        "event_watch_reason",
+        "setup_reason",
+        "candidate_status",
+    ):
+        value = _clean_cell_text(row.get(column, ""))
+        if value:
+            return value
+    return "-"
+
+
+def _trend_setup_board(
+    *,
+    current_setups: pd.DataFrame,
+    candidate_shortlist: pd.DataFrame,
+    event_watch: pd.DataFrame,
+    limit: int = 8,
+) -> List[str]:
+    frames: List[pd.DataFrame] = []
+
+    def add_source(df: pd.DataFrame, label: str) -> None:
+        if df is None or df.empty:
+            return
+        source = df.copy()
+        source["_trend_board_source"] = label
+        frames.append(source)
+
+    add_source(current_setups, "SETUP")
+    add_source(candidate_shortlist, "PATTERN")
+    add_source(event_watch, "WATCH")
+    if not frames:
+        return ["_No trend setup board rows surfaced._"]
+
+    board = pd.concat(frames, ignore_index=True, sort=False)
+    if "ticker" not in board.columns:
+        return ["_No trend setup board rows surfaced._"]
+    board["ticker"] = board["ticker"].fillna("").astype(str).str.upper().str.strip()
+    board = board[board["ticker"].ne("")].copy()
+    if board.empty:
+        return ["_No trend setup board rows surfaced._"]
+
+    event_score = pd.to_numeric(board.get("event_watch_score", pd.Series(np.nan, index=board.index)), errors="coerce")
+    swing_score = pd.to_numeric(board.get("swing_score", pd.Series(np.nan, index=board.index)), errors="coerce")
+    edge = pd.to_numeric(board.get("edge_pct", pd.Series(np.nan, index=board.index)), errors="coerce")
+    board["_trend_board_score"] = event_score.fillna(swing_score).fillna(-1)
+    board["_trend_board_edge"] = edge.fillna(-999)
+    source_rank = {"SETUP": 0, "WATCH": 1, "PATTERN": 2}
+    board["_trend_board_rank"] = board["_trend_board_source"].map(source_rank).fillna(9)
+    board = board.sort_values(
+        ["_trend_board_score", "_trend_board_rank", "_trend_board_edge"],
+        ascending=[False, True, False],
+        kind="mergesort",
+    )
+    board = board.drop_duplicates("ticker", keep="first").head(max(1, int(limit)))
+
+    rows: List[List[str]] = []
+    for _, row in board.iterrows():
+        setup_tier = _clean_cell_text(row.get("setup_tier", "")).upper().replace("_", " ")
+        event_status = _clean_cell_text(row.get("event_watch_status", "")).upper().replace("_", " ")
+        source = str(row.get("_trend_board_source", "") or "TREND").strip().upper()
+        status = setup_tier or (event_status if source == "WATCH" else source)
+        if not status:
+            status = "WATCH ONLY" if source == "WATCH" else source
+        rows.append(
+            [
+                str(row.get("ticker", "") or "-").strip().upper(),
+                str(row.get("direction", "") or "-").strip().lower(),
+                _clip_text(_status_text(status), 22),
+                _clip_text(_trend_board_read(row, source), 72),
+                _clip_text(_trade_setup_text(row), 96),
+                _clip_text(_trend_board_trigger(row), 96),
+                _clip_text(_blocker_text(_trend_board_blocker(row)) or _trend_board_blocker(row), 42),
+            ]
+        )
+
+    return [
+        "This table shows the trends first. A row is an entry only when the State is GREEN MAKE NOW; otherwise it is a setup to work or recheck.",
+        "",
+        _render_table(
+            ["Ticker", "Bias", "State", "Trend", "Setup", "Entry/Recheck", "Blocker"],
+            rows,
+        ),
+    ]
+
+
+def _hot_recall_reason(row: pd.Series) -> str:
+    for column in (
+        "tactical_probe_why",
+        "setup_reason",
+        "event_watch_reason",
+        "actionability_reject_reasons",
+        "quality_reject_reasons",
+        "base_gate_reasons",
+        "radar_note",
+    ):
+        value = _clean_cell_text(row.get(column, ""))
+        if value:
+            return value
+    return "-"
+
+
+def _hot_recall_status(row: pd.Series, source: str) -> str:
+    source = str(source or "").strip().upper()
+    if source == "ACTIONABLE":
+        return "GREEN MAKE NOW"
+    if source == "PROBE":
+        return "YELLOW TACTICAL PROBE"
+    if source == "SETUP":
+        tier = _clean_cell_text(row.get("setup_tier", "")).upper().replace("_", " ")
+        return _status_text(tier or "TRADE SETUP")
+    if source == "WATCH":
+        return "BLUE WATCH ONLY"
+    if _truthy(row.get("radar_only")):
+        return "GRAY RADAR ONLY"
+    return "GRAY BLOCKED PATTERN"
+
+
+def _hot_recall_score(row: pd.Series) -> float:
+    for column in ("event_watch_score", "swing_score"):
+        score = _safe_float(row.get(column))
+        if math.isfinite(score):
+            return score
+    return math.nan
+
+
+def _hot_ticker_recall_board(
+    *,
+    actionable: pd.DataFrame,
+    tactical_probes: pd.DataFrame,
+    current_setups: pd.DataFrame,
+    event_watch: pd.DataFrame,
+    patterns: pd.DataFrame,
+    hot_tickers: Sequence[str] = HOT_TICKER_RECALL_UNIVERSE,
+) -> List[str]:
+    frames: List[pd.DataFrame] = []
+
+    def add_source(df: pd.DataFrame, label: str) -> None:
+        if df is None or df.empty:
+            return
+        source = df.copy()
+        source["_hot_recall_source"] = label
+        frames.append(source)
+
+    add_source(actionable, "ACTIONABLE")
+    add_source(tactical_probes, "PROBE")
+    add_source(current_setups, "SETUP")
+    add_source(event_watch, "WATCH")
+    add_source(patterns, "PATTERN")
+    if not frames:
+        return ["_No hot/liquid tickers were available in the scored candidate set._"]
+
+    universe = [str(t).strip().upper() for t in hot_tickers if str(t).strip()]
+    universe_set = set(universe)
+    board = pd.concat(frames, ignore_index=True, sort=False)
+    if "ticker" not in board.columns:
+        return ["_No hot/liquid tickers were available in the scored candidate set._"]
+    board["ticker"] = board["ticker"].fillna("").astype(str).str.upper().str.strip()
+    board = board[board["ticker"].isin(universe_set)].copy()
+    if board.empty:
+        return ["_No hot/liquid tickers were available in the scored candidate set._"]
+
+    source_rank = {"ACTIONABLE": 0, "PROBE": 1, "SETUP": 2, "WATCH": 3, "PATTERN": 4}
+    board["_hot_source_rank"] = board["_hot_recall_source"].map(source_rank).fillna(9)
+    board["_hot_score"] = board.apply(_hot_recall_score, axis=1).fillna(-1)
+    board["_hot_has_ticket"] = board.apply(lambda r: 1 if _entry_text(r) != "-" else 0, axis=1)
+    board["_hot_edge"] = pd.to_numeric(
+        board.get("edge_pct", pd.Series(np.nan, index=board.index)),
+        errors="coerce",
+    ).fillna(-999)
+    board["_hot_order"] = board["ticker"].map({ticker: idx for idx, ticker in enumerate(universe)}).fillna(999)
+    board = board.sort_values(
+        ["_hot_source_rank", "_hot_score", "_hot_has_ticket", "_hot_edge"],
+        ascending=[True, False, False, False],
+        kind="mergesort",
+    )
+    board = board.drop_duplicates("ticker", keep="first").sort_values(
+        ["_hot_source_rank", "_hot_order"],
+        ascending=[True, True],
+        kind="mergesort",
+    )
+
+    rows: List[List[str]] = []
+    for _, row in board.iterrows():
+        source = str(row.get("_hot_recall_source", "") or "PATTERN").strip().upper()
+        rows.append(
+            [
+                str(row.get("ticker", "") or "-").strip().upper(),
+                _clip_text(_hot_recall_status(row, source), 24),
+                str(row.get("direction", "") or "-").strip().lower(),
+                _clip_text(_trend_board_read(row, source), 68),
+                _clip_text(_trade_setup_text(row), 90),
+                _clip_text(_blocker_text(_hot_recall_reason(row)) or _hot_recall_reason(row), 48),
+            ]
+        )
+
+    missing = [ticker for ticker in universe if ticker not in set(board["ticker"])]
+    lines = [
+        "This board is the recall guardrail for hot/liquid names. It prevents AAPL/GOOG/AMZN/NVDA/INTC/MU/PLTR-type tickers from disappearing just because they failed a gate or missed the top-10 watch slice.",
+        "",
+        _render_table(
+            ["Ticker", "State", "Bias", "Trend", "Setup", "Gate / Why"],
+            rows,
+        ),
+    ]
+    if missing:
+        lines.append("")
+        lines.append("Not in scored candidate set today: " + ", ".join(missing[:12]) + ("..." if len(missing) > 12 else ""))
+    return lines
+
+
 def _event_watch_blocks(df: pd.DataFrame, *, limit: int = DEFAULT_CANDIDATE_TOP) -> List[str]:
-    lines: List[str] = []
+    rows: List[List[str]] = []
     for number, (_, row) in enumerate(df.head(limit).iterrows(), start=1):
         ticker = str(row.get("ticker", "") or "-").strip().upper()
         direction = str(row.get("direction", "") or "-").strip().lower()
-        status = str(row.get("event_watch_status", "") or "WATCH ONLY").strip().upper()
-        lines.append(f"### {number}. {ticker} - `{status}` - {direction}")
-        _append_field(lines, "Trade setup to rebuild", _trade_setup_text(row), limit=360)
-        _append_field(lines, "Event score", _fmt_num(row.get("event_watch_score"), 1), limit=80)
-        _append_field(lines, "Why it surfaced", row.get("event_watch_catalysts", ""), limit=460)
-        _append_field(lines, "When to enter", row.get("event_watch_trigger", ""), limit=520)
-        _append_field(lines, "Why not Actionable Now", row.get("event_watch_reason", ""), limit=520)
-        lines.append("")
-    return lines
+        rows.append(
+            [
+                str(number),
+                ticker,
+                direction,
+                _fmt_num(row.get("event_watch_score"), 1),
+                _clip_text(_trade_setup_text(row), 86),
+                _clip_text(row.get("event_watch_catalysts", ""), 120),
+                _clip_text(row.get("event_watch_reason", ""), 140),
+                _clip_text(row.get("event_watch_trigger", ""), 120),
+            ]
+        )
+    if not rows:
+        return ["_none_"]
+    return [
+        _render_table(
+            [
+                "#",
+                "Ticker",
+                "Bias",
+                "Score",
+                "Setup To Rebuild",
+                "Why Surfaced",
+                "Why No Order",
+                "Recheck Trigger",
+            ],
+            rows,
+        )
+    ]
 
 
 def _risk_blocked_blocks(df: pd.DataFrame, *, limit: int = 20) -> List[str]:
@@ -8610,6 +9494,7 @@ def build_report(
     schwab_actual_shape_audit_csv: Path,
     trade_tracker_csv: Path,
     schwab_enabled: bool,
+    schwab_live_reason: str,
     backtest_enabled: bool,
     quote_replay_mode: str,
     min_edge: float,
@@ -8651,9 +9536,74 @@ def build_report(
     if workup_ids and "_trend_row_id" in patterns.columns:
         risk_blocked_mask &= ~patterns["_trend_row_id"].isin(workup_ids)
     risk_blocked_count = int(risk_blocked_mask.sum())
+    regime_label = str(market_regime.get("regime", "unknown") or "unknown")
+    regime_reason = str(market_regime.get("reason", "") or "").strip()
 
     lines.append(f"# Trend Analysis - {as_of.isoformat()} / L{lookback}")
     lines.append("")
+    lines.append("## Quick Read")
+    if not actionable.empty and "position_size_tier" in actionable.columns:
+        standard_count = int(
+            actionable["position_size_tier"]
+            .fillna("")
+            .astype(str)
+            .str.upper()
+            .isin({"STANDARD_RISK", "MAX_PLANNED_RISK"})
+            .sum()
+        )
+    else:
+        standard_count = len(actionable)
+    starter_count = max(0, len(actionable) - standard_count) + len(tactical_probes)
+    tradeable_count = standard_count + starter_count
+    lines.append(
+        f"- Tradeable tickets: {tradeable_count} "
+        f"(standard-size={standard_count}, starter/probe={starter_count})"
+    )
+    lines.append(f"- Standard-size Make Now orders: {standard_count}")
+    lines.append(f"- Event watch names: {len(event_watch)} (no order; catalyst/momentum only)")
+    if end != as_of:
+        lines.append(
+            f"- Data freshness warning: requested {as_of.isoformat()}, but latest usable dated folder is {end}; this is stale EOD data, not an intraday trend scan."
+        )
+    lines.append(
+        f"- Market regime: {regime_label}"
+        + (f" ({regime_reason})" if regime_reason else "")
+    )
+    lines.append("")
+    lines.append("## Trend Setup Board")
+    lines.extend(
+        _trend_setup_board(
+            current_setups=current_setups,
+            candidate_shortlist=candidate_shortlist,
+            event_watch=event_watch,
+            limit=max(8, DEFAULT_CANDIDATE_TOP),
+        )
+    )
+    lines.append("")
+    lines.append("## Hot Ticker Recall Board")
+    lines.extend(
+        _hot_ticker_recall_board(
+            actionable=actionable,
+            tactical_probes=tactical_probes,
+            current_setups=current_setups,
+            event_watch=event_watch,
+            patterns=patterns,
+        )
+    )
+    lines.append("")
+    lines.append("## Final Trade Output")
+    lines.extend(
+        _final_trade_ticket_lines(
+            actionable=actionable,
+            proven_tickets=proven_tickets,
+            current_setups=current_setups,
+            tactical_probes=tactical_probes,
+            event_watch=event_watch,
+        )
+    )
+    lines.append("")
+
+    lines.append("## Run Summary")
     lines.append(f"- Date window: {start} to {end}")
     lines.append(f"- Effective signal date: {end}")
     lines.append(f"- Trading days analyzed: {len(trading_days)}")
@@ -8679,8 +9629,6 @@ def build_report(
         "- Data sources: trends=local UW dated folders; likelihood backtest=historical OHLC analogs; "
         + f"option P&L replay=local UW option snapshots; live validation={live_validation_source}"
     )
-    regime_label = str(market_regime.get("regime", "unknown") or "unknown")
-    regime_reason = str(market_regime.get("reason", "") or "").strip()
     lines.append(
         f"- Market regime filter: {regime_label}"
         + (f" ({regime_reason})" if regime_reason else "")
@@ -8694,9 +9642,20 @@ def build_report(
         + f"blocked rows={int(open_position_summary.get('blocked_rows', 0) or 0)}"
     )
     if schwab_actual_summary.get("status") == "ok":
+        asof_count = int(
+            schwab_actual_summary.get(
+                "parsed_closed_trades_asof",
+                schwab_actual_summary.get("parsed_closed_trades", 0),
+            )
+            or 0
+        )
+        total_count = int(schwab_actual_summary.get("parsed_closed_trades_total", asof_count) or 0)
+        count_text = f"{asof_count} as-of closed trades"
+        if total_count != asof_count:
+            count_text += f" ({total_count} total in source)"
         lines.append(
             "- Schwab actual trade audit: "
-            + f"{int(schwab_actual_summary.get('parsed_closed_trades', 0) or 0)} parsed closed trades; "
+            + f"{count_text}; "
             + f"exact playbooks={len(schwab_actual_playbook_audit)}, "
             + f"exact shapes={len(schwab_actual_shape_audit)}, "
             + f"strategies={len(schwab_actual_strategy_audit)}"
@@ -8820,6 +9779,8 @@ def build_report(
         + ("; flow conflicts allowed" if allow_flow_conflict else "; no directional flow conflict")
     )
     lines.append(f"- Schwab live validation: {'enabled' if schwab_enabled else 'skipped'}")
+    if str(schwab_live_reason or "").strip():
+        lines.append(f"- Schwab live validation reason: {schwab_live_reason}")
     if schwab_enabled:
         lines.append(
             "- Tradeability gate: "
@@ -8871,16 +9832,6 @@ def build_report(
         lines.append("- Research confidence audit: no completed historical bucket outcomes")
     else:
         lines.append("- Research confidence audit: skipped")
-    lines.append("")
-
-    lines.append("## Final Trade Output")
-    lines.extend(
-        _final_trade_ticket_lines(
-            proven_tickets=proven_tickets,
-            current_setups=current_setups,
-            tactical_probes=tactical_probes,
-        )
-    )
     lines.append("")
 
     lines.append("## Event / Momentum Watch")
@@ -9372,6 +10323,15 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
     trading_days = swing.discover_trading_days(root, lookback, as_of)
     if not trading_days:
         raise RuntimeError(f"No dated folders discovered under {root} on or before {as_of}")
+    latest_days = swing.discover_trading_days(root, 1, None)
+    latest_data_date = latest_days[-1][0] if latest_days else None
+    live_schwab_enabled, live_schwab_reason = _live_schwab_mode(
+        no_schwab=bool(args.no_schwab),
+        force_live_schwab=bool(args.force_live_schwab),
+        as_of=as_of,
+        latest_data_date=latest_data_date,
+        today=dt.date.today(),
+    )
 
     cfg = _load_config(Path(args.config).expanduser().resolve())
     names = _output_names(as_of, lookback)
@@ -9380,7 +10340,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
     cfg.setdefault("pipeline", {})["output_dir"] = str(out_dir)
     cfg.setdefault("output", {})["report_md_name"] = names["raw_report"].replace(f"-L{lookback}.md", ".md")
     cfg.setdefault("output", {})["shortlist_csv_name"] = names["raw_csv"].replace(f"-L{lookback}.csv", ".csv")
-    cfg.setdefault("schwab_validation", {})["enabled"] = not bool(args.no_schwab)
+    cfg.setdefault("schwab_validation", {})["enabled"] = bool(live_schwab_enabled)
     cfg.setdefault("backtest", {})["enabled"] = not bool(args.no_backtest)
     cfg.setdefault("backtest", {})["min_signals"] = int(args.min_backtest_signals)
     cfg.setdefault("backtest", {})["max_setups"] = int(args.max_backtest_setups)
@@ -9388,7 +10348,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
         cfg.setdefault("backtest", {})["cache_dir"] = args.cache_dir
 
     top_n = int(args.top)
-    candidate_pool = int(args.candidate_pool or max(top_n * 3, top_n + 10))
+    candidate_pool = int(args.candidate_pool or _default_candidate_pool(top_n))
 
     print("Trend Analysis Pipeline", flush=True)
     print(f"  Root: {root}", flush=True)
@@ -9396,7 +10356,10 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
     print(f"  Lookback: {lookback} trading days", flush=True)
     print(f"  Candidate pool: {candidate_pool}", flush=True)
     print(f"  Backtest: {'enabled' if not args.no_backtest else 'skipped'}", flush=True)
-    print(f"  Schwab: {'enabled' if not args.no_schwab else 'skipped'}", flush=True)
+    print(
+        f"  Schwab live chain: {'enabled' if live_schwab_enabled else 'skipped'} ({live_schwab_reason})",
+        flush=True,
+    )
 
     raw_report = out_dir / names["raw_report"]
     raw_csv = out_dir / names["raw_csv"]
@@ -9490,7 +10453,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
         position_json = (
             Path(args.position_json).expanduser().resolve()
             if args.position_json
-            else _latest_position_json(root)
+            else _position_json_for_asof(root, as_of)
         )
         candidates, open_position_summary = annotate_open_position_awareness(candidates, position_json)
 
@@ -9499,10 +10462,14 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
         if args.schwab_report_json
         else _latest_schwab_report_json(root)
     )
-    schwab_actual_trades, schwab_actual_summary = load_schwab_closed_trade_history(schwab_report_json)
-    schwab_actual_strategy_audit = build_schwab_actual_strategy_audit(schwab_actual_trades)
-    schwab_actual_playbook_audit = build_schwab_actual_playbook_audit(schwab_actual_trades)
-    schwab_actual_shape_audit = build_schwab_actual_shape_audit(schwab_actual_trades)
+    schwab_actual_trades_all, schwab_actual_summary_raw = load_schwab_closed_trade_history(schwab_report_json)
+    (
+        schwab_actual_trades,
+        schwab_actual_summary,
+        schwab_actual_strategy_audit,
+        schwab_actual_playbook_audit,
+        schwab_actual_shape_audit,
+    ) = schwab_actual_audits_asof(schwab_actual_trades_all, schwab_actual_summary_raw, as_of)
     candidates = annotate_schwab_actual_evidence(
         candidates,
         schwab_actual_playbook_audit,
@@ -9524,7 +10491,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
         candidates,
         top_n=top_n,
         backtest_enabled=not bool(args.no_backtest),
-        schwab_enabled=not bool(args.no_schwab),
+        schwab_enabled=bool(live_schwab_enabled),
         quote_replay_mode=quote_replay_mode,
         min_edge=float(args.min_backtest_edge),
         min_signals=int(args.min_backtest_signals),
@@ -9666,7 +10633,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
             candidates,
             top_n=top_n,
             backtest_enabled=not bool(args.no_backtest),
-            schwab_enabled=not bool(args.no_schwab),
+            schwab_enabled=bool(live_schwab_enabled),
             quote_replay_mode=quote_replay_mode,
             min_edge=float(args.min_backtest_edge),
             min_signals=int(args.min_backtest_signals),
@@ -9835,7 +10802,7 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
     )
     event_watch = build_event_momentum_watch(
         annotated_candidates,
-        top_n=int(args.candidate_top),
+        top_n=max(int(args.candidate_top), DEFAULT_EVENT_WATCH_TOP),
     )
     tracking_summary = update_trade_tracking(
         actionable,
@@ -9976,7 +10943,8 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
         schwab_actual_playbook_audit_csv=schwab_actual_playbook_audit_csv,
         schwab_actual_shape_audit_csv=schwab_actual_shape_audit_csv,
         trade_tracker_csv=trade_tracker_csv,
-        schwab_enabled=not bool(args.no_schwab),
+        schwab_enabled=bool(live_schwab_enabled),
+        schwab_live_reason=live_schwab_reason,
         backtest_enabled=not bool(args.no_backtest),
         quote_replay_mode=quote_replay_mode,
         min_edge=float(args.min_backtest_edge),
@@ -10023,7 +10991,9 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Any]:
         "actionable": int(len(actionable)),
         "patterns": int(len(patterns)),
         "backtest_enabled": not bool(args.no_backtest),
-        "schwab_enabled": not bool(args.no_schwab),
+        "schwab_enabled": bool(live_schwab_enabled),
+        "schwab_live_reason": live_schwab_reason,
+        "latest_data_date": latest_data_date.isoformat() if latest_data_date else "",
         "quote_replay_mode": quote_replay_mode,
         "quote_replay_counts": trend_quote_replay.quote_replay_summary(candidates),
         "quote_replay_rows": int(len(quote_replay_results)),

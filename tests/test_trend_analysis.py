@@ -42,6 +42,9 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(as_of, dt.date(2026, 4, 23))
         self.assertEqual(lookback, 30)
 
+    def test_default_candidate_pool_is_large_enough_for_recall_audits(self) -> None:
+        self.assertGreaterEqual(trend_analysis._default_candidate_pool(15), 250)
+
     def test_event_momentum_watch_surfaces_intc_like_catalyst_spike(self) -> None:
         candidates = pd.DataFrame(
             [
@@ -87,6 +90,145 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertIn("live spot $81.85 vs latest UW close $66.78", watch.iloc[0]["event_watch_catalysts"])
         self.assertIn("Do not chase stale strikes", watch.iloc[0]["event_watch_trigger"])
         self.assertEqual(watch.iloc[0]["strike_setup"], "Sell 57P / Buy 50P (7w, $0.82 credit)")
+
+    def test_event_momentum_watch_surfaces_confirmed_pre_breakout_drift(self) -> None:
+        candidates = pd.DataFrame(
+            [
+                {
+                    "ticker": "AMD",
+                    "direction": "bullish",
+                    "strategy": "Bull Put Credit",
+                    "strike_setup": "Sell 180P / Buy 170P (10w, $0.27 credit)",
+                    "target_expiry": "2026-05-29",
+                    "latest_close": 278.39,
+                    "swing_score": 55.7,
+                    "price_direction": "bullish",
+                    "price_trend": 66.4,
+                    "flow_direction": "bearish",
+                    "flow_persistence": 54.0,
+                    "oi_direction": "mixed",
+                    "oi_momentum": 40.4,
+                    "dp_direction": "accumulation",
+                    "dp_confirmation": 42.0,
+                    "whale_consensus": 89.3,
+                    "whale_appearances": 26,
+                    "days_observed": 30,
+                    "latest_iv_rank": 55.3,
+                    "latest_return_pct": 0.0005,
+                    "latest_return_direction": "neutral",
+                    "earnings_label": "EARNINGS 2026-05-05 (18d away, 24d before expiry)",
+                    "actionability_reject_reasons": (
+                        "swing score 55.7 < min 60.0; "
+                        "flow conflict: bearish flow vs bullish trade; "
+                        "earnings in trade window: EARNINGS 2026-05-05"
+                    ),
+                }
+            ]
+        )
+
+        watch = trend_analysis.build_event_momentum_watch(candidates, top_n=5)
+
+        self.assertEqual(watch.iloc[0]["ticker"], "AMD")
+        self.assertEqual(watch.iloc[0]["event_watch_status"], "WATCH ONLY")
+        self.assertGreaterEqual(float(watch.iloc[0]["event_watch_score"]), 62.0)
+        self.assertIn("price trend bullish", watch.iloc[0]["event_watch_catalysts"])
+        self.assertIn("whale consensus", watch.iloc[0]["event_watch_catalysts"])
+
+    def test_event_momentum_watch_does_not_bury_confirmed_drift_under_stale_shocks(self) -> None:
+        shock_rows = []
+        for i in range(6):
+            shock_rows.append(
+                {
+                    "ticker": f"SHK{i}",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "strike_setup": "Buy 50C / Sell 55C (5w, $2.00 debit)",
+                    "target_expiry": "2026-05-29",
+                    "latest_close": 50.0,
+                    "swing_score": 51.0,
+                    "price_direction": "bullish",
+                    "price_trend": 45.0,
+                    "flow_direction": "mixed",
+                    "flow_persistence": 45.0,
+                    "whale_consensus": 20.0,
+                    "whale_appearances": 1,
+                    "days_observed": 30,
+                    "latest_iv_rank": 55.0,
+                    "latest_return_pct": 0.09 + (i * 0.001),
+                    "latest_return_direction": "bullish",
+                    "earnings_label": "EARNINGS 2026-04-17 (0d away, 42d before expiry)",
+                    "actionability_reject_reasons": "swing score 51.0 < min 60.0",
+                }
+            )
+        drift_row = {
+            "ticker": "AMD",
+            "direction": "bullish",
+            "strategy": "Bull Put Credit",
+            "strike_setup": "Sell 180P / Buy 170P (10w, $0.27 credit)",
+            "target_expiry": "2026-05-29",
+            "latest_close": 278.39,
+            "swing_score": 55.7,
+            "price_direction": "bullish",
+            "price_trend": 66.4,
+            "flow_direction": "bearish",
+            "flow_persistence": 54.0,
+            "oi_direction": "mixed",
+            "oi_momentum": 40.4,
+            "dp_direction": "accumulation",
+            "dp_confirmation": 42.0,
+            "whale_consensus": 89.3,
+            "whale_appearances": 26,
+            "days_observed": 30,
+            "latest_iv_rank": 55.3,
+            "latest_return_pct": 0.0005,
+            "latest_return_direction": "neutral",
+            "earnings_label": "EARNINGS 2026-05-05 (18d away, 24d before expiry)",
+            "actionability_reject_reasons": "flow conflict: bearish flow vs bullish trade",
+        }
+        candidates = pd.DataFrame(shock_rows + [drift_row])
+
+        watch = trend_analysis.build_event_momentum_watch(candidates, top_n=3)
+
+        self.assertIn("AMD", set(watch["ticker"]))
+        self.assertEqual(watch.iloc[0]["ticker"], "AMD")
+
+    def test_event_momentum_watch_rebuilds_neutral_condor_when_price_whale_dp_confirm(self) -> None:
+        candidates = pd.DataFrame(
+            [
+                {
+                    "ticker": "AMD",
+                    "direction": "neutral",
+                    "strategy": "Iron Condor",
+                    "strike_setup": "Sell 220P / Buy 210P + Sell 260C / Buy 270C (10w, $3.62 credit)",
+                    "target_expiry": "2026-05-29",
+                    "latest_close": 236.64,
+                    "swing_score": 52.4,
+                    "price_direction": "bullish",
+                    "price_trend": 68.0,
+                    "flow_direction": "mixed",
+                    "flow_persistence": 48.0,
+                    "oi_direction": "mixed",
+                    "oi_momentum": 40.0,
+                    "dp_direction": "accumulation",
+                    "dp_confirmation": 44.0,
+                    "whale_consensus": 89.0,
+                    "whale_appearances": 24,
+                    "days_observed": 30,
+                    "latest_iv_rank": 58.0,
+                    "latest_return_pct": 0.02,
+                    "latest_return_direction": "bullish",
+                    "earnings_label": "EARNINGS 2026-05-05 (26d away, 24d before expiry)",
+                    "actionability_reject_reasons": "swing score 52.4 < min 60.0",
+                }
+            ]
+        )
+
+        watch = trend_analysis.build_event_momentum_watch(candidates, top_n=5)
+
+        self.assertEqual(watch.iloc[0]["ticker"], "AMD")
+        self.assertEqual(watch.iloc[0]["direction"], "bullish")
+        self.assertNotEqual(watch.iloc[0]["strategy"], "Iron Condor")
+        self.assertIn("Reaction direction changed from neutral to bullish", watch.iloc[0]["event_watch_reason"])
 
     def test_event_momentum_watch_flips_stale_direction_to_live_reaction(self) -> None:
         candidates = pd.DataFrame(
@@ -165,6 +307,86 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(watch.iloc[0]["direction"], "bearish")
         self.assertEqual(watch.iloc[0]["strategy"], "Bear Put Debit")
         self.assertIn("P / Sell", watch.iloc[0]["strike_setup"])
+
+    def test_event_momentum_watch_keeps_big_reaction_without_whale_confirmation(self) -> None:
+        candidates = pd.DataFrame(
+            [
+                {
+                    "ticker": "GAP",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "strike_setup": "Buy 50C / Sell 55C (5w, reprice live debit)",
+                    "target_expiry": "2026-06-05",
+                    "latest_close": 50.0,
+                    "swing_score": 47.0,
+                    "price_direction": "bullish",
+                    "price_trend": 46.0,
+                    "latest_return_pct": 0.14,
+                    "latest_return_direction": "bullish",
+                    "flow_direction": "mixed",
+                    "flow_persistence": 48.0,
+                    "oi_direction": "bullish",
+                    "oi_momentum": 40.0,
+                    "dp_direction": "neutral",
+                    "dp_confirmation": 20.0,
+                    "whale_consensus": 0.0,
+                    "whale_appearances": 0,
+                    "days_observed": 30,
+                    "latest_iv_rank": 60.0,
+                    "actionability_reject_reasons": "swing score 47.0 < min 60.0",
+                }
+            ]
+        )
+
+        watch = trend_analysis.build_event_momentum_watch(candidates, top_n=5)
+
+        self.assertEqual(watch.iloc[0]["ticker"], "GAP")
+        self.assertEqual(watch.iloc[0]["event_watch_status"], "WATCH ONLY")
+        self.assertIn("latest completed day +14.0%", watch.iloc[0]["event_watch_catalysts"])
+
+    def test_event_momentum_watch_does_not_wait_for_far_future_earnings_after_price_shock(self) -> None:
+        candidates = pd.DataFrame(
+            [
+                {
+                    "ticker": "INTC",
+                    "direction": "bullish",
+                    "strategy": "Bull Put Credit",
+                    "strike_setup": "Sell 40P / Buy 35P (5w, ~$0.75 credit)",
+                    "live_strike_setup": "Sell 63P / Buy 55P (8w, $1.07 credit)",
+                    "live_validated": True,
+                    "target_expiry": "2026-06-05",
+                    "latest_close": 82.54,
+                    "swing_score": 55.3,
+                    "price_direction": "bullish",
+                    "price_trend": 76.0,
+                    "latest_return_pct": 0.236,
+                    "latest_return_direction": "bullish",
+                    "flow_direction": "bullish",
+                    "flow_persistence": 58.0,
+                    "oi_direction": "mixed",
+                    "oi_momentum": 44.0,
+                    "dp_direction": "accumulation",
+                    "dp_confirmation": 40.0,
+                    "whale_consensus": 97.0,
+                    "whale_appearances": 29,
+                    "days_observed": 30,
+                    "latest_iv_rank": 90.0,
+                    "next_earnings_date": "2026-07-23",
+                    "earnings_label": "EARNINGS 2026-07-23 (90d away, 48d after expiry)",
+                    "actionability_reject_reasons": "swing score 55.3 < min 60.0",
+                }
+            ]
+        )
+
+        watch = trend_analysis.build_event_momentum_watch(candidates, top_n=5)
+
+        self.assertEqual(watch.iloc[0]["ticker"], "INTC")
+        self.assertIn("latest completed day +23.6%", watch.iloc[0]["event_watch_catalysts"])
+        self.assertIn("upcoming earnings: EARNINGS 2026-07-23", watch.iloc[0]["event_watch_catalysts"])
+        self.assertNotIn("earnings/catalyst window: EARNINGS 2026-07-23", watch.iloc[0]["event_watch_catalysts"])
+        self.assertIn("latest completed day already moved +23.6%", watch.iloc[0]["event_watch_trigger"])
+        self.assertIn("Do not chase the first spike", watch.iloc[0]["event_watch_trigger"])
+        self.assertNotIn("wait for the first full post-catalyst dated folder after 2026-07-23", watch.iloc[0]["event_watch_trigger"])
 
     def test_event_direction_pending_blocks_actionability(self) -> None:
         row = pd.Series(
@@ -334,6 +556,57 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(raw_row["ticker"], "NVDA")
         self.assertEqual(missed, "missed")
         self.assertIsNone(missed_row)
+
+    def test_missed_mover_audit_prefers_wider_walk_forward_raw_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out_dir = Path(tmp)
+            day = dt.date(2026, 4, 20)
+            root_raw = out_dir / "trend_analysis_raw_2026-04-20-L30.csv"
+            root_raw.write_text("ticker\nNVDA\n", encoding="utf-8")
+            walk_dir = out_dir / "walk_forward" / "2026-04-20-L30"
+            walk_dir.mkdir(parents=True)
+            (walk_dir / "trend_analysis_raw_2026-04-20-L30.csv").write_text(
+                "ticker\nNVDA\nAAPL\nAMD\n",
+                encoding="utf-8",
+            )
+
+            frames = trend_missed_mover_audit._load_output_frames(out_dir, day, 30)
+
+        self.assertEqual(
+            set(frames["raw"]["ticker"].fillna("").astype(str).str.upper()),
+            {"NVDA", "AAPL", "AMD"},
+        )
+
+    def test_walk_forward_raw_cache_rejects_stale_structure_variants(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            stale = Path(tmp) / "stale.csv"
+            rows = [{"ticker": f"T{i}", "variant_tag": "base"} for i in range(250)]
+            rows.extend({"ticker": f"T{i}", "variant_tag": "pre_earnings"} for i in range(250))
+            pd.DataFrame(rows).to_csv(stale, index=False)
+
+            reusable, reason = trend_analysis._raw_candidate_cache_reusable(
+                stale,
+                candidate_pool=250,
+            )
+
+        self.assertFalse(reusable)
+        self.assertIn("stale", reason)
+
+    def test_walk_forward_raw_cache_accepts_structural_variant_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fresh = Path(tmp) / "fresh.csv"
+            rows = [{"ticker": f"T{i}", "variant_tag": "base"} for i in range(250)]
+            rows.extend({"ticker": f"T{i}", "variant_tag": "pre_earnings"} for i in range(250))
+            rows.extend({"ticker": f"T{i}", "variant_tag": "momentum_debit"} for i in range(10))
+            pd.DataFrame(rows).to_csv(fresh, index=False)
+
+            reusable, reason = trend_analysis._raw_candidate_cache_reusable(
+                fresh,
+                candidate_pool=250,
+            )
+
+        self.assertTrue(reusable)
+        self.assertEqual(reason, "")
 
     def test_universe_radar_appends_non_actionable_lower_ranked_tickers(self) -> None:
         candidates = pd.DataFrame(
@@ -547,6 +820,7 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertIn("### Make Now", text)
         self.assertIn("### Probe", text)
         self.assertIn("### Watch / Avoid", text)
+        self.assertIn("| Ticker | Color / Status | Trade Setup | Enter / Act Only When |", text)
         self.assertIn("DO NOT OPEN", text)
         self.assertIn("NFLX", text)
         self.assertIn("Enter only above 95.00", text)
@@ -555,6 +829,289 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertNotIn("WULF", text)
         self.assertLess(text.index("### Make Now"), text.index("### Probe"))
         self.assertLess(text.index("### Probe"), text.index("### Watch / Avoid"))
+
+    def test_final_trade_output_puts_starter_actionable_rows_in_probe(self) -> None:
+        actionable = pd.DataFrame(
+            [
+                {
+                    "ticker": "C",
+                    "strategy": "Bull Call Debit",
+                    "direction": "bullish",
+                    "target_expiry": "2026-05-29",
+                    "live_strike_setup": "Buy 128C / Sell 140C (12w, $5.71 debit)",
+                    "live_validated": True,
+                    "position_size_tier": "STARTER_RISK",
+                    "position_size_guidance": "Starter only: 0.25R.",
+                    "backtest_verdict": "PASS",
+                    "edge_pct": 17.0,
+                    "backtest_signals": 223,
+                }
+            ]
+        )
+
+        lines = trend_analysis._final_trade_ticket_lines(
+            actionable=actionable,
+            proven_tickets=pd.DataFrame(),
+            current_setups=pd.DataFrame(),
+        )
+        text = "\n".join(lines)
+
+        self.assertIn("YELLOW TACTICAL PROBE", text)
+        self.assertIn("C - `TACTICAL PROBE`", text)
+        self.assertIn("Buy 128C / Sell 140C", text)
+        self.assertIn("Passed the trend-analysis entry gate, but only as a starter ticket", text)
+        self.assertIn("**Why:**", text)
+        self.assertIn("No standard/full-gate trade passed every gate today", text)
+
+    def test_final_trade_output_puts_standard_actionable_rows_in_make_now(self) -> None:
+        actionable = pd.DataFrame(
+            [
+                {
+                    "ticker": "C",
+                    "strategy": "Bull Call Debit",
+                    "direction": "bullish",
+                    "target_expiry": "2026-05-29",
+                    "live_strike_setup": "Buy 128C / Sell 140C (12w, $5.71 debit)",
+                    "live_validated": True,
+                    "position_size_tier": "STANDARD_RISK",
+                    "position_size_guidance": "Standard risk allowed.",
+                    "backtest_verdict": "PASS",
+                    "edge_pct": 17.0,
+                    "backtest_signals": 223,
+                }
+            ]
+        )
+
+        lines = trend_analysis._final_trade_ticket_lines(
+            actionable=actionable,
+            proven_tickets=pd.DataFrame(),
+            current_setups=pd.DataFrame(),
+        )
+        text = "\n".join(lines)
+
+        self.assertIn("GREEN MAKE NOW", text)
+        self.assertIn("C - `MAKE NOW`", text)
+        self.assertIn("Buy 128C / Sell 140C", text)
+        self.assertIn("Passed the trend-analysis entry gate at the listed size tier", text)
+        self.assertIn("**Why:**", text)
+        self.assertNotIn("No standard/full-gate trade passed every gate today", text)
+
+    def test_final_trade_output_treats_tactical_probes_as_tradeable_tickets(self) -> None:
+        tactical = pd.DataFrame(
+            [
+                {
+                    "ticker": "NKE",
+                    "strategy": "Bear Put Debit",
+                    "direction": "bearish",
+                    "target_expiry": "2026-06-18",
+                    "live_strike_setup": "Buy 45P / Sell 40P (5w, $1.92 debit)",
+                    "live_validated": True,
+                    "tactical_probe_what_to_do": "Smallest defined-risk probe only, max 0.25R.",
+                    "tactical_probe_why": "positive low-sample evidence: LOW_SAMPLE, edge 38.4%, signals 69 < actionable min 100",
+                    "tactical_probe_next": "Reprice both legs live.",
+                }
+            ]
+        )
+
+        lines = trend_analysis._final_trade_ticket_lines(
+            actionable=pd.DataFrame(),
+            proven_tickets=pd.DataFrame(),
+            current_setups=pd.DataFrame(),
+            tactical_probes=tactical,
+        )
+        text = "\n".join(lines)
+
+        self.assertIn("### Tradeable Tickets", text)
+        self.assertIn("YELLOW TACTICAL PROBE", text)
+        self.assertIn("NKE - `TACTICAL PROBE`", text)
+        self.assertIn("### Probe / Starter Trades", text)
+        self.assertIn("This does not mean no trade exists", text)
+        self.assertNotIn("No trade passed every gate", text)
+
+    def test_final_trade_output_keeps_event_watch_out_of_order_table(self) -> None:
+        event_watch = pd.DataFrame(
+            [
+                {
+                    "ticker": "CRWV",
+                    "strategy": "Bull Call Debit",
+                    "direction": "bullish",
+                    "target_expiry": "2026-05-29",
+                    "live_strike_setup": "Buy 110C / Sell 120C (10w, $4.33 debit)",
+                    "event_watch_status": "WATCH ONLY",
+                    "event_watch_score": 71.1,
+                    "event_watch_catalysts": "upcoming earnings; price trend bullish",
+                    "event_watch_trigger": "Rebuild only after price and flow confirm.",
+                    "event_watch_reason": "Catalyst/momentum pattern surfaced before order eligibility.",
+                }
+            ]
+        )
+
+        lines = trend_analysis._final_trade_ticket_lines(
+            proven_tickets=pd.DataFrame(),
+            current_setups=pd.DataFrame(),
+            event_watch=event_watch,
+        )
+        text = "\n".join(lines)
+
+        self.assertIn("Event-watch names: 1", text)
+        self.assertIn("no-order catalyst/momentum watches", text)
+        self.assertNotIn("TEAL EVENT WATCH", text)
+        self.assertNotIn("| CRWV |", text)
+
+    def test_event_watch_blocks_render_compact_no_order_table(self) -> None:
+        event_watch = pd.DataFrame(
+            [
+                {
+                    "ticker": "CRWV",
+                    "strategy": "Bull Call Debit",
+                    "direction": "bullish",
+                    "target_expiry": "2026-05-29",
+                    "live_strike_setup": "Buy 110C / Sell 120C (10w, $4.33 debit)",
+                    "event_watch_score": 71.1,
+                    "event_watch_catalysts": "upcoming earnings; price trend bullish",
+                    "event_watch_trigger": "Rebuild only after price and flow confirm.",
+                    "event_watch_reason": "Catalyst/momentum pattern surfaced before order eligibility.",
+                }
+            ]
+        )
+
+        text = "\n".join(trend_analysis._event_watch_blocks(event_watch))
+
+        self.assertIn("| # | Ticker | Bias | Score | Setup To Rebuild |", text)
+        self.assertIn("Why No Order", text)
+        self.assertIn("CRWV", text)
+        self.assertNotIn("### 1.", text)
+
+    def test_trend_setup_board_surfaces_watch_names_before_gate_verdict(self) -> None:
+        current_setups = pd.DataFrame(
+            [
+                {
+                    "ticker": "CRCL",
+                    "direction": "bearish",
+                    "strategy": "Bear Put Debit",
+                    "target_expiry": "2026-05-08",
+                    "live_strike_setup": "Buy 100P / Sell 90P (10w, $4.18 debit)",
+                    "live_validated": True,
+                    "setup_tier": "TACTICAL PROBE",
+                    "setup_entry_trigger": "Enter only after stock stays below $101.01.",
+                    "setup_reason": "low-sample support; weak directional flow",
+                    "swing_score": 63.5,
+                    "price_direction": "bearish",
+                    "price_trend": 66.0,
+                    "flow_direction": "bearish",
+                    "flow_persistence": 58.0,
+                    "backtest_verdict": "PASS",
+                    "edge_pct": 10.2,
+                    "backtest_signals": 101,
+                }
+            ]
+        )
+        event_watch = pd.DataFrame(
+            [
+                {
+                    "ticker": "INTC",
+                    "direction": "bullish",
+                    "strategy": "Bull Put Credit",
+                    "target_expiry": "2026-06-18",
+                    "live_strike_setup": "Sell 65P / Buy 57.5P (7.5w, $0.64 credit)",
+                    "live_validated": True,
+                    "event_watch_status": "WATCH ONLY",
+                    "event_watch_score": 79.0,
+                    "event_watch_trigger": "Reprice after the stock holds the breakout.",
+                    "event_watch_reason": "earnings; no full actionability gate yet",
+                    "price_direction": "bullish",
+                    "price_trend": 77.0,
+                    "flow_direction": "bullish",
+                    "flow_persistence": 61.0,
+                }
+            ]
+        )
+
+        text = "\n".join(
+            trend_analysis._trend_setup_board(
+                current_setups=current_setups,
+                candidate_shortlist=pd.DataFrame(),
+                event_watch=event_watch,
+            )
+        )
+
+        self.assertIn("| Ticker | Bias | State | Trend | Setup | Entry/Recheck | Blocker |", text)
+        self.assertIn("INTC", text)
+        self.assertIn("Sell 65P / Buy 57.5P", text)
+        self.assertIn("BLUE WATCH ONLY", text)
+        self.assertIn("CRCL", text)
+        self.assertIn("Buy 100P / Sell 90P", text)
+        self.assertNotIn("NAN", text)
+
+    def test_hot_ticker_recall_board_surfaces_blocked_liquid_names(self) -> None:
+        patterns = pd.DataFrame(
+            [
+                {
+                    "ticker": "AMZN",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "target_expiry": "2026-06-18",
+                    "live_strike_setup": "Buy 270C / Sell 280C (10w, $3.80 debit)",
+                    "live_validated": True,
+                    "swing_score": 69.6,
+                    "price_direction": "bullish",
+                    "price_trend": 75.0,
+                    "flow_direction": "mixed",
+                    "flow_persistence": 58.0,
+                    "backtest_verdict": "LOW_SAMPLE",
+                    "edge_pct": 20.1,
+                    "backtest_signals": 62,
+                    "actionability_reject_reasons": "batch proof playbook gate blocked",
+                    "quality_reject_reasons": "weak directional flow: 58.0 < min 60.0",
+                },
+                {
+                    "ticker": "INTC",
+                    "direction": "bullish",
+                    "strategy": "Bull Put Credit",
+                    "target_expiry": "2026-06-18",
+                    "live_strike_setup": "Sell 67.5P / Buy 57.5P (10w, $0.81 credit)",
+                    "live_validated": True,
+                    "swing_score": 58.8,
+                    "price_direction": "bullish",
+                    "price_trend": 100.0,
+                    "flow_direction": "bullish",
+                    "flow_persistence": 56.0,
+                    "actionability_reject_reasons": "swing score 58.8 < min 60.0",
+                },
+                {
+                    "ticker": "MU",
+                    "direction": "bullish",
+                    "strategy": "Bull Put Credit",
+                    "target_expiry": "2026-06-12",
+                    "swing_score": 57.4,
+                    "price_direction": "bullish",
+                    "price_trend": 100.0,
+                    "flow_direction": "bearish",
+                    "flow_persistence": 58.7,
+                    "radar_only": True,
+                    "radar_note": "Radar only: ticker scored outside the validated candidate pool.",
+                },
+            ]
+        )
+
+        text = "\n".join(
+            trend_analysis._hot_ticker_recall_board(
+                actionable=pd.DataFrame(),
+                tactical_probes=pd.DataFrame(),
+                current_setups=pd.DataFrame(),
+                event_watch=pd.DataFrame(),
+                patterns=patterns,
+                hot_tickers=("AMZN", "INTC", "MU"),
+            )
+        )
+
+        self.assertIn("hot/liquid names", text)
+        self.assertIn("AMZN", text)
+        self.assertIn("Buy 270C / Sell 280C", text)
+        self.assertIn("INTC", text)
+        self.assertIn("Sell 67.5P / Buy 57.5P", text)
+        self.assertIn("MU", text)
+        self.assertIn("GRAY RADAR ONLY", text)
 
     def test_watch_only_tickets_show_specific_entry_conditions(self) -> None:
         proven_tickets = pd.DataFrame(
@@ -729,7 +1286,7 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(tickets.iloc[0]["proven_ticket_status"], "MAKE NOW")
         self.assertIn("schwab", tickets.iloc[0]["proven_ticket_why"].lower())
 
-    def test_current_setup_pool_prefers_broker_supported_candidates(self) -> None:
+    def test_current_setup_pool_keeps_broker_supported_and_workbench_candidates(self) -> None:
         annotated = pd.DataFrame(
             [
                 {
@@ -750,7 +1307,7 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         proven = annotated[trend_analysis._proven_playbook_mask(annotated)].copy()
         pool = trend_analysis._current_setup_reporting_pool(annotated, proven)
 
-        self.assertEqual(list(pool["ticker"]), ["NFLX"])
+        self.assertEqual(list(pool["ticker"]), ["NFLX", "WULF"])
 
     def test_resolve_invocation_accepts_date_then_lookback(self) -> None:
         args = argparse.Namespace(
@@ -837,6 +1394,169 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(pre_earn[0].target_expiry, "2026-04-24")
         self.assertTrue(pre_earn[0].earnings_safe)
         self.assertEqual(pre_earn[0].repair_source, "expiry moved before earnings window")
+
+    def test_trade_repair_prioritizes_pre_earnings_before_liquidity_variants(self) -> None:
+        liquid_score = swing_trend_pipeline.SwingScore(
+            ticker="EARLY",
+            recommended_strategy="Bull Call Debit",
+            target_expiry="2026-05-22",
+            target_dte=50,
+            long_strike=100.0,
+            short_strike=110.0,
+            spread_width=10.0,
+            strike_setup="Buy 100C / Sell 110C",
+            cost_type="debit",
+            est_cost=3.0,
+            direction="bullish",
+        )
+        earnings_score = swing_trend_pipeline.SwingScore(
+            ticker="LATE",
+            recommended_strategy="Bull Put Credit",
+            target_expiry="2026-05-29",
+            target_dte=42,
+            long_strike=170.0,
+            short_strike=180.0,
+            spread_width=10.0,
+            strike_setup="Sell 180P / Buy 170P",
+            cost_type="credit",
+            est_cost=0.3,
+            direction="bullish",
+        )
+        signals = {
+            "EARLY": swing_trend_pipeline.SwingSignals(
+                ticker="EARLY",
+                latest_date=dt.date(2026, 4, 17),
+                latest_close=105.0,
+                price_direction="bullish",
+                flow_direction="bullish",
+            ),
+            "LATE": swing_trend_pipeline.SwingSignals(
+                ticker="LATE",
+                latest_date=dt.date(2026, 4, 17),
+                latest_close=278.0,
+                next_earnings_date=dt.date(2026, 5, 5),
+                price_direction="bullish",
+                flow_direction="bearish",
+            ),
+        }
+
+        variants = swing_trend_pipeline.generate_trade_repair_variants(
+            [liquid_score, earnings_score],
+            signals,
+            {
+                "filters": {"earnings_buffer_days": 3},
+                "trade_repair": {"max_total_variants": 1, "max_variants_per_score": 3},
+            },
+        )
+
+        self.assertEqual(len(variants), 1)
+        self.assertEqual(variants[0].ticker, "LATE")
+        self.assertEqual(variants[0].variant_tag, "pre_earnings")
+        self.assertEqual(variants[0].target_expiry, "2026-05-01")
+
+    def test_trade_repair_tests_call_debit_for_high_iv_bullish_momentum_credit(self) -> None:
+        score = swing_trend_pipeline.SwingScore(
+            ticker="MRVL",
+            recommended_strategy="Bull Put Credit",
+            recommended_track="SHIELD",
+            target_expiry="2026-06-18",
+            target_dte=49,
+            long_strike=70.0,
+            short_strike=80.0,
+            spread_width=10.0,
+            strike_setup="Sell 80P / Buy 70P",
+            cost_type="credit",
+            est_cost=1.50,
+            direction="bullish",
+            price_trend_score=88.0,
+        )
+        signals = swing_trend_pipeline.SwingSignals(
+            ticker="MRVL",
+            latest_date=dt.date(2026, 4, 30),
+            latest_close=165.15,
+            price_direction="bullish",
+            flow_direction="bullish",
+        )
+
+        variants = swing_trend_pipeline.generate_trade_repair_variants(
+            [score],
+            {"MRVL": signals},
+            {"trade_repair": {"max_total_variants": 5, "max_variants_per_score": 3}},
+        )
+
+        debit = [v for v in variants if v.variant_tag == "momentum_debit"]
+        self.assertEqual(len(debit), 1)
+        self.assertEqual(debit[0].recommended_strategy, "Bull Call Debit")
+        self.assertEqual(debit[0].recommended_track, "FIRE")
+        self.assertIn("Buy", debit[0].strike_setup)
+        self.assertIn("C", debit[0].strike_setup)
+
+    def test_trade_repair_pre_earnings_budget_does_not_starve_structure_repairs(self) -> None:
+        scores = []
+        signals = {}
+        for idx in range(3):
+            ticker = f"EARN{idx}"
+            scores.append(
+                swing_trend_pipeline.SwingScore(
+                    ticker=ticker,
+                    recommended_strategy="Bull Put Credit",
+                    target_expiry="2026-06-18",
+                    target_dte=49,
+                    long_strike=90.0,
+                    short_strike=100.0,
+                    spread_width=10.0,
+                    strike_setup="Sell 100P / Buy 90P",
+                    cost_type="credit",
+                    direction="bullish",
+                    price_trend_score=90.0,
+                )
+            )
+            signals[ticker] = swing_trend_pipeline.SwingSignals(
+                ticker=ticker,
+                latest_date=dt.date(2026, 4, 30),
+                latest_close=120.0,
+                next_earnings_date=dt.date(2026, 5, 20),
+                price_direction="bullish",
+                flow_direction="bullish",
+            )
+
+        variants = swing_trend_pipeline.generate_trade_repair_variants(
+            scores,
+            signals,
+            {
+                "filters": {"earnings_buffer_days": 3},
+                "trade_repair": {
+                    "max_total_variants": 4,
+                    "max_pre_earnings_variants": 1,
+                    "max_variants_per_score": 3,
+                },
+            },
+        )
+
+        tags = [v.variant_tag for v in variants]
+        self.assertEqual(tags.count("pre_earnings"), 1)
+        self.assertIn("momentum_debit", tags)
+
+    def test_whale_mentions_fast_loader_uses_symbol_presence_without_full_rank_build(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            day_dir = Path(tmp) / "2026-04-30"
+            day_dir.mkdir(parents=True)
+            source = day_dir / "bot-eod-report-2026-04-30.csv"
+            source.write_text(
+                "executed_at,underlying_symbol,premium,equity_type\n"
+                "2026-04-30T10:00:00Z,MRVL,250000,COMMON_STOCK\n"
+                "2026-04-30T10:01:00Z,SPY,500000,ETF\n"
+                "2026-04-30T10:02:00Z,JUNK,100000,COMMON_STOCK\n",
+                encoding="utf-8",
+            )
+
+            mentions = swing_trend_pipeline.load_whale_mentions(
+                [(dt.date(2026, 4, 30), day_dir)],
+                {"MRVL", "SPY"},
+                cfg={"gates": {"exclude_etfs": True, "exclude_issue_types": ["ETF"]}},
+            )
+
+        self.assertEqual(mentions, {dt.date(2026, 4, 30): {"MRVL"}})
 
     def test_chain_optimizer_prefers_listed_expiry_with_local_quote_coverage(self) -> None:
         score = swing_trend_pipeline.SwingScore(
@@ -1947,6 +2667,40 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(annotated_late.loc[0, "schwab_actual_playbook_verdict"], "supportive")
         self.assertIn("3 Schwab closed trade(s)", annotated_late.loc[0, "schwab_actual_playbook_summary"])
 
+    def test_schwab_actual_audits_asof_excludes_future_closed_trades(self) -> None:
+        closed = pd.DataFrame(
+            [
+                {
+                    "ticker": "NVDA",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "realized_pnl": 125.0,
+                    "hold_days": 3,
+                    "closed_at": "2026-04-20T14:00:00+00:00",
+                },
+                {
+                    "ticker": "NVDA",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "realized_pnl": 150.0,
+                    "hold_days": 4,
+                    "closed_at": "2026-04-25T14:00:00+00:00",
+                },
+            ]
+        )
+
+        asof_trades, summary, strategy_audit, playbook_audit, _shape_audit = trend_analysis.schwab_actual_audits_asof(
+            closed,
+            {"status": "ok", "parsed_closed_trades": 2},
+            dt.date(2026, 4, 23),
+        )
+
+        self.assertEqual(len(asof_trades), 1)
+        self.assertEqual(summary["parsed_closed_trades_asof"], 1)
+        self.assertEqual(summary["parsed_closed_trades_total"], 2)
+        self.assertEqual(int(playbook_audit.loc[0, "closed_trades"]), 1)
+        self.assertEqual(int(strategy_audit.loc[0, "closed_trades"]), 1)
+
     def test_calibrate_trade_tracking_execution_matches_schwab_report_history(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -2595,6 +3349,83 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertIn(dt.date(2026, 1, 11), selected[1])
         self.assertNotIn(dt.date(2026, 1, 11), selected[4])
 
+    def test_signal_date_samples_cap_total_dates_not_per_horizon(self) -> None:
+        days = [
+            (dt.date(2026, 1, 1) + dt.timedelta(days=i), Path(f"/tmp/{i}"))
+            for i in range(20)
+        ]
+
+        selected = trend_analysis._signal_dates_by_horizon(
+            days,
+            lookback=3,
+            as_of=dt.date(2026, 1, 20),
+            samples=3,
+            horizons=[1, 3, 5],
+        )
+        unique_dates = {day for dates in selected.values() for day in dates}
+
+        self.assertLessEqual(len(unique_dates), 3)
+
+    def test_historical_asof_auto_disables_live_schwab(self) -> None:
+        enabled, reason = trend_analysis._live_schwab_mode(
+            no_schwab=False,
+            force_live_schwab=False,
+            as_of=dt.date(2026, 4, 23),
+            latest_data_date=dt.date(2026, 4, 24),
+            today=dt.date(2026, 4, 24),
+        )
+
+        self.assertFalse(enabled)
+        self.assertIn("historical as-of 2026-04-23", reason)
+
+    def test_stale_latest_local_asof_auto_disables_live_schwab(self) -> None:
+        enabled, reason = trend_analysis._live_schwab_mode(
+            no_schwab=False,
+            force_live_schwab=False,
+            as_of=dt.date(2026, 4, 28),
+            latest_data_date=dt.date(2026, 4, 28),
+            today=dt.date(2026, 4, 29),
+        )
+
+        self.assertFalse(enabled)
+        self.assertIn("before current date 2026-04-29", reason)
+
+    def test_requested_current_asof_without_local_folder_keeps_live_schwab(self) -> None:
+        enabled, reason = trend_analysis._live_schwab_mode(
+            no_schwab=False,
+            force_live_schwab=False,
+            as_of=dt.date(2026, 4, 30),
+            latest_data_date=dt.date(2026, 4, 29),
+            today=dt.date(2026, 4, 30),
+        )
+
+        self.assertTrue(enabled)
+        self.assertIn("uses latest completed local data 2026-04-29", reason)
+
+    def test_future_asof_disables_live_schwab(self) -> None:
+        enabled, reason = trend_analysis._live_schwab_mode(
+            no_schwab=False,
+            force_live_schwab=False,
+            as_of=dt.date(2026, 5, 1),
+            latest_data_date=dt.date(2026, 4, 29),
+            today=dt.date(2026, 4, 30),
+        )
+
+        self.assertFalse(enabled)
+        self.assertIn("future as-of 2026-05-01", reason)
+
+    def test_latest_asof_keeps_live_schwab_available(self) -> None:
+        enabled, reason = trend_analysis._live_schwab_mode(
+            no_schwab=False,
+            force_live_schwab=False,
+            as_of=dt.date(2026, 4, 24),
+            latest_data_date=dt.date(2026, 4, 24),
+            today=dt.date(2026, 4, 24),
+        )
+
+        self.assertTrue(enabled)
+        self.assertIn("latest local as-of", reason)
+
     def test_walk_forward_confidence_text_uses_completed_outcomes(self) -> None:
         outcomes = pd.DataFrame(
             [
@@ -2848,6 +3679,529 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         )
 
         self.assertTrue(trend_analysis.research_gate_passes(row))
+
+    def test_research_gate_passes_with_current_pass_backtest_when_batch_has_no_match(self) -> None:
+        row = pd.Series(
+            {
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "no_match",
+                "batch_family_gate_pass": False,
+                "strategy_family_gate_pass": False,
+                "ticker_playbook_gate_pass": False,
+                "rolling_playbook_gate_pass": True,
+                "schwab_actual_playbook_supportive": False,
+                "schwab_actual_shape_supportive": False,
+                "backtest_verdict": "PASS",
+                "edge_pct": 4.0,
+                "backtest_signals": 140,
+            }
+        )
+
+        self.assertTrue(trend_analysis.research_gate_passes(row))
+
+    def test_negative_batch_playbook_blocks_current_backtest_support(self) -> None:
+        row = pd.Series(
+            {
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "negative",
+                "batch_family_gate_pass": False,
+                "strategy_family_gate_pass": False,
+                "ticker_playbook_gate_pass": False,
+                "rolling_playbook_gate_pass": True,
+                "backtest_verdict": "PASS",
+                "edge_pct": 4.0,
+                "backtest_signals": 140,
+            }
+        )
+
+        self.assertFalse(trend_analysis.research_gate_passes(row))
+
+    def test_batch_no_match_does_not_veto_current_pass_base_gate(self) -> None:
+        row = pd.Series(
+            {
+                "ticker": "FCX",
+                "strategy": "Bull Call Debit",
+                "direction": "bullish",
+                "swing_score": 64.0,
+                "backtest_verdict": "PASS",
+                "edge_pct": 8.0,
+                "backtest_signals": 140,
+                "live_validated": True,
+                "quote_replay_verdict": "ENTRY_OK",
+                "market_regime_gate_pass": True,
+                "open_position_gate_pass": True,
+                "rolling_playbook_gate_pass": True,
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "no_match",
+                "batch_playbook_summary": "no supportive prior-only batch-proof playbook match",
+                "batch_family_gate_pass": False,
+                "strategy_family_gate_pass": False,
+                "ticker_playbook_gate_pass": False,
+                "schwab_actual_playbook_supportive": False,
+                "schwab_actual_shape_supportive": False,
+            }
+        )
+
+        reasons = trend_analysis.base_gate_reasons(
+            row,
+            backtest_enabled=True,
+            schwab_enabled=True,
+            quote_replay_mode="gate",
+            min_edge=0.0,
+            min_signals=100,
+            min_swing_score=60.0,
+            allow_low_sample=False,
+        )
+
+        self.assertEqual(reasons, [])
+
+    def test_strong_directional_pass_can_clear_near_miss_swing_score(self) -> None:
+        row = pd.Series(
+            {
+                "ticker": "C",
+                "strategy": "Bull Call Debit",
+                "direction": "bullish",
+                "swing_score": 58.2,
+                "backtest_verdict": "PASS",
+                "edge_pct": 16.0,
+                "backtest_signals": 223,
+                "live_validated": True,
+                "quote_replay_verdict": "ENTRY_OK",
+                "market_regime_gate_pass": True,
+                "open_position_gate_pass": True,
+                "rolling_playbook_gate_pass": True,
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "no_match",
+                "batch_family_gate_pass": False,
+                "strategy_family_gate_pass": False,
+                "ticker_playbook_gate_pass": False,
+                "price_direction": "bullish",
+                "price_trend": 67.0,
+                "flow_direction": "bullish",
+                "flow_persistence": 62.0,
+                "whale_appearances": 18,
+            }
+        )
+
+        reasons = trend_analysis.base_gate_reasons(
+            row,
+            backtest_enabled=True,
+            schwab_enabled=True,
+            quote_replay_mode="gate",
+            min_edge=0.0,
+            min_signals=100,
+            min_swing_score=60.0,
+            allow_low_sample=False,
+        )
+
+        self.assertEqual(reasons, [])
+
+    def test_strong_emerging_low_sample_can_be_actionable_starter_risk(self) -> None:
+        candidate = pd.DataFrame(
+            [
+                {
+                    "ticker": "WULF",
+                    "strategy": "Bull Call Debit",
+                    "direction": "bullish",
+                    "swing_score": 59.0,
+                    "backtest_verdict": "LOW_SAMPLE",
+                    "edge_pct": 18.0,
+                    "backtest_signals": 83,
+                    "live_validated": True,
+                    "quote_replay_verdict": "ENTRY_OK",
+                    "target_expiry": "2026-05-01",
+                    "live_strike_setup": "Buy 20C / Sell 22.5C (2.5w, $0.96 debit)",
+                    "latest_close": 20.80,
+                    "live_long_strike": 20.0,
+                    "long_strike": 20.0,
+                    "spread_width": 2.5,
+                    "live_spread_cost": 0.96,
+                    "live_bid_ask_width": 0.05,
+                    "price_direction": "bullish",
+                    "price_trend": 67.0,
+                    "flow_direction": "bullish",
+                    "flow_persistence": 62.0,
+                    "whale_appearances": 20,
+                    "days_observed": 30,
+                    "earnings_safe": True,
+                    "market_regime_gate_pass": True,
+                    "open_position_gate_pass": True,
+                    "rolling_playbook_gate_pass": True,
+                    "batch_playbook_gate_pass": False,
+                    "batch_playbook_verdict": "no_match",
+                    "batch_family_gate_pass": False,
+                    "strategy_family_gate_pass": False,
+                    "ticker_playbook_gate_pass": False,
+                    "schwab_actual_playbook_supportive": False,
+                    "schwab_actual_shape_supportive": False,
+                }
+            ]
+        )
+
+        actionable, patterns = trend_analysis.split_actionable_candidates(
+            candidate,
+            top_n=5,
+            backtest_enabled=True,
+            min_edge=0.0,
+            min_signals=100,
+            allow_low_sample=False,
+            schwab_enabled=True,
+            quote_replay_mode="gate",
+            min_swing_score=60.0,
+            min_underlying_price=20.0,
+            min_debit_spread_price=0.75,
+            min_whale_appearances=8,
+        )
+        sized = trend_analysis.annotate_position_sizing(actionable)
+
+        self.assertEqual(len(actionable), 1)
+        self.assertTrue(patterns.empty)
+        self.assertEqual(sized.iloc[0]["position_size_tier"], "STARTER_RISK")
+
+    def test_emerging_low_sample_still_requires_price_and_flow_confirmation(self) -> None:
+        row = pd.Series(
+            {
+                "ticker": "WEAK",
+                "strategy": "Bull Call Debit",
+                "direction": "bullish",
+                "swing_score": 59.0,
+                "backtest_verdict": "LOW_SAMPLE",
+                "edge_pct": 18.0,
+                "backtest_signals": 83,
+                "live_validated": True,
+                "quote_replay_verdict": "ENTRY_OK",
+                "market_regime_gate_pass": True,
+                "open_position_gate_pass": True,
+                "rolling_playbook_gate_pass": True,
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "no_match",
+                "batch_playbook_summary": "no supportive prior-only batch-proof playbook match",
+                "batch_family_gate_pass": False,
+                "strategy_family_gate_pass": False,
+                "ticker_playbook_gate_pass": False,
+                "price_direction": "range_bound",
+                "price_trend": 54.0,
+                "flow_direction": "bullish",
+                "flow_persistence": 62.0,
+                "whale_appearances": 20,
+                "days_observed": 30,
+            }
+        )
+
+        reasons = trend_analysis.base_gate_reasons(
+            row,
+            backtest_enabled=True,
+            schwab_enabled=True,
+            quote_replay_mode="gate",
+            min_edge=0.0,
+            min_signals=100,
+            min_swing_score=60.0,
+            allow_low_sample=False,
+        )
+
+        self.assertTrue(any("swing score" in reason for reason in reasons))
+        self.assertTrue(any("backtest LOW_SAMPLE" in reason for reason in reasons))
+        self.assertTrue(any("batch proof playbook gate blocked" in reason for reason in reasons))
+
+    def test_negative_batch_playbook_blocks_emerging_low_sample_support(self) -> None:
+        row = pd.Series(
+            {
+                "ticker": "WULF",
+                "strategy": "Bull Call Debit",
+                "direction": "bullish",
+                "swing_score": 59.0,
+                "backtest_verdict": "LOW_SAMPLE",
+                "edge_pct": 18.0,
+                "backtest_signals": 83,
+                "live_validated": True,
+                "quote_replay_verdict": "ENTRY_OK",
+                "market_regime_gate_pass": True,
+                "open_position_gate_pass": True,
+                "rolling_playbook_gate_pass": True,
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "negative",
+                "batch_playbook_summary": "rolling batch proof negative",
+                "batch_family_gate_pass": False,
+                "strategy_family_gate_pass": False,
+                "ticker_playbook_gate_pass": False,
+                "price_direction": "bullish",
+                "price_trend": 67.0,
+                "flow_direction": "bullish",
+                "flow_persistence": 62.0,
+                "whale_appearances": 20,
+                "days_observed": 30,
+            }
+        )
+
+        reasons = trend_analysis.base_gate_reasons(
+            row,
+            backtest_enabled=True,
+            schwab_enabled=True,
+            quote_replay_mode="gate",
+            min_edge=0.0,
+            min_signals=100,
+            min_swing_score=60.0,
+            allow_low_sample=False,
+        )
+
+        self.assertTrue(any("batch proof playbook gate blocked" in reason for reason in reasons))
+
+    def test_high_quality_smaller_low_sample_can_be_actionable_starter_risk(self) -> None:
+        candidate = pd.DataFrame(
+            [
+                {
+                    "ticker": "NKE",
+                    "strategy": "Bear Put Debit",
+                    "direction": "bearish",
+                    "swing_score": 65.4,
+                    "backtest_verdict": "LOW_SAMPLE",
+                    "edge_pct": 7.7,
+                    "backtest_signals": 58,
+                    "live_validated": True,
+                    "quote_replay_verdict": "ENTRY_OK",
+                    "target_expiry": "2026-05-08",
+                    "live_strike_setup": "Buy 43P / Sell 38P (5w, $0.91 debit)",
+                    "latest_close": 43.20,
+                    "live_long_strike": 43.0,
+                    "long_strike": 43.0,
+                    "spread_width": 5.0,
+                    "live_spread_cost": 0.91,
+                    "live_bid_ask_width": 0.05,
+                    "price_direction": "bearish",
+                    "price_trend": 79.6,
+                    "flow_direction": "bearish",
+                    "flow_persistence": 81.3,
+                    "whale_appearances": 14,
+                    "days_observed": 30,
+                    "earnings_safe": True,
+                    "market_regime_gate_pass": True,
+                    "open_position_gate_pass": True,
+                    "rolling_playbook_gate_pass": True,
+                    "batch_playbook_gate_pass": False,
+                    "batch_playbook_verdict": "no_match",
+                    "batch_family_gate_pass": False,
+                    "strategy_family_gate_pass": False,
+                    "ticker_playbook_gate_pass": False,
+                    "schwab_actual_playbook_supportive": False,
+                    "schwab_actual_shape_supportive": False,
+                }
+            ]
+        )
+
+        actionable, _ = trend_analysis.split_actionable_candidates(
+            candidate,
+            top_n=5,
+            backtest_enabled=True,
+            min_edge=0.0,
+            min_signals=100,
+            allow_low_sample=False,
+            schwab_enabled=True,
+            quote_replay_mode="gate",
+            min_swing_score=60.0,
+            min_underlying_price=20.0,
+            min_debit_spread_price=0.75,
+            min_whale_appearances=8,
+        )
+
+        self.assertEqual(len(actionable), 1)
+
+    def test_high_quality_smaller_low_sample_still_requires_real_edge(self) -> None:
+        row = pd.Series(
+            {
+                "ticker": "NKE",
+                "strategy": "Bear Put Debit",
+                "direction": "bearish",
+                "swing_score": 65.4,
+                "backtest_verdict": "LOW_SAMPLE",
+                "edge_pct": 1.6,
+                "backtest_signals": 58,
+                "live_validated": True,
+                "quote_replay_verdict": "ENTRY_OK",
+                "market_regime_gate_pass": True,
+                "open_position_gate_pass": True,
+                "rolling_playbook_gate_pass": True,
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "no_match",
+                "batch_playbook_summary": "no supportive prior-only batch-proof playbook match",
+                "batch_family_gate_pass": False,
+                "strategy_family_gate_pass": False,
+                "ticker_playbook_gate_pass": False,
+                "price_direction": "bearish",
+                "price_trend": 79.6,
+                "flow_direction": "bearish",
+                "flow_persistence": 81.3,
+                "whale_appearances": 14,
+                "days_observed": 30,
+            }
+        )
+
+        reasons = trend_analysis.base_gate_reasons(
+            row,
+            backtest_enabled=True,
+            schwab_enabled=True,
+            quote_replay_mode="gate",
+            min_edge=0.0,
+            min_signals=100,
+            min_swing_score=60.0,
+            allow_low_sample=False,
+        )
+
+        self.assertTrue(any("backtest LOW_SAMPLE" in reason for reason in reasons))
+
+    def test_broad_negative_schwab_strategy_does_not_veto_strong_current_setup(self) -> None:
+        row = pd.Series(
+            {
+                "ticker": "C",
+                "strategy": "Bull Call Debit",
+                "direction": "bullish",
+                "latest_close": 131.69,
+                "whale_appearances": 16,
+                "price_direction": "bullish",
+                "price_trend": 60.7,
+                "flow_direction": "bullish",
+                "flow_persistence": 64.0,
+                "spread_width": 10.0,
+                "live_spread_cost": 3.79,
+                "long_strike": 130.0,
+                "live_long_strike": 130.0,
+                "earnings_safe": True,
+                "live_bid_ask_width": 0.10,
+                "swing_score": 57.2,
+                "backtest_verdict": "PASS",
+                "edge_pct": 24.4,
+                "backtest_signals": 228,
+                "schwab_actual_strategy_verdict": "negative",
+                "schwab_actual_strategy_summary": "29 Schwab Bull Call Debit trade(s), avg $-23.21",
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "no_match",
+            }
+        )
+
+        reasons = trend_analysis.quality_gate_reasons(
+            row,
+            schwab_enabled=True,
+            allow_earnings_risk=False,
+            allow_volatile_ic=False,
+            allow_flow_conflict=False,
+            max_bid_ask_to_price_pct=0.35,
+            max_bid_ask_to_width_pct=0.15,
+            max_short_delta=0.30,
+            min_underlying_price=20.0,
+            min_debit_spread_price=0.75,
+            min_whale_appearances=8,
+        )
+
+        self.assertFalse(any("actual Schwab strategy audit negative" in reason for reason in reasons))
+
+    def test_broad_negative_schwab_strategy_still_blocks_weak_current_setup(self) -> None:
+        row = pd.Series(
+            {
+                "ticker": "WEAK",
+                "strategy": "Bull Call Debit",
+                "direction": "bullish",
+                "latest_close": 100.0,
+                "whale_appearances": 16,
+                "price_direction": "bullish",
+                "price_trend": 60.7,
+                "flow_direction": "bullish",
+                "flow_persistence": 64.0,
+                "spread_width": 10.0,
+                "live_spread_cost": 3.79,
+                "long_strike": 100.0,
+                "live_long_strike": 100.0,
+                "earnings_safe": True,
+                "live_bid_ask_width": 0.10,
+                "swing_score": 57.2,
+                "backtest_verdict": "PASS",
+                "edge_pct": 4.0,
+                "backtest_signals": 120,
+                "schwab_actual_strategy_verdict": "negative",
+                "schwab_actual_strategy_summary": "29 Schwab Bull Call Debit trade(s), avg $-23.21",
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "no_match",
+            }
+        )
+
+        reasons = trend_analysis.quality_gate_reasons(
+            row,
+            schwab_enabled=True,
+            allow_earnings_risk=False,
+            allow_volatile_ic=False,
+            allow_flow_conflict=False,
+            max_bid_ask_to_price_pct=0.35,
+            max_bid_ask_to_width_pct=0.15,
+            max_short_delta=0.30,
+            min_underlying_price=20.0,
+            min_debit_spread_price=0.75,
+            min_whale_appearances=8,
+        )
+
+        self.assertTrue(any("actual Schwab strategy audit negative" in reason for reason in reasons))
+
+    def test_dedupe_trade_rows_prefers_same_live_ticket_over_heuristic_setup(self) -> None:
+        rows = pd.DataFrame(
+            [
+                {
+                    "ticker": "C",
+                    "strategy": "Bull Call Debit",
+                    "target_expiry": "2026-05-29",
+                    "strike_setup": "Buy 130C / Sell 140C (10w, ~$4 debit)",
+                    "live_strike_setup": "Buy 130C / Sell 140C (10w, $3.79 debit)",
+                },
+                {
+                    "ticker": "C",
+                    "strategy": "Bull Call Debit",
+                    "target_expiry": "2026-05-29",
+                    "strike_setup": "Buy 128C / Sell 140C (12w, live-priced debit)",
+                    "live_strike_setup": "Buy 130C / Sell 140C (10w, $3.79 debit)",
+                },
+            ]
+        )
+
+        deduped = trend_analysis._dedupe_trade_rows(rows)
+
+        self.assertEqual(len(deduped), 1)
+
+    def test_near_miss_swing_score_still_blocks_without_strong_exact_evidence(self) -> None:
+        row = pd.Series(
+            {
+                "ticker": "WEAK",
+                "strategy": "Bull Call Debit",
+                "direction": "bullish",
+                "swing_score": 58.2,
+                "backtest_verdict": "PASS",
+                "edge_pct": 4.0,
+                "backtest_signals": 120,
+                "live_validated": True,
+                "quote_replay_verdict": "ENTRY_OK",
+                "market_regime_gate_pass": True,
+                "open_position_gate_pass": True,
+                "rolling_playbook_gate_pass": True,
+                "batch_playbook_gate_pass": False,
+                "batch_playbook_verdict": "no_match",
+                "batch_family_gate_pass": False,
+                "strategy_family_gate_pass": False,
+                "ticker_playbook_gate_pass": False,
+                "price_direction": "bullish",
+                "price_trend": 67.0,
+                "flow_direction": "bullish",
+                "flow_persistence": 62.0,
+                "whale_appearances": 18,
+            }
+        )
+
+        reasons = trend_analysis.base_gate_reasons(
+            row,
+            backtest_enabled=True,
+            schwab_enabled=True,
+            quote_replay_mode="gate",
+            min_edge=0.0,
+            min_signals=100,
+            min_swing_score=60.0,
+            allow_low_sample=False,
+        )
+
+        self.assertTrue(any("swing score" in reason for reason in reasons))
 
     def test_batch_no_match_does_not_veto_broker_supported_base_gate(self) -> None:
         row = pd.Series(
@@ -3368,6 +4722,22 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(summary["open_underlyings"], 1)
         self.assertTrue(actionable.empty)
         self.assertIn("open position conflict", patterns.iloc[0]["base_gate_reasons"])
+
+    def test_position_json_for_asof_avoids_future_position_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            trade_dir = root / "out" / "trade_analysis"
+            trade_dir.mkdir(parents=True)
+            older = trade_dir / "position_data_2026-04-20.json"
+            future = trade_dir / "position_data_2026-04-25.json"
+            older.write_text('{"positions":[]}', encoding="utf-8")
+            future.write_text('{"positions":[]}', encoding="utf-8")
+
+            selected = trend_analysis._position_json_for_asof(root, dt.date(2026, 4, 23))
+            too_early = trend_analysis._position_json_for_asof(root, dt.date(2026, 4, 19))
+
+        self.assertEqual(selected, older)
+        self.assertIsNone(too_early)
 
     def test_position_sizing_starter_for_low_sample_playbook(self) -> None:
         actionable = pd.DataFrame(

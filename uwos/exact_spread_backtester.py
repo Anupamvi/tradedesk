@@ -43,7 +43,7 @@ STRATEGY_TO_RIGHT = {
 
 DEFAULT_SETUPS_ALIASES = {
     "trade_id": ["trade_id", "id", "row_id"],
-    "signal_date": ["signal_date", "entry_date", "as_of_date", "asof", "date"],
+    "signal_date": ["signal_date", "scan_date", "entry_date", "as_of_date", "asof", "date"],
     "ticker": ["ticker", "symbol", "underlying"],
     "strategy": ["strategy", "strategy_type", "setup"],
     "expiry": ["expiry", "expiration", "exp_date", "expiration_date"],
@@ -69,7 +69,7 @@ DEFAULT_ACTUAL_ALIASES = {
     "trade_id": ["trade_id", "id", "row_id"],
     "ticker": ["ticker", "symbol", "underlying"],
     "strategy": ["strategy", "strategy_type", "setup"],
-    "signal_date": ["signal_date", "entry_date", "open_date", "date"],
+    "signal_date": ["signal_date", "scan_date", "entry_date", "open_date", "date"],
     "expiry": ["expiry", "expiration", "exp_date", "expiration_date"],
     "short_leg": ["short_leg", "short_symbol", "short_option"],
     "long_leg": ["long_leg", "long_symbol", "long_option"],
@@ -203,6 +203,7 @@ class HistoricalOptionQuoteStore:
         self.use_hot = bool(use_hot)
         self.use_oi = bool(use_oi)
         self._cache: Dict[dt.date, pd.DataFrame] = {}
+        self._leg_quote_cache: Dict[dt.date, Dict[str, LegQuote]] = {}
         self._date_dirs: Dict[dt.date, Path] = {}
         for p in root_dir.iterdir():
             if not p.is_dir():
@@ -311,27 +312,40 @@ class HistoricalOptionQuoteStore:
     def get_quotes_for_date(self, asof: dt.date, wanted_symbols: Optional[Set[str]] = None) -> pd.DataFrame:
         if asof not in self._cache:
             self._cache[asof] = self._load_date_quotes(asof, wanted_symbols=None)
+            self._leg_quote_cache[asof] = self._build_leg_quote_index(self._cache[asof])
         q = self._cache[asof]
         if wanted_symbols:
             return q[q["option_symbol"].isin(wanted_symbols)].copy()
         return q.copy()
 
+    @staticmethod
+    def _build_leg_quote_index(q: pd.DataFrame) -> Dict[str, LegQuote]:
+        if q.empty:
+            return {}
+        out: Dict[str, LegQuote] = {}
+        for r in q.itertuples(index=False):
+            symbol = str(getattr(r, "option_symbol", "") or "").upper().strip()
+            if not symbol:
+                continue
+            volume = safe_float(getattr(r, "volume", math.nan))
+            open_interest = safe_float(getattr(r, "open_interest", math.nan))
+            out[symbol] = LegQuote(
+                bid=float(getattr(r, "bid")),
+                ask=float(getattr(r, "ask")),
+                mid=float(getattr(r, "mid")),
+                volume=float(volume) if np.isfinite(volume) else math.nan,
+                open_interest=float(open_interest) if np.isfinite(open_interest) else math.nan,
+                source_kind=str(getattr(r, "source_kind")),
+            )
+        return out
+
     def get_leg_quote(self, asof: dt.date, symbol: str) -> Optional[LegQuote]:
         sym = str(symbol or "").upper().strip()
         if not sym:
             return None
-        q = self.get_quotes_for_date(asof, wanted_symbols={sym})
-        if q.empty:
-            return None
-        r = q.iloc[0]
-        return LegQuote(
-            bid=float(r["bid"]),
-            ask=float(r["ask"]),
-            mid=float(r["mid"]),
-            volume=float(r["volume"]) if np.isfinite(safe_float(r["volume"])) else math.nan,
-            open_interest=float(r["open_interest"]) if np.isfinite(safe_float(r["open_interest"])) else math.nan,
-            source_kind=str(r["source_kind"]),
-        )
+        if asof not in self._cache:
+            self.get_quotes_for_date(asof)
+        return self._leg_quote_cache.get(asof, {}).get(sym)
 
 
 class UnderlyingCloseStore:

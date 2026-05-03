@@ -316,7 +316,7 @@ MARKET_CONTEXT_TERMS = {"equities", "market", "markets", "risk off", "selloff", 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Score ticker or market-segment sentiment from UW flow, news/social text, macro, and trend outputs."
+        description="Score ticker or market-segment sentiment from UW flow, news/social text, and macro."
     )
     parser.add_argument("query", nargs="*", help="Ticker, segment, or catalyst query, e.g. NFLX or 'Iran war'.")
     parser.add_argument("--ticker", action="append", default=[], help="Ticker to analyze. Repeatable.")
@@ -341,6 +341,17 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="Maximum tickers to include in one Schwab news request.",
     )
     parser.add_argument("--manual-auth", action="store_true", help="Use manual Schwab OAuth flow for Schwab news.")
+    parser.add_argument(
+        "--trade-artifacts",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Attach existing trend-analysis trade artifacts to sentiment rows. Use --no-trade-artifacts for pure sentiment.",
+    )
+    parser.add_argument(
+        "--sentiment-only",
+        action="store_true",
+        help="Pure sentiment mode: do not run or attach trend-analysis artifacts or batch-proof gates.",
+    )
     parser.add_argument(
         "--run-trend-analysis",
         action=argparse.BooleanOptionalAction,
@@ -429,6 +440,14 @@ def _fmt_num(value: Any, places: int = 1) -> str:
     if not math.isfinite(num):
         return "-"
     return f"{num:.{places}f}"
+
+
+def _clip_text(value: Any, limit: int) -> str:
+    text = str(value or "").replace("\n", " ").strip()
+    text = re.sub(r"\s+", " ", text)
+    if len(text) <= limit:
+        return text
+    return text[: max(0, limit - 3)].rstrip(" ;,.") + "..."
 
 
 def _fmt_money(value: Any) -> str:
@@ -2081,13 +2100,15 @@ def write_scores_csv(path: Path, rows: Sequence[Dict[str, Any]]) -> None:
 
 
 def render_table(rows: Sequence[Sequence[str]], headers: Sequence[str]) -> str:
-    widths = [len(str(h)) for h in headers]
-    for row in rows:
+    escaped_headers = [str(h).replace("|", "\\|") for h in headers]
+    escaped_rows = [[str(cell).replace("|", "\\|") for cell in row] for row in rows]
+    widths = [len(h) for h in escaped_headers]
+    for row in escaped_rows:
         for idx, cell in enumerate(row):
-            widths[idx] = max(widths[idx], len(str(cell)))
-    header = "| " + " | ".join(str(h).ljust(widths[idx]) for idx, h in enumerate(headers)) + " |"
+            widths[idx] = max(widths[idx], len(cell))
+    header = "| " + " | ".join(h.ljust(widths[idx]) for idx, h in enumerate(escaped_headers)) + " |"
     sep = "| " + " | ".join("-" * widths[idx] for idx in range(len(headers))) + " |"
-    body = ["| " + " | ".join(str(cell).ljust(widths[idx]) for idx, cell in enumerate(row)) + " |" for row in rows]
+    body = ["| " + " | ".join(cell.ljust(widths[idx]) for idx, cell in enumerate(row)) + " |" for row in escaped_rows]
     return "\n".join([header, sep, *body])
 
 
@@ -2106,11 +2127,22 @@ def write_report(
 ) -> None:
     lines: List[str] = []
     title_query = query or "market"
+    top_rows = list(results)[: max(1, int(top))]
+    bullish = [r for r in results if r["direction"] == "bullish"][: max(5, min(top, 12))]
+    bearish = [r for r in results if r["direction"] == "bearish"][: max(5, min(top, 12))]
+    blocked_rows = [r for r in top_rows if r.get("proof_status") in {"BATCH_BLOCKED", "BATCH_PROOF_MISSING"}]
+
     lines.append(f"# Sentiment Analysis - {title_query} - {as_of.isoformat()}")
     lines.append("")
     lines.append(
         "Research output only. Exact option trades are surfaced only when trend-analysis artifacts exist and the batch proof gate supports them."
     )
+    lines.append("")
+    lines.append("## Quick Read")
+    lines.append(f"- Directional bullish rows: {len(bullish)}")
+    lines.append(f"- Directional bearish rows: {len(bearish)}")
+    lines.append(f"- Proof-supported trade rows: {sum(1 for r in top_rows if r.get('proof_status') == 'PROOF_SUPPORTED')}")
+    lines.append(f"- Batch-blocked trade rows: {len(blocked_rows)}")
     lines.append("")
     lines.append("## Data Quality")
     lines.append(f"- Lookback: {lookback} usable UW folder(s)")
@@ -2167,7 +2199,6 @@ def write_report(
         lines.append("- Text layer gap: no recent X/Reddit/news/browser artifacts were found; score relies on UW and theme/macro only.")
     lines.append("")
 
-    top_rows = list(results)[: max(1, int(top))]
     table_rows = []
     for row in top_rows:
         table_rows.append(
@@ -2187,24 +2218,36 @@ def write_report(
     lines.append(render_table(table_rows, ["Ticker", "Bias", "Score", "Conf", "Sector", "UW", "Opt", "Text", "Trade"]))
     lines.append("")
 
-    bullish = [r for r in results if r["direction"] == "bullish"][: max(5, min(top, 12))]
-    bearish = [r for r in results if r["direction"] == "bearish"][: max(5, min(top, 12))]
     lines.append("## Bullish Watchlist")
     if bullish:
+        rows = []
         for row in bullish:
-            lines.append(
-                f"- **{row['ticker']}** score {_fmt_num(row['sentiment_score'], 1)}, confidence {_fmt_num(row['confidence'], 0)}: {row['drivers'] or 'no dominant driver'}"
+            rows.append(
+                [
+                    str(row["ticker"]),
+                    _fmt_num(row["sentiment_score"], 1),
+                    _fmt_num(row["confidence"], 0),
+                    _clip_text(row["drivers"] or "no dominant driver", 160),
+                ]
             )
+        lines.append(render_table(rows, ["Ticker", "Score", "Conf", "Top Driver"]))
     else:
         lines.append("- No bullish rows cleared the directional threshold.")
     lines.append("")
 
     lines.append("## Bearish Watchlist")
     if bearish:
+        rows = []
         for row in bearish:
-            lines.append(
-                f"- **{row['ticker']}** score {_fmt_num(row['sentiment_score'], 1)}, confidence {_fmt_num(row['confidence'], 0)}: {row['drivers'] or 'no dominant driver'}"
+            rows.append(
+                [
+                    str(row["ticker"]),
+                    _fmt_num(row["sentiment_score"], 1),
+                    _fmt_num(row["confidence"], 0),
+                    _clip_text(row["drivers"] or "no dominant driver", 160),
+                ]
             )
+        lines.append(render_table(rows, ["Ticker", "Score", "Conf", "Top Driver"]))
     else:
         lines.append("- No bearish rows cleared the directional threshold.")
     lines.append("")
@@ -2225,23 +2268,28 @@ def write_report(
             lines.append("- No existing trend-analysis trade artifacts matched the ranked sentiment rows.")
     lines.append("")
 
-    blocked_rows = [r for r in top_rows if r.get("proof_status") in {"BATCH_BLOCKED", "BATCH_PROOF_MISSING"}]
     if blocked_rows:
         lines.append("## Batch-Proof Blocked Trade Artifacts")
+        rows = []
         for row in blocked_rows[:12]:
-            lines.append(
-                f"- **{row['ticker']}**: {row.get('trade_summary', '')} "
-                f"(source status {row.get('trade_original_status', '-')})"
+            rows.append(
+                [
+                    str(row["ticker"]),
+                    str(row.get("trade_original_status", "-")),
+                    _clip_text(row.get("trade_summary", ""), 180),
+                ]
             )
+        lines.append(render_table(rows, ["Ticker", "Source Status", "Why Blocked / Setup"]))
         lines.append("")
 
     evidence_rows = [r for r in top_rows if r.get("evidence")]
     if evidence_rows:
         lines.append("## Text Evidence")
+        rows = []
         for row in evidence_rows[:8]:
-            lines.append(f"### {row['ticker']}")
             for item in row.get("evidence", [])[:3]:
-                lines.append(f"- {item}")
+                rows.append([str(row["ticker"]), _clip_text(item, 220)])
+        lines.append(render_table(rows, ["Ticker", "Clipped Evidence"]))
         lines.append("")
 
     lines.append("## Files")
@@ -2253,6 +2301,10 @@ def write_report(
 
 def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
     args = parse_args(argv)
+    if bool(args.sentiment_only):
+        args.trade_artifacts = False
+        args.run_trend_analysis = False
+        args.batch_proof_gate = False
     root = Path(args.root_dir).expanduser().resolve() if args.root_dir else paths.project_root()
     as_of = _parse_date(args.as_of) if args.as_of else latest_data_date(root)
     lookback = max(1, int(args.lookback))
@@ -2265,14 +2317,22 @@ def run(argv: Optional[Sequence[str]] = None) -> Dict[str, Path]:
     stock_path, stock_rows = load_latest_stock_rows(days)
     docs = load_text_documents(days, max_docs=max(0, int(args.max_docs)))
     regime = compute_regime(root, days)
-    trend_refresh_summary = run_trend_analysis_refresh(args, root=root, as_of=as_of, lookback=lookback)
-    trade_map = load_trade_artifacts(root, as_of, include_patterns=bool(args.include_pattern_trades))
+    trend_refresh_summary = (
+        run_trend_analysis_refresh(args, root=root, as_of=as_of, lookback=lookback)
+        if bool(args.trade_artifacts)
+        else {"enabled": False, "status": "sentiment_only"}
+    )
+    trade_map = (
+        load_trade_artifacts(root, as_of, include_patterns=bool(args.include_pattern_trades))
+        if bool(args.trade_artifacts)
+        else {}
+    )
     proof_dir = Path(args.batch_proof_dir).expanduser().resolve() if args.batch_proof_dir else None
     proof_gate = load_batch_proof_gate(
         root,
         as_of,
         lookback,
-        enabled=bool(args.batch_proof_gate),
+        enabled=bool(args.batch_proof_gate) and bool(args.trade_artifacts),
         proof_dir=proof_dir,
     )
     seed_universe = build_seed_universe(args, query, query_terms, stock_rows, docs)

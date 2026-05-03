@@ -8,6 +8,12 @@ from uwos import trend_analysis_batch
 
 
 class TestTrendAnalysisBatch(unittest.TestCase):
+    def test_default_candidate_pool_matches_trend_recall_pool(self) -> None:
+        args = trend_analysis_batch.parse_args([])
+
+        self.assertGreaterEqual(args.candidate_pool, 250)
+        self.assertGreaterEqual(args.max_backtest_setups, 300)
+
     def test_summarize_outcomes_computes_expectancy(self) -> None:
         df = pd.DataFrame(
             [
@@ -62,6 +68,23 @@ class TestTrendAnalysisBatch(unittest.TestCase):
         )
 
         self.assertEqual(list(out["pnl"]), [2])
+
+    def test_filter_outcome_dates_prefers_exit_date(self) -> None:
+        df = pd.DataFrame(
+            [
+                {"signal_date": "2026-04-14", "exit_date": "2026-04-21", "pnl": 10},
+                {"signal_date": "2026-04-15", "exit_date": "2026-04-22", "pnl": 20},
+                {"signal_date": "2026-04-16", "exit_date": "2026-04-23", "pnl": 30},
+            ]
+        )
+
+        out = trend_analysis_batch._filter_outcome_dates(
+            df,
+            dt.date(2026, 4, 22),
+            dt.date(2026, 4, 23),
+        )
+
+        self.assertEqual(list(out["pnl"]), [20, 30])
 
     def test_gap_diagnostics_explain_negative_policy_and_blockers(self) -> None:
         df = pd.DataFrame(

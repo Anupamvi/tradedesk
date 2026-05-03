@@ -177,11 +177,39 @@ def _output_path(out_dir: Path, kind: str, trade_date: dt.date, lookback: int) -
     raise KeyError(kind)
 
 
+def _raw_cache_path(out_dir: Path, trade_date: dt.date, lookback: int) -> Path:
+    return (
+        out_dir
+        / "walk_forward"
+        / f"{trade_date.isoformat()}-L{lookback}"
+        / f"trend_analysis_raw_{trade_date.isoformat()}-L{lookback}.csv"
+    )
+
+
+def _ticker_count(df: pd.DataFrame) -> int:
+    ticker_col = _ticker_column(df)
+    if df.empty or ticker_col is None:
+        return 0
+    return df[ticker_col].fillna("").astype(str).str.upper().str.strip().nunique()
+
+
+def _load_raw_frame(out_dir: Path, trade_date: dt.date, lookback: int) -> pd.DataFrame:
+    root_raw = _read_csv(_output_path(out_dir, "raw", trade_date, lookback))
+    walk_forward_raw = _read_csv(_raw_cache_path(out_dir, trade_date, lookback))
+    if walk_forward_raw.empty:
+        return root_raw
+    if root_raw.empty:
+        return walk_forward_raw
+    return walk_forward_raw if _ticker_count(walk_forward_raw) > _ticker_count(root_raw) else root_raw
+
+
 def _load_output_frames(out_dir: Path, trade_date: dt.date, lookback: int) -> Dict[str, pd.DataFrame]:
-    return {
+    frames = {
         kind: _read_csv(_output_path(out_dir, kind, trade_date, lookback))
         for kind, _ in OUTPUT_KINDS
     }
+    frames["raw"] = _load_raw_frame(out_dir, trade_date, lookback)
+    return frames
 
 
 def _ticker_in_frame(frame: pd.DataFrame, ticker: str) -> bool:
