@@ -14,6 +14,8 @@ import pandas as pd
 
 
 BOT_EOD_PREFIX = "bot-eod-report-"
+DP_EOD_PREFIX = "dp-eod-report-"
+WHALE_CSV_PREFIX = "whale_trades_filtered"
 WHALE_MD_PREFIX = "whale-"
 DEFAULT_CHUNKSIZE = 250_000
 DEFAULT_TOP_N = 200
@@ -57,6 +59,38 @@ def find_bot_eod_source(base_dir: Path, date_str: str | None = None) -> Path:
         patterns = [f"{BOT_EOD_PREFIX}*.zip", f"{BOT_EOD_PREFIX}*.csv"]
 
     seen: set[Path] = set()
+    search_dirs = [base_dir, base_dir / "bot-eod-split"]
+    for pattern in patterns:
+        matches = []
+        for search_dir in search_dirs:
+            if not search_dir.exists():
+                continue
+            for path in sorted(search_dir.glob(pattern)):
+                if path in seen or not path.is_file():
+                    continue
+                seen.add(path)
+                matches.append(path)
+        if matches:
+            return matches[-1]
+
+    suffix = f" for {date_str}" if date_str else ""
+    raise FileNotFoundError(f"Missing {BOT_EOD_PREFIX}YYYY-MM-DD CSV/ZIP{suffix} in {base_dir}")
+
+
+def find_whale_csv_source(base_dir: Path, date_str: str | None = None) -> Path:
+    """Find older generated whale CSV exports such as whale_trades_filtered 01-02.csv."""
+    base_dir = Path(base_dir)
+    if date_str:
+        mmdd = date_str[5:]
+        patterns = [
+            f"{WHALE_CSV_PREFIX}*{date_str}*.csv",
+            f"{WHALE_CSV_PREFIX}*{mmdd}*.csv",
+            f"{WHALE_CSV_PREFIX}*.csv",
+        ]
+    else:
+        patterns = [f"{WHALE_CSV_PREFIX}*.csv"]
+
+    seen: set[Path] = set()
     for pattern in patterns:
         matches = []
         for path in sorted(base_dir.glob(pattern)):
@@ -68,7 +102,7 @@ def find_bot_eod_source(base_dir: Path, date_str: str | None = None) -> Path:
             return matches[-1]
 
     suffix = f" for {date_str}" if date_str else ""
-    raise FileNotFoundError(f"Missing {BOT_EOD_PREFIX}YYYY-MM-DD CSV/ZIP{suffix} in {base_dir}")
+    raise FileNotFoundError(f"Missing {WHALE_CSV_PREFIX} CSV{suffix} in {base_dir}")
 
 
 def find_whale_markdown_source(base_dir: Path, date_str: str | None = None) -> Path:
@@ -136,6 +170,52 @@ def load_whale_markdown_symbols(path: Path, ticker_set: set[str] | None = None) 
         symbols.add(symbol)
 
     return symbols
+
+
+def load_whale_flow_source(
+    base_dir: Path,
+    date_str: str | None,
+    cfg: dict,
+    ticker_set: set[str] | None = None,
+) -> WhaleFlow:
+    """Load the best available whale rank source for daily discovery.
+
+    New folders should use bot-eod-report CSV/ZIP exports. Older replay folders
+    often have generated whale_trades_filtered CSVs, and legacy folders may have
+    only generated whale markdown summaries; those still contain a useful
+    ticker-rank lane, so use them as a compatibility fallback instead of failing
+    the entire daily pipeline.
+    """
+    try:
+        source = find_bot_eod_source(base_dir, date_str)
+        return load_yes_prime_whale_flow(source, cfg)
+    except FileNotFoundError:
+        try:
+            source = find_whale_csv_source(base_dir, date_str)
+            return load_yes_prime_whale_flow(source, cfg)
+        except FileNotFoundError:
+            source = find_whale_markdown_source(base_dir, date_str)
+        symbols = sorted(load_whale_markdown_symbols(source, ticker_set=ticker_set))
+        symbol_summary = pd.DataFrame(
+            {
+                "underlying_symbol": symbols,
+                "source": "legacy_whale_markdown",
+                "rank": range(1, len(symbols) + 1),
+            }
+        )
+        top_trades = symbol_summary.copy()
+        empty = pd.DataFrame()
+        return WhaleFlow(
+            source_path=source,
+            source_label="legacy_whale_markdown",
+            total_rows=len(symbols),
+            yes_prime_rows=len(symbols),
+            symbol_summary=symbol_summary,
+            top_trades=top_trades,
+            track_summary=empty.copy(),
+            option_type_summary=empty.copy(),
+            side_summary=empty.copy(),
+        )
 
 
 @contextmanager

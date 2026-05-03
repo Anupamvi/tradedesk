@@ -5,6 +5,7 @@ import argparse
 import csv
 import io
 import json
+import re
 import sys
 import zipfile
 from contextlib import contextmanager
@@ -12,10 +13,15 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterator, Sequence
 
-from uwos.whale_source import BOT_EOD_PREFIX, infer_date_from_path, open_bot_eod
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from uwos.whale_source import BOT_EOD_PREFIX, find_bot_eod_source, infer_date_from_path, open_bot_eod
 
 
 csv.field_size_limit(sys.maxsize)
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 @dataclass
@@ -68,6 +74,30 @@ def _read_header_and_count(input_path: Path) -> tuple[list[str], int, str]:
             raise ValueError(f"Input report is empty: {input_path}") from exc
         total_rows = sum(1 for _ in reader)
     return header, total_rows, source_label
+
+
+def resolve_input_and_out_dir(
+    target: str | Path,
+    *,
+    root_dir: Path = REPO_ROOT,
+    out_dir: Path | None = None,
+) -> tuple[Path, Path | None]:
+    """Resolve a date, date folder, or explicit bot EOD path into split inputs."""
+    target_text = str(target).strip()
+    root_dir = Path(root_dir).expanduser().resolve()
+
+    if DATE_RE.fullmatch(target_text):
+        day_dir = root_dir / target_text
+        if not day_dir.is_dir():
+            raise FileNotFoundError(f"Missing dated folder: {day_dir}")
+        return find_bot_eod_source(day_dir, target_text), (Path(out_dir) if out_dir else day_dir)
+
+    target_path = Path(target_text).expanduser()
+    if target_path.is_dir():
+        date_str = target_path.name if DATE_RE.fullmatch(target_path.name) else None
+        return find_bot_eod_source(target_path, date_str), (Path(out_dir) if out_dir else target_path)
+
+    return target_path, out_dir
 
 
 @contextmanager
@@ -169,7 +199,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Split a large bot-eod-report-YYYY-MM-DD CSV/ZIP into smaller row-balanced files."
     )
-    parser.add_argument("input", type=Path, help="Path to bot-eod-report-YYYY-MM-DD.csv or .zip")
+    parser.add_argument(
+        "target",
+        help=(
+            "Trade date like 2026-04-26, a dated folder, or an explicit "
+            "bot-eod-report-YYYY-MM-DD.csv/.zip path."
+        ),
+    )
+    parser.add_argument(
+        "--root-dir",
+        type=Path,
+        default=REPO_ROOT,
+        help=f"Repo root containing dated folders. Default: {REPO_ROOT}",
+    )
     parser.add_argument(
         "--parts",
         type=int,
@@ -194,9 +236,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
-    result = split_bot_eod_report(
-        args.input,
+    input_path, out_dir = resolve_input_and_out_dir(
+        args.target,
+        root_dir=args.root_dir,
         out_dir=args.out_dir,
+    )
+    result = split_bot_eod_report(
+        input_path,
+        out_dir=out_dir,
         parts=args.parts,
         output_format=args.output_format,
         overwrite=bool(args.overwrite),

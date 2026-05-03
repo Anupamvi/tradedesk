@@ -1,9 +1,9 @@
 # Anu Options Engine — BROWSER EXECUTION ADDENDUM (Audited FIRE + SHIELD No-GEX Payload)
 
 **Canonical upload filename:** `Anu_Options_Engine_EXECUTION_PROTOCOL_v3_1_4_BROWSER.md`  
-**Effective logic version:** 3.2.7-full-source-routing-audit  
-**Date:** 2026-04-25
-**Revision:** r6 mixed-flow rescue + scan-date OI default
+**Effective logic version:** 3.2.9-r7.2-exec-shortlist  
+**Date:** 2026-04-26
+**Revision:** r7.2 execution-shortlist user-facing fix
 
 ## Browser execution policy
 
@@ -55,3 +55,15 @@ Browser/Atlas context remains non-operative for automated ranking, gating, sizin
 ## r6 browser execution inheritance
 
 Browser execution inherits the file-only Mixed-Flow Rescue gate, but browser context may not create or satisfy it. The row must still come from file-native flow, actual hot-chain construction, positive EV/ML, executable size, and no hard blocks. Browser execution also inherits scan-date OI by default, explicit next-day overlay only by request, raw bot full-source schema inference, and ETF/index lane WATCH labeling.
+
+
+## r7 browser execution clarification
+
+Browser mode inherits the r7 idea-stage/execution-stage split. Browser context cannot create a live quote artifact by itself and cannot block EOD trade ideas. A live quote check is performed only when the user supplies explicit quote data or intentionally asks for broker-page/manual quote validation.
+
+
+## r7.2 browser execution-shortlist inheritance
+
+Browser mode inherits the Execution Shortlist gate. Browser page text, visible GEX, UW gamma pages, inferred walls/flips, or screenshots may not create native approval, satisfy live quote validation, or override a rejection. Live approval requires explicit exact-spread quote fields or an attached broker/live quote artifact.
+
+The browser report must show `Execution Shortlist / Preferred Trade Ideas` before any diagnostic idea table when the user asks for trades to execute or potential trades to quote.

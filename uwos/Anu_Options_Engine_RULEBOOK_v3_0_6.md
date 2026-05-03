@@ -1,9 +1,9 @@
 # Anu Options Engine — RULEBOOK (Audited FIRE + SHIELD No-GEX Payload)
 
 **Canonical upload filename:** `Anu_Options_Engine_RULEBOOK_v3_0_6.md`  
-**Effective logic version:** 3.2.7-full-source-routing-audit  
-**Date:** 2026-04-25
-**Revision:** r6 mixed-flow rescue + scan-date OI default
+**Effective logic version:** 3.2.9-r7.2-exec-shortlist  
+**Date:** 2026-04-26
+**Revision:** r7.2 execution-shortlist user-facing fix
 
 This file preserves the canonical project slot while replacing the earlier audited no-GEX payload. Automated GEX remains disabled, but SHIELD is restored through a written file-native non-GEX anchor and a real iron-condor path.
 
@@ -344,3 +344,93 @@ These corrections close contradictions found in v3.2.7:
 4. **Output truthfulness.** The audit must separately disclose `next_day_overlay_requested` and `uses_next_day_overlay`; filename ordering alone is not proof of next-day overlay.
 5. **Live quote handling.** A live Schwab/broker quote gate may rescue a mixed-flow row only as an execution validation input; it does not replace EV/ML ranking. When live quote data is available, EV/ML should be recomputed from the executable live net or the row remains watch-only.
 6. **ETF/index lane clarity.** ETF/index candidates use ETF WATCH/CANDIDATE labeling unless a dedicated ETF primary lane is explicitly enabled.
+
+
+## r7 trade-idea routing corrections
+
+These corrections fix the user-facing pipeline without changing the FIRE/SHIELD construction math.
+
+### Idea stage vs execution stage
+
+The engine has two distinct stages:
+
+1. **Trade idea stage**: EOD flow, hot-chain, scan-date OI, same-ticker bias, event policy, size guard, and EV/ML scoring decide which ideas are worth carrying forward.
+2. **Execution stage**: live broker quotes are used only to verify the final order price, recompute live net/EV when supplied, and avoid stale or crossed fills.
+
+A row marked `mixed-flow rescue; live entry gate required` is **not blocked at the idea stage**. It is a valid idea when it passed the written Mixed-Flow Rescue gate. The live quote gate is the final order-entry validation, not a reason to hide the idea table.
+
+### Health Gate default is advisory unless explicitly enforced
+
+Missing Schwab/broker artifacts remain `Bootstrap` and must never stall the scan.
+
+By default, broker Health Gate artifacts are **advisory**:
+
+- `PASS` may label executable primary rows as `Strict`.
+- `UNKNOWN`, missing artifacts, or absent logs leave rows as `Bootstrap`.
+- `FAIL`, `WARN`, or unresolved broker rows are written to audit and Notice but do not suppress trade ideas unless the operator explicitly runs with `--enforce-health-gate`.
+
+When `--enforce-health-gate` is enabled, a broker-native hard fail may block BUY/SELL publication. Without that explicit flag, the pipeline must continue and surface ideas.
+
+### Mandatory high-conviction idea lane
+
+The EV/ML primary table remains official and keeps the exact primary table contract. However, the report must also emit a separate high-conviction idea lane so high-conviction rows are not buried by EV/ML-first ranking.
+
+The high-conviction idea lane includes rows when all are true:
+
+- row is primary-table eligible under normal construction/gating rules;
+- common-stock lane only, not ETF/index;
+- `EV/ML > 0`;
+- `Size != None`;
+- not inside the 0-10 day earnings/catalyst block;
+- not minority-flow and not split-flow watch;
+- `Conviction >= conviction_threshold`, default `62`, equivalent to `>61`.
+
+The high-conviction lane includes all qualifying primary-eligible rows, not only the one-per-ticker EV/ML winner. It is sorted by `Conviction` first, then `EV/ML`, then POP. This does not override the official EV/ML primary ranking; it is an additional idea-discovery table.
+
+### Mandatory order-entry sheet
+
+Every run must emit an order-entry sheet for trade ideas. The sheet must include:
+
+- ticker, action, expiry, buy leg, sell leg;
+- EOD entry limit: debit rows use `pay <= Net`; credit rows use `collect >= Net`;
+- EV/ML, POP, Conviction;
+- max loss and max gain per one-lot in dollars;
+- Size bucket retained for audit, but the user-facing sheet must show dollar risk so `Tiny`, `Starter`, and `Pilot` are not the only sizing language;
+- live quote instruction: live quote confirms final order entry and is not an idea-stage blocker.
+
+### Output truthfulness
+
+The assistant/report must not present diagnostics, alternates, clean overlays, or hand-filtered rows as the official primary table. Non-primary idea lanes must be clearly labeled as separate outputs from the canonical built rows.
+
+
+### Split full-source ZIP handling
+
+When the EOD bot source is uploaded as ordered ZIP parts named `bot-eod-report-YYYY-MM-DD.part-NN-of-MM.zip`, those parts are a valid full-source input. The executable must stream every part in numeric order and disclose every part hash. This is input normalization only and does not change trade logic, ranking, or seeding rules.
+
+
+## r7.1 split-source audit correction
+
+Split full-source bot ZIPs must preserve zero-padded totals such as `part-01-of-05`; all parts must be streamed in numeric order and every part hash must appear in the audit JSON. A run that only hashes the first split part fails audit completeness.
+
+
+## r7.2 execution-shortlist fix
+
+### Official primary vs executable recommendations
+
+The official primary table remains exactly:
+
+`Ticker | Action | Buy leg | Sell leg | Expiry | Net | EV/ML | POP | Conviction | Execution | Notice | Size`
+
+It remains EV/ML-first and one best row per ticker for audit/discovery. It is **not** the user-facing executable recommendation table.
+
+When the user asks for trades to execute, quote, or top potential trade ideas, the first user-facing table must be `Execution Shortlist / Preferred Trade Ideas`, using the same preferred table format. This table is filtered after official construction and may be sorted by Priority Score for quote sequencing.
+
+### Execution Shortlist gates
+
+A row may enter Execution Shortlist only if it is native, non-flex, non-rescue, non-expiry-rescued, common-stock `MAJOR` or clean `MID_PILOT`, positive EV/ML, `Size != None`, no event block, no minority/split flow, no neutral-conflict, no Mixed-Flow Rescue, no fabricated/missing leg, DTE >= 21, POP >= 0.20, Conviction >= 55, and earnings/catalyst is 15+ calendar days away. ADRs are `Potential` by default unless explicitly enabled.
+
+Rows that fail one soft recommendation floor may appear as `Potential` only if all hard gates pass. Rows with hard blocks must not be shown as preferred trade ideas.
+
+### Output rule
+
+Do not call official primary, high-conviction, alternates, blocked-positive-EV, ETF lane, mixed-flow rescue, family-flex, or diagnostics executable recommendations. If the Execution Shortlist is empty, state `No execution candidates from this run` and do not backfill from other lanes.

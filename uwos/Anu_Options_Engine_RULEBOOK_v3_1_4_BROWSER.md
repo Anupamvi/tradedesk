@@ -1,9 +1,9 @@
 # Anu Options Engine — BROWSER RULEBOOK ADDENDUM (Audited FIRE + SHIELD No-GEX Payload)
 
 **Canonical upload filename:** `Anu_Options_Engine_RULEBOOK_v3_1_4_BROWSER.md`  
-**Effective logic version:** 3.2.7-full-source-routing-audit  
-**Date:** 2026-04-25
-**Revision:** r6 mixed-flow rescue + scan-date OI default
+**Effective logic version:** 3.2.9-r7.2-exec-shortlist  
+**Date:** 2026-04-26
+**Revision:** r7.2 execution-shortlist user-facing fix
 
 This browser addendum keeps the canonical project slot while preserving no-GEX automation.
 
@@ -63,3 +63,17 @@ Browser/Atlas context remains non-operative for automated ranking, gating, sizin
 ## r6 browser inheritance
 
 Browser/Atlas context remains non-operative. It may not satisfy Mixed-Flow Rescue, create live quote proof unless an explicit broker/live-quote artifact is attached, override EV/ML ranking, or change OI handle policy. Browser mode inherits exact-date OI default, explicit-only next-day OI overlay, raw bot full-source schema inference, and ETF/index lane WATCH labeling.
+
+
+## r7 browser clarification
+
+Browser/Atlas remains non-operative for automated ranking, gating, sizing, GEX, SHIELD anchors, condor creation, and Mixed-Flow Rescue. Browser context may help a human read a broker page, but live quote validation requires an explicit attached broker/live-quote artifact or manually supplied quote fields. Browser absence must not suppress the EOD trade-idea tables.
+
+
+## r7.2 execution-shortlist fix
+
+Browser/Atlas context remains non-operative for automated ranking, gating, sizing, GEX, SHIELD anchors, condor creation, Mixed-Flow Rescue, and Execution Shortlist approval. Browser context may help a human read a broker page, but a row is not live-approved unless explicit live quote fields/artifacts are supplied.
+
+The browser layer inherits the new user-facing rule: do not present the EV/ML primary table, high-conviction lane, alternates, ETF lane, or diagnostics as executable trade recommendations. User-facing recommendations must come from `Execution Shortlist / Preferred Trade Ideas` only.
+
+Browser absence cannot suppress EOD ideas, but browser presence cannot promote a row into Execution Shortlist.

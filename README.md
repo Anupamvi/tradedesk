@@ -31,22 +31,26 @@ python -m uwos.schwab_position_analyzer --manual-auth
 
 ## 1. Daily Pipeline — Generate Today's Trades
 
-**What:** Takes 5 EOD data files from UnusualWhales and produces a ranked table of option spread trades, validated against live Schwab quotes.
+**What:** Takes EOD data files from UnusualWhales and produces a ranked table of option spread trades, validated against current Schwab quotes and Schwab live-chain GEX.
 
 **How it works:**
 1. **Stage-1 Discovery** — scans hot chains, whale trades, and dark pool data to find the best debit spreads (FIRE track) and credit spreads (SHIELD track). Scores each by conviction (direction bias, efficiency, liquidity, whale activity).
-2. **Stage-2 Validation** — fetches live Schwab option chains, checks entry prices, runs a historical backtest for each setup, and applies quality gates (delta, GEX regime, macro regime, sigma).
+2. **Stage-2 Validation** — fetches current Schwab option chains, checks entry prices, calculates Schwab live-chain GEX, runs a historical backtest for each setup, and applies quality gates (delta, GEX regime, macro regime, sigma).
 3. **Output** — an expert trade table sorted into Core (best), Tactical (good with caveats), and Watch (blocked).
 
 **Run:**
 ```bash
-# Place your 5 UW files in c:\uw_root\2026-04-08\
+# Place your UW files in c:\uw_root\2026-04-08\
 python -m uwos.run_mode_a_two_stage \
   --base-dir "c:/uw_root/2026-04-08" \
   --config "c:/uw_root/uwos/rulebook_config_goal_holistic_claude.yaml" \
-  --out-dir "c:/uw_root/out/2026-04-08" \
-  --top-trades 20
+  --out-dir "c:/uw_root/out/daily_pipeline_2026-04-08" \
+  --output "c:/uw_root/out/daily_pipeline_2026-04-08/anu-expert-trade-table-2026-04-08.md" \
+  --top-trades 20 \
+  --eod-live-planning
 ```
+
+For normal daily use, EOD live planning is the default even if `--eod-live-planning` is omitted. Use `--historical-replay` only for backtesting/replay/audit.
 
 **Or via Claude Code:** `/daily-pipeline 2026-04-08`
 
@@ -60,10 +64,10 @@ python -m uwos.run_mode_a_two_stage \
 **Output files:**
 | File | What |
 |------|------|
-| `YYYY-MM-DD/anu-expert-trade-table-YYYY-MM-DD.md` | The main trade table — Core / Tactical / Watch |
-| `out/YYYY-MM-DD/setup_likelihood_YYYY-MM-DD.md` | Backtest win rate and edge for each setup |
-| `out/YYYY-MM-DD/live_trade_table_YYYY-MM-DD_final.csv` | Full CSV with live Schwab pricing |
-| `out/YYYY-MM-DD/dropped_trades_YYYY-MM-DD.csv` | Why each rejected trade was dropped |
+| `out/daily_pipeline_YYYY-MM-DD/anu-expert-trade-table-YYYY-MM-DD.md` | The main trade table — Core / Tactical / Pilot / Scout / Watch |
+| `out/daily_pipeline_YYYY-MM-DD/setup_likelihood_YYYY-MM-DD.md` | Backtest win rate and edge for each setup |
+| `out/daily_pipeline_YYYY-MM-DD/live_trade_table_YYYY-MM-DD_final.csv` | Full CSV with live Schwab pricing |
+| `out/daily_pipeline_YYYY-MM-DD/dropped_trades_YYYY-MM-DD.csv` | Why each rejected trade was dropped |
 
 **Key concepts:**
 - **FIRE** = debit spreads (Bull Call Debit, Bear Put Debit) — you pay upfront, profit if stock moves your way
@@ -160,11 +164,17 @@ python -m uwos.trade_monitor --force --manual      # notify ALL actionable verdi
 python -m uwos.trade_monitor --test                # send a test notification
 ```
 
-**Automated scheduling (Windows Task Scheduler):**
+**Automated scheduling (GCP VM systemd timer):**
 ```bash
-uwos\setup_trade_monitor.bat
+sudo systemctl status trade-monitor.timer
 ```
-Runs every 30 min, Mon-Fri 9:30 AM – 4:05 PM.
+Runs hourly on the `tradedesk-monitor` GCP VM. The script itself skips outside US market hours.
+
+The old Windows Task Scheduler job is decommissioned to avoid duplicate ntfy alerts. On the old Windows laptop, run:
+```bat
+schtasks /delete /tn "TradeMonitor" /f
+```
+or run `uwos\setup_trade_monitor.bat`, which now deletes that old task instead of creating it.
 
 **Notifications go to:** `https://ntfy.sh/your_topic` (install ntfy app on phone for push alerts)
 
@@ -370,8 +380,8 @@ Daily inputs:
 
 - Dated UW EOD/report zip files under `/Users/anuppamvi/uw_root/tradedesk/YYYY-MM-DD`.
 - Local chain/OI overlays when available.
-- Schwab quotes and positions for live pricing and account context.
-- UW/GEX enrichment when available from local files or browser capture.
+- Schwab quotes and option-chain snapshots for live pricing, account context, and current Schwab-chain GEX.
+- Date-matched UW/GEX enrichment only for explicit historical replay/audit.
 
 Daily outputs:
 
@@ -388,8 +398,8 @@ Decision tiers:
 
 Candidate coverage rule:
 
-External scanner, morning-watch, and deterministic chain-only opportunities must not be report-only afterthoughts. If they produce a plausible structure, the daily pipeline should feed that structure into the candidate book before Stage-2/live approval, then approve, Scout, or reject it with explicit reasons.
+Daily candidates must come from the dated UW source files and live Schwab validation. Do not ingest external scanner or `options_scan_*_audited_recommendations.csv` artifacts as daily-pipeline candidates. Use separate scanner outputs only for manual coverage audits, not as approval inputs.
 
 Replay rule:
 
-Historical replay is for validation and bug finding. A historical `WAIT` or replay-only row is not a live entry. Rerun with live Schwab pricing before placing any order.
+Historical replay is for validation and bug finding. A plain "run daily pipeline" request is not replay; it should use EOD live planning with current Schwab quotes and Schwab live-chain GEX. A historical `WAIT` or replay-only row is not a live entry.

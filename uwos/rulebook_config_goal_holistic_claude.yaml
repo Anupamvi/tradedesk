@@ -47,12 +47,18 @@ engine:
   max_expiries_per_ticker: 8
   strike_search_depth: 12
   discovery_multiplier: 6
-  final_max_trades_per_ticker: 3
+  eod_stage2_candidate_cap: 240       # Price a broad EOD candidate set before final High/Medium/Watch classification
+  fire_expiry_coverage_repair: true    # Preserve approval-compatible FIRE expiries when 49D rows rank higher on liquidity/RR
+  fire_expiry_coverage_max_dte: 45
+  min_approval_compatible_fire_expiries_per_ticker_strategy: 1
+  final_max_trades_per_ticker: 1
   min_per_track: 1
   min_shield_in_output: 5              # [T5] was: 3 — reserve 5 output slots for best SHIELD trades
   min_bear_in_output: 2                # [T8] reserve 2 output slots for bear FIRE trades
   max_same_direction_pct: 0.70         # [T9] max 70% of approved can be same direction (bull or bear)
   max_same_expiry_count: 8             # [T9] max 8 trades sharing one expiry date — forces DTE diversification
+  external_scanner_mode: "off"         # daily pipeline ignores options_scan_* scanner artifacts
+  show_external_scanner_coverage_section: false
   include_watch_candidates: true
 
 gates:
@@ -61,6 +67,7 @@ gates:
   max_credit_pct_width: 0.55
   max_debit_pct_width: 0.45           # [T6] was: 0.35 — ATM strikes cost more; 35% was rejecting valid near-ATM setups
   tactical_max_debit_pct_width: 0.35  # [T9] Tactical trades must have tighter cost/width — prevents 50%+ debit/width from leaking P&L
+  tactical_debit_pct_width_tolerance: 0.02 # Soft band: tiny live price drift above tactical debit/width cap is a warning, not a cliff
   min_live_reward_risk: 1.50          # [T9] Stage-2 live R/R floor — CORZ at 0.94x would have been blocked
   min_leg_open_interest: 100
   min_leg_volume: 40                  # [T1] was: 20 — better fill quality
@@ -146,6 +153,14 @@ approval:
   disallow_likelihood_strengths: [Low Sample, Negative, Negative-Strong, N/A]
 
   allow_stage1_watch_promotion: true
+  earnings_buffer_days: 7
+  flow_direction_threshold: 0.08
+  flow_strength_threshold: 0.15
+  flow_premium_threshold: 0.08
+  flow_volume_conflict_threshold: 0.10
+  flow_strong_threshold: 0.30
+  contract_flow_bias_threshold: 0.10
+  income_contract_flow_directional_threshold: 0.25
   stage1_watch_promotion_min_conviction: 55
   stage1_watch_promotion_min_edge_pct: 8.0
   stage1_watch_promotion_min_signals: 150
@@ -163,7 +178,7 @@ approval:
   # contract-neighborhood flow. Missing UW GEX keeps the trade Tactical rather
   # than Core.
   allow_bull_call_evidence_lane: true
-  bull_call_evidence_min_edge_pct: 5.0
+  bull_call_evidence_min_edge_pct: 8.0
   bull_call_evidence_min_signals: 120
   bull_call_evidence_min_conviction: 30
   bull_call_evidence_min_long_delta: 0.30
@@ -194,6 +209,7 @@ approval:
   # Apply the same professional execution-quality guard to all approved
   # bull-call debit trades, not just evidence-lane promotions.
   bull_call_approval_max_dte: 45
+  bull_call_approval_dte_grace_days: 4 # Soft band: 46-49 DTE is near-limit quality warning; >49 DTE remains blocked
   bull_call_approval_min_reward_risk: 2.0
   bull_call_approval_require_contract_confirmed: true
   # Precision guard from full-folder replay audit:
@@ -218,10 +234,37 @@ approval:
   core_size_mult: 1.00
   tactical_size_mult: 0.50
   enable_scout_book: true
+  scout_live_entry_enabled: false     # Scout is research/watch only; live approvals require Core/Tactical.
   scout_size_mult: 0.25
   scout_min_edge_pct: 8.0
   scout_max_edge_pct: 20.0
   scout_block_gex_volatile_breakout: false
+  # Pilot Convexity Book:
+  # Tiny defined-risk debit ideas can be actionable even when they do not
+  # deserve Core/Tactical sizing. Daily discovery still comes only from the
+  # dated UW source files plus live Schwab validation.
+  enable_pilot_book: true
+  pilot_live_entry_enabled: false
+  pilot_size_mult: 0.10
+  pilot_max_loss: 150
+  pilot_min_ev_ml: 1.50
+  pilot_high_pop_min: 0.25
+  pilot_floor_pop_min: 0.15
+  pilot_min_conviction: 40
+  pilot_pass_min_signals: 100
+  pilot_pass_min_edge_pct: 1.0
+  pilot_min_dte: 5
+  pilot_max_dte: 45
+  pilot_min_reward_risk: 1.50
+  pilot_max_debit_frac: 0.25
+  pilot_max_long_otm_pct: 0.15
+  enable_native_pilot_book: true
+  native_pilot_max_loss: 250
+  native_pilot_min_partial_ev_ml: 0.00
+  native_pilot_min_signals: 60
+  native_pilot_min_edge_pct: 1.0
+  native_pilot_require_contract_confirmed: true
+  native_pilot_market_confidences: [Medium, High]
   # Backtest-calibrated bearish Scout lane.
   # This is deliberately not a mirrored bull-call rule. The 5-month replay
   # showed broad bear-put rows lose, while a small low-IV / low-VIX pullback
@@ -238,9 +281,238 @@ approval:
   bear_put_scout_min_reward_risk: 2.0
   bear_put_scout_max_debit_frac: 0.35
   tactical_min_conviction: 55
+  tactical_min_conviction_grace: 2     # Soft band: tiny score miss is a warning, not a hard cliff
   tactical_min_edge_pct: 6.5          # [T2] was: 5.0 — half-size trades must clear higher edge bar
   tactical_min_signals: 150           # [T2] was: 120 — more historical validation required for tactical
+  tactical_min_signals_grace: 5        # Soft band: 145-149 samples should not fail only on rounding
   tactical_require_verdict_pass: true
+
+  # Medium Confidence Book:
+  # First-class, separately tracked starter-size book for profitable daily
+  # near-misses. It does not loosen Core/Tactical. It requires live-valid
+  # pricing, PASS likelihood, enough sample/edge, clean direct contract flow,
+  # acceptable debit/width and reward/risk, and only forgives Stage-1 discovery
+  # weakness plus modest bull-call DTE overage.
+  enable_medium_book: true
+  medium_size_mult: 0.25
+  medium_allowed_strategies: [Bull Call Debit]
+  medium_min_conviction: 40
+  medium_min_edge_pct: 8.0
+  medium_bear_min_edge_pct: 12.0
+  medium_shield_min_edge_pct: 8.0
+  medium_min_signals: 120
+  medium_require_verdict_pass: true
+  medium_min_reward_risk: 1.50
+  medium_max_debit_frac: 0.37
+  medium_min_dte: 14
+  medium_max_dte: 60
+  medium_max_iv_rank: 85
+  medium_require_contract_confirmed: true
+  medium_allowed_market_confidences: [Medium, High]
+
+  # Quant Edge Book:
+  # Data-driven small-size lane from the 2026 replay. This does not weaken
+  # Core/Tactical. It promotes only live/gate-effective PASS setups with broad
+  # historical sample, positive edge, non-extreme IV, and no severe safety
+  # blockers. It intentionally allows weak Stage-1 flow/GEX/conviction labels
+  # because the replay showed those labels were dropping profitable candidates.
+  enable_quant_edge_book: true
+  quant_edge_size_mult: 0.25
+  quant_edge_allowed_strategies: [Bull Call Debit, Iron Condor]
+  quant_edge_allowed_verdicts: [PASS]
+  quant_edge_min_edge_pct: 5.0
+  quant_edge_min_signals: 150
+  quant_edge_min_dte: 30
+  quant_edge_max_dte: 60
+  quant_edge_min_iv_rank: 30
+  quant_edge_max_iv_rank: 85
+  quant_edge_max_per_day: 3
+  quant_edge_max_per_ticker_day: 1
+  quant_edge_disallowed_blocker_substrings:
+    - contra
+    - live_entry_gate_fail
+    - market_regime_block
+    - invalid_entry_structure
+    - earnings_risk
+    - dte_too_long
+    - liquidity
+
+  # Short-DTE Edge Book:
+  # Separate small-size lane for 21-35 DTE bull-call setups. This is a
+  # post-Qualified-Review promotion, not a hard-blocker override. Replay evidence
+  # accepted only the stronger edge>=20 subset and rejected research-only,
+  # downtrend, earnings, liquidity, missing-GEX, and live-entry failures.
+  enable_short_dte_edge_book: true
+  short_dte_edge_size_mult: 0.15
+  short_dte_edge_allowed_strategies: [Bull Call Debit]
+  short_dte_edge_allowed_verdicts: [PASS]
+  short_dte_edge_min_edge_pct: 20.0
+  short_dte_edge_min_signals: 120
+  short_dte_edge_min_confidence_score: 5
+  short_dte_edge_min_dte: 21
+  short_dte_edge_max_dte: 35
+  short_dte_edge_max_iv_rank: 55
+  short_dte_edge_max_per_day: 1
+  short_dte_edge_max_per_ticker_day: 1
+  short_dte_edge_require_qualified_candidate: true
+  short_dte_edge_disallowed_blocker_substrings:
+    - contra
+    - live_entry_gate_fail
+    - invalid_entry_structure
+    - earnings_risk
+    - liquidity
+    - pilot_research_only
+    - scout_research_only
+    - bull_call_downtrend_without_high_vix
+    - gex_missing
+    - UW_GEX
+
+  # High-Signal Edge Book:
+  # Train-first exact backtest found that the pipeline was over-dropping high
+  # sample Bull Call Debit candidates in non-mid/range regimes. This lane is
+  # deliberately small and capped: it promotes only post-Qualified-Review rows
+  # with PASS likelihood, strong sample count, confirmed contract flow, usable
+  # GEX context, clean earnings/live/liquidity checks, and no missing-leg/GEX
+  # data. It allows 46-60 DTE instead of using the old 45D cliff.
+  enable_high_signal_edge_book: true
+  high_signal_edge_size_mult: 0.15
+  high_signal_edge_allowed_strategies: [Bull Call Debit]
+  high_signal_edge_allowed_verdicts: [PASS]
+  high_signal_edge_min_edge_pct: 8.0
+  high_signal_edge_min_signals: 180
+  high_signal_edge_min_confidence_score: 5
+  high_signal_edge_min_dte: 21
+  high_signal_edge_max_dte: 60
+  high_signal_edge_max_iv_rank: 55
+  high_signal_edge_max_per_day: 1
+  high_signal_edge_max_per_ticker_day: 1
+  high_signal_edge_require_qualified_candidate: true
+  high_signal_edge_require_contract_flow_confirmed: true
+  high_signal_edge_require_gex_context: true
+  high_signal_edge_excluded_approval_regimes: [mid/range]
+  high_signal_edge_allowed_gex_wall_contexts: []
+  high_signal_edge_disallowed_blocker_substrings:
+    - contra
+    - live_entry_gate_fail
+    - invalid_entry_structure
+    - earnings_risk
+    - liquidity
+    - missing_live
+    - missing_leg
+    - gex_missing
+    - UW_GEX
+
+  # Income Book:
+  # First-class, separately tracked starter-size book for strict iron-condor
+  # income trades. This exists because 2026 replay shows condors can add
+  # positive PF, but they were under-generated/under-surfaced versus FIRE debit
+  # spreads. Keep it strict: pinned GEX, no directional/contra contract flow,
+  # enough historical sample, positive edge, and acceptable IV/DTE.
+  enable_income_book: true
+  income_size_mult: 0.25
+  income_allowed_strategies: [Iron Condor]
+  income_min_edge_pct: 5.0
+  income_min_signals: 100
+  income_min_hist_success_pct: 60.0
+  income_min_dte: 28
+  income_max_dte: 70
+  income_max_iv_rank: 85
+  income_allowed_verdicts: [PASS, LOW_SAMPLE]
+  income_allowed_gex_regimes: [pinned]
+  income_min_credit_no_touch_pct: 0.0
+
+  # Regime Weekly Book:
+  # Outcome-mined tactical lane from the full rejected-candidate replay.
+  # It fixes the static-regime failure: neutral/range Jan-Feb rewarded
+  # contrarian bear debits even when the generic likelihood verdict was FAIL,
+  # while high-vol/risk-off Mar-Apr rewarded PASS bull-call continuation.
+  # The lane is capped at one setup per day and requires live-valid entry,
+  # explicit edge, no earnings risk, acceptable debit/width, and score >= 125.
+  enable_regime_weekly_book: true
+  regime_weekly_size_mult: 0.35
+  regime_weekly_max_per_day: 1
+  regime_weekly_max_per_ticker_day: 1
+  regime_weekly_min_score: 125.0
+  regime_weekly_min_confidence_score: 4
+  regime_weekly_promoted_confidence_score: 7
+  regime_weekly_min_edge_score: 1
+  regime_weekly_min_edge_pct: -20.0
+  regime_weekly_min_reward_risk: 1.20
+  regime_weekly_max_debit_frac: 0.37
+  regime_weekly_min_dte: 14
+  regime_weekly_max_dte: 70
+  regime_weekly_bear_allowed_verdicts: [FAIL, UNKNOWN]
+  regime_weekly_bear_allowed_market_regimes: [neutral, risk_on]
+  regime_weekly_bear_excluded_approval_prefixes: ["high/"]
+  regime_weekly_bear_min_edge_pct: -20.0
+  regime_weekly_bear_max_edge_pct: 0.0
+  regime_weekly_bull_allowed_verdicts: [PASS]
+  regime_weekly_bull_allowed_approval_prefixes: ["high/"]
+  regime_weekly_bull_allowed_market_regimes: []
+  regime_weekly_bull_allow_gex_volatile: false
+  regime_weekly_bull_min_edge_pct: 0.0
+  regime_weekly_enable_income: true
+  regime_weekly_income_allowed_verdicts: [PASS]
+  regime_weekly_income_min_credit_no_touch_pct: 0.0
+  regime_weekly_block_contract_flow_states: [contra, directional]
+
+  # When the directional daily book has no live ENTER rows, run the validated
+  # weekly credit-premium engine as a separate Schwab-priced action queue.
+  weekly_credit_fallback:
+    enabled: true
+    always_show: false
+    max_rows: 5
+    max_candidates_per_day: 8
+    top_underlyings: 120
+    # Weekly fallback uses the engine's replay-validated floor. The strict daily
+    # directional approval book still uses the 25% valid_trade credit floor.
+    min_credit_pct_width: 0.18
+    min_pop: 0.70
+    min_confidence_score: 7
+    max_loss_per_contract: 850
+    min_iv_rank: 20
+    max_leg_spread_pct: 0.25
+
+  # Profit-safety / qualified-candidate model. These add visibility and stricter
+  # final approval; they do not loosen credit, POP, or trade-count gates.
+  enable_qualified_book: true
+  qualified_min_confidence_score: 5
+  qualified_min_edge_score: 1
+  confidence_high_min_score: 7
+  confidence_medium_min_score: 5
+  final_validity_gate_enabled: true
+  valid_trade_min_pop: 0.60
+  valid_trade_min_confidence_score: 5
+  valid_trade_min_edge_score: 1
+  valid_trade_require_positive_edge_pct: true
+  valid_trade_require_likelihood_pass: true
+  valid_trade_require_live_price: true
+  valid_trade_block_earnings_risk: true
+  valid_trade_block_liquidity_flags: true
+  valid_trade_min_credit_pct_width: 0.25
+  valid_trade_max_credit_pct_width: 0.55
+  valid_trade_max_debit_pct_width: 0.45
+  valid_trade_min_debit_reward_risk: 1.35
+  medium_review_min_pop: 0.60
+  medium_review_min_confidence_score: 5
+  medium_review_min_edge_score: 1
+  medium_block_earnings_risk: true
+  high_enter_min_pop: 0.60
+  high_enter_preferred_pop: 0.65
+  high_enter_min_confidence_score: 7
+  high_enter_min_edge_pct: 5.0
+  high_enter_require_positive_edge: true
+  high_enter_require_clean_flow_or_technical: true
+
+  # Regime-aware approval guardrails.
+  approval_regime_rules_enabled: true
+  approval_mid_down_block_bull_calls: true
+  approval_mid_down_bear_put_min_pop: 0.65
+  approval_low_range_debit_max_be_distance_pct: 0.03
+  approval_high_down_min_signals: 150
+  approval_high_range_breakout_min_edge_pct: 12.0
+  approval_high_range_breakout_min_confidence_score: 7
+  min_condor_in_output: 2
 
   # Event Momentum Scout:
   # Controlled tiny-size lane for high-IV/event debit spreads after live
@@ -279,6 +551,27 @@ approval:
   debit_momentum_scout_bear_require_flow_confirmed: true
   debit_momentum_scout_block_gex_volatile_breakout: false
 
+  # Backtest-promoted Tactical lane:
+  # Pinned-resistance bull-call continuations with PASS likelihood, Moderate+
+  # strength, confirmed contract flow, 31-45 DTE, and strong live R/R had
+  # positive realized quality in replay. This lane does not forgive live entry,
+  # contra flow, LOW_SAMPLE/FAIL verdicts, long DTE, weak strength, or short-DTE
+  # high-edge chase setups.
+  allow_bull_call_pinned_continuation_lane: true
+  bull_call_pinned_continuation_min_edge_pct: 8.0
+  bull_call_pinned_continuation_min_signals: 120
+  bull_call_pinned_continuation_min_conviction: 40
+  bull_call_pinned_continuation_core_min_conviction: 55
+  bull_call_pinned_continuation_min_dte: 31
+  bull_call_pinned_continuation_max_dte: 45
+  bull_call_pinned_continuation_min_reward_risk: 2.0
+  bull_call_pinned_continuation_max_debit_frac: 0.35
+  bull_call_pinned_continuation_min_likelihood_strength: Moderate
+  bull_call_pinned_continuation_allowed_gex_contexts: [pinned_resistance_above_call_wall]
+  bull_call_pinned_continuation_allowed_regime_confidences: [Medium, High]
+  bull_call_pinned_continuation_require_contract_confirmed: true
+  bull_call_pinned_continuation_block_short_dte_high_edge: true
+
   # Width-based entry gate tolerance (professional swing-trade standard).
   # Formula: tolerance = max(entry_tolerance_floor, spread_width × entry_tolerance_width_pct)
   # For a $15 spread at 2.5%: max(0.25, 15*0.025) = max(0.25, 0.375) = $0.375
@@ -307,6 +600,8 @@ approval:
   # FIRE delta gate: reject lottery tickets with low directional exposure
   require_fire_long_delta: true
   min_abs_long_delta_fire: 0.15
+  allow_fire_delta_moneyness_proxy: true
+  fire_delta_proxy_max_long_otm_pct: 0.02
   # GEX regime gate: block regime-mismatched trades
   require_gex_regime: true
   min_fire_pinned_gex_abs: 10000000   # require at least $10M pinned GEX before downgrading FIRE out of Core
@@ -320,6 +615,7 @@ approval:
   disallow_confidence_tiers: [REJECT, LOTTO]
 
   enforce_pretrade_portfolio_caps: true
+  block_same_underlying_option_overlap: true
   pretrade_caps_require_data: false
 
 high_beta:
@@ -366,6 +662,9 @@ playbook:
     single_symbol_max_share: 0.08
     single_expiry_max_share_short_put: 0.20
     max_sector_share: 0.30             # [T4] new — no more than 30% of approved trades in one sector
+    max_active_trades: 8
+    max_active_ticker_share: 0.25
+    max_active_sector_share: 0.35
   weekly:
     strategy_window_trades: 20
     strategy_min_trades: 20

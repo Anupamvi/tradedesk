@@ -74,7 +74,7 @@ Automated options trading platform that screens, analyzes, and monitors trades u
 | `trade_monitor.py` | Position surveillance + ntfy alerts | `python -m uwos.trade_monitor --force --manual` |
 | `trade_ideas.py` | New trade discovery (Schwab + UW flow) | `python -m uwos.trade_ideas` |
 | `schwab_position_analyzer.py` | Fetch + enrich open positions | `python -m uwos.schwab_position_analyzer --days 90` |
-| `run_mode_a_two_stage.py` | Daily 2-stage pipeline | `python -m uwos.run_mode_a_two_stage --base-dir ...` |
+| `run_mode_a_two_stage.py` | Daily EOD live-planning pipeline | `python -m uwos.run_mode_a_two_stage --base-dir ... --eod-live-planning` |
 | `eod_trade_scan_mode_a.py` | Candidate screening + macro regime | `compute_macro_regime()` |
 | `backtest_ideas.py` | March backtest of trade ideas | `python -m uwos.backtest_ideas` |
 | `test_verdicts.py` | 63-case verdict test suite | `python -m uwos.test_verdicts` |
@@ -83,7 +83,7 @@ Automated options trading platform that screens, analyzes, and monitors trades u
 
 - Project root: `c:\uw_root`
 - UWOS module: `c:\uw_root\uwos`
-- Daily data: `c:\uw_root\YYYY-MM-DD\` (UW zips + whale markdown)
+- Daily data: `c:\uw_root\YYYY-MM-DD\` (UW zips + `bot-eod-report-YYYY-MM-DD.zip`/`.csv`; whale markdown is legacy fallback only)
 - Output: `c:\uw_root\out\` (trade_analysis, trade_ideas, opportunities)
 - Config: `c:\uw_root\uwos\rulebook_config_goal_holistic_claude.yaml`
 - Token: `c:\uw_root\tokens\schwab_token.json`
@@ -94,19 +94,20 @@ Automated options trading platform that screens, analyzes, and monitors trades u
 - **Schwab API**: credentials in `.env` (SCHWAB_API_KEY, SCHWAB_APP_SECRET, SCHWAB_TOKEN_PATH)
 - **Re-auth**: `del "c:\uw_root\tokens\schwab_token.json"` then `python -m uwos.schwab_position_analyzer --manual-auth`
 - **ntfy**: topic `uw-trades-transition`, configured in `.env` (NTFY_TOPIC)
-- **Scheduler**: Windows Task `TradeMonitor`, every 30 min, runs on battery, catches up after sleep
+- **Scheduler**: GCP VM `tradedesk-monitor`, `trade-monitor.timer` hourly. Old Windows task `TradeMonitor` must stay deleted to avoid duplicate ntfy alerts.
 
 ### Critical Rules
 
 1. **Always read `.env` before giving credential/token file paths** — never guess
 2. **Run `python -m uwos.test_verdicts` before shipping any verdict engine changes** — 64 test cases must pass
 3. **Schwab API is the primary real-time data source** — not yfinance. yfinance is fallback only for fundamentals
-4. **Credit trades get patience, debit trades get urgency** — different verdict matrices
-5. **Verdicts use hysteresis** — once escalated (HOLD→ASSESS), requires $300+ P&L improvement to de-escalate. Prevents flip-flopping
-6. **Equity verdicts are context-aware** — compare stock drop to SPY 5d return. In broad selloff, widen thresholds
-7. **Trade ideas exclude held positions** — auto-reads from monitor_state.json
-8. **Notifications go to ntfy only** — SMS was removed (T-Mobile gateway blocked)
-9. **All output as .md file references with clickable VSCode-compatible links**
+4. **Daily pipeline defaults to EOD live planning** — use dated EOD files for discovery, then current Schwab quotes and Schwab live-chain GEX. Do not use `--historical-replay` unless explicitly backtesting/replaying.
+5. **Credit trades get patience, debit trades get urgency** — different verdict matrices
+6. **Verdicts use hysteresis** — once escalated (HOLD→ASSESS), requires $300+ P&L improvement to de-escalate. Prevents flip-flopping
+7. **Equity verdicts are context-aware** — compare stock drop to SPY 5d return. In broad selloff, widen thresholds
+8. **Trade ideas exclude held positions** — auto-reads from monitor_state.json
+9. **Notifications go to ntfy only** — SMS was removed (T-Mobile gateway blocked)
+10. **All output as .md file references with clickable VSCode-compatible links**
 
 ### Verdict Engine Rules (compute_verdict)
 

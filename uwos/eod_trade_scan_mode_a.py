@@ -12,7 +12,7 @@ import pandas as pd
 import yaml
 
 from uwos.pricer import compute_live_net
-from uwos.whale_source import BOT_EOD_PREFIX, find_bot_eod_source, load_yes_prime_whale_flow
+from uwos.whale_source import BOT_EOD_PREFIX, load_whale_flow_source
 
 
 OCC_RE = re.compile(r"^([A-Z\.]{1,10})(\d{6})([CP])(\d{8})$")
@@ -43,6 +43,11 @@ def parse_date(x):
 
 def fnum(x):
     try:
+        if isinstance(x, pd.Series):
+            for item in reversed(x.tolist()):
+                if not pd.isna(item):
+                    return fnum(item)
+            return math.nan
         if pd.isna(x):
             return math.nan
         return float(x)
@@ -570,17 +575,31 @@ def _leg_flow_metrics(row):
     }
 
 
-def contract_flow_for_spread(strategy, long_row=None, short_row=None, short_put_row=None, short_call_row=None):
+def contract_flow_for_spread(
+    strategy,
+    long_row=None,
+    short_row=None,
+    short_put_row=None,
+    short_call_row=None,
+    flow_bias_threshold=0.10,
+    income_directional_threshold=0.25,
+):
     strategy = str(strategy).strip()
+    flow_bias_threshold = abs(fnum(flow_bias_threshold))
+    income_directional_threshold = abs(fnum(income_directional_threshold))
+    if not np.isfinite(flow_bias_threshold) or flow_bias_threshold <= 0:
+        flow_bias_threshold = 0.10
+    if not np.isfinite(income_directional_threshold) or income_directional_threshold <= 0:
+        income_directional_threshold = 0.25
 
     def _confirm_debit(row, right):
         m = _leg_flow_metrics(row)
         bias = m["ask_bid_bias"]
         if not np.isfinite(bias):
             return "unknown", "no_contract_side_data", m
-        if bias >= 0.10:
+        if bias >= flow_bias_threshold:
             return "confirmed", f"ask_side_{'call_buying' if right == 'C' else 'put_buying'}", m
-        if bias <= -0.10:
+        if bias <= -flow_bias_threshold:
             return "contra", f"bid_side_{'call_selling' if right == 'C' else 'put_selling'}", m
         return "weak_or_ambiguous", "balanced_bid_ask", m
 
@@ -589,9 +608,9 @@ def contract_flow_for_spread(strategy, long_row=None, short_row=None, short_put_
         bias = m["ask_bid_bias"]
         if not np.isfinite(bias):
             return "unknown", "no_contract_side_data", m
-        if bias <= -0.10:
+        if bias <= -flow_bias_threshold:
             return "confirmed", f"bid_side_{'call_selling' if right == 'C' else 'put_selling'}", m
-        if bias >= 0.10:
+        if bias >= flow_bias_threshold:
             return "contra", f"ask_side_{'call_buying' if right == 'C' else 'put_buying'}", m
         return "weak_or_ambiguous", "balanced_bid_ask", m
 
@@ -609,8 +628,8 @@ def contract_flow_for_spread(strategy, long_row=None, short_row=None, short_put_
         put_bias = put_metrics["ask_bid_bias"]
         call_bias = call_metrics["ask_bid_bias"]
         directional = (
-            (np.isfinite(put_bias) and abs(put_bias) >= 0.25)
-            or (np.isfinite(call_bias) and abs(call_bias) >= 0.25)
+            (np.isfinite(put_bias) and abs(put_bias) >= income_directional_threshold)
+            or (np.isfinite(call_bias) and abs(call_bias) >= income_directional_threshold)
         )
         status = "directional" if directional else "confirmed_neutral"
         driver = f"short_put_bias={put_bias:+.2f};short_call_bias={call_bias:+.2f}"
@@ -635,7 +654,92 @@ def contract_flow_for_spread(strategy, long_row=None, short_row=None, short_put_
     }
 
 
-def compute_macro_regime(asof, force_historical=False):
+def _read_stock_screener_rows(path: Path) -> pd.DataFrame:
+    try:
+        if path.suffix.lower() == ".zip":
+            with zipfile.ZipFile(path) as zf:
+                csv_names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
+                if not csv_names:
+                    return pd.DataFrame()
+                with zf.open(csv_names[0]) as fh:
+                    return pd.read_csv(fh)
+        return pd.read_csv(path)
+    except Exception:
+        return pd.DataFrame()
+
+
+def _stock_screener_candidates(root: Path, day: dt.date) -> list[Path]:
+    day_dir = root / day.isoformat()
+    if not day_dir.exists():
+        return []
+    day_s = day.isoformat()
+    candidates = [
+        day_dir / "_unzipped_mode_a" / f"stock-screener-{day_s}.csv",
+        day_dir / f"stock-screener-{day_s}.csv",
+        day_dir / f"stock-screener-{day_s}.zip",
+        day_dir / f"stock-screener-scrape-{day_s}.csv",
+        day_dir / f"stock-screener-{day_s}" / f"stock-screener-{day_s}.csv",
+    ]
+    return [p for p in candidates if p.exists()]
+
+
+def _index_closes_from_screener(df: pd.DataFrame) -> dict:
+    if df is None or df.empty or "ticker" not in df.columns or "close" not in df.columns:
+        return {}
+    work = df.copy()
+    work["ticker"] = work["ticker"].astype(str).str.upper().str.strip()
+    out = {}
+    for ticker in ["SPY", "VIX", "^VIX", "$VIX"]:
+        row = work[work["ticker"].eq(ticker)]
+        if row.empty:
+            continue
+        close = fnum(row.iloc[0].get("close"))
+        if np.isfinite(close) and close > 0:
+            key = "VIX" if ticker in {"^VIX", "$VIX"} else ticker
+            out[key] = float(close)
+    return out
+
+
+def _local_macro_regime(asof: dt.date, screener=None, local_root=None) -> dict:
+    root = Path(local_root).expanduser().resolve() if local_root else Path.cwd().resolve()
+    spy_points: dict[dt.date, float] = {}
+    vix_level = math.nan
+
+    current = _index_closes_from_screener(screener) if screener is not None else {}
+    if "SPY" in current:
+        spy_points[asof] = current["SPY"]
+    if "VIX" in current:
+        vix_level = current["VIX"]
+
+    for offset in range(0, 22):
+        day = asof - dt.timedelta(days=offset)
+        if day in spy_points and np.isfinite(vix_level):
+            continue
+        for path in _stock_screener_candidates(root, day):
+            rows = _read_stock_screener_rows(path)
+            closes = _index_closes_from_screener(rows)
+            if "SPY" in closes:
+                spy_points.setdefault(day, closes["SPY"])
+            if day == asof and "VIX" in closes and not np.isfinite(vix_level):
+                vix_level = closes["VIX"]
+            break
+
+    spy_5d_ret = math.nan
+    ordered = sorted((d, c) for d, c in spy_points.items() if d <= asof and np.isfinite(c) and c > 0)
+    if len(ordered) >= 6:
+        spy_5d_ret = ordered[-1][1] / ordered[-6][1] - 1.0
+    elif len(ordered) >= 2:
+        spy_5d_ret = ordered[-1][1] / ordered[0][1] - 1.0
+
+    out = {}
+    if np.isfinite(spy_5d_ret):
+        out["spy_5d_ret"] = float(spy_5d_ret)
+    if np.isfinite(vix_level) and vix_level > 0:
+        out["vix_level"] = float(vix_level)
+    return out
+
+
+def compute_macro_regime(asof, force_historical=False, screener=None, local_root=None):
     """Fetch SPY 5-day return and VIX level for macro regime awareness.
     Uses Schwab API (fast, reliable) with yfinance fallback.
     Returns dict with spy_5d_ret, vix_level, regime ('risk_off'|'risk_on'|'neutral').
@@ -643,10 +747,18 @@ def compute_macro_regime(asof, force_historical=False):
     spy_5d_ret = 0.0
     vix_level = 20.0
 
+    # Prefer the dated UW stock screener when it contains index rows. This keeps
+    # historical replay and EOD planning regime-aware without requiring network.
+    local_macro = _local_macro_regime(asof, screener=screener, local_root=local_root)
+    if "spy_5d_ret" in local_macro:
+        spy_5d_ret = float(local_macro["spy_5d_ret"])
+    if "vix_level" in local_macro:
+        vix_level = float(local_macro["vix_level"])
+
     # Try Schwab only for same-day non-replay runs. Historical replay must not
     # use a current SPY/$VIX quote even when replaying today's dated files.
     try:
-        if (not force_historical) and asof >= dt.date.today():
+        if (not local_macro) and (not force_historical) and asof >= dt.date.today():
             from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
             config = SchwabAuthConfig.from_env(load_dotenv_file=True)
             svc = SchwabLiveDataService(config=config, interactive_login=False)
@@ -671,7 +783,7 @@ def compute_macro_regime(asof, force_historical=False):
     except Exception:
         pass
 
-    if force_historical or asof < dt.date.today() or not np.isfinite(vix_level) or vix_level == 20.0:
+    if (not local_macro) and (force_historical or asof < dt.date.today() or not np.isfinite(vix_level) or vix_level == 20.0):
         # Fallback to yfinance
         try:
             import yfinance as yf
@@ -702,7 +814,12 @@ def compute_macro_regime(asof, force_historical=False):
         regime = "risk_on"
     else:
         regime = "neutral"
-    return {"spy_5d_ret": spy_5d_ret, "vix_level": vix_level, "regime": regime}
+    return {
+        "spy_5d_ret": spy_5d_ret,
+        "vix_level": vix_level,
+        "regime": regime,
+        "source": "local_uw_stock_screener" if local_macro else "market_data_fallback",
+    }
 
 
 def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=20):
@@ -712,7 +829,9 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     pricing_cfg = cfg.get("pricing", {})
     high_beta_cfg = cfg.get("high_beta", {})
     strategy_sel_cfg = cfg.get("strategy_selection", {})
+    approval_cfg = cfg.get("approval", {}) if isinstance(cfg, dict) else {}
     engine_cfg = cfg.get("engine", {}) if isinstance(cfg, dict) else {}
+    flow_cfg = cfg.get("flow", {}) if isinstance(cfg, dict) else {}
 
     min_credit = float(gates_cfg["min_credit_pct_width"])
     max_credit = fnum(gates_cfg.get("max_credit_pct_width", 1.0))
@@ -738,6 +857,55 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     if not np.isfinite(min_credit_rr) or min_credit_rr < 0:
         min_credit_rr = 0.0
     exclude_etfs = bool(gates_cfg.get("exclude_etfs", True))
+    earnings_buffer_days = fnum(
+        approval_cfg.get(
+            "earnings_buffer_days",
+            gates_cfg.get("earnings_buffer_days", cfg.get("earnings_buffer_days", 7)),
+        )
+    )
+    if not np.isfinite(earnings_buffer_days) or earnings_buffer_days < 0:
+        earnings_buffer_days = 7.0
+    earnings_buffer_days = int(round(earnings_buffer_days))
+
+    flow_direction_threshold = fnum(
+        approval_cfg.get("flow_direction_threshold", flow_cfg.get("direction_threshold", 0.08))
+    )
+    flow_strength_threshold = fnum(
+        approval_cfg.get("flow_strength_threshold", flow_cfg.get("confirmation_direction_threshold", 0.15))
+    )
+    flow_premium_threshold = fnum(
+        approval_cfg.get("flow_premium_threshold", flow_cfg.get("confirmation_premium_threshold", 0.08))
+    )
+    flow_volume_conflict_threshold = fnum(
+        approval_cfg.get("flow_volume_conflict_threshold", flow_cfg.get("volume_conflict_threshold", 0.10))
+    )
+    flow_strong_threshold = fnum(
+        approval_cfg.get("flow_strong_threshold", flow_cfg.get("strong_threshold", 0.30))
+    )
+    contract_flow_bias_threshold = fnum(
+        approval_cfg.get("contract_flow_bias_threshold", flow_cfg.get("contract_bias_threshold", 0.10))
+    )
+    income_contract_flow_directional_threshold = fnum(
+        approval_cfg.get(
+            "income_contract_flow_directional_threshold",
+            flow_cfg.get("income_directional_threshold", 0.25),
+        )
+    )
+    def _nonnegative_threshold(value, default):
+        value = fnum(value)
+        return float(value) if np.isfinite(value) and value >= 0 else float(default)
+
+    flow_direction_threshold = _nonnegative_threshold(flow_direction_threshold, 0.08)
+    flow_strength_threshold = _nonnegative_threshold(flow_strength_threshold, 0.15)
+    flow_premium_threshold = _nonnegative_threshold(flow_premium_threshold, 0.08)
+    flow_volume_conflict_threshold = _nonnegative_threshold(flow_volume_conflict_threshold, 0.10)
+    flow_strong_threshold = _nonnegative_threshold(flow_strong_threshold, 0.30)
+    contract_flow_bias_threshold = _nonnegative_threshold(contract_flow_bias_threshold, 0.10)
+    income_contract_flow_directional_threshold = _nonnegative_threshold(
+        income_contract_flow_directional_threshold,
+        0.25,
+    )
+
     executable_sources = {
         str(x).strip().lower()
         for x in pricing_cfg.get("executable_source_kinds", ["hot"])
@@ -814,6 +982,19 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     strike_search_depth = max(1, int(engine_cfg.get("strike_search_depth", 6)))
     min_per_track = max(1, int(engine_cfg.get("min_per_track", 1)))
     include_watch_candidates = bool(engine_cfg.get("include_watch_candidates", True))
+    fire_expiry_coverage_repair = bool(engine_cfg.get("fire_expiry_coverage_repair", True))
+    fire_expiry_coverage_max_dte = fnum(
+        engine_cfg.get(
+            "fire_expiry_coverage_max_dte",
+            approval_cfg.get("bull_call_approval_max_dte", fire_target),
+        )
+    )
+    if not np.isfinite(fire_expiry_coverage_max_dte) or fire_expiry_coverage_max_dte <= 0:
+        fire_expiry_coverage_max_dte = float(fire_target)
+    min_approval_fire_expiries = max(
+        0,
+        int(engine_cfg.get("min_approval_compatible_fire_expiries_per_ticker_strategy", 1)),
+    )
 
     high_beta_names = {
         str(x).strip().upper()
@@ -826,7 +1007,12 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     high_beta_require_delta = bool(high_beta_cfg.get("require_short_delta_for_core", True))
     fire_lotto_dte_max = int(fire_cfg.get("lotto_dte_max", 10))
 
-    macro = compute_macro_regime(asof)
+    macro = compute_macro_regime(
+        asof,
+        force_historical=bool(getattr(build_best_candidates, "_force_historical", False)),
+        screener=screener,
+        local_root=getattr(build_best_candidates, "_local_root", Path.cwd()),
+    )
     macro_regime = macro["regime"]
     print(f"  [macro] SPY 5d={macro['spy_5d_ret']:+.2%}, VIX={macro['vix_level']:.1f}, regime={macro_regime}")
     # Stash macro on function for Stage-2 reuse (avoids duplicate API call)
@@ -911,7 +1097,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
 
     def _flow_direction_label(v):
         v = fnum(v)
-        if not np.isfinite(v) or abs(v) < 0.08:
+        if not np.isfinite(v) or abs(v) < flow_direction_threshold:
             return "neutral_or_ambiguous"
         return "bullish" if v > 0 else "bearish"
 
@@ -919,11 +1105,11 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         v = abs(fnum(v))
         if not np.isfinite(v):
             return "unknown"
-        if v >= 0.30:
+        if v >= flow_strong_threshold:
             return "strong"
-        if v >= 0.15:
+        if v >= flow_strength_threshold:
             return "moderate"
-        if v >= 0.08:
+        if v >= flow_direction_threshold:
             return "weak"
         return "ambiguous"
 
@@ -945,11 +1131,15 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         volume_bias = fnum(row.get("flow_volume_bias"))
         if not (np.isfinite(direction_bias) and np.isfinite(premium_bias)):
             return "weak_or_ambiguous"
-        if abs(direction_bias) < 0.15 or abs(premium_bias) < 0.08:
+        if abs(direction_bias) < flow_strength_threshold or abs(premium_bias) < flow_premium_threshold:
             return "weak_or_ambiguous"
         if np.sign(direction_bias) != np.sign(premium_bias):
             return "conflicted"
-        if np.isfinite(volume_bias) and abs(volume_bias) >= 0.10 and np.sign(volume_bias) != np.sign(direction_bias):
+        if (
+            np.isfinite(volume_bias)
+            and abs(volume_bias) >= flow_volume_conflict_threshold
+            and np.sign(volume_bias) != np.sign(direction_bias)
+        ):
             return "conflicted"
         return "confirmed"
 
@@ -969,6 +1159,11 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
     )
     global FLOW_CONTEXT_BY_TICKER
     flow_context_cols = [
+        "close",
+        "iv30d",
+        "implied_move",
+        "implied_move_perc",
+        "iv_rank",
         "bullish_premium",
         "bearish_premium",
         "call_premium",
@@ -1092,7 +1287,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
         # FIRE candidates should be allowed through discovery; otherwise names
         # like NFLX can be labeled neutral while bear-put candidates are silently
         # suppressed.
-        neutral_gap = 0.08
+        neutral_gap = flow_direction_threshold
         if bias > neutral_gap:
             return True, False
         if bias < -neutral_gap:
@@ -1236,19 +1431,23 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                 "verified": False,
                 "crossed": False,
                 "within7": False,
+                "within_buffer": False,
+                "buffer_days": earnings_buffer_days,
                 "core_ok": False,
                 "label": "UNKNOWN",
             }
         days_to_er = (earnings - asof).days
         crossed = asof <= earnings <= expiry
-        within7 = 0 <= days_to_er <= 7
-        core_ok = (not crossed) and (not within7)
+        within_buffer = 0 <= days_to_er <= earnings_buffer_days
+        core_ok = (not crossed) and (not within_buffer)
         return {
             "verified": True,
             "crossed": crossed,
-            "within7": within7,
+            "within7": within_buffer,
+            "within_buffer": within_buffer,
+            "buffer_days": earnings_buffer_days,
             "core_ok": core_ok,
-            "label": "PASS" if core_ok else ("CROSSED" if crossed else "WITHIN7"),
+            "label": "PASS" if core_ok else ("CROSSED" if crossed else f"WITHIN{earnings_buffer_days}"),
         }
 
     def is_high_beta(row):
@@ -1432,7 +1631,13 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             f"Invalidate if close < {inv_level:.2f}.",
                             iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
                             stage1_extra_diagnostics=stage1_extra_diag,
-                            **contract_flow_for_spread("Bull Call Debit", long_row=lg, short_row=sh),
+                            **contract_flow_for_spread(
+                                "Bull Call Debit",
+                                long_row=lg,
+                                short_row=sh,
+                                flow_bias_threshold=contract_flow_bias_threshold,
+                                income_directional_threshold=income_contract_flow_directional_threshold,
+                            ),
                         ))
 
             puts = chains.get((ticker, "P", expiry))
@@ -1535,7 +1740,13 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             f"Invalidate if close > {inv_level:.2f}.",
                             iv_rank=float(iv_rank) if np.isfinite(iv_rank) else None,
                             stage1_extra_diagnostics=stage1_extra_diag,
-                            **contract_flow_for_spread("Bear Put Debit", long_row=lg, short_row=sh),
+                            **contract_flow_for_spread(
+                                "Bear Put Debit",
+                                long_row=lg,
+                                short_row=sh,
+                                flow_bias_threshold=contract_flow_bias_threshold,
+                                income_directional_threshold=income_contract_flow_directional_threshold,
+                            ),
                         ))
 
         # Bull Put Credit + Bear Call Credit (SHIELD with full rulebook gating).
@@ -1673,7 +1884,13 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             core_ok=bool(core_ok),
                             high_beta_pass=bool(hb_pass),
                             earnings_label=str(er.get("label", "")),
-                            **contract_flow_for_spread("Bull Put Credit", short_row=sh, long_row=lg),
+                            **contract_flow_for_spread(
+                                "Bull Put Credit",
+                                short_row=sh,
+                                long_row=lg,
+                                flow_bias_threshold=contract_flow_bias_threshold,
+                                income_directional_threshold=income_contract_flow_directional_threshold,
+                            ),
                         ))
 
             calls = chains.get((ticker, "C", expiry))
@@ -1814,7 +2031,13 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                             core_ok=bool(core_ok),
                             high_beta_pass=bool(hb_pass),
                             earnings_label=str(er.get("label", "")),
-                            **contract_flow_for_spread("Bear Call Credit", short_row=sh, long_row=lg),
+                            **contract_flow_for_spread(
+                                "Bear Call Credit",
+                                short_row=sh,
+                                long_row=lg,
+                                flow_bias_threshold=contract_flow_bias_threshold,
+                                income_directional_threshold=income_contract_flow_directional_threshold,
+                            ),
                         ))
 
             # Iron Condor (SHIELD neutral income), built directly from live executable put/call legs.
@@ -2077,6 +2300,8 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                                     "Iron Condor",
                                     short_put_row=sh_put,
                                     short_call_row=sh_call,
+                                    flow_bias_threshold=contract_flow_bias_threshold,
+                                    income_directional_threshold=income_contract_flow_directional_threshold,
                                 ),
                             )
                         )
@@ -2475,6 +2700,7 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
 
     # Seed best per track AND direction, so bears surface even when bulls dominate.
     bear_strategies = {"Bear Put Debit", "Bear Call Credit"}
+    debit_fire_strategies = {"Bull Call Debit", "Bear Put Debit"}
     for track in ["FIRE", "SHIELD"]:
         sub = df[df["track"] == track]
         if sub.empty:
@@ -2501,6 +2727,34 @@ def build_best_candidates(asof, cfg, screener, quotes, whale_tables, top_trades=
                     added += 1
                 if added >= min_per_track:
                     break
+
+    # The best liquidity/RR FIRE row is often just beyond the approval DTE
+    # target.  Keep at least one approval-compatible expiry per ticker/side
+    # when available so Stage-2 pricing, GEX, and likelihood can make the final
+    # decision instead of losing the alternate during Stage-1 de-duplication.
+    if fire_expiry_coverage_repair and min_approval_fire_expiries > 0:
+        fire_df = df[
+            (df["track"] == "FIRE")
+            & df["strategy"].isin(debit_fire_strategies)
+            & (pd.to_numeric(df["dte"], errors="coerce") <= fire_expiry_coverage_max_dte)
+        ].copy()
+        if not fire_df.empty:
+            fire_df["_dte_dist"] = (
+                pd.to_numeric(fire_df["dte"], errors="coerce") - fire_target
+            ).abs()
+            fire_df = fire_df.sort_values(
+                ["ticker", "strategy", "conviction", "_dte_dist", "max_loss"],
+                ascending=[True, True, False, True, True],
+            )
+            for (_ticker, _strategy), sub in fire_df.groupby(["ticker", "strategy"], sort=False):
+                added = 0
+                for _, row in sub.iterrows():
+                    if len(selected_rows) >= max(1, max_total_trades):
+                        break
+                    if try_add(row.drop(labels=["_dte_dist"], errors="ignore")):
+                        added += 1
+                    if added >= min_approval_fire_expiries:
+                        break
 
     for _, row in df.iterrows():
         if len(selected_rows) >= max(1, max_total_trades):
@@ -2643,8 +2897,8 @@ def main():
         print(f"[EXCEPTION] {type(exc).__name__}: {exc}")
         raise
 
-    bot_eod_source = find_bot_eod_source(base, asof_str)
-    whale_flow = load_yes_prime_whale_flow(bot_eod_source, cfg)
+    whale_flow = load_whale_flow_source(base, asof_str, cfg)
+    bot_eod_source = whale_flow.source_path
     whale_source_name = bot_eod_source.name
     tables = whale_flow.as_rank_tables()
     whale_symbol_summary_csv = base / "_unzipped_mode_a" / f"whale-symbol-summary-{asof_str}.csv"
@@ -2652,7 +2906,7 @@ def main():
     whale_flow.symbol_summary.to_csv(whale_symbol_summary_csv, index=False)
     whale_flow.top_trades.to_csv(whale_top_trades_csv, index=False)
     print(
-        "Loaded bot EOD whale source: "
+        f"Loaded {whale_flow.source_label} whale source: "
         f"{whale_source_name}; scanned={whale_flow.total_rows:,}; "
         f"yes_prime={whale_flow.yes_prime_rows:,}; symbols={len(whale_flow.symbol_summary):,}"
     )

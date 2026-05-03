@@ -49,10 +49,11 @@ run daily pipeline for 2026-04-20
 What Codex should do:
 
 - Use the UW files in `/Users/anuppamvi/uw_root/tradedesk/2026-04-20`.
-- Collect or refresh UW GEX if needed.
+- Run the normal EOD live-planning pipeline, not historical replay.
+- Refresh current Schwab option quotes and calculate current Schwab chain GEX.
 - Generate the candidate trade Markdown.
 - Generate the machine-readable decision CSV.
-- Summarize Core, Tactical, Scout, and Watch trades.
+- Summarize Core, Tactical, Pilot, Scout, and Watch trades.
 - Write the report to `/Users/anuppamvi/uw_root/tradedesk/out/daily_pipeline_YYYY-MM-DD/anu-expert-trade-table-YYYY-MM-DD.md`.
 - Surface missing external-scanner or morning-watch setups so they can be evaluated by the same daily gates instead of disappearing silently.
 
@@ -213,8 +214,9 @@ What Codex should do:
 - Do not size Scout trades as Tactical or Core trades.
 - Do not average down.
 - Do not mix trend-analysis into daily-pipeline runs.
+- Do not use `--historical-replay` for a plain "run daily pipeline" request.
 - Do not treat historical replay output as live entry approval.
-- Do not promote a trade just because an external scanner likes it; feed it into the daily candidate book and let the daily rules approve, Scout, or reject it.
+- Do not ingest external scanner recommendations into the daily pipeline. Daily candidates must come from the dated UW source files and live Schwab validation.
 
 ## Sizing Guide
 
@@ -243,7 +245,7 @@ Then ask:
 run daily-pipeline replay audit for the last two weeks
 ```
 
-The escalation should identify whether the skip streak is caused by market-quality issues or by a pipeline bug. The audit must specifically check Stage-1 flow blockers, GEX availability, IV, Schwab live pricing, external scanner coverage, and whether high-EV structures were dropped before approval.
+The escalation should identify whether the skip streak is caused by market-quality issues or by a pipeline bug. The audit must specifically check Stage-1 flow blockers, GEX availability, IV, Schwab live pricing, and whether high-quality native UW structures were dropped before approval.
 
 ## Current Confidence Benchmark
 

@@ -567,16 +567,25 @@ def main() -> None:
             width_for_risk = width_live if width_live is not None else width_row
 
         gate_pass_live = None
+        gate_pass_live_tolerated = None
+        gate_miss_abs_live = math.nan
+        gate_tol_total_live = math.nan
         if entry_threshold is not None and live_net_bid_ask is not None:
             gate_eps = 1e-9
             # Width-based tolerance: max(floor, width × pct)
             w = width_for_risk if width_for_risk is not None and math.isfinite(width_for_risk) else 0.0
             width_tol = w * args.entry_tol_width_pct if args.entry_tol_width_pct > 0 else 0.0
             effective_tol = max(gate_eps, args.entry_tol_floor, width_tol)
+            gate_tol_total_live = effective_tol
             if net_type == "credit":
-                gate_pass_live = live_net_bid_ask >= (entry_threshold - effective_tol)
+                gate_miss_abs_live = max(0.0, entry_threshold - live_net_bid_ask)
+                gate_pass_live_tolerated = live_net_bid_ask >= (entry_threshold - effective_tol)
             else:
-                gate_pass_live = live_net_bid_ask <= (entry_threshold + effective_tol)
+                gate_miss_abs_live = max(0.0, live_net_bid_ask - entry_threshold)
+                gate_pass_live_tolerated = live_net_bid_ask <= (entry_threshold + effective_tol)
+            # Preserve existing behavior: live_status uses the tolerated gate,
+            # while downstream reporting recomputes strict vs near-miss context.
+            gate_pass_live = gate_pass_live_tolerated
 
         und_payload = underlying_quotes.get(ticker, {})
         und_quote = und_payload.get("quote", und_payload)

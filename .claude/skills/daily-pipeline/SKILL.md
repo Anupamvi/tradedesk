@@ -5,7 +5,16 @@ description: Use when user asks to run the daily 2-stage options pipeline, analy
 
 # Daily 2-Stage Options Pipeline
 
-Run the UW 2-stage pipeline (Stage-1 discovery + Stage-2 Schwab live validation) for a given trading date and present approved trades with clickable output links.
+Run the UW 2-stage pipeline (Stage-1 EOD discovery + Stage-2 Schwab live quote/GEX validation) for a given trading date and present the actionable table first, with clickable output links.
+
+Default: a plain "run daily pipeline for DATE" request is an EOD live-planning run. It uses dated EOD files for discovery, then current Schwab option quotes and current Schwab chain GEX for entry decisions. Do not use `--historical-replay` unless the user explicitly asks for backtesting, replay, or deterministic historical audit.
+
+Live action meanings:
+- `ENTER`: executable at the current Schwab quote.
+- `TARGET`: valid setup; use the shown target limit price and do not chase the current quote.
+- `REVIEW`: valid setup but existing portfolio exposure requires an explicit add/adjust decision.
+- `WAIT`: missing live quote/GEX/data or replay-only blocker.
+- `SKIP`: rejected/not approved.
 
 ## Parameters
 
@@ -19,8 +28,10 @@ The user provides a **date** (YYYY-MM-DD). If no date given, use today's date fr
 cd "{repo_root}" && python -m uwos.run_mode_a_two_stage \
   --base-dir "{repo_root}/{date}" \
   --config "{repo_root}/uwos/rulebook_config_goal_holistic_claude.yaml" \
-  --out-dir "{repo_root}/out/{date}" \
-  --top-trades 20
+  --out-dir "{repo_root}/out/daily_pipeline_{date}" \
+  --output "{repo_root}/out/daily_pipeline_{date}/anu-expert-trade-table-{date}.md" \
+  --top-trades 20 \
+  --eod-live-planning
 ```
    Use timeout of 300000ms (5 min) as Schwab API calls take time.
 3. **Read full output** if truncated — extract all trade tables
@@ -30,31 +41,26 @@ cd "{repo_root}" && python -m uwos.run_mode_a_two_stage \
 
 ### Header
 ```
-**{N} Approved / 20 total** | **Core: {X}, Tactical: {Y}, Watch: {Z}**
+**{N} Actionable / 20 total** | **Core: {X}, Tactical: {Y}, Pilot: {P}, Scout: {S}, Watch: {Z}** | **Actions: ENTER={E}, TARGET={T}, REVIEW={R}, WAIT={W}**
 ```
 
-### Core Book Table
-| # | Ticker | Strategy | Strike Setup | Expiry | DTE | Cost | Max Profit | Conviction | Edge |
-
-### Tactical Book Table (include track: FIRE or SHIELD)
-| # | Ticker | Strategy | Strike Setup | Expiry | DTE | Credit/Debit | Max Profit | Conviction | Edge | Blockers |
-
-Bold SHIELD trades in the Tactical table.
+### Actionable Table
+Present Core/Tactical/Pilot rows first. Include `Live Action`, target limit/entry gate, portfolio context, max loss, max profit, conviction, and the exact blocker only when action is `REVIEW` or `WAIT`.
 
 ### Watch Summary
-One-line bullets explaining why each was blocked.
+Only after the actionable table, summarize top Watch rows and why they were blocked.
 
 ### Highlights
 3-5 bullet observations: new entrants, notable signals, portfolio balance, day-over-day changes if prior day data available.
 
 ### Output Files (ALWAYS include — clickable VSCode-relative links)
 ```
-- Expert trade table: [anu-expert-trade-table-{date}.md]({date}/anu-expert-trade-table-{date}.md)
-- Live trade CSV: [live_trade_table_{date}_final.csv](out/{date}/live_trade_table_{date}_final.csv)
-- Setup likelihood: [setup_likelihood_{date}.md](out/{date}/setup_likelihood_{date}.md)
-- Dropped trades: [dropped_trades_{date}.csv](out/{date}/dropped_trades_{date}.csv)
-- Run manifest: [run_manifest_{date}.json](out/{date}/run_manifest_{date}.json)
-- Schwab snapshot: [schwab_snapshot_{date}.json](out/{date}/schwab_snapshot_{date}.json)
+- Expert trade table: [anu-expert-trade-table-{date}.md](out/daily_pipeline_{date}/anu-expert-trade-table-{date}.md)
+- Live trade CSV: [live_trade_table_{date}_final.csv](out/daily_pipeline_{date}/live_trade_table_{date}_final.csv)
+- Setup likelihood: [setup_likelihood_{date}.md](out/daily_pipeline_{date}/setup_likelihood_{date}.md)
+- Dropped trades: [dropped_trades_{date}.csv](out/daily_pipeline_{date}/dropped_trades_{date}.csv)
+- Run manifest: [run_manifest_{date}.json](out/daily_pipeline_{date}/run_manifest_{date}.json)
+- Schwab snapshot: [schwab_snapshot_{date}.json](out/daily_pipeline_{date}/schwab_snapshot_{date}.json)
 ```
 
 ## Entry Gate Tolerance
