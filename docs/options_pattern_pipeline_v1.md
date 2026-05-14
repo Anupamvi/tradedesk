@@ -5,6 +5,27 @@ source-like Unusual Whales exports directly from `YYYY-MM-DD` folders and
 ignores prior trend scores, gates, candidate files, rejection labels, and
 generated watchlists as model inputs.
 
+## V1 Baseline And Revert Policy
+
+The live V1 implementation is:
+
+```text
+uwos/options_pattern_pipeline_v1/
+```
+
+The immutable V1 backup copy is:
+
+```text
+uwos/options_pattern_pipeline_v1_frozen_v1/
+```
+
+Treat the frozen copy as a restore point. Future pattern-pipeline changes should
+be made in the live package or in a successor package such as
+`uwos/options_pattern_pipeline_v2/`. Do not edit, delete, rename, reformat, or
+bulk-update the frozen backup unless explicitly refreshing the V1 baseline. To
+revert V1 behavior, restore from the frozen copy rather than recreating files by
+hand.
+
 ## Flow Source Priority
 
 For each dated UW folder, `bot-eod-report-YYYY-MM-DD` is the mandatory primary
