@@ -381,6 +381,15 @@ def month_label(opened: str) -> str:
     return datetime.strptime(opened, "%Y-%m-%d").strftime("%B %Y Trades")
 
 
+def status_mix(rows: list[dict[str, Any]]) -> str:
+    statuses = sorted({row["status"] for row in rows})
+    return ", ".join(f"{status}={sum(1 for row in rows if row['status'] == status)}" for status in statuses)
+
+
+def pnl_total(rows: list[dict[str, Any]]) -> float:
+    return sum(float(row["sort_pnl"]) for row in rows if row.get("sort_pnl") is not None)
+
+
 def write_numbers_sheet(workbook: Path, sheet_name: str, rows: list[dict[str, Any]]) -> None:
     headers = [
         "Opened",
@@ -534,17 +543,15 @@ def main() -> None:
         f"Built {len(rows)} option trade rows from Schwab API/state "
         f"for {start_date.isoformat()} -> {end_date.isoformat()}."
     )
-    print(
-        "Status mix:",
-        ", ".join(
-            f"{status}={sum(1 for row in rows if row['status'] == status)}"
-            for status in sorted({row["status"] for row in rows})
-        ),
-    )
-    print(
-        "Total P/L:",
-        money(sum(float(row["sort_pnl"]) for row in rows if row.get("sort_pnl") is not None)),
-    )
+    current_month = end_date.strftime("%Y-%m")
+    current_month_rows = [row for row in rows if str(row.get("opened", "")).startswith(current_month)]
+
+    print("Full-range status mix:", status_mix(rows))
+    print("Full-range Total P/L:", money(pnl_total(rows)))
+    print("Current month:", current_month)
+    print("Current-month rows:", len(current_month_rows))
+    print("Current-month status mix:", status_mix(current_month_rows) if current_month_rows else "none")
+    print("Current-month Total P/L:", money(pnl_total(current_month_rows)))
     if not args.dry_run:
         write_numbers_sheet(args.workbook, args.sheet_name, rows)
         print(f"Updated Numbers sheet: {args.sheet_name}")
