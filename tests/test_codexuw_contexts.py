@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import datetime as dt
+
+import pandas as pd
+
 from codexuw.catalysts import load_catalyst_context
-from codexuw.engine import build_entry_watchlist, apply_high_conviction_decision_marks, select_final_trades, select_ticker_pool
+from codexuw.engine import build_entry_watchlist, apply_high_conviction_decision_marks, select_final_trades, select_ticker_pool, _write_execute_outcome_ledger
 from codexuw.portfolio import summarize_positions
+from codexuw.provenance import build_input_provenance, file_fingerprint
+from codexuw.qa import audit_run
+from codexuw.schwab_live import SchwabChainValidator
 
 
 def test_summarize_positions_blocks_existing_option_underlyings() -> None:
@@ -33,9 +40,248 @@ def test_load_catalyst_context_reads_browser_text(tmp_path) -> None:
     assert spy["catalyst_status"] == "unknown"
 
 
-def test_select_ticker_pool_excludes_etfs_but_keeps_stocks() -> None:
-    import pandas as pd
+def test_structured_catalyst_date_overrides_word_count_noise(tmp_path) -> None:
+    browser_dir = tmp_path / "browser_text"
+    browser_dir.mkdir()
+    (browser_dir / "browser-text-capture-news-nvda.txt").write_text(
+        "NVDA risk note: NVIDIA financial results conference call is on 2026-05-20 after market close.",
+        encoding="utf-8",
+    )
 
+    df = load_catalyst_context(tmp_path, ["NVDA"], asof=dt.date(2026, 5, 6))
+    nvda = df.iloc[0]
+
+    assert nvda["catalyst_status"] == "mixed"
+    assert str(nvda["catalyst_earnings_date"]) == "2026-05-20"
+    assert nvda["catalyst_earnings_days"] == 14.0
+
+
+def test_browser_earnings_date_must_be_on_ticker_line(tmp_path) -> None:
+    browser_dir = tmp_path / "browser_text"
+    browser_dir.mkdir()
+    (browser_dir / "browser-text-capture-news-mixed.txt").write_text(
+        "AAA is being watched for flow quality.\n"
+        "BBB financial results conference call is on 2026-05-10 after close.\n",
+        encoding="utf-8",
+    )
+
+    df = load_catalyst_context(tmp_path, ["AAA"], asof=dt.date(2026, 5, 6))
+    aaa = df.iloc[0]
+
+    assert aaa["catalyst_status"] == "mixed"
+    assert pd.isna(aaa["catalyst_earnings_date"])
+    assert pd.isna(aaa["catalyst_earnings_days"])
+
+
+def test_ticker_scoped_browser_file_can_supply_company_name_event_line(tmp_path) -> None:
+    browser_dir = tmp_path / "browser_text"
+    browser_dir.mkdir()
+    (browser_dir / "browser-text-capture-news-NVDA-LIVE.txt").write_text(
+        "NVIDIA announced that its financial results conference call is on 2026-05-20 after close.\n",
+        encoding="utf-8",
+    )
+
+    df = load_catalyst_context(tmp_path, ["NVDA"], asof=dt.date(2026, 5, 6))
+    nvda = df.iloc[0]
+
+    assert nvda["catalyst_status"] == "mixed"
+    assert str(nvda["catalyst_earnings_date"]) == "2026-05-20"
+    assert nvda["catalyst_earnings_days"] == 14.0
+
+
+def test_ticker_scoped_browser_file_extracts_monthly_sales_event(tmp_path) -> None:
+    browser_dir = tmp_path / "browser_text"
+    browser_dir.mkdir()
+    (browser_dir / "browser-text-capture-news-TSM-LIVE.txt").write_text(
+        "TSMC Financial Calendar: 2026-05-08 13:30 Asia/Taipei - TSMC Monthly Sales - April 2026.\n",
+        encoding="utf-8",
+    )
+
+    df = load_catalyst_context(tmp_path, ["TSM"], asof=dt.date(2026, 5, 6))
+    tsm = df.iloc[0]
+
+    assert tsm["catalyst_status"] == "caution"
+    assert str(tsm["catalyst_earnings_date"]) == "2026-05-08"
+    assert tsm["catalyst_earnings_days"] == 2.0
+
+
+def test_trade_description_date_does_not_become_catalyst_date(tmp_path) -> None:
+    browser_dir = tmp_path / "browser_text"
+    browser_dir.mkdir()
+    (browser_dir / "browser-text-capture-news-TSLA-LIVE.txt").write_text(
+        "Tesla investor relations shows Q1 2026 earnings were released on 2026-04-22.\n"
+        "The TSLA 2026-06-18 bull call debit spread candidate is not blocked by a near-term earnings event.\n",
+        encoding="utf-8",
+    )
+
+    df = load_catalyst_context(tmp_path, ["TSLA"], asof=dt.date(2026, 5, 7))
+    tsla = df.iloc[0]
+
+    assert tsla["catalyst_status"] == "mixed"
+    assert str(tsla["catalyst_earnings_date"]) == "2026-04-22"
+    assert tsla["catalyst_earnings_days"] == -15.0
+
+
+def test_input_provenance_records_export_hashes(tmp_path) -> None:
+    base = tmp_path / "2026-05-06"
+    base.mkdir()
+    path = base / "stock-screener-2026-05-06.csv"
+    path.write_text("ticker,close\nNVDA,210\n", encoding="utf-8")
+
+    provenance = build_input_provenance(base)
+
+    stock = provenance["exports"]["stock_screener"]
+    assert stock["path"] == str(path)
+    assert len(stock["sha256"]) == 64
+    assert stock["size_bytes"] > 0
+
+
+def test_file_fingerprint_uses_cache_when_signature_matches(tmp_path) -> None:
+    path = tmp_path / "large-ish.csv"
+    path.write_text("ticker,close\nNVDA,210\n", encoding="utf-8")
+
+    first = file_fingerprint(path)
+    second = file_fingerprint(path)
+
+    assert first["hash_cache"] == "miss"
+    assert second["hash_cache"] == "hit"
+    assert first["sha256"] == second["sha256"]
+
+
+def test_schwab_validator_can_replay_saved_snapshot_without_service(tmp_path) -> None:
+    snapshot_dir = tmp_path / "snapshot"
+    snapshot_dir.mkdir()
+    (snapshot_dir / "NVDA.json").write_text('{"symbol":"NVDA","underlyingPrice":210.0}', encoding="utf-8")
+
+    validator = SchwabChainValidator(tmp_path / "out", snapshot_dir=snapshot_dir)
+    chain = validator.get_chain("NVDA", dt.date(2026, 5, 6), dt.date(2026, 5, 15))
+
+    assert chain["underlyingPrice"] == 210.0
+    assert "snapshot:" in validator.sources["NVDA"]
+
+
+def test_execute_outcome_ledger_records_open_trade(tmp_path) -> None:
+    final = pd.DataFrame(
+        [
+            {
+                "ticker": "NVDA",
+                "strategy": "Bull Call Debit Spread",
+                "direction": "Bull Call",
+                "expiry": "2026-05-15",
+                "sell_leg": "NVDA260515C00215000",
+                "buy_leg": "NVDA260515C00210000",
+                "entry_action": "BUY TO OPEN debit spread",
+                "entry_limit_debit": 1.82,
+                "contracts": 1,
+                "max_profit": 318.0,
+                "max_loss": 182.0,
+                "breakeven": 211.82,
+                "score": 7.22,
+                "confidence": "High",
+                "trade_tier": "Execute Tactical",
+                "edge_verdict": "positive",
+            }
+        ]
+    )
+
+    path = _write_execute_outcome_ledger(tmp_path / "codexuw_daily_test", dt.date(2026, 5, 6), final)
+    ledger = pd.read_csv(path)
+
+    assert ledger["outcome_status"].iloc[0] == "OPEN_REVIEW_REQUIRED"
+    assert ledger["entry_price"].iloc[0] == 1.82
+    assert (tmp_path / "codexuw_execute_outcome_ledger.csv").exists()
+
+
+def test_qa_audit_catches_final_hard_block_token(tmp_path) -> None:
+    run = tmp_path / "codexuw_daily_test"
+    run.mkdir()
+    asof = "2026-05-06"
+    manifest = {
+        "execute_rows": 1,
+        "watch_rows": 0,
+        "research_rows": 0,
+        "avoid_rows": 0,
+        "run_provenance": {
+            "input_files": {
+                "exports": {
+                    "stock_screener": {"sha256": "a" * 64},
+                    "hot_chains": {"sha256": "b" * 64},
+                }
+            },
+            "schwab_snapshot": {"status": "ok"},
+        },
+    }
+    (run / f"codexuw_manifest_{asof}.json").write_text(__import__("json").dumps(manifest), encoding="utf-8")
+    pd.DataFrame(
+        [
+            {
+                "ticker": "BAD",
+                "strategy": "Bull Call Debit Spread",
+                "hard_rejects": "",
+                "penalties": "news_catalyst_caution",
+                "confirmations_failed": "",
+                "trade_status_reason": "bad",
+                "risk_notes": "",
+                "max_loss": 100,
+            }
+        ]
+    ).to_csv(run / f"codexuw_final_trades_{asof}.csv", index=False)
+    pd.DataFrame().to_csv(run / f"codexuw_watch_trades_{asof}.csv", index=False)
+    pd.DataFrame().to_csv(run / f"codexuw_research_candidates_{asof}.csv", index=False)
+    pd.DataFrame().to_csv(run / f"codexuw_avoid_trades_{asof}.csv", index=False)
+    pd.DataFrame(
+        [{"ticker": "BAD", "strategy": "Bull Call Debit Spread", "outcome_status": "OPEN_REVIEW_REQUIRED"}]
+    ).to_csv(run / f"codexuw_execute_outcome_ledger_{asof}.csv", index=False)
+    pd.DataFrame([{"ticker": "BAD", "catalyst_status": "caution", "catalyst_earnings_date": ""}]).to_csv(
+        run / f"codexuw_catalysts_{asof}.csv", index=False
+    )
+    (run / f"codexuw_trade_report_{asof}.md").write_text("## Action Board\n\n| Status | Ticker |\n|---|---|\n", encoding="utf-8")
+
+    issues = audit_run(run, asof=asof)
+
+    assert any("hard-block token" in issue for issue in issues)
+
+
+def test_qa_action_board_duplicate_check_is_scoped_to_action_board(tmp_path) -> None:
+    run = tmp_path / "codexuw_daily_test"
+    run.mkdir()
+    asof = "2026-05-06"
+    manifest = {
+        "execute_rows": 0,
+        "watch_rows": 0,
+        "research_rows": 0,
+        "avoid_rows": 0,
+        "run_provenance": {
+            "input_files": {
+                "exports": {
+                    "stock_screener": {"sha256": "a" * 64},
+                    "hot_chains": {"sha256": "b" * 64},
+                }
+            },
+            "schwab_snapshot": {"status": "not_required"},
+        },
+    }
+    (run / f"codexuw_manifest_{asof}.json").write_text(__import__("json").dumps(manifest), encoding="utf-8")
+    for name in ["final_trades", "watch_trades", "research_candidates", "avoid_trades", "execute_outcome_ledger"]:
+        pd.DataFrame().to_csv(run / f"codexuw_{name}_{asof}.csv", index=False)
+    (run / f"codexuw_trade_report_{asof}.md").write_text(
+        "## Action Board\n\n"
+        "| Status | Ticker |\n"
+        "|---|---|\n"
+        "| 🔵 Research | AAA |\n\n"
+        "## Top Research Near-Misses\n\n"
+        "| Status | Ticker |\n"
+        "|---|---|\n"
+        "| 🔵 Research | AAA |\n",
+        encoding="utf-8",
+    )
+
+    issues = audit_run(run, asof=asof)
+
+    assert not any("action board duplicate" in issue for issue in issues)
+
+
+def test_select_ticker_pool_excludes_etfs_but_keeps_stocks() -> None:
     df = pd.DataFrame(
         [
             {

@@ -701,6 +701,55 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertIn("NVDA", universe)
         self.assertIn("ASGN", universe)
 
+    def test_ticker_universe_includes_price_trend_supplement(self) -> None:
+        cfg = {
+            "filters": {
+                "exclude_etfs": True,
+                "exclude_indices": True,
+                "min_market_cap": 2_000_000_000,
+                "min_avg30_volume": 500_000,
+                "max_tickers_to_score": 1,
+                "max_latest_day_tickers": 0,
+                "max_earnings_tickers": 0,
+                "max_catalyst_tickers": 0,
+                "max_price_trend_tickers": 5,
+                "max_total_tickers_to_score": 10,
+                "price_trend_supplement_enabled": True,
+            }
+        }
+        base = {
+            "issue_type": "Common Stock",
+            "is_index": "f",
+            "marketcap": 3_000_000_000,
+            "avg30_volume": 1_000_000,
+            "total_volume": 1_000_000,
+            "put_volume": 0,
+            "call_volume": 0,
+            "bullish_premium": 0,
+            "bearish_premium": 0,
+            "next_earnings_date": "",
+            "iv_rank": 20,
+        }
+        screeners = {
+            dt.date(2026, 4, 21): pd.DataFrame(
+                [
+                    {**base, "ticker": "FLOW", "call_volume": 10_000, "close": 50.0, "prev_close": 49.0},
+                    {**base, "ticker": "MSFT", "close": 100.0, "prev_close": 99.0},
+                ]
+            ),
+            dt.date(2026, 4, 22): pd.DataFrame(
+                [
+                    {**base, "ticker": "FLOW", "call_volume": 10_000, "close": 50.5, "prev_close": 50.0},
+                    {**base, "ticker": "MSFT", "close": 124.0, "prev_close": 118.0},
+                ]
+            ),
+        }
+
+        universe = swing_trend_pipeline.build_ticker_universe(screeners, cfg)
+
+        self.assertIn("FLOW", universe)
+        self.assertIn("MSFT", universe)
+
     def test_quote_replay_can_force_entry_only_for_live_scan(self) -> None:
         from uwos import trend_quote_replay
         from uwos.exact_spread_backtester import LegQuote, build_occ_symbol
@@ -820,7 +869,8 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertIn("### Make Now", text)
         self.assertIn("### Probe", text)
         self.assertIn("### Watch / Avoid", text)
-        self.assertIn("| Ticker | Color / Status | Trade Setup | Enter / Act Only When |", text)
+        self.assertIn("#### 🔴 Do Not Open", text)
+        self.assertIn("**Ticket:** Bull Call Debit; Buy 93C / Sell 103C", text)
         self.assertIn("DO NOT OPEN", text)
         self.assertIn("NFLX", text)
         self.assertIn("Enter only above 95.00", text)
@@ -856,8 +906,8 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         )
         text = "\n".join(lines)
 
-        self.assertIn("YELLOW TACTICAL PROBE", text)
-        self.assertIn("C - `TACTICAL PROBE`", text)
+        self.assertIn("🟡 STARTER ACTIONABLE", text)
+        self.assertIn("C - `STARTER ACTIONABLE`", text)
         self.assertIn("Buy 128C / Sell 140C", text)
         self.assertIn("Passed the trend-analysis entry gate, but only as a starter ticket", text)
         self.assertIn("**Why:**", text)
@@ -921,8 +971,8 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         )
         text = "\n".join(lines)
 
-        self.assertIn("### Tradeable Tickets", text)
-        self.assertIn("YELLOW TACTICAL PROBE", text)
+        self.assertIn("### Color Trade Table", text)
+        self.assertIn("🟠 TACTICAL PROBE", text)
         self.assertIn("NKE - `TACTICAL PROBE`", text)
         self.assertIn("### Probe / Starter Trades", text)
         self.assertIn("This does not mean no trade exists", text)
@@ -1035,10 +1085,10 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
             )
         )
 
-        self.assertIn("| Ticker | Bias | State | Trend | Setup | Entry/Recheck | Blocker |", text)
+        self.assertIn("This list shows trends first", text)
         self.assertIn("INTC", text)
         self.assertIn("Sell 65P / Buy 57.5P", text)
-        self.assertIn("BLUE WATCH ONLY", text)
+        self.assertIn("🔵 WATCH ONLY", text)
         self.assertIn("CRCL", text)
         self.assertIn("Buy 100P / Sell 90P", text)
         self.assertNotIn("NAN", text)
@@ -1105,13 +1155,83 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
             )
         )
 
-        self.assertIn("hot/liquid names", text)
+        self.assertIn("most liquid/high-activity scored names", text)
         self.assertIn("AMZN", text)
         self.assertIn("Buy 270C / Sell 280C", text)
         self.assertIn("INTC", text)
         self.assertIn("Sell 67.5P / Buy 57.5P", text)
         self.assertIn("MU", text)
-        self.assertIn("GRAY RADAR ONLY", text)
+        self.assertIn("⚪ RADAR ONLY", text)
+
+    def test_liquid_trend_board_surfaces_blocked_large_caps(self) -> None:
+        patterns = pd.DataFrame(
+            [
+                {
+                    "ticker": "AAPL",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "target_expiry": "2026-06-18",
+                    "live_strike_setup": "Buy 280C / Sell 290C (10w, $3.20 debit)",
+                    "live_validated": True,
+                    "swing_score": 67.0,
+                    "price_direction": "bullish",
+                    "price_trend": 95.0,
+                    "flow_direction": "mixed",
+                    "flow_persistence": 55.0,
+                    "actionability_reject_reasons": "market regime conflict",
+                }
+            ]
+        )
+
+        text = "\n".join(
+            trend_analysis._liquid_trend_leader_board(
+                actionable=pd.DataFrame(),
+                tactical_probes=pd.DataFrame(),
+                current_setups=pd.DataFrame(),
+                event_watch=pd.DataFrame(),
+                patterns=patterns,
+            )
+        )
+
+        self.assertIn("core trend-leader read", text)
+        self.assertIn("Unique trend names in scored candidate set: 1", text)
+        self.assertIn("AAPL", text)
+        self.assertIn("Buy 280C / Sell 290C", text)
+        self.assertIn("market regime conflict", text)
+
+    def test_hot_ticker_board_is_data_driven_not_hardcoded(self) -> None:
+        patterns = pd.DataFrame(
+            [
+                {
+                    "ticker": "XYZ",
+                    "direction": "bullish",
+                    "strategy": "Bull Call Debit",
+                    "target_expiry": "2026-06-18",
+                    "live_strike_setup": "Buy 50C / Sell 55C (5w, $1.20 debit)",
+                    "live_validated": True,
+                    "swing_score": 65.0,
+                    "price_trend": 88.0,
+                    "latest_market_cap": 5_000_000_000,
+                    "latest_option_volume": 1_000_000,
+                    "latest_option_premium": 250_000_000,
+                    "actionability_reject_reasons": "weak flow",
+                }
+            ]
+        )
+
+        text = "\n".join(
+            trend_analysis._hot_ticker_recall_board(
+                actionable=pd.DataFrame(),
+                tactical_probes=pd.DataFrame(),
+                current_setups=pd.DataFrame(),
+                event_watch=pd.DataFrame(),
+                patterns=patterns,
+            )
+        )
+
+        self.assertIn("not a hardcoded ticker list", text)
+        self.assertIn("XYZ", text)
+        self.assertIn("Buy 50C / Sell 55C", text)
 
     def test_watch_only_tickets_show_specific_entry_conditions(self) -> None:
         proven_tickets = pd.DataFrame(
@@ -4684,6 +4804,27 @@ class TestTrendAnalysisWrapper(unittest.TestCase):
         self.assertEqual(regime["regime"], "risk_off")
         self.assertFalse(bool(annotated.iloc[0]["market_regime_gate_pass"]))
         self.assertIn("risk_off conflict", annotated.iloc[0]["market_regime_summary"])
+
+    def test_market_regime_does_not_call_one_soft_breadth_day_risk_off(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            day = dt.date(2026, 5, 7)
+            day_dir = root / day.isoformat()
+            day_dir.mkdir()
+            rows = [
+                "ticker,close,prev_close,issue_type,put_call_ratio,iv_rank",
+                "SPY,99.69,100,ETF,1.15,40",
+                "QQQ,99.88,100,ETF,1.13,45",
+            ]
+            rows.extend(
+                f"T{i},{99 if i < 38 else 101},100,common stock,,"
+                for i in range(100)
+            )
+            (day_dir / "stock-screener.csv").write_text("\n".join(rows), encoding="utf-8")
+
+            regime = trend_analysis.compute_market_regime(root, [(day, day_dir)])
+
+        self.assertEqual(regime["regime"], "mixed")
 
     def test_open_position_awareness_blocks_existing_underlying(self) -> None:
         candidate = pd.DataFrame(

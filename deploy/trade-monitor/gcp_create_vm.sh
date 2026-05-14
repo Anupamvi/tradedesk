@@ -85,8 +85,9 @@ Next Step 2 on VM:
 
 Then smoke test:
   sudo bash -lc 'cd /opt/tradedesk/current; set -a; . /etc/tradedesk/tradedesk.env; set +a; sudo -E -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor --test'
+  sudo bash -lc 'cd /opt/tradedesk/current; set -a; . /etc/tradedesk/tradedesk.env; set +a; sudo -E -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor --manual-test'
   sudo systemctl start trade-monitor.service
 
-Start hourly timer:
+Start 5-minute market-hours timer:
   sudo systemctl enable --now trade-monitor.timer
 MSG

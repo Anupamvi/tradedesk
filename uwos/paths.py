@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 
@@ -10,8 +11,9 @@ def project_root() -> Path:
     if env_root:
         return Path(env_root).expanduser().resolve()
 
-    windows_root = Path("c:/uw_root")
-    if windows_root.exists():
-        return windows_root.resolve()
+    if sys.platform.startswith("win"):
+        windows_root = Path("c:/uw_root")
+        if windows_root.exists():
+            return windows_root.resolve()
 
     return Path(__file__).resolve().parents[1]

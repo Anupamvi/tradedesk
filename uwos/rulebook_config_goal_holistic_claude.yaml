@@ -244,7 +244,8 @@ approval:
   # deserve Core/Tactical sizing. Daily discovery still comes only from the
   # dated UW source files plus live Schwab validation.
   enable_pilot_book: true
-  pilot_live_entry_enabled: false
+  pilot_live_entry_enabled: true
+  pilot_enter_near_miss_within_tolerance: true
   pilot_size_mult: 0.10
   pilot_max_loss: 150
   pilot_min_ev_ml: 1.50

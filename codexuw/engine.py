@@ -10,9 +10,17 @@ from typing import Any
 import pandas as pd
 
 from .data import safe_float
+from .edge_model import EDGE_COLUMNS, apply_replay_edge_model
 from .occ import build_occ_symbol, parse_occ_symbol
 from .performance import performance_min_score, performance_risk_multiplier
-from .schwab_live import SchwabChainValidator, chain_spot, chain_to_contracts, find_best_credit_spread, price_width_bucket
+from .schwab_live import (
+    SchwabChainValidator,
+    chain_spot,
+    chain_to_contracts,
+    find_credit_spread_alternatives,
+    find_debit_spread_alternatives,
+    price_width_bucket,
+)
 
 
 INDEX_SKIP = {"SPX", "SPXW", "NDX", "NDXP", "VIX"}
@@ -50,6 +58,11 @@ ETF_SYMBOL_SKIP = {
     "XOP",
 }
 AI_TECH = {"NVDA", "AMD", "AVGO", "MSFT", "GOOGL", "GOOG", "META", "TSM", "QCOM", "MU", "INTC"}
+ETF_FALLBACK_SYMBOLS = {"SPY", "QQQ", "IWM"}
+CREDIT_DIRECTIONS = {"Bull Put", "Bear Call"}
+DEBIT_DIRECTIONS = {"Bull Call", "Bear Put"}
+BULLISH_DIRECTIONS = {"Bull Put", "Bull Call"}
+BEARISH_DIRECTIONS = {"Bear Call", "Bear Put"}
 
 
 def is_etf_row(row: pd.Series) -> bool:
@@ -60,6 +73,18 @@ def is_etf_row(row: pd.Series) -> bool:
 
 
 def _earnings_days(row: pd.Series, asof: dt.date) -> float:
+    catalyst_days = safe_float(row.get("catalyst_earnings_days"))
+    if math.isfinite(catalyst_days):
+        return catalyst_days
+    catalyst_date = row.get("catalyst_earnings_date")
+    if not pd.isna(catalyst_date):
+        if isinstance(catalyst_date, dt.datetime):
+            catalyst_date = catalyst_date.date()
+        if isinstance(catalyst_date, dt.date):
+            return float((catalyst_date - asof).days)
+        parsed = pd.to_datetime(catalyst_date, errors="coerce")
+        if not pd.isna(parsed):
+            return float((parsed.date() - asof).days)
     value = row.get("next_earnings_dt")
     if pd.isna(value):
         return math.nan
@@ -167,17 +192,129 @@ def select_ticker_pool(sc: pd.DataFrame, *, max_tickers: int) -> pd.DataFrame:
     return df.sort_values("_liq_rank", ascending=False).head(max_tickers).drop(columns=["_liq_rank"])
 
 
-def _direction_list(row: pd.Series) -> list[str]:
+def _direction_sign(direction: object) -> int:
+    text = str(direction or "")
+    if text in BULLISH_DIRECTIONS:
+        return 1
+    if text in BEARISH_DIRECTIONS:
+        return -1
+    return 0
+
+
+def _is_credit_strategy(row: pd.Series | dict[str, Any]) -> bool:
+    direction = str(row.get("direction", ""))
+    strategy = str(row.get("strategy", ""))
+    return direction in CREDIT_DIRECTIONS or "Credit" in strategy
+
+
+def _is_debit_strategy(row: pd.Series | dict[str, Any]) -> bool:
+    direction = str(row.get("direction", ""))
+    strategy = str(row.get("strategy", ""))
+    return direction in DEBIT_DIRECTIONS or "Debit" in strategy
+
+
+def _strategy_kind(direction: object) -> str:
+    return "Credit" if str(direction or "") in CREDIT_DIRECTIONS else "Debit"
+
+
+def _strategy_label(direction: object) -> str:
+    kind = _strategy_kind(direction)
+    return f"{direction} {kind} Spread"
+
+
+def _direction_list(row: pd.Series, *, include_debit: bool = True) -> list[str]:
     bias = safe_float(row.get("combined_flow_bias"), safe_float(row.get("flow_bias"), 0.0))
     total = safe_float(row.get("flow_total_premium"), 0.0)
     directions: list[str] = []
     if bias >= 0.025:
         directions.append("Bull Put")
+        if include_debit:
+            directions.append("Bull Call")
     if bias <= -0.025:
         directions.append("Bear Call")
+        if include_debit:
+            directions.append("Bear Put")
     if not directions and total >= 150_000_000 and abs(bias) < 0.04:
         directions = ["Bull Put", "Bear Call"]
+        if include_debit:
+            directions.extend(["Bull Call", "Bear Put"])
     return directions
+
+
+def select_index_fallback_pool(sc: pd.DataFrame, *, max_tickers: int = 3) -> pd.DataFrame:
+    df = sc.copy()
+    df["ticker"] = df["ticker"].astype(str).str.upper().str.strip()
+    df = df[df["ticker"].isin(ETF_FALLBACK_SYMBOLS)].copy()
+    if df.empty:
+        return df
+    df["_rank"] = (
+        pd.to_numeric(df.get("flow_total_premium"), errors="coerce").fillna(0).clip(upper=2_000_000_000)
+        + pd.to_numeric(df.get("total_open_interest"), errors="coerce").fillna(0) * 10.0
+        + pd.to_numeric(df.get("avg30_volume"), errors="coerce").fillna(0)
+    )
+    return df.sort_values("_rank", ascending=False).head(max_tickers).drop(columns=["_rank"])
+
+
+def _contract_side_bias(right: object, ask_volume: float, bid_volume: float, *, threshold: float = 0.58) -> str:
+    ask = safe_float(ask_volume, 0.0)
+    bid = safe_float(bid_volume, 0.0)
+    total = ask + bid
+    if total <= 0:
+        return "unknown"
+    ask_share = ask / total
+    bid_share = bid / total
+    right_text = str(right or "").upper()[:1]
+    if right_text == "C":
+        if ask_share >= threshold:
+            return "bullish"
+        if bid_share >= threshold:
+            return "bearish"
+    if right_text == "P":
+        if bid_share >= threshold:
+            return "bullish"
+        if ask_share >= threshold:
+            return "bearish"
+    return "mixed"
+
+
+def classify_flow_quality(row: pd.Series | dict[str, Any]) -> tuple[str, str]:
+    """Classify UW flow quality before treating it as directional evidence."""
+    data = row if isinstance(row, pd.Series) else pd.Series(row)
+    direction = str(data.get("direction") or "")
+    expected_sign = _direction_sign(direction)
+    bias = safe_float(data.get("combined_flow_bias"), safe_float(data.get("flow_bias"), 0.0))
+    bot_total = safe_float(data.get("bot_total_premium"), 0.0)
+    total = safe_float(data.get("flow_total_premium"), bot_total)
+    multileg_ratio = max(
+        safe_float(data.get("bot_multileg_ratio"), 0.0),
+        safe_float(data.get("source_multileg_ratio"), 0.0),
+        safe_float(data.get("source_stock_multileg_ratio"), 0.0),
+    )
+    side_bias = str(data.get("source_side_bias") or "unknown")
+    bot_volume_oi_ratio = safe_float(data.get("bot_volume_oi_ratio"), math.nan)
+    unique_expiries = safe_float(data.get("bot_unique_expiries"), math.nan)
+    unique_strikes = safe_float(data.get("bot_unique_strikes"), math.nan)
+    directional_premium = safe_float(data.get("bot_bull_premium"), 0.0) if expected_sign >= 0 else safe_float(data.get("bot_bear_premium"), 0.0)
+    opposite_premium = safe_float(data.get("bot_bear_premium"), 0.0) if expected_sign >= 0 else safe_float(data.get("bot_bull_premium"), 0.0)
+    opposite_ratio = opposite_premium / (directional_premium + opposite_premium) if directional_premium + opposite_premium > 0 else math.nan
+
+    if multileg_ratio >= 0.45:
+        return "spread_leg", f"multi-leg context dominates ({multileg_ratio:.0%}); do not read as standalone direction"
+    if math.isfinite(opposite_ratio) and 0.35 <= opposite_ratio <= 0.65 and abs(bias) < 0.08:
+        return "unclear", "same-ticker opposite-side activity makes flow noisy"
+    if math.isfinite(bot_volume_oi_ratio) and bot_volume_oi_ratio >= 0.85 and math.isfinite(unique_expiries) and unique_expiries <= 2:
+        return "roll", "volume is large versus OI and concentrated in few expiries; likely roll/position management"
+    if expected_sign < 0 and safe_float(data.get("bot_put_ask_premium"), 0.0) > max(1_000_000.0, total * 0.35):
+        return "hedge", "put ask premium dominates; bearish flow may be portfolio hedge"
+    if expected_sign > 0 and safe_float(data.get("bot_call_ask_premium"), 0.0) > 0 and safe_float(data.get("bot_put_ask_premium"), 0.0) > total * 0.25:
+        return "hedge", "bullish call flow appears alongside heavy put demand"
+    if expected_sign and bias * expected_sign >= 0.04 and side_bias in {"bullish", "bearish", "mixed", "unknown"}:
+        if side_bias in {"bullish", "bearish"} and ((side_bias == "bullish") != (expected_sign > 0)):
+            return "unclear", f"contract side bias is {side_bias} but candidate direction is {direction}"
+        return "directional", f"premium bias {bias:+.1%} aligns with {direction}"
+    if math.isfinite(unique_strikes) and unique_strikes <= 2 and total >= 10_000_000:
+        return "roll", "large flow concentrated in repeated strikes"
+    return "unclear", "UW flow lacks clean directional confirmation"
 
 
 def _preferred_width(spot: float) -> float:
@@ -201,6 +338,7 @@ def generate_candidates(
     *,
     asof: dt.date,
     max_candidates: int,
+    index_fallback: bool = False,
 ) -> pd.DataFrame:
     bot = bot_flow.set_index("ticker", drop=False) if not bot_flow.empty else pd.DataFrame()
     rows: list[dict[str, Any]] = []
@@ -220,14 +358,18 @@ def generate_candidates(
         row = row.copy()
         row["combined_flow_bias"] = combined_bias
         for direction in _direction_list(row):
-            right = "P" if direction == "Bull Put" else "C"
+            right = "P" if direction in {"Bull Put", "Bear Put"} else "C"
             opt = ticker_hot[ticker_hot["right"].eq(right)].copy()
             if opt.empty:
                 continue
             if direction == "Bull Put":
                 opt = opt[(opt["strike"] < close) & (((close - opt["strike"]) / close).between(0.015, 0.18))]
-            else:
+            elif direction == "Bear Call":
                 opt = opt[(opt["strike"] > close) & (((opt["strike"] - close) / close).between(0.015, 0.18))]
+            elif direction == "Bull Call":
+                opt = opt[(opt["strike"] >= close * 0.96) & (opt["strike"] <= close * 1.08)]
+            else:
+                opt = opt[(opt["strike"] <= close * 1.04) & (opt["strike"] >= close * 0.90)]
             if opt.empty:
                 continue
             opt["_dte_pref"] = (opt["dte"] - 21).abs()
@@ -245,46 +387,135 @@ def generate_candidates(
                     continue
                 if direction == "Bull Put":
                     target = close * 0.94
-                else:
+                elif direction == "Bear Call":
                     target = close * 1.06
+                elif direction == "Bull Call":
+                    target = close * 1.01
+                else:
+                    target = close * 0.99
                 exp_contracts["_target_dist"] = (exp_contracts["strike"] - target).abs()
-                short = exp_contracts.sort_values(["_target_dist", "_liq"], ascending=[True, False]).iloc[0]
+                source = exp_contracts.sort_values(["_target_dist", "_liq"], ascending=[True, False]).iloc[0]
                 width = _preferred_width(close)
-                short_strike = safe_float(short.get("strike"))
-                long_strike = short_strike - width if direction == "Bull Put" else short_strike + width
-                short_bid = safe_float(short.get("bid"))
-                est_credit = short_bid * 0.45 if math.isfinite(short_bid) else math.nan
+                source_strike = safe_float(source.get("strike"))
+                if direction == "Bull Put":
+                    short_strike = source_strike
+                    long_strike = short_strike - width
+                    estimated_credit = safe_float(source.get("bid")) * 0.45
+                    estimated_debit = math.nan
+                    source_role = "short"
+                    distance_pct = (close - short_strike) / close if close > 0 else math.nan
+                    breakeven_distance_pct = math.nan
+                elif direction == "Bear Call":
+                    short_strike = source_strike
+                    long_strike = short_strike + width
+                    estimated_credit = safe_float(source.get("bid")) * 0.45
+                    estimated_debit = math.nan
+                    source_role = "short"
+                    distance_pct = (short_strike - close) / close if close > 0 else math.nan
+                    breakeven_distance_pct = math.nan
+                elif direction == "Bull Call":
+                    long_strike = source_strike
+                    short_strike = long_strike + width
+                    estimated_credit = math.nan
+                    estimated_debit = safe_float(source.get("ask"))
+                    source_role = "long"
+                    breakeven_distance_pct = ((long_strike + estimated_debit) - close) / close if close > 0 and math.isfinite(estimated_debit) else math.nan
+                    distance_pct = abs((long_strike - close) / close) if close > 0 else math.nan
+                else:
+                    long_strike = source_strike
+                    short_strike = long_strike - width
+                    estimated_credit = math.nan
+                    estimated_debit = safe_float(source.get("ask"))
+                    source_role = "long"
+                    breakeven_distance_pct = (close - (long_strike - estimated_debit)) / close if close > 0 and math.isfinite(estimated_debit) else math.nan
+                    distance_pct = abs((long_strike - close) / close) if close > 0 else math.nan
                 short_leg_eod = build_occ_symbol(ticker, expiry, right, short_strike)
                 long_leg_eod = build_occ_symbol(ticker, expiry, right, long_strike)
-                rows.append(
-                    {
-                        "ticker": ticker,
-                        "sector": row.get("sector", ""),
-                        "direction": direction,
-                        "strategy": f"{direction} Credit Spread",
-                        "expiry": expiry,
-                        "dte": int((expiry - asof).days) if isinstance(expiry, dt.date) else math.nan,
-                        "stock_price_eod": close,
-                        "short_strike_eod": short_strike,
-                        "long_strike_eod": long_strike,
-                        "preferred_width": width,
-                        "estimated_eod_credit": round(est_credit, 2) if math.isfinite(est_credit) else math.nan,
-                        "flow_bias": safe_float(row.get("flow_bias"), 0.0),
-                        "bot_flow_bias": safe_float(bot.loc[ticker].get("bot_flow_bias"), math.nan) if not bot.empty and ticker in bot.index else math.nan,
-                        "combined_flow_bias": combined_bias,
-                        "flow_total_premium": safe_float(row.get("flow_total_premium"), 0.0),
-                        "iv_rank": safe_float(row.get("iv_rank")),
-                        "iv30d": safe_float(row.get("iv30d")),
-                        "implied_move_perc": safe_float(row.get("implied_move_perc")),
-                        "next_earnings_dt": row.get("next_earnings_dt"),
-                        "edge_type": _edge_text(direction, row, exp_contracts),
-                        "source_contract": short.get("option_symbol", ""),
-                        "short_leg_eod": short_leg_eod,
-                        "long_leg_eod": long_leg_eod,
-                        "source_contract_volume": safe_float(short.get("volume"), 0.0),
-                        "source_contract_oi": safe_float(short.get("open_interest"), 0.0),
-                    }
-                )
+                ask_side_volume = safe_float(source.get("ask_side_volume"), 0.0)
+                bid_side_volume = safe_float(source.get("bid_side_volume"), 0.0)
+                multileg_volume = safe_float(source.get("multileg_volume"), 0.0)
+                stock_multileg_volume = safe_float(source.get("stock_multi_leg_volume"), 0.0)
+                source_volume = safe_float(source.get("volume"), 0.0)
+                source_side_bias = _contract_side_bias(right, ask_side_volume, bid_side_volume)
+                bot_metrics = bot.loc[ticker].to_dict() if not bot.empty and ticker in bot.index else {}
+                dte = int((expiry - asof).days) if isinstance(expiry, dt.date) else math.nan
+                iv30d = safe_float(row.get("iv30d"))
+                expected_move = iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
+                if direction in CREDIT_DIRECTIONS:
+                    expected_ratio = distance_pct / expected_move if math.isfinite(distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
+                    target_entry = round(width * 0.18, 2)
+                else:
+                    expected_ratio = expected_move / max(breakeven_distance_pct, 0.001) if math.isfinite(breakeven_distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
+                    target_entry = round(width * 0.45, 2)
+                candidate = {
+                    "ticker": ticker,
+                    "sector": row.get("sector", ""),
+                    "direction": direction,
+                    "strategy": _strategy_label(direction),
+                    "strategy_kind": _strategy_kind(direction),
+                    "index_fallback": bool(index_fallback),
+                    "expiry": expiry,
+                    "dte": dte,
+                    "stock_price_eod": close,
+                    "short_strike_eod": short_strike,
+                    "long_strike_eod": long_strike,
+                    "preferred_width": width,
+                    "estimated_eod_credit": round(estimated_credit, 2) if math.isfinite(estimated_credit) else math.nan,
+                    "estimated_eod_debit": round(estimated_debit, 2) if math.isfinite(estimated_debit) else math.nan,
+                    "estimated_credit_pct_width": estimated_credit / width if math.isfinite(estimated_credit) and width > 0 else math.nan,
+                    "estimated_debit_pct_width": estimated_debit / width if math.isfinite(estimated_debit) and width > 0 else math.nan,
+                    "construction_source": "uw_flow_anchor_seed",
+                    "construction_reason": "candidate seed built from the closest liquid UW hot-chain contract before Schwab live spread expansion",
+                    "anchor_strike": source_strike,
+                    "target_entry": target_entry,
+                    "expected_move_ratio": expected_ratio,
+                    "distance_pct": distance_pct,
+                    "breakeven_distance_pct": breakeven_distance_pct,
+                    "flow_bias": safe_float(row.get("flow_bias"), 0.0),
+                    "bot_flow_bias": safe_float(bot_metrics.get("bot_flow_bias"), math.nan),
+                    "combined_flow_bias": combined_bias,
+                    "flow_total_premium": safe_float(row.get("flow_total_premium"), 0.0),
+                    "iv_rank": safe_float(row.get("iv_rank")),
+                    "iv30d": safe_float(row.get("iv30d")),
+                    "implied_move_perc": safe_float(row.get("implied_move_perc")),
+                    "next_earnings_dt": row.get("next_earnings_dt"),
+                    "edge_type": _edge_text(direction, row, exp_contracts),
+                    "source_contract": source.get("option_symbol", ""),
+                    "source_contract_role": source_role,
+                    "short_leg_eod": short_leg_eod,
+                    "long_leg_eod": long_leg_eod,
+                    "source_contract_volume": source_volume,
+                    "source_contract_oi": safe_float(source.get("open_interest"), 0.0),
+                    "source_ask_side_volume": ask_side_volume,
+                    "source_bid_side_volume": bid_side_volume,
+                    "source_mid_volume": safe_float(source.get("mid_volume"), 0.0),
+                    "source_sweep_volume": safe_float(source.get("sweep_volume"), 0.0),
+                    "source_cross_volume": safe_float(source.get("cross_volume"), 0.0),
+                    "source_multileg_volume": multileg_volume,
+                    "source_stock_multileg_volume": stock_multileg_volume,
+                    "source_multileg_ratio": multileg_volume / source_volume if source_volume > 0 else 0.0,
+                    "source_stock_multileg_ratio": stock_multileg_volume / source_volume if source_volume > 0 else 0.0,
+                    "source_side_bias": source_side_bias,
+                    **{k: bot_metrics.get(k, math.nan) for k in [
+                        "bot_bull_premium",
+                        "bot_bear_premium",
+                        "bot_total_premium",
+                        "bot_call_ask_premium",
+                        "bot_call_bid_premium",
+                        "bot_put_ask_premium",
+                        "bot_put_bid_premium",
+                        "bot_multileg_premium",
+                        "bot_multileg_ratio",
+                        "bot_volume_oi_ratio",
+                        "bot_unique_expiries",
+                        "bot_unique_strikes",
+                        "bot_trades",
+                    ]},
+                }
+                flow_quality, flow_reason = classify_flow_quality(candidate)
+                candidate["flow_quality"] = flow_quality
+                candidate["flow_quality_reason"] = flow_reason
+                rows.append(candidate)
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
@@ -294,7 +525,35 @@ def generate_candidates(
         + df["source_contract_volume"].clip(upper=50_000) / 50_000
         + df["source_contract_oi"].clip(upper=50_000) / 100_000
     )
-    return df.sort_values("_pre_score", ascending=False).head(max_candidates).drop(columns=["_pre_score"])
+    credit = df[df["strategy_kind"].eq("Credit")].copy()
+    if not credit.empty:
+        direction_sign = credit["direction"].map(lambda value: _direction_sign(value))
+        credit["_edge_align"] = credit["combined_flow_bias"] * direction_sign
+        credit["_edge_dte_pref"] = (pd.to_numeric(credit["dte"], errors="coerce").fillna(45) - 21).abs()
+        credit["_edge_score"] = (
+            credit["_edge_align"].clip(lower=0.0, upper=0.30) * 8.0
+            + pd.to_numeric(credit["source_contract_volume"], errors="coerce").fillna(0).clip(upper=5000) / 2500.0
+            + pd.to_numeric(credit["source_contract_oi"], errors="coerce").fillna(0).clip(upper=10000) / 10000.0
+            + pd.to_numeric(credit["flow_total_premium"], errors="coerce").fillna(0).clip(upper=250_000_000) / 250_000_000
+            - credit["_edge_dte_pref"] / 30.0
+        )
+        rescue = (
+            credit[credit["_edge_align"] >= 0.10]
+            .sort_values("_edge_score", ascending=False)
+            .groupby("ticker", as_index=False)
+            .head(2)
+        )
+    else:
+        rescue = pd.DataFrame()
+    base = df.sort_values("_pre_score", ascending=False).head(max_candidates)
+    if not rescue.empty:
+        out = pd.concat([base, rescue[df.columns]], ignore_index=True).drop_duplicates(
+            subset=["ticker", "direction", "expiry", "short_strike_eod", "long_strike_eod"],
+            keep="first",
+        )
+    else:
+        out = base
+    return out.sort_values("_pre_score", ascending=False).drop(columns=["_pre_score"], errors="ignore")
 
 
 def _score_trade(row: pd.Series, regime: dict[str, Any], asof: dt.date) -> tuple[float, str, list[str], list[str]]:
@@ -302,15 +561,16 @@ def _score_trade(row: pd.Series, regime: dict[str, Any], asof: dt.date) -> tuple
     penalties: list[str] = []
     score = 0.0
     direction = str(row.get("direction", ""))
-    bias = safe_float(row.get("combined_flow_bias"), 0.0)
-    align = bias if direction == "Bull Put" else -bias
+    bias = safe_float(row.get("combined_flow_bias"), safe_float(row.get("flow_bias"), 0.0))
+    direction_sign = _direction_sign(direction)
+    align = bias * direction_sign if direction_sign else 0.0
     total = safe_float(row.get("flow_total_premium"), 0.0)
     score += min(3.0, max(0.0, math.log10(max(total, 1.0)) - 6.5) + max(0.0, align) * 5.0)
 
     technical = 1.0
-    if regime["trend"] == "uptrend" and direction == "Bull Put":
+    if regime["trend"] == "uptrend" and direction in BULLISH_DIRECTIONS:
         technical += 0.8
-    elif regime["trend"] == "downtrend" and direction == "Bear Call":
+    elif regime["trend"] == "downtrend" and direction in BEARISH_DIRECTIONS:
         technical += 0.8
     elif regime["trend"] == "range":
         technical += 0.4
@@ -318,18 +578,35 @@ def _score_trade(row: pd.Series, regime: dict[str, Any], asof: dt.date) -> tuple
 
     iv_rank = safe_float(row.get("iv_rank"))
     credit_pct = safe_float(row.get("credit_pct_width"))
+    debit_pct = safe_float(row.get("debit_pct_width"))
+    reward_risk = safe_float(row.get("reward_risk"))
     vol_edge = 0.0
     if math.isfinite(iv_rank):
-        vol_edge += min(1.0, max(0.0, iv_rank - 15.0) / 45.0)
-    if math.isfinite(credit_pct):
+        if _is_debit_strategy(row):
+            vol_edge += min(1.0, max(0.0, 75.0 - iv_rank) / 55.0)
+        else:
+            vol_edge += min(1.0, max(0.0, iv_rank - 15.0) / 45.0)
+    if _is_credit_strategy(row) and math.isfinite(credit_pct):
         vol_edge += min(1.0, max(0.0, credit_pct - 0.12) / 0.14)
+    elif _is_debit_strategy(row) and math.isfinite(debit_pct):
+        vol_edge += min(1.0, max(0.0, 0.50 - debit_pct) / 0.25)
+        if math.isfinite(reward_risk):
+            vol_edge += min(0.75, max(0.0, reward_risk - 0.8) / 1.2)
     score += min(2.0, vol_edge)
 
     distance = safe_float(row.get("distance_pct"))
-    iv30d = safe_float(row.get("iv30d"))
+    breakeven_distance = safe_float(row.get("breakeven_distance_pct"))
     dte = safe_float(row.get("dte"))
-    expected_move = iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
-    if math.isfinite(distance) and math.isfinite(expected_move) and expected_move > 0:
+    expected_move = _expected_move_pct(row)
+    if _is_debit_strategy(row) and math.isfinite(breakeven_distance) and math.isfinite(expected_move) and expected_move > 0:
+        score += min(2.0, max(0.0, expected_move / max(breakeven_distance, 0.001)))
+        trend_confirms = (regime["trend"] == "uptrend" and direction == "Bull Call") or (
+            regime["trend"] == "downtrend" and direction == "Bear Put"
+        )
+        if breakeven_distance > expected_move and not trend_confirms:
+            penalties.append("debit_breakeven_outside_expected_move")
+            score -= 0.75
+    elif math.isfinite(distance) and math.isfinite(expected_move) and expected_move > 0:
         score += min(2.0, max(0.0, distance / max(expected_move, 0.001)))
         if distance < expected_move * 0.55:
             penalties.append("too_close_to_expected_move")
@@ -339,26 +616,35 @@ def _score_trade(row: pd.Series, regime: dict[str, Any], asof: dt.date) -> tuple
     elif math.isfinite(distance):
         score += min(2.0, distance / 0.04)
 
-    if math.isfinite(credit_pct) and credit_pct >= 0.20:
+    if _is_credit_strategy(row) and math.isfinite(credit_pct) and credit_pct >= 0.20:
         score += 1.0
-    elif math.isfinite(credit_pct) and credit_pct >= 0.16:
+    elif _is_credit_strategy(row) and math.isfinite(credit_pct) and credit_pct >= 0.16:
         score += 0.5
+    elif _is_debit_strategy(row) and math.isfinite(debit_pct) and debit_pct <= 0.45 and math.isfinite(reward_risk) and reward_risk >= 1.0:
+        score += 0.75
     else:
-        penalties.append("credit_below_min_16pct_width")
+        penalties.append("debit_bad_reward_risk_or_credit_below_min" if _is_debit_strategy(row) else "credit_below_min_16pct_width")
         score -= 0.5
 
-    pattern_pass, pattern = replay_quality_pattern(
-        direction=direction,
-        trend=str(regime.get("trend", "")),
-        credit_pct=credit_pct,
-        distance_pct=distance,
-        expected_move=expected_move,
-    )
-    if pattern_pass:
-        score += 0.25
+    if _is_credit_strategy(row):
+        pattern_pass, pattern = replay_quality_pattern(
+            direction=direction,
+            trend=str(regime.get("trend", "")),
+            credit_pct=credit_pct,
+            distance_pct=distance,
+            expected_move=expected_move,
+        )
+        if pattern_pass:
+            score += 0.25
+        else:
+            penalties.append(pattern)
+            score -= 1.25
     else:
-        penalties.append(pattern)
-        score -= 1.25
+        if math.isfinite(debit_pct) and debit_pct <= 0.45 and math.isfinite(reward_risk) and reward_risk >= 1.0:
+            penalties.append("debit_replay_proxy_requires_confirmation")
+        else:
+            penalties.append("debit_replay_guard_bad_structure")
+            score -= 1.0
 
     earnings_days = _earnings_days(row, asof)
     if math.isfinite(earnings_days) and earnings_days <= 7:
@@ -381,7 +667,7 @@ def _score_trade(row: pd.Series, regime: dict[str, Any], asof: dt.date) -> tuple
     if str(row.get("live_status")) != "PASS":
         hard.append(str(row.get("live_status") or "missing_live_data"))
     if align <= 0:
-        hard.append("no_flow_edge_alignment")
+        penalties.append("no_flow_edge_alignment")
     if regime.get("transition"):
         penalties.append("regime_transition")
         score -= 0.5
@@ -397,6 +683,7 @@ def live_validate_and_score(
     out_dir: Path,
     regime: dict[str, Any],
     require_live: bool,
+    schwab_snapshot_dir: Path | None = None,
 ) -> pd.DataFrame:
     if candidates.empty:
         return candidates
@@ -405,73 +692,247 @@ def live_validate_and_score(
     live_error = ""
     if require_live:
         try:
-            validator = SchwabChainValidator(out_dir)
+            validator = SchwabChainValidator(out_dir, snapshot_dir=schwab_snapshot_dir)
         except Exception as exc:
             live_error = str(exc)
 
     from_date = _next_weekday(max(dt.date.today(), asof))
     to_date = asof + dt.timedelta(days=50)
+    default_live_keys = [
+        "credit_pct_width",
+        "credit",
+        "debit_pct_width",
+        "debit",
+        "spread_width",
+        "distance_pct",
+        "breakeven_distance_pct",
+        "reward_risk",
+        "quote_width_pct",
+        "short_oi",
+        "short_volume",
+        "long_oi",
+        "long_volume",
+        "max_profit",
+        "max_loss",
+        "breakeven",
+    ]
     for _, cand in candidates.iterrows():
-        row = cand.to_dict()
-        for key in [
-            "credit_pct_width",
-            "credit",
-            "spread_width",
-            "distance_pct",
-            "quote_width_pct",
-            "short_oi",
-            "short_volume",
-            "long_oi",
-            "long_volume",
-            "max_profit",
-            "max_loss",
-            "breakeven",
-        ]:
-            row.setdefault(key, math.nan)
+        base = cand.to_dict()
+        for key in default_live_keys:
+            base.setdefault(key, math.nan)
+        live_alternatives: list[dict[str, Any]]
         if validator is None:
-            row.update({"live_status": "live_unavailable", "live_blocker": live_error or "Schwab validator disabled"})
+            live_alternatives = [{"live_status": "live_unavailable", "live_blocker": live_error or "Schwab validator disabled"}]
         else:
             chain = validator.get_chain(str(cand["ticker"]), from_date=from_date, to_date=to_date)
             if not chain:
-                row.update({"live_status": "chain_error", "live_blocker": validator.errors.get(str(cand["ticker"]), "chain fetch failed")})
+                live_alternatives = [{"live_status": "chain_error", "live_blocker": validator.errors.get(str(cand["ticker"]), "chain fetch failed")}]
             else:
                 spot = chain_spot(chain)
                 contracts = chain_to_contracts(chain)
-                live = find_best_credit_spread(
-                    contracts,
-                    direction=str(cand["direction"]),
-                    expiry=cand["expiry"],
-                    spot=spot,
-                    preferred_width=safe_float(cand.get("preferred_width"), math.nan),
-                )
-                row.update(live)
-                row["stock_price_live"] = spot
-                if live.get("live_status") == "PASS":
-                    row["max_profit"] = safe_float(live.get("credit")) * 100.0
-                    row["max_loss"] = (safe_float(live.get("spread_width")) - safe_float(live.get("credit"))) * 100.0
-                    if str(cand["direction"]) == "Bull Put":
-                        row["breakeven"] = safe_float(live.get("short_strike")) - safe_float(live.get("credit"))
+                expected_move = _expected_move_pct(pd.Series(base))
+                anchor = safe_float(base.get("anchor_strike"), safe_float(base.get("short_strike_eod")))
+                if _is_debit_strategy(cand):
+                    live_alternatives = find_debit_spread_alternatives(
+                        contracts,
+                        direction=str(cand["direction"]),
+                        expiry=cand["expiry"],
+                        spot=spot,
+                        preferred_width=safe_float(cand.get("preferred_width"), math.nan),
+                        anchor_strike=anchor,
+                        expected_move_pct=expected_move,
+                    )
+                else:
+                    live_alternatives = find_credit_spread_alternatives(
+                        contracts,
+                        direction=str(cand["direction"]),
+                        expiry=cand["expiry"],
+                        spot=spot,
+                        preferred_width=safe_float(cand.get("preferred_width"), math.nan),
+                        anchor_strike=anchor,
+                        expected_move_pct=expected_move,
+                    )
+                for live in live_alternatives:
+                    live["stock_price_live"] = spot
+        for live in live_alternatives:
+            row = base.copy()
+            row.update(live)
+            row.setdefault("construction_source", base.get("construction_source", "uw_flow_anchor_seed"))
+            row.setdefault("construction_reason", base.get("construction_reason", "seed candidate"))
+            row.setdefault("target_entry", base.get("target_entry", math.nan))
+            row["regime_trend"] = regime.get("trend")
+            if row.get("live_status") == "PASS":
+                if _is_debit_strategy(row):
+                    row["max_profit"] = (safe_float(row.get("spread_width")) - safe_float(row.get("debit"))) * 100.0
+                    row["max_loss"] = safe_float(row.get("debit")) * 100.0
+                else:
+                    row["max_profit"] = safe_float(row.get("credit")) * 100.0
+                    row["max_loss"] = (safe_float(row.get("spread_width")) - safe_float(row.get("credit"))) * 100.0
+                    if str(row.get("direction")) == "Bull Put":
+                        row["breakeven"] = safe_float(row.get("short_strike")) - safe_float(row.get("credit"))
                     else:
-                        row["breakeven"] = safe_float(live.get("short_strike")) + safe_float(live.get("credit"))
-        score, confidence, hard, penalties = _score_trade(pd.Series(row), regime, asof)
-        row["score"] = score
-        row["confidence"] = confidence
-        row["hard_rejects"] = ";".join(hard)
-        row["penalties"] = ";".join(penalties)
-        pattern_pass, pattern = replay_quality_pattern(
-            direction=str(row.get("direction", "")),
-            trend=str(regime.get("trend", "")),
-            credit_pct=safe_float(row.get("credit_pct_width")),
-            distance_pct=safe_float(row.get("distance_pct")),
-            expected_move=safe_float(row.get("iv30d")) * math.sqrt(safe_float(row.get("dte")) / 365.0)
-            if safe_float(row.get("iv30d")) > 0 and safe_float(row.get("dte")) > 0
-            else math.nan,
-        )
-        row["replay_pattern"] = pattern if pattern_pass else ""
-        rows.append(row)
+                        row["breakeven"] = safe_float(row.get("short_strike")) + safe_float(row.get("credit"))
+            score, confidence, hard, penalties = _score_trade(pd.Series(row), regime, asof)
+            row["score"] = score
+            row["confidence"] = confidence
+            row["hard_rejects"] = ";".join(hard)
+            row["penalties"] = ";".join(penalties)
+            expected_move = _expected_move_pct(pd.Series(row))
+            if _is_debit_strategy(row):
+                debit_pct = safe_float(row.get("debit_pct_width"))
+                reward_risk = safe_float(row.get("reward_risk"))
+                be_distance = safe_float(row.get("breakeven_distance_pct"))
+                if (
+                    math.isfinite(debit_pct)
+                    and debit_pct <= 0.45
+                    and math.isfinite(reward_risk)
+                    and reward_risk >= 1.0
+                    and math.isfinite(be_distance)
+                    and math.isfinite(expected_move)
+                    and be_distance <= expected_move
+                ):
+                    row["replay_pattern"] = "debit_structure_acceptable_proxy"
+                    row["replay_ev_verdict"] = "acceptable_proxy"
+                else:
+                    row["replay_pattern"] = ""
+                    row["replay_ev_verdict"] = "unsupported_or_bad_debit_profile"
+            else:
+                pattern_pass, pattern = replay_quality_pattern(
+                    direction=str(row.get("direction", "")),
+                    trend=str(regime.get("trend", "")),
+                    credit_pct=safe_float(row.get("credit_pct_width")),
+                    distance_pct=safe_float(row.get("distance_pct")),
+                    expected_move=expected_move,
+                )
+                if pattern_pass:
+                    row["replay_pattern"] = pattern
+                    row["replay_ev_verdict"] = "structure_proxy"
+                elif _credit_secondary_income_replay_lane(pd.Series(row)):
+                    row["replay_pattern"] = "secondary_income_proxy_requires_decision_selection"
+                    row["replay_ev_verdict"] = "secondary_income_proxy"
+                else:
+                    row["replay_pattern"] = ""
+                    row["replay_ev_verdict"] = f"negative_or_unsupported:{pattern}"
+            rows.append(row)
     if validator is not None:
         validator.save()
     return pd.DataFrame(rows)
+
+
+def _occ_key(symbol: object) -> str:
+    parsed = parse_occ_symbol(symbol)
+    return parsed.compact if parsed else ""
+
+
+def _leg_side_bias(leg: pd.Series | None) -> str:
+    if leg is None or leg.empty:
+        return "unknown"
+    return _contract_side_bias(
+        leg.get("right"),
+        safe_float(leg.get("prev_ask_volume"), 0.0),
+        safe_float(leg.get("prev_bid_volume"), 0.0),
+        threshold=0.55,
+    )
+
+
+def _oi_change_value(leg: pd.Series | None) -> float:
+    if leg is None or leg.empty:
+        return math.nan
+    diff = safe_float(leg.get("oi_diff_plain"))
+    if math.isfinite(diff):
+        return diff
+    return safe_float(leg.get("oi_change"))
+
+
+def _oi_leg_context(leg: pd.Series | None) -> str:
+    if leg is None or leg.empty:
+        return "no_match"
+    parts = []
+    for label, key in [
+        ("premium", "prev_total_premium"),
+        ("volume", "volume"),
+        ("multi_leg", "prev_multi_leg_volume"),
+        ("stock_multi_leg", "prev_stock_multi_leg_volume"),
+    ]:
+        value = safe_float(leg.get(key))
+        if math.isfinite(value) and value > 0:
+            parts.append(f"{label}={value:g}")
+    return ", ".join(parts) if parts else "matched"
+
+
+def apply_oi_carryover(scored: pd.DataFrame, chain_oi: pd.DataFrame | None) -> pd.DataFrame:
+    if scored.empty:
+        return scored
+    out = scored.copy()
+    default_cols = {
+        "oi_carryover_status": "unavailable",
+        "oi_carryover_reason": "no chain-oi carryover file available",
+        "short_leg_oi_change": math.nan,
+        "long_leg_oi_change": math.nan,
+        "short_leg_side_bias": "unknown",
+        "long_leg_side_bias": "unknown",
+        "oi_source_file": "",
+        "short_leg_oi_context": "",
+        "long_leg_oi_context": "",
+    }
+    if chain_oi is None or chain_oi.empty:
+        for col, value in default_cols.items():
+            out[col] = value
+        return out
+
+    oi = chain_oi.copy()
+    oi["_occ_key"] = oi["option_symbol"].map(_occ_key) if "option_symbol" in oi.columns else ""
+    by_key = {str(r["_occ_key"]): r for _, r in oi[oi["_occ_key"].astype(bool)].iterrows()}
+    source_file = str(chain_oi.attrs.get("source_path", ""))
+
+    for idx, row in out.iterrows():
+        short_key = _occ_key(row.get("short_leg", row.get("short_leg_eod")))
+        long_key = _occ_key(row.get("long_leg", row.get("long_leg_eod")))
+        short = by_key.get(short_key)
+        long = by_key.get(long_key)
+        short_change = _oi_change_value(short)
+        long_change = _oi_change_value(long)
+        short_bias = _leg_side_bias(short)
+        long_bias = _leg_side_bias(long)
+        direction_sign = _direction_sign(row.get("direction"))
+        expected_bias = "bullish" if direction_sign > 0 else "bearish" if direction_sign < 0 else "unknown"
+
+        if short is None and long is None:
+            status = "no_exact_match"
+            reason = "no exact short/long leg match in OI carryover file"
+        else:
+            support_votes = 0
+            contrary_votes = 0
+            for bias, change in [(short_bias, short_change), (long_bias, long_change)]:
+                if not math.isfinite(change) or change <= 0:
+                    continue
+                if bias == expected_bias:
+                    support_votes += 1
+                elif bias in {"bullish", "bearish"}:
+                    contrary_votes += 1
+            if support_votes and not contrary_votes:
+                status = "supportive"
+                reason = f"exact-leg OI/side bias supports {expected_bias} direction"
+            elif support_votes and contrary_votes:
+                status = "mixed"
+                reason = "exact-leg OI has both supportive and contrary side bias"
+            elif contrary_votes:
+                status = "contrary"
+                reason = f"exact-leg OI side bias conflicts with {expected_bias} direction"
+            else:
+                status = "matched_unconfirmed"
+                reason = "exact leg matched but OI/side bias is not directionally decisive"
+
+        out.at[idx, "oi_carryover_status"] = status
+        out.at[idx, "oi_carryover_reason"] = reason
+        out.at[idx, "short_leg_oi_change"] = short_change
+        out.at[idx, "long_leg_oi_change"] = long_change
+        out.at[idx, "short_leg_side_bias"] = short_bias
+        out.at[idx, "long_leg_side_bias"] = long_bias
+        out.at[idx, "oi_source_file"] = source_file
+        out.at[idx, "short_leg_oi_context"] = _oi_leg_context(short)
+        out.at[idx, "long_leg_oi_context"] = _oi_leg_context(long)
+    return out
 
 
 def _append_token(value: object, token: str) -> str:
@@ -548,6 +1009,13 @@ def _edge_summary(row: pd.Series) -> str:
     pattern = _clean_note(row.get("replay_pattern"))
     if pattern:
         parts.append(pattern)
+    edge_verdict = _clean_note(row.get("edge_verdict"))
+    edge_sample = safe_float(row.get("edge_sample_size"))
+    if edge_verdict:
+        if math.isfinite(edge_sample):
+            parts.append(f"replay edge {edge_verdict} n={int(edge_sample)}")
+        else:
+            parts.append(f"replay edge {edge_verdict}")
     credit_pct = safe_float(row.get("credit_pct_width"))
     pop = safe_float(row.get("pop_delta_proxy"))
     if math.isfinite(credit_pct):
@@ -562,15 +1030,18 @@ def _edge_summary(row: pd.Series) -> str:
 
 def _flow_alignment(row: pd.Series) -> float:
     bias = safe_float(row.get("combined_flow_bias"), safe_float(row.get("flow_bias"), 0.0))
-    return bias if str(row.get("direction")) == "Bull Put" else -bias
+    sign = _direction_sign(row.get("direction"))
+    return bias * sign if sign else math.nan
 
 
 def _expected_move_ratio(row: pd.Series) -> float:
-    distance = safe_float(row.get("distance_pct"))
+    distance = safe_float(row.get("breakeven_distance_pct")) if _is_debit_strategy(row) else safe_float(row.get("distance_pct"))
     iv30d = safe_float(row.get("iv30d"))
     dte = safe_float(row.get("dte"))
     expected_move = iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
-    return distance / expected_move if math.isfinite(distance) and math.isfinite(expected_move) and expected_move > 0 else math.nan
+    if not math.isfinite(distance) or not math.isfinite(expected_move) or expected_move <= 0:
+        return math.nan
+    return expected_move / max(distance, 0.001) if _is_debit_strategy(row) else distance / expected_move
 
 
 def _decision_sort_score(row: pd.Series) -> float:
@@ -615,6 +1086,18 @@ def _secondary_income_eligible(
 def validated_addon_income_lane(direction: object, credit_pct: float) -> bool:
     """Replay-validated lane for adding trades beyond the strongest daily setup."""
     return str(direction or "") == "Bear Call" and math.isfinite(credit_pct) and 0.20 <= credit_pct <= 0.24
+
+
+def _credit_secondary_income_replay_lane(row: pd.Series) -> bool:
+    if not _is_credit_strategy(row):
+        return False
+    return _secondary_income_eligible(
+        credit_pct=safe_float(row.get("credit_pct_width")),
+        ratio=_expected_move_ratio(row),
+        align=_flow_alignment(row),
+        score=_decision_sort_score(row),
+        dte=safe_float(row.get("dte")),
+    )
 
 
 def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date | None = None) -> pd.DataFrame:
@@ -675,16 +1158,30 @@ def apply_portfolio_context(scored: pd.DataFrame, portfolio: dict[str, Any] | No
     total_value = safe_float(portfolio.get("total_value"), 0.0)
     for idx, row in out.iterrows():
         ticker = str(row.get("ticker") or "").upper()
+        notes: list[str] = []
+        cap = safe_float(row.get("portfolio_size_cap"), math.nan)
         if ticker in option_underlyings:
-            out.at[idx, "hard_rejects"] = _append_token(row.get("hard_rejects"), f"existing_option_exposure:{ticker}")
-            out.at[idx, "portfolio_note"] = "Existing option exposure in Schwab account."
-        elif ticker in large_equity:
+            cap = 1 if not math.isfinite(cap) else min(cap, 1)
+            notes.append("existing option exposure")
+            out.at[idx, "portfolio_warning"] = "existing option exposure"
+        if ticker in large_equity:
             pct = large_equity[ticker] / total_value if total_value > 0 else 0.0
+            hedging = str(row.get("direction")) in BEARISH_DIRECTIONS
+            out.at[idx, "portfolio_exposure_pct"] = pct
+            out.at[idx, "portfolio_hedging"] = bool(hedging)
+            if not hedging:
+                cap = 1 if not math.isfinite(cap) else min(cap, 1)
+                notes.append(f"large existing equity exposure {pct:.1%}; size capped to 1-lot")
+            else:
+                notes.append(f"large existing equity exposure {pct:.1%}; trade may hedge portfolio")
             out.at[idx, "penalties"] = _append_token(row.get("penalties"), f"large_existing_equity_exposure:{pct:.1%}")
-            out.at[idx, "portfolio_note"] = f"Existing equity exposure {pct:.1%} of account."
             score = max(0.0, safe_float(row.get("score"), 0.0) - 0.5)
             out.at[idx, "score"] = round(score, 2)
             out.at[idx, "confidence"] = _confidence_from_score(score)
+        if notes:
+            out.at[idx, "portfolio_note"] = "; ".join(notes)
+        if math.isfinite(cap):
+            out.at[idx, "portfolio_size_cap"] = int(cap)
     return out
 
 
@@ -732,6 +1229,503 @@ def apply_final_quality_guards(scored: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _expected_move_pct(row: pd.Series) -> float:
+    implied = safe_float(row.get("implied_move_perc"))
+    if math.isfinite(implied) and implied > 0:
+        return implied
+    iv30d = safe_float(row.get("iv30d"))
+    dte = safe_float(row.get("dte"))
+    return iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
+
+
+def _credit_required_entry(row: pd.Series) -> float:
+    width = safe_float(row.get("spread_width"))
+    if not math.isfinite(width) or width <= 0:
+        return math.nan
+    return round(width * 0.18, 2)
+
+
+def _debit_required_entry(row: pd.Series) -> float:
+    width = safe_float(row.get("spread_width"))
+    if not math.isfinite(width) or width <= 0:
+        return math.nan
+    return round(width * 0.45, 2)
+
+
+def _token_set(value: object) -> set[str]:
+    return {x.strip() for x in str(value or "").split(";") if x.strip() and x.strip().lower() != "nan"}
+
+
+def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> list[str]:
+    """Non-price thesis gates that cannot be averaged away by a high score."""
+    blockers: list[str] = []
+    penalties = _token_set(row.get("penalties"))
+    failed = _token_set(row.get("confirmations_failed"))
+    flow_quality = str(row.get("flow_quality") or "unclear")
+    replay_verdict = str(row.get("replay_ev_verdict") or "")
+    edge_verdict = str(row.get("edge_verdict") or replay_verdict)
+    oi_status = str(row.get("oi_carryover_status") or "")
+    catalyst_status = str(row.get("catalyst_status") or "").strip().lower()
+    decision_reason = str(row.get("decision_reason") or "")
+    confidence = str(row.get("confidence") or "")
+    score = safe_float(row.get("score"), 0.0)
+    decision_eligible = str(row.get("decision_eligible")).lower() == "true"
+    decision_tier = str(row.get("decision_tier") or "")
+    confirmation_score = safe_float(row.get("confirmation_score"), 0.0)
+    secondary_credit = (
+        _is_credit_strategy(row)
+        and replay_verdict == "acceptable_secondary_income"
+        and decision_eligible
+        and decision_tier == "secondary_income"
+    )
+    independent_confirmed_flow = (
+        flow_quality in {"unclear", "spread_leg"}
+        and edge_verdict in {"positive", "acceptable"}
+        and confirmation_score >= 8.0
+        and oi_status in {"supportive", "matched_unconfirmed", ""}
+        and "price_action_trend" not in failed
+        and _flow_alignment(row) >= 0.04
+        and str(row.get("live_status")) == "PASS"
+        and safe_float(row.get("quote_width_pct"), 1.0) <= 0.35
+    )
+
+    if (
+        catalyst_status == "caution"
+        or "news_catalyst_caution" in penalties
+        or "final_guard_near_term_news_caution" in penalties
+    ):
+        blockers.append("news_catalyst_caution")
+    if "earnings_news_risk" in failed:
+        blockers.append("earnings_news_risk")
+    if any(token.startswith("final_guard_") for token in penalties):
+        blockers.append("final_quality_guard")
+    if decision_reason in {
+        "decision_final_quality_guard",
+        "decision_news_catalyst_caution",
+        "decision_marginal_live_liquidity",
+        "decision_score_below_medium",
+    }:
+        blockers.append(decision_reason)
+    if "regime_transition" in penalties and (confidence != "High" or score < 7.5):
+        blockers.append("regime_transition_defensive")
+    if flow_quality in {"hedge", "roll"}:
+        blockers.append(f"flow_not_directional:{flow_quality}")
+    elif flow_quality != "directional" and not (
+        secondary_credit and flow_quality in {"unclear", "spread_leg"} and _flow_alignment(row) >= 0.12
+    ) and not independent_confirmed_flow:
+        blockers.append(f"flow_not_directional:{flow_quality}")
+    if "no_flow_edge_alignment" in penalties:
+        blockers.append("no_flow_edge_alignment")
+    if "price_action_trend" in failed:
+        blockers.append("price_action_trend")
+    if oi_status == "contrary":
+        blockers.append("oi_carryover_contrary")
+    if _is_debit_strategy(row):
+        if replay_verdict == "acceptable_proxy" and not allow_proxy_ev:
+            blockers.append("debit_proxy_ev_only")
+        elif replay_verdict not in {"acceptable", "positive"} and not (allow_proxy_ev and replay_verdict == "acceptable_proxy"):
+            blockers.append(f"debit_ev_not_supported:{replay_verdict or 'missing'}")
+    elif replay_verdict not in {"acceptable", "positive", "acceptable_secondary_income"}:
+        blockers.append(f"credit_ev_not_supported:{replay_verdict or 'missing'}")
+    elif replay_verdict == "acceptable_secondary_income" and not secondary_credit:
+        blockers.append("secondary_income_not_decision_selected")
+    if "liquidity_quote_quality" in failed:
+        blockers.append("liquidity_quote_quality")
+    return list(dict.fromkeys(blockers))
+
+
+def _tactical_debit_execute_ok(row: pd.Series, core_blockers: list[str]) -> bool:
+    """Small defined-risk debit lane for transition regimes; never promotes noisy credit income."""
+    if not _is_debit_strategy(row):
+        return False
+    blocker_set = set(core_blockers)
+    if blocker_set - {"regime_transition_defensive"}:
+        return False
+    penalties = _token_set(row.get("penalties"))
+    failed = _token_set(row.get("confirmations_failed"))
+    if penalties & {
+        "news_unconfirmed",
+        "news_catalyst_caution",
+        "wide_bid_ask",
+        "marginal_liquidity",
+        "debit_bad_reward_risk_or_credit_below_min",
+        "debit_replay_guard_bad_structure",
+    }:
+        return False
+    if any(token.startswith("final_guard_") for token in penalties):
+        return False
+    if failed & {
+        "earnings_news_risk",
+        "expected_move_buffer",
+        "level_or_gex_protection",
+        "historical_ev_replay",
+        "iv_premium_quality",
+        "liquidity_quote_quality",
+        "price_action_trend",
+    }:
+        return False
+    debit = safe_float(row.get("debit"))
+    required_debit = _debit_required_entry(row)
+    return (
+        str(row.get("live_status")) == "PASS"
+        and str(row.get("confidence") or "") == "High"
+        and safe_float(row.get("score"), 0.0) >= 7.0
+        and safe_float(row.get("confirmation_score"), 0.0) >= 9.0
+        and str(row.get("edge_verdict") or row.get("replay_ev_verdict") or "") in {"positive", "acceptable"}
+        and safe_float(row.get("edge_sample_size"), 0.0) >= 7.0
+        and str(row.get("flow_quality") or "") not in {"hedge", "roll"}
+        and str(row.get("oi_carryover_status") or "") != "contrary"
+        and str(row.get("catalyst_status") or "").strip().lower() != "caution"
+        and math.isfinite(debit)
+        and math.isfinite(required_debit)
+        and debit <= required_debit
+        and safe_float(row.get("debit_pct_width"), math.nan) <= 0.40
+        and safe_float(row.get("reward_risk"), math.nan) >= 1.50
+        and safe_float(row.get("expected_move_ratio"), math.nan) >= 1.05
+        and safe_float(row.get("quote_width_pct"), math.nan) <= 0.08
+        and safe_float(row.get("max_loss"), math.inf) <= 250.0
+    )
+
+
+def apply_confirmation_framework(
+    scored: pd.DataFrame,
+    *,
+    asof: dt.date,
+    regime: dict[str, Any],
+    recent_performance: dict[str, Any] | None = None,
+) -> pd.DataFrame:
+    if scored.empty:
+        return scored
+    out = scored.copy()
+    perf_status = (recent_performance or {}).get("status", "unavailable")
+    perf_stance = (recent_performance or {}).get("stance", "")
+    for idx, row in out.iterrows():
+        row = out.loc[idx]
+        expected_move = _expected_move_pct(row)
+        distance = safe_float(row.get("distance_pct"))
+        breakeven_distance = safe_float(row.get("breakeven_distance_pct"))
+        if _is_debit_strategy(row):
+            expected_ratio = expected_move / max(breakeven_distance, 0.001) if math.isfinite(expected_move) and math.isfinite(breakeven_distance) else math.nan
+        else:
+            expected_ratio = distance / expected_move if math.isfinite(distance) and math.isfinite(expected_move) and expected_move > 0 else math.nan
+        level_protection = "not_available"
+        if _is_credit_strategy(row):
+            if math.isfinite(expected_ratio) and expected_ratio >= 1.0:
+                level_protection = "short strike outside expected move"
+            elif math.isfinite(expected_ratio) and expected_ratio >= 0.65:
+                level_protection = "borderline expected move buffer"
+            elif math.isfinite(expected_ratio):
+                level_protection = "inside expected move without known GEX/level protection"
+        elif math.isfinite(expected_ratio) and expected_ratio >= 1.0:
+            level_protection = "breakeven reachable within expected move"
+        elif math.isfinite(expected_ratio):
+            level_protection = "breakeven beyond expected move"
+
+        checks: dict[str, bool | None] = {}
+        trend = str(regime.get("trend") or "")
+        direction = str(row.get("direction") or "")
+        checks["price_action_trend"] = (
+            trend == "range"
+            or (trend == "uptrend" and direction in BULLISH_DIRECTIONS)
+            or (trend == "downtrend" and direction in BEARISH_DIRECTIONS)
+        )
+        oi_status = str(row.get("oi_carryover_status") or "")
+        checks["oi_carryover"] = True if oi_status == "supportive" else False if oi_status == "contrary" else None
+        iv_rank = safe_float(row.get("iv_rank"))
+        if _is_debit_strategy(row):
+            checks["iv_premium_quality"] = (
+                safe_float(row.get("debit_pct_width")) <= 0.45
+                and safe_float(row.get("reward_risk")) >= 1.0
+                and (not math.isfinite(iv_rank) or iv_rank <= 75)
+            )
+        else:
+            checks["iv_premium_quality"] = safe_float(row.get("credit_pct_width")) >= 0.18
+        earnings_days = _earnings_days(row, asof)
+        catalyst_status = str(row.get("catalyst_status") or "").lower()
+        checks["earnings_news_risk"] = not (math.isfinite(earnings_days) and 0 <= earnings_days <= 7) and catalyst_status != "caution"
+        if _is_debit_strategy(row):
+            checks["expected_move_buffer"] = math.isfinite(expected_ratio) and expected_ratio >= 1.0
+        else:
+            checks["expected_move_buffer"] = math.isfinite(expected_ratio) and expected_ratio >= 0.65
+        checks["level_or_gex_protection"] = None if level_protection == "not_available" else "without known" not in level_protection and "beyond" not in level_protection
+        replay_verdict = str(row.get("replay_ev_verdict") or "")
+        edge_verdict = str(row.get("edge_verdict") or "")
+        if (
+            replay_verdict == "secondary_income_proxy"
+            and str(row.get("decision_eligible")).lower() == "true"
+            and str(row.get("decision_tier") or "") == "secondary_income"
+            and edge_verdict in {"positive", "acceptable"}
+        ):
+            replay_verdict = "acceptable_secondary_income"
+            out.at[idx, "replay_ev_verdict"] = replay_verdict
+            out.at[idx, "replay_pattern"] = "validated_secondary_income_sleeve"
+        replay_ok = edge_verdict in {"positive", "acceptable"} or replay_verdict in {"acceptable", "acceptable_secondary_income", "positive"}
+        if not replay_verdict and _clean_note(row.get("replay_pattern")):
+            replay_ok = True
+            replay_verdict = "acceptable"
+        checks["historical_ev_replay"] = replay_ok
+        checks["schwab_live_pricing"] = str(row.get("live_status")) == "PASS"
+        short_liq = safe_float(row.get("short_oi"), 0.0) + safe_float(row.get("short_volume"), 0.0)
+        long_liq = safe_float(row.get("long_oi"), 0.0) + safe_float(row.get("long_volume"), 0.0)
+        checks["liquidity_quote_quality"] = min(short_liq, long_liq) >= 500 and safe_float(row.get("quote_width_pct"), 0.0) <= 0.35
+        checks["portfolio_risk_budget_fit"] = True
+
+        passed = [name for name, ok in checks.items() if ok is True]
+        failed = [name for name, ok in checks.items() if ok is False]
+        neutral = [name for name, ok in checks.items() if ok is None]
+        denominator = max(1, len(checks) - len(neutral))
+        confirmation_score = round(10.0 * len(passed) / denominator, 2)
+        primary_blocker = ""
+        if _clean_note(row.get("hard_rejects")):
+            primary_blocker = str(row.get("hard_rejects")).split(";")[0]
+        elif failed:
+            primary_blocker = failed[0]
+        elif _clean_note(row.get("decision_reason")) and str(row.get("decision_eligible")).lower() != "true":
+            primary_blocker = str(row.get("decision_reason"))
+
+        out.at[idx, "expected_move_pct"] = expected_move
+        out.at[idx, "expected_move_ratio"] = expected_ratio
+        out.at[idx, "level_protection"] = level_protection
+        out.at[idx, "confirmations_passed"] = ";".join(passed)
+        out.at[idx, "confirmations_failed"] = ";".join(failed)
+        out.at[idx, "confirmation_score"] = confirmation_score
+        out.at[idx, "primary_blocker"] = primary_blocker
+        out.at[idx, "historical_sample_size"] = safe_float((recent_performance or {}).get("window"), math.nan)
+        out.at[idx, "historical_win_rate"] = safe_float((recent_performance or {}).get("win_rate"), math.nan)
+        out.at[idx, "historical_avg_pl"] = safe_float((recent_performance or {}).get("avg_pnl_1x"), math.nan)
+        out.at[idx, "historical_profit_factor"] = safe_float((recent_performance or {}).get("profit_factor"), math.nan)
+        out.at[idx, "historical_max_adverse_excursion"] = safe_float((recent_performance or {}).get("max_adverse_excursion"), math.nan)
+        if perf_status == "ok":
+            out.at[idx, "replay_ev_verdict"] = replay_verdict or ("acceptable" if perf_stance != "degrading" else "degrading")
+        elif not replay_verdict:
+            out.at[idx, "replay_ev_verdict"] = "unsupported_thin_sample"
+    return out
+
+
+def assign_trade_statuses(scored: pd.DataFrame, *, single_name_execute_quality_poor: bool | None = None) -> pd.DataFrame:
+    if scored.empty:
+        return scored
+    out = scored.copy()
+    for text_col in ["trade_status", "trade_tier", "trade_status_reason", "price_annotation", "what_must_improve"]:
+        if text_col in out.columns:
+            out[text_col] = out[text_col].fillna("").astype(object)
+        else:
+            out[text_col] = ""
+    provisional_statuses: list[str] = []
+    for idx, row in out.iterrows():
+        hard = _clean_note(row.get("hard_rejects"))
+        penalties = str(row.get("penalties") or "")
+        flow_quality = str(row.get("flow_quality") or "unclear")
+        confirmation_score = safe_float(row.get("confirmation_score"), 0.0)
+        replay_verdict = str(row.get("replay_ev_verdict") or "")
+        credit = safe_float(row.get("credit"))
+        debit = safe_float(row.get("debit"))
+        width = safe_float(row.get("spread_width"))
+        credit_pct = safe_float(row.get("credit_pct_width"))
+        debit_pct = safe_float(row.get("debit_pct_width"))
+        reward_risk = safe_float(row.get("reward_risk"))
+        expected_ratio = safe_float(row.get("expected_move_ratio"))
+        quote_width = safe_float(row.get("quote_width_pct"))
+        required_credit = _credit_required_entry(row)
+        required_debit = _debit_required_entry(row)
+        no_chase = required_credit if _is_credit_strategy(row) else required_debit
+        price_annotation = ""
+        if _is_debit_strategy(row) and math.isfinite(debit) and math.isfinite(required_debit):
+            if debit > required_debit:
+                miss_pct = (debit - required_debit) / required_debit if required_debit > 0 else math.nan
+                suffix = f" ({miss_pct:.0%} above target)" if math.isfinite(miss_pct) else ""
+                price_annotation = f"current debit ${debit:.2f} is above target ${required_debit:.2f}{suffix}; annotate, do not drop, and do not chase"
+            else:
+                price_annotation = f"current debit ${debit:.2f} is at or below target ${required_debit:.2f}"
+        status = "Research"
+        tier = ""
+        reason = ""
+        core_blockers = _execute_core_blockers(row)
+        edge_verdict = str(row.get("edge_verdict") or "")
+        edge_watch_ok = (
+            replay_verdict in {"acceptable", "positive", "acceptable_secondary_income"}
+            or edge_verdict in {"acceptable", "positive"}
+            or (
+                edge_verdict == "thin_sample"
+                and safe_float(row.get("edge_avg_pnl"), math.nan) >= 0
+                and confirmation_score >= 6.0
+            )
+        )
+        watch_blockers = [
+            blocker
+            for blocker in core_blockers
+            if not (
+                blocker in {"credit_ev_not_supported:thin_sample", "debit_ev_not_supported:thin_sample"}
+                or (blocker.startswith("flow_not_directional:") and flow_quality in {"unclear", "spread_leg"} and edge_watch_ok)
+            )
+        ]
+        quote_near_miss = "wide_bid_ask" in penalties or (math.isfinite(quote_width) and 0.35 < quote_width <= 0.65)
+
+        if hard:
+            status = "Avoid"
+            reason = hard
+        elif "bid_ask_too_wide" in penalties or (math.isfinite(quote_width) and quote_width > 0.65):
+            status = "Avoid"
+            reason = "unusable liquidity / too-wide quote"
+        elif replay_verdict.startswith("negative"):
+            status = "Avoid"
+            reason = replay_verdict
+        elif _is_credit_strategy(row):
+            if (
+                not core_blockers
+                and
+                math.isfinite(credit_pct)
+                and credit_pct >= 0.25
+                and confirmation_score >= 7.0
+                and replay_verdict in {"acceptable", "positive"}
+                and (math.isfinite(expected_ratio) and expected_ratio >= 0.65)
+            ):
+                status = "Execute"
+                tier = "Execute A"
+                reason = "A-tier credit/width with supportive confirmations"
+            elif (
+                not core_blockers
+                and
+                math.isfinite(credit_pct)
+                and 0.18 <= credit_pct < 0.25
+                and confirmation_score >= 7.0
+                and str(row.get("oi_carryover_status")) == "supportive"
+                and replay_verdict in {"acceptable", "positive"}
+            ):
+                status = "Execute"
+                tier = "Execute B"
+                reason = "B-tier credit with OI, price action, and replay support"
+            elif (
+                not core_blockers
+                and replay_verdict == "acceptable_secondary_income"
+                and str(row.get("decision_eligible")).lower() == "true"
+                and str(row.get("decision_tier") or "") == "secondary_income"
+                and math.isfinite(credit_pct)
+                and 0.16 <= credit_pct <= 0.30
+                and confirmation_score >= 6.0
+            ):
+                status = "Execute"
+                tier = "Execute Secondary"
+                reason = "replay-validated secondary income sleeve with live pricing and risk gates"
+            elif (
+                not watch_blockers
+                and edge_watch_ok
+                and math.isfinite(credit)
+                and math.isfinite(required_credit)
+                and required_credit * 0.80 <= credit < required_credit
+            ):
+                status = "Watch"
+                tier = "near-trigger"
+                reason = f"work 1-lot at ${required_credit:.2f} credit only; no chase below ${required_credit:.2f}"
+            elif not watch_blockers and edge_watch_ok and quote_near_miss and math.isfinite(credit) and math.isfinite(required_credit) and credit >= required_credit * 0.80:
+                status = "Watch"
+                tier = "quote-cleanup"
+                reason = "entry price is available, but quote quality needs fresh Schwab recheck before order entry"
+            elif core_blockers:
+                status = "Research"
+                reason = ";".join(core_blockers)
+            elif flow_quality == "directional" or confirmation_score >= 5.0:
+                status = "Research"
+                reason = "interesting setup but confirmations or pricing are insufficient"
+            else:
+                status = "Avoid"
+                reason = "noisy flow with no confirmation"
+        else:
+            breakeven_ok = math.isfinite(expected_ratio) and expected_ratio >= 1.0
+            iv_ok = safe_float(row.get("iv_rank"), 0.0) <= 75 if math.isfinite(safe_float(row.get("iv_rank"))) else True
+            if _tactical_debit_execute_ok(row, core_blockers):
+                status = "Execute"
+                tier = "Execute Tactical"
+                reason = "tactical defined-risk debit: positive replay, tight quote, expected-move room, and 1-lot max-risk cap"
+            elif (
+                not core_blockers
+                and
+                math.isfinite(debit_pct)
+                and debit_pct <= 0.45
+                and math.isfinite(reward_risk)
+                and reward_risk >= 1.0
+                and breakeven_ok
+                and iv_ok
+                and confirmation_score >= 7.5
+                and flow_quality == "directional"
+                and replay_verdict in {"acceptable", "positive"}
+            ):
+                status = "Execute"
+                tier = "Execute B"
+                reason = "debit spread passes debit, reward/risk, IV, breakeven, and confirmation gates"
+            elif (
+                not watch_blockers
+                and edge_watch_ok
+                and math.isfinite(debit)
+                and math.isfinite(required_debit)
+                and required_debit < debit <= required_debit * 1.35
+                and confirmation_score >= 5.0
+            ):
+                status = "Watch"
+                tier = "near-trigger"
+                reason = f"work 1-lot at ${required_debit:.2f} debit or better; no chase above ${required_debit:.2f}"
+            elif not watch_blockers and edge_watch_ok and quote_near_miss and math.isfinite(debit) and math.isfinite(required_debit) and debit <= required_debit:
+                status = "Watch"
+                tier = "quote-cleanup"
+                reason = "entry price is available, but quote quality needs fresh Schwab recheck before order entry"
+            elif (
+                not watch_blockers
+                and edge_watch_ok
+                and math.isfinite(debit)
+                and math.isfinite(required_debit)
+                and debit > required_debit * 1.35
+                and confirmation_score >= 5.0
+            ):
+                status = "Research"
+                tier = "debit-price-annotation"
+                reason = f"debit replay/thesis is promising but current debit ${debit:.2f} is above target ${required_debit:.2f}; keep visible, no chase"
+            elif core_blockers:
+                status = "Research"
+                reason = ";".join(core_blockers)
+            elif flow_quality == "directional" or confirmation_score >= 5.0:
+                status = "Research"
+                reason = price_annotation or "debit lane needs stronger EV/replay, breakeven, IV, or price confirmation"
+            else:
+                status = "Avoid"
+                reason = "no realistic debit edge"
+
+        out.at[idx, "trade_status"] = status
+        out.at[idx, "trade_tier"] = tier
+        out.at[idx, "trade_status_reason"] = reason
+        out.at[idx, "required_entry"] = required_credit if _is_credit_strategy(row) else required_debit
+        out.at[idx, "no_chase_threshold"] = no_chase
+        if price_annotation:
+            out.at[idx, "price_annotation"] = price_annotation
+            if not _clean_note(out.at[idx, "what_must_improve"] if "what_must_improve" in out.columns else "") and status in {"Watch", "Research"}:
+                if math.isfinite(debit) and math.isfinite(required_debit) and debit > required_debit:
+                    out.at[idx, "what_must_improve"] = f"debit must fall to ${required_debit:.2f} or better"
+                elif math.isfinite(debit) and math.isfinite(required_debit):
+                    out.at[idx, "what_must_improve"] = "non-price confirmations must improve; debit is already within target"
+                else:
+                    out.at[idx, "what_must_improve"] = "fresh Schwab debit recheck required"
+        if status == "Execute":
+            out.at[idx, "primary_blocker"] = ""
+        elif status == "Watch" and not _clean_note(row.get("primary_blocker")):
+            out.at[idx, "primary_blocker"] = tier or "watch_trigger_not_met"
+        provisional_statuses.append(status)
+
+    if single_name_execute_quality_poor is None:
+        single_name_execute_quality_poor = not (
+            (out["trade_status"].eq("Execute"))
+            & (~out.get("index_fallback", pd.Series(False, index=out.index)).astype(bool))
+        ).any()
+    if "index_fallback" in out.columns and not single_name_execute_quality_poor:
+        mask = out["index_fallback"].astype(bool) & out["trade_status"].eq("Execute")
+        out.loc[mask, "trade_status"] = "Research"
+        out.loc[mask, "trade_status_reason"] = "ETF/index fallback disabled because single-name Execute quality exists"
+        out.loc[mask, "trade_tier"] = "ETF/index fallback standby"
+    elif "index_fallback" in out.columns:
+        mask = out["index_fallback"].astype(bool) & out["trade_status"].eq("Execute")
+        out.loc[mask, "trade_tier"] = out.loc[mask, "trade_tier"].replace("", "ETF/index fallback")
+        out.loc[mask, "portfolio_size_cap"] = 1
+    return out
+
+
 def select_final_trades(
     scored: pd.DataFrame,
     *,
@@ -742,12 +1736,24 @@ def select_final_trades(
 ) -> pd.DataFrame:
     if scored.empty:
         return scored
-    required = {"hard_rejects", "credit_pct_width", "score", "penalties"}
+    required = {"hard_rejects", "score", "penalties"}
     if not required.issubset(scored.columns):
         return scored.iloc[0:0].copy()
     min_score = performance_min_score(recent_performance, 5.0)
     relaxed_min_score = performance_min_score(recent_performance, 4.5)
-    if "decision_eligible" in scored.columns:
+    if "trade_status" in scored.columns:
+        approved = scored[scored["trade_status"].astype(str).eq("Execute") & scored["hard_rejects"].fillna("").eq("")].copy()
+        if approved.empty:
+            return approved
+        tier_bonus = approved.get("trade_tier", pd.Series("", index=approved.index)).fillna("").map(
+            {"Execute A": 100.0, "Execute A+": 100.0, "Execute B": 50.0, "Execute Tactical": 35.0, "ETF/index fallback": 20.0}
+        ).fillna(0.0)
+        approved["_rank"] = (
+            tier_bonus
+            + pd.to_numeric(approved.get("confirmation_score", 0), errors="coerce").fillna(0)
+            + pd.to_numeric(approved.get("score", 0), errors="coerce").fillna(0) * 0.05
+        )
+    elif "decision_eligible" in scored.columns:
         approved = scored[scored["decision_eligible"].astype(str).str.lower().eq("true")].copy()
         if "decision_score" in approved.columns:
             tier_bonus = approved.get("decision_tier", pd.Series("", index=approved.index)).fillna("").map(
@@ -784,7 +1790,7 @@ def select_final_trades(
     max_trade_risk = risk_budget * (0.22 if regime.get("sizing_stance") == "normal" else 0.14) * perf_mult
     for _, row in approved.iterrows():
         is_addon = bool(selected) and validated_addon_income_lane(row.get("direction"), safe_float(row.get("credit_pct_width")))
-        if selected and not is_addon:
+        if "trade_status" not in approved.columns and selected and not is_addon:
             continue
         max_loss = safe_float(row.get("max_loss"))
         if not math.isfinite(max_loss) or max_loss <= 0:
@@ -792,6 +1798,11 @@ def select_final_trades(
         confidence = str(row.get("confidence"))
         trade_budget = max_trade_risk if confidence == "High" else max_trade_risk * 0.55
         contracts = max(1, int(trade_budget // max_loss)) if confidence == "High" else 1
+        portfolio_cap = safe_float(row.get("portfolio_size_cap"))
+        if math.isfinite(portfolio_cap) and portfolio_cap > 0:
+            contracts = min(contracts, int(portfolio_cap))
+        if str(row.get("trade_tier")) in {"Execute B", "Execute Secondary", "Execute Tactical"} or bool(row.get("index_fallback", False)):
+            contracts = min(contracts, 1)
         risk = contracts * max_loss
         ticker = str(row.get("ticker"))
         sector = str(row.get("sector") or "Unknown")
@@ -824,11 +1835,14 @@ def select_final_trades(
             )
         out["position_size"] = f"{contracts} contract{'s' if contracts != 1 else ''}; max risk ${risk:,.0f}"
         credit = safe_float(row.get("credit"))
-        if math.isfinite(credit) and credit > 0:
+        debit = safe_float(row.get("debit"))
+        if _is_credit_strategy(row) and math.isfinite(credit) and credit > 0:
             take_profit_debit = credit * 0.40
             stop_debit = credit * 2.00
             out["entry_action"] = "SELL TO OPEN credit spread"
             out["entry_limit_credit"] = round(credit, 2)
+            out["entry_limit_debit"] = math.nan
+            out["current_credit_debit"] = round(credit, 2)
             out["target_close_debit"] = round(take_profit_debit, 2)
             out["stop_review_debit"] = round(stop_debit, 2)
             out["sell_leg_action"] = "SELL TO OPEN"
@@ -840,9 +1854,29 @@ def select_final_trades(
                 f"Take 60% profit near ${take_profit_debit:.2f}; stop/review near ${stop_debit:.2f}; "
                 "exit if short strike is threatened; avoid expiration-week gamma unless revalidated."
             )
+        elif _is_debit_strategy(row) and math.isfinite(debit) and debit > 0:
+            target_credit = debit * 1.60
+            stop_debit = debit * 0.50
+            out["entry_action"] = "BUY TO OPEN debit spread"
+            out["entry_limit_credit"] = math.nan
+            out["entry_limit_debit"] = round(debit, 2)
+            out["current_credit_debit"] = round(debit, 2)
+            out["target_close_credit"] = round(target_credit, 2)
+            out["stop_review_debit"] = round(stop_debit, 2)
+            out["sell_leg_action"] = "SELL TO OPEN"
+            out["buy_leg_action"] = "BUY TO OPEN"
+            out["close_action"] = "SELL TO CLOSE spread"
+            out["take_profit"] = f"sell near ${target_credit:.2f} credit"
+            out["stop_loss"] = f"review/exit near ${stop_debit:.2f} debit value"
+            out["exit_plan"] = (
+                f"Take profit near ${target_credit:.2f} spread value; stop/review if spread value falls near ${stop_debit:.2f}; "
+                "exit if direction thesis or breakeven reachability fails."
+            )
         else:
             out["entry_action"] = ""
             out["entry_limit_credit"] = math.nan
+            out["entry_limit_debit"] = math.nan
+            out["current_credit_debit"] = math.nan
             out["target_close_debit"] = math.nan
             out["stop_review_debit"] = math.nan
             out["sell_leg_action"] = "SELL TO OPEN"
@@ -852,7 +1886,15 @@ def select_final_trades(
             out["stop_loss"] = ""
             out["exit_plan"] = "Exit if live pricing invalidates the setup or short strike is threatened."
         notes = []
-        for value in [row.get("penalties"), row.get("portfolio_note"), row.get("catalyst_note")]:
+        penalties_note = _clean_note(row.get("penalties"))
+        if _is_debit_strategy(row) and str(row.get("edge_verdict") or row.get("replay_ev_verdict") or "") in {"positive", "acceptable"}:
+            penalty_tokens = [
+                token
+                for token in _token_set(penalties_note)
+                if token != "debit_replay_proxy_requires_confirmation"
+            ]
+            penalties_note = ";".join(penalty_tokens)
+        for value in [penalties_note, row.get("portfolio_note"), row.get("catalyst_note")]:
             note = _clean_note(value)
             if note:
                 notes.append(note)
@@ -876,6 +1918,109 @@ def select_final_trades(
     final = pd.DataFrame(selected).drop(columns=["_rank"], errors="ignore")
     final.insert(0, "rank", range(1, len(final) + 1))
     return final
+
+
+def _entry_price(row: pd.Series) -> float:
+    if _is_debit_strategy(row):
+        return safe_float(row.get("entry_limit_debit"), safe_float(row.get("debit")))
+    return safe_float(row.get("entry_limit_credit"), safe_float(row.get("credit")))
+
+
+def _write_execute_outcome_ledger(out_dir: Path, asof: dt.date, final: pd.DataFrame) -> Path:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    columns = [
+        "run_id",
+        "asof",
+        "trade_key",
+        "ticker",
+        "strategy",
+        "direction",
+        "expiry",
+        "sell_leg",
+        "buy_leg",
+        "entry_action",
+        "entry_price",
+        "contracts",
+        "max_profit",
+        "max_loss",
+        "breakeven",
+        "score",
+        "confidence",
+        "trade_tier",
+        "edge_verdict",
+        "edge_sample_size",
+        "edge_win_rate",
+        "edge_avg_pnl",
+        "outcome_status",
+        "exit_date",
+        "exit_value",
+        "realized_pnl",
+        "outcome_note",
+        "report_path",
+    ]
+    rows: list[dict[str, Any]] = []
+    report_path = out_dir / f"codexuw_trade_report_{asof}.md"
+    for _, row in final.iterrows():
+        entry = _entry_price(row)
+        trade_key = "|".join(
+            [
+                out_dir.name,
+                str(asof),
+                str(row.get("ticker") or ""),
+                str(row.get("strategy") or ""),
+                str(row.get("expiry") or ""),
+                str(row.get("sell_leg") or row.get("short_leg") or ""),
+                str(row.get("buy_leg") or row.get("long_leg") or ""),
+            ]
+        )
+        rows.append(
+            {
+                "run_id": out_dir.name,
+                "asof": str(asof),
+                "trade_key": trade_key,
+                "ticker": row.get("ticker"),
+                "strategy": row.get("strategy"),
+                "direction": row.get("direction"),
+                "expiry": row.get("expiry"),
+                "sell_leg": row.get("sell_leg", row.get("short_leg")),
+                "buy_leg": row.get("buy_leg", row.get("long_leg")),
+                "entry_action": row.get("entry_action"),
+                "entry_price": round(entry, 2) if math.isfinite(entry) else math.nan,
+                "contracts": int(safe_float(row.get("contracts"), 1.0)),
+                "max_profit": row.get("max_profit"),
+                "max_loss": row.get("max_loss"),
+                "breakeven": row.get("breakeven"),
+                "score": row.get("score"),
+                "confidence": row.get("confidence"),
+                "trade_tier": row.get("trade_tier"),
+                "edge_verdict": row.get("edge_verdict"),
+                "edge_sample_size": row.get("edge_sample_size"),
+                "edge_win_rate": row.get("edge_win_rate"),
+                "edge_avg_pnl": row.get("edge_avg_pnl"),
+                "outcome_status": "OPEN_REVIEW_REQUIRED",
+                "exit_date": "",
+                "exit_value": math.nan,
+                "realized_pnl": math.nan,
+                "outcome_note": "Populate exit fields after close or replay mark; do not count as win/loss until realized.",
+                "report_path": str(report_path),
+            }
+        )
+    ledger = pd.DataFrame(rows, columns=columns)
+    run_path = out_dir / f"codexuw_execute_outcome_ledger_{asof}.csv"
+    ledger.to_csv(run_path, index=False)
+
+    central_path = out_dir.parent / "codexuw_execute_outcome_ledger.csv"
+    if not ledger.empty:
+        if central_path.exists():
+            existing = pd.read_csv(central_path)
+            combined = pd.concat([existing, ledger], ignore_index=True)
+            combined = combined.drop_duplicates(subset=["trade_key"], keep="last")
+        else:
+            combined = ledger
+        combined.to_csv(central_path, index=False)
+    elif not central_path.exists():
+        pd.DataFrame(columns=columns).to_csv(central_path, index=False)
+    return run_path
 
 
 def _entry_credit_target(row: pd.Series) -> float:
@@ -915,6 +2060,97 @@ def build_entry_watchlist(scored: pd.DataFrame, *, top_n: int = 12) -> pd.DataFr
     """Surface no-order candidates that become actionable only after entry pricing improves."""
     if scored.empty:
         return pd.DataFrame()
+    if "trade_status" in scored.columns:
+        watch_rows = scored[scored["trade_status"].astype(str).eq("Watch")].copy()
+        if watch_rows.empty:
+            return pd.DataFrame()
+        rows = []
+        for _, row in watch_rows.iterrows():
+            is_credit = _is_credit_strategy(row)
+            required = safe_float(row.get("required_entry"))
+            credit = safe_float(row.get("credit"))
+            debit = _current_debit(row)
+            if is_credit:
+                current_entry = f"${credit:.2f} credit" if math.isfinite(credit) else "n/a"
+                target_entry = f">= ${required:.2f} credit" if math.isfinite(required) else "fresh Schwab recheck"
+                trigger = (
+                    f"Work 1-lot at ${required:.2f} credit only. No chase below ${required:.2f}. Fresh Schwab recheck required."
+                    if math.isfinite(required)
+                    else "Fresh Schwab recheck required before entry."
+                )
+                limit_order = f"SELL TO OPEN 1 spread at ${required:.2f} credit limit" if math.isfinite(required) else "fresh Schwab recheck required"
+                what_must_improve = (
+                    f"credit must improve from ${credit:.2f} to at least ${required:.2f}"
+                    if math.isfinite(credit) and math.isfinite(required) and credit < required
+                    else "quote must tighten with fresh Schwab confirmation"
+                )
+                watch_kind = "price_improvement_credit"
+            else:
+                current_entry = f"${debit:.2f} debit" if math.isfinite(debit) else "n/a"
+                target_entry = f"<= ${required:.2f} debit" if math.isfinite(required) else "fresh Schwab recheck"
+                trigger = (
+                    f"Work 1-lot at ${required:.2f} debit or better. No chase above ${required:.2f}. Fresh Schwab recheck required."
+                    if math.isfinite(required)
+                    else "Fresh Schwab recheck required before entry."
+                )
+                limit_order = f"BUY TO OPEN 1 spread at ${required:.2f} debit limit" if math.isfinite(required) else "fresh Schwab recheck required"
+                what_must_improve = (
+                    f"debit must fall from ${debit:.2f} to ${required:.2f} or better"
+                    if math.isfinite(debit) and math.isfinite(required) and debit > required
+                    else "quote must tighten with fresh Schwab confirmation"
+                )
+                watch_kind = "price_improvement_debit"
+            rows.append(
+                {
+                    "watch_rank_score": safe_float(row.get("confirmation_score"), 0.0) + safe_float(row.get("score"), 0.0) * 0.05,
+                    "status": "Watch",
+                    "watch_kind": watch_kind,
+                    "ticker": row.get("ticker"),
+                    "direction": row.get("direction"),
+                    "strategy": row.get("strategy"),
+                    "flow_quality": row.get("flow_quality"),
+                    "sell_leg": row.get("short_leg"),
+                    "buy_leg": row.get("long_leg"),
+                    "expiry": row.get("expiry"),
+                    "dte": row.get("dte"),
+                    "current_entry": current_entry,
+                    "target_entry": target_entry,
+                    "credit": credit,
+                    "required_credit": required if is_credit else math.nan,
+                    "debit": debit,
+                    "max_debit": required if not is_credit else math.nan,
+                    "required_entry": required,
+                    "spread_width": row.get("spread_width"),
+                    "credit_pct_width": row.get("credit_pct_width"),
+                    "debit_pct_width": row.get("debit_pct_width"),
+                    "target_pct_width": required / safe_float(row.get("spread_width")) if math.isfinite(required) and safe_float(row.get("spread_width")) > 0 else math.nan,
+                    "pop_delta_proxy": row.get("pop_delta_proxy"),
+                    "score": row.get("score"),
+                    "confirmation_score": row.get("confirmation_score"),
+                    "confidence": row.get("confidence"),
+                    "quote_width_pct": row.get("quote_width_pct"),
+                    "limit_order": limit_order,
+                    "no_chase_threshold": row.get("no_chase_threshold", required),
+                    "what_must_improve": what_must_improve,
+                    "fresh_schwab_recheck_required": True,
+                    "trigger": trigger,
+                    "reason": row.get("trade_status_reason"),
+                    "risk_note": "Watch only. Do not enter unless trigger price is available and hard safety gates still pass.",
+                    "portfolio_risk": row.get("portfolio_note", ""),
+                    "edge_verdict": row.get("edge_verdict", row.get("replay_ev_verdict")),
+                    "edge_sample_size": row.get("edge_sample_size"),
+                    "edge_win_rate": row.get("edge_win_rate"),
+                    "edge_avg_pnl": row.get("edge_avg_pnl"),
+                    "edge_match_level": row.get("edge_match_level"),
+                    "price_annotation": row.get("price_annotation", ""),
+                    "construction_source": row.get("construction_source"),
+                    "construction_reason": row.get("construction_reason"),
+                    "primary_blocker": row.get("primary_blocker", ""),
+                }
+            )
+        out = pd.DataFrame(rows).sort_values("watch_rank_score", ascending=False).head(top_n).drop(columns=["watch_rank_score"])
+        out.insert(0, "rank", range(1, len(out) + 1))
+        return out
     rows: list[dict[str, Any]] = []
     for _, row in scored.iterrows():
         if _clean_note(row.get("hard_rejects")):
@@ -948,6 +2184,8 @@ def build_entry_watchlist(scored: pd.DataFrame, *, top_n: int = 12) -> pd.DataFr
             if math.isfinite(width) and width > 0:
                 target_pct = target_credit / width
             trigger = f"Wait for credit to improve to at least ${target_credit:.2f}; rerun Schwab chain before entry."
+            limit_order = f"SELL TO OPEN 1 spread at ${target_credit:.2f} credit limit"
+            what_must_improve = f"credit must improve from ${credit:.2f} to at least ${target_credit:.2f}"
         elif is_debit and math.isfinite(debit) and math.isfinite(target_debit) and debit > target_debit:
             watch_kind = "price_improvement_debit"
             current_entry = f"${debit:.2f} debit"
@@ -956,18 +2194,24 @@ def build_entry_watchlist(scored: pd.DataFrame, *, top_n: int = 12) -> pd.DataFr
             if math.isfinite(width) and width > 0:
                 target_pct = target_debit / width
             trigger = f"Wait for debit to fall to ${target_debit:.2f} or better; rerun Schwab chain before entry."
+            limit_order = f"BUY TO OPEN 1 spread at ${target_debit:.2f} debit limit"
+            what_must_improve = f"debit must fall from ${debit:.2f} to ${target_debit:.2f} or better"
         elif "marginal_liquidity" in penalties or "wide_bid_ask" in penalties or decision_reason == "decision_marginal_live_liquidity":
             watch_kind = "execution_improvement"
             if is_credit and math.isfinite(credit):
                 current_entry = f"${credit:.2f} credit"
                 target_entry = f">= ${max(credit, target_credit) if math.isfinite(target_credit) else credit:.2f} credit with tighter quotes"
+                limit_order = f"SELL TO OPEN 1 spread at ${max(credit, target_credit) if math.isfinite(target_credit) else credit:.2f} credit limit after recheck"
             elif is_debit and math.isfinite(debit):
                 current_entry = f"${debit:.2f} debit"
                 target_entry = f"<= ${min(debit, target_debit) if math.isfinite(target_debit) else debit:.2f} debit with tighter quotes"
+                limit_order = f"BUY TO OPEN 1 spread at ${min(debit, target_debit) if math.isfinite(target_debit) else debit:.2f} debit limit after recheck"
             else:
                 current_entry = "n/a"
                 target_entry = "tighter two-sided market"
+                limit_order = "fresh Schwab recheck required"
             trigger = "Wait for tighter bid/ask and real two-leg liquidity; rerun Schwab chain before entry."
+            what_must_improve = "bid/ask must tighten and both legs must keep usable liquidity"
         else:
             continue
 
@@ -999,9 +2243,22 @@ def build_entry_watchlist(scored: pd.DataFrame, *, top_n: int = 12) -> pd.DataFr
             "quote_width_pct": quote_width,
             "short_leg_liquidity": short_liq,
             "long_leg_liquidity": long_liq,
+            "limit_order": limit_order,
+            "no_chase_threshold": target_credit if is_credit else target_debit,
+            "what_must_improve": what_must_improve,
+            "fresh_schwab_recheck_required": True,
             "trigger": trigger,
             "reason": ";".join(x for x in [decision_reason, penalties] if x),
             "risk_note": "Watch only. Do not enter unless trigger price is available and hard safety gates still pass.",
+            "edge_verdict": row.get("edge_verdict", row.get("replay_ev_verdict")),
+            "edge_sample_size": row.get("edge_sample_size"),
+            "edge_win_rate": row.get("edge_win_rate"),
+            "edge_avg_pnl": row.get("edge_avg_pnl"),
+            "edge_match_level": row.get("edge_match_level"),
+            "price_annotation": row.get("price_annotation", ""),
+            "construction_source": row.get("construction_source"),
+            "construction_reason": row.get("construction_reason"),
+            "primary_blocker": row.get("primary_blocker", ""),
         }
         rows.append(out)
     if not rows:
@@ -1038,6 +2295,426 @@ def decision_summary(scored: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame([{"decision_reason": k, "count": v} for k, v in counts.most_common()])
 
 
+def _current_credit_debit_text(row: pd.Series) -> str:
+    credit = safe_float(row.get("credit"))
+    debit = _current_debit(row)
+    if _is_credit_strategy(row) and math.isfinite(credit):
+        return f"${credit:.2f} credit"
+    if _is_debit_strategy(row) and math.isfinite(debit):
+        return f"${debit:.2f} debit"
+    return "n/a"
+
+
+def _required_entry_text(row: pd.Series) -> str:
+    value = safe_float(row.get("required_entry"))
+    if not math.isfinite(value):
+        value = _entry_credit_target(row) if _is_credit_strategy(row) else _entry_debit_target(row)
+    if not math.isfinite(value):
+        return "fresh Schwab recheck"
+    return f">= ${value:.2f} credit" if _is_credit_strategy(row) else f"<= ${value:.2f} debit"
+
+
+def _size_text(row: pd.Series) -> str:
+    contracts = safe_float(row.get("contracts"))
+    if math.isfinite(contracts) and contracts > 0:
+        return f"{int(contracts)}-lot"
+    cap = safe_float(row.get("portfolio_size_cap"))
+    if math.isfinite(cap) and cap > 0:
+        return f"max {int(cap)}-lot"
+    return "1-lot review"
+
+
+def _no_chase_text(row: pd.Series) -> str:
+    value = safe_float(row.get("no_chase_threshold"))
+    if not math.isfinite(value):
+        return ""
+    return f"no chase below ${value:.2f}" if _is_credit_strategy(row) else f"no chase above ${value:.2f}"
+
+
+def _status_label(status: object) -> str:
+    text = str(status or "").strip()
+    icons = {
+        "Execute": "🟢",
+        "Watch": "🟡",
+        "Research": "🔵",
+        "Avoid": "🔴",
+    }
+    return f"{icons.get(text, '⚪')} {text}" if text else ""
+
+
+def _action_board_rows(final: pd.DataFrame, watch: pd.DataFrame, research: pd.DataFrame, avoid: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+
+    def add_row(status: str, row: pd.Series) -> None:
+        rows.append(
+            {
+                "Status": _status_label(status),
+                "Ticker": row.get("ticker"),
+                "Strategy": row.get("strategy"),
+                "Flow Quality": row.get("flow_quality", ""),
+                "Sell Leg": _leg_label(row.get("sell_leg", row.get("short_leg"))),
+                "Buy Leg": _leg_label(row.get("buy_leg", row.get("long_leg"))),
+                "Expiry": row.get("expiration_date", row.get("expiry")),
+                "Current Credit/Debit": _current_credit_debit_text(row),
+                "Required Entry": _required_entry_text(row),
+                "Max Profit": _money(row.get("max_profit")),
+                "Max Loss": _money(row.get("max_loss")),
+                "Breakeven": round(safe_float(row.get("breakeven")), 2) if math.isfinite(safe_float(row.get("breakeven"))) else "",
+                "POP/Delta Proxy": _pct(row.get("pop_delta_proxy")),
+                "Confirmation Score": round(safe_float(row.get("confirmation_score")), 2)
+                if math.isfinite(safe_float(row.get("confirmation_score")))
+                else "",
+                "Edge Verdict": row.get("edge_verdict", row.get("replay_ev_verdict", "")),
+                "Edge Sample Size": int(safe_float(row.get("edge_sample_size"))) if math.isfinite(safe_float(row.get("edge_sample_size"))) else "",
+                "Edge Win Rate": _pct(row.get("edge_win_rate")),
+                "Edge Avg P/L": _money(row.get("edge_avg_pnl")),
+                "Edge Match Level": row.get("edge_match_level", ""),
+                "Construction Source": row.get("construction_source", ""),
+                "No Chase": _no_chase_text(row),
+                "What Must Improve": row.get("what_must_improve", ""),
+                "Size": _size_text(row),
+                "Portfolio Risk": _clean_note(row.get("portfolio_note")),
+                "Primary Blocker": row.get("primary_blocker", ""),
+                "Reason": row.get("trade_status_reason", row.get("reason", row.get("primary_blocker", ""))),
+            }
+        )
+
+    for _, row in final.iterrows():
+        add_row("Execute", row)
+    for _, row in watch.iterrows():
+        add_row("Watch", row)
+    for _, row in research.head(12).iterrows():
+        add_row("Research", row)
+    for _, row in avoid.head(12).iterrows():
+        add_row("Avoid", row)
+    return pd.DataFrame(rows)
+
+
+def _compact_trade_label(row: pd.Series) -> str:
+    direction = _clean_note(row.get("direction"))
+    strategy = _clean_note(row.get("strategy"))
+    if direction and strategy and direction not in strategy:
+        return f"{direction} {strategy}"
+    return strategy or direction
+
+
+def _compact_entry_text(row: pd.Series) -> str:
+    current = _clean_note(row.get("current_entry"))
+    if current:
+        return current
+    current_credit_debit = safe_float(row.get("current_credit_debit"))
+    if math.isfinite(current_credit_debit):
+        return f"${current_credit_debit:.2f} {'credit' if _is_credit_strategy(row) else 'debit'}"
+    return _current_credit_debit_text(row)
+
+
+def _compact_trigger_text(row: pd.Series) -> str:
+    raw_target = row.get("target_entry")
+    target = _clean_note(raw_target)
+    target_number = safe_float(raw_target)
+    if target and not math.isfinite(target_number):
+        return target
+    if math.isfinite(target_number):
+        return f">= ${target_number:.2f} credit" if _is_credit_strategy(row) else f"<= ${target_number:.2f} debit"
+    return _required_entry_text(row)
+
+
+def _compact_edge_text(row: pd.Series) -> str:
+    verdict = _clean_note(row.get("edge_verdict", row.get("replay_ev_verdict")))
+    sample = safe_float(row.get("edge_sample_size"))
+    win = safe_float(row.get("edge_win_rate"))
+    avg = safe_float(row.get("edge_avg_pnl"))
+    parts = [verdict] if verdict else []
+    if math.isfinite(sample) and sample > 0:
+        parts.append(f"n={int(sample)}")
+    if math.isfinite(win):
+        parts.append(f"win {win:.1%}")
+    if math.isfinite(avg):
+        parts.append(f"avg ${avg:.2f}")
+    return "; ".join(parts)
+
+
+def _compact_reason_text(row: pd.Series) -> str:
+    for key in ("what_must_improve", "trade_status_reason", "reason", "primary_blocker", "penalties", "hard_rejects"):
+        value = _clean_note(row.get(key))
+        if value:
+            return value
+    return ""
+
+
+def _diversified_report_rows(
+    frame: pd.DataFrame,
+    *,
+    limit: int,
+    max_per_ticker: int = 1,
+    existing_ticker_counts: Counter | None = None,
+) -> pd.DataFrame:
+    if frame.empty or limit <= 0:
+        return frame.iloc[0:0].copy()
+    work = frame.copy()
+    def numeric_col(name: str, default: float) -> pd.Series:
+        if name in work.columns:
+            return pd.to_numeric(work[name], errors="coerce").fillna(default)
+        return pd.Series([default] * len(work), index=work.index)
+
+    work["_report_score"] = numeric_col("score", 0.0)
+    work["_report_confirm"] = numeric_col("confirmation_score", 0.0)
+    work["_report_edge_n"] = numeric_col("edge_sample_size", 0.0)
+    work["_report_quote"] = numeric_col("quote_width_pct", math.inf)
+    work = work.sort_values(
+        ["_report_score", "_report_confirm", "_report_edge_n", "_report_quote"],
+        ascending=[False, False, False, True],
+    )
+    counts = Counter(existing_ticker_counts or {})
+    selected: list[int] = []
+    for idx, row in work.iterrows():
+        ticker = str(row.get("ticker") or "").upper()
+        if ticker and counts[ticker] >= max_per_ticker:
+            continue
+        selected.append(idx)
+        if ticker:
+            counts[ticker] += 1
+        if len(selected) >= limit:
+            break
+    return work.loc[selected].drop(columns=["_report_score", "_report_confirm", "_report_edge_n", "_report_quote"], errors="ignore")
+
+
+def _compact_action_rows(final: pd.DataFrame, watch: pd.DataFrame, research: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+
+    def add(status: str, row: pd.Series) -> None:
+        score = safe_float(row.get("score"))
+        max_loss = safe_float(row.get("max_loss"))
+        risk = _clean_note(row.get("position_size"))
+        if not risk and math.isfinite(max_loss):
+            risk = f"max loss ${max_loss:.0f}"
+        rows.append(
+            {
+                "Status": _status_label(status),
+                "Ticker": row.get("ticker"),
+                "Trade": _compact_trade_label(row),
+                "Sell Leg": _leg_label(row.get("sell_leg", row.get("short_leg"))),
+                "Buy Leg": _leg_label(row.get("buy_leg", row.get("long_leg"))),
+                "Expiry": row.get("expiration_date", row.get("expiry")),
+                "Entry Now": _compact_entry_text(row),
+                "Trigger / No Chase": _compact_trigger_text(row),
+                "POP": _pct(row.get("pop_delta_proxy")),
+                "Score": f"{score:.2f}" if math.isfinite(score) else "",
+                "Edge": _compact_edge_text(row),
+                "Size / Risk": risk or _size_text(row),
+                "Why": _compact_reason_text(row),
+            }
+        )
+
+    for _, row in final.iterrows():
+        add("Execute", row)
+    existing_counts = Counter(str(row.get("ticker") or "").upper() for _, row in final.iterrows())
+    displayed_watch = _diversified_report_rows(
+        watch,
+        limit=len(watch),
+        max_per_ticker=1,
+        existing_ticker_counts=existing_counts,
+    )
+    for _, row in displayed_watch.iterrows():
+        add("Watch", row)
+    existing_counts.update(str(row.get("ticker") or "").upper() for _, row in displayed_watch.iterrows())
+    for _, row in _diversified_report_rows(research, limit=8, max_per_ticker=1, existing_ticker_counts=existing_counts).iterrows():
+        add("Research", row)
+    return pd.DataFrame(rows)
+
+
+def _compact_watch_rows(watch: pd.DataFrame) -> pd.DataFrame:
+    if watch.empty:
+        return pd.DataFrame()
+    rows = []
+    for _, row in watch.iterrows():
+        score = safe_float(row.get("score"))
+        rows.append(
+            {
+                "Status": _status_label("Watch"),
+                "Ticker": row.get("ticker"),
+                "Trade": _compact_trade_label(row),
+                "Sell Leg": _leg_label(row.get("sell_leg")),
+                "Buy Leg": _leg_label(row.get("buy_leg")),
+                "Expiry": row.get("expiry"),
+                "Current": _compact_entry_text(row),
+                "Trigger": _compact_trigger_text(row),
+                "POP": _pct(row.get("pop_delta_proxy")),
+                "Score": f"{score:.2f}" if math.isfinite(score) else "",
+                "Rule": _clean_note(row.get("trigger")) or _clean_note(row.get("limit_order")),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _compact_research_rows(research: pd.DataFrame, limit: int = 8) -> pd.DataFrame:
+    if research.empty:
+        return pd.DataFrame()
+    rows = []
+    for _, row in _diversified_report_rows(research, limit=limit, max_per_ticker=1).iterrows():
+        score = safe_float(row.get("score"))
+        rows.append(
+            {
+                "Status": _status_label("Research"),
+                "Ticker": row.get("ticker"),
+                "Trade": _compact_trade_label(row),
+                "Sell Leg": _leg_label(row.get("sell_leg", row.get("short_leg"))),
+                "Buy Leg": _leg_label(row.get("buy_leg", row.get("long_leg"))),
+                "Expiry": row.get("expiry"),
+                "Entry Now": _compact_entry_text(row),
+                "Needed": _compact_trigger_text(row),
+                "Score": f"{score:.2f}" if math.isfinite(score) else "",
+                "Edge": _compact_edge_text(row),
+                "Blocker": _clean_note(row.get("primary_blocker")) or _compact_reason_text(row),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _write_compact_daily_report(
+    *,
+    out_dir: Path,
+    asof: dt.date,
+    regime: dict[str, Any],
+    scored: pd.DataFrame,
+    final: pd.DataFrame,
+    watch: pd.DataFrame,
+    research: pd.DataFrame,
+    avoid: pd.DataFrame,
+    funnel: dict[str, int],
+    portfolio: dict[str, Any] | None,
+    recent_performance: dict[str, Any] | None,
+) -> Path:
+    report = out_dir / f"codexuw_trade_report_{asof}.md"
+    action_rows = _compact_action_rows(final, watch, research)
+    watch_rows = _compact_watch_rows(watch)
+    rej = rejection_summary(scored).head(10)
+    decisions = decision_summary(scored).head(8)
+    live_counts = scored["live_status"].fillna("unknown").value_counts().to_dict() if not scored.empty and "live_status" in scored.columns else {}
+    flow_counts = scored["flow_quality"].fillna("unknown").value_counts().to_dict() if not scored.empty and "flow_quality" in scored.columns else {}
+    oi_counts = scored["oi_carryover_status"].fillna("unknown").value_counts().to_dict() if not scored.empty and "oi_carryover_status" in scored.columns else {}
+    oi_source = ""
+    if not scored.empty and "oi_source_file" in scored.columns:
+        source_values = scored["oi_source_file"].dropna().astype(str)
+        source_values = source_values[source_values.ne("")]
+        if not source_values.empty:
+            oi_source = _clean_note(source_values.iloc[0])
+
+    lines = [
+        f"# CodexUW Daily Options Income Report - {asof}",
+        "",
+        "## Decision",
+        "",
+        f"Execute: **{len(final)}** | Watch: **{len(watch)}** | Research: **{len(research)}** | Avoid: **{len(avoid)}**",
+        "",
+    ]
+    if final.empty:
+        lines.extend(["**No high-quality trades today.**", ""])
+    elif len(final) == 1:
+        if watch.empty:
+            lines.extend(["Only one setup cleared Execute. No Watch orders cleared; the rest stay in Research/Avoid with explicit blockers.", ""])
+        else:
+            lines.extend(
+                [
+                    "Only one setup cleared Execute. Watch orders below are conditional only; the rest stay in Research/Avoid with explicit blockers.",
+                    "",
+                ]
+            )
+
+    lines.extend(["## Action Board", ""])
+    if action_rows.empty:
+        lines.extend(["_No candidates produced._", ""])
+    else:
+        lines.extend([action_rows.where(pd.notna(action_rows), "").to_markdown(index=False), ""])
+
+    if not final.empty:
+        rows = []
+        for _, row in final.sort_values("rank").iterrows():
+            rows.append(
+                {
+                    "Status": _status_label("Execute"),
+                    "Rank": int(safe_float(row.get("rank"), 0)),
+                    "Ticker": row.get("ticker"),
+                    "Trade": _compact_trade_label(row),
+                    "Legs": f"{_leg_label(row.get('sell_leg'))} / {_leg_label(row.get('buy_leg'))}",
+                    "Expiry": row.get("expiration_date", row.get("expiry")),
+                    "Entry": _compact_entry_text(row),
+                    "Max Profit": _money(row.get("max_profit")),
+                    "Max Loss": _money(row.get("max_loss")),
+                    "Breakeven": f"{safe_float(row.get('breakeven')):.2f}" if math.isfinite(safe_float(row.get("breakeven"))) else "",
+                    "POP": _pct(row.get("pop_delta_proxy")),
+                    "Score": f"{safe_float(row.get('score')):.2f}" if math.isfinite(safe_float(row.get("score"))) else "",
+                    "Exit": row.get("exit_plan"),
+                }
+            )
+        lines.extend(["## Execute Detail", "", pd.DataFrame(rows).to_markdown(index=False), ""])
+
+    lines.extend(["## Watch Orders", ""])
+    if watch_rows.empty:
+        lines.extend(["_No Watch orders._", ""])
+    else:
+        lines.extend(
+            [
+                "These are not Execute trades. Work only at the trigger price after a fresh Schwab recheck.",
+                "",
+                watch_rows.where(pd.notna(watch_rows), "").to_markdown(index=False),
+                "",
+            ]
+        )
+
+    lines.extend(["## Why Not More Trades", ""])
+    if decisions.empty:
+        lines.append("_No decision counts._")
+    else:
+        lines.extend(["Decision gates:", "", decisions.to_markdown(index=False)])
+    lines.append("")
+    if rej.empty:
+        lines.append("_No rejection counts._")
+    else:
+        lines.extend(["Top blockers:", "", rej.to_markdown(index=False)])
+    lines.append("")
+
+    perf = recent_performance or {}
+    perf_text = (
+        f"{perf.get('stance')} / win {safe_float(perf.get('win_rate')):.1%} / avg ${safe_float(perf.get('avg_pnl_1x')):.2f}"
+        if perf.get("status") == "ok"
+        else str(perf.get("status", "not_checked"))
+    )
+    portfolio_text = "not_checked"
+    if portfolio and portfolio.get("status") == "ok":
+        portfolio_text = (
+            f"positions {portfolio.get('position_count', 0)}, "
+            f"account ${safe_float(portfolio.get('total_value'), 0):,.0f}, "
+            f"cash ${safe_float(portfolio.get('cash'), 0):,.0f}"
+        )
+    context = pd.DataFrame(
+        [
+            {"Item": "Regime", "Value": f"{regime.get('trend')} / {regime.get('volatility')} vol / {regime.get('flow')} flow"},
+            {"Item": "Schwab Live", "Value": str(live_counts or "not available")},
+            {"Item": "Flow Quality", "Value": str(flow_counts or "not available")},
+            {"Item": "OI Carryover", "Value": str(oi_counts or "not available")},
+            {"Item": "OI Source", "Value": oi_source or "not available"},
+            {"Item": "Portfolio", "Value": portfolio_text},
+            {"Item": "Recent Performance", "Value": perf_text},
+            {"Item": "Funnel", "Value": str(funnel)},
+        ]
+    )
+    lines.extend(["## Run Context", "", context.to_markdown(index=False), ""])
+
+    artifacts = pd.DataFrame(
+        [
+            {"Artifact": "Execute CSV", "Path": str(out_dir / f"codexuw_execute_trades_{asof}.csv")},
+            {"Artifact": "Watch CSV", "Path": str(out_dir / f"codexuw_watch_trades_{asof}.csv")},
+            {"Artifact": "Research CSV", "Path": str(out_dir / f"codexuw_research_candidates_{asof}.csv")},
+            {"Artifact": "Avoid CSV", "Path": str(out_dir / f"codexuw_avoid_trades_{asof}.csv")},
+            {"Artifact": "Scored CSV", "Path": str(out_dir / f"codexuw_scored_{asof}.csv")},
+        ]
+    )
+    lines.extend(["## Artifacts", "", artifacts.to_markdown(index=False), ""])
+    report.write_text("\n".join(lines), encoding="utf-8")
+    return report
+
+
 def write_outputs(
     *,
     out_dir: Path,
@@ -1052,13 +2729,118 @@ def write_outputs(
     recent_performance: dict[str, Any] | None = None,
     watchlist: pd.DataFrame | None = None,
     max_final_trades: int | None = None,
+    run_provenance: dict[str, Any] | None = None,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     candidates.to_csv(out_dir / f"codexuw_candidates_{asof}.csv", index=False)
     scored.to_csv(out_dir / f"codexuw_scored_{asof}.csv", index=False)
-    final.to_csv(out_dir / f"codexuw_final_trades_{asof}.csv", index=False)
     watch = watchlist if watchlist is not None else pd.DataFrame()
+    watch_default_cols = [
+        "rank",
+        "status",
+        "watch_kind",
+        "ticker",
+        "direction",
+        "strategy",
+        "sell_leg",
+        "buy_leg",
+        "expiry",
+        "dte",
+        "current_entry",
+        "target_entry",
+        "limit_order",
+        "no_chase_threshold",
+        "what_must_improve",
+        "fresh_schwab_recheck_required",
+        "trigger",
+        "reason",
+        "edge_verdict",
+        "edge_sample_size",
+        "edge_win_rate",
+        "edge_avg_pnl",
+        "edge_match_level",
+        "price_annotation",
+        "construction_source",
+        "portfolio_risk",
+        "primary_blocker",
+    ]
+    if watch.empty and len(watch.columns) == 0:
+        watch = pd.DataFrame(columns=watch_default_cols)
+    final.to_csv(out_dir / f"codexuw_final_trades_{asof}.csv", index=False)
+    final.to_csv(out_dir / f"codexuw_execute_trades_{asof}.csv", index=False)
+    outcome_ledger_path = _write_execute_outcome_ledger(out_dir, asof, final)
     watch.to_csv(out_dir / f"codexuw_entry_watchlist_{asof}.csv", index=False)
+    watch.to_csv(out_dir / f"codexuw_watch_trades_{asof}.csv", index=False)
+    if "trade_status" in scored.columns:
+        research = scored[scored["trade_status"].astype(str).eq("Research")].copy()
+        avoid = scored[scored["trade_status"].astype(str).eq("Avoid")].copy()
+    else:
+        research = scored.iloc[0:0].copy()
+        avoid = scored[scored.get("hard_rejects", pd.Series("", index=scored.index)).fillna("").ne("")].copy() if not scored.empty else scored.copy()
+    research.to_csv(out_dir / f"codexuw_research_candidates_{asof}.csv", index=False)
+    avoid.to_csv(out_dir / f"codexuw_avoid_trades_{asof}.csv", index=False)
+    alt_cols = [
+        "ticker",
+        "direction",
+        "strategy",
+        "expiry",
+        "dte",
+        "construction_source",
+        "construction_reason",
+        "anchor_strike",
+        "short_leg",
+        "long_leg",
+        "short_strike",
+        "long_strike",
+        "spread_width",
+        "credit",
+        "debit",
+        "target_entry",
+        "required_entry",
+        "no_chase_threshold",
+        "expected_move_ratio",
+        "breakeven_distance_pct",
+        "reward_risk",
+        "credit_pct_width",
+        "debit_pct_width",
+        "liquidity_summary",
+        "live_status",
+        "quote_width_pct",
+    ]
+    spread_alternatives = scored[[c for c in alt_cols if c in scored.columns]].copy() if not scored.empty else pd.DataFrame(columns=alt_cols)
+    spread_alternatives.to_csv(out_dir / f"codexuw_spread_construction_alternatives_{asof}.csv", index=False)
+    edge_cols = [
+        "ticker",
+        "direction",
+        "strategy",
+        "expiry",
+        "construction_source",
+        "trade_status",
+        "replay_ev_verdict",
+        *EDGE_COLUMNS,
+        "primary_blocker",
+    ]
+    edge_audit = scored[[c for c in edge_cols if c in scored.columns]].copy() if not scored.empty else pd.DataFrame(columns=edge_cols)
+    edge_audit.to_csv(out_dir / f"codexuw_edge_model_audit_{asof}.csv", index=False)
+    oi_cols = [
+        "ticker",
+        "strategy",
+        "short_leg",
+        "long_leg",
+        "oi_carryover_status",
+        "oi_carryover_reason",
+        "short_leg_oi_change",
+        "long_leg_oi_change",
+        "short_leg_side_bias",
+        "long_leg_side_bias",
+        "oi_source_file",
+        "short_leg_oi_context",
+        "long_leg_oi_context",
+    ]
+    oi_details = scored[[c for c in oi_cols if c in scored.columns]].copy() if not scored.empty else pd.DataFrame(columns=oi_cols)
+    oi_details.to_csv(out_dir / f"codexuw_oi_carryover_{asof}.csv", index=False)
+    action_board = _action_board_rows(final, watch, research, avoid)
+    action_board.to_csv(out_dir / f"codexuw_action_board_{asof}.csv", index=False)
     rejection_summary(scored).to_csv(out_dir / f"codexuw_rejections_{asof}.csv", index=False)
     if catalysts is not None and not catalysts.empty:
         catalysts.to_csv(out_dir / f"codexuw_catalysts_{asof}.csv", index=False)
@@ -1072,30 +2854,66 @@ def write_outputs(
                 "portfolio_position_count": (portfolio or {}).get("position_count", 0),
                 "recent_performance": recent_performance or {"status": "not_checked"},
                 "entry_watchlist_rows": int(len(watch)),
+                "execute_rows": int(len(final)),
+                "watch_rows": int(len(watch)),
+                "research_rows": int(len(research)),
+                "avoid_rows": int(len(avoid)),
+                "spread_alternative_rows": int(len(spread_alternatives)),
+                "edge_audit_rows": int(len(edge_audit)),
                 "max_final_trades": max_final_trades,
+                "execute_outcome_ledger": str(outcome_ledger_path),
+                "run_provenance": run_provenance or {},
             },
             indent=2,
             sort_keys=True,
         ),
         encoding="utf-8",
     )
+    return _write_compact_daily_report(
+        out_dir=out_dir,
+        asof=asof,
+        regime=regime,
+        scored=scored,
+        final=final,
+        watch=watch,
+        research=research,
+        avoid=avoid,
+        funnel=funnel,
+        portfolio=portfolio,
+        recent_performance=recent_performance,
+    )
     report = out_dir / f"codexuw_trade_report_{asof}.md"
     lines = [
         f"# CodexUW Daily Options Income Report - {asof}",
         "",
-        "## Funnel",
+        "## Action Board",
+        "",
     ]
+    if action_board.empty:
+        lines.extend(["_No candidates produced._", ""])
+    else:
+        action_board = action_board.where(pd.notna(action_board), "")
+        lines.extend([action_board.to_markdown(index=False), ""])
+    lines.extend(
+        [
+        "## Funnel",
+        ]
+    )
     prev = None
     for name, count in funnel.items():
         drop = ""
-        if prev is not None and prev:
-            drop = f" ({(prev - count) / prev:.1%} drop)"
+        if name not in {"watch_rows", "research_rows", "avoid_rows"} and prev is not None and prev:
+            if count <= prev:
+                drop = f" ({(prev - count) / prev:.1%} drop)"
+            else:
+                drop = f" ({(count - prev) / prev:.1%} expansion)"
         lines.append(f"- {name}: {count}{drop}")
-        prev = count
+        if name not in {"watch_rows", "research_rows", "avoid_rows"}:
+            prev = count
     lines.extend(
         [
             "",
-            "## Regime",
+            "## Regime Summary",
             f"- Volatility: {regime.get('volatility')}",
             f"- Trend: {regime.get('trend')}",
             f"- Flow: {regime.get('flow')}",
@@ -1106,7 +2924,7 @@ def write_outputs(
     validation_note = _clean_note(regime.get("validation_note"))
     if validation_note:
         lines.append(f"- Validation mode: {validation_note}")
-    lines.extend(["", "## Portfolio Context"])
+    lines.extend(["", "## Portfolio Risk Notes"])
     if portfolio and portfolio.get("status") == "ok":
         large = portfolio.get("large_equity_exposure", {}) or {}
         lines.extend(
@@ -1114,7 +2932,7 @@ def write_outputs(
                 f"- Schwab positions: {portfolio.get('position_count', 0)}",
                 f"- Account value: ${safe_float(portfolio.get('total_value'), 0.0):,.0f}",
                 f"- Cash: ${safe_float(portfolio.get('cash'), 0.0):,.0f}",
-                f"- Existing option underlyings blocked: {len(portfolio.get('option_underlyings', []) or [])}",
+                f"- Existing option underlyings annotated: {len(portfolio.get('option_underlyings', []) or [])}",
                 f"- Large equity exposures: {', '.join(sorted(large)[:10]) if large else 'none'}",
                 "",
             ]
@@ -1130,6 +2948,39 @@ def write_outputs(
                 "",
             ]
         )
+    flow_counts = scored["flow_quality"].fillna("unknown").value_counts().to_dict() if not scored.empty and "flow_quality" in scored.columns else {}
+    lines.extend(
+        [
+            "## Flow Quality Summary",
+            f"- UW flow classifications: {flow_counts if flow_counts else 'not available'}",
+            "- Noisy UW flow is routed to Research unless other confirmations are strong.",
+            "",
+        ]
+    )
+    oi_counts = (
+        scored["oi_carryover_status"].fillna("unknown").value_counts().to_dict()
+        if not scored.empty and "oi_carryover_status" in scored.columns
+        else {}
+    )
+    oi_source = _clean_note(scored["oi_source_file"].dropna().astype(str).iloc[0]) if not scored.empty and "oi_source_file" in scored.columns and scored["oi_source_file"].dropna().astype(str).any() else ""
+    lines.extend(
+        [
+            "## OI Carryover Summary",
+            f"- Status counts: {oi_counts if oi_counts else 'not available'}",
+            f"- Source: {oi_source or 'not available'}",
+            "",
+        ]
+    )
+    live_counts = scored["live_status"].fillna("unknown").value_counts().to_dict() if not scored.empty and "live_status" in scored.columns else {}
+    lines.extend(
+        [
+            "## Data / Schwab Validation Status",
+            f"- Schwab live pricing status counts: {live_counts if live_counts else 'not available'}",
+            f"- Scored candidates: {len(scored)}",
+            f"- CSV artifacts: Execute, Watch, Research, Avoid, scored candidates, spread alternatives, edge audit, and OI carryover details written under {out_dir}",
+            "",
+        ]
+    )
     lines.append("## Recent Performance")
     if recent_performance and recent_performance.get("status") == "ok":
         lines.extend(
@@ -1144,6 +2995,17 @@ def write_outputs(
         )
     else:
         lines.extend([f"- Status: {(recent_performance or {}).get('status', 'not_checked')}", f"- Reason: {(recent_performance or {}).get('reason', '')}", ""])
+    edge_counts = scored["edge_verdict"].fillna("unknown").value_counts().to_dict() if not scored.empty and "edge_verdict" in scored.columns else {}
+    match_counts = scored["edge_match_level"].fillna("unknown").value_counts().to_dict() if not scored.empty and "edge_match_level" in scored.columns else {}
+    lines.extend(
+        [
+            "## Replay Edge Model",
+            f"- Edge verdict counts: {edge_counts if edge_counts else 'not available'}",
+            f"- Match level counts: {match_counts if match_counts else 'not available'}",
+            "- Proxy structure is not treated as executable EV; debit proxies require actual positive or acceptable replay edge before Execute.",
+            "",
+        ]
+    )
     if final.empty:
         lines.extend(["## Final Decision", "", "No high-quality trades today", ""])
     else:
@@ -1157,17 +3019,29 @@ def write_outputs(
             "buy_leg",
             "dte",
             "credit",
+            "debit",
             "spread_width",
             "entry_limit_credit",
+            "entry_limit_debit",
             "target_close_debit",
             "stop_review_debit",
             "credit_pct_width",
+            "debit_pct_width",
             "max_profit",
             "max_loss",
             "breakeven",
             "pop_delta_proxy",
             "score",
             "trade_conviction",
+            "edge_verdict",
+            "edge_sample_size",
+            "edge_win_rate",
+            "edge_avg_pnl",
+            "edge_match_level",
+            "price_annotation",
+            "construction_source",
+            "required_entry",
+            "no_chase_threshold",
             "sizing_label",
             "sizing_rationale",
             "edge_summary",
@@ -1188,17 +3062,29 @@ def write_outputs(
                 "buy_leg": "Buy Leg (Long)",
                 "dte": "DTE",
                 "credit": "Credit",
+                "debit": "Debit",
                 "spread_width": "Spread Width",
                 "entry_limit_credit": "Entry Limit Credit",
+                "entry_limit_debit": "Entry Limit Debit",
                 "target_close_debit": "Target Close Debit",
                 "stop_review_debit": "Stop / Review Debit",
                 "credit_pct_width": "Credit % Width",
+                "debit_pct_width": "Debit % Width",
                 "max_profit": "Max Profit",
                 "max_loss": "Max Loss",
                 "breakeven": "Breakeven",
                 "pop_delta_proxy": "POP / Delta Proxy",
                 "score": "Score",
                 "trade_conviction": "Trade Conviction",
+                "edge_verdict": "Edge Verdict",
+                "edge_sample_size": "Edge Sample Size",
+                "edge_win_rate": "Edge Win Rate",
+                "edge_avg_pnl": "Edge Avg P/L",
+                "edge_match_level": "Edge Match Level",
+                "price_annotation": "Price Annotation",
+                "construction_source": "Construction Source",
+                "required_entry": "Required Entry",
+                "no_chase_threshold": "No Chase",
                 "sizing_label": "Sizing Flag",
                 "sizing_rationale": "Sizing Rationale",
                 "edge_summary": "Edge / Thesis",
@@ -1216,16 +3102,26 @@ def write_outputs(
                 lambda row: f"{_confidence_icon(str(row.get('Trade Conviction', '')).split(' ')[0])} {row.get('Trade Conviction', '')}",
                 axis=1,
             )
-        for col in ["credit_pct_width", "pop_delta_proxy"]:
-            label = {"credit_pct_width": "Credit % Width", "pop_delta_proxy": "POP / Delta Proxy"}[col]
+        for col in ["credit_pct_width", "debit_pct_width", "pop_delta_proxy", "edge_win_rate"]:
+            label = {
+                "credit_pct_width": "Credit % Width",
+                "debit_pct_width": "Debit % Width",
+                "pop_delta_proxy": "POP / Delta Proxy",
+                "edge_win_rate": "Edge Win Rate",
+            }[col]
             if label in display.columns:
                 display[label] = display[label].map(lambda x: f"{safe_float(x) * 100:.1f}%" if math.isfinite(safe_float(x)) else "")
         for col in [
             "credit",
+            "debit",
             "spread_width",
             "entry_limit_credit",
+            "entry_limit_debit",
             "target_close_debit",
             "stop_review_debit",
+            "edge_avg_pnl",
+            "required_entry",
+            "no_chase_threshold",
             "max_profit",
             "max_loss",
             "breakeven",
@@ -1233,10 +3129,15 @@ def write_outputs(
         ]:
             label = {
                 "credit": "Credit",
+                "debit": "Debit",
                 "spread_width": "Spread Width",
                 "entry_limit_credit": "Entry Limit Credit",
+                "entry_limit_debit": "Entry Limit Debit",
                 "target_close_debit": "Target Close Debit",
                 "stop_review_debit": "Stop / Review Debit",
+                "edge_avg_pnl": "Edge Avg P/L",
+                "required_entry": "Required Entry",
+                "no_chase_threshold": "No Chase",
                 "max_profit": "Max Profit",
                 "max_loss": "Max Loss",
                 "breakeven": "Breakeven",
@@ -1244,12 +3145,13 @@ def write_outputs(
             }[col]
             if label in display.columns:
                 display[label] = display[label].map(lambda x: round(safe_float(x), 2) if math.isfinite(safe_float(x)) else "")
-        lines.extend(["## Final Trades", "", display.to_markdown(index=False), ""])
+        lines.extend(["## Execute Trades", "", display.to_markdown(index=False), ""])
         lines.extend(["## Trade Playbook", ""])
         for _, row in final.sort_values("rank").iterrows():
             pop = safe_float(row.get("pop_delta_proxy"))
             pop_text = f"{pop:.1%}" if math.isfinite(pop) else "n/a"
             icon = _confidence_icon(row.get("confidence"))
+            is_debit = _is_debit_strategy(row)
             leg_rows = pd.DataFrame(
                 [
                     {
@@ -1266,12 +3168,32 @@ def write_outputs(
                     },
                 ]
             )
+            entry_line = (
+                f"- 🟢 Entry order: BUY TO OPEN spread for {_money(row.get('entry_limit_debit', row.get('debit')))} debit limit."
+                if is_debit
+                else f"- 🟢 Entry order: SELL TO OPEN spread for {_money(row.get('entry_limit_credit', row.get('credit')))} credit limit."
+            )
+            profit_line = (
+                f"- 🟡 Profit target: SELL TO CLOSE spread near {_money(row.get('target_close_credit'))} credit."
+                if is_debit
+                else f"- 🟡 Profit target: BUY TO CLOSE spread at {_money(row.get('target_close_debit'))} debit."
+            )
+            stop_line = (
+                f"- 🔴 Stop/review: review if spread value falls near {_money(row.get('stop_review_debit'))}."
+                if is_debit
+                else f"- 🔴 Stop/review: BUY TO CLOSE spread near {_money(row.get('stop_review_debit'))} debit."
+            )
+            net_line = (
+                f"- 🔵 Net debit: {_money(row.get('debit'))}; width: {_money(row.get('spread_width'))}; breakeven: {safe_float(row.get('breakeven')):.2f}"
+                if is_debit
+                else f"- 🔵 Net credit: {_money(row.get('credit'))}; width: {_money(row.get('spread_width'))}; breakeven: {safe_float(row.get('breakeven')):.2f}"
+            )
             lines.extend(
                 [
-                    f"### {icon} Rank {int(row.get('rank'))} - {row.get('ticker')} {row.get('direction')} Credit Spread",
-                    f"- 🟢 Entry order: SELL TO OPEN spread for {_money(row.get('entry_limit_credit', row.get('credit')))} credit limit.",
-                    f"- 🟡 Profit target: BUY TO CLOSE spread at {_money(row.get('target_close_debit'))} debit.",
-                    f"- 🔴 Stop/review: BUY TO CLOSE spread near {_money(row.get('stop_review_debit'))} debit.",
+                    f"### {icon} Rank {int(row.get('rank'))} - {row.get('ticker')} {row.get('strategy')}",
+                    entry_line,
+                    profit_line,
+                    stop_line,
                     f"- 🔵 Expiration date: {row.get('expiration_date', row.get('expiry'))}; DTE: {row.get('dte')}",
                     f"- {icon} Trade conviction: {row.get('trade_conviction')}; Score: {safe_float(row.get('score')):.2f}; POP / delta proxy: {pop_text}",
                     f"- 🟣 Sizing: {row.get('sizing_label')}; {row.get('sizing_rationale')}",
@@ -1279,7 +3201,7 @@ def write_outputs(
                     "",
                     leg_rows.to_markdown(index=False),
                     "",
-                    f"- 🔵 Net credit: {_money(row.get('credit'))}; width: {_money(row.get('spread_width'))}; breakeven: {safe_float(row.get('breakeven')):.2f}",
+                    net_line,
                     f"- 🔴 Risk: max profit {_money(row.get('max_profit'))}; max loss {_money(row.get('max_loss'))}; {row.get('position_size')}",
                     f"- 🟡 Exit plan: {row.get('exit_plan')}",
                     "",
@@ -1325,9 +3247,18 @@ def write_outputs(
             "dte",
             "current_entry",
             "target_entry",
+            "limit_order",
+            "no_chase_threshold",
+            "what_must_improve",
             "credit_pct_width",
             "target_pct_width",
             "pop_delta_proxy",
+            "edge_verdict",
+            "edge_sample_size",
+            "edge_win_rate",
+            "edge_avg_pnl",
+            "edge_match_level",
+            "construction_source",
             "score",
             "confidence",
             "quote_width_pct",
@@ -1346,9 +3277,18 @@ def write_outputs(
                 "dte": "DTE",
                 "current_entry": "Current Entry",
                 "target_entry": "Trigger Entry",
+                "limit_order": "Limit Order",
+                "no_chase_threshold": "No Chase",
+                "what_must_improve": "What Must Improve",
                 "credit_pct_width": "Current % Width",
                 "target_pct_width": "Trigger % Width",
                 "pop_delta_proxy": "POP / Delta Proxy",
+                "edge_verdict": "Edge Verdict",
+                "edge_sample_size": "Edge Sample Size",
+                "edge_win_rate": "Edge Win Rate",
+                "edge_avg_pnl": "Edge Avg P/L",
+                "edge_match_level": "Edge Match Level",
+                "construction_source": "Construction Source",
                 "score": "Score",
                 "confidence": "Conviction",
                 "quote_width_pct": "Bid/Ask Width",
@@ -1358,14 +3298,14 @@ def write_outputs(
         for label in ["Sell Leg", "Buy Leg"]:
             if label in watch_display.columns:
                 watch_display[label] = watch_display[label].map(_leg_label)
-        for label in ["Current % Width", "Trigger % Width", "POP / Delta Proxy", "Bid/Ask Width"]:
+        for label in ["Current % Width", "Trigger % Width", "POP / Delta Proxy", "Bid/Ask Width", "Edge Win Rate"]:
             if label in watch_display.columns:
                 watch_display[label] = watch_display[label].map(lambda x: f"{safe_float(x) * 100:.1f}%" if math.isfinite(safe_float(x)) else "")
         if "Score" in watch_display.columns:
             watch_display["Score"] = watch_display["Score"].map(lambda x: f"{safe_float(x):.2f}" if math.isfinite(safe_float(x)) else "")
         lines.extend(
             [
-                "## Entry Watchlist - Wait For Better Price",
+                "## Watch / Work Limit Orders",
                 "",
                 (
                     "These are not final trades. They passed hard safety gates, but current pricing or execution is not good enough. "
@@ -1376,11 +3316,84 @@ def write_outputs(
                 "",
             ]
         )
+    summary_cols = [
+        "ticker",
+        "strategy",
+        "flow_quality",
+        "expiry",
+        "credit",
+        "debit",
+        "required_entry",
+        "confirmation_score",
+        "edge_verdict",
+        "edge_sample_size",
+        "edge_win_rate",
+        "edge_avg_pnl",
+        "edge_match_level",
+        "price_annotation",
+        "construction_source",
+        "primary_blocker",
+        "trade_status_reason",
+    ]
+    if not research.empty:
+        research_display = research[[c for c in summary_cols if c in research.columns]].head(15).copy()
+        research_display = research_display.rename(
+            columns={
+                "ticker": "Ticker",
+                "strategy": "Strategy",
+                "flow_quality": "Flow Quality",
+                "expiry": "Expiry",
+                "credit": "Credit",
+                "debit": "Debit",
+                "required_entry": "Required Entry",
+                "confirmation_score": "Confirmation Score",
+                "edge_verdict": "Edge Verdict",
+                "edge_sample_size": "Edge Sample Size",
+                "edge_win_rate": "Edge Win Rate",
+                "edge_avg_pnl": "Edge Avg P/L",
+                "edge_match_level": "Edge Match Level",
+                "price_annotation": "Price Annotation",
+                "construction_source": "Construction Source",
+                "primary_blocker": "Primary Blocker",
+                "trade_status_reason": "Reason",
+            }
+        )
+        research_display = research_display.where(pd.notna(research_display), "")
+        lines.extend(["## Research Candidates", "", research_display.to_markdown(index=False), ""])
+    else:
+        lines.extend(["## Research Candidates", "", "_No Research candidates._", ""])
+    if not avoid.empty:
+        avoid_display = avoid[[c for c in summary_cols if c in avoid.columns]].head(20).copy()
+        avoid_display = avoid_display.rename(
+            columns={
+                "ticker": "Ticker",
+                "strategy": "Strategy",
+                "flow_quality": "Flow Quality",
+                "expiry": "Expiry",
+                "credit": "Credit",
+                "debit": "Debit",
+                "required_entry": "Required Entry",
+                "confirmation_score": "Confirmation Score",
+                "edge_verdict": "Edge Verdict",
+                "edge_sample_size": "Edge Sample Size",
+                "edge_win_rate": "Edge Win Rate",
+                "edge_avg_pnl": "Edge Avg P/L",
+                "edge_match_level": "Edge Match Level",
+                "price_annotation": "Price Annotation",
+                "construction_source": "Construction Source",
+                "primary_blocker": "Primary Blocker",
+                "trade_status_reason": "Reason",
+            }
+        )
+        avoid_display = avoid_display.where(pd.notna(avoid_display), "")
+        lines.extend(["## Avoid List", "", avoid_display.to_markdown(index=False), ""])
+    else:
+        lines.extend(["## Avoid List", "", "_No Avoid candidates._", ""])
     rej = rejection_summary(scored).head(12)
     decision_rej = decision_summary(scored).head(12)
     if not decision_rej.empty:
         lines.extend(["## High-Conviction Decision Gate", "", decision_rej.to_markdown(index=False), ""])
-    lines.extend(["## Rejected Candidate Summary", ""])
+    lines.extend(["## Rejection Summary", ""])
     if rej.empty:
         lines.append("_No rejected candidates._")
     else:

@@ -1,9 +1,9 @@
 # Anu Options Engine — RULEBOOK (Audited FIRE + SHIELD No-GEX Payload)
 
-**Canonical upload filename:** `Anu_Options_Engine_RULEBOOK_v3_0_6.md`  
-**Effective logic version:** 3.2.9-r7.2-exec-shortlist  
+**Canonical upload filename:** `Anu_Options_Engine_RULEBOOK_v3_0_6.md`
+**Effective logic version:** 3.2.9-r8-audit-fixes
 **Date:** 2026-04-26
-**Revision:** r7.2 execution-shortlist user-facing fix
+**Revision:** r8 audit fixes (2026-04-26) — see `claude/AUDIT_FINDINGS_2026-04-26.md`. Adds portfolio caps, volatility-regime gate, RV/IV gate, partial-payoff EV/ML, Confident-Buy tier, PriorityScore composite. Inherits r7.1 split-audit + r6 mixed-flow rescue + scan-date OI default.
 
 This file preserves the canonical project slot while replacing the earlier audited no-GEX payload. Automated GEX remains disabled, but SHIELD is restored through a written file-native non-GEX anchor and a real iron-condor path.
 
@@ -403,29 +403,139 @@ Every run must emit an order-entry sheet for trade ideas. The sheet must include
 The assistant/report must not present diagnostics, alternates, clean overlays, or hand-filtered rows as the official primary table. Non-primary idea lanes must be clearly labeled as separate outputs from the canonical built rows.
 
 
-### Full bot-EOD source handling
+### Full bot EOD source handling
 
 The EOD bot source must be the complete `bot-eod-report-YYYY-MM-DD.csv` or `bot-eod-report-YYYY-MM-DD.zip`. Split part files such as `bot-eod-report-YYYY-MM-DD.part-NN-of-MM.zip` are not valid inputs for this pipeline.
 
 
-## r7.2 execution-shortlist fix
+## r7.1 source audit correction
 
-### Official primary vs executable recommendations
+Full-source bot ZIP runs must hash the complete main file consumed by the engine. Split part files are rejected so audit completeness is tied to the main full-source report.
 
-The official primary table remains exactly:
 
-`Ticker | Action | Buy leg | Sell leg | Expiry | Net | EV/ML | POP | Conviction | Execution | Notice | Size`
+## r8 audit fixes (2026-04-26)
 
-It remains EV/ML-first and one best row per ticker for audit/discovery. It is **not** the user-facing executable recommendation table.
+This revision lands the findings of `claude/AUDIT_FINDINGS_2026-04-26.md`. Trade logic now incorporates portfolio risk, volatility regime, partial-payoff expectancy, and a backtested-priority composite.
 
-When the user asks for trades to execute, quote, or top potential trade ideas, the first user-facing table must be `Execution Shortlist / Preferred Trade Ideas`, using the same preferred table format. This table is filtered after official construction and may be sorted by Priority Score for quote sequencing.
+### r8.1 Sizing buckets (CRIT-1)
 
-### Execution Shortlist gates
+Credit-vertical sizing now reaches all three tiers. Previous build collapsed the lower band to a duplicate `Pilot`. Bands:
 
-A row may enter Execution Shortlist only if it is native, non-flex, non-rescue, non-expiry-rescued, common-stock `MAJOR` or clean `MID_PILOT`, positive EV/ML, `Size != None`, no event block, no minority/split flow, no neutral-conflict, no Mixed-Flow Rescue, no fabricated/missing leg, DTE >= 21, POP >= 0.20, Conviction >= 55, and earnings/catalyst is 15+ calendar days away. ADRs are `Potential` by default unless explicitly enabled.
+- `EV/ML >= 0.40` => Starter
+- `0.10 <= EV/ML < 0.40` => Pilot
+- `0.03 <= EV/ML < 0.10` => Tiny
+- `EV/ML < 0.03` => None (not publishable)
 
-Rows that fail one soft recommendation floor may appear as `Potential` only if all hard gates pass. Rows with hard blocks must not be shown as preferred trade ideas.
+### r8.2 Partial-payoff EV/ML (CRIT-2)
 
-### Output rule
+EV/ML for FIRE debit and SHIELD credit verticals is now computed via closed-form lognormal integration over three zones (full loss, linear ramp, full profit) instead of binary breakeven payoff. The legacy `pure_ev_ml(POP, R/R)` is retained as a fallback only when the partial integral is degenerate.
 
-Do not call official primary, high-conviction, alternates, blocked-positive-EV, ETF lane, mixed-flow rescue, family-flex, or diagnostics executable recommendations. If the Execution Shortlist is empty, state `No execution candidates from this run` and do not backfill from other lanes.
+### r8.3 Portfolio risk caps (CRIT-3)
+
+After per-ticker EV/ML ranking and before final publication, three portfolio-level caps are applied:
+
+- **Single-name cap**: at most 1 primary row per ticker (already enforced; now explicit).
+- **Sector cap**: at most 2 directional FIRE primary rows per GICS sector per day (`screener.sector`). Credit / condor structures are exempt because they are not single-direction sector bets.
+- **Direction cap**: at most 4 same-direction FIRE primary rows per day (all bull or all bear).
+
+Rows excluded by a portfolio cap are routed to the alternates collector with `drop_reason=portfolio_cap:<single_name|sector:X|direction:bull|direction:bear>` so they remain visible in audit and reporting.
+
+The defaults are tuned for a small-account retail operator. The constants live in `anu_analysis_v3_1_7.py` (`PORTFOLIO_*_CAP`) and may be raised by an explicit operator override.
+
+### r8.4 OCC root regex (HIGH-1)
+
+The option-symbol parser now accepts roots containing digits and standard OCC punctuation: `[A-Z][A-Z0-9.\-/]{0,5}`. The previous `[A-Z]+` silently dropped post-corp-action symbols.
+
+### r8.5 SHIELD anchor follow-through (HIGH-2)
+
+`shield_anchor_ok` now requires AT LEAST TWO of three meaningful follow-through signals:
+
+- bid_ask_ratio >= 1.20 (real seller-led microstructure)
+- oi_change >= 5% (OI growing meaningfully)
+- curr_oi >= 1000 AND oi_change >= 0 (liquid AND not declining)
+
+A single OR-branch passing on `curr_oi >= 1000` alone is no longer sufficient.
+
+### r8.6 Conservative pricing (HIGH-3)
+
+`conservative_long_price` now requires a real `ask>0` for the buy quote, then falls back to `mid + half_spread` when ask is missing. Symmetric change for `conservative_short_price` (use real bid; else mid - half_spread). Eliminates over-optimistic mid-print entry assumptions.
+
+### r8.7 DTE bands and pct_width (HIGH-4 + LOW-1)
+
+- FIRE debit: DTE 7-90 (was 21-70). pct_width <= 0.35 (was <= 0.45).
+- SHIELD credit: DTE 7-75 (was 28-56). pct_width 0.20-0.55 (was 0.30-0.55).
+
+Earnings/event windows are still enforced downstream via `inside_event_block` (0-10d).
+
+### r8.8 Volatility regime gate (HIGH-5)
+
+Each candidate carries `iv_rank`, `vol_regime`, and `rv_iv_ratio` from the screener. Rules:
+
+- `iv_rank < 30` (low-IV regime): debit-favored. FIRE debits require `POP >= 0.20` for primary publication. SHIELD credits get a Notice tag.
+- `iv_rank > 70` (high-IV regime): credit-favored. FIRE debits require `width >= 1.5x ladder` OR `Conviction >= 70` for primary publication.
+- `rv_iv_ratio = volatility / iv30d`:
+  - `> 1.20` (IV expensive): SHIELD favored, FIRE debit gets a penalty Notice.
+  - `< 0.85` (IV cheap): FIRE favored, SHIELD gets a downgrade Notice.
+
+Blocked rows are routed to Alternates / Watch with the `vol_regime:*` notice. They are not deleted from the audit.
+
+### r8.9 Real-world flat-drift POP (MED-1)
+
+`compute_pop_*` now uses real-world flat-drift `z = ln(K/S) / sigma_T` instead of the risk-neutral `+0.5 sigma^2` correction. This removes a 3-5 percentage-point bias between ITM and OTM probabilities and matches the natural-measure assumption used by the EV calculation.
+
+### r8.10 Mixed-Flow Rescue follow-through (MED-2)
+
+The follow-through gate now requires at least one MEANINGFUL signal (was: any of three trivial OR branches; the previous `curr_oi >= 1000` branch passed any liquid contract). New gate:
+
+- oi_change >= 0.10
+- ask_bid_ratio >= 1.25
+- (curr_oi >= 1000 AND oi_change >= 0.0)
+
+Sum of true >= 1 required.
+
+### r8.11 RV / IV ratio in audit (MED-3)
+
+The audit JSON exposes `rv_iv_ratio` per ticker (computed from screener `volatility / iv30d`). This is informational and used by the volatility-regime gate above; it is not a hard filter on its own.
+
+### r8.12 Conviction spread-quality term (MED-4)
+
+`conviction_raw` now includes a 0.10-weighted spread-quality component derived from the long-leg bid/ask:
+
+- relative spread <= 4% of ask: full credit (1.0)
+- relative spread >= 20% of ask: zero credit (0.0)
+- linear in between
+
+Other weights rebalanced to sum to 1.0. Wide-spread quotes can no longer publish high-conviction entries.
+
+### r8.13 Defensive size cap for 0-10d earnings (MED-5)
+
+`apply_event_size_cap` now sets `Size = "None"` for any row with `0 <= er_days <= 10`, regardless of computed EV/ML. This is defense-in-depth alongside `inside_event_block`.
+
+### r8.14 Confident-Buy visual tier (LOW-2)
+
+In the primary table, any row meeting ALL of:
+
+- Conviction >= 70
+- EV/ML >= 0.40
+- POP >= 0.25
+
+is marked `🔥🟢` (FIRE Confident) for visual emphasis. EV/ML-first ranking is unchanged; this is a visual cue only.
+
+### r8.15 PriorityScore composite
+
+The order-entry sheet now includes a `PriorityScore` (0-100) composite of Conviction (50%), EV/ML (30%), and √POP (20%), and is sorted by PriorityScore descending. Backtest at 5d horizon (n=849, 2026-03-20 → 2026-04-15):
+
+- Conviction >= 65 alone: 90% hit rate, mean +$218/lot.
+- Conviction 55-64: 59% hit, +$119/lot.
+- Conviction < 55: 58% hit, +$52/lot.
+
+Conviction is the strongest single discriminator at the upper tier; PriorityScore extends this by combining all three orthogonal signals.
+
+### r8.16 Audit JSON additions
+
+Audit JSON now exposes:
+
+- `portfolio_caps_dropped_rows` and `portfolio_caps_drop_reasons`
+- `vol_regime_blocked_rows`
+- `confident_buy_rows`
+- `audit_fix_revision: r8-2026-04-26`

@@ -143,9 +143,30 @@ def load_chain_oi(base_dir: Path, asof: dt.date) -> pd.DataFrame:
     df["right"] = parsed.map(lambda x: x.right if x else "")
     df["strike"] = parsed.map(lambda x: x.strike if x else math.nan)
     df["dte"] = df["expiry_dt"].map(lambda x: dte_from_expiry(x, asof))
-    for col in ["oi_change", "curr_oi", "volume", "last_fill", "last_bid", "last_ask", "prev_total_premium"]:
+    for col in [
+        "oi_diff_plain",
+        "oi_change",
+        "curr_oi",
+        "last_oi",
+        "volume",
+        "last_fill",
+        "last_bid",
+        "last_ask",
+        "prev_total_premium",
+        "prev_neutral_volume",
+        "prev_mid_volume",
+        "prev_bid_volume",
+        "prev_ask_volume",
+        "prev_stock_multi_leg_volume",
+        "prev_multi_leg_volume",
+        "curr_vol",
+        "prev_vol",
+        "trades",
+        "avg_price",
+    ]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
+    df.attrs["source_path"] = str(path)
     return df
 
 
@@ -170,6 +191,8 @@ def aggregate_bot_flow(
         "open_interest",
         "delta",
         "canceled",
+        "report_flags",
+        "upstream_condition_detail",
     ]
     rows_seen = 0
     parts = []
@@ -187,24 +210,73 @@ def aggregate_bot_flow(
         chunk["bot_premium"] = pd.to_numeric(chunk["premium"], errors="coerce").fillna(0)
         side = chunk["side"].astype(str).str.lower()
         opt_type = chunk["option_type"].astype(str).str.lower()
-        bull_mask = ((opt_type == "call") & (side == "ask")) | ((opt_type == "put") & (side == "bid"))
-        bear_mask = ((opt_type == "call") & (side == "bid")) | ((opt_type == "put") & (side == "ask"))
+        call_ask_mask = (opt_type == "call") & (side == "ask")
+        call_bid_mask = (opt_type == "call") & (side == "bid")
+        put_ask_mask = (opt_type == "put") & (side == "ask")
+        put_bid_mask = (opt_type == "put") & (side == "bid")
+        bull_mask = call_ask_mask | put_bid_mask
+        bear_mask = call_bid_mask | put_ask_mask
+        flags = chunk.get("report_flags", pd.Series("", index=chunk.index)).astype(str).str.lower()
+        condition = chunk.get("upstream_condition_detail", pd.Series("", index=chunk.index)).astype(str).str.lower()
+        multi_mask = flags.str.contains("multi|spread|floor|cross", regex=True) | condition.str.contains(
+            "multi|spread|floor|cross", regex=True
+        )
         chunk["bot_bull_premium"] = chunk["bot_premium"].where(bull_mask, 0.0)
         chunk["bot_bear_premium"] = chunk["bot_premium"].where(bear_mask, 0.0)
+        chunk["bot_call_ask_premium"] = chunk["bot_premium"].where(call_ask_mask, 0.0)
+        chunk["bot_call_bid_premium"] = chunk["bot_premium"].where(call_bid_mask, 0.0)
+        chunk["bot_put_ask_premium"] = chunk["bot_premium"].where(put_ask_mask, 0.0)
+        chunk["bot_put_bid_premium"] = chunk["bot_premium"].where(put_bid_mask, 0.0)
+        chunk["bot_multileg_premium"] = chunk["bot_premium"].where(multi_mask, 0.0)
+        chunk["bot_open_interest_sum"] = pd.to_numeric(chunk.get("open_interest"), errors="coerce").fillna(0)
+        chunk["bot_volume_sum"] = pd.to_numeric(chunk.get("volume"), errors="coerce").fillna(0)
+        chunk["bot_unique_expiries"] = chunk["expiry"].astype(str)
+        chunk["bot_unique_strikes"] = pd.to_numeric(chunk.get("strike"), errors="coerce")
         chunk["bot_trades"] = 1
         agg = chunk.groupby("underlying_symbol", as_index=False).agg(
             bot_bull_premium=("bot_bull_premium", "sum"),
             bot_bear_premium=("bot_bear_premium", "sum"),
             bot_total_premium=("bot_premium", "sum"),
+            bot_call_ask_premium=("bot_call_ask_premium", "sum"),
+            bot_call_bid_premium=("bot_call_bid_premium", "sum"),
+            bot_put_ask_premium=("bot_put_ask_premium", "sum"),
+            bot_put_bid_premium=("bot_put_bid_premium", "sum"),
+            bot_multileg_premium=("bot_multileg_premium", "sum"),
+            bot_open_interest_sum=("bot_open_interest_sum", "sum"),
+            bot_volume_sum=("bot_volume_sum", "sum"),
+            bot_unique_expiries=("bot_unique_expiries", "nunique"),
+            bot_unique_strikes=("bot_unique_strikes", "nunique"),
             bot_trades=("bot_trades", "sum"),
         )
         parts.append(agg)
         if max_rows and rows_seen >= max_rows:
             break
     if not parts:
-        return pd.DataFrame(columns=["ticker", "bot_bull_premium", "bot_bear_premium", "bot_total_premium", "bot_trades", "bot_flow_bias"])
+        return pd.DataFrame(
+            columns=[
+                "ticker",
+                "bot_bull_premium",
+                "bot_bear_premium",
+                "bot_total_premium",
+                "bot_call_ask_premium",
+                "bot_call_bid_premium",
+                "bot_put_ask_premium",
+                "bot_put_bid_premium",
+                "bot_multileg_premium",
+                "bot_open_interest_sum",
+                "bot_volume_sum",
+                "bot_unique_expiries",
+                "bot_unique_strikes",
+                "bot_trades",
+                "bot_flow_bias",
+                "bot_multileg_ratio",
+                "bot_volume_oi_ratio",
+            ]
+        )
     out = pd.concat(parts, ignore_index=True).groupby("underlying_symbol", as_index=False).sum()
     out = out.rename(columns={"underlying_symbol": "ticker"})
     denom = out["bot_total_premium"].where(out["bot_total_premium"].abs() > 0)
     out["bot_flow_bias"] = (out["bot_bull_premium"] - out["bot_bear_premium"]) / denom
+    out["bot_multileg_ratio"] = out["bot_multileg_premium"] / denom
+    out["bot_volume_oi_ratio"] = out["bot_volume_sum"] / out["bot_open_interest_sum"].where(out["bot_open_interest_sum"].abs() > 0)
     return out

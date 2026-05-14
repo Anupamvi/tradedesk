@@ -93,8 +93,8 @@ Automated options trading platform that screens, analyzes, and monitors trades u
 
 - **Schwab API**: credentials in `.env` (SCHWAB_API_KEY, SCHWAB_APP_SECRET, SCHWAB_TOKEN_PATH)
 - **Re-auth**: `del "c:\uw_root\tokens\schwab_token.json"` then `python -m uwos.schwab_position_analyzer --manual-auth`
-- **ntfy**: topic `uw-trades-transition`, configured in `.env` (NTFY_TOPIC)
-- **Scheduler**: GCP VM `tradedesk-monitor`, `trade-monitor.timer` hourly. Old Windows task `TradeMonitor` must stay deleted to avoid duplicate ntfy alerts.
+- **ntfy**: topic `uw-trades-transition`, configured in `.env` (NTFY_TOPIC). Urgent phone alerts can also use `NTFY_PHONE_TOPIC` and optional Twilio SMS. Manual monitor alerts should use `NTFY_MANUAL_TOPIC` with `MANUAL_ALERT_PREFIX=MANUAL MONITOR` so MU/SPY-style watch alerts are visually distinct.
+- **Scheduler**: GCP VM `tradedesk-monitor`, `trade-monitor.timer` every 5 minutes during market/after-hours watch windows. Old Windows task `TradeMonitor` must stay deleted to avoid duplicate ntfy alerts.
 
 ### Critical Rules
 
@@ -106,7 +106,7 @@ Automated options trading platform that screens, analyzes, and monitors trades u
 6. **Verdicts use hysteresis** — once escalated (HOLD→ASSESS), requires $300+ P&L improvement to de-escalate. Prevents flip-flopping
 7. **Equity verdicts are context-aware** — compare stock drop to SPY 5d return. In broad selloff, widen thresholds
 8. **Trade ideas exclude held positions** — auto-reads from monitor_state.json
-9. **Notifications go to ntfy only** — SMS was removed (T-Mobile gateway blocked)
+9. **Notifications default to ntfy** — optional phone-only ntfy and Twilio SMS are supported for critical monitor alerts; do not use carrier email gateways.
 10. **All output as .md file references with clickable VSCode-compatible links**
 
 ### Verdict Engine Rules (compute_verdict)

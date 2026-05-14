@@ -78,7 +78,37 @@ For normal daily use, EOD live planning is the default even if `--eod-live-plann
 
 ---
 
-## 2. Trend Analysis — Multi-Day UW Pattern Scanner
+## 2. Options Trend Pipeline v2 — Production UW Trend Desk
+
+**What:** Replaces the legacy trend scan for daily research. It builds multi-factor UW option-flow candidates, gates current trades with leakage-free walk-forward validation, compares against legacy and naive baselines, and still emits watch/avoid output when no edge is proven.
+
+**Run latest usable UW date:**
+```bash
+python3 -m uwos.options_trend_pipeline_v2 --base-dir /Users/anuppamvi/uw_root/tradedesk
+```
+
+**Run a specific historical date:**
+```bash
+python3 -m uwos.options_trend_pipeline_v2 \
+  --base-dir /Users/anuppamvi/uw_root/tradedesk \
+  --as-of 2026-04-30 \
+  --out-dir /Users/anuppamvi/uw_root/tradedesk/out/options_trend_pipeline_v2/2026-04-30 \
+  --lookback 30 \
+  --validate-days 30
+```
+
+**Or via Claude/Codex:** `trend-analysis 2026-04-30 30`
+
+**Output:** `out/options_trend_pipeline_v2/YYYY-MM-DD/` with stable daily artifacts: `daily_report.md`, `actionable_trades.csv`, `watchlist_research_setups.csv`, `blocked_candidates.csv`, `all_candidates.csv`, `market_regime.csv`, `sentiment_news_summary.csv`, `validation_scorecard.csv`, `validation_outcomes.csv`, `missed_mover_audit.csv`, `baseline_comparison_report.csv`, `data_inventory.csv`, and `metadata.json`. The underlying engine artifacts are kept in the same directory with their `trend-analysis-v2-*` names for reproducibility.
+
+Historical validation uses only local UW artifacts available at each signal date: hot-chain bid/ask snapshots for entry sanity and later local option quotes or expiry intrinsic value for forward R scoring. Non-expiry stock/intrinsic proxy exits are labeled `PARTIAL`; missing or post-cutoff exits are `UNSCORABLE` and are never counted as wins. It does not use current Schwab chains on old signal dates. Current institutional-flow scoring scans the latest usable bot-EOD whale day by default; raise `--whale-lookback-days` when you need a deeper whale scan. The old `python -m uwos.trend_analysis` path below is legacy/comparison infrastructure; Claude/Codex `trend-analysis` now maps to v2.
+
+The compatibility engine remains directly runnable for debugging:
+```bash
+python3 -m uwos.trend_analysis_v2 2026-04-30 --lookback 30 --validate-days 30
+```
+
+### Legacy v1 Pattern Scanner
 
 **What:** Looks across dated UW folders to find a small set of persistent bullish, bearish, or range-bound option candidates to work on. The command reads stock screener, chain OI, hot chains, dark pool, and whale files across the lookback window, then separates high-conviction candidates from backtest/live-gated actionable trades.
 
@@ -92,7 +122,7 @@ python -m uwos.trend_analysis 2026-04-17 30 --walk-forward-samples 8  # optional
 python -m uwos.trend_analysis 2026-04-17 30 --walk-forward-samples 31 --reuse-walk-forward-raw --reuse-walk-forward-outcomes --reuse-research-outcomes  # optional confidence replay
 ```
 
-**Or via Claude/Codex:** `trend-analysis 2026-04-17`
+**Legacy direct CLI only:** Claude/Codex `trend-analysis` now uses v2. Run v1 directly only for explicit legacy comparison.
 
 The numeric lookback counts weekday folders with usable `stock-screener` data walking backward from the as-of date. Weekend folders or partial dated folders do not consume a lookback day. A normal `trend-analysis DATE N` scan does not replay older signal dates; add `--walk-forward-samples N` only when you explicitly want confidence validation across earlier as-of dates.
 
@@ -147,7 +177,7 @@ python -m uwos.swing_trend_pipeline --lookback 30 --as-of 2026-04-17
 
 ## 3. Trade Desk — Position Monitoring & Push Alerts
 
-**What:** Monitors your open option positions every 30 minutes during market hours. Applies verdict rules (CLOSE, ROLL, ASSESS, HOLD) and sends push notifications via [ntfy.sh](https://ntfy.sh) when action is needed.
+**What:** Monitors your open option positions during market hours. On the cloud runner it polls every 5 minutes, applies verdict rules (CLOSE, ROLL, ASSESS, HOLD), and sends push notifications via [ntfy.sh](https://ntfy.sh) when action is needed. For shutdown-safe monitoring, run it from the persistent GCP VM/systemd runner, not a local Codex heartbeat.
 
 **How it works:**
 1. Fetches current positions from Schwab API
@@ -162,13 +192,15 @@ python -m uwos.swing_trend_pipeline --lookback 30 --as-of 2026-04-17
 python -m uwos.trade_monitor --force              # single scan, notify on transitions
 python -m uwos.trade_monitor --force --manual      # notify ALL actionable verdicts
 python -m uwos.trade_monitor --test                # send a test notification
+python -m uwos.trade_monitor --phone-test          # send urgent phone-channel test
+python -m uwos.trade_monitor --manual-test         # send manual-monitor style phone test
 ```
 
 **Automated scheduling (GCP VM systemd timer):**
 ```bash
 sudo systemctl status trade-monitor.timer
 ```
-Runs hourly on the `tradedesk-monitor` GCP VM. The script itself skips outside US market hours.
+Runs every 5 minutes on the `tradedesk-monitor` GCP VM during the market/after-hours watch window. The script itself skips outside US market hours unless after-hours movement gates pass.
 
 The old Windows Task Scheduler job is decommissioned to avoid duplicate ntfy alerts. On the old Windows laptop, run:
 ```bat
@@ -176,7 +208,9 @@ schtasks /delete /tn "TradeMonitor" /f
 ```
 or run `uwos\setup_trade_monitor.bat`, which now deletes that old task instead of creating it.
 
-**Notifications go to:** `https://ntfy.sh/your_topic` (install ntfy app on phone for push alerts)
+**Notifications go to:** `https://ntfy.sh/your_topic` (install ntfy app on phone for push alerts). Urgent risk alerts can also go to `NTFY_PHONE_TOPIC` and optional Twilio SMS via `PHONE_NOTIFY_MODE=ntfy`, `sms`, `both`, or `off`. Manual MU/SPY-style monitor alerts can use `NTFY_MANUAL_TOPIC` plus `MANUAL_ALERT_PREFIX=MANUAL MONITOR` so they look and sound separate from regular monitor notifications.
+
+When asking Codex to **monitor options**, use the cloud runner for anything that must survive the MacBook being closed or shut down. Thread heartbeats are useful for an active local session, but they are not a substitute for the VM timer.
 
 ---
 

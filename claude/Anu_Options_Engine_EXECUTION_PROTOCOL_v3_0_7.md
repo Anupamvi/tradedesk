@@ -1,9 +1,9 @@
 # Anu Options Engine — EXECUTION PROTOCOL (Audited FIRE + SHIELD No-GEX Payload)
 
-**Canonical upload filename:** `Anu_Options_Engine_EXECUTION_PROTOCOL_v3_0_7.md`  
-**Effective logic version:** 3.2.9-r7.2-exec-shortlist  
+**Canonical upload filename:** `Anu_Options_Engine_EXECUTION_PROTOCOL_v3_0_7.md`
+**Effective logic version:** 3.2.9-r8-audit-fixes
 **Date:** 2026-04-26
-**Revision:** r7.2 execution-shortlist user-facing fix
+**Revision:** r8 audit fixes (2026-04-26) — partial-payoff EV/ML, portfolio caps, volatility regime, RV/IV ratio, Confident-Buy tier, PriorityScore composite. Inherits r7.1 split-audit + r6 mixed-flow rescue + scan-date OI default.
 
 ## Audit gate zero: canonical executable sync
 
@@ -371,52 +371,87 @@ Live quote data is an execution artifact. It may recompute net price and EV/ML b
 High-conviction ideas, all-primary-eligible ideas, order-entry sheets, alternates, and built-row diagnostics are not the official EV/ML primary table. The report must label them separately and must never call them the primary table unless they are from the official primary output.
 
 
-### Full bot-EOD source handling
+### Full bot EOD source handling
 
 The EOD bot source must be the complete `bot-eod-report-YYYY-MM-DD.csv` or `bot-eod-report-YYYY-MM-DD.zip`. Split part files such as `bot-eod-report-YYYY-MM-DD.part-NN-of-MM.zip` are not valid inputs for this pipeline.
 
 
-## r7.2 execution-shortlist/reporting correction
+## r7.1 source audit correction
 
-### New stage: Execution Shortlist / Preferred Trade Ideas
+Full-source bot ZIP runs must hash the complete main file consumed by the engine. Split part files are rejected so audit completeness is tied to the main full-source report.
 
-The official EV/ML primary table remains required for audit and discovery, but it is no longer the user-facing executable recommendation table. When the user asks for trades to execute, quote, or top potential trade ideas, the first trade table must be `Execution Shortlist / Preferred Trade Ideas`.
 
-A row may enter Execution Shortlist only after the normal construction/audit gates and these additional recommendation gates:
+## r8 execution additions (2026-04-26)
 
-- native source row only; `is_family_flex=false`;
-- no Mixed-Flow Rescue promotion; `mixed_flow_rescue=false` and `neutral_conflict=false`;
-- no adjacent-expiry rescue or Notice containing `expiry rescued`;
-- common-stock lane only: `MAJOR` or clean `MID_PILOT`; ETF/index rows stay in ETF lane;
-- no minority flow, split-flow watch, event block, fabricated/missing leg, invalid geometry, negative EV/ML, or `Size=None`;
-- DTE must be at least 21 from scan date unless explicitly overridden;
-- earnings/catalyst must be at least 15 calendar days away for `Quote Candidate`; 11-14d may only be `Potential`, never first-line executable;
-- default floors: `POP >= 0.20`, `Conviction >= 55`, `EV/ML > 0`;
-- ADR rows are `Potential` by default unless operator uses `--allow-adr-execution`;
-- exact live spread quote is required before order entry. Missing live quote means `Quote Candidate`, not `Live OK`.
+These additions implement the rulebook r8 fixes at the executor level. See `claude/AUDIT_FINDINGS_2026-04-26.md` for derivations.
 
-### Required new outputs
+### Run-order changes (between primary candidate selection and publication)
 
-The executable must write:
+After the per-ticker EV/ML-first dedup, the executor now runs three additional passes before publishing the primary table:
 
-1. `options_scan_YYYY-MM-DD_audited_execution_shortlist.csv`
-2. `options_scan_YYYY-MM-DD_audited_execution_order_entry_sheet.csv`
-3. `options_scan_YYYY-MM-DD_priority_overlay.csv`
+1. **Volatility-regime gate** (HIGH-5 + MED-3). Joins `iv_rank`, `iv30d`, `volatility` from the screener, computes `vol_regime` and `rv_iv_ratio`, sets `vol_regime_block` and a per-row notice. Blocked rows are dropped from primary; their notices remain visible in audit/Watch.
 
-The run report must print, in order:
+2. **Portfolio-cap pass** (CRIT-3). Single-name, sector, direction caps. Walks the EV/ML-sorted primary table; admits rows respecting caps, routes excluded rows to `portfolio_dropped` with `drop_reason`.
 
-1. `Execution Shortlist / Preferred Trade Ideas`
-2. `Execution order-entry sheet`
-3. official EV/ML primary table for audit/discovery
-4. Priority Overlay, with statement that it sequences quotes only and does not replace official ranking
-5. high-conviction lane
-6. watch/catalyst/blocked/alternates/ETF diagnostics
-7. audit summary
+3. **Confident-Buy visual tier** (LOW-2). Marks any surviving row with Conv >= 70 AND EV/ML >= 0.40 AND POP >= 0.25 as `🔥🟢` and appends a `Confident-Buy tier` notice.
 
-### Language discipline
+### Math changes
 
-Only rows in Execution Shortlist may be called executable recommendations, quote candidates, or preferred trade ideas. Official primary, high-conviction, alternates, blocked-positive-EV, ETF lane, and diagnostics must never be called execution-approved. If Execution Shortlist is empty, say `No execution candidates from this run`; do not backfill from diagnostics.
+- `partial_ev_ml_debit` and `partial_ev_ml_credit` now compute closed-form lognormal partial-payoff EV/ML across the strike-to-strike ramp. The legacy binary `pure_ev_ml(POP, R/R)` is retained only for fallback when the partial integral is degenerate (POP=0, sigma_t<=0).
 
-### Priority Score mode
+- `compute_pop_*` now uses real-world flat-drift `z = ln(K/S)/sigma_T` (MED-1).
 
-Because r7.2 updates all five canonical files together, Priority Score mode may be `ENGINE_NATIVE`. Priority Score remains only an order-entry/quote sequencing overlay and may not gate, promote, suppress, size, rescue, or replace EV/ML-first official ranking.
+### Audit JSON additions
+
+- `portfolio_caps_dropped_rows`, `portfolio_caps_drop_reasons`
+- `vol_regime_blocked_rows`
+- `confident_buy_rows`
+- `audit_fix_revision: r8-2026-04-26`
+- per-row `rv_iv_ratio`, `vol_regime`, `vol_regime_block`, `vol_regime_notice` (in built CSV)
+
+### Order-entry sheet
+
+The order-entry CSV now includes `PriorityScore` (Conv 50% + EV/ML 30% + √POP 20%, scaled to 0-100) and is sorted by PriorityScore descending. EV/ML-first remains the canonical ranking for the primary inline table; PriorityScore is the operator-facing composite for "what to enter first" given backtested edge.
+
+### Conviction calibration note
+
+Backtest of historical engine output (n=849, 2026-03-20 → 2026-04-15, 5d horizon, mid-price marks):
+
+- Conv >= 65: 90% hit, mean +$218/lot.
+- Conv 55-64: 59% hit, mean +$119/lot.
+- Conv < 55: 58% hit, mean +$52/lot.
+
+The default conviction threshold of 62 (high-conviction lane) is calibrated; operator may surface Conv >= 65 as a tighter "Confident-Buy" sub-tier (already wired by r8.14 above).
+
+### Sizing buckets recap
+
+- FIRE debit: EV/ML >= 1.0 → Tiny; >= 0.40 → Starter; >= 0.10 → Pilot; else None.
+- SHIELD credit: EV/ML >= 0.40 → Starter; >= 0.10 → Pilot; >= 0.03 → Tiny; else None. (r8.1 fix: previously the lower band collapsed into duplicate Pilot.)
+- Iron condor: EV/ML >= 0.30 → Starter; >= 0.08 → Pilot; else None.
+
+### DTE bands
+
+- FIRE debit: DTE 7-90, pct_width <= 0.35.
+- SHIELD credit: DTE 7-75, pct_width 0.20-0.55.
+- Earnings/event windows are still enforced via `inside_event_block` (0-10d).
+
+### SHIELD anchor follow-through
+
+`shield_anchor_ok` requires AT LEAST TWO of:
+
+- bid_ask_ratio >= 1.20
+- oi_change >= 0.05
+- (curr_oi >= 1000 AND oi_change >= 0.0)
+
+### Mixed-Flow Rescue follow-through
+
+At least one MEANINGFUL signal:
+
+- oi_change >= 0.10
+- ask_bid_ratio >= 1.25
+- (curr_oi >= 1000 AND oi_change >= 0.0)
+
+### Conservative pricing
+
+- Long leg: prefer `ask>0`; else `mid + max(0.05, mid - bid)`.
+- Short leg: prefer `bid>0`; else `mid - max(0.05, ask - mid)`.

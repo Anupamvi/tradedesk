@@ -20,6 +20,77 @@ WHALE_MD_PREFIX = "whale-"
 DEFAULT_CHUNKSIZE = 250_000
 DEFAULT_TOP_N = 200
 WHALE_SYMBOL_RE = re.compile(r"^[A-Z][A-Z0-9.\-/]{0,9}$")
+BOT_EOD_PART_RE = re.compile(
+    rf"^(?P<stem>{re.escape(BOT_EOD_PREFIX)}\d{{4}}-\d{{2}}-\d{{2}})"
+    r"\.part-(?P<index>\d+)-of-(?P<total>\d+)\.(?P<suffix>csv|zip)$",
+    re.IGNORECASE,
+)
+BOT_EOD_BASE_USECOLS = [
+    "executed_at",
+    "underlying_symbol",
+    "side",
+    "strike",
+    "option_type",
+    "expiry",
+    "underlying_price",
+    "price",
+    "size",
+    "premium",
+    "open_interest",
+    "equity_type",
+    "implied_volatility",
+    "delta",
+]
+BOT_EOD_OPTIONAL_USECOLS = [
+    "option_chain_id",
+    "nbbo_bid",
+    "nbbo_ask",
+    "ewma_nbbo_bid",
+    "ewma_nbbo_ask",
+    "volume",
+    "theta",
+    "gamma",
+    "vega",
+    "rho",
+    "theo",
+    "sector",
+    "exchange",
+    "report_flags",
+    "canceled",
+    "upstream_condition_detail",
+]
+BOT_EOD_DTYPE = {
+    "executed_at": "string",
+    "underlying_symbol": "string",
+    "option_chain_id": "string",
+    "side": "string",
+    "strike": "float64",
+    "option_type": "string",
+    "expiry": "string",
+    "underlying_price": "float64",
+    "nbbo_bid": "float64",
+    "nbbo_ask": "float64",
+    "ewma_nbbo_bid": "float64",
+    "ewma_nbbo_ask": "float64",
+    "price": "float64",
+    "size": "float64",
+    "premium": "float64",
+    "volume": "float64",
+    "open_interest": "float64",
+    "implied_volatility": "float64",
+    "delta": "float64",
+    "theta": "float64",
+    "gamma": "float64",
+    "vega": "float64",
+    "rho": "float64",
+    "theo": "float64",
+    "sector": "string",
+    "exchange": "string",
+    "report_flags": "string",
+    "canceled": "string",
+    "upstream_condition_detail": "string",
+    "equity_type": "string",
+}
 
 
 @dataclass
@@ -46,32 +117,61 @@ def infer_date_from_path(path: Path) -> str:
     return match.group(0) if match else "Unknown Date"
 
 
+def _bot_eod_part_match(path: Path) -> re.Match[str] | None:
+    return BOT_EOD_PART_RE.match(Path(path).name)
+
+
+def is_split_bot_eod_part(path: Path) -> bool:
+    return _bot_eod_part_match(Path(path)) is not None
+
+
+def _latest_path(paths: list[Path]) -> Path:
+    return max(paths, key=lambda p: (p.stat().st_mtime, str(p)))
+
+
 def find_bot_eod_source(base_dir: Path, date_str: str | None = None) -> Path:
     base_dir = Path(base_dir)
-    if date_str:
-        patterns = [
-            f"{BOT_EOD_PREFIX}{date_str}.zip",
-            f"{BOT_EOD_PREFIX}{date_str}.csv",
-            f"{BOT_EOD_PREFIX}{date_str}*.zip",
-            f"{BOT_EOD_PREFIX}{date_str}*.csv",
-        ]
-    else:
-        patterns = [f"{BOT_EOD_PREFIX}*.zip", f"{BOT_EOD_PREFIX}*.csv"]
+    search_dirs = [base_dir]
 
-    seen: set[Path] = set()
-    search_dirs = [base_dir, base_dir / "bot-eod-split"]
-    for pattern in patterns:
-        matches = []
+    def collect(patterns: list[str]) -> list[Path]:
+        seen: set[Path] = set()
+        matches: list[Path] = []
         for search_dir in search_dirs:
             if not search_dir.exists():
                 continue
-            for path in sorted(search_dir.glob(pattern)):
-                if path in seen or not path.is_file():
-                    continue
-                seen.add(path)
-                matches.append(path)
-        if matches:
-            return matches[-1]
+            for pattern in patterns:
+                for path in sorted(search_dir.glob(pattern)):
+                    if path in seen or not path.is_file():
+                        continue
+                    seen.add(path)
+                    matches.append(path)
+        return matches
+
+    if date_str:
+        exact = collect([f"{BOT_EOD_PREFIX}{date_str}.zip", f"{BOT_EOD_PREFIX}{date_str}.csv"])
+        if exact:
+            return _latest_path(exact)
+
+        matches = collect([f"{BOT_EOD_PREFIX}{date_str}*.zip", f"{BOT_EOD_PREFIX}{date_str}*.csv"])
+        variants = [path for path in matches if not is_split_bot_eod_part(path)]
+        if variants:
+            return _latest_path(variants)
+        if any(is_split_bot_eod_part(path) for path in matches):
+            raise FileNotFoundError(
+                f"Split bot EOD files are not accepted for {date_str}; "
+                f"provide the full {BOT_EOD_PREFIX}{date_str}.csv/.zip in {base_dir}"
+            )
+
+    else:
+        matches = collect([f"{BOT_EOD_PREFIX}*.zip", f"{BOT_EOD_PREFIX}*.csv"])
+        candidates = [path for path in matches if not is_split_bot_eod_part(path)]
+        if candidates:
+            return _latest_path(candidates)
+        if any(is_split_bot_eod_part(path) for path in matches):
+            raise FileNotFoundError(
+                f"Split bot EOD files are not accepted; provide the full "
+                f"{BOT_EOD_PREFIX}YYYY-MM-DD.csv/.zip in {base_dir}"
+            )
 
     suffix = f" for {date_str}" if date_str else ""
     raise FileNotFoundError(f"Missing {BOT_EOD_PREFIX}YYYY-MM-DD CSV/ZIP{suffix} in {base_dir}")
@@ -221,6 +321,10 @@ def load_whale_flow_source(
 @contextmanager
 def open_bot_eod(path: Path) -> Iterator[tuple[object, str]]:
     path = Path(path)
+    if is_split_bot_eod_part(path):
+        raise FileNotFoundError(
+            f"Split bot EOD files are not accepted; provide the full bot EOD CSV/ZIP: {path}"
+        )
     if path.suffix.lower() == ".zip":
         zf = zipfile.ZipFile(path)
         try:
@@ -242,6 +346,19 @@ def open_bot_eod(path: Path) -> Iterator[tuple[object, str]]:
 
     with path.open("r", encoding="utf-8", errors="replace") as handle:
         yield handle, str(path)
+
+
+def available_bot_eod_columns(path: Path) -> list[str]:
+    with open_bot_eod(path) as (handle, _source_label):
+        return list(pd.read_csv(handle, nrows=0).columns)
+
+
+def bot_eod_usecols(path: Path) -> list[str]:
+    available = set(available_bot_eod_columns(path))
+    missing_required = [col for col in BOT_EOD_BASE_USECOLS if col not in available]
+    if missing_required:
+        raise ValueError(f"Missing required bot EOD columns in {path}: {missing_required}")
+    return BOT_EOD_BASE_USECOLS + [col for col in BOT_EOD_OPTIONAL_USECOLS if col in available]
 
 
 def _build_width(prices: np.ndarray, tiers: list[dict]) -> np.ndarray:
@@ -287,25 +404,57 @@ def _empty_top_trades() -> pd.DataFrame:
     return pd.DataFrame(
         columns=[
             "underlying_symbol",
+            "option_chain_id",
             "track",
             "net_type",
             "option_type",
             "side",
+            "executed_at",
             "expiry",
             "dte",
             "underlying_price",
+            "nbbo_bid",
+            "nbbo_ask",
+            "ewma_nbbo_bid",
+            "ewma_nbbo_ask",
             "strike",
             "price",
             "width",
             "pct_width",
             "size",
+            "volume",
             "premium",
             "open_interest",
             "implied_volatility",
             "delta",
+            "theta",
+            "gamma",
+            "vega",
+            "rho",
+            "theo",
+            "sector",
+            "exchange",
+            "report_flags",
+            "canceled",
+            "upstream_condition_detail",
             "equity_type",
         ]
     )
+
+
+def _infer_price_and_premium(chunk: pd.DataFrame) -> None:
+    price = pd.to_numeric(chunk["price"], errors="coerce")
+    premium = pd.to_numeric(chunk["premium"], errors="coerce")
+    size = pd.to_numeric(chunk["size"], errors="coerce")
+
+    inferred_price = premium / (size * 100.0)
+    price = price.where(price.notna(), inferred_price.where((premium > 0) & (size > 0)))
+
+    inferred_premium = price * size * 100.0
+    premium = premium.where(premium.notna(), inferred_premium.where((price > 0) & (size > 0)))
+
+    chunk["price"] = price
+    chunk["premium"] = premium
 
 
 def load_yes_prime_whale_flow(
@@ -345,39 +494,10 @@ def load_yes_prime_whale_flow(
     side_counter: Counter = Counter()
     symbol_stats: dict[str, dict[str, object]] = {}
     top_trades = _empty_top_trades()
+    report_date_ts = pd.to_datetime(infer_date_from_path(input_path), errors="coerce")
 
-    usecols = [
-        "executed_at",
-        "underlying_symbol",
-        "side",
-        "strike",
-        "option_type",
-        "expiry",
-        "underlying_price",
-        "price",
-        "size",
-        "premium",
-        "open_interest",
-        "equity_type",
-        "implied_volatility",
-        "delta",
-    ]
-    dtype = {
-        "executed_at": "string",
-        "underlying_symbol": "string",
-        "side": "string",
-        "strike": "float64",
-        "option_type": "string",
-        "expiry": "string",
-        "underlying_price": "float64",
-        "price": "float64",
-        "size": "float64",
-        "premium": "float64",
-        "open_interest": "float64",
-        "equity_type": "string",
-        "implied_volatility": "float64",
-        "delta": "float64",
-    }
+    usecols = bot_eod_usecols(input_path)
+    dtype = {col: BOT_EOD_DTYPE[col] for col in usecols}
 
     with open_bot_eod(Path(input_path)) as (input_handle, source_label):
         for chunk in pd.read_csv(
@@ -391,8 +511,13 @@ def load_yes_prime_whale_flow(
             chunk["option_type"] = chunk["option_type"].fillna("unknown").astype("string").str.lower()
             chunk["underlying_symbol"] = chunk["underlying_symbol"].fillna("").astype("string").str.upper()
             chunk["equity_type"] = chunk["equity_type"].fillna("").astype("string")
+            if "canceled" in chunk.columns:
+                chunk["canceled"] = chunk["canceled"].fillna("").astype("string").str.lower()
+            _infer_price_and_premium(chunk)
 
             executed_date = pd.to_datetime(chunk["executed_at"].str.slice(0, 10), errors="coerce")
+            if not pd.isna(report_date_ts):
+                executed_date = executed_date.fillna(report_date_ts)
             expiry_date = pd.to_datetime(chunk["expiry"], errors="coerce")
             dte = (expiry_date - executed_date).dt.days
 
@@ -402,10 +527,14 @@ def load_yes_prime_whale_flow(
             pct_width = price / width
 
             side = chunk["side"].to_numpy()
-            net_type = np.where(side == "bid", "credit", "debit")
-            track = np.where(net_type == "credit", "SHIELD", "FIRE")
+            side_ok = np.isin(side, ["bid", "ask"])
+            net_type = np.where(side == "bid", "credit", np.where(side == "ask", "debit", "unknown"))
+            track = np.where(net_type == "credit", "SHIELD", np.where(net_type == "debit", "FIRE", "UNKNOWN"))
 
             mask = ~np.isnan(width) & ~np.isnan(pct_width) & dte.notna().to_numpy()
+            mask &= side_ok
+            if "canceled" in chunk.columns:
+                mask &= ~chunk["canceled"].isin({"t", "true", "1", "yes", "y"}).to_numpy()
 
             if exclude_etfs:
                 eq_type_upper = chunk["equity_type"].str.upper().to_numpy()
@@ -516,7 +645,11 @@ def load_yes_prime_whale_flow(
                 if not stats["equity_type"]:
                     stats["equity_type"] = str(row["equity_type"])
 
-            candidate = yes_chunk[_empty_top_trades().columns].copy().nlargest(top_n, "premium")
+            top_columns = list(_empty_top_trades().columns)
+            for col in top_columns:
+                if col not in yes_chunk.columns:
+                    yes_chunk[col] = pd.NA
+            candidate = yes_chunk[top_columns].copy().nlargest(top_n, "premium")
             if top_trades.empty:
                 top_trades = candidate.reset_index(drop=True)
             else:

@@ -23,6 +23,26 @@ def _row() -> pd.Series:
     )
 
 
+def _debit_row() -> pd.Series:
+    return pd.Series(
+        {
+            "asof": dt.date(2026, 1, 2),
+            "expiry": dt.date(2026, 1, 16),
+            "ticker": "XYZ",
+            "direction": "Bull Call",
+            "strategy": "Bull Call Debit Spread",
+            "stock_price_eod": 100.0,
+            "long_strike_eod": 100.0,
+            "short_strike_eod": 105.0,
+            "long_leg_eod": "XYZ260116C00100000",
+            "short_leg_eod": "XYZ260116C00105000",
+            "combined_flow_bias": 0.12,
+            "iv30d": 0.30,
+            "dte": 14,
+        }
+    )
+
+
 def _quote(bid: float, ask: float) -> dict[str, float | str]:
     return {"bid": bid, "ask": ask, "mid": (bid + ask) / 2.0, "volume": 1000.0, "open_interest": 1000.0}
 
@@ -73,6 +93,61 @@ def test_simulate_spread_exit_hits_stop_loss() -> None:
     assert result["exact_evaluated"] is True
     assert result["exit_reason"] == "stop_loss"
     assert result["pnl_1x"] < 0
+
+
+def test_simulate_debit_spread_exit_hits_profit_target() -> None:
+    quotes = {
+        dt.date(2026, 1, 2): {
+            "XYZ260116C00100000": _quote(2.00, 2.20),
+            "XYZ260116C00105000": _quote(0.80, 1.00),
+        },
+        dt.date(2026, 1, 5): {
+            "XYZ260116C00100000": _quote(4.00, 4.20),
+            "XYZ260116C00105000": _quote(1.50, 1.70),
+        },
+    }
+
+    result = simulate_spread_exit(
+        _debit_row(),
+        close_history={},
+        quote_history=quotes,
+        slippage_pct=0.10,
+        profit_take_pct=0.60,
+        stop_loss_mult=2.0,
+    )
+
+    assert result["exact_evaluated"] is True
+    assert result["entry_side"] == "debit"
+    assert result["exit_reason"] == "profit_target"
+    assert result["exit_value"] > result["entry_debit"]
+    assert result["pnl_1x"] > 0
+
+
+def test_debit_above_target_is_annotated_not_unfilled() -> None:
+    quotes = {
+        dt.date(2026, 1, 2): {
+            "XYZ260116C00100000": _quote(3.10, 3.30),
+            "XYZ260116C00105000": _quote(0.60, 0.80),
+        },
+        dt.date(2026, 1, 5): {
+            "XYZ260116C00100000": _quote(6.00, 6.20),
+            "XYZ260116C00105000": _quote(0.80, 1.00),
+        },
+    }
+
+    result = simulate_spread_exit(
+        _debit_row(),
+        close_history={},
+        quote_history=quotes,
+        slippage_pct=0.10,
+        profit_take_pct=0.60,
+        stop_loss_mult=2.0,
+    )
+
+    assert result["exact_evaluated"] is True
+    assert result["entry_price_annotation"] == "entry_debit_above_target"
+    assert "above_target" in result["fill_reason"]
+    assert result["entry_debit"] > result["target_debit"]
 
 
 def test_replay_quality_pattern_accepts_validated_credit_and_buffer() -> None:
@@ -219,6 +294,39 @@ def test_decision_selection_blocks_near_earnings() -> None:
 
     assert selected["decision_pass"].sum() == 0
     assert selected["decision_reason"].iloc[0] == "decision_earnings_within_10d:9"
+
+
+def test_decision_selection_retains_above_target_debit_as_annotation() -> None:
+    detail = pd.DataFrame(
+        [
+            {
+                "asof": "2026-04-29",
+                "ticker": "DEB",
+                "direction": "Bull Call",
+                "strategy": "Bull Call Debit Spread",
+                "stock_price_eod": 100.0,
+                "long_strike_eod": 100.0,
+                "short_strike_eod": 105.0,
+                "entry_debit": 2.60,
+                "entry_debit_pct_width": 0.52,
+                "entry_quote_width_pct": 0.10,
+                "reward_risk": 0.92,
+                "breakeven_distance_pct": 0.026,
+                "iv30d": 0.45,
+                "dte": 21,
+                "combined_flow_bias": 0.14,
+                "exact_evaluated": True,
+                "exact_win": True,
+                "pnl_1x": 110.0,
+            }
+        ]
+    )
+
+    selected = apply_replay_decision_selection(detail, max_selected_per_day=1)
+
+    assert selected["decision_pass"].sum() == 0
+    assert selected["decision_reason"].iloc[0] == "decision_debit_above_target_watch_annotation"
+    assert selected["decision_tier"].iloc[0] == "debit_watch_annotation"
 
 
 def test_decision_selection_uses_secondary_income_sleeve_only_without_primary() -> None:

@@ -9,7 +9,7 @@ The runner is intentionally simple:
 - secret env file: `/etc/tradedesk/tradedesk.env`
 - mutable Schwab token: `/var/lib/tradedesk/tokens/schwab_token.json`
 - monitor state/output: `/opt/tradedesk/current/out/...`
-- scheduler: `systemd` timer for US trading hours plus after-hours watch checks
+- scheduler: `systemd` timer every 5 minutes during US trading hours plus after-hours watch checks
 
 Do not put Schwab secrets, ntfy topic, token JSON, or `out/` state in git.
 
@@ -66,10 +66,31 @@ SCHWAB_APP_SECRET=
 SCHWAB_CALLBACK_URL=
 SCHWAB_TOKEN_PATH=/var/lib/tradedesk/tokens/schwab_token.json
 NTFY_TOPIC=
+NTFY_SERVER=https://ntfy.sh
+NTFY_TOKEN=
+NTFY_PHONE_TOPIC=
+NTFY_MANUAL_TOPIC=
+MANUAL_ALERT_PREFIX=MANUAL MONITOR
+MANUAL_ALERT_TAGS=rotating_light,warning
+PHONE_NOTIFY_MODE=ntfy
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_FROM=
+SMS_TO=
 AFTER_HOURS_MARKET_MOVE_PCT=0.6
 AFTER_HOURS_WATCH_MOVE_PCT=2.0
 AFTER_HOURS_MAX_WATCH=60
 ```
+
+Notification fields:
+
+- `NTFY_TOPIC`: normal monitor alerts.
+- `NTFY_PHONE_TOPIC`: optional second ntfy topic subscribed from your phone for urgent alerts only.
+- `NTFY_MANUAL_TOPIC`: optional separate ntfy topic for manual MU/SPY-style monitor alerts. Subscribe to this topic on the phone with a distinct sound so these do not blend into regular alerts.
+- `MANUAL_ALERT_PREFIX`: title prefix for manual monitor alerts. Default `MANUAL MONITOR`.
+- `MANUAL_ALERT_TAGS`: ntfy tags for manual monitor alerts. Default `rotating_light,warning`.
+- `PHONE_NOTIFY_MODE`: `ntfy`, `sms`, `both`, or `off`. Default `ntfy`.
+- `TWILIO_*` and `SMS_TO`: optional Twilio SMS fallback. Use E.164 phone numbers such as `+14155551212`.
 
 Then copy the existing Schwab token JSON to:
 
@@ -92,11 +113,16 @@ After secrets are present:
 
 ```bash
 sudo bash -lc 'cd /opt/tradedesk/current; set -a; . /etc/tradedesk/tradedesk.env; set +a; sudo -E -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor --test'
+sudo bash -lc 'cd /opt/tradedesk/current; set -a; . /etc/tradedesk/tradedesk.env; set +a; sudo -E -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor --phone-test'
+sudo bash -lc 'cd /opt/tradedesk/current; set -a; . /etc/tradedesk/tradedesk.env; set +a; sudo -E -u tradedesk -H /opt/tradedesk/venv/bin/python -m uwos.trade_monitor --manual-test'
 sudo systemctl start trade-monitor.service
 ```
 
-The first command sends an ntfy test without exposing secrets to the
-`tradedesk` user's shell profile. The second command uses the exact systemd
+The first command sends a normal ntfy test without exposing secrets to the
+`tradedesk` user's shell profile. The second command sends an urgent phone-channel
+test through `NTFY_PHONE_TOPIC` and/or Twilio SMS, depending on `PHONE_NOTIFY_MODE`.
+The third command sends the distinct manual-monitor style test, preferably through
+`NTFY_MANUAL_TOPIC` when configured. The fourth command uses the exact systemd
 service path that the timer will run; it should scan during US market hours,
 scan after close only if movement thresholds are crossed, or print why it
 skipped.

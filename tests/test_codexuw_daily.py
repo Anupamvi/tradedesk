@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import datetime as dt
 
-from codexuw.daily import parse_args, write_data_error_report
+from codexuw.daily import live_planning_validation_note, parse_args, write_data_error_report
+import codexuw.daily as daily
 from codexuw.data import find_export
 
 
@@ -51,3 +52,52 @@ def test_daily_defaults_to_eight_final_trades(monkeypatch, tmp_path) -> None:
     args = parse_args()
 
     assert args.max_final_trades == 8
+
+
+def test_stale_daily_folder_warning_says_live_schwab_is_current() -> None:
+    note = live_planning_validation_note(dt.date(2026, 4, 27), dt.date(2026, 5, 5))
+
+    assert "live-planning run using current Schwab chains against historical UW flow from 2026-04-27" in note
+    assert "Use codexuw.replay / historical mode" in note
+
+
+def test_historical_replay_flag_delegates_to_replay_path(monkeypatch, tmp_path) -> None:
+    base_dir = tmp_path / "2026-04-27"
+    out_dir = tmp_path / "out"
+    base_dir.mkdir()
+    calls = {}
+
+    def fake_run_replay(root, out, start, end, max_days, **kwargs):
+        calls["root"] = root
+        calls["out"] = out
+        calls["start"] = start
+        calls["end"] = end
+        calls["max_days"] = max_days
+        calls["kwargs"] = kwargs
+        out.mkdir()
+        report = out / "codexuw_replay_report.md"
+        report.write_text("report", encoding="utf-8")
+        return report
+
+    monkeypatch.setattr("codexuw.replay.run_replay", fake_run_replay)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "codexuw.daily",
+            "--base-dir",
+            str(base_dir),
+            "--out-dir",
+            str(out_dir),
+            "--historical-replay",
+            "--replay-end",
+            "2026-05-01",
+        ],
+    )
+
+    daily.main()
+
+    assert calls["root"] == tmp_path
+    assert calls["start"] == dt.date(2026, 4, 27)
+    assert calls["end"] == dt.date(2026, 5, 1)
+    assert calls["max_days"] == 0
+    assert calls["kwargs"]["entry_start"] == dt.date(2026, 4, 27)

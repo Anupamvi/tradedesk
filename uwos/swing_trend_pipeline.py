@@ -219,6 +219,9 @@ class ScreenerFeatures:
     iv30d_1w_change: float = math.nan
     bullish_premium: float = 0.0
     bearish_premium: float = 0.0
+    call_volume: float = 0.0
+    put_volume: float = 0.0
+    total_option_premium: float = 0.0
     flow_bias: float = 0.0
     put_call_ratio: float = math.nan
     volume_ratio: float = math.nan
@@ -268,6 +271,9 @@ class SwingSignals:
     sector: str = ""
     n_days_observed: int = 0
     latest_close: float = math.nan
+    latest_market_cap: float = math.nan
+    latest_option_volume: float = 0.0
+    latest_option_premium: float = 0.0
     latest_date: Optional[dt.date] = None
     next_earnings_date: Optional[dt.date] = None
 
@@ -555,6 +561,92 @@ def _add_flow_column(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _append_price_trend_supplement(
+    *,
+    selected: List[str],
+    selected_set: Set[str],
+    combined: pd.DataFrame,
+    filters: Dict[str, Any],
+) -> None:
+    """Ensure liquid price-trend leaders are scored even with muted option flow."""
+    if not bool(filters.get("price_trend_supplement_enabled", True)):
+        return
+    max_price_trend = int(filters.get("max_price_trend_tickers", 250) or 0)
+    if max_price_trend <= 0 or combined.empty or "ticker" not in combined.columns:
+        return
+
+    pool = combined.copy()
+    pool["ticker"] = pool["ticker"].astype(str).str.strip().str.upper()
+    if "close" not in pool.columns:
+        return
+    if "_trend_date" not in pool.columns:
+        pool["_trend_date"] = 0
+    pool = pool.sort_values(["ticker", "_trend_date"], kind="mergesort")
+
+    first_close = pd.to_numeric(pool.groupby("ticker")["close"].first(), errors="coerce")
+    latest = pool.groupby("ticker", as_index=False).tail(1).copy()
+    latest["close"] = pd.to_numeric(latest.get("close"), errors="coerce")
+    latest["prev_close"] = pd.to_numeric(latest.get("prev_close"), errors="coerce")
+    latest["_lookback_return_abs"] = latest.apply(
+        lambda row: abs(float(row["close"]) / float(first_close.get(row["ticker"], math.nan)) - 1.0)
+        if math.isfinite(_fnum(row.get("close")))
+        and math.isfinite(_fnum(first_close.get(row["ticker"], math.nan)))
+        and _fnum(first_close.get(row["ticker"], math.nan)) > 0
+        else 0.0,
+        axis=1,
+    )
+    latest["_latest_return_abs"] = latest.apply(
+        lambda row: abs(float(row["close"]) / float(row["prev_close"]) - 1.0)
+        if math.isfinite(_fnum(row.get("close")))
+        and math.isfinite(_fnum(row.get("prev_close")))
+        and _fnum(row.get("prev_close")) > 0
+        else 0.0,
+        axis=1,
+    )
+    total_volume = pd.to_numeric(
+        latest.get("total_volume", pd.Series(0.0, index=latest.index)),
+        errors="coerce",
+    ).fillna(0.0)
+    avg_volume = pd.to_numeric(
+        latest.get("avg30_volume", pd.Series(0.0, index=latest.index)),
+        errors="coerce",
+    ).replace(0, np.nan)
+    latest["_volume_surge"] = (total_volume / avg_volume).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    latest["_mcap_sort"] = pd.to_numeric(
+        latest.get("marketcap", pd.Series(0.0, index=latest.index)),
+        errors="coerce",
+    ).fillna(0.0)
+    latest["_price_trend_rank"] = (
+        latest["_lookback_return_abs"].clip(0, 1.0) * 100.0
+        + latest["_latest_return_abs"].clip(0, 0.25) * 120.0
+        + latest["_volume_surge"].clip(0, 5.0) * 2.0
+        + np.log1p(
+            pd.to_numeric(
+                latest.get("_flow", pd.Series(0.0, index=latest.index)),
+                errors="coerce",
+            ).fillna(0.0)
+        )
+        / 4.0
+    )
+    latest = latest[
+        latest["_lookback_return_abs"].gt(0)
+        | latest["_latest_return_abs"].gt(0)
+        | latest["_volume_surge"].gt(1.0)
+    ].copy()
+    if latest.empty:
+        return
+    ranked = latest.sort_values(
+        ["_price_trend_rank", "_lookback_return_abs", "_latest_return_abs", "_mcap_sort"],
+        ascending=[False, False, False, False],
+        kind="mergesort",
+    )
+    for ticker in ranked["ticker"].head(max_price_trend):
+        ticker = str(ticker or "").strip().upper()
+        if ticker and ticker not in selected_set:
+            selected.append(ticker)
+            selected_set.add(ticker)
+
+
 def build_ticker_universe(
     screeners: Dict[dt.date, pd.DataFrame],
     cfg: Dict,
@@ -575,9 +667,11 @@ def build_ticker_universe(
     catalyst_volume_surge = _fnum(filters.get("catalyst_volume_surge_ratio", 1.5))
 
     frames = []
-    for _, df in screeners.items():
+    for day, df in screeners.items():
         sub = _filter_universe_frame(df, filters=filters, min_mcap=min_mcap, min_vol=min_vol)
         if not sub.empty:
+            sub = sub.copy()
+            sub["_trend_date"] = day
             frames.append(sub)
 
     if not frames:
@@ -597,6 +691,13 @@ def build_ticker_universe(
             if ticker not in selected_set:
                 selected.append(ticker)
                 selected_set.add(ticker)
+
+        _append_price_trend_supplement(
+            selected=selected,
+            selected_set=selected_set,
+            combined=combined,
+            filters=filters,
+        )
 
         catalyst = _filter_universe_frame(
             latest_raw,
@@ -940,6 +1041,8 @@ def extract_screener_features(row: pd.Series) -> ScreenerFeatures:
     bear = _fnum(row.get("bearish_premium", 0))
     total_prem = abs(bull) + abs(bear)
     flow_bias = _safe_div(bull - bear, total_prem) if total_prem > 0 else 0.0
+    call_volume = _fnum(row.get("call_volume", 0))
+    put_volume = _fnum(row.get("put_volume", 0))
 
     iv30d = _fnum(row.get("iv30d", math.nan))
     iv30d_1d = _fnum(row.get("iv30d_1d", math.nan))
@@ -965,6 +1068,9 @@ def extract_screener_features(row: pd.Series) -> ScreenerFeatures:
         iv30d_1w_change=iv30d - iv30d_1w if math.isfinite(iv30d) and math.isfinite(iv30d_1w) else math.nan,
         bullish_premium=bull if math.isfinite(bull) else 0.0,
         bearish_premium=bear if math.isfinite(bear) else 0.0,
+        call_volume=call_volume if math.isfinite(call_volume) else 0.0,
+        put_volume=put_volume if math.isfinite(put_volume) else 0.0,
+        total_option_premium=total_prem if math.isfinite(total_prem) else 0.0,
         flow_bias=flow_bias,
         put_call_ratio=_fnum(row.get("put_call_ratio", math.nan)),
         volume_ratio=_safe_div(total_vol, avg30) if avg30 > 0 else math.nan,
@@ -1165,6 +1271,9 @@ def compute_swing_signals(
     sig.n_days_observed = len(screener_series)
     sig.latest_date = screener_series[-1][0]
     sig.latest_close = screener_series[-1][1].close
+    sig.latest_market_cap = screener_series[-1][1].market_cap
+    sig.latest_option_volume = screener_series[-1][1].call_volume + screener_series[-1][1].put_volume
+    sig.latest_option_premium = screener_series[-1][1].total_option_premium
     sig.sector = screener_series[-1][1].sector
     # Take most recent non-None earnings date
     for _, sf in reversed(screener_series):
@@ -3752,6 +3861,11 @@ def run_backtest(
     bt_rows = []
     for s in scores:
         sig = signals_map.get(s.ticker, SwingSignals())
+        liquidity_rank = (
+            math.log1p(max(0.0, float(sig.latest_option_volume or 0.0)))
+            + math.log1p(max(0.0, float(sig.latest_option_premium or 0.0))) / 3.0
+            + math.log1p(max(0.0, float(sig.latest_market_cap or 0.0))) / 6.0
+        )
         # Use live cost if validated, else heuristic est_cost
         cost = s.live_spread_cost if (s.live_validated is True and math.isfinite(s.live_spread_cost)) else s.est_cost
         if not math.isfinite(cost) or cost <= 0:
@@ -3796,6 +3910,8 @@ def run_backtest(
             "entry_gate": entry_gate,
             "_sort_score": s.composite_score,
             "_sort_live": 1 if s.live_validated is True else 0,
+            "_sort_price_trend": s.price_trend_score,
+            "_sort_liquidity": liquidity_rank,
         }
         if _is_ic:
             # IC needs extra columns for breakeven_levels and required_win_rate_pct
@@ -3813,11 +3929,39 @@ def run_backtest(
     bt_df = pd.DataFrame(bt_rows)
     max_setups = int(bt_cfg.get("max_setups", 160) or 0)
     if max_setups > 0 and len(bt_df) > max_setups:
+        primary_count = max(1, int(max_setups * 0.60))
+        trend_count = max(1, int(max_setups * 0.25))
+        liquidity_count = max_setups - primary_count - trend_count
+        primary = bt_df.sort_values(
+            ["_sort_live", "_sort_score"],
+            ascending=[False, False],
+            kind="mergesort",
+        ).head(primary_count)
+        trend = bt_df.sort_values(
+            ["_sort_live", "_sort_price_trend", "_sort_liquidity", "_sort_score"],
+            ascending=[False, False, False, False],
+            kind="mergesort",
+        ).head(max(0, trend_count))
+        liquidity = bt_df.sort_values(
+            ["_sort_live", "_sort_liquidity", "_sort_price_trend", "_sort_score"],
+            ascending=[False, False, False, False],
+            kind="mergesort",
+        ).head(max(0, liquidity_count))
         bt_df = (
-            bt_df.sort_values(["_sort_live", "_sort_score"], ascending=[False, False])
-            .head(max_setups)
-            .copy()
+            pd.concat([primary, trend, liquidity], ignore_index=True, sort=False)
+            .drop_duplicates("setup_id", keep="first")
         )
+        if len(bt_df) < max_setups:
+            remaining = bt_df["setup_id"].astype(str)
+            fill = bt_df
+            fill = (
+                pd.DataFrame(bt_rows)
+                .loc[lambda df: ~df["setup_id"].astype(str).isin(set(remaining))]
+                .sort_values(["_sort_live", "_sort_score"], ascending=[False, False], kind="mergesort")
+                .head(max_setups - len(bt_df))
+            )
+            bt_df = pd.concat([bt_df, fill], ignore_index=True, sort=False)
+        bt_df = bt_df.head(max_setups).copy()
         kept_ids = set(bt_df["setup_id"].astype(str))
         score_keys = {
             score_obj_id: setup_id
@@ -3825,10 +3969,13 @@ def run_backtest(
             if setup_id in kept_ids
         }
         print(
-            f"  [backtest] Capped setup batch to top {len(bt_df)} by score/live validation",
+            f"  [backtest] Capped setup batch to top {len(bt_df)} by score, price-trend, and liquidity leaders",
             file=sys.stderr,
         )
-    bt_df = bt_df.drop(columns=["_sort_score", "_sort_live"], errors="ignore")
+    bt_df = bt_df.drop(
+        columns=["_sort_score", "_sort_live", "_sort_price_trend", "_sort_liquidity"],
+        errors="ignore",
+    )
     bt_input_csv = out_dir / "_backtest_setups_tmp.csv"
     bt_df.to_csv(bt_input_csv, index=False)
 
@@ -4228,6 +4375,9 @@ def generate_shortlist_csv(
             "confidence_tier": s.confidence_tier,
             "days_observed": sig.n_days_observed,
             "latest_close": round(sig.latest_close, 2) if math.isfinite(sig.latest_close) else "",
+            "latest_market_cap": round(sig.latest_market_cap, 2) if math.isfinite(sig.latest_market_cap) else "",
+            "latest_option_volume": round(sig.latest_option_volume, 2),
+            "latest_option_premium": round(sig.latest_option_premium, 2),
             "latest_iv_rank": round(sig.latest_iv_rank, 1) if math.isfinite(sig.latest_iv_rank) else "",
             "iv_level": sig.iv_level,
             "iv_regime_label": sig.iv_regime,

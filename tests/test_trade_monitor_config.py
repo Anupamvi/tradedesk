@@ -18,12 +18,110 @@ class TestTradeMonitorConfig(unittest.TestCase):
             with patch("dotenv.dotenv_values", return_value={"NTFY_TOPIC": "from-dotenv"}):
                 self.assertEqual(load_notify_config()["ntfy_topic"], "from-dotenv")
 
+    def test_phone_notify_config_reads_env(self):
+        from uwos.trade_monitor import load_notify_config
+
+        with patch.dict(
+            os.environ,
+            {
+                "NTFY_PHONE_TOPIC": "phone-topic",
+                "NTFY_MANUAL_TOPIC": "manual-topic",
+                "MANUAL_ALERT_PREFIX": "TRADE WATCH",
+                "MANUAL_ALERT_TAGS": "rotating_light,bell",
+                "PHONE_NOTIFY_MODE": "both",
+                "TWILIO_ACCOUNT_SID": "sid",
+                "TWILIO_AUTH_TOKEN": "token",
+                "TWILIO_FROM": "+15550000000",
+                "SMS_TO": "+15551112222",
+            },
+            clear=False,
+        ):
+            with patch("dotenv.dotenv_values", return_value={}):
+                cfg = load_notify_config()
+
+        self.assertEqual(cfg["ntfy_phone_topic"], "phone-topic")
+        self.assertEqual(cfg["ntfy_manual_topic"], "manual-topic")
+        self.assertEqual(cfg["manual_alert_prefix"], "TRADE WATCH")
+        self.assertEqual(cfg["manual_alert_tags"], "rotating_light,bell")
+        self.assertEqual(cfg["phone_notify_mode"], "both")
+        self.assertEqual(cfg["twilio_account_sid"], "sid")
+        self.assertEqual(cfg["sms_to"], "+15551112222")
+
+    def test_phone_mode_enabled(self):
+        from uwos.trade_monitor import _phone_mode_enabled
+
+        self.assertTrue(_phone_mode_enabled("ntfy", "ntfy"))
+        self.assertTrue(_phone_mode_enabled("both", "sms"))
+        self.assertTrue(_phone_mode_enabled("ntfy,sms", "sms"))
+        self.assertFalse(_phone_mode_enabled("off", "ntfy"))
+        self.assertFalse(_phone_mode_enabled("", "sms"))
+
     def test_masked_secret_status_never_returns_value(self):
         from uwos.trade_monitor import _masked_secret_status
 
         self.assertEqual(_masked_secret_status(""), "unset")
         self.assertEqual(_masked_secret_status("abc"), "set")
         self.assertEqual(_masked_secret_status("secret-topic"), "set (12 chars)")
+
+    def test_manual_notify_uses_distinct_manual_topic_and_style(self):
+        from uwos import trade_monitor
+
+        cfg = {
+            "ntfy_server": "https://ntfy.sh",
+            "ntfy_topic": "regular-topic",
+            "ntfy_token": "",
+            "ntfy_phone_topic": "phone-topic",
+            "ntfy_manual_topic": "manual-topic",
+            "manual_alert_prefix": "MANUAL MONITOR",
+            "manual_alert_tags": "rotating_light,warning",
+            "phone_notify_mode": "ntfy",
+            "twilio_account_sid": "",
+            "twilio_auth_token": "",
+            "twilio_from": "",
+            "sms_to": "",
+        }
+        with patch("uwos.trade_monitor.load_notify_config", return_value=cfg):
+            with patch("uwos.trade_monitor.send_ntfy", return_value=True) as send_ntfy:
+                trade_monitor.notify(
+                    "[CLOSE] CLOSE: MU",
+                    "Trigger hit",
+                    priority="high",
+                    tags="chart_with_upwards_trend",
+                    critical=True,
+                    manual=True,
+                )
+
+        self.assertEqual(send_ntfy.call_count, 2)
+        regular_call, manual_call = send_ntfy.call_args_list
+        self.assertEqual(regular_call.args[0], "regular-topic")
+        self.assertEqual(regular_call.args[1], "MANUAL MONITOR - [CLOSE] CLOSE: MU")
+        self.assertEqual(regular_call.args[3], "urgent")
+        self.assertIn("rotating_light", regular_call.args[4])
+        self.assertEqual(manual_call.args[0], "manual-topic")
+        self.assertEqual(manual_call.args[1], "MANUAL MONITOR - [CLOSE] CLOSE: MU")
+
+    def test_manual_notify_falls_back_to_phone_topic(self):
+        from uwos import trade_monitor
+
+        cfg = {
+            "ntfy_server": "https://ntfy.sh",
+            "ntfy_topic": "regular-topic",
+            "ntfy_token": "",
+            "ntfy_phone_topic": "phone-topic",
+            "ntfy_manual_topic": "",
+            "manual_alert_prefix": "MANUAL MONITOR",
+            "manual_alert_tags": "rotating_light,warning",
+            "phone_notify_mode": "ntfy",
+            "twilio_account_sid": "",
+            "twilio_auth_token": "",
+            "twilio_from": "",
+            "sms_to": "",
+        }
+        with patch("uwos.trade_monitor.load_notify_config", return_value=cfg):
+            with patch("uwos.trade_monitor.send_ntfy", return_value=True) as send_ntfy:
+                trade_monitor.notify("ROLL: SPY", "Trigger hit", manual=True)
+
+        self.assertEqual(send_ntfy.call_args_list[1].args[0], "phone-topic")
 
     def test_trade_ideas_excludes_current_underlyings(self):
         from uwos.trade_monitor import run_trade_ideas_scan

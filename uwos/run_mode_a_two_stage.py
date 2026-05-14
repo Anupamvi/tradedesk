@@ -2650,6 +2650,9 @@ def run():
     scout_live_entry_enabled = bool(approval_cfg.get("scout_live_entry_enabled", False))
     enable_pilot_book = bool(approval_cfg.get("enable_pilot_book", False))
     pilot_live_entry_enabled = bool(approval_cfg.get("pilot_live_entry_enabled", False))
+    pilot_enter_near_miss_within_tolerance = bool(
+        approval_cfg.get("pilot_enter_near_miss_within_tolerance", False)
+    )
     pilot_size_mult = fnum(approval_cfg.get("pilot_size_mult", 0.10))
     pilot_max_loss = fnum(approval_cfg.get("pilot_max_loss", 150.0))
     pilot_min_ev_ml = fnum(approval_cfg.get("pilot_min_ev_ml", 1.50))
@@ -7396,11 +7399,27 @@ def run():
         gex_block_reason = live_gex_entry_block_reason(row, auto_gex_required)
         if gex_block_reason:
             return "WAIT", gex_block_reason
+        execution_book = str(row.get("execution_book", "") or "").strip()
+        if (
+            execution_book == "Pilot"
+            and pilot_enter_near_miss_within_tolerance
+            and ok_live
+            and gate_near_miss
+            and not gate_pass_strict
+        ):
+            if portfolio_review:
+                return "REVIEW", f"Position review required before adding risk: {portfolio_cap_reason}."
+            miss_abs = fnum(row.get("gate_miss_abs"))
+            tol_total = fnum(row.get("gate_tol_total"))
+            tolerance_note = ""
+            if np.isfinite(miss_abs) and np.isfinite(tol_total):
+                tolerance_note = f" miss {miss_abs:.2f} <= tolerance {tol_total:.2f}"
+            return "ENTER", f"Pilot live quote is inside configured entry tolerance ({_target_limit_text().rstrip('.')}{tolerance_note})."
         price_target_required = (
             live_status == "fails_live_entry_gate"
             or (gate_near_miss and not gate_pass_strict)
             or (
-                str(row.get("execution_book", "")).strip() == "Pilot"
+                execution_book == "Pilot"
                 and ok_live
                 and not gate_pass_strict
             )
@@ -7431,6 +7450,18 @@ def run():
             reason = str(row.get("entry_structure_reason_live", "") or "").strip()
             return "SKIP", f"Invalid live structure{': ' + reason if reason else ''}."
         return "SKIP", f"Live status is not executable: {live_status or 'unknown'}."
+
+    def live_action_label(action: str) -> str:
+        """Human-readable action label for reports; raw code is kept separately."""
+        code = str(action or "").strip().upper()
+        labels = {
+            "ENTER": "🟣 ENTER NOW",
+            "TARGET": "🟢 WORK LIMIT",
+            "REVIEW": "🟡 REVIEW",
+            "WAIT": "⚪ WAIT",
+            "SKIP": "🔴 SKIP",
+        }
+        return labels.get(code, code or "⚪ WAIT")
 
     out_rows = []
     for i, r in mdf.iterrows():
@@ -7478,6 +7509,7 @@ def run():
             max_loss = "N/A"
             be_txt = "N/A"
         live_action, live_action_reason = live_entry_action(r, approved)
+        live_action_display = live_action_label(live_action)
 
         if approved:
             confidence_tier = str(r.get("confidence_tier", ""))
@@ -7861,7 +7893,8 @@ def run():
                 ),
                 "Expiry": str(r["expiry"])[:10],
                 "DTE": (dt.datetime.strptime(str(r["expiry"])[:10], "%Y-%m-%d").date() - asof).days,
-                "Live Action": live_action,
+                "Live Action": live_action_display,
+                "Live Action Code": live_action,
                 "Live Check Reason": live_action_reason,
                 "Entry Gate": str(r.get("entry_gate", "") or ""),
                 "Net Credit/Debit": net_txt,
@@ -7907,6 +7940,7 @@ def run():
             "Expiry",
             "DTE",
             "Live Action",
+            "Live Action Code",
             "Live Check Reason",
             "Entry Gate",
             "Net Credit/Debit",
@@ -9338,6 +9372,14 @@ def run():
 
     def _decision_key(value: object) -> str:
         text = str(value or "").strip().upper()
+        if "PILOT" in text and "ENTER" in text:
+            return "PILOT ENTER"
+        if "PILOT" in text and ("TARGET" in text or "WAIT" in text or "LIMIT" in text):
+            return "PILOT LIMIT"
+        if "PILOT" in text and "REVIEW" in text:
+            return "PILOT REVIEW"
+        if "PILOT" in text:
+            return "PILOT REVIEW"
         if "HIGH" in text and "ENTER" in text:
             return "HIGH ENTER"
         if "HIGH" in text and ("TARGET" in text or "WAIT" in text or "LIMIT" in text):
@@ -9390,6 +9432,12 @@ def run():
             return "🟣 INCOME LIMIT"
         if key == "INCOME REVIEW":
             return "🟣 INCOME REVIEW"
+        if key == "PILOT ENTER":
+            return "🟠 PILOT ENTER"
+        if key == "PILOT LIMIT":
+            return "🟠 PILOT LIMIT"
+        if key == "PILOT REVIEW":
+            return "🟠 PILOT REVIEW"
         if key == "WATCHLIST":
             return "⚪ WATCHLIST"
         if key == "ENTER":
@@ -9486,7 +9534,15 @@ def run():
             for _, row in approved_df.iterrows():
                 live_action = str(row.get("Live Action", "") or "").strip()
                 book_label = str(row.get("Execution Book", "") or "").strip()
-                decision_prefix = "INCOME" if book_label == "Income" else "MEDIUM" if book_label == "Medium" else "HIGH"
+                decision_prefix = (
+                    "INCOME"
+                    if book_label == "Income"
+                    else "MEDIUM"
+                    if book_label == "Medium"
+                    else "PILOT"
+                    if book_label == "Pilot"
+                    else "HIGH"
+                )
                 rows.append(
                     {
                         "Decision": f"{decision_prefix} {live_action or 'REVIEW'}",
@@ -9534,13 +9590,16 @@ def run():
             "INCOME ENTER": 5,
             "INCOME LIMIT": 6,
             "INCOME REVIEW": 7,
+            "PILOT ENTER": 8,
+            "PILOT LIMIT": 9,
+            "PILOT REVIEW": 10,
             "ENTER": 0,
             "TARGET": 1,
-            "WAIT FOR PRICE": 8,
-            "REVIEW": 9,
-            "REVIEW ONLY": 9,
-            "WATCHLIST": 10,
-            "SKIP": 10,
+            "WAIT FOR PRICE": 11,
+            "REVIEW": 12,
+            "REVIEW ONLY": 12,
+            "WATCHLIST": 13,
+            "SKIP": 13,
         }
         board["_decision_key"] = board["Decision"].map(_decision_key)
         board["_rank"] = board["_decision_key"].map(lambda x: decision_rank.get(str(x).strip(), 9))
@@ -10481,8 +10540,114 @@ def run():
 
     edge_qualified_rows = int((pd.to_numeric(decision_audit_all.get("edge_score", pd.Series(dtype=float)), errors="coerce").fillna(0) >= 1).sum()) if not decision_audit_all.empty else 0
     qualified_candidate_rows = int(decision_audit_all.get("qualified_candidate", pd.Series(dtype=bool)).fillna(False).astype(bool).sum()) if not decision_audit_all.empty else 0
-    live_enter_rows = int((out_df.get("Live Action", pd.Series(dtype=str)).fillna("").astype(str) == "ENTER").sum()) if not out_df.empty else 0
+    live_action_code_series = out_df.get("Live Action Code", out_df.get("Live Action", pd.Series(dtype=str)))
+    live_enter_rows = int((live_action_code_series.fillna("").astype(str) == "ENTER").sum()) if not out_df.empty else 0
     weekly_credit_fallback, weekly_credit_meta = weekly_credit_fallback_section(live_enter_rows)
+
+    def weekly_credit_work_limit_board(meta: dict, limit: int = 8) -> list[str]:
+        """Show live-valid weekly-credit work limits without calling them approved."""
+        artifacts = meta.get("artifacts", {}) if isinstance(meta, dict) else {}
+        final_csv = artifacts.get("weekly_final_live_csv") or artifacts.get("weekly_live_csv") or ""
+        path = Path(str(final_csv)) if final_csv else Path()
+        if not path.exists():
+            return []
+        try:
+            wdf = pd.read_csv(path)
+        except Exception:
+            return []
+        if wdf.empty:
+            return []
+        valid = wdf.get("is_final_live_valid", pd.Series(False, index=wdf.index)).fillna(False).astype(bool)
+        status_ok = wdf.get("live_status", pd.Series("", index=wdf.index)).fillna("").astype(str).eq("ok_live")
+        board = wdf[valid & status_ok].copy()
+        if board.empty:
+            return []
+
+        def _spread(row) -> str:
+            ticker = str(row.get("ticker", "") or "")
+            strategy = str(row.get("strategy", "") or "")
+            expiry = str(row.get("expiry", "") or "")[:10]
+            short_strike = fnum(row.get("short_strike"))
+            long_strike = fnum(row.get("long_strike"))
+            is_put = "put" in strategy.lower()
+            put_call = "P" if is_put else "C"
+            if np.isfinite(short_strike) and np.isfinite(long_strike):
+                return f"{ticker} {strategy} Sell {short_strike:g}{put_call} / Buy {long_strike:g}{put_call} {expiry}"
+            return f"{ticker} {strategy} {expiry}".strip()
+
+        def _action(row) -> str:
+            net_type = str(row.get("net_type", "") or "").strip().lower()
+            live_net = fnum(row.get("live_net_bid_ask"))
+            threshold = fnum(row.get("entry_gate_threshold"))
+            if not np.isfinite(threshold):
+                threshold = fnum(row.get("entry_net"))
+            if np.isfinite(live_net) and np.isfinite(threshold):
+                if net_type == "credit" and live_net >= threshold:
+                    return live_action_label("ENTER")
+                if net_type == "debit" and live_net <= threshold:
+                    return live_action_label("ENTER")
+            return live_action_label("TARGET")
+
+        def _limit(row) -> str:
+            net_type = str(row.get("net_type", "") or "").strip().lower()
+            threshold = fnum(row.get("entry_gate_threshold"))
+            if not np.isfinite(threshold):
+                threshold = fnum(row.get("entry_net"))
+            if not np.isfinite(threshold):
+                return ""
+            return f"{'>=' if net_type == 'credit' else '<='} {threshold:.2f} {'credit' if net_type == 'credit' else 'debit'}"
+
+        def _live(row) -> str:
+            live_net = fnum(row.get("live_net_bid_ask"))
+            live_mark = fnum(row.get("live_net_mark"))
+            if np.isfinite(live_net) and np.isfinite(live_mark):
+                return f"bid {live_net:.2f} / mid {live_mark:.2f}"
+            if np.isfinite(live_net):
+                return f"live {live_net:.2f}"
+            return ""
+
+        def _pop(row) -> str:
+            short_delta = abs(fnum(row.get("short_delta_live")))
+            if np.isfinite(short_delta):
+                return f"{max(0.0, min(1.0, 1.0 - short_delta)):.0%}"
+            return ""
+
+        board["Action"] = board.apply(_action, axis=1)
+        board["Trade"] = board.apply(_spread, axis=1)
+        board["Limit"] = board.apply(_limit, axis=1)
+        board["Live"] = board.apply(_live, axis=1)
+        board["POP"] = board.apply(_pop, axis=1)
+        board["Conf"] = pd.to_numeric(board.get("confidence_score", pd.Series(np.nan, index=board.index)), errors="coerce").map(
+            lambda x: f"{x:.1f}" if np.isfinite(x) else ""
+        )
+        board["Max Loss"] = pd.to_numeric(board.get("live_max_loss", pd.Series(np.nan, index=board.index)), errors="coerce").map(
+            lambda x: money(x) if np.isfinite(x) else ""
+        )
+        board["_order"] = board["Action"].map({
+            live_action_label("ENTER"): 0,
+            live_action_label("TARGET"): 1,
+            live_action_label("REVIEW"): 2,
+        }).fillna(3)
+        board["_score"] = pd.to_numeric(board.get("score", pd.Series(0, index=board.index)), errors="coerce").fillna(0)
+        board = board.sort_values(["_order", "_score"], ascending=[True, False]).head(limit)
+        actionable_count = int(meta.get("rows_actionable", 0) or 0) if isinstance(meta, dict) else 0
+        status_line = (
+            "- These rows passed the fallback safety gates and are repeated here as limit-order context."
+            if actionable_count > 0
+            else "- Review only: no weekly-credit fallback row passed all fallback safety gates. Use this as a target-price watch board, not an action queue."
+        )
+        return [
+            "## Weekly Credit Work Limits",
+            "",
+            "These are live-valid rows from the weekly credit fallback book. Approved fallback entries, if any, are listed under Trades To Enter.",
+            status_line,
+            "`🟣 ENTER NOW` means the live bid/ask passes the target; `🟢 WORK LIMIT` means wait for the shown limit.",
+            "",
+            markdown_table(board, ["Action", "Trade", "Limit", "Live", "POP", "Conf", "Max Loss"]),
+            "",
+        ]
+
+    actionable_limit_board = weekly_credit_work_limit_board(weekly_credit_meta)
     funnel_metrics_lines = [
         "## Daily Funnel Metrics",
         "",
@@ -10498,6 +10663,7 @@ def run():
     ]
 
     lines = [
+        *actionable_limit_board,
         *weekly_credit_fallback,
         *daily_trade_board,
         *review_candidate_pool,
@@ -10939,7 +11105,17 @@ def run():
             "approved_rows": int(approved_count),
             "edge_qualified_rows": int((pd.to_numeric(decision_audit_all.get("edge_score", pd.Series(dtype=float)), errors="coerce").fillna(0) >= 1).sum()) if not decision_audit_all.empty else 0,
             "qualified_review_rows": int(decision_audit_all.get("qualified_candidate", pd.Series(dtype=bool)).fillna(False).astype(bool).sum()) if not decision_audit_all.empty else 0,
-            "live_enter_rows": int((out_df.get("Live Action", pd.Series(dtype=str)).fillna("").astype(str) == "ENTER").sum()) if not out_df.empty else 0,
+            "live_enter_rows": int(
+                (
+                    out_df.get(
+                        "Live Action Code",
+                        out_df.get("Live Action", pd.Series(dtype=str)),
+                    )
+                    .fillna("")
+                    .astype(str)
+                    == "ENTER"
+                ).sum()
+            ) if not out_df.empty else 0,
             "approved_core_rows": int(core_count),
             "approved_tactical_rows": int(tactical_count),
             "approved_quant_edge_rows": int(

@@ -51,8 +51,9 @@ Next:
   2. Copy Schwab token JSON to $STATE_DIR/tokens/schwab_token.json
   3. Run:
        sudo -u $SERVICE_USER -H $VENV_DIR/bin/python -m uwos.trade_monitor --test
+       sudo -u $SERVICE_USER -H $VENV_DIR/bin/python -m uwos.trade_monitor --manual-test
        sudo -u $SERVICE_USER -H $VENV_DIR/bin/python -m uwos.trade_monitor
-  4. Start hourly timer:
+  4. Start 5-minute market-hours timer:
        sudo systemctl enable --now trade-monitor.timer
 
 The timer was installed but not started.

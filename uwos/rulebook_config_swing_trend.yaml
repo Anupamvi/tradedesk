@@ -38,6 +38,8 @@ filters:
   max_latest_day_tickers: 150     # Supplement with fresh same-day flow so new catalysts are not missed
   max_earnings_tickers: 250       # Include near-earnings names even before option flow ranks high
   max_catalyst_tickers: 250       # Supplement high-IV/earnings/volume-surge names from the signal date
+  price_trend_supplement_enabled: true # Ensure liquid price-trend leaders are scored even when option flow is muted
+  max_price_trend_tickers: 250     # Top names by lookback/latest move, volume surge, and flow
   max_total_tickers_to_score: 750 # Hard cap after cumulative + latest-day + earnings + catalyst supplements
   catalyst_min_market_cap: 1000000000
   catalyst_min_avg30_volume: 250000

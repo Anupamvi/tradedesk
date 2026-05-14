@@ -2,14 +2,11 @@
 Description=Run UW Trade Monitor during market and after-hours watch windows
 
 [Timer]
-# Regular session: market open, then hourly through the trading day.
-OnCalendar=Mon..Fri *-*-* 09:30:00 America/New_York
-OnCalendar=Mon..Fri *-*-* 10..15:00:00 America/New_York
-# After close: run only if the code sees meaningful movement in SPY/QQQ,
-# open-position underlyings, or recent trade-idea tickers.
-OnCalendar=Mon..Fri *-*-* 16,17,18,19:30:00 America/New_York
+# Poll every 5 minutes on weekdays. The Python monitor skips outside market
+# hours unless after-hours movement gates pass, so this calendar stays simple.
+OnCalendar=Mon..Fri *-*-* *:0/5:00 America/New_York
 Persistent=true
-RandomizedDelaySec=60
+RandomizedDelaySec=20
 Unit=trade-monitor.service
 
 [Install]

@@ -6,16 +6,19 @@ diffs against previous state, and sends alerts for all transitions.
 
 Usage:
     python -m uwos.trade_monitor              # single run
-    python -m uwos.trade_monitor --loop 30    # run every 30 min during market hours
+    python -m uwos.trade_monitor --loop 5     # run every 5 min during market hours
     python -m uwos.trade_monitor --test       # send a test notification
+    python -m uwos.trade_monitor --manual-test # send a manual-monitor style test
 """
 
 import argparse
 import datetime as dt
+import base64
 import json
 import os
 import sys
 import time
+import urllib.parse
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -41,15 +44,29 @@ def load_notify_config() -> Dict[str, str]:
     from dotenv import dotenv_values
     env = dotenv_values(ROOT / ".env")
     return {
+        "ntfy_server": os.environ.get("NTFY_SERVER") or env.get("NTFY_SERVER", "https://ntfy.sh"),
         "ntfy_topic": os.environ.get("NTFY_TOPIC") or env.get("NTFY_TOPIC", ""),
+        "ntfy_token": os.environ.get("NTFY_TOKEN") or env.get("NTFY_TOKEN", ""),
+        "ntfy_phone_topic": os.environ.get("NTFY_PHONE_TOPIC") or env.get("NTFY_PHONE_TOPIC", ""),
+        "ntfy_manual_topic": os.environ.get("NTFY_MANUAL_TOPIC") or env.get("NTFY_MANUAL_TOPIC", ""),
+        "manual_alert_prefix": os.environ.get("MANUAL_ALERT_PREFIX") or env.get("MANUAL_ALERT_PREFIX", "MANUAL MONITOR"),
+        "manual_alert_tags": os.environ.get("MANUAL_ALERT_TAGS") or env.get("MANUAL_ALERT_TAGS", "rotating_light,warning"),
+        "phone_notify_mode": (
+            os.environ.get("PHONE_NOTIFY_MODE") or env.get("PHONE_NOTIFY_MODE", "ntfy")
+        ).lower(),
+        "twilio_account_sid": os.environ.get("TWILIO_ACCOUNT_SID") or env.get("TWILIO_ACCOUNT_SID", ""),
+        "twilio_auth_token": os.environ.get("TWILIO_AUTH_TOKEN") or env.get("TWILIO_AUTH_TOKEN", ""),
+        "twilio_from": os.environ.get("TWILIO_FROM") or env.get("TWILIO_FROM", ""),
+        "sms_to": os.environ.get("SMS_TO") or env.get("SMS_TO", ""),
     }
 
 
 def send_ntfy(topic: str, title: str, body: str, priority: str = "default",
-              tags: str = "") -> bool:
+              tags: str = "", *, server: str = "https://ntfy.sh", token: str = "") -> bool:
     """Push notification via ntfy.sh. Retries once on failure."""
     if not topic:
         return False
+    server = (server or "https://ntfy.sh").rstrip("/")
     payload = {
         "topic": topic,
         "title": _strip_emoji(title),
@@ -62,8 +79,10 @@ def send_ntfy(topic: str, title: str, body: str, priority: str = "default",
 
     for attempt in range(2):  # retry once
         try:
-            req = urllib.request.Request("https://ntfy.sh", data=data, method="POST")
+            req = urllib.request.Request(server, data=data, method="POST")
             req.add_header("Content-Type", "application/json")
+            if token:
+                req.add_header("Authorization", f"Bearer {token}")
             urllib.request.urlopen(req, timeout=10)
             return True
         except Exception as e:
@@ -81,6 +100,64 @@ def _strip_emoji(text: str) -> str:
 
 def _priority_int(p: str) -> int:
     return {"min": 1, "low": 2, "default": 3, "high": 4, "urgent": 5}.get(p, 3)
+
+
+def _phone_mode_enabled(mode: str, channel: str) -> bool:
+    tokens = {part.strip().lower() for part in str(mode or "").split(",") if part.strip()}
+    if not tokens:
+        return False
+    if "off" in tokens or "none" in tokens:
+        return False
+    return "both" in tokens or "all" in tokens or channel in tokens
+
+
+def _merge_tags(*tag_groups: str) -> str:
+    seen = set()
+    merged = []
+    for group in tag_groups:
+        for tag in str(group or "").split(","):
+            cleaned = tag.strip()
+            if cleaned and cleaned not in seen:
+                seen.add(cleaned)
+                merged.append(cleaned)
+    return ",".join(merged)
+
+
+def _manual_alert_title(title: str, cfg: Dict[str, str]) -> str:
+    prefix = (cfg.get("manual_alert_prefix") or "MANUAL MONITOR").strip()
+    clean_title = _strip_emoji(title)
+    if not prefix:
+        return clean_title
+    if clean_title.upper().startswith(prefix.upper()):
+        return clean_title
+    return f"{prefix} - {clean_title}"
+
+
+def send_sms_twilio(cfg: Dict[str, str], title: str, body: str) -> bool:
+    """Send an optional SMS via Twilio. Returns False when not configured."""
+    sid = cfg.get("twilio_account_sid", "")
+    token = cfg.get("twilio_auth_token", "")
+    sender = cfg.get("twilio_from", "")
+    recipient = cfg.get("sms_to", "")
+    if not all([sid, token, sender, recipient]):
+        return False
+    text = f"{_strip_emoji(title)}\n{body}"[:1500]
+    data = urllib.parse.urlencode({"From": sender, "To": recipient, "Body": text}).encode("utf-8")
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
+    auth = base64.b64encode(f"{sid}:{token}".encode("utf-8")).decode("ascii")
+    for attempt in range(2):
+        try:
+            req = urllib.request.Request(url, data=data, method="POST")
+            req.add_header("Authorization", f"Basic {auth}")
+            req.add_header("Content-Type", "application/x-www-form-urlencoded")
+            urllib.request.urlopen(req, timeout=10)
+            return True
+        except Exception as e:
+            if attempt == 0:
+                time.sleep(2)
+            else:
+                _safe_print(f"  [sms] FAILED after retry: {e}")
+    return False
 
 
 def _masked_secret_status(value: str) -> str:
@@ -114,12 +191,49 @@ def _safe_print(msg: str) -> None:
 
 
 def notify(title: str, body: str, priority: str = "default",
-           tags: str = "", critical: bool = False) -> None:
-    """Send notification via ntfy push."""
+           tags: str = "", critical: bool = False, manual: bool = False) -> None:
+    """Send notification via ntfy, plus optional phone channels for risk/manual alerts."""
     cfg = load_notify_config()
-    sent = send_ntfy(cfg["ntfy_topic"], title, body, priority, tags)
+    send_title = _manual_alert_title(title, cfg) if manual else title
+    send_priority = "urgent" if manual else priority
+    send_tags = _merge_tags(cfg.get("manual_alert_tags", ""), tags) if manual else tags
+
+    sent = send_ntfy(
+        cfg["ntfy_topic"],
+        send_title,
+        body,
+        send_priority,
+        send_tags,
+        server=cfg["ntfy_server"],
+        token=cfg["ntfy_token"],
+    )
     if not sent:
-        _safe_print(f"  [notify] ntfy failed, message: {_strip_emoji(title)}: {body}")
+        _safe_print(f"  [notify] ntfy failed, message: {_strip_emoji(send_title)}: {body}")
+    if not critical and not manual:
+        return
+
+    phone_mode = cfg.get("phone_notify_mode", "")
+    if _phone_mode_enabled(phone_mode, "ntfy"):
+        phone_topic = (
+            cfg.get("ntfy_manual_topic", "") if manual and cfg.get("ntfy_manual_topic", "")
+            else cfg.get("ntfy_phone_topic", "")
+        )
+        if phone_topic and phone_topic != cfg.get("ntfy_topic", ""):
+            phone_sent = send_ntfy(
+                phone_topic,
+                send_title if manual else f"PHONE ALERT - {_strip_emoji(send_title)}",
+                body,
+                "urgent",
+                send_tags or "rotating_light",
+                server=cfg["ntfy_server"],
+                token=cfg["ntfy_token"],
+            )
+            if not phone_sent:
+                _safe_print(f"  [notify] phone ntfy failed: {_strip_emoji(send_title)}: {body}")
+    if _phone_mode_enabled(phone_mode, "sms"):
+        sms_sent = send_sms_twilio(cfg, send_title, body)
+        if not sms_sent:
+            _safe_print(f"  [notify] SMS not sent or not configured: {_strip_emoji(send_title)}")
 
 
 # ---------------------------------------------------------------------------
@@ -841,7 +955,7 @@ def run_once(force: bool = False, manual: bool = False) -> int:
         priority = "urgent" if alert.get("critical") else "default"
         tags = "rotating_light" if alert.get("critical") else "chart_with_upwards_trend"
         _safe_print(f"    {title}: {body}")
-        notify(title, body, priority=priority, tags=tags, critical=True)
+        notify(title, body, priority=priority, tags=tags, critical=True, manual=manual)
     total_alerts += len(alerts)
 
     # Mode 2: Trade ideas scanner during market hours, plus moving after-hours windows.
@@ -891,7 +1005,7 @@ def run_once(force: bool = False, manual: bool = False) -> int:
                         f"{legs} {r.get('expiry', '')} | Score: {r.get('composite',0):.0f}"
                     )
                 _safe_print(f"    IDEA: {title}: {body}")
-                notify(title, body, priority="high", tags="chart_with_upwards_trend")
+                notify(title, body, priority="high", tags="chart_with_upwards_trend", manual=manual)
             total_alerts += len(idea_alerts)
             if not idea_alerts:
                 _safe_print(f"  [{dt.datetime.now():%H:%M:%S}] No trade ideas")
@@ -910,30 +1024,49 @@ def main():
                         help="Run every N minutes (0 = single run)")
     parser.add_argument("--test", action="store_true",
                         help="Send a test notification and exit")
+    parser.add_argument("--phone-test", action="store_true",
+                        help="Send an urgent test through phone channels and exit")
+    parser.add_argument("--manual-test", action="store_true",
+                        help="Send a distinct manual-monitor phone alert test and exit")
     parser.add_argument("--force", action="store_true",
                         help="Run even outside market hours")
     parser.add_argument("--manual", action="store_true",
                         help="Manual run — notify ALL current verdicts (not just transitions)")
     args = parser.parse_args()
 
-    if args.test:
+    if args.test or args.phone_test or args.manual_test:
         print("Sending test notification...")
+        critical = bool(args.phone_test or args.manual_test)
+        manual_test = bool(args.manual_test)
         notify(
-            "TEST ONLY - Trade Monitor",
+            (
+                "TEST ONLY - Manual Monitor"
+                if manual_test else
+                "TEST ONLY - Trade Monitor" if not critical else "TEST ONLY - Phone Alert"
+            ),
             (
                 "Notification path OK. Example setup format: "
                 "[BREAKOUT] Bull Put Credit: Sell $460P / Buy $450P 2026-06-18 | "
                 "Cr $3.40 | MaxP $340 | Prob 66% | Tech 8/10 | TEST ONLY, do not trade."
             ),
-            priority="default",
-            tags="white_check_mark",
+            priority="default" if not critical else "urgent",
+            tags="white_check_mark" if not critical else "rotating_light",
+            critical=critical,
+            manual=manual_test,
         )
-        print("Done. Check your ntfy app.")
+        if manual_test:
+            print("Done. Check your manual-monitor ntfy topic on the phone.")
+        else:
+            print("Done. Check your ntfy app and phone channel." if critical else "Done. Check your ntfy app.")
         return
 
     if args.loop > 0:
         print(f"Trade Monitor starting — scanning every {args.loop} min during market hours")
-        print(f"  ntfy topic: {_masked_secret_status(load_notify_config()['ntfy_topic'])}")
+        cfg = load_notify_config()
+        print(f"  ntfy topic: {_masked_secret_status(cfg['ntfy_topic'])}")
+        print(f"  phone ntfy topic: {_masked_secret_status(cfg['ntfy_phone_topic'])}")
+        print(f"  manual ntfy topic: {_masked_secret_status(cfg['ntfy_manual_topic'])}")
+        print(f"  phone mode: {cfg['phone_notify_mode'] or 'unset'}")
         print(f"  State file: {STATE_FILE}")
         print(f"  Press Ctrl+C to stop")
         while True:

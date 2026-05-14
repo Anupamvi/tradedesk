@@ -12,7 +12,7 @@ import re
 import sqlite3
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -67,34 +67,8 @@ DEFAULT_EVENT_WATCH_MIN_PRICE_SCORE = 65.0
 DEFAULT_EVENT_WATCH_MIN_WHALE_CONSENSUS = 80.0
 DEFAULT_EVENT_WATCH_MIN_IV_RANK = 85.0
 DEFAULT_UNIVERSE_RADAR_MIN_SCORE = 35.0
-HOT_TICKER_RECALL_UNIVERSE = (
-    "AAPL",
-    "GOOG",
-    "GOOGL",
-    "AMZN",
-    "MSFT",
-    "META",
-    "NVDA",
-    "TSLA",
-    "AMD",
-    "AVGO",
-    "MU",
-    "INTC",
-    "PLTR",
-    "PLT",
-    "NFLX",
-    "ORCL",
-    "BABA",
-    "SMCI",
-    "MSTR",
-    "CRWV",
-    "SNOW",
-    "ARM",
-    "CRM",
-    "COIN",
-    "HOOD",
-    "SOFI",
-)
+DEFAULT_LIQUID_TREND_BOARD_TOP = 25
+DEFAULT_LIQUID_RECALL_TOP = 25
 DEFAULT_WALK_FORWARD_SAMPLES = 0
 DEFAULT_WALK_FORWARD_HORIZONS = "5,10,20"
 DEFAULT_WALK_FORWARD_TOP = 3
@@ -2167,11 +2141,22 @@ def compute_market_regime(root: Path, trading_days: List[Tuple[dt.date, Path]]) 
     index_pcr = float(np.mean(index_pcr_values)) if index_pcr_values else math.nan
     index_iv_rank = float(np.mean(index_iv_values)) if index_iv_values else math.nan
 
-    if (
-        (math.isfinite(breadth) and breadth < 0.40)
-        or (math.isfinite(spy_ret) and spy_ret < -0.005 and math.isfinite(qqq_ret) and qqq_ret < -0.005)
-        or (math.isfinite(index_pcr) and index_pcr >= 1.25)
-    ):
+    weak_breadth = math.isfinite(breadth) and breadth < 0.40
+    severe_breadth = math.isfinite(breadth) and breadth < 0.35
+    index_selloff = (
+        math.isfinite(spy_ret)
+        and math.isfinite(qqq_ret)
+        and spy_ret < -0.005
+        and qqq_ret < -0.005
+    )
+    index_pressure = (
+        math.isfinite(spy_ret)
+        and math.isfinite(qqq_ret)
+        and (spy_ret < -0.005 or qqq_ret < -0.005)
+    )
+    pcr_stress = math.isfinite(index_pcr) and index_pcr >= 1.25
+
+    if severe_breadth or index_selloff or pcr_stress or (weak_breadth and index_pressure):
         regime = "risk_off"
     elif (
         math.isfinite(breadth)
@@ -8288,7 +8273,7 @@ def _compact_ticket_decision(status: str) -> str:
     normalized = str(status or "").strip().upper()
     if normalized == "MAKE NOW":
         return "Can open if trigger holds"
-    if normalized in {"TACTICAL PROBE", "PROBE ONLY"}:
+    if normalized in {"STARTER ACTIONABLE", "TACTICAL PROBE", "PROBE ONLY"}:
         return "Probe only, max 0.25R"
     if normalized == "DO NOT OPEN":
         return "Do not open"
@@ -8303,13 +8288,14 @@ def _actionable_entry_status(row: pd.Series) -> str:
     tier = str(row.get("position_size_tier", "") or "").strip().upper()
     if tier in {"STANDARD_RISK", "MAX_PLANNED_RISK"}:
         return "MAKE NOW"
-    return "TACTICAL PROBE"
+    return "STARTER ACTIONABLE"
 
 
 def _status_badge_html(status: str) -> str:
     normalized = str(status or "").strip().upper() or "-"
     palette = {
         "MAKE NOW": ("#dcfce7", "#166534", "#86efac"),
+        "STARTER ACTIONABLE": ("#fef9c3", "#854d0e", "#fde047"),
         "TACTICAL PROBE": ("#fef3c7", "#92400e", "#facc15"),
         "PROBE ONLY": ("#dbeafe", "#1d4ed8", "#93c5fd"),
         "WATCH ONLY": ("#e0f2fe", "#075985", "#7dd3fc"),
@@ -8420,15 +8406,16 @@ def _blocker_badges_html(why: str) -> str:
 def _status_text(status: str) -> str:
     normalized = str(status or "").strip().upper() or "-"
     labels = {
-        "MAKE NOW": "GREEN MAKE NOW",
-        "TACTICAL PROBE": "YELLOW TACTICAL PROBE",
-        "PROBE ONLY": "BLUE PROBE ONLY",
-        "TRADE SETUP": "BLUE TRADE SETUP",
-        "REBUILD": "BLUE REBUILD",
-        "PATTERN": "GRAY PATTERN",
-        "EVENT WATCH": "WATCH ONLY - NO ORDER",
-        "WATCH ONLY": "BLUE WATCH ONLY",
-        "DO NOT OPEN": "RED DO NOT OPEN",
+        "MAKE NOW": "🟢 GREEN MAKE NOW",
+        "STARTER ACTIONABLE": "🟡 STARTER ACTIONABLE",
+        "TACTICAL PROBE": "🟠 TACTICAL PROBE",
+        "PROBE ONLY": "🔵 PROBE ONLY",
+        "TRADE SETUP": "🔵 TRADE SETUP",
+        "REBUILD": "🔵 REBUILD",
+        "PATTERN": "⚪ PATTERN",
+        "EVENT WATCH": "🔵 WATCH ONLY - NO ORDER",
+        "WATCH ONLY": "🔵 WATCH ONLY",
+        "DO NOT OPEN": "🔴 RED DO NOT OPEN",
     }
     return labels.get(normalized, normalized)
 
@@ -8460,20 +8447,43 @@ def _blocker_text(why: str) -> str:
 def _render_trade_ticket_html_table(rows: List[Dict[str, str]]) -> str:
     if not rows:
         return "- No final trade tickets surfaced."
-    table_rows: List[List[str]] = []
-    for row in rows:
-        table_rows.append(
-            [
-                _clip_text(row.get("ticker", ""), 12),
-                _clip_text(row.get("status", ""), 24),
-                _clip_text(row.get("setup", ""), 120),
-                _clip_text(row.get("entry", ""), 120),
-            ]
-        )
-    return _render_table(
-        ["Ticker", "Color / Status", "Trade Setup", "Enter / Act Only When"],
-        table_rows,
-    )
+    groups = [
+        ("🟢 Make Now", lambda value: "MAKE NOW" in value),
+        ("🟡 Starter Actionable", lambda value: "STARTER ACTIONABLE" in value),
+        ("🟠 Tactical Probes", lambda value: "TACTICAL PROBE" in value),
+        ("🔵 Watch / Rebuild", lambda value: "WATCH" in value or "REBUILD" in value or "TRADE SETUP" in value),
+        ("🔴 Do Not Open", lambda value: "DO NOT OPEN" in value),
+    ]
+    rendered: List[str] = []
+    used: Set[int] = set()
+    for title, predicate in groups:
+        group_rows = [
+            (idx, row)
+            for idx, row in enumerate(rows)
+            if idx not in used and predicate(str(row.get("status", "") or "").upper())
+        ]
+        if not group_rows:
+            continue
+        rendered.append(f"#### {title}")
+        for idx, row in group_rows:
+            used.add(idx)
+            ticker = _clean_cell_text(row.get("ticker", "")) or "-"
+            status = _clean_cell_text(row.get("status", "")) or "-"
+            setup = _clean_cell_text(row.get("setup", "")) or "-"
+            entry = _clean_cell_text(row.get("entry", "")) or "-"
+            rendered.append(f"- **{ticker}** — {status}")
+            rendered.append(f"  - **Ticket:** {setup}")
+            rendered.append(f"  - **Trigger:** {entry}")
+        rendered.append("")
+    leftovers = [(idx, row) for idx, row in enumerate(rows) if idx not in used]
+    if leftovers:
+        rendered.append("#### Other")
+        for _, row in leftovers:
+            ticker = _clean_cell_text(row.get("ticker", "")) or "-"
+            rendered.append(f"- **{ticker}** — {_clean_cell_text(row.get('status', '')) or '-'}")
+            rendered.append(f"  - **Ticket:** {_clean_cell_text(row.get('setup', '')) or '-'}")
+            rendered.append(f"  - **Trigger:** {_clean_cell_text(row.get('entry', '')) or '-'}")
+    return "\n".join(rendered).rstrip()
 
 
 def _final_trade_ticket_lines(
@@ -8504,23 +8514,32 @@ def _final_trade_ticket_lines(
         why: str,
     ) -> None:
         ticker = str(row.get("ticker", "") or "-").strip().upper()
-        if not ticker or ticker in table_seen:
+        setup_text = (
+            _clean_cell_text(row.get("strategy", ""))
+            + "; "
+            + _entry_text(row)
+            + "; exp "
+            + (_clean_cell_text(row.get("target_expiry", "")) or "-")
+        )
+        table_key = f"{ticker}|{_clean_cell_text(row.get('target_expiry', ''))}|{_entry_text(row)}|{status}"
+        if not ticker or table_key in table_seen:
             return
-        table_seen.add(ticker)
+        table_seen.add(table_key)
+        trigger = str(row.get("setup_entry_trigger", "") or "").strip()
+        if not trigger:
+            current_row = current_lookup.get(ticker)
+            if current_row is not None:
+                trigger = str(current_row.get("setup_entry_trigger", "") or "").strip()
+        if not trigger:
+            trigger = _compact_entry_trigger(row, status=status, why=why)
         table_rows.append(
             {
                 "ticker": ticker,
                 "status": _status_text(status),
-                "setup": (
-                    _clean_cell_text(row.get("strategy", ""))
-                    + "; "
-                    + _entry_text(row)
-                    + "; exp "
-                    + (_clean_cell_text(row.get("target_expiry", "")) or "-")
-                ),
+                "setup": setup_text,
                 "expiry": _clean_cell_text(row.get("target_expiry", "")) or "-",
                 "decision": _compact_ticket_decision(status),
-                "entry": _compact_entry_trigger(row, status=status, why=why),
+                "entry": trigger,
                 "blockers": _blocker_text(why),
             }
         )
@@ -8557,16 +8576,17 @@ def _final_trade_ticket_lines(
             continue
         add_table_row(row, status=status, why=str(row.get("proven_ticket_why", "") or "").strip())
 
-    lines.append("### Tradeable Tickets")
+    lines.append("### Color Trade Table")
     if table_rows:
         lines.append(_render_trade_ticket_html_table(table_rows))
     else:
         lines.append("- No final trade tickets surfaced.")
     lines.append("")
     lines.append(
-        "Status key: GREEN MAKE NOW = standard-size entry; "
-        "YELLOW TACTICAL PROBE = tradeable starter ticket, max 0.25R; "
-        "BLUE WATCH ONLY = no order; RED DO NOT OPEN = blocked."
+        "Status key: 🟢 GREEN MAKE NOW = standard-size entry; "
+        "🟡 STARTER ACTIONABLE = entry gate passed, starter risk only; "
+        "🟠 TACTICAL PROBE = conditional small-risk workup; "
+        "🔵 WATCH ONLY = no order; 🔴 RED DO NOT OPEN = blocked."
     )
     event_count = len(event_watch) if event_watch is not None else 0
     if event_count:
@@ -8576,7 +8596,9 @@ def _final_trade_ticket_lines(
     lines.append("")
     lines.append("### Details")
     lines.append(
-        "Full-gate trades are listed first. Tactical probes are still trade tickets, but only at starter size because one or more soft gates has not cleared."
+        "Rows are separated by status. Starter actionable rows passed the current entry gate but remain "
+        "starter-sized. Tactical probes have a specific ticket, but still need the listed condition/gate "
+        "to improve before treating them as stronger entries."
     )
     lines.append("")
 
@@ -8686,7 +8708,7 @@ def _final_trade_ticket_lines(
     probe_lines: List[str] = ["### Probe / Starter Trades"]
     probe_count = 0
     for _, row in actionable_source.iterrows():
-        if _actionable_entry_status(row) != "TACTICAL PROBE":
+        if _actionable_entry_status(row) not in {"STARTER ACTIONABLE", "TACTICAL PROBE"}:
             continue
         ticker = str(row.get("ticker", "") or "").strip().upper()
         if not ticker or ticker in seen_tickers:
@@ -8706,7 +8728,7 @@ def _final_trade_ticket_lines(
         add_block(
             probe_lines,
             row,
-            status="TACTICAL PROBE",
+            status="STARTER ACTIONABLE",
             what_to_do=f"Can be opened only under the {tier} size tier. {guidance}".strip(),
             why="Passed the trend-analysis entry gate, but only as a starter ticket: exact replayable ticket, "
             + ", ".join(support_bits)
@@ -9163,7 +9185,7 @@ def _trend_setup_board(
     )
     board = board.drop_duplicates("ticker", keep="first").head(max(1, int(limit)))
 
-    rows: List[List[str]] = []
+    card_lines: List[str] = []
     for _, row in board.iterrows():
         setup_tier = _clean_cell_text(row.get("setup_tier", "")).upper().replace("_", " ")
         event_status = _clean_cell_text(row.get("event_watch_status", "")).upper().replace("_", " ")
@@ -9171,25 +9193,20 @@ def _trend_setup_board(
         status = setup_tier or (event_status if source == "WATCH" else source)
         if not status:
             status = "WATCH ONLY" if source == "WATCH" else source
-        rows.append(
-            [
-                str(row.get("ticker", "") or "-").strip().upper(),
-                str(row.get("direction", "") or "-").strip().lower(),
-                _clip_text(_status_text(status), 22),
-                _clip_text(_trend_board_read(row, source), 72),
-                _clip_text(_trade_setup_text(row), 96),
-                _clip_text(_trend_board_trigger(row), 96),
-                _clip_text(_blocker_text(_trend_board_blocker(row)) or _trend_board_blocker(row), 42),
-            ]
-        )
+        ticker = str(row.get("ticker", "") or "-").strip().upper()
+        direction = str(row.get("direction", "") or "-").strip().lower()
+        blocker = _blocker_text(_trend_board_blocker(row)) or _trend_board_blocker(row)
+        card_lines.append(f"- **{_status_text(status)} {ticker}** `{direction}`")
+        card_lines.append(f"  - **Setup:** {_trade_setup_text(row)}")
+        card_lines.append(f"  - **Trend:** {_trend_board_read(row, source)}")
+        card_lines.append(f"  - **Recheck:** {_trend_board_trigger(row)}")
+        card_lines.append(f"  - **Blocker:** {_clean_cell_text(blocker) or '-'}")
 
     return [
-        "This table shows the trends first. A row is an entry only when the State is GREEN MAKE NOW; otherwise it is a setup to work or recheck.",
+        "This list shows trends first. A row is a standard entry only when the State is 🟢 GREEN MAKE NOW. "
+        "🟡 STARTER ACTIONABLE and 🟠 TACTICAL PROBE are small-risk only; 🔵/⚪ rows are no-order workups.",
         "",
-        _render_table(
-            ["Ticker", "Bias", "State", "Trend", "Setup", "Entry/Recheck", "Blocker"],
-            rows,
-        ),
+        *card_lines,
     ]
 
 
@@ -9212,17 +9229,17 @@ def _hot_recall_reason(row: pd.Series) -> str:
 def _hot_recall_status(row: pd.Series, source: str) -> str:
     source = str(source or "").strip().upper()
     if source == "ACTIONABLE":
-        return "GREEN MAKE NOW"
+        return _status_text(_actionable_entry_status(row))
     if source == "PROBE":
-        return "YELLOW TACTICAL PROBE"
+        return _status_text("TACTICAL PROBE")
     if source == "SETUP":
         tier = _clean_cell_text(row.get("setup_tier", "")).upper().replace("_", " ")
         return _status_text(tier or "TRADE SETUP")
     if source == "WATCH":
-        return "BLUE WATCH ONLY"
+        return _status_text("WATCH ONLY")
     if _truthy(row.get("radar_only")):
-        return "GRAY RADAR ONLY"
-    return "GRAY BLOCKED PATTERN"
+        return "⚪ RADAR ONLY"
+    return "⚪ BLOCKED PATTERN"
 
 
 def _hot_recall_score(row: pd.Series) -> float:
@@ -9233,6 +9250,26 @@ def _hot_recall_score(row: pd.Series) -> float:
     return math.nan
 
 
+def _liquid_recall_score(row: pd.Series) -> float:
+    option_volume = _safe_float(row.get("latest_option_volume"))
+    option_premium = _safe_float(row.get("latest_option_premium"))
+    market_cap = _safe_float(row.get("latest_market_cap"))
+    price_trend = _safe_float(row.get("price_trend"))
+    swing_score = _hot_recall_score(row)
+    score = 0.0
+    if math.isfinite(option_volume) and option_volume > 0:
+        score += math.log1p(option_volume) * 4.0
+    if math.isfinite(option_premium) and option_premium > 0:
+        score += math.log1p(option_premium) * 2.0
+    if math.isfinite(market_cap) and market_cap > 0:
+        score += math.log1p(market_cap)
+    if math.isfinite(price_trend):
+        score += price_trend / 5.0
+    if math.isfinite(swing_score):
+        score += swing_score / 8.0
+    return score
+
+
 def _hot_ticker_recall_board(
     *,
     actionable: pd.DataFrame,
@@ -9240,7 +9277,8 @@ def _hot_ticker_recall_board(
     current_setups: pd.DataFrame,
     event_watch: pd.DataFrame,
     patterns: pd.DataFrame,
-    hot_tickers: Sequence[str] = HOT_TICKER_RECALL_UNIVERSE,
+    limit: int = DEFAULT_LIQUID_RECALL_TOP,
+    hot_tickers: Optional[Sequence[str]] = None,
 ) -> List[str]:
     frames: List[pd.DataFrame] = []
 
@@ -9259,62 +9297,131 @@ def _hot_ticker_recall_board(
     if not frames:
         return ["_No hot/liquid tickers were available in the scored candidate set._"]
 
-    universe = [str(t).strip().upper() for t in hot_tickers if str(t).strip()]
-    universe_set = set(universe)
     board = pd.concat(frames, ignore_index=True, sort=False)
     if "ticker" not in board.columns:
         return ["_No hot/liquid tickers were available in the scored candidate set._"]
     board["ticker"] = board["ticker"].fillna("").astype(str).str.upper().str.strip()
-    board = board[board["ticker"].isin(universe_set)].copy()
+    board = board[board["ticker"].ne("")].copy()
+    if hot_tickers is not None:
+        universe_set = {str(t).strip().upper() for t in hot_tickers if str(t).strip()}
+        board = board[board["ticker"].isin(universe_set)].copy()
     if board.empty:
         return ["_No hot/liquid tickers were available in the scored candidate set._"]
 
     source_rank = {"ACTIONABLE": 0, "PROBE": 1, "SETUP": 2, "WATCH": 3, "PATTERN": 4}
     board["_hot_source_rank"] = board["_hot_recall_source"].map(source_rank).fillna(9)
     board["_hot_score"] = board.apply(_hot_recall_score, axis=1).fillna(-1)
+    board["_hot_liquidity_score"] = board.apply(_liquid_recall_score, axis=1)
     board["_hot_has_ticket"] = board.apply(lambda r: 1 if _entry_text(r) != "-" else 0, axis=1)
     board["_hot_edge"] = pd.to_numeric(
         board.get("edge_pct", pd.Series(np.nan, index=board.index)),
         errors="coerce",
     ).fillna(-999)
-    board["_hot_order"] = board["ticker"].map({ticker: idx for idx, ticker in enumerate(universe)}).fillna(999)
     board = board.sort_values(
-        ["_hot_source_rank", "_hot_score", "_hot_has_ticket", "_hot_edge"],
-        ascending=[True, False, False, False],
+        ["_hot_liquidity_score", "_hot_source_rank", "_hot_has_ticket", "_hot_score", "_hot_edge"],
+        ascending=[False, True, False, False, False],
         kind="mergesort",
     )
-    board = board.drop_duplicates("ticker", keep="first").sort_values(
-        ["_hot_source_rank", "_hot_order"],
-        ascending=[True, True],
+    board = board.drop_duplicates("ticker", keep="first").head(max(1, int(limit))).sort_values(
+        ["_hot_source_rank", "_hot_liquidity_score"],
+        ascending=[True, False],
         kind="mergesort",
     )
 
-    rows: List[List[str]] = []
+    card_lines: List[str] = []
     for _, row in board.iterrows():
         source = str(row.get("_hot_recall_source", "") or "PATTERN").strip().upper()
-        rows.append(
-            [
-                str(row.get("ticker", "") or "-").strip().upper(),
-                _clip_text(_hot_recall_status(row, source), 24),
-                str(row.get("direction", "") or "-").strip().lower(),
-                _clip_text(_trend_board_read(row, source), 68),
-                _clip_text(_trade_setup_text(row), 90),
-                _clip_text(_blocker_text(_hot_recall_reason(row)) or _hot_recall_reason(row), 48),
-            ]
+        ticker = str(row.get("ticker", "") or "-").strip().upper()
+        reason = _blocker_text(_hot_recall_reason(row)) or _hot_recall_reason(row)
+        card_lines.append(
+            f"- **{_hot_recall_status(row, source)} {ticker}** "
+            f"`{str(row.get('direction', '') or '-').strip().lower()}`"
         )
+        card_lines.append(f"  - **Setup:** {_trade_setup_text(row)}")
+        card_lines.append(f"  - **Trend:** {_trend_board_read(row, source)}")
+        card_lines.append(f"  - **Gate:** {_clean_cell_text(reason) or '-'}")
 
-    missing = [ticker for ticker in universe if ticker not in set(board["ticker"])]
     lines = [
-        "This board is the recall guardrail for hot/liquid names. It prevents AAPL/GOOG/AMZN/NVDA/INTC/MU/PLTR-type tickers from disappearing just because they failed a gate or missed the top-10 watch slice.",
+        "This is a dynamic check of the most liquid/high-activity scored names. It is ranked from the "
+        "current data by option volume, option premium, market cap, and trend strength; it is not a "
+        "hardcoded ticker list.",
         "",
-        _render_table(
-            ["Ticker", "State", "Bias", "Trend", "Setup", "Gate / Why"],
-            rows,
-        ),
+        *card_lines,
     ]
-    if missing:
-        lines.append("")
-        lines.append("Not in scored candidate set today: " + ", ".join(missing[:12]) + ("..." if len(missing) > 12 else ""))
+    return lines
+
+
+def _liquid_trend_leader_board(
+    *,
+    actionable: pd.DataFrame,
+    tactical_probes: pd.DataFrame,
+    current_setups: pd.DataFrame,
+    event_watch: pd.DataFrame,
+    patterns: pd.DataFrame,
+    limit: int = DEFAULT_LIQUID_TREND_BOARD_TOP,
+) -> List[str]:
+    frames: List[pd.DataFrame] = []
+
+    def add_source(df: pd.DataFrame, label: str) -> None:
+        if df is None or df.empty:
+            return
+        source = df.copy()
+        source["_trend_leader_source"] = label
+        frames.append(source)
+
+    add_source(actionable, "ACTIONABLE")
+    add_source(tactical_probes, "PROBE")
+    add_source(current_setups, "SETUP")
+    add_source(event_watch, "WATCH")
+    add_source(patterns, "PATTERN")
+    if not frames:
+        return ["_No scored rows were available for the liquid trend-leader board._"]
+
+    board = pd.concat(frames, ignore_index=True, sort=False)
+    if "ticker" not in board.columns:
+        return ["_No ticker column was available for the liquid trend-leader board._"]
+    board["ticker"] = board["ticker"].fillna("").astype(str).str.upper().str.strip()
+    board = board[board["ticker"].ne("")].copy()
+    if board.empty:
+        return ["_No liquid trend leaders were present in the scored candidate set._"]
+
+    source_rank = {"ACTIONABLE": 0, "PROBE": 1, "SETUP": 2, "WATCH": 3, "PATTERN": 4}
+    board["_trend_leader_source_rank"] = board["_trend_leader_source"].map(source_rank).fillna(9)
+    price_score = pd.to_numeric(
+        board.get("price_trend", pd.Series(np.nan, index=board.index)),
+        errors="coerce",
+    )
+    swing_score = board.apply(_hot_recall_score, axis=1)
+    board["_trend_leader_score"] = price_score.fillna(swing_score).fillna(-1)
+    board["_trend_leader_edge"] = pd.to_numeric(
+        board.get("edge_pct", pd.Series(np.nan, index=board.index)),
+        errors="coerce",
+    ).fillna(-999)
+    scored_count = int(board["ticker"].nunique())
+    board = board.sort_values(
+        ["_trend_leader_score", "_trend_leader_source_rank", "_trend_leader_edge"],
+        ascending=[False, True, False],
+        kind="mergesort",
+    ).drop_duplicates("ticker", keep="first")
+    shown = board.head(max(1, int(limit)))
+
+    lines = [
+        "This is the core trend-leader read from the scored universe, not a hardcoded ticker list. "
+        "It answers: what is trending, what exact option ticket did the engine build, and what gate "
+        "stopped an order?",
+        f"- Unique trend names in scored candidate set: {scored_count}",
+        "",
+    ]
+    for _, row in shown.iterrows():
+        source = str(row.get("_trend_leader_source", "") or "PATTERN").strip().upper()
+        ticker = str(row.get("ticker", "") or "-").strip().upper()
+        direction = str(row.get("direction", "") or "-").strip().lower()
+        raw_reason = _hot_recall_reason(row)
+        reason = _clean_cell_text(raw_reason) or _blocker_text(raw_reason)
+        lines.append(f"- **{_hot_recall_status(row, source)} {ticker}** `{direction}`")
+        lines.append(f"  - **Setup:** {_trade_setup_text(row)}")
+        lines.append(f"  - **Trend:** {_trend_board_read(row, source)}")
+        lines.append(f"  - **Gate:** {_clean_cell_text(reason) or '-'}")
     return lines
 
 
@@ -9553,14 +9660,14 @@ def build_report(
         )
     else:
         standard_count = len(actionable)
-    starter_count = max(0, len(actionable) - standard_count) + len(tactical_probes)
-    tradeable_count = standard_count + starter_count
-    lines.append(
-        f"- Tradeable tickets: {tradeable_count} "
-        f"(standard-size={standard_count}, starter/probe={starter_count})"
-    )
-    lines.append(f"- Standard-size Make Now orders: {standard_count}")
-    lines.append(f"- Event watch names: {len(event_watch)} (no order; catalyst/momentum only)")
+    starter_actionable_count = max(0, len(actionable) - standard_count)
+    tactical_probe_count = len(tactical_probes)
+    trade_table_count = standard_count + starter_actionable_count + tactical_probe_count
+    lines.append(f"- 🟢 Standard-size Make Now orders: {standard_count}")
+    lines.append(f"- 🟡 Starter-risk actionable rows: {starter_actionable_count}")
+    lines.append(f"- 🟠 Tactical probe rows: {tactical_probe_count}")
+    lines.append(f"- Trade rows shown before blockers: {trade_table_count}")
+    lines.append(f"- 🔵 Event watch names: {len(event_watch)} (no order; catalyst/momentum only)")
     if end != as_of:
         lines.append(
             f"- Data freshness warning: requested {as_of.isoformat()}, but latest usable dated folder is {end}; this is stale EOD data, not an intraday trend scan."
@@ -9570,19 +9677,20 @@ def build_report(
         + (f" ({regime_reason})" if regime_reason else "")
     )
     lines.append("")
-    lines.append("## Trend Setup Board")
+    lines.append("## Hot Ticker Trend Check")
     lines.extend(
-        _trend_setup_board(
+        _hot_ticker_recall_board(
+            actionable=actionable,
+            tactical_probes=tactical_probes,
             current_setups=current_setups,
-            candidate_shortlist=candidate_shortlist,
             event_watch=event_watch,
-            limit=max(8, DEFAULT_CANDIDATE_TOP),
+            patterns=patterns,
         )
     )
     lines.append("")
-    lines.append("## Hot Ticker Recall Board")
+    lines.append("## Liquid Trend Leaders")
     lines.extend(
-        _hot_ticker_recall_board(
+        _liquid_trend_leader_board(
             actionable=actionable,
             tactical_probes=tactical_probes,
             current_setups=current_setups,
@@ -9602,7 +9710,16 @@ def build_report(
         )
     )
     lines.append("")
-
+    lines.append("## Trend Setup Board")
+    lines.extend(
+        _trend_setup_board(
+            current_setups=current_setups,
+            candidate_shortlist=candidate_shortlist,
+            event_watch=event_watch,
+            limit=max(8, DEFAULT_CANDIDATE_TOP),
+        )
+    )
+    lines.append("")
     lines.append("## Run Summary")
     lines.append(f"- Date window: {start} to {end}")
     lines.append(f"- Effective signal date: {end}")
