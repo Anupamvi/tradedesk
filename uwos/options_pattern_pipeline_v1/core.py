@@ -26,8 +26,17 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, Tuple
 
+from .macro_geo import (
+    build_macro_geo_bundle,
+    decompose_blockers,
+    macro_geo_confirmation_fieldnames,
+    macro_geo_promotion_fieldnames,
+    macro_geo_ticker_map_fieldnames,
+    render_missed_pattern_audit,
+    render_pattern_observability_matrix,
+)
 
-PIPELINE_VERSION = "options_pattern_pipeline_v1.0"
+PIPELINE_VERSION = "options_pattern_pipeline_v1.1"
 DEFAULT_SEED = 20260510
 HORIZONS = (1, 3, 5, 10, 20)
 INDEX_TICKERS = {"SPY", "QQQ", "IWM"}
@@ -170,17 +179,51 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
     base_dir = Path(args.base_dir).expanduser().resolve()
     inventory_rows = inventory_source_data(base_dir)
     source_dates = source_complete_dates(base_dir)
-    if not source_dates:
+    requested_latest = str(args.as_of).lower() == "latest"
+    if not source_dates and requested_latest:
         raise SystemExit(f"No source-complete UW date folders found under {base_dir}")
 
-    if str(args.as_of).lower() == "latest":
+    if requested_latest:
         as_of = source_dates[-1]
     else:
         as_of = require_date(args.as_of)
         if as_of not in source_dates:
-            raise SystemExit(
-                f"{as_of} is not source-complete. Latest source-complete date is {source_dates[-1]}."
+            out_dir = (
+                Path(args.out_dir).expanduser().resolve()
+                if args.out_dir
+                else base_dir / "out" / "options_pattern_pipeline_v1" / as_of
             )
+            bot_eod_cache_dir = (
+                Path(args.bot_eod_cache_dir).expanduser().resolve()
+                if args.bot_eod_cache_dir
+                else base_dir / "out" / "options_pattern_pipeline_v1" / "cache" / "bot_eod"
+            )
+            config = base_run_config(args, base_dir, as_of, bot_eod_cache_dir)
+            completeness = source_completeness_for_date(base_dir, as_of)
+            macro_geo_bundle = build_macro_geo_bundle(
+                base_dir=base_dir,
+                as_of=as_of,
+                snapshots={},
+                source_dates=[d for d in source_dates if d <= as_of],
+                daily_rows=[],
+                source_complete=False,
+                missing_sources=completeness["missing_sources"],
+            )
+            output_paths = write_source_incomplete_outputs(
+                out_dir=out_dir,
+                base_dir=base_dir,
+                as_of=as_of,
+                config=config,
+                inventory_rows=inventory_rows,
+                completeness=completeness,
+                macro_geo_bundle=macro_geo_bundle,
+            )
+            return {
+                "as_of": as_of,
+                "out_dir": str(out_dir),
+                "output_paths": output_paths,
+                "verdict": "BLOCKED_SOURCE_INCOMPLETE",
+            }
 
     usable_dates = [d for d in source_dates if d <= as_of]
     out_dir = (
@@ -195,22 +238,7 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
         else base_dir / "out" / "options_pattern_pipeline_v1" / "cache" / "bot_eod"
     )
 
-    config = {
-        "pipeline_version": PIPELINE_VERSION,
-        "base_dir": str(base_dir),
-        "as_of": as_of,
-        "seed": args.seed,
-        "max_chain_rows_per_day": args.max_chain_rows_per_day,
-        "max_flow_file_mb": args.max_flow_file_mb,
-        "bot_eod_cache_dir": str(bot_eod_cache_dir),
-        "top_candidates_per_day": args.top_candidates_per_day,
-        "horizons": list(HORIZONS),
-        "input_policy": (
-            "Reads dated UW source-like exports only. Ignores prior trend pipeline "
-            "scores, gates, candidates, rejection labels, generated reports, and "
-            "morning watchlists as feature inputs."
-        ),
-    }
+    config = base_run_config(args, base_dir, as_of, bot_eod_cache_dir)
 
     snapshot_dates = [as_of] if args.no_validation else usable_dates
     snapshots: Dict[str, Snapshot] = {}
@@ -248,6 +276,16 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
 
     missed_rows = [] if args.no_validation else run_missed_mover_audit(snapshots, usable_dates, as_of)
     sentiment_summary = build_sentiment_news_summary(base_dir / as_of, as_of)
+    completeness = source_completeness_for_date(base_dir, as_of)
+    macro_geo_bundle = build_macro_geo_bundle(
+        base_dir=base_dir,
+        as_of=as_of,
+        snapshots=snapshots,
+        source_dates=usable_dates,
+        daily_rows=daily_rows,
+        source_complete=bool(completeness["source_complete"]),
+        missing_sources=completeness["missing_sources"],
+    )
 
     output_paths = write_outputs(
         out_dir=out_dir,
@@ -261,6 +299,8 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
         daily_rows=daily_rows,
         missed_rows=missed_rows,
         sentiment_summary=sentiment_summary,
+        source_completeness=completeness,
+        macro_geo_bundle=macro_geo_bundle,
     )
     return {
         "as_of": as_of,
@@ -268,6 +308,72 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
         "output_paths": output_paths,
         "verdict": final_verdict(validation_bundle, daily_rows),
     }
+
+
+def base_run_config(
+    args: argparse.Namespace,
+    base_dir: Path,
+    as_of: str,
+    bot_eod_cache_dir: Path,
+) -> Dict[str, Any]:
+    return {
+        "pipeline_version": PIPELINE_VERSION,
+        "base_dir": str(base_dir),
+        "as_of": as_of,
+        "seed": args.seed,
+        "max_chain_rows_per_day": args.max_chain_rows_per_day,
+        "max_flow_file_mb": args.max_flow_file_mb,
+        "bot_eod_cache_dir": str(bot_eod_cache_dir),
+        "top_candidates_per_day": args.top_candidates_per_day,
+        "horizons": list(HORIZONS),
+        "input_policy": (
+            "Reads dated UW source-like exports only. Ignores prior trend pipeline "
+            "scores, gates, candidates, rejection labels, generated reports, and "
+            "morning watchlists as feature inputs."
+        ),
+    }
+
+
+def source_completeness_for_date(base_dir: Path, signal_date: str) -> Dict[str, Any]:
+    date_dir = base_dir / signal_date
+    missing: List[str] = []
+    present: Dict[str, List[str]] = {
+        "stock_screener": [],
+        "hot_chains": [],
+        "chain_oi": [],
+        "bot_eod": [],
+        "option_trades": [],
+        "whale_filtered": [],
+    }
+    if not date_dir.exists():
+        missing.append(f"date folder: {date_dir}")
+        missing.extend(
+            [
+                f"stock-screener source: expected stock-screener-{signal_date}.csv or .zip under {date_dir}",
+                f"hot-chains source: expected hot-chains-{signal_date}.csv or .zip under {date_dir}",
+                f"chain-oi-changes source: expected chain-oi-changes-{signal_date}.csv or .zip under {date_dir}",
+                f"options flow source: expected bot-eod-report-{signal_date}.csv/.zip, option-trades-{signal_date}.csv/.zip, or whale_trades_filtered.csv under {date_dir}",
+            ]
+        )
+        return {"source_complete": False, "missing_sources": missing, "present_sources": present}
+
+    sources = sources_for_date(date_dir, signal_date)
+    for key in present:
+        present[key] = [ref.label for ref in sources.get(key, [])]
+    required = {
+        "stock_screener": f"stock-screener source: expected stock-screener-{signal_date}.csv or .zip under {date_dir}",
+        "hot_chains": f"hot-chains source: expected hot-chains-{signal_date}.csv or .zip under {date_dir}",
+        "chain_oi": f"chain-oi-changes source: expected chain-oi-changes-{signal_date}.csv or .zip under {date_dir}",
+    }
+    for key, message in required.items():
+        if not sources.get(key):
+            missing.append(message)
+    if not (sources.get("bot_eod") or sources.get("option_trades") or sources.get("whale_filtered")):
+        missing.append(
+            f"options flow source: expected bot-eod-report-{signal_date}.csv/.zip, "
+            f"option-trades-{signal_date}.csv/.zip, or whale_trades_filtered.csv under {date_dir}"
+        )
+    return {"source_complete": not missing, "missing_sources": missing, "present_sources": present}
 
 
 def require_date(value: str) -> str:
@@ -1820,6 +1926,9 @@ def classify_daily_signals(
             blockers.append("LIMITED_OUT_OF_SAMPLE_SAMPLE")
         if int(tier_info.get("beats_baselines_count") or 0) < 2:
             blockers.append("DOES_NOT_BEAT_TWO_BASELINES")
+        validation_avg_r = num(tier_info.get("validation_average_net_r"))
+        if validation_avg_r is not None and validation_avg_r <= 0:
+            blockers.append("VALIDATION_EXPECTANCY_NEGATIVE")
         blockers = sorted(set(blockers))
         if tier == "PROVEN" and not blockers:
             classification = "TRADE"
@@ -1840,11 +1949,12 @@ def classify_daily_signals(
         row["pattern_probability_score"] = pct_value(tier_info.get("validation_probability_score"))
         row["probability_evidence"] = tier_info.get("probability_evidence", "")
         row["block_reasons"] = blockers
+        row["blocker_categories"] = decompose_blockers(blockers)
         row["current_market_alignment"] = snapshot.market_regime.get("regime", "UNKNOWN")
         row["why_actionable_now"] = (
             "Passes validation, liquidity, quote, risk, event, and regime checks."
             if classification == "TRADE"
-            else "Not actionable because " + "; ".join(blockers[:5])
+            else "Not actionable because " + "; ".join(decompose_blockers(blockers)[:5])
         )
         row["major_risks"] = daily_major_risks(row)
         rows.append(row)
@@ -2836,6 +2946,8 @@ def write_outputs(
     daily_rows: Sequence[Mapping[str, Any]],
     missed_rows: Sequence[Mapping[str, Any]],
     sentiment_summary: Mapping[str, Any],
+    source_completeness: Mapping[str, Any],
+    macro_geo_bundle: Mapping[str, Any],
 ) -> Dict[str, str]:
     actionable = [r for r in daily_rows if r["classification"] == "TRADE"][:5]
     watch = [r for r in daily_rows if r["classification"] == "WATCH"][:15]
@@ -2864,6 +2976,8 @@ def write_outputs(
         "validation_splits": validation_bundle["splits"],
         "daily_pattern_config": daily_pattern_config,
         "input_policy": config["input_policy"],
+        "source_completeness": source_completeness,
+        "macro_geo_summary": macro_geo_bundle.get("summary", {}),
         "reproducibility": {
             "python": sys.version,
             "random_seed": config["seed"],
@@ -2887,6 +3001,12 @@ def write_outputs(
         "validation_details": str(out_dir / "validation_details.csv"),
         "baseline_comparison": str(out_dir / "baseline_comparison.csv"),
         "missed_mover_audit": str(out_dir / "missed_mover_audit.csv"),
+        "macro_geo_catalysts": str(out_dir / "macro_geo_catalysts.json"),
+        "macro_geo_ticker_map": str(out_dir / "macro_geo_ticker_map.csv"),
+        "macro_geo_uw_confirmation": str(out_dir / "macro_geo_uw_confirmation.csv"),
+        "macro_geo_promotion_decisions": str(out_dir / "macro_geo_promotion_decisions.csv"),
+        "pattern_observability_matrix": str(out_dir / "pattern_observability_matrix.md"),
+        "missed_pattern_audit": str(out_dir / "missed_pattern_audit.md"),
         "inventory": str(out_dir / "source_inventory.csv"),
         "metadata": str(out_dir / "metadata.json"),
         "regime_sector_validation": str(out_dir / "validation_by_regime_sector_ticker.csv"),
@@ -2903,6 +3023,29 @@ def write_outputs(
     write_csv(Path(paths["validation_details"]), validation_bundle["outcomes"], validation_detail_fieldnames())
     write_csv(Path(paths["baseline_comparison"]), validation_bundle["baseline_comparison"], baseline_fieldnames())
     write_csv(Path(paths["missed_mover_audit"]), missed_rows, missed_fieldnames())
+    write_json(Path(paths["macro_geo_catalysts"]), macro_geo_bundle.get("catalysts", []))
+    write_csv(Path(paths["macro_geo_ticker_map"]), macro_geo_bundle.get("ticker_map", []), macro_geo_ticker_map_fieldnames())
+    write_csv(
+        Path(paths["macro_geo_uw_confirmation"]),
+        macro_geo_bundle.get("uw_confirmation", []),
+        macro_geo_confirmation_fieldnames(),
+    )
+    write_csv(
+        Path(paths["macro_geo_promotion_decisions"]),
+        macro_geo_bundle.get("promotion_decisions", []),
+        macro_geo_promotion_fieldnames(),
+    )
+    Path(paths["pattern_observability_matrix"]).write_text(
+        render_pattern_observability_matrix(macro_geo_bundle.get("observability_rows", [])),
+        encoding="utf-8",
+    )
+    Path(paths["missed_pattern_audit"]).write_text(
+        render_missed_pattern_audit(
+            macro_geo_bundle.get("missed_pattern_rows", []),
+            source_completeness.get("missing_sources", []),
+        ),
+        encoding="utf-8",
+    )
     write_csv(Path(paths["inventory"]), inventory_rows, inventory_fieldnames())
     write_csv(Path(paths["regime_sector_validation"]), validation_bundle["regime_sector"], regime_sector_fieldnames())
     write_json(Path(paths["metadata"]), metadata)
@@ -2917,8 +3060,111 @@ def write_outputs(
             validation_bundle,
             missed_rows,
             sentiment_summary,
+            source_completeness,
+            macro_geo_bundle,
             metadata,
         ),
+        encoding="utf-8",
+    )
+    return paths
+
+
+def write_source_incomplete_outputs(
+    out_dir: Path,
+    base_dir: Path,
+    as_of: str,
+    config: Mapping[str, Any],
+    inventory_rows: Sequence[Mapping[str, Any]],
+    completeness: Mapping[str, Any],
+    macro_geo_bundle: Mapping[str, Any],
+) -> Dict[str, str]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    metadata = {
+        "pipeline_version": PIPELINE_VERSION,
+        "created_utc": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "command": " ".join(sys.argv),
+        "base_dir": str(base_dir),
+        "as_of": as_of,
+        "output_dir": str(out_dir),
+        "deterministic_seed": config["seed"],
+        "source_dates_used": [],
+        "source_files_by_date": {},
+        "skipped_sources_by_date": {},
+        "source_counts_by_date": {},
+        "source_files_for_as_of": [],
+        "skipped_sources_for_as_of": [],
+        "validation_splits": [],
+        "daily_pattern_config": {},
+        "input_policy": config["input_policy"],
+        "source_completeness": completeness,
+        "macro_geo_summary": macro_geo_bundle.get("summary", {}),
+        "verdict": "BLOCKED_SOURCE_INCOMPLETE",
+    }
+    paths = {
+        "daily_report": str(out_dir / f"daily_report_{as_of}.md"),
+        "actionable_trades": str(out_dir / "actionable_trades.csv"),
+        "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
+        "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
+        "discovered_pattern_families": str(out_dir / "discovered_pattern_families.csv"),
+        "market_regime_summary": str(out_dir / "market_regime_summary.json"),
+        "sentiment_news_summary": str(out_dir / "sentiment_news_summary.json"),
+        "validation_scorecard": str(out_dir / "validation_scorecard.csv"),
+        "train_scorecard": str(out_dir / "train_scorecard.csv"),
+        "validation_details": str(out_dir / "validation_details.csv"),
+        "baseline_comparison": str(out_dir / "baseline_comparison.csv"),
+        "missed_mover_audit": str(out_dir / "missed_mover_audit.csv"),
+        "macro_geo_catalysts": str(out_dir / "macro_geo_catalysts.json"),
+        "macro_geo_ticker_map": str(out_dir / "macro_geo_ticker_map.csv"),
+        "macro_geo_uw_confirmation": str(out_dir / "macro_geo_uw_confirmation.csv"),
+        "macro_geo_promotion_decisions": str(out_dir / "macro_geo_promotion_decisions.csv"),
+        "pattern_observability_matrix": str(out_dir / "pattern_observability_matrix.md"),
+        "missed_pattern_audit": str(out_dir / "missed_pattern_audit.md"),
+        "inventory": str(out_dir / "source_inventory.csv"),
+        "metadata": str(out_dir / "metadata.json"),
+        "regime_sector_validation": str(out_dir / "validation_by_regime_sector_ticker.csv"),
+    }
+    write_csv(Path(paths["actionable_trades"]), [], trade_fieldnames())
+    write_csv(Path(paths["watchlist_research_setups"]), [], trade_fieldnames())
+    write_csv(Path(paths["blocked_candidates"]), [], blocked_fieldnames())
+    write_csv(Path(paths["discovered_pattern_families"]), [], discovered_fieldnames())
+    write_json(Path(paths["market_regime_summary"]), {"date": as_of, "regime": "UNKNOWN", "source": "source_incomplete"})
+    write_json(
+        Path(paths["sentiment_news_summary"]),
+        {"summary": "Source incomplete; no single-date sentiment summary was built.", "used_sources": [], "skipped_sources": []},
+    )
+    write_csv(Path(paths["validation_scorecard"]), [], scorecard_fieldnames())
+    write_csv(Path(paths["train_scorecard"]), [], scorecard_fieldnames())
+    write_csv(Path(paths["validation_details"]), [], validation_detail_fieldnames())
+    write_csv(Path(paths["baseline_comparison"]), [], baseline_fieldnames())
+    write_csv(Path(paths["missed_mover_audit"]), [], missed_fieldnames())
+    write_json(Path(paths["macro_geo_catalysts"]), macro_geo_bundle.get("catalysts", []))
+    write_csv(Path(paths["macro_geo_ticker_map"]), macro_geo_bundle.get("ticker_map", []), macro_geo_ticker_map_fieldnames())
+    write_csv(
+        Path(paths["macro_geo_uw_confirmation"]),
+        macro_geo_bundle.get("uw_confirmation", []),
+        macro_geo_confirmation_fieldnames(),
+    )
+    write_csv(
+        Path(paths["macro_geo_promotion_decisions"]),
+        macro_geo_bundle.get("promotion_decisions", []),
+        macro_geo_promotion_fieldnames(),
+    )
+    Path(paths["pattern_observability_matrix"]).write_text(
+        render_pattern_observability_matrix(macro_geo_bundle.get("observability_rows", [])),
+        encoding="utf-8",
+    )
+    Path(paths["missed_pattern_audit"]).write_text(
+        render_missed_pattern_audit(
+            macro_geo_bundle.get("missed_pattern_rows", []),
+            completeness.get("missing_sources", []),
+        ),
+        encoding="utf-8",
+    )
+    write_csv(Path(paths["inventory"]), inventory_rows, inventory_fieldnames())
+    write_csv(Path(paths["regime_sector_validation"]), [], regime_sector_fieldnames())
+    write_json(Path(paths["metadata"]), metadata)
+    Path(paths["daily_report"]).write_text(
+        render_source_incomplete_report(as_of, completeness, macro_geo_bundle, metadata),
         encoding="utf-8",
     )
     return paths
@@ -2962,6 +3208,7 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "liquidity_quote_sanity": quote_sanity_text(r),
         "major_risks": r.get("major_risks"),
         "why_actionable_now": r.get("why_actionable_now"),
+        "blocker_categories": ";".join(r.get("blocker_categories") or []),
         "block_reasons": ";".join(r.get("block_reasons") or []),
     }
 
@@ -3075,6 +3322,74 @@ def quote_sanity_text(r: Mapping[str, Any]) -> str:
     )
 
 
+def append_run_observability_summary(
+    lines: List[str],
+    actionable: Sequence[Mapping[str, Any]],
+    source_completeness: Mapping[str, Any],
+    macro_geo_bundle: Mapping[str, Any],
+) -> None:
+    summary = macro_geo_bundle.get("summary", {})
+    source_complete = bool(source_completeness.get("source_complete"))
+    lines.append("## Run Observability Summary")
+    lines.append(f"- Source data complete: {'yes' if source_complete else 'no'}.")
+    if source_completeness.get("missing_sources"):
+        for missing in source_completeness.get("missing_sources", [])[:8]:
+            lines.append(f"- Missing source data: {missing}")
+    lines.append(f"- Eligible catalysts existed: {'yes' if summary.get('eligible_catalyst_count') else 'no'}.")
+    lines.append(
+        f"- Future-dated catalysts skipped: {'yes' if summary.get('future_dated_catalyst_count') else 'no'} "
+        f"({summary.get('future_dated_catalyst_count', 0)})."
+    )
+    lines.append(
+        f"- UW confirmed catalyst themes: {summary.get('uw_confirmed_themes') or 'none'}."
+    )
+    if actionable:
+        lines.append(f"- Approved trades: {len(actionable)}.")
+    else:
+        reason = summary.get("primary_no_trade_reason") or "no setup cleared validation, quote, liquidity, regime, and event checks"
+        lines.append(f"- Approved trades: 0 because {reason}.")
+    lines.append(f"- Watch/blocked names that matter: {summary.get('watch_or_blocked_names') or 'none'}.")
+
+
+def render_source_incomplete_report(
+    as_of: str,
+    completeness: Mapping[str, Any],
+    macro_geo_bundle: Mapping[str, Any],
+    metadata: Mapping[str, Any],
+) -> str:
+    lines: List[str] = []
+    lines.append(f"# Options Pattern Pipeline v1 Daily Report - {as_of}")
+    lines.append("")
+    lines.append("Final pipeline verdict: **BLOCKED_SOURCE_INCOMPLETE**")
+    lines.append("")
+    append_run_observability_summary(lines, [], completeness, macro_geo_bundle)
+    lines.append("")
+    lines.append("## Source Incomplete")
+    lines.append("The run was not promoted because required point-in-time UW source files are missing.")
+    for missing in completeness.get("missing_sources", []):
+        lines.append(f"- {missing}")
+    lines.append("")
+    lines.append("## Catalyst Audit")
+    summary = macro_geo_bundle.get("summary", {})
+    lines.append(f"- Eligible catalysts: {', '.join(summary.get('eligible_event_types') or []) or 'none'}.")
+    lines.append(
+        f"- Future-dated catalysts skipped: {summary.get('future_dated_catalyst_count', 0)} "
+        f"({', '.join(summary.get('future_dated_event_types') or []) or 'none'})."
+    )
+    lines.append(f"- UW-confirmed catalyst themes: {summary.get('uw_confirmed_themes') or 'none'}.")
+    lines.append("")
+    lines.append("## Scenario Buckets")
+    for row in macro_geo_bundle.get("promotion_decisions", [])[:20]:
+        blocker = f" | blocker: {row.get('promotion_blocker')}" if row.get("promotion_blocker") else ""
+        lines.append(f"- {row.get('scenario_bucket')} {row.get('ticker') or 'run'} {row.get('event_type') or ''}{blocker}")
+    lines.append("")
+    lines.append("## Reproducibility")
+    lines.append(f"- Deterministic seed: {metadata['deterministic_seed']}")
+    lines.append("- No pattern validation or trade promotion was run because source data was incomplete.")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def render_daily_report(
     as_of: str,
     snapshot: Snapshot,
@@ -3085,6 +3400,8 @@ def render_daily_report(
     validation_bundle: Mapping[str, Any],
     missed_rows: Sequence[Mapping[str, Any]],
     sentiment_summary: Mapping[str, Any],
+    source_completeness: Mapping[str, Any],
+    macro_geo_bundle: Mapping[str, Any],
     metadata: Mapping[str, Any],
 ) -> str:
     lines: List[str] = []
@@ -3092,6 +3409,8 @@ def render_daily_report(
     lines.append(f"# Options Pattern Pipeline v1 Daily Report - {as_of}")
     lines.append("")
     lines.append(f"Final pipeline verdict: **{verdict}**")
+    lines.append("")
+    append_run_observability_summary(lines, actionable, source_completeness, macro_geo_bundle)
     lines.append("")
     lines.append("## Market Regime")
     regime = snapshot.market_regime
@@ -3106,6 +3425,19 @@ def render_daily_report(
         )
     lines.append("")
     lines.append("## Macro, Micro, Geopolitical Context")
+    macro_summary = macro_geo_bundle.get("summary", {})
+    eligible_types = macro_summary.get("eligible_event_types") or []
+    if eligible_types:
+        lines.append(f"- Structured eligible catalysts: {', '.join(eligible_types)}.")
+    else:
+        lines.append("- Structured eligible catalysts: none found in point-in-time local captures.")
+    if macro_summary.get("future_dated_catalyst_count"):
+        lines.append(
+            f"- Future-dated catalysts skipped: {macro_summary.get('future_dated_catalyst_count')} "
+            f"({', '.join(macro_summary.get('future_dated_event_types') or [])})."
+        )
+    if macro_summary.get("uw_confirmed_themes"):
+        lines.append(f"- UW-confirmed catalyst themes: {macro_summary.get('uw_confirmed_themes')}.")
     lines.append(f"- {sentiment_summary.get('summary')}")
     if sentiment_summary.get("used_sources"):
         for src in sentiment_summary["used_sources"][:5]:
@@ -3147,7 +3479,10 @@ def render_daily_report(
         for r in actionable[:5]:
             lines.append(f"- {r['ticker']} probability evidence: {r.get('probability_evidence')}")
     else:
-        lines.append("- No actionable trades today. No pattern passed the full validation, baseline, quote, risk, event, and regime acceptance bar.")
+        no_trade_reason = macro_geo_bundle.get("summary", {}).get("primary_no_trade_reason") or (
+            "No pattern passed the full validation, baseline, quote, risk, event, and regime acceptance bar."
+        )
+        lines.append(f"- No actionable trades today. {no_trade_reason}")
     lines.append("")
     lines.append("## Watchlist / Research")
     if watch:
@@ -3172,6 +3507,19 @@ def render_daily_report(
             )
     else:
         lines.append("- No blocked candidates after daily classification.")
+    lines.append("")
+    lines.append("## Catalyst Promotion / Scenario Buckets")
+    promotion_rows = macro_geo_bundle.get("promotion_decisions", [])
+    if promotion_rows:
+        for row in promotion_rows[:20]:
+            ticker = row.get("ticker") or "run"
+            blocker = f" | blocker: {row.get('promotion_blocker')}" if row.get("promotion_blocker") else ""
+            evidence = f" | UW: {row.get('uw_evidence_found')}" if row.get("uw_evidence_found") else ""
+            lines.append(
+                f"- {row.get('scenario_bucket')} {ticker} {row.get('event_type') or ''}{evidence}{blocker}"
+            )
+    else:
+        lines.append("- No macro/geopolitical scenario rows were produced.")
     lines.append("")
     lines.append("## Baseline Comparison")
     for row in validation_bundle.get("baseline_comparison", []):
@@ -3249,6 +3597,7 @@ def trade_fieldnames() -> List[str]:
         "liquidity_quote_sanity",
         "major_risks",
         "why_actionable_now",
+        "blocker_categories",
         "block_reasons",
     ]
 

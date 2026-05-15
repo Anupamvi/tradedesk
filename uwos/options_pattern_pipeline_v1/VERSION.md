@@ -3,7 +3,7 @@
 This package is the live V1 implementation of the leakage-aware options-pattern
 pipeline.
 
-- Version: `options_pattern_pipeline_v1.0`
+- Version: `options_pattern_pipeline_v1.1`
 - CLI: `python3 -m uwos.options_pattern_pipeline_v1`
 - Frozen backup package: `uwos/options_pattern_pipeline_v1_frozen_v1/`
 

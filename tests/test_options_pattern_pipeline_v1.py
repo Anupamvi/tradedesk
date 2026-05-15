@@ -1,5 +1,17 @@
+import subprocess
 import zipfile
+from pathlib import Path
 
+import pytest
+
+from uwos.options_pattern_pipeline_v1.macro_geo import (
+    SCENARIO_BUCKETS,
+    build_macro_geo_bundle,
+    build_observability_matrix_rows,
+    classify_promotion_bucket,
+    collect_macro_geo_catalysts,
+    decompose_blockers,
+)
 from uwos.options_pattern_pipeline_v1.core import (
     assign_family_tiers,
     build_daily_snapshot,
@@ -8,9 +20,17 @@ from uwos.options_pattern_pipeline_v1.core import (
     normalize_header,
     parse_option_symbol,
     score_signal_horizon,
+    source_completeness_for_date,
     sources_for_date,
     trade_output_row,
 )
+
+
+class SnapshotStub:
+    def __init__(self, features, best_options=None, market_regime=None):
+        self.features = features
+        self.best_options = best_options or {}
+        self.market_regime = market_regime or {"regime": "MIXED"}
 
 
 def test_parse_occ_symbol_with_padded_root():
@@ -432,3 +452,230 @@ def test_candidate_probability_adjustment_differentiates_same_family_trades():
     assert by_ticker["GOOD"]["trade_success_probability_pct"] > by_ticker["BAD"]["trade_success_probability_pct"]
     assert by_ticker["GOOD"]["trade_probability_score"] > by_ticker["BAD"]["trade_probability_score"]
     assert by_ticker["GOOD"]["pattern_success_probability_pct"] == by_ticker["BAD"]["pattern_success_probability_pct"]
+
+
+def test_macro_geo_point_in_time_filters_future_captures(tmp_path):
+    browser_dir = tmp_path / "2026-05-12" / "browser_text"
+    browser_dir.mkdir(parents=True)
+    (browser_dir / "browser-text-capture-news-MACRO-LIVE-2026-05-13.txt").write_text(
+        "May 13, 2026 live macro context.\n"
+        "Premarket tone noted Trump/Xi China talks, trade talks, and AI chip discussion risk. "
+        "This is supportive for selected semiconductors and QQQ.\n",
+        encoding="utf-8",
+    )
+
+    future_for_12 = collect_macro_geo_catalysts(tmp_path, "2026-05-12")
+    eligible_for_13 = collect_macro_geo_catalysts(tmp_path, "2026-05-13")
+
+    assert future_for_12
+    assert all(not row["as_of_eligible"] for row in future_for_12)
+    assert {row["ineligible_reason"] for row in future_for_12} == {"capture_date_after_as_of"}
+    assert any(row["as_of_eligible"] for row in eligible_for_13)
+
+
+def test_macro_geo_extracts_china_trade_ai_chip_catalysts_and_mapping(tmp_path):
+    browser_dir = tmp_path / "2026-05-13" / "browser_text"
+    browser_dir.mkdir(parents=True)
+    (browser_dir / "browser-text-capture-news-SEMIS.txt").write_text(
+        "Capture date: 2026-05-13\n"
+        "Reuters and AP reported Trump and Xi China summit trade talks with U.S. CEOs. "
+        "Nvidia, Micron, Qualcomm, and Intel rebounded on AI chip and semiconductor optimism. "
+        "Ticker: MU\n",
+        encoding="utf-8",
+    )
+
+    catalysts = collect_macro_geo_catalysts(tmp_path, "2026-05-13")
+    event_types = {row["event_type"] for row in catalysts}
+    mapped = {ticker for row in catalysts for ticker in row["mapped_tickers"] + row["mapped_etfs"]}
+
+    assert "China/US diplomacy" in event_types
+    assert "AI chips/semiconductors" in event_types
+    assert {"TSLA", "AAPL", "MU", "NVDA", "SMH", "QQQ"} <= mapped
+
+
+def test_macro_geo_ignores_unrelated_false_positive_headlines(tmp_path):
+    browser_dir = tmp_path / "2026-05-13" / "browser_text"
+    browser_dir.mkdir(parents=True)
+    (browser_dir / "browser-text-capture-news-FOOD.txt").write_text(
+        "Capture date: 2026-05-13\n"
+        "A classroom discussion covered China history, tariffs in the 1800s, and diplomacy. "
+        "The note was about curriculum planning and restaurant menu translations.\n",
+        encoding="utf-8",
+    )
+
+    assert collect_macro_geo_catalysts(tmp_path, "2026-05-13") == []
+
+
+def test_macro_geo_uw_confirmation_sector_index_and_watch_rows(tmp_path):
+    browser_dir = tmp_path / "2026-05-13" / "browser_text"
+    browser_dir.mkdir(parents=True)
+    (browser_dir / "browser-text-capture-news-SEMIS.txt").write_text(
+        "Capture date: 2026-05-13\n"
+        "Semiconductor stocks rallied as Nvidia and Micron AI chip optimism boosted QQQ and SMH.\n",
+        encoding="utf-8",
+    )
+    bullish_feature = {
+        "source_flags": ["bot_eod", "hot_chains", "chain_oi"],
+        "flow_total_premium": 750000,
+        "hot_total_premium": 500000,
+        "oi_call_diff": 25000,
+        "oi_put_diff": 1000,
+        "flow_premium_bias": 0.42,
+        "flow_call_ask_ratio": 0.68,
+    }
+    snapshot = SnapshotStub(
+        {
+            "NVDA": dict(bullish_feature),
+            "SMH": dict(bullish_feature),
+        },
+        {
+            ("NVDA", "bullish"): {
+                "bid": 4.9,
+                "ask": 5.0,
+                "spread_pct": 0.02,
+                "volume": 5000,
+                "open_interest": 10000,
+                "dte": 30,
+            },
+            ("SMH", "bullish"): {
+                "bid": 2.0,
+                "ask": 2.02,
+                "spread_pct": 0.01,
+                "volume": 3000,
+                "open_interest": 8000,
+                "dte": 30,
+            },
+        },
+    )
+
+    bundle = build_macro_geo_bundle(
+        base_dir=tmp_path,
+        as_of="2026-05-13",
+        snapshots={"2026-05-13": snapshot},
+        source_dates=["2026-05-13"],
+        daily_rows=[],
+        source_complete=True,
+        missing_sources=[],
+    )
+    decisions = {(row["ticker"], row["scenario_bucket"]) for row in bundle["promotion_decisions"]}
+
+    assert ("NVDA", "CATALYST_WATCH") in decisions
+    assert ("SMH", "SECTOR_INDEX_CONFIRMED_SETUP") in decisions
+    assert any(row["uw_confirmed"] for row in bundle["uw_confirmation"] if row["ticker"] == "NVDA")
+
+
+def test_macro_geo_promotion_bucket_blocker_decomposition():
+    catalyst = {"as_of_eligible": True}
+    confirmation = {"uw_confirmed": True, "uw_evidence_found": "bot-EOD options flow"}
+
+    regime_bucket, _ = classify_promotion_bucket(
+        catalyst,
+        confirmation,
+        {"classification": "AVOID", "block_reasons": ["MARKET_REGIME_CONFLICT"]},
+        True,
+        [],
+    )
+    validation_bucket, validation_blocker = classify_promotion_bucket(
+        catalyst,
+        confirmation,
+        {
+            "classification": "WATCH",
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN", "VALIDATION_EXPECTANCY_NEGATIVE"],
+        },
+        True,
+        [],
+    )
+    liquidity_bucket, _ = classify_promotion_bucket(
+        catalyst,
+        confirmation,
+        {"classification": "AVOID", "block_reasons": ["BID_ASK_SPREAD_TOO_WIDE"]},
+        True,
+        [],
+    )
+
+    assert regime_bucket == "REGIME_CONFLICTED_SETUP"
+    assert validation_bucket == "VALIDATION_BLOCKED_SETUP"
+    assert "pattern family not proven" in validation_blocker
+    assert liquidity_bucket == "LIQUIDITY_OR_QUOTE_BLOCKED_SETUP"
+    assert decompose_blockers(["LIMITED_OUT_OF_SAMPLE_SAMPLE", "DOES_NOT_BEAT_TWO_BASELINES"]) == [
+        "sample size too small",
+        "does not beat baselines",
+    ]
+
+
+def test_macro_geo_multi_day_continuation_without_future_leakage(tmp_path):
+    for d in ("2026-05-11", "2026-05-12", "2026-05-14"):
+        browser_dir = tmp_path / d / "browser_text"
+        browser_dir.mkdir(parents=True)
+        browser_dir.joinpath(f"browser-text-capture-news-SEMIS-{d}.txt").write_text(
+            f"Capture date: {d}\n"
+            "Semiconductor and AI chip optimism supported Nvidia and Micron, with QQQ confirmation.\n",
+            encoding="utf-8",
+        )
+    weak = {
+        "source_flags": ["hot_chains"],
+        "hot_total_premium": 120000,
+        "oi_call_diff": 2000,
+        "flow_premium_bias": 0.2,
+    }
+    strong = {
+        "source_flags": ["bot_eod", "hot_chains", "chain_oi"],
+        "flow_total_premium": 600000,
+        "hot_total_premium": 400000,
+        "oi_call_diff": 20000,
+        "flow_premium_bias": 0.3,
+    }
+    bundle = build_macro_geo_bundle(
+        base_dir=tmp_path,
+        as_of="2026-05-12",
+        snapshots={
+            "2026-05-11": SnapshotStub({"NVDA": weak}),
+            "2026-05-12": SnapshotStub({"NVDA": strong}),
+        },
+        source_dates=["2026-05-11", "2026-05-12"],
+        daily_rows=[],
+        source_complete=True,
+        missing_sources=[],
+    )
+
+    continuing = [r for r in bundle["promotion_decisions"] if r["scenario_bucket"] == "MULTI_DAY_CONTINUING_CATALYST"]
+    assert continuing
+    assert "2026-05-14" not in continuing[0]["capture_date"]
+    assert "improved" in continuing[0]["uw_evidence_found"]
+
+
+def test_source_incomplete_handling_lists_missing_files(tmp_path):
+    completeness = source_completeness_for_date(tmp_path, "2026-05-14")
+
+    assert completeness["source_complete"] is False
+    assert any("date folder" in item for item in completeness["missing_sources"])
+    assert any("stock-screener-2026-05-14" in item for item in completeness["missing_sources"])
+    assert any("bot-eod-report-2026-05-14" in item for item in completeness["missing_sources"])
+
+
+def test_observability_matrix_has_every_required_scenario():
+    rows = build_observability_matrix_rows("2026-05-13", [])
+
+    assert {row["scenario_name"] for row in rows} == set(SCENARIO_BUCKETS)
+    assert all(row["expected_behavior"] for row in rows)
+
+
+def test_frozen_v1_backup_remains_unchanged_against_baseline_tag():
+    if not Path(".git").exists():
+        pytest.skip("git metadata not available")
+
+    result = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--exit-code",
+            "options-pattern-pipeline-v1",
+            "--",
+            "uwos/options_pattern_pipeline_v1_frozen_v1",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
