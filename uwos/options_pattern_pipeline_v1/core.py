@@ -3228,7 +3228,10 @@ def trade_setup_fields(r: Mapping[str, Any]) -> Dict[str, str]:
         strike = parsed.get("strike")
     action = "BUY"
     strike_text = format_strike(strike)
-    trade_setup = f"{action} {option_type} {ticker} {strike_text} exp {expiry}".strip()
+    if not option_type or not strike_text or not expiry:
+        trade_setup = "No complete option ticket - missing quote/strike/expiry"
+    else:
+        trade_setup = f"{action} {option_type} {ticker} {strike_text} exp {expiry}".strip()
     return {
         "strategy": strategy,
         "buy_or_sell": action,
@@ -3271,7 +3274,9 @@ def spread_trade_setup_fields(
         parts.append(f"{action} {option_type} {ticker} {strike_text}".strip())
         strike_parts.append(f"{action} {strike_text}".strip())
     trade_setup = " / ".join(parts)
-    if expiry:
+    if not trade_setup:
+        trade_setup = "No complete spread ticket - missing legs/quote"
+    elif expiry:
         trade_setup = f"{trade_setup} exp {expiry}"
     return {
         "strategy": strategy,
@@ -3351,6 +3356,125 @@ def append_run_observability_summary(
     lines.append(f"- Watch/blocked names that matter: {summary.get('watch_or_blocked_names') or 'none'}.")
 
 
+def markdown_cell(value: Any) -> str:
+    text = "" if value is None else str(value)
+    return text.replace("\n", " ").replace("|", "/").strip()
+
+
+def money_text(value: Any) -> str:
+    parsed = num(value)
+    if parsed is None:
+        return ""
+    return f"${parsed:,.2f}"
+
+
+def pct_text(value: Any) -> str:
+    parsed = num(value)
+    if parsed is None:
+        return ""
+    return f"{f'{parsed:.2f}'.rstrip('0').rstrip('.')}%"
+
+
+def count_text(value: Any) -> str:
+    parsed = num(value)
+    if parsed is None:
+        return "n/a"
+    return f"{int(parsed):,}"
+
+
+def strategy_plain_english(strategy: str) -> str:
+    normalized = str(strategy or "").strip().lower()
+    if normalized == "long put debit":
+        return "Buy a put; bearish; max loss is the debit paid."
+    if normalized == "long call debit":
+        return "Buy a call; bullish; max loss is the debit paid."
+    if normalized == "bear call credit spread":
+        return "Sell lower-strike call, buy higher-strike call; bearish/neutral credit spread."
+    if normalized == "bull put credit spread":
+        return "Sell higher-strike put, buy lower-strike put; bullish/neutral credit spread."
+    if normalized:
+        return "Option structure shown in the ticket legs."
+    return ""
+
+
+def blocker_text(row: Mapping[str, Any]) -> str:
+    blockers = row.get("blocker_categories") or row.get("block_reasons") or []
+    if isinstance(blockers, str):
+        parts = [p.strip() for p in blockers.split(";") if p.strip()]
+    else:
+        parts = [str(p).strip() for p in blockers if str(p).strip()]
+    return "; ".join(parts[:5])
+
+
+def ticket_row(
+    row: Mapping[str, Any],
+    status: str,
+    index: int,
+) -> str:
+    setup = trade_setup_fields(row)
+    why = "Actionable" if status == "TRADE" else blocker_text(row) or row.get("why_actionable_now") or ""
+    return (
+        f"| {index} | {status} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
+        f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('strategy'))} | "
+        f"{markdown_cell(strategy_plain_english(setup.get('strategy', '')))} | {markdown_cell(setup.get('entry_range'))} | "
+        f"{money_text(row.get('max_risk_per_contract'))} | {pct_text(row.get('success_probability_pct'))} | "
+        f"{pct_text(row.get('probability_score'))} | {markdown_cell(why)} |"
+    )
+
+
+def append_ticket_table(
+    lines: List[str],
+    title: str,
+    rows: Sequence[Mapping[str, Any]],
+    status: str,
+    limit: int,
+    empty_text: str,
+) -> None:
+    lines.append(f"## {title}")
+    if not rows:
+        lines.append(f"- {empty_text}")
+        lines.append("")
+        return
+    lines.append("| # | Status | Ticker | Bias | Full Ticket | Strategy | Meaning | Entry | Max Risk | Success | Score | Why |")
+    lines.append("|---:|---|---|---|---|---|---|---:|---:|---:|---:|---|")
+    for idx, row in enumerate(rows[:limit], 1):
+        lines.append(ticket_row(row, status, idx))
+    lines.append("")
+
+
+def append_strategy_glossary(lines: List[str], rows: Sequence[Mapping[str, Any]]) -> None:
+    strategies: Dict[str, str] = {}
+    for row in rows:
+        setup = trade_setup_fields(row)
+        strategy = str(setup.get("strategy") or "").strip()
+        if strategy and strategy not in strategies:
+            strategies[strategy] = strategy_plain_english(strategy)
+    if not strategies:
+        return
+    lines.append("## Strategy Glossary")
+    for strategy, meaning in sorted(strategies.items()):
+        lines.append(f"- {strategy}: {meaning}")
+    lines.append("")
+
+
+def validation_snapshot_rows(discovered_rows: Sequence[Mapping[str, Any]], limit: int = 12) -> List[Mapping[str, Any]]:
+    tier_rank = {"PROVEN": 3, "PROMISING": 2, "RESEARCH_ONLY": 1}
+    rows = [
+        row
+        for row in discovered_rows
+        if str(row.get("confidence_tier") or "") in {"PROVEN", "PROMISING"}
+    ]
+    rows.sort(
+        key=lambda row: (
+            tier_rank.get(str(row.get("confidence_tier") or ""), 0),
+            num(row.get("validation_probability_score")) or -1.0,
+            num(row.get("validation_average_net_r")) or -999.0,
+        ),
+        reverse=True,
+    )
+    return rows[:limit]
+
+
 def render_source_incomplete_report(
     as_of: str,
     completeness: Mapping[str, Any],
@@ -3406,112 +3530,57 @@ def render_daily_report(
 ) -> str:
     lines: List[str] = []
     verdict = metadata["verdict"]
+    macro_summary = macro_geo_bundle.get("summary", {})
+    no_trade_reason = macro_summary.get("primary_no_trade_reason") or (
+        "No setup cleared validation, quote, liquidity, event, and regime checks."
+    )
+    source_counts = (metadata.get("source_counts_by_date") or {}).get(as_of, {})
     lines.append(f"# Options Pattern Pipeline v1 Daily Report - {as_of}")
     lines.append("")
     lines.append(f"Final pipeline verdict: **{verdict}**")
     lines.append("")
-    append_run_observability_summary(lines, actionable, source_completeness, macro_geo_bundle)
-    lines.append("")
-    lines.append("## Market Regime")
     regime = snapshot.market_regime
-    lines.append(f"- Regime: {regime.get('regime')}")
-    lines.append(f"- Average index return: {fmt_pct(regime.get('avg_index_return'))}")
-    lines.append(f"- Breadth positive: {fmt_pct(regime.get('breadth_positive_pct'))}")
-    lines.append(f"- VIX / volatility read: {regime.get('vix_context')}")
-    if regime.get("top_sectors"):
-        lines.append(
-            "- Sector rotation: "
-            + ", ".join(f"{s['sector']} {fmt_pct(s['avg_return'])}" for s in regime["top_sectors"])
-        )
+    lines.append("## Decision Summary")
+    lines.append(f"- Approved trades: {len(actionable)}.")
+    if not actionable:
+        lines.append(f"- No-trade reason: {no_trade_reason}")
+    lines.append(
+        f"- Regime: {regime.get('regime')} | index return {fmt_pct(regime.get('avg_index_return'))} | "
+        f"positive breadth {fmt_pct(regime.get('breadth_positive_pct'))}."
+    )
+    lines.append(f"- Source data complete: {'yes' if source_completeness.get('source_complete') else 'no'}.")
+    lines.append(
+        f"- Bot-EOD: {count_text(source_counts.get('bot_eod_rows'))} flow rows, "
+        f"{count_text(source_counts.get('bot_eod_quote_rows'))} quote rows, "
+        f"cache {'hit' if source_counts.get('bot_eod_cache_hit') else 'built' if source_counts.get('bot_eod_cache_built') else 'n/a'}."
+    )
+    lines.append(
+        f"- Catalyst buckets: {macro_summary.get('primary_no_trade_reason') or 'see Macro/Catalyst Read'}."
+    )
     lines.append("")
-    lines.append("## Macro, Micro, Geopolitical Context")
-    macro_summary = macro_geo_bundle.get("summary", {})
+
+    append_ticket_table(lines, "Actionable Trade Tickets", actionable, "TRADE", 10, "No actionable trade tickets.")
+    append_ticket_table(lines, "Watch Tickets", watch, "WATCH", 15, "No watch tickets passed the daily screens.")
+    append_ticket_table(lines, "Avoid / Blocked Tickets", blocked, "AVOID", 15, "No blocked tickets after daily classification.")
+    append_strategy_glossary(lines, list(actionable[:10]) + list(watch[:15]) + list(blocked[:15]))
+
+    lines.append("## Macro / Catalyst Read")
     eligible_types = macro_summary.get("eligible_event_types") or []
-    if eligible_types:
-        lines.append(f"- Structured eligible catalysts: {', '.join(eligible_types)}.")
-    else:
-        lines.append("- Structured eligible catalysts: none found in point-in-time local captures.")
-    if macro_summary.get("future_dated_catalyst_count"):
-        lines.append(
-            f"- Future-dated catalysts skipped: {macro_summary.get('future_dated_catalyst_count')} "
-            f"({', '.join(macro_summary.get('future_dated_event_types') or [])})."
-        )
-    if macro_summary.get("uw_confirmed_themes"):
-        lines.append(f"- UW-confirmed catalyst themes: {macro_summary.get('uw_confirmed_themes')}.")
-    lines.append(f"- {sentiment_summary.get('summary')}")
+    lines.append(f"- Eligible catalysts: {', '.join(eligible_types[:12]) or 'none'}.")
+    lines.append(f"- UW-confirmed themes: {macro_summary.get('uw_confirmed_themes') or 'none'}.")
+    lines.append(
+        f"- Scenario counts: {macro_summary.get('primary_no_trade_reason') or 'not provided'}."
+    )
+    lines.append(f"- News/capture note: {sentiment_summary.get('summary')}")
     if sentiment_summary.get("used_sources"):
-        for src in sentiment_summary["used_sources"][:5]:
-            url_part = f" URLs: {', '.join(src.get('urls') or [])}" if src.get("urls") else ""
-            lines.append(f"- Used local capture: `{src['path']}`.{url_part}")
-    if sentiment_summary.get("skipped_sources"):
-        lines.append(
-            f"- Skipped {len(sentiment_summary['skipped_sources'])} local captures that failed point-in-time checks."
-        )
-    lines.append("")
-    lines.append("## Strongest Pattern Families")
-    if discovered_rows:
-        for row in discovered_rows:
-            lines.append(
-                f"- {row['pattern_family']}: {row['confidence_tier']} | "
-                f"success probability {fmt_pct(row.get('validation_success_probability'))}, "
-                f"probability score {fmt_pct(row.get('validation_probability_score'))}, "
-                f"validation avg R {fmt_num(row.get('validation_average_net_r'))}, "
-                f"scored {row.get('validation_scored_count')}, "
-                f"beats baselines {row.get('beats_baselines_count')}"
-            )
-    else:
-        lines.append("- No historical validation rows were produced.")
-    lines.append("")
-    lines.append("## Actionable Trades")
-    if actionable:
-        lines.append("| Status | Ticker | Direction | Strategy | Buy/Sell | Call/Put | Strike(s) | Expiration | Entry | Max Risk | Success % | Prob Score | Pattern |")
-        lines.append("|---|---|---|---|---|---|---:|---|---:|---:|---:|---:|---|")
-        for r in actionable[:5]:
-            setup = trade_setup_fields(r)
-            lines.append(
-                f"| TRADE | {r['ticker']} | {r['direction']} | {setup['strategy']} | "
-                f"{setup['buy_or_sell']} | {setup['call_or_put']} | {setup['strike_rates']} | "
-                f"{setup['expiration_date']} | {setup['entry_range']} | "
-                f"{fmt_num(r.get('max_risk_per_contract'))} | {fmt_num(r.get('success_probability_pct'))}% | "
-                f"{fmt_num(r.get('probability_score'))}% | {r.get('pattern_family')} |"
-            )
-        lines.append("")
-        for r in actionable[:5]:
-            lines.append(f"- {r['ticker']} probability evidence: {r.get('probability_evidence')}")
-    else:
-        no_trade_reason = macro_geo_bundle.get("summary", {}).get("primary_no_trade_reason") or (
-            "No pattern passed the full validation, baseline, quote, risk, event, and regime acceptance bar."
-        )
-        lines.append(f"- No actionable trades today. {no_trade_reason}")
-    lines.append("")
-    lines.append("## Watchlist / Research")
-    if watch:
-        lines.append("| Status | Ticker | Direction | Strategy | Buy/Sell | Call/Put | Strike(s) | Expiration | Entry | Reason |")
-        lines.append("|---|---|---|---|---|---|---:|---|---:|---|")
-        for r in watch[:15]:
-            setup = trade_setup_fields(r)
-            lines.append(
-                f"| WATCH | {r['ticker']} | {r['direction']} | {setup['strategy']} | "
-                f"{setup['buy_or_sell']} | {setup['call_or_put']} | {setup['strike_rates']} | "
-                f"{setup['expiration_date']} | {setup['entry_range']} | {r.get('why_actionable_now')} |"
-            )
-    else:
-        lines.append("- No watchlist setups passed basic pattern screens.")
-    lines.append("")
-    lines.append("## Blocked High-Interest Candidates")
-    if blocked:
-        for r in blocked[:20]:
-            lines.append(
-                f"- AVOID {r['ticker']} {r['direction']} {r['pattern_family']}: "
-                f"{'; '.join(r.get('block_reasons') or [])}"
-            )
-    else:
-        lines.append("- No blocked candidates after daily classification.")
+        for src in sentiment_summary["used_sources"][:3]:
+            urls = ", ".join(src.get("urls") or [])
+            lines.append(f"- Capture: `{src['path']}`" + (f" | {urls}" if urls else ""))
     lines.append("")
     lines.append("## Catalyst Promotion / Scenario Buckets")
     promotion_rows = macro_geo_bundle.get("promotion_decisions", [])
     if promotion_rows:
-        for row in promotion_rows[:20]:
+        for row in promotion_rows[:12]:
             ticker = row.get("ticker") or "run"
             blocker = f" | blocker: {row.get('promotion_blocker')}" if row.get("promotion_blocker") else ""
             evidence = f" | UW: {row.get('uw_evidence_found')}" if row.get("uw_evidence_found") else ""
@@ -3520,6 +3589,22 @@ def render_daily_report(
             )
     else:
         lines.append("- No macro/geopolitical scenario rows were produced.")
+    lines.append("")
+    lines.append("## Validation Snapshot")
+    compact_validation_rows = validation_snapshot_rows(discovered_rows)
+    if compact_validation_rows:
+        for row in compact_validation_rows:
+            lines.append(
+                f"- {row['pattern_family']}: {row['confidence_tier']} | "
+                f"success {fmt_pct(row.get('validation_success_probability'))}, "
+                f"score {fmt_pct(row.get('validation_probability_score'))}, "
+                f"avg R {fmt_num(row.get('validation_average_net_r'))}, "
+                f"scored {row.get('validation_scored_count')}, "
+                f"beats {row.get('beats_baselines_count')} baselines."
+            )
+    else:
+        lines.append("- No proven or promising pattern families were produced.")
+    lines.append("- Full validation detail is in `validation_scorecard.csv` and `discovered_pattern_families.csv`.")
     lines.append("")
     lines.append("## Baseline Comparison")
     for row in validation_bundle.get("baseline_comparison", []):
@@ -3537,7 +3622,7 @@ def render_daily_report(
     if not missed_rows:
         lines.append("- Missed-mover audit had no scorable next-day stock moves.")
     lines.append("")
-    lines.append("## Reproducibility")
+    lines.append("## Source / Reproducibility")
     lines.append(f"- Source dates used: {metadata['source_dates_used'][0]} through {metadata['source_dates_used'][-1]}")
     lines.append(f"- Validation splits: {len(metadata['validation_splits'])}")
     lines.append(f"- Deterministic seed: {metadata['deterministic_seed']}")
