@@ -5,7 +5,14 @@ import datetime as dt
 import pandas as pd
 
 from codexuw.catalysts import load_catalyst_context
-from codexuw.engine import build_entry_watchlist, apply_high_conviction_decision_marks, select_final_trades, select_ticker_pool, _write_execute_outcome_ledger
+from codexuw.engine import (
+    build_entry_watchlist,
+    apply_high_conviction_decision_marks,
+    select_final_trades,
+    select_ticker_pool,
+    _write_execute_outcome_ledger,
+    _write_recommendation_outcome_ledger,
+)
 from codexuw.portfolio import summarize_positions
 from codexuw.provenance import build_input_provenance, file_fingerprint
 from codexuw.qa import audit_run
@@ -16,7 +23,7 @@ def test_summarize_positions_blocks_existing_option_underlyings() -> None:
     payload = {
         "balances": {"total_value": 100_000, "cash": 10_000},
         "positions": [
-            {"symbol": "MSFT", "asset_type": "EQUITY", "market_value": 6_000},
+            {"symbol": "MSFT", "asset_type": "EQUITY", "qty": 100, "market_value": 6_000},
             {"symbol": "GOOG  260515P00375000", "asset_type": "OPTION", "underlying": "GOOG", "short_qty": 1, "market_value": -200},
         ],
     }
@@ -24,6 +31,8 @@ def test_summarize_positions_blocks_existing_option_underlyings() -> None:
     assert summary["option_underlyings"] == ["GOOG"]
     assert summary["short_option_underlyings"] == ["GOOG"]
     assert summary["large_equity_exposure"] == {"MSFT": 6000.0}
+    assert any(row["action"] == "SELL COVERED INCOME" for row in summary["portfolio_income_actions"])
+    assert any(row["action"] in {"HOLD", "ROLL", "TAKE PROFIT"} for row in summary["risk_actions"])
 
 
 def test_load_catalyst_context_reads_browser_text(tmp_path) -> None:
@@ -189,7 +198,34 @@ def test_execute_outcome_ledger_records_open_trade(tmp_path) -> None:
 
     assert ledger["outcome_status"].iloc[0] == "OPEN_REVIEW_REQUIRED"
     assert ledger["entry_price"].iloc[0] == 1.82
+    assert ledger["setup_family"].iloc[0] == "debit spreads"
+    assert ledger["recommended_limit"].iloc[0] == 1.82
     assert (tmp_path / "codexuw_execute_outcome_ledger.csv").exists()
+
+
+def test_recommendation_outcome_ledger_records_conditional_watch(tmp_path) -> None:
+    watch = pd.DataFrame(
+        [
+            {
+                "ticker": "NVDA",
+                "strategy": "Bull Put Credit Spread",
+                "direction": "Bull Put",
+                "expiry": "2026-05-15",
+                "sell_leg": "NVDA260515P00200000",
+                "buy_leg": "NVDA260515P00195000",
+                "required_entry": 1.25,
+                "mid_credit": 1.10,
+                "natural_credit": 0.95,
+            }
+        ]
+    )
+
+    path = _write_recommendation_outcome_ledger(tmp_path / "codexuw_daily_test", dt.date(2026, 5, 6), pd.DataFrame(), watch)
+    ledger = pd.read_csv(path)
+
+    assert ledger["lane"].iloc[0] == "Enter Only At Price"
+    assert ledger["outcome_status"].iloc[0] == "CONDITIONAL_NOT_FILLED"
+    assert ledger["recommended_limit"].iloc[0] == 1.25
 
 
 def test_qa_audit_catches_final_hard_block_token(tmp_path) -> None:

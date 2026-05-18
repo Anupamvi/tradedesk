@@ -1,11 +1,29 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
 from .data import safe_float
+
+
+def setup_family(strategy: object, direction: object = "") -> str:
+    text = f"{strategy or ''} {direction or ''}".lower()
+    if "earn" in text:
+        return "earnings-risk trades"
+    if "hedge" in text or "collar" in text:
+        return "hedges/rolls"
+    if "covered" in text or "income" in text or "cash-secured" in text or "csp" in text:
+        return "portfolio income"
+    if "debit" in text or "bull call" in text or "bear put" in text:
+        return "debit spreads"
+    if "credit" in text or "bull put" in text or "bear call" in text:
+        return "credit spreads"
+    if "roll" in text:
+        return "hedges/rolls"
+    return "other"
 
 
 def summarize_recent_replay(detail: pd.DataFrame, *, window: int = 20) -> dict[str, Any]:
@@ -76,6 +94,105 @@ def load_recent_performance(out_root: Path, *, window: int = 20) -> dict[str, An
     summary = summarize_recent_replay(detail, window=window)
     summary["source"] = str(path)
     return summary
+
+
+def summarize_live_outcomes(ledger: pd.DataFrame, *, window: int = 30) -> dict[str, Any]:
+    if ledger.empty:
+        return {"status": "unavailable", "reason": "empty_live_outcome_ledger"}
+    df = ledger.copy()
+    if "realized_pnl" not in df.columns:
+        return {"status": "unavailable", "reason": "missing_realized_pnl"}
+    df["realized_pnl"] = pd.to_numeric(df["realized_pnl"], errors="coerce")
+    realized = df[df["realized_pnl"].notna()].copy()
+    if realized.empty:
+        return {
+            "status": "unavailable",
+            "reason": "no_realized_live_outcomes",
+            "ledger_rows": int(len(df)),
+        }
+    date_col = "report_date" if "report_date" in realized.columns else "asof" if "asof" in realized.columns else ""
+    if date_col:
+        realized[date_col] = pd.to_datetime(realized[date_col], errors="coerce")
+        realized = realized.sort_values(date_col)
+    recent = realized.tail(window).copy()
+    if "setup_family" not in recent.columns:
+        recent["setup_family"] = recent.apply(lambda row: setup_family(row.get("strategy"), row.get("direction")), axis=1)
+    family_summary: dict[str, Any] = {}
+    for family, part in recent.groupby("setup_family"):
+        pnl = pd.to_numeric(part["realized_pnl"], errors="coerce").dropna()
+        if pnl.empty:
+            continue
+        wins = int((pnl > 0).sum())
+        outcomes = int(len(pnl))
+        avg_pnl = float(pnl.mean())
+        total_pnl = float(pnl.sum())
+        expectancy = "negative" if outcomes >= 3 and avg_pnl < 0 else "positive" if outcomes >= 3 and avg_pnl > 0 else "insufficient"
+        family_summary[str(family)] = {
+            "outcomes": outcomes,
+            "wins": wins,
+            "win_rate": wins / outcomes if outcomes else math.nan,
+            "avg_pnl": avg_pnl,
+            "total_pnl": total_pnl,
+            "expectancy": expectancy,
+        }
+    win_rate = float((recent["realized_pnl"] > 0).mean()) if not recent.empty else math.nan
+    latest = ""
+    if date_col and recent[date_col].notna().any():
+        latest = str(recent[date_col].max().date())
+    return {
+        "status": "ok",
+        "window": int(len(recent)),
+        "win_rate": win_rate,
+        "avg_pnl": float(recent["realized_pnl"].mean()),
+        "total_pnl": float(recent["realized_pnl"].sum()),
+        "latest_report_date": latest,
+        "family_summary": family_summary,
+    }
+
+
+def load_live_outcome_performance(out_root: Path, *, window: int = 30) -> dict[str, Any]:
+    candidates = [
+        out_root / "codexuw_recommendation_outcome_ledger.csv",
+        out_root / "codexuw_execute_outcome_ledger.csv",
+    ]
+    existing = [path for path in candidates if path.exists()]
+    if not existing:
+        return {"status": "unavailable", "reason": "no_live_outcome_ledger_found"}
+    path = existing[0]
+    try:
+        ledger = pd.read_csv(path)
+    except Exception as exc:
+        return {"status": "unavailable", "reason": str(exc), "source": str(path)}
+    summary = summarize_live_outcomes(ledger, window=window)
+    summary["source"] = str(path)
+    try:
+        summary["ledger_mtime_utc"] = pd.Timestamp(path.stat().st_mtime, unit="s", tz="UTC").isoformat()
+    except OSError:
+        pass
+    return summary
+
+
+def live_outcome_adjustment(context: dict[str, Any] | None, strategy: object, direction: object = "") -> dict[str, Any]:
+    family = setup_family(strategy, direction)
+    if not context or context.get("status") != "ok":
+        return {"family": family, "status": "unavailable", "score_penalty": 0.0, "block_execute": False}
+    family_summary = (context.get("family_summary") or {}).get(family, {})
+    expectancy = family_summary.get("expectancy")
+    if expectancy == "negative":
+        return {
+            "family": family,
+            "status": "negative_expectancy",
+            "score_penalty": 1.5,
+            "block_execute": True,
+            "summary": family_summary,
+        }
+    return {
+        "family": family,
+        "status": expectancy or "insufficient",
+        "score_penalty": 0.0,
+        "block_execute": False,
+        "summary": family_summary,
+    }
 
 
 def performance_risk_multiplier(context: dict[str, Any] | None) -> float:

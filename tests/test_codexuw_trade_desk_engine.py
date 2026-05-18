@@ -5,11 +5,14 @@ import datetime as dt
 import pandas as pd
 
 from codexuw.engine import (
+    apply_confidence_components,
+    apply_data_quality_gate,
     apply_replay_edge_model,
     apply_oi_carryover,
     apply_portfolio_context,
     assign_trade_statuses,
     build_entry_watchlist,
+    build_data_quality_status,
     classify_flow_quality,
     select_final_trades,
     _compact_action_rows,
@@ -156,6 +159,22 @@ def test_large_equity_exposure_caps_size_and_warns_without_veto() -> None:
     assert annotated["portfolio_size_cap"].iloc[0] == 1
     assert "large existing equity exposure" in annotated["portfolio_note"].iloc[0]
     assert final["contracts"].tolist() == [1]
+
+
+def test_elevated_equity_exposure_blocks_additive_execute_without_exceptional_evidence() -> None:
+    scored = pd.DataFrame([_credit_row(ticker="AAA", max_loss=100.0)])
+    portfolio = {
+        "status": "ok",
+        "total_value": 100_000,
+        "option_underlyings": [],
+        "large_equity_exposure": {"AAA": 9_000},
+    }
+
+    annotated = apply_portfolio_context(scored, portfolio)
+    out = assign_trade_statuses(annotated)
+
+    assert out["trade_status"].iloc[0] == "Research"
+    assert "portfolio_concentration_additive" in out["trade_status_reason"].iloc[0]
 
 
 def test_risk_cap_breach_still_blocks_selection() -> None:
@@ -742,3 +761,47 @@ def test_credit_spread_alternatives_emit_labeled_constructions() -> None:
     assert len(alternatives) >= 2
     assert {row["construction_source"] for row in alternatives}
     assert all("target_entry" in row for row in alternatives)
+
+
+def test_data_quality_gate_demotes_execute_when_portfolio_is_missing() -> None:
+    scored = assign_trade_statuses(pd.DataFrame([_credit_row()]))
+    assert scored["trade_status"].iloc[0] == "Execute"
+
+    gated = apply_data_quality_gate(
+        scored,
+        {"status": "critical", "critical_blockers": ["schwab_portfolio_available"], "items": []},
+    )
+
+    assert gated["trade_status"].iloc[0] == "Research"
+    assert "data_gate_missing_portfolio_state" in gated["data_quality_blockers"].iloc[0]
+
+
+def test_data_quality_status_reports_required_live_inputs() -> None:
+    status = build_data_quality_status(
+        input_provenance={"exports": {"stock_screener": {}, "hot_chains": {}, "bot_eod_report": {}}, "browser_text_count": 0},
+        scored=pd.DataFrame([_credit_row(live_status="PASS")]),
+        portfolio={"status": "unavailable", "error": "token expired"},
+        catalysts=pd.DataFrame([{"ticker": "AAA", "catalyst_status": "unknown"}]),
+        recent_performance={"status": "unavailable", "reason": "no replay"},
+        live_outcomes={"status": "unavailable", "reason": "no ledger"},
+        run_mode="Intraday live execution",
+    )
+
+    assert status["status"] == "critical"
+    assert "schwab_portfolio_available" in status["critical_blockers"]
+    assert "browser_news_notes_present" in status["critical_blockers"]
+
+
+def test_negative_live_outcome_family_blocks_execute_confidence() -> None:
+    live_outcomes = {
+        "status": "ok",
+        "family_summary": {
+            "credit spreads": {"outcomes": 4, "avg_pnl": -75.0, "expectancy": "negative"}
+        },
+    }
+    adjusted = apply_confidence_components(pd.DataFrame([_credit_row()]), live_outcomes=live_outcomes)
+    status = assign_trade_statuses(adjusted)
+
+    assert "negative_live_expectancy:credit spreads" in adjusted["penalties"].iloc[0]
+    assert status["trade_status"].iloc[0] == "Research"
+    assert "negative_live_expectancy" in status["trade_status_reason"].iloc[0]

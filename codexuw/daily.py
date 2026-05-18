@@ -12,13 +12,17 @@ from .data import aggregate_bot_flow, infer_asof_date, load_chain_oi, load_hot_c
 from .engine import (
     apply_confirmation_framework,
     apply_catalyst_context,
+    apply_confidence_components,
+    apply_data_quality_gate,
     apply_final_quality_guards,
     apply_high_conviction_decision_marks,
     apply_oi_carryover,
     apply_portfolio_context,
     apply_replay_edge_model,
     assign_trade_statuses,
+    build_data_quality_status,
     build_entry_watchlist,
+    build_intraday_change_summary,
     detect_regime,
     generate_candidates,
     live_validate_and_score,
@@ -27,7 +31,7 @@ from .engine import (
     select_ticker_pool,
     write_outputs,
 )
-from .performance import load_recent_performance
+from .performance import load_live_outcome_performance, load_recent_performance
 from .portfolio import fetch_portfolio_context, unavailable_portfolio_context
 from .provenance import build_input_provenance, build_run_environment, build_schwab_snapshot_provenance
 
@@ -62,6 +66,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--schwab-snapshot-dir", default="", help="Optional existing schwab_chains directory or run out-dir to replay exact chain snapshots")
     parser.add_argument("--historical-replay", action="store_true", help="Delegate this dated run to codexuw.replay historical mode")
     parser.add_argument("--replay-end", default="", help="Optional historical replay end date; defaults to latest dated folder")
+    parser.add_argument(
+        "--report-mode",
+        default="auto",
+        choices=["auto", "pre-market", "intraday", "post-close", "historical"],
+        help="Label the decision report mode. auto infers from local market time unless --historical-replay is set.",
+    )
+    parser.add_argument("--max-risk-per-trade", type=float, default=0.0, help="Optional hard max risk per new trade.")
+    parser.add_argument("--max-risk-per-day", type=float, default=0.0, help="Optional hard max total new risk for the report.")
+    parser.add_argument("--max-open-risk-by-ticker", type=float, default=0.0, help="Optional hard max new open risk by ticker.")
+    parser.add_argument("--max-correlated-sector-exposure", type=float, default=0.0, help="Optional hard max new correlated sector/factor risk.")
+    parser.add_argument("--daily-loss-limit", type=float, default=0.0, help="If Schwab day P/L is below this loss, new trades move out of Execute.")
     return parser.parse_args()
 
 
@@ -80,6 +95,23 @@ def live_planning_validation_note(asof: dt.date, latest_asof: dt.date | None) ->
     if latest_asof == asof:
         return "latest UW planning folder; current Schwab chains are used for executable pricing."
     return ""
+
+
+def infer_report_mode(value: str, *, historical_replay: bool) -> str:
+    if historical_replay or value == "historical":
+        return "Historical audit/replay"
+    if value == "pre-market":
+        return "Pre-market planning"
+    if value == "intraday":
+        return "Intraday live execution"
+    if value == "post-close":
+        return "Post-close review"
+    now = dt.datetime.now().time()
+    if now < dt.time(6, 30):
+        return "Pre-market planning"
+    if now <= dt.time(13, 0):
+        return "Intraday live execution"
+    return "Post-close review"
 
 
 def write_data_error_report(out_dir: Path, asof, base_dir: Path, error: Exception) -> Path:
@@ -114,19 +146,31 @@ def write_data_error_report(out_dir: Path, asof, base_dir: Path, error: Exceptio
     )
     report = out_dir / f"codexuw_trade_report_{asof}.md"
     lines = [
-        f"# CodexUW Daily Options Income Report - {asof}",
+        f"# CodexUW Daily Decision Engine - {asof}",
         "",
-        "## Funnel",
-        "- raw_screener_rows: 0",
-        "- ticker_pool_rows: 0",
-        "- candidate_rows: 0",
-        "- live_scored_rows: 0",
-        "- hard_reject_rows: 1",
-        "- final_trade_rows: 0",
+        "## First Screen",
+        "",
+        "| Item | Value |",
+        "|:--|:--|",
+        "| Report mode | Data error / no recommendation |",
+        "| Data-quality status | 🔴 critical |",
+        "| Market regime | unavailable |",
+        "| Portfolio risk | not checked because required UW files failed |",
+        "| Top action today | Stand down until required input files are present |",
+        "| Execute Now count | 0 |",
+        "| Enter Only At Price count | 0 |",
+        "| Portfolio Income count | 0 |",
+        "| Watch count | 0 |",
+        "",
+        "## Data Quality Gate",
+        "",
+        "| Status | Check | Detail |",
+        "|:--|:--|:--|",
+        f"| 🔴 missing | UW files present | {reason} |",
         "",
         "## Final Decision",
         "",
-        "No high-quality trades today",
+        "No high-quality trades today. No high-quality Execute trades today.",
         "",
         "## No-Trade Reason",
         "- Issue type: data problem",
@@ -150,6 +194,7 @@ def main() -> None:
     out_dir = Path(args.out_dir).expanduser().resolve()
     asof = infer_asof_date(base_dir)
     input_provenance = build_input_provenance(base_dir)
+    run_mode = infer_report_mode(args.report_mode, historical_replay=args.historical_replay)
 
     if args.historical_replay:
         from .replay import run_replay
@@ -170,7 +215,7 @@ def main() -> None:
             max_selected_per_day=args.max_final_trades,
             bot_max_rows=args.bot_max_rows,
         )
-        print("Historical mode: delegated to codexuw.replay for would-have-executed evaluation.")
+        print("Historical audit/replay mode: delegated to codexuw.replay for would-have-executed evaluation.")
         print(f"Wrote: {report}")
         print(f"Wrote: {out_dir / f'codexuw_replay_trade_report_{asof}.md'}")
         return
@@ -250,15 +295,39 @@ def main() -> None:
         if args.skip_recent_performance
         else load_recent_performance(base_dir.parent / "out")
     )
+    live_outcomes = load_live_outcome_performance(base_dir.parent / "out")
     scored = apply_confirmation_framework(scored, asof=asof, regime=regime, recent_performance=recent_performance)
+    data_quality = build_data_quality_status(
+        input_provenance=input_provenance,
+        scored=scored,
+        portfolio=portfolio,
+        catalysts=catalysts,
+        recent_performance=recent_performance,
+        live_outcomes=live_outcomes,
+        run_mode=run_mode,
+    )
+    scored = apply_confidence_components(scored, live_outcomes=live_outcomes)
     scored = assign_trade_statuses(scored)
+    scored = apply_data_quality_gate(scored, data_quality)
     watchlist = build_entry_watchlist(scored)
+    risk_config = {
+        "max_risk_per_trade": args.max_risk_per_trade,
+        "max_risk_per_day": args.max_risk_per_day,
+        "max_open_risk_by_ticker": args.max_open_risk_by_ticker,
+        "max_correlated_sector_exposure": args.max_correlated_sector_exposure,
+        "daily_loss_limit": args.daily_loss_limit,
+        "allow_new_trades": True,
+    }
+    if args.daily_loss_limit > 0 and portfolio and portfolio.get("status") == "ok":
+        if float(portfolio.get("day_pnl") or 0.0) <= -abs(args.daily_loss_limit):
+            risk_config["allow_new_trades"] = False
     final = select_final_trades(
         scored,
         regime=regime,
         risk_budget=args.risk_budget,
         recent_performance=recent_performance,
         max_final_trades=args.max_final_trades,
+        risk_config=risk_config,
     )
     funnel = {
         "raw_screener_rows": int(len(sc)),
@@ -276,11 +345,25 @@ def main() -> None:
         "input_files": input_provenance,
         "schwab_snapshot": build_schwab_snapshot_provenance(out_dir),
         "schwab_snapshot_input_dir": str(Path(args.schwab_snapshot_dir).expanduser().resolve()) if args.schwab_snapshot_dir else "",
-        "mode": "offline" if args.offline else "live_planning",
+        "mode": "offline" if args.offline else run_mode,
+        "risk_config": risk_config,
     }
+    change_summary = build_intraday_change_summary(
+        out_dir=out_dir,
+        asof=asof,
+        scored=scored,
+        final=final,
+        watch=watchlist,
+        portfolio=portfolio,
+        risk_budget=args.risk_budget,
+    )
     report = write_outputs(
         out_dir=out_dir,
         asof=asof,
+        run_mode=run_mode,
+        data_quality=data_quality,
+        change_summary=change_summary,
+        live_outcomes=live_outcomes,
         regime=regime,
         candidates=candidates,
         scored=scored,

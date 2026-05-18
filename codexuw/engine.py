@@ -12,7 +12,7 @@ import pandas as pd
 from .data import safe_float
 from .edge_model import EDGE_COLUMNS, apply_replay_edge_model
 from .occ import build_occ_symbol, parse_occ_symbol
-from .performance import performance_min_score, performance_risk_multiplier
+from .performance import live_outcome_adjustment, performance_min_score, performance_risk_multiplier, setup_family
 from .schwab_live import (
     SchwabChainValidator,
     chain_spot,
@@ -1272,6 +1272,16 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
     decision_eligible = str(row.get("decision_eligible")).lower() == "true"
     decision_tier = str(row.get("decision_tier") or "")
     confirmation_score = safe_float(row.get("confirmation_score"), 0.0)
+    portfolio_exposure = safe_float(row.get("portfolio_exposure_pct"))
+    portfolio_hedging = str(row.get("portfolio_hedging", "")).lower() == "true"
+    exceptional_additive = (
+        confirmation_score >= 9.0
+        and str(row.get("edge_verdict") or row.get("replay_ev_verdict") or "") in {"positive", "acceptable"}
+        and safe_float(row.get("edge_sample_size"), 0.0) >= 10.0
+        and str(row.get("live_status")) == "PASS"
+        and safe_float(row.get("quote_width_pct"), 1.0) <= 0.20
+        and str(row.get("flow_quality") or "") == "directional"
+    )
     secondary_credit = (
         _is_credit_strategy(row)
         and replay_verdict == "acceptable_secondary_income"
@@ -1295,6 +1305,12 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
         or "final_guard_near_term_news_caution" in penalties
     ):
         blockers.append("news_catalyst_caution")
+    if catalyst_status == "unknown" or "news_unconfirmed" in penalties:
+        blockers.append("news_unconfirmed")
+    if any(token.startswith("negative_live_expectancy:") for token in penalties):
+        blockers.append("negative_live_expectancy")
+    if math.isfinite(portfolio_exposure) and portfolio_exposure >= 0.08 and not portfolio_hedging and not exceptional_additive:
+        blockers.append("portfolio_concentration_additive")
     if "earnings_news_risk" in failed:
         blockers.append("earnings_news_risk")
     if any(token.startswith("final_guard_") for token in penalties):
@@ -1692,6 +1708,8 @@ def assign_trade_statuses(scored: pd.DataFrame, *, single_name_execute_quality_p
         out.at[idx, "trade_status"] = status
         out.at[idx, "trade_tier"] = tier
         out.at[idx, "trade_status_reason"] = reason
+        if core_blockers and status in {"Research", "Avoid"}:
+            out.at[idx, "primary_blocker"] = core_blockers[0]
         out.at[idx, "required_entry"] = required_credit if _is_credit_strategy(row) else required_debit
         out.at[idx, "no_chase_threshold"] = no_chase
         if price_annotation:
@@ -1733,9 +1751,13 @@ def select_final_trades(
     risk_budget: float,
     recent_performance: dict[str, Any] | None = None,
     max_final_trades: int = 8,
+    risk_config: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
     if scored.empty:
         return scored
+    risk_config = risk_config or {}
+    if risk_config.get("allow_new_trades") is False:
+        return scored.iloc[0:0].copy()
     required = {"hard_rejects", "score", "penalties"}
     if not required.issubset(scored.columns):
         return scored.iloc[0:0].copy()
@@ -1788,6 +1810,18 @@ def select_final_trades(
     ai_risk = 0.0
     perf_mult = performance_risk_multiplier(recent_performance)
     max_trade_risk = risk_budget * (0.22 if regime.get("sizing_stance") == "normal" else 0.14) * perf_mult
+    explicit_max_trade = safe_float(risk_config.get("max_risk_per_trade"))
+    if math.isfinite(explicit_max_trade) and explicit_max_trade > 0:
+        max_trade_risk = min(max_trade_risk, explicit_max_trade)
+    max_daily_risk = safe_float(risk_config.get("max_risk_per_day"), risk_budget)
+    if not math.isfinite(max_daily_risk) or max_daily_risk <= 0:
+        max_daily_risk = risk_budget
+    max_ticker_risk = safe_float(risk_config.get("max_open_risk_by_ticker"), risk_budget * 0.30)
+    if not math.isfinite(max_ticker_risk) or max_ticker_risk <= 0:
+        max_ticker_risk = risk_budget * 0.30
+    max_sector_risk = safe_float(risk_config.get("max_correlated_sector_exposure"), risk_budget * 0.55)
+    if not math.isfinite(max_sector_risk) or max_sector_risk <= 0:
+        max_sector_risk = risk_budget * 0.55
     for _, row in approved.iterrows():
         is_addon = bool(selected) and validated_addon_income_lane(row.get("direction"), safe_float(row.get("credit_pct_width")))
         if "trade_status" not in approved.columns and selected and not is_addon:
@@ -1806,11 +1840,11 @@ def select_final_trades(
         risk = contracts * max_loss
         ticker = str(row.get("ticker"))
         sector = str(row.get("sector") or "Unknown")
-        if total_risk + risk > risk_budget:
+        if total_risk + risk > max_daily_risk:
             continue
-        if ticker_risk[ticker] + risk > risk_budget * 0.30:
+        if ticker_risk[ticker] + risk > max_ticker_risk:
             continue
-        if sector_risk[sector] + risk > risk_budget * 0.55:
+        if sector_risk[sector] + risk > max_sector_risk:
             continue
         if ticker in AI_TECH and ai_risk + risk > risk_budget * 0.55:
             continue
@@ -1926,20 +1960,40 @@ def _entry_price(row: pd.Series) -> float:
     return safe_float(row.get("entry_limit_credit"), safe_float(row.get("credit")))
 
 
+def _recommended_limit(row: pd.Series) -> float:
+    for key in ["required_entry", "entry_limit_credit", "entry_limit_debit", "credit", "debit"]:
+        value = safe_float(row.get(key))
+        if math.isfinite(value) and value > 0:
+            return value
+    return math.nan
+
+
+def _live_mid_natural(row: pd.Series) -> tuple[float, float]:
+    if _is_debit_strategy(row):
+        return safe_float(row.get("mid_debit")), safe_float(row.get("natural_debit"))
+    return safe_float(row.get("mid_credit")), safe_float(row.get("natural_credit"))
+
+
 def _write_execute_outcome_ledger(out_dir: Path, asof: dt.date, final: pd.DataFrame) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     columns = [
         "run_id",
         "asof",
         "trade_key",
+        "report_date",
+        "lane",
         "ticker",
         "strategy",
+        "setup_family",
         "direction",
         "expiry",
         "sell_leg",
         "buy_leg",
         "entry_action",
         "entry_price",
+        "recommended_limit",
+        "schwab_live_mid",
+        "schwab_live_natural",
         "contracts",
         "max_profit",
         "max_loss",
@@ -1952,9 +2006,15 @@ def _write_execute_outcome_ledger(out_dir: Path, asof: dt.date, final: pd.DataFr
         "edge_win_rate",
         "edge_avg_pnl",
         "outcome_status",
+        "actual_fill",
         "exit_date",
+        "exit_fill",
         "exit_value",
+        "max_adverse_excursion",
+        "max_favorable_excursion",
         "realized_pnl",
+        "thesis_worked",
+        "reason_for_win_loss",
         "outcome_note",
         "report_path",
     ]
@@ -1962,6 +2022,7 @@ def _write_execute_outcome_ledger(out_dir: Path, asof: dt.date, final: pd.DataFr
     report_path = out_dir / f"codexuw_trade_report_{asof}.md"
     for _, row in final.iterrows():
         entry = _entry_price(row)
+        live_mid, live_natural = _live_mid_natural(row)
         trade_key = "|".join(
             [
                 out_dir.name,
@@ -1978,14 +2039,20 @@ def _write_execute_outcome_ledger(out_dir: Path, asof: dt.date, final: pd.DataFr
                 "run_id": out_dir.name,
                 "asof": str(asof),
                 "trade_key": trade_key,
+                "report_date": str(asof),
+                "lane": "Execute Now",
                 "ticker": row.get("ticker"),
                 "strategy": row.get("strategy"),
+                "setup_family": setup_family(row.get("strategy"), row.get("direction")),
                 "direction": row.get("direction"),
                 "expiry": row.get("expiry"),
                 "sell_leg": row.get("sell_leg", row.get("short_leg")),
                 "buy_leg": row.get("buy_leg", row.get("long_leg")),
                 "entry_action": row.get("entry_action"),
                 "entry_price": round(entry, 2) if math.isfinite(entry) else math.nan,
+                "recommended_limit": round(_recommended_limit(row), 2) if math.isfinite(_recommended_limit(row)) else math.nan,
+                "schwab_live_mid": round(live_mid, 2) if math.isfinite(live_mid) else math.nan,
+                "schwab_live_natural": round(live_natural, 2) if math.isfinite(live_natural) else math.nan,
                 "contracts": int(safe_float(row.get("contracts"), 1.0)),
                 "max_profit": row.get("max_profit"),
                 "max_loss": row.get("max_loss"),
@@ -1998,9 +2065,15 @@ def _write_execute_outcome_ledger(out_dir: Path, asof: dt.date, final: pd.DataFr
                 "edge_win_rate": row.get("edge_win_rate"),
                 "edge_avg_pnl": row.get("edge_avg_pnl"),
                 "outcome_status": "OPEN_REVIEW_REQUIRED",
+                "actual_fill": math.nan,
                 "exit_date": "",
+                "exit_fill": math.nan,
                 "exit_value": math.nan,
+                "max_adverse_excursion": math.nan,
+                "max_favorable_excursion": math.nan,
                 "realized_pnl": math.nan,
+                "thesis_worked": "",
+                "reason_for_win_loss": "",
                 "outcome_note": "Populate exit fields after close or replay mark; do not count as win/loss until realized.",
                 "report_path": str(report_path),
             }
@@ -2020,6 +2093,92 @@ def _write_execute_outcome_ledger(out_dir: Path, asof: dt.date, final: pd.DataFr
         combined.to_csv(central_path, index=False)
     elif not central_path.exists():
         pd.DataFrame(columns=columns).to_csv(central_path, index=False)
+    return run_path
+
+
+def _write_recommendation_outcome_ledger(out_dir: Path, asof: dt.date, final: pd.DataFrame, watch: pd.DataFrame) -> Path:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    columns = [
+        "run_id",
+        "report_date",
+        "trade_key",
+        "ticker",
+        "strategy",
+        "setup_family",
+        "lane",
+        "recommended_limit",
+        "schwab_live_mid",
+        "schwab_live_natural",
+        "actual_fill",
+        "exit_fill",
+        "max_adverse_excursion",
+        "max_favorable_excursion",
+        "realized_pnl",
+        "thesis_worked",
+        "reason_for_win_loss",
+        "outcome_status",
+        "report_path",
+    ]
+    report_path = out_dir / f"codexuw_trade_report_{asof}.md"
+    rows: list[dict[str, Any]] = []
+
+    def add_rows(frame: pd.DataFrame, lane: str) -> None:
+        if frame.empty:
+            return
+        for _, row in frame.iterrows():
+            live_mid, live_natural = _live_mid_natural(row)
+            key = "|".join(
+                [
+                    out_dir.name,
+                    str(asof),
+                    lane,
+                    str(row.get("ticker") or ""),
+                    str(row.get("strategy") or ""),
+                    str(row.get("expiry") or row.get("expiration_date") or ""),
+                    str(row.get("sell_leg") or row.get("short_leg") or ""),
+                    str(row.get("buy_leg") or row.get("long_leg") or ""),
+                ]
+            )
+            rows.append(
+                {
+                    "run_id": out_dir.name,
+                    "report_date": str(asof),
+                    "trade_key": key,
+                    "ticker": row.get("ticker"),
+                    "strategy": row.get("strategy"),
+                    "setup_family": setup_family(row.get("strategy"), row.get("direction")),
+                    "lane": lane,
+                    "recommended_limit": round(_recommended_limit(row), 2) if math.isfinite(_recommended_limit(row)) else math.nan,
+                    "schwab_live_mid": round(live_mid, 2) if math.isfinite(live_mid) else math.nan,
+                    "schwab_live_natural": round(live_natural, 2) if math.isfinite(live_natural) else math.nan,
+                    "actual_fill": math.nan,
+                    "exit_fill": math.nan,
+                    "max_adverse_excursion": math.nan,
+                    "max_favorable_excursion": math.nan,
+                    "realized_pnl": math.nan,
+                    "thesis_worked": "",
+                    "reason_for_win_loss": "",
+                    "outcome_status": "OPEN_REVIEW_REQUIRED" if lane == "Execute Now" else "CONDITIONAL_NOT_FILLED",
+                    "report_path": str(report_path),
+                }
+            )
+
+    add_rows(final, "Execute Now")
+    add_rows(watch, "Enter Only At Price")
+    ledger = pd.DataFrame(rows, columns=columns)
+    run_path = out_dir / f"codexuw_recommendation_outcome_ledger_{asof}.csv"
+    ledger.to_csv(run_path, index=False)
+    central_path = out_dir.parent / "codexuw_recommendation_outcome_ledger.csv"
+    if central_path.exists():
+        try:
+            existing = pd.read_csv(central_path)
+            combined = pd.concat([existing, ledger], ignore_index=True)
+            combined = combined.drop_duplicates(subset=["trade_key"], keep="last")
+        except Exception:
+            combined = ledger
+    else:
+        combined = ledger
+    combined.to_csv(central_path, index=False)
     return run_path
 
 
@@ -2338,8 +2497,256 @@ def _status_label(status: object) -> str:
         "Watch": "🟡",
         "Research": "🔵",
         "Avoid": "🔴",
+        "Conditional": "🟡",
+        "Manage": "🔴",
+        "Income": "🔵",
     }
     return f"{icons.get(text, '⚪')} {text}" if text else ""
+
+
+def _quality_icon(status: object) -> str:
+    text = str(status or "").lower()
+    if text in {"ok", "fresh", "available", "present"}:
+        return "🟢"
+    if text in {"degraded", "stale", "warning", "not_present", "unavailable"}:
+        return "🟡"
+    if text in {"missing", "critical"}:
+        return "🔴"
+    return "🔵"
+
+
+def build_data_quality_status(
+    *,
+    input_provenance: dict[str, Any] | None,
+    scored: pd.DataFrame,
+    portfolio: dict[str, Any] | None,
+    catalysts: pd.DataFrame | None,
+    recent_performance: dict[str, Any] | None,
+    live_outcomes: dict[str, Any] | None,
+    run_mode: str,
+) -> dict[str, Any]:
+    provenance = input_provenance or {}
+    exports = provenance.get("exports") or {}
+    required_exports = ["stock_screener", "hot_chains", "bot_eod_report"]
+    missing_exports = [name for name in required_exports if name not in exports]
+    live_counts = scored["live_status"].fillna("unknown").value_counts().to_dict() if not scored.empty and "live_status" in scored.columns else {}
+    pass_count = int(live_counts.get("PASS", 0))
+    portfolio_status = (portfolio or {}).get("status", "not_checked")
+    browser_count = int(provenance.get("browser_text_count", 0) or 0)
+    catalyst_counts = catalysts["catalyst_status"].fillna("unknown").value_counts().to_dict() if catalysts is not None and not catalysts.empty and "catalyst_status" in catalysts.columns else {}
+
+    items = [
+        {
+            "check": "UW files present",
+            "status": "ok" if not missing_exports else "missing",
+            "detail": "required exports found" if not missing_exports else f"missing {', '.join(missing_exports)}",
+            "critical": bool(missing_exports),
+        },
+        {
+            "check": "Schwab quotes available",
+            "status": "ok" if pass_count else "missing",
+            "detail": f"{pass_count} PASS rows; counts={live_counts}" if live_counts else "no live quote rows",
+            "critical": pass_count == 0,
+        },
+        {
+            "check": "Schwab portfolio available",
+            "status": "ok" if portfolio_status == "ok" else "missing",
+            "detail": f"positions={(portfolio or {}).get('position_count', 0)}" if portfolio_status == "ok" else str((portfolio or {}).get("error") or portfolio_status),
+            "critical": portfolio_status != "ok",
+        },
+        {
+            "check": "Browser/news notes present",
+            "status": "ok" if browser_count > 0 else "missing",
+            "detail": f"{browser_count} local browser/news captures; catalyst counts={catalyst_counts}" if browser_count > 0 else "no local browser/news captures",
+            "critical": browser_count == 0,
+        },
+        {
+            "check": "Replay data freshness",
+            "status": "ok" if (recent_performance or {}).get("status") == "ok" else "unavailable",
+            "detail": (
+                f"latest={(recent_performance or {}).get('latest_asof', '')}; window={(recent_performance or {}).get('window', '')}"
+                if (recent_performance or {}).get("status") == "ok"
+                else str((recent_performance or {}).get("reason") or (recent_performance or {}).get("status") or "not_checked")
+            ),
+            "critical": False,
+        },
+        {
+            "check": "Live outcome ledger freshness",
+            "status": "ok" if (live_outcomes or {}).get("status") == "ok" else "unavailable",
+            "detail": (
+                f"latest={(live_outcomes or {}).get('latest_report_date', '')}; window={(live_outcomes or {}).get('window', '')}"
+                if (live_outcomes or {}).get("status") == "ok"
+                else str((live_outcomes or {}).get("reason") or (live_outcomes or {}).get("status") or "not_checked")
+            ),
+            "critical": False,
+        },
+    ]
+    critical_blockers = []
+    for item in items:
+        if item["critical"]:
+            key = str(item["check"]).lower().replace("/", "_").replace(" ", "_")
+            critical_blockers.append(key)
+    return {
+        "run_mode": run_mode,
+        "status": "critical" if critical_blockers else "ok",
+        "critical_blockers": critical_blockers,
+        "items": items,
+    }
+
+
+def _component_label(score: float, label: str) -> str:
+    if not math.isfinite(score):
+        return f"n/a {label}"
+    bucket = "strong" if score >= 8 else "usable" if score >= 6 else "weak" if score >= 4 else "blocked"
+    return f"{score:.0f}/10 {bucket}: {label}"
+
+
+def _confidence_component_scores(row: pd.Series, live_outcomes: dict[str, Any] | None) -> dict[str, str]:
+    edge_verdict = str(row.get("edge_verdict") or row.get("replay_ev_verdict") or "")
+    sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size"), math.nan))
+    if edge_verdict in {"positive", "acceptable"} and math.isfinite(sample) and sample >= 7:
+        replay_score, replay_label = 8.0, f"{edge_verdict} n={int(sample)}"
+    elif edge_verdict in {"thin_sample", "acceptable_proxy"} or (math.isfinite(sample) and sample < 5):
+        replay_score, replay_label = 4.0, f"thin/proxy {edge_verdict or 'sample'}"
+    elif str(row.get("replay_ev_verdict") or "").startswith("negative"):
+        replay_score, replay_label = 2.0, "negative replay/live analogue"
+    else:
+        replay_score, replay_label = 5.0, edge_verdict or "unavailable"
+
+    quote = safe_float(row.get("quote_width_pct"))
+    live_status = str(row.get("live_status") or "")
+    liq = min(
+        safe_float(row.get("short_oi"), 0.0) + safe_float(row.get("short_volume"), 0.0),
+        safe_float(row.get("long_oi"), 0.0) + safe_float(row.get("long_volume"), 0.0),
+    )
+    if live_status == "PASS" and math.isfinite(quote) and quote <= 0.20 and liq >= 500:
+        live_score, live_label = 9.0, "clean Schwab quote/liquidity"
+    elif live_status == "PASS" and math.isfinite(quote) and quote <= 0.35 and liq >= 100:
+        live_score, live_label = 7.0, "usable Schwab quote/liquidity"
+    elif live_status == "PASS":
+        live_score, live_label = 5.0, "live priced but marginal quote/liquidity"
+    else:
+        live_score, live_label = 1.0, live_status or "missing live pricing"
+
+    portfolio_note = _clean_note(row.get("portfolio_note"))
+    exposure = safe_float(row.get("portfolio_exposure_pct"))
+    hedging = str(row.get("portfolio_hedging", "")).lower() == "true"
+    if math.isfinite(exposure) and exposure >= 0.08 and not hedging:
+        portfolio_score, portfolio_label = 3.0, f"concentrated exposure {exposure:.1%}"
+    elif portfolio_note:
+        portfolio_score, portfolio_label = 6.0 if hedging else 5.0, portfolio_note
+    else:
+        portfolio_score, portfolio_label = 8.0, "no concentration flag"
+
+    catalyst_status = str(row.get("catalyst_status") or "").lower()
+    penalties = _token_set(row.get("penalties"))
+    if catalyst_status in {"supportive", "mixed"} and "news_unconfirmed" not in penalties:
+        catalyst_score, catalyst_label = 8.0 if catalyst_status == "supportive" else 6.0, catalyst_status
+    elif catalyst_status == "caution" or "news_catalyst_caution" in penalties:
+        catalyst_score, catalyst_label = 2.0, "material news caution"
+    else:
+        catalyst_score, catalyst_label = 3.0, "news unconfirmed"
+
+    ratio = safe_float(row.get("expected_move_ratio"))
+    trend = str(row.get("regime_trend") or "")
+    direction = str(row.get("direction") or "")
+    trend_ok = trend == "range" or (trend == "uptrend" and direction in BULLISH_DIRECTIONS) or (trend == "downtrend" and direction in BEARISH_DIRECTIONS)
+    technical_score = 8.0 if math.isfinite(ratio) and ratio >= (1.0 if _is_debit_strategy(row) else 0.65) and trend_ok else 5.0 if trend_ok else 3.0
+    technical_label = f"expected-move ratio {ratio:.2f}; trend {trend}" if math.isfinite(ratio) else f"trend {trend or 'unknown'}"
+
+    if _is_credit_strategy(row):
+        rr_value = safe_float(row.get("credit_pct_width"))
+        rr_score = 9.0 if math.isfinite(rr_value) and rr_value >= 0.25 else 7.0 if math.isfinite(rr_value) and rr_value >= 0.18 else 3.0
+        rr_label = f"credit/width {rr_value:.1%}" if math.isfinite(rr_value) else "credit unavailable"
+    else:
+        reward = safe_float(row.get("reward_risk"))
+        debit_pct = safe_float(row.get("debit_pct_width"))
+        rr_score = 8.0 if math.isfinite(reward) and reward >= 1.5 and debit_pct <= 0.40 else 6.0 if math.isfinite(reward) and reward >= 1.0 else 3.0
+        rr_label = f"reward/risk {reward:.2f}; debit/width {debit_pct:.1%}" if math.isfinite(reward) and math.isfinite(debit_pct) else "reward/risk unavailable"
+
+    live_adjustment = live_outcome_adjustment(live_outcomes, row.get("strategy"), row.get("direction"))
+    live_family_label = str(live_adjustment.get("status") or "unavailable")
+    if live_adjustment.get("block_execute"):
+        replay_score = min(replay_score, 3.0)
+        replay_label = f"{replay_label}; live family negative"
+
+    return {
+        "replay_confidence": _component_label(replay_score, replay_label),
+        "live_execution_confidence": _component_label(live_score, live_label),
+        "portfolio_fit": _component_label(portfolio_score, portfolio_label),
+        "catalyst_news_quality": _component_label(catalyst_score, catalyst_label),
+        "liquidity_quality": _component_label(live_score, f"quote {quote:.1%}; min OI+vol {liq:.0f}" if math.isfinite(quote) else f"min OI+vol {liq:.0f}"),
+        "technical_level_quality": _component_label(technical_score, technical_label),
+        "risk_reward_quality": _component_label(rr_score, rr_label),
+        "live_outcome_family": str(live_adjustment.get("family") or setup_family(row.get("strategy"), row.get("direction"))),
+        "live_outcome_family_status": live_family_label,
+    }
+
+
+def apply_confidence_components(scored: pd.DataFrame, live_outcomes: dict[str, Any] | None = None) -> pd.DataFrame:
+    if scored.empty:
+        return scored
+    out = scored.copy()
+    component_cols = [
+        "replay_confidence",
+        "live_execution_confidence",
+        "portfolio_fit",
+        "catalyst_news_quality",
+        "liquidity_quality",
+        "technical_level_quality",
+        "risk_reward_quality",
+        "live_outcome_family",
+        "live_outcome_family_status",
+    ]
+    for col in component_cols:
+        out[col] = ""
+    for idx, row in out.iterrows():
+        comps = _confidence_component_scores(row, live_outcomes)
+        for col, value in comps.items():
+            out.at[idx, col] = value
+        adjustment = live_outcome_adjustment(live_outcomes, row.get("strategy"), row.get("direction"))
+        if adjustment.get("block_execute"):
+            out.at[idx, "penalties"] = _append_token(row.get("penalties"), f"negative_live_expectancy:{adjustment.get('family')}")
+            score = max(0.0, safe_float(row.get("score"), 0.0) - safe_float(adjustment.get("score_penalty"), 0.0))
+            out.at[idx, "score"] = round(score, 2)
+            out.at[idx, "confidence"] = _confidence_from_score(score)
+    out["confidence_components"] = out[
+        [
+            "replay_confidence",
+            "live_execution_confidence",
+            "portfolio_fit",
+            "catalyst_news_quality",
+            "liquidity_quality",
+            "technical_level_quality",
+            "risk_reward_quality",
+        ]
+    ].agg(" | ".join, axis=1)
+    return out
+
+
+def apply_data_quality_gate(scored: pd.DataFrame, data_quality: dict[str, Any] | None) -> pd.DataFrame:
+    if scored.empty:
+        return scored
+    out = scored.copy()
+    blockers = set((data_quality or {}).get("critical_blockers") or [])
+    for idx, row in out.iterrows():
+        row_blockers: list[str] = []
+        if "schwab_quotes_available" in blockers or str(row.get("live_status") or "") != "PASS":
+            row_blockers.append("data_gate_missing_live_pricing")
+        if "schwab_portfolio_available" in blockers:
+            row_blockers.append("data_gate_missing_portfolio_state")
+        penalties = _token_set(row.get("penalties"))
+        catalyst_status = str(row.get("catalyst_status") or "").strip().lower()
+        if "browser_news_notes_present" in blockers or "news_unconfirmed" in penalties or catalyst_status == "unknown":
+            row_blockers.append("data_gate_news_unconfirmed")
+        if row_blockers:
+            out.at[idx, "data_quality_blockers"] = ";".join(row_blockers)
+            if str(row.get("trade_status") or "") == "Execute":
+                out.at[idx, "trade_status"] = "Research"
+                out.at[idx, "trade_tier"] = "data-quality-downgrade"
+                out.at[idx, "trade_status_reason"] = _append_token(row.get("trade_status_reason"), ";".join(row_blockers))
+                out.at[idx, "primary_blocker"] = row_blockers[0]
+    return out
 
 
 def _action_board_rows(final: pd.DataFrame, watch: pd.DataFrame, research: pd.DataFrame, avoid: pd.DataFrame) -> pd.DataFrame:
@@ -2435,7 +2842,11 @@ def _compact_edge_text(row: pd.Series) -> str:
 
 
 def _compact_reason_text(row: pd.Series) -> str:
-    for key in ("what_must_improve", "trade_status_reason", "reason", "primary_blocker", "penalties", "hard_rejects"):
+    if str(row.get("trade_status") or "") == "Watch":
+        keys = ("what_must_improve", "trade_status_reason", "reason", "primary_blocker", "penalties", "hard_rejects")
+    else:
+        keys = ("primary_blocker", "trade_status_reason", "reason", "what_must_improve", "penalties", "hard_rejects")
+    for key in keys:
         value = _clean_note(row.get(key))
         if value:
             return value
@@ -2571,10 +2982,292 @@ def _compact_research_rows(research: pd.DataFrame, limit: int = 8) -> pd.DataFra
     return pd.DataFrame(rows)
 
 
+def _portfolio_actions_frame(portfolio: dict[str, Any] | None, *, lane: str | None = None) -> pd.DataFrame:
+    actions = list((portfolio or {}).get("risk_actions") or [])
+    if lane:
+        actions = [row for row in actions if row.get("lane") == lane]
+    rows = []
+    for row in actions:
+        exposure = safe_float(row.get("exposure_pct"))
+        rows.append(
+            {
+                "Status": f"{row.get('icon', '🔵')} {row.get('action', '')}",
+                "Ticker": row.get("ticker"),
+                "Position": row.get("position"),
+                "Exposure": f"{exposure:.1%}" if math.isfinite(exposure) else "",
+                "Reason": row.get("reason", ""),
+                "Action": row.get("instruction", ""),
+                "Assignment / Tradeoff": row.get("assignment_risk") or row.get("upside_downside_tradeoff") or row.get("portfolio_impact", ""),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _data_quality_frame(data_quality: dict[str, Any] | None) -> pd.DataFrame:
+    rows = []
+    for item in (data_quality or {}).get("items", []):
+        rows.append(
+            {
+                "Status": f"{_quality_icon(item.get('status'))} {item.get('status')}",
+                "Check": item.get("check"),
+                "Detail": item.get("detail"),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _portfolio_risk_summary(portfolio: dict[str, Any] | None) -> str:
+    if not portfolio or portfolio.get("status") != "ok":
+        return f"portfolio unavailable: {(portfolio or {}).get('error') or (portfolio or {}).get('status', 'not_checked')}"
+    large = portfolio.get("large_equity_exposure", {}) or {}
+    actions = portfolio.get("risk_actions", []) or []
+    return (
+        f"{portfolio.get('position_count', 0)} positions; "
+        f"account ${safe_float(portfolio.get('total_value'), 0):,.0f}; "
+        f"day P/L ${safe_float(portfolio.get('day_pnl'), 0):,.0f}; "
+        f"{len(large)} large equity exposures; {len(actions)} risk/income actions"
+    )
+
+
+def _top_action_today(final: pd.DataFrame, watch: pd.DataFrame, portfolio: dict[str, Any] | None, data_quality: dict[str, Any] | None) -> str:
+    if (data_quality or {}).get("status") == "critical":
+        blockers = ", ".join((data_quality or {}).get("critical_blockers") or [])
+        return f"Stand down from Execute until data gate clears: {blockers}"
+    risk_actions = list((portfolio or {}).get("risk_actions") or [])
+    if risk_actions:
+        first = risk_actions[0]
+        return f"{first.get('action')} {first.get('ticker')}: {first.get('instruction')}"
+    if not final.empty:
+        row = final.sort_values("rank").iloc[0] if "rank" in final.columns else final.iloc[0]
+        return f"Execute {row.get('ticker')} {row.get('strategy')} at {_compact_entry_text(row)} with lifecycle alerts"
+    if not watch.empty:
+        row = watch.iloc[0]
+        return f"Rest conditional limit for {row.get('ticker')}: {_clean_note(row.get('trigger')) or _compact_trigger_text(row)}"
+    return "No new exposure; use near-miss alerts or stand down."
+
+
+def _first_screen_frame(
+    *,
+    run_mode: str,
+    data_quality: dict[str, Any] | None,
+    regime: dict[str, Any],
+    portfolio: dict[str, Any] | None,
+    final: pd.DataFrame,
+    watch: pd.DataFrame,
+    watch_alerts: pd.DataFrame,
+) -> pd.DataFrame:
+    income_count = len((portfolio or {}).get("portfolio_income_actions") or [])
+    data_status = (data_quality or {}).get("status", "unknown")
+    return pd.DataFrame(
+        [
+            {"Item": "Report mode", "Value": run_mode},
+            {"Item": "Data-quality status", "Value": f"{_quality_icon(data_status)} {data_status}"},
+            {
+                "Item": "Market regime",
+                "Value": f"{regime.get('trend')} / {regime.get('volatility')} vol / {regime.get('flow')} flow / sizing {regime.get('sizing_stance')}",
+            },
+            {"Item": "Portfolio risk", "Value": _portfolio_risk_summary(portfolio)},
+            {"Item": "Top action today", "Value": _top_action_today(final, watch, portfolio, data_quality)},
+            {"Item": "Execute Now count", "Value": int(len(final))},
+            {"Item": "Enter Only At Price count", "Value": int(len(watch))},
+            {"Item": "Portfolio Income count", "Value": int(income_count)},
+            {"Item": "Watch count", "Value": int(len(watch_alerts))},
+        ]
+    )
+
+
+def _watch_alert_rows(research: pd.DataFrame, avoid: pd.DataFrame, limit: int = 8) -> pd.DataFrame:
+    pool = research.copy()
+    if pool.empty:
+        return pd.DataFrame()
+    rows = []
+    for _, row in _diversified_report_rows(pool, limit=limit, max_per_ticker=1).iterrows():
+        trigger = _compact_trigger_text(row)
+        blocker = _clean_note(row.get("primary_blocker")) or _compact_reason_text(row)
+        rows.append(
+            {
+                "Status": "🔵 Watch",
+                "Ticker": row.get("ticker"),
+                "Flow": row.get("flow_quality", ""),
+                "Price Condition": trigger,
+                "Alert Trigger": f"{trigger}; blocker must clear: {blocker}",
+                "Action If Triggered": "Rerun Schwab/news checks; move to Enter Only At Price only if data gate and blocker clear.",
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _near_miss_rows(research: pd.DataFrame, avoid: pd.DataFrame, limit: int = 8) -> pd.DataFrame:
+    pool = research.copy()
+    if pool.empty and not avoid.empty:
+        pool = avoid.copy()
+    if pool.empty:
+        return pd.DataFrame()
+    rows = []
+    for _, row in _diversified_report_rows(pool, limit=limit, max_per_ticker=1).iterrows():
+        rows.append(
+            {
+                "Status": _status_label(str(row.get("trade_status") or "Research")),
+                "Ticker": row.get("ticker"),
+                "Trade": _compact_trade_label(row),
+                "Flow": row.get("flow_quality", ""),
+                "Current": _compact_entry_text(row),
+                "Valid Only If": _compact_trigger_text(row),
+                "Blocker": _clean_note(row.get("primary_blocker")) or _compact_reason_text(row),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _tactical_debit_rows(final: pd.DataFrame, watch: pd.DataFrame, research: pd.DataFrame, limit: int = 8) -> pd.DataFrame:
+    frames = [frame for frame in [final, watch, research] if not frame.empty]
+    if not frames:
+        return pd.DataFrame()
+    pool = pd.concat(frames, ignore_index=True, sort=False)
+    pool = pool[pool.apply(_is_debit_strategy, axis=1)].copy()
+    if pool.empty:
+        return pd.DataFrame()
+    rows = []
+    for _, row in _diversified_report_rows(pool, limit=limit, max_per_ticker=1).iterrows():
+        rows.append(
+            {
+                "Status": _status_label(str(row.get("trade_status") or ("Execute" if "rank" in row else "Watch"))),
+                "Ticker": row.get("ticker"),
+                "Trade": _compact_trade_label(row),
+                "Entry": _compact_entry_text(row),
+                "Max Loss": _money(row.get("max_loss")),
+                "Reward/Risk": f"{safe_float(row.get('reward_risk')):.2f}" if math.isfinite(safe_float(row.get("reward_risk"))) else "",
+                "Exit Plan": row.get("exit_plan", _clean_note(row.get("trigger"))),
+                "Why": _compact_reason_text(row),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _live_outcome_summary_text(live_outcomes: dict[str, Any] | None) -> str:
+    if not live_outcomes or live_outcomes.get("status") != "ok":
+        return str((live_outcomes or {}).get("reason") or (live_outcomes or {}).get("status") or "not_checked")
+    parts = []
+    for family, summary in (live_outcomes.get("family_summary") or {}).items():
+        parts.append(
+            f"{family}: {summary.get('expectancy')} avg ${safe_float(summary.get('avg_pnl')):.0f} over {summary.get('outcomes')} outcomes"
+        )
+    return "; ".join(parts[:5]) if parts else "no realized family outcomes"
+
+
+def _change_frame(change_summary: dict[str, Any] | None) -> pd.DataFrame:
+    if not change_summary:
+        return pd.DataFrame()
+    rows = change_summary.get("rows") or []
+    return pd.DataFrame(rows)
+
+
+def build_intraday_change_summary(
+    *,
+    out_dir: Path,
+    asof: dt.date,
+    scored: pd.DataFrame,
+    final: pd.DataFrame,
+    watch: pd.DataFrame,
+    portfolio: dict[str, Any] | None,
+    risk_budget: float,
+) -> dict[str, Any]:
+    candidates = []
+    for path in sorted(out_dir.parent.glob(f"codexuw_daily*{asof}*/codexuw_scored_{asof}.csv")):
+        if path.parent.resolve() == out_dir.resolve():
+            continue
+        candidates.append(path)
+    if not candidates:
+        return {"status": "unavailable", "summary": "No prior report found for this date.", "rows": []}
+    prior_path = max(candidates, key=lambda path: path.stat().st_mtime)
+    try:
+        prior = pd.read_csv(prior_path)
+    except Exception as exc:
+        return {"status": "unavailable", "summary": f"Prior report could not be read: {exc}", "rows": []}
+
+    current_pool = pd.concat([frame for frame in [final, watch, scored.head(20)] if not frame.empty], ignore_index=True, sort=False)
+    if current_pool.empty:
+        return {"status": "ok", "prior_scored": str(prior_path), "summary": "No current rows to compare.", "rows": []}
+
+    def key(row: pd.Series) -> str:
+        return "|".join(
+            [
+                str(row.get("ticker") or ""),
+                str(row.get("strategy") or ""),
+                str(row.get("expiry") or row.get("expiration_date") or ""),
+                str(row.get("short_leg") or row.get("sell_leg") or ""),
+                str(row.get("long_leg") or row.get("buy_leg") or ""),
+            ]
+        )
+
+    prior = prior.copy()
+    prior["_change_key"] = prior.apply(key, axis=1)
+    prior_by_key = {str(row["_change_key"]): row for _, row in prior.iterrows()}
+    rows = []
+    seen: set[str] = set()
+    for _, row in current_pool.iterrows():
+        change_key = key(row)
+        if not change_key or change_key in seen:
+            continue
+        seen.add(change_key)
+        old = prior_by_key.get(change_key)
+        if old is None:
+            rows.append(
+                {
+                    "Ticker": row.get("ticker"),
+                    "Change": "new candidate",
+                    "Underlying": f"now {_money(row.get('stock_price_live'))}",
+                    "Option Quote": _compact_entry_text(row),
+                    "Bid/Ask Width": _pct(row.get("quote_width_pct")),
+                    "Liquidity": f"short {safe_float(row.get('short_oi'), 0) + safe_float(row.get('short_volume'), 0):.0f}; long {safe_float(row.get('long_oi'), 0) + safe_float(row.get('long_volume'), 0):.0f}",
+                    "Flow/OI": f"{row.get('flow_quality', '')}; OI {row.get('oi_carryover_status', '')}",
+                    "News": row.get("catalyst_status", ""),
+                    "Portfolio": _clean_note(row.get("portfolio_note")),
+                    "Risk Budget": f"${risk_budget:,.0f}",
+                }
+            )
+            continue
+        old_entry = _compact_entry_text(old)
+        new_entry = _compact_entry_text(row)
+        old_width = safe_float(old.get("quote_width_pct"))
+        new_width = safe_float(row.get("quote_width_pct"))
+        rows.append(
+            {
+                "Ticker": row.get("ticker"),
+                "Change": "updated",
+                "Underlying": f"{_money(old.get('stock_price_live'))} -> {_money(row.get('stock_price_live'))}",
+                "Option Quote": f"{old_entry} -> {new_entry}",
+                "Bid/Ask Width": f"{_pct(old_width)} -> {_pct(new_width)}",
+                "Liquidity": (
+                    f"short {safe_float(old.get('short_oi'), 0) + safe_float(old.get('short_volume'), 0):.0f}->"
+                    f"{safe_float(row.get('short_oi'), 0) + safe_float(row.get('short_volume'), 0):.0f}; "
+                    f"long {safe_float(old.get('long_oi'), 0) + safe_float(old.get('long_volume'), 0):.0f}->"
+                    f"{safe_float(row.get('long_oi'), 0) + safe_float(row.get('long_volume'), 0):.0f}"
+                ),
+                "Flow/OI": f"{old.get('flow_quality', '')}/{old.get('oi_carryover_status', '')} -> {row.get('flow_quality', '')}/{row.get('oi_carryover_status', '')}",
+                "News": f"{old.get('catalyst_status', '')} -> {row.get('catalyst_status', '')}",
+                "Portfolio": _clean_note(row.get("portfolio_note")) or _portfolio_risk_summary(portfolio),
+                "Risk Budget": f"${risk_budget:,.0f}",
+            }
+        )
+        if len(rows) >= 10:
+            break
+    return {
+        "status": "ok",
+        "prior_scored": str(prior_path),
+        "summary": f"Compared against {prior_path.parent.name}.",
+        "rows": rows,
+    }
+
+
 def _write_compact_daily_report(
     *,
     out_dir: Path,
     asof: dt.date,
+    run_mode: str,
+    data_quality: dict[str, Any] | None,
+    change_summary: dict[str, Any] | None,
+    live_outcomes: dict[str, Any] | None,
     regime: dict[str, Any],
     scored: pd.DataFrame,
     final: pd.DataFrame,
@@ -2588,6 +3281,21 @@ def _write_compact_daily_report(
     report = out_dir / f"codexuw_trade_report_{asof}.md"
     action_rows = _compact_action_rows(final, watch, research)
     watch_rows = _compact_watch_rows(watch)
+    watch_alerts = _watch_alert_rows(research, avoid)
+    near_misses = _near_miss_rows(research, avoid)
+    tactical_debits = _tactical_debit_rows(final, watch, research)
+    manage_actions = _portfolio_actions_frame(portfolio, lane="Manage Existing Risk")
+    income_actions = _portfolio_actions_frame(portfolio, lane="Portfolio Income")
+    data_quality_rows = _data_quality_frame(data_quality)
+    first_screen = _first_screen_frame(
+        run_mode=run_mode,
+        data_quality=data_quality,
+        regime=regime,
+        portfolio=portfolio,
+        final=final,
+        watch=watch,
+        watch_alerts=watch_alerts,
+    )
     rej = rejection_summary(scored).head(10)
     decisions = decision_summary(scored).head(8)
     live_counts = scored["live_status"].fillna("unknown").value_counts().to_dict() if not scored.empty and "live_status" in scored.columns else {}
@@ -2601,25 +3309,26 @@ def _write_compact_daily_report(
             oi_source = _clean_note(source_values.iloc[0])
 
     lines = [
-        f"# CodexUW Daily Options Income Report - {asof}",
+        f"# CodexUW Daily Decision Engine - {asof}",
         "",
-        "## Decision",
+        "## First Screen",
         "",
-        f"Execute: **{len(final)}** | Watch: **{len(watch)}** | Research: **{len(research)}** | Avoid: **{len(avoid)}**",
+        first_screen.to_markdown(index=False),
         "",
     ]
+    if data_quality_rows.empty:
+        lines.extend(["## Data Quality Gate", "", "_No data-quality status available._", ""])
+    else:
+        lines.extend(["## Data Quality Gate", "", data_quality_rows.to_markdown(index=False), ""])
     if final.empty:
-        lines.extend(["**No high-quality trades today.**", ""])
+        lines.extend(
+            [
+                "**No high-quality Execute trades today.** The best action may still be risk management, resting conditional limits, income review, alerts, or standing down.",
+                "",
+            ]
+        )
     elif len(final) == 1:
-        if watch.empty:
-            lines.extend(["Only one setup cleared Execute. No Watch orders cleared; the rest stay in Research/Avoid with explicit blockers.", ""])
-        else:
-            lines.extend(
-                [
-                    "Only one setup cleared Execute. Watch orders below are conditional only; the rest stay in Research/Avoid with explicit blockers.",
-                    "",
-                ]
-            )
+        lines.extend(["Only one setup cleared Execute. Conditional rows below are not market orders.", ""])
 
     lines.extend(["## Action Board", ""])
     if action_rows.empty:
@@ -2627,6 +3336,13 @@ def _write_compact_daily_report(
     else:
         lines.extend([action_rows.where(pd.notna(action_rows), "").to_markdown(index=False), ""])
 
+    lines.extend(["## 1. Manage Existing Risk", ""])
+    if manage_actions.empty:
+        lines.extend(["_No open Schwab position action required by the current heuristic review._", ""])
+    else:
+        lines.extend([manage_actions.where(pd.notna(manage_actions), "").head(10).to_markdown(index=False), ""])
+
+    lines.extend(["## 2. Execute Now", ""])
     if not final.empty:
         rows = []
         for _, row in final.sort_values("rank").iterrows():
@@ -2644,23 +3360,70 @@ def _write_compact_daily_report(
                     "Breakeven": f"{safe_float(row.get('breakeven')):.2f}" if math.isfinite(safe_float(row.get("breakeven"))) else "",
                     "POP": _pct(row.get("pop_delta_proxy")),
                     "Score": f"{safe_float(row.get('score')):.2f}" if math.isfinite(safe_float(row.get("score"))) else "",
+                    "Confidence Components": row.get("confidence_components", ""),
                     "Exit": row.get("exit_plan"),
                 }
             )
-        lines.extend(["## Execute Detail", "", pd.DataFrame(rows).to_markdown(index=False), ""])
+        lines.extend([pd.DataFrame(rows).to_markdown(index=False), ""])
+    else:
+        lines.extend(["_No Execute trades. Data gate, live pricing, portfolio fit, catalyst, liquidity, or expectancy blocked new exposure._", ""])
 
-    lines.extend(["## Watch Orders", ""])
+    lines.extend(["## 3. Enter Only At Price", ""])
     if watch_rows.empty:
-        lines.extend(["_No Watch orders._", ""])
+        lines.extend(["_No conditional entry orders._", ""])
     else:
         lines.extend(
             [
-                "These are not Execute trades. Work only at the trigger price after a fresh Schwab recheck.",
+                "These are not Execute trades. Work only at the trigger price after a fresh Schwab recheck and unchanged data gate.",
                 "",
                 watch_rows.where(pd.notna(watch_rows), "").to_markdown(index=False),
                 "",
             ]
         )
+
+    lines.extend(["## 4. Portfolio Income", ""])
+    if income_actions.empty:
+        lines.extend(["_No covered-income action surfaced from current Schwab positions._", ""])
+    else:
+        lines.extend([income_actions.where(pd.notna(income_actions), "").head(8).to_markdown(index=False), ""])
+
+    lines.extend(["## 5. Tactical Debit Setups", ""])
+    if tactical_debits.empty:
+        lines.extend(["_No tactical debit setup clears the small-risk lane._", ""])
+    else:
+        lines.extend([tactical_debits.where(pd.notna(tactical_debits), "").to_markdown(index=False), ""])
+
+    lines.extend(["## 6. Watch With Alert", ""])
+    if watch_alerts.empty:
+        lines.extend(["_No monitor-ready alert rows._", ""])
+    else:
+        lines.extend([watch_alerts.where(pd.notna(watch_alerts), "").to_markdown(index=False), ""])
+
+    lines.extend(["## 7. Near Misses", ""])
+    if near_misses.empty:
+        lines.extend(["_No near misses to monitor._", ""])
+    else:
+        lines.extend([near_misses.where(pd.notna(near_misses), "").to_markdown(index=False), ""])
+
+    lines.extend(["## 8. Avoid / Research", ""])
+    research_counts = research["flow_quality"].fillna("unknown").value_counts().to_dict() if not research.empty and "flow_quality" in research.columns else {}
+    avoid_counts = avoid["flow_quality"].fillna("unknown").value_counts().to_dict() if not avoid.empty and "flow_quality" in avoid.columns else {}
+    lines.extend(
+        [
+            f"- Research flow quality: {research_counts if research_counts else 'none'}",
+            f"- Avoid flow quality: {avoid_counts if avoid_counts else 'none'}",
+            "- Flow labels are directional, hedge, roll, spread_leg, or unclear; non-directional flow cannot be primary Execute evidence.",
+            "",
+        ]
+    )
+
+    change_rows = _change_frame(change_summary)
+    if str(run_mode).lower().startswith("intraday"):
+        lines.extend(["## Intraday Changes", ""])
+        if change_rows.empty:
+            lines.extend([str((change_summary or {}).get("summary") or "No prior report found for this date."), ""])
+        else:
+            lines.extend([change_rows.where(pd.notna(change_rows), "").head(10).to_markdown(index=False), ""])
 
     lines.extend(["## Why Not More Trades", ""])
     if decisions.empty:
@@ -2696,6 +3459,7 @@ def _write_compact_daily_report(
             {"Item": "OI Source", "Value": oi_source or "not available"},
             {"Item": "Portfolio", "Value": portfolio_text},
             {"Item": "Recent Performance", "Value": perf_text},
+            {"Item": "Live Outcome Calibration", "Value": _live_outcome_summary_text(live_outcomes)},
             {"Item": "Funnel", "Value": str(funnel)},
         ]
     )
@@ -2719,6 +3483,10 @@ def write_outputs(
     *,
     out_dir: Path,
     asof: dt.date,
+    run_mode: str = "Intraday live execution",
+    data_quality: dict[str, Any] | None = None,
+    change_summary: dict[str, Any] | None = None,
+    live_outcomes: dict[str, Any] | None = None,
     regime: dict[str, Any],
     candidates: pd.DataFrame,
     scored: pd.DataFrame,
@@ -2771,6 +3539,7 @@ def write_outputs(
     outcome_ledger_path = _write_execute_outcome_ledger(out_dir, asof, final)
     watch.to_csv(out_dir / f"codexuw_entry_watchlist_{asof}.csv", index=False)
     watch.to_csv(out_dir / f"codexuw_watch_trades_{asof}.csv", index=False)
+    recommendation_ledger_path = _write_recommendation_outcome_ledger(out_dir, asof, final, watch)
     if "trade_status" in scored.columns:
         research = scored[scored["trade_status"].astype(str).eq("Research")].copy()
         avoid = scored[scored["trade_status"].astype(str).eq("Avoid")].copy()
@@ -2848,11 +3617,15 @@ def write_outputs(
         json.dumps(
             {
                 "asof": str(asof),
+                "report_mode": run_mode,
+                "data_quality": data_quality or {},
+                "intraday_change_summary": change_summary or {},
                 "regime": regime,
                 "funnel": funnel,
                 "portfolio_status": (portfolio or {}).get("status", "not_checked"),
                 "portfolio_position_count": (portfolio or {}).get("position_count", 0),
                 "recent_performance": recent_performance or {"status": "not_checked"},
+                "live_outcomes": live_outcomes or {"status": "not_checked"},
                 "entry_watchlist_rows": int(len(watch)),
                 "execute_rows": int(len(final)),
                 "watch_rows": int(len(watch)),
@@ -2862,6 +3635,7 @@ def write_outputs(
                 "edge_audit_rows": int(len(edge_audit)),
                 "max_final_trades": max_final_trades,
                 "execute_outcome_ledger": str(outcome_ledger_path),
+                "recommendation_outcome_ledger": str(recommendation_ledger_path),
                 "run_provenance": run_provenance or {},
             },
             indent=2,
@@ -2872,6 +3646,10 @@ def write_outputs(
     return _write_compact_daily_report(
         out_dir=out_dir,
         asof=asof,
+        run_mode=run_mode,
+        data_quality=data_quality,
+        change_summary=change_summary,
+        live_outcomes=live_outcomes,
         regime=regime,
         scored=scored,
         final=final,
