@@ -60,6 +60,22 @@ GENERATED_OR_OLD_ARTIFACT_MARKERS = (
     "rejection",
     "watchlist",
 )
+HARD_TRADE_BLOCKERS = {
+    "NO_TRADEABLE_OPTION_QUOTE",
+    "MISSING_BID_ASK_SPREAD",
+    "BID_ASK_SPREAD_TOO_WIDE",
+    "MISSING_ENTRY_CREDIT",
+    "MISSING_ENTRY_ASK",
+    "OPTION_LIQUIDITY_TOO_LOW",
+    "DTE_TOO_SHORT_FOR_VALIDATION_HORIZONS",
+}
+REGIME_TRADE_BLOCKERS = {"MARKET_REGIME_CONFLICT"}
+VALIDATION_TRADE_BLOCKERS = {
+    "PATTERN_VALIDATION_NOT_PROVEN",
+    "LIMITED_OUT_OF_SAMPLE_SAMPLE",
+    "DOES_NOT_BEAT_TWO_BASELINES",
+    "VALIDATION_EXPECTANCY_NEGATIVE",
+}
 
 
 @dataclass(frozen=True)
@@ -2952,6 +2968,7 @@ def write_outputs(
     actionable = [r for r in daily_rows if r["classification"] == "TRADE"][:5]
     watch = [r for r in daily_rows if r["classification"] == "WATCH"][:15]
     blocked = [r for r in daily_rows if r["classification"] in {"AVOID", "BLOCKED"}]
+    trade_review = build_trade_review_candidates(daily_rows)[:25]
 
     discovered_rows = []
     for family, tier in sorted(validation_bundle["family_tiers"].items()):
@@ -3005,6 +3022,7 @@ def write_outputs(
         "macro_geo_ticker_map": str(out_dir / "macro_geo_ticker_map.csv"),
         "macro_geo_uw_confirmation": str(out_dir / "macro_geo_uw_confirmation.csv"),
         "macro_geo_promotion_decisions": str(out_dir / "macro_geo_promotion_decisions.csv"),
+        "trade_review_candidates": str(out_dir / "trade_review_candidates.csv"),
         "pattern_observability_matrix": str(out_dir / "pattern_observability_matrix.md"),
         "missed_pattern_audit": str(out_dir / "missed_pattern_audit.md"),
         "inventory": str(out_dir / "source_inventory.csv"),
@@ -3015,6 +3033,7 @@ def write_outputs(
     write_csv(Path(paths["actionable_trades"]), [trade_output_row(r) for r in actionable], trade_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [trade_output_row(r) for r in watch], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [blocked_output_row(r) for r in blocked], blocked_fieldnames())
+    write_csv(Path(paths["trade_review_candidates"]), [trade_review_output_row(r) for r in trade_review], trade_review_fieldnames())
     write_csv(Path(paths["discovered_pattern_families"]), discovered_rows, discovered_fieldnames())
     write_json(Path(paths["market_regime_summary"]), snapshots[as_of].market_regime)
     write_json(Path(paths["sentiment_news_summary"]), sentiment_summary)
@@ -3054,6 +3073,7 @@ def write_outputs(
             as_of,
             snapshots[as_of],
             actionable,
+            trade_review,
             watch,
             blocked,
             discovered_rows,
@@ -3211,6 +3231,110 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "blocker_categories": ";".join(r.get("blocker_categories") or []),
         "block_reasons": ";".join(r.get("block_reasons") or []),
     }
+
+
+def build_trade_review_candidates(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
+    candidates_by_ticket: Dict[Tuple[str, str, str, str], Mapping[str, Any]] = {}
+    for row in rows:
+        if row.get("classification") == "TRADE":
+            continue
+        if trade_review_status(row) in {"NO_TRADE_NO_QUOTE", "NO_TRADE_BAD_CONTRACT"}:
+            continue
+        setup = trade_setup_fields(row)
+        key = (
+            str(row.get("ticker") or ""),
+            str(row.get("direction") or ""),
+            str(setup.get("trade_setup") or ""),
+            str(setup.get("entry_range") or ""),
+        )
+        current = candidates_by_ticket.get(key)
+        if current is None or trade_review_sort_key(row) > trade_review_sort_key(current):
+            candidates_by_ticket[key] = row
+    candidates = list(candidates_by_ticket.values())
+    candidates.sort(
+        key=trade_review_sort_key,
+        reverse=True,
+    )
+    return candidates
+
+
+def trade_review_sort_key(row: Mapping[str, Any]) -> Tuple[int, float, float, float]:
+    return (
+        trade_review_rank(trade_review_status(row)),
+        num(row.get("probability_score")) or -1.0,
+        num(row.get("success_probability_pct")) or -1.0,
+        num(row.get("pattern_score")) or -1.0,
+    )
+
+
+def hard_trade_blockers(row: Mapping[str, Any]) -> List[str]:
+    blockers = row.get("block_reasons") or []
+    return [b for b in blockers if b in HARD_TRADE_BLOCKERS]
+
+
+def trade_review_status(row: Mapping[str, Any]) -> str:
+    blockers = set(row.get("block_reasons") or [])
+    if "NO_TRADEABLE_OPTION_QUOTE" in blockers:
+        return "NO_TRADE_NO_QUOTE"
+    if blockers & HARD_TRADE_BLOCKERS:
+        return "NO_TRADE_BAD_CONTRACT"
+    score = num(row.get("probability_score")) or 0.0
+    success = num(row.get("success_probability_pct")) or 0.0
+    tier = str(row.get("confidence_tier") or "")
+    if blockers & REGIME_TRADE_BLOCKERS:
+        return "MACRO_CONFLICT_REVIEW"
+    if tier == "PROMISING" and (score >= 40.0 or success >= 50.0):
+        return "PROMISING_REVIEW"
+    if score >= 45.0 or success >= 55.0:
+        return "TACTICAL_REVIEW"
+    if blockers & VALIDATION_TRADE_BLOCKERS:
+        return "VALIDATION_REVIEW"
+    return "RESEARCH_REVIEW"
+
+
+def trade_review_rank(status: str) -> int:
+    return {
+        "TACTICAL_REVIEW": 5,
+        "PROMISING_REVIEW": 4,
+        "MACRO_CONFLICT_REVIEW": 3,
+        "VALIDATION_REVIEW": 2,
+        "RESEARCH_REVIEW": 1,
+        "NO_TRADE_BAD_CONTRACT": 0,
+        "NO_TRADE_NO_QUOTE": 0,
+    }.get(status, 0)
+
+
+def promotion_needed_text(row: Mapping[str, Any]) -> str:
+    blockers = set(row.get("block_reasons") or [])
+    needs: List[str] = []
+    if blockers & REGIME_TRADE_BLOCKERS:
+        needs.append("regime alignment or explicit hedge thesis")
+    if "VALIDATION_EXPECTANCY_NEGATIVE" in blockers:
+        needs.append("positive out-of-sample expectancy")
+    if "PATTERN_VALIDATION_NOT_PROVEN" in blockers:
+        needs.append("pattern family upgraded to proven")
+    if "LIMITED_OUT_OF_SAMPLE_SAMPLE" in blockers:
+        needs.append("larger scored OOS sample")
+    if "DOES_NOT_BEAT_TWO_BASELINES" in blockers:
+        needs.append("edge over at least two baselines")
+    if "NEAR_TERM_EARNINGS_EVENT_RISK" in blockers:
+        needs.append("earnings/event-risk plan")
+    if blockers & HARD_TRADE_BLOCKERS:
+        needs.append("clean quote/liquidity/DTE")
+    return "; ".join(needs[:5]) or "manual desk review"
+
+
+def trade_review_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
+    row = trade_output_row(r)
+    row.update(
+        {
+            "review_status": trade_review_status(r),
+            "review_priority": trade_review_rank(trade_review_status(r)),
+            "promotion_needed": promotion_needed_text(r),
+            "hard_blockers": ";".join(hard_trade_blockers(r)),
+        }
+    )
+    return row
 
 
 def trade_setup_fields(r: Mapping[str, Any]) -> Dict[str, str]:
@@ -3442,6 +3566,35 @@ def append_ticket_table(
     lines.append("")
 
 
+def trade_review_row(row: Mapping[str, Any], index: int) -> str:
+    setup = trade_setup_fields(row)
+    return (
+        f"| {index} | {markdown_cell(trade_review_status(row))} | {markdown_cell(row.get('ticker'))} | "
+        f"{markdown_cell(row.get('direction'))} | {markdown_cell(setup.get('trade_setup'))} | "
+        f"{markdown_cell(setup.get('entry_range'))} | {money_text(row.get('max_risk_per_contract'))} | "
+        f"{pct_text(row.get('success_probability_pct'))} | {pct_text(row.get('probability_score'))} | "
+        f"{markdown_cell(blocker_text(row))} | {markdown_cell(promotion_needed_text(row))} |"
+    )
+
+
+def append_trade_review_table(
+    lines: List[str],
+    rows: Sequence[Mapping[str, Any]],
+    limit: int = 12,
+) -> None:
+    lines.append("## Trade-Review Board")
+    lines.append("- Not auto-approved. This is the ranked desk-review board so a zero-TRADE day still shows the best live setups.")
+    if not rows:
+        lines.append("- No reviewable tickets with complete quotes/liquidity.")
+        lines.append("")
+        return
+    lines.append("| # | Review | Ticker | Bias | Full Ticket | Entry | Max Risk | Success | Score | What's Wrong | Promotion Needed |")
+    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---|---|")
+    for idx, row in enumerate(rows[:limit], 1):
+        lines.append(trade_review_row(row, idx))
+    lines.append("")
+
+
 def append_strategy_glossary(lines: List[str], rows: Sequence[Mapping[str, Any]]) -> None:
     strategies: Dict[str, str] = {}
     for row in rows:
@@ -3518,6 +3671,7 @@ def render_daily_report(
     as_of: str,
     snapshot: Snapshot,
     actionable: Sequence[Mapping[str, Any]],
+    trade_review: Sequence[Mapping[str, Any]],
     watch: Sequence[Mapping[str, Any]],
     blocked: Sequence[Mapping[str, Any]],
     discovered_rows: Sequence[Mapping[str, Any]],
@@ -3542,6 +3696,7 @@ def render_daily_report(
     regime = snapshot.market_regime
     lines.append("## Decision Summary")
     lines.append(f"- Approved trades: {len(actionable)}.")
+    lines.append(f"- Trade-review candidates: {len(trade_review)}.")
     if not actionable:
         lines.append(f"- No-trade reason: {no_trade_reason}")
     lines.append(
@@ -3560,9 +3715,10 @@ def render_daily_report(
     lines.append("")
 
     append_ticket_table(lines, "Actionable Trade Tickets", actionable, "TRADE", 10, "No actionable trade tickets.")
+    append_trade_review_table(lines, trade_review, 12)
     append_ticket_table(lines, "Watch Tickets", watch, "WATCH", 15, "No watch tickets passed the daily screens.")
     append_ticket_table(lines, "Avoid / Blocked Tickets", blocked, "AVOID", 15, "No blocked tickets after daily classification.")
-    append_strategy_glossary(lines, list(actionable[:10]) + list(watch[:15]) + list(blocked[:15]))
+    append_strategy_glossary(lines, list(actionable[:10]) + list(trade_review[:12]) + list(watch[:15]) + list(blocked[:15]))
 
     lines.append("## Macro / Catalyst Read")
     eligible_types = macro_summary.get("eligible_event_types") or []
@@ -3689,6 +3845,15 @@ def trade_fieldnames() -> List[str]:
 
 def blocked_fieldnames() -> List[str]:
     return trade_fieldnames() + ["pattern_score", "bid_ask_spread_pct", "liquidity_volume", "liquidity_open_interest"]
+
+
+def trade_review_fieldnames() -> List[str]:
+    return [
+        "review_status",
+        "review_priority",
+        "promotion_needed",
+        "hard_blockers",
+    ] + trade_fieldnames()
 
 
 def discovered_fieldnames() -> List[str]:

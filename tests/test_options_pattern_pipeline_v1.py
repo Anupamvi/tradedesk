@@ -17,12 +17,14 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_daily_snapshot,
     build_validation_splits,
     classify_daily_signals,
+    build_trade_review_candidates,
     normalize_header,
     parse_option_symbol,
     score_signal_horizon,
     source_completeness_for_date,
     sources_for_date,
     trade_output_row,
+    trade_review_output_row,
 )
 
 
@@ -658,6 +660,66 @@ def test_observability_matrix_has_every_required_scenario():
 
     assert {row["scenario_name"] for row in rows} == set(SCENARIO_BUCKETS)
     assert all(row["expected_behavior"] for row in rows)
+
+
+def test_trade_review_board_keeps_reviewable_setups_visible():
+    rows = [
+        {
+            "classification": "WATCH",
+            "ticker": "TSLA",
+            "direction": "bearish",
+            "confidence_tier": "RESEARCH_ONLY",
+            "probability_score": 49.97,
+            "success_probability_pct": 55.33,
+            "pattern_score": 9.0,
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN", "VALIDATION_EXPECTANCY_NEGATIVE"],
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Put Debit",
+            "lead_option_symbol": "TSLA260618P00410000",
+            "expiry": "2026-06-18",
+            "option_type": "put",
+            "strike": 410,
+            "entry_range": "20.30-20.45",
+            "max_risk_per_contract": 2045.65,
+        },
+        {
+            "classification": "AVOID",
+            "ticker": "MSFT",
+            "direction": "bullish",
+            "confidence_tier": "PROMISING",
+            "probability_score": 49.91,
+            "success_probability_pct": 52.33,
+            "pattern_score": 8.5,
+            "block_reasons": ["MARKET_REGIME_CONFLICT", "PATTERN_VALIDATION_NOT_PROVEN"],
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "lead_option_symbol": "MSFT260618C00420000",
+            "expiry": "2026-06-18",
+            "option_type": "call",
+            "strike": 420,
+            "entry_range": "16.50-16.75",
+            "max_risk_per_contract": 1675.65,
+        },
+        {
+            "classification": "AVOID",
+            "ticker": "XYZ",
+            "direction": "bullish",
+            "confidence_tier": "RESEARCH_ONLY",
+            "probability_score": 60.0,
+            "success_probability_pct": 65.0,
+            "pattern_score": 20.0,
+            "block_reasons": ["NO_TRADEABLE_OPTION_QUOTE"],
+        },
+    ]
+
+    candidates = build_trade_review_candidates(rows)
+    output = [trade_review_output_row(row) for row in candidates]
+
+    assert [row["ticker"] for row in output] == ["TSLA", "MSFT"]
+    assert output[0]["review_status"] == "TACTICAL_REVIEW"
+    assert output[0]["trade_setup"] == "BUY PUT TSLA 410 exp 2026-06-18"
+    assert output[1]["review_status"] == "MACRO_CONFLICT_REVIEW"
+    assert "regime alignment" in output[1]["promotion_needed"]
 
 
 def test_frozen_v1_backup_remains_unchanged_against_baseline_tag():
