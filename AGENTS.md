@@ -1,5 +1,30 @@
 # Trading Desk Agent Instructions
 
+## Codex Daily V2 Default
+
+- Treat `codexdaily`, `codex daily`, and discussions of the daily Codex pipeline as **Codex Daily V2** unless the user explicitly asks for V1, `uwos`, historical replay, or another pipeline.
+- V2 is the clean `codexuw` implementation: `python3 -m codexuw.daily`.
+- Default V2 live-planning command for a dated UW folder:
+
+```bash
+python3 -m codexuw.daily \
+  --base-dir /Users/anuppamvi/uw_root/tradedesk/YYYY-MM-DD \
+  --out-dir /Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v2_YYYY-MM-DD \
+  --max-tickers 60 \
+  --max-candidates 50 \
+  --max-final-trades 8 \
+  --risk-budget 15000 \
+  --monthly-profit-target 10000 \
+  --max-contracts-per-trade 20 \
+  --minimum-expected-value-per-dollar-risk 0.01 \
+  --risk-mandate target-growth \
+  --index-income-mode primary \
+  --portfolio-income-mode trading-sleeve-only
+```
+
+- V2 must still use Schwab live chains/pricing and Schwab portfolio state for execution decisions. Do not force trades when live edge, liquidity, catalyst, or risk controls do not support them.
+- Core investment holdings are protected by default. Do not recommend covered calls on long-term holdings unless the user explicitly allows the ticker or asks for `--portfolio-income-mode existing-core-review`.
+
 ## Pattern Pipeline V1 Baseline
 
 - `uwos/options_pattern_pipeline_v1_frozen_v1/` is the immutable backup copy of the Options Pattern Pipeline V1 baseline.

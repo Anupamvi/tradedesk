@@ -19,6 +19,8 @@ from .engine import (
     apply_oi_carryover,
     apply_portfolio_context,
     apply_replay_edge_model,
+    PIPELINE_NAME,
+    PIPELINE_VERSION,
     assign_trade_statuses,
     build_data_quality_status,
     build_entry_watchlist,
@@ -168,6 +170,8 @@ def write_data_error_report(out_dir: Path, asof, base_dir: Path, error: Exceptio
     (out_dir / f"codexuw_manifest_{asof}.json").write_text(
         json.dumps(
             {
+                "pipeline_name": PIPELINE_NAME,
+                "pipeline_version": PIPELINE_VERSION,
                 "asof": str(asof),
                 "base_dir": str(base_dir),
                 "funnel": funnel,
@@ -181,12 +185,13 @@ def write_data_error_report(out_dir: Path, asof, base_dir: Path, error: Exceptio
     )
     report = out_dir / f"codexuw_trade_report_{asof}.md"
     lines = [
-        f"# CodexUW Daily Decision Engine - {asof}",
+        f"# {PIPELINE_NAME} - Daily Decision Engine - {asof}",
         "",
         "## First Screen",
         "",
         "| Item | Value |",
         "|:--|:--|",
+        f"| Pipeline | {PIPELINE_NAME} |",
         "| Report mode | Data error / no recommendation |",
         "| Data-quality status | 🔴 critical |",
         "| Market regime | unavailable |",
@@ -407,6 +412,8 @@ def main() -> None:
         "avoid_rows": int(scored["trade_status"].eq("Avoid").sum()) if not scored.empty and "trade_status" in scored.columns else 0,
     }
     run_provenance = {
+        "pipeline_name": PIPELINE_NAME,
+        "pipeline_version": PIPELINE_VERSION,
         "environment": build_run_environment(),
         "input_files": input_provenance,
         "schwab_snapshot": build_schwab_snapshot_provenance(out_dir),

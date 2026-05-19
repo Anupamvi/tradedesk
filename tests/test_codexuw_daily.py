@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 
 from codexuw.daily import live_planning_validation_note, parse_args, write_data_error_report
 import codexuw.daily as daily
@@ -20,6 +21,11 @@ def test_write_data_error_report_documents_no_trade_reason(tmp_path) -> None:
     )
 
     text = report.read_text(encoding="utf-8")
+    manifest = json.loads((out_dir / "codexuw_manifest_2026-05-01.json").read_text(encoding="utf-8"))
+    assert "# Codex Daily V2 - Daily Decision Engine - 2026-05-01" in text
+    assert "| Pipeline | Codex Daily V2 |" in text
+    assert manifest["pipeline_name"] == "Codex Daily V2"
+    assert manifest["pipeline_version"] == "v2"
     assert "No high-quality trades today" in text
     assert "Issue type: data problem" in text
     assert "No stock-screener export found" in text

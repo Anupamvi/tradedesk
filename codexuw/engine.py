@@ -63,6 +63,8 @@ CREDIT_DIRECTIONS = {"Bull Put", "Bear Call"}
 DEBIT_DIRECTIONS = {"Bull Call", "Bear Put"}
 BULLISH_DIRECTIONS = {"Bull Put", "Bull Call"}
 BEARISH_DIRECTIONS = {"Bear Call", "Bear Put"}
+PIPELINE_NAME = "Codex Daily V2"
+PIPELINE_VERSION = "v2"
 
 
 def is_etf_row(row: pd.Series) -> bool:
@@ -3326,6 +3328,7 @@ def _first_screen_frame(
     income_count = len((portfolio or {}).get("portfolio_income_actions") or [])
     data_status = (data_quality or {}).get("status", "unknown")
     rows = [
+            {"Item": "Pipeline", "Value": PIPELINE_NAME},
             {"Item": "Monthly target", "Value": _money((target_model or {}).get("monthly_profit_target"))},
             {"Item": "MTD realized P/L", "Value": _money((target_model or {}).get("month_to_date_realized_pnl"))},
             {"Item": "Remaining target", "Value": _money((target_model or {}).get("remaining_monthly_target"))},
@@ -3628,7 +3631,7 @@ def _write_compact_daily_report(
             oi_source = _clean_note(source_values.iloc[0])
 
     lines = [
-        f"# CodexUW Daily Decision Engine - {asof}",
+        f"# {PIPELINE_NAME} - Daily Decision Engine - {asof}",
         "",
         "## First Screen",
         "",
@@ -3950,6 +3953,8 @@ def write_outputs(
     (out_dir / f"codexuw_manifest_{asof}.json").write_text(
         json.dumps(
             {
+                "pipeline_name": PIPELINE_NAME,
+                "pipeline_version": PIPELINE_VERSION,
                 "asof": str(asof),
                 "report_mode": run_mode,
                 "data_quality": data_quality or {},
