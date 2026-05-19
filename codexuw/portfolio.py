@@ -149,12 +149,15 @@ def _build_position_actions(
                     actions,
                     lane="Manage Existing Risk",
                     ticker=ticker,
-                    action="REDUCE",
+                    action="HOLD",
                     position=label,
                     exposure_pct=pct,
                     reason=f"single-name equity concentration is elevated at {pct:.1%}",
-                    instruction="Do not add directional exposure here unless it is a hedge; consider trimming or collaring first.",
-                    portfolio_impact="reduces concentration before new risk is considered",
+                    instruction=(
+                        "Exposure note only; valid new trades may still execute if live pricing, expectancy, "
+                        "and explicit risk-budget gates pass."
+                    ),
+                    portfolio_impact="surfaces concentration context without vetoing valid trade setups",
                 )
             if shares >= 100 and ticker not in option_tickers:
                 _append_action(

@@ -122,11 +122,11 @@ def test_portfolio_exposure_annotates_without_hard_rejecting_valid_trade() -> No
     out = apply_portfolio_context(scored, portfolio)
 
     assert out["hard_rejects"].iloc[0] == ""
-    assert out["portfolio_size_cap"].iloc[0] == 1
+    assert "portfolio_size_cap" not in out.columns or pd.isna(out["portfolio_size_cap"].iloc[0])
     assert "existing option exposure" in out["portfolio_note"].iloc[0]
 
 
-def test_existing_option_exposure_caps_execute_size_to_one_lot() -> None:
+def test_explicit_portfolio_size_cap_still_caps_execute_size_to_one_lot() -> None:
     scored = pd.DataFrame([_credit_row(ticker="AAA", portfolio_size_cap=1)])
     final = select_final_trades(
         assign_trade_statuses(scored),
@@ -138,7 +138,7 @@ def test_existing_option_exposure_caps_execute_size_to_one_lot() -> None:
     assert final["contracts"].tolist() == [1]
 
 
-def test_large_equity_exposure_caps_size_and_warns_without_veto() -> None:
+def test_large_equity_exposure_warns_without_veto_or_size_cap() -> None:
     scored = pd.DataFrame([_credit_row(ticker="AAA", max_loss=100.0)])
     portfolio = {
         "status": "ok",
@@ -156,12 +156,12 @@ def test_large_equity_exposure_caps_size_and_warns_without_veto() -> None:
     )
 
     assert annotated["hard_rejects"].iloc[0] == ""
-    assert annotated["portfolio_size_cap"].iloc[0] == 1
-    assert "large existing equity exposure" in annotated["portfolio_note"].iloc[0]
-    assert final["contracts"].tolist() == [1]
+    assert "portfolio_size_cap" not in annotated.columns or pd.isna(annotated["portfolio_size_cap"].iloc[0])
+    assert "execution gate unaffected" in annotated["portfolio_note"].iloc[0]
+    assert final["contracts"].tolist() == [11]
 
 
-def test_elevated_equity_exposure_blocks_additive_execute_without_exceptional_evidence() -> None:
+def test_elevated_equity_exposure_does_not_block_additive_execute() -> None:
     scored = pd.DataFrame([_credit_row(ticker="AAA", max_loss=100.0)])
     portfolio = {
         "status": "ok",
@@ -173,8 +173,9 @@ def test_elevated_equity_exposure_blocks_additive_execute_without_exceptional_ev
     annotated = apply_portfolio_context(scored, portfolio)
     out = assign_trade_statuses(annotated)
 
-    assert out["trade_status"].iloc[0] == "Research"
-    assert "portfolio_concentration_additive" in out["trade_status_reason"].iloc[0]
+    assert out["trade_status"].iloc[0] == "Execute"
+    assert "portfolio_concentration_additive" not in out["trade_status_reason"].iloc[0]
+    assert "execution gate unaffected" in out["portfolio_note"].iloc[0]
 
 
 def test_risk_cap_breach_still_blocks_selection() -> None:

@@ -1159,9 +1159,7 @@ def apply_portfolio_context(scored: pd.DataFrame, portfolio: dict[str, Any] | No
     for idx, row in out.iterrows():
         ticker = str(row.get("ticker") or "").upper()
         notes: list[str] = []
-        cap = safe_float(row.get("portfolio_size_cap"), math.nan)
         if ticker in option_underlyings:
-            cap = 1 if not math.isfinite(cap) else min(cap, 1)
             notes.append("existing option exposure")
             out.at[idx, "portfolio_warning"] = "existing option exposure"
         if ticker in large_equity:
@@ -1170,18 +1168,12 @@ def apply_portfolio_context(scored: pd.DataFrame, portfolio: dict[str, Any] | No
             out.at[idx, "portfolio_exposure_pct"] = pct
             out.at[idx, "portfolio_hedging"] = bool(hedging)
             if not hedging:
-                cap = 1 if not math.isfinite(cap) else min(cap, 1)
-                notes.append(f"large existing equity exposure {pct:.1%}; size capped to 1-lot")
+                notes.append(f"large existing equity exposure {pct:.1%}; execution gate unaffected")
             else:
                 notes.append(f"large existing equity exposure {pct:.1%}; trade may hedge portfolio")
             out.at[idx, "penalties"] = _append_token(row.get("penalties"), f"large_existing_equity_exposure:{pct:.1%}")
-            score = max(0.0, safe_float(row.get("score"), 0.0) - 0.5)
-            out.at[idx, "score"] = round(score, 2)
-            out.at[idx, "confidence"] = _confidence_from_score(score)
         if notes:
             out.at[idx, "portfolio_note"] = "; ".join(notes)
-        if math.isfinite(cap):
-            out.at[idx, "portfolio_size_cap"] = int(cap)
     return out
 
 
@@ -1272,16 +1264,6 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
     decision_eligible = str(row.get("decision_eligible")).lower() == "true"
     decision_tier = str(row.get("decision_tier") or "")
     confirmation_score = safe_float(row.get("confirmation_score"), 0.0)
-    portfolio_exposure = safe_float(row.get("portfolio_exposure_pct"))
-    portfolio_hedging = str(row.get("portfolio_hedging", "")).lower() == "true"
-    exceptional_additive = (
-        confirmation_score >= 9.0
-        and str(row.get("edge_verdict") or row.get("replay_ev_verdict") or "") in {"positive", "acceptable"}
-        and safe_float(row.get("edge_sample_size"), 0.0) >= 10.0
-        and str(row.get("live_status")) == "PASS"
-        and safe_float(row.get("quote_width_pct"), 1.0) <= 0.20
-        and str(row.get("flow_quality") or "") == "directional"
-    )
     secondary_credit = (
         _is_credit_strategy(row)
         and replay_verdict == "acceptable_secondary_income"
@@ -1309,8 +1291,6 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
         blockers.append("news_unconfirmed")
     if any(token.startswith("negative_live_expectancy:") for token in penalties):
         blockers.append("negative_live_expectancy")
-    if math.isfinite(portfolio_exposure) and portfolio_exposure >= 0.08 and not portfolio_hedging and not exceptional_additive:
-        blockers.append("portfolio_concentration_additive")
     if "earnings_news_risk" in failed:
         blockers.append("earnings_news_risk")
     if any(token.startswith("final_guard_") for token in penalties):
@@ -1864,9 +1844,7 @@ def select_final_trades(
             )
         else:
             out["sizing_label"] = "1-lot base"
-            out["sizing_rationale"] = (
-                "Kept to 1-lot because confidence, risk budget, concentration, or liquidity did not justify a size-up."
-            )
+            out["sizing_rationale"] = "Kept to 1-lot because confidence, risk budget, or liquidity did not justify a size-up."
         out["position_size"] = f"{contracts} contract{'s' if contracts != 1 else ''}; max risk ${risk:,.0f}"
         credit = safe_float(row.get("credit"))
         debit = safe_float(row.get("debit"))
@@ -2597,7 +2575,7 @@ def build_data_quality_status(
 def _component_label(score: float, label: str) -> str:
     if not math.isfinite(score):
         return f"n/a {label}"
-    bucket = "strong" if score >= 8 else "usable" if score >= 6 else "weak" if score >= 4 else "blocked"
+    bucket = "strong" if score >= 8 else "usable" if score >= 6 else "weak" if score >= 4 else "low"
     return f"{score:.0f}/10 {bucket}: {label}"
 
 
@@ -2632,7 +2610,7 @@ def _confidence_component_scores(row: pd.Series, live_outcomes: dict[str, Any] |
     exposure = safe_float(row.get("portfolio_exposure_pct"))
     hedging = str(row.get("portfolio_hedging", "")).lower() == "true"
     if math.isfinite(exposure) and exposure >= 0.08 and not hedging:
-        portfolio_score, portfolio_label = 3.0, f"concentrated exposure {exposure:.1%}"
+        portfolio_score, portfolio_label = 5.0, f"exposure note {exposure:.1%}; not an execution gate"
     elif portfolio_note:
         portfolio_score, portfolio_label = 6.0 if hedging else 5.0, portfolio_note
     else:
@@ -3033,13 +3011,13 @@ def _top_action_today(final: pd.DataFrame, watch: pd.DataFrame, portfolio: dict[
     if (data_quality or {}).get("status") == "critical":
         blockers = ", ".join((data_quality or {}).get("critical_blockers") or [])
         return f"Stand down from Execute until data gate clears: {blockers}"
+    if not final.empty:
+        row = final.sort_values("rank").iloc[0] if "rank" in final.columns else final.iloc[0]
+        return f"Execute {row.get('ticker')} {row.get('strategy')} at {_compact_entry_text(row)} with lifecycle alerts"
     risk_actions = list((portfolio or {}).get("risk_actions") or [])
     if risk_actions:
         first = risk_actions[0]
         return f"{first.get('action')} {first.get('ticker')}: {first.get('instruction')}"
-    if not final.empty:
-        row = final.sort_values("rank").iloc[0] if "rank" in final.columns else final.iloc[0]
-        return f"Execute {row.get('ticker')} {row.get('strategy')} at {_compact_entry_text(row)} with lifecycle alerts"
     if not watch.empty:
         row = watch.iloc[0]
         return f"Rest conditional limit for {row.get('ticker')}: {_clean_note(row.get('trigger')) or _compact_trigger_text(row)}"
@@ -3366,7 +3344,7 @@ def _write_compact_daily_report(
             )
         lines.extend([pd.DataFrame(rows).to_markdown(index=False), ""])
     else:
-        lines.extend(["_No Execute trades. Data gate, live pricing, portfolio fit, catalyst, liquidity, or expectancy blocked new exposure._", ""])
+        lines.extend(["_No Execute trades. Data gate, live pricing, catalyst, liquidity, or expectancy blocked new exposure._", ""])
 
     lines.extend(["## 3. Enter Only At Price", ""])
     if watch_rows.empty:
