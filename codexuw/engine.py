@@ -1769,6 +1769,17 @@ def select_final_trades(
             + pd.to_numeric(approved.get("confirmation_score", 0), errors="coerce").fillna(0)
             + pd.to_numeric(approved.get("score", 0), errors="coerce").fillna(0) * 0.05
         )
+        target_rank_rows = []
+        for _, rank_row in approved.iterrows():
+            target_profit = _target_profit_per_contract(rank_row)
+            expected_value, _source = _expected_value_per_contract(rank_row)
+            max_loss = safe_float(rank_row.get("max_loss"))
+            ev_per_risk = expected_value / max_loss if math.isfinite(expected_value) and math.isfinite(max_loss) and max_loss > 0 else math.nan
+            target_rank_rows.append(
+                (max(0.0, safe_float(target_profit, 0.0)) / 100.0)
+                + (max(0.0, safe_float(ev_per_risk, 0.0)) * 10.0)
+            )
+        approved["_rank"] = approved["_rank"] + pd.Series(target_rank_rows, index=approved.index)
     elif "decision_eligible" in scored.columns:
         approved = scored[scored["decision_eligible"].astype(str).str.lower().eq("true")].copy()
         if "decision_score" in approved.columns:
@@ -1816,6 +1827,8 @@ def select_final_trades(
     max_sector_risk = safe_float(risk_config.get("max_correlated_sector_exposure"), risk_budget * 0.55)
     if not math.isfinite(max_sector_risk) or max_sector_risk <= 0:
         max_sector_risk = risk_budget * 0.55
+    max_contracts = safe_float(risk_config.get("max_contracts_per_trade"))
+    min_ev_per_risk = safe_float(risk_config.get("minimum_expected_value_per_dollar_risk"), 0.0)
     for _, row in approved.iterrows():
         is_addon = bool(selected) and validated_addon_income_lane(row.get("direction"), safe_float(row.get("credit_pct_width")))
         if "trade_status" not in approved.columns and selected and not is_addon:
@@ -1825,11 +1838,29 @@ def select_final_trades(
             continue
         confidence = str(row.get("confidence"))
         trade_budget = max_trade_risk if confidence == "High" else max_trade_risk * 0.55
-        contracts = max(1, int(trade_budget // max_loss)) if confidence == "High" else 1
+        target_profit_per_contract = _target_profit_per_contract(row)
+        expected_value_per_contract, ev_source = _expected_value_per_contract(row)
+        ev_per_dollar_risk = (
+            expected_value_per_contract / max_loss
+            if math.isfinite(expected_value_per_contract) and math.isfinite(max_loss) and max_loss > 0
+            else math.nan
+        )
+        can_size_from_expectancy = (
+            confidence == "High"
+            and math.isfinite(ev_per_dollar_risk)
+            and ev_per_dollar_risk >= max(0.0, min_ev_per_risk)
+            and str(row.get("live_status")) == "PASS"
+            and safe_float(row.get("edge_sample_size"), 0.0) >= 7.0
+        )
+        contracts = max(1, int(trade_budget // max_loss)) if can_size_from_expectancy else 1
+        liquidity_cap = _liquidity_capacity_contracts(row)
+        contracts = min(contracts, liquidity_cap)
+        if math.isfinite(max_contracts) and max_contracts > 0:
+            contracts = min(contracts, int(max_contracts))
         portfolio_cap = safe_float(row.get("portfolio_size_cap"))
         if math.isfinite(portfolio_cap) and portfolio_cap > 0:
             contracts = min(contracts, int(portfolio_cap))
-        if str(row.get("trade_tier")) in {"Execute B", "Execute Secondary", "Execute Tactical"} or bool(row.get("index_fallback", False)):
+        if str(row.get("trade_tier")) in {"Execute Secondary", "Execute Tactical"} or bool(row.get("index_fallback", False)):
             contracts = min(contracts, 1)
         risk = contracts * max_loss
         ticker = str(row.get("ticker"))
@@ -1850,15 +1881,31 @@ def select_final_trades(
         out["trade_conviction"] = _trade_conviction(row)
         out["edge_summary"] = _edge_summary(row)
         out["selection_role"] = "validated add-on income lane" if is_addon else "strongest high-conviction setup"
+        out["target_profit_per_contract"] = round(target_profit_per_contract, 2) if math.isfinite(target_profit_per_contract) else math.nan
+        out["target_profit_total"] = round(target_profit_per_contract * contracts, 2) if math.isfinite(target_profit_per_contract) else math.nan
+        out["expected_value_per_contract"] = round(expected_value_per_contract, 2) if math.isfinite(expected_value_per_contract) else math.nan
+        out["expected_value_total"] = round(expected_value_per_contract * contracts, 2) if math.isfinite(expected_value_per_contract) else math.nan
+        out["expected_value_source"] = ev_source
+        out["ev_per_dollar_risk"] = round(ev_per_dollar_risk, 4) if math.isfinite(ev_per_dollar_risk) else math.nan
+        out["liquidity_capacity_contracts"] = liquidity_cap
+        out["position_max_loss"] = round(risk, 2)
+        monthly_target = safe_float(risk_config.get("monthly_profit_target"), 0.0)
+        out["target_contribution_pct"] = (
+            round((target_profit_per_contract * contracts) / monthly_target, 4)
+            if math.isfinite(target_profit_per_contract) and monthly_target > 0
+            else math.nan
+        )
         if contracts > 1:
             out["sizing_label"] = f"🟣 SIZE-UP: {contracts}-lot"
             out["sizing_rationale"] = (
-                f"High confidence; ${max_loss:,.0f} max loss per contract fits ${trade_budget:,.0f} trade budget; "
-                "ticker, sector, factor, and total daily risk caps still pass."
+                f"High confidence with positive expectancy ({ev_source}); ${max_loss:,.0f} max loss per contract fits "
+                f"${trade_budget:,.0f} trade budget; liquidity cap {liquidity_cap}; ticker, sector, factor, and total daily risk caps still pass."
             )
         else:
             out["sizing_label"] = "1-lot base"
-            out["sizing_rationale"] = "Kept to 1-lot because confidence, risk budget, or liquidity did not justify a size-up."
+            out["sizing_rationale"] = (
+                "Kept to 1-lot because confidence, live expectancy, risk budget, sample size, or liquidity did not justify a size-up."
+            )
         out["position_size"] = f"{contracts} contract{'s' if contracts != 1 else ''}; max risk ${risk:,.0f}"
         credit = safe_float(row.get("credit"))
         debit = safe_float(row.get("debit"))
@@ -2905,6 +2952,8 @@ def _compact_action_rows(final: pd.DataFrame, watch: pd.DataFrame, research: pd.
                 "Score": f"{score:.2f}" if math.isfinite(score) else "",
                 "Edge": _compact_edge_text(row),
                 "Size / Risk": risk or _size_text(row),
+                "Target Profit": _money(row.get("target_profit_total")),
+                "EV/Risk": f"{safe_float(row.get('ev_per_dollar_risk')):.2f}" if math.isfinite(safe_float(row.get("ev_per_dollar_risk"))) else "",
                 "Why": _compact_reason_text(row),
             }
         )
@@ -3038,6 +3087,124 @@ def _top_action_today(final: pd.DataFrame, watch: pd.DataFrame, portfolio: dict[
     return "No new exposure; use near-miss alerts or stand down."
 
 
+def _business_days_remaining(asof: dt.date) -> int:
+    day = asof
+    remaining = 0
+    while day.month == asof.month:
+        if day.weekday() < 5:
+            remaining += 1
+        day += dt.timedelta(days=1)
+    return max(1, remaining)
+
+
+def _target_profit_per_contract(row: pd.Series) -> float:
+    max_profit = safe_float(row.get("max_profit"))
+    credit = safe_float(row.get("credit"))
+    debit = safe_float(row.get("debit"))
+    if _is_credit_strategy(row) and math.isfinite(credit) and credit > 0:
+        target = credit * 100.0 * 0.60
+    elif _is_debit_strategy(row) and math.isfinite(debit) and debit > 0:
+        target = debit * 100.0 * 0.60
+    else:
+        target = math.nan
+    if math.isfinite(target) and math.isfinite(max_profit) and max_profit > 0:
+        return max(0.0, min(target, max_profit))
+    return target
+
+
+def _expected_value_per_contract(row: pd.Series) -> tuple[float, str]:
+    avg = safe_float(row.get("edge_avg_pnl"))
+    if math.isfinite(avg):
+        return avg, "edge_avg_pnl"
+    win_rate = safe_float(row.get("edge_win_rate"))
+    target = _target_profit_per_contract(row)
+    max_loss = safe_float(row.get("max_loss"))
+    if math.isfinite(win_rate) and math.isfinite(target) and math.isfinite(max_loss) and max_loss > 0:
+        loss_assumption = min(max_loss, target)
+        return win_rate * target - (1.0 - win_rate) * loss_assumption, "edge_win_rate_proxy"
+    return math.nan, "unavailable"
+
+
+def _liquidity_capacity_contracts(row: pd.Series) -> int:
+    short_liq = safe_float(row.get("short_oi"), 0.0) + safe_float(row.get("short_volume"), 0.0)
+    long_liq = safe_float(row.get("long_oi"), 0.0) + safe_float(row.get("long_volume"), 0.0)
+    liq = min(short_liq, long_liq)
+    if not math.isfinite(liq) or liq <= 0:
+        return 1
+    return max(1, int(liq * 0.01))
+
+
+def build_target_capital_model(
+    *,
+    asof: dt.date,
+    monthly_profit_target: float,
+    month_to_date_realized_pnl: float = 0.0,
+    max_monthly_drawdown: float = 0.0,
+    risk_budget: float = 0.0,
+    risk_config: dict[str, Any] | None = None,
+    portfolio: dict[str, Any] | None = None,
+    final: pd.DataFrame | None = None,
+) -> dict[str, Any]:
+    risk_config = risk_config or {}
+    target = max(0.0, safe_float(monthly_profit_target, 0.0))
+    mtd = safe_float(month_to_date_realized_pnl, 0.0)
+    remaining = max(0.0, target - mtd)
+    days_left = _business_days_remaining(asof)
+    required_daily = remaining / days_left if days_left > 0 else remaining
+    max_daily_risk = safe_float(risk_config.get("max_risk_per_day"), risk_budget)
+    if not math.isfinite(max_daily_risk) or max_daily_risk <= 0:
+        max_daily_risk = risk_budget
+    max_total_open_risk = safe_float(risk_config.get("max_total_open_risk"), 0.0)
+    if math.isfinite(max_total_open_risk) and max_total_open_risk > 0:
+        max_daily_risk = min(max_daily_risk, max_total_open_risk)
+    account_value = safe_float((portfolio or {}).get("total_value"), math.nan)
+    cash = safe_float((portfolio or {}).get("cash"), math.nan)
+    execute = final if final is not None else pd.DataFrame()
+    execute_target_profit = safe_float(execute.get("target_profit_total", pd.Series(dtype=float)).sum(), 0.0) if not execute.empty else 0.0
+    execute_max_loss = safe_float(execute.get("position_max_loss", pd.Series(dtype=float)).sum(), 0.0) if not execute.empty else 0.0
+    monthly_run_rate = execute_target_profit * days_left
+    binding = []
+    if target <= 0:
+        feasibility = "not_configured"
+        binding.append("monthly target not configured")
+    elif remaining <= 0:
+        feasibility = "achieved"
+        binding.append("monthly target already met")
+    elif execute.empty:
+        feasibility = "infeasible"
+        binding.append("no Execute trades")
+    elif execute_target_profit < required_daily:
+        feasibility = "stretched" if execute_target_profit > 0 else "infeasible"
+        binding.append("execute target profit below required daily pace")
+    else:
+        feasibility = "feasible"
+    if execute_max_loss > max_daily_risk > 0:
+        feasibility = "infeasible"
+        binding.append("execute max loss exceeds daily risk budget")
+    if math.isfinite(max_monthly_drawdown) and max_monthly_drawdown > 0 and abs(min(mtd, 0.0)) >= max_monthly_drawdown:
+        feasibility = "infeasible"
+        binding.append("monthly drawdown limit reached")
+    if feasibility == "feasible" and monthly_run_rate < remaining:
+        feasibility = "stretched"
+        binding.append("monthly run-rate below remaining target")
+    return {
+        "monthly_profit_target": target,
+        "month_to_date_realized_pnl": mtd,
+        "remaining_monthly_target": remaining,
+        "business_days_remaining": days_left,
+        "required_daily_pnl": required_daily,
+        "available_daily_risk_budget": max_daily_risk,
+        "max_monthly_drawdown": safe_float(max_monthly_drawdown, 0.0),
+        "account_value": account_value,
+        "cash": cash,
+        "execute_target_profit": execute_target_profit,
+        "execute_max_loss": execute_max_loss,
+        "monthly_run_rate_from_execute": monthly_run_rate,
+        "target_feasibility": feasibility,
+        "binding_constraint": "; ".join(dict.fromkeys(binding)) if binding else "none",
+    }
+
+
 def _first_screen_frame(
     *,
     run_mode: str,
@@ -3047,11 +3214,20 @@ def _first_screen_frame(
     final: pd.DataFrame,
     watch: pd.DataFrame,
     watch_alerts: pd.DataFrame,
+    target_model: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
     income_count = len((portfolio or {}).get("portfolio_income_actions") or [])
     data_status = (data_quality or {}).get("status", "unknown")
-    return pd.DataFrame(
-        [
+    rows = [
+            {"Item": "Monthly target", "Value": _money((target_model or {}).get("monthly_profit_target"))},
+            {"Item": "MTD realized P/L", "Value": _money((target_model or {}).get("month_to_date_realized_pnl"))},
+            {"Item": "Remaining target", "Value": _money((target_model or {}).get("remaining_monthly_target"))},
+            {"Item": "Required daily pace", "Value": _money((target_model or {}).get("required_daily_pnl"))},
+            {"Item": "Available risk budget", "Value": _money((target_model or {}).get("available_daily_risk_budget"))},
+            {"Item": "Execute target profit", "Value": _money((target_model or {}).get("execute_target_profit"))},
+            {"Item": "Execute max loss", "Value": _money((target_model or {}).get("execute_max_loss"))},
+            {"Item": "Target feasibility", "Value": (target_model or {}).get("target_feasibility", "not_available")},
+            {"Item": "Binding constraint", "Value": (target_model or {}).get("binding_constraint", "not_available")},
             {"Item": "Report mode", "Value": run_mode},
             {"Item": "Data-quality status", "Value": f"{_quality_icon(data_status)} {data_status}"},
             {
@@ -3064,6 +3240,26 @@ def _first_screen_frame(
             {"Item": "Enter Only At Price count", "Value": int(len(watch))},
             {"Item": "Portfolio Income count", "Value": int(income_count)},
             {"Item": "Watch count", "Value": int(len(watch_alerts))},
+    ]
+    return pd.DataFrame(rows)
+
+
+def _target_model_frame(target_model: dict[str, Any] | None) -> pd.DataFrame:
+    if not target_model:
+        return pd.DataFrame()
+    return pd.DataFrame(
+        [
+            {"Metric": "Monthly target", "Value": _money(target_model.get("monthly_profit_target"))},
+            {"Metric": "MTD realized P/L", "Value": _money(target_model.get("month_to_date_realized_pnl"))},
+            {"Metric": "Remaining target", "Value": _money(target_model.get("remaining_monthly_target"))},
+            {"Metric": "Business days remaining", "Value": target_model.get("business_days_remaining")},
+            {"Metric": "Required daily P/L", "Value": _money(target_model.get("required_daily_pnl"))},
+            {"Metric": "Available daily risk", "Value": _money(target_model.get("available_daily_risk_budget"))},
+            {"Metric": "Execute target profit", "Value": _money(target_model.get("execute_target_profit"))},
+            {"Metric": "Execute max loss", "Value": _money(target_model.get("execute_max_loss"))},
+            {"Metric": "Monthly run-rate from Execute", "Value": _money(target_model.get("monthly_run_rate_from_execute"))},
+            {"Metric": "Feasibility", "Value": target_model.get("target_feasibility")},
+            {"Metric": "Binding constraint", "Value": target_model.get("binding_constraint")},
         ]
     )
 
@@ -3269,6 +3465,7 @@ def _write_compact_daily_report(
     funnel: dict[str, int],
     portfolio: dict[str, Any] | None,
     recent_performance: dict[str, Any] | None,
+    target_model: dict[str, Any] | None = None,
 ) -> Path:
     report = out_dir / f"codexuw_trade_report_{asof}.md"
     action_rows = _compact_action_rows(final, watch, research)
@@ -3287,7 +3484,9 @@ def _write_compact_daily_report(
         final=final,
         watch=watch,
         watch_alerts=watch_alerts,
+        target_model=target_model,
     )
+    target_rows = _target_model_frame(target_model)
     rej = rejection_summary(scored).head(10)
     decisions = decision_summary(scored).head(8)
     live_counts = scored["live_status"].fillna("unknown").value_counts().to_dict() if not scored.empty and "live_status" in scored.columns else {}
@@ -3312,6 +3511,15 @@ def _write_compact_daily_report(
         lines.extend(["## Data Quality Gate", "", "_No data-quality status available._", ""])
     else:
         lines.extend(["## Data Quality Gate", "", data_quality_rows.to_markdown(index=False), ""])
+    if not target_rows.empty:
+        lines.extend(["## Target Feasibility", "", target_rows.to_markdown(index=False), ""])
+        if (target_model or {}).get("target_feasibility") in {"infeasible", "stretched"}:
+            lines.extend(
+                [
+                    f"Target status: {(target_model or {}).get('target_feasibility')}. Binding constraint: {(target_model or {}).get('binding_constraint')}.",
+                    "",
+                ]
+            )
     if final.empty:
         lines.extend(
             [
@@ -3349,6 +3557,11 @@ def _write_compact_daily_report(
                     "Entry": _compact_entry_text(row),
                     "Max Profit": _money(row.get("max_profit")),
                     "Max Loss": _money(row.get("max_loss")),
+                    "Contracts": int(safe_float(row.get("contracts"), 0)) if math.isfinite(safe_float(row.get("contracts"))) else "",
+                    "Position Max Loss": _money(row.get("position_max_loss")),
+                    "Target Profit": _money(row.get("target_profit_total")),
+                    "EV": _money(row.get("expected_value_total")),
+                    "% Monthly Target": _pct(row.get("target_contribution_pct")),
                     "Breakeven": f"{safe_float(row.get('breakeven')):.2f}" if math.isfinite(safe_float(row.get("breakeven"))) else "",
                     "POP": _pct(row.get("pop_delta_proxy")),
                     "Score": f"{safe_float(row.get('score')):.2f}" if math.isfinite(safe_float(row.get("score"))) else "",
@@ -3490,6 +3703,7 @@ def write_outputs(
     watchlist: pd.DataFrame | None = None,
     max_final_trades: int | None = None,
     run_provenance: dict[str, Any] | None = None,
+    target_model: dict[str, Any] | None = None,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     candidates.to_csv(out_dir / f"codexuw_candidates_{asof}.csv", index=False)
@@ -3618,6 +3832,7 @@ def write_outputs(
                 "portfolio_position_count": (portfolio or {}).get("position_count", 0),
                 "recent_performance": recent_performance or {"status": "not_checked"},
                 "live_outcomes": live_outcomes or {"status": "not_checked"},
+                "target_model": target_model or {},
                 "entry_watchlist_rows": int(len(watch)),
                 "execute_rows": int(len(final)),
                 "watch_rows": int(len(watch)),
@@ -3651,6 +3866,7 @@ def write_outputs(
         funnel=funnel,
         portfolio=portfolio,
         recent_performance=recent_performance,
+        target_model=target_model,
     )
     report = out_dir / f"codexuw_trade_report_{asof}.md"
     lines = [

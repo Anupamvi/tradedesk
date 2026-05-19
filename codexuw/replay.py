@@ -503,6 +503,33 @@ def _split_metrics(df: pd.DataFrame, split_day: dt.date | None) -> dict[str, Any
     return out
 
 
+def _monthly_target_metrics(df: pd.DataFrame, monthly_profit_target: float) -> pd.DataFrame:
+    if df.empty or monthly_profit_target <= 0 or "asof" not in df.columns or "pnl_1x" not in df.columns:
+        return pd.DataFrame(columns=["Month", "Trades", "Total P/L 1x", "Avg P/L 1x", "Max DD 1x", "Contracts For Target", "Target Feasible 1x"])
+    work = df[df.get("exact_evaluated", pd.Series(False, index=df.index)).eq(True)].copy()
+    if work.empty:
+        return pd.DataFrame(columns=["Month", "Trades", "Total P/L 1x", "Avg P/L 1x", "Max DD 1x", "Contracts For Target", "Target Feasible 1x"])
+    work["_month"] = pd.to_datetime(work["asof"]).dt.to_period("M").astype(str)
+    rows = []
+    for month, part in work.groupby("_month"):
+        pnl = pd.to_numeric(part["pnl_1x"], errors="coerce").fillna(0.0)
+        total = float(pnl.sum())
+        avg = float(pnl.mean()) if len(pnl) else math.nan
+        contracts_needed = math.ceil(monthly_profit_target / total) if total > 0 else math.inf
+        rows.append(
+            {
+                "Month": month,
+                "Trades": int(len(part)),
+                "Total P/L 1x": total,
+                "Avg P/L 1x": avg,
+                "Max DD 1x": _max_drawdown(pnl),
+                "Contracts For Target": contracts_needed if math.isfinite(contracts_needed) else "not achievable",
+                "Target Feasible 1x": total >= monthly_profit_target,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def _truthy(value: object) -> bool:
     return str(value).strip().lower() == "true"
 
@@ -1173,6 +1200,7 @@ def run_replay(
     profit_take_pct: float = 0.60,
     stop_loss_mult: float = 2.0,
     max_selected_per_day: int = 8,
+    monthly_profit_target: float = 10_000.0,
 ) -> Path:
     folders = dated_folders(root, start, end)
     if max_days > 0:
@@ -1289,6 +1317,7 @@ def run_replay(
     metrics = _split_metrics(exact, split_day)
     guarded_metrics = _split_metrics(guarded_exact, split_day)
     decision_metrics = _split_metrics(decision_exact, split_day)
+    target_metrics = _monthly_target_metrics(decision_exact, monthly_profit_target)
     payload = {
         "root": str(root),
         "start": str(start) if start else "",
@@ -1313,6 +1342,8 @@ def run_replay(
         "exact_metrics": metrics,
         "guarded_exact_metrics": guarded_metrics,
         "decision_exact_metrics": decision_metrics,
+        "monthly_profit_target": monthly_profit_target,
+        "target_months": target_metrics.to_dict(orient="records") if not target_metrics.empty else [],
     }
     (out_dir / "codexuw_replay_manifest.json").write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
     report = out_dir / "codexuw_replay_report.md"
@@ -1338,6 +1369,7 @@ def run_replay(
         f"- Decision-selected win rate: {decision_metrics.get('all', {}).get('win_rate'):.1%}" if decision_metrics.get("all", {}).get("win_rate") is not None else "- Decision-selected win rate: n/a",
         f"- Decision-selected avg PnL/spread: ${decision_metrics.get('all', {}).get('avg_pnl_1x'):,.2f}" if decision_metrics.get("all", {}).get("avg_pnl_1x") is not None else "- Decision-selected avg PnL/spread: n/a",
         f"- Decision-selected max drawdown: ${decision_metrics.get('all', {}).get('max_drawdown_1x'):,.2f}" if decision_metrics.get("all", {}).get("max_drawdown_1x") is not None else "- Decision-selected max drawdown: n/a",
+        f"- Monthly P/L target: ${monthly_profit_target:,.0f}",
         f"- Train/test split day: {payload['split_day'] or 'n/a'}",
         f"- Fill model: entry at mid less {slippage_pct:.0%}; exits at mid plus {slippage_pct:.0%}; {profit_take_pct:.0%} profit target; {stop_loss_mult:.1f}x credit stop; expiry settlement fallback.",
         "",
@@ -1391,6 +1423,14 @@ def run_replay(
             }
         )
     lines.append(pd.DataFrame(decision_rows).to_markdown(index=False))
+    lines.extend(["", "## Monthly Target Feasibility", ""])
+    if target_metrics.empty:
+        lines.append("_No decision-selected exact trades were available for monthly target feasibility._")
+    else:
+        display_target = target_metrics.copy()
+        for label in ["Total P/L 1x", "Avg P/L 1x", "Max DD 1x"]:
+            display_target[label] = display_target[label].map(lambda x: f"${safe_float(x):,.2f}" if math.isfinite(safe_float(x)) else "")
+        lines.append(display_target.to_markdown(index=False))
     if not decision_exact.empty:
         selected_cols = [
             "asof",
@@ -1463,6 +1503,7 @@ def main() -> None:
     parser.add_argument("--slippage-pct", type=float, default=0.10)
     parser.add_argument("--profit-take-pct", type=float, default=0.60)
     parser.add_argument("--stop-loss-mult", type=float, default=2.0)
+    parser.add_argument("--monthly-profit-target", type=float, default=10_000.0)
     args = parser.parse_args()
     entry_date = parse_date(args.entry_date)
     entry_start = entry_date or parse_date(args.entry_start)
@@ -1485,6 +1526,7 @@ def main() -> None:
         profit_take_pct=args.profit_take_pct,
         stop_loss_mult=args.stop_loss_mult,
         max_selected_per_day=args.max_selected_per_day,
+        monthly_profit_target=args.monthly_profit_target,
     )
     print(f"Wrote: {report}")
     if report_date is not None:

@@ -14,6 +14,7 @@ from codexuw.engine import (
     assign_trade_statuses,
     build_entry_watchlist,
     build_data_quality_status,
+    build_target_capital_model,
     classify_flow_quality,
     select_final_trades,
     _compact_action_rows,
@@ -60,6 +61,9 @@ def _credit_row(**overrides) -> dict:
         "flow_quality_reason": "premium bias aligns",
         "oi_carryover_status": "supportive",
         "replay_ev_verdict": "acceptable",
+        "edge_sample_size": 10,
+        "edge_win_rate": 0.65,
+        "edge_avg_pnl": 45.0,
         "confirmation_score": 8.0,
         "catalyst_status": "supportive",
     }
@@ -104,6 +108,9 @@ def _debit_row(**overrides) -> dict:
         "flow_quality_reason": "premium bias aligns",
         "oi_carryover_status": "supportive",
         "replay_ev_verdict": "acceptable_proxy",
+        "edge_sample_size": 10,
+        "edge_win_rate": 0.65,
+        "edge_avg_pnl": 45.0,
         "confirmation_score": 8.0,
         "catalyst_status": "supportive",
     }
@@ -190,6 +197,48 @@ def test_risk_cap_breach_still_blocks_selection() -> None:
     )
 
     assert final.empty
+
+
+def test_target_model_marks_tiny_execute_profit_stretched() -> None:
+    final = pd.DataFrame(
+        [
+            {
+                "target_profit_total": 120.0,
+                "position_max_loss": 200.0,
+            }
+        ]
+    )
+
+    model = build_target_capital_model(
+        asof=dt.date(2026, 5, 18),
+        monthly_profit_target=10_000,
+        month_to_date_realized_pnl=0,
+        risk_budget=3_000,
+        risk_config={"max_risk_per_day": 3_000},
+        portfolio={"status": "ok", "total_value": 100_000, "cash": 10_000},
+        final=final,
+    )
+
+    assert model["target_feasibility"] == "stretched"
+    assert model["execute_target_profit"] == 120.0
+    assert "below required daily pace" in model["binding_constraint"]
+
+
+def test_target_aware_selection_outputs_target_contribution_columns() -> None:
+    scored = pd.DataFrame([_credit_row(max_loss=100.0, credit=1.0, max_profit=100.0)])
+
+    final = select_final_trades(
+        assign_trade_statuses(scored),
+        regime={"sizing_stance": "normal"},
+        risk_budget=5_000,
+        recent_performance={"status": "unavailable"},
+        risk_config={"monthly_profit_target": 10_000, "max_contracts_per_trade": 3},
+    )
+
+    assert final["contracts"].tolist() == [3]
+    assert final["target_profit_total"].iloc[0] == 180.0
+    assert final["position_max_loss"].iloc[0] == 300.0
+    assert final["target_contribution_pct"].iloc[0] == 0.018
 
 
 def test_flow_classifier_labels_directional_hedge_roll_spread_leg_unclear() -> None:

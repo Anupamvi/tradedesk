@@ -23,6 +23,7 @@ from .engine import (
     build_data_quality_status,
     build_entry_watchlist,
     build_intraday_change_summary,
+    build_target_capital_model,
     detect_regime,
     generate_candidates,
     live_validate_and_score,
@@ -77,6 +78,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-open-risk-by-ticker", type=float, default=0.0, help="Optional hard max new open risk by ticker.")
     parser.add_argument("--max-correlated-sector-exposure", type=float, default=0.0, help="Optional hard max new correlated sector/factor risk.")
     parser.add_argument("--daily-loss-limit", type=float, default=0.0, help="If Schwab day P/L is below this loss, new trades move out of Execute.")
+    parser.add_argument("--monthly-profit-target", type=float, default=10000.0, help="Target-aware v2 monthly P/L objective.")
+    parser.add_argument("--month-to-date-realized-pnl", type=float, default=0.0, help="Known realized month-to-date P/L for target feasibility.")
+    parser.add_argument("--max-monthly-drawdown", type=float, default=0.0, help="Optional monthly drawdown stop for target feasibility.")
+    parser.add_argument("--max-total-open-risk", type=float, default=0.0, help="Optional hard cap for total new/open risk considered by v2 sizing.")
+    parser.add_argument("--max-contracts-per-trade", type=float, default=0.0, help="Optional hard cap for contracts per Execute trade.")
+    parser.add_argument(
+        "--minimum-expected-value-per-dollar-risk",
+        type=float,
+        default=0.0,
+        help="Minimum positive expected value per dollar risk required before v2 size-up.",
+    )
     return parser.parse_args()
 
 
@@ -214,6 +226,7 @@ def main() -> None:
             max_eval_candidates=args.max_candidates,
             max_selected_per_day=args.max_final_trades,
             bot_max_rows=args.bot_max_rows,
+            monthly_profit_target=args.monthly_profit_target,
         )
         print("Historical audit/replay mode: delegated to codexuw.replay for would-have-executed evaluation.")
         print(f"Wrote: {report}")
@@ -315,6 +328,10 @@ def main() -> None:
         "max_risk_per_day": args.max_risk_per_day,
         "max_open_risk_by_ticker": args.max_open_risk_by_ticker,
         "max_correlated_sector_exposure": args.max_correlated_sector_exposure,
+        "max_total_open_risk": args.max_total_open_risk,
+        "max_contracts_per_trade": args.max_contracts_per_trade,
+        "minimum_expected_value_per_dollar_risk": args.minimum_expected_value_per_dollar_risk,
+        "monthly_profit_target": args.monthly_profit_target,
         "daily_loss_limit": args.daily_loss_limit,
         "allow_new_trades": True,
     }
@@ -328,6 +345,16 @@ def main() -> None:
         recent_performance=recent_performance,
         max_final_trades=args.max_final_trades,
         risk_config=risk_config,
+    )
+    target_model = build_target_capital_model(
+        asof=asof,
+        monthly_profit_target=args.monthly_profit_target,
+        month_to_date_realized_pnl=args.month_to_date_realized_pnl,
+        max_monthly_drawdown=args.max_monthly_drawdown,
+        risk_budget=args.risk_budget,
+        risk_config=risk_config,
+        portfolio=portfolio,
+        final=final,
     )
     funnel = {
         "raw_screener_rows": int(len(sc)),
@@ -347,6 +374,7 @@ def main() -> None:
         "schwab_snapshot_input_dir": str(Path(args.schwab_snapshot_dir).expanduser().resolve()) if args.schwab_snapshot_dir else "",
         "mode": "offline" if args.offline else run_mode,
         "risk_config": risk_config,
+        "target_model": target_model,
     }
     change_summary = build_intraday_change_summary(
         out_dir=out_dir,
@@ -375,6 +403,7 @@ def main() -> None:
         watchlist=watchlist,
         max_final_trades=args.max_final_trades,
         run_provenance=run_provenance,
+        target_model=target_model,
     )
     print(f"Wrote: {report}")
     print(f"Final trades: {len(final)}")
