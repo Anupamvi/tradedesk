@@ -1256,6 +1256,7 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
     flow_quality = str(row.get("flow_quality") or "unclear")
     replay_verdict = str(row.get("replay_ev_verdict") or "")
     edge_verdict = str(row.get("edge_verdict") or replay_verdict)
+    edge_sample_size = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size"), math.nan))
     oi_status = str(row.get("oi_carryover_status") or "")
     catalyst_status = str(row.get("catalyst_status") or "").strip().lower()
     decision_reason = str(row.get("decision_reason") or "")
@@ -1291,6 +1292,8 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
         blockers.append("news_unconfirmed")
     if any(token.startswith("negative_live_expectancy:") for token in penalties):
         blockers.append("negative_live_expectancy")
+    if math.isfinite(edge_sample_size) and edge_sample_size < 7.0 and replay_verdict not in {"acceptable_secondary_income"}:
+        blockers.append(f"thin_replay_sample:n={int(edge_sample_size)}")
     if "earnings_news_risk" in failed:
         blockers.append("earnings_news_risk")
     if any(token.startswith("final_guard_") for token in penalties):
@@ -1314,6 +1317,8 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
         blockers.append("no_flow_edge_alignment")
     if "price_action_trend" in failed:
         blockers.append("price_action_trend")
+    if "market_regime_alignment" in failed:
+        blockers.append("market_regime_alignment")
     if oi_status == "contrary":
         blockers.append("oi_carryover_contrary")
     if _is_debit_strategy(row):
@@ -1420,11 +1425,20 @@ def apply_confirmation_framework(
         checks: dict[str, bool | None] = {}
         trend = str(regime.get("trend") or "")
         direction = str(row.get("direction") or "")
+        catalyst_status = str(row.get("catalyst_status") or "").lower()
         checks["price_action_trend"] = (
             trend == "range"
             or (trend == "uptrend" and direction in BULLISH_DIRECTIONS)
             or (trend == "downtrend" and direction in BEARISH_DIRECTIONS)
         )
+        edge_sample_size = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size"), math.nan))
+        if _is_debit_strategy(row) and direction in BULLISH_DIRECTIONS and str(regime.get("flow") or "") == "weak":
+            checks["market_regime_alignment"] = (
+                trend == "uptrend"
+                and catalyst_status == "supportive"
+                and math.isfinite(edge_sample_size)
+                and edge_sample_size >= 10.0
+            )
         oi_status = str(row.get("oi_carryover_status") or "")
         checks["oi_carryover"] = True if oi_status == "supportive" else False if oi_status == "contrary" else None
         iv_rank = safe_float(row.get("iv_rank"))
@@ -1437,7 +1451,6 @@ def apply_confirmation_framework(
         else:
             checks["iv_premium_quality"] = safe_float(row.get("credit_pct_width")) >= 0.18
         earnings_days = _earnings_days(row, asof)
-        catalyst_status = str(row.get("catalyst_status") or "").lower()
         checks["earnings_news_risk"] = not (math.isfinite(earnings_days) and 0 <= earnings_days <= 7) and catalyst_status != "caution"
         if _is_debit_strategy(row):
             checks["expected_move_buffer"] = math.isfinite(expected_ratio) and expected_ratio >= 1.0
@@ -1552,6 +1565,7 @@ def assign_trade_statuses(scored: pd.DataFrame, *, single_name_execute_quality_p
             for blocker in core_blockers
             if not (
                 blocker in {"credit_ev_not_supported:thin_sample", "debit_ev_not_supported:thin_sample"}
+                or (blocker.startswith("thin_replay_sample:") and edge_watch_ok)
                 or (blocker.startswith("flow_not_directional:") and flow_quality in {"unclear", "spread_leg"} and edge_watch_ok)
             )
         ]

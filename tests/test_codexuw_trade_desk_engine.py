@@ -7,6 +7,7 @@ import pandas as pd
 from codexuw.engine import (
     apply_confidence_components,
     apply_data_quality_gate,
+    apply_confirmation_framework,
     apply_replay_edge_model,
     apply_oi_carryover,
     apply_portfolio_context,
@@ -534,6 +535,52 @@ def test_tactical_debit_lane_requires_news_confirmation() -> None:
     out = assign_trade_statuses(scored)
 
     assert out["trade_status"].iloc[0] == "Research"
+
+
+def test_positive_thin_replay_sample_cannot_execute() -> None:
+    scored = pd.DataFrame(
+        [
+            _debit_row(
+                ticker="THINPOS",
+                replay_ev_verdict="positive",
+                edge_verdict="positive",
+                edge_sample_size=4,
+                confirmation_score=10.0,
+                score=8.0,
+            )
+        ]
+    )
+
+    out = assign_trade_statuses(scored)
+
+    assert out["trade_status"].iloc[0] == "Research"
+    assert "thin_replay_sample:n=4" in out["trade_status_reason"].iloc[0]
+
+
+def test_bullish_debit_needs_market_regime_alignment_in_weak_flow() -> None:
+    scored = pd.DataFrame(
+        [
+            _debit_row(
+                ticker="BULL",
+                replay_ev_verdict="positive",
+                edge_verdict="positive",
+                edge_sample_size=12,
+                catalyst_status="mixed",
+                confirmation_score=10.0,
+                score=8.0,
+            )
+        ]
+    )
+
+    confirmed = apply_confirmation_framework(
+        scored,
+        asof=ASOF,
+        regime={"trend": "range", "flow": "weak", "sizing_stance": "normal"},
+    )
+    out = assign_trade_statuses(confirmed)
+
+    assert out["trade_status"].iloc[0] == "Research"
+    assert "market_regime_alignment" in out["trade_status_reason"].iloc[0]
 
 
 def test_debit_proxy_ev_routes_to_research_not_execute() -> None:
