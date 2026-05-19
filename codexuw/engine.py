@@ -1511,7 +1511,12 @@ def apply_confirmation_framework(
     return out
 
 
-def assign_trade_statuses(scored: pd.DataFrame, *, single_name_execute_quality_poor: bool | None = None) -> pd.DataFrame:
+def assign_trade_statuses(
+    scored: pd.DataFrame,
+    *,
+    single_name_execute_quality_poor: bool | None = None,
+    index_income_mode: str = "fallback",
+) -> pd.DataFrame:
     if scored.empty:
         return scored
     out = scored.copy()
@@ -1721,20 +1726,29 @@ def assign_trade_statuses(scored: pd.DataFrame, *, single_name_execute_quality_p
             out.at[idx, "primary_blocker"] = tier or "watch_trigger_not_met"
         provisional_statuses.append(status)
 
+    index_mode = str(index_income_mode or "fallback").strip().lower()
     if single_name_execute_quality_poor is None:
         single_name_execute_quality_poor = not (
             (out["trade_status"].eq("Execute"))
             & (~out.get("index_fallback", pd.Series(False, index=out.index)).astype(bool))
         ).any()
-    if "index_fallback" in out.columns and not single_name_execute_quality_poor:
+    if "index_fallback" in out.columns and index_mode == "disabled":
+        mask = out["index_fallback"].astype(bool) & out["trade_status"].eq("Execute")
+        out.loc[mask, "trade_status"] = "Research"
+        out.loc[mask, "trade_status_reason"] = "ETF/index income disabled by risk mandate"
+        out.loc[mask, "trade_tier"] = "ETF/index disabled"
+        out.loc[mask, "portfolio_size_cap"] = 1
+    elif "index_fallback" in out.columns and index_mode == "fallback" and not single_name_execute_quality_poor:
         mask = out["index_fallback"].astype(bool) & out["trade_status"].eq("Execute")
         out.loc[mask, "trade_status"] = "Research"
         out.loc[mask, "trade_status_reason"] = "ETF/index fallback disabled because single-name Execute quality exists"
         out.loc[mask, "trade_tier"] = "ETF/index fallback standby"
     elif "index_fallback" in out.columns:
         mask = out["index_fallback"].astype(bool) & out["trade_status"].eq("Execute")
-        out.loc[mask, "trade_tier"] = out.loc[mask, "trade_tier"].replace("", "ETF/index fallback")
-        out.loc[mask, "portfolio_size_cap"] = 1
+        tier_label = "ETF/index primary income" if index_mode == "primary" else "ETF/index fallback"
+        out.loc[mask, "trade_tier"] = out.loc[mask, "trade_tier"].replace("", tier_label)
+        if index_mode != "primary":
+            out.loc[mask, "portfolio_size_cap"] = 1
     return out
 
 
@@ -1814,21 +1828,43 @@ def select_final_trades(
     sector_risk = Counter()
     ai_risk = 0.0
     perf_mult = performance_risk_multiplier(recent_performance)
-    max_trade_risk = risk_budget * (0.22 if regime.get("sizing_stance") == "normal" else 0.14) * perf_mult
+    risk_mandate = str(risk_config.get("risk_mandate") or "capital-preservation").strip().lower()
+    if risk_mandate == "aggressive-intraday":
+        trade_fraction = 0.85 if regime.get("sizing_stance") == "normal" else 0.50
+        default_ticker_fraction = 0.70
+        default_sector_fraction = 0.90
+        default_factor_fraction = 0.90
+    elif risk_mandate == "target-growth":
+        trade_fraction = 0.65 if regime.get("sizing_stance") == "normal" else 0.35
+        default_ticker_fraction = 0.55
+        default_sector_fraction = 0.80
+        default_factor_fraction = 0.80
+    elif risk_mandate == "balanced":
+        trade_fraction = 0.35 if regime.get("sizing_stance") == "normal" else 0.22
+        default_ticker_fraction = 0.40
+        default_sector_fraction = 0.65
+        default_factor_fraction = 0.65
+    else:
+        trade_fraction = 0.22 if regime.get("sizing_stance") == "normal" else 0.14
+        default_ticker_fraction = 0.30
+        default_sector_fraction = 0.55
+        default_factor_fraction = 0.55
+    max_trade_risk = risk_budget * trade_fraction * perf_mult
     explicit_max_trade = safe_float(risk_config.get("max_risk_per_trade"))
     if math.isfinite(explicit_max_trade) and explicit_max_trade > 0:
         max_trade_risk = min(max_trade_risk, explicit_max_trade)
     max_daily_risk = safe_float(risk_config.get("max_risk_per_day"), risk_budget)
     if not math.isfinite(max_daily_risk) or max_daily_risk <= 0:
         max_daily_risk = risk_budget
-    max_ticker_risk = safe_float(risk_config.get("max_open_risk_by_ticker"), risk_budget * 0.30)
+    max_ticker_risk = safe_float(risk_config.get("max_open_risk_by_ticker"), risk_budget * default_ticker_fraction)
     if not math.isfinite(max_ticker_risk) or max_ticker_risk <= 0:
-        max_ticker_risk = risk_budget * 0.30
-    max_sector_risk = safe_float(risk_config.get("max_correlated_sector_exposure"), risk_budget * 0.55)
+        max_ticker_risk = risk_budget * default_ticker_fraction
+    max_sector_risk = safe_float(risk_config.get("max_correlated_sector_exposure"), risk_budget * default_sector_fraction)
     if not math.isfinite(max_sector_risk) or max_sector_risk <= 0:
-        max_sector_risk = risk_budget * 0.55
+        max_sector_risk = risk_budget * default_sector_fraction
     max_contracts = safe_float(risk_config.get("max_contracts_per_trade"))
     min_ev_per_risk = safe_float(risk_config.get("minimum_expected_value_per_dollar_risk"), 0.0)
+    index_income_mode = str(risk_config.get("index_income_mode") or "fallback").strip().lower()
     for _, row in approved.iterrows():
         is_addon = bool(selected) and validated_addon_income_lane(row.get("direction"), safe_float(row.get("credit_pct_width")))
         if "trade_status" not in approved.columns and selected and not is_addon:
@@ -1860,19 +1896,23 @@ def select_final_trades(
         portfolio_cap = safe_float(row.get("portfolio_size_cap"))
         if math.isfinite(portfolio_cap) and portfolio_cap > 0:
             contracts = min(contracts, int(portfolio_cap))
-        if str(row.get("trade_tier")) in {"Execute Secondary", "Execute Tactical"} or bool(row.get("index_fallback", False)):
+        if str(row.get("trade_tier")) in {"Execute Secondary", "Execute Tactical"} or (
+            bool(row.get("index_fallback", False)) and index_income_mode != "primary"
+        ):
             contracts = min(contracts, 1)
-        risk = contracts * max_loss
         ticker = str(row.get("ticker"))
         sector = str(row.get("sector") or "Unknown")
-        if total_risk + risk > max_daily_risk:
+        remaining_contract_risk = min(
+            max_daily_risk - total_risk,
+            max_ticker_risk - ticker_risk[ticker],
+            max_sector_risk - sector_risk[sector],
+        )
+        if ticker in AI_TECH:
+            remaining_contract_risk = min(remaining_contract_risk, risk_budget * default_factor_fraction - ai_risk)
+        contracts = min(contracts, int(remaining_contract_risk // max_loss))
+        if contracts < 1:
             continue
-        if ticker_risk[ticker] + risk > max_ticker_risk:
-            continue
-        if sector_risk[sector] + risk > max_sector_risk:
-            continue
-        if ticker in AI_TECH and ai_risk + risk > risk_budget * 0.55:
-            continue
+        risk = contracts * max_loss
         out = row.copy()
         out["contracts"] = contracts
         out["sell_leg"] = row.get("short_leg")
@@ -1898,7 +1938,7 @@ def select_final_trades(
         if contracts > 1:
             out["sizing_label"] = f"🟣 SIZE-UP: {contracts}-lot"
             out["sizing_rationale"] = (
-                f"High confidence with positive expectancy ({ev_source}); ${max_loss:,.0f} max loss per contract fits "
+                f"{risk_mandate} mandate; High confidence with positive expectancy ({ev_source}); ${max_loss:,.0f} max loss per contract fits "
                 f"${trade_budget:,.0f} trade budget; liquidity cap {liquidity_cap}; ticker, sector, factor, and total daily risk caps still pass."
             )
         else:
@@ -3163,6 +3203,56 @@ def build_target_capital_model(
     execute_target_profit = safe_float(execute.get("target_profit_total", pd.Series(dtype=float)).sum(), 0.0) if not execute.empty else 0.0
     execute_max_loss = safe_float(execute.get("position_max_loss", pd.Series(dtype=float)).sum(), 0.0) if not execute.empty else 0.0
     monthly_run_rate = execute_target_profit * days_left
+    one_lot_target_profit = 0.0
+    one_lot_max_loss = 0.0
+    best_contract_target_profit = 0.0
+    best_contract_max_loss = 0.0
+    best_contract_ticker = ""
+    best_contract_selected_contracts = math.nan
+    if not execute.empty:
+        for _, row in execute.iterrows():
+            per_contract_target = safe_float(row.get("target_profit_per_contract"))
+            per_contract_risk = safe_float(row.get("max_loss"))
+            if not math.isfinite(per_contract_target):
+                per_contract_target = _target_profit_per_contract(row)
+            if not math.isfinite(per_contract_target):
+                contracts = safe_float(row.get("contracts"), 1.0)
+                total_target = safe_float(row.get("target_profit_total"))
+                if math.isfinite(total_target) and math.isfinite(contracts) and contracts > 0:
+                    per_contract_target = total_target / contracts
+                elif math.isfinite(total_target):
+                    per_contract_target = total_target
+            if not math.isfinite(per_contract_risk):
+                contracts = safe_float(row.get("contracts"), 1.0)
+                total_risk = safe_float(row.get("position_max_loss"))
+                if math.isfinite(total_risk) and math.isfinite(contracts) and contracts > 0:
+                    per_contract_risk = total_risk / contracts
+                elif math.isfinite(total_risk):
+                    per_contract_risk = total_risk
+            if math.isfinite(per_contract_target) and per_contract_target > 0:
+                one_lot_target_profit += per_contract_target
+                if math.isfinite(per_contract_risk) and per_contract_risk > 0:
+                    one_lot_max_loss += per_contract_risk
+                    if per_contract_target > best_contract_target_profit:
+                        best_contract_target_profit = per_contract_target
+                        best_contract_max_loss = per_contract_risk
+                        best_contract_ticker = str(row.get("ticker") or "")
+                        best_contract_selected_contracts = safe_float(row.get("contracts"), 1.0)
+    target_repeats_required = math.nan
+    risk_required_for_daily_target = math.nan
+    best_setup_contracts_required = math.nan
+    best_setup_risk_required = math.nan
+    if one_lot_target_profit > 0:
+        target_repeats_required = math.ceil(required_daily / one_lot_target_profit) if required_daily > 0 else 0
+        risk_required_for_daily_target = target_repeats_required * one_lot_max_loss
+    if best_contract_target_profit > 0:
+        best_setup_contracts_required = math.ceil(required_daily / best_contract_target_profit) if required_daily > 0 else 0
+        best_setup_risk_required = best_setup_contracts_required * best_contract_max_loss
+    risk_gap_for_daily_target = (
+        risk_required_for_daily_target - max_daily_risk
+        if math.isfinite(risk_required_for_daily_target) and math.isfinite(max_daily_risk)
+        else math.nan
+    )
     binding = []
     if target <= 0:
         feasibility = "not_configured"
@@ -3176,6 +3266,14 @@ def build_target_capital_model(
     elif execute_target_profit < required_daily:
         feasibility = "stretched" if execute_target_profit > 0 else "infeasible"
         binding.append("execute target profit below required daily pace")
+        if math.isfinite(risk_gap_for_daily_target) and risk_gap_for_daily_target > 0:
+            binding.append("risk budget below target-sufficient sizing")
+        elif (
+            math.isfinite(best_setup_contracts_required)
+            and math.isfinite(best_contract_selected_contracts)
+            and best_setup_contracts_required > best_contract_selected_contracts
+        ):
+            binding.append("liquidity/contract cap below target-sufficient sizing")
     else:
         feasibility = "feasible"
     if execute_max_loss > max_daily_risk > 0:
@@ -3200,6 +3298,15 @@ def build_target_capital_model(
         "execute_target_profit": execute_target_profit,
         "execute_max_loss": execute_max_loss,
         "monthly_run_rate_from_execute": monthly_run_rate,
+        "one_lot_target_profit": one_lot_target_profit,
+        "one_lot_max_loss": one_lot_max_loss,
+        "target_repeats_required": target_repeats_required,
+        "risk_required_for_daily_target": risk_required_for_daily_target,
+        "risk_gap_for_daily_target": risk_gap_for_daily_target,
+        "best_setup_ticker": best_contract_ticker,
+        "best_setup_selected_contracts": best_contract_selected_contracts,
+        "best_setup_contracts_required": best_setup_contracts_required,
+        "best_setup_risk_required": best_setup_risk_required,
         "target_feasibility": feasibility,
         "binding_constraint": "; ".join(dict.fromkeys(binding)) if binding else "none",
     }
@@ -3226,6 +3333,7 @@ def _first_screen_frame(
             {"Item": "Available risk budget", "Value": _money((target_model or {}).get("available_daily_risk_budget"))},
             {"Item": "Execute target profit", "Value": _money((target_model or {}).get("execute_target_profit"))},
             {"Item": "Execute max loss", "Value": _money((target_model or {}).get("execute_max_loss"))},
+            {"Item": "Risk needed for daily target", "Value": _money((target_model or {}).get("risk_required_for_daily_target"))},
             {"Item": "Target feasibility", "Value": (target_model or {}).get("target_feasibility", "not_available")},
             {"Item": "Binding constraint", "Value": (target_model or {}).get("binding_constraint", "not_available")},
             {"Item": "Report mode", "Value": run_mode},
@@ -3258,6 +3366,26 @@ def _target_model_frame(target_model: dict[str, Any] | None) -> pd.DataFrame:
             {"Metric": "Execute target profit", "Value": _money(target_model.get("execute_target_profit"))},
             {"Metric": "Execute max loss", "Value": _money(target_model.get("execute_max_loss"))},
             {"Metric": "Monthly run-rate from Execute", "Value": _money(target_model.get("monthly_run_rate_from_execute"))},
+            {"Metric": "One-lot target profit", "Value": _money(target_model.get("one_lot_target_profit"))},
+            {"Metric": "Risk required for daily target", "Value": _money(target_model.get("risk_required_for_daily_target"))},
+            {"Metric": "Risk gap for daily target", "Value": _money(target_model.get("risk_gap_for_daily_target"))},
+            {
+                "Metric": "Best setup contracts needed",
+                "Value": (
+                    f"{target_model.get('best_setup_ticker')}: {int(safe_float(target_model.get('best_setup_contracts_required')))} contracts"
+                    if math.isfinite(safe_float(target_model.get("best_setup_contracts_required")))
+                    else "n/a"
+                ),
+            },
+            {
+                "Metric": "Best setup contracts selected",
+                "Value": (
+                    f"{target_model.get('best_setup_ticker')}: {int(safe_float(target_model.get('best_setup_selected_contracts')))} contracts"
+                    if math.isfinite(safe_float(target_model.get("best_setup_selected_contracts")))
+                    else "n/a"
+                ),
+            },
+            {"Metric": "Best setup risk needed", "Value": _money(target_model.get("best_setup_risk_required"))},
             {"Metric": "Feasibility", "Value": target_model.get("target_feasibility")},
             {"Metric": "Binding constraint", "Value": target_model.get("binding_constraint")},
         ]

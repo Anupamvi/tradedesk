@@ -52,6 +52,9 @@ def test_daily_defaults_to_eight_final_trades(monkeypatch, tmp_path) -> None:
     args = parse_args()
 
     assert args.max_final_trades == 8
+    assert args.portfolio_income_mode == "trading-sleeve-only"
+    assert args.index_income_mode == "fallback"
+    assert args.risk_mandate == "capital-preservation"
 
 
 def test_stale_daily_folder_warning_says_live_schwab_is_current() -> None:

@@ -35,6 +35,38 @@ def test_summarize_positions_blocks_existing_option_underlyings() -> None:
     assert any(row["action"] in {"HOLD", "ROLL", "TAKE PROFIT"} for row in summary["risk_actions"])
 
 
+def test_trading_sleeve_only_protects_core_holdings_from_covered_calls() -> None:
+    payload = {
+        "balances": {"total_value": 100_000, "cash": 20_000},
+        "positions": [
+            {"symbol": "MSFT", "asset_type": "EQUITY", "qty": 100, "market_value": 42_000},
+        ],
+    }
+
+    summary = summarize_positions(payload, portfolio_income_mode="trading-sleeve-only")
+
+    assert not any(row["action"] == "SELL COVERED INCOME" for row in summary["portfolio_income_actions"])
+    assert any(row["action"] == "INCOME SLEEVE ONLY" for row in summary["portfolio_income_actions"])
+    assert "core equity holdings are protected" in summary["portfolio_income_actions"][0]["reason"]
+
+
+def test_trading_sleeve_only_allows_explicit_income_lot_ticker() -> None:
+    payload = {
+        "balances": {"total_value": 100_000, "cash": 20_000},
+        "positions": [
+            {"symbol": "MSFT", "asset_type": "EQUITY", "qty": 100, "market_value": 42_000},
+        ],
+    }
+
+    summary = summarize_positions(
+        payload,
+        portfolio_income_mode="trading-sleeve-only",
+        covered_income_allowed_tickers=["MSFT"],
+    )
+
+    assert any(row["action"] == "SELL COVERED INCOME" for row in summary["portfolio_income_actions"])
+
+
 def test_load_catalyst_context_reads_browser_text(tmp_path) -> None:
     browser_dir = tmp_path / "browser_text"
     browser_dir.mkdir()

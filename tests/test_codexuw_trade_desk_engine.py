@@ -222,6 +222,8 @@ def test_target_model_marks_tiny_execute_profit_stretched() -> None:
     assert model["target_feasibility"] == "stretched"
     assert model["execute_target_profit"] == 120.0
     assert "below required daily pace" in model["binding_constraint"]
+    assert model["risk_required_for_daily_target"] == 1800.0
+    assert model["risk_gap_for_daily_target"] == -1200.0
 
 
 def test_target_aware_selection_outputs_target_contribution_columns() -> None:
@@ -239,6 +241,30 @@ def test_target_aware_selection_outputs_target_contribution_columns() -> None:
     assert final["target_profit_total"].iloc[0] == 180.0
     assert final["position_max_loss"].iloc[0] == 300.0
     assert final["target_contribution_pct"].iloc[0] == 0.018
+
+
+def test_target_growth_mandate_can_size_more_than_capital_preservation() -> None:
+    scored = pd.DataFrame([_credit_row(max_loss=100.0, credit=1.0, max_profit=100.0)])
+    executable = assign_trade_statuses(scored)
+
+    conservative = select_final_trades(
+        executable,
+        regime={"sizing_stance": "normal"},
+        risk_budget=1_000,
+        recent_performance={"status": "unavailable"},
+        risk_config={"risk_mandate": "capital-preservation", "max_contracts_per_trade": 20},
+    )
+    target = select_final_trades(
+        executable,
+        regime={"sizing_stance": "normal"},
+        risk_budget=1_000,
+        recent_performance={"status": "unavailable"},
+        risk_config={"risk_mandate": "target-growth", "max_contracts_per_trade": 20},
+    )
+
+    assert conservative["contracts"].tolist() == [2]
+    assert target["contracts"].tolist() == [5]
+    assert "target-growth mandate" in target["sizing_rationale"].iloc[0]
 
 
 def test_flow_classifier_labels_directional_hedge_roll_spread_leg_unclear() -> None:
@@ -675,6 +701,17 @@ def test_etf_fallback_execute_demotes_when_single_name_execute_quality_exists() 
     assert out.set_index("ticker").loc["AAA", "trade_status"] == "Execute"
     assert out.set_index("ticker").loc["SPY", "trade_status"] == "Research"
     assert "fallback disabled" in out.set_index("ticker").loc["SPY", "trade_status_reason"]
+
+
+def test_index_primary_mode_lets_index_income_compete_with_single_name_execute() -> None:
+    single = _credit_row(ticker="AAA", index_fallback=False)
+    etf = _credit_row(ticker="SPY", index_fallback=True)
+
+    out = assign_trade_statuses(pd.DataFrame([single, etf]), index_income_mode="primary")
+
+    assert out.set_index("ticker").loc["AAA", "trade_status"] == "Execute"
+    assert out.set_index("ticker").loc["SPY", "trade_status"] == "Execute"
+    assert "fallback disabled" not in out.set_index("ticker").loc["SPY", "trade_status_reason"]
 
 
 def test_replay_edge_model_positive_match_promotes_live_credit_candidate(tmp_path) -> None:

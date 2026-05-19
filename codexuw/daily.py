@@ -84,6 +84,29 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-total-open-risk", type=float, default=0.0, help="Optional hard cap for total new/open risk considered by v2 sizing.")
     parser.add_argument("--max-contracts-per-trade", type=float, default=0.0, help="Optional hard cap for contracts per Execute trade.")
     parser.add_argument(
+        "--risk-mandate",
+        default="capital-preservation",
+        choices=["capital-preservation", "balanced", "target-growth", "aggressive-intraday"],
+        help="Capital-allocation posture for v2 sizing. Higher mandates still require live quality, positive expectancy, sample size, and risk caps.",
+    )
+    parser.add_argument(
+        "--index-income-mode",
+        default="fallback",
+        choices=["disabled", "fallback", "primary"],
+        help="How SPY/QQQ/IWM index-income candidates are handled. primary lets them compete with single-name trades.",
+    )
+    parser.add_argument(
+        "--portfolio-income-mode",
+        default="trading-sleeve-only",
+        choices=["disabled", "trading-sleeve-only", "existing-core-review"],
+        help="Controls covered-income recommendations. trading-sleeve-only protects core investments unless tickers are explicitly allowed.",
+    )
+    parser.add_argument(
+        "--covered-income-allowed-tickers",
+        default="",
+        help="Comma-separated tickers allowed for covered-income review when --portfolio-income-mode=trading-sleeve-only.",
+    )
+    parser.add_argument(
         "--minimum-expected-value-per-dollar-risk",
         type=float,
         default=0.0,
@@ -288,7 +311,15 @@ def main() -> None:
         portfolio = unavailable_portfolio_context("skipped")
     else:
         try:
-            portfolio = fetch_portfolio_context(out_dir)
+            portfolio = fetch_portfolio_context(
+                out_dir,
+                portfolio_income_mode=args.portfolio_income_mode,
+                covered_income_allowed_tickers=[
+                    ticker.strip().upper()
+                    for ticker in str(args.covered_income_allowed_tickers or "").split(",")
+                    if ticker.strip()
+                ],
+            )
         except Exception as exc:
             portfolio = unavailable_portfolio_context(str(exc))
     scored = apply_portfolio_context(scored, portfolio)
@@ -320,7 +351,7 @@ def main() -> None:
         run_mode=run_mode,
     )
     scored = apply_confidence_components(scored, live_outcomes=live_outcomes)
-    scored = assign_trade_statuses(scored)
+    scored = assign_trade_statuses(scored, index_income_mode=args.index_income_mode)
     scored = apply_data_quality_gate(scored, data_quality)
     watchlist = build_entry_watchlist(scored)
     risk_config = {
@@ -333,6 +364,14 @@ def main() -> None:
         "minimum_expected_value_per_dollar_risk": args.minimum_expected_value_per_dollar_risk,
         "monthly_profit_target": args.monthly_profit_target,
         "daily_loss_limit": args.daily_loss_limit,
+        "risk_mandate": args.risk_mandate,
+        "index_income_mode": args.index_income_mode,
+        "portfolio_income_mode": args.portfolio_income_mode,
+        "covered_income_allowed_tickers": [
+            ticker.strip().upper()
+            for ticker in str(args.covered_income_allowed_tickers or "").split(",")
+            if ticker.strip()
+        ],
         "allow_new_trades": True,
     }
     if args.daily_loss_limit > 0 and portfolio and portfolio.get("status") == "ok":

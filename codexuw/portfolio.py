@@ -37,6 +37,8 @@ def _risk_action_icon(action: str) -> str:
         return "🟡"
     if text in {"SELL COVERED INCOME", "SELL CSP"}:
         return "🔵"
+    if text in {"RESEARCH TRADING LOT", "INCOME SLEEVE ONLY"}:
+        return "🔵"
     return "🟢"
 
 
@@ -75,10 +77,16 @@ def _build_position_actions(
     positions: list[dict[str, Any]],
     *,
     total_value: float,
+    cash: float = 0.0,
     equity_exposure: Counter[str],
+    portfolio_income_mode: str = "existing-core-review",
+    covered_income_allowed_tickers: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
+    income_mode = str(portfolio_income_mode or "existing-core-review").strip().lower()
+    allowed_income = {str(t).upper().strip() for t in (covered_income_allowed_tickers or set()) if str(t).strip()}
     option_tickers = {_position_underlying(pos) for pos in positions if str(pos.get("asset_type") or "").upper() == "OPTION"}
+    protected_income_candidates = 0
     for pos in positions:
         ticker = _position_underlying(pos)
         if not ticker:
@@ -159,7 +167,8 @@ def _build_position_actions(
                     ),
                     portfolio_impact="surfaces concentration context without vetoing valid trade setups",
                 )
-            if shares >= 100 and ticker not in option_tickers:
+            covered_income_allowed = income_mode == "existing-core-review" or ticker in allowed_income
+            if shares >= 100 and ticker not in option_tickers and covered_income_allowed:
                 _append_action(
                     actions,
                     lane="Portfolio Income",
@@ -173,10 +182,33 @@ def _build_position_actions(
                     upside_downside_tradeoff="income improves basis but gives up upside above the short call; collar adds downside protection at extra cost",
                     portfolio_impact="monetizes existing exposure instead of adding unrelated directional risk",
                 )
+            elif shares >= 100 and ticker not in option_tickers and income_mode == "trading-sleeve-only":
+                protected_income_candidates += 1
+    if income_mode == "trading-sleeve-only" and protected_income_candidates:
+        _append_action(
+            actions,
+            lane="Portfolio Income",
+            ticker="CASH",
+            action="INCOME SLEEVE ONLY",
+            position=f"cash ${cash:,.0f}",
+            reason="core equity holdings are protected from covered-call assignment risk",
+            instruction=(
+                "Do not sell covered calls on long-term holdings. Build income only from explicitly allowed "
+                "trading-lot shares or cash-secured-put/buy-write candidates funded from a separate options sleeve."
+            ),
+            assignment_risk="covered calls on core holdings are disabled unless the ticker is explicitly allowed",
+            upside_downside_tradeoff="keeps investment upside separate from options-income experiments",
+            portfolio_impact="prevents losing long-term holdings while still allowing a dedicated income sleeve",
+        )
     return actions
 
 
-def summarize_positions(payload: dict[str, Any]) -> dict[str, Any]:
+def summarize_positions(
+    payload: dict[str, Any],
+    *,
+    portfolio_income_mode: str = "existing-core-review",
+    covered_income_allowed_tickers: list[str] | set[str] | None = None,
+) -> dict[str, Any]:
     positions = list(payload.get("positions", []) or [])
     total_value = safe_float((payload.get("balances") or {}).get("total_value"), 0.0)
     cash = safe_float((payload.get("balances") or {}).get("cash"), 0.0)
@@ -204,7 +236,14 @@ def summarize_positions(payload: dict[str, Any]) -> dict[str, Any]:
         for ticker, value in equity_exposure.items()
         if total_value > 0 and value / total_value >= 0.04
     }
-    risk_actions = _build_position_actions(positions, total_value=total_value, equity_exposure=equity_exposure)
+    risk_actions = _build_position_actions(
+        positions,
+        total_value=total_value,
+        cash=cash,
+        equity_exposure=equity_exposure,
+        portfolio_income_mode=portfolio_income_mode,
+        covered_income_allowed_tickers=set(covered_income_allowed_tickers or []),
+    )
     return {
         "status": "ok",
         "total_value": total_value,
@@ -218,10 +257,17 @@ def summarize_positions(payload: dict[str, Any]) -> dict[str, Any]:
         "large_equity_exposure": dict(sorted(large_equity.items())),
         "risk_actions": risk_actions,
         "portfolio_income_actions": [row for row in risk_actions if row.get("lane") == "Portfolio Income"],
+        "portfolio_income_mode": portfolio_income_mode,
+        "covered_income_allowed_tickers": sorted({str(t).upper().strip() for t in (covered_income_allowed_tickers or []) if str(t).strip()}),
     }
 
 
-def fetch_portfolio_context(out_dir: Path) -> dict[str, Any]:
+def fetch_portfolio_context(
+    out_dir: Path,
+    *,
+    portfolio_income_mode: str = "existing-core-review",
+    covered_income_allowed_tickers: list[str] | set[str] | None = None,
+) -> dict[str, Any]:
     from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -229,7 +275,11 @@ def fetch_portfolio_context(out_dir: Path) -> dict[str, Any]:
     payload = service.get_account_positions()
     positions = pd.DataFrame(payload.get("positions", []) or [])
     positions.to_csv(out_dir / "codexuw_open_positions_from_schwab.csv", index=False)
-    summary = summarize_positions(payload)
+    summary = summarize_positions(
+        payload,
+        portfolio_income_mode=portfolio_income_mode,
+        covered_income_allowed_tickers=covered_income_allowed_tickers,
+    )
     (out_dir / "codexuw_portfolio_context.json").write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
     return summary
 
@@ -249,4 +299,6 @@ def unavailable_portfolio_context(error: str) -> dict[str, Any]:
         "large_equity_exposure": {},
         "risk_actions": [],
         "portfolio_income_actions": [],
+        "portfolio_income_mode": "unavailable",
+        "covered_income_allowed_tickers": [],
     }
