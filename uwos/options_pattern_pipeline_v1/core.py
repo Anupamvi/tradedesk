@@ -2965,10 +2965,10 @@ def write_outputs(
     source_completeness: Mapping[str, Any],
     macro_geo_bundle: Mapping[str, Any],
 ) -> Dict[str, str]:
-    actionable = [r for r in daily_rows if r["classification"] == "TRADE"][:5]
-    watch = [r for r in daily_rows if r["classification"] == "WATCH"][:15]
-    blocked = [r for r in daily_rows if r["classification"] in {"AVOID", "BLOCKED"}]
-    trade_review = build_trade_review_candidates(daily_rows)[:25]
+    actionable = dedupe_rows_by_ticket([r for r in daily_rows if r["classification"] == "TRADE"])
+    watch = dedupe_rows_by_ticket([r for r in daily_rows if r["classification"] == "WATCH"])
+    blocked = dedupe_rows_by_ticket([r for r in daily_rows if r["classification"] in {"AVOID", "BLOCKED"}])
+    trade_review = build_trade_review_candidates(daily_rows)
 
     discovered_rows = []
     for family, tier in sorted(validation_bundle["family_tiers"].items()):
@@ -2995,6 +2995,13 @@ def write_outputs(
         "input_policy": config["input_policy"],
         "source_completeness": source_completeness,
         "macro_geo_summary": macro_geo_bundle.get("summary", {}),
+        "daily_trade_decision": daily_trade_decision(actionable, trade_review),
+        "candidate_counts": {
+            "actionable_trades": len(actionable),
+            "trade_review_candidates": len(trade_review),
+            "watchlist_research_setups": len(watch),
+            "blocked_candidates": len(blocked),
+        },
         "reproducibility": {
             "python": sys.version,
             "random_seed": config["seed"],
@@ -3233,6 +3240,14 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
+def daily_trade_decision(actionable: Sequence[Mapping[str, Any]], trade_review: Sequence[Mapping[str, Any]]) -> str:
+    if actionable:
+        return "AUTO_APPROVED_TRADES"
+    if trade_review:
+        return "REVIEW_REQUIRED_NO_AUTO_APPROVAL"
+    return "NO_REVIEWABLE_TICKETS"
+
+
 def build_trade_review_candidates(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
     candidates_by_ticket: Dict[Tuple[str, str, str, str], Mapping[str, Any]] = {}
     for row in rows:
@@ -3256,6 +3271,28 @@ def build_trade_review_candidates(rows: Sequence[Mapping[str, Any]]) -> List[Map
         reverse=True,
     )
     return candidates
+
+
+def dedupe_rows_by_ticket(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
+    best_by_ticket: Dict[Tuple[str, str, str, str], Mapping[str, Any]] = {}
+    for row in rows:
+        key = trade_ticket_key(row)
+        current = best_by_ticket.get(key)
+        if current is None or trade_review_sort_key(row) > trade_review_sort_key(current):
+            best_by_ticket[key] = row
+    out = list(best_by_ticket.values())
+    out.sort(key=trade_review_sort_key, reverse=True)
+    return out
+
+
+def trade_ticket_key(row: Mapping[str, Any]) -> Tuple[str, str, str, str]:
+    setup = trade_setup_fields(row)
+    return (
+        str(row.get("ticker") or ""),
+        str(row.get("direction") or ""),
+        str(setup.get("trade_setup") or ""),
+        str(setup.get("entry_range") or ""),
+    )
 
 
 def trade_review_sort_key(row: Mapping[str, Any]) -> Tuple[int, float, float, float]:
@@ -3692,6 +3729,7 @@ def render_daily_report(
     lines.append(f"# Options Pattern Pipeline v1 Daily Report - {as_of}")
     lines.append("")
     lines.append(f"Final pipeline verdict: **{verdict}**")
+    lines.append(f"Daily trade decision: **{metadata.get('daily_trade_decision', 'UNKNOWN')}**")
     lines.append("")
     regime = snapshot.market_regime
     lines.append("## Decision Summary")

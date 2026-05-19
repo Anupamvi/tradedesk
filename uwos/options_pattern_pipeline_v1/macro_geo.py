@@ -720,7 +720,7 @@ def build_promotion_decision_rows(
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     confirmation_by_key = {(r.get("catalyst_id"), r.get("ticker")): r for r in confirmations}
-    daily_by_ticker = best_daily_rows_by_ticker(daily_rows)
+    daily_by_ticker = daily_rows_by_ticker(daily_rows)
 
     if not source_complete:
         rows.append(
@@ -768,7 +768,7 @@ def build_promotion_decision_rows(
             continue
         for ticker in mapped:
             confirmation = confirmation_by_key.get((catalyst.get("catalyst_id"), ticker), {})
-            daily_row = daily_by_ticker.get(ticker, {})
+            daily_row = best_daily_row_for_catalyst(ticker, catalyst, confirmation, daily_by_ticker)
             bucket, blocker = classify_promotion_bucket(
                 catalyst=catalyst,
                 confirmation=confirmation,
@@ -792,17 +792,59 @@ def build_promotion_decision_rows(
     return rows
 
 
-def best_daily_rows_by_ticker(daily_rows: Sequence[Mapping[str, Any]]) -> Dict[str, Mapping[str, Any]]:
-    ranked = {"TRADE": 4, "WATCH": 3, "AVOID": 2, "BLOCKED": 1}
-    out: Dict[str, Mapping[str, Any]] = {}
+def daily_rows_by_ticker(daily_rows: Sequence[Mapping[str, Any]]) -> Dict[str, List[Mapping[str, Any]]]:
+    grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
     for row in daily_rows:
         ticker = str(row.get("ticker") or "")
-        if not ticker:
-            continue
-        existing = out.get(ticker)
-        if existing is None or ranked.get(str(row.get("classification")), 0) > ranked.get(str(existing.get("classification")), 0):
-            out[ticker] = row
-    return out
+        if ticker:
+            grouped[ticker].append(row)
+    for rows in grouped.values():
+        rows.sort(key=daily_row_rank, reverse=True)
+    return grouped
+
+
+def best_daily_rows_by_ticker(daily_rows: Sequence[Mapping[str, Any]]) -> Dict[str, Mapping[str, Any]]:
+    return {ticker: rows[0] for ticker, rows in daily_rows_by_ticker(daily_rows).items() if rows}
+
+
+def best_daily_row_for_catalyst(
+    ticker: str,
+    catalyst: Mapping[str, Any],
+    confirmation: Mapping[str, Any],
+    daily_by_ticker: Mapping[str, Sequence[Mapping[str, Any]]],
+) -> Mapping[str, Any]:
+    rows = list(daily_by_ticker.get(ticker) or [])
+    if not rows:
+        return {}
+    preferred_direction = preferred_catalyst_direction(catalyst, confirmation)
+    if preferred_direction in {"bullish", "bearish"}:
+        for row in rows:
+            if str(row.get("direction") or "") == preferred_direction:
+                return row
+        return {}
+    return rows[0]
+
+
+def preferred_catalyst_direction(catalyst: Mapping[str, Any], confirmation: Mapping[str, Any]) -> str:
+    for value in (
+        confirmation.get("catalyst_direction_bias"),
+        catalyst.get("direction_bias"),
+        confirmation.get("uw_direction"),
+    ):
+        direction = str(value or "").lower()
+        if direction in {"bullish", "bearish"}:
+            return direction
+    return "mixed"
+
+
+def daily_row_rank(row: Mapping[str, Any]) -> Tuple[int, float, float, float]:
+    ranked = {"TRADE": 4, "WATCH": 3, "AVOID": 2, "BLOCKED": 1}
+    return (
+        ranked.get(str(row.get("classification")), 0),
+        _num(row.get("probability_score")) or -1.0,
+        _num(row.get("success_probability_pct")) or -1.0,
+        _num(row.get("pattern_score")) or -1.0,
+    )
 
 
 def classify_promotion_bucket(
@@ -861,6 +903,7 @@ def promotion_row(
         "uw_evidence_found": confirmation.get("uw_evidence_found", ""),
         "uw_evidence_score": confirmation.get("uw_evidence_score", ""),
         "daily_classification": daily_row.get("classification", ""),
+        "daily_direction": daily_row.get("direction", ""),
         "pattern_family": daily_row.get("pattern_family", ""),
         "block_reasons": join_list(daily_row.get("block_reasons")),
         "blocker_categories": join_list(decompose_blockers(daily_row.get("block_reasons") or [])),
@@ -926,6 +969,7 @@ def build_multi_day_continuation_rows(
                 "uw_evidence_found": f"multi-day confirmation trend: {trend}",
                 "uw_evidence_score": scores[-1][1] if scores else "",
                 "daily_classification": "",
+                "daily_direction": "",
                 "pattern_family": "",
                 "block_reasons": "",
                 "blocker_categories": "",
@@ -1003,6 +1047,7 @@ def build_no_pattern_rows(
             "uw_evidence_found": "see macro_geo_uw_confirmation.csv and watchlist/blocked CSVs",
             "uw_evidence_score": "",
             "daily_classification": "",
+            "daily_direction": "",
             "pattern_family": "",
             "block_reasons": "",
             "blocker_categories": "",
@@ -1276,6 +1321,7 @@ def macro_geo_promotion_fieldnames() -> List[str]:
         "uw_evidence_found",
         "uw_evidence_score",
         "daily_classification",
+        "daily_direction",
         "pattern_family",
         "block_reasons",
         "blocker_categories",

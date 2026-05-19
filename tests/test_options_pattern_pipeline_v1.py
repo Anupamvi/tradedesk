@@ -8,6 +8,7 @@ from uwos.options_pattern_pipeline_v1.macro_geo import (
     SCENARIO_BUCKETS,
     build_macro_geo_bundle,
     build_observability_matrix_rows,
+    build_promotion_decision_rows,
     classify_promotion_bucket,
     collect_macro_geo_catalysts,
     decompose_blockers,
@@ -15,9 +16,10 @@ from uwos.options_pattern_pipeline_v1.macro_geo import (
 from uwos.options_pattern_pipeline_v1.core import (
     assign_family_tiers,
     build_daily_snapshot,
+    build_trade_review_candidates,
     build_validation_splits,
     classify_daily_signals,
-    build_trade_review_candidates,
+    dedupe_rows_by_ticket,
     normalize_header,
     parse_option_symbol,
     score_signal_horizon,
@@ -720,6 +722,116 @@ def test_trade_review_board_keeps_reviewable_setups_visible():
     assert output[0]["trade_setup"] == "BUY PUT TSLA 410 exp 2026-06-18"
     assert output[1]["review_status"] == "MACRO_CONFLICT_REVIEW"
     assert "regime alignment" in output[1]["promotion_needed"]
+
+
+def test_ticket_outputs_dedupe_same_contract_family_duplicates():
+    base_row = {
+        "classification": "WATCH",
+        "ticker": "TSLA",
+        "direction": "bearish",
+        "confidence_tier": "RESEARCH_ONLY",
+        "success_probability_pct": 55.33,
+        "pattern_score": 9.0,
+        "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Put Debit",
+        "lead_option_symbol": "TSLA260618P00410000",
+        "expiry": "2026-06-18",
+        "option_type": "put",
+        "strike": 410,
+        "entry_range": "20.30-20.45",
+    }
+    weaker_duplicate = dict(base_row, probability_score=44.90, pattern_family="VOL_EXPANSION_CATALYST")
+    stronger_duplicate = dict(base_row, probability_score=49.97, pattern_family="OI_GAMMA_CONTINUATION")
+    other_ticket = dict(base_row, ticker="SLV", lead_option_symbol="SLV260618P00070000", strike=70, probability_score=35.0)
+
+    deduped = dedupe_rows_by_ticket([weaker_duplicate, other_ticket, stronger_duplicate])
+
+    assert len(deduped) == 2
+    assert deduped[0]["ticker"] == "TSLA"
+    assert deduped[0]["pattern_family"] == "OI_GAMMA_CONTINUATION"
+
+
+def test_macro_promotion_uses_direction_matched_daily_row():
+    catalyst = {
+        "catalyst_id": "c1",
+        "as_of_eligible": True,
+        "direction_bias": "bullish",
+        "mapped_tickers": ["AAPL"],
+        "mapped_etfs": [],
+        "event_type": "China/US diplomacy",
+    }
+    confirmation = {
+        "catalyst_id": "c1",
+        "ticker": "AAPL",
+        "uw_confirmed": True,
+        "uw_evidence_found": "bot-EOD options flow; bullish direction; liquid expiry/quote",
+        "uw_direction": "bullish",
+        "catalyst_direction_bias": "bullish",
+        "direction_confirmed": True,
+        "sector_etf_confirmation": False,
+    }
+    daily_rows = [
+        {
+            "ticker": "AAPL",
+            "direction": "bearish",
+            "classification": "WATCH",
+            "pattern_family": "BEARISH_WATCH_SHOULD_NOT_MATCH",
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+            "probability_score": 60.0,
+        },
+        {
+            "ticker": "AAPL",
+            "direction": "bullish",
+            "classification": "AVOID",
+            "pattern_family": "BULLISH_MATCH",
+            "block_reasons": ["MARKET_REGIME_CONFLICT"],
+            "probability_score": 45.0,
+        },
+    ]
+
+    rows = build_promotion_decision_rows([catalyst], [confirmation], daily_rows, True, [], "2026-05-18")
+
+    assert rows[0]["daily_direction"] == "bullish"
+    assert rows[0]["pattern_family"] == "BULLISH_MATCH"
+    assert rows[0]["scenario_bucket"] == "REGIME_CONFLICTED_SETUP"
+
+
+def test_macro_promotion_does_not_use_opposite_direction_daily_row():
+    catalyst = {
+        "catalyst_id": "c1",
+        "as_of_eligible": True,
+        "direction_bias": "bullish",
+        "mapped_tickers": ["AAPL"],
+        "mapped_etfs": [],
+        "event_type": "China/US diplomacy",
+    }
+    confirmation = {
+        "catalyst_id": "c1",
+        "ticker": "AAPL",
+        "uw_confirmed": True,
+        "uw_evidence_found": "bot-EOD options flow; bullish direction",
+        "uw_direction": "bullish",
+        "catalyst_direction_bias": "bullish",
+        "direction_confirmed": True,
+        "sector_etf_confirmation": False,
+    }
+    daily_rows = [
+        {
+            "ticker": "AAPL",
+            "direction": "bearish",
+            "classification": "WATCH",
+            "pattern_family": "BEARISH_ONLY",
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+            "probability_score": 60.0,
+        }
+    ]
+
+    rows = build_promotion_decision_rows([catalyst], [confirmation], daily_rows, True, [], "2026-05-18")
+
+    assert rows[0]["daily_classification"] == ""
+    assert rows[0]["daily_direction"] == ""
+    assert rows[0]["scenario_bucket"] == "CATALYST_WATCH"
 
 
 def test_frozen_v1_backup_remains_unchanged_against_baseline_tag():
