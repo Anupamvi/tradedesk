@@ -15,18 +15,25 @@ from uwos.options_pattern_pipeline_v1.macro_geo import (
 )
 from uwos.options_pattern_pipeline_v1.core import (
     assign_family_tiers,
+    build_artifact_manifest,
     build_daily_snapshot,
+    build_decision_board_rows,
+    build_shadow_ledger_rows,
     build_trade_review_candidates,
     build_validation_splits,
     classify_daily_signals,
+    decision_board_fieldnames,
     dedupe_rows_by_ticket,
+    empty_validation_bundle,
     normalize_header,
+    prepare_decision_rows,
     parse_option_symbol,
     score_signal_horizon,
     source_completeness_for_date,
     sources_for_date,
     trade_output_row,
     trade_review_output_row,
+    validate_decision_board_rows,
 )
 
 
@@ -832,6 +839,112 @@ def test_macro_promotion_does_not_use_opposite_direction_daily_row():
     assert rows[0]["daily_classification"] == ""
     assert rows[0]["daily_direction"] == ""
     assert rows[0]["scenario_bucket"] == "CATALYST_WATCH"
+
+
+def test_strict_decision_layer_blocks_auto_approval_on_negative_edge():
+    daily_rows = [
+        {
+            "date": "2026-05-18",
+            "classification": "TRADE",
+            "ticker": "XYZ",
+            "direction": "bullish",
+            "pattern_family": "EDGE",
+            "confidence_tier": "PROVEN",
+            "probability_score": 60.0,
+            "success_probability_pct": 60.0,
+            "pattern_score": 10.0,
+            "block_reasons": [],
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "lead_option_symbol": "XYZ260619C00100000",
+            "expiry": "2026-06-19",
+            "option_type": "call",
+            "strike": 100,
+            "entry_bid": 1.0,
+            "entry_ask": 1.1,
+            "entry_range": "1.00-1.10",
+            "bid_ask_spread_pct": 0.09,
+            "max_risk_per_contract": 110.65,
+            "liquidity_volume": 1000,
+            "liquidity_open_interest": 1000,
+            "dte": 20,
+            "quote_source": "bot_eod",
+        }
+    ]
+    validation_bundle = empty_validation_bundle()
+    validation_bundle["family_tiers"] = {
+        "EDGE": {
+            "confidence_tier": "PROVEN",
+            "validation_scored_count": 80,
+            "validation_win_count": 40,
+            "validation_success_probability": 0.5,
+            "validation_probability_score": 0.48,
+            "validation_average_net_r": -0.05,
+            "validation_profit_factor": 0.8,
+            "beats_baselines_count": 2,
+        }
+    }
+
+    rows, _ = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        {"source_complete": True},
+        {"risk_config": {"allow_conservative_historical_quote_for_auto": True}},
+    )
+
+    assert rows[0]["status"] == "AVOID"
+    assert "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS" in rows[0]["block_reasons"]
+    assert "PROFIT_FACTOR_BELOW_AUTO_APPROVAL" in rows[0]["block_reasons"]
+
+
+def test_decision_board_schema_accepts_no_trade_contract():
+    rows = build_decision_board_rows([], "2026-05-18", True, "NO_TRADE", {"daily_report": "x"})
+
+    assert rows[0]["status"] == "NO_TRADE"
+    assert "candidate_id" in decision_board_fieldnames()
+    assert validate_decision_board_rows(rows) == []
+
+
+def test_shadow_ledger_tracks_trade_review_rows():
+    board_rows = [
+        {
+            "run_date": "2026-05-18",
+            "status": "TRADE_REVIEW",
+            "candidate_id": "abc",
+            "full_ticket": "BUY CALL XYZ 100 exp 2026-06-19",
+            "entry": "debit 1.00-1.10",
+            "target": 100,
+            "stop": "50% stop",
+            "time_stop": "5 trading days",
+            "kill_switch_triggered": "",
+        }
+    ]
+
+    rows = build_shadow_ledger_rows("2026-05-18", board_rows, empty_validation_bundle())
+
+    assert rows[0]["candidate_id"] == "abc"
+    assert rows[0]["exit_status"] == "OPEN_SHADOW_PENDING"
+
+
+def test_artifact_manifest_contains_reproducibility_contract(tmp_path):
+    manifest = build_artifact_manifest(
+        "2026-05-18",
+        tmp_path,
+        {"seed": 7, "risk_config_path": "cfg.json", "risk_config_hash": "hash"},
+        {
+            "command": "python3 -m uwos.options_pattern_pipeline_v1",
+            "source_files_for_as_of": [],
+            "source_counts_by_date": {},
+            "skipped_sources_for_as_of": [],
+        },
+        {"decision_board_csv": "decision_board.csv"},
+        [],
+        1.25,
+    )
+
+    assert manifest["artifact_schema_version"] == "artifact_manifest_v1"
+    assert manifest["deterministic_seed"] == 7
+    assert manifest["artifact_paths"]["decision_board_csv"] == "decision_board.csv"
 
 
 def test_frozen_v1_backup_remains_unchanged_against_baseline_tag():

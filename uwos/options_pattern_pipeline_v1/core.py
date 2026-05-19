@@ -17,7 +17,9 @@ import os
 import random
 import re
 import statistics
+import subprocess
 import sys
+import time
 import zipfile
 from collections import Counter, defaultdict
 from contextlib import contextmanager
@@ -36,7 +38,10 @@ from .macro_geo import (
     render_pattern_observability_matrix,
 )
 
-PIPELINE_VERSION = "options_pattern_pipeline_v1.1"
+PIPELINE_VERSION = "options_pattern_pipeline_v1.2"
+ARTIFACT_SCHEMA_VERSION = "options_pattern_artifacts_v1"
+DECISION_BOARD_SCHEMA_VERSION = "decision_board_v1"
+MANIFEST_SCHEMA_VERSION = "artifact_manifest_v1"
 DEFAULT_SEED = 20260510
 HORIZONS = (1, 3, 5, 10, 20)
 INDEX_TICKERS = {"SPY", "QQQ", "IWM"}
@@ -75,6 +80,90 @@ VALIDATION_TRADE_BLOCKERS = {
     "LIMITED_OUT_OF_SAMPLE_SAMPLE",
     "DOES_NOT_BEAT_TWO_BASELINES",
     "VALIDATION_EXPECTANCY_NEGATIVE",
+}
+EV_TRADE_BLOCKERS = {
+    "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS",
+    "EXPECTED_R_PER_DAY_NOT_POSITIVE",
+    "PROFIT_FACTOR_BELOW_AUTO_APPROVAL",
+    "CALIBRATION_SCORE_MISSING_OR_WEAK",
+    "CONFIDENCE_BAND_TOO_WEAK",
+}
+RISK_TRADE_BLOCKERS = {
+    "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT",
+    "CAPACITY_TOO_SMALL_FOR_INTENDED_SIZE",
+    "EXCLUDED_TICKER_OR_INSTRUMENT",
+    "MANUAL_ONLY_TICKER_OR_INSTRUMENT",
+    "HIGH_NOTIONAL_INDEX_GUARDRAIL",
+}
+QUOTE_TRADE_BLOCKERS = {
+    "LIVE_QUOTE_VALIDATION_SKIPPED",
+    "LIVE_QUOTE_VALIDATION_FAILED",
+    "QUOTE_COVERAGE_TOO_WEAK",
+    "STALE_OR_HISTORICAL_QUOTE_ONLY",
+}
+KILL_SWITCH_PREFIX = "KILL_SWITCH_"
+DEFAULT_RISK_CONFIG = {
+    "account_risk_budget": 15000.0,
+    "max_risk_per_trade": 1500.0,
+    "max_daily_risk": 5000.0,
+    "max_weekly_risk": 10000.0,
+    "max_ticker_exposure": 3000.0,
+    "max_sector_theme_exposure": 6000.0,
+    "max_correlated_exposure": 7500.0,
+    "max_buying_power_usage_pct": 0.35,
+    "max_contracts_per_trade": 10,
+    "min_expected_r": 0.0,
+    "min_expected_r_per_day": 0.0,
+    "min_profit_factor": 1.20,
+    "min_oos_scored_outcomes": 30,
+    "min_baselines_beaten": 2,
+    "min_probability_score": 0.50,
+    "min_calibrated_probability": 0.50,
+    "min_confidence_lower_bound": 0.45,
+    "max_bid_ask_spread_pct": 0.35,
+    "max_credit_spread_spread_pct": 0.65,
+    "min_option_volume": 50,
+    "min_open_interest": 25,
+    "min_quote_coverage": 0.25,
+    "max_unscorable_rate": 0.75,
+    "max_validation_drawdown_r": -12.0,
+    "max_calibration_brier": 0.35,
+    "contract_fee": 0.65,
+    "round_trip_long_option_fees": 1.30,
+    "round_trip_spread_fees": 2.60,
+    "slippage_pct_of_spread": 0.50,
+    "expected_hold_days": 5,
+    "live_quote_required_for_auto": False,
+    "allow_conservative_historical_quote_for_auto": True,
+    "manual_only_tickers": ["SPX", "SPXW", "NDX", "RUT"],
+    "manual_only_instruments": ["AM_SETTLED_INDEX_OPTIONS", "PM_SETTLED_INDEX_OPTIONS"],
+    "excluded_tickers": [],
+    "excluded_instruments": [],
+    "high_notional_index_tickers": ["SPX", "SPXW", "NDX", "RUT"],
+    "option_approval_constraints": {
+        "defined_risk_only": True,
+        "no_naked_short_options": True,
+        "manual_review_for_index_options": True,
+    },
+    "kill_switches": {
+        "source_incomplete": True,
+        "low_quote_coverage": True,
+        "high_unscorable_rate": True,
+        "calibration_fails": True,
+        "validation_drawdown_breached": True,
+        "artifact_schema_validation_fails": True,
+        "decision_board_missing_required_fields": True,
+        "live_quote_validation_required": False,
+        "shadow_pl_deteriorates": False,
+        "volatility_shock": False,
+        "max_risk_used": False,
+        "too_many_correlated_candidates": False,
+    },
+    "artifact_retention": {
+        "max_artifact_size_mb": 200,
+        "preserve_rerun_suffixes": True,
+        "canonical_overwrite_allowed": True,
+    },
 }
 
 
@@ -182,6 +271,15 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         action="store_true",
         help="Generate the daily report without historical validation.",
     )
+    parser.add_argument(
+        "--risk-config",
+        default=None,
+        help=(
+            "JSON risk/gating config. Default: "
+            "<base-dir>/configs/options_pattern_pipeline_v1_hardening.json when present, "
+            "otherwise built-in conservative defaults."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -192,6 +290,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
 
 def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
+    started_perf = time.perf_counter()
     base_dir = Path(args.base_dir).expanduser().resolve()
     inventory_rows = inventory_source_data(base_dir)
     source_dates = source_complete_dates(base_dir)
@@ -233,6 +332,7 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
                 inventory_rows=inventory_rows,
                 completeness=completeness,
                 macro_geo_bundle=macro_geo_bundle,
+                runtime_seconds=time.perf_counter() - started_perf,
             )
             return {
                 "as_of": as_of,
@@ -317,6 +417,7 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
         sentiment_summary=sentiment_summary,
         source_completeness=completeness,
         macro_geo_bundle=macro_geo_bundle,
+        runtime_seconds=time.perf_counter() - started_perf,
     )
     return {
         "as_of": as_of,
@@ -332,8 +433,10 @@ def base_run_config(
     as_of: str,
     bot_eod_cache_dir: Path,
 ) -> Dict[str, Any]:
+    risk_config_path, risk_config, risk_config_hash = load_risk_config(args.risk_config, base_dir)
     return {
         "pipeline_version": PIPELINE_VERSION,
+        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "base_dir": str(base_dir),
         "as_of": as_of,
         "seed": args.seed,
@@ -342,12 +445,46 @@ def base_run_config(
         "bot_eod_cache_dir": str(bot_eod_cache_dir),
         "top_candidates_per_day": args.top_candidates_per_day,
         "horizons": list(HORIZONS),
+        "risk_config_path": str(risk_config_path) if risk_config_path else "",
+        "risk_config_hash": risk_config_hash,
+        "risk_config": risk_config,
         "input_policy": (
             "Reads dated UW source-like exports only. Ignores prior trend pipeline "
             "scores, gates, candidates, rejection labels, generated reports, and "
             "morning watchlists as feature inputs."
         ),
     }
+
+
+def load_risk_config(config_arg: Optional[str], base_dir: Path) -> Tuple[Optional[Path], Dict[str, Any], str]:
+    default_path = base_dir / "configs" / "options_pattern_pipeline_v1_hardening.json"
+    path = Path(config_arg).expanduser().resolve() if config_arg else default_path
+    config = dict(DEFAULT_RISK_CONFIG)
+    if path.exists():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            raise SystemExit(f"Could not read risk config {path}: {exc}") from exc
+        if not isinstance(loaded, dict):
+            raise SystemExit(f"Risk config {path} must be a JSON object")
+        config = deep_merge_dicts(config, loaded)
+        used_path: Optional[Path] = path
+    elif config_arg:
+        raise SystemExit(f"Risk config does not exist: {path}")
+    else:
+        used_path = None
+    config_hash = hashlib.sha256(stable_json(config).encode("utf-8")).hexdigest()
+    return used_path, config, config_hash
+
+
+def deep_merge_dicts(base: Mapping[str, Any], override: Mapping[str, Any]) -> Dict[str, Any]:
+    out = dict(base)
+    for key, value in override.items():
+        if isinstance(value, Mapping) and isinstance(out.get(key), Mapping):
+            out[key] = deep_merge_dicts(out[key], value)
+        else:
+            out[key] = value
+    return out
 
 
 def source_completeness_for_date(base_dir: Path, signal_date: str) -> Dict[str, Any]:
@@ -1845,11 +1982,15 @@ def build_signal(
         target_profit = (entry_credit * 50.0) if entry_credit else None
         stop_rule = "Exit if spread debit reaches 2x entry credit or short strike is breached."
         time_stop = "Exit after 5 trading days or at 50% credit capture, whichever comes first."
+        invalidation_rule = "Short strike breach, event-risk surprise, or regime flip against spread direction."
+        review_close_rule = "Review daily; close at 50% credit capture, 2x credit stop, or two sessions before expiration."
     else:
         entry_range = format_entry_range(entry_bid, entry_ask)
         target_profit = max_risk if max_risk else None
         stop_rule = "Exit if option bid loses 50% from entry debit or thesis invalidates."
         time_stop = "Exit after 5 trading days unless target/stop triggers first."
+        invalidation_rule = "Underlying closes through thesis invalidation level or catalyst/macro direction reverses."
+        review_close_rule = "Review daily; close at 100% option gain, 50% loss, time stop, or catalyst invalidation."
     return {
         "date": snapshot.signal_date,
         "ticker": f["ticker"],
@@ -1871,8 +2012,10 @@ def build_signal(
         "flow_total_premium": f.get("flow_total_premium"),
         "flow_premium_bias": f.get("flow_premium_bias"),
         "avg_iv": f.get("avg_iv"),
+        "quote_iv": quote.get("iv"),
         "avg_spread_pct": f.get("avg_spread_pct"),
         "lead_option_symbol": quote.get("option_symbol", ""),
+        "quote_source": quote.get("quote_source", ""),
         "strategy_kind": strategy_kind,
         "legs_json": stable_json(quote.get("legs", [])),
         "strategy_type": strategy_type,
@@ -1891,6 +2034,9 @@ def build_signal(
         "target_profit": target_profit,
         "stop_rule": stop_rule,
         "time_stop": time_stop,
+        "invalidation_rule": invalidation_rule,
+        "review_close_rule": review_close_rule,
+        "expected_hold_days": 5,
         "position_size_tier": "RISK_CAPPED_RESEARCH" if blockers else "STANDARD_REVIEW",
         "liquidity_volume": quote.get("volume"),
         "liquidity_open_interest": quote.get("open_interest"),
@@ -1938,13 +2084,16 @@ def classify_daily_signals(
         tier = tier_info.get("confidence_tier", "RESEARCH_ONLY")
         if tier != "PROVEN":
             blockers.append("PATTERN_VALIDATION_NOT_PROVEN")
-        if int(tier_info.get("validation_scored_count") or 0) < 20:
+        if int(tier_info.get("validation_scored_count") or 0) < 30:
             blockers.append("LIMITED_OUT_OF_SAMPLE_SAMPLE")
         if int(tier_info.get("beats_baselines_count") or 0) < 2:
             blockers.append("DOES_NOT_BEAT_TWO_BASELINES")
         validation_avg_r = num(tier_info.get("validation_average_net_r"))
         if validation_avg_r is not None and validation_avg_r <= 0:
             blockers.append("VALIDATION_EXPECTANCY_NEGATIVE")
+        validation_pf = num(tier_info.get("validation_profit_factor"))
+        if validation_pf is not None and validation_pf < 1.20:
+            blockers.append("PROFIT_FACTOR_BELOW_AUTO_APPROVAL")
         blockers = sorted(set(blockers))
         if tier == "PROVEN" and not blockers:
             classification = "TRADE"
@@ -2704,6 +2853,8 @@ def generate_baseline_signals(
     for snap in validation_snaps:
         per_date_target = max(3, min(top_candidates_per_day, by_date_real.get(snap.signal_date, 5)))
         signals.extend(unusual_volume_baseline(snap, pattern_config, per_date_target))
+        signals.extend(uw_flow_only_baseline(snap, pattern_config, per_date_target))
+        signals.extend(naive_catalyst_only_baseline(snap, pattern_config, per_date_target))
         signals.extend(price_momentum_baseline(snap, pattern_config, per_date_target))
         signals.extend(index_directional_baseline(snap, pattern_config))
         signals.extend(random_same_liquidity_baseline(snap, validation_signals, pattern_config, per_date_target, seed, split_name))
@@ -2719,6 +2870,43 @@ def unusual_volume_baseline(snap: Snapshot, pattern_config: Mapping[str, Any], l
         if quote:
             sig = build_signal(snap, f, "BASELINE_UNUSUAL_VOLUME_ONLY", direction, ratio, ["highest options volume ratio"], quote, pattern_config)
             rows.append((ratio, sig))
+    rows.sort(key=lambda x: x[0], reverse=True)
+    return [r[1] for r in rows[:limit]]
+
+
+def uw_flow_only_baseline(snap: Snapshot, pattern_config: Mapping[str, Any], limit: int) -> List[Dict[str, Any]]:
+    rows: List[Tuple[float, Dict[str, Any]]] = []
+    for f in snap.features.values():
+        flow_total = f.get("flow_total_premium") or 0.0
+        if flow_total <= 0:
+            continue
+        bias = f.get("flow_premium_bias") or f.get("premium_bias") or 0.0
+        direction = "bullish" if bias >= 0 else "bearish"
+        quote = snap.best_options.get((f["ticker"], direction))
+        if quote:
+            sig = build_signal(snap, f, "BASELINE_NAIVE_UW_FLOW_ONLY", direction, flow_total, ["naive UW flow premium only"], quote, pattern_config)
+            rows.append((flow_total, sig))
+    rows.sort(key=lambda x: x[0], reverse=True)
+    return [r[1] for r in rows[:limit]]
+
+
+def naive_catalyst_only_baseline(snap: Snapshot, pattern_config: Mapping[str, Any], limit: int) -> List[Dict[str, Any]]:
+    rows: List[Tuple[float, Dict[str, Any]]] = []
+    for f in snap.features.values():
+        earnings_dte = f.get("earnings_dte")
+        premium = max(f.get("hot_total_premium") or 0.0, f.get("flow_total_premium") or 0.0)
+        if earnings_dte is None and premium <= 0:
+            continue
+        catalyst_score = premium
+        if earnings_dte is not None and 0 <= earnings_dte <= 7:
+            catalyst_score += 500_000.0 / (1.0 + earnings_dte)
+        if catalyst_score <= 0:
+            continue
+        direction = "bullish" if (f.get("flow_premium_bias") or f.get("premium_bias") or 0.0) >= 0 else "bearish"
+        quote = snap.best_options.get((f["ticker"], direction))
+        if quote:
+            sig = build_signal(snap, f, "BASELINE_NAIVE_CATALYST_ONLY", direction, catalyst_score, ["naive catalyst/event proximity only"], quote, pattern_config)
+            rows.append((catalyst_score, sig))
     rows.sort(key=lambda x: x[0], reverse=True)
     return [r[1] for r in rows[:limit]]
 
@@ -2950,6 +3138,1166 @@ def build_sentiment_news_summary(date_dir: Path, as_of: str) -> Dict[str, Any]:
     return {"used_sources": used, "skipped_sources": skipped, "keyword_counts": dict(keyword_counts), "summary": summary}
 
 
+def prepare_decision_rows(
+    daily_rows: Sequence[Mapping[str, Any]],
+    validation_bundle: Mapping[str, Any],
+    source_completeness: Mapping[str, Any],
+    config: Mapping[str, Any],
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    risk_config = dict(config.get("risk_config") or DEFAULT_RISK_CONFIG)
+    family_stats = build_family_outcome_stats(validation_bundle.get("outcomes", []))
+    calibration_metrics = build_calibration_metrics(validation_bundle)
+    run_kill_switches = build_run_kill_switches(
+        validation_bundle=validation_bundle,
+        source_completeness=source_completeness,
+        risk_config=risk_config,
+        calibration_metrics=calibration_metrics,
+    )
+    family_tiers = validation_bundle.get("family_tiers", {})
+    enriched = [
+        enrich_decision_row(
+            row,
+            family_tiers.get(str(row.get("pattern_family") or ""), {}),
+            family_stats.get(str(row.get("pattern_family") or ""), {}),
+            risk_config,
+            run_kill_switches,
+        )
+        for row in daily_rows
+    ]
+    return enriched, {
+        "risk_config": risk_config,
+        "family_stats": family_stats,
+        "calibration_metrics": calibration_metrics,
+        "run_kill_switches": run_kill_switches,
+    }
+
+
+def build_family_outcome_stats(outcomes: Sequence[Mapping[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
+    for outcome in outcomes:
+        if outcome.get("sample") == "VALIDATION" and outcome.get("horizon") == "5d":
+            grouped[str(outcome.get("pattern_family") or "")].append(outcome)
+    stats: Dict[str, Dict[str, Any]] = {}
+    for family, rows in grouped.items():
+        scored = [r for r in rows if r.get("status") == "SCORED" and r.get("net_r") is not None]
+        net_rs = [float(r["net_r"]) for r in scored]
+        wins = [r for r in net_rs if r > 0]
+        losses = [r for r in net_rs if r <= 0]
+        positives = sum(wins)
+        negatives = abs(sum(losses))
+        stats[family] = {
+            "pattern_family": family,
+            "signal_count": len(rows),
+            "scored_count": len(scored),
+            "partial_count": sum(1 for r in rows if r.get("status") == "PARTIAL"),
+            "unscorable_count": sum(1 for r in rows if r.get("status") == "UNSCORABLE"),
+            "win_count": len(wins),
+            "win_rate": safe_div(len(wins), len(scored)),
+            "avg_r": statistics.fmean(net_rs) if net_rs else None,
+            "median_r": statistics.median(net_rs) if net_rs else None,
+            "avg_win_r": statistics.fmean(wins) if wins else None,
+            "avg_loss_r": statistics.fmean(losses) if losses else None,
+            "payoff_ratio": (statistics.fmean(wins) / abs(statistics.fmean(losses))) if wins and losses else None,
+            "profit_factor": positives / negatives if negatives > 0 else (None if positives == 0 else 999.0),
+            "drawdown_proxy_r": drawdown_proxy(net_rs),
+            "worst_losing_streak": worst_losing_streak(net_rs),
+            "quote_coverage": safe_div(len(scored), len(rows)),
+        }
+    return stats
+
+
+def build_calibration_metrics(validation_bundle: Mapping[str, Any]) -> Dict[str, Any]:
+    family_tiers = validation_bundle.get("family_tiers", {})
+    buckets: Dict[str, Dict[str, Any]] = {}
+    scored_total = 0
+    brier_terms: List[float] = []
+    for outcome in validation_bundle.get("outcomes", []):
+        if outcome.get("sample") != "VALIDATION" or outcome.get("horizon") != "5d":
+            continue
+        if outcome.get("status") != "SCORED" or outcome.get("win") in (None, ""):
+            continue
+        tier = family_tiers.get(str(outcome.get("pattern_family") or ""), {})
+        p = num(tier.get("validation_probability_score"))
+        if p is None:
+            p = num(tier.get("validation_success_probability"))
+        if p is None:
+            continue
+        p = clamp(p, 0.0, 1.0)
+        win = 1.0 if int(outcome.get("win") or 0) else 0.0
+        brier_terms.append((p - win) ** 2)
+        scored_total += 1
+        lo = int(math.floor(p * 10.0)) * 10
+        hi = min(lo + 10, 100)
+        key = f"{lo:02d}-{hi:02d}%"
+        bucket = buckets.setdefault(key, {"bucket": key, "count": 0, "predicted_sum": 0.0, "wins": 0})
+        bucket["count"] += 1
+        bucket["predicted_sum"] += p
+        bucket["wins"] += int(win)
+    rows: List[Dict[str, Any]] = []
+    for key in sorted(buckets):
+        bucket = buckets[key]
+        rows.append(
+            {
+                "bucket": key,
+                "count": bucket["count"],
+                "avg_predicted_probability": safe_div(bucket["predicted_sum"], bucket["count"]),
+                "observed_win_rate": safe_div(bucket["wins"], bucket["count"]),
+                "wins": bucket["wins"],
+            }
+        )
+    brier = statistics.fmean(brier_terms) if brier_terms else None
+    return {
+        "schema_version": ARTIFACT_SCHEMA_VERSION,
+        "scored_prediction_count": scored_total,
+        "brier_score": brier,
+        "reliability_buckets": rows,
+        "status": "AVAILABLE" if brier is not None else "NOT_AVAILABLE",
+    }
+
+
+def build_run_kill_switches(
+    validation_bundle: Mapping[str, Any],
+    source_completeness: Mapping[str, Any],
+    risk_config: Mapping[str, Any],
+    calibration_metrics: Mapping[str, Any],
+) -> List[str]:
+    switches: List[str] = []
+    kill_cfg = risk_config.get("kill_switches") or {}
+    if kill_cfg.get("source_incomplete", True) and not source_completeness.get("source_complete"):
+        switches.append("KILL_SWITCH_SOURCE_INCOMPLETE")
+    scorecard = validation_bundle.get("validation_scorecard", [])
+    signals = sum(int(r.get("signal_count") or 0) for r in scorecard)
+    scored = sum(int(r.get("scored_count") or 0) for r in scorecard)
+    unscorable = sum(int(r.get("unscorable_count") or 0) for r in scorecard)
+    quote_coverage = safe_div(scored, signals)
+    unscorable_rate = safe_div(unscorable, signals)
+    if (
+        kill_cfg.get("low_quote_coverage", True)
+        and signals
+        and quote_coverage is not None
+        and quote_coverage < float(risk_config.get("min_quote_coverage", 0.25))
+    ):
+        switches.append("KILL_SWITCH_LOW_QUOTE_COVERAGE")
+    if (
+        kill_cfg.get("high_unscorable_rate", True)
+        and signals
+        and unscorable_rate is not None
+        and unscorable_rate > float(risk_config.get("max_unscorable_rate", 0.75))
+    ):
+        switches.append("KILL_SWITCH_HIGH_UNSCORABLE_RATE")
+    drawdowns = [float(r["drawdown_proxy_r"]) for r in scorecard if r.get("drawdown_proxy_r") not in (None, "")]
+    if (
+        kill_cfg.get("validation_drawdown_breached", True)
+        and drawdowns
+        and min(drawdowns) < float(risk_config.get("max_validation_drawdown_r", -12.0))
+    ):
+        switches.append("KILL_SWITCH_VALIDATION_DRAWDOWN_BREACHED")
+    brier = num(calibration_metrics.get("brier_score"))
+    if (
+        kill_cfg.get("calibration_fails", True)
+        and brier is not None
+        and brier > float(risk_config.get("max_calibration_brier", 0.35))
+    ):
+        switches.append("KILL_SWITCH_CALIBRATION_FAILS")
+    return sorted(set(switches))
+
+
+def enrich_decision_row(
+    row: Mapping[str, Any],
+    tier_info: Mapping[str, Any],
+    family_stats: Mapping[str, Any],
+    risk_config: Mapping[str, Any],
+    run_kill_switches: Sequence[str],
+) -> Dict[str, Any]:
+    enriched = dict(row)
+    blockers = set(enriched.get("block_reasons") or [])
+    setup = trade_setup_fields(enriched)
+    p = probability_decimal(enriched)
+    if p is None:
+        p = num(tier_info.get("validation_probability_score"))
+    if p is None:
+        p = num(tier_info.get("validation_success_probability"))
+    calibrated_probability = clamp(p, 0.0, 1.0) if p is not None else None
+    avg_win = num(family_stats.get("avg_win_r"))
+    avg_loss = num(family_stats.get("avg_loss_r"))
+    expected_r = None
+    if calibrated_probability is not None and avg_win is not None and avg_loss is not None:
+        expected_r = calibrated_probability * avg_win + (1.0 - calibrated_probability) * avg_loss
+    if expected_r is None:
+        expected_r = num(tier_info.get("validation_average_net_r")) or num(family_stats.get("avg_r"))
+    expected_hold = int(num(enriched.get("expected_hold_days")) or int(risk_config.get("expected_hold_days", 5)))
+    expected_r_per_day = safe_div(expected_r, max(expected_hold, 1))
+    validation_profit_factor = num(tier_info.get("validation_profit_factor")) or num(family_stats.get("profit_factor"))
+    validation_scored = int(num(tier_info.get("validation_scored_count")) or num(family_stats.get("scored_count")) or 0)
+    baselines_beaten = int(num(tier_info.get("beats_baselines_count")) or 0)
+    probability_score = probability_decimal_from_pct(enriched.get("probability_score"))
+    confidence_lower = num(tier_info.get("validation_probability_score"))
+    confidence_upper = wilson_upper_bound(
+        int(num(tier_info.get("validation_win_count")) or num(family_stats.get("win_count")) or 0),
+        validation_scored,
+    )
+    capacity = estimate_capacity_contracts(enriched, risk_config)
+    quote_validation_status = live_quote_validation_status(enriched, risk_config)
+    fill = fill_cost_fields(enriched, risk_config)
+    max_risk = num(enriched.get("max_risk_per_contract"))
+    ticker = str(enriched.get("ticker") or "")
+
+    if expected_r is None or expected_r <= float(risk_config.get("min_expected_r", 0.0)):
+        blockers.add("EXPECTED_R_NOT_POSITIVE_AFTER_COSTS")
+    if expected_r_per_day is None or expected_r_per_day <= float(risk_config.get("min_expected_r_per_day", 0.0)):
+        blockers.add("EXPECTED_R_PER_DAY_NOT_POSITIVE")
+    if validation_profit_factor is None or validation_profit_factor < float(risk_config.get("min_profit_factor", 1.2)):
+        blockers.add("PROFIT_FACTOR_BELOW_AUTO_APPROVAL")
+    if validation_scored < int(risk_config.get("min_oos_scored_outcomes", 30)):
+        blockers.add("LIMITED_OUT_OF_SAMPLE_SAMPLE")
+    if baselines_beaten < int(risk_config.get("min_baselines_beaten", 2)):
+        blockers.add("DOES_NOT_BEAT_TWO_BASELINES")
+    if probability_score is None or probability_score < float(risk_config.get("min_probability_score", 0.50)):
+        blockers.add("CALIBRATION_SCORE_MISSING_OR_WEAK")
+    if calibrated_probability is None or calibrated_probability < float(risk_config.get("min_calibrated_probability", 0.50)):
+        blockers.add("CALIBRATION_SCORE_MISSING_OR_WEAK")
+    if confidence_lower is None or confidence_lower < float(risk_config.get("min_confidence_lower_bound", 0.45)):
+        blockers.add("CONFIDENCE_BAND_TOO_WEAK")
+    if max_risk is not None and max_risk > float(risk_config.get("max_risk_per_trade", 1500.0)):
+        blockers.add("MAX_RISK_EXCEEDS_PER_TRADE_LIMIT")
+    if capacity < 1:
+        blockers.add("CAPACITY_TOO_SMALL_FOR_INTENDED_SIZE")
+    if ticker in set(risk_config.get("excluded_tickers") or []):
+        blockers.add("EXCLUDED_TICKER_OR_INSTRUMENT")
+    if ticker in set(risk_config.get("manual_only_tickers") or []):
+        blockers.add("MANUAL_ONLY_TICKER_OR_INSTRUMENT")
+    if ticker in set(risk_config.get("high_notional_index_tickers") or []) and max_risk and max_risk > float(risk_config.get("max_risk_per_trade", 1500.0)) * 0.5:
+        blockers.add("HIGH_NOTIONAL_INDEX_GUARDRAIL")
+    if quote_validation_status.startswith("FAILED"):
+        blockers.add("LIVE_QUOTE_VALIDATION_FAILED")
+    elif quote_validation_status.startswith("SKIPPED") and risk_config.get("live_quote_required_for_auto", False):
+        blockers.add("LIVE_QUOTE_VALIDATION_SKIPPED")
+    for switch in run_kill_switches:
+        blockers.add(switch)
+
+    hard_or_reject = blockers & (
+        HARD_TRADE_BLOCKERS
+        | EV_TRADE_BLOCKERS
+        | RISK_TRADE_BLOCKERS
+        | QUOTE_TRADE_BLOCKERS
+        | {"VALIDATION_EXPECTANCY_NEGATIVE"}
+    )
+    has_ticket = "No complete" not in str(setup.get("trade_setup") or "")
+    if not blockers and enriched.get("classification") == "TRADE":
+        status = "AUTO_APPROVED"
+    elif hard_or_reject:
+        status = "AVOID"
+    elif has_ticket:
+        status = "TRADE_REVIEW"
+    else:
+        status = "AVOID"
+
+    enriched.update(
+        {
+            "status": status,
+            "candidate_id": stable_candidate_id(enriched),
+            "block_reasons": sorted(blockers),
+            "expected_R": round(expected_r, 6) if expected_r is not None else None,
+            "expected_R_per_day": round(expected_r_per_day, 6) if expected_r_per_day is not None else None,
+            "avg_win_R": avg_win,
+            "avg_loss_R": avg_loss,
+            "payoff_ratio": family_stats.get("payoff_ratio"),
+            "validation_profit_factor": validation_profit_factor,
+            "validation_scored_count": validation_scored,
+            "beats_baselines_count": baselines_beaten,
+            "calibrated_probability": round(calibrated_probability, 6) if calibrated_probability is not None else None,
+            "confidence_lower_bound": confidence_lower,
+            "confidence_upper_bound": confidence_upper,
+            "confidence_uncertainty_band": confidence_band_text(confidence_lower, confidence_upper),
+            "capacity_estimate_contracts": capacity,
+            "live_quote_validation_status": quote_validation_status,
+            "fill_model": fill["fill_model"],
+            "slippage_estimate": fill["slippage_estimate"],
+            "fees_commissions": fill["fees_commissions"],
+            "entry_debit_credit": setup.get("entry_range"),
+            "full_ticket": setup.get("trade_setup"),
+            "all_legs": setup.get("occ_symbols"),
+            "expected_hold": f"{expected_hold} trading days",
+            "invalidation": enriched.get("invalidation_rule") or "",
+            "review_close_rule": enriched.get("review_close_rule") or "",
+            "iv_volatility_context": volatility_context(enriched),
+            "event_risk": event_risk_text(enriched),
+            "regime_alignment": regime_alignment_text(enriched),
+            "uw_evidence": uw_evidence_text(enriched),
+            "kill_switch_triggered": ";".join(run_kill_switches),
+        }
+    )
+    enriched["blocker_categories"] = decompose_blockers(enriched["block_reasons"])
+    enriched["promotion_requirements"] = promotion_needed_text(enriched)
+    return enriched
+
+
+def probability_decimal(row: Mapping[str, Any]) -> Optional[float]:
+    for key in ("trade_success_probability_pct", "success_probability_pct", "pattern_success_probability_pct"):
+        parsed = probability_decimal_from_pct(row.get(key))
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def probability_decimal_from_pct(value: Any) -> Optional[float]:
+    parsed = num(value)
+    if parsed is None:
+        return None
+    if parsed > 1.0:
+        return clamp(parsed / 100.0, 0.0, 1.0)
+    return clamp(parsed, 0.0, 1.0)
+
+
+def wilson_upper_bound(wins: int, total: int, z: float = 1.0) -> Optional[float]:
+    if total <= 0:
+        return None
+    phat = wins / total
+    denom = 1.0 + z * z / total
+    centre = phat + z * z / (2.0 * total)
+    margin = z * math.sqrt((phat * (1.0 - phat) + z * z / (4.0 * total)) / total)
+    return max(0.0, min(1.0, (centre + margin) / denom))
+
+
+def estimate_capacity_contracts(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> int:
+    volume = max(num(row.get("liquidity_volume")) or 0.0, 0.0)
+    oi = max(num(row.get("liquidity_open_interest")) or 0.0, 0.0)
+    max_contracts = int(risk_config.get("max_contracts_per_trade", 10) or 10)
+    if volume <= 0 and oi <= 0:
+        return 0
+    capacity = max(1, int(min(max_contracts, max(volume * 0.02, 0.0), max(oi * 0.01, 0.0) if oi else max_contracts)))
+    return capacity
+
+
+def live_quote_validation_status(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> str:
+    bid = num(row.get("entry_bid"))
+    ask = num(row.get("entry_ask"))
+    spread_pct = num(row.get("bid_ask_spread_pct"))
+    max_spread = (
+        float(risk_config.get("max_credit_spread_spread_pct", 0.65))
+        if row.get("strategy_kind") == "credit_spread"
+        else float(risk_config.get("max_bid_ask_spread_pct", 0.35))
+    )
+    if ask is None and row.get("strategy_kind") != "credit_spread":
+        return "FAILED_NO_COMPLETE_QUOTE"
+    if spread_pct is None:
+        return "FAILED_MISSING_SPREAD"
+    if spread_pct > max_spread:
+        return "FAILED_SPREAD_TOO_WIDE"
+    source = str(row.get("quote_source") or "")
+    if source in {"bot_eod", "hot_chains"} and risk_config.get("allow_conservative_historical_quote_for_auto", True):
+        return "CONSERVATIVE_HISTORICAL_QUOTE_ASSUMPTION"
+    if bid is not None or ask is not None:
+        return "SKIPPED_NO_SCHWAB_LIVE_CHAIN_HISTORICAL_QUOTE_ONLY"
+    return "FAILED_NO_COMPLETE_QUOTE"
+
+
+def fill_cost_fields(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> Dict[str, Any]:
+    spread = num(row.get("entry_ask")) - num(row.get("entry_bid")) if num(row.get("entry_ask")) is not None and num(row.get("entry_bid")) is not None else None
+    slippage = None
+    if spread is not None:
+        slippage = max(0.0, spread) * 100.0 * float(risk_config.get("slippage_pct_of_spread", 0.5))
+    fees = (
+        float(risk_config.get("round_trip_spread_fees", 2.60))
+        if row.get("strategy_kind") == "credit_spread"
+        else float(risk_config.get("round_trip_long_option_fees", 1.30))
+    )
+    fill_model = "conservative_credit" if row.get("strategy_kind") == "credit_spread" else "conservative_debit_at_ask"
+    return {"fill_model": fill_model, "slippage_estimate": slippage, "fees_commissions": fees}
+
+
+def stable_candidate_id(row: Mapping[str, Any]) -> str:
+    setup = trade_setup_fields(row)
+    key = stable_json(
+        {
+            "date": row.get("date"),
+            "ticker": row.get("ticker"),
+            "direction": row.get("direction"),
+            "ticket": setup.get("trade_setup"),
+            "entry": setup.get("entry_range"),
+            "family": row.get("pattern_family"),
+        }
+    )
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+
+
+def confidence_band_text(lower: Any, upper: Any) -> str:
+    lo = num(lower)
+    hi = num(upper)
+    if lo is None and hi is None:
+        return "n/a"
+    return f"{fmt_pct(lo)} to {fmt_pct(hi)}"
+
+
+def volatility_context(row: Mapping[str, Any]) -> str:
+    iv = num(row.get("quote_iv")) or num(row.get("avg_iv"))
+    if iv is None:
+        return "IV unavailable in local quote history"
+    if iv >= 0.75:
+        label = "elevated IV / IV-crush risk"
+    elif iv >= 0.40:
+        label = "moderate-to-high IV"
+    else:
+        label = "normal/lower IV"
+    return f"{label}: {fmt_pct(iv)}"
+
+
+def event_risk_text(row: Mapping[str, Any]) -> str:
+    dte = num(row.get("earnings_dte"))
+    next_date = row.get("next_earnings_date") or ""
+    if dte is None:
+        return "No near-term earnings date in local source"
+    if dte < 0:
+        return f"Earnings date already passed ({next_date})"
+    if dte <= 2:
+        return f"Near-term earnings/event risk in {int(dte)} calendar days ({next_date})"
+    return f"Earnings/event risk outside immediate window ({int(dte)} calendar days)"
+
+
+def regime_alignment_text(row: Mapping[str, Any]) -> str:
+    if "MARKET_REGIME_CONFLICT" in set(row.get("block_reasons") or []):
+        return f"conflicts with {row.get('current_market_alignment') or row.get('market_regime') or 'UNKNOWN'}"
+    return f"aligned/acceptable in {row.get('current_market_alignment') or row.get('market_regime') or 'UNKNOWN'}"
+
+
+def uw_evidence_text(row: Mapping[str, Any]) -> str:
+    return (
+        f"{row.get('reason_summary') or 'pattern signal'}; "
+        f"premium={fmt_num(row.get('hot_total_premium'))}; "
+        f"flow_bias={fmt_num(row.get('flow_premium_bias'))}; "
+        f"call_ratio={fmt_num(row.get('call_volume_ratio_30d'))}; "
+        f"put_ratio={fmt_num(row.get('put_volume_ratio_30d'))}"
+    )
+
+
+def build_decision_board_rows(
+    rows: Sequence[Mapping[str, Any]],
+    as_of: str,
+    source_complete: bool,
+    daily_decision: str,
+    artifact_paths: Optional[Mapping[str, str]] = None,
+) -> List[Dict[str, Any]]:
+    artifact_paths_text = stable_json(artifact_paths or {})
+    board: List[Dict[str, Any]] = []
+    for row in rows:
+        setup = trade_setup_fields(row)
+        board.append(
+            {
+                "run_date": as_of,
+                "pipeline_version": PIPELINE_VERSION,
+                "artifact_schema_version": DECISION_BOARD_SCHEMA_VERSION,
+                "daily_trade_decision": daily_decision,
+                "source_complete": bool(source_complete),
+                "candidate_id": row.get("candidate_id") or stable_candidate_id(row),
+                "status": row.get("status") or "TRADE_REVIEW",
+                "ticker": row.get("ticker"),
+                "direction": row.get("direction"),
+                "strategy": setup.get("strategy"),
+                "full_ticket": setup.get("trade_setup"),
+                "all_legs": setup.get("occ_symbols"),
+                "buy_sell": setup.get("buy_or_sell"),
+                "call_put": setup.get("call_or_put"),
+                "strikes": setup.get("strike_rates"),
+                "expiration": setup.get("expiration_date"),
+                "entry": setup.get("entry_range"),
+                "entry_debit_credit": row.get("entry_debit_credit") or setup.get("entry_range"),
+                "bid": row.get("entry_bid"),
+                "ask": row.get("entry_ask"),
+                "spread": row.get("bid_ask_spread_pct"),
+                "fill_model": row.get("fill_model"),
+                "slippage": row.get("slippage_estimate"),
+                "fees_commissions": row.get("fees_commissions"),
+                "max_risk": row.get("max_risk_per_contract"),
+                "target": row.get("target_profit"),
+                "stop": row.get("stop_rule"),
+                "time_stop": row.get("time_stop"),
+                "invalidation": row.get("invalidation"),
+                "review_close_rule": row.get("review_close_rule"),
+                "expected_hold": row.get("expected_hold"),
+                "expected_R": row.get("expected_R"),
+                "expected_R_per_day": row.get("expected_R_per_day"),
+                "avg_win_R": row.get("avg_win_R"),
+                "avg_loss_R": row.get("avg_loss_R"),
+                "payoff_ratio": row.get("payoff_ratio"),
+                "probability_score": row.get("probability_score"),
+                "calibrated_probability": row.get("calibrated_probability"),
+                "validation_tier": row.get("confidence_tier"),
+                "validation_scored_count": row.get("validation_scored_count"),
+                "validation_profit_factor": row.get("validation_profit_factor"),
+                "beats_baselines_count": row.get("beats_baselines_count"),
+                "confidence_uncertainty_band": row.get("confidence_uncertainty_band"),
+                "volume": row.get("liquidity_volume"),
+                "open_interest": row.get("liquidity_open_interest"),
+                "capacity_estimate": row.get("capacity_estimate_contracts"),
+                "DTE": row.get("dte"),
+                "IV_volatility_context": row.get("iv_volatility_context"),
+                "event_risk": row.get("event_risk"),
+                "regime_alignment": row.get("regime_alignment"),
+                "live_quote_validation_status": row.get("live_quote_validation_status"),
+                "catalyst_thesis": row.get("reason_summary"),
+                "UW_evidence": row.get("uw_evidence"),
+                "blockers": ";".join(row.get("block_reasons") or []),
+                "promotion_requirements": row.get("promotion_requirements") or promotion_needed_text(row),
+                "kill_switch_triggered": row.get("kill_switch_triggered") or "",
+                "artifact_paths": artifact_paths_text,
+            }
+        )
+    if not board:
+        board.append(no_trade_decision_board_row(as_of, source_complete, daily_decision, artifact_paths_text))
+    return board
+
+
+def no_trade_decision_board_row(
+    as_of: str,
+    source_complete: bool,
+    daily_decision: str,
+    artifact_paths_text: str,
+) -> Dict[str, Any]:
+    return {
+        "run_date": as_of,
+        "pipeline_version": PIPELINE_VERSION,
+        "artifact_schema_version": DECISION_BOARD_SCHEMA_VERSION,
+        "daily_trade_decision": daily_decision or "NO_TRADE",
+        "source_complete": bool(source_complete),
+        "candidate_id": f"NO_TRADE_{as_of}",
+        "status": "NO_TRADE",
+        "ticker": "",
+        "direction": "",
+        "full_ticket": "No candidate cleared required evidence, execution, risk, and validation gates.",
+        "entry": "",
+        "max_risk": "",
+        "expected_R": "",
+        "expected_R_per_day": "",
+        "probability_score": "",
+        "calibrated_probability": "",
+        "validation_tier": "",
+        "blockers": "NO_REVIEWABLE_TICKETS",
+        "promotion_requirements": "new source-complete evidence, valid quote, positive EV, validation edge, and no kill-switches",
+        "kill_switch_triggered": "",
+        "artifact_paths": artifact_paths_text,
+    }
+
+
+def validate_decision_board_rows(rows: Sequence[Mapping[str, Any]]) -> List[str]:
+    errors: List[str] = []
+    required = [
+        "run_date",
+        "pipeline_version",
+        "artifact_schema_version",
+        "daily_trade_decision",
+        "source_complete",
+        "candidate_id",
+        "status",
+        "ticker",
+        "direction",
+        "full_ticket",
+        "entry",
+        "max_risk",
+        "expected_R",
+        "expected_R_per_day",
+        "probability_score",
+        "calibrated_probability",
+        "validation_tier",
+        "blockers",
+        "promotion_requirements",
+        "kill_switch_triggered",
+        "artifact_paths",
+    ]
+    allowed_statuses = {"AUTO_APPROVED", "TRADE_REVIEW", "AVOID", "NO_TRADE"}
+    for idx, row in enumerate(rows, 1):
+        for field in required:
+            if field not in row:
+                errors.append(f"row {idx} missing {field}")
+        status = row.get("status")
+        if status not in allowed_statuses:
+            errors.append(f"row {idx} invalid status {status!r}")
+        if row.get("status") != "NO_TRADE" and not row.get("candidate_id"):
+            errors.append(f"row {idx} missing candidate_id")
+    return errors
+
+
+def decision_board_fieldnames() -> List[str]:
+    return [
+        "run_date",
+        "pipeline_version",
+        "artifact_schema_version",
+        "daily_trade_decision",
+        "source_complete",
+        "candidate_id",
+        "status",
+        "ticker",
+        "direction",
+        "strategy",
+        "full_ticket",
+        "all_legs",
+        "buy_sell",
+        "call_put",
+        "strikes",
+        "expiration",
+        "entry",
+        "entry_debit_credit",
+        "bid",
+        "ask",
+        "spread",
+        "fill_model",
+        "slippage",
+        "fees_commissions",
+        "max_risk",
+        "target",
+        "stop",
+        "time_stop",
+        "invalidation",
+        "review_close_rule",
+        "expected_hold",
+        "expected_R",
+        "expected_R_per_day",
+        "avg_win_R",
+        "avg_loss_R",
+        "payoff_ratio",
+        "probability_score",
+        "calibrated_probability",
+        "validation_tier",
+        "validation_scored_count",
+        "validation_profit_factor",
+        "beats_baselines_count",
+        "confidence_uncertainty_band",
+        "volume",
+        "open_interest",
+        "capacity_estimate",
+        "DTE",
+        "IV_volatility_context",
+        "event_risk",
+        "regime_alignment",
+        "live_quote_validation_status",
+        "catalyst_thesis",
+        "UW_evidence",
+        "blockers",
+        "promotion_requirements",
+        "kill_switch_triggered",
+        "artifact_paths",
+    ]
+
+
+def build_walk_forward_performance_rows(validation_bundle: Mapping[str, Any]) -> List[Dict[str, Any]]:
+    family_tiers = validation_bundle.get("family_tiers", {})
+    rows: List[Dict[str, Any]] = []
+    for row in validation_bundle.get("validation_scorecard", []):
+        tier = family_tiers.get(str(row.get("pattern_family") or ""), {})
+        rows.append(
+            {
+                "split": row.get("split"),
+                "sample": row.get("sample"),
+                "pattern_family": row.get("pattern_family"),
+                "validation_tier": tier.get("confidence_tier", ""),
+                "net_R_after_fees_slippage": row.get("average_net_r"),
+                "expected_R": tier.get("validation_average_net_r"),
+                "expected_R_per_day": safe_div(tier.get("validation_average_net_r"), 5),
+                "win_rate": row.get("win_rate_scored"),
+                "avg_R": row.get("average_net_r"),
+                "median_R": row.get("median_net_r"),
+                "profit_factor": row.get("profit_factor"),
+                "drawdown_proxy": row.get("drawdown_proxy_r"),
+                "losing_streak": row.get("worst_losing_streak"),
+                "brier_calibration_score": "",
+                "scored_count": row.get("scored_count"),
+                "unscorable_count": row.get("unscorable_count"),
+                "quote_coverage": row.get("tradeable_with_real_quotes_pct"),
+                "blocker_distribution": row.get("top_block_reasons"),
+                "baselines_beaten": tier.get("beats_baselines_count", ""),
+            }
+        )
+    return rows
+
+
+def walk_forward_fieldnames() -> List[str]:
+    return [
+        "split",
+        "sample",
+        "pattern_family",
+        "validation_tier",
+        "net_R_after_fees_slippage",
+        "expected_R",
+        "expected_R_per_day",
+        "win_rate",
+        "avg_R",
+        "median_R",
+        "profit_factor",
+        "drawdown_proxy",
+        "losing_streak",
+        "brier_calibration_score",
+        "scored_count",
+        "unscorable_count",
+        "quote_coverage",
+        "blocker_distribution",
+        "baselines_beaten",
+    ]
+
+
+def build_threshold_sensitivity_rows(
+    validation_bundle: Mapping[str, Any],
+    risk_config: Mapping[str, Any],
+) -> List[Dict[str, Any]]:
+    tiers = list((validation_bundle.get("family_tiers") or {}).values())
+    definitions = [
+        {
+            "threshold_set": "OLD_DAILY_TRADE_GATE",
+            "min_oos_scored": 20,
+            "min_profit_factor": 1.0,
+            "min_avg_R": 0.0,
+            "min_baselines_beaten": 1,
+            "notes": "Approximate legacy daily promotion pressure before strict acceptance gate.",
+        },
+        {
+            "threshold_set": "NEW_AUTO_APPROVED_GATE",
+            "min_oos_scored": int(risk_config.get("min_oos_scored_outcomes", 30)),
+            "min_profit_factor": float(risk_config.get("min_profit_factor", 1.2)),
+            "min_avg_R": float(risk_config.get("min_expected_r", 0.0)),
+            "min_baselines_beaten": int(risk_config.get("min_baselines_beaten", 2)),
+            "notes": "Configured strict gate used for AUTO_APPROVED.",
+        },
+        {
+            "threshold_set": "STRICT_EDGE_GATE",
+            "min_oos_scored": 50,
+            "min_profit_factor": 1.5,
+            "min_avg_R": 0.05,
+            "min_baselines_beaten": 3,
+            "notes": "Stress threshold for sensitivity review.",
+        },
+    ]
+    rows: List[Dict[str, Any]] = []
+    for definition in definitions:
+        passing = [
+            t
+            for t in tiers
+            if int(t.get("validation_scored_count") or 0) >= definition["min_oos_scored"]
+            and (num(t.get("validation_profit_factor")) or 0.0) >= definition["min_profit_factor"]
+            and (num(t.get("validation_average_net_r")) or -999.0) > definition["min_avg_R"]
+            and int(t.get("beats_baselines_count") or 0) >= definition["min_baselines_beaten"]
+        ]
+        rows.append(
+            {
+                **definition,
+                "passing_family_count": len(passing),
+                "passing_families": ";".join(str(t.get("pattern_family") or "") for t in passing[:25]),
+                "candidate_family_count": len(tiers),
+            }
+        )
+    return rows
+
+
+def threshold_sensitivity_fieldnames() -> List[str]:
+    return [
+        "threshold_set",
+        "min_oos_scored",
+        "min_profit_factor",
+        "min_avg_R",
+        "min_baselines_beaten",
+        "passing_family_count",
+        "passing_families",
+        "candidate_family_count",
+        "notes",
+    ]
+
+
+def build_ablation_attribution_rows(validation_bundle: Mapping[str, Any]) -> List[Dict[str, Any]]:
+    baseline_by_name = {
+        str(r.get("baseline") or ""): r for r in validation_bundle.get("baseline_comparison", [])
+    }
+    scorecard = validation_bundle.get("validation_scorecard", [])
+    combined_avg = statistics.fmean(
+        [float(r["average_net_r"]) for r in scorecard if r.get("average_net_r") not in (None, "")]
+    ) if any(r.get("average_net_r") not in (None, "") for r in scorecard) else None
+    rows = []
+    mappings = [
+        ("UW flow only", "BASELINE_NAIVE_UW_FLOW_ONLY"),
+        ("macro only", "BASELINE_NAIVE_CATALYST_ONLY"),
+        ("validation only", "validation_scorecard_pre_daily_gate"),
+        ("regime filter", "MARKET_REGIME_CONFLICT blocker impact"),
+        ("liquidity filter", "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"),
+        ("volatility filter", "VOL_EXPANSION_CATALYST families"),
+        ("fill/slippage filter", "SCORED option exits after fees"),
+        ("combined model", "pattern families after all gates"),
+    ]
+    for component, reference in mappings:
+        baseline = baseline_by_name.get(reference, {})
+        rows.append(
+            {
+                "component": component,
+                "reference": reference,
+                "average_net_R": baseline.get("average_net_r", combined_avg if component == "combined model" else ""),
+                "scored_count": baseline.get("scored_count", ""),
+                "interpretation": ablation_interpretation(component, baseline, combined_avg),
+            }
+        )
+    return rows
+
+
+def ablation_interpretation(component: str, baseline: Mapping[str, Any], combined_avg: Optional[float]) -> str:
+    if component == "combined model":
+        return "Combined model after discovery, validation, quote/liquidity, regime, cost, and risk gates."
+    if baseline:
+        return "Baseline scored directly against historical option outcomes."
+    return "Component is represented as a documented gate/filter; no separate standalone P/L model is promoted."
+
+
+def ablation_fieldnames() -> List[str]:
+    return ["component", "reference", "average_net_R", "scored_count", "interpretation"]
+
+
+def render_calibration_summary(as_of: str, metrics: Mapping[str, Any]) -> str:
+    lines = [
+        f"# Calibration Summary - {as_of}",
+        "",
+        f"- Artifact schema: {ARTIFACT_SCHEMA_VERSION}",
+        f"- Status: {metrics.get('status')}",
+        f"- Scored predictions: {metrics.get('scored_prediction_count', 0)}",
+        f"- Brier score: {fmt_num(metrics.get('brier_score'))}",
+        "",
+        "## Reliability Buckets",
+        "| Bucket | Count | Avg Predicted | Observed Win Rate | Wins |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for row in metrics.get("reliability_buckets", []):
+        lines.append(
+            f"| {row['bucket']} | {row['count']} | {fmt_pct(row.get('avg_predicted_probability'))} | "
+            f"{fmt_pct(row.get('observed_win_rate'))} | {row['wins']} |"
+        )
+    if not metrics.get("reliability_buckets"):
+        lines.append("| n/a | 0 | n/a | n/a | 0 |")
+    lines.extend(
+        [
+            "",
+            "Calibration is used as an approval gate. Missing or weak calibration keeps candidates out of AUTO_APPROVED.",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def build_shadow_ledger_rows(
+    as_of: str,
+    decision_rows: Sequence[Mapping[str, Any]],
+    validation_bundle: Mapping[str, Any],
+) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for row in decision_rows:
+        if row.get("status") not in {"AUTO_APPROVED", "TRADE_REVIEW"}:
+            continue
+        rows.append(
+            {
+                "recommendation_date": as_of,
+                "candidate_id": row.get("candidate_id"),
+                "status": row.get("status"),
+                "full_ticket": row.get("full_ticket"),
+                "entry_assumption": row.get("entry"),
+                "target": row.get("target"),
+                "stop": row.get("stop"),
+                "time_stop": row.get("time_stop"),
+                "max_favorable_excursion": "",
+                "max_adverse_excursion": "",
+                "exit_status": "OPEN_SHADOW_PENDING",
+                "net_R_after_costs": "",
+                "days_held": "",
+                "catalyst_thesis_validity": "pending",
+                "later_kill_switch_would_have_skipped": row.get("kill_switch_triggered"),
+            }
+        )
+    for outcome in validation_bundle.get("outcomes", []):
+        if outcome.get("sample") != "VALIDATION" or outcome.get("horizon") != "5d":
+            continue
+        rows.append(
+            {
+                "recommendation_date": outcome.get("signal_date"),
+                "candidate_id": hashlib.sha256(stable_json(outcome).encode("utf-8")).hexdigest()[:16],
+                "status": "HISTORICAL_SHADOW",
+                "full_ticket": outcome.get("lead_option_symbol"),
+                "entry_assumption": outcome.get("entry_credit") or outcome.get("entry_ask"),
+                "target": "",
+                "stop": "",
+                "time_stop": "5d validation horizon",
+                "max_favorable_excursion": "",
+                "max_adverse_excursion": "",
+                "exit_status": outcome.get("status"),
+                "net_R_after_costs": outcome.get("net_r"),
+                "days_held": "5",
+                "catalyst_thesis_validity": "historical_outcome_only",
+                "later_kill_switch_would_have_skipped": "not_replayed",
+            }
+        )
+    return rows
+
+
+def shadow_ledger_fieldnames() -> List[str]:
+    return [
+        "recommendation_date",
+        "candidate_id",
+        "status",
+        "full_ticket",
+        "entry_assumption",
+        "target",
+        "stop",
+        "time_stop",
+        "max_favorable_excursion",
+        "max_adverse_excursion",
+        "exit_status",
+        "net_R_after_costs",
+        "days_held",
+        "catalyst_thesis_validity",
+        "later_kill_switch_would_have_skipped",
+    ]
+
+
+def render_shadow_summary(as_of: str, rows: Sequence[Mapping[str, Any]]) -> str:
+    historical = [r for r in rows if r.get("status") == "HISTORICAL_SHADOW" and r.get("net_R_after_costs") not in (None, "")]
+    net_rs = [float(r["net_R_after_costs"]) for r in historical if num(r.get("net_R_after_costs")) is not None]
+    pending = [r for r in rows if r.get("exit_status") == "OPEN_SHADOW_PENDING"]
+    lines = [
+        f"# Shadow Outcome Summary - {as_of}",
+        "",
+        f"- Open AUTO_APPROVED/TRADE_REVIEW shadow rows: {len(pending)}",
+        f"- Historical validation shadow rows: {len(historical)}",
+        f"- Average net R after costs: {fmt_num(statistics.fmean(net_rs) if net_rs else None)}",
+        f"- Median net R after costs: {fmt_num(statistics.median(net_rs) if net_rs else None)}",
+        f"- Profit factor: {fmt_num(profit_factor_from_rs(net_rs))}",
+        f"- Worst losing streak: {worst_losing_streak(net_rs) if net_rs else 0}",
+        "",
+        "Rows are shadow records only. This pipeline does not place trades or orders.",
+    ]
+    return "\n".join(lines)
+
+
+def profit_factor_from_rs(net_rs: Sequence[float]) -> Optional[float]:
+    positives = sum(r for r in net_rs if r > 0)
+    negatives = abs(sum(r for r in net_rs if r < 0))
+    if negatives > 0:
+        return positives / negatives
+    if positives > 0:
+        return 999.0
+    return None
+
+
+def build_artifact_manifest(
+    as_of: str,
+    base_dir: Path,
+    config: Mapping[str, Any],
+    metadata: Mapping[str, Any],
+    paths: Mapping[str, str],
+    schema_errors: Sequence[str],
+    runtime_seconds: float,
+) -> Dict[str, Any]:
+    source_files = metadata.get("source_files_for_as_of") or []
+    return {
+        "run_date": as_of,
+        "pipeline_version": PIPELINE_VERSION,
+        "artifact_schema_version": MANIFEST_SCHEMA_VERSION,
+        "git_sha": current_git_sha(base_dir),
+        "command": metadata.get("command"),
+        "config_path": config.get("risk_config_path"),
+        "config_hash": config.get("risk_config_hash"),
+        "deterministic_seed": config.get("seed"),
+        "source_files_used": source_files,
+        "source_fingerprints": [fingerprint_source_label(label) for label in source_files],
+        "cache_status": {
+            "hit": any((counts or {}).get("bot_eod_cache_hit") for counts in (metadata.get("source_counts_by_date") or {}).values()),
+            "built": any((counts or {}).get("bot_eod_cache_built") for counts in (metadata.get("source_counts_by_date") or {}).values()),
+        },
+        "artifact_paths": dict(paths),
+        "artifact_schema_versions": {
+            "decision_board": DECISION_BOARD_SCHEMA_VERSION,
+            "manifest": MANIFEST_SCHEMA_VERSION,
+            "general": ARTIFACT_SCHEMA_VERSION,
+        },
+        "runtime_seconds": round(runtime_seconds, 3),
+        "warning_count": len(metadata.get("skipped_sources_for_as_of") or []),
+        "error_count": len(schema_errors),
+        "schema_errors": list(schema_errors),
+        "no_trade_order_placement": True,
+    }
+
+
+def current_git_sha(base_dir: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=base_dir,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    except Exception:
+        return "UNKNOWN"
+    return result.stdout.strip() if result.returncode == 0 else "UNKNOWN"
+
+
+def fingerprint_source_label(label: str) -> Dict[str, Any]:
+    path_text, _, member = str(label).partition("::")
+    path = Path(path_text)
+    row: Dict[str, Any] = {"label": label, "path": path_text, "member": member}
+    if not path.exists():
+        row["exists"] = False
+        return row
+    row.update({"exists": True, "bytes": path.stat().st_size, "mtime_ns": path.stat().st_mtime_ns})
+    try:
+        if member:
+            with zipfile.ZipFile(path) as zf:
+                info = zf.getinfo(member)
+            row.update({"member_bytes": info.file_size, "member_crc": info.CRC})
+        else:
+            h = hashlib.sha256()
+            with path.open("rb") as fh:
+                for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                    h.update(chunk)
+            row["sha256"] = h.hexdigest()
+    except Exception as exc:
+        row["fingerprint_error"] = str(exc)
+    return row
+
+
+def render_profitability_audit(
+    as_of: str,
+    metadata: Mapping[str, Any],
+    decision_rows: Sequence[Mapping[str, Any]],
+    validation_bundle: Mapping[str, Any],
+    threshold_rows: Sequence[Mapping[str, Any]],
+    calibration_metrics: Mapping[str, Any],
+    run_controls: Mapping[str, Any],
+) -> str:
+    counts = Counter(str(r.get("status") or "") for r in decision_rows)
+    blockers = Counter()
+    for row in decision_rows:
+        for blocker in str(row.get("blockers") or "").split(";"):
+            if blocker:
+                blockers[blocker] += 1
+    lines = [
+        f"# Profitability Audit - {as_of}",
+        "",
+        "## Old Pipeline Failure Modes",
+        "- Trade-looking rows could be promoted without a single status vocabulary tied to EV, quote quality, calibration, risk, and kill-switches.",
+        "- Pretty markdown could hide duplicated tickets, incomplete CSV contracts, weak OOS samples, and missing shadow outcome tracking.",
+        "- Baseline comparison existed, but it was not packaged with threshold sensitivity, calibration, manifest, and decision-board schema validation.",
+        "",
+        "## Root Causes",
+        "- Discovery, validation, reporting, and approval were too tightly implied by the old `TRADE` label.",
+        "- Realistic execution assumptions were scattered across outcome scoring instead of repeated on every current ticket.",
+        "- Run reproducibility existed in metadata, but not as a standalone artifact manifest with schema versions and source fingerprints.",
+        "",
+        "## Fixes Applied",
+        "- Added strict statuses: AUTO_APPROVED, TRADE_REVIEW, AVOID, and NO_TRADE.",
+        "- Added expected R, expected R/day, calibrated probability, confidence band, profit-factor, capacity, risk, fill, fees, slippage, lifecycle, and kill-switch gates.",
+        "- Added decision board JSON/CSV, artifact manifest, walk-forward performance, threshold sensitivity, calibration summary, shadow ledger, shadow summary, and this audit.",
+        "- Kept frozen V1 untouched and preserved the existing source-first validation engine.",
+        "",
+        "## Old vs New Behavior",
+        f"- New AUTO_APPROVED rows: {counts.get('AUTO_APPROVED', 0)}.",
+        f"- New TRADE_REVIEW rows: {counts.get('TRADE_REVIEW', 0)}.",
+        f"- New AVOID rows: {counts.get('AVOID', 0)}.",
+        f"- New NO_TRADE rows: {counts.get('NO_TRADE', 0)}.",
+        f"- Daily trade decision: {metadata.get('daily_trade_decision')}.",
+        "",
+        "## Examples From Required Dates",
+        f"- This artifact run date: {as_of}. Required reruns must include 2026-05-15 and 2026-05-18; compare their decision boards and manifests side by side.",
+        "- 2026-05-15: inspect `decision_board.csv`, `daily_report_2026-05-15.md`, and `artifact_manifest.json` for final counts and blockers.",
+        "- 2026-05-18: inspect `decision_board.csv`, `daily_report_2026-05-18.md`, and `artifact_manifest.json` for final counts and blockers.",
+        "",
+        "## Why Each Gate Exists",
+        "- EV and expected R/day prevent attractive narratives from outranking negative expectancy after fees and slippage.",
+        "- Profit factor, OOS count, calibration, and baselines reduce one-off luck and overfit promotion.",
+        "- Quote, spread, volume, OI, capacity, and max-risk gates prevent untradeable or oversized tickets.",
+        "- Macro, catalyst, event, volatility, and regime gates prevent directionally inconsistent tickets from being auto-approved.",
+        "- Kill-switches stop promotion when source, quote, validation, calibration, schema, or shadow evidence degrades.",
+        "",
+        "## What Got Better",
+        "- Every current setup is ticket-first and has explicit blocker/promotion requirements.",
+        "- CSV and JSON artifacts are schema-versioned and deduped by ticket key.",
+        "- Validation evidence now flows into current expected-R fields and shadow tracking.",
+        "",
+        "## What Got Worse",
+        "- AUTO_APPROVED is deliberately rarer. Some setups that used to appear actionable now require review because strict evidence is missing.",
+        "- The pipeline can be more conservative when live quote validation is unavailable.",
+        "",
+        "## Validation And Calibration",
+        f"- Validation splits: {len(validation_bundle.get('splits', []))}.",
+        f"- Calibration status: {calibration_metrics.get('status')} with Brier score {fmt_num(calibration_metrics.get('brier_score'))}.",
+        f"- Run kill-switches: {', '.join(run_controls.get('run_kill_switches') or []) or 'none'}.",
+        "",
+        "## Top Blockers",
+    ]
+    for blocker, count in blockers.most_common(12):
+        lines.append(f"- {blocker}: {count}")
+    if not blockers:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Threshold Sensitivity",
+        ]
+    )
+    for row in threshold_rows:
+        lines.append(
+            f"- {row['threshold_set']}: {row['passing_family_count']}/{row['candidate_family_count']} families pass "
+            f"(min scored {row['min_oos_scored']}, PF {row['min_profit_factor']}, baselines {row['min_baselines_beaten']})."
+        )
+    lines.extend(
+        [
+            "",
+            "## Known Limitations",
+            "- This does not guarantee profit; it only states whether the historical evidence supports positive expected edge under documented assumptions.",
+            "- Schwab/live-chain validation is not performed by this local pattern package unless a future integration supplies live quotes.",
+            "- Shadow outcomes are strongest for dates with future option quote coverage; sparse quote history remains a limiting factor.",
+            "- Corporate-action, delisting, and symbol-change handling is source-dependent and remains a data-risk item.",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_runbook(as_of: str, config: Mapping[str, Any]) -> str:
+    return "\n".join(
+        [
+            "# Options Pattern Pipeline Runbook",
+            "",
+            "## Run Command",
+            "```bash",
+            "python3 -m uwos.options_pattern_pipeline_v1 \\",
+            "  --base-dir /Users/anuppamvi/uw_root/tradedesk \\",
+            f"  --as-of {as_of} \\",
+            f"  --out-dir /Users/anuppamvi/uw_root/tradedesk/out/options_pattern_pipeline_v1/{as_of}",
+            "```",
+            "",
+            "## Artifact Meanings",
+            "- `decision_board.csv/json`: ticket-first status board and schema contract.",
+            "- `artifact_manifest.json`: reproducibility metadata, git SHA, source fingerprints, config hash, and artifact paths.",
+            "- `walk_forward_performance.csv`: validation performance after fees/slippage.",
+            "- `threshold_sensitivity.csv`: old-vs-new approval threshold comparison.",
+            "- `calibration_summary.md`: Brier score and reliability buckets.",
+            "- `shadow_recommendation_ledger.csv`: open and historical shadow rows.",
+            "",
+            "## Status Meanings",
+            "- AUTO_APPROVED: all configured EV, validation, execution, risk, lifecycle, macro, and kill-switch gates passed.",
+            "- TRADE_REVIEW: a complete ticket exists but one or more promotion requirements remain.",
+            "- AVOID: execution, risk, EV, quote, validation, or data quality makes the ticket unsuitable.",
+            "- NO_TRADE: no reviewable ticket exists for the run.",
+            "",
+            "## Before Trusting A Recommendation",
+            "- Inspect `decision_board.csv` first, then the daily report.",
+            "- Confirm live quote, spread, liquidity, event risk, and portfolio exposure manually before any real order.",
+            "- Review shadow ledger deterioration and kill-switches.",
+            "- Never treat historical edge as guaranteed profit.",
+            "",
+            "## Source Incomplete Handling",
+            "- If source completeness is false, the kill-switch prevents AUTO_APPROVED and the board falls to NO_TRADE/AVOID.",
+            "",
+            "## Rollback",
+            "- Restore behavior from `uwos/options_pattern_pipeline_v1_frozen_v1/` only if explicitly requested.",
+            "- Verify frozen V1 remains unchanged with `git diff --exit-code options-pattern-pipeline-v1 -- uwos/options_pattern_pipeline_v1_frozen_v1`.",
+            "",
+            "## GitHub Sync",
+            "- Commit only live pipeline, tests, configs, docs, and generated acceptance artifacts.",
+            "- Do not commit secrets, account numbers, Schwab credentials, tokens, or unrelated user changes.",
+            "",
+            f"Risk config hash: `{config.get('risk_config_hash')}`",
+        ]
+    )
+
+
 def write_outputs(
     out_dir: Path,
     base_dir: Path,
@@ -2964,11 +4312,18 @@ def write_outputs(
     sentiment_summary: Mapping[str, Any],
     source_completeness: Mapping[str, Any],
     macro_geo_bundle: Mapping[str, Any],
+    runtime_seconds: float,
 ) -> Dict[str, str]:
-    actionable = dedupe_rows_by_ticket([r for r in daily_rows if r["classification"] == "TRADE"])
-    watch = dedupe_rows_by_ticket([r for r in daily_rows if r["classification"] == "WATCH"])
-    blocked = dedupe_rows_by_ticket([r for r in daily_rows if r["classification"] in {"AVOID", "BLOCKED"}])
-    trade_review = build_trade_review_candidates(daily_rows)
+    decision_enriched_rows, run_controls = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        source_completeness,
+        config,
+    )
+    actionable = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AUTO_APPROVED"])
+    trade_review = build_trade_review_candidates(decision_enriched_rows)
+    watch = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "TRADE_REVIEW" and r.get("classification") == "WATCH"])
+    blocked = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AVOID"])
 
     discovered_rows = []
     for family, tier in sorted(validation_bundle["family_tiers"].items()):
@@ -2976,8 +4331,10 @@ def write_outputs(
         row["daily_pattern_config_json"] = stable_json(daily_pattern_config)
         discovered_rows.append(row)
 
+    daily_decision = daily_trade_decision(actionable, trade_review, blocked)
     metadata = {
         "pipeline_version": PIPELINE_VERSION,
+        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "created_utc": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
         "command": " ".join(sys.argv),
         "base_dir": str(base_dir),
@@ -2995,10 +4352,12 @@ def write_outputs(
         "input_policy": config["input_policy"],
         "source_completeness": source_completeness,
         "macro_geo_summary": macro_geo_bundle.get("summary", {}),
-        "daily_trade_decision": daily_trade_decision(actionable, trade_review),
+        "daily_trade_decision": daily_decision,
+        "run_kill_switches": run_controls["run_kill_switches"],
         "candidate_counts": {
-            "actionable_trades": len(actionable),
+            "auto_approved": len(actionable),
             "trade_review_candidates": len(trade_review),
+            "avoid": len(blocked),
             "watchlist_research_setups": len(watch),
             "blocked_candidates": len(blocked),
         },
@@ -3008,7 +4367,10 @@ def write_outputs(
             "max_chain_rows_per_day": config["max_chain_rows_per_day"],
             "max_flow_file_mb": config["max_flow_file_mb"],
             "bot_eod_cache_dir": config["bot_eod_cache_dir"],
+            "risk_config_path": config.get("risk_config_path"),
+            "risk_config_hash": config.get("risk_config_hash"),
         },
+        "risk_config": config.get("risk_config", {}),
         "verdict": final_verdict(validation_bundle, daily_rows),
     }
 
@@ -3030,6 +4392,17 @@ def write_outputs(
         "macro_geo_uw_confirmation": str(out_dir / "macro_geo_uw_confirmation.csv"),
         "macro_geo_promotion_decisions": str(out_dir / "macro_geo_promotion_decisions.csv"),
         "trade_review_candidates": str(out_dir / "trade_review_candidates.csv"),
+        "decision_board_json": str(out_dir / "decision_board.json"),
+        "decision_board_csv": str(out_dir / "decision_board.csv"),
+        "artifact_manifest": str(out_dir / "artifact_manifest.json"),
+        "walk_forward_performance": str(out_dir / "walk_forward_performance.csv"),
+        "threshold_sensitivity": str(out_dir / "threshold_sensitivity.csv"),
+        "calibration_summary": str(out_dir / "calibration_summary.md"),
+        "profitability_audit": str(out_dir / "profitability_audit.md"),
+        "shadow_recommendation_ledger": str(out_dir / "shadow_recommendation_ledger.csv"),
+        "shadow_outcome_summary": str(out_dir / "shadow_outcome_summary.md"),
+        "ablation_attribution": str(out_dir / "ablation_attribution.csv"),
+        "pattern_pipeline_runbook": str(out_dir / "pattern_pipeline_runbook.md"),
         "pattern_observability_matrix": str(out_dir / "pattern_observability_matrix.md"),
         "missed_pattern_audit": str(out_dir / "missed_pattern_audit.md"),
         "inventory": str(out_dir / "source_inventory.csv"),
@@ -3037,10 +4410,59 @@ def write_outputs(
         "regime_sector_validation": str(out_dir / "validation_by_regime_sector_ticker.csv"),
     }
 
+    decision_board_source_rows = dedupe_rows_by_ticket(decision_enriched_rows)
+    decision_board = build_decision_board_rows(
+        decision_board_source_rows,
+        as_of,
+        bool(source_completeness.get("source_complete")),
+        daily_decision,
+        paths,
+    )
+    schema_errors = validate_decision_board_rows(decision_board)
+    if schema_errors and "KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS" not in metadata["run_kill_switches"]:
+        metadata["run_kill_switches"] = sorted(set(metadata["run_kill_switches"] + ["KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS"]))
+    walk_forward_rows = build_walk_forward_performance_rows(validation_bundle)
+    threshold_rows = build_threshold_sensitivity_rows(validation_bundle, run_controls["risk_config"])
+    ablation_rows = build_ablation_attribution_rows(validation_bundle)
+    shadow_rows = build_shadow_ledger_rows(as_of, decision_board, validation_bundle)
+
     write_csv(Path(paths["actionable_trades"]), [trade_output_row(r) for r in actionable], trade_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [trade_output_row(r) for r in watch], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [blocked_output_row(r) for r in blocked], blocked_fieldnames())
     write_csv(Path(paths["trade_review_candidates"]), [trade_review_output_row(r) for r in trade_review], trade_review_fieldnames())
+    write_json(
+        Path(paths["decision_board_json"]),
+        {
+            "schema_version": DECISION_BOARD_SCHEMA_VERSION,
+            "run_date": as_of,
+            "daily_trade_decision": daily_decision,
+            "validation_errors": schema_errors,
+            "rows": decision_board,
+        },
+    )
+    write_csv(Path(paths["decision_board_csv"]), decision_board, decision_board_fieldnames())
+    write_csv(Path(paths["walk_forward_performance"]), walk_forward_rows, walk_forward_fieldnames())
+    write_csv(Path(paths["threshold_sensitivity"]), threshold_rows, threshold_sensitivity_fieldnames())
+    write_csv(Path(paths["ablation_attribution"]), ablation_rows, ablation_fieldnames())
+    Path(paths["calibration_summary"]).write_text(
+        render_calibration_summary(as_of, run_controls["calibration_metrics"]),
+        encoding="utf-8",
+    )
+    Path(paths["profitability_audit"]).write_text(
+        render_profitability_audit(
+            as_of,
+            metadata,
+            decision_board,
+            validation_bundle,
+            threshold_rows,
+            run_controls["calibration_metrics"],
+            run_controls,
+        ),
+        encoding="utf-8",
+    )
+    write_csv(Path(paths["shadow_recommendation_ledger"]), shadow_rows, shadow_ledger_fieldnames())
+    Path(paths["shadow_outcome_summary"]).write_text(render_shadow_summary(as_of, shadow_rows), encoding="utf-8")
+    Path(paths["pattern_pipeline_runbook"]).write_text(render_runbook(as_of, config), encoding="utf-8")
     write_csv(Path(paths["discovered_pattern_families"]), discovered_rows, discovered_fieldnames())
     write_json(Path(paths["market_regime_summary"]), snapshots[as_of].market_regime)
     write_json(Path(paths["sentiment_news_summary"]), sentiment_summary)
@@ -3075,6 +4497,18 @@ def write_outputs(
     write_csv(Path(paths["inventory"]), inventory_rows, inventory_fieldnames())
     write_csv(Path(paths["regime_sector_validation"]), validation_bundle["regime_sector"], regime_sector_fieldnames())
     write_json(Path(paths["metadata"]), metadata)
+    write_json(
+        Path(paths["artifact_manifest"]),
+        build_artifact_manifest(
+            as_of,
+            base_dir,
+            config,
+            metadata,
+            paths,
+            schema_errors,
+            runtime_seconds,
+        ),
+    )
     Path(paths["daily_report"]).write_text(
         render_daily_report(
             as_of,
@@ -3104,10 +4538,12 @@ def write_source_incomplete_outputs(
     inventory_rows: Sequence[Mapping[str, Any]],
     completeness: Mapping[str, Any],
     macro_geo_bundle: Mapping[str, Any],
+    runtime_seconds: float,
 ) -> Dict[str, str]:
     out_dir.mkdir(parents=True, exist_ok=True)
     metadata = {
         "pipeline_version": PIPELINE_VERSION,
+        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "created_utc": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
         "command": " ".join(sys.argv),
         "base_dir": str(base_dir),
@@ -3125,6 +4561,9 @@ def write_source_incomplete_outputs(
         "input_policy": config["input_policy"],
         "source_completeness": completeness,
         "macro_geo_summary": macro_geo_bundle.get("summary", {}),
+        "daily_trade_decision": "NO_TRADE",
+        "run_kill_switches": ["KILL_SWITCH_SOURCE_INCOMPLETE"],
+        "risk_config": config.get("risk_config", {}),
         "verdict": "BLOCKED_SOURCE_INCOMPLETE",
     }
     paths = {
@@ -3144,6 +4583,18 @@ def write_source_incomplete_outputs(
         "macro_geo_ticker_map": str(out_dir / "macro_geo_ticker_map.csv"),
         "macro_geo_uw_confirmation": str(out_dir / "macro_geo_uw_confirmation.csv"),
         "macro_geo_promotion_decisions": str(out_dir / "macro_geo_promotion_decisions.csv"),
+        "trade_review_candidates": str(out_dir / "trade_review_candidates.csv"),
+        "decision_board_json": str(out_dir / "decision_board.json"),
+        "decision_board_csv": str(out_dir / "decision_board.csv"),
+        "artifact_manifest": str(out_dir / "artifact_manifest.json"),
+        "walk_forward_performance": str(out_dir / "walk_forward_performance.csv"),
+        "threshold_sensitivity": str(out_dir / "threshold_sensitivity.csv"),
+        "calibration_summary": str(out_dir / "calibration_summary.md"),
+        "profitability_audit": str(out_dir / "profitability_audit.md"),
+        "shadow_recommendation_ledger": str(out_dir / "shadow_recommendation_ledger.csv"),
+        "shadow_outcome_summary": str(out_dir / "shadow_outcome_summary.md"),
+        "ablation_attribution": str(out_dir / "ablation_attribution.csv"),
+        "pattern_pipeline_runbook": str(out_dir / "pattern_pipeline_runbook.md"),
         "pattern_observability_matrix": str(out_dir / "pattern_observability_matrix.md"),
         "missed_pattern_audit": str(out_dir / "missed_pattern_audit.md"),
         "inventory": str(out_dir / "source_inventory.csv"),
@@ -3153,6 +4604,7 @@ def write_source_incomplete_outputs(
     write_csv(Path(paths["actionable_trades"]), [], trade_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [], blocked_fieldnames())
+    write_csv(Path(paths["trade_review_candidates"]), [], trade_review_fieldnames())
     write_csv(Path(paths["discovered_pattern_families"]), [], discovered_fieldnames())
     write_json(Path(paths["market_regime_summary"]), {"date": as_of, "regime": "UNKNOWN", "source": "source_incomplete"})
     write_json(
@@ -3164,6 +4616,44 @@ def write_source_incomplete_outputs(
     write_csv(Path(paths["validation_details"]), [], validation_detail_fieldnames())
     write_csv(Path(paths["baseline_comparison"]), [], baseline_fieldnames())
     write_csv(Path(paths["missed_mover_audit"]), [], missed_fieldnames())
+    decision_board = build_decision_board_rows([], as_of, False, "NO_TRADE", paths)
+    if decision_board:
+        decision_board[0]["kill_switch_triggered"] = "KILL_SWITCH_SOURCE_INCOMPLETE"
+        decision_board[0]["blockers"] = "KILL_SWITCH_SOURCE_INCOMPLETE;NO_REVIEWABLE_TICKETS"
+    schema_errors = validate_decision_board_rows(decision_board)
+    write_json(
+        Path(paths["decision_board_json"]),
+        {
+            "schema_version": DECISION_BOARD_SCHEMA_VERSION,
+            "run_date": as_of,
+            "daily_trade_decision": "NO_TRADE",
+            "validation_errors": schema_errors,
+            "rows": decision_board,
+        },
+    )
+    write_csv(Path(paths["decision_board_csv"]), decision_board, decision_board_fieldnames())
+    write_csv(Path(paths["walk_forward_performance"]), [], walk_forward_fieldnames())
+    write_csv(Path(paths["threshold_sensitivity"]), build_threshold_sensitivity_rows(empty_validation_bundle(), config.get("risk_config", {})), threshold_sensitivity_fieldnames())
+    write_csv(Path(paths["ablation_attribution"]), [], ablation_fieldnames())
+    Path(paths["calibration_summary"]).write_text(
+        render_calibration_summary(as_of, build_calibration_metrics(empty_validation_bundle())),
+        encoding="utf-8",
+    )
+    Path(paths["profitability_audit"]).write_text(
+        render_profitability_audit(
+            as_of,
+            metadata,
+            decision_board,
+            empty_validation_bundle(),
+            build_threshold_sensitivity_rows(empty_validation_bundle(), config.get("risk_config", {})),
+            build_calibration_metrics(empty_validation_bundle()),
+            {"run_kill_switches": ["KILL_SWITCH_SOURCE_INCOMPLETE"]},
+        ),
+        encoding="utf-8",
+    )
+    write_csv(Path(paths["shadow_recommendation_ledger"]), [], shadow_ledger_fieldnames())
+    Path(paths["shadow_outcome_summary"]).write_text(render_shadow_summary(as_of, []), encoding="utf-8")
+    Path(paths["pattern_pipeline_runbook"]).write_text(render_runbook(as_of, config), encoding="utf-8")
     write_json(Path(paths["macro_geo_catalysts"]), macro_geo_bundle.get("catalysts", []))
     write_csv(Path(paths["macro_geo_ticker_map"]), macro_geo_bundle.get("ticker_map", []), macro_geo_ticker_map_fieldnames())
     write_csv(
@@ -3190,6 +4680,18 @@ def write_source_incomplete_outputs(
     write_csv(Path(paths["inventory"]), inventory_rows, inventory_fieldnames())
     write_csv(Path(paths["regime_sector_validation"]), [], regime_sector_fieldnames())
     write_json(Path(paths["metadata"]), metadata)
+    write_json(
+        Path(paths["artifact_manifest"]),
+        build_artifact_manifest(
+            as_of,
+            base_dir,
+            config,
+            metadata,
+            paths,
+            schema_errors,
+            runtime_seconds,
+        ),
+    )
     Path(paths["daily_report"]).write_text(
         render_source_incomplete_report(as_of, completeness, macro_geo_bundle, metadata),
         encoding="utf-8",
@@ -3201,6 +4703,8 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
     setup = trade_setup_fields(r)
     return {
         "classification": r.get("classification"),
+        "status": r.get("status"),
+        "candidate_id": r.get("candidate_id"),
         "ticker": r.get("ticker"),
         "direction": r.get("direction"),
         "discovered_pattern_family": r.get("pattern_family"),
@@ -3224,10 +4728,25 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "trade_setup": setup["trade_setup"],
         "occ_symbols": setup["occ_symbols"],
         "suggested_entry_debit_credit_range": setup["entry_range"],
+        "fill_model": r.get("fill_model"),
+        "slippage_estimate": r.get("slippage_estimate"),
+        "fees_commissions": r.get("fees_commissions"),
         "max_risk_per_contract": r.get("max_risk_per_contract"),
         "target_profit": r.get("target_profit"),
         "stop_invalidation_rule": r.get("stop_rule"),
         "time_stop": r.get("time_stop"),
+        "invalidation": r.get("invalidation"),
+        "review_close_rule": r.get("review_close_rule"),
+        "expected_hold": r.get("expected_hold"),
+        "expected_R": r.get("expected_R"),
+        "expected_R_per_day": r.get("expected_R_per_day"),
+        "avg_win_R": r.get("avg_win_R"),
+        "avg_loss_R": r.get("avg_loss_R"),
+        "payoff_ratio": r.get("payoff_ratio"),
+        "calibrated_probability": r.get("calibrated_probability"),
+        "validation_profit_factor": r.get("validation_profit_factor"),
+        "capacity_estimate_contracts": r.get("capacity_estimate_contracts"),
+        "live_quote_validation_status": r.get("live_quote_validation_status"),
         "position_size_tier": r.get("position_size_tier"),
         "catalyst_thesis": r.get("reason_summary"),
         "historical_evidence_summary": r.get("validation_note"),
@@ -3240,18 +4759,24 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
-def daily_trade_decision(actionable: Sequence[Mapping[str, Any]], trade_review: Sequence[Mapping[str, Any]]) -> str:
+def daily_trade_decision(
+    actionable: Sequence[Mapping[str, Any]],
+    trade_review: Sequence[Mapping[str, Any]],
+    blocked: Sequence[Mapping[str, Any]] = (),
+) -> str:
     if actionable:
-        return "AUTO_APPROVED_TRADES"
+        return "AUTO_APPROVED"
     if trade_review:
-        return "REVIEW_REQUIRED_NO_AUTO_APPROVAL"
-    return "NO_REVIEWABLE_TICKETS"
+        return "TRADE_REVIEW"
+    return "NO_TRADE"
 
 
 def build_trade_review_candidates(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
     candidates_by_ticket: Dict[Tuple[str, str, str, str], Mapping[str, Any]] = {}
     for row in rows:
-        if row.get("classification") == "TRADE":
+        if row.get("status") == "AUTO_APPROVED":
+            continue
+        if row.get("status") not in (None, "TRADE_REVIEW"):
             continue
         if trade_review_status(row) in {"NO_TRADE_NO_QUOTE", "NO_TRADE_BAD_CONTRACT"}:
             continue
@@ -3315,6 +4840,12 @@ def trade_review_status(row: Mapping[str, Any]) -> str:
         return "NO_TRADE_NO_QUOTE"
     if blockers & HARD_TRADE_BLOCKERS:
         return "NO_TRADE_BAD_CONTRACT"
+    if blockers & EV_TRADE_BLOCKERS:
+        return "EV_REVIEW"
+    if blockers & RISK_TRADE_BLOCKERS:
+        return "RISK_REVIEW"
+    if any(str(b).startswith(KILL_SWITCH_PREFIX) for b in blockers):
+        return "KILL_SWITCH_REVIEW"
     score = num(row.get("probability_score")) or 0.0
     success = num(row.get("success_probability_pct")) or 0.0
     tier = str(row.get("confidence_tier") or "")
@@ -3334,6 +4865,9 @@ def trade_review_rank(status: str) -> int:
         "TACTICAL_REVIEW": 5,
         "PROMISING_REVIEW": 4,
         "MACRO_CONFLICT_REVIEW": 3,
+        "EV_REVIEW": 3,
+        "RISK_REVIEW": 3,
+        "KILL_SWITCH_REVIEW": 3,
         "VALIDATION_REVIEW": 2,
         "RESEARCH_REVIEW": 1,
         "NO_TRADE_BAD_CONTRACT": 0,
@@ -3354,6 +4888,18 @@ def promotion_needed_text(row: Mapping[str, Any]) -> str:
         needs.append("larger scored OOS sample")
     if "DOES_NOT_BEAT_TWO_BASELINES" in blockers:
         needs.append("edge over at least two baselines")
+    if "PROFIT_FACTOR_BELOW_AUTO_APPROVAL" in blockers:
+        needs.append("profit factor at or above approval threshold")
+    if "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS" in blockers:
+        needs.append("positive expected R after costs")
+    if "EXPECTED_R_PER_DAY_NOT_POSITIVE" in blockers:
+        needs.append("positive expected R per day")
+    if "CALIBRATION_SCORE_MISSING_OR_WEAK" in blockers or "CONFIDENCE_BAND_TOO_WEAK" in blockers:
+        needs.append("better calibration/confidence band")
+    if "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT" in blockers:
+        needs.append("smaller defined-risk ticket")
+    if any(str(b).startswith(KILL_SWITCH_PREFIX) for b in blockers):
+        needs.append("kill-switch cleared")
     if "NEAR_TERM_EARNINGS_EVENT_RISK" in blockers:
         needs.append("earnings/event-risk plan")
     if blockers & HARD_TRADE_BLOCKERS:
@@ -3573,7 +5119,7 @@ def ticket_row(
     index: int,
 ) -> str:
     setup = trade_setup_fields(row)
-    why = "Actionable" if status == "TRADE" else blocker_text(row) or row.get("why_actionable_now") or ""
+    why = "All configured auto-approval gates passed" if status == "AUTO_APPROVED" else blocker_text(row) or row.get("why_actionable_now") or ""
     return (
         f"| {index} | {status} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
         f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('strategy'))} | "
@@ -3752,9 +5298,9 @@ def render_daily_report(
     )
     lines.append("")
 
-    append_ticket_table(lines, "Actionable Trade Tickets", actionable, "TRADE", 10, "No actionable trade tickets.")
+    append_ticket_table(lines, "AUTO_APPROVED Trade Tickets", actionable, "AUTO_APPROVED", 10, "No auto-approved trade tickets.")
     append_trade_review_table(lines, trade_review, 12)
-    append_ticket_table(lines, "Watch Tickets", watch, "WATCH", 15, "No watch tickets passed the daily screens.")
+    append_ticket_table(lines, "Trade-Review Watch Tickets", watch, "TRADE_REVIEW", 15, "No review watch tickets passed the daily screens.")
     append_ticket_table(lines, "Avoid / Blocked Tickets", blocked, "AVOID", 15, "No blocked tickets after daily classification.")
     append_strategy_glossary(lines, list(actionable[:10]) + list(trade_review[:12]) + list(watch[:15]) + list(blocked[:15]))
 
@@ -3842,6 +5388,8 @@ def write_json(path: Path, data: Any) -> None:
 def trade_fieldnames() -> List[str]:
     return [
         "classification",
+        "status",
+        "candidate_id",
         "ticker",
         "direction",
         "discovered_pattern_family",
@@ -3865,10 +5413,25 @@ def trade_fieldnames() -> List[str]:
         "trade_setup",
         "occ_symbols",
         "suggested_entry_debit_credit_range",
+        "fill_model",
+        "slippage_estimate",
+        "fees_commissions",
         "max_risk_per_contract",
         "target_profit",
         "stop_invalidation_rule",
         "time_stop",
+        "invalidation",
+        "review_close_rule",
+        "expected_hold",
+        "expected_R",
+        "expected_R_per_day",
+        "avg_win_R",
+        "avg_loss_R",
+        "payoff_ratio",
+        "calibrated_probability",
+        "validation_profit_factor",
+        "capacity_estimate_contracts",
+        "live_quote_validation_status",
         "position_size_tier",
         "catalyst_thesis",
         "historical_evidence_summary",
@@ -4250,6 +5813,8 @@ def baseline_note(name: str) -> str:
         "BASELINE_RANDOM_SAME_DATE_LIQUIDITY": "Deterministic random ticker/option baseline from same date and approximate liquidity.",
         "BASELINE_SPY_QQQ_DIRECTIONAL": "Simple SPY/QQQ same-day direction option baseline.",
         "BASELINE_UNUSUAL_VOLUME_ONLY": "Ranks options volume expansion without full pattern/risk gates.",
+        "BASELINE_NAIVE_UW_FLOW_ONLY": "Ranks raw UW flow premium/bias without full pattern/risk gates.",
+        "BASELINE_NAIVE_CATALYST_ONLY": "Ranks naive catalyst/event proximity and premium concentration without full pattern/risk gates.",
         "BASELINE_SIMPLE_PRICE_MOMENTUM": "Ranks same-day stock momentum with available option quotes.",
     }
     return notes.get(name, "")

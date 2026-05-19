@@ -89,6 +89,16 @@ Each run writes:
 - `actionable_trades.csv`
 - `watchlist_research_setups.csv`
 - `blocked_candidates.csv`
+- `trade_review_candidates.csv`
+- `decision_board.json`
+- `decision_board.csv`
+- `artifact_manifest.json`
+- `walk_forward_performance.csv`
+- `threshold_sensitivity.csv`
+- `calibration_summary.md`
+- `profitability_audit.md`
+- `shadow_recommendation_ledger.csv`
+- `shadow_outcome_summary.md`
 - `discovered_pattern_families.csv`
 - `market_regime_summary.json`
 - `sentiment_news_summary.json`
@@ -110,3 +120,26 @@ example, a broad parent such as `VOL_EXPANSION_CATALYST` is validated as
 families like `VOL_EXPANSION_CATALYST__BULLISH__LONG_OPTION__TECHNOLOGY` so a
 repeatable sector-specific edge is not hidden by unrelated bearish, spread, or
 non-sector variants.
+
+## Acceptance-Grade Decision Board
+
+The old discovery classification remains available for compatibility, but the
+operator-facing decision status is now:
+
+- `AUTO_APPROVED`: all expected-R, expected-R/day, profit-factor, OOS sample,
+  baseline, calibration, confidence, execution, risk, capacity, macro/event, and
+  kill-switch gates passed.
+- `TRADE_REVIEW`: a complete ticket exists, but one or more promotion
+  requirements remain.
+- `AVOID`: quote, liquidity, risk, EV, validation, calibration, or instrument
+  quality fails a reject gate.
+- `NO_TRADE`: no reviewable ticket exists for the run.
+
+Risk and approval thresholds are explicit in:
+
+```text
+configs/options_pattern_pipeline_v1_hardening.json
+```
+
+Use `--risk-config PATH` to run with a different JSON config. The selected
+config hash is written to `artifact_manifest.json`.
