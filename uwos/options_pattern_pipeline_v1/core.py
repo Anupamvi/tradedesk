@@ -128,6 +128,14 @@ DEFAULT_RISK_CONFIG = {
     "max_unscorable_rate": 0.75,
     "max_validation_drawdown_r": -12.0,
     "max_calibration_brier": 0.35,
+    "min_edge_review_expected_r": 0.05,
+    "min_edge_review_profit_factor": 1.30,
+    "min_edge_review_scored_outcomes": 30,
+    "min_edge_review_quote_coverage": 0.50,
+    "min_edge_review_baselines_beaten": 2,
+    "min_regime_edge_review_expected_r": 0.05,
+    "min_regime_edge_review_profit_factor": 1.20,
+    "min_regime_edge_review_scored_outcomes": 20,
     "contract_fee": 0.65,
     "round_trip_long_option_fees": 1.30,
     "round_trip_spread_fees": 2.60,
@@ -2286,9 +2294,11 @@ def run_historical_validation(
         )
 
     validation_scorecard = summarize_outcomes(all_outcomes, sample="VALIDATION")
+    validation_gate_outcomes = select_validation_gate_outcomes(all_outcomes)
+    validation_gate_scorecard = summarize_outcomes(validation_gate_outcomes, sample="VALIDATION")
     train_scorecard = summarize_outcomes(all_outcomes, sample="TRAIN")
     baseline_comparison = summarize_baselines(all_baseline_outcomes)
-    family_tiers = assign_family_tiers(validation_scorecard, baseline_comparison)
+    family_tiers = assign_family_tiers(validation_gate_scorecard, baseline_comparison)
     regime_sector = summarize_regime_sector(all_outcomes)
     return {
         "splits": splits,
@@ -2297,6 +2307,7 @@ def run_historical_validation(
         "outcomes": all_outcomes,
         "baseline_outcomes": all_baseline_outcomes,
         "validation_scorecard": validation_scorecard,
+        "validation_gate_scorecard": validation_gate_scorecard,
         "train_scorecard": train_scorecard,
         "baseline_comparison": baseline_comparison,
         "family_tiers": family_tiers,
@@ -2312,6 +2323,7 @@ def empty_validation_bundle() -> Dict[str, Any]:
         "outcomes": [],
         "baseline_outcomes": [],
         "validation_scorecard": [],
+        "validation_gate_scorecard": [],
         "train_scorecard": [],
         "baseline_comparison": [],
         "family_tiers": {},
@@ -2614,6 +2626,21 @@ def nth_future_date(ordered_dates: Sequence[str], signal_date: str, horizon: int
     if target_idx >= len(ordered_dates):
         return None
     return ordered_dates[target_idx]
+
+
+def select_validation_gate_outcomes(outcomes: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
+    """Use each validation month once for daily gates and backtest summaries."""
+    validation_5d = [
+        o
+        for o in outcomes
+        if o.get("sample") == "VALIDATION" and o.get("horizon") == "5d"
+    ]
+    cumulative = [
+        o
+        for o in validation_5d
+        if str(o.get("split") or "").startswith("cumulative_to_")
+    ]
+    return cumulative or validation_5d
 
 
 def summarize_outcomes(outcomes: Sequence[Mapping[str, Any]], sample: str) -> List[Dict[str, Any]]:
@@ -3146,6 +3173,7 @@ def prepare_decision_rows(
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     risk_config = dict(config.get("risk_config") or DEFAULT_RISK_CONFIG)
     family_stats = build_family_outcome_stats(validation_bundle.get("outcomes", []))
+    regime_edge_stats = build_regime_edge_stats(validation_bundle.get("outcomes", []))
     calibration_metrics = build_calibration_metrics(validation_bundle)
     run_kill_switches = build_run_kill_switches(
         validation_bundle=validation_bundle,
@@ -3159,6 +3187,13 @@ def prepare_decision_rows(
             row,
             family_tiers.get(str(row.get("pattern_family") or ""), {}),
             family_stats.get(str(row.get("pattern_family") or ""), {}),
+            regime_edge_stats.get(
+                (
+                    str(row.get("pattern_family") or ""),
+                    str(row.get("current_market_alignment") or row.get("market_regime") or "UNKNOWN"),
+                ),
+                {},
+            ),
             risk_config,
             run_kill_switches,
         )
@@ -3167,6 +3202,7 @@ def prepare_decision_rows(
     return enriched, {
         "risk_config": risk_config,
         "family_stats": family_stats,
+        "regime_edge_stats": regime_edge_stats,
         "calibration_metrics": calibration_metrics,
         "run_kill_switches": run_kill_switches,
     }
@@ -3174,9 +3210,8 @@ def prepare_decision_rows(
 
 def build_family_outcome_stats(outcomes: Sequence[Mapping[str, Any]]) -> Dict[str, Dict[str, Any]]:
     grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
-    for outcome in outcomes:
-        if outcome.get("sample") == "VALIDATION" and outcome.get("horizon") == "5d":
-            grouped[str(outcome.get("pattern_family") or "")].append(outcome)
+    for outcome in select_validation_gate_outcomes(outcomes):
+        grouped[str(outcome.get("pattern_family") or "")].append(outcome)
     stats: Dict[str, Dict[str, Any]] = {}
     for family, rows in grouped.items():
         scored = [r for r in rows if r.get("status") == "SCORED" and r.get("net_r") is not None]
@@ -3206,14 +3241,34 @@ def build_family_outcome_stats(outcomes: Sequence[Mapping[str, Any]]) -> Dict[st
     return stats
 
 
+def build_regime_edge_stats(outcomes: Sequence[Mapping[str, Any]]) -> Dict[Tuple[str, str], Dict[str, Any]]:
+    grouped: Dict[Tuple[str, str], List[Mapping[str, Any]]] = defaultdict(list)
+    for outcome in select_validation_gate_outcomes(outcomes):
+        key = (str(outcome.get("pattern_family") or ""), str(outcome.get("market_regime") or "UNKNOWN"))
+        grouped[key].append(outcome)
+    stats: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    for key, rows in grouped.items():
+        scored = [r for r in rows if r.get("status") == "SCORED" and r.get("net_r") is not None]
+        net_rs = [float(r["net_r"]) for r in scored]
+        positives = sum(r for r in net_rs if r > 0)
+        negatives = abs(sum(r for r in net_rs if r < 0))
+        stats[key] = {
+            "signal_count": len(rows),
+            "scored_count": len(scored),
+            "win_rate": safe_div(sum(1 for r in net_rs if r > 0), len(scored)),
+            "avg_r": statistics.fmean(net_rs) if net_rs else None,
+            "profit_factor": positives / negatives if negatives > 0 else (None if positives == 0 else 999.0),
+            "quote_coverage": safe_div(len(scored), len(rows)),
+        }
+    return stats
+
+
 def build_calibration_metrics(validation_bundle: Mapping[str, Any]) -> Dict[str, Any]:
     family_tiers = validation_bundle.get("family_tiers", {})
     buckets: Dict[str, Dict[str, Any]] = {}
     scored_total = 0
     brier_terms: List[float] = []
-    for outcome in validation_bundle.get("outcomes", []):
-        if outcome.get("sample") != "VALIDATION" or outcome.get("horizon") != "5d":
-            continue
+    for outcome in select_validation_gate_outcomes(validation_bundle.get("outcomes", [])):
         if outcome.get("status") != "SCORED" or outcome.get("win") in (None, ""):
             continue
         tier = family_tiers.get(str(outcome.get("pattern_family") or ""), {})
@@ -3265,7 +3320,7 @@ def build_run_kill_switches(
     kill_cfg = risk_config.get("kill_switches") or {}
     if kill_cfg.get("source_incomplete", True) and not source_completeness.get("source_complete"):
         switches.append("KILL_SWITCH_SOURCE_INCOMPLETE")
-    scorecard = validation_bundle.get("validation_scorecard", [])
+    scorecard = validation_bundle.get("validation_gate_scorecard") or validation_bundle.get("validation_scorecard", [])
     signals = sum(int(r.get("signal_count") or 0) for r in scorecard)
     scored = sum(int(r.get("scored_count") or 0) for r in scorecard)
     unscorable = sum(int(r.get("unscorable_count") or 0) for r in scorecard)
@@ -3302,10 +3357,92 @@ def build_run_kill_switches(
     return sorted(set(switches))
 
 
+def hard_review_blockers(blockers: Iterable[str]) -> set[str]:
+    blocker_set = set(blockers)
+    hard_kill_switches = {
+        "KILL_SWITCH_SOURCE_INCOMPLETE",
+        "KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS",
+    }
+    return blocker_set & (
+        HARD_TRADE_BLOCKERS
+        | RISK_TRADE_BLOCKERS
+        | QUOTE_TRADE_BLOCKERS
+        | hard_kill_switches
+        | {
+            "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS",
+            "EXPECTED_R_PER_DAY_NOT_POSITIVE",
+            "VALIDATION_EXPECTANCY_NEGATIVE",
+        }
+    )
+
+
+def qualifies_for_validated_edge_review(
+    blockers: Iterable[str],
+    has_ticket: bool,
+    family_stats: Mapping[str, Any],
+    regime_edge_stats: Mapping[str, Any],
+    risk_config: Mapping[str, Any],
+    current_regime: str,
+    baselines_beaten: int,
+) -> Tuple[bool, str, str]:
+    blocker_set = set(blockers)
+    if not has_ticket or hard_review_blockers(blocker_set):
+        return False, "", ""
+
+    scored = int(num(family_stats.get("scored_count")) or 0)
+    avg_r = num(family_stats.get("avg_r"))
+    pf = num(family_stats.get("profit_factor"))
+    quote_coverage = num(family_stats.get("quote_coverage"))
+    if (
+        scored < int(risk_config.get("min_edge_review_scored_outcomes", 30))
+        or avg_r is None
+        or avg_r <= float(risk_config.get("min_edge_review_expected_r", 0.05))
+        or pf is None
+        or pf < float(risk_config.get("min_edge_review_profit_factor", 1.30))
+        or quote_coverage is None
+        or quote_coverage < float(risk_config.get("min_edge_review_quote_coverage", 0.50))
+        or baselines_beaten < int(risk_config.get("min_edge_review_baselines_beaten", 2))
+    ):
+        return False, "", ""
+
+    family_text = (
+        f"family scored={scored}, avg_R={fmt_num(avg_r)}, "
+        f"PF={fmt_num(pf)}, quote_coverage={fmt_pct(quote_coverage)}"
+    )
+    if "MARKET_REGIME_CONFLICT" not in blocker_set:
+        return True, "VALIDATED_FAMILY_EDGE_REVIEW", family_text
+
+    regime_scored = int(num(regime_edge_stats.get("scored_count")) or 0)
+    regime_avg_r = num(regime_edge_stats.get("avg_r"))
+    regime_pf = num(regime_edge_stats.get("profit_factor"))
+    if (
+        regime_scored >= int(risk_config.get("min_regime_edge_review_scored_outcomes", 20))
+        and regime_avg_r is not None
+        and regime_avg_r > float(risk_config.get("min_regime_edge_review_expected_r", 0.05))
+        and regime_pf is not None
+        and regime_pf >= float(risk_config.get("min_regime_edge_review_profit_factor", 1.20))
+    ):
+        regime_text = (
+            f"{current_regime or 'UNKNOWN'} regime scored={regime_scored}, "
+            f"avg_R={fmt_num(regime_avg_r)}, PF={fmt_num(regime_pf)}"
+        )
+        return True, "VALIDATED_FAMILY_AND_REGIME_EDGE_REVIEW", f"{family_text}; {regime_text}"
+
+    return False, "", family_text
+
+
+def soft_review_candidate(row: Mapping[str, Any]) -> bool:
+    tier = str(row.get("confidence_tier") or "")
+    score = num(row.get("probability_score")) or 0.0
+    success = num(row.get("success_probability_pct")) or 0.0
+    return tier in {"PROMISING", "PROVEN"} or score >= 45.0 or success >= 55.0
+
+
 def enrich_decision_row(
     row: Mapping[str, Any],
     tier_info: Mapping[str, Any],
     family_stats: Mapping[str, Any],
+    regime_edge_stats: Mapping[str, Any],
     risk_config: Mapping[str, Any],
     run_kill_switches: Sequence[str],
 ) -> Dict[str, Any]:
@@ -3375,26 +3512,35 @@ def enrich_decision_row(
     for switch in run_kill_switches:
         blockers.add(switch)
 
-    hard_or_reject = blockers & (
-        HARD_TRADE_BLOCKERS
-        | EV_TRADE_BLOCKERS
-        | RISK_TRADE_BLOCKERS
-        | QUOTE_TRADE_BLOCKERS
-        | {"VALIDATION_EXPECTANCY_NEGATIVE"}
-    )
     has_ticket = "No complete" not in str(setup.get("trade_setup") or "")
+    edge_review, edge_review_reason, edge_review_evidence = qualifies_for_validated_edge_review(
+        blockers,
+        has_ticket,
+        family_stats,
+        regime_edge_stats,
+        risk_config,
+        str(enriched.get("current_market_alignment") or enriched.get("market_regime") or "UNKNOWN"),
+        baselines_beaten,
+    )
+    hard_or_reject = hard_review_blockers(blockers)
     if not blockers and enriched.get("classification") == "TRADE":
         status = "AUTO_APPROVED"
+    elif edge_review:
+        status = "TRADE_REVIEW"
     elif hard_or_reject:
         status = "AVOID"
-    elif has_ticket:
+    elif has_ticket and soft_review_candidate(enriched):
         status = "TRADE_REVIEW"
     else:
         status = "AVOID"
+    normalized_classification = (
+        "TRADE" if status == "AUTO_APPROVED" else "WATCH" if status == "TRADE_REVIEW" else "AVOID"
+    )
 
     enriched.update(
         {
             "status": status,
+            "classification": normalized_classification,
             "candidate_id": stable_candidate_id(enriched),
             "block_reasons": sorted(blockers),
             "expected_R": round(expected_r, 6) if expected_r is not None else None,
@@ -3425,6 +3571,8 @@ def enrich_decision_row(
             "regime_alignment": regime_alignment_text(enriched),
             "uw_evidence": uw_evidence_text(enriched),
             "kill_switch_triggered": ";".join(run_kill_switches),
+            "edge_review_reason": edge_review_reason,
+            "edge_review_evidence": edge_review_evidence,
         }
     )
     enriched["blocker_categories"] = decompose_blockers(enriched["block_reasons"])
@@ -3636,6 +3784,8 @@ def build_decision_board_rows(
                 "live_quote_validation_status": row.get("live_quote_validation_status"),
                 "catalyst_thesis": row.get("reason_summary"),
                 "UW_evidence": row.get("uw_evidence"),
+                "edge_review_reason": row.get("edge_review_reason"),
+                "edge_review_evidence": row.get("edge_review_evidence"),
                 "blockers": ";".join(row.get("block_reasons") or []),
                 "promotion_requirements": row.get("promotion_requirements") or promotion_needed_text(row),
                 "kill_switch_triggered": row.get("kill_switch_triggered") or "",
@@ -3771,6 +3921,8 @@ def decision_board_fieldnames() -> List[str]:
         "live_quote_validation_status",
         "catalyst_thesis",
         "UW_evidence",
+        "edge_review_reason",
+        "edge_review_evidence",
         "blockers",
         "promotion_requirements",
         "kill_switch_triggered",
@@ -3942,6 +4094,160 @@ def ablation_interpretation(component: str, baseline: Mapping[str, Any], combine
 
 def ablation_fieldnames() -> List[str]:
     return ["component", "reference", "average_net_R", "scored_count", "interpretation"]
+
+
+def build_full_backtest_by_family(outcomes: Sequence[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
+    for outcome in select_validation_gate_outcomes(outcomes):
+        grouped[str(outcome.get("pattern_family") or "")].append(outcome)
+    rows = [full_backtest_group_row("pattern_family", family, items) for family, items in grouped.items()]
+    rows.sort(
+        key=lambda r: (
+            int(r.get("scored_count") or 0) >= 30,
+            num(r.get("avg_R")) or -999.0,
+            num(r.get("profit_factor")) or -999.0,
+        ),
+        reverse=True,
+    )
+    return rows
+
+
+def build_full_backtest_by_month(outcomes: Sequence[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
+    for outcome in select_validation_gate_outcomes(outcomes):
+        month = str(outcome.get("signal_date") or "")[:7] or "UNKNOWN"
+        grouped[month].append(outcome)
+    return [full_backtest_group_row("month", month, items) for month, items in sorted(grouped.items())]
+
+
+def full_backtest_group_row(key_name: str, key_value: str, items: Sequence[Mapping[str, Any]]) -> Dict[str, Any]:
+    scored = [o for o in items if o.get("status") == "SCORED" and num(o.get("net_r")) is not None]
+    partial = [o for o in items if o.get("status") == "PARTIAL"]
+    unscorable = [o for o in items if o.get("status") == "UNSCORABLE"]
+    net_rs = [float(o["net_r"]) for o in scored]
+    positives = sum(r for r in net_rs if r > 0)
+    negatives = abs(sum(r for r in net_rs if r < 0))
+    dates = sorted(str(o.get("signal_date") or "") for o in items if o.get("signal_date"))
+    return {
+        key_name: key_value,
+        "signal_count": len(items),
+        "scored_count": len(scored),
+        "partial_count": len(partial),
+        "unscorable_count": len(unscorable),
+        "quote_coverage": safe_div(len(scored), len(items)),
+        "win_rate": safe_div(sum(1 for r in net_rs if r > 0), len(scored)),
+        "avg_R": statistics.fmean(net_rs) if net_rs else None,
+        "median_R": statistics.median(net_rs) if net_rs else None,
+        "profit_factor": positives / negatives if negatives > 0 else (None if positives == 0 else 999.0),
+        "gross_R": sum(net_rs) if net_rs else None,
+        "drawdown_proxy": drawdown_proxy(net_rs),
+        "max_losing_streak": worst_losing_streak(net_rs),
+        "first_signal_date": dates[0] if dates else "",
+        "last_signal_date": dates[-1] if dates else "",
+    }
+
+
+def full_backtest_family_fieldnames() -> List[str]:
+    return [
+        "pattern_family",
+        "signal_count",
+        "scored_count",
+        "partial_count",
+        "unscorable_count",
+        "quote_coverage",
+        "win_rate",
+        "avg_R",
+        "median_R",
+        "profit_factor",
+        "gross_R",
+        "drawdown_proxy",
+        "max_losing_streak",
+        "first_signal_date",
+        "last_signal_date",
+    ]
+
+
+def full_backtest_month_fieldnames() -> List[str]:
+    return [
+        "month",
+        "signal_count",
+        "scored_count",
+        "partial_count",
+        "unscorable_count",
+        "quote_coverage",
+        "win_rate",
+        "avg_R",
+        "median_R",
+        "profit_factor",
+        "gross_R",
+        "drawdown_proxy",
+        "max_losing_streak",
+        "first_signal_date",
+        "last_signal_date",
+    ]
+
+
+def render_full_backtest_summary(
+    as_of: str,
+    outcomes: Sequence[Mapping[str, Any]],
+    family_rows: Sequence[Mapping[str, Any]],
+    month_rows: Sequence[Mapping[str, Any]],
+) -> str:
+    gate_outcomes = select_validation_gate_outcomes(outcomes)
+    overall = full_backtest_group_row("scope", "canonical_cumulative_walk_forward", gate_outcomes)
+    dates = [str(o.get("signal_date") or "") for o in gate_outcomes if o.get("signal_date")]
+    top = [r for r in family_rows if int(r.get("scored_count") or 0) >= 30 and (num(r.get("avg_R")) or -999.0) > 0]
+    bottom = [r for r in family_rows if int(r.get("scored_count") or 0) >= 30 and (num(r.get("avg_R")) or 999.0) < 0]
+    bottom = sorted(bottom, key=lambda r: num(r.get("avg_R")) or 999.0)[:5]
+    lines = [
+        f"# Full Backtest Summary - {as_of}",
+        "",
+        "Method: canonical cumulative walk-forward holdouts only. Each validation month is counted once; overlapping exploratory validation splits are not double-counted in this summary or in the daily approval gate.",
+        "",
+        "## Overall",
+        f"- Validation dates: {(min(dates) if dates else 'n/a')} through {(max(dates) if dates else 'n/a')}",
+        f"- Signals: {overall.get('signal_count', 0)}",
+        f"- Scored: {overall.get('scored_count', 0)}",
+        f"- Quote coverage: {fmt_pct(overall.get('quote_coverage'))}",
+        f"- Win rate: {fmt_pct(overall.get('win_rate'))}",
+        f"- Avg R: {fmt_num(overall.get('avg_R'))}",
+        f"- Median R: {fmt_num(overall.get('median_R'))}",
+        f"- Profit factor: {fmt_num(overall.get('profit_factor'))}",
+        f"- Gross R: {fmt_num(overall.get('gross_R'))}",
+        f"- Drawdown proxy: {fmt_num(overall.get('drawdown_proxy'))}",
+        f"- Max losing streak: {overall.get('max_losing_streak', 0)}",
+        "",
+        "## Monthly",
+        "| Month | Signals | Scored | Quote Coverage | Win Rate | Avg R | Profit Factor | Gross R |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for row in month_rows:
+        lines.append(
+            f"| {row.get('month')} | {row.get('signal_count')} | {row.get('scored_count')} | "
+            f"{fmt_pct(row.get('quote_coverage'))} | {fmt_pct(row.get('win_rate'))} | "
+            f"{fmt_num(row.get('avg_R'))} | {fmt_num(row.get('profit_factor'))} | {fmt_num(row.get('gross_R'))} |"
+        )
+    lines.extend(["", "## Best Families With At Least 30 Scored Outcomes"])
+    if top:
+        for row in top[:5]:
+            lines.append(
+                f"- {row.get('pattern_family')}: scored {row.get('scored_count')}, "
+                f"win {fmt_pct(row.get('win_rate'))}, avg R {fmt_num(row.get('avg_R'))}, "
+                f"PF {fmt_num(row.get('profit_factor'))}, gross R {fmt_num(row.get('gross_R'))}"
+            )
+    else:
+        lines.append("- None.")
+    lines.extend(["", "## Worst Families With At Least 30 Scored Outcomes"])
+    if bottom:
+        for row in bottom:
+            lines.append(
+                f"- {row.get('pattern_family')}: scored {row.get('scored_count')}, "
+                f"win {fmt_pct(row.get('win_rate'))}, avg R {fmt_num(row.get('avg_R'))}, "
+                f"PF {fmt_num(row.get('profit_factor'))}, gross R {fmt_num(row.get('gross_R'))}"
+            )
+    else:
+        lines.append("- None.")
+    return "\n".join(lines)
 
 
 def render_calibration_summary(as_of: str, metrics: Mapping[str, Any]) -> str:
@@ -4383,6 +4689,7 @@ def write_outputs(
         "market_regime_summary": str(out_dir / "market_regime_summary.json"),
         "sentiment_news_summary": str(out_dir / "sentiment_news_summary.json"),
         "validation_scorecard": str(out_dir / "validation_scorecard.csv"),
+        "validation_gate_scorecard": str(out_dir / "validation_gate_scorecard.csv"),
         "train_scorecard": str(out_dir / "train_scorecard.csv"),
         "validation_details": str(out_dir / "validation_details.csv"),
         "baseline_comparison": str(out_dir / "baseline_comparison.csv"),
@@ -4395,6 +4702,9 @@ def write_outputs(
         "decision_board_json": str(out_dir / "decision_board.json"),
         "decision_board_csv": str(out_dir / "decision_board.csv"),
         "artifact_manifest": str(out_dir / "artifact_manifest.json"),
+        "full_backtest_summary": str(out_dir / "full_backtest_summary.md"),
+        "full_backtest_by_family": str(out_dir / "full_backtest_by_family.csv"),
+        "full_backtest_by_month": str(out_dir / "full_backtest_by_month.csv"),
         "walk_forward_performance": str(out_dir / "walk_forward_performance.csv"),
         "threshold_sensitivity": str(out_dir / "threshold_sensitivity.csv"),
         "calibration_summary": str(out_dir / "calibration_summary.md"),
@@ -4425,6 +4735,8 @@ def write_outputs(
     threshold_rows = build_threshold_sensitivity_rows(validation_bundle, run_controls["risk_config"])
     ablation_rows = build_ablation_attribution_rows(validation_bundle)
     shadow_rows = build_shadow_ledger_rows(as_of, decision_board, validation_bundle)
+    backtest_family_rows = build_full_backtest_by_family(validation_bundle.get("outcomes", []))
+    backtest_month_rows = build_full_backtest_by_month(validation_bundle.get("outcomes", []))
 
     write_csv(Path(paths["actionable_trades"]), [trade_output_row(r) for r in actionable], trade_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [trade_output_row(r) for r in watch], trade_fieldnames())
@@ -4444,6 +4756,13 @@ def write_outputs(
     write_csv(Path(paths["walk_forward_performance"]), walk_forward_rows, walk_forward_fieldnames())
     write_csv(Path(paths["threshold_sensitivity"]), threshold_rows, threshold_sensitivity_fieldnames())
     write_csv(Path(paths["ablation_attribution"]), ablation_rows, ablation_fieldnames())
+    write_csv(Path(paths["validation_gate_scorecard"]), validation_bundle.get("validation_gate_scorecard", []), scorecard_fieldnames())
+    write_csv(Path(paths["full_backtest_by_family"]), backtest_family_rows, full_backtest_family_fieldnames())
+    write_csv(Path(paths["full_backtest_by_month"]), backtest_month_rows, full_backtest_month_fieldnames())
+    Path(paths["full_backtest_summary"]).write_text(
+        render_full_backtest_summary(as_of, validation_bundle.get("outcomes", []), backtest_family_rows, backtest_month_rows),
+        encoding="utf-8",
+    )
     Path(paths["calibration_summary"]).write_text(
         render_calibration_summary(as_of, run_controls["calibration_metrics"]),
         encoding="utf-8",
@@ -4575,6 +4894,7 @@ def write_source_incomplete_outputs(
         "market_regime_summary": str(out_dir / "market_regime_summary.json"),
         "sentiment_news_summary": str(out_dir / "sentiment_news_summary.json"),
         "validation_scorecard": str(out_dir / "validation_scorecard.csv"),
+        "validation_gate_scorecard": str(out_dir / "validation_gate_scorecard.csv"),
         "train_scorecard": str(out_dir / "train_scorecard.csv"),
         "validation_details": str(out_dir / "validation_details.csv"),
         "baseline_comparison": str(out_dir / "baseline_comparison.csv"),
@@ -4587,6 +4907,9 @@ def write_source_incomplete_outputs(
         "decision_board_json": str(out_dir / "decision_board.json"),
         "decision_board_csv": str(out_dir / "decision_board.csv"),
         "artifact_manifest": str(out_dir / "artifact_manifest.json"),
+        "full_backtest_summary": str(out_dir / "full_backtest_summary.md"),
+        "full_backtest_by_family": str(out_dir / "full_backtest_by_family.csv"),
+        "full_backtest_by_month": str(out_dir / "full_backtest_by_month.csv"),
         "walk_forward_performance": str(out_dir / "walk_forward_performance.csv"),
         "threshold_sensitivity": str(out_dir / "threshold_sensitivity.csv"),
         "calibration_summary": str(out_dir / "calibration_summary.md"),
@@ -4612,6 +4935,7 @@ def write_source_incomplete_outputs(
         {"summary": "Source incomplete; no single-date sentiment summary was built.", "used_sources": [], "skipped_sources": []},
     )
     write_csv(Path(paths["validation_scorecard"]), [], scorecard_fieldnames())
+    write_csv(Path(paths["validation_gate_scorecard"]), [], scorecard_fieldnames())
     write_csv(Path(paths["train_scorecard"]), [], scorecard_fieldnames())
     write_csv(Path(paths["validation_details"]), [], validation_detail_fieldnames())
     write_csv(Path(paths["baseline_comparison"]), [], baseline_fieldnames())
@@ -4632,6 +4956,12 @@ def write_source_incomplete_outputs(
         },
     )
     write_csv(Path(paths["decision_board_csv"]), decision_board, decision_board_fieldnames())
+    write_csv(Path(paths["full_backtest_by_family"]), [], full_backtest_family_fieldnames())
+    write_csv(Path(paths["full_backtest_by_month"]), [], full_backtest_month_fieldnames())
+    Path(paths["full_backtest_summary"]).write_text(
+        render_full_backtest_summary(as_of, [], [], []),
+        encoding="utf-8",
+    )
     write_csv(Path(paths["walk_forward_performance"]), [], walk_forward_fieldnames())
     write_csv(Path(paths["threshold_sensitivity"]), build_threshold_sensitivity_rows(empty_validation_bundle(), config.get("risk_config", {})), threshold_sensitivity_fieldnames())
     write_csv(Path(paths["ablation_attribution"]), [], ablation_fieldnames())
@@ -4750,6 +5080,8 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "position_size_tier": r.get("position_size_tier"),
         "catalyst_thesis": r.get("reason_summary"),
         "historical_evidence_summary": r.get("validation_note"),
+        "edge_review_reason": r.get("edge_review_reason"),
+        "edge_review_evidence": r.get("edge_review_evidence"),
         "current_market_regime_alignment": r.get("current_market_alignment"),
         "liquidity_quote_sanity": quote_sanity_text(r),
         "major_risks": r.get("major_risks"),
@@ -4835,6 +5167,8 @@ def hard_trade_blockers(row: Mapping[str, Any]) -> List[str]:
 
 
 def trade_review_status(row: Mapping[str, Any]) -> str:
+    if row.get("edge_review_reason"):
+        return "VALIDATED_EDGE_REVIEW"
     blockers = set(row.get("block_reasons") or [])
     if "NO_TRADEABLE_OPTION_QUOTE" in blockers:
         return "NO_TRADE_NO_QUOTE"
@@ -4862,6 +5196,7 @@ def trade_review_status(row: Mapping[str, Any]) -> str:
 
 def trade_review_rank(status: str) -> int:
     return {
+        "VALIDATED_EDGE_REVIEW": 6,
         "TACTICAL_REVIEW": 5,
         "PROMISING_REVIEW": 4,
         "MACRO_CONFLICT_REVIEW": 3,
@@ -4878,7 +5213,10 @@ def trade_review_rank(status: str) -> int:
 def promotion_needed_text(row: Mapping[str, Any]) -> str:
     blockers = set(row.get("block_reasons") or [])
     needs: List[str] = []
-    if blockers & REGIME_TRADE_BLOCKERS:
+    edge_review_reason = str(row.get("edge_review_reason") or "")
+    if blockers & REGIME_TRADE_BLOCKERS and edge_review_reason:
+        needs.append("confirm current catalyst still matches validated regime edge")
+    elif blockers & REGIME_TRADE_BLOCKERS:
         needs.append("regime alignment or explicit hedge thesis")
     if "VALIDATION_EXPECTANCY_NEGATIVE" in blockers:
         needs.append("positive out-of-sample expectancy")
@@ -5151,12 +5489,13 @@ def append_ticket_table(
 
 def trade_review_row(row: Mapping[str, Any], index: int) -> str:
     setup = trade_setup_fields(row)
+    edge_evidence = row.get("edge_review_evidence") or f"expected R {fmt_num(row.get('expected_R'))}; PF {fmt_num(row.get('validation_profit_factor'))}"
     return (
         f"| {index} | {markdown_cell(trade_review_status(row))} | {markdown_cell(row.get('ticker'))} | "
         f"{markdown_cell(row.get('direction'))} | {markdown_cell(setup.get('trade_setup'))} | "
         f"{markdown_cell(setup.get('entry_range'))} | {money_text(row.get('max_risk_per_contract'))} | "
         f"{pct_text(row.get('success_probability_pct'))} | {pct_text(row.get('probability_score'))} | "
-        f"{markdown_cell(blocker_text(row))} | {markdown_cell(promotion_needed_text(row))} |"
+        f"{markdown_cell(edge_evidence)} | {markdown_cell(blocker_text(row))} | {markdown_cell(promotion_needed_text(row))} |"
     )
 
 
@@ -5171,8 +5510,8 @@ def append_trade_review_table(
         lines.append("- No reviewable tickets with complete quotes/liquidity.")
         lines.append("")
         return
-    lines.append("| # | Review | Ticker | Bias | Full Ticket | Entry | Max Risk | Success | Score | What's Wrong | Promotion Needed |")
-    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---|---|")
+    lines.append("| # | Review | Ticker | Bias | Full Ticket | Entry | Max Risk | Success | Score | Edge Evidence | What's Wrong | Promotion Needed |")
+    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---|---|---|")
     for idx, row in enumerate(rows[:limit], 1):
         lines.append(trade_review_row(row, idx))
     lines.append("")
@@ -5435,6 +5774,8 @@ def trade_fieldnames() -> List[str]:
         "position_size_tier",
         "catalyst_thesis",
         "historical_evidence_summary",
+        "edge_review_reason",
+        "edge_review_evidence",
         "current_market_regime_alignment",
         "liquidity_quote_sanity",
         "major_risks",

@@ -893,8 +893,89 @@ def test_strict_decision_layer_blocks_auto_approval_on_negative_edge():
     )
 
     assert rows[0]["status"] == "AVOID"
+    assert rows[0]["classification"] == "AVOID"
     assert "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS" in rows[0]["block_reasons"]
     assert "PROFIT_FACTOR_BELOW_AUTO_APPROVAL" in rows[0]["block_reasons"]
+
+
+def test_validated_regime_edge_surfaces_trade_review_instead_of_blanket_avoid():
+    daily_rows = [
+        {
+            "date": "2026-05-19",
+            "classification": "WATCH",
+            "ticker": "INTC",
+            "direction": "bullish",
+            "pattern_family": "OI_GAMMA_CONTINUATION__BULLISH__LONG_OPTION__TECHNOLOGY",
+            "confidence_tier": "PROMISING",
+            "probability_score": 49.0,
+            "success_probability_pct": 52.0,
+            "pattern_score": 10.0,
+            "block_reasons": [
+                "PATTERN_VALIDATION_NOT_PROVEN",
+                "MARKET_REGIME_CONFLICT",
+                "CALIBRATION_SCORE_MISSING_OR_WEAK",
+                "CONFIDENCE_BAND_TOO_WEAK",
+            ],
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "lead_option_symbol": "INTC260619C00110000",
+            "expiry": "2026-06-19",
+            "option_type": "call",
+            "strike": 110,
+            "entry_bid": 10.6,
+            "entry_ask": 10.75,
+            "entry_range": "10.60-10.75",
+            "bid_ask_spread_pct": 0.014,
+            "max_risk_per_contract": 1075.65,
+            "liquidity_volume": 1000,
+            "liquidity_open_interest": 1000,
+            "dte": 31,
+            "quote_source": "bot_eod",
+            "current_market_alignment": "RISK_OFF",
+            "market_regime": "RISK_OFF",
+        }
+    ]
+    validation_bundle = empty_validation_bundle()
+    family = "OI_GAMMA_CONTINUATION__BULLISH__LONG_OPTION__TECHNOLOGY"
+    validation_bundle["family_tiers"] = {
+        family: {
+            "confidence_tier": "PROMISING",
+            "validation_scored_count": 35,
+            "validation_win_count": 22,
+            "validation_success_probability": 22 / 35,
+            "validation_probability_score": 0.44,
+            "validation_average_net_r": 0.20,
+            "validation_profit_factor": 2.0,
+            "beats_baselines_count": 3,
+        }
+    }
+    validation_bundle["outcomes"] = [
+        {
+            "split": "cumulative_to_2026-05_holdout",
+            "sample": "VALIDATION",
+            "horizon": "5d",
+            "signal_date": "2026-05-01",
+            "pattern_family": family,
+            "market_regime": "RISK_OFF",
+            "status": "SCORED",
+            "net_r": 0.45 if idx < 22 else -0.18,
+            "win": int(idx < 22),
+        }
+        for idx in range(35)
+    ]
+
+    rows, _ = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        {"source_complete": True},
+        {},
+    )
+
+    assert rows[0]["status"] == "TRADE_REVIEW"
+    assert rows[0]["classification"] == "WATCH"
+    assert rows[0]["edge_review_reason"] == "VALIDATED_FAMILY_AND_REGIME_EDGE_REVIEW"
+    assert "MARKET_REGIME_CONFLICT" in rows[0]["block_reasons"]
+    assert trade_review_output_row(rows[0])["review_status"] == "VALIDATED_EDGE_REVIEW"
 
 
 def test_decision_board_schema_accepts_no_trade_contract():
