@@ -983,6 +983,8 @@ def test_validated_regime_edge_surfaces_trade_review_instead_of_blanket_avoid():
     recommendation = pattern_recommendation_output_row(recommendations[0], 1)
     assert recommendation["recommendation"] == "PATTERN_RECOMMENDATION"
     assert recommendation["entry_limit"] == "debit 10.60-10.75"
+    assert recommendation["breakeven_success_probability_pct"] == 28.57
+    assert recommendation["edge_vs_breakeven_pct"] > 0
     assert "Validated historical edge" in recommendation["why_recommended"]
 
 

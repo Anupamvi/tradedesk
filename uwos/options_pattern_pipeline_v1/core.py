@@ -5291,6 +5291,8 @@ def pattern_recommendation_output_row(r: Mapping[str, Any], rank: int) -> Dict[s
             "recommendation_rank": rank,
             "recommendation": recommendation,
             "entry_limit": trade_setup_fields(r).get("entry_range"),
+            "breakeven_success_probability_pct": breakeven_success_probability_pct(r),
+            "edge_vs_breakeven_pct": edge_vs_breakeven_pct(r),
             "why_recommended": recommendation_reason_text(r),
             "why_not_auto_approved": blocker_text(r) if r.get("status") != "AUTO_APPROVED" else "",
         }
@@ -5301,10 +5303,38 @@ def pattern_recommendation_output_row(r: Mapping[str, Any], rank: int) -> Dict[s
 def recommendation_reason_text(row: Mapping[str, Any]) -> str:
     if row.get("status") == "AUTO_APPROVED":
         return "All auto-approval gates passed."
+    breakeven = breakeven_success_probability_pct(row)
+    edge = edge_vs_breakeven_pct(row)
+    payoff = num(row.get("payoff_ratio"))
+    edge_text = ""
+    if breakeven is not None and edge is not None:
+        edge_text = f"; success {pct_text(row.get('success_probability_pct'))} vs breakeven {pct_text(breakeven)} ({pct_text(edge)} edge)"
+    if payoff is not None:
+        edge_text += f"; payoff {fmt_num(payoff)}x"
     edge = row.get("edge_review_evidence")
     if edge:
-        return f"Validated historical edge: {edge}"
-    return f"Positive expected R {fmt_num(row.get('expected_R'))} with review blockers."
+        return f"Validated historical edge: {edge}{edge_text}"
+    return f"Positive expected R {fmt_num(row.get('expected_R'))}{edge_text} with review blockers."
+
+
+def breakeven_success_probability_pct(row: Mapping[str, Any]) -> Optional[float]:
+    avg_win = num(row.get("avg_win_R"))
+    avg_loss = num(row.get("avg_loss_R"))
+    if avg_win is None or avg_loss is None or avg_win <= 0 or avg_loss >= 0:
+        return None
+    loss = abs(avg_loss)
+    denom = avg_win + loss
+    if denom <= 0:
+        return None
+    return round((loss / denom) * 100.0, 2)
+
+
+def edge_vs_breakeven_pct(row: Mapping[str, Any]) -> Optional[float]:
+    success = num(row.get("success_probability_pct"))
+    breakeven = breakeven_success_probability_pct(row)
+    if success is None or breakeven is None:
+        return None
+    return round(success - breakeven, 2)
 
 
 def trade_setup_fields(r: Mapping[str, Any]) -> Dict[str, str]:
@@ -5573,7 +5603,9 @@ def recommendation_row(row: Mapping[str, Any], index: int) -> str:
         f"| {index} | {label} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
         f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('entry_range'))} | "
         f"{money_text(row.get('max_risk_per_contract'))} | {pct_text(row.get('success_probability_pct'))} | "
-        f"{pct_text(row.get('probability_score'))} | {markdown_cell(recommendation_reason_text(row))} | "
+        f"{pct_text(row.get('probability_score'))} | {fmt_num(row.get('expected_R'))} | "
+        f"{fmt_num(row.get('payoff_ratio'))}x | {pct_text(breakeven_success_probability_pct(row))} | "
+        f"{pct_text(edge_vs_breakeven_pct(row))} | {markdown_cell(recommendation_reason_text(row))} | "
         f"{markdown_cell(blocker_text(row) if row.get('status') != 'AUTO_APPROVED' else '')} |"
     )
 
@@ -5588,8 +5620,8 @@ def append_pattern_recommendation_table(
         lines.append("- No pattern recommendation with complete ticket and validated edge.")
         lines.append("")
         return
-    lines.append("| # | Recommendation | Ticker | Bias | Full Ticket | Entry Limit | Max Risk | Success | Score | Why Recommended | Why Not Auto |")
-    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---|---|")
+    lines.append("| # | Recommendation | Ticker | Bias | Full Ticket | Entry Limit | Max Risk | Success | Score | Exp R | Payoff | Breakeven | Edge vs BE | Why Recommended | Why Not Auto |")
+    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|")
     for idx, row in enumerate(rows[:limit], 1):
         lines.append(recommendation_row(row, idx))
     lines.append("")
@@ -5884,6 +5916,8 @@ def pattern_recommendation_fieldnames() -> List[str]:
         "recommendation_rank",
         "recommendation",
         "entry_limit",
+        "breakeven_success_probability_pct",
+        "edge_vs_breakeven_pct",
         "why_recommended",
         "why_not_auto_approved",
     ] + trade_review_fieldnames()
