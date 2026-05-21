@@ -8,6 +8,8 @@ from codexuw.catalysts import load_catalyst_context
 from codexuw.engine import (
     build_entry_watchlist,
     apply_high_conviction_decision_marks,
+    generate_candidates,
+    is_etf_row,
     select_final_trades,
     select_ticker_pool,
     _write_execute_outcome_ledger,
@@ -370,12 +372,100 @@ def test_select_ticker_pool_excludes_etfs_but_keeps_stocks() -> None:
                 "issue_type": "Common Stock",
                 "full_name": "MICROSOFT CORP",
             },
+            {
+                "ticker": "NFLX",
+                "close": 88,
+                "flow_total_premium": 90_000_000,
+                "total_open_interest": 900_000,
+                "avg30_volume": 15_000_000,
+                "issue_type": "Common Stock",
+                "full_name": "NETFLIX INC",
+            },
         ]
     )
 
     pool = select_ticker_pool(df, max_tickers=10)
 
-    assert pool["ticker"].tolist() == ["MSFT"]
+    assert set(pool["ticker"]) == {"MSFT", "NFLX"}
+
+
+def test_is_etf_row_does_not_match_etf_inside_netflix_name() -> None:
+    netflix = pd.Series({"ticker": "NFLX", "issue_type": "Common Stock", "full_name": "NETFLIX INC"})
+    yieldmax = pd.Series(
+        {
+            "ticker": "NFLY",
+            "issue_type": "ETF",
+            "full_name": "YIELDMAX NFLX OPTION INCOME STRATEGY ETF",
+        }
+    )
+
+    assert not is_etf_row(netflix)
+    assert is_etf_row(yieldmax)
+
+
+def test_generate_candidates_keeps_one_setup_per_selected_ticker_before_scoring() -> None:
+    asof = dt.date(2026, 5, 20)
+    expiry = dt.date(2026, 6, 18)
+    sc_pool = pd.DataFrame(
+        [
+            {
+                "ticker": "AAA",
+                "close": 100.0,
+                "flow_bias": 0.12,
+                "flow_total_premium": 250_000_000,
+                "iv_rank": 35,
+                "iv30d": 0.30,
+                "implied_move_perc": 0.04,
+                "sector": "Technology",
+            },
+            {
+                "ticker": "NFLX",
+                "close": 88.0,
+                "flow_bias": -0.05,
+                "flow_total_premium": 32_000_000,
+                "iv_rank": 27,
+                "iv30d": 0.31,
+                "implied_move_perc": 0.03,
+                "sector": "Communication Services",
+            },
+        ]
+    )
+    hot = pd.DataFrame(
+        [
+            {
+                "ticker": "AAA",
+                "right": "P",
+                "strike": 94.0,
+                "expiry_dt": expiry,
+                "dte": 29,
+                "premium": 2_000_000.0,
+                "volume": 50_000,
+                "open_interest": 50_000,
+                "option_symbol": "AAA260618P00094000",
+                "bid": 1.2,
+                "ask": 1.4,
+            },
+            {
+                "ticker": "NFLX",
+                "right": "C",
+                "strike": 95.0,
+                "expiry_dt": expiry,
+                "dte": 29,
+                "premium": 250_000.0,
+                "volume": 1_000,
+                "open_interest": 5_000,
+                "option_symbol": "NFLX260618C00095000",
+                "bid": 1.0,
+                "ask": 1.2,
+            },
+        ]
+    )
+
+    candidates = generate_candidates(sc_pool, hot, pd.DataFrame(), asof=asof, max_candidates=1)
+
+    assert {"AAA", "NFLX"}.issubset(set(candidates["ticker"]))
+    nflx = candidates[candidates["ticker"].eq("NFLX")].iloc[0]
+    assert nflx["candidate_coverage_source"] == "per_ticker_coverage"
 
 
 def test_live_selection_uses_high_conviction_decision_layer() -> None:

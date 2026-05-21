@@ -667,6 +667,71 @@ def test_debit_proxy_ev_routes_to_research_not_execute() -> None:
     assert "debit_proxy_ev_only" in out["trade_status_reason"].iloc[0]
 
 
+def test_missing_ticker_news_can_surface_manual_scout_without_execute() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(
+                ticker="SCOUT",
+                direction="Bear Call",
+                strategy="Bear Call Credit Spread",
+                short_leg="SCOUT260515C00105000",
+                long_leg="SCOUT260515C00110000",
+                combined_flow_bias=-0.03,
+                flow_quality="unclear",
+                penalties="news_unconfirmed",
+                catalyst_status="unknown",
+                replay_ev_verdict="acceptable",
+                edge_verdict="acceptable",
+                edge_sample_size=40,
+                confirmation_score=10.0,
+                score=8.2,
+                credit=1.20,
+                credit_pct_width=0.24,
+                max_loss=380.0,
+                quote_width_pct=0.03,
+                oi_carryover_status="matched_unconfirmed",
+            )
+        ]
+    )
+
+    status = assign_trade_statuses(scored)
+    watch = build_entry_watchlist(status)
+
+    assert status["trade_status"].iloc[0] == "Watch"
+    assert status["trade_tier"].iloc[0] == "manual-confirmation-scout"
+    assert "news_unconfirmed" in status["trade_status_reason"].iloc[0]
+    assert watch["watch_kind"].iloc[0] == "manual_confirmation_scout"
+    assert "SCOUT ONLY" in watch["trigger"].iloc[0]
+    assert watch["target_entry"].iloc[0] == ">= $1.20 credit"
+    action = _compact_action_rows(pd.DataFrame(), watch, pd.DataFrame())
+    assert "manual check must clear" in action["Why"].iloc[0]
+
+
+def test_manual_scout_does_not_override_price_action_failure() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(
+                ticker="BADSCOUT",
+                flow_quality="unclear",
+                confirmations_failed="price_action_trend",
+                replay_ev_verdict="positive",
+                edge_verdict="positive",
+                edge_sample_size=40,
+                confirmation_score=9.0,
+                score=8.0,
+                credit=1.20,
+                credit_pct_width=0.24,
+                quote_width_pct=0.03,
+            )
+        ]
+    )
+
+    out = assign_trade_statuses(scored)
+
+    assert out["trade_status"].iloc[0] == "Research"
+    assert "price_action_trend" in out["trade_status_reason"].iloc[0]
+
+
 def test_debit_above_target_stays_visible_with_price_annotation() -> None:
     scored = pd.DataFrame(
         [

@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import math
+import re
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,7 @@ from .data import safe_float
 from .edge_model import EDGE_COLUMNS, apply_replay_edge_model
 from .occ import build_occ_symbol, parse_occ_symbol
 from .performance import live_outcome_adjustment, performance_min_score, performance_risk_multiplier, setup_family
+from .pipeline_versions import PIPELINE_NAME_V2, PIPELINE_VERSION_V2, pipeline_version_record
 from .schwab_live import (
     SchwabChainValidator,
     chain_spot,
@@ -63,15 +65,19 @@ CREDIT_DIRECTIONS = {"Bull Put", "Bear Call"}
 DEBIT_DIRECTIONS = {"Bull Call", "Bear Put"}
 BULLISH_DIRECTIONS = {"Bull Put", "Bull Call"}
 BEARISH_DIRECTIONS = {"Bear Call", "Bear Put"}
-PIPELINE_NAME = "Codex Daily V2"
-PIPELINE_VERSION = "v2"
+PIPELINE_NAME = PIPELINE_NAME_V2
+PIPELINE_VERSION = PIPELINE_VERSION_V2
 
 
 def is_etf_row(row: pd.Series) -> bool:
     ticker = str(row.get("ticker") or "").upper().strip()
-    issue_type = str(row.get("issue_type") or "").upper()
-    name = str(row.get("full_name") or "").upper()
-    return ticker in ETF_SYMBOL_SKIP or "ETF" in issue_type or "ETF" in name or " EXCHANGE TRADED " in name
+    issue_type = str(row.get("issue_type") or "").upper().strip()
+    name = str(row.get("full_name") or "").upper().strip()
+    name_is_etf = bool(
+        re.search(r"\bETF\b", name)
+        or re.search(r"\bEXCHANGE[- ]TRADED(?: FUND| PRODUCT| NOTE)?\b", name)
+    )
+    return ticker in ETF_SYMBOL_SKIP or issue_type == "ETF" or name_is_etf
 
 
 def _earnings_days(row: pd.Series, asof: dt.date) -> float:
@@ -527,6 +533,7 @@ def generate_candidates(
         + df["source_contract_volume"].clip(upper=50_000) / 50_000
         + df["source_contract_oi"].clip(upper=50_000) / 100_000
     )
+    df["candidate_coverage_source"] = ""
     credit = df[df["strategy_kind"].eq("Credit")].copy()
     if not credit.empty:
         direction_sign = credit["direction"].map(lambda value: _direction_sign(value))
@@ -548,13 +555,19 @@ def generate_candidates(
     else:
         rescue = pd.DataFrame()
     base = df.sort_values("_pre_score", ascending=False).head(max_candidates)
+    # Keep at least one constructed setup per selected ticker. Otherwise a name
+    # can survive universe selection, have usable chains, and still disappear
+    # before scoring just because several tickers generated many same-name variants.
+    coverage = df.sort_values("_pre_score", ascending=False).groupby("ticker", as_index=False).head(1).copy()
+    coverage["candidate_coverage_source"] = "per_ticker_coverage"
     if not rescue.empty:
-        out = pd.concat([base, rescue[df.columns]], ignore_index=True).drop_duplicates(
-            subset=["ticker", "direction", "expiry", "short_strike_eod", "long_strike_eod"],
-            keep="first",
-        )
+        pieces = [base, rescue[df.columns], coverage[df.columns]]
     else:
-        out = base
+        pieces = [base, coverage[df.columns]]
+    out = pd.concat(pieces, ignore_index=True).drop_duplicates(
+        subset=["ticker", "direction", "expiry", "short_strike_eod", "long_strike_eod"],
+        keep="first",
+    )
     return out.sort_values("_pre_score", ascending=False).drop(columns=["_pre_score"], errors="ignore")
 
 
@@ -699,7 +712,12 @@ def live_validate_and_score(
             live_error = str(exc)
 
     from_date = _next_weekday(max(dt.date.today(), asof))
-    to_date = asof + dt.timedelta(days=50)
+    candidate_expiries = pd.to_datetime(candidates.get("expiry", pd.Series(dtype=object)), errors="coerce")
+    max_expiry = candidate_expiries.max()
+    if pd.notna(max_expiry):
+        to_date = max(asof + dt.timedelta(days=50), max_expiry.date() + dt.timedelta(days=1))
+    else:
+        to_date = asof + dt.timedelta(days=50)
     default_live_keys = [
         "credit_pct_width",
         "credit",
@@ -759,6 +777,13 @@ def live_validate_and_score(
         for live in live_alternatives:
             row = base.copy()
             row.update(live)
+            if str(base.get("construction_source") or "") == "fallback_income":
+                row["live_construction_source"] = live.get("construction_source", "")
+                row["live_construction_reason"] = live.get("construction_reason", "")
+                row["construction_source"] = "fallback_income"
+                row["construction_reason"] = base.get("construction_reason", "fallback income seed")
+                row["target_entry"] = base.get("target_entry", row.get("target_entry", math.nan))
+                row["fallback_target_credit"] = base.get("fallback_target_credit", row.get("target_entry", math.nan))
             row.setdefault("construction_source", base.get("construction_source", "uw_flow_anchor_seed"))
             row.setdefault("construction_reason", base.get("construction_reason", "seed candidate"))
             row.setdefault("target_entry", base.get("target_entry", math.nan))
@@ -1046,6 +1071,12 @@ def _expected_move_ratio(row: pd.Series) -> float:
     return expected_move / max(distance, 0.001) if _is_debit_strategy(row) else distance / expected_move
 
 
+def _min_leg_liquidity(row: pd.Series) -> float:
+    short_liq = safe_float(row.get("short_oi"), 0.0) + safe_float(row.get("short_volume"), 0.0)
+    long_liq = safe_float(row.get("long_oi"), 0.0) + safe_float(row.get("long_volume"), 0.0)
+    return min(short_liq, long_liq)
+
+
 def _decision_sort_score(row: pd.Series) -> float:
     credit_pct = safe_float(row.get("credit_pct_width"))
     ratio = _expected_move_ratio(row)
@@ -1233,6 +1264,10 @@ def _expected_move_pct(row: pd.Series) -> float:
 
 
 def _credit_required_entry(row: pd.Series) -> float:
+    if str(row.get("construction_source") or "") == "fallback_income":
+        target = safe_float(row.get("fallback_target_credit"), safe_float(row.get("target_entry")))
+        if math.isfinite(target) and target > 0:
+            return round(target, 2)
     width = safe_float(row.get("spread_width"))
     if not math.isfinite(width) or width <= 0:
         return math.nan
@@ -1294,6 +1329,8 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
         blockers.append("news_unconfirmed")
     if any(token.startswith("negative_live_expectancy:") for token in penalties):
         blockers.append("negative_live_expectancy")
+    if any(token.startswith("recent_loss_family:") for token in penalties):
+        blockers.append("recent_loss_family")
     if math.isfinite(edge_sample_size) and edge_sample_size < 7.0 and replay_verdict not in {"acceptable_secondary_income"}:
         blockers.append(f"thin_replay_sample:n={int(edge_sample_size)}")
     if "earnings_news_risk" in failed:
@@ -1388,6 +1425,74 @@ def _tactical_debit_execute_ok(row: pd.Series, core_blockers: list[str]) -> bool
         and safe_float(row.get("quote_width_pct"), math.nan) <= 0.08
         and safe_float(row.get("max_loss"), math.inf) <= 250.0
     )
+
+
+def _manual_confirmation_scout_ok(row: pd.Series, core_blockers: list[str], *, edge_watch_ok: bool) -> tuple[bool, list[str], list[str]]:
+    """Surface a trade as Watch when only human-verifiable thesis checks are missing.
+
+    This intentionally does not promote to Execute. It prevents the daily report from
+    collapsing to "no trade" when live pricing, liquidity, replay edge, and risk are
+    good but the remaining blocker is a missing ticker news/OI/ambiguous-flow check.
+    """
+    soft_allowed = {"news_unconfirmed", "flow_not_directional:unclear", "flow_not_directional:spread_leg"}
+    soft: list[str] = []
+    hard: list[str] = []
+    edge_verdict = str(row.get("edge_verdict") or row.get("replay_ev_verdict") or "")
+    flow_quality = str(row.get("flow_quality") or "")
+    confirmation_score = safe_float(row.get("confirmation_score"), 0.0)
+    edge_sample = safe_float(row.get("edge_sample_size"), 0.0)
+    for blocker in core_blockers:
+        if blocker in soft_allowed:
+            soft.append(blocker)
+        elif (
+            blocker == "oi_carryover_contrary"
+            and flow_quality == "directional"
+            and edge_verdict in {"positive", "acceptable"}
+            and edge_sample >= 10.0
+            and confirmation_score >= 8.0
+        ):
+            soft.append(blocker)
+        else:
+            hard.append(blocker)
+    if hard or not soft:
+        return False, soft, hard
+    if not edge_watch_ok:
+        return False, soft, hard
+    if str(row.get("live_status")) != "PASS":
+        return False, soft, hard
+    if str(row.get("confidence") or "") != "High":
+        return False, soft, hard
+    if safe_float(row.get("score"), 0.0) < 7.0 or confirmation_score < 8.0:
+        return False, soft, hard
+    if _min_leg_liquidity(row) < 500.0:
+        return False, soft, hard
+    quote_width = safe_float(row.get("quote_width_pct"))
+    if not math.isfinite(quote_width) or quote_width > 0.20:
+        return False, soft, hard
+    max_loss = safe_float(row.get("max_loss"))
+    if not math.isfinite(max_loss) or max_loss > 450.0:
+        return False, soft, hard
+    if _is_credit_strategy(row):
+        credit = safe_float(row.get("credit"))
+        required = _credit_required_entry(row)
+        credit_pct = safe_float(row.get("credit_pct_width"))
+        return (
+            math.isfinite(credit)
+            and math.isfinite(required)
+            and credit >= required
+            and math.isfinite(credit_pct)
+            and 0.18 <= credit_pct <= 0.30
+        ), soft, hard
+    debit = safe_float(row.get("debit"))
+    required = _debit_required_entry(row)
+    reward_risk = safe_float(row.get("reward_risk"))
+    return (
+        math.isfinite(debit)
+        and math.isfinite(required)
+        and debit <= required
+        and math.isfinite(reward_risk)
+        and reward_risk >= 1.0
+    ), soft, hard
 
 
 def apply_confirmation_framework(
@@ -1546,11 +1651,22 @@ def assign_trade_statuses(
         required_debit = _debit_required_entry(row)
         no_chase = required_credit if _is_credit_strategy(row) else required_debit
         price_annotation = ""
+        credit_price_miss = False
+        debit_price_miss = False
+        if _is_credit_strategy(row) and math.isfinite(credit) and math.isfinite(required_credit):
+            if credit < required_credit:
+                miss_pct = (required_credit - credit) / required_credit if required_credit > 0 else math.nan
+                suffix = f" ({miss_pct:.0%} below target)" if math.isfinite(miss_pct) else ""
+                price_annotation = f"current credit ${credit:.2f} is below target ${required_credit:.2f}{suffix}; show as work-limit, do not drop, and do not hit natural"
+                credit_price_miss = True
+            else:
+                price_annotation = f"current credit ${credit:.2f} is at or above target ${required_credit:.2f}"
         if _is_debit_strategy(row) and math.isfinite(debit) and math.isfinite(required_debit):
             if debit > required_debit:
                 miss_pct = (debit - required_debit) / required_debit if required_debit > 0 else math.nan
                 suffix = f" ({miss_pct:.0%} above target)" if math.isfinite(miss_pct) else ""
-                price_annotation = f"current debit ${debit:.2f} is above target ${required_debit:.2f}{suffix}; annotate, do not drop, and do not chase"
+                price_annotation = f"current debit ${debit:.2f} is above target ${required_debit:.2f}{suffix}; show as work-limit, do not drop, and do not chase"
+                debit_price_miss = True
             else:
                 price_annotation = f"current debit ${debit:.2f} is at or below target ${required_debit:.2f}"
         status = "Research"
@@ -1577,6 +1693,11 @@ def assign_trade_statuses(
             )
         ]
         quote_near_miss = "wide_bid_ask" in penalties or (math.isfinite(quote_width) and 0.35 < quote_width <= 0.65)
+        scout_ok, scout_soft, _scout_hard = _manual_confirmation_scout_ok(
+            row,
+            core_blockers,
+            edge_watch_ok=edge_watch_ok,
+        )
 
         if hard:
             status = "Avoid"
@@ -1638,6 +1759,27 @@ def assign_trade_statuses(
                 status = "Watch"
                 tier = "quote-cleanup"
                 reason = "entry price is available, but quote quality needs fresh Schwab recheck before order entry"
+            elif (
+                not watch_blockers
+                and edge_watch_ok
+                and credit_price_miss
+                and math.isfinite(required_credit)
+                and confirmation_score >= 5.0
+            ):
+                status = "Watch"
+                tier = "work-limit-price-target"
+                reason = f"work-limit trade: target ${required_credit:.2f} credit; current credit ${credit:.2f} is below target, so show the ticket but do not enter below target"
+                out.at[idx, "what_must_improve"] = f"credit must improve to ${required_credit:.2f} or better"
+            elif scout_ok:
+                scout_price = max(credit, required_credit) if math.isfinite(credit) and math.isfinite(required_credit) else required_credit
+                status = "Watch"
+                tier = "manual-confirmation-scout"
+                reason = "manual-confirmation scout: live price/risk pass, but confirm before entry: " + ";".join(scout_soft)
+                out.at[idx, "what_must_improve"] = "manual check must clear: " + ";".join(scout_soft)
+                out.at[idx, "trigger"] = (
+                    f"SCOUT ONLY: recheck ticker news, OI/flow context, and Schwab chain; then work 1-lot at "
+                    f"${scout_price:.2f} credit or better. No size-up."
+                )
             elif core_blockers:
                 status = "Research"
                 reason = ";".join(core_blockers)
@@ -1688,12 +1830,33 @@ def assign_trade_statuses(
             elif (
                 not watch_blockers
                 and edge_watch_ok
+                and debit_price_miss
+                and math.isfinite(required_debit)
+                and confirmation_score >= 5.0
+            ):
+                status = "Watch"
+                tier = "work-limit-price-target"
+                reason = f"work-limit trade: target ${required_debit:.2f} debit; current debit ${debit:.2f} is above target, so show the ticket but do not chase above target"
+                out.at[idx, "what_must_improve"] = f"debit must fall to ${required_debit:.2f} or better"
+            elif scout_ok:
+                scout_price = min(debit, required_debit) if math.isfinite(debit) and math.isfinite(required_debit) else required_debit
+                status = "Watch"
+                tier = "manual-confirmation-scout"
+                reason = "manual-confirmation scout: live price/risk pass, but confirm before entry: " + ";".join(scout_soft)
+                out.at[idx, "what_must_improve"] = "manual check must clear: " + ";".join(scout_soft)
+                out.at[idx, "trigger"] = (
+                    f"SCOUT ONLY: recheck ticker news, OI/flow context, and Schwab chain; then work 1-lot at "
+                    f"${scout_price:.2f} debit or better. No size-up."
+                )
+            elif (
+                not watch_blockers
+                and edge_watch_ok
                 and math.isfinite(debit)
                 and math.isfinite(required_debit)
                 and debit > required_debit * 1.35
                 and confirmation_score >= 5.0
             ):
-                status = "Research"
+                status = "Watch"
                 tier = "debit-price-annotation"
                 reason = f"debit replay/thesis is promising but current debit ${debit:.2f} is above target ${required_debit:.2f}; keep visible, no chase"
             elif core_blockers:
@@ -1716,12 +1879,16 @@ def assign_trade_statuses(
         if price_annotation:
             out.at[idx, "price_annotation"] = price_annotation
             if not _clean_note(out.at[idx, "what_must_improve"] if "what_must_improve" in out.columns else "") and status in {"Watch", "Research"}:
-                if math.isfinite(debit) and math.isfinite(required_debit) and debit > required_debit:
+                if credit_price_miss:
+                    out.at[idx, "what_must_improve"] = f"credit must improve to ${required_credit:.2f} or better"
+                elif debit_price_miss:
                     out.at[idx, "what_must_improve"] = f"debit must fall to ${required_debit:.2f} or better"
                 elif math.isfinite(debit) and math.isfinite(required_debit):
                     out.at[idx, "what_must_improve"] = "non-price confirmations must improve; debit is already within target"
+                elif math.isfinite(credit) and math.isfinite(required_credit):
+                    out.at[idx, "what_must_improve"] = "non-price confirmations must improve; credit is already within target"
                 else:
-                    out.at[idx, "what_must_improve"] = "fresh Schwab debit recheck required"
+                    out.at[idx, "what_must_improve"] = "fresh Schwab price recheck required"
         if status == "Execute":
             out.at[idx, "primary_blocker"] = ""
         elif status == "Watch" and not _clean_note(row.get("primary_blocker")):
@@ -1778,7 +1945,14 @@ def select_final_trades(
         if approved.empty:
             return approved
         tier_bonus = approved.get("trade_tier", pd.Series("", index=approved.index)).fillna("").map(
-            {"Execute A": 100.0, "Execute A+": 100.0, "Execute B": 50.0, "Execute Tactical": 35.0, "ETF/index fallback": 20.0}
+            {
+                "Execute A": 100.0,
+                "Execute A+": 100.0,
+                "Execute B": 50.0,
+                "Execute Tactical": 35.0,
+                "Execute Fallback Income": 25.0,
+                "ETF/index fallback": 20.0,
+            }
         ).fillna(0.0)
         approved["_rank"] = (
             tier_bonus
@@ -1898,8 +2072,11 @@ def select_final_trades(
         portfolio_cap = safe_float(row.get("portfolio_size_cap"))
         if math.isfinite(portfolio_cap) and portfolio_cap > 0:
             contracts = min(contracts, int(portfolio_cap))
-        if str(row.get("trade_tier")) in {"Execute Secondary", "Execute Tactical"} or (
-            bool(row.get("index_fallback", False)) and index_income_mode != "primary"
+        if (
+            str(row.get("trade_tier")) in {"Execute Secondary", "Execute Tactical"}
+            or str(row.get("trade_tier")) == "Execute Fallback Income"
+            or str(row.get("alpha_tier") or "").strip() == "Tier 2"
+            or (bool(row.get("index_fallback", False)) and index_income_mode != "primary")
         ):
             contracts = min(contracts, 1)
         ticker = str(row.get("ticker"))
@@ -1945,9 +2122,14 @@ def select_final_trades(
             )
         else:
             out["sizing_label"] = "1-lot base"
-            out["sizing_rationale"] = (
-                "Kept to 1-lot because confidence, live expectancy, risk budget, sample size, or liquidity did not justify a size-up."
-            )
+            if str(row.get("alpha_tier") or "").strip() == "Tier 2":
+                out["sizing_rationale"] = (
+                    "Kept to 1-lot because Tier 2 liquidity-shift setups require live outcome proof before size-up."
+                )
+            else:
+                out["sizing_rationale"] = (
+                    "Kept to 1-lot because confidence, live expectancy, risk budget, sample size, or liquidity did not justify a size-up."
+                )
         out["position_size"] = f"{contracts} contract{'s' if contracts != 1 else ''}; max risk ${risk:,.0f}"
         credit = safe_float(row.get("credit"))
         debit = safe_float(row.get("debit"))
@@ -2307,39 +2489,62 @@ def build_entry_watchlist(scored: pd.DataFrame, *, top_n: int = 12) -> pd.DataFr
         rows = []
         for _, row in watch_rows.iterrows():
             is_credit = _is_credit_strategy(row)
+            is_scout = "scout" in str(row.get("trade_tier") or "").lower()
+            existing_trigger = _clean_note(row.get("trigger"))
+            existing_improvement = _clean_note(row.get("what_must_improve"))
             required = safe_float(row.get("required_entry"))
             credit = safe_float(row.get("credit"))
             debit = _current_debit(row)
             if is_credit:
+                order_credit = (
+                    max(credit, required)
+                    if is_scout and math.isfinite(credit) and math.isfinite(required)
+                    else required
+                )
                 current_entry = f"${credit:.2f} credit" if math.isfinite(credit) else "n/a"
-                target_entry = f">= ${required:.2f} credit" if math.isfinite(required) else "fresh Schwab recheck"
+                target_entry = f">= ${order_credit:.2f} credit" if math.isfinite(order_credit) else "fresh Schwab recheck"
                 trigger = (
-                    f"Work 1-lot at ${required:.2f} credit only. No chase below ${required:.2f}. Fresh Schwab recheck required."
+                    existing_trigger
+                    if existing_trigger
+                    else f"Work 1-lot at ${required:.2f} credit only. No chase below ${required:.2f}. Fresh Schwab recheck required."
                     if math.isfinite(required)
                     else "Fresh Schwab recheck required before entry."
                 )
-                limit_order = f"SELL TO OPEN 1 spread at ${required:.2f} credit limit" if math.isfinite(required) else "fresh Schwab recheck required"
+                limit_order = f"SELL TO OPEN 1 spread at ${order_credit:.2f} credit limit" if math.isfinite(order_credit) else "fresh Schwab recheck required"
                 what_must_improve = (
+                    existing_improvement
+                    if existing_improvement
+                    else
                     f"credit must improve from ${credit:.2f} to at least ${required:.2f}"
                     if math.isfinite(credit) and math.isfinite(required) and credit < required
                     else "quote must tighten with fresh Schwab confirmation"
                 )
-                watch_kind = "price_improvement_credit"
+                watch_kind = "manual_confirmation_scout" if is_scout else "price_improvement_credit"
             else:
+                order_debit = (
+                    min(debit, required)
+                    if is_scout and math.isfinite(debit) and math.isfinite(required)
+                    else required
+                )
                 current_entry = f"${debit:.2f} debit" if math.isfinite(debit) else "n/a"
-                target_entry = f"<= ${required:.2f} debit" if math.isfinite(required) else "fresh Schwab recheck"
+                target_entry = f"<= ${order_debit:.2f} debit" if math.isfinite(order_debit) else "fresh Schwab recheck"
                 trigger = (
-                    f"Work 1-lot at ${required:.2f} debit or better. No chase above ${required:.2f}. Fresh Schwab recheck required."
+                    existing_trigger
+                    if existing_trigger
+                    else f"Work 1-lot at ${required:.2f} debit or better. No chase above ${required:.2f}. Fresh Schwab recheck required."
                     if math.isfinite(required)
                     else "Fresh Schwab recheck required before entry."
                 )
-                limit_order = f"BUY TO OPEN 1 spread at ${required:.2f} debit limit" if math.isfinite(required) else "fresh Schwab recheck required"
+                limit_order = f"BUY TO OPEN 1 spread at ${order_debit:.2f} debit limit" if math.isfinite(order_debit) else "fresh Schwab recheck required"
                 what_must_improve = (
+                    existing_improvement
+                    if existing_improvement
+                    else
                     f"debit must fall from ${debit:.2f} to ${required:.2f} or better"
                     if math.isfinite(debit) and math.isfinite(required) and debit > required
                     else "quote must tighten with fresh Schwab confirmation"
                 )
-                watch_kind = "price_improvement_debit"
+                watch_kind = "manual_confirmation_scout" if is_scout else "price_improvement_debit"
             rows.append(
                 {
                     "watch_rank_score": safe_float(row.get("confirmation_score"), 0.0) + safe_float(row.get("score"), 0.0) * 0.05,
@@ -2923,7 +3128,8 @@ def _compact_edge_text(row: pd.Series) -> str:
 
 
 def _compact_reason_text(row: pd.Series) -> str:
-    if str(row.get("trade_status") or "") == "Watch":
+    status_text = str(row.get("trade_status") or row.get("status") or "")
+    if "Watch" in status_text:
         keys = ("what_must_improve", "trade_status_reason", "reason", "primary_blocker", "penalties", "hard_rejects")
     else:
         keys = ("primary_blocker", "trade_status_reason", "reason", "what_must_improve", "penalties", "hard_rejects")
@@ -3329,6 +3535,8 @@ def _first_screen_frame(
     data_status = (data_quality or {}).get("status", "unknown")
     rows = [
             {"Item": "Pipeline", "Value": PIPELINE_NAME},
+            {"Item": "Version", "Value": PIPELINE_VERSION},
+            {"Item": "Version lock", "Value": "locked 2026-05-21"},
             {"Item": "Monthly target", "Value": _money((target_model or {}).get("monthly_profit_target"))},
             {"Item": "MTD realized P/L", "Value": _money((target_model or {}).get("month_to_date_realized_pnl"))},
             {"Item": "Remaining target", "Value": _money((target_model or {}).get("remaining_monthly_target"))},
@@ -3955,6 +4163,7 @@ def write_outputs(
             {
                 "pipeline_name": PIPELINE_NAME,
                 "pipeline_version": PIPELINE_VERSION,
+                "version_lock": pipeline_version_record("v2"),
                 "asof": str(asof),
                 "report_mode": run_mode,
                 "data_quality": data_quality or {},
