@@ -18,6 +18,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_artifact_manifest,
     build_daily_snapshot,
     build_decision_board_rows,
+    build_pattern_recommendations,
     build_shadow_ledger_rows,
     build_trade_review_candidates,
     build_validation_splits,
@@ -32,6 +33,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     source_completeness_for_date,
     sources_for_date,
     trade_output_row,
+    pattern_recommendation_output_row,
     trade_review_output_row,
     validate_decision_board_rows,
 )
@@ -976,6 +978,12 @@ def test_validated_regime_edge_surfaces_trade_review_instead_of_blanket_avoid():
     assert rows[0]["edge_review_reason"] == "VALIDATED_FAMILY_AND_REGIME_EDGE_REVIEW"
     assert "MARKET_REGIME_CONFLICT" in rows[0]["block_reasons"]
     assert trade_review_output_row(rows[0])["review_status"] == "VALIDATED_EDGE_REVIEW"
+    recommendations = build_pattern_recommendations([], rows)
+    assert len(recommendations) == 1
+    recommendation = pattern_recommendation_output_row(recommendations[0], 1)
+    assert recommendation["recommendation"] == "PATTERN_RECOMMENDATION"
+    assert recommendation["entry_limit"] == "debit 10.60-10.75"
+    assert "Validated historical edge" in recommendation["why_recommended"]
 
 
 def test_decision_board_schema_accepts_no_trade_contract():

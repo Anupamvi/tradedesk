@@ -4628,6 +4628,7 @@ def write_outputs(
     )
     actionable = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AUTO_APPROVED"])
     trade_review = build_trade_review_candidates(decision_enriched_rows)
+    pattern_recommendations = build_pattern_recommendations(actionable, trade_review)
     watch = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "TRADE_REVIEW" and r.get("classification") == "WATCH"])
     blocked = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AVOID"])
 
@@ -4662,6 +4663,7 @@ def write_outputs(
         "run_kill_switches": run_controls["run_kill_switches"],
         "candidate_counts": {
             "auto_approved": len(actionable),
+            "pattern_recommendations": len(pattern_recommendations),
             "trade_review_candidates": len(trade_review),
             "avoid": len(blocked),
             "watchlist_research_setups": len(watch),
@@ -4683,6 +4685,7 @@ def write_outputs(
     paths = {
         "daily_report": str(out_dir / f"daily_report_{as_of}.md"),
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
+        "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
         "discovered_pattern_families": str(out_dir / "discovered_pattern_families.csv"),
@@ -4739,6 +4742,11 @@ def write_outputs(
     backtest_month_rows = build_full_backtest_by_month(validation_bundle.get("outcomes", []))
 
     write_csv(Path(paths["actionable_trades"]), [trade_output_row(r) for r in actionable], trade_fieldnames())
+    write_csv(
+        Path(paths["pattern_recommendations"]),
+        [pattern_recommendation_output_row(r, idx) for idx, r in enumerate(pattern_recommendations, 1)],
+        pattern_recommendation_fieldnames(),
+    )
     write_csv(Path(paths["watchlist_research_setups"]), [trade_output_row(r) for r in watch], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [blocked_output_row(r) for r in blocked], blocked_fieldnames())
     write_csv(Path(paths["trade_review_candidates"]), [trade_review_output_row(r) for r in trade_review], trade_review_fieldnames())
@@ -4833,6 +4841,7 @@ def write_outputs(
             as_of,
             snapshots[as_of],
             actionable,
+            pattern_recommendations,
             trade_review,
             watch,
             blocked,
@@ -4888,6 +4897,7 @@ def write_source_incomplete_outputs(
     paths = {
         "daily_report": str(out_dir / f"daily_report_{as_of}.md"),
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
+        "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
         "discovered_pattern_families": str(out_dir / "discovered_pattern_families.csv"),
@@ -4925,6 +4935,7 @@ def write_source_incomplete_outputs(
         "regime_sector_validation": str(out_dir / "validation_by_regime_sector_ticker.csv"),
     }
     write_csv(Path(paths["actionable_trades"]), [], trade_fieldnames())
+    write_csv(Path(paths["pattern_recommendations"]), [], pattern_recommendation_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [], blocked_fieldnames())
     write_csv(Path(paths["trade_review_candidates"]), [], trade_review_fieldnames())
@@ -5103,6 +5114,20 @@ def daily_trade_decision(
     return "NO_TRADE"
 
 
+def build_pattern_recommendations(
+    actionable: Sequence[Mapping[str, Any]],
+    trade_review: Sequence[Mapping[str, Any]],
+) -> List[Mapping[str, Any]]:
+    recommendations: List[Mapping[str, Any]] = []
+    recommendations.extend(actionable)
+    recommendations.extend(
+        row
+        for row in trade_review
+        if row.get("edge_review_reason") or trade_review_status(row) == "VALIDATED_EDGE_REVIEW"
+    )
+    return dedupe_rows_by_ticket(recommendations)
+
+
 def build_trade_review_candidates(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
     candidates_by_ticket: Dict[Tuple[str, str, str, str], Mapping[str, Any]] = {}
     for row in rows:
@@ -5256,6 +5281,30 @@ def trade_review_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         }
     )
     return row
+
+
+def pattern_recommendation_output_row(r: Mapping[str, Any], rank: int) -> Dict[str, Any]:
+    row = trade_review_output_row(r)
+    recommendation = "AUTO_APPROVED" if r.get("status") == "AUTO_APPROVED" else "PATTERN_RECOMMENDATION"
+    row.update(
+        {
+            "recommendation_rank": rank,
+            "recommendation": recommendation,
+            "entry_limit": trade_setup_fields(r).get("entry_range"),
+            "why_recommended": recommendation_reason_text(r),
+            "why_not_auto_approved": blocker_text(r) if r.get("status") != "AUTO_APPROVED" else "",
+        }
+    )
+    return row
+
+
+def recommendation_reason_text(row: Mapping[str, Any]) -> str:
+    if row.get("status") == "AUTO_APPROVED":
+        return "All auto-approval gates passed."
+    edge = row.get("edge_review_evidence")
+    if edge:
+        return f"Validated historical edge: {edge}"
+    return f"Positive expected R {fmt_num(row.get('expected_R'))} with review blockers."
 
 
 def trade_setup_fields(r: Mapping[str, Any]) -> Dict[str, str]:
@@ -5517,6 +5566,35 @@ def append_trade_review_table(
     lines.append("")
 
 
+def recommendation_row(row: Mapping[str, Any], index: int) -> str:
+    setup = trade_setup_fields(row)
+    label = "AUTO_APPROVED" if row.get("status") == "AUTO_APPROVED" else "PATTERN_RECOMMENDATION"
+    return (
+        f"| {index} | {label} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
+        f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('entry_range'))} | "
+        f"{money_text(row.get('max_risk_per_contract'))} | {pct_text(row.get('success_probability_pct'))} | "
+        f"{pct_text(row.get('probability_score'))} | {markdown_cell(recommendation_reason_text(row))} | "
+        f"{markdown_cell(blocker_text(row) if row.get('status') != 'AUTO_APPROVED' else '')} |"
+    )
+
+
+def append_pattern_recommendation_table(
+    lines: List[str],
+    rows: Sequence[Mapping[str, Any]],
+    limit: int = 8,
+) -> None:
+    lines.append("## Pattern Recommendations")
+    if not rows:
+        lines.append("- No pattern recommendation with complete ticket and validated edge.")
+        lines.append("")
+        return
+    lines.append("| # | Recommendation | Ticker | Bias | Full Ticket | Entry Limit | Max Risk | Success | Score | Why Recommended | Why Not Auto |")
+    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---|---|")
+    for idx, row in enumerate(rows[:limit], 1):
+        lines.append(recommendation_row(row, idx))
+    lines.append("")
+
+
 def append_strategy_glossary(lines: List[str], rows: Sequence[Mapping[str, Any]]) -> None:
     strategies: Dict[str, str] = {}
     for row in rows:
@@ -5593,6 +5671,7 @@ def render_daily_report(
     as_of: str,
     snapshot: Snapshot,
     actionable: Sequence[Mapping[str, Any]],
+    pattern_recommendations: Sequence[Mapping[str, Any]],
     trade_review: Sequence[Mapping[str, Any]],
     watch: Sequence[Mapping[str, Any]],
     blocked: Sequence[Mapping[str, Any]],
@@ -5619,6 +5698,7 @@ def render_daily_report(
     regime = snapshot.market_regime
     lines.append("## Decision Summary")
     lines.append(f"- Approved trades: {len(actionable)}.")
+    lines.append(f"- Pattern recommendations: {len(pattern_recommendations)}.")
     lines.append(f"- Trade-review candidates: {len(trade_review)}.")
     if not actionable:
         lines.append(f"- No-trade reason: {no_trade_reason}")
@@ -5637,6 +5717,7 @@ def render_daily_report(
     )
     lines.append("")
 
+    append_pattern_recommendation_table(lines, pattern_recommendations, 8)
     append_ticket_table(lines, "AUTO_APPROVED Trade Tickets", actionable, "AUTO_APPROVED", 10, "No auto-approved trade tickets.")
     append_trade_review_table(lines, trade_review, 12)
     append_ticket_table(lines, "Trade-Review Watch Tickets", watch, "TRADE_REVIEW", 15, "No review watch tickets passed the daily screens.")
@@ -5796,6 +5877,16 @@ def trade_review_fieldnames() -> List[str]:
         "promotion_needed",
         "hard_blockers",
     ] + trade_fieldnames()
+
+
+def pattern_recommendation_fieldnames() -> List[str]:
+    return [
+        "recommendation_rank",
+        "recommendation",
+        "entry_limit",
+        "why_recommended",
+        "why_not_auto_approved",
+    ] + trade_review_fieldnames()
 
 
 def discovered_fieldnames() -> List[str]:
