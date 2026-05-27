@@ -6083,7 +6083,8 @@ def ticket_row(
         why = blocker_text(row) or row.get("why_actionable_now") or ""
     return (
         f"| {index} | {status} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
-        f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('strategy'))} | "
+        f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('occ_symbols'))} | "
+        f"{markdown_cell(setup.get('strategy'))} | "
         f"{markdown_cell(strategy_plain_english(setup.get('strategy', '')))} | {markdown_cell(setup.get('entry_range'))} | "
         f"{money_text(row.get('max_risk_per_contract'))} | {pct_text(row.get('success_probability_pct'))} | "
         f"{pct_text(row.get('probability_score'))} | {markdown_cell(why)} |"
@@ -6103,8 +6104,8 @@ def append_ticket_table(
         lines.append(f"- {empty_text}")
         lines.append("")
         return
-    lines.append("| # | Status | Ticker | Bias | Full Ticket | Strategy | Meaning | Entry | Max Risk | Success | Score | Why |")
-    lines.append("|---:|---|---|---|---|---|---|---:|---:|---:|---:|---|")
+    lines.append("| # | Status | Ticker | Bias | Full Ticket | OCC / Legs | Strategy | Meaning | Entry | Max Risk | Success | Score | Why |")
+    lines.append("|---:|---|---|---|---|---|---|---|---:|---:|---:|---:|---|")
     for idx, row in enumerate(rows[:limit], 1):
         lines.append(ticket_row(row, status, idx))
     lines.append("")
@@ -6116,6 +6117,7 @@ def trade_review_row(row: Mapping[str, Any], index: int) -> str:
     return (
         f"| {index} | {markdown_cell(trade_review_status(row))} | {markdown_cell(row.get('ticker'))} | "
         f"{markdown_cell(row.get('direction'))} | {markdown_cell(setup.get('trade_setup'))} | "
+        f"{markdown_cell(setup.get('occ_symbols'))} | "
         f"{markdown_cell(setup.get('entry_range'))} | {money_text(row.get('max_risk_per_contract'))} | "
         f"{pct_text(row.get('success_probability_pct'))} | {pct_text(row.get('probability_score'))} | "
         f"{markdown_cell(edge_evidence)} | {markdown_cell(blocker_text(row))} | {markdown_cell(promotion_needed_text(row))} |"
@@ -6133,8 +6135,8 @@ def append_trade_review_table(
         lines.append("- No reviewable tickets with complete quotes/liquidity.")
         lines.append("")
         return
-    lines.append("| # | Review | Ticker | Bias | Full Ticket | Entry | Max Risk | Success | Score | Edge Evidence | What's Wrong | Promotion Needed |")
-    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---|---|---|")
+    lines.append("| # | Review | Ticker | Bias | Full Ticket | OCC / Legs | Entry | Max Risk | Success | Score | Edge Evidence | What's Wrong | Promotion Needed |")
+    lines.append("|---:|---|---|---|---|---|---:|---:|---:|---:|---|---|---|")
     for idx, row in enumerate(rows[:limit], 1):
         lines.append(trade_review_row(row, idx))
     lines.append("")
@@ -6145,7 +6147,8 @@ def recommendation_row(row: Mapping[str, Any], index: int) -> str:
     label = "AUTO_APPROVED" if row.get("status") == "AUTO_APPROVED" else "PATTERN_RECOMMENDATION"
     return (
         f"| {index} | {label} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
-        f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('entry_range'))} | "
+        f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('occ_symbols'))} | "
+        f"{markdown_cell(setup.get('entry_range'))} | "
         f"{money_text(row.get('max_risk_per_contract'))} | {pct_text(row.get('success_probability_pct'))} | "
         f"{pct_text(row.get('probability_score'))} | {fmt_num(row.get('expected_R'))} | "
         f"{fmt_num(row.get('payoff_ratio'))}x | {pct_text(breakeven_success_probability_pct(row))} | "
@@ -6164,8 +6167,8 @@ def append_pattern_recommendation_table(
         lines.append("- No pattern recommendation with complete ticket and validated edge.")
         lines.append("")
         return
-    lines.append("| # | Recommendation | Ticker | Bias | Full Ticket | Entry Limit | Max Risk | Success | Score | Exp R | Payoff | Breakeven | Edge vs BE | Why Recommended | Why Not Auto |")
-    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|")
+    lines.append("| # | Recommendation | Ticker | Bias | Full Ticket | OCC / Legs | Entry Limit | Max Risk | Success | Score | Exp R | Payoff | Breakeven | Edge vs BE | Why Recommended | Why Not Auto |")
+    lines.append("|---:|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|")
     for idx, row in enumerate(rows[:limit], 1):
         lines.append(recommendation_row(row, idx))
     lines.append("")
@@ -6178,7 +6181,8 @@ def catalyst_flow_leader_row(row: Mapping[str, Any], index: int) -> str:
         f"| {index} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
         f"{money_text(total_premium)} | {fmt_pct(row.get('flow_call_premium_share'))} | "
         f"{fmt_pct(row.get('flow_put_premium_share'))} | {fmt_pct(row.get('flow_call_ask_premium_share'))} | "
-        f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('entry_range'))} | "
+        f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('occ_symbols'))} | "
+        f"{markdown_cell(setup.get('entry_range'))} | "
         f"{money_text(row.get('max_risk_per_contract'))} | {pct_text(row.get('success_probability_pct'))} | "
         f"{pct_text(row.get('probability_score'))} | {fmt_num(row.get('expected_R'))} | "
         f"{fmt_num(row.get('validation_profit_factor'))} | {markdown_cell(trade_review_status(row))} | "
@@ -6197,8 +6201,8 @@ def append_catalyst_flow_leader_table(
         lines.append("- No catalyst-flow leaders met the rescue threshold.")
         lines.append("")
         return
-    lines.append("| # | Ticker | Bias | Flow Premium | Call Share | Put Share | Ask Call Share | Full Ticket | Entry | Max Risk | Success | Score | Exp R | PF | Review | Why Not Auto |")
-    lines.append("|---:|---|---|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---|---|")
+    lines.append("| # | Ticker | Bias | Flow Premium | Call Share | Put Share | Ask Call Share | Full Ticket | OCC / Legs | Entry | Max Risk | Success | Score | Exp R | PF | Review | Why Not Auto |")
+    lines.append("|---:|---|---|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---:|---:|---|---|")
     for idx, row in enumerate(rows[:limit], 1):
         lines.append(catalyst_flow_leader_row(row, idx))
     lines.append("")
