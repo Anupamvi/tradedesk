@@ -5047,10 +5047,10 @@ def write_outputs(
         "run_kill_switches": run_controls["run_kill_switches"],
         "candidate_counts": {
             "auto_approved": len(actionable),
-        "pattern_recommendations": len(pattern_recommendations),
-        "catalyst_flow_leaders": len(catalyst_flow_leaders),
-        "ticker_trend_edges": len(build_ticker_trend_edge_rows(run_controls["ticker_trend_stats"], run_controls["risk_config"])),
-        "trade_review_candidates": len(trade_review),
+            "pattern_recommendations": len(pattern_recommendations),
+            "catalyst_flow_leaders": len(catalyst_flow_leaders),
+            "ticker_trend_edges": len(build_ticker_trend_edge_rows(run_controls["ticker_trend_stats"], run_controls["risk_config"])),
+            "trade_review_candidates": len(trade_review),
             "avoid": len(blocked),
             "watchlist_research_setups": len(watch),
             "blocked_candidates": len(blocked),
@@ -5065,7 +5065,7 @@ def write_outputs(
             "risk_config_hash": config.get("risk_config_hash"),
         },
         "risk_config": config.get("risk_config", {}),
-        "verdict": final_verdict(validation_bundle, daily_rows),
+        "verdict": final_verdict(validation_bundle, daily_rows, actionable),
     }
 
     paths = {
@@ -6720,7 +6720,13 @@ def flatten_signal(sig: Mapping[str, Any]) -> Dict[str, Any]:
     return row
 
 
-def final_verdict(validation_bundle: Mapping[str, Any], daily_rows: Sequence[Mapping[str, Any]]) -> str:
+def final_verdict(
+    validation_bundle: Mapping[str, Any],
+    daily_rows: Sequence[Mapping[str, Any]],
+    actionable_rows: Sequence[Mapping[str, Any]] = (),
+) -> str:
+    if actionable_rows:
+        return "PRODUCTION_READY"
     tiers = [v.get("confidence_tier") for v in validation_bundle.get("family_tiers", {}).values()]
     if any(t == "PROVEN" for t in tiers):
         return "PRODUCTION_READY"
