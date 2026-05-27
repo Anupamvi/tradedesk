@@ -610,6 +610,86 @@ def test_catalyst_flow_leader_board_keeps_premium_leaders_visible():
     assert "Catalyst/flow leader rescue" in output["why_recommended"]
 
 
+def test_ticker_trend_overlay_can_promote_executable_trade():
+    family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__TECHNOLOGY"
+    daily_rows = [
+        {
+            "ticker": "AMD",
+            "direction": "bullish",
+            "pattern_family": family,
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
+            "classification": "WATCH",
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+            "confidence_tier": "PROMISING",
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "option_type": "call",
+            "strike": 600,
+            "expiry": "2026-06-18",
+            "lead_option_symbol": "AMD260618C00600000",
+            "entry_bid": 10.8,
+            "entry_ask": 11.25,
+            "entry_range": "10.80-11.25",
+            "bid_ask_spread_pct": 0.04,
+            "max_risk_per_contract": 1125.65,
+            "liquidity_volume": 2000,
+            "liquidity_open_interest": 3000,
+            "quote_source": "bot_eod",
+            "current_market_alignment": "RISK_ON",
+            "market_regime": "RISK_ON",
+        }
+    ]
+    outcomes = []
+    for idx in range(34):
+        win = idx % 3 != 0
+        outcomes.append(
+            {
+                "split": "cumulative_to_2026-05_holdout",
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "signal_date": f"2026-05-{idx % 20 + 1:02d}",
+                "ticker": "AMD",
+                "direction": "bullish",
+                "pattern_family": family,
+                "market_regime": "RISK_ON",
+                "strategy_kind": "long_option",
+                "status": "SCORED",
+                "net_r": 2.0 if win else -0.45,
+                "win": int(win),
+            }
+        )
+    validation_bundle = empty_validation_bundle()
+    validation_bundle["family_tiers"] = {
+        family: {
+            "confidence_tier": "PROMISING",
+            "validation_scored_count": 34,
+            "validation_win_count": 22,
+            "validation_success_probability": 22 / 34,
+            "validation_failure_probability": 12 / 34,
+            "validation_probability_score": 0.45,
+            "validation_average_net_r": 0.1,
+            "validation_profit_factor": 1.3,
+            "beats_baselines_count": 6,
+        }
+    }
+    validation_bundle["outcomes"] = outcomes
+
+    rows, controls = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        {"source_complete": True},
+        {},
+    )
+
+    assert rows[0]["status"] == "AUTO_APPROVED"
+    assert rows[0]["classification"] == "TRADE"
+    assert rows[0]["ticker_trend_scope"] == "ticker_direction_strategy"
+    assert rows[0]["success_probability_pct"] > 55
+    assert rows[0]["expected_R"] > 0
+    assert "PATTERN_VALIDATION_NOT_PROVEN" not in rows[0]["block_reasons"]
+    assert controls["run_kill_switches"] == []
+
+
 def test_macro_geo_point_in_time_filters_future_captures(tmp_path):
     browser_dir = tmp_path / "2026-05-12" / "browser_text"
     browser_dir.mkdir(parents=True)
