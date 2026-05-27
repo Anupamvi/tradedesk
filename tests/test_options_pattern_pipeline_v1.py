@@ -16,6 +16,7 @@ from uwos.options_pattern_pipeline_v1.macro_geo import (
 from uwos.options_pattern_pipeline_v1.core import (
     assign_family_tiers,
     build_artifact_manifest,
+    build_catalyst_flow_leaders,
     build_daily_snapshot,
     build_decision_board_rows,
     build_pattern_recommendations,
@@ -26,6 +27,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     decision_board_fieldnames,
     dedupe_rows_by_ticket,
     empty_validation_bundle,
+    generate_signals_for_snapshot,
     normalize_header,
     prepare_decision_rows,
     parse_option_symbol,
@@ -34,15 +36,18 @@ from uwos.options_pattern_pipeline_v1.core import (
     sources_for_date,
     trade_output_row,
     pattern_recommendation_output_row,
+    catalyst_flow_leader_output_row,
     trade_review_output_row,
     validate_decision_board_rows,
 )
 
 
 class SnapshotStub:
-    def __init__(self, features, best_options=None, market_regime=None):
+    def __init__(self, features, best_options=None, market_regime=None, signal_date="2026-05-13"):
+        self.signal_date = signal_date
         self.features = features
         self.best_options = best_options or {}
+        self.option_quotes = {}
         self.market_regime = market_regime or {"regime": "MIXED"}
 
 
@@ -467,6 +472,144 @@ def test_candidate_probability_adjustment_differentiates_same_family_trades():
     assert by_ticker["GOOD"]["pattern_success_probability_pct"] == by_ticker["BAD"]["pattern_success_probability_pct"]
 
 
+def test_catalyst_flow_leader_rescue_surfaces_top_premium_name_despite_low_ratio():
+    feature = {
+        "ticker": "AMD",
+        "close": 505.0,
+        "sector": "Technology",
+        "stock_return_1d": 0.08,
+        "call_volume_ratio_30d": 0.8,
+        "put_volume_ratio_30d": 0.7,
+        "premium_bias": 0.02,
+        "flow_premium_bias": 0.03,
+        "flow_total_premium": 1_600_000_000.0,
+        "flow_call_premium_share": 0.81,
+        "flow_put_premium_share": 0.19,
+        "flow_call_ask_premium_share": 0.81,
+        "flow_put_ask_premium_share": 0.19,
+        "flow_call_ask_ratio": 0.51,
+        "flow_put_ask_ratio": 0.50,
+        "hot_total_premium": 900_000_000.0,
+        "liquidity_score": 40.0,
+        "avg_iv": 0.45,
+        "oi_call_diff": 0.0,
+        "oi_put_diff": 0.0,
+    }
+    snapshot = SnapshotStub(
+        {"AMD": feature},
+        {
+            ("AMD", "bullish"): {
+                "option_symbol": "AMD260618C00500000",
+                "option_type": "call",
+                "expiry": "2026-06-18",
+                "strike": 500,
+                "dte": 23,
+                "bid": 39.85,
+                "ask": 40.40,
+                "mid": 40.125,
+                "spread_pct": 0.014,
+                "volume": 3000,
+                "open_interest": 7000,
+                "quote_source": "bot_eod",
+            }
+        },
+        {"regime": "RISK_ON"},
+        signal_date="2026-05-26",
+    )
+    pattern_config = {
+        "min_call_volume_ratio": 1.35,
+        "min_put_volume_ratio": 1.35,
+        "min_hot_premium": 250_000,
+        "min_oi_diff": 5_000,
+        "max_spread_pct": 0.35,
+        "high_iv": 0.75,
+        "min_liquidity_score": 8.0,
+        "min_ask_side_ratio": 0.52,
+        "max_event_dte_without_event_strategy": 2,
+    }
+
+    signals = generate_signals_for_snapshot(snapshot, pattern_config, max_signals=1)
+
+    assert signals[0]["ticker"] == "AMD"
+    assert signals[0]["base_pattern_family"] == "CATALYST_FLOW_LEADER"
+    assert signals[0]["direction"] == "bullish"
+    assert signals[0]["entry_range"] == "39.85-40.40"
+
+
+def test_catalyst_flow_leader_board_keeps_premium_leaders_visible():
+    rows = [
+        {
+            "ticker": "GOOG",
+            "direction": "bullish",
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
+            "status": "TRADE_REVIEW",
+            "flow_total_premium": 175_000_000.0,
+            "hot_total_premium": 120_000_000.0,
+            "flow_call_premium_share": 0.81,
+            "flow_put_premium_share": 0.19,
+            "flow_call_ask_premium_share": 0.72,
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "option_type": "call",
+            "strike": 400,
+            "expiry": "2026-06-18",
+            "lead_option_symbol": "GOOG260618C00400000",
+            "entry_bid": 5.75,
+            "entry_ask": 6.10,
+            "entry_range": "5.75-6.10",
+            "max_risk_per_contract": 610.65,
+            "success_probability_pct": 29.12,
+            "probability_score": 23.87,
+            "expected_R": 0.0307,
+            "avg_win_R": 2.4,
+            "avg_loss_R": -0.91,
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+        },
+        {
+            "ticker": "SNDK",
+            "direction": "bullish",
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
+            "status": "TRADE_REVIEW",
+            "flow_total_premium": 1_896_000_000.0,
+            "hot_total_premium": 900_000_000.0,
+            "flow_call_premium_share": 0.49,
+            "flow_put_premium_share": 0.51,
+            "flow_call_ask_premium_share": 0.53,
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "option_type": "call",
+            "strike": 2100,
+            "expiry": "2026-06-05",
+            "lead_option_symbol": "SNDK260605C02100000",
+            "entry_bid": 9.40,
+            "entry_ask": 10.70,
+            "entry_range": "9.40-10.70",
+            "max_risk_per_contract": 1070.65,
+            "success_probability_pct": 37.35,
+            "probability_score": 34.39,
+            "expected_R": 0.4556,
+            "avg_win_R": 2.4,
+            "avg_loss_R": -0.91,
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+        },
+        {
+            "ticker": "MSFT",
+            "direction": "bullish",
+            "base_pattern_family": "OI_GAMMA_CONTINUATION",
+            "flow_total_premium": 500_000_000.0,
+        },
+    ]
+
+    leaders = build_catalyst_flow_leaders(rows)
+
+    assert [row["ticker"] for row in leaders] == ["SNDK", "GOOG"]
+    output = catalyst_flow_leader_output_row(leaders[0], 1)
+    assert output["trade_setup"] == "BUY CALL SNDK 2100 exp 2026-06-05"
+    assert output["entry_limit"] == "debit 9.40-10.70"
+    assert output["flow_total_premium"] == 1_896_000_000.0
+    assert "Catalyst/flow leader rescue" in output["why_recommended"]
+
+
 def test_macro_geo_point_in_time_filters_future_captures(tmp_path):
     browser_dir = tmp_path / "2026-05-12" / "browser_text"
     browser_dir.mkdir(parents=True)
@@ -504,6 +647,21 @@ def test_macro_geo_extracts_china_trade_ai_chip_catalysts_and_mapping(tmp_path):
     assert "China/US diplomacy" in event_types
     assert "AI chips/semiconductors" in event_types
     assert {"TSLA", "AAPL", "MU", "NVDA", "SMH", "QQQ"} <= mapped
+
+
+def test_macro_geo_uses_capture_filename_ticker_for_single_name_news(tmp_path):
+    browser_dir = tmp_path / "2026-05-26" / "browser_text"
+    browser_dir.mkdir(parents=True)
+    (browser_dir / "browser-text-capture-news-SNDK-2026-05-26.txt").write_text(
+        "SNDK note for the trading desk.\n"
+        "SanDisk shares rallied on earnings, guidance, revenue, and storage demand.\n",
+        encoding="utf-8",
+    )
+
+    catalysts = collect_macro_geo_catalysts(tmp_path, "2026-05-26")
+    mapped = {ticker for row in catalysts for ticker in row["mapped_tickers"]}
+
+    assert "SNDK" in mapped
 
 
 def test_macro_geo_ignores_unrelated_false_positive_headlines(tmp_path):

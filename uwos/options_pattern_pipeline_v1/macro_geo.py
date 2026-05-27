@@ -376,7 +376,7 @@ def parse_catalysts_from_capture(path: Path, as_of: str, folder_date: str) -> Li
     capture_date = extract_capture_date(text, path.name, folder_date)
     published_dates = extract_published_dates(text)
     urls = sorted(set(re.findall(r"https?://[^\s)>\"]+", text)))[:8]
-    explicit_tickers = extract_explicit_tickers(text)
+    explicit_tickers = extract_explicit_tickers(text, path.name)
     ineligible_reason = ""
     if capture_date > as_of:
         ineligible_reason = "capture_date_after_as_of"
@@ -488,8 +488,11 @@ def extract_published_dates(text: str) -> List[str]:
     return sorted(set(out))
 
 
-def extract_explicit_tickers(text: str) -> set[str]:
+def extract_explicit_tickers(text: str, filename: str = "") -> set[str]:
     tickers = {clean_ticker(t) for t in re.findall(r"^\s*Ticker:\s*([A-Za-z0-9.\-]+)\s*$", text, re.MULTILINE)}
+    filename_match = re.search(r"(?:capture|news|ticker)[-_]([A-Z0-9.\-]{1,8})[-_](?:20\d{2}-\d{2}-\d{2})", filename, re.IGNORECASE)
+    if filename_match:
+        tickers.add(clean_ticker(filename_match.group(1)))
     for ticker in ALL_MAPPED_TICKERS:
         if re.search(rf"\b{re.escape(ticker)}\b", text, flags=re.IGNORECASE):
             tickers.add(ticker)
@@ -663,14 +666,27 @@ def uw_confirmation_row(
 
 
 def direction_for_quote(direction_bias: str, uw_direction: str) -> str:
-    if direction_bias in {"bullish", "bearish"}:
-        return direction_bias
     if uw_direction in {"bullish", "bearish"}:
         return uw_direction
+    if direction_bias in {"bullish", "bearish"}:
+        return direction_bias
     return "bullish"
 
 
 def infer_uw_direction(feature: Mapping[str, Any]) -> str:
+    call_share = _num(feature.get("flow_call_premium_share"))
+    put_share = _num(feature.get("flow_put_premium_share"))
+    call_ask_share = _num(feature.get("flow_call_ask_premium_share"))
+    put_ask_share = _num(feature.get("flow_put_ask_premium_share"))
+    stock_return = _num(feature.get("stock_return_1d")) or 0.0
+    if call_share is not None and call_share >= 0.62 and stock_return >= -0.01:
+        return "bullish"
+    if put_share is not None and put_share >= 0.62 and stock_return <= 0.01:
+        return "bearish"
+    if call_ask_share is not None and call_ask_share >= 0.53 and stock_return >= 0:
+        return "bullish"
+    if put_ask_share is not None and put_ask_share >= 0.57 and stock_return <= 0:
+        return "bearish"
     flow_bias = first_num(feature.get("flow_premium_bias"), feature.get("premium_bias"))
     if flow_bias is not None:
         if flow_bias > 0.05:
@@ -827,9 +843,9 @@ def best_daily_row_for_catalyst(
 
 def preferred_catalyst_direction(catalyst: Mapping[str, Any], confirmation: Mapping[str, Any]) -> str:
     for value in (
+        confirmation.get("uw_direction"),
         confirmation.get("catalyst_direction_bias"),
         catalyst.get("direction_bias"),
-        confirmation.get("uw_direction"),
     ):
         direction = str(value or "").lower()
         if direction in {"bullish", "bearish"}:

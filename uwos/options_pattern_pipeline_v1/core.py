@@ -55,6 +55,9 @@ SOURCE_PREFIXES = (
 BOT_EOD_CACHE_SCHEMA_VERSION = 1
 BOT_EOD_QUOTE_MIN_PREMIUM = 10_000.0
 BOT_EOD_QUOTE_MIN_VOLUME = 100.0
+FLOW_LEADER_MIN_PREMIUM = 100_000_000.0
+FLOW_LEADER_MIN_DIRECTION_SHARE = 0.62
+FLOW_LEADER_SCORE_BONUS = 10.0
 GENERATED_OR_OLD_ARTIFACT_MARKERS = (
     "_trend_cache",
     "morning-watch-setups",
@@ -1688,6 +1691,16 @@ def finalize_feature(f: Dict[str, Any]) -> None:
     flow_bullish = (f.get("flow_call_ask_premium") or 0.0) + (f.get("flow_put_bid_premium") or 0.0)
     flow_bearish = (f.get("flow_put_ask_premium") or 0.0) + (f.get("flow_call_bid_premium") or 0.0)
     f["flow_premium_bias"] = safe_div(flow_bullish - flow_bearish, flow_bullish + flow_bearish)
+    flow_call_total = (f.get("flow_call_ask_premium") or 0.0) + (f.get("flow_call_bid_premium") or 0.0)
+    flow_put_total = (f.get("flow_put_ask_premium") or 0.0) + (f.get("flow_put_bid_premium") or 0.0)
+    flow_call_ask = f.get("flow_call_ask_premium") or 0.0
+    flow_put_ask = f.get("flow_put_ask_premium") or 0.0
+    f["flow_call_total_premium"] = flow_call_total
+    f["flow_put_total_premium"] = flow_put_total
+    f["flow_call_premium_share"] = safe_div(flow_call_total, flow_call_total + flow_put_total)
+    f["flow_put_premium_share"] = safe_div(flow_put_total, flow_call_total + flow_put_total)
+    f["flow_call_ask_premium_share"] = safe_div(flow_call_ask, flow_call_ask + flow_put_ask)
+    f["flow_put_ask_premium_share"] = safe_div(flow_put_ask, flow_call_ask + flow_put_ask)
     f["flow_call_ask_ratio"] = safe_div(
         f.get("flow_call_ask_premium"),
         (f.get("flow_call_ask_premium") or 0.0) + (f.get("flow_call_bid_premium") or 0.0),
@@ -1915,6 +1928,27 @@ def generate_signals_for_snapshot(
                 )
             )
 
+        flow_leader_direction = catalyst_flow_leader_direction(f)
+        if flow_leader_direction:
+            score = (
+                FLOW_LEADER_SCORE_BONUS
+                + zish(hot_premium, FLOW_LEADER_MIN_PREMIUM)
+                + 2.0 * abs((f.get("flow_call_premium_share") or 0.5) - 0.5)
+                + max(abs(stock_ret), 0.0)
+            )
+            candidates.append(
+                (
+                    "CATALYST_FLOW_LEADER",
+                    flow_leader_direction,
+                    score,
+                    [
+                        "dominant bot-EOD premium concentration",
+                        "catalyst/flow leader rescue",
+                        f"{flow_leader_direction} flow leader direction",
+                    ],
+                )
+            )
+
         if ticker in INDEX_TICKERS and put_ratio >= pattern_config["min_put_volume_ratio"]:
             score = zish(put_ratio, pattern_config["min_put_volume_ratio"]) + max(
                 f.get("put_call_ratio") or 0.0, 0.0
@@ -1929,11 +1963,92 @@ def generate_signals_for_snapshot(
             )
 
         for family, direction, score, reasons in candidates:
-            quote = snapshot.best_options.get((ticker, direction))
+            if family == "CATALYST_FLOW_LEADER":
+                quote = select_flow_leader_quote(snapshot, f, direction, pattern_config)
+            else:
+                quote = snapshot.best_options.get((ticker, direction))
             signals.append(build_signal(snapshot, f, family, direction, score, reasons, quote, pattern_config))
 
     signals.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
     return signals[:max_signals]
+
+
+def select_flow_leader_quote(
+    snapshot: Snapshot,
+    feature: Mapping[str, Any],
+    direction: str,
+    pattern_config: Mapping[str, Any],
+) -> Optional[Mapping[str, Any]]:
+    ticker = str(feature.get("ticker") or "")
+    max_debit = DEFAULT_RISK_CONFIG["max_risk_per_trade"] / 100.0
+    max_spread = min(0.35, float(pattern_config.get("max_spread_pct", 0.35) or 0.35))
+    best: Optional[Mapping[str, Any]] = None
+    best_score = -1.0
+    for quote in snapshot.option_quotes.values():
+        if quote.get("ticker") != ticker or quote.get("direction") != direction:
+            continue
+        if quote.get("strategy_kind") == "credit_spread":
+            continue
+        ask = num(quote.get("ask"))
+        bid = num(quote.get("bid"))
+        dte = num(quote.get("dte"))
+        spread_pct = num(quote.get("spread_pct"))
+        volume = num(quote.get("volume")) or 0.0
+        open_interest = num(quote.get("open_interest")) or 0.0
+        if ask is None or bid is None or ask <= 0 or bid < 0:
+            continue
+        if ask > max_debit or ask < 0.25:
+            continue
+        if dte is None or dte < 7 or dte > 70:
+            continue
+        if volume < 50 or open_interest < 25:
+            continue
+        if spread_pct is None or spread_pct > max_spread:
+            continue
+        premium = max(num(quote.get("premium")) or 0.0, 0.0)
+        score = (
+            math.log1p(volume)
+            + math.log1p(open_interest)
+            + math.log1p(premium / 1000.0)
+            - 8.0 * spread_pct
+            - abs(float(dte) - 21.0) / 70.0
+        )
+        if score > best_score:
+            candidate = dict(quote)
+            candidate["selection_score"] = score
+            best = candidate
+            best_score = score
+    return best or snapshot.best_options.get((ticker, direction))
+
+
+def catalyst_flow_leader_direction(f: Mapping[str, Any]) -> Optional[str]:
+    total_premium = max(num(f.get("flow_total_premium")) or 0.0, num(f.get("hot_total_premium")) or 0.0)
+    if total_premium < FLOW_LEADER_MIN_PREMIUM:
+        return None
+    call_share = num(f.get("flow_call_premium_share"))
+    put_share = num(f.get("flow_put_premium_share"))
+    call_ask_share = num(f.get("flow_call_ask_premium_share"))
+    put_ask_share = num(f.get("flow_put_ask_premium_share"))
+    flow_bias = num(f.get("flow_premium_bias")) or 0.0
+    stock_return = num(f.get("stock_return_1d")) or 0.0
+    call_oi = num(f.get("oi_call_diff")) or 0.0
+    put_oi = num(f.get("oi_put_diff")) or 0.0
+
+    if call_share is not None and call_share >= FLOW_LEADER_MIN_DIRECTION_SHARE:
+        if stock_return >= -0.01 or (call_ask_share is not None and call_ask_share >= 0.45) or call_oi >= put_oi:
+            return "bullish"
+    if put_share is not None and put_share >= FLOW_LEADER_MIN_DIRECTION_SHARE:
+        if stock_return <= 0.01 or (put_ask_share is not None and put_ask_share >= 0.55) or put_oi >= call_oi:
+            return "bearish"
+    if call_ask_share is not None and call_ask_share >= 0.53 and stock_return >= 0:
+        return "bullish"
+    if put_ask_share is not None and put_ask_share >= 0.57 and stock_return <= 0:
+        return "bearish"
+    if flow_bias >= 0.05:
+        return "bullish"
+    if flow_bias <= -0.08 and stock_return <= 0:
+        return "bearish"
+    return None
 
 
 def build_signal(
@@ -2019,6 +2134,10 @@ def build_signal(
         "hot_total_premium": max(f.get("hot_total_premium") or 0.0, f.get("flow_total_premium") or 0.0),
         "flow_total_premium": f.get("flow_total_premium"),
         "flow_premium_bias": f.get("flow_premium_bias"),
+        "flow_call_premium_share": f.get("flow_call_premium_share"),
+        "flow_put_premium_share": f.get("flow_put_premium_share"),
+        "flow_call_ask_premium_share": f.get("flow_call_ask_premium_share"),
+        "flow_put_ask_premium_share": f.get("flow_put_ask_premium_share"),
         "avg_iv": f.get("avg_iv"),
         "quote_iv": quote.get("iv"),
         "avg_spread_pct": f.get("avg_spread_pct"),
@@ -3523,9 +3642,12 @@ def enrich_decision_row(
         baselines_beaten,
     )
     hard_or_reject = hard_review_blockers(blockers)
+    flow_leader_review = catalyst_flow_leader_review_candidate(enriched, blockers, has_ticket)
     if not blockers and enriched.get("classification") == "TRADE":
         status = "AUTO_APPROVED"
     elif edge_review:
+        status = "TRADE_REVIEW"
+    elif flow_leader_review:
         status = "TRADE_REVIEW"
     elif hard_or_reject:
         status = "AVOID"
@@ -3586,6 +3708,24 @@ def probability_decimal(row: Mapping[str, Any]) -> Optional[float]:
         if parsed is not None:
             return parsed
     return None
+
+
+def catalyst_flow_leader_review_candidate(
+    row: Mapping[str, Any],
+    blockers: Iterable[str],
+    has_ticket: bool,
+) -> bool:
+    if not has_ticket:
+        return False
+    if str(row.get("base_pattern_family") or "") != "CATALYST_FLOW_LEADER":
+        return False
+    blocker_set = set(blockers)
+    if blocker_set & (HARD_TRADE_BLOCKERS | RISK_TRADE_BLOCKERS | QUOTE_TRADE_BLOCKERS):
+        return False
+    total_premium = max(num(row.get("flow_total_premium")) or 0.0, num(row.get("hot_total_premium")) or 0.0)
+    if total_premium < FLOW_LEADER_MIN_PREMIUM:
+        return False
+    return True
 
 
 def probability_decimal_from_pct(value: Any) -> Optional[float]:
@@ -4629,6 +4769,7 @@ def write_outputs(
     actionable = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AUTO_APPROVED"])
     trade_review = build_trade_review_candidates(decision_enriched_rows)
     pattern_recommendations = build_pattern_recommendations(actionable, trade_review)
+    catalyst_flow_leaders = build_catalyst_flow_leaders(decision_enriched_rows)
     watch = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "TRADE_REVIEW" and r.get("classification") == "WATCH"])
     blocked = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AVOID"])
 
@@ -4664,6 +4805,7 @@ def write_outputs(
         "candidate_counts": {
             "auto_approved": len(actionable),
             "pattern_recommendations": len(pattern_recommendations),
+            "catalyst_flow_leaders": len(catalyst_flow_leaders),
             "trade_review_candidates": len(trade_review),
             "avoid": len(blocked),
             "watchlist_research_setups": len(watch),
@@ -4686,6 +4828,7 @@ def write_outputs(
         "daily_report": str(out_dir / f"daily_report_{as_of}.md"),
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
+        "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
         "discovered_pattern_families": str(out_dir / "discovered_pattern_families.csv"),
@@ -4746,6 +4889,11 @@ def write_outputs(
         Path(paths["pattern_recommendations"]),
         [pattern_recommendation_output_row(r, idx) for idx, r in enumerate(pattern_recommendations, 1)],
         pattern_recommendation_fieldnames(),
+    )
+    write_csv(
+        Path(paths["catalyst_flow_leaders"]),
+        [catalyst_flow_leader_output_row(r, idx) for idx, r in enumerate(catalyst_flow_leaders, 1)],
+        catalyst_flow_leader_fieldnames(),
     )
     write_csv(Path(paths["watchlist_research_setups"]), [trade_output_row(r) for r in watch], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [blocked_output_row(r) for r in blocked], blocked_fieldnames())
@@ -4842,6 +4990,7 @@ def write_outputs(
             snapshots[as_of],
             actionable,
             pattern_recommendations,
+            catalyst_flow_leaders,
             trade_review,
             watch,
             blocked,
@@ -4891,6 +5040,15 @@ def write_source_incomplete_outputs(
         "macro_geo_summary": macro_geo_bundle.get("summary", {}),
         "daily_trade_decision": "NO_TRADE",
         "run_kill_switches": ["KILL_SWITCH_SOURCE_INCOMPLETE"],
+        "candidate_counts": {
+            "auto_approved": 0,
+            "pattern_recommendations": 0,
+            "catalyst_flow_leaders": 0,
+            "trade_review_candidates": 0,
+            "avoid": 0,
+            "watchlist_research_setups": 0,
+            "blocked_candidates": 0,
+        },
         "risk_config": config.get("risk_config", {}),
         "verdict": "BLOCKED_SOURCE_INCOMPLETE",
     }
@@ -4898,6 +5056,7 @@ def write_source_incomplete_outputs(
         "daily_report": str(out_dir / f"daily_report_{as_of}.md"),
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
+        "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
         "discovered_pattern_families": str(out_dir / "discovered_pattern_families.csv"),
@@ -4936,6 +5095,7 @@ def write_source_incomplete_outputs(
     }
     write_csv(Path(paths["actionable_trades"]), [], trade_fieldnames())
     write_csv(Path(paths["pattern_recommendations"]), [], pattern_recommendation_fieldnames())
+    write_csv(Path(paths["catalyst_flow_leaders"]), [], catalyst_flow_leader_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [], blocked_fieldnames())
     write_csv(Path(paths["trade_review_candidates"]), [], trade_review_fieldnames())
@@ -5123,9 +5283,33 @@ def build_pattern_recommendations(
     recommendations.extend(
         row
         for row in trade_review
-        if row.get("edge_review_reason") or trade_review_status(row) == "VALIDATED_EDGE_REVIEW"
+        if row.get("edge_review_reason")
+        or trade_review_status(row) in {"VALIDATED_EDGE_REVIEW", "CATALYST_FLOW_REVIEW"}
     )
     return dedupe_rows_by_ticket(recommendations)
+
+
+def build_catalyst_flow_leaders(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
+    leaders_by_ticker: Dict[Tuple[str, str], Mapping[str, Any]] = {}
+    for row in rows:
+        if str(row.get("base_pattern_family") or "") != "CATALYST_FLOW_LEADER":
+            continue
+        key = (str(row.get("ticker") or ""), str(row.get("direction") or ""))
+        current = leaders_by_ticker.get(key)
+        if current is None or catalyst_flow_leader_sort_key(row) > catalyst_flow_leader_sort_key(current):
+            leaders_by_ticker[key] = row
+    leaders = list(leaders_by_ticker.values())
+    leaders.sort(key=catalyst_flow_leader_sort_key, reverse=True)
+    return leaders
+
+
+def catalyst_flow_leader_sort_key(row: Mapping[str, Any]) -> Tuple[float, float, float, float]:
+    return (
+        max(num(row.get("flow_total_premium")) or 0.0, num(row.get("hot_total_premium")) or 0.0),
+        num(row.get("probability_score")) or -1.0,
+        num(row.get("success_probability_pct")) or -1.0,
+        num(row.get("pattern_score")) or -1.0,
+    )
 
 
 def build_trade_review_candidates(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
@@ -5194,6 +5378,8 @@ def hard_trade_blockers(row: Mapping[str, Any]) -> List[str]:
 def trade_review_status(row: Mapping[str, Any]) -> str:
     if row.get("edge_review_reason"):
         return "VALIDATED_EDGE_REVIEW"
+    if str(row.get("base_pattern_family") or "") == "CATALYST_FLOW_LEADER":
+        return "CATALYST_FLOW_REVIEW"
     blockers = set(row.get("block_reasons") or [])
     if "NO_TRADEABLE_OPTION_QUOTE" in blockers:
         return "NO_TRADE_NO_QUOTE"
@@ -5222,6 +5408,7 @@ def trade_review_status(row: Mapping[str, Any]) -> str:
 def trade_review_rank(status: str) -> int:
     return {
         "VALIDATED_EDGE_REVIEW": 6,
+        "CATALYST_FLOW_REVIEW": 5,
         "TACTICAL_REVIEW": 5,
         "PROMISING_REVIEW": 4,
         "MACRO_CONFLICT_REVIEW": 3,
@@ -5300,6 +5487,37 @@ def pattern_recommendation_output_row(r: Mapping[str, Any], rank: int) -> Dict[s
     return row
 
 
+def catalyst_flow_leader_output_row(r: Mapping[str, Any], rank: int) -> Dict[str, Any]:
+    setup = trade_setup_fields(r)
+    total_premium = max(num(r.get("flow_total_premium")) or 0.0, num(r.get("hot_total_premium")) or 0.0)
+    return {
+        "leader_rank": rank,
+        "ticker": r.get("ticker"),
+        "direction": r.get("direction"),
+        "status": r.get("status"),
+        "review_status": trade_review_status(r),
+        "flow_total_premium": total_premium,
+        "flow_call_premium_share": r.get("flow_call_premium_share"),
+        "flow_put_premium_share": r.get("flow_put_premium_share"),
+        "flow_call_ask_premium_share": r.get("flow_call_ask_premium_share"),
+        "flow_put_ask_premium_share": r.get("flow_put_ask_premium_share"),
+        "trade_setup": setup.get("trade_setup"),
+        "entry_limit": setup.get("entry_range"),
+        "max_risk_per_contract": r.get("max_risk_per_contract"),
+        "success_probability_pct": r.get("success_probability_pct"),
+        "probability_score": r.get("probability_score"),
+        "expected_R": r.get("expected_R"),
+        "expected_R_per_day": r.get("expected_R_per_day"),
+        "validation_profit_factor": r.get("validation_profit_factor"),
+        "breakeven_success_probability_pct": breakeven_success_probability_pct(r),
+        "edge_vs_breakeven_pct": edge_vs_breakeven_pct(r),
+        "why_recommended": recommendation_reason_text(r),
+        "why_not_auto_approved": blocker_text(r) if r.get("status") != "AUTO_APPROVED" else "",
+        "promotion_needed": promotion_needed_text(r),
+        "occ_symbols": setup.get("occ_symbols"),
+    }
+
+
 def recommendation_reason_text(row: Mapping[str, Any]) -> str:
     if row.get("status") == "AUTO_APPROVED":
         return "All auto-approval gates passed."
@@ -5314,6 +5532,13 @@ def recommendation_reason_text(row: Mapping[str, Any]) -> str:
     edge = row.get("edge_review_evidence")
     if edge:
         return f"Validated historical edge: {edge}{edge_text}"
+    if str(row.get("base_pattern_family") or "") == "CATALYST_FLOW_LEADER":
+        premium = num(row.get("flow_total_premium")) or num(row.get("hot_total_premium"))
+        return (
+            f"Catalyst/flow leader rescue: total premium {money_text(premium)}; "
+            f"flow call share {fmt_pct(row.get('flow_call_premium_share'))}; "
+            f"ask-side call share {fmt_pct(row.get('flow_call_ask_premium_share'))}{edge_text}"
+        )
     return f"Positive expected R {fmt_num(row.get('expected_R'))}{edge_text} with review blockers."
 
 
@@ -5627,6 +5852,39 @@ def append_pattern_recommendation_table(
     lines.append("")
 
 
+def catalyst_flow_leader_row(row: Mapping[str, Any], index: int) -> str:
+    setup = trade_setup_fields(row)
+    total_premium = max(num(row.get("flow_total_premium")) or 0.0, num(row.get("hot_total_premium")) or 0.0)
+    return (
+        f"| {index} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
+        f"{money_text(total_premium)} | {fmt_pct(row.get('flow_call_premium_share'))} | "
+        f"{fmt_pct(row.get('flow_put_premium_share'))} | {fmt_pct(row.get('flow_call_ask_premium_share'))} | "
+        f"{markdown_cell(setup.get('trade_setup'))} | {markdown_cell(setup.get('entry_range'))} | "
+        f"{money_text(row.get('max_risk_per_contract'))} | {pct_text(row.get('success_probability_pct'))} | "
+        f"{pct_text(row.get('probability_score'))} | {fmt_num(row.get('expected_R'))} | "
+        f"{fmt_num(row.get('validation_profit_factor'))} | {markdown_cell(trade_review_status(row))} | "
+        f"{markdown_cell(blocker_text(row) if row.get('status') != 'AUTO_APPROVED' else '')} |"
+    )
+
+
+def append_catalyst_flow_leader_table(
+    lines: List[str],
+    rows: Sequence[Mapping[str, Any]],
+    limit: int = 40,
+) -> None:
+    lines.append("## Catalyst-Flow Leaders")
+    lines.append("- High-premium catalyst/flow names rescued before the recommendation-score cap; sorted by total premium.")
+    if not rows:
+        lines.append("- No catalyst-flow leaders met the rescue threshold.")
+        lines.append("")
+        return
+    lines.append("| # | Ticker | Bias | Flow Premium | Call Share | Put Share | Ask Call Share | Full Ticket | Entry | Max Risk | Success | Score | Exp R | PF | Review | Why Not Auto |")
+    lines.append("|---:|---|---|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---|---|")
+    for idx, row in enumerate(rows[:limit], 1):
+        lines.append(catalyst_flow_leader_row(row, idx))
+    lines.append("")
+
+
 def append_strategy_glossary(lines: List[str], rows: Sequence[Mapping[str, Any]]) -> None:
     strategies: Dict[str, str] = {}
     for row in rows:
@@ -5704,6 +5962,7 @@ def render_daily_report(
     snapshot: Snapshot,
     actionable: Sequence[Mapping[str, Any]],
     pattern_recommendations: Sequence[Mapping[str, Any]],
+    catalyst_flow_leaders: Sequence[Mapping[str, Any]],
     trade_review: Sequence[Mapping[str, Any]],
     watch: Sequence[Mapping[str, Any]],
     blocked: Sequence[Mapping[str, Any]],
@@ -5731,6 +5990,7 @@ def render_daily_report(
     lines.append("## Decision Summary")
     lines.append(f"- Approved trades: {len(actionable)}.")
     lines.append(f"- Pattern recommendations: {len(pattern_recommendations)}.")
+    lines.append(f"- Catalyst-flow leaders: {len(catalyst_flow_leaders)}.")
     lines.append(f"- Trade-review candidates: {len(trade_review)}.")
     if not actionable:
         lines.append(f"- No-trade reason: {no_trade_reason}")
@@ -5750,11 +6010,15 @@ def render_daily_report(
     lines.append("")
 
     append_pattern_recommendation_table(lines, pattern_recommendations, 8)
+    append_catalyst_flow_leader_table(lines, catalyst_flow_leaders, 40)
     append_ticket_table(lines, "AUTO_APPROVED Trade Tickets", actionable, "AUTO_APPROVED", 10, "No auto-approved trade tickets.")
     append_trade_review_table(lines, trade_review, 12)
     append_ticket_table(lines, "Trade-Review Watch Tickets", watch, "TRADE_REVIEW", 15, "No review watch tickets passed the daily screens.")
     append_ticket_table(lines, "Avoid / Blocked Tickets", blocked, "AVOID", 15, "No blocked tickets after daily classification.")
-    append_strategy_glossary(lines, list(actionable[:10]) + list(trade_review[:12]) + list(watch[:15]) + list(blocked[:15]))
+    append_strategy_glossary(
+        lines,
+        list(actionable[:10]) + list(catalyst_flow_leaders[:40]) + list(trade_review[:12]) + list(watch[:15]) + list(blocked[:15]),
+    )
 
     lines.append("## Macro / Catalyst Read")
     eligible_types = macro_summary.get("eligible_event_types") or []
@@ -5921,6 +6185,35 @@ def pattern_recommendation_fieldnames() -> List[str]:
         "why_recommended",
         "why_not_auto_approved",
     ] + trade_review_fieldnames()
+
+
+def catalyst_flow_leader_fieldnames() -> List[str]:
+    return [
+        "leader_rank",
+        "ticker",
+        "direction",
+        "status",
+        "review_status",
+        "flow_total_premium",
+        "flow_call_premium_share",
+        "flow_put_premium_share",
+        "flow_call_ask_premium_share",
+        "flow_put_ask_premium_share",
+        "trade_setup",
+        "entry_limit",
+        "max_risk_per_contract",
+        "success_probability_pct",
+        "probability_score",
+        "expected_R",
+        "expected_R_per_day",
+        "validation_profit_factor",
+        "breakeven_success_probability_pct",
+        "edge_vs_breakeven_pct",
+        "why_recommended",
+        "why_not_auto_approved",
+        "promotion_needed",
+        "occ_symbols",
+    ]
 
 
 def discovered_fieldnames() -> List[str]:
