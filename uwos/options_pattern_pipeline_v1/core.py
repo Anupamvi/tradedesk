@@ -58,6 +58,7 @@ BOT_EOD_QUOTE_MIN_VOLUME = 100.0
 FLOW_LEADER_MIN_PREMIUM = 100_000_000.0
 FLOW_LEADER_MIN_DIRECTION_SHARE = 0.62
 FLOW_LEADER_SCORE_BONUS = 10.0
+SOURCE_COVERAGE_MIN_PREMIUM = 50_000_000.0
 GENERATED_OR_OLD_ARTIFACT_MARKERS = (
     "_trend_cache",
     "morning-watch-setups",
@@ -5009,12 +5010,26 @@ def write_outputs(
         source_completeness,
         config,
     )
+    macro_geo_bundle = build_macro_geo_bundle(
+        base_dir=base_dir,
+        as_of=as_of,
+        snapshots=snapshots,
+        source_dates=sorted(snapshots),
+        daily_rows=decision_enriched_rows,
+        source_complete=bool(source_completeness.get("source_complete")),
+        missing_sources=source_completeness.get("missing_sources", []),
+    )
     actionable = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AUTO_APPROVED"])
     trade_review = build_trade_review_candidates(decision_enriched_rows)
     pattern_recommendations = build_pattern_recommendations(actionable, trade_review)
     catalyst_flow_leaders = build_catalyst_flow_leaders(decision_enriched_rows)
     watch = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "TRADE_REVIEW" and r.get("classification") == "WATCH"])
     blocked = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AVOID"])
+    source_coverage_rows = build_source_ticker_coverage_rows(
+        snapshots[as_of],
+        daily_pattern_config,
+        decision_enriched_rows,
+    )
 
     discovered_rows = []
     for family, tier in sorted(validation_bundle["family_tiers"].items()):
@@ -5049,6 +5064,7 @@ def write_outputs(
             "auto_approved": len(actionable),
             "pattern_recommendations": len(pattern_recommendations),
             "catalyst_flow_leaders": len(catalyst_flow_leaders),
+            "source_ticker_coverage": len(source_coverage_rows),
             "ticker_trend_edges": len(build_ticker_trend_edge_rows(run_controls["ticker_trend_stats"], run_controls["risk_config"])),
             "trade_review_candidates": len(trade_review),
             "avoid": len(blocked),
@@ -5073,6 +5089,7 @@ def write_outputs(
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
+        "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
         "ticker_trend_edges": str(out_dir / "ticker_trend_edges.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
@@ -5141,6 +5158,7 @@ def write_outputs(
         [catalyst_flow_leader_output_row(r, idx) for idx, r in enumerate(catalyst_flow_leaders, 1)],
         catalyst_flow_leader_fieldnames(),
     )
+    write_csv(Path(paths["source_ticker_coverage"]), source_coverage_rows, source_coverage_fieldnames())
     write_csv(Path(paths["ticker_trend_edges"]), ticker_trend_rows, ticker_trend_edge_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [trade_output_row(r) for r in watch], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [blocked_output_row(r) for r in blocked], blocked_fieldnames())
@@ -5238,6 +5256,7 @@ def write_outputs(
             actionable,
             pattern_recommendations,
             catalyst_flow_leaders,
+            source_coverage_rows,
             ticker_trend_rows,
             trade_review,
             watch,
@@ -5292,6 +5311,7 @@ def write_source_incomplete_outputs(
             "auto_approved": 0,
             "pattern_recommendations": 0,
             "catalyst_flow_leaders": 0,
+            "source_ticker_coverage": 0,
             "ticker_trend_edges": 0,
             "trade_review_candidates": 0,
             "avoid": 0,
@@ -5306,6 +5326,7 @@ def write_source_incomplete_outputs(
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
+        "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
         "ticker_trend_edges": str(out_dir / "ticker_trend_edges.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
@@ -5346,6 +5367,7 @@ def write_source_incomplete_outputs(
     write_csv(Path(paths["actionable_trades"]), [], trade_fieldnames())
     write_csv(Path(paths["pattern_recommendations"]), [], pattern_recommendation_fieldnames())
     write_csv(Path(paths["catalyst_flow_leaders"]), [], catalyst_flow_leader_fieldnames())
+    write_csv(Path(paths["source_ticker_coverage"]), [], source_coverage_fieldnames())
     write_csv(Path(paths["ticker_trend_edges"]), [], ticker_trend_edge_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [], blocked_fieldnames())
@@ -5564,6 +5586,222 @@ def build_catalyst_flow_leaders(rows: Sequence[Mapping[str, Any]]) -> List[Mappi
     leaders = list(leaders_by_ticker.values())
     leaders.sort(key=catalyst_flow_leader_sort_key, reverse=True)
     return leaders
+
+
+def build_source_ticker_coverage_rows(
+    snapshot: Snapshot,
+    pattern_config: Mapping[str, Any],
+    decision_rows: Sequence[Mapping[str, Any]],
+    min_premium: float = SOURCE_COVERAGE_MIN_PREMIUM,
+) -> List[Dict[str, Any]]:
+    rows_by_ticker: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
+    for row in decision_rows:
+        ticker = str(row.get("ticker") or "")
+        if ticker:
+            rows_by_ticker[ticker].append(row)
+    for rows in rows_by_ticker.values():
+        rows.sort(key=source_coverage_decision_sort_key, reverse=True)
+
+    coverage_rows: List[Dict[str, Any]] = []
+    for ticker, feature in snapshot.features.items():
+        total_premium = source_coverage_total_premium(feature)
+        if total_premium < min_premium:
+            continue
+        direction = catalyst_flow_leader_direction(feature) or source_coverage_direction(feature)
+        quote = source_coverage_quote(snapshot, feature, direction, pattern_config)
+        setup = source_coverage_setup_fields(ticker, direction, quote)
+        surfaced_rows = rows_by_ticker.get(ticker, [])
+        best_row = surfaced_rows[0] if surfaced_rows else {}
+        status = source_coverage_surface_status(best_row)
+        coverage_rows.append(
+            {
+                "coverage_rank": 0,
+                "ticker": ticker,
+                "decision_surface_status": status,
+                "source_gap_reason": source_coverage_gap_reason(feature, best_row, direction, quote),
+                "source_flags": ";".join(sorted(str(flag) for flag in feature.get("source_flags", []))),
+                "source_total_premium": total_premium,
+                "flow_total_premium": feature.get("flow_total_premium"),
+                "hot_total_premium": feature.get("hot_total_premium"),
+                "stock_screener_total_premium": (num(feature.get("call_premium")) or 0.0)
+                + (num(feature.get("put_premium")) or 0.0),
+                "flow_call_premium_share": feature.get("flow_call_premium_share"),
+                "flow_put_premium_share": feature.get("flow_put_premium_share"),
+                "flow_call_ask_premium_share": feature.get("flow_call_ask_premium_share"),
+                "flow_put_ask_premium_share": feature.get("flow_put_ask_premium_share"),
+                "call_volume_ratio_30d": feature.get("call_volume_ratio_30d"),
+                "put_volume_ratio_30d": feature.get("put_volume_ratio_30d"),
+                "oi_call_diff": feature.get("oi_call_diff"),
+                "oi_put_diff": feature.get("oi_put_diff"),
+                "direction": direction,
+                "decision_status": best_row.get("status", ""),
+                "decision_classification": best_row.get("classification", ""),
+                "decision_pattern_family": best_row.get("pattern_family", ""),
+                "decision_block_reasons": join_reason_list(best_row.get("block_reasons")),
+                "trade_legs": setup.get("trade_legs", ""),
+                "entry_limit": setup.get("entry_range", ""),
+                "quote_source": quote.get("quote_source", ""),
+                "quote_volume": quote.get("volume"),
+                "quote_open_interest": quote.get("open_interest"),
+                "bid_ask_spread_pct": quote.get("spread_pct"),
+                "decision_artifact": source_coverage_artifact(status),
+            }
+        )
+    coverage_rows.sort(
+        key=lambda row: (
+            1 if row.get("decision_surface_status") == "NOT_SURFACED" else 0,
+            num(row.get("source_total_premium")) or 0.0,
+        ),
+        reverse=True,
+    )
+    for idx, row in enumerate(coverage_rows, 1):
+        row["coverage_rank"] = idx
+    return coverage_rows
+
+
+def source_coverage_decision_sort_key(row: Mapping[str, Any]) -> Tuple[int, float, float, float]:
+    return (
+        {"AUTO_APPROVED": 5, "TRADE_REVIEW": 4, "AVOID": 2}.get(str(row.get("status") or ""), 1),
+        trade_review_rank(trade_review_status(row)),
+        num(row.get("probability_score")) or -1.0,
+        num(row.get("pattern_score")) or -1.0,
+    )
+
+
+def source_coverage_total_premium(feature: Mapping[str, Any]) -> float:
+    stock_screener_premium = (num(feature.get("call_premium")) or 0.0) + (num(feature.get("put_premium")) or 0.0)
+    return max(
+        num(feature.get("flow_total_premium")) or 0.0,
+        num(feature.get("hot_total_premium")) or 0.0,
+        stock_screener_premium,
+    )
+
+
+def source_coverage_direction(feature: Mapping[str, Any]) -> str:
+    call_share = num(feature.get("flow_call_premium_share"))
+    put_share = num(feature.get("flow_put_premium_share"))
+    call_ask_share = num(feature.get("flow_call_ask_premium_share"))
+    put_ask_share = num(feature.get("flow_put_ask_premium_share"))
+    flow_bias = num(feature.get("flow_premium_bias")) or num(feature.get("premium_bias")) or 0.0
+    if call_share is not None and put_share is not None and call_share != put_share:
+        return "bullish" if call_share > put_share else "bearish"
+    if call_ask_share is not None and put_ask_share is not None and call_ask_share != put_ask_share:
+        return "bullish" if call_ask_share > put_ask_share else "bearish"
+    if flow_bias < 0:
+        return "bearish"
+    return "bullish"
+
+
+def source_coverage_quote(
+    snapshot: Snapshot,
+    feature: Mapping[str, Any],
+    direction: str,
+    pattern_config: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    ticker = str(feature.get("ticker") or "")
+    if direction in {"bullish", "bearish"}:
+        quote = select_flow_leader_quote(snapshot, feature, direction, pattern_config)
+        if quote:
+            return quote
+    quote_options = [
+        q
+        for key, q in snapshot.best_options.items()
+        if len(key) >= 2 and key[0] == ticker and key[1] in {"bullish", "bearish"}
+    ]
+    if not quote_options:
+        return {}
+    return max(quote_options, key=lambda q: num(q.get("selection_score")) or 0.0)
+
+
+def source_coverage_setup_fields(ticker: str, direction: str, quote: Mapping[str, Any]) -> Dict[str, str]:
+    if not quote:
+        return {"trade_legs": "", "entry_range": ""}
+    strategy_kind = str(quote.get("strategy_kind") or "long_option")
+    if strategy_kind == "credit_spread":
+        row = {
+            "ticker": ticker,
+            "direction": direction,
+            "strategy_kind": strategy_kind,
+            "strategy_type": quote.get("strategy_type") or ("Bull Put Credit Spread" if direction == "bullish" else "Bear Call Credit Spread"),
+            "expiry": quote.get("expiry", ""),
+            "entry_credit": quote.get("entry_credit"),
+            "legs_json": stable_json(quote.get("legs", [])),
+        }
+    else:
+        row = {
+            "ticker": ticker,
+            "direction": direction,
+            "strategy_kind": strategy_kind,
+            "strategy_type": quote.get("strategy_type") or ("Long Call Debit" if direction == "bullish" else "Long Put Debit"),
+            "lead_option_symbol": quote.get("option_symbol", ""),
+            "option_type": quote.get("option_type", "call" if direction == "bullish" else "put"),
+            "strike": quote.get("strike"),
+            "expiry": quote.get("expiry", ""),
+            "entry_bid": quote.get("bid"),
+            "entry_ask": quote.get("ask"),
+            "entry_range": format_entry_range(quote.get("bid"), quote.get("ask")),
+        }
+    return trade_setup_fields(row)
+
+
+def source_coverage_surface_status(row: Mapping[str, Any]) -> str:
+    if not row:
+        return "NOT_SURFACED"
+    status = str(row.get("status") or "")
+    if status == "AUTO_APPROVED":
+        return "AUTO_APPROVED"
+    if status == "TRADE_REVIEW":
+        return "TRADE_REVIEW"
+    if status == "AVOID":
+        return "BLOCKED"
+    return status or "SURFACED"
+
+
+def source_coverage_gap_reason(
+    feature: Mapping[str, Any],
+    best_row: Mapping[str, Any],
+    direction: str,
+    quote: Mapping[str, Any],
+) -> str:
+    if best_row:
+        blockers = join_reason_list(best_row.get("block_reasons"))
+        if blockers:
+            return f"surfaced in decision board; blockers: {blockers}"
+        return "surfaced in decision board"
+    reasons: List[str] = []
+    if not feature.get("close") or feature.get("close") <= 0:
+        reasons.append("missing underlying close/price so signal generator skipped it")
+    total_premium = source_coverage_total_premium(feature)
+    if total_premium < FLOW_LEADER_MIN_PREMIUM:
+        reasons.append("below 100M catalyst-flow-leader threshold")
+    elif not catalyst_flow_leader_direction(feature):
+        reasons.append("premium was high but direction was not decisive enough for flow-leader rescue")
+    else:
+        reasons.append("qualified as high-flow source ticker but did not survive the ranked signal cap")
+    if not quote:
+        reasons.append("no complete tradeable option quote found")
+    elif num(quote.get("spread_pct")) is not None and num(quote.get("spread_pct")) > 0.35:
+        reasons.append("best quote spread is too wide")
+    if direction not in {"bullish", "bearish"}:
+        reasons.append("no usable directional bias")
+    return "; ".join(reasons)
+
+
+def source_coverage_artifact(status: str) -> str:
+    return {
+        "AUTO_APPROVED": "actionable_trades.csv",
+        "TRADE_REVIEW": "trade_review_candidates.csv",
+        "BLOCKED": "blocked_candidates.csv",
+        "NOT_SURFACED": "source_ticker_coverage.csv",
+    }.get(status, "decision_board.csv")
+
+
+def join_reason_list(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return "; ".join(part.strip() for part in value.split(";") if part.strip())
+    return "; ".join(str(part).strip() for part in value if str(part).strip())
 
 
 def catalyst_flow_leader_sort_key(row: Mapping[str, Any]) -> Tuple[float, float, float, float]:
@@ -6268,6 +6506,40 @@ def append_catalyst_flow_leader_table(
     lines.append("")
 
 
+def source_coverage_row(row: Mapping[str, Any], index: int) -> str:
+    return (
+        f"| {index} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('decision_surface_status'))} | "
+        f"{money_text(row.get('source_total_premium'))} | {fmt_pct(row.get('flow_call_premium_share'))} | "
+        f"{fmt_pct(row.get('flow_put_premium_share'))} | {fmt_pct(row.get('flow_call_ask_premium_share'))} | "
+        f"{markdown_cell(row.get('direction'))} | {markdown_cell(row.get('trade_legs'))} | "
+        f"{markdown_cell(row.get('entry_limit'))} | {fmt_num(row.get('quote_volume'))} | "
+        f"{fmt_num(row.get('quote_open_interest'))} | {fmt_pct(row.get('bid_ask_spread_pct'))} | "
+        f"{markdown_cell(row.get('source_gap_reason'))} | {markdown_cell(row.get('decision_artifact'))} |"
+    )
+
+
+def append_source_coverage_table(
+    lines: List[str],
+    rows: Sequence[Mapping[str, Any]],
+    limit: int = 30,
+) -> None:
+    lines.append("## Source Ticker Coverage")
+    lines.append(
+        "- High-premium source tickers from UW. This prevents names with real flow from disappearing without a visible reason."
+    )
+    if not rows:
+        lines.append("- No source ticker met the source-coverage premium floor.")
+        lines.append("")
+        return
+    near_misses = [row for row in rows if row.get("decision_surface_status") == "NOT_SURFACED"]
+    visible = near_misses + [row for row in rows if row.get("decision_surface_status") != "NOT_SURFACED"]
+    lines.append("| # | Ticker | Surface | Source Premium | Call Share | Put Share | Ask Call Share | Bias | Best Legs | Entry | Vol | OI | Spread | Reason | Artifact |")
+    lines.append("|---:|---|---|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|---|")
+    for idx, row in enumerate(visible[:limit], 1):
+        lines.append(source_coverage_row(row, idx))
+    lines.append("")
+
+
 def append_ticker_trend_edge_table(
     lines: List[str],
     rows: Sequence[Mapping[str, Any]],
@@ -6372,6 +6644,7 @@ def render_daily_report(
     actionable: Sequence[Mapping[str, Any]],
     pattern_recommendations: Sequence[Mapping[str, Any]],
     catalyst_flow_leaders: Sequence[Mapping[str, Any]],
+    source_coverage_rows: Sequence[Mapping[str, Any]],
     ticker_trend_rows: Sequence[Mapping[str, Any]],
     trade_review: Sequence[Mapping[str, Any]],
     watch: Sequence[Mapping[str, Any]],
@@ -6401,6 +6674,7 @@ def render_daily_report(
     lines.append(f"- Approved trades: {len(actionable)}.")
     lines.append(f"- Pattern recommendations: {len(pattern_recommendations)}.")
     lines.append(f"- Catalyst-flow leaders: {len(catalyst_flow_leaders)}.")
+    lines.append(f"- Source ticker coverage names: {len(source_coverage_rows)}.")
     lines.append(f"- Executable trend-approved trades: {len(actionable)}.")
     lines.append(f"- Base ticker trend edges: {sum(1 for row in ticker_trend_rows if str(row.get('trade_ready_trend') or '') == 'yes')}.")
     lines.append(f"- Trade-review candidates: {len(trade_review)}.")
@@ -6428,6 +6702,7 @@ def render_daily_report(
     lines.append("")
 
     append_pattern_recommendation_table(lines, pattern_recommendations, 8)
+    append_source_coverage_table(lines, source_coverage_rows, 30)
     append_ticker_trend_edge_table(lines, ticker_trend_rows, 15)
     append_catalyst_flow_leader_table(lines, catalyst_flow_leaders, 40)
     append_ticket_table(lines, "AUTO_APPROVED Trade Tickets", actionable, "AUTO_APPROVED", 10, "No auto-approved trade tickets.")
@@ -6644,6 +6919,40 @@ def catalyst_flow_leader_fieldnames() -> List[str]:
         "why_not_auto_approved",
         "promotion_needed",
         "occ_symbols",
+    ]
+
+
+def source_coverage_fieldnames() -> List[str]:
+    return [
+        "coverage_rank",
+        "ticker",
+        "decision_surface_status",
+        "source_gap_reason",
+        "source_flags",
+        "source_total_premium",
+        "flow_total_premium",
+        "hot_total_premium",
+        "stock_screener_total_premium",
+        "flow_call_premium_share",
+        "flow_put_premium_share",
+        "flow_call_ask_premium_share",
+        "flow_put_ask_premium_share",
+        "call_volume_ratio_30d",
+        "put_volume_ratio_30d",
+        "oi_call_diff",
+        "oi_put_diff",
+        "direction",
+        "decision_status",
+        "decision_classification",
+        "decision_pattern_family",
+        "decision_block_reasons",
+        "trade_legs",
+        "entry_limit",
+        "quote_source",
+        "quote_volume",
+        "quote_open_interest",
+        "bid_ask_spread_pct",
+        "decision_artifact",
     ]
 
 

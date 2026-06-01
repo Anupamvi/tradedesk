@@ -11,6 +11,7 @@ from uwos.options_pattern_pipeline_v1.macro_geo import (
     build_promotion_decision_rows,
     classify_promotion_bucket,
     collect_macro_geo_catalysts,
+    clean_ticker as clean_macro_ticker,
     decompose_blockers,
 )
 from uwos.options_pattern_pipeline_v1.core import (
@@ -20,6 +21,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_daily_snapshot,
     build_decision_board_rows,
     build_pattern_recommendations,
+    build_source_ticker_coverage_rows,
     build_shadow_ledger_rows,
     build_trade_review_candidates,
     build_validation_splits,
@@ -49,6 +51,63 @@ class SnapshotStub:
         self.best_options = best_options or {}
         self.option_quotes = {}
         self.market_regime = market_regime or {"regime": "MIXED"}
+
+
+def test_macro_ticker_cleaner_strips_news_filename_prefix():
+    assert clean_macro_ticker("NEWS-IBM") == "IBM"
+    assert clean_macro_ticker("CAPTURE-CRWD") == "CRWD"
+
+
+def test_source_coverage_surfaces_high_flow_ticker_that_misses_decision_board():
+    snapshot = SnapshotStub(
+        features={
+            "IBM": {
+                "ticker": "IBM",
+                "close": 282.0,
+                "source_flags": {"bot_eod", "hot_chains", "stock_screener"},
+                "flow_total_premium": 94_315_371.0,
+                "hot_total_premium": 57_753_450.0,
+                "call_premium": 79_222_529.0,
+                "put_premium": 15_092_842.0,
+                "flow_call_premium_share": 0.84,
+                "flow_put_premium_share": 0.16,
+                "flow_call_ask_premium_share": 0.51,
+                "flow_put_ask_premium_share": 0.08,
+                "flow_premium_bias": 0.68,
+                "call_volume_ratio_30d": 2.90,
+                "put_volume_ratio_30d": 1.06,
+                "oi_call_diff": 4500,
+                "oi_put_diff": 300,
+            }
+        },
+        best_options={
+            ("IBM", "bullish"): {
+                "ticker": "IBM",
+                "direction": "bullish",
+                "option_symbol": "IBM260618C00300000",
+                "option_type": "call",
+                "expiry": "2026-06-18",
+                "strike": 300.0,
+                "dte": 15,
+                "bid": 4.1,
+                "ask": 4.3,
+                "mid": 4.2,
+                "volume": 900,
+                "open_interest": 1200,
+                "premium": 387000.0,
+                "spread_pct": 0.048,
+                "quote_source": "bot_eod",
+                "selection_score": 20.0,
+            }
+        },
+    )
+
+    rows = build_source_ticker_coverage_rows(snapshot, {"max_spread_pct": 0.35}, [])
+
+    assert rows[0]["ticker"] == "IBM"
+    assert rows[0]["decision_surface_status"] == "NOT_SURFACED"
+    assert "below 100M catalyst-flow-leader threshold" in rows[0]["source_gap_reason"]
+    assert rows[0]["trade_legs"] == "Buy 1 IBM 2026-06-18 300C @ debit 4.10-4.30 limit"
 
 
 def test_parse_occ_symbol_with_padded_root():

@@ -1365,7 +1365,11 @@ def stable_id(*parts: str) -> str:
 
 
 def clean_ticker(value: str) -> str:
-    return re.sub(r"[^A-Z0-9.\-]", "", str(value or "").upper())
+    cleaned = re.sub(r"[^A-Z0-9.\-]", "", str(value or "").upper())
+    for prefix in ("NEWS-", "CAPTURE-", "TICKER-"):
+        if cleaned.startswith(prefix) and len(cleaned) > len(prefix):
+            cleaned = cleaned[len(prefix) :]
+    return cleaned
 
 
 def join_list(value: Any) -> str:
