@@ -61,6 +61,9 @@ FLOW_LEADER_SCORE_BONUS = 10.0
 SOURCE_COVERAGE_MIN_PREMIUM = 50_000_000.0
 SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 500
 GOAL_AUDIT_REQUIRED_TICKERS = ("AMD", "MU", "NVDA", "SNDK", "IBM", "CRWD", "HOOD", "NOW")
+TRADEABLE_GAP_MIN_SOURCE_PREMIUM = 10_000.0
+TRADEABLE_GAP_MIN_HOT_PREMIUM = 25_000.0
+TRADEABLE_GAP_MAX_EXTRA_SIGNALS = 25
 GENERATED_OR_OLD_ARTIFACT_MARKERS = (
     "_trend_cache",
     "morning-watch-setups",
@@ -1994,6 +1997,33 @@ def generate_signals_for_snapshot(
                     )
                 )
 
+        gap_rescue_direction = tradeable_gap_rescue_direction(f)
+        if gap_rescue_direction:
+            quote = tradeable_gap_quote(snapshot, f, gap_rescue_direction, pattern_config)
+            if quote and not any(c[0] == "TRADEABLE_SOURCE_GAP_RESCUE" and c[1] == gap_rescue_direction for c in candidates):
+                source_total_premium = source_coverage_total_premium(f)
+                max_volume_ratio = max(call_ratio, put_ratio)
+                score = (
+                    3.5
+                    + zish(source_total_premium, TRADEABLE_GAP_MIN_SOURCE_PREMIUM)
+                    + zish(hot_premium, TRADEABLE_GAP_MIN_HOT_PREMIUM)
+                    + math.log1p(max_volume_ratio)
+                    + 2.0 * abs(premium_bias)
+                    + min(abs(stock_ret), 0.25)
+                )
+                candidates.append(
+                    (
+                        "TRADEABLE_SOURCE_GAP_RESCUE",
+                        gap_rescue_direction,
+                        score,
+                        [
+                            "tradeable option quote present",
+                            "lower-premium UW source signal",
+                            "missed-mover gap rescue candidate",
+                        ],
+                    )
+                )
+
         if ticker in INDEX_TICKERS and put_ratio >= pattern_config["min_put_volume_ratio"]:
             score = zish(put_ratio, pattern_config["min_put_volume_ratio"]) + max(
                 f.get("put_call_ratio") or 0.0, 0.0
@@ -2012,6 +2042,8 @@ def generate_signals_for_snapshot(
                 quote = select_flow_leader_quote(snapshot, f, direction, pattern_config)
             elif family == "SOURCE_PREMIUM_COVERAGE_RESCUE":
                 quote = source_coverage_quote(snapshot, f, direction, pattern_config)
+            elif family == "TRADEABLE_SOURCE_GAP_RESCUE":
+                quote = tradeable_gap_quote(snapshot, f, direction, pattern_config)
             else:
                 quote = snapshot.best_options.get((ticker, direction))
             signals.append(build_signal(snapshot, f, family, direction, score, reasons, quote, pattern_config))
@@ -2025,6 +2057,7 @@ def select_signal_set(signals: Sequence[Mapping[str, Any]], max_signals: int) ->
     ranked.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
     selected: List[Dict[str, Any]] = ranked[:max_signals]
     selected_keys = {signal_identity_key(row) for row in selected}
+    selected_tickers = {str(row.get("ticker") or "") for row in selected}
     best_rescue_by_ticker: Dict[str, Dict[str, Any]] = {}
     for row in ranked:
         if not must_keep_source_rescue_signal(row):
@@ -2040,6 +2073,25 @@ def select_signal_set(signals: Sequence[Mapping[str, Any]], max_signals: int) ->
             continue
         selected.append(row)
         selected_keys.add(key)
+        selected_tickers.add(str(row.get("ticker") or ""))
+    best_gap_by_ticker: Dict[str, Dict[str, Any]] = {}
+    for row in ranked:
+        if not must_keep_tradeable_gap_signal(row):
+            continue
+        ticker = str(row.get("ticker") or "")
+        if ticker in selected_tickers:
+            continue
+        current = best_gap_by_ticker.get(ticker)
+        if current is None or tradeable_gap_sort_key(row) > tradeable_gap_sort_key(current):
+            best_gap_by_ticker[ticker] = dict(row)
+    gap_rows = sorted(best_gap_by_ticker.values(), key=tradeable_gap_sort_key, reverse=True)
+    for row in gap_rows[:TRADEABLE_GAP_MAX_EXTRA_SIGNALS]:
+        key = signal_identity_key(row)
+        if key in selected_keys:
+            continue
+        selected.append(row)
+        selected_keys.add(key)
+        selected_tickers.add(str(row.get("ticker") or ""))
     selected.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
     return selected
 
@@ -2063,6 +2115,31 @@ def must_keep_source_rescue_signal(row: Mapping[str, Any]) -> bool:
         num(row.get("hot_total_premium")) or 0.0,
     )
     return source_premium >= SOURCE_COVERAGE_MIN_PREMIUM
+
+
+def must_keep_tradeable_gap_signal(row: Mapping[str, Any]) -> bool:
+    if str(row.get("base_pattern_family") or "") != "TRADEABLE_SOURCE_GAP_RESCUE":
+        return False
+    if not row.get("lead_option_symbol"):
+        return False
+    spread = num(row.get("bid_ask_spread_pct"))
+    if spread is None or spread > 0.35:
+        return False
+    source_premium = max(
+        num(row.get("source_total_premium")) or 0.0,
+        num(row.get("flow_total_premium")) or 0.0,
+        num(row.get("hot_total_premium")) or 0.0,
+    )
+    return source_premium >= TRADEABLE_GAP_MIN_SOURCE_PREMIUM
+
+
+def tradeable_gap_sort_key(row: Mapping[str, Any]) -> Tuple[float, float, float, float]:
+    return (
+        num(row.get("pattern_score")) or -1.0,
+        max(num(row.get("source_total_premium")) or 0.0, num(row.get("hot_total_premium")) or 0.0),
+        num(row.get("liquidity_volume")) or -1.0,
+        -(num(row.get("bid_ask_spread_pct")) or 9.0),
+    )
 
 
 def source_rescue_sort_key(row: Mapping[str, Any]) -> Tuple[float, float, float]:
@@ -2113,6 +2190,81 @@ def source_direction_share(f: Mapping[str, Any], direction: str) -> float:
             num(f.get("flow_put_ask_premium_share")) or 0.0,
         )
     return 0.0
+
+
+def tradeable_gap_rescue_direction(f: Mapping[str, Any]) -> Optional[str]:
+    source_total_premium = source_coverage_total_premium(f)
+    if source_total_premium >= SOURCE_COVERAGE_MIN_PREMIUM:
+        return None
+    hot_premium = max(num(f.get("hot_total_premium")) or 0.0, num(f.get("flow_total_premium")) or 0.0)
+    call_ratio = num(f.get("call_volume_ratio_30d")) or 0.0
+    put_ratio = num(f.get("put_volume_ratio_30d")) or 0.0
+    max_volume_ratio = max(call_ratio, put_ratio)
+    screen_bias = num(f.get("premium_bias")) or 0.0
+    flow_bias = num(f.get("flow_premium_bias")) or 0.0
+    premium_bias = flow_bias if abs(flow_bias) > abs(screen_bias) else screen_bias
+    if source_total_premium < TRADEABLE_GAP_MIN_SOURCE_PREMIUM and hot_premium < TRADEABLE_GAP_MIN_HOT_PREMIUM:
+        return None
+    has_shape = (
+        source_total_premium >= 100_000.0
+        or hot_premium >= TRADEABLE_GAP_MIN_HOT_PREMIUM
+        or max_volume_ratio >= 1.25
+        or abs(premium_bias) >= 0.03
+    )
+    if not has_shape:
+        return None
+    stock_ret = num(f.get("stock_return_1d")) or 0.0
+    if stock_ret >= 0.03:
+        return "bullish"
+    if stock_ret <= -0.03:
+        return "bearish"
+    if premium_bias >= 0.03:
+        return "bullish"
+    if premium_bias <= -0.03:
+        return "bearish"
+    if call_ratio >= put_ratio * 1.15 and call_ratio >= 1.0:
+        return "bullish"
+    if put_ratio >= call_ratio * 1.15 and put_ratio >= 1.0:
+        return "bearish"
+    return source_coverage_direction(f)
+
+
+def tradeable_gap_quote(
+    snapshot: Snapshot,
+    feature: Mapping[str, Any],
+    direction: str,
+    pattern_config: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    ticker = str(feature.get("ticker") or "")
+    direct_best = snapshot.best_options.get((ticker, direction))
+    if direct_best and tradeable_gap_quote_eligible(direct_best, pattern_config):
+        return direct_best
+    return {}
+
+
+def tradeable_gap_quote_eligible(quote: Mapping[str, Any], pattern_config: Mapping[str, Any]) -> bool:
+    if not quote or quote.get("strategy_kind") == "credit_spread":
+        return False
+    ask = num(quote.get("ask"))
+    bid = num(quote.get("bid"))
+    dte = num(quote.get("dte"))
+    spread_pct = num(quote.get("spread_pct"))
+    volume = num(quote.get("volume")) or 0.0
+    open_interest = num(quote.get("open_interest")) or 0.0
+    max_debit = DEFAULT_RISK_CONFIG["max_risk_per_trade"] / 100.0
+    max_spread = min(0.35, float(pattern_config.get("max_spread_pct", 0.35) or 0.35))
+    return (
+        ask is not None
+        and bid is not None
+        and 0.05 <= ask <= max_debit
+        and bid >= 0
+        and dte is not None
+        and 7 <= dte <= 70
+        and volume >= 50
+        and open_interest >= 25
+        and spread_pct is not None
+        and spread_pct <= max_spread
+    )
 
 
 def select_flow_leader_quote(
@@ -3388,6 +3540,8 @@ def missed_mover_bucket(
         return "FLAGGED_BY_PATTERN_PIPELINE"
     if not quote or "missing_quote_spread" in reason:
         return "NOT_OPTION_TRADEABLE_MISSING_QUOTE"
+    if not tradeable_gap_quote_eligible(quote, {"max_spread_pct": 0.35}):
+        return "NOT_OPTION_TRADEABLE_QUOTE_FAILED"
     total_premium = source_coverage_total_premium(f)
     max_volume_ratio = max(num(f.get("call_volume_ratio_30d")) or 0.0, num(f.get("put_volume_ratio_30d")) or 0.0)
     has_flow = total_premium >= SOURCE_COVERAGE_MIN_PREMIUM or (num(f.get("hot_total_premium")) or 0.0) > 0.0

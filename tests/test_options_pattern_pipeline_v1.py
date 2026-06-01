@@ -339,6 +339,93 @@ def test_source_rescue_signals_survive_rank_cap():
     assert any(s["ticker"] == "CRWD" and s["base_pattern_family"] == "CATALYST_FLOW_LEADER" for s in signals)
 
 
+def test_tradeable_source_gap_rescue_survives_rank_cap():
+    pattern_config = {
+        "min_call_volume_ratio": 1.35,
+        "min_put_volume_ratio": 1.35,
+        "min_hot_premium": 250_000,
+        "min_oi_diff": 5_000,
+        "max_spread_pct": 0.35,
+        "high_iv": 0.75,
+        "min_liquidity_score": 8.0,
+        "min_ask_side_ratio": 0.52,
+        "max_event_dte_without_event_strategy": 2,
+    }
+    features = {
+        "LOUD": {
+            "date": "2026-05-28",
+            "ticker": "LOUD",
+            "close": 100.0,
+            "source_flags": {"stock_screener"},
+            "call_volume_ratio_30d": 80.0,
+            "put_volume_ratio_30d": 0.2,
+            "premium_bias": 0.50,
+            "flow_call_ask_ratio": 0.90,
+            "hot_total_premium": 100_000_000.0,
+            "liquidity_score": 20.0,
+        },
+            "FUBO": {
+                "date": "2026-03-23",
+                "ticker": "FUBO",
+                "close": 2.20,
+                "source_flags": {"hot_chains", "stock_screener"},
+                "hot_total_premium": 30_000.0,
+                "call_premium": 30_000.0,
+                "put_premium": 0.0,
+                "call_volume_ratio_30d": 1.30,
+                "put_volume_ratio_30d": 0.90,
+                "premium_bias": 0.205,
+                "hot_call_ask_ratio": 0.20,
+                "liquidity_score": 9.0,
+        },
+    }
+    best_options = {
+        ("LOUD", "bullish"): {
+            "ticker": "LOUD",
+            "direction": "bullish",
+            "option_symbol": "LOUD260618C00120000",
+            "option_type": "call",
+            "expiry": "2026-06-18",
+            "strike": 120.0,
+            "dte": 15,
+            "bid": 4.0,
+            "ask": 4.2,
+            "mid": 4.1,
+            "volume": 1000,
+            "open_interest": 2000,
+            "premium": 420_000.0,
+            "spread_pct": 0.049,
+            "quote_source": "bot_eod",
+        },
+        ("FUBO", "bullish"): {
+            "ticker": "FUBO",
+            "direction": "bullish",
+            "option_symbol": "FUBO260515C00001000",
+            "option_type": "call",
+            "expiry": "2026-05-15",
+            "strike": 1.0,
+            "dte": 45,
+            "bid": 0.20,
+            "ask": 0.22,
+            "mid": 0.21,
+            "volume": 1500,
+            "open_interest": 2500,
+            "premium": 330_000.0,
+            "spread_pct": 0.095,
+            "quote_source": "bot_eod",
+        },
+    }
+    snapshot = SnapshotStub(features, best_options, signal_date="2026-03-23")
+
+    signals = generate_signals_for_snapshot(snapshot, pattern_config, max_signals=1)
+
+    assert signals[0]["ticker"] == "LOUD"
+    assert any(
+        s["ticker"] == "FUBO" and s["base_pattern_family"] == "TRADEABLE_SOURCE_GAP_RESCUE"
+        for s in signals
+    )
+
+
 def test_goal_evidence_fails_when_required_high_signal_ticker_disappears():
     snapshot = SnapshotStub(
         features={
@@ -506,7 +593,15 @@ def test_missed_mover_bucket_separates_untradeable_from_generation_gap():
                 "premium_bias": 0.2,
             },
             False,
-            {"option_symbol": "FUBO260618C00005000", "bid": 1.0, "ask": 1.1},
+            {
+                "option_symbol": "FUBO260618C00005000",
+                "bid": 1.0,
+                "ask": 1.1,
+                "dte": 30,
+                "volume": 1500,
+                "open_interest": 2500,
+                "spread_pct": 0.095,
+            },
             "moved_without_matching_frozen_pattern",
         )
         == "CANDIDATE_GENERATION_GAP"
