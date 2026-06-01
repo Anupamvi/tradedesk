@@ -60,6 +60,7 @@ FLOW_LEADER_MIN_DIRECTION_SHARE = 0.62
 FLOW_LEADER_SCORE_BONUS = 10.0
 SOURCE_COVERAGE_MIN_PREMIUM = 50_000_000.0
 SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 500
+GOAL_AUDIT_REQUIRED_TICKERS = ("AMD", "MU", "NVDA", "SNDK", "IBM", "CRWD", "HOOD", "NOW")
 GENERATED_OR_OLD_ARTIFACT_MARKERS = (
     "_trend_cache",
     "morning-watch-setups",
@@ -164,6 +165,7 @@ DEFAULT_RISK_CONFIG = {
     "round_trip_spread_fees": 2.60,
     "slippage_pct_of_spread": 0.50,
     "expected_hold_days": 5,
+    "goal_required_coverage_tickers": list(GOAL_AUDIT_REQUIRED_TICKERS),
     "live_quote_required_for_auto": False,
     "allow_conservative_historical_quote_for_auto": True,
     "manual_only_tickers": ["SPX", "SPXW", "NDX", "RUT"],
@@ -4292,6 +4294,15 @@ def build_decision_board_rows(
                 "UW_evidence": row.get("uw_evidence"),
                 "edge_review_reason": row.get("edge_review_reason"),
                 "edge_review_evidence": row.get("edge_review_evidence"),
+                "ticker_trend_scope": row.get("ticker_trend_scope"),
+                "ticker_trend_scored_count": row.get("ticker_trend_scored_count"),
+                "ticker_trend_win_rate_pct": row.get("ticker_trend_win_rate_pct"),
+                "ticker_trend_probability_score_pct": row.get("ticker_trend_probability_score_pct"),
+                "ticker_trend_avg_R": row.get("ticker_trend_avg_R"),
+                "ticker_trend_profit_factor": row.get("ticker_trend_profit_factor"),
+                "ticker_trend_drawdown_proxy_r": row.get("ticker_trend_drawdown_proxy_r"),
+                "ticker_trend_max_losing_streak": row.get("ticker_trend_max_losing_streak"),
+                "ticker_trend_edge_vs_breakeven_pct": row.get("ticker_trend_edge_vs_breakeven_pct"),
                 "blockers": ";".join(row.get("block_reasons") or []),
                 "promotion_requirements": row.get("promotion_requirements") or promotion_needed_text(row),
                 "kill_switch_triggered": row.get("kill_switch_triggered") or "",
@@ -4429,6 +4440,15 @@ def decision_board_fieldnames() -> List[str]:
         "UW_evidence",
         "edge_review_reason",
         "edge_review_evidence",
+        "ticker_trend_scope",
+        "ticker_trend_scored_count",
+        "ticker_trend_win_rate_pct",
+        "ticker_trend_probability_score_pct",
+        "ticker_trend_avg_R",
+        "ticker_trend_profit_factor",
+        "ticker_trend_drawdown_proxy_r",
+        "ticker_trend_max_losing_streak",
+        "ticker_trend_edge_vs_breakeven_pct",
         "blockers",
         "promotion_requirements",
         "kill_switch_triggered",
@@ -5061,6 +5081,374 @@ def render_profitability_audit(
     return "\n".join(lines)
 
 
+def build_goal_evidence_rows(
+    as_of: str,
+    snapshot: Optional[Snapshot],
+    decision_board: Sequence[Mapping[str, Any]],
+    source_coverage_rows: Sequence[Mapping[str, Any]],
+    missed_rows: Sequence[Mapping[str, Any]],
+    validation_bundle: Mapping[str, Any],
+    run_controls: Mapping[str, Any],
+    source_completeness: Mapping[str, Any],
+) -> List[Dict[str, Any]]:
+    risk_config = run_controls.get("risk_config") or DEFAULT_RISK_CONFIG
+    rows: List[Dict[str, Any]] = []
+
+    rows.append(
+        goal_evidence_row(
+            "source_complete_ingestion",
+            "PASS" if source_completeness.get("source_complete") else "FAIL",
+            as_of,
+            1 if source_completeness.get("source_complete") else 0,
+            0 if source_completeness.get("source_complete") else 1,
+            (
+                "All required source groups present."
+                if source_completeness.get("source_complete")
+                else f"Missing sources: {', '.join(source_completeness.get('missing_sources') or [])}"
+            ),
+            "Fix missing dated UW source files before trusting any trade output.",
+        )
+    )
+
+    validation_rows = validation_bundle.get("validation_gate_scorecard") or []
+    baseline_rows = validation_bundle.get("baseline_comparison") or []
+    validation_failures = []
+    if not validation_bundle.get("splits"):
+        validation_failures.append("no validation splits")
+    if not validation_rows:
+        validation_failures.append("no validation gate scorecard")
+    if not baseline_rows:
+        validation_failures.append("no baseline comparison")
+    rows.append(
+        goal_evidence_row(
+            "rolling_oos_backtest_and_baselines_present",
+            "FAIL" if validation_failures else "PASS",
+            "all source-complete dates through as-of",
+            len(validation_rows),
+            len(validation_failures),
+            (
+                f"splits={len(validation_bundle.get('splits') or [])}; "
+                f"validation_families={len(validation_rows)}; baselines={len(baseline_rows)}"
+                if not validation_failures
+                else "; ".join(validation_failures)
+            ),
+            "Run without --no-validation and preserve baseline outputs.",
+        )
+    )
+
+    reviewable_rows = [
+        r for r in decision_board if str(r.get("status") or "") in {"AUTO_APPROVED", "TRADE_REVIEW"}
+    ]
+    ticket_failures = []
+    required_ticket_fields = (
+        "full_ticket",
+        "buy_sell",
+        "call_put",
+        "strikes",
+        "expiration",
+        "entry",
+        "max_risk",
+        "expected_R",
+        "probability_score",
+    )
+    for row in reviewable_rows:
+        missing = [
+            field
+            for field in required_ticket_fields
+            if row.get(field) in (None, "") or str(row.get(field) or "").startswith("No complete")
+        ]
+        if missing:
+            ticket_failures.append(f"{row.get('ticker')}:{','.join(missing)}")
+    rows.append(
+        goal_evidence_row(
+            "trade_ready_ticket_fields_present",
+            "FAIL" if ticket_failures else "PASS" if reviewable_rows else "WARN",
+            "AUTO_APPROVED and TRADE_REVIEW rows",
+            len(reviewable_rows) - len(ticket_failures),
+            len(ticket_failures),
+            (
+                f"reviewable_rows={len(reviewable_rows)}"
+                if not ticket_failures
+                else "missing fields: " + "; ".join(ticket_failures[:20])
+            ),
+            "Do not publish review/action rows without legs, entry, risk, probability, and EV.",
+        )
+    )
+
+    auto_rows = [r for r in decision_board if str(r.get("status") or "") == "AUTO_APPROVED"]
+    bad_auto = []
+    for row in auto_rows:
+        failures = auto_approved_goal_gate_failures(row, risk_config)
+        if failures:
+            bad_auto.append(f"{row.get('ticker')}:{','.join(failures)}")
+    rows.append(
+        goal_evidence_row(
+            "auto_approved_positive_expectancy_after_costs",
+            "FAIL" if bad_auto else "PASS" if auto_rows else "WARN",
+            "AUTO_APPROVED rows",
+            len(auto_rows) - len(bad_auto),
+            len(bad_auto),
+            (
+                f"auto_approved={len(auto_rows)}; every auto row passed EV/sample/PF/probability gates"
+                if auto_rows and not bad_auto
+                else "no auto-approved executable trade edge was proven"
+                if not auto_rows
+                else "failed gates: " + "; ".join(bad_auto[:20])
+            ),
+            "If no auto rows exist, publish no-edge; if failures exist, demote them before output.",
+        )
+    )
+
+    coverage_failures = []
+    for row in source_coverage_rows:
+        missing = [
+            field
+            for field in ("ticker", "decision_surface_status", "source_gap_reason", "decision_artifact")
+            if not row.get(field)
+        ]
+        if missing:
+            coverage_failures.append(f"{row.get('ticker') or 'UNKNOWN'}:{','.join(missing)}")
+    rows.append(
+        goal_evidence_row(
+            "high_source_flow_not_silent",
+            "FAIL" if coverage_failures else "PASS",
+            f"source_total_premium >= {int(SOURCE_COVERAGE_MIN_PREMIUM)}",
+            len(source_coverage_rows) - len(coverage_failures),
+            len(coverage_failures),
+            (
+                f"covered_or_explained_high_source_tickers={len(source_coverage_rows)}"
+                if not coverage_failures
+                else "coverage rows missing required explanations: " + "; ".join(coverage_failures[:20])
+            ),
+            "Every high-source ticker must land in decision rows or source coverage with a reason.",
+        )
+    )
+
+    rows.append(
+        build_required_ticker_goal_row(
+            as_of,
+            snapshot,
+            decision_board,
+            source_coverage_rows,
+            risk_config,
+        )
+    )
+
+    missed_unexplained = [r for r in missed_rows if not r.get("likely_miss_reason")]
+    missed_unflagged = [
+        r
+        for r in missed_rows
+        if str(r.get("was_flagged_by_new_pipeline")).lower() not in {"true", "1", "yes"}
+    ]
+    rows.append(
+        goal_evidence_row(
+            "missed_mover_audit_visible",
+            "FAIL" if missed_unexplained else "WARN" if missed_unflagged else "PASS" if missed_rows else "WARN",
+            "historical next-day top movers before as-of",
+            len(missed_rows) - len(missed_unexplained),
+            len(missed_unexplained),
+            (
+                f"missed_rows={len(missed_rows)}; unflagged_but_explained={len(missed_unflagged)}; "
+                f"top_unflagged_reasons={top_missed_reason_text(missed_unflagged)}"
+                if not missed_unexplained
+                else "unexplained missed movers: "
+                + "; ".join(f"{r.get('signal_date')}:{r.get('ticker')}" for r in missed_unexplained[:20])
+            ),
+            "Use unflagged-but-explained movers to design new pattern families; do not hide misses.",
+        )
+    )
+
+    blockers = Counter()
+    for row in decision_board:
+        for blocker in str(row.get("blockers") or "").split(";"):
+            if blocker:
+                blockers[blocker] += 1
+    rows.append(
+        goal_evidence_row(
+            "quantified_no_edge_report_if_no_trade",
+            "PASS" if auto_rows else "WARN",
+            "daily decision board",
+            len(auto_rows),
+            0 if auto_rows else 1,
+            (
+                f"auto-approved trades={len(auto_rows)}"
+                if auto_rows
+                else "No executable edge proven; top blockers: "
+                + "; ".join(f"{name}:{count}" for name, count in blockers.most_common(8))
+            ),
+            "If this is WARN, treat the run as no-edge unless manual research overrides it outside the pipeline.",
+        )
+    )
+
+    return rows
+
+
+def top_missed_reason_text(rows: Sequence[Mapping[str, Any]], limit: int = 5) -> str:
+    counts = Counter(str(row.get("likely_miss_reason") or "UNKNOWN") for row in rows)
+    return ", ".join(f"{reason}:{count}" for reason, count in counts.most_common(limit)) or "none"
+
+
+def build_required_ticker_goal_row(
+    as_of: str,
+    snapshot: Optional[Snapshot],
+    decision_board: Sequence[Mapping[str, Any]],
+    source_coverage_rows: Sequence[Mapping[str, Any]],
+    risk_config: Mapping[str, Any],
+) -> Dict[str, Any]:
+    required = [
+        str(t).strip().upper()
+        for t in risk_config.get("goal_required_coverage_tickers", GOAL_AUDIT_REQUIRED_TICKERS)
+        if str(t).strip()
+    ]
+    decision_tickers = {str(r.get("ticker") or "").upper() for r in decision_board if r.get("ticker")}
+    coverage_by_ticker = {str(r.get("ticker") or "").upper(): r for r in source_coverage_rows if r.get("ticker")}
+    features = (snapshot.features if snapshot else {}) or {}
+    covered: List[str] = []
+    missing_high_signal: List[str] = []
+    low_signal_or_not_source_present: List[str] = []
+    missing_source: List[str] = []
+    for ticker in required:
+        if ticker in decision_tickers or ticker in coverage_by_ticker:
+            covered.append(ticker)
+            continue
+        feature = features.get(ticker)
+        if not feature:
+            missing_source.append(ticker)
+            continue
+        total_premium = source_coverage_total_premium(feature)
+        if total_premium >= SOURCE_COVERAGE_MIN_PREMIUM:
+            missing_high_signal.append(ticker)
+        else:
+            low_signal_or_not_source_present.append(f"{ticker}:{fmt_num(total_premium)}")
+
+    status = "FAIL" if missing_high_signal else "WARN" if missing_source or low_signal_or_not_source_present else "PASS"
+    evidence_parts = [f"covered={','.join(covered) or 'none'}"]
+    if missing_high_signal:
+        evidence_parts.append(f"missing_high_signal={','.join(missing_high_signal)}")
+    if low_signal_or_not_source_present:
+        evidence_parts.append(f"below_high_signal_threshold={','.join(low_signal_or_not_source_present)}")
+    if missing_source:
+        evidence_parts.append(f"missing_source_feature={','.join(missing_source)}")
+    return goal_evidence_row(
+        "known_failure_ticker_surface_audit",
+        status,
+        as_of,
+        len(covered),
+        len(missing_high_signal),
+        "; ".join(evidence_parts),
+        "For any missing high-signal ticker, fix ingestion/candidate generation before trusting the date.",
+    )
+
+
+def auto_approved_goal_gate_failures(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> List[str]:
+    failures: List[str] = []
+    uses_ticker_trend = bool(row.get("ticker_trend_scope"))
+    if uses_ticker_trend:
+        min_expected_r = float(risk_config.get("min_ticker_trend_expected_r", 0.15))
+        min_scored = int(risk_config.get("min_ticker_trend_scored_outcomes", 20))
+        min_profit_factor = float(risk_config.get("min_ticker_trend_profit_factor", 1.50))
+        min_probability = float(risk_config.get("min_ticker_trend_probability_score", 0.42))
+        min_calibrated = float(risk_config.get("min_ticker_trend_win_rate", 0.55))
+        scored = int(num(row.get("ticker_trend_scored_count")) or num(row.get("validation_scored_count")) or 0)
+        profit_factor = num(row.get("ticker_trend_profit_factor")) or num(row.get("validation_profit_factor"))
+        expected_r = num(row.get("ticker_trend_avg_R")) or num(row.get("expected_R"))
+        probability_score = probability_decimal_from_pct(row.get("ticker_trend_probability_score_pct"))
+        calibrated = probability_decimal_from_pct(row.get("ticker_trend_win_rate_pct"))
+    else:
+        min_expected_r = float(risk_config.get("min_expected_r", 0.0))
+        min_scored = int(risk_config.get("min_oos_scored_outcomes", 30))
+        min_profit_factor = float(risk_config.get("min_profit_factor", 1.2))
+        min_probability = float(risk_config.get("min_probability_score", 0.50))
+        min_calibrated = float(risk_config.get("min_calibrated_probability", 0.50))
+        scored = int(num(row.get("validation_scored_count")) or 0)
+        profit_factor = num(row.get("validation_profit_factor"))
+        expected_r = num(row.get("expected_R"))
+        probability_score = probability_decimal_from_pct(row.get("probability_score"))
+        calibrated = num(row.get("calibrated_probability"))
+
+    if (expected_r or 0.0) <= min_expected_r:
+        failures.append("expected_R")
+    if (num(row.get("expected_R_per_day")) or 0.0) <= float(risk_config.get("min_expected_r_per_day", 0.0)):
+        failures.append("expected_R_per_day")
+    if (profit_factor or 0.0) < min_profit_factor:
+        failures.append("profit_factor")
+    if scored < min_scored:
+        failures.append("oos_sample")
+    if int(num(row.get("beats_baselines_count")) or 0) < int(risk_config.get("min_baselines_beaten", 2)):
+        failures.append("baselines")
+    if probability_score is None or probability_score < min_probability:
+        failures.append("probability_score")
+    if calibrated is None or calibrated < min_calibrated:
+        failures.append("calibrated_probability")
+    if row.get("blockers"):
+        failures.append("blockers_present")
+    return failures
+
+
+def goal_evidence_row(
+    requirement: str,
+    status: str,
+    scope: str,
+    passed_count: int,
+    failed_count: int,
+    evidence: str,
+    required_next_action: str,
+) -> Dict[str, Any]:
+    return {
+        "requirement": requirement,
+        "status": status,
+        "scope": scope,
+        "passed_count": passed_count,
+        "failed_count": failed_count,
+        "evidence": evidence,
+        "required_next_action": required_next_action,
+    }
+
+
+def goal_evidence_overall_status(rows: Sequence[Mapping[str, Any]]) -> str:
+    statuses = {str(row.get("status") or "") for row in rows}
+    if "FAIL" in statuses:
+        return "FAIL_REQUIREMENTS_REMAIN"
+    if "WARN" in statuses:
+        return "PARTIAL_EVIDENCE_NOT_GOAL_COMPLETE"
+    return "DAILY_EVIDENCE_PASSES_NOT_GLOBAL_GOAL_COMPLETE"
+
+
+def render_goal_evidence_report(as_of: str, rows: Sequence[Mapping[str, Any]]) -> str:
+    counts = Counter(str(row.get("status") or "UNKNOWN") for row in rows)
+    overall = goal_evidence_overall_status(rows)
+    lines = [
+        f"# Goal Evidence Audit - {as_of}",
+        "",
+        f"Overall status: **{overall}**",
+        "",
+        "This is a per-run evidence audit for the rebuild goal. It does not mark the full goal complete; multi-date rolling proof is still required.",
+        "",
+        "## Status Counts",
+        f"- PASS: {counts.get('PASS', 0)}",
+        f"- WARN: {counts.get('WARN', 0)}",
+        f"- FAIL: {counts.get('FAIL', 0)}",
+        "",
+        "## Requirement Results",
+    ]
+    for row in rows:
+        lines.append(
+            f"- {row.get('status')} `{row.get('requirement')}`: {row.get('evidence')} "
+            f"Next: {row.get('required_next_action')}"
+        )
+    no_edge = next((r for r in rows if r.get("requirement") == "quantified_no_edge_report_if_no_trade"), None)
+    if no_edge and no_edge.get("status") != "PASS":
+        lines.extend(
+            [
+                "",
+                "## No-Edge Read",
+                "No executable trade edge was proven by this run. The pipeline must output this as no-edge instead of forcing a ticket.",
+                f"Evidence: {no_edge.get('evidence')}",
+            ]
+        )
+    return "\n".join(lines)
+
+
 def render_runbook(as_of: str, config: Mapping[str, Any]) -> str:
     return "\n".join(
         [
@@ -5080,6 +5468,7 @@ def render_runbook(as_of: str, config: Mapping[str, Any]) -> str:
             "- `walk_forward_performance.csv`: validation performance after fees/slippage.",
             "- `threshold_sensitivity.csv`: old-vs-new approval threshold comparison.",
             "- `calibration_summary.md`: Brier score and reliability buckets.",
+            "- `goal_evidence.csv/md`: requirement-level proof for source coverage, explicit tickets, no-edge, and profitability gates.",
             "- `shadow_recommendation_ledger.csv`: open and historical shadow rows.",
             "",
             "## Status Meanings",
@@ -5239,6 +5628,8 @@ def write_outputs(
         "threshold_sensitivity": str(out_dir / "threshold_sensitivity.csv"),
         "calibration_summary": str(out_dir / "calibration_summary.md"),
         "profitability_audit": str(out_dir / "profitability_audit.md"),
+        "goal_evidence_audit": str(out_dir / "goal_evidence_audit.md"),
+        "goal_evidence": str(out_dir / "goal_evidence.csv"),
         "shadow_recommendation_ledger": str(out_dir / "shadow_recommendation_ledger.csv"),
         "shadow_outcome_summary": str(out_dir / "shadow_outcome_summary.md"),
         "ablation_attribution": str(out_dir / "ablation_attribution.csv"),
@@ -5261,6 +5652,8 @@ def write_outputs(
     schema_errors = validate_decision_board_rows(decision_board)
     if schema_errors and "KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS" not in metadata["run_kill_switches"]:
         metadata["run_kill_switches"] = sorted(set(metadata["run_kill_switches"] + ["KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS"]))
+        for row in decision_board:
+            row["kill_switch_triggered"] = ";".join(metadata["run_kill_switches"])
     walk_forward_rows = build_walk_forward_performance_rows(validation_bundle)
     threshold_rows = build_threshold_sensitivity_rows(validation_bundle, run_controls["risk_config"])
     ablation_rows = build_ablation_attribution_rows(validation_bundle)
@@ -5268,6 +5661,17 @@ def write_outputs(
     backtest_family_rows = build_full_backtest_by_family(validation_bundle.get("outcomes", []))
     backtest_month_rows = build_full_backtest_by_month(validation_bundle.get("outcomes", []))
     ticker_trend_rows = build_ticker_trend_edge_rows(run_controls["ticker_trend_stats"], run_controls["risk_config"])
+    goal_rows = build_goal_evidence_rows(
+        as_of,
+        snapshots[as_of],
+        decision_board,
+        source_coverage_rows,
+        missed_rows,
+        validation_bundle,
+        run_controls,
+        source_completeness,
+    )
+    metadata["goal_evidence_status"] = goal_evidence_overall_status(goal_rows)
 
     write_csv(Path(paths["actionable_trades"]), [trade_output_row(r) for r in actionable], trade_fieldnames())
     write_csv(
@@ -5322,6 +5726,8 @@ def write_outputs(
         ),
         encoding="utf-8",
     )
+    write_csv(Path(paths["goal_evidence"]), goal_rows, goal_evidence_fieldnames())
+    Path(paths["goal_evidence_audit"]).write_text(render_goal_evidence_report(as_of, goal_rows), encoding="utf-8")
     write_csv(Path(paths["shadow_recommendation_ledger"]), shadow_rows, shadow_ledger_fieldnames())
     Path(paths["shadow_outcome_summary"]).write_text(render_shadow_summary(as_of, shadow_rows), encoding="utf-8")
     Path(paths["pattern_pipeline_runbook"]).write_text(render_runbook(as_of, config), encoding="utf-8")
@@ -5476,6 +5882,8 @@ def write_source_incomplete_outputs(
         "threshold_sensitivity": str(out_dir / "threshold_sensitivity.csv"),
         "calibration_summary": str(out_dir / "calibration_summary.md"),
         "profitability_audit": str(out_dir / "profitability_audit.md"),
+        "goal_evidence_audit": str(out_dir / "goal_evidence_audit.md"),
+        "goal_evidence": str(out_dir / "goal_evidence.csv"),
         "shadow_recommendation_ledger": str(out_dir / "shadow_recommendation_ledger.csv"),
         "shadow_outcome_summary": str(out_dir / "shadow_outcome_summary.md"),
         "ablation_attribution": str(out_dir / "ablation_attribution.csv"),
@@ -5511,6 +5919,17 @@ def write_source_incomplete_outputs(
         decision_board[0]["kill_switch_triggered"] = "KILL_SWITCH_SOURCE_INCOMPLETE"
         decision_board[0]["blockers"] = "KILL_SWITCH_SOURCE_INCOMPLETE;NO_REVIEWABLE_TICKETS"
     schema_errors = validate_decision_board_rows(decision_board)
+    goal_rows = build_goal_evidence_rows(
+        as_of,
+        None,
+        decision_board,
+        [],
+        [],
+        empty_validation_bundle(),
+        {"risk_config": config.get("risk_config", {}), "run_kill_switches": ["KILL_SWITCH_SOURCE_INCOMPLETE"]},
+        completeness,
+    )
+    metadata["goal_evidence_status"] = goal_evidence_overall_status(goal_rows)
     write_json(
         Path(paths["decision_board_json"]),
         {
@@ -5547,6 +5966,8 @@ def write_source_incomplete_outputs(
         ),
         encoding="utf-8",
     )
+    write_csv(Path(paths["goal_evidence"]), goal_rows, goal_evidence_fieldnames())
+    Path(paths["goal_evidence_audit"]).write_text(render_goal_evidence_report(as_of, goal_rows), encoding="utf-8")
     write_csv(Path(paths["shadow_recommendation_ledger"]), [], shadow_ledger_fieldnames())
     Path(paths["shadow_outcome_summary"]).write_text(render_shadow_summary(as_of, []), encoding="utf-8")
     Path(paths["pattern_pipeline_runbook"]).write_text(render_runbook(as_of, config), encoding="utf-8")
@@ -6790,6 +7211,7 @@ def render_daily_report(
     lines.append("")
     lines.append(f"Final pipeline verdict: **{verdict}**")
     lines.append(f"Daily trade decision: **{metadata.get('daily_trade_decision', 'UNKNOWN')}**")
+    lines.append(f"Goal evidence status: **{metadata.get('goal_evidence_status', 'NOT_EVALUATED')}**")
     lines.append("")
     regime = snapshot.market_regime
     lines.append("## Decision Summary")
@@ -6877,6 +7299,7 @@ def render_daily_report(
     else:
         lines.append("- No proven or promising pattern families were produced.")
     lines.append("- Full validation detail is in `validation_scorecard.csv` and `discovered_pattern_families.csv`.")
+    lines.append("- Requirement-level rebuild evidence is in `goal_evidence.csv` and `goal_evidence_audit.md`.")
     lines.append("")
     lines.append("## Baseline Comparison")
     for row in validation_bundle.get("baseline_comparison", []):
@@ -7075,6 +7498,18 @@ def source_coverage_fieldnames() -> List[str]:
         "quote_open_interest",
         "bid_ask_spread_pct",
         "decision_artifact",
+    ]
+
+
+def goal_evidence_fieldnames() -> List[str]:
+    return [
+        "requirement",
+        "status",
+        "scope",
+        "passed_count",
+        "failed_count",
+        "evidence",
+        "required_next_action",
     ]
 
 

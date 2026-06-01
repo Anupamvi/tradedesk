@@ -20,6 +20,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_catalyst_flow_leaders,
     build_daily_snapshot,
     build_decision_board_rows,
+    build_goal_evidence_rows,
     build_pattern_recommendations,
     build_source_ticker_coverage_rows,
     build_shadow_ledger_rows,
@@ -30,6 +31,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     dedupe_rows_by_ticket,
     empty_validation_bundle,
     generate_signals_for_snapshot,
+    goal_evidence_overall_status,
     normalize_header,
     prepare_decision_rows,
     parse_option_symbol,
@@ -334,6 +336,153 @@ def test_source_rescue_signals_survive_rank_cap():
     assert len(signals) == 2
     assert signals[0]["ticker"] == "LOUD"
     assert any(s["ticker"] == "CRWD" and s["base_pattern_family"] == "CATALYST_FLOW_LEADER" for s in signals)
+
+
+def test_goal_evidence_fails_when_required_high_signal_ticker_disappears():
+    snapshot = SnapshotStub(
+        features={
+            "IBM": {
+                "ticker": "IBM",
+                "flow_total_premium": 94_315_371.0,
+                "hot_total_premium": 57_753_450.0,
+                "call_premium": 79_222_529.0,
+                "put_premium": 15_092_842.0,
+                "flow_call_premium_share": 0.84,
+                "flow_put_premium_share": 0.16,
+            }
+        },
+        signal_date="2026-05-28",
+    )
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-05-28",
+        snapshot,
+        [],
+        [],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": ["IBM"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    required_row = next(row for row in rows if row["requirement"] == "known_failure_ticker_surface_audit")
+    assert required_row["status"] == "FAIL"
+    assert "missing_high_signal=IBM" in required_row["evidence"]
+    assert goal_evidence_overall_status(rows) == "FAIL_REQUIREMENTS_REMAIN"
+
+
+def test_goal_evidence_checks_auto_approved_profitability_gates():
+    decision_board = [
+        {
+            "status": "AUTO_APPROVED",
+            "ticker": "AMD",
+            "full_ticket": "BUY CALL AMD 600 exp 2026-06-18",
+            "buy_sell": "BUY",
+            "call_put": "CALL",
+            "strikes": "600",
+            "expiration": "2026-06-18",
+            "entry": "debit 11.60-11.65",
+            "max_risk": 1165.0,
+            "expected_R": 1.12586,
+            "expected_R_per_day": 0.225172,
+            "probability_score": 54.22,
+            "calibrated_probability": 0.619,
+            "validation_profit_factor": 1.51,
+            "validation_scored_count": 50,
+            "beats_baselines_count": 2,
+            "blockers": "",
+        }
+    ]
+    source_coverage_rows = [
+        {
+            "ticker": "AMD",
+            "decision_surface_status": "AUTO_APPROVED",
+            "source_gap_reason": "surfaced in decision board",
+            "decision_artifact": "actionable_trades.csv",
+        }
+    ]
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-05-28",
+        SnapshotStub({"AMD": {"ticker": "AMD", "flow_total_premium": 123_000_000.0}}),
+        decision_board,
+        source_coverage_rows,
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": ["AMD"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    expectancy_row = next(row for row in rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
+    ticket_row = next(row for row in rows if row["requirement"] == "trade_ready_ticket_fields_present")
+    assert expectancy_row["status"] == "PASS"
+    assert ticket_row["status"] == "PASS"
+
+
+def test_goal_evidence_uses_ticker_trend_gates_for_ticker_trend_auto_approval():
+    decision_board = [
+        {
+            "status": "AUTO_APPROVED",
+            "ticker": "ASTS",
+            "full_ticket": "BUY CALL ASTS 40 exp 2026-06-18",
+            "buy_sell": "BUY",
+            "call_put": "CALL",
+            "strikes": "40",
+            "expiration": "2026-06-18",
+            "entry": "debit 3.00-3.10",
+            "max_risk": 310.0,
+            "expected_R": 0.681731,
+            "expected_R_per_day": 0.136346,
+            "probability_score": 46.13,
+            "calibrated_probability": 0.565217,
+            "validation_profit_factor": 5.051584,
+            "validation_scored_count": 23,
+            "beats_baselines_count": 6,
+            "ticker_trend_scope": "ticker_direction_strategy",
+            "ticker_trend_scored_count": 23,
+            "ticker_trend_win_rate_pct": 56.52,
+            "ticker_trend_probability_score_pct": 46.13,
+            "ticker_trend_avg_R": 0.681731,
+            "ticker_trend_profit_factor": 5.051584,
+            "blockers": "",
+        }
+    ]
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-05-28",
+        SnapshotStub({"ASTS": {"ticker": "ASTS", "flow_total_premium": 217_000_000.0}}),
+        decision_board,
+        [
+            {
+                "ticker": "ASTS",
+                "decision_surface_status": "AUTO_APPROVED",
+                "source_gap_reason": "surfaced in decision board",
+                "decision_artifact": "actionable_trades.csv",
+            }
+        ],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": ["ASTS"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    expectancy_row = next(row for row in rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
+    assert expectancy_row["status"] == "PASS"
 
 
 def test_parse_occ_symbol_with_padded_root():
