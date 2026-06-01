@@ -59,6 +59,7 @@ FLOW_LEADER_MIN_PREMIUM = 100_000_000.0
 FLOW_LEADER_MIN_DIRECTION_SHARE = 0.62
 FLOW_LEADER_SCORE_BONUS = 10.0
 SOURCE_COVERAGE_MIN_PREMIUM = 50_000_000.0
+SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 500
 GENERATED_OR_OLD_ARTIFACT_MARKERS = (
     "_trend_cache",
     "morning-watch-setups",
@@ -1967,6 +1968,29 @@ def generate_signals_for_snapshot(
                     ],
                 )
             )
+        else:
+            source_rescue_direction = source_rescue_signal_direction(f)
+            if source_rescue_direction and not any(c[1] == source_rescue_direction for c in candidates):
+                source_total_premium = source_coverage_total_premium(f)
+                direction_share = source_direction_share(f, source_rescue_direction)
+                score = (
+                    FLOW_LEADER_SCORE_BONUS * 0.70
+                    + zish(source_total_premium, SOURCE_COVERAGE_MIN_PREMIUM)
+                    + 2.0 * max(direction_share - 0.50, 0.0)
+                    + max(abs(stock_ret), 0.0)
+                )
+                candidates.append(
+                    (
+                        "SOURCE_PREMIUM_COVERAGE_RESCUE",
+                        source_rescue_direction,
+                        score,
+                        [
+                            "high source premium near-miss",
+                            "source coverage rescue candidate",
+                            f"{source_rescue_direction} source-flow direction",
+                        ],
+                    )
+                )
 
         if ticker in INDEX_TICKERS and put_ratio >= pattern_config["min_put_volume_ratio"]:
             score = zish(put_ratio, pattern_config["min_put_volume_ratio"]) + max(
@@ -1984,12 +2008,109 @@ def generate_signals_for_snapshot(
         for family, direction, score, reasons in candidates:
             if family == "CATALYST_FLOW_LEADER":
                 quote = select_flow_leader_quote(snapshot, f, direction, pattern_config)
+            elif family == "SOURCE_PREMIUM_COVERAGE_RESCUE":
+                quote = source_coverage_quote(snapshot, f, direction, pattern_config)
             else:
                 quote = snapshot.best_options.get((ticker, direction))
             signals.append(build_signal(snapshot, f, family, direction, score, reasons, quote, pattern_config))
 
     signals.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
-    return signals[:max_signals]
+    return select_signal_set(signals, max_signals)
+
+
+def select_signal_set(signals: Sequence[Mapping[str, Any]], max_signals: int) -> List[Dict[str, Any]]:
+    ranked = [dict(row) for row in signals]
+    ranked.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
+    selected: List[Dict[str, Any]] = ranked[:max_signals]
+    selected_keys = {signal_identity_key(row) for row in selected}
+    best_rescue_by_ticker: Dict[str, Dict[str, Any]] = {}
+    for row in ranked:
+        if not must_keep_source_rescue_signal(row):
+            continue
+        ticker = str(row.get("ticker") or "")
+        current = best_rescue_by_ticker.get(ticker)
+        if current is None or source_rescue_sort_key(row) > source_rescue_sort_key(current):
+            best_rescue_by_ticker[ticker] = dict(row)
+    rescue_rows = sorted(best_rescue_by_ticker.values(), key=source_rescue_sort_key, reverse=True)
+    for row in rescue_rows[:SOURCE_RESCUE_MAX_EXTRA_SIGNALS]:
+        key = signal_identity_key(row)
+        if key in selected_keys:
+            continue
+        selected.append(row)
+        selected_keys.add(key)
+    selected.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
+    return selected
+
+
+def signal_identity_key(row: Mapping[str, Any]) -> Tuple[str, str, str, str]:
+    return (
+        str(row.get("date") or ""),
+        str(row.get("ticker") or ""),
+        str(row.get("direction") or ""),
+        str(row.get("pattern_family") or row.get("base_pattern_family") or ""),
+    )
+
+
+def must_keep_source_rescue_signal(row: Mapping[str, Any]) -> bool:
+    base_family = str(row.get("base_pattern_family") or "")
+    if not base_family or base_family.startswith("BASELINE_"):
+        return False
+    source_premium = max(
+        num(row.get("source_total_premium")) or 0.0,
+        num(row.get("flow_total_premium")) or 0.0,
+        num(row.get("hot_total_premium")) or 0.0,
+    )
+    return source_premium >= SOURCE_COVERAGE_MIN_PREMIUM
+
+
+def source_rescue_sort_key(row: Mapping[str, Any]) -> Tuple[float, float, float]:
+    return (
+        max(
+            num(row.get("source_total_premium")) or 0.0,
+            num(row.get("flow_total_premium")) or 0.0,
+            num(row.get("hot_total_premium")) or 0.0,
+        ),
+        num(row.get("pattern_score")) or -1.0,
+        num(row.get("liquidity_volume")) or -1.0,
+    )
+
+
+def source_rescue_signal_direction(f: Mapping[str, Any]) -> Optional[str]:
+    total_premium = source_coverage_total_premium(f)
+    if total_premium < SOURCE_COVERAGE_MIN_PREMIUM:
+        return None
+    call_share = num(f.get("flow_call_premium_share"))
+    put_share = num(f.get("flow_put_premium_share"))
+    call_ask_share = num(f.get("flow_call_ask_premium_share"))
+    put_ask_share = num(f.get("flow_put_ask_premium_share"))
+    flow_bias = num(f.get("flow_premium_bias")) or num(f.get("premium_bias")) or 0.0
+    if call_share is not None and call_share >= 0.58:
+        return "bullish"
+    if put_share is not None and put_share >= 0.58:
+        return "bearish"
+    if call_ask_share is not None and call_ask_share >= 0.58:
+        return "bullish"
+    if put_ask_share is not None and put_ask_share >= 0.58:
+        return "bearish"
+    if flow_bias >= 0.05:
+        return "bullish"
+    if flow_bias <= -0.05:
+        return "bearish"
+    return None
+
+
+def source_direction_share(f: Mapping[str, Any], direction: str) -> float:
+    if direction == "bullish":
+        return max(
+            num(f.get("flow_call_premium_share")) or 0.0,
+            num(f.get("flow_call_ask_premium_share")) or 0.0,
+        )
+    if direction == "bearish":
+        return max(
+            num(f.get("flow_put_premium_share")) or 0.0,
+            num(f.get("flow_put_ask_premium_share")) or 0.0,
+        )
+    return 0.0
 
 
 def select_flow_leader_quote(
@@ -2150,6 +2271,7 @@ def build_signal(
         "call_volume_ratio_30d": f.get("call_volume_ratio_30d"),
         "put_volume_ratio_30d": f.get("put_volume_ratio_30d"),
         "premium_bias": f.get("premium_bias"),
+        "source_total_premium": source_coverage_total_premium(f),
         "hot_total_premium": max(f.get("hot_total_premium") or 0.0, f.get("flow_total_premium") or 0.0),
         "flow_total_premium": f.get("flow_total_premium"),
         "flow_premium_bias": f.get("flow_premium_bias"),
@@ -5609,9 +5731,9 @@ def build_source_ticker_coverage_rows(
             continue
         direction = catalyst_flow_leader_direction(feature) or source_coverage_direction(feature)
         quote = source_coverage_quote(snapshot, feature, direction, pattern_config)
-        setup = source_coverage_setup_fields(ticker, direction, quote)
         surfaced_rows = rows_by_ticker.get(ticker, [])
         best_row = surfaced_rows[0] if surfaced_rows else {}
+        setup = trade_setup_fields(best_row) if best_row else source_coverage_setup_fields(ticker, direction, quote)
         status = source_coverage_surface_status(best_row)
         coverage_rows.append(
             {
@@ -5640,10 +5762,10 @@ def build_source_ticker_coverage_rows(
                 "decision_block_reasons": join_reason_list(best_row.get("block_reasons")),
                 "trade_legs": setup.get("trade_legs", ""),
                 "entry_limit": setup.get("entry_range", ""),
-                "quote_source": quote.get("quote_source", ""),
-                "quote_volume": quote.get("volume"),
-                "quote_open_interest": quote.get("open_interest"),
-                "bid_ask_spread_pct": quote.get("spread_pct"),
+                "quote_source": best_row.get("quote_source") or quote.get("quote_source", ""),
+                "quote_volume": best_row.get("liquidity_volume") if best_row else quote.get("volume"),
+                "quote_open_interest": best_row.get("liquidity_open_interest") if best_row else quote.get("open_interest"),
+                "bid_ask_spread_pct": best_row.get("bid_ask_spread_pct") if best_row else quote.get("spread_pct"),
                 "decision_artifact": source_coverage_artifact(status),
             }
         )

@@ -45,11 +45,11 @@ from uwos.options_pattern_pipeline_v1.core import (
 
 
 class SnapshotStub:
-    def __init__(self, features, best_options=None, market_regime=None, signal_date="2026-05-13"):
+    def __init__(self, features, best_options=None, market_regime=None, signal_date="2026-05-13", option_quotes=None):
         self.signal_date = signal_date
         self.features = features
         self.best_options = best_options or {}
-        self.option_quotes = {}
+        self.option_quotes = option_quotes or {}
         self.market_regime = market_regime or {"regime": "MIXED"}
 
 
@@ -108,6 +108,232 @@ def test_source_coverage_surfaces_high_flow_ticker_that_misses_decision_board():
     assert rows[0]["decision_surface_status"] == "NOT_SURFACED"
     assert "below 100M catalyst-flow-leader threshold" in rows[0]["source_gap_reason"]
     assert rows[0]["trade_legs"] == "Buy 1 IBM 2026-06-18 300C @ debit 4.10-4.30 limit"
+
+
+def test_source_coverage_uses_decision_ticket_when_ticker_surfaces():
+    snapshot = SnapshotStub(
+        features={
+            "IBM": {
+                "ticker": "IBM",
+                "close": 282.0,
+                "source_flags": {"bot_eod", "hot_chains", "stock_screener"},
+                "flow_total_premium": 94_315_371.0,
+                "hot_total_premium": 57_753_450.0,
+                "call_premium": 79_222_529.0,
+                "put_premium": 15_092_842.0,
+                "flow_call_premium_share": 0.84,
+                "flow_put_premium_share": 0.16,
+                "flow_call_ask_premium_share": 0.51,
+                "flow_put_ask_premium_share": 0.08,
+                "flow_premium_bias": 0.68,
+            }
+        },
+        best_options={
+            ("IBM", "bullish"): {
+                "ticker": "IBM",
+                "direction": "bullish",
+                "option_symbol": "IBM260618C00300000",
+                "option_type": "call",
+                "expiry": "2026-06-18",
+                "strike": 300.0,
+                "dte": 15,
+                "bid": 4.1,
+                "ask": 4.3,
+                "mid": 4.2,
+                "volume": 900,
+                "open_interest": 1200,
+                "premium": 387000.0,
+                "spread_pct": 0.048,
+                "quote_source": "bot_eod",
+                "selection_score": 20.0,
+            }
+        },
+    )
+    decision_rows = [
+        {
+            "ticker": "IBM",
+            "direction": "bullish",
+            "status": "TRADE_REVIEW",
+            "classification": "WATCH",
+            "pattern_family": "SOURCE_PREMIUM_COVERAGE_RESCUE__BULLISH__LONG_OPTION__TECHNOLOGY",
+            "strategy_type": "Long Call Debit",
+            "strategy_kind": "long_option",
+            "lead_option_symbol": "IBM260618C00260000",
+            "option_type": "CALL",
+            "strike": 260.0,
+            "expiry": "2026-06-18",
+            "entry_range": "12.70-12.70",
+            "quote_source": "bot_eod",
+            "liquidity_volume": 1450,
+            "liquidity_open_interest": 2180,
+            "bid_ask_spread_pct": 0.0,
+            "probability_score": 20.08,
+            "expected_R": 0.081568,
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+        }
+    ]
+
+    rows = build_source_ticker_coverage_rows(snapshot, {"max_spread_pct": 0.35}, decision_rows)
+
+    assert rows[0]["ticker"] == "IBM"
+    assert rows[0]["decision_surface_status"] == "TRADE_REVIEW"
+    assert rows[0]["decision_pattern_family"] == "SOURCE_PREMIUM_COVERAGE_RESCUE__BULLISH__LONG_OPTION__TECHNOLOGY"
+    assert rows[0]["trade_legs"] == "Buy 1 IBM 2026-06-18 260C @ debit 12.70-12.70 limit"
+    assert rows[0]["entry_limit"] == "debit 12.70-12.70"
+    assert rows[0]["quote_volume"] == 1450
+
+
+def test_source_premium_near_miss_generates_validation_candidate():
+    pattern_config = {
+        "min_call_volume_ratio": 1.35,
+        "min_put_volume_ratio": 1.35,
+        "min_hot_premium": 250_000,
+        "min_oi_diff": 5_000,
+        "max_spread_pct": 0.35,
+        "high_iv": 0.75,
+        "min_liquidity_score": 8.0,
+        "min_ask_side_ratio": 0.52,
+        "max_event_dte_without_event_strategy": 2,
+    }
+    snapshot = SnapshotStub(
+        features={
+            "IBM": {
+                "date": "2026-05-28",
+                "ticker": "IBM",
+                "close": 282.0,
+                "source_flags": {"bot_eod", "stock_screener"},
+                "flow_total_premium": 94_315_371.0,
+                "hot_total_premium": 57_753_450.0,
+                "call_premium": 79_222_529.0,
+                "put_premium": 15_092_842.0,
+                "flow_call_premium_share": 0.84,
+                "flow_put_premium_share": 0.16,
+                "flow_call_ask_premium_share": 0.80,
+                "flow_put_ask_premium_share": 0.07,
+                "flow_premium_bias": 0.67,
+                "call_volume_ratio_30d": 1.1,
+                "put_volume_ratio_30d": 0.8,
+                "liquidity_score": 25.0,
+            }
+        },
+        best_options={},
+        option_quotes={
+            "IBM260717C00300000": {
+                "ticker": "IBM",
+                "direction": "bullish",
+                "option_symbol": "IBM260717C00300000",
+                "option_type": "call",
+                "expiry": "2026-07-17",
+                "strike": 300.0,
+                "dte": 35,
+                "bid": 5.4,
+                "ask": 5.5,
+                "mid": 5.45,
+                "volume": 2600,
+                "open_interest": 5594,
+                "premium": 1_430_000.0,
+                "spread_pct": 0.018,
+                "quote_source": "bot_eod",
+            }
+        },
+        signal_date="2026-05-28",
+    )
+
+    signals = generate_signals_for_snapshot(snapshot, pattern_config, max_signals=1)
+
+    assert signals[0]["ticker"] == "IBM"
+    assert signals[0]["base_pattern_family"] == "SOURCE_PREMIUM_COVERAGE_RESCUE"
+    assert signals[0]["entry_range"] == "5.40-5.50"
+
+
+def test_source_rescue_signals_survive_rank_cap():
+    pattern_config = {
+        "min_call_volume_ratio": 1.35,
+        "min_put_volume_ratio": 1.35,
+        "min_hot_premium": 250_000,
+        "min_oi_diff": 5_000,
+        "max_spread_pct": 0.35,
+        "high_iv": 0.75,
+        "min_liquidity_score": 8.0,
+        "min_ask_side_ratio": 0.52,
+        "max_event_dte_without_event_strategy": 2,
+    }
+    features = {
+        "LOUD": {
+            "date": "2026-05-28",
+            "ticker": "LOUD",
+            "close": 100.0,
+            "source_flags": {"stock_screener"},
+            "call_volume_ratio_30d": 80.0,
+            "put_volume_ratio_30d": 0.2,
+            "premium_bias": 0.50,
+            "flow_premium_bias": 0.0,
+            "flow_call_ask_ratio": 0.90,
+            "hot_total_premium": 100_000_000.0,
+            "liquidity_score": 20.0,
+        },
+        "CRWD": {
+            "date": "2026-05-28",
+            "ticker": "CRWD",
+            "close": 480.0,
+            "source_flags": {"bot_eod", "hot_chains", "stock_screener"},
+            "flow_total_premium": 110_377_795.0,
+            "hot_total_premium": 27_566_565.0,
+            "call_premium": 91_551_507.0,
+            "put_premium": 18_826_288.0,
+            "flow_call_premium_share": 0.82,
+            "flow_put_premium_share": 0.18,
+            "flow_call_ask_premium_share": 0.86,
+            "flow_put_ask_premium_share": 0.06,
+            "flow_premium_bias": 0.65,
+            "call_volume_ratio_30d": 0.8,
+            "put_volume_ratio_30d": 0.7,
+            "liquidity_score": 22.0,
+        },
+    }
+    best_options = {
+        ("LOUD", "bullish"): {
+            "ticker": "LOUD",
+            "direction": "bullish",
+            "option_symbol": "LOUD260618C00120000",
+            "option_type": "call",
+            "expiry": "2026-06-18",
+            "strike": 120.0,
+            "dte": 15,
+            "bid": 4.0,
+            "ask": 4.2,
+            "mid": 4.1,
+            "volume": 1000,
+            "open_interest": 2000,
+            "premium": 420_000.0,
+            "spread_pct": 0.049,
+            "quote_source": "bot_eod",
+        },
+        ("CRWD", "bullish"): {
+            "ticker": "CRWD",
+            "direction": "bullish",
+            "option_symbol": "CRWD260618C00820000",
+            "option_type": "call",
+            "expiry": "2026-06-18",
+            "strike": 820.0,
+            "dte": 15,
+            "bid": 6.95,
+            "ask": 8.50,
+            "mid": 7.725,
+            "volume": 639,
+            "open_interest": 935,
+            "premium": 543_150.0,
+            "spread_pct": 0.2006,
+            "quote_source": "bot_eod",
+        },
+    }
+    snapshot = SnapshotStub(features, best_options, signal_date="2026-05-28")
+
+    signals = generate_signals_for_snapshot(snapshot, pattern_config, max_signals=1)
+
+    assert len(signals) == 2
+    assert signals[0]["ticker"] == "LOUD"
+    assert any(s["ticker"] == "CRWD" and s["base_pattern_family"] == "CATALYST_FLOW_LEADER" for s in signals)
 
 
 def test_parse_occ_symbol_with_padded_root():
