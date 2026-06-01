@@ -60,10 +60,14 @@ FLOW_LEADER_MIN_DIRECTION_SHARE = 0.62
 FLOW_LEADER_SCORE_BONUS = 10.0
 SOURCE_COVERAGE_MIN_PREMIUM = 50_000_000.0
 SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 500
+VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
+MISSED_MOVER_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
 GOAL_AUDIT_REQUIRED_TICKERS = ("AMD", "MU", "NVDA", "SNDK", "IBM", "CRWD", "HOOD", "NOW")
 TRADEABLE_GAP_MIN_SOURCE_PREMIUM = 10_000.0
 TRADEABLE_GAP_MIN_HOT_PREMIUM = 25_000.0
 TRADEABLE_GAP_MAX_EXTRA_SIGNALS = 25
+VALIDATION_TRADEABLE_GAP_MAX_EXTRA_SIGNALS = 15
+MISSED_MOVER_TRADEABLE_GAP_MAX_EXTRA_SIGNALS = 25
 GENERATED_OR_OLD_ARTIFACT_MARKERS = (
     "_trend_cache",
     "morning-watch-setups",
@@ -1843,6 +1847,8 @@ def generate_signals_for_snapshot(
     snapshot: Snapshot,
     pattern_config: Mapping[str, Any],
     max_signals: int,
+    source_rescue_max_extra: int = SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
+    tradeable_gap_max_extra: int = TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
 ) -> List[Dict[str, Any]]:
     signals: List[Dict[str, Any]] = []
     market = snapshot.market_regime.get("regime", "UNKNOWN")
@@ -2049,10 +2055,20 @@ def generate_signals_for_snapshot(
             signals.append(build_signal(snapshot, f, family, direction, score, reasons, quote, pattern_config))
 
     signals.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
-    return select_signal_set(signals, max_signals)
+    return select_signal_set(
+        signals,
+        max_signals,
+        source_rescue_max_extra=source_rescue_max_extra,
+        tradeable_gap_max_extra=tradeable_gap_max_extra,
+    )
 
 
-def select_signal_set(signals: Sequence[Mapping[str, Any]], max_signals: int) -> List[Dict[str, Any]]:
+def select_signal_set(
+    signals: Sequence[Mapping[str, Any]],
+    max_signals: int,
+    source_rescue_max_extra: int = SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
+    tradeable_gap_max_extra: int = TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+) -> List[Dict[str, Any]]:
     ranked = [dict(row) for row in signals]
     ranked.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
     selected: List[Dict[str, Any]] = ranked[:max_signals]
@@ -2067,7 +2083,7 @@ def select_signal_set(signals: Sequence[Mapping[str, Any]], max_signals: int) ->
         if current is None or source_rescue_sort_key(row) > source_rescue_sort_key(current):
             best_rescue_by_ticker[ticker] = dict(row)
     rescue_rows = sorted(best_rescue_by_ticker.values(), key=source_rescue_sort_key, reverse=True)
-    for row in rescue_rows[:SOURCE_RESCUE_MAX_EXTRA_SIGNALS]:
+    for row in rescue_rows[: max(0, source_rescue_max_extra)]:
         key = signal_identity_key(row)
         if key in selected_keys:
             continue
@@ -2085,7 +2101,7 @@ def select_signal_set(signals: Sequence[Mapping[str, Any]], max_signals: int) ->
         if current is None or tradeable_gap_sort_key(row) > tradeable_gap_sort_key(current):
             best_gap_by_ticker[ticker] = dict(row)
     gap_rows = sorted(best_gap_by_ticker.values(), key=tradeable_gap_sort_key, reverse=True)
-    for row in gap_rows[:TRADEABLE_GAP_MAX_EXTRA_SIGNALS]:
+    for row in gap_rows[: max(0, tradeable_gap_max_extra)]:
         key = signal_identity_key(row)
         if key in selected_keys:
             continue
@@ -2679,10 +2695,26 @@ def run_historical_validation(
         )
         train_signals = []
         for snap in train_snaps:
-            train_signals.extend(generate_signals_for_snapshot(snap, pattern_config, top_candidates_per_day))
+            train_signals.extend(
+                generate_signals_for_snapshot(
+                    snap,
+                    pattern_config,
+                    top_candidates_per_day,
+                    source_rescue_max_extra=VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
+                    tradeable_gap_max_extra=VALIDATION_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+                )
+            )
         validation_signals = []
         for snap in validation_snaps:
-            validation_signals.extend(generate_signals_for_snapshot(snap, pattern_config, top_candidates_per_day))
+            validation_signals.extend(
+                generate_signals_for_snapshot(
+                    snap,
+                    pattern_config,
+                    top_candidates_per_day,
+                    source_rescue_max_extra=VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
+                    tradeable_gap_max_extra=VALIDATION_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+                )
+            )
         for sig in train_signals:
             sig = dict(sig)
             sig["split"] = split["name"]
@@ -3478,7 +3510,13 @@ def run_missed_mover_audit(
             movers.append((abs(move), f, move))
         movers.sort(key=lambda x: x[0], reverse=True)
         cfg = learn_pattern_config([current])
-        signals = generate_signals_for_snapshot(current, cfg, max_signals=50)
+        signals = generate_signals_for_snapshot(
+            current,
+            cfg,
+            max_signals=50,
+            source_rescue_max_extra=MISSED_MOVER_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
+            tradeable_gap_max_extra=MISSED_MOVER_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+        )
         signal_tickers = {s["ticker"] for s in signals}
         for abs_move, f, move in movers[:per_date]:
             ticker = f["ticker"]
@@ -4186,15 +4224,18 @@ def enrich_decision_row(
     )
     hard_or_reject = hard_review_blockers(blockers)
     flow_leader_review = catalyst_flow_leader_review_candidate(enriched, blockers, has_ticket)
+    has_review_probability_and_ev = expected_r is not None and num(enriched.get("probability_score")) is not None
+    if has_ticket and not has_review_probability_and_ev:
+        blockers.add("INSUFFICIENT_VALIDATION_FOR_TRADE_REVIEW")
     if not blockers and has_ticket:
         status = "AUTO_APPROVED"
-    elif edge_review:
+    elif edge_review and has_review_probability_and_ev:
         status = "TRADE_REVIEW"
-    elif flow_leader_review:
+    elif flow_leader_review and has_review_probability_and_ev:
         status = "TRADE_REVIEW"
     elif hard_or_reject:
         status = "AVOID"
-    elif has_ticket and soft_review_candidate(enriched):
+    elif has_ticket and has_review_probability_and_ev and soft_review_candidate(enriched):
         status = "TRADE_REVIEW"
     else:
         status = "AVOID"

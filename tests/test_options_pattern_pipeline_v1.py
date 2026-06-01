@@ -339,6 +339,95 @@ def test_source_rescue_signals_survive_rank_cap():
     assert any(s["ticker"] == "CRWD" and s["base_pattern_family"] == "CATALYST_FLOW_LEADER" for s in signals)
 
 
+def test_source_rescue_extra_rows_can_be_capped_for_validation():
+    pattern_config = {
+        "min_call_volume_ratio": 1.35,
+        "min_put_volume_ratio": 1.35,
+        "min_hot_premium": 250_000,
+        "min_oi_diff": 5_000,
+        "max_spread_pct": 0.35,
+        "high_iv": 0.75,
+        "min_liquidity_score": 8.0,
+        "min_ask_side_ratio": 0.52,
+        "max_event_dte_without_event_strategy": 2,
+    }
+
+    def quote(ticker, strike):
+        return {
+            "ticker": ticker,
+            "direction": "bullish",
+            "option_symbol": f"{ticker}260618C{int(strike * 1000):08d}",
+            "option_type": "call",
+            "expiry": "2026-06-18",
+            "strike": strike,
+            "dte": 15,
+            "bid": 4.0,
+            "ask": 4.2,
+            "mid": 4.1,
+            "volume": 1000,
+            "open_interest": 2000,
+            "premium": 420_000.0,
+            "spread_pct": 0.049,
+            "quote_source": "bot_eod",
+        }
+
+    features = {
+        "LOUD": {
+            "date": "2026-05-28",
+            "ticker": "LOUD",
+            "close": 100.0,
+            "source_flags": {"stock_screener"},
+            "call_volume_ratio_30d": 80.0,
+            "put_volume_ratio_30d": 0.2,
+            "premium_bias": 0.50,
+            "flow_premium_bias": 0.0,
+            "flow_call_ask_ratio": 0.90,
+            "hot_total_premium": 1_000_000.0,
+            "liquidity_score": 20.0,
+        },
+    }
+    best_options = {("LOUD", "bullish"): quote("LOUD", 120.0)}
+    for idx, ticker in enumerate(("SRC1", "SRC2", "SRC3"), 1):
+        features[ticker] = {
+            "date": "2026-05-28",
+            "ticker": ticker,
+            "close": 100.0 + idx,
+            "source_flags": {"bot_eod", "hot_chains"},
+            "flow_total_premium": 60_000_000.0 + idx,
+            "hot_total_premium": 20_000_000.0,
+            "call_premium": 35_000_000.0,
+            "put_premium": 25_000_000.0,
+            "flow_call_premium_share": 0.56,
+            "flow_put_premium_share": 0.44,
+            "flow_call_ask_premium_share": 0.54,
+            "flow_put_ask_premium_share": 0.46,
+            "flow_premium_bias": 0.06,
+            "call_volume_ratio_30d": 0.8,
+            "put_volume_ratio_30d": 0.7,
+            "liquidity_score": 18.0,
+        }
+        best_options[(ticker, "bullish")] = quote(ticker, 120.0 + idx)
+
+    snapshot = SnapshotStub(features, best_options, signal_date="2026-05-28")
+
+    capped = generate_signals_for_snapshot(
+        snapshot,
+        pattern_config,
+        max_signals=1,
+        source_rescue_max_extra=1,
+        tradeable_gap_max_extra=0,
+    )
+    uncapped_daily_default = generate_signals_for_snapshot(
+        snapshot,
+        pattern_config,
+        max_signals=1,
+        tradeable_gap_max_extra=0,
+    )
+
+    assert sum(s["base_pattern_family"] == "SOURCE_PREMIUM_COVERAGE_RESCUE" for s in capped) == 1
+    assert sum(s["base_pattern_family"] == "SOURCE_PREMIUM_COVERAGE_RESCUE" for s in uncapped_daily_default) == 3
+
+
 def test_tradeable_source_gap_rescue_survives_rank_cap():
     pattern_config = {
         "min_call_volume_ratio": 1.35,
@@ -1693,6 +1782,53 @@ def test_strict_decision_layer_blocks_auto_approval_on_negative_edge():
     assert rows[0]["classification"] == "AVOID"
     assert "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS" in rows[0]["block_reasons"]
     assert "PROFIT_FACTOR_BELOW_AUTO_APPROVAL" in rows[0]["block_reasons"]
+
+
+def test_catalyst_flow_leader_without_probability_or_ev_is_avoid_not_review():
+    family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__BASIC_MATERIALS"
+    daily_rows = [
+        {
+            "date": "2026-05-26",
+            "classification": "WATCH",
+            "ticker": "NEM",
+            "direction": "bullish",
+            "pattern_family": family,
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
+            "confidence_tier": "RESEARCH_ONLY",
+            "pattern_score": 10.0,
+            "block_reasons": [],
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "lead_option_symbol": "NEM260618C00120000",
+            "expiry": "2026-06-18",
+            "option_type": "call",
+            "strike": 120,
+            "entry_bid": 2.19,
+            "entry_ask": 2.34,
+            "entry_range": "2.19-2.34",
+            "bid_ask_spread_pct": 0.066,
+            "max_risk_per_contract": 234.65,
+            "liquidity_volume": 269,
+            "liquidity_open_interest": 14663,
+            "dte": 23,
+            "quote_source": "bot_eod",
+            "flow_total_premium": 474_900_000.0,
+            "hot_total_premium": 474_900_000.0,
+        }
+    ]
+
+    rows, _ = prepare_decision_rows(
+        daily_rows,
+        empty_validation_bundle(),
+        {"source_complete": True},
+        {},
+    )
+
+    assert rows[0]["status"] == "AVOID"
+    assert rows[0]["classification"] == "AVOID"
+    assert "INSUFFICIENT_VALIDATION_FOR_TRADE_REVIEW" in rows[0]["block_reasons"]
+    assert rows[0]["expected_R"] is None
+    assert rows[0].get("probability_score") is None
 
 
 def test_validated_regime_edge_surfaces_trade_review_instead_of_blanket_avoid():
