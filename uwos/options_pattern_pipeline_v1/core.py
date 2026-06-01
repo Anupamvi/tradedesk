@@ -3330,6 +3330,11 @@ def run_missed_mover_audit(
         signal_tickers = {s["ticker"] for s in signals}
         for abs_move, f, move in movers[:per_date]:
             ticker = f["ticker"]
+            direction = "bullish" if move >= 0 else "bearish"
+            quote = source_coverage_quote(current, f, direction, cfg)
+            flagged = ticker in signal_tickers
+            reason = missed_reason(f, flagged)
+            miss_bucket = missed_mover_bucket(f, flagged, quote, reason)
             rows.append(
                 {
                     "signal_date": d,
@@ -3338,12 +3343,20 @@ def run_missed_mover_audit(
                     "next_day_stock_move": move,
                     "abs_next_day_stock_move": abs_move,
                     "sector": f.get("sector") or "",
-                    "was_flagged_by_new_pipeline": ticker in signal_tickers,
-                    "likely_miss_reason": missed_reason(f, ticker in signal_tickers),
+                    "was_flagged_by_new_pipeline": flagged,
+                    "likely_miss_reason": reason,
+                    "miss_bucket": miss_bucket,
+                    "candidate_generation_gap": miss_bucket == "CANDIDATE_GENERATION_GAP",
+                    "has_tradeable_option_quote": bool(quote),
+                    "source_total_premium": source_coverage_total_premium(f),
                     "call_volume_ratio_30d": f.get("call_volume_ratio_30d"),
                     "put_volume_ratio_30d": f.get("put_volume_ratio_30d"),
                     "premium_bias": f.get("premium_bias"),
                     "hot_total_premium": f.get("hot_total_premium"),
+                    "quote_symbol": quote.get("option_symbol", ""),
+                    "quote_bid": quote.get("bid"),
+                    "quote_ask": quote.get("ask"),
+                    "quote_spread_pct": quote.get("spread_pct"),
                 }
             )
     rows.sort(key=lambda r: (r["signal_date"], r["abs_next_day_stock_move"]), reverse=True)
@@ -3363,6 +3376,25 @@ def missed_reason(f: Mapping[str, Any], flagged: bool) -> str:
     if f.get("avg_spread_pct") is None:
         reasons.append("missing_quote_spread")
     return ";".join(reasons) if reasons else "moved_without_matching_frozen_pattern"
+
+
+def missed_mover_bucket(
+    f: Mapping[str, Any],
+    flagged: bool,
+    quote: Mapping[str, Any],
+    reason: str,
+) -> str:
+    if flagged:
+        return "FLAGGED_BY_PATTERN_PIPELINE"
+    if not quote or "missing_quote_spread" in reason:
+        return "NOT_OPTION_TRADEABLE_MISSING_QUOTE"
+    total_premium = source_coverage_total_premium(f)
+    max_volume_ratio = max(num(f.get("call_volume_ratio_30d")) or 0.0, num(f.get("put_volume_ratio_30d")) or 0.0)
+    has_flow = total_premium >= SOURCE_COVERAGE_MIN_PREMIUM or (num(f.get("hot_total_premium")) or 0.0) > 0.0
+    has_signal_shape = max_volume_ratio >= 1.25 or abs(num(f.get("premium_bias")) or 0.0) >= 0.03
+    if has_flow or has_signal_shape:
+        return "CANDIDATE_GENERATION_GAP"
+    return "NO_UW_OPTIONS_EDGE_VISIBLE"
 
 
 def build_sentiment_news_summary(date_dir: Path, as_of: str) -> Dict[str, Any]:
@@ -5240,15 +5272,20 @@ def build_goal_evidence_rows(
         for r in missed_rows
         if str(r.get("was_flagged_by_new_pipeline")).lower() not in {"true", "1", "yes"}
     ]
+    missed_candidate_gaps = [
+        r for r in missed_unflagged if str(r.get("candidate_generation_gap")).lower() in {"true", "1", "yes"}
+    ]
     rows.append(
         goal_evidence_row(
             "missed_mover_audit_visible",
-            "FAIL" if missed_unexplained else "WARN" if missed_unflagged else "PASS" if missed_rows else "WARN",
+            "FAIL" if missed_unexplained else "WARN" if missed_candidate_gaps else "PASS" if missed_rows else "WARN",
             "historical next-day top movers before as-of",
             len(missed_rows) - len(missed_unexplained),
             len(missed_unexplained),
             (
                 f"missed_rows={len(missed_rows)}; unflagged_but_explained={len(missed_unflagged)}; "
+                f"candidate_generation_gaps={len(missed_candidate_gaps)}; "
+                f"miss_buckets={missed_bucket_text(missed_unflagged)}; "
                 f"top_unflagged_reasons={top_missed_reason_text(missed_unflagged)}"
                 if not missed_unexplained
                 else "unexplained missed movers: "
@@ -5286,6 +5323,11 @@ def build_goal_evidence_rows(
 def top_missed_reason_text(rows: Sequence[Mapping[str, Any]], limit: int = 5) -> str:
     counts = Counter(str(row.get("likely_miss_reason") or "UNKNOWN") for row in rows)
     return ", ".join(f"{reason}:{count}" for reason, count in counts.most_common(limit)) or "none"
+
+
+def missed_bucket_text(rows: Sequence[Mapping[str, Any]], limit: int = 5) -> str:
+    counts = Counter(str(row.get("miss_bucket") or "UNKNOWN") for row in rows)
+    return ", ".join(f"{bucket}:{count}" for bucket, count in counts.most_common(limit)) or "none"
 
 
 def build_required_ticker_goal_row(
@@ -7635,10 +7677,18 @@ def missed_fieldnames() -> List[str]:
         "sector",
         "was_flagged_by_new_pipeline",
         "likely_miss_reason",
+        "miss_bucket",
+        "candidate_generation_gap",
+        "has_tradeable_option_quote",
+        "source_total_premium",
         "call_volume_ratio_30d",
         "put_volume_ratio_30d",
         "premium_bias",
         "hot_total_premium",
+        "quote_symbol",
+        "quote_bid",
+        "quote_ask",
+        "quote_spread_pct",
     ]
 
 

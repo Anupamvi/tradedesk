@@ -32,6 +32,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     empty_validation_bundle,
     generate_signals_for_snapshot,
     goal_evidence_overall_status,
+    missed_mover_bucket,
     normalize_header,
     prepare_decision_rows,
     parse_option_symbol,
@@ -483,6 +484,33 @@ def test_goal_evidence_uses_ticker_trend_gates_for_ticker_trend_auto_approval():
 
     expectancy_row = next(row for row in rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
     assert expectancy_row["status"] == "PASS"
+
+
+def test_missed_mover_bucket_separates_untradeable_from_generation_gap():
+    assert (
+        missed_mover_bucket(
+            {"ticker": "COOK", "hot_total_premium": 0.0, "call_volume_ratio_30d": 0.1, "put_volume_ratio_30d": 0.2},
+            False,
+            {},
+            "no_hot_chain_premium;missing_quote_spread",
+        )
+        == "NOT_OPTION_TRADEABLE_MISSING_QUOTE"
+    )
+    assert (
+        missed_mover_bucket(
+            {
+                "ticker": "FUBO",
+                "hot_total_premium": 274_575.0,
+                "call_volume_ratio_30d": 10.1,
+                "put_volume_ratio_30d": 1.9,
+                "premium_bias": 0.2,
+            },
+            False,
+            {"option_symbol": "FUBO260618C00005000", "bid": 1.0, "ask": 1.1},
+            "moved_without_matching_frozen_pattern",
+        )
+        == "CANDIDATE_GENERATION_GAP"
+    )
 
 
 def test_parse_occ_symbol_with_padded_root():
