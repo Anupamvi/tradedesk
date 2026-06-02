@@ -230,12 +230,56 @@ def configured_max_risk_per_trade(risk_config: Optional[Mapping[str, Any]] = Non
     return float(cfg.get("max_risk_per_trade", DEFAULT_RISK_CONFIG["max_risk_per_trade"]))
 
 
+def configured_slippage_pct_of_spread(risk_config: Optional[Mapping[str, Any]] = None) -> float:
+    cfg = risk_config or DEFAULT_RISK_CONFIG
+    return float(cfg.get("slippage_pct_of_spread", DEFAULT_RISK_CONFIG["slippage_pct_of_spread"]))
+
+
+def bid_ask_slippage_dollars(
+    bid: Any,
+    ask: Any,
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> float:
+    parsed_bid = num(bid)
+    parsed_ask = num(ask)
+    if parsed_bid is None or parsed_ask is None:
+        return 0.0
+    return max(0.0, parsed_ask - parsed_bid) * 100.0 * configured_slippage_pct_of_spread(risk_config)
+
+
+def signal_entry_slippage_dollars(
+    signal: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> float:
+    if str(signal.get("strategy_kind") or "long_option") == "credit_spread":
+        spread = num(signal.get("quote_spread"))
+        if spread is None:
+            entry_credit = num(signal.get("entry_credit"))
+            spread_pct = num(signal.get("bid_ask_spread_pct"))
+            if entry_credit is not None and spread_pct is not None:
+                spread = max(0.0, entry_credit * spread_pct)
+        return max(spread or 0.0, 0.0) * 100.0 * configured_slippage_pct_of_spread(risk_config)
+    return bid_ask_slippage_dollars(signal.get("entry_bid"), signal.get("entry_ask"), risk_config)
+
+
+def credit_spread_exit_slippage_dollars(
+    short_quote: Mapping[str, Any],
+    long_quote: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> float:
+    short_spread = max(0.0, (num(short_quote.get("ask")) or 0.0) - (num(short_quote.get("bid")) or 0.0))
+    long_spread = max(0.0, (num(long_quote.get("ask")) or 0.0) - (num(long_quote.get("bid")) or 0.0))
+    return (short_spread + long_spread) * 100.0 * configured_slippage_pct_of_spread(risk_config)
+
+
 def scoring_cost_model(strategy_kind: str, risk_config: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
     if strategy_kind == "credit_spread":
         return {
             "cost_model": "credit_spread_entry_credit_exit_debit_after_configured_fees",
             "round_trip_fees": configured_round_trip_spread_fees(risk_config),
             "opening_fee": configured_spread_opening_fee(risk_config),
+            "slippage_pct_of_spread": configured_slippage_pct_of_spread(risk_config),
+            "slippage_model": "configured_extra_slippage_pct_of_entry_and_exit_spreads",
             "entry_fill_assumption": "short_bid_minus_long_ask_credit",
             "exit_fill_assumption": "future_short_ask_minus_future_long_bid_debit",
         }
@@ -243,6 +287,8 @@ def scoring_cost_model(strategy_kind: str, risk_config: Optional[Mapping[str, An
         "cost_model": "long_option_entry_ask_exit_bid_after_configured_fees",
         "round_trip_fees": configured_round_trip_long_option_fees(risk_config),
         "opening_fee": configured_long_option_opening_fee(risk_config),
+        "slippage_pct_of_spread": configured_slippage_pct_of_spread(risk_config),
+        "slippage_model": "configured_extra_slippage_pct_of_entry_and_exit_spreads",
         "entry_fill_assumption": "entry_ask",
         "exit_fill_assumption": "future_bid_or_managed_exit",
     }
@@ -1552,7 +1598,8 @@ def best_credit_spread(
             min_oi = min(short.get("open_interest") or 0.0, long.get("open_interest") or 0.0)
             if min_volume < 25 or min_oi < 10:
                 continue
-            max_risk = (width - credit) * 100.0 + configured_spread_opening_fee(risk_config)
+            entry_slippage = combined_spread * 100.0 * configured_slippage_pct_of_spread(risk_config)
+            max_risk = (width - credit) * 100.0 + configured_spread_opening_fee(risk_config) + entry_slippage
             if max_risk <= 0:
                 continue
             score = (
@@ -1579,6 +1626,7 @@ def best_credit_spread(
                 "ask": credit,
                 "mid": credit,
                 "spread": combined_spread,
+                "quote_spread": combined_spread,
                 "spread_pct": combined_spread / max(credit, 0.01),
                 "volume": min_volume,
                 "open_interest": min_oi,
@@ -2551,10 +2599,21 @@ def build_signal(
     entry_bid = quote.get("bid")
     entry_mid = quote.get("mid")
     entry_credit = quote.get("entry_credit")
+    entry_slippage = signal_entry_slippage_dollars(
+        {
+            "strategy_kind": strategy_kind,
+            "entry_bid": entry_bid,
+            "entry_ask": entry_ask,
+            "entry_credit": entry_credit,
+            "bid_ask_spread_pct": spread_pct,
+            "quote_spread": quote.get("quote_spread") or quote.get("spread"),
+        },
+        risk_config,
+    )
     max_risk = (
         quote.get("max_risk")
         if strategy_kind == "credit_spread"
-        else (entry_ask * 100.0 + configured_long_option_opening_fee(risk_config) if entry_ask else None)
+        else (entry_ask * 100.0 + configured_long_option_opening_fee(risk_config) + entry_slippage if entry_ask else None)
     )
     strategy_type = quote.get("strategy_type") or ("Long Call Debit" if direction == "bullish" else "Long Put Debit")
     if strategy_kind == "credit_spread":
@@ -2616,6 +2675,8 @@ def build_signal(
         "entry_credit": entry_credit,
         "entry_range": entry_range,
         "max_risk_per_contract": max_risk,
+        "quote_spread": quote.get("quote_spread") or quote.get("spread"),
+        "entry_slippage": entry_slippage,
         "target_profit": target_profit,
         "stop_rule": stop_rule,
         "time_stop": time_stop,
@@ -3061,6 +3122,7 @@ def score_signal_horizon(
     target_date = nth_future_date(ordered_dates, signal_date, horizon)
     strategy_kind = str(signal.get("strategy_kind") or "long_option")
     cost_fields = scoring_cost_model(strategy_kind, risk_config)
+    entry_slippage = signal_entry_slippage_dollars(signal, risk_config)
     base = {
         "split": split_name,
         "sample": sample,
@@ -3081,7 +3143,12 @@ def score_signal_horizon(
         "entry_bid": signal.get("entry_bid"),
         "round_trip_fees": cost_fields["round_trip_fees"],
         "opening_fee": cost_fields["opening_fee"],
+        "entry_slippage": entry_slippage,
+        "exit_slippage": None,
+        "slippage_dollars": entry_slippage,
+        "slippage_pct_of_spread": cost_fields["slippage_pct_of_spread"],
         "cost_model": cost_fields["cost_model"],
+        "slippage_model": cost_fields["slippage_model"],
         "entry_fill_assumption": cost_fields["entry_fill_assumption"],
         "exit_fill_assumption": cost_fields["exit_fill_assumption"],
         "bid_ask_spread_pct": signal.get("bid_ask_spread_pct"),
@@ -3114,15 +3181,19 @@ def score_signal_horizon(
         future_long = snapshots[target_date].option_quotes.get(long_leg["option_symbol"])
         if future_short and future_long and future_short.get("ask", 0.0) > 0 and future_long.get("bid", 0.0) >= 0:
             exit_debit = max(0.0, future_short["ask"] - future_long["bid"])
-            net_dollars = (entry_credit - exit_debit) * 100.0 - cost_fields["round_trip_fees"]
+            exit_slippage = credit_spread_exit_slippage_dollars(future_short, future_long, risk_config)
+            slippage_dollars = entry_slippage + exit_slippage
+            net_dollars = (entry_credit - exit_debit) * 100.0 - cost_fields["round_trip_fees"] - slippage_dollars
             net_r = net_dollars / max_risk if max_risk > 0 else None
             base.update(
                 {
                     "status": "SCORED",
                     "exit_debit": exit_debit,
+                    "exit_slippage": exit_slippage,
+                    "slippage_dollars": slippage_dollars,
                     "net_r": net_r,
                     "win": int(net_r is not None and net_r > 0),
-                    "outcome_note": "credit_spread_exit_debit_after_fees",
+                    "outcome_note": "credit_spread_exit_debit_after_costs_slippage",
                 }
             )
             return base
@@ -3147,35 +3218,43 @@ def score_signal_horizon(
         base["outcome_note"] = "missing_entry_debit"
         return base
     symbol = signal.get("lead_option_symbol") or ""
-    managed = score_managed_long_option(signal, snapshots, ordered_dates, horizon, entry, symbol, risk_config)
+    managed = score_managed_long_option(signal, snapshots, ordered_dates, horizon, entry, symbol, risk_config, entry_slippage)
     if managed:
         base.update(managed)
         return base
     future_quote = snapshots[target_date].option_quotes.get(symbol)
     if future_quote and future_quote.get("bid", 0.0) > 0:
         exit_value = future_quote["bid"]
-        net_dollars = (exit_value - entry) * 100.0 - cost_fields["round_trip_fees"]
-        risk_dollars = entry * 100.0 + cost_fields["opening_fee"]
+        exit_slippage = bid_ask_slippage_dollars(future_quote.get("bid"), future_quote.get("ask"), risk_config)
+        slippage_dollars = entry_slippage + exit_slippage
+        net_dollars = (exit_value - entry) * 100.0 - cost_fields["round_trip_fees"] - slippage_dollars
+        risk_dollars = entry * 100.0 + cost_fields["opening_fee"] + entry_slippage
         net_r = net_dollars / risk_dollars if risk_dollars > 0 else None
         base.update(
             {
                 "status": "SCORED",
                 "exit_bid": exit_value,
+                "exit_slippage": exit_slippage,
+                "slippage_dollars": slippage_dollars,
                 "net_r": net_r,
                 "win": int(net_r is not None and net_r > 0),
-                "outcome_note": "option_bid_to_entry_ask_after_fees",
+                "outcome_note": "option_bid_to_entry_ask_after_costs_slippage",
             }
         )
         return base
     if future_quote and (future_quote.get("mid") or future_quote.get("option_close")):
         exit_value = future_quote.get("mid") or future_quote.get("option_close")
-        net_dollars = (exit_value - entry) * 100.0 - cost_fields["round_trip_fees"]
-        risk_dollars = entry * 100.0 + cost_fields["opening_fee"]
+        exit_slippage = bid_ask_slippage_dollars(future_quote.get("bid"), future_quote.get("ask"), risk_config)
+        slippage_dollars = entry_slippage + exit_slippage
+        net_dollars = (exit_value - entry) * 100.0 - cost_fields["round_trip_fees"] - slippage_dollars
+        risk_dollars = entry * 100.0 + cost_fields["opening_fee"] + entry_slippage
         net_r = net_dollars / risk_dollars if risk_dollars > 0 else None
         base.update(
             {
                 "status": "PARTIAL",
                 "exit_proxy": exit_value,
+                "exit_slippage": exit_slippage,
+                "slippage_dollars": slippage_dollars,
                 "net_r": net_r,
                 "win": 0,
                 "outcome_note": "option_mid_or_close_proxy_not_counted_as_win",
@@ -3208,6 +3287,7 @@ def score_managed_long_option(
     entry: float,
     symbol: str,
     risk_config: Optional[Mapping[str, Any]] = None,
+    entry_slippage: float = 0.0,
 ) -> Optional[Dict[str, Any]]:
     if not symbol:
         return None
@@ -3219,7 +3299,7 @@ def score_managed_long_option(
     target_price = entry * 2.0
     stop_price = entry * 0.50
     cost_fields = scoring_cost_model("long_option", risk_config)
-    risk_dollars = entry * 100.0 + cost_fields["opening_fee"]
+    risk_dollars = entry * 100.0 + cost_fields["opening_fee"] + entry_slippage
     saw_real_quote = False
     last_bid: Optional[float] = None
     last_date = ""
@@ -3241,37 +3321,50 @@ def score_managed_long_option(
         # Conservative same-day ordering: if target and stop are both inside the
         # daily range, assume the stop was hit first.
         if low is not None and low <= stop_price:
-            net_dollars = (stop_price - entry) * 100.0 - cost_fields["round_trip_fees"]
+            net_dollars = (stop_price - entry) * 100.0 - cost_fields["round_trip_fees"] - entry_slippage
             return {
                 "status": "SCORED",
                 "managed_exit_date": d,
                 "managed_exit_price": stop_price,
+                "exit_slippage": 0.0,
+                "slippage_dollars": entry_slippage,
                 "net_r": net_dollars / risk_dollars if risk_dollars > 0 else None,
                 "win": 0,
-                "outcome_note": "managed_long_option_stop_hit_conservative",
+                "outcome_note": "managed_long_option_stop_hit_conservative_after_costs_slippage",
             }
         if high is not None and high >= target_price:
-            net_dollars = (target_price - entry) * 100.0 - cost_fields["round_trip_fees"]
+            net_dollars = (target_price - entry) * 100.0 - cost_fields["round_trip_fees"] - entry_slippage
             net_r = net_dollars / risk_dollars if risk_dollars > 0 else None
             return {
                 "status": "SCORED",
                 "managed_exit_date": d,
                 "managed_exit_price": target_price,
+                "exit_slippage": 0.0,
+                "slippage_dollars": entry_slippage,
                 "net_r": net_r,
                 "win": int(net_r is not None and net_r > 0),
-                "outcome_note": "managed_long_option_target_hit",
+                "outcome_note": "managed_long_option_target_hit_after_costs_slippage",
             }
     if saw_real_quote and last_bid is not None:
-        net_dollars = (last_bid - entry) * 100.0 - cost_fields["round_trip_fees"]
+        last_quote = snapshots.get(last_date).option_quotes.get(symbol) if last_date in snapshots else None
+        exit_slippage = bid_ask_slippage_dollars(
+            last_bid,
+            last_quote.get("ask") if last_quote else None,
+            risk_config,
+        )
+        slippage_dollars = entry_slippage + exit_slippage
+        net_dollars = (last_bid - entry) * 100.0 - cost_fields["round_trip_fees"] - slippage_dollars
         net_r = net_dollars / risk_dollars if risk_dollars > 0 else None
         return {
             "status": "SCORED",
             "managed_exit_date": last_date,
             "managed_exit_price": last_bid,
             "exit_bid": last_bid,
+            "exit_slippage": exit_slippage,
+            "slippage_dollars": slippage_dollars,
             "net_r": net_r,
             "win": int(net_r is not None and net_r > 0),
-            "outcome_note": "managed_long_option_horizon_bid_exit",
+            "outcome_note": "managed_long_option_horizon_bid_exit_after_costs_slippage",
         }
     return None
 
@@ -4849,10 +4942,7 @@ def live_quote_validation_status(row: Mapping[str, Any], risk_config: Mapping[st
 
 
 def fill_cost_fields(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> Dict[str, Any]:
-    spread = num(row.get("entry_ask")) - num(row.get("entry_bid")) if num(row.get("entry_ask")) is not None and num(row.get("entry_bid")) is not None else None
-    slippage = None
-    if spread is not None:
-        slippage = max(0.0, spread) * 100.0 * float(risk_config.get("slippage_pct_of_spread", 0.5))
+    slippage = signal_entry_slippage_dollars(row, risk_config)
     cost_model = scoring_cost_model(str(row.get("strategy_kind") or "long_option"), risk_config)
     fees = cost_model["round_trip_fees"]
     fill_model = "conservative_credit" if row.get("strategy_kind") == "credit_spread" else "conservative_debit_at_ask"
@@ -8586,7 +8676,12 @@ def validation_detail_fieldnames() -> List[str]:
         "entry_bid",
         "round_trip_fees",
         "opening_fee",
+        "entry_slippage",
+        "exit_slippage",
+        "slippage_dollars",
+        "slippage_pct_of_spread",
         "cost_model",
+        "slippage_model",
         "entry_fill_assumption",
         "exit_fill_assumption",
         "bid_ask_spread_pct",

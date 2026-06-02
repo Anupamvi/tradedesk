@@ -1363,6 +1363,7 @@ def test_unscorable_option_outcome_is_not_a_win():
     assert row["win"] == 0
     assert row["cost_model"] == "long_option_entry_ask_exit_bid_after_configured_fees"
     assert "round_trip_fees" in validation_detail_fieldnames()
+    assert "slippage_dollars" in validation_detail_fieldnames()
 
 
 def test_long_option_scoring_uses_configured_fees():
@@ -1387,7 +1388,7 @@ def test_long_option_scoring_uses_configured_fees():
             "S",
             (),
             {
-                "option_quotes": {"XYZ260116C00100000": {"bid": 1.5}},
+                "option_quotes": {"XYZ260116C00100000": {"bid": 1.5, "ask": 1.6}},
                 "features": {"XYZ": {"close": 101.0}},
             },
         )(),
@@ -1406,8 +1407,12 @@ def test_long_option_scoring_uses_configured_fees():
     assert row["status"] == "SCORED"
     assert row["round_trip_fees"] == 10.0
     assert row["opening_fee"] == 5.0
+    assert row["entry_slippage"] == pytest.approx(5.0)
+    assert row["exit_slippage"] == pytest.approx(5.0)
+    assert row["slippage_dollars"] == pytest.approx(10.0)
     assert row["cost_model"] == "long_option_entry_ask_exit_bid_after_configured_fees"
-    assert row["net_r"] == pytest.approx((50.0 - 10.0) / 105.0)
+    assert row["slippage_model"] == "configured_extra_slippage_pct_of_entry_and_exit_spreads"
+    assert row["net_r"] == pytest.approx((50.0 - 10.0 - 10.0) / 110.0)
 
 
 def test_build_signal_uses_configured_opening_fee_for_ticket_risk():
@@ -1449,8 +1454,9 @@ def test_build_signal_uses_configured_opening_fee_for_ticket_risk():
         {"round_trip_long_option_fees": 10.0},
     )
 
-    assert row["max_risk_per_contract"] == pytest.approx(105.0)
-    assert row["target_profit"] == pytest.approx(105.0)
+    assert row["entry_slippage"] == pytest.approx(2.5)
+    assert row["max_risk_per_contract"] == pytest.approx(107.5)
+    assert row["target_profit"] == pytest.approx(107.5)
 
 
 def test_tradeable_gap_quote_eligible_uses_configured_max_risk():
@@ -1507,7 +1513,7 @@ def test_managed_long_option_scores_stop_before_same_day_target():
 
     assert row["status"] == "SCORED"
     assert row["win"] == 0
-    assert row["outcome_note"] == "managed_long_option_stop_hit_conservative"
+    assert row["outcome_note"] == "managed_long_option_stop_hit_conservative_after_costs_slippage"
 
 
 def test_credit_spread_scores_with_future_leg_quotes():
@@ -1523,7 +1529,7 @@ def test_credit_spread_scores_with_future_leg_quotes():
         "strategy_type": "Bull Put Credit Spread",
         "legs_json": '[{"action":"SELL","option_symbol":"XYZ260116P00095000"},{"action":"BUY","option_symbol":"XYZ260116P00090000"}]',
         "entry_credit": 1.0,
-        "max_risk_per_contract": 401.30,
+        "max_risk_per_contract": 411.30,
         "entry_ask": 1.0,
         "entry_bid": 1.0,
         "bid_ask_spread_pct": 0.2,
@@ -1537,8 +1543,8 @@ def test_credit_spread_scores_with_future_leg_quotes():
             (),
             {
                 "option_quotes": {
-                    "XYZ260116P00095000": {"ask": 0.4},
-                    "XYZ260116P00090000": {"bid": 0.1},
+                    "XYZ260116P00095000": {"bid": 0.3, "ask": 0.4},
+                    "XYZ260116P00090000": {"bid": 0.1, "ask": 0.2},
                 },
                 "features": {"XYZ": {"close": 101.0}},
             },
@@ -1557,11 +1563,14 @@ def test_credit_spread_scores_with_future_leg_quotes():
 
     assert row["status"] == "SCORED"
     assert row["win"] == 1
-    assert row["outcome_note"] == "credit_spread_exit_debit_after_fees"
+    assert row["outcome_note"] == "credit_spread_exit_debit_after_costs_slippage"
     assert row["round_trip_fees"] == 10.0
     assert row["opening_fee"] == 5.0
+    assert row["entry_slippage"] == pytest.approx(10.0)
+    assert row["exit_slippage"] == pytest.approx(10.0)
+    assert row["slippage_dollars"] == pytest.approx(20.0)
     assert row["cost_model"] == "credit_spread_entry_credit_exit_debit_after_configured_fees"
-    assert row["net_r"] == pytest.approx((70.0 - 10.0) / 401.30)
+    assert row["net_r"] == pytest.approx((70.0 - 10.0 - 20.0) / 411.30)
 
 
 def test_bot_eod_is_separate_primary_source_when_present(tmp_path):
