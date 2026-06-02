@@ -26,6 +26,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_source_ticker_coverage_rows,
     build_shadow_ledger_rows,
     build_trade_review_candidates,
+    build_ticker_trend_edge_rows,
     build_validation_splits,
     classify_daily_signals,
     decision_board_fieldnames,
@@ -751,6 +752,7 @@ def test_goal_evidence_checks_auto_approved_profitability_gates():
             "validation_scored_count": 50,
             "beats_baselines_count": 2,
             "baselines_beaten_names": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY",
+            "baselines_beaten_details": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.05,edge_R=0.30,scored=20;BASELINE_NAIVE_UW_FLOW_ONLY:baseline_avg_R=0.01,edge_R=0.24,scored=20",
             "blockers": "",
         }
     ]
@@ -805,6 +807,7 @@ def test_goal_evidence_uses_ticker_trend_gates_for_ticker_trend_auto_approval():
             "validation_scored_count": 23,
             "beats_baselines_count": 6,
             "baselines_beaten_names": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY",
+            "baselines_beaten_details": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.05,edge_R=0.73,scored=20;BASELINE_NAIVE_UW_FLOW_ONLY:baseline_avg_R=0.01,edge_R=0.67,scored=20",
             "ticker_trend_scope": "ticker_direction_strategy",
             "ticker_trend_scored_count": 23,
             "ticker_trend_win_rate_pct": 56.52,
@@ -1523,6 +1526,7 @@ def test_trade_output_uses_human_readable_long_option_setup():
             "validation_profit_factor": 1.7,
             "beats_baselines_count": 3,
             "baselines_beaten_names": "BASELINE_A;BASELINE_B;BASELINE_C",
+            "baselines_beaten_details": "BASELINE_A:baseline_avg_R=-0.05,edge_R=0.47,scored=20;BASELINE_B:baseline_avg_R=0.01,edge_R=0.41,scored=20;BASELINE_C:baseline_avg_R=0.10,edge_R=0.32,scored=20",
             "probability_score": 55.0,
             "calibrated_probability": 0.61,
             "block_reasons": [],
@@ -1539,10 +1543,12 @@ def test_trade_output_uses_human_readable_long_option_setup():
     assert row["validation_scored_count"] == 42
     assert row["beats_baselines_count"] == 3
     assert row["baselines_beaten_names"] == "BASELINE_A;BASELINE_B;BASELINE_C"
+    assert row["baselines_beaten_details"].startswith("BASELINE_A:baseline_avg_R=-0.05")
     assert "expected_R=0.42" in row["auto_approval_gate_evidence"]
     assert "scored=42" in row["auto_approval_gate_evidence"]
     assert "baselines_beaten=3" in row["auto_approval_gate_evidence"]
     assert "baseline_names=BASELINE_A;BASELINE_B;BASELINE_C" in row["auto_approval_gate_evidence"]
+    assert "baseline_edges=BASELINE_A:baseline_avg_R=-0.05" in row["auto_approval_gate_evidence"]
 
 
 def test_trade_output_uses_human_readable_spread_setup():
@@ -1609,6 +1615,7 @@ def test_family_tiers_include_validation_probability_score():
     assert "52/80" in edge["probability_evidence"]
     assert edge["beats_baselines_count"] == 2
     assert edge["baselines_beaten_names"] == "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY"
+    assert "BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.05" in edge["baselines_beaten_details"]
 
 
 def test_classified_trade_carries_probability_fields():
@@ -1898,10 +1905,16 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
             "validation_average_net_r": 0.1,
             "validation_profit_factor": 1.3,
             "beats_baselines_count": 6,
-            "baselines_beaten_names": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY",
+            "baselines_beaten_names": "BASELINE_FAMILY_ONLY_SHOULD_NOT_SURVIVE_TICKER_TREND",
+            "baselines_beaten_details": "BASELINE_FAMILY_ONLY_SHOULD_NOT_SURVIVE_TICKER_TREND:baseline_avg_R=-9,edge_R=9,scored=99",
         }
     }
     validation_bundle["outcomes"] = outcomes
+    validation_bundle["baseline_comparison"] = [
+        {"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY", "average_net_r": -0.05, "scored_count": 20},
+        {"baseline": "BASELINE_NAIVE_UW_FLOW_ONLY", "average_net_r": 0.01, "scored_count": 20},
+        {"baseline": "BASELINE_TOO_STRONG", "average_net_r": 1.70, "scored_count": 20},
+    ]
 
     rows, controls = prepare_decision_rows(
         daily_rows,
@@ -1925,11 +1938,117 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
     assert "Not actionable" not in trade_row["why_actionable_now"]
     assert trade_row["validation_scored_count"] == rows[0]["validation_scored_count"]
     assert trade_row["beats_baselines_count"] == rows[0]["beats_baselines_count"]
+    assert trade_row["beats_baselines_count"] == 2
     assert trade_row["baselines_beaten_names"] == "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY"
-    assert "baselines_beaten=6" in trade_row["auto_approval_gate_evidence"]
+    assert "BASELINE_TOO_STRONG" not in trade_row["baselines_beaten_names"]
+    assert "BASELINE_FAMILY_ONLY" not in trade_row["baselines_beaten_names"]
+    assert "baseline_avg_R=-0.05" in trade_row["baselines_beaten_details"]
+    assert "edge_R=1.18" in trade_row["baselines_beaten_details"]
+    assert "baselines_beaten=2" in trade_row["auto_approval_gate_evidence"]
     assert "baseline_names=BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY" in trade_row["auto_approval_gate_evidence"]
+    assert "baseline_edges=BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.05" in trade_row["auto_approval_gate_evidence"]
     assert "ticker_trend_scope=ticker_direction_strategy" in trade_row["auto_approval_gate_evidence"]
+    edge_rows = build_ticker_trend_edge_rows(
+        controls["ticker_trend_stats"],
+        controls["risk_config"],
+        controls["baseline_comparison"],
+    )
+    amd_edge = next(row for row in edge_rows if row["ticker"] == "AMD")
+    assert amd_edge["trade_ready_trend"] == "yes"
+    assert amd_edge["beats_baselines_count"] == 2
+    assert amd_edge["baselines_beaten_names"] == "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY"
     assert controls["run_kill_switches"] == []
+
+
+def test_ticker_trend_overlay_demotes_when_trend_does_not_beat_baselines():
+    family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__TECHNOLOGY"
+    daily_rows = [
+        {
+            "ticker": "AMD",
+            "direction": "bullish",
+            "pattern_family": family,
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
+            "classification": "WATCH",
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+            "confidence_tier": "PROMISING",
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "option_type": "call",
+            "strike": 600,
+            "expiry": "2026-06-18",
+            "lead_option_symbol": "AMD260618C00600000",
+            "entry_bid": 10.8,
+            "entry_ask": 11.25,
+            "entry_range": "10.80-11.25",
+            "bid_ask_spread_pct": 0.04,
+            "max_risk_per_contract": 1125.65,
+            "liquidity_volume": 2000,
+            "liquidity_open_interest": 3000,
+            "quote_source": "bot_eod",
+            "current_market_alignment": "RISK_ON",
+            "market_regime": "RISK_ON",
+        }
+    ]
+    outcomes = []
+    for idx in range(34):
+        win = idx % 3 != 0
+        outcomes.append(
+            {
+                "split": "cumulative_to_2026-05_holdout",
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "signal_date": f"2026-05-{idx % 20 + 1:02d}",
+                "ticker": "AMD",
+                "direction": "bullish",
+                "pattern_family": family,
+                "market_regime": "RISK_ON",
+                "strategy_kind": "long_option",
+                "status": "SCORED",
+                "net_r": 2.0 if win else -0.45,
+                "win": int(win),
+            }
+        )
+    validation_bundle = empty_validation_bundle()
+    validation_bundle["family_tiers"] = {
+        family: {
+            "confidence_tier": "PROMISING",
+            "validation_scored_count": 34,
+            "validation_win_count": 22,
+            "validation_success_probability": 22 / 34,
+            "validation_probability_score": 0.45,
+            "validation_average_net_r": 0.1,
+            "validation_profit_factor": 1.3,
+            "beats_baselines_count": 6,
+            "baselines_beaten_names": "BASELINE_FAMILY_ONLY_SHOULD_NOT_PASS",
+            "baselines_beaten_details": "BASELINE_FAMILY_ONLY_SHOULD_NOT_PASS:baseline_avg_R=-9,edge_R=9,scored=99",
+        }
+    }
+    validation_bundle["outcomes"] = outcomes
+    validation_bundle["baseline_comparison"] = [
+        {"baseline": "BASELINE_TOO_STRONG_A", "average_net_r": 1.50, "scored_count": 20},
+        {"baseline": "BASELINE_TOO_STRONG_B", "average_net_r": 1.60, "scored_count": 20},
+    ]
+
+    rows, controls = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        {"source_complete": True},
+        {},
+    )
+
+    assert rows[0]["ticker_trend_scope"] == "ticker_direction_strategy"
+    assert rows[0]["beats_baselines_count"] == 0
+    assert rows[0]["baselines_beaten_names"] == ""
+    assert "DOES_NOT_BEAT_TWO_BASELINES" in rows[0]["block_reasons"]
+    assert rows[0]["status"] != "AUTO_APPROVED"
+    edge_rows = build_ticker_trend_edge_rows(
+        controls["ticker_trend_stats"],
+        controls["risk_config"],
+        controls["baseline_comparison"],
+    )
+    amd_edge = next(row for row in edge_rows if row["ticker"] == "AMD")
+    assert amd_edge["trade_ready_trend"] == "no"
+    assert amd_edge["beats_baselines_count"] == 0
 
 
 def test_macro_geo_point_in_time_filters_future_captures(tmp_path):

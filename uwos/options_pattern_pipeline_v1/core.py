@@ -2786,6 +2786,7 @@ def auto_approval_gate_evidence_text(row: Mapping[str, Any]) -> str:
         f"scored={row.get('validation_scored_count') or row.get('ticker_trend_scored_count') or ''}",
         f"baselines_beaten={row.get('beats_baselines_count')}",
         f"baseline_names={row.get('baselines_beaten_names') or ''}",
+        f"baseline_edges={row.get('baselines_beaten_details') or ''}",
         f"probability_score={pct_text(row.get('probability_score'))}",
         f"calibrated_probability={fmt_pct(row.get('calibrated_probability'))}",
     ]
@@ -3288,6 +3289,56 @@ def summarize_baselines(baseline_outcomes: Sequence[Mapping[str, Any]]) -> List[
     return rows
 
 
+def baseline_refs_from_comparison(baseline_comparison: Sequence[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    refs: List[Dict[str, Any]] = []
+    for row in baseline_comparison:
+        avg_r = num(row.get("average_net_r"))
+        scored = int(num(row.get("scored_count")) or 0)
+        if avg_r is None or scored <= 0:
+            continue
+        refs.append(
+            {
+                "baseline": str(row.get("baseline") or "UNKNOWN_BASELINE"),
+                "average_net_r": avg_r,
+                "scored_count": scored,
+            }
+        )
+    return refs
+
+
+def baseline_edge_evidence(
+    avg_r: Optional[float],
+    baseline_comparison: Sequence[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    if avg_r is None:
+        return {"count": 0, "names": "", "details": ""}
+    beaten: List[Dict[str, Any]] = []
+    for ref in baseline_refs_from_comparison(baseline_comparison):
+        baseline_avg = num(ref.get("average_net_r"))
+        if baseline_avg is None or avg_r <= baseline_avg:
+            continue
+        beaten.append(
+            {
+                "baseline": ref["baseline"],
+                "average_net_r": baseline_avg,
+                "scored_count": ref.get("scored_count"),
+                "edge_r": avg_r - baseline_avg,
+            }
+        )
+    return {
+        "count": len(beaten),
+        "names": ";".join(str(row["baseline"]) for row in beaten),
+        "details": ";".join(
+            (
+                f"{row['baseline']}:baseline_avg_R={fmt_num(row.get('average_net_r'))},"
+                f"edge_R={fmt_num(row.get('edge_r'))},"
+                f"scored={row.get('scored_count')}"
+            )
+            for row in beaten
+        ),
+    }
+
+
 def assign_family_tiers(
     validation_scorecard: Sequence[Mapping[str, Any]],
     baseline_comparison: Sequence[Mapping[str, Any]],
@@ -3295,11 +3346,6 @@ def assign_family_tiers(
     by_family: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
     for row in validation_scorecard:
         by_family[str(row["pattern_family"])].append(row)
-    baseline_refs = [
-        (str(b.get("baseline") or "UNKNOWN_BASELINE"), float(b["average_net_r"]))
-        for b in baseline_comparison
-        if b.get("average_net_r") is not None and int(b.get("scored_count") or 0) > 0
-    ]
     tiers: Dict[str, Dict[str, Any]] = {}
     for family, rows in by_family.items():
         scored = sum(int(r.get("scored_count") or 0) for r in rows)
@@ -3329,12 +3375,8 @@ def assign_family_tiers(
             if r.get("profit_factor") not in (None, "") and float(r["profit_factor"]) < 999
         ]
         pf = statistics.fmean(profit_factors) if profit_factors else None
-        beaten_baselines = [
-            name
-            for name, baseline_avg_r in baseline_refs
-            if avg_r is not None and avg_r > baseline_avg_r
-        ]
-        beats = len(beaten_baselines)
+        baseline_evidence = baseline_edge_evidence(avg_r, baseline_comparison)
+        beats = int(baseline_evidence["count"])
         split_consistent = (
             split_count >= 2
             and positive_splits >= math.ceil(split_count * 0.75)
@@ -3373,7 +3415,8 @@ def assign_family_tiers(
             "validation_average_net_r": avg_r,
             "validation_profit_factor": pf,
             "beats_baselines_count": beats,
-            "baselines_beaten_names": ";".join(beaten_baselines),
+            "baselines_beaten_names": baseline_evidence["names"],
+            "baselines_beaten_details": baseline_evidence["details"],
             "validation_split_count": split_count,
             "positive_validation_splits": positive_splits,
             "worst_split_average_net_r": worst_split_avg,
@@ -3929,6 +3972,7 @@ def prepare_decision_rows(
                 {},
             ),
             ticker_trend_stats,
+            validation_bundle.get("baseline_comparison", []),
             risk_config,
             run_kill_switches,
         )
@@ -3939,6 +3983,7 @@ def prepare_decision_rows(
         "family_stats": family_stats,
         "regime_edge_stats": regime_edge_stats,
         "ticker_trend_stats": ticker_trend_stats,
+        "baseline_comparison": validation_bundle.get("baseline_comparison", []),
         "calibration_metrics": calibration_metrics,
         "run_kill_switches": run_kill_switches,
     }
@@ -4335,6 +4380,7 @@ def enrich_decision_row(
     family_stats: Mapping[str, Any],
     regime_edge_stats: Mapping[str, Any],
     ticker_trend_stats: Mapping[Tuple[str, str, str], Mapping[str, Any]],
+    baseline_comparison: Sequence[Mapping[str, Any]],
     risk_config: Mapping[str, Any],
     run_kill_switches: Sequence[str],
 ) -> Dict[str, Any]:
@@ -4360,6 +4406,7 @@ def enrich_decision_row(
     validation_scored = int(num(tier_info.get("validation_scored_count")) or num(family_stats.get("scored_count")) or 0)
     baselines_beaten = int(num(tier_info.get("beats_baselines_count")) or 0)
     baselines_beaten_names = str(tier_info.get("baselines_beaten_names") or "")
+    baselines_beaten_details = str(tier_info.get("baselines_beaten_details") or "")
     probability_score = probability_decimal_from_pct(enriched.get("probability_score"))
     confidence_lower = num(tier_info.get("validation_probability_score"))
     confidence_upper = wilson_upper_bound(
@@ -4385,6 +4432,10 @@ def enrich_decision_row(
         expected_r_per_day = safe_div(expected_r, max(expected_hold, 1))
         validation_profit_factor = num(ticker_trend.get("profit_factor"))
         validation_scored = int(num(ticker_trend.get("scored_count")) or 0)
+        ticker_baseline_evidence = baseline_edge_evidence(expected_r, baseline_comparison)
+        baselines_beaten = int(ticker_baseline_evidence["count"])
+        baselines_beaten_names = str(ticker_baseline_evidence["names"])
+        baselines_beaten_details = str(ticker_baseline_evidence["details"])
         enriched["success_probability_pct"] = pct_value(calibrated_probability)
         enriched["failure_probability_pct"] = pct_value(1.0 - calibrated_probability if calibrated_probability is not None else None)
         enriched["probability_score"] = pct_value(confidence_lower)
@@ -4506,6 +4557,7 @@ def enrich_decision_row(
             "validation_scored_count": validation_scored,
             "beats_baselines_count": baselines_beaten,
             "baselines_beaten_names": baselines_beaten_names,
+            "baselines_beaten_details": baselines_beaten_details,
             "calibrated_probability": round(calibrated_probability, 6) if calibrated_probability is not None else None,
             "confidence_lower_bound": confidence_lower,
             "confidence_upper_bound": confidence_upper,
@@ -4760,6 +4812,7 @@ def build_decision_board_rows(
                 "validation_profit_factor": row.get("validation_profit_factor"),
                 "beats_baselines_count": row.get("beats_baselines_count"),
                 "baselines_beaten_names": row.get("baselines_beaten_names"),
+                "baselines_beaten_details": row.get("baselines_beaten_details"),
                 "confidence_uncertainty_band": row.get("confidence_uncertainty_band"),
                 "volume": row.get("liquidity_volume"),
                 "open_interest": row.get("liquidity_open_interest"),
@@ -4907,6 +4960,7 @@ def decision_board_fieldnames() -> List[str]:
         "validation_profit_factor",
         "beats_baselines_count",
         "baselines_beaten_names",
+        "baselines_beaten_details",
         "confidence_uncertainty_band",
         "volume",
         "open_interest",
@@ -6051,6 +6105,8 @@ def auto_approved_goal_gate_failures(row: Mapping[str, Any], risk_config: Mappin
         failures.append("baselines")
     if baselines_beaten >= min_baselines and not str(row.get("baselines_beaten_names") or "").strip():
         failures.append("baseline_names")
+    if baselines_beaten >= min_baselines and not str(row.get("baselines_beaten_details") or "").strip():
+        failures.append("baseline_details")
     if probability_score is None or probability_score < min_probability:
         failures.append("probability_score")
     if calibrated is None or calibrated < min_calibrated:
@@ -6252,7 +6308,13 @@ def write_outputs(
             "pattern_recommendations": len(pattern_recommendations),
             "catalyst_flow_leaders": len(catalyst_flow_leaders),
             "source_ticker_coverage": len(source_coverage_rows),
-            "ticker_trend_edges": len(build_ticker_trend_edge_rows(run_controls["ticker_trend_stats"], run_controls["risk_config"])),
+            "ticker_trend_edges": len(
+                build_ticker_trend_edge_rows(
+                    run_controls["ticker_trend_stats"],
+                    run_controls["risk_config"],
+                    run_controls.get("baseline_comparison", []),
+                )
+            ),
             "trade_review_candidates": len(trade_review),
             "avoid": len(blocked),
             "watchlist_research_setups": len(watch),
@@ -6336,7 +6398,11 @@ def write_outputs(
     shadow_rows = build_shadow_ledger_rows(as_of, decision_board, validation_bundle)
     backtest_family_rows = build_full_backtest_by_family(validation_bundle.get("outcomes", []))
     backtest_month_rows = build_full_backtest_by_month(validation_bundle.get("outcomes", []))
-    ticker_trend_rows = build_ticker_trend_edge_rows(run_controls["ticker_trend_stats"], run_controls["risk_config"])
+    ticker_trend_rows = build_ticker_trend_edge_rows(
+        run_controls["ticker_trend_stats"],
+        run_controls["risk_config"],
+        run_controls.get("baseline_comparison", []),
+    )
     goal_rows = build_goal_evidence_rows(
         as_of,
         snapshots[as_of],
@@ -6744,6 +6810,7 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "validation_profit_factor": r.get("validation_profit_factor"),
         "beats_baselines_count": r.get("beats_baselines_count"),
         "baselines_beaten_names": r.get("baselines_beaten_names"),
+        "baselines_beaten_details": r.get("baselines_beaten_details"),
         "auto_approval_gate_evidence": auto_approval_gate_evidence_text(r),
         "capacity_estimate_contracts": r.get("capacity_estimate_contracts"),
         "live_quote_validation_status": r.get("live_quote_validation_status"),
@@ -7288,6 +7355,7 @@ def catalyst_flow_leader_output_row(r: Mapping[str, Any], rank: int) -> Dict[str
 def build_ticker_trend_edge_rows(
     ticker_trend_stats: Mapping[Tuple[str, str, str], Mapping[str, Any]],
     risk_config: Mapping[str, Any],
+    baseline_comparison: Sequence[Mapping[str, Any]] = (),
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for (ticker, direction, strategy_kind), stats in ticker_trend_stats.items():
@@ -7296,12 +7364,15 @@ def build_ticker_trend_edge_rows(
             continue
         breakeven = ticker_trend_breakeven_probability(stats)
         edge = ticker_trend_edge_vs_breakeven_pct(stats)
+        baseline_evidence = baseline_edge_evidence(num(stats.get("avg_r")), baseline_comparison)
+        baselines_beaten = int(baseline_evidence["count"])
+        baseline_ready = baselines_beaten >= int(risk_config.get("min_baselines_beaten", 2))
         rows.append(
             {
                 "ticker": ticker,
                 "direction": direction,
                 "strategy_kind": strategy_kind,
-                "trade_ready_trend": "yes" if ticker_trend_passes(stats, risk_config) else "no",
+                "trade_ready_trend": "yes" if ticker_trend_passes(stats, risk_config) and baseline_ready else "no",
                 "scored_count": scored,
                 "win_count": stats.get("win_count"),
                 "win_rate": stats.get("win_rate"),
@@ -7318,6 +7389,9 @@ def build_ticker_trend_edge_rows(
                 "worst_losing_streak": stats.get("worst_losing_streak"),
                 "quote_coverage": stats.get("quote_coverage"),
                 "signal_count": stats.get("signal_count"),
+                "beats_baselines_count": baselines_beaten,
+                "baselines_beaten_names": baseline_evidence["names"],
+                "baselines_beaten_details": baseline_evidence["details"],
             }
         )
     rows.sort(
@@ -8112,6 +8186,7 @@ def trade_fieldnames() -> List[str]:
         "validation_profit_factor",
         "beats_baselines_count",
         "baselines_beaten_names",
+        "baselines_beaten_details",
         "auto_approval_gate_evidence",
         "capacity_estimate_contracts",
         "live_quote_validation_status",
@@ -8263,6 +8338,9 @@ def ticker_trend_edge_fieldnames() -> List[str]:
         "worst_losing_streak",
         "quote_coverage",
         "signal_count",
+        "beats_baselines_count",
+        "baselines_beaten_names",
+        "baselines_beaten_details",
     ]
 
 
@@ -8279,6 +8357,8 @@ def discovered_fieldnames() -> List[str]:
         "validation_average_net_r",
         "validation_profit_factor",
         "beats_baselines_count",
+        "baselines_beaten_names",
+        "baselines_beaten_details",
         "validation_split_count",
         "positive_validation_splits",
         "worst_split_average_net_r",
