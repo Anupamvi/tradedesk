@@ -20,6 +20,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_catalyst_flow_leaders,
     build_daily_snapshot,
     build_decision_board_rows,
+    build_directional_scenario_goal_row,
     build_goal_evidence_rows,
     build_pattern_recommendations,
     build_source_ticker_coverage_rows,
@@ -916,6 +917,63 @@ def test_goal_evidence_warns_when_no_edge_is_not_quantified():
     no_edge_row = next(row for row in rows if row["requirement"] == "quantified_no_edge_report_if_no_trade")
     assert no_edge_row["status"] == "WARN"
     assert "blocker counts were not available" in no_edge_row["evidence"]
+
+
+def test_directional_scenario_goal_passes_when_put_side_is_reviewed_or_covered():
+    decision_board = [
+        {
+            "status": "AUTO_APPROVED",
+            "direction": "bullish",
+            "call_put": "CALL",
+            "full_ticket": "BUY CALL AMD 600 exp 2026-06-18",
+        },
+        {
+            "status": "TRADE_REVIEW",
+            "direction": "bearish",
+            "call_put": "PUT",
+            "full_ticket": "BUY PUT GLD 405 exp 2026-07-17",
+        },
+        {
+            "status": "AVOID",
+            "direction": "bearish",
+            "call_put": "PUT",
+            "full_ticket": "BUY PUT ZS 120 exp 2026-06-18",
+        },
+    ]
+    source_coverage_rows = [
+        {
+            "ticker": "GLD",
+            "direction": "bearish",
+            "trade_legs": "Buy 1 GLD 2026-07-17 405P @ debit 8.80-9.15 limit",
+        }
+    ]
+
+    row = build_directional_scenario_goal_row("2026-05-28", decision_board, source_coverage_rows)
+
+    assert row["status"] == "PASS"
+    assert "approved_put=0" in row["evidence"]
+    assert "review_put=1" in row["evidence"]
+    assert "avoid_put=1" in row["evidence"]
+    assert "coverage_bearish=1" in row["evidence"]
+    assert "coverage_put=1" in row["evidence"]
+
+
+def test_directional_scenario_goal_warns_when_auto_day_has_no_put_or_bearish_surface():
+    decision_board = [
+        {
+            "status": "AUTO_APPROVED",
+            "direction": "bullish",
+            "call_put": "CALL",
+            "full_ticket": "BUY CALL AMD 600 exp 2026-06-18",
+        }
+    ]
+
+    row = build_directional_scenario_goal_row("2026-05-28", decision_board, [])
+
+    assert row["status"] == "WARN"
+    assert "approved_call=1" in row["evidence"]
+    assert "review_put=0" in row["evidence"]
+    assert "coverage_bearish=0" in row["evidence"]
 
 
 def test_goal_evidence_reports_macro_geo_point_in_time_observability():

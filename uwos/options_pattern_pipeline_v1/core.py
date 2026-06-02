@@ -5676,6 +5676,7 @@ def build_goal_evidence_rows(
             "Every high-source ticker must land in decision rows or source coverage with a reason.",
         )
     )
+    rows.append(build_directional_scenario_goal_row(as_of, decision_board, source_coverage_rows))
 
     rows.append(
         build_required_ticker_goal_row(
@@ -5743,6 +5744,110 @@ def build_goal_evidence_rows(
     )
 
     return rows
+
+
+def build_directional_scenario_goal_row(
+    as_of: str,
+    decision_board: Sequence[Mapping[str, Any]],
+    source_coverage_rows: Sequence[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    status_direction_counts: Counter[Tuple[str, str]] = Counter()
+    status_option_counts: Counter[Tuple[str, str]] = Counter()
+    coverage_direction_counts: Counter[str] = Counter()
+    coverage_option_counts: Counter[str] = Counter()
+    for row in decision_board:
+        status = str(row.get("status") or "").upper()
+        if status not in {"AUTO_APPROVED", "TRADE_REVIEW", "AVOID"}:
+            continue
+        direction = normalized_trade_direction(row.get("direction"))
+        option_side = normalized_option_side(row)
+        if direction:
+            status_direction_counts[(status, direction)] += 1
+        if option_side:
+            status_option_counts[(status, option_side)] += 1
+    for row in source_coverage_rows:
+        direction = normalized_trade_direction(row.get("direction"))
+        option_side = normalized_option_side(row)
+        if direction:
+            coverage_direction_counts[direction] += 1
+        if option_side:
+            coverage_option_counts[option_side] += 1
+
+    approved_rows = sum(status_direction_counts[(status, direction)] for status in ("AUTO_APPROVED",) for direction in ("bullish", "bearish"))
+    bearish_surface = (
+        status_direction_counts[("AUTO_APPROVED", "bearish")]
+        + status_direction_counts[("TRADE_REVIEW", "bearish")]
+        + status_direction_counts[("AVOID", "bearish")]
+        + coverage_direction_counts["bearish"]
+    )
+    put_surface = (
+        status_option_counts[("AUTO_APPROVED", "PUT")]
+        + status_option_counts[("TRADE_REVIEW", "PUT")]
+        + status_option_counts[("AVOID", "PUT")]
+        + coverage_option_counts["PUT"]
+    )
+    if approved_rows and not bearish_surface and not put_surface:
+        status = "WARN"
+        failed_count = 1
+        next_action = "Confirm the date truly has no bearish/put source evidence; otherwise surface it as REVIEW, AVOID, or COVERAGE."
+    else:
+        status = "PASS"
+        failed_count = 0
+        next_action = "Keep bearish/put source signals visible even when no put trade clears auto-approval."
+    evidence = (
+        f"approved_bullish={status_direction_counts[('AUTO_APPROVED', 'bullish')]}; "
+        f"approved_bearish={status_direction_counts[('AUTO_APPROVED', 'bearish')]}; "
+        f"approved_call={status_option_counts[('AUTO_APPROVED', 'CALL')]}; "
+        f"approved_put={status_option_counts[('AUTO_APPROVED', 'PUT')]}; "
+        f"review_bullish={status_direction_counts[('TRADE_REVIEW', 'bullish')]}; "
+        f"review_bearish={status_direction_counts[('TRADE_REVIEW', 'bearish')]}; "
+        f"review_call={status_option_counts[('TRADE_REVIEW', 'CALL')]}; "
+        f"review_put={status_option_counts[('TRADE_REVIEW', 'PUT')]}; "
+        f"avoid_bullish={status_direction_counts[('AVOID', 'bullish')]}; "
+        f"avoid_bearish={status_direction_counts[('AVOID', 'bearish')]}; "
+        f"avoid_call={status_option_counts[('AVOID', 'CALL')]}; "
+        f"avoid_put={status_option_counts[('AVOID', 'PUT')]}; "
+        f"coverage_bullish={coverage_direction_counts['bullish']}; "
+        f"coverage_bearish={coverage_direction_counts['bearish']}; "
+        f"coverage_call={coverage_option_counts['CALL']}; "
+        f"coverage_put={coverage_option_counts['PUT']}"
+    )
+    return goal_evidence_row(
+        "directional_put_scenario_observability",
+        status,
+        as_of,
+        bearish_surface + put_surface,
+        failed_count,
+        evidence,
+        next_action,
+    )
+
+
+def normalized_trade_direction(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    if text in {"bullish", "bearish"}:
+        return text
+    return ""
+
+
+def normalized_option_side(row: Mapping[str, Any]) -> str:
+    for key in ("call_put", "call_or_put", "option_type"):
+        value = str(row.get(key) or "").strip().upper()
+        if value in {"CALL", "PUT"}:
+            return value
+        if value == "C":
+            return "CALL"
+        if value == "P":
+            return "PUT"
+    text = " ".join(
+        str(row.get(key) or "")
+        for key in ("trade_legs", "full_ticket", "strategy", "strategy_type")
+    ).upper()
+    if re.search(r"\bPUT\b|\d+P\b", text):
+        return "PUT"
+    if re.search(r"\bCALL\b|\d+C\b", text):
+        return "CALL"
+    return ""
 
 
 def top_missed_reason_text(rows: Sequence[Mapping[str, Any]], limit: int = 5) -> str:
