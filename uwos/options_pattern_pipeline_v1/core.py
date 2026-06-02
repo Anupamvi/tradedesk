@@ -5968,6 +5968,7 @@ def write_outputs(
         snapshots[as_of],
         daily_pattern_config,
         decision_enriched_rows,
+        required_tickers=(config.get("risk_config") or {}).get("goal_required_coverage_tickers", GOAL_AUDIT_REQUIRED_TICKERS),
     )
 
     discovered_rows = []
@@ -6564,6 +6565,7 @@ def build_source_ticker_coverage_rows(
     pattern_config: Mapping[str, Any],
     decision_rows: Sequence[Mapping[str, Any]],
     min_premium: float = SOURCE_COVERAGE_MIN_PREMIUM,
+    required_tickers: Sequence[str] = (),
 ) -> List[Dict[str, Any]]:
     rows_by_ticker: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
     for row in decision_rows:
@@ -6574,50 +6576,37 @@ def build_source_ticker_coverage_rows(
         rows.sort(key=source_coverage_decision_sort_key, reverse=True)
 
     coverage_rows: List[Dict[str, Any]] = []
+    included_tickers: set[str] = set()
     for ticker, feature in snapshot.features.items():
         total_premium = source_coverage_total_premium(feature)
         if total_premium < min_premium:
             continue
-        direction = catalyst_flow_leader_direction(feature) or source_coverage_direction(feature)
-        quote = source_coverage_quote(snapshot, feature, direction, pattern_config)
-        surfaced_rows = rows_by_ticker.get(ticker, [])
-        best_row = surfaced_rows[0] if surfaced_rows else {}
-        setup = trade_setup_fields(best_row) if best_row else source_coverage_setup_fields(ticker, direction, quote)
-        status = source_coverage_surface_status(best_row)
         coverage_rows.append(
-            {
-                "coverage_rank": 0,
-                "ticker": ticker,
-                "decision_surface_status": status,
-                "source_gap_reason": source_coverage_gap_reason(feature, best_row, direction, quote),
-                "source_flags": ";".join(sorted(str(flag) for flag in feature.get("source_flags", []))),
-                "source_total_premium": total_premium,
-                "flow_total_premium": feature.get("flow_total_premium"),
-                "hot_total_premium": feature.get("hot_total_premium"),
-                "stock_screener_total_premium": (num(feature.get("call_premium")) or 0.0)
-                + (num(feature.get("put_premium")) or 0.0),
-                "flow_call_premium_share": feature.get("flow_call_premium_share"),
-                "flow_put_premium_share": feature.get("flow_put_premium_share"),
-                "flow_call_ask_premium_share": feature.get("flow_call_ask_premium_share"),
-                "flow_put_ask_premium_share": feature.get("flow_put_ask_premium_share"),
-                "call_volume_ratio_30d": feature.get("call_volume_ratio_30d"),
-                "put_volume_ratio_30d": feature.get("put_volume_ratio_30d"),
-                "oi_call_diff": feature.get("oi_call_diff"),
-                "oi_put_diff": feature.get("oi_put_diff"),
-                "direction": direction,
-                "decision_status": best_row.get("status", ""),
-                "decision_classification": best_row.get("classification", ""),
-                "decision_pattern_family": best_row.get("pattern_family", ""),
-                "decision_block_reasons": join_reason_list(best_row.get("block_reasons")),
-                "trade_legs": setup.get("trade_legs", ""),
-                "entry_limit": setup.get("entry_range", ""),
-                "quote_source": best_row.get("quote_source") or quote.get("quote_source", ""),
-                "quote_volume": best_row.get("liquidity_volume") if best_row else quote.get("volume"),
-                "quote_open_interest": best_row.get("liquidity_open_interest") if best_row else quote.get("open_interest"),
-                "bid_ask_spread_pct": best_row.get("bid_ask_spread_pct") if best_row else quote.get("spread_pct"),
-                "decision_artifact": source_coverage_artifact(status),
-            }
+            build_source_ticker_coverage_row(snapshot, pattern_config, rows_by_ticker, ticker, feature)
         )
+        included_tickers.add(ticker.upper())
+
+    features_by_upper = {str(ticker).upper(): (ticker, feature) for ticker, feature in snapshot.features.items()}
+    decision_tickers = {str(ticker).upper() for ticker in rows_by_ticker}
+    for required in required_tickers:
+        required_ticker = str(required).strip().upper()
+        if not required_ticker or required_ticker in included_tickers or required_ticker in decision_tickers:
+            continue
+        feature_item = features_by_upper.get(required_ticker)
+        if not feature_item:
+            continue
+        ticker, feature = feature_item
+        coverage_rows.append(
+            build_source_ticker_coverage_row(
+                snapshot,
+                pattern_config,
+                rows_by_ticker,
+                ticker,
+                feature,
+                forced_reason=f"required coverage ticker below {int(min_premium)} high-source threshold",
+            )
+        )
+        included_tickers.add(required_ticker)
     coverage_rows.sort(
         key=lambda row: (
             1 if row.get("decision_surface_status") == "NOT_SURFACED" else 0,
@@ -6628,6 +6617,58 @@ def build_source_ticker_coverage_rows(
     for idx, row in enumerate(coverage_rows, 1):
         row["coverage_rank"] = idx
     return coverage_rows
+
+
+def build_source_ticker_coverage_row(
+    snapshot: Snapshot,
+    pattern_config: Mapping[str, Any],
+    rows_by_ticker: Mapping[str, Sequence[Mapping[str, Any]]],
+    ticker: str,
+    feature: Mapping[str, Any],
+    forced_reason: str = "",
+) -> Dict[str, Any]:
+    total_premium = source_coverage_total_premium(feature)
+    direction = catalyst_flow_leader_direction(feature) or source_coverage_direction(feature)
+    quote = source_coverage_quote(snapshot, feature, direction, pattern_config)
+    surfaced_rows = rows_by_ticker.get(ticker, [])
+    best_row = surfaced_rows[0] if surfaced_rows else {}
+    setup = trade_setup_fields(best_row) if best_row else source_coverage_setup_fields(ticker, direction, quote)
+    status = source_coverage_surface_status(best_row)
+    reason = source_coverage_gap_reason(feature, best_row, direction, quote)
+    if forced_reason and not best_row:
+        reason = f"{forced_reason}; source_total_premium={fmt_num(total_premium)}; {reason}"
+    return {
+        "coverage_rank": 0,
+        "ticker": ticker,
+        "decision_surface_status": status,
+        "source_gap_reason": reason,
+        "source_flags": ";".join(sorted(str(flag) for flag in feature.get("source_flags", []))),
+        "source_total_premium": total_premium,
+        "flow_total_premium": feature.get("flow_total_premium"),
+        "hot_total_premium": feature.get("hot_total_premium"),
+        "stock_screener_total_premium": (num(feature.get("call_premium")) or 0.0)
+        + (num(feature.get("put_premium")) or 0.0),
+        "flow_call_premium_share": feature.get("flow_call_premium_share"),
+        "flow_put_premium_share": feature.get("flow_put_premium_share"),
+        "flow_call_ask_premium_share": feature.get("flow_call_ask_premium_share"),
+        "flow_put_ask_premium_share": feature.get("flow_put_ask_premium_share"),
+        "call_volume_ratio_30d": feature.get("call_volume_ratio_30d"),
+        "put_volume_ratio_30d": feature.get("put_volume_ratio_30d"),
+        "oi_call_diff": feature.get("oi_call_diff"),
+        "oi_put_diff": feature.get("oi_put_diff"),
+        "direction": direction,
+        "decision_status": best_row.get("status", ""),
+        "decision_classification": best_row.get("classification", ""),
+        "decision_pattern_family": best_row.get("pattern_family", ""),
+        "decision_block_reasons": join_reason_list(best_row.get("block_reasons")),
+        "trade_legs": setup.get("trade_legs", ""),
+        "entry_limit": setup.get("entry_range", ""),
+        "quote_source": best_row.get("quote_source") or quote.get("quote_source", ""),
+        "quote_volume": best_row.get("liquidity_volume") if best_row else quote.get("volume"),
+        "quote_open_interest": best_row.get("liquidity_open_interest") if best_row else quote.get("open_interest"),
+        "bid_ask_spread_pct": best_row.get("bid_ask_spread_pct") if best_row else quote.get("spread_pct"),
+        "decision_artifact": source_coverage_artifact(status),
+    }
 
 
 def source_coverage_decision_sort_key(row: Mapping[str, Any]) -> Tuple[int, float, float, float]:

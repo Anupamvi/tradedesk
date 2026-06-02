@@ -186,6 +186,59 @@ def test_source_coverage_uses_decision_ticket_when_ticker_surfaces():
     assert rows[0]["quote_volume"] == 1450
 
 
+def test_source_coverage_includes_below_threshold_required_ticker():
+    snapshot = SnapshotStub(
+        features={
+            "IBM": {
+                "ticker": "IBM",
+                "close": 282.0,
+                "source_flags": {"bot_eod", "hot_chains"},
+                "flow_total_premium": 11_710_000.0,
+                "hot_total_premium": 8_000_000.0,
+                "flow_call_premium_share": 0.84,
+                "flow_put_premium_share": 0.16,
+                "flow_call_ask_premium_share": 0.51,
+                "flow_put_ask_premium_share": 0.08,
+                "flow_premium_bias": 0.68,
+            }
+        },
+        best_options={
+            ("IBM", "bullish"): {
+                "ticker": "IBM",
+                "direction": "bullish",
+                "option_symbol": "IBM260618C00300000",
+                "option_type": "call",
+                "expiry": "2026-06-18",
+                "strike": 300.0,
+                "dte": 15,
+                "bid": 4.1,
+                "ask": 4.3,
+                "mid": 4.2,
+                "volume": 900,
+                "open_interest": 1200,
+                "premium": 387000.0,
+                "spread_pct": 0.048,
+                "quote_source": "bot_eod",
+                "selection_score": 20.0,
+            }
+        },
+    )
+
+    rows = build_source_ticker_coverage_rows(
+        snapshot,
+        {"max_spread_pct": 0.35},
+        [],
+        required_tickers=["IBM"],
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["ticker"] == "IBM"
+    assert rows[0]["decision_surface_status"] == "NOT_SURFACED"
+    assert "required coverage ticker below 50000000 high-source threshold" in rows[0]["source_gap_reason"]
+    assert "source_total_premium=1.171e+07" in rows[0]["source_gap_reason"]
+    assert rows[0]["trade_legs"] == "Buy 1 IBM 2026-06-18 300C @ debit 4.10-4.30 limit"
+
+
 def test_source_premium_near_miss_generates_validation_candidate():
     pattern_config = {
         "min_call_volume_ratio": 1.35,
@@ -635,6 +688,46 @@ def test_goal_evidence_fails_when_required_high_signal_ticker_disappears():
     assert required_row["status"] == "FAIL"
     assert "missing_high_signal=IBM" in required_row["evidence"]
     assert goal_evidence_overall_status(rows) == "FAIL_REQUIREMENTS_REMAIN"
+
+
+def test_goal_evidence_passes_when_required_ticker_has_below_threshold_coverage():
+    snapshot = SnapshotStub(
+        features={
+            "IBM": {
+                "ticker": "IBM",
+                "flow_total_premium": 11_710_000.0,
+                "hot_total_premium": 8_000_000.0,
+            }
+        },
+        signal_date="2026-05-15",
+    )
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+    coverage_rows = [
+        {
+            "ticker": "IBM",
+            "decision_surface_status": "NOT_SURFACED",
+            "source_gap_reason": "required coverage ticker below 50000000 high-source threshold",
+        }
+    ]
+
+    rows = build_goal_evidence_rows(
+        "2026-05-15",
+        snapshot,
+        [],
+        coverage_rows,
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": ["IBM"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    required_row = next(row for row in rows if row["requirement"] == "known_failure_ticker_surface_audit")
+    assert required_row["status"] == "PASS"
+    assert "covered=IBM" in required_row["evidence"]
 
 
 def test_goal_evidence_checks_auto_approved_profitability_gates():
