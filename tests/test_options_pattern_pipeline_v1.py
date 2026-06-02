@@ -839,6 +839,85 @@ def test_goal_evidence_uses_ticker_trend_gates_for_ticker_trend_auto_approval():
     assert expectancy_row["status"] == "PASS"
 
 
+def test_goal_evidence_accepts_quantified_no_edge_without_forced_trade():
+    decision_board = [
+        {
+            "status": "TRADE_REVIEW",
+            "ticker": "AMD",
+            "full_ticket": "BUY CALL AMD 500 exp 2026-06-18",
+            "buy_sell": "BUY",
+            "call_put": "CALL",
+            "strikes": "500",
+            "expiration": "2026-06-18",
+            "entry": "debit 7.65-7.95",
+            "max_risk": 795.0,
+            "expected_R": -0.10,
+            "probability_score": 40.0,
+            "blockers": "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS;PATTERN_VALIDATION_NOT_PROVEN",
+        }
+    ]
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-05-18",
+        SnapshotStub({"AMD": {"ticker": "AMD", "flow_total_premium": 123_000_000.0}}),
+        decision_board,
+        [
+            {
+                "ticker": "AMD",
+                "decision_surface_status": "TRADE_REVIEW",
+                "source_gap_reason": "surfaced in decision board",
+                "decision_artifact": "trade_review_candidates.csv",
+            }
+        ],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": ["AMD"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    auto_row = next(row for row in rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
+    no_edge_row = next(row for row in rows if row["requirement"] == "quantified_no_edge_report_if_no_trade")
+    assert auto_row["status"] == "PASS"
+    assert "no auto-approved rows were emitted" in auto_row["evidence"]
+    assert no_edge_row["status"] == "PASS"
+    assert "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS" in no_edge_row["evidence"]
+
+
+def test_goal_evidence_warns_when_no_edge_is_not_quantified():
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-05-18",
+        SnapshotStub({"AMD": {"ticker": "AMD", "flow_total_premium": 123_000_000.0}}),
+        [],
+        [
+            {
+                "ticker": "AMD",
+                "decision_surface_status": "NOT_SURFACED",
+                "source_gap_reason": "explained",
+                "decision_artifact": "source_ticker_coverage.csv",
+            }
+        ],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": ["AMD"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    no_edge_row = next(row for row in rows if row["requirement"] == "quantified_no_edge_report_if_no_trade")
+    assert no_edge_row["status"] == "WARN"
+    assert "blocker counts were not available" in no_edge_row["evidence"]
+
+
 def test_missed_mover_bucket_separates_untradeable_from_generation_gap():
     assert (
         missed_mover_bucket(

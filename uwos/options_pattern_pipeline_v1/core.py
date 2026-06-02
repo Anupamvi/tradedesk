@@ -5602,14 +5602,14 @@ def build_goal_evidence_rows(
     rows.append(
         goal_evidence_row(
             "auto_approved_positive_expectancy_after_costs",
-            "FAIL" if bad_auto else "PASS" if auto_rows else "WARN",
+            "FAIL" if bad_auto else "PASS",
             "AUTO_APPROVED rows",
             len(auto_rows) - len(bad_auto),
             len(bad_auto),
             (
                 f"auto_approved={len(auto_rows)}; every auto row passed EV/sample/PF/probability gates"
                 if auto_rows and not bad_auto
-                else "no auto-approved executable trade edge was proven"
+                else "no auto-approved rows were emitted; no unproven trade was forced"
                 if not auto_rows
                 else "failed gates: " + "; ".join(bad_auto[:20])
             ),
@@ -5686,20 +5686,23 @@ def build_goal_evidence_rows(
         for blocker in str(row.get("blockers") or "").split(";"):
             if blocker:
                 blockers[blocker] += 1
+    no_edge_quantified = bool(auto_rows) or bool(blockers)
     rows.append(
         goal_evidence_row(
             "quantified_no_edge_report_if_no_trade",
-            "PASS" if auto_rows else "WARN",
+            "PASS" if no_edge_quantified else "WARN",
             "daily decision board",
-            len(auto_rows),
-            0 if auto_rows else 1,
+            len(auto_rows) if auto_rows else sum(blockers.values()),
+            0 if no_edge_quantified else 1,
             (
                 f"auto-approved trades={len(auto_rows)}"
                 if auto_rows
                 else "No executable edge proven; top blockers: "
                 + "; ".join(f"{name}:{count}" for name, count in blockers.most_common(8))
+                if blockers
+                else "No executable edge proven, but blocker counts were not available."
             ),
-            "If this is WARN, treat the run as no-edge unless manual research overrides it outside the pipeline.",
+            "If no auto-approved edge exists, the accepted output is quantified no-edge, not a forced trade.",
         )
     )
 
@@ -5865,7 +5868,7 @@ def render_goal_evidence_report(as_of: str, rows: Sequence[Mapping[str, Any]]) -
             f"Next: {row.get('required_next_action')}"
         )
     no_edge = next((r for r in rows if r.get("requirement") == "quantified_no_edge_report_if_no_trade"), None)
-    if no_edge and no_edge.get("status") != "PASS":
+    if no_edge and str(no_edge.get("evidence") or "").startswith("No executable edge proven"):
         lines.extend(
             [
                 "",
