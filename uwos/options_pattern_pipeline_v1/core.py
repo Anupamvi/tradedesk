@@ -2255,7 +2255,39 @@ def tradeable_gap_quote(
     direct_best = snapshot.best_options.get((ticker, direction))
     if direct_best and tradeable_gap_quote_eligible(direct_best, pattern_config):
         return direct_best
-    return {}
+    return select_tradeable_gap_long_option_quote(snapshot, ticker, direction, pattern_config)
+
+
+def select_tradeable_gap_long_option_quote(
+    snapshot: Snapshot,
+    ticker: str,
+    direction: str,
+    pattern_config: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    best: Dict[str, Any] = {}
+    best_score = -1.0
+    for quote in snapshot.option_quotes.values():
+        if quote.get("ticker") != ticker or quote.get("direction") != direction:
+            continue
+        if not tradeable_gap_quote_eligible(quote, pattern_config):
+            continue
+        volume = num(quote.get("volume")) or 0.0
+        open_interest = num(quote.get("open_interest")) or 0.0
+        premium = max(num(quote.get("premium")) or 0.0, 0.0)
+        dte = num(quote.get("dte")) or 21.0
+        spread_pct = num(quote.get("spread_pct")) or 0.35
+        score = (
+            math.log1p(volume)
+            + math.log1p(open_interest)
+            + math.log1p(premium / 1000.0)
+            - 8.0 * spread_pct
+            - abs(float(dte) - 21.0) / 70.0
+        )
+        if score > best_score:
+            best = dict(quote)
+            best["selection_score"] = score
+            best_score = score
+    return best
 
 
 def tradeable_gap_quote_eligible(quote: Mapping[str, Any], pattern_config: Mapping[str, Any]) -> bool:
@@ -3518,13 +3550,24 @@ def run_missed_mover_audit(
             tradeable_gap_max_extra=MISSED_MOVER_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
         )
         signal_tickers = {s["ticker"] for s in signals}
+        signal_pairs = {(s["ticker"], s.get("direction")) for s in signals}
+        option_quotes_by_ticker, best_options_by_ticker = quote_indexes_by_ticker(current)
         for abs_move, f, move in movers[:per_date]:
             ticker = f["ticker"]
             direction = "bullish" if move >= 0 else "bearish"
-            quote = source_coverage_quote(current, f, direction, cfg)
-            flagged = ticker in signal_tickers
-            reason = missed_reason(f, flagged)
-            miss_bucket = missed_mover_bucket(f, flagged, quote, reason)
+            scoped_current = scoped_mover_snapshot(
+                current,
+                f,
+                option_quotes_by_ticker.get(ticker, {}),
+                best_options_by_ticker.get(ticker, {}),
+            )
+            quote = source_coverage_quote(scoped_current, f, direction, cfg)
+            flagged_any_direction = ticker in signal_tickers
+            flagged_same_direction = (ticker, direction) in signal_pairs
+            targeted_signals = generate_targeted_mover_signals(scoped_current, f, cfg)
+            targeted_signal = best_targeted_mover_signal(targeted_signals, direction)
+            reason = missed_reason(f, flagged_same_direction)
+            miss_bucket = missed_mover_bucket(f, flagged_same_direction, quote, reason, targeted_signal, direction)
             rows.append(
                 {
                     "signal_date": d,
@@ -3533,7 +3576,14 @@ def run_missed_mover_audit(
                     "next_day_stock_move": move,
                     "abs_next_day_stock_move": abs_move,
                     "sector": f.get("sector") or "",
-                    "was_flagged_by_new_pipeline": flagged,
+                    "was_flagged_by_new_pipeline": flagged_same_direction,
+                    "was_flagged_ticker_any_direction": flagged_any_direction,
+                    "targeted_signal_family": targeted_signal.get("base_pattern_family", ""),
+                    "targeted_signal_direction": targeted_signal.get("direction", ""),
+                    "targeted_signal_classification": targeted_signal.get("classification", ""),
+                    "targeted_signal_blockers": ";".join(targeted_signal.get("block_reasons") or []),
+                    "targeted_signal_score": targeted_signal.get("pattern_score"),
+                    "targeted_quote_symbol": targeted_signal.get("lead_option_symbol", ""),
                     "likely_miss_reason": reason,
                     "miss_bucket": miss_bucket,
                     "candidate_generation_gap": miss_bucket == "CANDIDATE_GENERATION_GAP",
@@ -3551,6 +3601,70 @@ def run_missed_mover_audit(
             )
     rows.sort(key=lambda r: (r["signal_date"], r["abs_next_day_stock_move"]), reverse=True)
     return rows[:250]
+
+
+def quote_indexes_by_ticker(
+    snapshot: Snapshot,
+) -> Tuple[Dict[str, Dict[str, Dict[str, Any]]], Dict[str, Dict[Tuple[str, str], Dict[str, Any]]]]:
+    option_quotes_by_ticker: Dict[str, Dict[str, Dict[str, Any]]] = defaultdict(dict)
+    for key, quote in snapshot.option_quotes.items():
+        ticker = str(quote.get("ticker") or "")
+        if ticker:
+            option_quotes_by_ticker[ticker][key] = quote
+    best_options_by_ticker: Dict[str, Dict[Tuple[str, str], Dict[str, Any]]] = defaultdict(dict)
+    for key, quote in snapshot.best_options.items():
+        if len(key) >= 2:
+            best_options_by_ticker[str(key[0])][key] = quote
+    return dict(option_quotes_by_ticker), dict(best_options_by_ticker)
+
+
+def scoped_mover_snapshot(
+    snapshot: Snapshot,
+    feature: Mapping[str, Any],
+    option_quotes: Mapping[str, Dict[str, Any]],
+    best_options: Mapping[Tuple[str, str], Dict[str, Any]],
+) -> Snapshot:
+    ticker = str(feature.get("ticker") or "")
+    return Snapshot(
+        signal_date=snapshot.signal_date,
+        source_files=snapshot.source_files,
+        skipped_sources=snapshot.skipped_sources,
+        features={ticker: dict(feature)} if ticker else {},
+        option_quotes=dict(option_quotes),
+        best_options=dict(best_options),
+        market_regime=snapshot.market_regime,
+        counts=snapshot.counts,
+    )
+
+
+def generate_targeted_mover_signals(
+    snapshot: Snapshot,
+    feature: Mapping[str, Any],
+    pattern_config: Mapping[str, Any],
+) -> List[Dict[str, Any]]:
+    ticker = str(feature.get("ticker") or "")
+    if not ticker:
+        return []
+    if set(snapshot.features) == {ticker}:
+        targeted = snapshot
+    else:
+        targeted = scoped_mover_snapshot(snapshot, feature, snapshot.option_quotes, snapshot.best_options)
+    return generate_signals_for_snapshot(
+        targeted,
+        pattern_config,
+        max_signals=10,
+        source_rescue_max_extra=10,
+        tradeable_gap_max_extra=10,
+    )
+
+
+def best_targeted_mover_signal(signals: Sequence[Mapping[str, Any]], direction: str) -> Dict[str, Any]:
+    if not signals:
+        return {}
+    same_direction = [s for s in signals if s.get("direction") == direction]
+    pool = same_direction or list(signals)
+    best = max(pool, key=lambda s: (num(s.get("pattern_score")) or -1.0, num(s.get("source_total_premium")) or 0.0))
+    return dict(best)
 
 
 def missed_reason(f: Mapping[str, Any], flagged: bool) -> str:
@@ -3573,9 +3687,20 @@ def missed_mover_bucket(
     flagged: bool,
     quote: Mapping[str, Any],
     reason: str,
+    targeted_signal: Optional[Mapping[str, Any]] = None,
+    future_direction: str = "",
 ) -> str:
     if flagged:
         return "FLAGGED_BY_PATTERN_PIPELINE"
+    targeted_signal = targeted_signal or {}
+    if targeted_signal:
+        signal_direction = str(targeted_signal.get("direction") or "")
+        if future_direction and signal_direction and signal_direction != future_direction:
+            return "DIRECTION_MISMATCH_NOT_LEAKAGE_SAFE"
+        blockers = targeted_signal.get("block_reasons") or []
+        if blockers:
+            return "GENERATED_BUT_BLOCKED"
+        return "GENERATED_BUT_BELOW_SELECTION_CAP"
     if not quote or "missing_quote_spread" in reason:
         return "NOT_OPTION_TRADEABLE_MISSING_QUOTE"
     if not tradeable_gap_quote_eligible(quote, {"max_spread_pct": 0.35}):
@@ -7871,6 +7996,13 @@ def missed_fieldnames() -> List[str]:
         "abs_next_day_stock_move",
         "sector",
         "was_flagged_by_new_pipeline",
+        "was_flagged_ticker_any_direction",
+        "targeted_signal_family",
+        "targeted_signal_direction",
+        "targeted_signal_classification",
+        "targeted_signal_blockers",
+        "targeted_signal_score",
+        "targeted_quote_symbol",
         "likely_miss_reason",
         "miss_bucket",
         "candidate_generation_gap",

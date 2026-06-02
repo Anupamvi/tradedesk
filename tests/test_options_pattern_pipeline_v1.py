@@ -515,6 +515,90 @@ def test_tradeable_source_gap_rescue_survives_rank_cap():
     )
 
 
+def test_tradeable_source_gap_rescue_falls_back_to_eligible_long_option():
+    pattern_config = {
+        "min_call_volume_ratio": 1.35,
+        "min_put_volume_ratio": 1.35,
+        "min_hot_premium": 250_000,
+        "min_oi_diff": 5_000,
+        "max_spread_pct": 0.35,
+        "high_iv": 0.75,
+        "min_liquidity_score": 8.0,
+        "min_ask_side_ratio": 0.52,
+        "max_event_dte_without_event_strategy": 2,
+    }
+    features = {
+        "CRWG": {
+            "date": "2026-05-04",
+            "ticker": "CRWG",
+            "close": 5.81,
+            "source_flags": {"hot_chains", "stock_screener"},
+            "hot_total_premium": 362_473.0,
+            "call_premium": 412_000.0,
+            "put_premium": 171_186.0,
+            "call_volume_ratio_30d": 1.54,
+            "put_volume_ratio_30d": 2.17,
+            "premium_bias": 0.079,
+            "flow_call_premium_share": 0.707,
+            "flow_put_premium_share": 0.293,
+            "stock_return_1d": 0.1088,
+            "liquidity_score": 12.0,
+        },
+    }
+    best_options = {
+        ("CRWG", "bullish"): {
+            "ticker": "CRWG",
+            "direction": "bullish",
+            "strategy_kind": "credit_spread",
+            "strategy_type": "Bull Put Credit Spread",
+            "expiry": "2026-05-15",
+            "dte": 11,
+            "entry_credit": 0.40,
+            "max_risk": 60.0,
+            "spread_pct": 0.40,
+            "volume": 255,
+            "open_interest": 1383,
+        },
+    }
+    long_call = {
+        "ticker": "CRWG",
+        "direction": "bullish",
+        "option_symbol": "CRWG260515C00005000",
+        "option_type": "call",
+        "expiry": "2026-05-15",
+        "strike": 5.0,
+        "dte": 11,
+        "bid": 0.85,
+        "ask": 0.95,
+        "mid": 0.90,
+        "volume": 800,
+        "open_interest": 1200,
+        "premium": 760_000.0,
+        "spread_pct": 0.111,
+        "quote_source": "bot_eod",
+    }
+    snapshot = SnapshotStub(
+        features,
+        best_options,
+        signal_date="2026-05-04",
+        option_quotes={"CRWG260515C00005000": long_call},
+    )
+
+    signals = generate_signals_for_snapshot(
+        snapshot,
+        pattern_config,
+        max_signals=1,
+        source_rescue_max_extra=0,
+        tradeable_gap_max_extra=1,
+    )
+
+    gap_signal = next(s for s in signals if s["base_pattern_family"] == "TRADEABLE_SOURCE_GAP_RESCUE")
+    assert gap_signal["ticker"] == "CRWG"
+    assert gap_signal["lead_option_symbol"] == "CRWG260515C00005000"
+    assert gap_signal["strategy_kind"] == "long_option"
+    assert not gap_signal["block_reasons"]
+
+
 def test_goal_evidence_fails_when_required_high_signal_ticker_disappears():
     snapshot = SnapshotStub(
         features={
@@ -694,6 +778,54 @@ def test_missed_mover_bucket_separates_untradeable_from_generation_gap():
             "moved_without_matching_frozen_pattern",
         )
         == "CANDIDATE_GENERATION_GAP"
+    )
+    assert (
+        missed_mover_bucket(
+            {"ticker": "CRWG", "hot_total_premium": 362_473.0, "call_volume_ratio_30d": 1.54},
+            False,
+            {
+                "option_symbol": "CRWG260515C00005000",
+                "bid": 1.15,
+                "ask": 1.60,
+                "dte": 11,
+                "volume": 800,
+                "open_interest": 1200,
+                "spread_pct": 0.2857,
+            },
+            "moved_without_matching_frozen_pattern",
+            {
+                "base_pattern_family": "TRADEABLE_SOURCE_GAP_RESCUE",
+                "direction": "bullish",
+                "lead_option_symbol": "CRWG260515C00005000",
+                "block_reasons": ["MARKET_REGIME_CONFLICT"],
+            },
+            "bullish",
+        )
+        == "GENERATED_BUT_BLOCKED"
+    )
+    assert (
+        missed_mover_bucket(
+            {"ticker": "HIMZ", "hot_total_premium": 62_490.0, "call_volume_ratio_30d": 0.45},
+            False,
+            {
+                "option_symbol": "HIMZ260417C00003000",
+                "bid": 0.10,
+                "ask": 0.15,
+                "dte": 30,
+                "volume": 1500,
+                "open_interest": 2500,
+                "spread_pct": 0.20,
+            },
+            "moved_without_matching_frozen_pattern",
+            {
+                "base_pattern_family": "TRADEABLE_SOURCE_GAP_RESCUE",
+                "direction": "bearish",
+                "lead_option_symbol": "HIMZ260417P00002000",
+                "block_reasons": [],
+            },
+            "bullish",
+        )
+        == "DIRECTION_MISMATCH_NOT_LEAKAGE_SAFE"
     )
 
 
