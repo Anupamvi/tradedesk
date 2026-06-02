@@ -1852,6 +1852,7 @@ def generate_signals_for_snapshot(
 ) -> List[Dict[str, Any]]:
     signals: List[Dict[str, Any]] = []
     market = snapshot.market_regime.get("regime", "UNKNOWN")
+    quote_cache = build_quote_selection_cache(snapshot, pattern_config)
     for ticker, f in snapshot.features.items():
         if not f.get("close") or f.get("close") <= 0:
             continue
@@ -2005,7 +2006,7 @@ def generate_signals_for_snapshot(
 
         gap_rescue_direction = tradeable_gap_rescue_direction(f)
         if gap_rescue_direction:
-            quote = tradeable_gap_quote(snapshot, f, gap_rescue_direction, pattern_config)
+            quote = tradeable_gap_quote(snapshot, f, gap_rescue_direction, pattern_config, quote_cache)
             if quote and not any(c[0] == "TRADEABLE_SOURCE_GAP_RESCUE" and c[1] == gap_rescue_direction for c in candidates):
                 source_total_premium = source_coverage_total_premium(f)
                 max_volume_ratio = max(call_ratio, put_ratio)
@@ -2045,11 +2046,11 @@ def generate_signals_for_snapshot(
 
         for family, direction, score, reasons in candidates:
             if family == "CATALYST_FLOW_LEADER":
-                quote = select_flow_leader_quote(snapshot, f, direction, pattern_config)
+                quote = select_flow_leader_quote(snapshot, f, direction, pattern_config, quote_cache)
             elif family == "SOURCE_PREMIUM_COVERAGE_RESCUE":
-                quote = source_coverage_quote(snapshot, f, direction, pattern_config)
+                quote = source_coverage_quote(snapshot, f, direction, pattern_config, quote_cache)
             elif family == "TRADEABLE_SOURCE_GAP_RESCUE":
-                quote = tradeable_gap_quote(snapshot, f, direction, pattern_config)
+                quote = tradeable_gap_quote(snapshot, f, direction, pattern_config, quote_cache)
             else:
                 quote = snapshot.best_options.get((ticker, direction))
             signals.append(build_signal(snapshot, f, family, direction, score, reasons, quote, pattern_config))
@@ -2250,12 +2251,46 @@ def tradeable_gap_quote(
     feature: Mapping[str, Any],
     direction: str,
     pattern_config: Mapping[str, Any],
+    quote_cache: Optional[Mapping[str, Mapping[Tuple[str, str], Mapping[str, Any]]]] = None,
 ) -> Mapping[str, Any]:
     ticker = str(feature.get("ticker") or "")
     direct_best = snapshot.best_options.get((ticker, direction))
     if direct_best and tradeable_gap_quote_eligible(direct_best, pattern_config):
         return direct_best
+    if quote_cache is not None:
+        return quote_cache.get("tradeable_gap", {}).get((ticker, direction), {})
     return select_tradeable_gap_long_option_quote(snapshot, ticker, direction, pattern_config)
+
+
+def build_quote_selection_cache(
+    snapshot: Snapshot,
+    pattern_config: Mapping[str, Any],
+) -> Dict[str, Dict[Tuple[str, str], Dict[str, Any]]]:
+    flow: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    flow_scores: Dict[Tuple[str, str], float] = {}
+    tradeable_gap: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    tradeable_gap_scores: Dict[Tuple[str, str], float] = {}
+    for quote in snapshot.option_quotes.values():
+        ticker = str(quote.get("ticker") or "")
+        direction = str(quote.get("direction") or "")
+        if not ticker or direction not in {"bullish", "bearish"}:
+            continue
+        key = (ticker, direction)
+        if flow_leader_quote_eligible(quote, pattern_config):
+            score = quote_selection_score(quote)
+            if score > flow_scores.get(key, -1.0):
+                candidate = dict(quote)
+                candidate["selection_score"] = score
+                flow[key] = candidate
+                flow_scores[key] = score
+        if tradeable_gap_quote_eligible(quote, pattern_config):
+            score = quote_selection_score(quote)
+            if score > tradeable_gap_scores.get(key, -1.0):
+                candidate = dict(quote)
+                candidate["selection_score"] = score
+                tradeable_gap[key] = candidate
+                tradeable_gap_scores[key] = score
+    return {"flow": flow, "tradeable_gap": tradeable_gap}
 
 
 def select_tradeable_gap_long_option_quote(
@@ -2271,18 +2306,7 @@ def select_tradeable_gap_long_option_quote(
             continue
         if not tradeable_gap_quote_eligible(quote, pattern_config):
             continue
-        volume = num(quote.get("volume")) or 0.0
-        open_interest = num(quote.get("open_interest")) or 0.0
-        premium = max(num(quote.get("premium")) or 0.0, 0.0)
-        dte = num(quote.get("dte")) or 21.0
-        spread_pct = num(quote.get("spread_pct")) or 0.35
-        score = (
-            math.log1p(volume)
-            + math.log1p(open_interest)
-            + math.log1p(premium / 1000.0)
-            - 8.0 * spread_pct
-            - abs(float(dte) - 21.0) / 70.0
-        )
+        score = quote_selection_score(quote)
         if score > best_score:
             best = dict(quote)
             best["selection_score"] = score
@@ -2315,46 +2339,67 @@ def tradeable_gap_quote_eligible(quote: Mapping[str, Any], pattern_config: Mappi
     )
 
 
+def flow_leader_quote_eligible(quote: Mapping[str, Any], pattern_config: Mapping[str, Any]) -> bool:
+    if not quote or quote.get("strategy_kind") == "credit_spread":
+        return False
+    ask = num(quote.get("ask"))
+    bid = num(quote.get("bid"))
+    dte = num(quote.get("dte"))
+    spread_pct = num(quote.get("spread_pct"))
+    volume = num(quote.get("volume")) or 0.0
+    open_interest = num(quote.get("open_interest")) or 0.0
+    max_debit = DEFAULT_RISK_CONFIG["max_risk_per_trade"] / 100.0
+    max_spread = min(0.35, float(pattern_config.get("max_spread_pct", 0.35) or 0.35))
+    return (
+        ask is not None
+        and bid is not None
+        and 0.25 <= ask <= max_debit
+        and bid >= 0
+        and dte is not None
+        and 7 <= dte <= 70
+        and volume >= 50
+        and open_interest >= 25
+        and spread_pct is not None
+        and spread_pct <= max_spread
+    )
+
+
+def quote_selection_score(quote: Mapping[str, Any]) -> float:
+    volume = num(quote.get("volume")) or 0.0
+    open_interest = num(quote.get("open_interest")) or 0.0
+    premium = max(num(quote.get("premium")) or 0.0, 0.0)
+    dte = num(quote.get("dte")) or 21.0
+    spread_pct = num(quote.get("spread_pct")) or 0.35
+    return (
+        math.log1p(volume)
+        + math.log1p(open_interest)
+        + math.log1p(premium / 1000.0)
+        - 8.0 * spread_pct
+        - abs(float(dte) - 21.0) / 70.0
+    )
+
+
 def select_flow_leader_quote(
     snapshot: Snapshot,
     feature: Mapping[str, Any],
     direction: str,
     pattern_config: Mapping[str, Any],
+    quote_cache: Optional[Mapping[str, Mapping[Tuple[str, str], Mapping[str, Any]]]] = None,
 ) -> Optional[Mapping[str, Any]]:
     ticker = str(feature.get("ticker") or "")
-    max_debit = DEFAULT_RISK_CONFIG["max_risk_per_trade"] / 100.0
-    max_spread = min(0.35, float(pattern_config.get("max_spread_pct", 0.35) or 0.35))
+    if quote_cache is not None:
+        cached = quote_cache.get("flow", {}).get((ticker, direction))
+        if cached:
+            return cached
+        return snapshot.best_options.get((ticker, direction))
     best: Optional[Mapping[str, Any]] = None
     best_score = -1.0
     for quote in snapshot.option_quotes.values():
         if quote.get("ticker") != ticker or quote.get("direction") != direction:
             continue
-        if quote.get("strategy_kind") == "credit_spread":
+        if not flow_leader_quote_eligible(quote, pattern_config):
             continue
-        ask = num(quote.get("ask"))
-        bid = num(quote.get("bid"))
-        dte = num(quote.get("dte"))
-        spread_pct = num(quote.get("spread_pct"))
-        volume = num(quote.get("volume")) or 0.0
-        open_interest = num(quote.get("open_interest")) or 0.0
-        if ask is None or bid is None or ask <= 0 or bid < 0:
-            continue
-        if ask > max_debit or ask < 0.25:
-            continue
-        if dte is None or dte < 7 or dte > 70:
-            continue
-        if volume < 50 or open_interest < 25:
-            continue
-        if spread_pct is None or spread_pct > max_spread:
-            continue
-        premium = max(num(quote.get("premium")) or 0.0, 0.0)
-        score = (
-            math.log1p(volume)
-            + math.log1p(open_interest)
-            + math.log1p(premium / 1000.0)
-            - 8.0 * spread_pct
-            - abs(float(dte) - 21.0) / 70.0
-        )
+        score = quote_selection_score(quote)
         if score > best_score:
             candidate = dict(quote)
             candidate["selection_score"] = score
@@ -3566,8 +3611,17 @@ def run_missed_mover_audit(
             flagged_same_direction = (ticker, direction) in signal_pairs
             targeted_signals = generate_targeted_mover_signals(scoped_current, f, cfg)
             targeted_signal = best_targeted_mover_signal(targeted_signals, direction)
+            same_day_direction = missed_mover_same_day_direction(f)
             reason = missed_reason(f, flagged_same_direction)
-            miss_bucket = missed_mover_bucket(f, flagged_same_direction, quote, reason, targeted_signal, direction)
+            miss_bucket = missed_mover_bucket(
+                f,
+                flagged_same_direction,
+                quote,
+                reason,
+                targeted_signal,
+                direction,
+                same_day_direction,
+            )
             rows.append(
                 {
                     "signal_date": d,
@@ -3584,6 +3638,7 @@ def run_missed_mover_audit(
                     "targeted_signal_blockers": ";".join(targeted_signal.get("block_reasons") or []),
                     "targeted_signal_score": targeted_signal.get("pattern_score"),
                     "targeted_quote_symbol": targeted_signal.get("lead_option_symbol", ""),
+                    "same_day_inferred_direction": same_day_direction or "",
                     "likely_miss_reason": reason,
                     "miss_bucket": miss_bucket,
                     "candidate_generation_gap": miss_bucket == "CANDIDATE_GENERATION_GAP",
@@ -3667,6 +3722,14 @@ def best_targeted_mover_signal(signals: Sequence[Mapping[str, Any]], direction: 
     return dict(best)
 
 
+def missed_mover_same_day_direction(f: Mapping[str, Any]) -> Optional[str]:
+    for direction_fn in (catalyst_flow_leader_direction, source_rescue_signal_direction, tradeable_gap_rescue_direction):
+        direction = direction_fn(f)
+        if direction in {"bullish", "bearish"}:
+            return direction
+    return None
+
+
 def missed_reason(f: Mapping[str, Any], flagged: bool) -> str:
     if flagged:
         return "flagged_by_pattern_pipeline"
@@ -3689,6 +3752,7 @@ def missed_mover_bucket(
     reason: str,
     targeted_signal: Optional[Mapping[str, Any]] = None,
     future_direction: str = "",
+    same_day_direction: str = "",
 ) -> str:
     if flagged:
         return "FLAGGED_BY_PATTERN_PIPELINE"
@@ -3705,6 +3769,8 @@ def missed_mover_bucket(
         return "NOT_OPTION_TRADEABLE_MISSING_QUOTE"
     if not tradeable_gap_quote_eligible(quote, {"max_spread_pct": 0.35}):
         return "NOT_OPTION_TRADEABLE_QUOTE_FAILED"
+    if future_direction and same_day_direction and same_day_direction != future_direction:
+        return "DIRECTION_MISMATCH_NOT_LEAKAGE_SAFE"
     total_premium = source_coverage_total_premium(f)
     max_volume_ratio = max(num(f.get("call_volume_ratio_30d")) or 0.0, num(f.get("put_volume_ratio_30d")) or 0.0)
     has_flow = total_premium >= SOURCE_COVERAGE_MIN_PREMIUM or (num(f.get("hot_total_premium")) or 0.0) > 0.0
@@ -6602,10 +6668,11 @@ def source_coverage_quote(
     feature: Mapping[str, Any],
     direction: str,
     pattern_config: Mapping[str, Any],
+    quote_cache: Optional[Mapping[str, Mapping[Tuple[str, str], Mapping[str, Any]]]] = None,
 ) -> Mapping[str, Any]:
     ticker = str(feature.get("ticker") or "")
     if direction in {"bullish", "bearish"}:
-        quote = select_flow_leader_quote(snapshot, feature, direction, pattern_config)
+        quote = select_flow_leader_quote(snapshot, feature, direction, pattern_config, quote_cache)
         if quote:
             return quote
     quote_options = [
@@ -8003,6 +8070,7 @@ def missed_fieldnames() -> List[str]:
         "targeted_signal_blockers",
         "targeted_signal_score",
         "targeted_quote_symbol",
+        "same_day_inferred_direction",
         "likely_miss_reason",
         "miss_bucket",
         "candidate_generation_gap",

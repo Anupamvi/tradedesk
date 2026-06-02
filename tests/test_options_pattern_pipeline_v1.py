@@ -827,6 +827,31 @@ def test_missed_mover_bucket_separates_untradeable_from_generation_gap():
         )
         == "DIRECTION_MISMATCH_NOT_LEAKAGE_SAFE"
     )
+    assert (
+        missed_mover_bucket(
+            {
+                "ticker": "FFAI",
+                "hot_total_premium": 37_606.0,
+                "call_volume_ratio_30d": 1.45,
+                "premium_bias": -0.179,
+            },
+            False,
+            {
+                "option_symbol": "FFAI260529C00000500",
+                "bid": 0.07,
+                "ask": 0.08,
+                "dte": 39,
+                "volume": 1500,
+                "open_interest": 2500,
+                "spread_pct": 0.1333,
+            },
+            "moved_without_matching_frozen_pattern",
+            {},
+            "bullish",
+            "bearish",
+        )
+        == "DIRECTION_MISMATCH_NOT_LEAKAGE_SAFE"
+    )
 
 
 def test_parse_occ_symbol_with_padded_root():
