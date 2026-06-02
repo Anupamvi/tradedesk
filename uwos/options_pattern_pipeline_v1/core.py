@@ -2785,6 +2785,7 @@ def auto_approval_gate_evidence_text(row: Mapping[str, Any]) -> str:
         f"PF={fmt_num(row.get('validation_profit_factor'))}",
         f"scored={row.get('validation_scored_count') or row.get('ticker_trend_scored_count') or ''}",
         f"baselines_beaten={row.get('beats_baselines_count')}",
+        f"baseline_names={row.get('baselines_beaten_names') or ''}",
         f"probability_score={pct_text(row.get('probability_score'))}",
         f"calibrated_probability={fmt_pct(row.get('calibrated_probability'))}",
     ]
@@ -3294,8 +3295,8 @@ def assign_family_tiers(
     by_family: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
     for row in validation_scorecard:
         by_family[str(row["pattern_family"])].append(row)
-    baseline_avgs = [
-        float(b["average_net_r"])
+    baseline_refs = [
+        (str(b.get("baseline") or "UNKNOWN_BASELINE"), float(b["average_net_r"]))
         for b in baseline_comparison
         if b.get("average_net_r") is not None and int(b.get("scored_count") or 0) > 0
     ]
@@ -3328,7 +3329,12 @@ def assign_family_tiers(
             if r.get("profit_factor") not in (None, "") and float(r["profit_factor"]) < 999
         ]
         pf = statistics.fmean(profit_factors) if profit_factors else None
-        beats = sum(1 for b in baseline_avgs if avg_r is not None and avg_r > b)
+        beaten_baselines = [
+            name
+            for name, baseline_avg_r in baseline_refs
+            if avg_r is not None and avg_r > baseline_avg_r
+        ]
+        beats = len(beaten_baselines)
         split_consistent = (
             split_count >= 2
             and positive_splits >= math.ceil(split_count * 0.75)
@@ -3367,6 +3373,7 @@ def assign_family_tiers(
             "validation_average_net_r": avg_r,
             "validation_profit_factor": pf,
             "beats_baselines_count": beats,
+            "baselines_beaten_names": ";".join(beaten_baselines),
             "validation_split_count": split_count,
             "positive_validation_splits": positive_splits,
             "worst_split_average_net_r": worst_split_avg,
@@ -4352,6 +4359,7 @@ def enrich_decision_row(
     validation_profit_factor = num(tier_info.get("validation_profit_factor")) or num(family_stats.get("profit_factor"))
     validation_scored = int(num(tier_info.get("validation_scored_count")) or num(family_stats.get("scored_count")) or 0)
     baselines_beaten = int(num(tier_info.get("beats_baselines_count")) or 0)
+    baselines_beaten_names = str(tier_info.get("baselines_beaten_names") or "")
     probability_score = probability_decimal_from_pct(enriched.get("probability_score"))
     confidence_lower = num(tier_info.get("validation_probability_score"))
     confidence_upper = wilson_upper_bound(
@@ -4497,6 +4505,7 @@ def enrich_decision_row(
             "validation_profit_factor": validation_profit_factor,
             "validation_scored_count": validation_scored,
             "beats_baselines_count": baselines_beaten,
+            "baselines_beaten_names": baselines_beaten_names,
             "calibrated_probability": round(calibrated_probability, 6) if calibrated_probability is not None else None,
             "confidence_lower_bound": confidence_lower,
             "confidence_upper_bound": confidence_upper,
@@ -4750,6 +4759,7 @@ def build_decision_board_rows(
                 "validation_scored_count": row.get("validation_scored_count"),
                 "validation_profit_factor": row.get("validation_profit_factor"),
                 "beats_baselines_count": row.get("beats_baselines_count"),
+                "baselines_beaten_names": row.get("baselines_beaten_names"),
                 "confidence_uncertainty_band": row.get("confidence_uncertainty_band"),
                 "volume": row.get("liquidity_volume"),
                 "open_interest": row.get("liquidity_open_interest"),
@@ -4896,6 +4906,7 @@ def decision_board_fieldnames() -> List[str]:
         "validation_scored_count",
         "validation_profit_factor",
         "beats_baselines_count",
+        "baselines_beaten_names",
         "confidence_uncertainty_band",
         "volume",
         "open_interest",
@@ -6034,8 +6045,12 @@ def auto_approved_goal_gate_failures(row: Mapping[str, Any], risk_config: Mappin
         failures.append("profit_factor")
     if scored < min_scored:
         failures.append("oos_sample")
-    if int(num(row.get("beats_baselines_count")) or 0) < int(risk_config.get("min_baselines_beaten", 2)):
+    baselines_beaten = int(num(row.get("beats_baselines_count")) or 0)
+    min_baselines = int(risk_config.get("min_baselines_beaten", 2))
+    if baselines_beaten < min_baselines:
         failures.append("baselines")
+    if baselines_beaten >= min_baselines and not str(row.get("baselines_beaten_names") or "").strip():
+        failures.append("baseline_names")
     if probability_score is None or probability_score < min_probability:
         failures.append("probability_score")
     if calibrated is None or calibrated < min_calibrated:
@@ -6728,6 +6743,7 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "validation_scored_count": r.get("validation_scored_count"),
         "validation_profit_factor": r.get("validation_profit_factor"),
         "beats_baselines_count": r.get("beats_baselines_count"),
+        "baselines_beaten_names": r.get("baselines_beaten_names"),
         "auto_approval_gate_evidence": auto_approval_gate_evidence_text(r),
         "capacity_estimate_contracts": r.get("capacity_estimate_contracts"),
         "live_quote_validation_status": r.get("live_quote_validation_status"),
@@ -8095,6 +8111,7 @@ def trade_fieldnames() -> List[str]:
         "validation_scored_count",
         "validation_profit_factor",
         "beats_baselines_count",
+        "baselines_beaten_names",
         "auto_approval_gate_evidence",
         "capacity_estimate_contracts",
         "live_quote_validation_status",
