@@ -1456,6 +1456,7 @@ def test_trade_output_uses_human_readable_long_option_setup():
             "direction": "bullish",
             "pattern_family": "VOL_EXPANSION_CATALYST__BULLISH__LONG_OPTION__TECHNOLOGY",
             "confidence_tier": "PROVEN",
+            "status": "AUTO_APPROVED",
             "strategy_kind": "long_option",
             "strategy_type": "Long Call Debit",
             "lead_option_symbol": "SNDK260515C02000000",
@@ -1463,6 +1464,13 @@ def test_trade_output_uses_human_readable_long_option_setup():
             "strike": 2000.0,
             "expiry": "2026-05-15",
             "entry_range": "7.20-7.30",
+            "expected_R": 0.42,
+            "expected_R_per_day": 0.084,
+            "validation_scored_count": 42,
+            "validation_profit_factor": 1.7,
+            "beats_baselines_count": 3,
+            "probability_score": 55.0,
+            "calibrated_probability": 0.61,
             "block_reasons": [],
         }
     )
@@ -1474,6 +1482,11 @@ def test_trade_output_uses_human_readable_long_option_setup():
     assert row["expiration_date"] == "2026-05-15"
     assert row["trade_setup"] == "BUY CALL SNDK 2000 exp 2026-05-15"
     assert row["occ_symbols"] == "SNDK260515C02000000"
+    assert row["validation_scored_count"] == 42
+    assert row["beats_baselines_count"] == 3
+    assert "expected_R=0.42" in row["auto_approval_gate_evidence"]
+    assert "scored=42" in row["auto_approval_gate_evidence"]
+    assert "baselines_beaten=3" in row["auto_approval_gate_evidence"]
 
 
 def test_trade_output_uses_human_readable_spread_setup():
@@ -1850,6 +1863,10 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
     trade_row = trade_output_row(rows[0])
     assert "ticker-specific trend validation" in trade_row["historical_evidence_summary"]
     assert "Not actionable" not in trade_row["why_actionable_now"]
+    assert trade_row["validation_scored_count"] == rows[0]["validation_scored_count"]
+    assert trade_row["beats_baselines_count"] == rows[0]["beats_baselines_count"]
+    assert "baselines_beaten=6" in trade_row["auto_approval_gate_evidence"]
+    assert "ticker_trend_scope=ticker_direction_strategy" in trade_row["auto_approval_gate_evidence"]
     assert controls["run_kill_switches"] == []
 
 

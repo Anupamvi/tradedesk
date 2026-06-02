@@ -2776,6 +2776,23 @@ def historical_evidence_summary_text(row: Mapping[str, Any]) -> str:
     return validation_note
 
 
+def auto_approval_gate_evidence_text(row: Mapping[str, Any]) -> str:
+    if str(row.get("status") or "") != "AUTO_APPROVED":
+        return ""
+    parts = [
+        f"expected_R={fmt_num(row.get('expected_R'))}",
+        f"expected_R_per_day={fmt_num(row.get('expected_R_per_day'))}",
+        f"PF={fmt_num(row.get('validation_profit_factor'))}",
+        f"scored={row.get('validation_scored_count') or row.get('ticker_trend_scored_count') or ''}",
+        f"baselines_beaten={row.get('beats_baselines_count')}",
+        f"probability_score={pct_text(row.get('probability_score'))}",
+        f"calibrated_probability={fmt_pct(row.get('calibrated_probability'))}",
+    ]
+    if row.get("ticker_trend_scope"):
+        parts.append(f"ticker_trend_scope={row.get('ticker_trend_scope')}")
+    return "; ".join(parts)
+
+
 def run_historical_validation(
     snapshots: Mapping[str, Snapshot],
     source_dates: Sequence[str],
@@ -6708,7 +6725,10 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "avg_loss_R": r.get("avg_loss_R"),
         "payoff_ratio": r.get("payoff_ratio"),
         "calibrated_probability": r.get("calibrated_probability"),
+        "validation_scored_count": r.get("validation_scored_count"),
         "validation_profit_factor": r.get("validation_profit_factor"),
+        "beats_baselines_count": r.get("beats_baselines_count"),
+        "auto_approval_gate_evidence": auto_approval_gate_evidence_text(r),
         "capacity_estimate_contracts": r.get("capacity_estimate_contracts"),
         "live_quote_validation_status": r.get("live_quote_validation_status"),
         "position_size_tier": r.get("position_size_tier"),
@@ -8072,7 +8092,10 @@ def trade_fieldnames() -> List[str]:
         "avg_loss_R",
         "payoff_ratio",
         "calibrated_probability",
+        "validation_scored_count",
         "validation_profit_factor",
+        "beats_baselines_count",
+        "auto_approval_gate_evidence",
         "capacity_estimate_contracts",
         "live_quote_validation_status",
         "position_size_tier",
