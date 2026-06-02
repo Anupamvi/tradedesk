@@ -17,6 +17,7 @@ from uwos.options_pattern_pipeline_v1.macro_geo import (
 from uwos.options_pattern_pipeline_v1.core import (
     assign_family_tiers,
     build_artifact_manifest,
+    build_signal,
     build_catalyst_flow_leaders,
     build_daily_snapshot,
     build_decision_board_rows,
@@ -42,10 +43,12 @@ from uwos.options_pattern_pipeline_v1.core import (
     source_completeness_for_date,
     sources_for_date,
     trade_output_row,
+    tradeable_gap_quote_eligible,
     pattern_recommendation_output_row,
     catalyst_flow_leader_output_row,
     trade_review_output_row,
     validate_decision_board_rows,
+    validation_detail_fieldnames,
 )
 
 
@@ -1358,6 +1361,111 @@ def test_unscorable_option_outcome_is_not_a_win():
 
     assert row["status"] == "UNSCORABLE"
     assert row["win"] == 0
+    assert row["cost_model"] == "long_option_entry_ask_exit_bid_after_configured_fees"
+    assert "round_trip_fees" in validation_detail_fieldnames()
+
+
+def test_long_option_scoring_uses_configured_fees():
+    signal = {
+        "date": "2026-01-02",
+        "ticker": "XYZ",
+        "direction": "bullish",
+        "pattern_family": "BULLISH_FLOW_EXPANSION",
+        "market_regime": "MIXED",
+        "sector": "Tech",
+        "lead_option_symbol": "XYZ260116C00100000",
+        "strategy_kind": "long_option",
+        "entry_ask": 1.0,
+        "entry_bid": 0.9,
+        "bid_ask_spread_pct": 0.1,
+        "block_reasons": [],
+        "close": 100.0,
+    }
+    snapshots = {
+        "2026-01-02": type("S", (), {"option_quotes": {}, "features": {"XYZ": {"close": 100.0}}})(),
+        "2026-01-05": type(
+            "S",
+            (),
+            {
+                "option_quotes": {"XYZ260116C00100000": {"bid": 1.5}},
+                "features": {"XYZ": {"close": 101.0}},
+            },
+        )(),
+    }
+
+    row = score_signal_horizon(
+        signal,
+        snapshots,
+        ["2026-01-02", "2026-01-05"],
+        "unit",
+        "VALIDATION",
+        1,
+        {"round_trip_long_option_fees": 10.0},
+    )
+
+    assert row["status"] == "SCORED"
+    assert row["round_trip_fees"] == 10.0
+    assert row["opening_fee"] == 5.0
+    assert row["cost_model"] == "long_option_entry_ask_exit_bid_after_configured_fees"
+    assert row["net_r"] == pytest.approx((50.0 - 10.0) / 105.0)
+
+
+def test_build_signal_uses_configured_opening_fee_for_ticket_risk():
+    snapshot = SnapshotStub(
+        features={},
+        market_regime={"regime": "MIXED"},
+        signal_date="2026-01-02",
+    )
+    feature = {
+        "ticker": "XYZ",
+        "close": 100.0,
+        "sector": "Tech",
+        "source_flags": set(),
+    }
+    quote = {
+        "option_symbol": "XYZ260116C00100000",
+        "strategy_kind": "long_option",
+        "option_type": "call",
+        "strike": 100.0,
+        "expiry": "2026-01-16",
+        "dte": 14,
+        "bid": 0.95,
+        "ask": 1.0,
+        "mid": 0.975,
+        "volume": 100,
+        "open_interest": 100,
+        "spread_pct": 0.05,
+    }
+
+    row = build_signal(
+        snapshot,
+        feature,
+        "UNIT_PATTERN",
+        "bullish",
+        1.0,
+        ["unit"],
+        quote,
+        {"max_spread_pct": 0.35, "max_event_dte_without_event_strategy": 2},
+        {"round_trip_long_option_fees": 10.0},
+    )
+
+    assert row["max_risk_per_contract"] == pytest.approx(105.0)
+    assert row["target_profit"] == pytest.approx(105.0)
+
+
+def test_tradeable_gap_quote_eligible_uses_configured_max_risk():
+    quote = {
+        "strategy_kind": "long_option",
+        "ask": 12.0,
+        "bid": 11.95,
+        "dte": 14,
+        "spread_pct": 0.01,
+        "volume": 100,
+        "open_interest": 100,
+    }
+
+    assert not tradeable_gap_quote_eligible(quote, {"max_spread_pct": 0.35}, {"max_risk_per_trade": 1000.0})
+    assert tradeable_gap_quote_eligible(quote, {"max_spread_pct": 0.35}, {"max_risk_per_trade": 1500.0})
 
 
 def test_managed_long_option_scores_stop_before_same_day_target():
@@ -1444,11 +1552,16 @@ def test_credit_spread_scores_with_future_leg_quotes():
         "unit",
         "VALIDATION",
         1,
+        {"round_trip_spread_fees": 10.0},
     )
 
     assert row["status"] == "SCORED"
     assert row["win"] == 1
     assert row["outcome_note"] == "credit_spread_exit_debit_after_fees"
+    assert row["round_trip_fees"] == 10.0
+    assert row["opening_fee"] == 5.0
+    assert row["cost_model"] == "credit_spread_entry_credit_exit_debit_after_configured_fees"
+    assert row["net_r"] == pytest.approx((70.0 - 10.0) / 401.30)
 
 
 def test_bot_eod_is_separate_primary_source_when_present(tmp_path):

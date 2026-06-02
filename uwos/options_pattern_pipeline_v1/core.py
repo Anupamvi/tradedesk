@@ -207,6 +207,47 @@ DEFAULT_RISK_CONFIG = {
 }
 
 
+def configured_round_trip_long_option_fees(risk_config: Optional[Mapping[str, Any]] = None) -> float:
+    cfg = risk_config or DEFAULT_RISK_CONFIG
+    return float(cfg.get("round_trip_long_option_fees", DEFAULT_RISK_CONFIG["round_trip_long_option_fees"]))
+
+
+def configured_round_trip_spread_fees(risk_config: Optional[Mapping[str, Any]] = None) -> float:
+    cfg = risk_config or DEFAULT_RISK_CONFIG
+    return float(cfg.get("round_trip_spread_fees", DEFAULT_RISK_CONFIG["round_trip_spread_fees"]))
+
+
+def configured_long_option_opening_fee(risk_config: Optional[Mapping[str, Any]] = None) -> float:
+    return configured_round_trip_long_option_fees(risk_config) / 2.0
+
+
+def configured_spread_opening_fee(risk_config: Optional[Mapping[str, Any]] = None) -> float:
+    return configured_round_trip_spread_fees(risk_config) / 2.0
+
+
+def configured_max_risk_per_trade(risk_config: Optional[Mapping[str, Any]] = None) -> float:
+    cfg = risk_config or DEFAULT_RISK_CONFIG
+    return float(cfg.get("max_risk_per_trade", DEFAULT_RISK_CONFIG["max_risk_per_trade"]))
+
+
+def scoring_cost_model(strategy_kind: str, risk_config: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+    if strategy_kind == "credit_spread":
+        return {
+            "cost_model": "credit_spread_entry_credit_exit_debit_after_configured_fees",
+            "round_trip_fees": configured_round_trip_spread_fees(risk_config),
+            "opening_fee": configured_spread_opening_fee(risk_config),
+            "entry_fill_assumption": "short_bid_minus_long_ask_credit",
+            "exit_fill_assumption": "future_short_ask_minus_future_long_bid_debit",
+        }
+    return {
+        "cost_model": "long_option_entry_ask_exit_bid_after_configured_fees",
+        "round_trip_fees": configured_round_trip_long_option_fees(risk_config),
+        "opening_fee": configured_long_option_opening_fee(risk_config),
+        "entry_fill_assumption": "entry_ask",
+        "exit_fill_assumption": "future_bid_or_managed_exit",
+    }
+
+
 @dataclass(frozen=True)
 class SourceRef:
     path: Path
@@ -411,6 +452,7 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
             min_month_dates=args.min_month_dates,
             top_candidates_per_day=args.top_candidates_per_day,
             seed=args.seed,
+            risk_config=config["risk_config"],
         )
 
     prior_dates = [d for d in snapshot_dates if d < as_of]
@@ -423,6 +465,7 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
         snapshots[as_of],
         daily_pattern_config,
         max_signals=args.top_candidates_per_day,
+        risk_config=config["risk_config"],
     )
     daily_rows = classify_daily_signals(
         daily_signals,
@@ -430,7 +473,12 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
         snapshots[as_of],
     )
 
-    missed_rows = [] if args.no_validation else run_missed_mover_audit(snapshots, usable_dates, as_of)
+    missed_rows = [] if args.no_validation else run_missed_mover_audit(
+        snapshots,
+        usable_dates,
+        as_of,
+        risk_config=config["risk_config"],
+    )
     sentiment_summary = build_sentiment_news_summary(base_dir / as_of, as_of)
     completeness = source_completeness_for_date(base_dir, as_of)
     macro_geo_bundle = build_macro_geo_bundle(
@@ -849,7 +897,7 @@ def build_daily_snapshot(base_dir: Path, signal_date: str, config: Mapping[str, 
                 f["source_flags"].add("option_trades")
                 update_option_trade_aggregate(f, row)
 
-    add_best_vertical_spreads(best_options, option_quotes)
+    add_best_vertical_spreads(best_options, option_quotes, config.get("risk_config"))
 
     apply_gex_context(date_dir, signal_date, features, source_files, skipped_sources, counts)
 
@@ -1422,6 +1470,7 @@ def maybe_set_best_option(best_options: Dict[Tuple[str, str], Dict[str, Any]], q
 def add_best_vertical_spreads(
     best_options: Dict[Tuple[str, str], Dict[str, Any]],
     option_quotes: Mapping[str, Mapping[str, Any]],
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> None:
     grouped: Dict[Tuple[str, str, str], List[Mapping[str, Any]]] = defaultdict(list)
     for quote in option_quotes.values():
@@ -1448,6 +1497,7 @@ def add_best_vertical_spreads(
                 short_candidates=[q for q in quotes if q["strike"] < stock],
                 long_candidates=quotes,
                 prefer_lower_long=True,
+                risk_config=risk_config,
             )
         else:
             spread = best_credit_spread(
@@ -1457,6 +1507,7 @@ def add_best_vertical_spreads(
                 short_candidates=[q for q in quotes if q["strike"] > stock],
                 long_candidates=quotes,
                 prefer_lower_long=False,
+                risk_config=risk_config,
             )
         if not spread:
             continue
@@ -1473,6 +1524,7 @@ def best_credit_spread(
     short_candidates: Sequence[Mapping[str, Any]],
     long_candidates: Sequence[Mapping[str, Any]],
     prefer_lower_long: bool,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     best: Optional[Dict[str, Any]] = None
     for short in short_candidates:
@@ -1500,7 +1552,7 @@ def best_credit_spread(
             min_oi = min(short.get("open_interest") or 0.0, long.get("open_interest") or 0.0)
             if min_volume < 25 or min_oi < 10:
                 continue
-            max_risk = (width - credit) * 100.0 + 1.30
+            max_risk = (width - credit) * 100.0 + configured_spread_opening_fee(risk_config)
             if max_risk <= 0:
                 continue
             score = (
@@ -1849,10 +1901,11 @@ def generate_signals_for_snapshot(
     max_signals: int,
     source_rescue_max_extra: int = SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
     tradeable_gap_max_extra: int = TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     signals: List[Dict[str, Any]] = []
     market = snapshot.market_regime.get("regime", "UNKNOWN")
-    quote_cache = build_quote_selection_cache(snapshot, pattern_config)
+    quote_cache = build_quote_selection_cache(snapshot, pattern_config, risk_config)
     for ticker, f in snapshot.features.items():
         if not f.get("close") or f.get("close") <= 0:
             continue
@@ -2006,7 +2059,7 @@ def generate_signals_for_snapshot(
 
         gap_rescue_direction = tradeable_gap_rescue_direction(f)
         if gap_rescue_direction:
-            quote = tradeable_gap_quote(snapshot, f, gap_rescue_direction, pattern_config, quote_cache)
+            quote = tradeable_gap_quote(snapshot, f, gap_rescue_direction, pattern_config, quote_cache, risk_config)
             if quote and not any(c[0] == "TRADEABLE_SOURCE_GAP_RESCUE" and c[1] == gap_rescue_direction for c in candidates):
                 source_total_premium = source_coverage_total_premium(f)
                 max_volume_ratio = max(call_ratio, put_ratio)
@@ -2046,14 +2099,14 @@ def generate_signals_for_snapshot(
 
         for family, direction, score, reasons in candidates:
             if family == "CATALYST_FLOW_LEADER":
-                quote = select_flow_leader_quote(snapshot, f, direction, pattern_config, quote_cache)
+                quote = select_flow_leader_quote(snapshot, f, direction, pattern_config, quote_cache, risk_config)
             elif family == "SOURCE_PREMIUM_COVERAGE_RESCUE":
-                quote = source_coverage_quote(snapshot, f, direction, pattern_config, quote_cache)
+                quote = source_coverage_quote(snapshot, f, direction, pattern_config, quote_cache, risk_config)
             elif family == "TRADEABLE_SOURCE_GAP_RESCUE":
-                quote = tradeable_gap_quote(snapshot, f, direction, pattern_config, quote_cache)
+                quote = tradeable_gap_quote(snapshot, f, direction, pattern_config, quote_cache, risk_config)
             else:
                 quote = snapshot.best_options.get((ticker, direction))
-            signals.append(build_signal(snapshot, f, family, direction, score, reasons, quote, pattern_config))
+            signals.append(build_signal(snapshot, f, family, direction, score, reasons, quote, pattern_config, risk_config))
 
     signals.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
     return select_signal_set(
@@ -2252,19 +2305,21 @@ def tradeable_gap_quote(
     direction: str,
     pattern_config: Mapping[str, Any],
     quote_cache: Optional[Mapping[str, Mapping[Tuple[str, str], Mapping[str, Any]]]] = None,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Mapping[str, Any]:
     ticker = str(feature.get("ticker") or "")
     direct_best = snapshot.best_options.get((ticker, direction))
-    if direct_best and tradeable_gap_quote_eligible(direct_best, pattern_config):
+    if direct_best and tradeable_gap_quote_eligible(direct_best, pattern_config, risk_config):
         return direct_best
     if quote_cache is not None:
         return quote_cache.get("tradeable_gap", {}).get((ticker, direction), {})
-    return select_tradeable_gap_long_option_quote(snapshot, ticker, direction, pattern_config)
+    return select_tradeable_gap_long_option_quote(snapshot, ticker, direction, pattern_config, risk_config)
 
 
 def build_quote_selection_cache(
     snapshot: Snapshot,
     pattern_config: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Dict[Tuple[str, str], Dict[str, Any]]]:
     flow: Dict[Tuple[str, str], Dict[str, Any]] = {}
     flow_scores: Dict[Tuple[str, str], float] = {}
@@ -2276,14 +2331,14 @@ def build_quote_selection_cache(
         if not ticker or direction not in {"bullish", "bearish"}:
             continue
         key = (ticker, direction)
-        if flow_leader_quote_eligible(quote, pattern_config):
+        if flow_leader_quote_eligible(quote, pattern_config, risk_config):
             score = quote_selection_score(quote)
             if score > flow_scores.get(key, -1.0):
                 candidate = dict(quote)
                 candidate["selection_score"] = score
                 flow[key] = candidate
                 flow_scores[key] = score
-        if tradeable_gap_quote_eligible(quote, pattern_config):
+        if tradeable_gap_quote_eligible(quote, pattern_config, risk_config):
             score = quote_selection_score(quote)
             if score > tradeable_gap_scores.get(key, -1.0):
                 candidate = dict(quote)
@@ -2298,13 +2353,14 @@ def select_tradeable_gap_long_option_quote(
     ticker: str,
     direction: str,
     pattern_config: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Mapping[str, Any]:
     best: Dict[str, Any] = {}
     best_score = -1.0
     for quote in snapshot.option_quotes.values():
         if quote.get("ticker") != ticker or quote.get("direction") != direction:
             continue
-        if not tradeable_gap_quote_eligible(quote, pattern_config):
+        if not tradeable_gap_quote_eligible(quote, pattern_config, risk_config):
             continue
         score = quote_selection_score(quote)
         if score > best_score:
@@ -2314,7 +2370,11 @@ def select_tradeable_gap_long_option_quote(
     return best
 
 
-def tradeable_gap_quote_eligible(quote: Mapping[str, Any], pattern_config: Mapping[str, Any]) -> bool:
+def tradeable_gap_quote_eligible(
+    quote: Mapping[str, Any],
+    pattern_config: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> bool:
     if not quote or quote.get("strategy_kind") == "credit_spread":
         return False
     ask = num(quote.get("ask"))
@@ -2323,7 +2383,7 @@ def tradeable_gap_quote_eligible(quote: Mapping[str, Any], pattern_config: Mappi
     spread_pct = num(quote.get("spread_pct"))
     volume = num(quote.get("volume")) or 0.0
     open_interest = num(quote.get("open_interest")) or 0.0
-    max_debit = DEFAULT_RISK_CONFIG["max_risk_per_trade"] / 100.0
+    max_debit = configured_max_risk_per_trade(risk_config) / 100.0
     max_spread = min(0.35, float(pattern_config.get("max_spread_pct", 0.35) or 0.35))
     return (
         ask is not None
@@ -2339,7 +2399,11 @@ def tradeable_gap_quote_eligible(quote: Mapping[str, Any], pattern_config: Mappi
     )
 
 
-def flow_leader_quote_eligible(quote: Mapping[str, Any], pattern_config: Mapping[str, Any]) -> bool:
+def flow_leader_quote_eligible(
+    quote: Mapping[str, Any],
+    pattern_config: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> bool:
     if not quote or quote.get("strategy_kind") == "credit_spread":
         return False
     ask = num(quote.get("ask"))
@@ -2348,7 +2412,7 @@ def flow_leader_quote_eligible(quote: Mapping[str, Any], pattern_config: Mapping
     spread_pct = num(quote.get("spread_pct"))
     volume = num(quote.get("volume")) or 0.0
     open_interest = num(quote.get("open_interest")) or 0.0
-    max_debit = DEFAULT_RISK_CONFIG["max_risk_per_trade"] / 100.0
+    max_debit = configured_max_risk_per_trade(risk_config) / 100.0
     max_spread = min(0.35, float(pattern_config.get("max_spread_pct", 0.35) or 0.35))
     return (
         ask is not None
@@ -2385,6 +2449,7 @@ def select_flow_leader_quote(
     direction: str,
     pattern_config: Mapping[str, Any],
     quote_cache: Optional[Mapping[str, Mapping[Tuple[str, str], Mapping[str, Any]]]] = None,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Optional[Mapping[str, Any]]:
     ticker = str(feature.get("ticker") or "")
     if quote_cache is not None:
@@ -2397,7 +2462,7 @@ def select_flow_leader_quote(
     for quote in snapshot.option_quotes.values():
         if quote.get("ticker") != ticker or quote.get("direction") != direction:
             continue
-        if not flow_leader_quote_eligible(quote, pattern_config):
+        if not flow_leader_quote_eligible(quote, pattern_config, risk_config):
             continue
         score = quote_selection_score(quote)
         if score > best_score:
@@ -2447,6 +2512,7 @@ def build_signal(
     reasons: Sequence[str],
     quote: Optional[Mapping[str, Any]],
     pattern_config: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     blockers: List[str] = []
     if quote is None:
@@ -2485,7 +2551,11 @@ def build_signal(
     entry_bid = quote.get("bid")
     entry_mid = quote.get("mid")
     entry_credit = quote.get("entry_credit")
-    max_risk = quote.get("max_risk") if strategy_kind == "credit_spread" else (entry_ask * 100.0 + 0.65 if entry_ask else None)
+    max_risk = (
+        quote.get("max_risk")
+        if strategy_kind == "credit_spread"
+        else (entry_ask * 100.0 + configured_long_option_opening_fee(risk_config) if entry_ask else None)
+    )
     strategy_type = quote.get("strategy_type") or ("Long Call Debit" if direction == "bullish" else "Long Put Debit")
     if strategy_kind == "credit_spread":
         entry_range = f"credit {entry_credit:.2f}" if entry_credit is not None else ""
@@ -2801,6 +2871,7 @@ def run_historical_validation(
     min_month_dates: int,
     top_candidates_per_day: int,
     seed: int,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     splits = build_validation_splits(source_dates, min_month_dates)
     all_signal_rows: List[Dict[str, Any]] = []
@@ -2830,6 +2901,7 @@ def run_historical_validation(
                     top_candidates_per_day,
                     source_rescue_max_extra=VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
                     tradeable_gap_max_extra=VALIDATION_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+                    risk_config=risk_config,
                 )
             )
         validation_signals = []
@@ -2841,6 +2913,7 @@ def run_historical_validation(
                     top_candidates_per_day,
                     source_rescue_max_extra=VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
                     tradeable_gap_max_extra=VALIDATION_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+                    risk_config=risk_config,
                 )
             )
         for sig in train_signals:
@@ -2853,8 +2926,8 @@ def run_historical_validation(
             sig["split"] = split["name"]
             sig["sample"] = "VALIDATION"
             all_signal_rows.append(flatten_signal(sig))
-        all_outcomes.extend(score_signals(train_signals, snapshots, source_dates, split["name"], "TRAIN"))
-        all_outcomes.extend(score_signals(validation_signals, snapshots, source_dates, split["name"], "VALIDATION"))
+        all_outcomes.extend(score_signals(train_signals, snapshots, source_dates, split["name"], "TRAIN", risk_config))
+        all_outcomes.extend(score_signals(validation_signals, snapshots, source_dates, split["name"], "VALIDATION", risk_config))
         baseline_signals = generate_baseline_signals(
             validation_signals,
             validation_snaps,
@@ -2862,9 +2935,10 @@ def run_historical_validation(
             top_candidates_per_day,
             seed,
             split["name"],
+            risk_config,
         )
         all_baseline_outcomes.extend(
-            score_signals(baseline_signals, snapshots, source_dates, split["name"], "BASELINE")
+            score_signals(baseline_signals, snapshots, source_dates, split["name"], "BASELINE", risk_config)
         )
 
     validation_scorecard = summarize_outcomes(all_outcomes, sample="VALIDATION")
@@ -2964,12 +3038,13 @@ def score_signals(
     source_dates: Sequence[str],
     split_name: str,
     sample: str,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     ordered_dates = list(source_dates)
     for signal in signals:
         for horizon in HORIZONS:
-            rows.append(score_signal_horizon(signal, snapshots, ordered_dates, split_name, sample, horizon))
+            rows.append(score_signal_horizon(signal, snapshots, ordered_dates, split_name, sample, horizon, risk_config))
     return rows
 
 
@@ -2980,9 +3055,12 @@ def score_signal_horizon(
     split_name: str,
     sample: str,
     horizon: int,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     signal_date = signal["date"]
     target_date = nth_future_date(ordered_dates, signal_date, horizon)
+    strategy_kind = str(signal.get("strategy_kind") or "long_option")
+    cost_fields = scoring_cost_model(strategy_kind, risk_config)
     base = {
         "split": split_name,
         "sample": sample,
@@ -2995,12 +3073,17 @@ def score_signal_horizon(
         "market_regime": signal.get("market_regime", ""),
         "sector": signal.get("sector", ""),
         "lead_option_symbol": signal.get("lead_option_symbol", ""),
-        "strategy_kind": signal.get("strategy_kind", "long_option"),
+        "strategy_kind": strategy_kind,
         "strategy_type": signal.get("strategy_type", ""),
         "legs_json": signal.get("legs_json", ""),
         "entry_credit": signal.get("entry_credit"),
         "entry_ask": signal.get("entry_ask"),
         "entry_bid": signal.get("entry_bid"),
+        "round_trip_fees": cost_fields["round_trip_fees"],
+        "opening_fee": cost_fields["opening_fee"],
+        "cost_model": cost_fields["cost_model"],
+        "entry_fill_assumption": cost_fields["entry_fill_assumption"],
+        "exit_fill_assumption": cost_fields["exit_fill_assumption"],
         "bid_ask_spread_pct": signal.get("bid_ask_spread_pct"),
         "blocked": bool(signal.get("block_reasons")),
         "block_reasons": ";".join(signal.get("block_reasons") or []),
@@ -3012,7 +3095,7 @@ def score_signal_horizon(
     if not target_date:
         base["outcome_note"] = "not_enough_future_dates"
         return base
-    if signal.get("strategy_kind") == "credit_spread":
+    if strategy_kind == "credit_spread":
         entry_credit = signal.get("entry_credit")
         max_risk = signal.get("max_risk_per_contract")
         if not entry_credit or entry_credit <= 0 or not max_risk or max_risk <= 0:
@@ -3031,7 +3114,7 @@ def score_signal_horizon(
         future_long = snapshots[target_date].option_quotes.get(long_leg["option_symbol"])
         if future_short and future_long and future_short.get("ask", 0.0) > 0 and future_long.get("bid", 0.0) >= 0:
             exit_debit = max(0.0, future_short["ask"] - future_long["bid"])
-            net_dollars = (entry_credit - exit_debit) * 100.0 - 2.60
+            net_dollars = (entry_credit - exit_debit) * 100.0 - cost_fields["round_trip_fees"]
             net_r = net_dollars / max_risk if max_risk > 0 else None
             base.update(
                 {
@@ -3064,15 +3147,15 @@ def score_signal_horizon(
         base["outcome_note"] = "missing_entry_debit"
         return base
     symbol = signal.get("lead_option_symbol") or ""
-    managed = score_managed_long_option(signal, snapshots, ordered_dates, horizon, entry, symbol)
+    managed = score_managed_long_option(signal, snapshots, ordered_dates, horizon, entry, symbol, risk_config)
     if managed:
         base.update(managed)
         return base
     future_quote = snapshots[target_date].option_quotes.get(symbol)
     if future_quote and future_quote.get("bid", 0.0) > 0:
         exit_value = future_quote["bid"]
-        net_dollars = (exit_value - entry) * 100.0 - 1.30
-        risk_dollars = entry * 100.0 + 0.65
+        net_dollars = (exit_value - entry) * 100.0 - cost_fields["round_trip_fees"]
+        risk_dollars = entry * 100.0 + cost_fields["opening_fee"]
         net_r = net_dollars / risk_dollars if risk_dollars > 0 else None
         base.update(
             {
@@ -3086,8 +3169,8 @@ def score_signal_horizon(
         return base
     if future_quote and (future_quote.get("mid") or future_quote.get("option_close")):
         exit_value = future_quote.get("mid") or future_quote.get("option_close")
-        net_dollars = (exit_value - entry) * 100.0 - 1.30
-        risk_dollars = entry * 100.0 + 0.65
+        net_dollars = (exit_value - entry) * 100.0 - cost_fields["round_trip_fees"]
+        risk_dollars = entry * 100.0 + cost_fields["opening_fee"]
         net_r = net_dollars / risk_dollars if risk_dollars > 0 else None
         base.update(
             {
@@ -3124,6 +3207,7 @@ def score_managed_long_option(
     horizon: int,
     entry: float,
     symbol: str,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     if not symbol:
         return None
@@ -3134,7 +3218,8 @@ def score_managed_long_option(
         return None
     target_price = entry * 2.0
     stop_price = entry * 0.50
-    risk_dollars = entry * 100.0 + 0.65
+    cost_fields = scoring_cost_model("long_option", risk_config)
+    risk_dollars = entry * 100.0 + cost_fields["opening_fee"]
     saw_real_quote = False
     last_bid: Optional[float] = None
     last_date = ""
@@ -3156,7 +3241,7 @@ def score_managed_long_option(
         # Conservative same-day ordering: if target and stop are both inside the
         # daily range, assume the stop was hit first.
         if low is not None and low <= stop_price:
-            net_dollars = (stop_price - entry) * 100.0 - 1.30
+            net_dollars = (stop_price - entry) * 100.0 - cost_fields["round_trip_fees"]
             return {
                 "status": "SCORED",
                 "managed_exit_date": d,
@@ -3166,7 +3251,7 @@ def score_managed_long_option(
                 "outcome_note": "managed_long_option_stop_hit_conservative",
             }
         if high is not None and high >= target_price:
-            net_dollars = (target_price - entry) * 100.0 - 1.30
+            net_dollars = (target_price - entry) * 100.0 - cost_fields["round_trip_fees"]
             net_r = net_dollars / risk_dollars if risk_dollars > 0 else None
             return {
                 "status": "SCORED",
@@ -3177,7 +3262,7 @@ def score_managed_long_option(
                 "outcome_note": "managed_long_option_target_hit",
             }
     if saw_real_quote and last_bid is not None:
-        net_dollars = (last_bid - entry) * 100.0 - 1.30
+        net_dollars = (last_bid - entry) * 100.0 - cost_fields["round_trip_fees"]
         net_r = net_dollars / risk_dollars if risk_dollars > 0 else None
         return {
             "status": "SCORED",
@@ -3496,34 +3581,65 @@ def generate_baseline_signals(
     top_candidates_per_day: int,
     seed: int,
     split_name: str,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     signals: List[Dict[str, Any]] = []
     by_date_real = Counter(str(s["date"]) for s in validation_signals)
     for snap in validation_snaps:
         per_date_target = max(3, min(top_candidates_per_day, by_date_real.get(snap.signal_date, 5)))
-        signals.extend(unusual_volume_baseline(snap, pattern_config, per_date_target))
-        signals.extend(uw_flow_only_baseline(snap, pattern_config, per_date_target))
-        signals.extend(naive_catalyst_only_baseline(snap, pattern_config, per_date_target))
-        signals.extend(price_momentum_baseline(snap, pattern_config, per_date_target))
-        signals.extend(index_directional_baseline(snap, pattern_config))
-        signals.extend(random_same_liquidity_baseline(snap, validation_signals, pattern_config, per_date_target, seed, split_name))
+        signals.extend(unusual_volume_baseline(snap, pattern_config, per_date_target, risk_config))
+        signals.extend(uw_flow_only_baseline(snap, pattern_config, per_date_target, risk_config))
+        signals.extend(naive_catalyst_only_baseline(snap, pattern_config, per_date_target, risk_config))
+        signals.extend(price_momentum_baseline(snap, pattern_config, per_date_target, risk_config))
+        signals.extend(index_directional_baseline(snap, pattern_config, risk_config))
+        signals.extend(
+            random_same_liquidity_baseline(
+                snap,
+                validation_signals,
+                pattern_config,
+                per_date_target,
+                seed,
+                split_name,
+                risk_config,
+            )
+        )
     return signals
 
 
-def unusual_volume_baseline(snap: Snapshot, pattern_config: Mapping[str, Any], limit: int) -> List[Dict[str, Any]]:
+def unusual_volume_baseline(
+    snap: Snapshot,
+    pattern_config: Mapping[str, Any],
+    limit: int,
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> List[Dict[str, Any]]:
     rows: List[Tuple[float, Dict[str, Any]]] = []
     for f in snap.features.values():
         direction = "bullish" if (f.get("call_volume_ratio_30d") or 0) >= (f.get("put_volume_ratio_30d") or 0) else "bearish"
         ratio = max(f.get("call_volume_ratio_30d") or 0.0, f.get("put_volume_ratio_30d") or 0.0)
         quote = snap.best_options.get((f["ticker"], direction))
         if quote:
-            sig = build_signal(snap, f, "BASELINE_UNUSUAL_VOLUME_ONLY", direction, ratio, ["highest options volume ratio"], quote, pattern_config)
+            sig = build_signal(
+                snap,
+                f,
+                "BASELINE_UNUSUAL_VOLUME_ONLY",
+                direction,
+                ratio,
+                ["highest options volume ratio"],
+                quote,
+                pattern_config,
+                risk_config,
+            )
             rows.append((ratio, sig))
     rows.sort(key=lambda x: x[0], reverse=True)
     return [r[1] for r in rows[:limit]]
 
 
-def uw_flow_only_baseline(snap: Snapshot, pattern_config: Mapping[str, Any], limit: int) -> List[Dict[str, Any]]:
+def uw_flow_only_baseline(
+    snap: Snapshot,
+    pattern_config: Mapping[str, Any],
+    limit: int,
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> List[Dict[str, Any]]:
     rows: List[Tuple[float, Dict[str, Any]]] = []
     for f in snap.features.values():
         flow_total = f.get("flow_total_premium") or 0.0
@@ -3533,13 +3649,28 @@ def uw_flow_only_baseline(snap: Snapshot, pattern_config: Mapping[str, Any], lim
         direction = "bullish" if bias >= 0 else "bearish"
         quote = snap.best_options.get((f["ticker"], direction))
         if quote:
-            sig = build_signal(snap, f, "BASELINE_NAIVE_UW_FLOW_ONLY", direction, flow_total, ["naive UW flow premium only"], quote, pattern_config)
+            sig = build_signal(
+                snap,
+                f,
+                "BASELINE_NAIVE_UW_FLOW_ONLY",
+                direction,
+                flow_total,
+                ["naive UW flow premium only"],
+                quote,
+                pattern_config,
+                risk_config,
+            )
             rows.append((flow_total, sig))
     rows.sort(key=lambda x: x[0], reverse=True)
     return [r[1] for r in rows[:limit]]
 
 
-def naive_catalyst_only_baseline(snap: Snapshot, pattern_config: Mapping[str, Any], limit: int) -> List[Dict[str, Any]]:
+def naive_catalyst_only_baseline(
+    snap: Snapshot,
+    pattern_config: Mapping[str, Any],
+    limit: int,
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> List[Dict[str, Any]]:
     rows: List[Tuple[float, Dict[str, Any]]] = []
     for f in snap.features.values():
         earnings_dte = f.get("earnings_dte")
@@ -3554,13 +3685,28 @@ def naive_catalyst_only_baseline(snap: Snapshot, pattern_config: Mapping[str, An
         direction = "bullish" if (f.get("flow_premium_bias") or f.get("premium_bias") or 0.0) >= 0 else "bearish"
         quote = snap.best_options.get((f["ticker"], direction))
         if quote:
-            sig = build_signal(snap, f, "BASELINE_NAIVE_CATALYST_ONLY", direction, catalyst_score, ["naive catalyst/event proximity only"], quote, pattern_config)
+            sig = build_signal(
+                snap,
+                f,
+                "BASELINE_NAIVE_CATALYST_ONLY",
+                direction,
+                catalyst_score,
+                ["naive catalyst/event proximity only"],
+                quote,
+                pattern_config,
+                risk_config,
+            )
             rows.append((catalyst_score, sig))
     rows.sort(key=lambda x: x[0], reverse=True)
     return [r[1] for r in rows[:limit]]
 
 
-def price_momentum_baseline(snap: Snapshot, pattern_config: Mapping[str, Any], limit: int) -> List[Dict[str, Any]]:
+def price_momentum_baseline(
+    snap: Snapshot,
+    pattern_config: Mapping[str, Any],
+    limit: int,
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> List[Dict[str, Any]]:
     rows: List[Tuple[float, Dict[str, Any]]] = []
     for f in snap.features.values():
         ret = f.get("stock_return_1d")
@@ -3569,13 +3715,27 @@ def price_momentum_baseline(snap: Snapshot, pattern_config: Mapping[str, Any], l
         direction = "bullish" if ret >= 0 else "bearish"
         quote = snap.best_options.get((f["ticker"], direction))
         if quote:
-            sig = build_signal(snap, f, "BASELINE_SIMPLE_PRICE_MOMENTUM", direction, abs(ret), ["same-day price momentum"], quote, pattern_config)
+            sig = build_signal(
+                snap,
+                f,
+                "BASELINE_SIMPLE_PRICE_MOMENTUM",
+                direction,
+                abs(ret),
+                ["same-day price momentum"],
+                quote,
+                pattern_config,
+                risk_config,
+            )
             rows.append((abs(ret), sig))
     rows.sort(key=lambda x: x[0], reverse=True)
     return [r[1] for r in rows[:limit]]
 
 
-def index_directional_baseline(snap: Snapshot, pattern_config: Mapping[str, Any]) -> List[Dict[str, Any]]:
+def index_directional_baseline(
+    snap: Snapshot,
+    pattern_config: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for ticker in ("SPY", "QQQ"):
         f = snap.features.get(ticker)
@@ -3595,6 +3755,7 @@ def index_directional_baseline(snap: Snapshot, pattern_config: Mapping[str, Any]
                     ["index direction baseline"],
                     quote,
                     pattern_config,
+                    risk_config,
                 )
             )
     return rows
@@ -3607,6 +3768,7 @@ def random_same_liquidity_baseline(
     limit: int,
     seed: int,
     split_name: str,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     universe: List[Tuple[float, Dict[str, Any], str]] = []
     for f in snap.features.values():
@@ -3641,6 +3803,7 @@ def random_same_liquidity_baseline(
                         ["deterministic random same-date liquidity baseline"],
                         quote,
                         pattern_config,
+                        risk_config,
                     )
                 )
     else:
@@ -3657,6 +3820,7 @@ def random_same_liquidity_baseline(
                         ["deterministic random same-date liquidity baseline"],
                         quote,
                         pattern_config,
+                        risk_config,
                     )
                 )
     return rows[:limit]
@@ -3667,6 +3831,7 @@ def run_missed_mover_audit(
     source_dates: Sequence[str],
     as_of: str,
     per_date: int = 5,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     usable_dates = [d for d in source_dates if d < as_of]
@@ -3692,6 +3857,7 @@ def run_missed_mover_audit(
             max_signals=50,
             source_rescue_max_extra=MISSED_MOVER_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
             tradeable_gap_max_extra=MISSED_MOVER_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+            risk_config=risk_config,
         )
         signal_tickers = {s["ticker"] for s in signals}
         signal_pairs = {(s["ticker"], s.get("direction")) for s in signals}
@@ -3705,10 +3871,10 @@ def run_missed_mover_audit(
                 option_quotes_by_ticker.get(ticker, {}),
                 best_options_by_ticker.get(ticker, {}),
             )
-            quote = source_coverage_quote(scoped_current, f, direction, cfg)
+            quote = source_coverage_quote(scoped_current, f, direction, cfg, risk_config=risk_config)
             flagged_any_direction = ticker in signal_tickers
             flagged_same_direction = (ticker, direction) in signal_pairs
-            targeted_signals = generate_targeted_mover_signals(scoped_current, f, cfg)
+            targeted_signals = generate_targeted_mover_signals(scoped_current, f, cfg, risk_config)
             targeted_signal = best_targeted_mover_signal(targeted_signals, direction)
             same_day_direction = missed_mover_same_day_direction(f)
             reason = missed_reason(f, flagged_same_direction)
@@ -3720,6 +3886,7 @@ def run_missed_mover_audit(
                 targeted_signal,
                 direction,
                 same_day_direction,
+                risk_config,
             )
             rows.append(
                 {
@@ -3795,6 +3962,7 @@ def generate_targeted_mover_signals(
     snapshot: Snapshot,
     feature: Mapping[str, Any],
     pattern_config: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     ticker = str(feature.get("ticker") or "")
     if not ticker:
@@ -3809,6 +3977,7 @@ def generate_targeted_mover_signals(
         max_signals=10,
         source_rescue_max_extra=10,
         tradeable_gap_max_extra=10,
+        risk_config=risk_config,
     )
 
 
@@ -3852,6 +4021,7 @@ def missed_mover_bucket(
     targeted_signal: Optional[Mapping[str, Any]] = None,
     future_direction: str = "",
     same_day_direction: str = "",
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> str:
     if flagged:
         return "FLAGGED_BY_PATTERN_PIPELINE"
@@ -3866,7 +4036,7 @@ def missed_mover_bucket(
         return "GENERATED_BUT_BELOW_SELECTION_CAP"
     if not quote or "missing_quote_spread" in reason:
         return "NOT_OPTION_TRADEABLE_MISSING_QUOTE"
-    if not tradeable_gap_quote_eligible(quote, {"max_spread_pct": 0.35}):
+    if not tradeable_gap_quote_eligible(quote, {"max_spread_pct": 0.35}, risk_config):
         return "NOT_OPTION_TRADEABLE_QUOTE_FAILED"
     if future_direction and same_day_direction and same_day_direction != future_direction:
         return "DIRECTION_MISMATCH_NOT_LEAKAGE_SAFE"
@@ -4683,11 +4853,8 @@ def fill_cost_fields(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> 
     slippage = None
     if spread is not None:
         slippage = max(0.0, spread) * 100.0 * float(risk_config.get("slippage_pct_of_spread", 0.5))
-    fees = (
-        float(risk_config.get("round_trip_spread_fees", 2.60))
-        if row.get("strategy_kind") == "credit_spread"
-        else float(risk_config.get("round_trip_long_option_fees", 1.30))
-    )
+    cost_model = scoring_cost_model(str(row.get("strategy_kind") or "long_option"), risk_config)
+    fees = cost_model["round_trip_fees"]
     fill_model = "conservative_credit" if row.get("strategy_kind") == "credit_spread" else "conservative_debit_at_ask"
     return {"fill_model": fill_model, "slippage_estimate": slippage, "fees_commissions": fees}
 
@@ -6272,6 +6439,7 @@ def write_outputs(
         daily_pattern_config,
         decision_enriched_rows,
         required_tickers=(config.get("risk_config") or {}).get("goal_required_coverage_tickers", GOAL_AUDIT_REQUIRED_TICKERS),
+        risk_config=config["risk_config"],
     )
 
     discovered_rows = []
@@ -6886,6 +7054,7 @@ def build_source_ticker_coverage_rows(
     decision_rows: Sequence[Mapping[str, Any]],
     min_premium: float = SOURCE_COVERAGE_MIN_PREMIUM,
     required_tickers: Sequence[str] = (),
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     rows_by_ticker: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
     for row in decision_rows:
@@ -6902,7 +7071,7 @@ def build_source_ticker_coverage_rows(
         if total_premium < min_premium:
             continue
         coverage_rows.append(
-            build_source_ticker_coverage_row(snapshot, pattern_config, rows_by_ticker, ticker, feature)
+            build_source_ticker_coverage_row(snapshot, pattern_config, rows_by_ticker, ticker, feature, risk_config=risk_config)
         )
         included_tickers.add(ticker.upper())
 
@@ -6924,6 +7093,7 @@ def build_source_ticker_coverage_rows(
                 ticker,
                 feature,
                 forced_reason=f"required coverage ticker below {int(min_premium)} high-source threshold",
+                risk_config=risk_config,
             )
         )
         included_tickers.add(required_ticker)
@@ -6946,10 +7116,11 @@ def build_source_ticker_coverage_row(
     ticker: str,
     feature: Mapping[str, Any],
     forced_reason: str = "",
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     total_premium = source_coverage_total_premium(feature)
     direction = catalyst_flow_leader_direction(feature) or source_coverage_direction(feature)
-    quote = source_coverage_quote(snapshot, feature, direction, pattern_config)
+    quote = source_coverage_quote(snapshot, feature, direction, pattern_config, risk_config=risk_config)
     surfaced_rows = rows_by_ticker.get(ticker, [])
     best_row = surfaced_rows[0] if surfaced_rows else {}
     setup = trade_setup_fields(best_row) if best_row else source_coverage_setup_fields(ticker, direction, quote)
@@ -7030,10 +7201,11 @@ def source_coverage_quote(
     direction: str,
     pattern_config: Mapping[str, Any],
     quote_cache: Optional[Mapping[str, Mapping[Tuple[str, str], Mapping[str, Any]]]] = None,
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Mapping[str, Any]:
     ticker = str(feature.get("ticker") or "")
     if direction in {"bullish", "bearish"}:
-        quote = select_flow_leader_quote(snapshot, feature, direction, pattern_config, quote_cache)
+        quote = select_flow_leader_quote(snapshot, feature, direction, pattern_config, quote_cache, risk_config)
         if quote:
             return quote
     quote_options = [
@@ -8412,6 +8584,11 @@ def validation_detail_fieldnames() -> List[str]:
         "entry_credit",
         "entry_ask",
         "entry_bid",
+        "round_trip_fees",
+        "opening_fee",
+        "cost_model",
+        "entry_fill_assumption",
+        "exit_fill_assumption",
         "bid_ask_spread_pct",
         "blocked",
         "block_reasons",
