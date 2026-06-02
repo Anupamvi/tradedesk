@@ -56,6 +56,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Directory for matrix CSV/Markdown. Default: out/options_pattern_pipeline_v1/<suffix>.",
     )
+    parser.add_argument(
+        "--runs-root",
+        default=None,
+        help="Root directory for per-date pipeline reruns. Default: <base-dir>/out/options_pattern_pipeline_v1.",
+    )
     parser.add_argument("--run-missing", action="store_true", help="Run pipeline for dates without an exact suffix output.")
     parser.add_argument("--force", action="store_true", help="Rerun every requested date even if output exists.")
     parser.add_argument(
@@ -69,7 +74,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     base_dir = Path(args.base_dir).expanduser().resolve()
-    root = base_dir / "out" / "options_pattern_pipeline_v1"
+    root = (
+        Path(args.runs_root).expanduser().resolve()
+        if args.runs_root
+        else base_dir / "out" / "options_pattern_pipeline_v1"
+    )
     matrix_dir = Path(args.matrix_dir).expanduser().resolve() if args.matrix_dir else root / args.suffix
     matrix_dir.mkdir(parents=True, exist_ok=True)
 

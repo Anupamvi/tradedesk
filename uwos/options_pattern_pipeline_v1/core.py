@@ -5508,6 +5508,7 @@ def build_goal_evidence_rows(
     validation_bundle: Mapping[str, Any],
     run_controls: Mapping[str, Any],
     source_completeness: Mapping[str, Any],
+    macro_geo_bundle: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     risk_config = run_controls.get("risk_config") or DEFAULT_RISK_CONFIG
     rows: List[Dict[str, Any]] = []
@@ -5651,6 +5652,7 @@ def build_goal_evidence_rows(
             risk_config,
         )
     )
+    rows.append(build_macro_geo_goal_row(as_of, macro_geo_bundle))
 
     missed_unexplained = [r for r in missed_rows if not r.get("likely_miss_reason")]
     missed_unflagged = [
@@ -5768,6 +5770,77 @@ def build_required_ticker_goal_row(
         len(missing_high_signal),
         "; ".join(evidence_parts),
         "For any missing high-signal ticker, fix ingestion/candidate generation before trusting the date.",
+    )
+
+
+def build_macro_geo_goal_row(as_of: str, macro_geo_bundle: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
+    if not macro_geo_bundle:
+        return goal_evidence_row(
+            "macro_geo_point_in_time_observability",
+            "WARN",
+            as_of,
+            0,
+            1,
+            "macro/geopolitical catalyst bundle was not provided to goal evidence",
+            "Build point-in-time browser/macro catalyst artifacts before claiming macro-aware pattern coverage.",
+        )
+    summary = dict(macro_geo_bundle.get("summary") or {})
+    required_keys = {
+        "source_complete",
+        "eligible_catalyst_count",
+        "future_dated_catalyst_count",
+        "uw_confirmed_catalyst_count",
+        "scenario_bucket_counts",
+    }
+    missing_keys = sorted(key for key in required_keys if key not in summary)
+    if missing_keys:
+        return goal_evidence_row(
+            "macro_geo_point_in_time_observability",
+            "WARN",
+            as_of,
+            0,
+            1,
+            "macro/geopolitical summary missing keys: " + ",".join(missing_keys),
+            "Preserve macro_geo_catalysts, ticker map, UW confirmation, and promotion-decision artifacts.",
+        )
+    if not summary.get("source_complete"):
+        missing_sources = ",".join(str(x) for x in summary.get("missing_sources") or [])
+        return goal_evidence_row(
+            "macro_geo_point_in_time_observability",
+            "FAIL",
+            as_of,
+            0,
+            1,
+            f"macro/geopolitical observability source incomplete; missing_sources={missing_sources or 'unknown'}",
+            "Fix source completeness before trusting catalyst-aware trade or no-edge decisions.",
+        )
+    eligible = int(num(summary.get("eligible_catalyst_count")) or 0)
+    future_filtered = int(num(summary.get("future_dated_catalyst_count")) or 0)
+    confirmed = int(num(summary.get("uw_confirmed_catalyst_count")) or 0)
+    promotion_rows = macro_geo_bundle.get("promotion_decisions") or []
+    ticker_map_rows = macro_geo_bundle.get("ticker_map") or []
+    confirmation_rows = macro_geo_bundle.get("uw_confirmation") or []
+    bucket_counts = summary.get("scenario_bucket_counts") or {}
+    bucket_text = ";".join(f"{key}:{value}" for key, value in sorted(bucket_counts.items())) or "none"
+    eligible_event_types = ",".join(str(x) for x in summary.get("eligible_event_types") or []) or "none"
+    future_event_types = ",".join(str(x) for x in summary.get("future_dated_event_types") or []) or "none"
+    theme_text = str(summary.get("uw_confirmed_themes") or "none")
+    has_catalyst_work = eligible > 0 or future_filtered > 0 or confirmed > 0
+    missing_artifacts = has_catalyst_work and not promotion_rows
+    return goal_evidence_row(
+        "macro_geo_point_in_time_observability",
+        "WARN" if missing_artifacts else "PASS",
+        as_of,
+        eligible + future_filtered,
+        1 if missing_artifacts else 0,
+        (
+            f"eligible_catalysts={eligible}; future_dated_filtered={future_filtered}; "
+            f"uw_confirmed_catalysts={confirmed}; promotion_rows={len(promotion_rows)}; "
+            f"ticker_map_rows={len(ticker_map_rows)}; uw_confirmation_rows={len(confirmation_rows)}; "
+            f"scenario_buckets={bucket_text}; eligible_event_types={eligible_event_types}; "
+            f"future_dated_event_types={future_event_types}; confirmed_themes={theme_text}"
+        ),
+        "Use macro_geo artifacts to explain catalyst/no-catalyst decisions without leaking future captures.",
     )
 
 
@@ -6102,6 +6175,7 @@ def write_outputs(
         validation_bundle,
         run_controls,
         source_completeness,
+        macro_geo_bundle,
     )
     metadata["goal_evidence_status"] = goal_evidence_overall_status(goal_rows)
 
@@ -6360,6 +6434,7 @@ def write_source_incomplete_outputs(
         empty_validation_bundle(),
         {"risk_config": config.get("risk_config", {}), "run_kill_switches": ["KILL_SWITCH_SOURCE_INCOMPLETE"]},
         completeness,
+        macro_geo_bundle,
     )
     metadata["goal_evidence_status"] = goal_evidence_overall_status(goal_rows)
     write_json(

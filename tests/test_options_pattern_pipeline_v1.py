@@ -918,6 +918,129 @@ def test_goal_evidence_warns_when_no_edge_is_not_quantified():
     assert "blocker counts were not available" in no_edge_row["evidence"]
 
 
+def test_goal_evidence_reports_macro_geo_point_in_time_observability():
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+    macro_geo_bundle = {
+        "summary": {
+            "source_complete": True,
+            "eligible_catalyst_count": 2,
+            "eligible_event_types": ["AI chips/semiconductors", "China/US diplomacy"],
+            "future_dated_catalyst_count": 1,
+            "future_dated_event_types": ["tariffs"],
+            "uw_confirmed_catalyst_count": 1,
+            "uw_confirmed_themes": "semiconductors/AI chips",
+            "scenario_bucket_counts": {
+                "CATALYST_WATCH": 1,
+                "POINT_IN_TIME_INELIGIBLE_CATALYST": 1,
+                "SECTOR_INDEX_CONFIRMED_SETUP": 1,
+            },
+        },
+        "promotion_decisions": [{"ticker": "NVDA"}, {"ticker": "SMH"}],
+        "ticker_map": [{"ticker": "NVDA"}, {"ticker": "SMH"}],
+        "uw_confirmation": [{"ticker": "NVDA"}],
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-05-13",
+        SnapshotStub({}),
+        [],
+        [],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": []}},
+        {"source_complete": True, "missing_sources": []},
+        macro_geo_bundle=macro_geo_bundle,
+    )
+
+    row = next(row for row in rows if row["requirement"] == "macro_geo_point_in_time_observability")
+    assert row["status"] == "PASS"
+    assert "eligible_catalysts=2" in row["evidence"]
+    assert "future_dated_filtered=1" in row["evidence"]
+    assert "promotion_rows=2" in row["evidence"]
+    assert "ticker_map_rows=2" in row["evidence"]
+    assert "uw_confirmation_rows=1" in row["evidence"]
+    assert "AI chips/semiconductors" in row["evidence"]
+    assert "POINT_IN_TIME_INELIGIBLE_CATALYST:1" in row["evidence"]
+
+
+def test_goal_evidence_warns_when_macro_geo_artifacts_are_missing():
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+    macro_geo_bundle = {
+        "summary": {
+            "source_complete": True,
+            "eligible_catalyst_count": 1,
+            "eligible_event_types": ["China/US diplomacy"],
+            "future_dated_catalyst_count": 0,
+            "future_dated_event_types": [],
+            "uw_confirmed_catalyst_count": 1,
+            "uw_confirmed_themes": "China beta/trade",
+            "scenario_bucket_counts": {"CATALYST_WATCH": 1},
+        },
+        "promotion_decisions": [],
+        "ticker_map": [{"ticker": "FXI"}],
+        "uw_confirmation": [{"ticker": "FXI"}],
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-05-13",
+        SnapshotStub({}),
+        [],
+        [],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": []}},
+        {"source_complete": True, "missing_sources": []},
+        macro_geo_bundle=macro_geo_bundle,
+    )
+
+    row = next(row for row in rows if row["requirement"] == "macro_geo_point_in_time_observability")
+    assert row["status"] == "WARN"
+    assert "eligible_catalysts=1" in row["evidence"]
+    assert "promotion_rows=0" in row["evidence"]
+
+
+def test_goal_evidence_fails_when_macro_geo_source_is_incomplete():
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+    macro_geo_bundle = {
+        "summary": {
+            "source_complete": False,
+            "missing_sources": ["bot_eod"],
+            "eligible_catalyst_count": 0,
+            "future_dated_catalyst_count": 0,
+            "uw_confirmed_catalyst_count": 0,
+            "scenario_bucket_counts": {},
+        },
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-05-13",
+        SnapshotStub({}),
+        [],
+        [],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": []}},
+        {"source_complete": False, "missing_sources": ["bot_eod"]},
+        macro_geo_bundle=macro_geo_bundle,
+    )
+
+    row = next(row for row in rows if row["requirement"] == "macro_geo_point_in_time_observability")
+    assert row["status"] == "FAIL"
+    assert "missing_sources=bot_eod" in row["evidence"]
+
+
 def test_missed_mover_bucket_separates_untradeable_from_generation_gap():
     assert (
         missed_mover_bucket(
