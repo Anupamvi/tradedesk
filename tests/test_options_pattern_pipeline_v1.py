@@ -1785,6 +1785,13 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
     assert rows[0]["success_probability_pct"] > 55
     assert rows[0]["expected_R"] > 0
     assert "PATTERN_VALIDATION_NOT_PROVEN" not in rows[0]["block_reasons"]
+    assert "Not actionable" not in rows[0]["why_actionable_now"]
+    assert "all auto-approval gates passed" in rows[0]["why_actionable_now"]
+    assert "pattern not proven out-of-sample" not in rows[0]["major_risks"]
+    assert "ticker-specific trend validation" in rows[0]["major_risks"]
+    trade_row = trade_output_row(rows[0])
+    assert "ticker-specific trend validation" in trade_row["historical_evidence_summary"]
+    assert "Not actionable" not in trade_row["why_actionable_now"]
     assert controls["run_kill_switches"] == []
 
 

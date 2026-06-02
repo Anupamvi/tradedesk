@@ -2738,10 +2738,42 @@ def daily_major_risks(row: Mapping[str, Any]) -> str:
     if row.get("bid_ask_spread_pct") is not None and row["bid_ask_spread_pct"] > 0.15:
         risks.append("wide option spread")
     if row.get("confidence_tier") != "PROVEN":
-        risks.append("pattern not proven out-of-sample")
+        if row.get("status") == "AUTO_APPROVED" and row.get("ticker_trend_scope"):
+            risks.append("approval relies on ticker-specific trend validation rather than family-only proof")
+        else:
+            risks.append("pattern not proven out-of-sample")
     if row.get("market_regime") in {"MIXED", "UNKNOWN"}:
         risks.append("uncertain market regime")
     return "; ".join(risks) if risks else "defined-risk option debit can still expire worthless"
+
+
+def final_actionability_text(row: Mapping[str, Any]) -> str:
+    status = str(row.get("status") or "")
+    blockers = row.get("block_reasons") or []
+    blocker_summary = "; ".join(decompose_blockers(blockers)[:5])
+    ticker_evidence = str(row.get("ticker_trend_evidence") or "")
+    if status == "AUTO_APPROVED":
+        if ticker_evidence:
+            return f"Executable ticker-specific trend edge; {ticker_evidence}; all auto-approval gates passed."
+        return "Executable pattern trade; all configured auto-approval gates passed."
+    if status == "TRADE_REVIEW":
+        return "Review only because " + (blocker_summary or "manual confirmation is still required")
+    if status == "AVOID":
+        return "Avoid because " + (blocker_summary or "required trade gates were not met")
+    return blocker_summary or "No actionable trade decision was emitted."
+
+
+def historical_evidence_summary_text(row: Mapping[str, Any]) -> str:
+    validation_note = str(row.get("validation_note") or "").strip()
+    ticker_evidence = str(row.get("ticker_trend_evidence") or "").strip()
+    if row.get("status") == "AUTO_APPROVED" and ticker_evidence:
+        summary = f"Auto-approved by ticker-specific trend validation after costs/slippage: {ticker_evidence}."
+        if validation_note:
+            summary += f" Family-level context: {validation_note}"
+        return summary
+    if row.get("status") == "AUTO_APPROVED":
+        return validation_note or "Auto-approved by validated family-level evidence after costs/slippage."
+    return validation_note
 
 
 def run_historical_validation(
@@ -4484,6 +4516,8 @@ def enrich_decision_row(
         }
     )
     enriched["blocker_categories"] = decompose_blockers(enriched["block_reasons"])
+    enriched["why_actionable_now"] = final_actionability_text(enriched)
+    enriched["major_risks"] = daily_major_risks(enriched)
     enriched["promotion_requirements"] = promotion_needed_text(enriched)
     return enriched
 
@@ -6574,7 +6608,7 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "live_quote_validation_status": r.get("live_quote_validation_status"),
         "position_size_tier": r.get("position_size_tier"),
         "catalyst_thesis": r.get("reason_summary"),
-        "historical_evidence_summary": r.get("validation_note"),
+        "historical_evidence_summary": historical_evidence_summary_text(r),
         "ticker_trend_scope": r.get("ticker_trend_scope"),
         "ticker_trend_scored_count": r.get("ticker_trend_scored_count"),
         "ticker_trend_win_rate_pct": r.get("ticker_trend_win_rate_pct"),
