@@ -39,6 +39,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     normalize_header,
     prepare_decision_rows,
     parse_option_symbol,
+    run_historical_validation,
     score_signal_horizon,
     source_complete_dates,
     source_completeness_for_date,
@@ -900,6 +901,125 @@ def test_goal_evidence_fails_auto_approval_without_baseline_names():
     assert "AMD:baseline_names" in expectancy_row["evidence"]
 
 
+def test_goal_evidence_accepts_insufficient_history_as_quantified_no_edge():
+    decision_board = [
+        {
+            "status": "AVOID",
+            "ticker": "AMD",
+            "blockers": "LIMITED_OUT_OF_SAMPLE_SAMPLE;PATTERN_VALIDATION_NOT_PROVEN;EXPECTED_R_NOT_POSITIVE_AFTER_COSTS",
+        }
+    ]
+    validation_bundle = empty_validation_bundle()
+    validation_bundle.update(
+        {
+            "validation_history_status": "INSUFFICIENT_SOURCE_COMPLETE_HISTORY",
+            "validation_history_reason": "no chronological train/validation split met min_month_dates=5",
+            "source_date_count": 8,
+            "source_month_date_counts": {"2025-12": 5, "2026-01": 3},
+            "min_month_dates": 5,
+        }
+    )
+
+    rows = build_goal_evidence_rows(
+        "2026-01-05",
+        SnapshotStub({"AMD": {"ticker": "AMD", "flow_total_premium": 123_000_000.0}}),
+        decision_board,
+        [
+            {
+                "ticker": "AMD",
+                "decision_surface_status": "AVOID",
+                "source_gap_reason": "surfaced in decision board",
+                "decision_artifact": "blocked_candidates.csv",
+            }
+        ],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": ["AMD"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    validation_row = next(row for row in rows if row["requirement"] == "rolling_oos_backtest_and_baselines_present")
+    ticket_row = next(row for row in rows if row["requirement"] == "trade_ready_ticket_fields_present")
+    no_edge_row = next(row for row in rows if row["requirement"] == "quantified_no_edge_report_if_no_trade")
+    assert validation_row["status"] == "PASS"
+    assert "insufficient_source_complete_history_no_edge" in validation_row["evidence"]
+    assert ticket_row["status"] == "PASS"
+    assert "no review/action ticket required" in ticket_row["evidence"]
+    assert no_edge_row["status"] == "PASS"
+    assert "LIMITED_OUT_OF_SAMPLE_SAMPLE" in no_edge_row["evidence"]
+
+
+def test_goal_evidence_still_fails_missing_validation_when_history_was_not_run():
+    decision_board = [
+        {
+            "status": "AVOID",
+            "ticker": "AMD",
+            "blockers": "PATTERN_VALIDATION_NOT_PROVEN",
+        }
+    ]
+
+    rows = build_goal_evidence_rows(
+        "2026-05-18",
+        SnapshotStub({"AMD": {"ticker": "AMD", "flow_total_premium": 123_000_000.0}}),
+        decision_board,
+        [
+            {
+                "ticker": "AMD",
+                "decision_surface_status": "AVOID",
+                "source_gap_reason": "surfaced in decision board",
+                "decision_artifact": "blocked_candidates.csv",
+            }
+        ],
+        [],
+        empty_validation_bundle(),
+        {"risk_config": {"goal_required_coverage_tickers": ["AMD"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    validation_row = next(row for row in rows if row["requirement"] == "rolling_oos_backtest_and_baselines_present")
+    ticket_row = next(row for row in rows if row["requirement"] == "trade_ready_ticket_fields_present")
+    assert validation_row["status"] == "FAIL"
+    assert "no validation splits" in validation_row["evidence"]
+    assert ticket_row["status"] == "PASS"
+
+
+def test_goal_evidence_zero_review_rows_passes_when_blockers_quantify_no_edge():
+    decision_board = [
+        {
+            "status": "AVOID",
+            "ticker": "AMD",
+            "blockers": "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS;PATTERN_VALIDATION_NOT_PROVEN",
+        }
+    ]
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-04-30",
+        SnapshotStub({"AMD": {"ticker": "AMD", "flow_total_premium": 123_000_000.0}}),
+        decision_board,
+        [
+            {
+                "ticker": "AMD",
+                "decision_surface_status": "AVOID",
+                "source_gap_reason": "surfaced in decision board",
+                "decision_artifact": "blocked_candidates.csv",
+            }
+        ],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": ["AMD"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    ticket_row = next(row for row in rows if row["requirement"] == "trade_ready_ticket_fields_present")
+    assert ticket_row["status"] == "PASS"
+    assert "reviewable_rows=0" in ticket_row["evidence"]
+
+
 def test_goal_evidence_accepts_quantified_no_edge_without_forced_trade():
     decision_board = [
         {
@@ -975,7 +1095,9 @@ def test_goal_evidence_warns_when_no_edge_is_not_quantified():
     )
 
     no_edge_row = next(row for row in rows if row["requirement"] == "quantified_no_edge_report_if_no_trade")
+    ticket_row = next(row for row in rows if row["requirement"] == "trade_ready_ticket_fields_present")
     assert no_edge_row["status"] == "WARN"
+    assert ticket_row["status"] == "WARN"
     assert "blocker counts were not available" in no_edge_row["evidence"]
 
 
@@ -1329,6 +1451,17 @@ def test_validation_splits_are_chronological_and_include_required_examples():
     assert "required_jan_2026_to_mar_2026" in names
     for split in splits:
         assert max(split["train_dates"]) < min(split["validation_dates"])
+
+
+def test_historical_validation_marks_sparse_history_without_splits():
+    dates = ["2025-12-22", "2025-12-23", "2025-12-24", "2025-12-29", "2025-12-30", "2026-01-05"]
+
+    bundle = run_historical_validation({}, dates, min_month_dates=5, top_candidates_per_day=40, seed=7)
+
+    assert bundle["splits"] == []
+    assert bundle["validation_history_status"] == "INSUFFICIENT_SOURCE_COMPLETE_HISTORY"
+    assert bundle["source_date_count"] == len(dates)
+    assert bundle["source_month_date_counts"] == {"2025-12": 5, "2026-01": 1}
 
 
 def test_unscorable_option_outcome_is_not_a_win():

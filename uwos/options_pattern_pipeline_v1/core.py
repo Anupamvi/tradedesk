@@ -2934,6 +2934,13 @@ def run_historical_validation(
     risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     splits = build_validation_splits(source_dates, min_month_dates)
+    source_month_date_counts = month_date_counts(source_dates)
+    validation_history_status = "OOS_READY" if splits else "INSUFFICIENT_SOURCE_COMPLETE_HISTORY"
+    validation_history_reason = (
+        f"{len(splits)} chronological train/validation split(s) met min_month_dates={min_month_dates}"
+        if splits
+        else f"no chronological train/validation split met min_month_dates={min_month_dates}"
+    )
     all_signal_rows: List[Dict[str, Any]] = []
     all_outcomes: List[Dict[str, Any]] = []
     all_baseline_outcomes: List[Dict[str, Any]] = []
@@ -3020,6 +3027,11 @@ def run_historical_validation(
         "baseline_comparison": baseline_comparison,
         "family_tiers": family_tiers,
         "regime_sector": regime_sector,
+        "source_date_count": len(source_dates),
+        "source_month_date_counts": dict(source_month_date_counts),
+        "min_month_dates": min_month_dates,
+        "validation_history_status": validation_history_status,
+        "validation_history_reason": validation_history_reason,
     }
 
 
@@ -3036,7 +3048,19 @@ def empty_validation_bundle() -> Dict[str, Any]:
         "baseline_comparison": [],
         "family_tiers": {},
         "regime_sector": [],
+        "source_date_count": 0,
+        "source_month_date_counts": {},
+        "min_month_dates": None,
+        "validation_history_status": "NOT_RUN",
+        "validation_history_reason": "historical validation was not run",
     }
+
+
+def month_date_counts(source_dates: Sequence[str]) -> Dict[str, int]:
+    counts: Dict[str, int] = defaultdict(int)
+    for d in source_dates:
+        counts[str(d)[:7]] += 1
+    return dict(sorted(counts.items()))
 
 
 def build_validation_splits(source_dates: Sequence[str], min_month_dates: int = 5) -> List[Dict[str, Any]]:
@@ -5889,6 +5913,22 @@ def build_goal_evidence_rows(
 ) -> List[Dict[str, Any]]:
     risk_config = run_controls.get("risk_config") or DEFAULT_RISK_CONFIG
     rows: List[Dict[str, Any]] = []
+    reviewable_rows = [
+        r for r in decision_board if str(r.get("status") or "") in {"AUTO_APPROVED", "TRADE_REVIEW"}
+    ]
+    auto_rows = [r for r in decision_board if str(r.get("status") or "") == "AUTO_APPROVED"]
+    blockers = Counter()
+    for row in decision_board:
+        for blocker in str(row.get("blockers") or "").split(";"):
+            if blocker:
+                blockers[blocker] += 1
+    no_edge_quantified = bool(auto_rows) or bool(blockers)
+    insufficient_history_no_edge = (
+        bool(source_completeness.get("source_complete"))
+        and str(validation_bundle.get("validation_history_status") or "") == "INSUFFICIENT_SOURCE_COMPLETE_HISTORY"
+        and not reviewable_rows
+        and no_edge_quantified
+    )
 
     rows.append(
         goal_evidence_row(
@@ -5915,26 +5955,49 @@ def build_goal_evidence_rows(
         validation_failures.append("no validation gate scorecard")
     if not baseline_rows:
         validation_failures.append("no baseline comparison")
+    if validation_failures and insufficient_history_no_edge:
+        validation_status = "PASS"
+        validation_failed_count = 0
+        validation_passed_count = 1
+        month_counts = validation_bundle.get("source_month_date_counts") or {}
+        month_text = ",".join(f"{month}:{count}" for month, count in sorted(month_counts.items())) or "none"
+        validation_evidence = (
+            "insufficient_source_complete_history_no_edge; "
+            f"source_dates={validation_bundle.get('source_date_count', 0)}; "
+            f"min_month_dates={validation_bundle.get('min_month_dates')}; "
+            f"month_counts={month_text}; "
+            f"reason={validation_bundle.get('validation_history_reason')}; "
+            f"reviewable_rows={len(reviewable_rows)}; "
+            "top_blockers="
+            + ";".join(f"{name}:{count}" for name, count in blockers.most_common(8))
+        )
+        validation_next_action = (
+            "Keep this as quantified NO_TRADE/AVOID until enough prior source-complete history creates "
+            "chronological OOS splits and baselines."
+        )
+    else:
+        validation_status = "FAIL" if validation_failures else "PASS"
+        validation_failed_count = len(validation_failures)
+        validation_passed_count = len(validation_rows)
+        validation_evidence = (
+            f"splits={len(validation_bundle.get('splits') or [])}; "
+            f"validation_families={len(validation_rows)}; baselines={len(baseline_rows)}"
+            if not validation_failures
+            else "; ".join(validation_failures)
+        )
+        validation_next_action = "Run without --no-validation and preserve baseline outputs."
     rows.append(
         goal_evidence_row(
             "rolling_oos_backtest_and_baselines_present",
-            "FAIL" if validation_failures else "PASS",
+            validation_status,
             "all source-complete dates through as-of",
-            len(validation_rows),
-            len(validation_failures),
-            (
-                f"splits={len(validation_bundle.get('splits') or [])}; "
-                f"validation_families={len(validation_rows)}; baselines={len(baseline_rows)}"
-                if not validation_failures
-                else "; ".join(validation_failures)
-            ),
-            "Run without --no-validation and preserve baseline outputs.",
+            validation_passed_count,
+            validation_failed_count,
+            validation_evidence,
+            validation_next_action,
         )
     )
 
-    reviewable_rows = [
-        r for r in decision_board if str(r.get("status") or "") in {"AUTO_APPROVED", "TRADE_REVIEW"}
-    ]
     ticket_failures = []
     required_ticket_fields = (
         "full_ticket",
@@ -5955,23 +6018,37 @@ def build_goal_evidence_rows(
         ]
         if missing:
             ticket_failures.append(f"{row.get('ticker')}:{','.join(missing)}")
+    if ticket_failures:
+        ticket_status = "FAIL"
+        ticket_failed_count = len(ticket_failures)
+        ticket_evidence = "missing fields: " + "; ".join(ticket_failures[:20])
+    elif reviewable_rows:
+        ticket_status = "PASS"
+        ticket_failed_count = 0
+        ticket_evidence = f"reviewable_rows={len(reviewable_rows)}"
+    elif no_edge_quantified:
+        ticket_status = "PASS"
+        ticket_failed_count = 0
+        ticket_evidence = (
+            f"reviewable_rows=0; no review/action ticket required; top_blockers="
+            + ";".join(f"{name}:{count}" for name, count in blockers.most_common(8))
+        )
+    else:
+        ticket_status = "WARN"
+        ticket_failed_count = 1
+        ticket_evidence = "reviewable_rows=0; blocker counts were not available"
     rows.append(
         goal_evidence_row(
             "trade_ready_ticket_fields_present",
-            "FAIL" if ticket_failures else "PASS" if reviewable_rows else "WARN",
+            ticket_status,
             "AUTO_APPROVED and TRADE_REVIEW rows",
             len(reviewable_rows) - len(ticket_failures),
-            len(ticket_failures),
-            (
-                f"reviewable_rows={len(reviewable_rows)}"
-                if not ticket_failures
-                else "missing fields: " + "; ".join(ticket_failures[:20])
-            ),
+            ticket_failed_count,
+            ticket_evidence,
             "Do not publish review/action rows without legs, entry, risk, probability, and EV.",
         )
     )
 
-    auto_rows = [r for r in decision_board if str(r.get("status") or "") == "AUTO_APPROVED"]
     bad_auto = []
     for row in auto_rows:
         failures = auto_approved_goal_gate_failures(row, risk_config)
@@ -6061,12 +6138,6 @@ def build_goal_evidence_rows(
         )
     )
 
-    blockers = Counter()
-    for row in decision_board:
-        for blocker in str(row.get("blockers") or "").split(";"):
-            if blocker:
-                blockers[blocker] += 1
-    no_edge_quantified = bool(auto_rows) or bool(blockers)
     rows.append(
         goal_evidence_row(
             "quantified_no_edge_report_if_no_trade",
@@ -6559,6 +6630,13 @@ def write_outputs(
         "source_files_for_as_of": snapshots[as_of].source_files,
         "skipped_sources_for_as_of": snapshots[as_of].skipped_sources,
         "validation_splits": validation_bundle["splits"],
+        "validation_history": {
+            "status": validation_bundle.get("validation_history_status"),
+            "reason": validation_bundle.get("validation_history_reason"),
+            "source_date_count": validation_bundle.get("source_date_count"),
+            "source_month_date_counts": validation_bundle.get("source_month_date_counts"),
+            "min_month_dates": validation_bundle.get("min_month_dates"),
+        },
         "daily_pattern_config": daily_pattern_config,
         "input_policy": config["input_policy"],
         "source_completeness": source_completeness,
@@ -6834,6 +6912,13 @@ def write_source_incomplete_outputs(
         "source_files_for_as_of": [],
         "skipped_sources_for_as_of": [],
         "validation_splits": [],
+        "validation_history": {
+            "status": "NOT_RUN",
+            "reason": "source data was incomplete",
+            "source_date_count": 0,
+            "source_month_date_counts": {},
+            "min_month_dates": None,
+        },
         "daily_pattern_config": {},
         "input_policy": config["input_policy"],
         "source_completeness": completeness,
