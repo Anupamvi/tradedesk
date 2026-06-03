@@ -15,6 +15,7 @@ SHEET_NAME="${SHEET_NAME:-Codex Schwab Numbers}"
 EXPORT_XLSX="$ROOT/out/codex_schwab_numbers_inspect.xlsx"
 SCHWAB_JSON="$ROOT/out/schwab_positions_${TODAY}_schwab_numbers.json"
 ROWS_JSON="$ROOT/out/codex_schwab_numbers_rows.json"
+PREMIUM_JSON="$ROOT/out/codex_schwab_premium_income_summary.json"
 
 cp -p "$WORKBOOK" "$WORKBOOK.backup-schwab-numbers-$STAMP"
 
@@ -45,6 +46,7 @@ APPLESCRIPT
 	--sheet-name "$SHEET_NAME" \
 	--start-date "$START_DATE" \
 	--end-date "$END_DATE" \
-	--out-json "$ROWS_JSON"
+	--out-json "$ROWS_JSON" \
+	--premium-out-json "$PREMIUM_JSON"
 
 echo "Updated $SHEET_NAME in $WORKBOOK"

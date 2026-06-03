@@ -253,7 +253,9 @@ def build_rows(
 ) -> list[dict[str, Any]]:
     openings_by_order: dict[str, list[Execution]] = defaultdict(list)
     closes_by_symbol: dict[str, list[Execution]] = defaultdict(list)
+    executions_by_order: dict[str, list[Execution]] = defaultdict(list)
     for ex in executions:
+        executions_by_order[ex.order_id].append(ex)
         if ex.is_opening:
             d = ex.dt.date()
             if start_date <= d <= end_date:
@@ -274,15 +276,42 @@ def build_rows(
         closed = closed_by_entry.get(order_id)
         open_pnl = 0.0
         realized_pnl: float | None = None
+        exit_cash = 0.0
         notes: list[str] = []
         open_leg_labels: list[str] = []
         closed_leg_labels: list[str] = []
+
+        def close_cash_for_leg(leg: Execution) -> tuple[float, list[Execution]]:
+            leg_close_cash = 0.0
+            leg_closes: list[Execution] = []
+            for close in closes_by_symbol.get(leg.symbol, []):
+                if close.dt > opened_dt:
+                    leg_close_cash += close.net_amount
+                    leg_closes.append(close)
+            return leg_close_cash, leg_closes
+
+        def close_cash_for_exit_orders(order_ids: list[str]) -> tuple[float, list[Execution]]:
+            exit_cash_total = 0.0
+            exit_executions: list[Execution] = []
+            for exit_order_id in order_ids:
+                for ex in executions_by_order.get(str(exit_order_id), []):
+                    if ex.is_opening:
+                        continue
+                    exit_cash_total += ex.net_amount
+                    exit_executions.append(ex)
+            return exit_cash_total, exit_executions
 
         if closed:
             status = "CLOSED PROFIT" if closed.get("realized_pnl", 0) >= 0 else "CLOSED LOSS"
             realized_pnl = float(closed.get("realized_pnl", 0) or 0)
             closed_at = closed.get("closed_at", "")
-            closed_leg_labels = [compact_leg_label(x) for x in legs]
+            exit_order_ids = [str(x) for x in closed.get("exit_order_ids", [])]
+            exit_cash, exit_executions = close_cash_for_exit_orders(exit_order_ids)
+            if exit_executions:
+                closed_leg_labels = [compact_leg_label(x) for x in sorted(exit_executions, key=lambda x: x.symbol)]
+            else:
+                closed_leg_labels = [compact_leg_label(x) for x in legs]
+                exit_cash = sum(close_cash_for_leg(leg)[0] for leg in legs)
         else:
             closed_at = ""
             realized_partial = 0.0
@@ -299,13 +328,9 @@ def build_rows(
                 expiry_date = parse_date((option_parts(leg.symbol)[0] or leg.expiry) + "T00:00:00+00:00")
                 if pos or not expiry_date or expiry_date >= today:
                     all_expired_absent = False
-                leg_close_cash = 0.0
-                leg_closes: list[Execution] = []
-                for close in closes_by_symbol.get(leg.symbol, []):
-                    if close.dt > opened_dt:
-                        leg_close_cash += close.net_amount
-                        leg_closes.append(close)
+                leg_close_cash, leg_closes = close_cash_for_leg(leg)
                 if not pos and abs(leg_close_cash) > 0.005:
+                    exit_cash += leg_close_cash
                     realized_partial += leg.net_amount + leg_close_cash
                     closed_leg_labels.append(
                         f"{compact_leg_label(leg)} -> "
@@ -347,6 +372,12 @@ def build_rows(
         if status == "PARTIAL OPEN":
             pass
 
+        premium_income_value, premium_income_rule = premium_income_for_row(
+            entry_cash=entry_cash,
+            realized_pnl=realized_pnl,
+            status=status,
+        )
+
         rows.append(
             {
                 "opened": opened_dt.date().isoformat(),
@@ -358,17 +389,52 @@ def build_rows(
                 "open_legs": " / ".join(open_leg_labels),
                 "closed_legs": " / ".join(closed_leg_labels),
                 "entry_cash": cashflow(entry_cash),
+                "exit_cash": cashflow(exit_cash) if abs(exit_cash) > 0.005 else "",
                 "realized_pnl": money(realized_pnl) if realized_pnl is not None else "",
                 "open_pnl": money(open_pnl) if abs(open_pnl) > 0.005 else "",
                 "total_pnl": money(total_pnl),
+                "premium_income": money(premium_income_value),
+                "premium_income_rule": premium_income_rule,
                 "closed_or_asof": closed_at or datetime.now().date().isoformat(),
                 "order_ids": order_id,
                 "manual_match": manual_match(legs, manual_text),
                 "notes": "; ".join(notes),
+                "entry_cash_value": entry_cash,
+                "exit_cash_value": exit_cash,
+                "realized_pnl_value": realized_pnl or 0.0,
+                "open_pnl_value": open_pnl,
+                "premium_income_value": premium_income_value,
                 "sort_pnl": total_pnl,
             }
         )
     return rows
+
+
+def premium_income_for_row(
+    *,
+    entry_cash: float,
+    realized_pnl: float | None,
+    status: str,
+) -> tuple[float, str]:
+    """User-facing premium-income accounting.
+
+    Credit entries are counted when opened. Open marks are ignored. A closed or
+    partially closed credit trade contributes a loss only when realized P/L is
+    negative. Debit entries contribute nothing until closed/partial, then use
+    realized P/L.
+    """
+
+    has_realized = realized_pnl is not None
+    is_closed_or_partial = status.startswith("CLOSED") or status == "PARTIAL OPEN"
+    if entry_cash > 0:
+        closed_loss = min(float(realized_pnl or 0.0), 0.0) if is_closed_or_partial else 0.0
+        value = entry_cash + closed_loss
+        if closed_loss < 0:
+            return value, f"credit counted {money(entry_cash)}; realized closed loss {money(closed_loss)}"
+        return value, f"credit counted {money(entry_cash)}; open/closed without counted loss"
+    if is_closed_or_partial and has_realized:
+        return float(realized_pnl or 0.0), "debit trade counted only after close/partial realization"
+    return 0.0, "debit trade ignored until closed"
 
 
 def applescript_string(value: Any) -> str:
@@ -390,6 +456,71 @@ def pnl_total(rows: list[dict[str, Any]]) -> float:
     return sum(float(row["sort_pnl"]) for row in rows if row.get("sort_pnl") is not None)
 
 
+def numeric_total(rows: list[dict[str, Any]], key: str) -> float:
+    return sum(float(row.get(key) or 0.0) for row in rows)
+
+
+def premium_income_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    by_month: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        month = str(row.get("opened", ""))[:7]
+        if not month:
+            continue
+        bucket = by_month.setdefault(
+            month,
+            {
+                "rows": 0,
+                "status_mix": defaultdict(int),
+                "credit_income_counted": 0.0,
+                "closed_debit_profit_counted": 0.0,
+                "closed_losses_counted": 0.0,
+                "premium_income_total": 0.0,
+                "open_mark_ignored": 0.0,
+            },
+        )
+        bucket["rows"] += 1
+        bucket["status_mix"][row.get("status", "")] += 1
+        entry_cash = float(row.get("entry_cash_value") or 0.0)
+        realized = float(row.get("realized_pnl_value") or 0.0)
+        premium_value = float(row.get("premium_income_value") or 0.0)
+        status = str(row.get("status", ""))
+        if entry_cash > 0:
+            bucket["credit_income_counted"] += entry_cash
+            if (status.startswith("CLOSED") or status == "PARTIAL OPEN") and realized < 0:
+                bucket["closed_losses_counted"] += realized
+        elif status.startswith("CLOSED") or status == "PARTIAL OPEN":
+            if realized >= 0:
+                bucket["closed_debit_profit_counted"] += realized
+            else:
+                bucket["closed_losses_counted"] += realized
+        if status == "OPEN":
+            bucket["open_mark_ignored"] += float(row.get("open_pnl_value") or 0.0)
+        bucket["premium_income_total"] += premium_value
+
+    normalized: dict[str, Any] = {}
+    for month, bucket in sorted(by_month.items()):
+        normalized[month] = {
+            "rows": bucket["rows"],
+            "status_mix": dict(sorted(bucket["status_mix"].items())),
+            "credit_income_counted": round(bucket["credit_income_counted"], 2),
+            "closed_debit_profit_counted": round(bucket["closed_debit_profit_counted"], 2),
+            "closed_losses_counted": round(bucket["closed_losses_counted"], 2),
+            "premium_income_total": round(bucket["premium_income_total"], 2),
+            "open_mark_ignored": round(bucket["open_mark_ignored"], 2),
+        }
+    totals = {
+        "rows": sum(v["rows"] for v in normalized.values()),
+        "credit_income_counted": round(sum(v["credit_income_counted"] for v in normalized.values()), 2),
+        "closed_debit_profit_counted": round(
+            sum(v["closed_debit_profit_counted"] for v in normalized.values()), 2
+        ),
+        "closed_losses_counted": round(sum(v["closed_losses_counted"] for v in normalized.values()), 2),
+        "premium_income_total": round(sum(v["premium_income_total"] for v in normalized.values()), 2),
+        "open_mark_ignored": round(sum(v["open_mark_ignored"] for v in normalized.values()), 2),
+    }
+    return {"months": normalized, "totals": totals}
+
+
 def write_numbers_sheet(workbook: Path, sheet_name: str, rows: list[dict[str, Any]]) -> None:
     headers = [
         "Opened",
@@ -401,9 +532,12 @@ def write_numbers_sheet(workbook: Path, sheet_name: str, rows: list[dict[str, An
         "Open Legs",
         "Closed Legs",
         "Entry Cashflow",
+        "Exit Cashflow",
         "Realized P/L",
         "Open P/L",
         "Total P/L",
+        "Premium Income",
+        "Premium Rule",
         "Closed / As Of",
         "Order IDs",
         "Manual Log Match",
@@ -423,9 +557,12 @@ def write_numbers_sheet(workbook: Path, sheet_name: str, rows: list[dict[str, An
         "Open Legs": "open_legs",
         "Closed Legs": "closed_legs",
         "Entry Cashflow": "entry_cash",
+        "Exit Cashflow": "exit_cash",
         "Realized P/L": "realized_pnl",
         "Open P/L": "open_pnl",
         "Total P/L": "total_pnl",
+        "Premium Income": "premium_income",
+        "Premium Rule": "premium_income_rule",
         "Closed / As Of": "closed_or_asof",
         "Order IDs": "order_ids",
         "Manual Log Match": "manual_match",
@@ -524,6 +661,7 @@ def main() -> None:
     parser.add_argument("--start-date", default=DEFAULT_START_DATE.isoformat())
     parser.add_argument("--end-date", default=datetime.now().date().isoformat())
     parser.add_argument("--out-json", type=Path)
+    parser.add_argument("--premium-out-json", type=Path)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -538,6 +676,9 @@ def main() -> None:
 
     if args.out_json:
         args.out_json.write_text(json.dumps(rows, indent=2))
+    summary = premium_income_summary(rows)
+    if args.premium_out_json:
+        args.premium_out_json.write_text(json.dumps(summary, indent=2))
 
     print(
         f"Built {len(rows)} option trade rows from Schwab API/state "
@@ -547,11 +688,22 @@ def main() -> None:
     current_month_rows = [row for row in rows if str(row.get("opened", "")).startswith(current_month)]
 
     print("Full-range status mix:", status_mix(rows))
+    print("Full-range Entry cashflow:", money(numeric_total(rows, "entry_cash_value")))
+    print("Full-range Exit cashflow:", money(numeric_total(rows, "exit_cash_value")))
+    print("Full-range Realized P/L:", money(numeric_total(rows, "realized_pnl_value")))
+    print("Full-range Open mark P/L:", money(numeric_total(rows, "open_pnl_value")))
     print("Full-range Total P/L:", money(pnl_total(rows)))
+    print("Full-range Premium-income total:", money(summary["totals"]["premium_income_total"]))
     print("Current month:", current_month)
     print("Current-month rows:", len(current_month_rows))
     print("Current-month status mix:", status_mix(current_month_rows) if current_month_rows else "none")
+    print("Current-month Entry cashflow:", money(numeric_total(current_month_rows, "entry_cash_value")))
+    print("Current-month Exit cashflow:", money(numeric_total(current_month_rows, "exit_cash_value")))
+    print("Current-month Realized P/L:", money(numeric_total(current_month_rows, "realized_pnl_value")))
+    print("Current-month Open mark P/L:", money(numeric_total(current_month_rows, "open_pnl_value")))
     print("Current-month Total P/L:", money(pnl_total(current_month_rows)))
+    current_summary = summary["months"].get(current_month, {})
+    print("Current-month Premium-income total:", money(current_summary.get("premium_income_total", 0.0)))
     if not args.dry_run:
         write_numbers_sheet(args.workbook, args.sheet_name, rows)
         print(f"Updated Numbers sheet: {args.sheet_name}")
