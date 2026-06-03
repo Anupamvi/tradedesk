@@ -2174,6 +2174,110 @@ def test_ticker_trend_overlay_demotes_when_trend_does_not_beat_baselines():
     assert amd_edge["beats_baselines_count"] == 0
 
 
+def test_ticker_trend_overlay_demotes_auto_when_sample_is_below_auto_minimum():
+    family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__CONSUMER_CYCLICAL"
+    daily_rows = [
+        {
+            "ticker": "TSLA",
+            "direction": "bullish",
+            "pattern_family": family,
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
+            "classification": "WATCH",
+            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+            "confidence_tier": "PROMISING",
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "option_type": "call",
+            "strike": 500,
+            "expiry": "2026-06-18",
+            "lead_option_symbol": "TSLA260618C00500000",
+            "entry_bid": 4.9,
+            "entry_ask": 5.0,
+            "entry_range": "4.90-5.00",
+            "bid_ask_spread_pct": 0.02,
+            "max_risk_per_contract": 500.65,
+            "liquidity_volume": 2000,
+            "liquidity_open_interest": 3000,
+            "quote_source": "bot_eod",
+            "current_market_alignment": "RISK_ON",
+            "market_regime": "RISK_ON",
+            "flow_total_premium": 1_500_000_000.0,
+            "hot_total_premium": 1_500_000_000.0,
+        }
+    ]
+    outcomes = []
+    for idx in range(18):
+        win = idx < 14
+        outcomes.append(
+            {
+                "split": "cumulative_to_2026-05_holdout",
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "signal_date": f"2026-05-{idx % 20 + 1:02d}",
+                "ticker": "TSLA",
+                "direction": "bullish",
+                "pattern_family": family,
+                "market_regime": "RISK_ON",
+                "strategy_kind": "long_option",
+                "status": "SCORED",
+                "net_r": 2.0 if win else -0.25,
+                "win": int(win),
+            }
+        )
+    validation_bundle = empty_validation_bundle()
+    validation_bundle["family_tiers"] = {
+        family: {
+            "confidence_tier": "PROMISING",
+            "validation_scored_count": 18,
+            "validation_win_count": 14,
+            "validation_success_probability": 14 / 18,
+            "validation_probability_score": 0.50,
+            "validation_average_net_r": 1.5,
+            "validation_profit_factor": 10.0,
+            "beats_baselines_count": 6,
+            "baselines_beaten_names": "BASELINE_FAMILY_ONLY_SHOULD_NOT_OVERRIDE_SAMPLE",
+            "baselines_beaten_details": "BASELINE_FAMILY_ONLY_SHOULD_NOT_OVERRIDE_SAMPLE:baseline_avg_R=-9,edge_R=9,scored=99",
+        }
+    }
+    validation_bundle["outcomes"] = outcomes
+    validation_bundle["baseline_comparison"] = [
+        {"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY", "average_net_r": -0.05, "scored_count": 20},
+        {"baseline": "BASELINE_NAIVE_UW_FLOW_ONLY", "average_net_r": 0.01, "scored_count": 20},
+    ]
+
+    rows, controls = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        {"source_complete": True},
+        {},
+    )
+
+    assert rows[0]["ticker_trend_scope"] == "ticker_direction_strategy"
+    assert rows[0]["validation_scored_count"] == 18
+    assert "LIMITED_OUT_OF_SAMPLE_SAMPLE" in rows[0]["block_reasons"]
+    assert rows[0]["status"] == "TRADE_REVIEW"
+    goal_rows = build_goal_evidence_rows(
+        "2026-05-28",
+        SnapshotStub({"TSLA": {"ticker": "TSLA", "flow_total_premium": 1_500_000_000.0}}),
+        rows,
+        [
+            {
+                "ticker": "TSLA",
+                "decision_surface_status": rows[0]["status"],
+                "source_gap_reason": "surfaced in decision board",
+                "decision_artifact": "trade_review_candidates.csv",
+            }
+        ],
+        [],
+        validation_bundle,
+        {"risk_config": controls["risk_config"]},
+        {"source_complete": True, "missing_sources": []},
+    )
+    auto_row = next(row for row in goal_rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
+    assert auto_row["status"] == "PASS"
+    assert "no auto-approved rows were emitted" in auto_row["evidence"]
+
+
 def test_macro_geo_point_in_time_filters_future_captures(tmp_path):
     browser_dir = tmp_path / "2026-05-12" / "browser_text"
     browser_dir.mkdir(parents=True)

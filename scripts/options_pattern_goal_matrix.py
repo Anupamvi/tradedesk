@@ -118,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     matrix_dir = Path(args.matrix_dir).expanduser().resolve() if args.matrix_dir else root / args.suffix
     matrix_dir.mkdir(parents=True, exist_ok=True)
+    bot_eod_cache_dir = root / "_cache" / "bot_eod"
 
     runs: list[DateRun] = []
     for date in dates:
@@ -126,7 +127,7 @@ def main(argv: list[str] | None = None) -> int:
         should_run = args.force or (args.run_missing and not exact_suffix_output)
         returncode: int | None = None
         if should_run:
-            returncode = run_pipeline(args.python, base_dir, date, out_dir)
+            returncode = run_pipeline(args.python, base_dir, date, out_dir, bot_eod_cache_dir)
             exact_suffix_output = returncode == 0 and has_goal_artifacts(out_dir)
             if returncode != 0:
                 runs.append(DateRun(date, out_dir, exact_suffix_output, True, returncode))
@@ -208,7 +209,7 @@ def format_date_scope(scope_kind: str, from_date: str | None, to_date: str | Non
     return f"{scope_kind};{bound_text};date_count={date_count}"
 
 
-def run_pipeline(python: str, base_dir: Path, date: str, out_dir: Path) -> int:
+def run_pipeline(python: str, base_dir: Path, date: str, out_dir: Path, bot_eod_cache_dir: Path) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
         python,
@@ -220,6 +221,8 @@ def run_pipeline(python: str, base_dir: Path, date: str, out_dir: Path) -> int:
         date,
         "--out-dir",
         str(out_dir),
+        "--bot-eod-cache-dir",
+        str(bot_eod_cache_dir),
     ]
     print("RUN", " ".join(cmd), flush=True)
     return subprocess.run(cmd, cwd=base_dir).returncode

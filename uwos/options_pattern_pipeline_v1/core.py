@@ -4763,6 +4763,9 @@ def enrich_decision_row(
     for switch in run_kill_switches:
         blockers.add(switch)
     if ticker_trend:
+        ticker_trend_sample_meets_auto_min = validation_scored >= int(
+            risk_config.get("min_ticker_trend_scored_outcomes", 20)
+        )
         for trend_overridden_blocker in (
             "PATTERN_VALIDATION_NOT_PROVEN",
             "LIMITED_OUT_OF_SAMPLE_SAMPLE",
@@ -4771,6 +4774,8 @@ def enrich_decision_row(
             "FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP",
             "FAMILY_VALIDATION_LOSING_STREAK_TOO_LONG",
         ):
+            if trend_overridden_blocker == "LIMITED_OUT_OF_SAMPLE_SAMPLE" and not ticker_trend_sample_meets_auto_min:
+                continue
             blockers.discard(trend_overridden_blocker)
 
     has_ticket = "No complete" not in str(setup.get("trade_setup") or "")
