@@ -672,8 +672,7 @@ def require_date(value: str) -> str:
 def source_complete_dates(base_dir: Path) -> List[str]:
     out: List[str] = []
     for d in list_date_dirs(base_dir):
-        sources = sources_for_date(base_dir / d, d)
-        if sources.get("stock_screener") and sources.get("hot_chains") and sources.get("chain_oi"):
+        if source_completeness_for_date(base_dir, d).get("source_complete"):
             out.append(d)
     return sorted(out)
 

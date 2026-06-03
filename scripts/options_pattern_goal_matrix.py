@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-"""Run and summarize options-pattern goal evidence across failure dates."""
+"""Run and summarize options-pattern goal evidence across selected dates."""
 
 from __future__ import annotations
 
 import argparse
 import csv
 import json
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from uwos.options_pattern_pipeline_v1.core import list_date_dirs, source_completeness_for_date
 
 
 DEFAULT_BASE_DIR = Path("/Users/anuppamvi/uw_root/tradedesk")
@@ -39,7 +46,23 @@ class DateRun:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-dir", default=str(DEFAULT_BASE_DIR), help="Root tradedesk directory.")
-    parser.add_argument("--dates", nargs="+", default=list(DEFAULT_DATES), help="As-of dates to include.")
+    parser.add_argument(
+        "--dates",
+        nargs="+",
+        default=list(DEFAULT_DATES),
+        type=require_date_arg,
+        help="As-of dates to include unless --all-source-complete is set.",
+    )
+    parser.add_argument(
+        "--all-source-complete",
+        action="store_true",
+        help=(
+            "Use every local YYYY-MM-DD folder with stock screener, hot chains, chain OI, "
+            "and an options-flow source."
+        ),
+    )
+    parser.add_argument("--from-date", type=require_date_arg, default=None, help="Inclusive lower date bound.")
+    parser.add_argument("--to-date", type=require_date_arg, default=None, help="Inclusive upper date bound.")
     parser.add_argument(
         "--required-tickers",
         nargs="+",
@@ -68,12 +91,26 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=sys.executable or "python3",
         help="Python executable for pipeline subprocesses.",
     )
+    parser.add_argument(
+        "--list-dates-only",
+        action="store_true",
+        help="Print the resolved date set and exit without running or writing matrix artifacts.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     base_dir = Path(args.base_dir).expanduser().resolve()
+    dates, date_scope = resolve_dates(args, base_dir)
+    if not dates:
+        print("No dates matched the requested matrix scope.", file=sys.stderr)
+        return 2
+    if args.list_dates_only:
+        for date in dates:
+            print(date)
+        return 0
+
     root = (
         Path(args.runs_root).expanduser().resolve()
         if args.runs_root
@@ -83,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     matrix_dir.mkdir(parents=True, exist_ok=True)
 
     runs: list[DateRun] = []
-    for date in args.dates:
+    for date in dates:
         out_dir = root / f"{date}_{args.suffix}"
         exact_suffix_output = has_goal_artifacts(out_dir)
         should_run = args.force or (args.run_missing and not exact_suffix_output)
@@ -101,15 +138,74 @@ def main(argv: list[str] | None = None) -> int:
                 exact_suffix_output = False
         runs.append(DateRun(date, out_dir, exact_suffix_output, should_run, returncode))
 
-    rows = [build_matrix_row(run, args.required_tickers) for run in runs]
+    rows = [build_matrix_row(run, args.required_tickers, date_scope) for run in runs]
     write_csv(matrix_dir / "goal_acceptance_matrix.csv", rows, matrix_fieldnames(args.required_tickers))
     (matrix_dir / "goal_acceptance_matrix.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    (matrix_dir / "date_selection.json").write_text(
+        json.dumps({"date_scope": date_scope, "dates": dates, "date_count": len(dates)}, indent=2),
+        encoding="utf-8",
+    )
     (matrix_dir / "goal_acceptance_matrix.md").write_text(
-        render_matrix_markdown(rows, args.required_tickers),
+        render_matrix_markdown(rows, args.required_tickers, date_scope),
         encoding="utf-8",
     )
     print(matrix_dir / "goal_acceptance_matrix.md")
     return 1 if any(str(row.get("pipeline_returncode") or "") not in ("", "0") for row in rows) else 0
+
+
+def require_date_arg(value: str) -> str:
+    text = str(value)
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        raise argparse.ArgumentTypeError(f"Expected YYYY-MM-DD, got {value!r}")
+    return text
+
+
+def resolve_dates(args: argparse.Namespace, base_dir: Path) -> tuple[list[str], str]:
+    if args.all_source_complete:
+        dates = strict_source_complete_dates(base_dir)
+        scope_kind = "all_source_complete"
+    else:
+        dates = list(args.dates)
+        scope_kind = "requested_dates"
+    dates = filter_dates(dedupe_dates(dates), args.from_date, args.to_date)
+    return dates, format_date_scope(scope_kind, args.from_date, args.to_date, len(dates))
+
+
+def strict_source_complete_dates(base_dir: Path) -> list[str]:
+    return [
+        date
+        for date in list_date_dirs(base_dir)
+        if source_completeness_for_date(base_dir, date).get("source_complete")
+    ]
+
+
+def dedupe_dates(dates: Iterable[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for date in dates:
+        if date in seen:
+            continue
+        seen.add(date)
+        out.append(date)
+    return out
+
+
+def filter_dates(dates: Iterable[str], from_date: str | None, to_date: str | None) -> list[str]:
+    return [
+        date
+        for date in dates
+        if (from_date is None or date >= from_date) and (to_date is None or date <= to_date)
+    ]
+
+
+def format_date_scope(scope_kind: str, from_date: str | None, to_date: str | None, date_count: int) -> str:
+    bounds = []
+    if from_date:
+        bounds.append(f"from={from_date}")
+    if to_date:
+        bounds.append(f"to={to_date}")
+    bound_text = ",".join(bounds) if bounds else "unbounded"
+    return f"{scope_kind};{bound_text};date_count={date_count}"
 
 
 def run_pipeline(python: str, base_dir: Path, date: str, out_dir: Path) -> int:
@@ -140,10 +236,11 @@ def newest_existing_goal_run(root: Path, date: str) -> Path | None:
     return max(candidates, key=lambda p: (p / "goal_evidence.csv").stat().st_mtime)
 
 
-def build_matrix_row(run: DateRun, required_tickers: Iterable[str]) -> dict[str, Any]:
+def build_matrix_row(run: DateRun, required_tickers: Iterable[str], date_scope: str) -> dict[str, Any]:
     out_dir = run.out_dir
     row: dict[str, Any] = {
         "date": run.date,
+        "date_scope": date_scope,
         "run_dir": str(out_dir),
         "exact_suffix_output": "yes" if run.exact_suffix_output else "no",
         "command_ran": "yes" if run.command_ran else "no",
@@ -171,7 +268,7 @@ def build_matrix_row(run: DateRun, required_tickers: Iterable[str]) -> dict[str,
 
     row.update(
         {
-            "matrix_status": matrix_status(failed, warned),
+            "matrix_status": matrix_status(failed, warned, date_scope),
             "goal_evidence_status": metadata.get("goal_evidence_status", ""),
             "verdict": metadata.get("verdict", ""),
             "daily_trade_decision": metadata.get("daily_trade_decision", ""),
@@ -208,11 +305,13 @@ def build_matrix_row(run: DateRun, required_tickers: Iterable[str]) -> dict[str,
     return row
 
 
-def matrix_status(failed: list[str], warned: list[str]) -> str:
+def matrix_status(failed: list[str], warned: list[str], date_scope: str) -> str:
     if failed:
         return "FAIL"
     if warned:
         return "PARTIAL"
+    if date_scope.startswith("all_source_complete;"):
+        return "PASS_SOURCE_COMPLETE_SCOPE"
     return "PASS_DAILY_NOT_GLOBAL"
 
 
@@ -355,6 +454,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]], fieldnames: list[str]) -> 
 def matrix_fieldnames(required_tickers: Iterable[str]) -> list[str]:
     return [
         "date",
+        "date_scope",
         "matrix_status",
         "goal_evidence_status",
         "verdict",
@@ -386,9 +486,11 @@ def matrix_fieldnames(required_tickers: Iterable[str]) -> list[str]:
     ]
 
 
-def render_matrix_markdown(rows: list[dict[str, Any]], required_tickers: Iterable[str]) -> str:
+def render_matrix_markdown(rows: list[dict[str, Any]], required_tickers: Iterable[str], date_scope: str) -> str:
     lines = [
         "# Options Pattern Goal Acceptance Matrix",
+        "",
+        f"Date scope: `{date_scope}`.",
         "",
         "This matrix aggregates per-date `goal_evidence.csv` artifacts. `PARTIAL` means no hard failure, but at least one warning remains, usually missed-mover coverage or a fallback run that was not produced with the requested suffix.",
         "",

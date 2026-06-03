@@ -40,6 +40,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     prepare_decision_rows,
     parse_option_symbol,
     score_signal_horizon,
+    source_complete_dates,
     source_completeness_for_date,
     sources_for_date,
     trade_output_row,
@@ -2385,6 +2386,25 @@ def test_source_incomplete_handling_lists_missing_files(tmp_path):
     assert any("date folder" in item for item in completeness["missing_sources"])
     assert any("stock-screener-2026-05-14" in item for item in completeness["missing_sources"])
     assert any("bot-eod-report-2026-05-14" in item for item in completeness["missing_sources"])
+
+
+def test_source_complete_dates_requires_options_flow_source(tmp_path):
+    complete = tmp_path / "2026-05-14"
+    complete.mkdir()
+    for prefix in ["stock-screener-", "hot-chains-", "chain-oi-changes-", "bot-eod-report-"]:
+        (complete / f"{prefix}2026-05-14.csv").write_text("ticker\nAAA\n", encoding="utf-8")
+
+    missing_flow = tmp_path / "2026-05-15"
+    missing_flow.mkdir()
+    for prefix in ["stock-screener-", "hot-chains-", "chain-oi-changes-"]:
+        (missing_flow / f"{prefix}2026-05-15.csv").write_text("ticker\nBBB\n", encoding="utf-8")
+
+    overlay_like = tmp_path / "2026-05-14-v3-overlay-2026-05-15-live"
+    overlay_like.mkdir()
+    for prefix in ["stock-screener-", "hot-chains-", "chain-oi-changes-", "bot-eod-report-"]:
+        (overlay_like / f"{prefix}2026-05-14.csv").write_text("ticker\nCCC\n", encoding="utf-8")
+
+    assert source_complete_dates(tmp_path) == ["2026-05-14"]
 
 
 def test_observability_matrix_has_every_required_scenario():
