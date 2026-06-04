@@ -43,6 +43,8 @@ from uwos.options_pattern_pipeline_v1.core import (
     run_historical_validation,
     score_signal_horizon,
     select_signal_set,
+    source_coverage_quote,
+    source_coverage_setup_fields,
     source_complete_dates,
     source_completeness_for_date,
     sources_for_date,
@@ -2849,6 +2851,41 @@ def test_trade_review_board_keeps_reviewable_setups_visible():
     assert output[0]["trade_setup"] == "BUY PUT TSLA 410 exp 2026-06-18"
     assert output[1]["review_status"] == "MACRO_CONFLICT_REVIEW"
     assert "regime alignment" in output[1]["promotion_needed"]
+
+
+def test_source_coverage_quote_does_not_cross_direction_unless_allowed():
+    bearish_quote = {
+        "ticker": "KLAC",
+        "direction": "bearish",
+        "strategy_kind": "long_option",
+        "option_symbol": "KLAC260320P01200000",
+        "option_type": "put",
+        "strike": 1200,
+        "expiry": "2026-03-20",
+        "bid": 16.9,
+        "ask": 20.3,
+        "selection_score": 10.0,
+    }
+    snapshot = SnapshotStub(
+        [{"ticker": "KLAC"}],
+        best_options={("KLAC", "bearish"): bearish_quote},
+        option_quotes={},
+    )
+
+    assert source_coverage_quote(snapshot, {"ticker": "KLAC"}, "bullish", {}) == {}
+
+    fallback = source_coverage_quote(
+        snapshot,
+        {"ticker": "KLAC"},
+        "bullish",
+        {},
+        allow_opposite_direction_fallback=True,
+    )
+    setup = source_coverage_setup_fields("KLAC", "bullish", fallback)
+
+    assert setup["strategy"] == "Long Put Debit"
+    assert setup["call_or_put"] == "PUT"
+    assert "1200P" in setup["trade_legs"]
 
 
 def test_ticket_outputs_dedupe_same_contract_family_duplicates():

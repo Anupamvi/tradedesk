@@ -276,3 +276,49 @@ def test_portfolio_acceptance_summary_fails_bad_auto_trade(tmp_path):
     assert "expected_R" in trade_rows[0]["portfolio_gate_failures"]
     assert summary["portfolio_status"] == "FAIL"
     assert summary["gate_fail_trade_count"] == 1
+
+
+def test_scenario_no_edge_rows_aggregate_bearish_put_and_spread_lanes(tmp_path):
+    run_dir = tmp_path / "2026-05-20_run"
+    run_dir.mkdir()
+    (run_dir / "trade_review_candidates.csv").write_text(
+        "\n".join(
+            [
+                "ticker,direction,strategy,call_or_put,expected_R,expected_R_per_day,probability_score,"
+                "success_probability_pct,validation_profit_factor,validation_scored_count,beats_baselines_count,"
+                "block_reasons,trade_legs",
+                "IWM,bearish,Long Put Debit,PUT,-0.20,-0.04,35,45,0.5,12,1,"
+                "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS;DOES_NOT_BEAT_TWO_BASELINES,"
+                "Buy 1 IWM 2026-06-18 260P @ debit 3.00-3.10 limit",
+                "SPY,bearish,Long Put Debit,PUT,0.10,0.02,42,55,1.2,18,2,"
+                "LIMITED_OUT_OF_SAMPLE_SAMPLE,"
+                "Buy 1 SPY 2026-06-18 700P @ debit 4.00-4.10 limit",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "blocked_candidates.csv").write_text(
+        "\n".join(
+            [
+                "ticker,direction,strategy,call_or_put,expected_R,expected_R_per_day,probability_score,"
+                "success_probability_pct,validation_profit_factor,validation_scored_count,beats_baselines_count,"
+                "block_reasons,trade_legs",
+                "MSTR,bearish,Bear Call Credit Spread,CALL / CALL,-0.30,-0.06,22,37,0.3,8,2,"
+                "PROFIT_FACTOR_BELOW_AUTO_APPROVAL;EXPECTED_R_NOT_POSITIVE_AFTER_COSTS,"
+                "Sell 1 MSTR 2026-06-18 500C / Buy 1 MSTR 2026-06-18 520C @ net credit 4.00 limit",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    rows = matrix.build_scenario_no_edge_rows([{"date": "2026-05-20", "run_dir": str(run_dir)}])
+    review_put = next(row for row in rows if row["surface_status"] == "REVIEW" and row["call_or_put"] == "PUT")
+    avoid_spread = next(row for row in rows if row["surface_status"] == "AVOID")
+
+    assert review_put["candidate_count"] == 2
+    assert review_put["distinct_ticker_count"] == 2
+    assert review_put["positive_expected_R_count"] == 1
+    assert "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS:1" in review_put["top_blockers"]
+    assert "SPY" in review_put["top_examples"]
+    assert avoid_spread["strategy"] == "Bear Call Credit Spread"
+    assert "PROFIT_FACTOR_BELOW_AUTO_APPROVAL:1" in avoid_spread["top_blockers"]

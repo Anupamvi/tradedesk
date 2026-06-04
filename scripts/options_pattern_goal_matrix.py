@@ -150,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     rows = [build_matrix_row(run, args.required_tickers, date_scope) for run in runs]
     portfolio_trade_rows = build_portfolio_trade_rows(rows)
     portfolio_summary_rows = [build_portfolio_acceptance_summary(rows, portfolio_trade_rows)]
+    scenario_rows = build_scenario_no_edge_rows(rows)
     write_csv(matrix_dir / "goal_acceptance_matrix.csv", rows, matrix_fieldnames(args.required_tickers))
     write_csv(matrix_dir / "portfolio_trade_rows.csv", portfolio_trade_rows, portfolio_trade_fieldnames())
     write_csv(
@@ -157,6 +158,7 @@ def main(argv: list[str] | None = None) -> int:
         portfolio_summary_rows,
         portfolio_acceptance_summary_fieldnames(),
     )
+    write_csv(matrix_dir / "scenario_no_edge_summary.csv", scenario_rows, scenario_no_edge_fieldnames())
     (matrix_dir / "goal_acceptance_matrix.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
     (matrix_dir / "date_selection.json").write_text(
         json.dumps({"date_scope": date_scope, "dates": dates, "date_count": len(dates)}, indent=2),
@@ -168,6 +170,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     (matrix_dir / "portfolio_acceptance_summary.md").write_text(
         render_portfolio_acceptance_markdown(portfolio_summary_rows[0], portfolio_trade_rows),
+        encoding="utf-8",
+    )
+    (matrix_dir / "scenario_no_edge_summary.md").write_text(
+        render_scenario_no_edge_markdown(scenario_rows),
         encoding="utf-8",
     )
     print(matrix_dir / "goal_acceptance_matrix.md")
@@ -645,6 +651,100 @@ def build_portfolio_acceptance_summary(
     }
 
 
+def build_scenario_no_edge_rows(matrix_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str, str, str], list[dict[str, Any]]] = {}
+    for matrix_row in matrix_rows:
+        date = str(matrix_row.get("date") or "")
+        run_dir = Path(str(matrix_row.get("run_dir") or ""))
+        for artifact, surface_status in (
+            ("trade_review_candidates.csv", "REVIEW"),
+            ("blocked_candidates.csv", "AVOID"),
+        ):
+            for row in read_csv(run_dir / artifact):
+                direction = normalized_direction(row) or "unknown"
+                strategy = clean_cell(row.get("strategy")) or "UNKNOWN"
+                call_or_put = clean_cell(row.get("call_or_put")) or "UNKNOWN"
+                key = (surface_status, direction, strategy, call_or_put)
+                grouped.setdefault(key, []).append({**row, "date": date, "surface_status": surface_status})
+    out: list[dict[str, Any]] = []
+    for (surface_status, direction, strategy, call_or_put), rows in grouped.items():
+        expected_rs = numeric_values(row.get("expected_R") for row in rows)
+        expected_r_days = numeric_values(row.get("expected_R_per_day") for row in rows)
+        probability_scores = numeric_values(row.get("probability_score") for row in rows)
+        success_probs = numeric_values(row.get("success_probability_pct") for row in rows)
+        profit_factors = numeric_values(row.get("validation_profit_factor") for row in rows)
+        scored_counts = numeric_values(row.get("validation_scored_count") for row in rows)
+        baseline_counts = numeric_values(row.get("beats_baselines_count") for row in rows)
+        blocker_counts = Counter()
+        for row in rows:
+            blocker_counts.update(blocker_tokens(row))
+        top = sorted(
+            rows,
+            key=lambda row: (
+                to_float(row.get("expected_R")) if to_float(row.get("expected_R")) is not None else -999.0,
+                to_float(row.get("probability_score")) if to_float(row.get("probability_score")) is not None else -999.0,
+            ),
+            reverse=True,
+        )[:5]
+        out.append(
+            {
+                "surface_status": surface_status,
+                "direction": direction,
+                "strategy": strategy,
+                "call_or_put": call_or_put,
+                "candidate_count": len(rows),
+                "distinct_ticker_count": len({str(row.get("ticker") or "").upper() for row in rows if row.get("ticker")}),
+                "date_count": len({row.get("date") for row in rows}),
+                "avg_expected_R": mean_or_blank(expected_rs),
+                "max_expected_R": max(expected_rs) if expected_rs else "",
+                "positive_expected_R_count": sum(1 for value in expected_rs if value > 0),
+                "avg_expected_R_per_day": mean_or_blank(expected_r_days),
+                "avg_probability_score": mean_or_blank(probability_scores),
+                "avg_success_probability_pct": mean_or_blank(success_probs),
+                "avg_validation_profit_factor": mean_or_blank(profit_factors),
+                "avg_validation_scored_count": mean_or_blank(scored_counts),
+                "avg_baselines_beaten": mean_or_blank(baseline_counts),
+                "top_blockers": format_counter(blocker_counts, 10),
+                "top_examples": "; ".join(format_scenario_example(row) for row in top),
+            }
+        )
+    out.sort(
+        key=lambda row: (
+            row["surface_status"] != "REVIEW",
+            row["direction"] != "bearish",
+            int(row["candidate_count"]),
+        )
+    )
+    return out
+
+
+def blocker_tokens(row: Mapping[str, Any]) -> list[str]:
+    text = ";".join(
+        clean_cell(row.get(field), limit=2000)
+        for field in ("hard_blockers", "block_reasons", "decision_block_reasons", "edge_review_reason", "major_risks")
+        if clean_cell(row.get(field))
+    )
+    tokens = []
+    for raw in re.split(r"[;|,]", text):
+        token = raw.strip()
+        if token:
+            tokens.append(token)
+    return tokens
+
+
+def format_counter(counter: Counter, limit: int) -> str:
+    return ";".join(f"{key}:{count}" for key, count in counter.most_common(limit))
+
+
+def format_scenario_example(row: Mapping[str, Any]) -> str:
+    return (
+        f"{row.get('date')} {row.get('ticker')} "
+        f"ER={clean_cell(row.get('expected_R')) or 'n/a'} "
+        f"score={clean_cell(row.get('probability_score')) or 'n/a'} "
+        f"legs={clean_cell(row.get('trade_legs'), limit=120) or 'n/a'}"
+    )
+
+
 def numeric_values(values: Iterable[Any]) -> list[float]:
     out: list[float] = []
     for value in values:
@@ -814,6 +914,29 @@ def portfolio_acceptance_summary_fieldnames() -> list[str]:
     ]
 
 
+def scenario_no_edge_fieldnames() -> list[str]:
+    return [
+        "surface_status",
+        "direction",
+        "strategy",
+        "call_or_put",
+        "candidate_count",
+        "distinct_ticker_count",
+        "date_count",
+        "avg_expected_R",
+        "max_expected_R",
+        "positive_expected_R_count",
+        "avg_expected_R_per_day",
+        "avg_probability_score",
+        "avg_success_probability_pct",
+        "avg_validation_profit_factor",
+        "avg_validation_scored_count",
+        "avg_baselines_beaten",
+        "top_blockers",
+        "top_examples",
+    ]
+
+
 def render_matrix_markdown(
     rows: list[dict[str, Any]],
     required_tickers: Iterable[str],
@@ -869,6 +992,7 @@ def render_matrix_markdown(
                 f"- Strategy mix: {portfolio_summary.get('strategy_mix') or 'none'}.",
                 f"- Warnings: {portfolio_summary.get('warnings') or 'none'}.",
                 "- Full portfolio proof: `portfolio_acceptance_summary.csv`, `portfolio_acceptance_summary.md`, and `portfolio_trade_rows.csv`.",
+                "- Scenario no-edge proof: `scenario_no_edge_summary.csv` and `scenario_no_edge_summary.md`.",
             ]
         )
     lines.extend(["", "## Detail"])
@@ -925,6 +1049,36 @@ def render_portfolio_acceptance_markdown(
         lines.append(f"- {len(trade_rows) - 60} additional trade rows omitted from Markdown; see `portfolio_trade_rows.csv`.")
     if not trade_rows:
         lines.append("| n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | NO_AUTO_TRADES | n/a |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_scenario_no_edge_markdown(rows: Sequence[Mapping[str, Any]]) -> str:
+    lines = [
+        "# Scenario No-Edge Summary",
+        "",
+        "This artifact aggregates non-auto TRADE_REVIEW and AVOID candidates across the matrix date set. It explains scenario lanes that surfaced but did not become AUTO_APPROVED trades.",
+        "",
+        "| Surface | Direction | Strategy | Type | Candidates | Tickers | Dates | Avg ER | Max ER | Positive ER | Avg Score | Avg PF | Avg Baselines | Top Blockers |",
+        "|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+    ]
+    for row in rows:
+        lines.append(
+            f"| {row.get('surface_status')} | {row.get('direction')} | {markdown_cell(row.get('strategy'))} | "
+            f"{markdown_cell(row.get('call_or_put'))} | {row.get('candidate_count')} | "
+            f"{row.get('distinct_ticker_count')} | {row.get('date_count')} | {row.get('avg_expected_R')} | "
+            f"{row.get('max_expected_R')} | {row.get('positive_expected_R_count')} | "
+            f"{row.get('avg_probability_score')} | {row.get('avg_validation_profit_factor')} | "
+            f"{row.get('avg_baselines_beaten')} | {markdown_cell(row.get('top_blockers'))} |"
+        )
+    if not rows:
+        lines.append("| n/a | n/a | n/a | n/a | 0 | 0 | 0 | n/a | n/a | 0 | n/a | n/a | n/a | n/a |")
+    lines.extend(["", "## Top Examples"])
+    for row in rows[:20]:
+        lines.append(
+            f"- {row.get('surface_status')} {row.get('direction')} {row.get('strategy')} "
+            f"{row.get('call_or_put')}: {row.get('top_examples') or 'n/a'}"
+        )
     lines.append("")
     return "\n".join(lines)
 

@@ -7327,7 +7327,14 @@ def build_source_ticker_coverage_row(
 ) -> Dict[str, Any]:
     total_premium = source_coverage_total_premium(feature)
     direction = catalyst_flow_leader_direction(feature) or source_coverage_direction(feature)
-    quote = source_coverage_quote(snapshot, feature, direction, pattern_config, risk_config=risk_config)
+    quote = source_coverage_quote(
+        snapshot,
+        feature,
+        direction,
+        pattern_config,
+        risk_config=risk_config,
+        allow_opposite_direction_fallback=True,
+    )
     surfaced_rows = rows_by_ticker.get(ticker, [])
     best_row = surfaced_rows[0] if surfaced_rows else {}
     setup = trade_setup_fields(best_row) if best_row else source_coverage_setup_fields(ticker, direction, quote)
@@ -7409,12 +7416,15 @@ def source_coverage_quote(
     pattern_config: Mapping[str, Any],
     quote_cache: Optional[Mapping[str, Mapping[Tuple[str, str], Mapping[str, Any]]]] = None,
     risk_config: Optional[Mapping[str, Any]] = None,
+    allow_opposite_direction_fallback: bool = False,
 ) -> Mapping[str, Any]:
     ticker = str(feature.get("ticker") or "")
     if direction in {"bullish", "bearish"}:
         quote = select_flow_leader_quote(snapshot, feature, direction, pattern_config, quote_cache, risk_config)
         if quote:
             return quote
+    if not allow_opposite_direction_fallback:
+        return {}
     quote_options = [
         q
         for key, q in snapshot.best_options.items()
@@ -7428,6 +7438,7 @@ def source_coverage_quote(
 def source_coverage_setup_fields(ticker: str, direction: str, quote: Mapping[str, Any]) -> Dict[str, str]:
     if not quote:
         return {"trade_legs": "", "entry_range": ""}
+    direction = str(quote.get("direction") or direction or "")
     strategy_kind = str(quote.get("strategy_kind") or "long_option")
     if strategy_kind == "credit_spread":
         row = {
