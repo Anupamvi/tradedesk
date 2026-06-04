@@ -32,6 +32,7 @@ DEFAULT_DATES = (
     "2026-05-28",
 )
 DEFAULT_REQUIRED_TICKERS = ("AMD", "MU", "NVDA", "SNDK", "IBM", "CRWD", "HOOD", "NOW")
+MIN_BEARISH_SOURCE_ROWS_FOR_SCENARIO_WARN = 5
 
 
 @dataclass(frozen=True)
@@ -268,6 +269,12 @@ def build_matrix_row(run: DateRun, required_tickers: Iterable[str], date_scope: 
     source = goal_by_req.get("high_source_flow_not_silent", {})
     miss_bucket_counts = missed_mover_bucket_counts(out_dir / "missed_mover_audit.csv")
     candidate_generation_gaps = miss_bucket_counts.get("CANDIDATE_GENERATION_GAP", "")
+    directional_metrics = directional_scenario_metrics(out_dir)
+    directional_status, directional_evidence, directional_failed, directional_warned = directional_scenario_gate(
+        directional_metrics
+    )
+    failed.extend(directional_failed)
+    warned.extend(directional_warned)
 
     row.update(
         {
@@ -284,6 +291,8 @@ def build_matrix_row(run: DateRun, required_tickers: Iterable[str], date_scope: 
             "known_ticker_status": known.get("status", ""),
             "known_ticker_evidence": known.get("evidence", ""),
             "high_source_status": source.get("status", ""),
+            "directional_scenario_status": directional_status,
+            "directional_scenario_evidence": directional_evidence,
             "missed_mover_status": missed.get("status", ""),
             "missed_mover_evidence": missed.get("evidence", ""),
             "candidate_generation_gaps": candidate_generation_gaps
@@ -338,6 +347,80 @@ def required_ticker_details(out_dir: Path, tickers: Iterable[str]) -> dict[str, 
                     "reason": format_reason(row),
                 }
     return result
+
+
+def directional_scenario_metrics(out_dir: Path) -> dict[str, int]:
+    metrics = {
+        "source_bearish": 0,
+        "candidate_bearish": 0,
+        "candidate_bearish_put_or_spread": 0,
+        "trend_bearish": 0,
+        "trend_bearish_put_or_spread": 0,
+        "trend_total": 0,
+        "auto_bearish": 0,
+        "auto_bearish_put_or_spread": 0,
+    }
+    for row in read_csv(out_dir / "source_ticker_coverage.csv"):
+        if normalized_direction(row) == "bearish":
+            metrics["source_bearish"] += 1
+    for artifact in ("actionable_trades.csv", "trade_review_candidates.csv", "blocked_candidates.csv"):
+        for row in read_csv(out_dir / artifact):
+            if normalized_direction(row) != "bearish":
+                continue
+            metrics["candidate_bearish"] += 1
+            if is_put_or_bearish_spread(row):
+                metrics["candidate_bearish_put_or_spread"] += 1
+            if artifact == "actionable_trades.csv":
+                metrics["auto_bearish"] += 1
+                if is_put_or_bearish_spread(row):
+                    metrics["auto_bearish_put_or_spread"] += 1
+    for row in read_csv(out_dir / "ticker_trend_edges.csv"):
+        metrics["trend_total"] += 1
+        if normalized_direction(row) != "bearish":
+            continue
+        metrics["trend_bearish"] += 1
+        if is_put_or_bearish_spread(row):
+            metrics["trend_bearish_put_or_spread"] += 1
+    return metrics
+
+
+def directional_scenario_gate(metrics: dict[str, int]) -> tuple[str, str, list[str], list[str]]:
+    failed: list[str] = []
+    warned: list[str] = []
+    source_bearish = metrics.get("source_bearish", 0)
+    candidate_bearish = metrics.get("candidate_bearish", 0)
+    trend_bearish = metrics.get("trend_bearish", 0)
+    trend_put_or_spread = metrics.get("trend_bearish_put_or_spread", 0)
+    trend_total = metrics.get("trend_total", 0)
+    if source_bearish and not candidate_bearish:
+        failed.append("directional_scenario_candidate_surface_missing")
+        status = "FAIL"
+    elif source_bearish >= MIN_BEARISH_SOURCE_ROWS_FOR_SCENARIO_WARN and trend_total and not trend_bearish:
+        warned.append("directional_scenario_trend_edge_missing")
+        status = "WARN"
+    elif source_bearish >= MIN_BEARISH_SOURCE_ROWS_FOR_SCENARIO_WARN and trend_bearish and not trend_put_or_spread:
+        warned.append("directional_scenario_put_spread_trend_edge_missing")
+        status = "WARN"
+    elif source_bearish:
+        status = "PASS"
+    else:
+        status = "NO_BEARISH_SOURCE"
+    evidence = ";".join(f"{key}={metrics.get(key, 0)}" for key in sorted(metrics))
+    return status, evidence, failed, warned
+
+
+def normalized_direction(row: dict[str, str]) -> str:
+    return str(row.get("direction") or "").strip().lower()
+
+
+def is_put_or_bearish_spread(row: dict[str, str]) -> bool:
+    option_type = str(row.get("call_or_put") or "").upper()
+    strategy = str(row.get("strategy") or row.get("strategy_kind") or "").upper()
+    if "PUT" in option_type:
+        return True
+    if "CREDIT_SPREAD" in strategy or "CREDIT SPREAD" in strategy:
+        return True
+    return normalized_direction(row) == "bearish" and option_type in {"CALL / CALL", "CALL/CALL"}
 
 
 def format_ticker_status(label: str, row: dict[str, str]) -> str:
@@ -476,6 +559,8 @@ def matrix_fieldnames(required_tickers: Iterable[str]) -> list[str]:
         "known_ticker_status",
         "known_ticker_evidence",
         "high_source_status",
+        "directional_scenario_status",
+        "directional_scenario_evidence",
         "missed_mover_status",
         "missed_mover_evidence",
         "actionable_tickers",
@@ -499,8 +584,8 @@ def render_matrix_markdown(rows: list[dict[str, Any]], required_tickers: Iterabl
         "",
         "This is an acceptance gate, not proof that the rebuild goal is complete. The goal still requires every target date to be current, leakage-safe, and positive expectancy after costs/slippage versus baselines.",
         "",
-        "| Date | Status | Exact | Decision | Auto | Review | Avoid | Gap Misses | Known Tickers | Warnings |",
-        "|---|---|---|---|---:|---:|---:|---:|---|---|",
+        "| Date | Status | Exact | Decision | Auto | Review | Avoid | Direction | Gap Misses | Known Tickers | Warnings |",
+        "|---|---|---|---|---:|---:|---:|---|---:|---|---|",
     ]
     for row in rows:
         ticker_bits = []
@@ -511,7 +596,8 @@ def render_matrix_markdown(rows: list[dict[str, Any]], required_tickers: Iterabl
         issue_bits = [bit for bit in (row.get("failed_requirements"), row.get("warn_requirements")) if bit]
         lines.append(
             "| {date} | {matrix_status} | {exact} | {daily_trade_decision} | {auto_approved_count} | "
-            "{trade_review_count} | {avoid_count} | {candidate_generation_gaps} | {tickers} | {warns} |".format(
+            "{trade_review_count} | {avoid_count} | {directional_status} | {candidate_generation_gaps} | "
+            "{tickers} | {warns} |".format(
                 date=row.get("date", ""),
                 matrix_status=row.get("matrix_status", ""),
                 exact=row.get("exact_suffix_output", ""),
@@ -519,6 +605,7 @@ def render_matrix_markdown(rows: list[dict[str, Any]], required_tickers: Iterabl
                 auto_approved_count=row.get("auto_approved_count", ""),
                 trade_review_count=row.get("trade_review_count", ""),
                 avoid_count=row.get("avoid_count", ""),
+                directional_status=row.get("directional_scenario_status", ""),
                 candidate_generation_gaps=row.get("candidate_generation_gaps", ""),
                 tickers=", ".join(ticker_bits),
                 warns=";".join(issue_bits),
@@ -530,6 +617,7 @@ def render_matrix_markdown(rows: list[dict[str, Any]], required_tickers: Iterabl
         lines.append(f"- Run dir: `{row.get('run_dir')}`")
         lines.append(f"- Exact suffix output: {row.get('exact_suffix_output')}")
         lines.append(f"- Known ticker evidence: {row.get('known_ticker_evidence') or 'n/a'}")
+        lines.append(f"- Directional scenario evidence: {row.get('directional_scenario_evidence') or 'n/a'}")
         lines.append(f"- Missed mover evidence: {row.get('missed_mover_evidence') or 'n/a'}")
         lines.append(f"- Miss bucket counts: {row.get('miss_bucket_counts') or 'n/a'}")
         lines.append("- Required ticker surface:")

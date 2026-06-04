@@ -60,3 +60,90 @@ def test_run_pipeline_uses_shared_bot_eod_cache(monkeypatch, tmp_path):
     assert captured["cwd"] == tmp_path / "base"
     cache_flag_index = captured["cmd"].index("--bot-eod-cache-dir")
     assert captured["cmd"][cache_flag_index + 1] == str(cache_dir)
+
+
+def test_directional_scenario_gate_fails_when_bearish_source_disappears():
+    status, evidence, failed, warned = matrix.directional_scenario_gate(
+        {
+            "source_bearish": 3,
+            "candidate_bearish": 0,
+            "candidate_bearish_put_or_spread": 0,
+            "trend_bearish": 0,
+            "trend_bearish_put_or_spread": 0,
+            "auto_bearish": 0,
+            "auto_bearish_put_or_spread": 0,
+        }
+    )
+
+    assert status == "FAIL"
+    assert failed == ["directional_scenario_candidate_surface_missing"]
+    assert warned == []
+    assert "source_bearish=3" in evidence
+
+
+def test_directional_scenario_gate_warns_when_put_spread_trend_edge_is_missing():
+    status, evidence, failed, warned = matrix.directional_scenario_gate(
+        {
+            "source_bearish": matrix.MIN_BEARISH_SOURCE_ROWS_FOR_SCENARIO_WARN,
+            "candidate_bearish": 12,
+            "candidate_bearish_put_or_spread": 12,
+            "trend_bearish": 2,
+            "trend_bearish_put_or_spread": 0,
+            "auto_bearish": 0,
+            "auto_bearish_put_or_spread": 0,
+        }
+    )
+
+    assert status == "WARN"
+    assert failed == []
+    assert warned == ["directional_scenario_put_spread_trend_edge_missing"]
+    assert "trend_bearish_put_or_spread=0" in evidence
+
+
+def test_directional_scenario_gate_does_not_warn_before_trend_history_exists():
+    status, evidence, failed, warned = matrix.directional_scenario_gate(
+        {
+            "source_bearish": matrix.MIN_BEARISH_SOURCE_ROWS_FOR_SCENARIO_WARN,
+            "candidate_bearish": 12,
+            "candidate_bearish_put_or_spread": 12,
+            "trend_bearish": 0,
+            "trend_bearish_put_or_spread": 0,
+            "trend_total": 0,
+            "auto_bearish": 0,
+            "auto_bearish_put_or_spread": 0,
+        }
+    )
+
+    assert status == "PASS"
+    assert failed == []
+    assert warned == []
+    assert "trend_total=0" in evidence
+
+
+def test_directional_scenario_metrics_counts_bearish_puts_and_credit_spreads(tmp_path):
+    out_dir = tmp_path
+    (out_dir / "source_ticker_coverage.csv").write_text(
+        "ticker,direction\nA,bearish\nB,bullish\n",
+        encoding="utf-8",
+    )
+    (out_dir / "trade_review_candidates.csv").write_text(
+        "ticker,direction,call_or_put,strategy\nA,bearish,PUT,Long Put Debit\nC,bullish,CALL,Long Call Debit\n",
+        encoding="utf-8",
+    )
+    (out_dir / "blocked_candidates.csv").write_text(
+        "ticker,direction,call_or_put,strategy\nD,bearish,CALL / CALL,Call Credit Spread\n",
+        encoding="utf-8",
+    )
+    (out_dir / "ticker_trend_edges.csv").write_text(
+        "ticker,direction,call_or_put,strategy_kind\nA,bearish,PUT,LONG_OPTION\nD,bearish,CALL / CALL,CREDIT_SPREAD\n",
+        encoding="utf-8",
+    )
+
+    metrics = matrix.directional_scenario_metrics(out_dir)
+
+    assert metrics["source_bearish"] == 1
+    assert metrics["candidate_bearish"] == 2
+    assert metrics["candidate_bearish_put_or_spread"] == 2
+    assert metrics["trend_bearish"] == 2
+    assert metrics["trend_bearish_put_or_spread"] == 2
+    assert metrics["trend_total"] == 2
