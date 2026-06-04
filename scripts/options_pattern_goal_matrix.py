@@ -17,7 +17,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from uwos.options_pattern_pipeline_v1.core import list_date_dirs, source_completeness_for_date
+from uwos.options_pattern_pipeline_v1.core import (
+    MIN_TICKER_TREND_EDGE_SCORED,
+    list_date_dirs,
+    source_completeness_for_date,
+)
 
 
 DEFAULT_BASE_DIR = Path("/Users/anuppamvi/uw_root/tradedesk")
@@ -357,6 +361,9 @@ def directional_scenario_metrics(out_dir: Path) -> dict[str, int]:
         "trend_bearish": 0,
         "trend_bearish_put_or_spread": 0,
         "trend_total": 0,
+        "validation_gate_bearish_groups": 0,
+        "validation_gate_bearish_groups_ge_edge_min": 0,
+        "validation_gate_bearish_max_scored": 0,
         "auto_bearish": 0,
         "auto_bearish_put_or_spread": 0,
     }
@@ -381,6 +388,13 @@ def directional_scenario_metrics(out_dir: Path) -> dict[str, int]:
         metrics["trend_bearish"] += 1
         if is_put_or_bearish_spread(row):
             metrics["trend_bearish_put_or_spread"] += 1
+    bearish_gate_scores = validation_gate_bearish_scores(out_dir / "validation_details.csv")
+    if bearish_gate_scores:
+        metrics["validation_gate_bearish_groups"] = len(bearish_gate_scores)
+        metrics["validation_gate_bearish_max_scored"] = max(bearish_gate_scores.values())
+        metrics["validation_gate_bearish_groups_ge_edge_min"] = sum(
+            1 for scored in bearish_gate_scores.values() if scored >= MIN_TICKER_TREND_EDGE_SCORED
+        )
     return metrics
 
 
@@ -392,9 +406,13 @@ def directional_scenario_gate(metrics: dict[str, int]) -> tuple[str, str, list[s
     trend_bearish = metrics.get("trend_bearish", 0)
     trend_put_or_spread = metrics.get("trend_bearish_put_or_spread", 0)
     trend_total = metrics.get("trend_total", 0)
+    max_gate_scored = metrics.get("validation_gate_bearish_max_scored", 0)
     if source_bearish and not candidate_bearish:
         failed.append("directional_scenario_candidate_surface_missing")
         status = "FAIL"
+    elif source_bearish >= MIN_BEARISH_SOURCE_ROWS_FOR_SCENARIO_WARN and trend_total and not trend_bearish and max_gate_scored:
+        warned.append("directional_scenario_trend_edge_insufficient_sample")
+        status = "WARN"
     elif source_bearish >= MIN_BEARISH_SOURCE_ROWS_FOR_SCENARIO_WARN and trend_total and not trend_bearish:
         warned.append("directional_scenario_trend_edge_missing")
         status = "WARN"
@@ -409,6 +427,28 @@ def directional_scenario_gate(metrics: dict[str, int]) -> tuple[str, str, list[s
     return status, evidence, failed, warned
 
 
+def validation_gate_bearish_scores(path: Path) -> dict[tuple[str, str], int]:
+    scores: dict[tuple[str, str], int] = {}
+    if not path.exists():
+        return scores
+    for row in read_csv(path):
+        if normalized_direction(row) != "bearish":
+            continue
+        if row.get("sample") != "VALIDATION" or row.get("horizon") != "5d":
+            continue
+        if not str(row.get("split") or "").startswith("cumulative_to_"):
+            continue
+        if row.get("status") != "SCORED" or not clean_cell(row.get("net_r")):
+            continue
+        ticker = str(row.get("ticker") or "").upper()
+        strategy_kind = str(row.get("strategy_kind") or "")
+        if not ticker or not strategy_kind:
+            continue
+        key = (ticker, strategy_kind)
+        scores[key] = scores.get(key, 0) + 1
+    return scores
+
+
 def normalized_direction(row: dict[str, str]) -> str:
     return str(row.get("direction") or "").strip().lower()
 
@@ -419,6 +459,8 @@ def is_put_or_bearish_spread(row: dict[str, str]) -> bool:
     if "PUT" in option_type:
         return True
     if "CREDIT_SPREAD" in strategy or "CREDIT SPREAD" in strategy:
+        return True
+    if normalized_direction(row) == "bearish" and strategy in {"LONG_OPTION", "LONG OPTION"}:
         return True
     return normalized_direction(row) == "bearish" and option_type in {"CALL / CALL", "CALL/CALL"}
 

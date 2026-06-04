@@ -63,6 +63,7 @@ SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 500
 VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
 MISSED_MOVER_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
 MIN_DIRECTIONAL_SCENARIO_SIGNALS = 12
+MIN_TICKER_TREND_EDGE_SCORED = 8
 GOAL_AUDIT_REQUIRED_TICKERS = ("AMD", "MU", "NVDA", "SNDK", "IBM", "CRWD", "HOOD", "NOW")
 TRADEABLE_GAP_MIN_SOURCE_PREMIUM = 10_000.0
 TRADEABLE_GAP_MIN_HOT_PREMIUM = 25_000.0
@@ -7738,8 +7739,9 @@ def build_ticker_trend_edge_rows(
     rows: List[Dict[str, Any]] = []
     for (ticker, direction, strategy_kind), stats in ticker_trend_stats.items():
         scored = int(num(stats.get("scored_count")) or 0)
-        if scored < 8:
+        if scored < MIN_TICKER_TREND_EDGE_SCORED:
             continue
+        strategy_fields = trend_edge_strategy_fields(direction, strategy_kind)
         breakeven = ticker_trend_breakeven_probability(stats)
         edge = ticker_trend_edge_vs_breakeven_pct(stats)
         baseline_evidence = baseline_edge_evidence(num(stats.get("avg_r")), baseline_comparison)
@@ -7750,6 +7752,7 @@ def build_ticker_trend_edge_rows(
                 "ticker": ticker,
                 "direction": direction,
                 "strategy_kind": strategy_kind,
+                **strategy_fields,
                 "trade_ready_trend": "yes" if ticker_trend_passes(stats, risk_config) and baseline_ready else "no",
                 "scored_count": scored,
                 "win_count": stats.get("win_count"),
@@ -7785,6 +7788,26 @@ def build_ticker_trend_edge_rows(
     for idx, row in enumerate(rows, 1):
         row["trend_rank"] = idx
     return rows
+
+
+def trend_edge_strategy_fields(direction: str, strategy_kind: str) -> Dict[str, str]:
+    direction = str(direction or "").lower()
+    strategy_kind = str(strategy_kind or "long_option")
+    if strategy_kind == "credit_spread":
+        if direction == "bearish":
+            return {
+                "strategy": "Bear Call Credit Spread",
+                "strategy_type": "Bear Call Credit Spread",
+                "call_or_put": "CALL / CALL",
+            }
+        return {
+            "strategy": "Bull Put Credit Spread",
+            "strategy_type": "Bull Put Credit Spread",
+            "call_or_put": "PUT / PUT",
+        }
+    if direction == "bearish":
+        return {"strategy": "Long Put Debit", "strategy_type": "Long Put Debit", "call_or_put": "PUT"}
+    return {"strategy": "Long Call Debit", "strategy_type": "Long Call Debit", "call_or_put": "CALL"}
 
 
 def recommendation_reason_text(row: Mapping[str, Any]) -> str:
@@ -8699,6 +8722,9 @@ def ticker_trend_edge_fieldnames() -> List[str]:
         "ticker",
         "direction",
         "strategy_kind",
+        "strategy",
+        "strategy_type",
+        "call_or_put",
         "trade_ready_trend",
         "scored_count",
         "win_count",

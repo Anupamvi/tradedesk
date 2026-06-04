@@ -100,6 +100,29 @@ def test_directional_scenario_gate_warns_when_put_spread_trend_edge_is_missing()
     assert "trend_bearish_put_or_spread=0" in evidence
 
 
+def test_directional_scenario_gate_labels_missing_trend_as_insufficient_sample_when_scored_below_threshold():
+    status, evidence, failed, warned = matrix.directional_scenario_gate(
+        {
+            "source_bearish": matrix.MIN_BEARISH_SOURCE_ROWS_FOR_SCENARIO_WARN,
+            "candidate_bearish": 12,
+            "candidate_bearish_put_or_spread": 12,
+            "trend_bearish": 0,
+            "trend_bearish_put_or_spread": 0,
+            "trend_total": 17,
+            "validation_gate_bearish_groups": 3,
+            "validation_gate_bearish_max_scored": matrix.MIN_TICKER_TREND_EDGE_SCORED - 1,
+            "validation_gate_bearish_groups_ge_edge_min": 0,
+            "auto_bearish": 0,
+            "auto_bearish_put_or_spread": 0,
+        }
+    )
+
+    assert status == "WARN"
+    assert failed == []
+    assert warned == ["directional_scenario_trend_edge_insufficient_sample"]
+    assert "validation_gate_bearish_max_scored=7" in evidence
+
+
 def test_directional_scenario_gate_does_not_warn_before_trend_history_exists():
     status, evidence, failed, warned = matrix.directional_scenario_gate(
         {
@@ -147,3 +170,42 @@ def test_directional_scenario_metrics_counts_bearish_puts_and_credit_spreads(tmp
     assert metrics["trend_bearish"] == 2
     assert metrics["trend_bearish_put_or_spread"] == 2
     assert metrics["trend_total"] == 2
+
+
+def test_directional_scenario_metrics_infers_bearish_long_option_as_put(tmp_path):
+    out_dir = tmp_path
+    (out_dir / "source_ticker_coverage.csv").write_text("ticker,direction\nIWM,bearish\n", encoding="utf-8")
+    (out_dir / "blocked_candidates.csv").write_text(
+        "ticker,direction,call_or_put,strategy\nIWM,bearish,PUT,Long Put Debit\n",
+        encoding="utf-8",
+    )
+    (out_dir / "ticker_trend_edges.csv").write_text(
+        "ticker,direction,strategy_kind,trade_ready_trend\nIWM,bearish,long_option,no\n",
+        encoding="utf-8",
+    )
+
+    metrics = matrix.directional_scenario_metrics(out_dir)
+
+    assert metrics["trend_bearish"] == 1
+    assert metrics["trend_bearish_put_or_spread"] == 1
+
+
+def test_validation_gate_bearish_scores_counts_only_gate_scored_rows(tmp_path):
+    path = tmp_path / "validation_details.csv"
+    path.write_text(
+        "\n".join(
+            [
+                "split,sample,horizon,ticker,direction,strategy_kind,status,net_r",
+                "cumulative_to_2026-04_holdout,VALIDATION,5d,IWM,bearish,long_option,SCORED,-0.2",
+                "cumulative_to_2026-04_holdout,VALIDATION,5d,IWM,bearish,long_option,SCORED,0.3",
+                "cumulative_to_2026-04_holdout,VALIDATION,3d,IWM,bearish,long_option,SCORED,0.3",
+                "cumulative_to_2026-04_holdout,TRAIN,5d,IWM,bearish,long_option,SCORED,0.3",
+                "month_2026-04_holdout,VALIDATION,5d,IWM,bearish,long_option,SCORED,0.3",
+                "cumulative_to_2026-04_holdout,VALIDATION,5d,SPY,bullish,long_option,SCORED,0.3",
+                "cumulative_to_2026-04_holdout,VALIDATION,5d,AAPL,bearish,credit_spread,PARTIAL,",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert matrix.validation_gate_bearish_scores(path) == {("IWM", "long_option"): 2}

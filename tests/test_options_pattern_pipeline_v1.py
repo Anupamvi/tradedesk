@@ -47,6 +47,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     sources_for_date,
     trade_output_row,
     tradeable_gap_quote_eligible,
+    trend_edge_strategy_fields,
     pattern_recommendation_output_row,
     catalyst_flow_leader_output_row,
     trade_review_output_row,
@@ -2278,9 +2279,25 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
     )
     amd_edge = next(row for row in edge_rows if row["ticker"] == "AMD")
     assert amd_edge["trade_ready_trend"] == "yes"
+    assert amd_edge["strategy"] == "Long Call Debit"
+    assert amd_edge["strategy_type"] == "Long Call Debit"
+    assert amd_edge["call_or_put"] == "CALL"
     assert amd_edge["beats_baselines_count"] == 2
     assert amd_edge["baselines_beaten_names"] == "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY"
     assert controls["run_kill_switches"] == []
+
+
+def test_trend_edge_strategy_fields_labels_bearish_structures():
+    assert trend_edge_strategy_fields("bearish", "long_option") == {
+        "strategy": "Long Put Debit",
+        "strategy_type": "Long Put Debit",
+        "call_or_put": "PUT",
+    }
+    assert trend_edge_strategy_fields("bearish", "credit_spread") == {
+        "strategy": "Bear Call Credit Spread",
+        "strategy_type": "Bear Call Credit Spread",
+        "call_or_put": "CALL / CALL",
+    }
 
 
 def test_ticker_trend_overlay_demotes_when_trend_does_not_beat_baselines():
