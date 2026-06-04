@@ -8284,27 +8284,107 @@ def append_source_coverage_table(
 def append_ticker_trend_edge_table(
     lines: List[str],
     rows: Sequence[Mapping[str, Any]],
+    risk_config: Mapping[str, Any],
     limit: int = 15,
 ) -> None:
     lines.append("## Ticker Trend Edge Board")
     lines.append("- Ticker-direction option trends from canonical 2026 validation outcomes; trade-ready rows must clear sample, win-rate, EV, PF, drawdown, and losing-streak gates.")
     trade_ready = [row for row in rows if str(row.get("trade_ready_trend") or "") == "yes"]
-    if not trade_ready:
+    if trade_ready:
+        lines.append("| # | Ticker | Bias | Strategy | Scored | Win | Score | Avg R | PF | Breakeven | Edge vs BE | Drawdown | Losing Streak |")
+        lines.append("|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+        for idx, row in enumerate(trade_ready[:limit], 1):
+            lines.append(
+                f"| {idx} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
+                f"{markdown_cell(row.get('strategy') or row.get('strategy_kind'))} | {row.get('scored_count')} | "
+                f"{fmt_pct(row.get('win_rate'))} | {fmt_pct(row.get('probability_score'))} | "
+                f"{fmt_num(row.get('avg_R'))} | {fmt_num(row.get('profit_factor'))} | "
+                f"{fmt_pct(row.get('breakeven_success_probability'))} | {pct_text(row.get('edge_vs_breakeven_pct'))} | "
+                f"{fmt_num(row.get('drawdown_proxy_r'))} | {row.get('worst_losing_streak')} |"
+            )
+    else:
         lines.append("- No ticker-direction trend cleared the executable gate.")
+    non_ready = balanced_non_ready_trend_rows(rows, limit)
+    if non_ready:
         lines.append("")
-        return
-    lines.append("| # | Ticker | Bias | Strategy | Scored | Win | Score | Avg R | PF | Breakeven | Edge vs BE | Drawdown | Losing Streak |")
-    lines.append("|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
-    for idx, row in enumerate(trade_ready[:limit], 1):
-        lines.append(
-            f"| {idx} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
-            f"{markdown_cell(row.get('strategy_kind'))} | {row.get('scored_count')} | "
-            f"{fmt_pct(row.get('win_rate'))} | {fmt_pct(row.get('probability_score'))} | "
-            f"{fmt_num(row.get('avg_R'))} | {fmt_num(row.get('profit_factor'))} | "
-            f"{fmt_pct(row.get('breakeven_success_probability'))} | {pct_text(row.get('edge_vs_breakeven_pct'))} | "
-            f"{fmt_num(row.get('drawdown_proxy_r'))} | {row.get('worst_losing_streak')} |"
-        )
+        lines.append("### No-Edge Trend Evidence")
+        lines.append("| # | Ticker | Bias | Strategy | Scored | Win | Score | Avg R | PF | Baselines | Why Not Ready |")
+        lines.append("|---:|---|---|---|---:|---:|---:|---:|---:|---:|---|")
+        for idx, row in enumerate(non_ready, 1):
+            lines.append(
+                f"| {idx} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
+                f"{markdown_cell(row.get('strategy') or row.get('strategy_kind'))} | {row.get('scored_count')} | "
+                f"{fmt_pct(row.get('win_rate'))} | {fmt_pct(row.get('probability_score'))} | "
+                f"{fmt_num(row.get('avg_R'))} | {fmt_num(row.get('profit_factor'))} | "
+                f"{row.get('beats_baselines_count')} | {markdown_cell(ticker_trend_no_edge_reason(row, risk_config))} |"
+            )
     lines.append("")
+
+
+def balanced_non_ready_trend_rows(rows: Sequence[Mapping[str, Any]], limit: int) -> List[Mapping[str, Any]]:
+    non_ready = [row for row in rows if str(row.get("trade_ready_trend") or "") != "yes"]
+    required_rows: List[Mapping[str, Any]] = []
+    for required in (
+        lambda row: str(row.get("direction") or "") == "bearish" and str(row.get("strategy_kind") or "") == "long_option",
+        lambda row: str(row.get("direction") or "") == "bearish" and str(row.get("strategy_kind") or "") == "credit_spread",
+    ):
+        extra = next((row for row in non_ready if required(row)), None)
+        if extra:
+            required_rows.append(extra)
+    selected_keys = {trend_row_identity(row) for row in required_rows}
+    selected = list(required_rows)
+    for row in non_ready:
+        key = trend_row_identity(row)
+        if key in selected_keys:
+            continue
+        selected.append(row)
+        selected_keys.add(key)
+        if len(selected) >= limit:
+            break
+    selected_keys = {trend_row_identity(row) for row in selected[:limit]}
+    return [row for row in non_ready if trend_row_identity(row) in selected_keys][:limit]
+
+
+def trend_row_identity(row: Mapping[str, Any]) -> Tuple[str, str, str]:
+    return (
+        str(row.get("ticker") or ""),
+        str(row.get("direction") or ""),
+        str(row.get("strategy_kind") or ""),
+    )
+
+
+def ticker_trend_no_edge_reason(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> str:
+    reasons: List[str] = []
+    scored = int(num(row.get("scored_count")) or 0)
+    win_rate = num(row.get("win_rate"))
+    probability_score = num(row.get("probability_score"))
+    avg_r = num(row.get("avg_R"))
+    profit_factor = num(row.get("profit_factor"))
+    drawdown = num(row.get("drawdown_proxy_r"))
+    losing_streak = int(num(row.get("worst_losing_streak")) or 0)
+    edge = num(row.get("edge_vs_breakeven_pct"))
+    baselines = int(num(row.get("beats_baselines_count")) or 0)
+    min_scored = int(risk_config.get("min_ticker_trend_scored_outcomes", 20))
+    min_baselines = int(risk_config.get("min_baselines_beaten", 2))
+    if scored < min_scored:
+        reasons.append(f"LIMITED_SAMPLE {scored}/{min_scored}")
+    if win_rate is None or win_rate < float(risk_config.get("min_ticker_trend_win_rate", 0.55)):
+        reasons.append("WIN_RATE_BELOW_GATE")
+    if probability_score is None or probability_score < float(risk_config.get("min_ticker_trend_probability_score", 0.42)):
+        reasons.append("PROBABILITY_SCORE_BELOW_GATE")
+    if avg_r is None or avg_r < float(risk_config.get("min_ticker_trend_expected_r", 0.15)):
+        reasons.append("EXPECTED_R_BELOW_GATE")
+    if profit_factor is None or profit_factor < float(risk_config.get("min_ticker_trend_profit_factor", 1.50)):
+        reasons.append("PROFIT_FACTOR_BELOW_GATE")
+    if drawdown is not None and drawdown < float(risk_config.get("max_ticker_trend_drawdown_r", -8.0)):
+        reasons.append("DRAWDOWN_TOO_DEEP")
+    if losing_streak > int(risk_config.get("max_ticker_trend_losing_streak", 8)):
+        reasons.append("LOSING_STREAK_TOO_LONG")
+    if edge is None or edge < float(risk_config.get("min_ticker_trend_breakeven_edge_pct", 5.0)):
+        reasons.append("BREAKEVEN_EDGE_BELOW_GATE")
+    if baselines < min_baselines:
+        reasons.append(f"BASELINES_BEATEN {baselines}/{min_baselines}")
+    return ";".join(reasons) or "NOT_TRADE_READY"
 
 
 def append_strategy_glossary(lines: List[str], rows: Sequence[Mapping[str, Any]]) -> None:
@@ -8445,7 +8525,7 @@ def render_daily_report(
 
     append_pattern_recommendation_table(lines, pattern_recommendations, 8)
     append_source_coverage_table(lines, source_coverage_rows, 30)
-    append_ticker_trend_edge_table(lines, ticker_trend_rows, 15)
+    append_ticker_trend_edge_table(lines, ticker_trend_rows, metadata.get("risk_config", {}), 15)
     append_catalyst_flow_leader_table(lines, catalyst_flow_leaders, 40)
     append_ticket_table(lines, "AUTO_APPROVED Trade Tickets", actionable, "AUTO_APPROVED", 10, "No auto-approved trade tickets.")
     append_trade_review_table(lines, trade_review, 12)

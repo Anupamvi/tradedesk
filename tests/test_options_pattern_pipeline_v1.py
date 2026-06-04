@@ -16,6 +16,7 @@ from uwos.options_pattern_pipeline_v1.macro_geo import (
 )
 from uwos.options_pattern_pipeline_v1.core import (
     assign_family_tiers,
+    balanced_non_ready_trend_rows,
     build_artifact_manifest,
     build_signal,
     build_catalyst_flow_leaders,
@@ -48,6 +49,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     trade_output_row,
     tradeable_gap_quote_eligible,
     trend_edge_strategy_fields,
+    ticker_trend_no_edge_reason,
     pattern_recommendation_output_row,
     catalyst_flow_leader_output_row,
     trade_review_output_row,
@@ -2297,6 +2299,60 @@ def test_trend_edge_strategy_fields_labels_bearish_structures():
         "strategy": "Bear Call Credit Spread",
         "strategy_type": "Bear Call Credit Spread",
         "call_or_put": "CALL / CALL",
+    }
+
+
+def test_ticker_trend_no_edge_reason_names_failed_gates():
+    reason = ticker_trend_no_edge_reason(
+        {
+            "scored_count": 7,
+            "win_rate": 0.40,
+            "probability_score": 0.35,
+            "avg_R": -0.10,
+            "profit_factor": 0.90,
+            "drawdown_proxy_r": -9.0,
+            "worst_losing_streak": 9,
+            "edge_vs_breakeven_pct": -2.0,
+            "beats_baselines_count": 1,
+        },
+        {
+            "min_ticker_trend_scored_outcomes": 20,
+            "min_ticker_trend_win_rate": 0.55,
+            "min_ticker_trend_probability_score": 0.42,
+            "min_ticker_trend_expected_r": 0.15,
+            "min_ticker_trend_profit_factor": 1.5,
+            "max_ticker_trend_drawdown_r": -8.0,
+            "max_ticker_trend_losing_streak": 8,
+            "min_ticker_trend_breakeven_edge_pct": 5.0,
+            "min_baselines_beaten": 2,
+        },
+    )
+
+    assert "LIMITED_SAMPLE 7/20" in reason
+    assert "EXPECTED_R_BELOW_GATE" in reason
+    assert "PROFIT_FACTOR_BELOW_GATE" in reason
+    assert "BASELINES_BEATEN 1/2" in reason
+
+
+def test_balanced_non_ready_trend_rows_keeps_bearish_put_and_spread_examples():
+    rows = [
+        {"ticker": f"BULL{i}", "direction": "bullish", "strategy_kind": "long_option", "trade_ready_trend": "no"}
+        for i in range(6)
+    ]
+    rows.extend(
+        [
+            {"ticker": "IWM", "direction": "bearish", "strategy_kind": "long_option", "trade_ready_trend": "no"},
+            {"ticker": "MSTR", "direction": "bearish", "strategy_kind": "credit_spread", "trade_ready_trend": "no"},
+        ]
+    )
+
+    selected = balanced_non_ready_trend_rows(rows, limit=5)
+
+    assert ("IWM", "bearish", "long_option") in {
+        (row["ticker"], row["direction"], row["strategy_kind"]) for row in selected
+    }
+    assert ("MSTR", "bearish", "credit_spread") in {
+        (row["ticker"], row["direction"], row["strategy_kind"]) for row in selected
     }
 
 
