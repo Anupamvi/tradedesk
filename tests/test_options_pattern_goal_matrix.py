@@ -322,3 +322,53 @@ def test_scenario_no_edge_rows_aggregate_bearish_put_and_spread_lanes(tmp_path):
     assert "SPY" in review_put["top_examples"]
     assert avoid_spread["strategy"] == "Bear Call Credit Spread"
     assert "PROFIT_FACTOR_BELOW_AUTO_APPROVAL:1" in avoid_spread["top_blockers"]
+
+
+def test_directional_edge_matrix_rows_aggregate_daily_diagnostics(tmp_path):
+    run_a = tmp_path / "2026-05-27_run"
+    run_b = tmp_path / "2026-05-28_run"
+    run_a.mkdir()
+    run_b.mkdir()
+    header = (
+        "surface_status,direction,strategy,call_or_put,primary_diagnosis,date_count,candidate_count,"
+        "distinct_ticker_count,positive_expected_R_count,avg_expected_R,max_expected_R,"
+        "avg_expected_R_per_day,avg_probability_score,avg_validation_profit_factor,"
+        "avg_baselines_beaten,top_blockers,top_examples"
+    )
+    run_a.joinpath("directional_edge_diagnostics.csv").write_text(
+        "\n".join(
+            [
+                header,
+                "TRADE_REVIEW,bearish,Long Put Debit,PUT,INSUFFICIENT_VALIDATED_SAMPLE,1,2,2,1,0.50,2.0,0.10,40,999,6,LIMITED_OUT_OF_SAMPLE_SAMPLE:2,CAR ER=2.0 score=40% legs=Buy 1 CAR 160P",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    run_b.joinpath("directional_edge_diagnostics.csv").write_text(
+        "\n".join(
+            [
+                header,
+                "TRADE_REVIEW,bearish,Long Put Debit,PUT,INSUFFICIENT_VALIDATED_SAMPLE,1,3,3,0,-0.10,0.2,-0.02,20,0.5,1,PATTERN_VALIDATION_NOT_PROVEN:3,IWM ER=-0.4 score=16% legs=Buy 1 IWM 276P",
+                "AVOID,bearish,Bear Call Credit Spread,CALL / CALL,NEGATIVE_AVG_EXPECTANCY_AFTER_COSTS,1,4,4,0,-0.60,-0.01,-0.12,10,0.08,0,EXPECTED_R_NOT_POSITIVE_AFTER_COSTS:4,BSX ER=-0.01 legs=Sell 1 BSX 50C / Buy 1 BSX 52C",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    rows = matrix.build_directional_edge_matrix_rows(
+        [
+            {"date": "2026-05-27", "run_dir": str(run_a)},
+            {"date": "2026-05-28", "run_dir": str(run_b)},
+        ]
+    )
+    review_put = next(row for row in rows if row["surface_status"] == "TRADE_REVIEW")
+    avoid_spread = next(row for row in rows if row["surface_status"] == "AVOID")
+
+    assert review_put["date_count"] == 2
+    assert review_put["candidate_count"] == 5
+    assert review_put["positive_expected_R_count"] == 1
+    assert round(review_put["avg_expected_R_weighted"], 2) == 0.14
+    assert "LIMITED_OUT_OF_SAMPLE_SAMPLE:2" in review_put["top_blockers"]
+    assert "PATTERN_VALIDATION_NOT_PROVEN:3" in review_put["top_blockers"]
+    assert "CAR" in review_put["top_examples"]
+    assert avoid_spread["primary_diagnosis"] == "NEGATIVE_AVG_EXPECTANCY_AFTER_COSTS"

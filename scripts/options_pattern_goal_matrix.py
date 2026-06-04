@@ -151,6 +151,7 @@ def main(argv: list[str] | None = None) -> int:
     portfolio_trade_rows = build_portfolio_trade_rows(rows)
     portfolio_summary_rows = [build_portfolio_acceptance_summary(rows, portfolio_trade_rows)]
     scenario_rows = build_scenario_no_edge_rows(rows)
+    directional_edge_rows = build_directional_edge_matrix_rows(rows)
     write_csv(matrix_dir / "goal_acceptance_matrix.csv", rows, matrix_fieldnames(args.required_tickers))
     write_csv(matrix_dir / "portfolio_trade_rows.csv", portfolio_trade_rows, portfolio_trade_fieldnames())
     write_csv(
@@ -159,6 +160,11 @@ def main(argv: list[str] | None = None) -> int:
         portfolio_acceptance_summary_fieldnames(),
     )
     write_csv(matrix_dir / "scenario_no_edge_summary.csv", scenario_rows, scenario_no_edge_fieldnames())
+    write_csv(
+        matrix_dir / "directional_edge_matrix_summary.csv",
+        directional_edge_rows,
+        directional_edge_matrix_fieldnames(),
+    )
     (matrix_dir / "goal_acceptance_matrix.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
     (matrix_dir / "date_selection.json").write_text(
         json.dumps({"date_scope": date_scope, "dates": dates, "date_count": len(dates)}, indent=2),
@@ -174,6 +180,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     (matrix_dir / "scenario_no_edge_summary.md").write_text(
         render_scenario_no_edge_markdown(scenario_rows),
+        encoding="utf-8",
+    )
+    (matrix_dir / "directional_edge_matrix_summary.md").write_text(
+        render_directional_edge_matrix_markdown(directional_edge_rows),
         encoding="utf-8",
     )
     print(matrix_dir / "goal_acceptance_matrix.md")
@@ -718,6 +728,104 @@ def build_scenario_no_edge_rows(matrix_rows: Iterable[Mapping[str, Any]]) -> lis
     return out
 
 
+def build_directional_edge_matrix_rows(matrix_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str, str, str, str], list[dict[str, Any]]] = {}
+    for matrix_row in matrix_rows:
+        date = str(matrix_row.get("date") or "")
+        run_dir = Path(str(matrix_row.get("run_dir") or ""))
+        for row in read_csv(run_dir / "directional_edge_diagnostics.csv"):
+            key = (
+                clean_cell(row.get("surface_status")) or "UNKNOWN",
+                normalized_direction(row) or "unknown",
+                clean_cell(row.get("strategy")) or "UNKNOWN",
+                clean_cell(row.get("call_or_put")) or "UNKNOWN",
+                clean_cell(row.get("primary_diagnosis")) or "UNKNOWN",
+            )
+            grouped.setdefault(key, []).append({**row, "date": date})
+
+    out: list[dict[str, Any]] = []
+    for (surface_status, direction, strategy, call_or_put, diagnosis), rows in grouped.items():
+        weighted_expected = weighted_average_from_rows(rows, "avg_expected_R", "candidate_count")
+        weighted_expected_day = weighted_average_from_rows(rows, "avg_expected_R_per_day", "candidate_count")
+        weighted_score = weighted_average_from_rows(rows, "avg_probability_score", "candidate_count")
+        weighted_pf = weighted_average_from_rows(rows, "avg_validation_profit_factor", "candidate_count")
+        weighted_baselines = weighted_average_from_rows(rows, "avg_baselines_beaten", "candidate_count")
+        blocker_counts = Counter()
+        for row in rows:
+            blocker_counts.update(parse_counter_text(row.get("top_blockers")))
+        top_examples = "; ".join(clean_cell(row.get("top_examples"), limit=220) for row in rows if row.get("top_examples"))
+        out.append(
+            {
+                "surface_status": surface_status,
+                "direction": direction,
+                "strategy": strategy,
+                "call_or_put": call_or_put,
+                "primary_diagnosis": diagnosis,
+                "date_count": len({row.get("date") for row in rows}),
+                "candidate_count": sum_int(row.get("candidate_count") for row in rows),
+                "distinct_ticker_count_sum": sum_int(row.get("distinct_ticker_count") for row in rows),
+                "positive_expected_R_count": sum_int(row.get("positive_expected_R_count") for row in rows),
+                "avg_expected_R_weighted": weighted_expected,
+                "max_expected_R": max_numeric(row.get("max_expected_R") for row in rows),
+                "avg_expected_R_per_day_weighted": weighted_expected_day,
+                "avg_probability_score_weighted": weighted_score,
+                "avg_validation_profit_factor_weighted": weighted_pf,
+                "avg_baselines_beaten_weighted": weighted_baselines,
+                "top_blockers": format_counter(blocker_counts, 10),
+                "top_examples": clean_cell(top_examples, limit=1000),
+            }
+        )
+    out.sort(
+        key=lambda row: (
+            row["surface_status"] != "AUTO_APPROVED",
+            row["surface_status"] != "TRADE_REVIEW",
+            row["direction"] != "bearish",
+            row["primary_diagnosis"],
+            -int(row["candidate_count"]),
+        )
+    )
+    return out
+
+
+def parse_counter_text(value: Any) -> Counter:
+    counter: Counter = Counter()
+    for part in str(value or "").split(";"):
+        if not part.strip() or ":" not in part:
+            continue
+        key, count_text = part.rsplit(":", 1)
+        count = to_float(count_text)
+        if key.strip() and count is not None:
+            counter[key.strip()] += int(count)
+    return counter
+
+
+def weighted_average_from_rows(rows: Sequence[Mapping[str, Any]], value_field: str, weight_field: str) -> float | str:
+    weighted_sum = 0.0
+    weight_sum = 0
+    for row in rows:
+        value = to_float(row.get(value_field))
+        weight = int(to_float(row.get(weight_field)) or 0)
+        if value is None or weight <= 0:
+            continue
+        weighted_sum += value * weight
+        weight_sum += weight
+    return weighted_sum / weight_sum if weight_sum else ""
+
+
+def sum_int(values: Iterable[Any]) -> int:
+    total = 0
+    for value in values:
+        parsed = to_float(value)
+        if parsed is not None:
+            total += int(parsed)
+    return total
+
+
+def max_numeric(values: Iterable[Any]) -> float | str:
+    parsed = [value for value in (to_float(value) for value in values) if value is not None]
+    return max(parsed) if parsed else ""
+
+
 def blocker_tokens(row: Mapping[str, Any]) -> list[str]:
     text = ";".join(
         clean_cell(row.get(field), limit=2000)
@@ -937,6 +1045,28 @@ def scenario_no_edge_fieldnames() -> list[str]:
     ]
 
 
+def directional_edge_matrix_fieldnames() -> list[str]:
+    return [
+        "surface_status",
+        "direction",
+        "strategy",
+        "call_or_put",
+        "primary_diagnosis",
+        "date_count",
+        "candidate_count",
+        "distinct_ticker_count_sum",
+        "positive_expected_R_count",
+        "avg_expected_R_weighted",
+        "max_expected_R",
+        "avg_expected_R_per_day_weighted",
+        "avg_probability_score_weighted",
+        "avg_validation_profit_factor_weighted",
+        "avg_baselines_beaten_weighted",
+        "top_blockers",
+        "top_examples",
+    ]
+
+
 def render_matrix_markdown(
     rows: list[dict[str, Any]],
     required_tickers: Iterable[str],
@@ -993,6 +1123,7 @@ def render_matrix_markdown(
                 f"- Warnings: {portfolio_summary.get('warnings') or 'none'}.",
                 "- Full portfolio proof: `portfolio_acceptance_summary.csv`, `portfolio_acceptance_summary.md`, and `portfolio_trade_rows.csv`.",
                 "- Scenario no-edge proof: `scenario_no_edge_summary.csv` and `scenario_no_edge_summary.md`.",
+                "- Directional edge proof: `directional_edge_matrix_summary.csv` and `directional_edge_matrix_summary.md`.",
             ]
         )
     lines.extend(["", "## Detail"])
@@ -1078,6 +1209,36 @@ def render_scenario_no_edge_markdown(rows: Sequence[Mapping[str, Any]]) -> str:
         lines.append(
             f"- {row.get('surface_status')} {row.get('direction')} {row.get('strategy')} "
             f"{row.get('call_or_put')}: {row.get('top_examples') or 'n/a'}"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_directional_edge_matrix_markdown(rows: Sequence[Mapping[str, Any]]) -> str:
+    lines = [
+        "# Directional Edge Matrix Summary",
+        "",
+        "This artifact aggregates each daily `directional_edge_diagnostics.csv` lane across the matrix date set.",
+        "",
+        "| Surface | Direction | Strategy | Type | Diagnosis | Dates | Candidates | Pos ER | Avg ER | Max ER | Avg Score | Avg PF | Avg Baselines | Top Blockers |",
+        "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+    ]
+    for row in rows:
+        lines.append(
+            f"| {row.get('surface_status')} | {row.get('direction')} | {markdown_cell(row.get('strategy'))} | "
+            f"{markdown_cell(row.get('call_or_put'))} | {markdown_cell(row.get('primary_diagnosis'))} | "
+            f"{row.get('date_count')} | {row.get('candidate_count')} | {row.get('positive_expected_R_count')} | "
+            f"{row.get('avg_expected_R_weighted')} | {row.get('max_expected_R')} | "
+            f"{row.get('avg_probability_score_weighted')} | {row.get('avg_validation_profit_factor_weighted')} | "
+            f"{row.get('avg_baselines_beaten_weighted')} | {markdown_cell(row.get('top_blockers'))} |"
+        )
+    if not rows:
+        lines.append("| n/a | n/a | n/a | n/a | n/a | 0 | 0 | 0 | n/a | n/a | n/a | n/a | n/a | n/a |")
+    lines.extend(["", "## Top Examples"])
+    for row in rows[:20]:
+        lines.append(
+            f"- {row.get('surface_status')} {row.get('direction')} {row.get('strategy')} "
+            f"{row.get('call_or_put')} {row.get('primary_diagnosis')}: {row.get('top_examples') or 'n/a'}"
         )
     lines.append("")
     return "\n".join(lines)
