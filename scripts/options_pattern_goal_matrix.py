@@ -157,12 +157,18 @@ def main(argv: list[str] | None = None) -> int:
         runs.append(DateRun(date, out_dir, exact_suffix_output, should_run, returncode))
 
     rows = [build_matrix_row(run, args.required_tickers, date_scope) for run in runs]
+    run_coverage_summary_rows = [build_run_coverage_summary(rows)]
     portfolio_trade_rows = build_portfolio_trade_rows(rows)
     portfolio_summary_rows = [build_portfolio_acceptance_summary(rows, portfolio_trade_rows)]
     scenario_rows = build_scenario_no_edge_rows(rows)
     directional_edge_rows = build_directional_edge_matrix_rows(rows)
     directional_no_edge_rows = build_directional_no_edge_report_rows(directional_edge_rows)
     write_csv(matrix_dir / "goal_acceptance_matrix.csv", rows, matrix_fieldnames(args.required_tickers))
+    write_csv(
+        matrix_dir / "run_coverage_summary.csv",
+        run_coverage_summary_rows,
+        run_coverage_summary_fieldnames(),
+    )
     write_csv(matrix_dir / "portfolio_trade_rows.csv", portfolio_trade_rows, portfolio_trade_fieldnames())
     write_csv(
         matrix_dir / "portfolio_acceptance_summary.csv",
@@ -186,7 +192,17 @@ def main(argv: list[str] | None = None) -> int:
         encoding="utf-8",
     )
     (matrix_dir / "goal_acceptance_matrix.md").write_text(
-        render_matrix_markdown(rows, args.required_tickers, date_scope, portfolio_summary_rows[0]),
+        render_matrix_markdown(
+            rows,
+            args.required_tickers,
+            date_scope,
+            portfolio_summary_rows[0],
+            run_coverage_summary_rows[0],
+        ),
+        encoding="utf-8",
+    )
+    (matrix_dir / "run_coverage_summary.md").write_text(
+        render_run_coverage_markdown(run_coverage_summary_rows[0]),
         encoding="utf-8",
     )
     (matrix_dir / "portfolio_acceptance_summary.md").write_text(
@@ -379,6 +395,55 @@ def matrix_status(failed: list[str], warned: list[str], date_scope: str) -> str:
     if date_scope.startswith("all_source_complete;"):
         return "PASS_SOURCE_COMPLETE_SCOPE"
     return "PASS_DAILY_NOT_GLOBAL"
+
+
+def build_run_coverage_summary(matrix_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    exact_dates = [
+        str(row.get("date") or "")
+        for row in matrix_rows
+        if row.get("exact_suffix_output") == "yes" and row.get("matrix_status") != "PIPELINE_FAILED"
+    ]
+    failed_dates = [
+        str(row.get("date") or "")
+        for row in matrix_rows
+        if str(row.get("pipeline_returncode") or "") not in ("", "0")
+    ]
+    missing_dates = [
+        str(row.get("date") or "")
+        for row in matrix_rows
+        if row.get("matrix_status") == "MISSING_ARTIFACTS"
+    ]
+    fallback_dates = [
+        str(row.get("date") or "")
+        for row in matrix_rows
+        if row.get("exact_suffix_output") == "no"
+        and row.get("matrix_status") not in {"MISSING_ARTIFACTS", "PIPELINE_FAILED"}
+    ]
+    non_exact_dates = sorted({date for date in fallback_dates + missing_dates + failed_dates if date})
+    date_count = len(matrix_rows)
+    exact_count = len([date for date in exact_dates if date])
+    if failed_dates:
+        coverage_status = "PIPELINE_FAILURE"
+    elif date_count and exact_count == date_count:
+        coverage_status = "EXACT_FULL_SCOPE"
+    elif exact_count:
+        coverage_status = "PARTIAL_EXACT_SCOPE"
+    else:
+        coverage_status = "NO_EXACT_RUNS"
+    return {
+        "coverage_status": coverage_status,
+        "date_count": date_count,
+        "exact_suffix_output_count": exact_count,
+        "non_exact_output_count": len(non_exact_dates),
+        "fallback_output_count": len([date for date in fallback_dates if date]),
+        "missing_artifact_count": len([date for date in missing_dates if date]),
+        "pipeline_failed_count": len([date for date in failed_dates if date]),
+        "exact_run_dates": format_date_list(exact_dates),
+        "non_exact_dates": format_date_list(non_exact_dates),
+        "fallback_dates": format_date_list(fallback_dates),
+        "missing_artifact_dates": format_date_list(missing_dates),
+        "pipeline_failed_dates": format_date_list(failed_dates),
+    }
 
 
 def required_ticker_details(out_dir: Path, tickers: Iterable[str]) -> dict[str, dict[str, str]]:
@@ -633,6 +698,11 @@ def build_portfolio_acceptance_summary(
     matrix_rows: Sequence[Mapping[str, Any]],
     trade_rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
+    evidence_rows = [
+        row for row in matrix_rows if row.get("matrix_status") not in {"MISSING_ARTIFACTS", "PIPELINE_FAILED"}
+    ]
+    evidence_dates = {row.get("date") for row in evidence_rows}
+    trade_dates = {row.get("date") for row in trade_rows}
     expected_rs = numeric_values(row.get("expected_R") for row in trade_rows)
     expected_r_days = numeric_values(row.get("expected_R_per_day") for row in trade_rows)
     probability_scores = numeric_values(row.get("probability_score") for row in trade_rows)
@@ -659,8 +729,10 @@ def build_portfolio_acceptance_summary(
     return {
         "portfolio_status": status,
         "date_count": len(matrix_rows),
-        "trade_day_count": len({row.get("date") for row in trade_rows}),
-        "no_trade_day_count": len(matrix_rows) - len({row.get("date") for row in trade_rows}),
+        "evidence_date_count": len(evidence_dates),
+        "non_evidence_date_count": len(matrix_rows) - len(evidence_dates),
+        "trade_day_count": len(trade_dates),
+        "no_trade_day_count": len(evidence_dates - trade_dates),
         "trade_count": len(trade_rows),
         "gate_pass_trade_count": len(trade_rows) - len(failed),
         "gate_fail_trade_count": len(failed),
@@ -1025,6 +1097,10 @@ def format_counts(counts: dict[str, int]) -> str:
     return ";".join(f"{key}:{counts[key]}" for key in sorted(counts))
 
 
+def format_date_list(dates: Iterable[str]) -> str:
+    return ",".join(date for date in sorted({date for date in dates if date}))
+
+
 def clean_cell(value: str | None, limit: int = 260) -> str:
     if value is None:
         return ""
@@ -1093,6 +1169,23 @@ def matrix_fieldnames(required_tickers: Iterable[str]) -> list[str]:
     ]
 
 
+def run_coverage_summary_fieldnames() -> list[str]:
+    return [
+        "coverage_status",
+        "date_count",
+        "exact_suffix_output_count",
+        "non_exact_output_count",
+        "fallback_output_count",
+        "missing_artifact_count",
+        "pipeline_failed_count",
+        "exact_run_dates",
+        "non_exact_dates",
+        "fallback_dates",
+        "missing_artifact_dates",
+        "pipeline_failed_dates",
+    ]
+
+
 def portfolio_trade_fieldnames() -> list[str]:
     return [
         "date",
@@ -1123,6 +1216,8 @@ def portfolio_acceptance_summary_fieldnames() -> list[str]:
     return [
         "portfolio_status",
         "date_count",
+        "evidence_date_count",
+        "non_evidence_date_count",
         "trade_day_count",
         "no_trade_day_count",
         "trade_count",
@@ -1211,11 +1306,26 @@ def directional_no_edge_report_fieldnames() -> list[str]:
     ]
 
 
+def render_run_coverage_markdown(summary: Mapping[str, Any]) -> str:
+    lines = [
+        "# Run Coverage Summary",
+        "",
+        "This artifact states whether the matrix date scope is backed by exact current-suffix pipeline outputs. It prevents a partial rerun from being mistaken for a full all-source-complete proof.",
+        "",
+        "## Summary",
+    ]
+    for field in run_coverage_summary_fieldnames():
+        lines.append(f"- {field}: {summary.get(field) if summary.get(field) not in (None, '') else 'n/a'}")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def render_matrix_markdown(
     rows: list[dict[str, Any]],
     required_tickers: Iterable[str],
     date_scope: str,
     portfolio_summary: Mapping[str, Any] | None = None,
+    run_coverage_summary: Mapping[str, Any] | None = None,
 ) -> str:
     lines = [
         "# Options Pattern Goal Acceptance Matrix",
@@ -1254,6 +1364,18 @@ def render_matrix_markdown(
             )
         )
     if portfolio_summary:
+        if run_coverage_summary:
+            lines.extend(
+                [
+                    "",
+                    "## Run Coverage",
+                    f"- Status: {run_coverage_summary.get('coverage_status')}",
+                    f"- Exact suffix outputs: {run_coverage_summary.get('exact_suffix_output_count')}/{run_coverage_summary.get('date_count')}.",
+                    f"- Non-exact outputs: {run_coverage_summary.get('non_exact_output_count')}; missing artifacts: {run_coverage_summary.get('missing_artifact_count')}; pipeline failures: {run_coverage_summary.get('pipeline_failed_count')}.",
+                    f"- Non-exact dates: {run_coverage_summary.get('non_exact_dates') or 'none'}.",
+                    "- Full run-coverage proof: `run_coverage_summary.csv` and `run_coverage_summary.md`.",
+                ]
+            )
         lines.extend(
             [
                 "",

@@ -43,6 +43,57 @@ def test_matrix_status_names_full_source_complete_scope():
     assert matrix.matrix_status([], [], "requested_dates;unbounded;date_count=8") == "PASS_DAILY_NOT_GLOBAL"
 
 
+def test_run_coverage_summary_identifies_partial_exact_scope():
+    summary = matrix.build_run_coverage_summary(
+        [
+            {
+                "date": "2026-05-15",
+                "exact_suffix_output": "yes",
+                "matrix_status": "PASS_SOURCE_COMPLETE_SCOPE",
+                "pipeline_returncode": "",
+            },
+            {
+                "date": "2026-05-16",
+                "exact_suffix_output": "no",
+                "matrix_status": "MISSING_ARTIFACTS",
+                "pipeline_returncode": "",
+            },
+            {
+                "date": "2026-05-17",
+                "exact_suffix_output": "no",
+                "matrix_status": "PARTIAL",
+                "pipeline_returncode": "",
+            },
+        ]
+    )
+
+    assert summary["coverage_status"] == "PARTIAL_EXACT_SCOPE"
+    assert summary["date_count"] == 3
+    assert summary["exact_suffix_output_count"] == 1
+    assert summary["missing_artifact_count"] == 1
+    assert summary["fallback_output_count"] == 1
+    assert summary["non_exact_dates"] == "2026-05-16,2026-05-17"
+    assert summary["exact_run_dates"] == "2026-05-15"
+    assert "partial rerun" in matrix.render_run_coverage_markdown(summary)
+
+
+def test_run_coverage_summary_prioritizes_pipeline_failures():
+    summary = matrix.build_run_coverage_summary(
+        [
+            {
+                "date": "2026-05-15",
+                "exact_suffix_output": "yes",
+                "matrix_status": "PIPELINE_FAILED",
+                "pipeline_returncode": "1",
+            }
+        ]
+    )
+
+    assert summary["coverage_status"] == "PIPELINE_FAILURE"
+    assert summary["pipeline_failed_count"] == 1
+    assert summary["exact_suffix_output_count"] == 0
+
+
 def test_run_pipeline_uses_shared_bot_eod_cache(monkeypatch, tmp_path):
     captured = {}
 
@@ -314,6 +365,24 @@ def test_portfolio_acceptance_summary_fails_bad_auto_trade(tmp_path):
     assert "expected_R" in trade_rows[0]["portfolio_gate_failures"]
     assert summary["portfolio_status"] == "FAIL"
     assert summary["gate_fail_trade_count"] == 1
+
+
+def test_portfolio_acceptance_no_trade_days_ignore_missing_artifact_rows():
+    summary = matrix.build_portfolio_acceptance_summary(
+        [
+            {"date": "2026-05-15", "matrix_status": "PASS_SOURCE_COMPLETE_SCOPE"},
+            {"date": "2026-05-16", "matrix_status": "MISSING_ARTIFACTS"},
+            {"date": "2026-05-17", "matrix_status": "PIPELINE_FAILED"},
+        ],
+        [],
+    )
+
+    assert summary["date_count"] == 3
+    assert summary["evidence_date_count"] == 1
+    assert summary["non_evidence_date_count"] == 2
+    assert summary["trade_day_count"] == 0
+    assert summary["no_trade_day_count"] == 1
+    assert summary["portfolio_status"] == "NO_AUTO_TRADES"
 
 
 def test_scenario_no_edge_rows_aggregate_bearish_put_and_spread_lanes(tmp_path):
