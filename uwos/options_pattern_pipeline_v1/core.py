@@ -63,6 +63,7 @@ SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 500
 VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
 MISSED_MOVER_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
 MIN_DIRECTIONAL_SCENARIO_SIGNALS = 12
+MIN_DIRECTION_STRATEGY_SCENARIO_SIGNALS = 4
 MIN_TICKER_TREND_EDGE_SCORED = 8
 GOAL_AUDIT_REQUIRED_TICKERS = ("AMD", "MU", "NVDA", "SNDK", "IBM", "CRWD", "HOOD", "NOW")
 TRADEABLE_GAP_MIN_SOURCE_PREMIUM = 10_000.0
@@ -1514,12 +1515,12 @@ def maybe_set_best_option(best_options: Dict[Tuple[str, str], Dict[str, Any]], q
         best_options[key] = candidate
 
 
-def add_best_vertical_spreads(
-    best_options: Dict[Tuple[str, str], Dict[str, Any]],
+def select_best_vertical_spreads(
     option_quotes: Mapping[str, Mapping[str, Any]],
     risk_config: Optional[Mapping[str, Any]] = None,
-) -> None:
+) -> Dict[Tuple[str, str], Dict[str, Any]]:
     grouped: Dict[Tuple[str, str, str], List[Mapping[str, Any]]] = defaultdict(list)
+    grouped_best: Dict[Tuple[str, str], Dict[str, Any]] = {}
     for quote in option_quotes.values():
         if quote.get("ask", 0.0) <= 0 or quote.get("bid", 0.0) <= 0:
             continue
@@ -1559,6 +1560,18 @@ def add_best_vertical_spreads(
         if not spread:
             continue
         key = (ticker, spread["direction"])
+        prior = grouped_best.get(key, {})
+        if spread["selection_score"] > prior.get("selection_score", -1):
+            grouped_best[key] = spread
+    return grouped_best
+
+
+def add_best_vertical_spreads(
+    best_options: Dict[Tuple[str, str], Dict[str, Any]],
+    option_quotes: Mapping[str, Mapping[str, Any]],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> None:
+    for key, spread in select_best_vertical_spreads(option_quotes, risk_config).items():
         prior = best_options.get(key, {})
         if spread["selection_score"] > prior.get("selection_score", -1) * 0.85:
             best_options[key] = spread
@@ -2109,6 +2122,7 @@ def generate_signals_for_snapshot(
         gap_rescue_direction = tradeable_gap_rescue_direction(f)
         if gap_rescue_direction:
             quote = tradeable_gap_quote(snapshot, f, gap_rescue_direction, pattern_config, quote_cache, risk_config)
+            spread_quote = credit_spread_quote(snapshot, ticker, gap_rescue_direction, quote_cache)
             if quote and not any(c[0] == "TRADEABLE_SOURCE_GAP_RESCUE" and c[1] == gap_rescue_direction for c in candidates):
                 source_total_premium = source_coverage_total_premium(f)
                 max_volume_ratio = max(call_ratio, put_ratio)
@@ -2132,6 +2146,29 @@ def generate_signals_for_snapshot(
                         ],
                     )
                 )
+            elif spread_quote and not any(c[0] == "TRADEABLE_SOURCE_GAP_RESCUE" and c[1] == gap_rescue_direction for c in candidates):
+                source_total_premium = source_coverage_total_premium(f)
+                max_volume_ratio = max(call_ratio, put_ratio)
+                score = (
+                    3.25
+                    + zish(source_total_premium, TRADEABLE_GAP_MIN_SOURCE_PREMIUM)
+                    + zish(hot_premium, TRADEABLE_GAP_MIN_HOT_PREMIUM)
+                    + math.log1p(max_volume_ratio)
+                    + 2.0 * abs(premium_bias)
+                    + min(abs(stock_ret), 0.25)
+                )
+                candidates.append(
+                    (
+                        "TRADEABLE_SOURCE_GAP_RESCUE",
+                        gap_rescue_direction,
+                        score,
+                        [
+                            "tradeable spread quote present",
+                            "lower-premium UW source signal",
+                            "missed-mover gap rescue candidate",
+                        ],
+                    )
+                )
 
         if ticker in INDEX_TICKERS and put_ratio >= pattern_config["min_put_volume_ratio"]:
             score = zish(put_ratio, pattern_config["min_put_volume_ratio"]) + max(
@@ -2147,15 +2184,16 @@ def generate_signals_for_snapshot(
             )
 
         for family, direction, score, reasons in candidates:
-            if family == "CATALYST_FLOW_LEADER":
-                quote = select_flow_leader_quote(snapshot, f, direction, pattern_config, quote_cache, risk_config)
-            elif family == "SOURCE_PREMIUM_COVERAGE_RESCUE":
-                quote = source_coverage_quote(snapshot, f, direction, pattern_config, quote_cache, risk_config)
-            elif family == "TRADEABLE_SOURCE_GAP_RESCUE":
-                quote = tradeable_gap_quote(snapshot, f, direction, pattern_config, quote_cache, risk_config)
-            else:
-                quote = snapshot.best_options.get((ticker, direction))
-            signals.append(build_signal(snapshot, f, family, direction, score, reasons, quote, pattern_config, risk_config))
+            for quote in signal_family_quote_candidates(
+                snapshot,
+                f,
+                family,
+                direction,
+                pattern_config,
+                quote_cache,
+                risk_config,
+            ):
+                signals.append(build_signal(snapshot, f, family, direction, score, reasons, quote, pattern_config, risk_config))
 
     signals.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
     return select_signal_set(
@@ -2199,6 +2237,30 @@ def select_signal_set(
             needed -= 1
             if needed <= 0:
                 break
+    strategy_lane_counts = Counter(
+        (str(row.get("direction") or ""), signal_strategy_kind(row)) for row in selected
+    )
+    min_strategy_lane = min(max_signals, MIN_DIRECTION_STRATEGY_SCENARIO_SIGNALS)
+    for direction in ("bullish", "bearish"):
+        for strategy_kind in ("long_option", "credit_spread"):
+            needed = max(0, min_strategy_lane - strategy_lane_counts.get((direction, strategy_kind), 0))
+            if not needed:
+                continue
+            for row in ranked:
+                if str(row.get("direction") or "") != direction:
+                    continue
+                if signal_strategy_kind(row) != strategy_kind:
+                    continue
+                key = signal_identity_key(row)
+                if key in selected_keys:
+                    continue
+                selected.append(row)
+                selected_keys.add(key)
+                selected_ticker_directions.add((str(row.get("ticker") or ""), direction))
+                strategy_lane_counts[(direction, strategy_kind)] += 1
+                needed -= 1
+                if needed <= 0:
+                    break
     best_rescue_by_ticker_direction: Dict[Tuple[str, str], Dict[str, Any]] = {}
     for row in ranked:
         if not must_keep_source_rescue_signal(row):
@@ -2241,12 +2303,17 @@ def select_signal_set(
     return selected
 
 
-def signal_identity_key(row: Mapping[str, Any]) -> Tuple[str, str, str, str]:
+def signal_strategy_kind(row: Mapping[str, Any]) -> str:
+    return str(row.get("strategy_kind") or "long_option")
+
+
+def signal_identity_key(row: Mapping[str, Any]) -> Tuple[str, str, str, str, str]:
     return (
         str(row.get("date") or ""),
         str(row.get("ticker") or ""),
         str(row.get("direction") or ""),
         str(row.get("pattern_family") or row.get("base_pattern_family") or ""),
+        signal_strategy_kind(row),
     )
 
 
@@ -2420,7 +2487,74 @@ def build_quote_selection_cache(
                 candidate["selection_score"] = score
                 tradeable_gap[key] = candidate
                 tradeable_gap_scores[key] = score
-    return {"flow": flow, "tradeable_gap": tradeable_gap}
+    credit_spread = select_best_vertical_spreads(snapshot.option_quotes, risk_config)
+    return {"flow": flow, "tradeable_gap": tradeable_gap, "credit_spread": credit_spread}
+
+
+def credit_spread_quote(
+    snapshot: Snapshot,
+    ticker: str,
+    direction: str,
+    quote_cache: Optional[Mapping[str, Mapping[Tuple[str, str], Mapping[str, Any]]]] = None,
+) -> Mapping[str, Any]:
+    key = (ticker, direction)
+    if quote_cache is not None:
+        cached = quote_cache.get("credit_spread", {}).get(key)
+        if cached:
+            return cached
+    quote = snapshot.best_options.get(key)
+    if quote and quote.get("strategy_kind") == "credit_spread":
+        return quote
+    return {}
+
+
+def quote_identity(quote: Mapping[str, Any]) -> Tuple[str, str, str, str, str]:
+    return (
+        str(quote.get("strategy_kind") or "long_option"),
+        str(quote.get("option_symbol") or ""),
+        str(quote.get("expiry") or ""),
+        str(quote.get("strike") or ""),
+        str(quote.get("long_strike") or ""),
+    )
+
+
+def append_unique_quote(quotes: List[Mapping[str, Any]], quote: Optional[Mapping[str, Any]]) -> None:
+    if not quote:
+        return
+    identity = quote_identity(quote)
+    if any(quote_identity(existing) == identity for existing in quotes):
+        return
+    quotes.append(quote)
+
+
+def signal_family_quote_candidates(
+    snapshot: Snapshot,
+    feature: Mapping[str, Any],
+    family: str,
+    direction: str,
+    pattern_config: Mapping[str, Any],
+    quote_cache: Mapping[str, Mapping[Tuple[str, str], Mapping[str, Any]]],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> List[Optional[Mapping[str, Any]]]:
+    ticker = str(feature.get("ticker") or "")
+    key = (ticker, direction)
+    if family == "CATALYST_FLOW_LEADER":
+        primary = select_flow_leader_quote(snapshot, feature, direction, pattern_config, quote_cache, risk_config)
+    elif family == "SOURCE_PREMIUM_COVERAGE_RESCUE":
+        primary = source_coverage_quote(snapshot, feature, direction, pattern_config, quote_cache, risk_config)
+    elif family == "TRADEABLE_SOURCE_GAP_RESCUE":
+        primary = tradeable_gap_quote(snapshot, feature, direction, pattern_config, quote_cache, risk_config)
+    else:
+        primary = snapshot.best_options.get(key)
+
+    quotes: List[Mapping[str, Any]] = []
+    append_unique_quote(quotes, primary)
+    if family != "TRADEABLE_SOURCE_GAP_RESCUE":
+        append_unique_quote(quotes, quote_cache.get("flow", {}).get(key))
+        append_unique_quote(quotes, quote_cache.get("tradeable_gap", {}).get(key))
+    append_unique_quote(quotes, credit_spread_quote(snapshot, ticker, direction, quote_cache))
+    append_unique_quote(quotes, snapshot.best_options.get(key))
+    return list(quotes) if quotes else [None]
 
 
 def select_tradeable_gap_long_option_quote(
@@ -7366,7 +7500,14 @@ def build_source_ticker_coverage_row(
         "decision_classification": best_row.get("classification", ""),
         "decision_pattern_family": best_row.get("pattern_family", ""),
         "decision_block_reasons": join_reason_list(best_row.get("block_reasons")),
+        "strategy": setup.get("strategy", ""),
+        "buy_or_sell": setup.get("buy_or_sell", ""),
+        "call_or_put": setup.get("call_or_put", ""),
+        "strike_rates": setup.get("strike_rates", ""),
+        "expiration_date": setup.get("expiration_date", ""),
+        "trade_setup": setup.get("trade_setup", ""),
         "trade_legs": setup.get("trade_legs", ""),
+        "occ_symbols": setup.get("occ_symbols", ""),
         "entry_limit": setup.get("entry_range", ""),
         "quote_source": best_row.get("quote_source") or quote.get("quote_source", ""),
         "quote_volume": best_row.get("liquidity_volume") if best_row else quote.get("volume"),
@@ -8785,7 +8926,14 @@ def source_coverage_fieldnames() -> List[str]:
         "decision_classification",
         "decision_pattern_family",
         "decision_block_reasons",
+        "strategy",
+        "buy_or_sell",
+        "call_or_put",
+        "strike_rates",
+        "expiration_date",
+        "trade_setup",
         "trade_legs",
+        "occ_symbols",
         "entry_limit",
         "quote_source",
         "quote_volume",

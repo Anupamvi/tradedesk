@@ -123,6 +123,10 @@ def test_source_coverage_surfaces_high_flow_ticker_that_misses_decision_board():
     assert rows[0]["ticker"] == "IBM"
     assert rows[0]["decision_surface_status"] == "NOT_SURFACED"
     assert "below 100M catalyst-flow-leader threshold" in rows[0]["source_gap_reason"]
+    assert rows[0]["strategy"] == "Long Call Debit"
+    assert rows[0]["call_or_put"] == "CALL"
+    assert rows[0]["strike_rates"] == "300"
+    assert rows[0]["expiration_date"] == "2026-06-18"
     assert rows[0]["trade_legs"] == "Buy 1 IBM 2026-06-18 300C @ debit 4.10-4.30 limit"
 
 
@@ -194,6 +198,10 @@ def test_source_coverage_uses_decision_ticket_when_ticker_surfaces():
     assert rows[0]["ticker"] == "IBM"
     assert rows[0]["decision_surface_status"] == "TRADE_REVIEW"
     assert rows[0]["decision_pattern_family"] == "SOURCE_PREMIUM_COVERAGE_RESCUE__BULLISH__LONG_OPTION__TECHNOLOGY"
+    assert rows[0]["strategy"] == "Long Call Debit"
+    assert rows[0]["call_or_put"] == "CALL"
+    assert rows[0]["strike_rates"] == "260"
+    assert rows[0]["expiration_date"] == "2026-06-18"
     assert rows[0]["trade_legs"] == "Buy 1 IBM 2026-06-18 260C @ debit 12.70-12.70 limit"
     assert rows[0]["entry_limit"] == "debit 12.70-12.70"
     assert rows[0]["quote_volume"] == 1450
@@ -729,6 +737,105 @@ def test_tradeable_source_gap_rescue_falls_back_to_eligible_long_option():
     assert gap_signal["lead_option_symbol"] == "CRWG260515C00005000"
     assert gap_signal["strategy_kind"] == "long_option"
     assert not gap_signal["block_reasons"]
+
+
+def test_generate_signals_keeps_credit_spread_lane_next_to_long_option():
+    pattern_config = {
+        "min_call_volume_ratio": 1.35,
+        "min_put_volume_ratio": 1.35,
+        "min_hot_premium": 250_000,
+        "min_oi_diff": 5_000,
+        "max_spread_pct": 0.35,
+        "high_iv": 0.75,
+        "min_liquidity_score": 8.0,
+        "min_ask_side_ratio": 0.52,
+        "max_event_dte_without_event_strategy": 2,
+    }
+    feature = {
+        "date": "2026-05-28",
+        "ticker": "LANE",
+        "close": 100.0,
+        "source_flags": {"hot_chains", "stock_screener"},
+        "hot_total_premium": 1_200_000.0,
+        "call_premium": 900_000.0,
+        "put_premium": 300_000.0,
+        "call_volume_ratio_30d": 4.0,
+        "put_volume_ratio_30d": 1.1,
+        "premium_bias": 0.50,
+        "hot_call_ask_ratio": 0.90,
+        "liquidity_score": 20.0,
+    }
+    long_call = {
+        "ticker": "LANE",
+        "direction": "bullish",
+        "option_symbol": "LANE260618C00110000",
+        "option_type": "call",
+        "expiry": "2026-06-18",
+        "strike": 110.0,
+        "dte": 15,
+        "bid": 3.8,
+        "ask": 4.0,
+        "mid": 3.9,
+        "volume": 2000,
+        "open_interest": 3000,
+        "premium": 800_000.0,
+        "spread_pct": 0.051,
+        "stock_close": 100.0,
+        "quote_source": "bot_eod",
+    }
+    short_put = {
+        "ticker": "LANE",
+        "direction": "bearish",
+        "option_symbol": "LANE260618P00095000",
+        "option_type": "put",
+        "expiry": "2026-06-18",
+        "strike": 95.0,
+        "dte": 15,
+        "bid": 2.0,
+        "ask": 2.2,
+        "mid": 2.1,
+        "volume": 1200,
+        "open_interest": 1800,
+        "premium": 240_000.0,
+        "spread_pct": 0.095,
+        "stock_close": 100.0,
+    }
+    long_put = {
+        "ticker": "LANE",
+        "direction": "bearish",
+        "option_symbol": "LANE260618P00090000",
+        "option_type": "put",
+        "expiry": "2026-06-18",
+        "strike": 90.0,
+        "dte": 15,
+        "bid": 0.8,
+        "ask": 0.9,
+        "mid": 0.85,
+        "volume": 900,
+        "open_interest": 1600,
+        "premium": 81_000.0,
+        "spread_pct": 0.118,
+        "stock_close": 100.0,
+    }
+    snapshot = SnapshotStub(
+        {"LANE": feature},
+        best_options={("LANE", "bullish"): long_call},
+        signal_date="2026-05-28",
+        option_quotes={
+            long_call["option_symbol"]: long_call,
+            short_put["option_symbol"]: short_put,
+            long_put["option_symbol"]: long_put,
+        },
+    )
+
+    signals = generate_signals_for_snapshot(snapshot, pattern_config, max_signals=1)
+    lane_signals = [row for row in signals if row["ticker"] == "LANE"]
+
+    assert {row["strategy_kind"] for row in lane_signals} == {"long_option", "credit_spread"}
+    spread = next(row for row in lane_signals if row["strategy_kind"] == "credit_spread")
+    assert spread["strategy_type"] == "Bull Put Credit Spread"
+    assert spread["option_type"] == "put"
+    assert "SELL" in spread["legs_json"]
 
 
 def test_goal_evidence_fails_when_required_high_signal_ticker_disappears():
