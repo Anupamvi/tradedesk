@@ -209,3 +209,70 @@ def test_validation_gate_bearish_scores_counts_only_gate_scored_rows(tmp_path):
     )
 
     assert matrix.validation_gate_bearish_scores(path) == {("IWM", "long_option"): 2}
+
+
+def test_portfolio_acceptance_summary_aggregates_auto_trades(tmp_path):
+    run_dir = tmp_path / "2026-05-29_run"
+    run_dir.mkdir()
+    (run_dir / "metadata.json").write_text(
+        '{"risk_config":{"min_ticker_trend_expected_r":0.15,"min_expected_r_per_day":0.0,'
+        '"min_ticker_trend_profit_factor":1.5,"min_ticker_trend_scored_outcomes":20,'
+        '"min_baselines_beaten":2,"min_ticker_trend_probability_score":0.42,'
+        '"min_ticker_trend_win_rate":0.55}}',
+        encoding="utf-8",
+    )
+    (run_dir / "actionable_trades.csv").write_text(
+        "\n".join(
+            [
+                "ticker,direction,strategy,buy_or_sell,call_or_put,strike_rates,expiration_date,"
+                "suggested_entry_debit_credit_range,trade_legs,max_risk_per_contract,probability_score,"
+                "success_probability_pct,expected_R,expected_R_per_day,validation_profit_factor,"
+                "validation_scored_count,beats_baselines_count,baselines_beaten_names,baselines_beaten_details,"
+                "ticker_trend_scope,ticker_trend_scored_count,ticker_trend_avg_R,ticker_trend_profit_factor,"
+                "ticker_trend_probability_score_pct,ticker_trend_win_rate_pct,calibrated_probability",
+                "AMD,bullish,Long Call Debit,BUY,CALL,550,2026-06-05,debit 9.05-9.25,"
+                "Buy 1 AMD 2026-06-05 550C @ debit 9.05-9.25 limit,925.65,55.83,66.67,"
+                "1.97,0.39,9.73,21,6,BASELINE_A;BASELINE_B,details,ticker_direction_strategy,"
+                "21,1.97,9.73,55.83,66.67,0.6667",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    trade_rows = matrix.build_portfolio_trade_rows([{"date": "2026-05-29", "run_dir": str(run_dir)}])
+    summary = matrix.build_portfolio_acceptance_summary([{"date": "2026-05-29"}], trade_rows)
+
+    assert trade_rows[0]["portfolio_gate_status"] == "PASS"
+    assert summary["portfolio_status"] == "PASS_WITH_WARNINGS"
+    assert summary["trade_count"] == 1
+    assert summary["gate_fail_trade_count"] == 0
+    assert summary["avg_expected_R"] == 1.97
+    assert "AUTO_DIRECTION_CONCENTRATION_NO_BEARISH" in summary["warnings"]
+
+
+def test_portfolio_acceptance_summary_fails_bad_auto_trade(tmp_path):
+    run_dir = tmp_path / "2026-05-29_run"
+    run_dir.mkdir()
+    (run_dir / "metadata.json").write_text('{"risk_config":{"min_baselines_beaten":2}}', encoding="utf-8")
+    (run_dir / "actionable_trades.csv").write_text(
+        "\n".join(
+            [
+                "ticker,direction,strategy,buy_or_sell,call_or_put,strike_rates,expiration_date,"
+                "suggested_entry_debit_credit_range,trade_legs,max_risk_per_contract,probability_score,"
+                "success_probability_pct,expected_R,expected_R_per_day,validation_profit_factor,"
+                "validation_scored_count,beats_baselines_count,baselines_beaten_names,baselines_beaten_details",
+                "BAD,bullish,Long Call Debit,BUY,CALL,10,2026-06-05,debit 1.00-1.05,"
+                "Buy 1 BAD 2026-06-05 10C @ debit 1.00-1.05 limit,105,20,30,-0.5,-0.1,0.5,"
+                "3,0,,",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    trade_rows = matrix.build_portfolio_trade_rows([{"date": "2026-05-29", "run_dir": str(run_dir)}])
+    summary = matrix.build_portfolio_acceptance_summary([{"date": "2026-05-29"}], trade_rows)
+
+    assert trade_rows[0]["portfolio_gate_status"] == "FAIL"
+    assert "expected_R" in trade_rows[0]["portfolio_gate_failures"]
+    assert summary["portfolio_status"] == "FAIL"
+    assert summary["gate_fail_trade_count"] == 1

@@ -7,11 +7,13 @@ import argparse
 import csv
 import json
 import re
+import statistics
 import subprocess
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -19,6 +21,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from uwos.options_pattern_pipeline_v1.core import (
     MIN_TICKER_TREND_EDGE_SCORED,
+    auto_approved_goal_gate_failures,
     list_date_dirs,
     source_completeness_for_date,
 )
@@ -145,14 +148,26 @@ def main(argv: list[str] | None = None) -> int:
         runs.append(DateRun(date, out_dir, exact_suffix_output, should_run, returncode))
 
     rows = [build_matrix_row(run, args.required_tickers, date_scope) for run in runs]
+    portfolio_trade_rows = build_portfolio_trade_rows(rows)
+    portfolio_summary_rows = [build_portfolio_acceptance_summary(rows, portfolio_trade_rows)]
     write_csv(matrix_dir / "goal_acceptance_matrix.csv", rows, matrix_fieldnames(args.required_tickers))
+    write_csv(matrix_dir / "portfolio_trade_rows.csv", portfolio_trade_rows, portfolio_trade_fieldnames())
+    write_csv(
+        matrix_dir / "portfolio_acceptance_summary.csv",
+        portfolio_summary_rows,
+        portfolio_acceptance_summary_fieldnames(),
+    )
     (matrix_dir / "goal_acceptance_matrix.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
     (matrix_dir / "date_selection.json").write_text(
         json.dumps({"date_scope": date_scope, "dates": dates, "date_count": len(dates)}, indent=2),
         encoding="utf-8",
     )
     (matrix_dir / "goal_acceptance_matrix.md").write_text(
-        render_matrix_markdown(rows, args.required_tickers, date_scope),
+        render_matrix_markdown(rows, args.required_tickers, date_scope, portfolio_summary_rows[0]),
+        encoding="utf-8",
+    )
+    (matrix_dir / "portfolio_acceptance_summary.md").write_text(
+        render_portfolio_acceptance_markdown(portfolio_summary_rows[0], portfolio_trade_rows),
         encoding="utf-8",
     )
     print(matrix_dir / "goal_acceptance_matrix.md")
@@ -518,6 +533,140 @@ def tickers_from_csv(path: Path, limit: int = 30) -> str:
     return ",".join(tickers)
 
 
+def build_portfolio_trade_rows(matrix_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for matrix_row in matrix_rows:
+        date = str(matrix_row.get("date") or "")
+        run_dir = Path(str(matrix_row.get("run_dir") or ""))
+        metadata = read_json(run_dir / "metadata.json")
+        risk_config = metadata.get("risk_config") or {}
+        for trade in read_csv(run_dir / "actionable_trades.csv"):
+            missing = portfolio_trade_missing_fields(trade)
+            gate_failures = list(auto_approved_goal_gate_failures(trade, risk_config))
+            failures = missing + gate_failures
+            rows.append(
+                {
+                    "date": date,
+                    "ticker": str(trade.get("ticker") or "").upper(),
+                    "direction": trade.get("direction", ""),
+                    "strategy": trade.get("strategy", ""),
+                    "buy_or_sell": trade.get("buy_or_sell", ""),
+                    "call_or_put": trade.get("call_or_put", ""),
+                    "strike_rates": trade.get("strike_rates", ""),
+                    "expiration_date": trade.get("expiration_date", ""),
+                    "entry": trade.get("suggested_entry_debit_credit_range", ""),
+                    "trade_legs": trade.get("trade_legs", ""),
+                    "max_risk_per_contract": trade.get("max_risk_per_contract", ""),
+                    "probability_score": trade.get("probability_score", ""),
+                    "success_probability_pct": trade.get("success_probability_pct", ""),
+                    "expected_R": trade.get("expected_R", ""),
+                    "expected_R_per_day": trade.get("expected_R_per_day", ""),
+                    "validation_profit_factor": trade.get("validation_profit_factor", ""),
+                    "validation_scored_count": trade.get("validation_scored_count", ""),
+                    "beats_baselines_count": trade.get("beats_baselines_count", ""),
+                    "baselines_beaten_names": trade.get("baselines_beaten_names", ""),
+                    "portfolio_gate_status": "PASS" if not failures else "FAIL",
+                    "portfolio_gate_failures": ";".join(failures),
+                }
+            )
+    return rows
+
+
+def portfolio_trade_missing_fields(row: Mapping[str, Any]) -> list[str]:
+    required = (
+        "ticker",
+        "direction",
+        "strategy",
+        "buy_or_sell",
+        "call_or_put",
+        "strike_rates",
+        "expiration_date",
+        "suggested_entry_debit_credit_range",
+        "trade_legs",
+        "max_risk_per_contract",
+        "probability_score",
+        "expected_R",
+        "expected_R_per_day",
+        "beats_baselines_count",
+        "baselines_beaten_names",
+        "baselines_beaten_details",
+    )
+    return [f"missing_{field}" for field in required if not clean_cell(row.get(field))]
+
+
+def build_portfolio_acceptance_summary(
+    matrix_rows: Sequence[Mapping[str, Any]],
+    trade_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    expected_rs = numeric_values(row.get("expected_R") for row in trade_rows)
+    expected_r_days = numeric_values(row.get("expected_R_per_day") for row in trade_rows)
+    probability_scores = numeric_values(row.get("probability_score") for row in trade_rows)
+    profit_factors = numeric_values(row.get("validation_profit_factor") for row in trade_rows)
+    failed = [row for row in trade_rows if row.get("portfolio_gate_status") != "PASS"]
+    direction_counts = Counter(str(row.get("direction") or "UNKNOWN") for row in trade_rows)
+    strategy_counts = Counter(str(row.get("strategy") or "UNKNOWN") for row in trade_rows)
+    option_counts = Counter(str(row.get("call_or_put") or "UNKNOWN") for row in trade_rows)
+    warnings: list[str] = []
+    if trade_rows and not any(str(row.get("direction") or "") == "bearish" for row in trade_rows):
+        warnings.append("AUTO_DIRECTION_CONCENTRATION_NO_BEARISH")
+    if trade_rows and not any("PUT" in str(row.get("call_or_put") or "").upper() for row in trade_rows):
+        warnings.append("AUTO_STRUCTURE_CONCENTRATION_NO_PUT")
+    if not trade_rows:
+        status = "NO_AUTO_TRADES"
+    elif failed:
+        status = "FAIL"
+    elif expected_rs and statistics.fmean(expected_rs) > 0 and warnings:
+        status = "PASS_WITH_WARNINGS"
+    elif expected_rs and statistics.fmean(expected_rs) > 0:
+        status = "PASS"
+    else:
+        status = "FAIL"
+    return {
+        "portfolio_status": status,
+        "date_count": len(matrix_rows),
+        "trade_day_count": len({row.get("date") for row in trade_rows}),
+        "no_trade_day_count": len(matrix_rows) - len({row.get("date") for row in trade_rows}),
+        "trade_count": len(trade_rows),
+        "gate_pass_trade_count": len(trade_rows) - len(failed),
+        "gate_fail_trade_count": len(failed),
+        "avg_expected_R": mean_or_blank(expected_rs),
+        "gross_expected_R": sum(expected_rs) if expected_rs else "",
+        "min_expected_R": min(expected_rs) if expected_rs else "",
+        "avg_expected_R_per_day": mean_or_blank(expected_r_days),
+        "avg_probability_score": mean_or_blank(probability_scores),
+        "avg_validation_profit_factor": mean_or_blank(profit_factors),
+        "direction_mix": format_counts(dict(direction_counts)),
+        "strategy_mix": format_counts(dict(strategy_counts)),
+        "option_mix": format_counts(dict(option_counts)),
+        "warnings": ";".join(warnings),
+        "failed_trade_examples": "; ".join(
+            f"{row.get('date')} {row.get('ticker')}:{row.get('portfolio_gate_failures')}" for row in failed[:20]
+        ),
+    }
+
+
+def numeric_values(values: Iterable[Any]) -> list[float]:
+    out: list[float] = []
+    for value in values:
+        number = to_float(value)
+        if number is not None:
+            out.append(number)
+    return out
+
+
+def mean_or_blank(values: Sequence[float]) -> float | str:
+    return statistics.fmean(values) if values else ""
+
+
+def to_float(value: Any) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def extract_count(text: str, key: str) -> str:
     marker = f"{key}="
     if marker not in text:
@@ -616,7 +765,61 @@ def matrix_fieldnames(required_tickers: Iterable[str]) -> list[str]:
     ]
 
 
-def render_matrix_markdown(rows: list[dict[str, Any]], required_tickers: Iterable[str], date_scope: str) -> str:
+def portfolio_trade_fieldnames() -> list[str]:
+    return [
+        "date",
+        "ticker",
+        "direction",
+        "strategy",
+        "buy_or_sell",
+        "call_or_put",
+        "strike_rates",
+        "expiration_date",
+        "entry",
+        "trade_legs",
+        "max_risk_per_contract",
+        "probability_score",
+        "success_probability_pct",
+        "expected_R",
+        "expected_R_per_day",
+        "validation_profit_factor",
+        "validation_scored_count",
+        "beats_baselines_count",
+        "baselines_beaten_names",
+        "portfolio_gate_status",
+        "portfolio_gate_failures",
+    ]
+
+
+def portfolio_acceptance_summary_fieldnames() -> list[str]:
+    return [
+        "portfolio_status",
+        "date_count",
+        "trade_day_count",
+        "no_trade_day_count",
+        "trade_count",
+        "gate_pass_trade_count",
+        "gate_fail_trade_count",
+        "avg_expected_R",
+        "gross_expected_R",
+        "min_expected_R",
+        "avg_expected_R_per_day",
+        "avg_probability_score",
+        "avg_validation_profit_factor",
+        "direction_mix",
+        "strategy_mix",
+        "option_mix",
+        "warnings",
+        "failed_trade_examples",
+    ]
+
+
+def render_matrix_markdown(
+    rows: list[dict[str, Any]],
+    required_tickers: Iterable[str],
+    date_scope: str,
+    portfolio_summary: Mapping[str, Any] | None = None,
+) -> str:
     lines = [
         "# Options Pattern Goal Acceptance Matrix",
         "",
@@ -653,6 +856,21 @@ def render_matrix_markdown(rows: list[dict[str, Any]], required_tickers: Iterabl
                 warns=";".join(issue_bits),
             )
         )
+    if portfolio_summary:
+        lines.extend(
+            [
+                "",
+                "## Portfolio Acceptance",
+                f"- Status: {portfolio_summary.get('portfolio_status')}",
+                f"- Trades: {portfolio_summary.get('trade_count')} across {portfolio_summary.get('trade_day_count')} trade days; no-trade days {portfolio_summary.get('no_trade_day_count')}.",
+                f"- Avg expected R: {portfolio_summary.get('avg_expected_R')}; gross expected R: {portfolio_summary.get('gross_expected_R')}.",
+                f"- Gate pass/fail: {portfolio_summary.get('gate_pass_trade_count')}/{portfolio_summary.get('gate_fail_trade_count')}.",
+                f"- Direction mix: {portfolio_summary.get('direction_mix') or 'none'}.",
+                f"- Strategy mix: {portfolio_summary.get('strategy_mix') or 'none'}.",
+                f"- Warnings: {portfolio_summary.get('warnings') or 'none'}.",
+                "- Full portfolio proof: `portfolio_acceptance_summary.csv`, `portfolio_acceptance_summary.md`, and `portfolio_trade_rows.csv`.",
+            ]
+        )
     lines.extend(["", "## Detail"])
     for row in rows:
         lines.append(f"### {row.get('date')} - {row.get('matrix_status')}")
@@ -672,6 +890,47 @@ def render_matrix_markdown(rows: list[dict[str, Any]], required_tickers: Iterabl
         lines.append(f"- Warning requirements: {row.get('warn_requirements') or 'none'}")
     lines.append("")
     return "\n".join(lines)
+
+
+def render_portfolio_acceptance_markdown(
+    summary: Mapping[str, Any],
+    trade_rows: Sequence[Mapping[str, Any]],
+) -> str:
+    lines = [
+        "# Portfolio Acceptance Summary",
+        "",
+        "This artifact aggregates the actual `AUTO_APPROVED` rows emitted by the matrix date set. It is not an order blotter; it is the acceptance proof that emitted trades carry executable fields, positive expected R after configured costs/slippage, and baseline evidence.",
+        "",
+        "## Summary",
+    ]
+    for field in portfolio_acceptance_summary_fieldnames():
+        lines.append(f"- {field}: {summary.get(field) if summary.get(field) not in (None, '') else 'n/a'}")
+    lines.extend(
+        [
+            "",
+            "## Trade Rows",
+            "| Date | Ticker | Direction | Strategy | Legs | Entry | Exp R | Prob Score | PF | Baselines | Gate | Failures |",
+            "|---|---|---|---|---|---|---:|---:|---:|---:|---|---|",
+        ]
+    )
+    for row in trade_rows[:60]:
+        lines.append(
+            f"| {row.get('date')} | {row.get('ticker')} | {row.get('direction')} | "
+            f"{markdown_cell(row.get('strategy'))} | {markdown_cell(row.get('trade_legs'))} | "
+            f"{markdown_cell(row.get('entry'))} | {row.get('expected_R')} | {row.get('probability_score')} | "
+            f"{row.get('validation_profit_factor')} | {row.get('beats_baselines_count')} | "
+            f"{row.get('portfolio_gate_status')} | {markdown_cell(row.get('portfolio_gate_failures'))} |"
+        )
+    if len(trade_rows) > 60:
+        lines.append(f"- {len(trade_rows) - 60} additional trade rows omitted from Markdown; see `portfolio_trade_rows.csv`.")
+    if not trade_rows:
+        lines.append("| n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | NO_AUTO_TRADES | n/a |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def markdown_cell(value: Any) -> str:
+    return str(value or "").replace("|", "\\|").replace("\n", " ").strip()
 
 
 if __name__ == "__main__":
