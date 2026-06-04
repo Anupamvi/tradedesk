@@ -92,6 +92,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Root directory for per-date pipeline reruns. Default: <base-dir>/out/options_pattern_pipeline_v1.",
     )
+    parser.add_argument(
+        "--bot-eod-cache-dir",
+        default=None,
+        help="Bot-EOD cache directory for per-date reruns. Default: <runs-root>/_cache/bot_eod.",
+    )
     parser.add_argument("--run-missing", action="store_true", help="Run pipeline for dates without an exact suffix output.")
     parser.add_argument("--force", action="store_true", help="Rerun every requested date even if output exists.")
     parser.add_argument(
@@ -126,7 +131,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     matrix_dir = Path(args.matrix_dir).expanduser().resolve() if args.matrix_dir else root / args.suffix
     matrix_dir.mkdir(parents=True, exist_ok=True)
-    bot_eod_cache_dir = root / "_cache" / "bot_eod"
+    bot_eod_cache_dir = (
+        Path(args.bot_eod_cache_dir).expanduser().resolve()
+        if args.bot_eod_cache_dir
+        else root / "_cache" / "bot_eod"
+    )
 
     runs: list[DateRun] = []
     for date in dates:
@@ -152,6 +161,7 @@ def main(argv: list[str] | None = None) -> int:
     portfolio_summary_rows = [build_portfolio_acceptance_summary(rows, portfolio_trade_rows)]
     scenario_rows = build_scenario_no_edge_rows(rows)
     directional_edge_rows = build_directional_edge_matrix_rows(rows)
+    directional_no_edge_rows = build_directional_no_edge_report_rows(directional_edge_rows)
     write_csv(matrix_dir / "goal_acceptance_matrix.csv", rows, matrix_fieldnames(args.required_tickers))
     write_csv(matrix_dir / "portfolio_trade_rows.csv", portfolio_trade_rows, portfolio_trade_fieldnames())
     write_csv(
@@ -164,6 +174,11 @@ def main(argv: list[str] | None = None) -> int:
         matrix_dir / "directional_edge_matrix_summary.csv",
         directional_edge_rows,
         directional_edge_matrix_fieldnames(),
+    )
+    write_csv(
+        matrix_dir / "directional_no_edge_report.csv",
+        directional_no_edge_rows,
+        directional_no_edge_report_fieldnames(),
     )
     (matrix_dir / "goal_acceptance_matrix.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
     (matrix_dir / "date_selection.json").write_text(
@@ -184,6 +199,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     (matrix_dir / "directional_edge_matrix_summary.md").write_text(
         render_directional_edge_matrix_markdown(directional_edge_rows),
+        encoding="utf-8",
+    )
+    (matrix_dir / "directional_no_edge_report.md").write_text(
+        render_directional_no_edge_report_markdown(directional_no_edge_rows, portfolio_summary_rows[0]),
         encoding="utf-8",
     )
     print(matrix_dir / "goal_acceptance_matrix.md")
@@ -787,6 +806,107 @@ def build_directional_edge_matrix_rows(matrix_rows: Iterable[Mapping[str, Any]])
     return out
 
 
+def build_directional_no_edge_report_rows(
+    directional_edge_rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    grouped: dict[str, list[Mapping[str, Any]]] = {}
+    for row in directional_edge_rows:
+        direction = clean_cell(row.get("direction")) or "unknown"
+        grouped.setdefault(direction, []).append(row)
+
+    out: list[dict[str, Any]] = []
+    for direction, rows in grouped.items():
+        auto_rows = [row for row in rows if row.get("surface_status") == "AUTO_APPROVED"]
+        review_rows = [row for row in rows if row.get("surface_status") in {"TRADE_REVIEW", "REVIEW"}]
+        avoid_rows = [row for row in rows if row.get("surface_status") == "AVOID"]
+        non_auto_rows = review_rows + avoid_rows
+        auto_count = sum_int(row.get("candidate_count") for row in auto_rows)
+        non_auto_count = sum_int(row.get("candidate_count") for row in non_auto_rows)
+        if auto_count or not non_auto_count:
+            continue
+
+        blocker_counts = Counter()
+        diagnosis_counts = Counter()
+        for row in non_auto_rows:
+            blocker_counts.update(parse_counter_text(row.get("top_blockers")))
+            diagnosis = clean_cell(row.get("primary_diagnosis")) or "UNKNOWN"
+            diagnosis_counts[diagnosis] += int(to_float(row.get("candidate_count")) or 0)
+
+        review_positive_count = sum_int(row.get("positive_expected_R_count") for row in review_rows)
+        avoid_positive_count = sum_int(row.get("positive_expected_R_count") for row in avoid_rows)
+        avg_expected_r = weighted_average_from_rows(non_auto_rows, "avg_expected_R_weighted", "candidate_count")
+        top_rows = sorted(
+            non_auto_rows,
+            key=lambda row: (
+                row.get("surface_status") in {"TRADE_REVIEW", "REVIEW"},
+                to_float(row.get("max_expected_R")) if to_float(row.get("max_expected_R")) is not None else -999.0,
+                int(to_float(row.get("candidate_count")) or 0),
+            ),
+            reverse=True,
+        )[:6]
+        top_examples = "; ".join(
+            clean_cell(row.get("top_examples"), limit=220) for row in top_rows if clean_cell(row.get("top_examples"))
+        )
+        out.append(
+            {
+                "direction": direction,
+                "primary_no_edge_reason": classify_directional_no_edge(
+                    review_positive_count, avg_expected_r, blocker_counts
+                ),
+                "auto_approved_candidate_count": auto_count,
+                "non_auto_candidate_count": non_auto_count,
+                "review_candidate_count": sum_int(row.get("candidate_count") for row in review_rows),
+                "avoid_candidate_count": sum_int(row.get("candidate_count") for row in avoid_rows),
+                "positive_expected_R_count": review_positive_count + avoid_positive_count,
+                "review_positive_expected_R_count": review_positive_count,
+                "avoid_positive_expected_R_count": avoid_positive_count,
+                "avg_expected_R_weighted": avg_expected_r,
+                "review_avg_expected_R_weighted": weighted_average_from_rows(
+                    review_rows, "avg_expected_R_weighted", "candidate_count"
+                ),
+                "avoid_avg_expected_R_weighted": weighted_average_from_rows(
+                    avoid_rows, "avg_expected_R_weighted", "candidate_count"
+                ),
+                "max_expected_R": max_numeric(row.get("max_expected_R") for row in non_auto_rows),
+                "avg_probability_score_weighted": weighted_average_from_rows(
+                    non_auto_rows, "avg_probability_score_weighted", "candidate_count"
+                ),
+                "avg_validation_profit_factor_weighted": weighted_average_from_rows(
+                    non_auto_rows, "avg_validation_profit_factor_weighted", "candidate_count"
+                ),
+                "avg_baselines_beaten_weighted": weighted_average_from_rows(
+                    non_auto_rows, "avg_baselines_beaten_weighted", "candidate_count"
+                ),
+                "top_diagnoses": format_counter(diagnosis_counts, 8),
+                "top_blockers": format_counter(blocker_counts, 12),
+                "top_examples": clean_cell(top_examples, limit=1200),
+            }
+        )
+    out.sort(key=lambda row: (-int(row["non_auto_candidate_count"]), str(row["direction"])))
+    return out
+
+
+def classify_directional_no_edge(
+    review_positive_count: int,
+    avg_expected_r: Any,
+    blocker_counts: Counter,
+) -> str:
+    if review_positive_count and (
+        blocker_counts.get("LIMITED_OUT_OF_SAMPLE_SAMPLE")
+        or blocker_counts.get("PATTERN_VALIDATION_NOT_PROVEN")
+        or blocker_counts.get("CALIBRATION_SCORE_MISSING_OR_WEAK")
+    ):
+        return "POSITIVE_REVIEW_EDGE_NOT_VALIDATED"
+    parsed_avg = to_float(avg_expected_r)
+    if parsed_avg is not None and parsed_avg <= 0:
+        return "NEGATIVE_AVG_EXPECTANCY_AFTER_COSTS"
+    if blocker_counts.get("LIMITED_OUT_OF_SAMPLE_SAMPLE") or blocker_counts.get("PATTERN_VALIDATION_NOT_PROVEN"):
+        return "INSUFFICIENT_VALIDATED_SAMPLE"
+    if blocker_counts.get("DOES_NOT_BEAT_TWO_BASELINES"):
+        return "BASELINE_EDGE_NOT_PROVEN"
+    return "NO_AUTO_APPROVED_EDGE_AFTER_GATES"
+
+
 def parse_counter_text(value: Any) -> Counter:
     counter: Counter = Counter()
     for part in str(value or "").split(";"):
@@ -1067,6 +1187,30 @@ def directional_edge_matrix_fieldnames() -> list[str]:
     ]
 
 
+def directional_no_edge_report_fieldnames() -> list[str]:
+    return [
+        "direction",
+        "primary_no_edge_reason",
+        "auto_approved_candidate_count",
+        "non_auto_candidate_count",
+        "review_candidate_count",
+        "avoid_candidate_count",
+        "positive_expected_R_count",
+        "review_positive_expected_R_count",
+        "avoid_positive_expected_R_count",
+        "avg_expected_R_weighted",
+        "review_avg_expected_R_weighted",
+        "avoid_avg_expected_R_weighted",
+        "max_expected_R",
+        "avg_probability_score_weighted",
+        "avg_validation_profit_factor_weighted",
+        "avg_baselines_beaten_weighted",
+        "top_diagnoses",
+        "top_blockers",
+        "top_examples",
+    ]
+
+
 def render_matrix_markdown(
     rows: list[dict[str, Any]],
     required_tickers: Iterable[str],
@@ -1124,6 +1268,7 @@ def render_matrix_markdown(
                 "- Full portfolio proof: `portfolio_acceptance_summary.csv`, `portfolio_acceptance_summary.md`, and `portfolio_trade_rows.csv`.",
                 "- Scenario no-edge proof: `scenario_no_edge_summary.csv` and `scenario_no_edge_summary.md`.",
                 "- Directional edge proof: `directional_edge_matrix_summary.csv` and `directional_edge_matrix_summary.md`.",
+                "- Directional no-edge proof: `directional_no_edge_report.csv` and `directional_no_edge_report.md`.",
             ]
         )
     lines.extend(["", "## Detail"])
@@ -1240,6 +1385,51 @@ def render_directional_edge_matrix_markdown(rows: Sequence[Mapping[str, Any]]) -
             f"- {row.get('surface_status')} {row.get('direction')} {row.get('strategy')} "
             f"{row.get('call_or_put')} {row.get('primary_diagnosis')}: {row.get('top_examples') or 'n/a'}"
         )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_directional_no_edge_report_markdown(
+    rows: Sequence[Mapping[str, Any]],
+    portfolio_summary: Mapping[str, Any] | None = None,
+) -> str:
+    lines = [
+        "# Directional No-Edge Report",
+        "",
+        "This artifact summarizes directions that surfaced candidates but produced zero `AUTO_APPROVED` trades. It is a no-edge proof for directional coverage, not an instruction to loosen trade gates.",
+        "",
+    ]
+    warnings = clean_cell(portfolio_summary.get("warnings") if portfolio_summary else "")
+    if warnings:
+        lines.extend([f"- Portfolio warnings: {warnings}", ""])
+    lines.extend(
+        [
+            "| Direction | Reason | Auto | Non-Auto | Review | Avoid | Pos ER | Pos Review | Avg ER | Review Avg ER | Avoid Avg ER | Max ER | Avg Score | Avg PF | Avg Baselines | Top Blockers |",
+            "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+        ]
+    )
+    for row in rows:
+        lines.append(
+            f"| {markdown_cell(row.get('direction'))} | {markdown_cell(row.get('primary_no_edge_reason'))} | "
+            f"{row.get('auto_approved_candidate_count')} | {row.get('non_auto_candidate_count')} | "
+            f"{row.get('review_candidate_count')} | {row.get('avoid_candidate_count')} | "
+            f"{row.get('positive_expected_R_count')} | {row.get('review_positive_expected_R_count')} | "
+            f"{row.get('avg_expected_R_weighted')} | {row.get('review_avg_expected_R_weighted')} | "
+            f"{row.get('avoid_avg_expected_R_weighted')} | {row.get('max_expected_R')} | "
+            f"{row.get('avg_probability_score_weighted')} | {row.get('avg_validation_profit_factor_weighted')} | "
+            f"{row.get('avg_baselines_beaten_weighted')} | {markdown_cell(row.get('top_blockers'))} |"
+        )
+    if not rows:
+        lines.append("| n/a | no direction had surfaced candidates with zero auto-approved trades | 0 | 0 | 0 | 0 | 0 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |")
+    lines.extend(["", "## Top Diagnoses"])
+    if rows:
+        for row in rows:
+            lines.append(
+                f"- {row.get('direction')}: {row.get('top_diagnoses') or 'n/a'}; examples: "
+                f"{row.get('top_examples') or 'n/a'}"
+            )
+    else:
+        lines.append("- n/a")
     lines.append("")
     return "\n".join(lines)
 

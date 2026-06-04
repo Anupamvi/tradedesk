@@ -62,6 +62,44 @@ def test_run_pipeline_uses_shared_bot_eod_cache(monkeypatch, tmp_path):
     assert captured["cmd"][cache_flag_index + 1] == str(cache_dir)
 
 
+def test_main_uses_explicit_bot_eod_cache_dir_for_run_missing(monkeypatch, tmp_path):
+    captured = {}
+    base_dir = tmp_path / "base"
+    base_dir.mkdir()
+    matrix_dir = tmp_path / "matrix"
+    runs_root = tmp_path / "runs"
+    cache_dir = tmp_path / "warm_cache"
+
+    monkeypatch.setattr(matrix, "resolve_dates", lambda args, base: (["2026-05-29"], "requested_dates;date_count=1"))
+    monkeypatch.setattr(matrix, "has_goal_artifacts", lambda out_dir: False)
+    monkeypatch.setattr(matrix, "newest_existing_goal_run", lambda root, date: None)
+
+    def fake_run_pipeline(python, base, date, out_dir, bot_eod_cache_dir):
+        captured["bot_eod_cache_dir"] = bot_eod_cache_dir
+        return 1
+
+    monkeypatch.setattr(matrix, "run_pipeline", fake_run_pipeline)
+
+    rc = matrix.main(
+        [
+            "--base-dir",
+            str(base_dir),
+            "--dates",
+            "2026-05-29",
+            "--runs-root",
+            str(runs_root),
+            "--matrix-dir",
+            str(matrix_dir),
+            "--bot-eod-cache-dir",
+            str(cache_dir),
+            "--run-missing",
+        ]
+    )
+
+    assert rc == 1
+    assert captured["bot_eod_cache_dir"] == cache_dir.resolve()
+
+
 def test_directional_scenario_gate_fails_when_bearish_source_disappears():
     status, evidence, failed, warned = matrix.directional_scenario_gate(
         {
@@ -372,3 +410,78 @@ def test_directional_edge_matrix_rows_aggregate_daily_diagnostics(tmp_path):
     assert "PATTERN_VALIDATION_NOT_PROVEN:3" in review_put["top_blockers"]
     assert "CAR" in review_put["top_examples"]
     assert avoid_spread["primary_diagnosis"] == "NEGATIVE_AVG_EXPECTANCY_AFTER_COSTS"
+
+
+def test_directional_no_edge_report_explains_zero_auto_direction():
+    rows = [
+        {
+            "surface_status": "AUTO_APPROVED",
+            "direction": "bullish",
+            "strategy": "Long Call Debit",
+            "call_or_put": "CALL",
+            "primary_diagnosis": "TRADE_READY_EDGE",
+            "candidate_count": 2,
+            "positive_expected_R_count": 2,
+            "avg_expected_R_weighted": 0.35,
+            "max_expected_R": 0.7,
+            "avg_probability_score_weighted": 60,
+            "avg_validation_profit_factor_weighted": 2.0,
+            "avg_baselines_beaten_weighted": 6,
+            "top_blockers": "",
+            "top_examples": "AAPL ER=0.7 legs=Buy 1 AAPL 310C",
+        },
+        {
+            "surface_status": "TRADE_REVIEW",
+            "direction": "bearish",
+            "strategy": "Long Put Debit",
+            "call_or_put": "PUT",
+            "primary_diagnosis": "INSUFFICIENT_VALIDATED_SAMPLE",
+            "candidate_count": 5,
+            "positive_expected_R_count": 1,
+            "avg_expected_R_weighted": 0.14,
+            "max_expected_R": 2.0,
+            "avg_probability_score_weighted": 25,
+            "avg_validation_profit_factor_weighted": 300,
+            "avg_baselines_beaten_weighted": 2,
+            "top_blockers": "LIMITED_OUT_OF_SAMPLE_SAMPLE:3;PATTERN_VALIDATION_NOT_PROVEN:5",
+            "top_examples": "CAR ER=2.0 legs=Buy 1 CAR 160P",
+        },
+        {
+            "surface_status": "AVOID",
+            "direction": "bearish",
+            "strategy": "Bear Call Credit Spread",
+            "call_or_put": "CALL / CALL",
+            "primary_diagnosis": "NEGATIVE_AVG_EXPECTANCY_AFTER_COSTS",
+            "candidate_count": 4,
+            "positive_expected_R_count": 0,
+            "avg_expected_R_weighted": -0.6,
+            "max_expected_R": -0.01,
+            "avg_probability_score_weighted": 10,
+            "avg_validation_profit_factor_weighted": 0.08,
+            "avg_baselines_beaten_weighted": 0,
+            "top_blockers": "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS:4;PATTERN_VALIDATION_NOT_PROVEN:4",
+            "top_examples": "BSX ER=-0.01 legs=Sell 1 BSX 50C / Buy 1 BSX 52C",
+        },
+    ]
+
+    report_rows = matrix.build_directional_no_edge_report_rows(rows)
+
+    assert len(report_rows) == 1
+    bearish = report_rows[0]
+    assert bearish["direction"] == "bearish"
+    assert bearish["primary_no_edge_reason"] == "POSITIVE_REVIEW_EDGE_NOT_VALIDATED"
+    assert bearish["auto_approved_candidate_count"] == 0
+    assert bearish["non_auto_candidate_count"] == 9
+    assert bearish["review_candidate_count"] == 5
+    assert bearish["avoid_candidate_count"] == 4
+    assert bearish["review_positive_expected_R_count"] == 1
+    assert round(bearish["avg_expected_R_weighted"], 3) == -0.189
+    assert "LIMITED_OUT_OF_SAMPLE_SAMPLE:3" in bearish["top_blockers"]
+    assert "CAR" in bearish["top_examples"]
+
+    markdown = matrix.render_directional_no_edge_report_markdown(
+        report_rows,
+        {"warnings": "AUTO_DIRECTION_CONCENTRATION_NO_BEARISH"},
+    )
+    assert "AUTO_DIRECTION_CONCENTRATION_NO_BEARISH" in markdown
+    assert "POSITIVE_REVIEW_EDGE_NOT_VALIDATED" in markdown
