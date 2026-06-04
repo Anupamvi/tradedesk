@@ -22,6 +22,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_catalyst_flow_leaders,
     build_daily_snapshot,
     build_decision_board_rows,
+    build_directional_edge_diagnostic_rows,
     build_directional_scenario_goal_row,
     build_goal_evidence_rows,
     build_pattern_recommendations,
@@ -836,6 +837,80 @@ def test_generate_signals_keeps_credit_spread_lane_next_to_long_option():
     assert spread["strategy_type"] == "Bull Put Credit Spread"
     assert spread["option_type"] == "put"
     assert "SELL" in spread["legs_json"]
+
+
+def test_directional_edge_diagnostics_explain_bearish_no_edge_lanes():
+    auto = {
+        "ticker": "QQQ",
+        "status": "AUTO_APPROVED",
+        "direction": "bullish",
+        "strategy_type": "Bull Put Credit Spread",
+        "strategy_kind": "credit_spread",
+        "legs_json": '[{"action":"SELL","option_symbol":"QQQ260618P00720000","option_type":"put","strike":720},{"action":"BUY","option_symbol":"QQQ260618P00705000","option_type":"put","strike":705}]',
+        "expiry": "2026-06-18",
+        "entry_credit": 3.17,
+        "expected_R": 0.13,
+        "expected_R_per_day": 0.026,
+        "probability_score": 61.0,
+        "success_probability_pct": 67.0,
+        "validation_profit_factor": 13.6,
+        "validation_scored_count": 58,
+        "beats_baselines_count": 6,
+        "block_reasons": [],
+    }
+    review = {
+        "ticker": "CAR",
+        "status": "TRADE_REVIEW",
+        "direction": "bearish",
+        "strategy_type": "Long Put Debit",
+        "strategy_kind": "long_option",
+        "lead_option_symbol": "CAR260618P00160000",
+        "option_type": "put",
+        "strike": 160,
+        "expiry": "2026-06-18",
+        "entry_range": "4.90-6.70",
+        "expected_R": 2.19,
+        "expected_R_per_day": 0.43,
+        "probability_score": 40.0,
+        "success_probability_pct": 55.0,
+        "validation_profit_factor": 999.0,
+        "validation_scored_count": 1,
+        "beats_baselines_count": 6,
+        "block_reasons": ["LIMITED_OUT_OF_SAMPLE_SAMPLE", "PATTERN_VALIDATION_NOT_PROVEN"],
+    }
+    avoid = {
+        "ticker": "IWM",
+        "status": "AVOID",
+        "direction": "bearish",
+        "strategy_type": "Long Put Debit",
+        "strategy_kind": "long_option",
+        "lead_option_symbol": "IWM260618P00276000",
+        "option_type": "put",
+        "strike": 276,
+        "expiry": "2026-06-18",
+        "entry_range": "1.43-1.45",
+        "expected_R": -0.42,
+        "expected_R_per_day": -0.08,
+        "probability_score": 16.0,
+        "success_probability_pct": 38.0,
+        "validation_profit_factor": 0.08,
+        "validation_scored_count": 33,
+        "beats_baselines_count": 0,
+        "block_reasons": ["EXPECTED_R_NOT_POSITIVE_AFTER_COSTS", "DOES_NOT_BEAT_TWO_BASELINES"],
+    }
+
+    rows = build_directional_edge_diagnostic_rows([auto], [review], [avoid])
+    by_lane = {(row["surface_status"], row["direction"], row["strategy"]) for row in rows}
+
+    assert ("AUTO_APPROVED", "bullish", "Bull Put Credit Spread") in by_lane
+    assert ("TRADE_REVIEW", "bearish", "Long Put Debit") in by_lane
+    assert ("AVOID", "bearish", "Long Put Debit") in by_lane
+    bearish_review = next(row for row in rows if row["surface_status"] == "TRADE_REVIEW")
+    bearish_avoid = next(row for row in rows if row["surface_status"] == "AVOID")
+    assert bearish_review["primary_diagnosis"] == "INSUFFICIENT_VALIDATED_SAMPLE"
+    assert "CAR" in bearish_review["top_examples"]
+    assert bearish_avoid["primary_diagnosis"] == "NEGATIVE_AVG_EXPECTANCY_AFTER_COSTS"
+    assert bearish_avoid["avg_expected_R"] == -0.42
 
 
 def test_goal_evidence_fails_when_required_high_signal_ticker_disappears():

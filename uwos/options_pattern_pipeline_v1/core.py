@@ -6694,6 +6694,7 @@ def render_runbook(as_of: str, config: Mapping[str, Any]) -> str:
             "- `threshold_sensitivity.csv`: old-vs-new approval threshold comparison.",
             "- `calibration_summary.md`: Brier score and reliability buckets.",
             "- `goal_evidence.csv/md`: requirement-level proof for source coverage, explicit tickets, no-edge, and profitability gates.",
+            "- `directional_edge_diagnostics.csv`: lane-level proof for bullish/bearish and call/put/spread outcomes.",
             "- `shadow_recommendation_ledger.csv`: open and historical shadow rows.",
             "",
             "## Status Meanings",
@@ -6761,6 +6762,7 @@ def write_outputs(
     catalyst_flow_leaders = build_catalyst_flow_leaders(decision_enriched_rows)
     watch = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "TRADE_REVIEW" and r.get("classification") == "WATCH"])
     blocked = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AVOID"])
+    directional_edge_rows = build_directional_edge_diagnostic_rows(actionable, trade_review, blocked)
     source_coverage_rows = build_source_ticker_coverage_rows(
         snapshots[as_of],
         daily_pattern_config,
@@ -6810,6 +6812,7 @@ def write_outputs(
             "pattern_recommendations": len(pattern_recommendations),
             "catalyst_flow_leaders": len(catalyst_flow_leaders),
             "source_ticker_coverage": len(source_coverage_rows),
+            "directional_edge_diagnostics": len(directional_edge_rows),
             "ticker_trend_edges": len(
                 build_ticker_trend_edge_rows(
                     run_controls["ticker_trend_stats"],
@@ -6841,6 +6844,7 @@ def write_outputs(
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
         "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
+        "directional_edge_diagnostics": str(out_dir / "directional_edge_diagnostics.csv"),
         "ticker_trend_edges": str(out_dir / "ticker_trend_edges.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
@@ -6930,6 +6934,7 @@ def write_outputs(
         catalyst_flow_leader_fieldnames(),
     )
     write_csv(Path(paths["source_ticker_coverage"]), source_coverage_rows, source_coverage_fieldnames())
+    write_csv(Path(paths["directional_edge_diagnostics"]), directional_edge_rows, directional_edge_diagnostic_fieldnames())
     write_csv(Path(paths["ticker_trend_edges"]), ticker_trend_rows, ticker_trend_edge_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [trade_output_row(r) for r in watch], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [blocked_output_row(r) for r in blocked], blocked_fieldnames())
@@ -7030,6 +7035,7 @@ def write_outputs(
             pattern_recommendations,
             catalyst_flow_leaders,
             source_coverage_rows,
+            directional_edge_rows,
             ticker_trend_rows,
             trade_review,
             watch,
@@ -7092,6 +7098,7 @@ def write_source_incomplete_outputs(
             "pattern_recommendations": 0,
             "catalyst_flow_leaders": 0,
             "source_ticker_coverage": 0,
+            "directional_edge_diagnostics": 0,
             "ticker_trend_edges": 0,
             "trade_review_candidates": 0,
             "avoid": 0,
@@ -7107,6 +7114,7 @@ def write_source_incomplete_outputs(
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
         "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
+        "directional_edge_diagnostics": str(out_dir / "directional_edge_diagnostics.csv"),
         "ticker_trend_edges": str(out_dir / "ticker_trend_edges.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
@@ -7150,6 +7158,7 @@ def write_source_incomplete_outputs(
     write_csv(Path(paths["pattern_recommendations"]), [], pattern_recommendation_fieldnames())
     write_csv(Path(paths["catalyst_flow_leaders"]), [], catalyst_flow_leader_fieldnames())
     write_csv(Path(paths["source_ticker_coverage"]), [], source_coverage_fieldnames())
+    write_csv(Path(paths["directional_edge_diagnostics"]), [], directional_edge_diagnostic_fieldnames())
     write_csv(Path(paths["ticker_trend_edges"]), [], ticker_trend_edge_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [], blocked_fieldnames())
@@ -7358,6 +7367,140 @@ def daily_trade_decision(
     if trade_review:
         return "TRADE_REVIEW"
     return "NO_TRADE"
+
+
+def build_directional_edge_diagnostic_rows(
+    actionable: Sequence[Mapping[str, Any]],
+    trade_review: Sequence[Mapping[str, Any]],
+    blocked: Sequence[Mapping[str, Any]],
+) -> List[Dict[str, Any]]:
+    grouped: Dict[Tuple[str, str, str, str], List[Mapping[str, Any]]] = defaultdict(list)
+    for source_rows, status in (
+        (actionable, "AUTO_APPROVED"),
+        (trade_review, "TRADE_REVIEW"),
+        (blocked, "AVOID"),
+    ):
+        for row in source_rows:
+            setup = trade_setup_fields(row)
+            direction = str(row.get("direction") or "unknown").lower()
+            strategy = str(setup.get("strategy") or row.get("strategy_type") or row.get("strategy_kind") or "UNKNOWN")
+            call_or_put = str(setup.get("call_or_put") or row.get("option_type") or "UNKNOWN")
+            grouped[(status, direction, strategy, call_or_put)].append(row)
+
+    out: List[Dict[str, Any]] = []
+    for (status, direction, strategy, call_or_put), rows in grouped.items():
+        expected_rs = numeric_list(row.get("expected_R") for row in rows)
+        expected_r_days = numeric_list(row.get("expected_R_per_day") for row in rows)
+        probability_scores = numeric_list(row.get("probability_score") for row in rows)
+        success_probs = numeric_list(row.get("success_probability_pct") for row in rows)
+        profit_factors = numeric_list(row.get("validation_profit_factor") for row in rows)
+        scored_counts = numeric_list(row.get("validation_scored_count") for row in rows)
+        baseline_counts = numeric_list(row.get("beats_baselines_count") for row in rows)
+        blocker_counts = directional_blocker_counts(rows)
+        top_rows = sorted(
+            rows,
+            key=lambda row: (
+                num(row.get("expected_R")) if num(row.get("expected_R")) is not None else -999.0,
+                num(row.get("probability_score")) if num(row.get("probability_score")) is not None else -999.0,
+            ),
+            reverse=True,
+        )[:5]
+        positive_count = sum(1 for value in expected_rs if value > 0)
+        out.append(
+            {
+                "surface_status": status,
+                "direction": direction,
+                "strategy": strategy,
+                "call_or_put": call_or_put,
+                "candidate_count": len(rows),
+                "distinct_ticker_count": len({str(row.get("ticker") or "").upper() for row in rows if row.get("ticker")}),
+                "avg_expected_R": mean_or_blank_number(expected_rs),
+                "max_expected_R": max(expected_rs) if expected_rs else "",
+                "positive_expected_R_count": positive_count,
+                "avg_expected_R_per_day": mean_or_blank_number(expected_r_days),
+                "avg_probability_score": mean_or_blank_number(probability_scores),
+                "avg_success_probability_pct": mean_or_blank_number(success_probs),
+                "avg_validation_profit_factor": mean_or_blank_number(profit_factors),
+                "avg_validation_scored_count": mean_or_blank_number(scored_counts),
+                "avg_baselines_beaten": mean_or_blank_number(baseline_counts),
+                "top_blockers": format_counter_text(blocker_counts, 10),
+                "primary_diagnosis": directional_edge_primary_diagnosis(status, expected_rs, blocker_counts),
+                "top_examples": "; ".join(format_directional_edge_example(row) for row in top_rows),
+            }
+        )
+    out.sort(
+        key=lambda row: (
+            str(row.get("surface_status")) != "AUTO_APPROVED",
+            str(row.get("surface_status")) != "TRADE_REVIEW",
+            str(row.get("direction")) != "bearish",
+            -int(row.get("candidate_count") or 0),
+        )
+    )
+    return out
+
+
+def numeric_list(values: Iterable[Any]) -> List[float]:
+    out: List[float] = []
+    for value in values:
+        parsed = num(value)
+        if parsed is not None:
+            out.append(parsed)
+    return out
+
+
+def mean_or_blank_number(values: Sequence[float]) -> Any:
+    return statistics.fmean(values) if values else ""
+
+
+def directional_blocker_counts(rows: Sequence[Mapping[str, Any]]) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    for row in rows:
+        raw_blockers = row.get("block_reasons") or row.get("blocker_categories") or []
+        if isinstance(raw_blockers, str):
+            tokens = raw_blockers.split(";")
+        else:
+            tokens = raw_blockers
+        for raw in tokens:
+            token = str(raw).strip()
+            if token:
+                counts[token] += 1
+    return counts
+
+
+def format_counter_text(counter: Counter[str], limit: int) -> str:
+    return ";".join(f"{key}:{count}" for key, count in counter.most_common(limit))
+
+
+def directional_edge_primary_diagnosis(
+    status: str,
+    expected_rs: Sequence[float],
+    blocker_counts: Counter[str],
+) -> str:
+    if status == "AUTO_APPROVED":
+        return "TRADE_READY_EDGE"
+    if expected_rs and statistics.fmean(expected_rs) <= 0:
+        return "NEGATIVE_AVG_EXPECTANCY_AFTER_COSTS"
+    if expected_rs and not any(value > 0 for value in expected_rs):
+        return "NEGATIVE_EXPECTANCY_AFTER_COSTS"
+    blockers = set(blocker_counts)
+    if "LIMITED_OUT_OF_SAMPLE_SAMPLE" in blockers or "PATTERN_VALIDATION_NOT_PROVEN" in blockers:
+        return "INSUFFICIENT_VALIDATED_SAMPLE"
+    if "CALIBRATION_SCORE_MISSING_OR_WEAK" in blockers or "CONFIDENCE_BAND_TOO_WEAK" in blockers:
+        return "WEAK_CALIBRATION_OR_CONFIDENCE"
+    if "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT" in blockers:
+        return "RISK_CAP_TOO_HIGH"
+    if "DOES_NOT_BEAT_TWO_BASELINES" in blockers:
+        return "BASELINES_NOT_BEATEN"
+    return "REVIEW_BLOCKERS_REMAIN"
+
+
+def format_directional_edge_example(row: Mapping[str, Any]) -> str:
+    setup = trade_setup_fields(row)
+    return (
+        f"{row.get('ticker')} ER={fmt_num(row.get('expected_R'))} "
+        f"score={pct_text(row.get('probability_score'))} "
+        f"legs={setup.get('trade_legs') or 'n/a'}"
+    )
 
 
 def build_pattern_recommendations(
@@ -8404,7 +8547,9 @@ def source_coverage_row(row: Mapping[str, Any], index: int) -> str:
         f"| {index} | {markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('decision_surface_status'))} | "
         f"{money_text(row.get('source_total_premium'))} | {fmt_pct(row.get('flow_call_premium_share'))} | "
         f"{fmt_pct(row.get('flow_put_premium_share'))} | {fmt_pct(row.get('flow_call_ask_premium_share'))} | "
-        f"{markdown_cell(row.get('direction'))} | {markdown_cell(row.get('trade_legs'))} | "
+        f"{markdown_cell(row.get('direction'))} | {markdown_cell(row.get('strategy'))} | "
+        f"{markdown_cell(row.get('call_or_put'))} | {markdown_cell(row.get('strike_rates'))} | "
+        f"{markdown_cell(row.get('expiration_date'))} | {markdown_cell(row.get('trade_legs'))} | "
         f"{markdown_cell(row.get('entry_limit'))} | {fmt_num(row.get('quote_volume'))} | "
         f"{fmt_num(row.get('quote_open_interest'))} | {fmt_pct(row.get('bid_ask_spread_pct'))} | "
         f"{markdown_cell(row.get('source_gap_reason'))} | {markdown_cell(row.get('decision_artifact'))} |"
@@ -8426,10 +8571,43 @@ def append_source_coverage_table(
         return
     near_misses = [row for row in rows if row.get("decision_surface_status") == "NOT_SURFACED"]
     visible = near_misses + [row for row in rows if row.get("decision_surface_status") != "NOT_SURFACED"]
-    lines.append("| # | Ticker | Surface | Source Premium | Call Share | Put Share | Ask Call Share | Bias | Best Legs | Entry | Vol | OI | Spread | Reason | Artifact |")
-    lines.append("|---:|---|---|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|---|")
+    lines.append("| # | Ticker | Surface | Source Premium | Call Share | Put Share | Ask Call Share | Bias | Strategy | Type | Strike | Expiry | Best Legs | Entry | Vol | OI | Spread | Reason | Artifact |")
+    lines.append("|---:|---|---|---:|---:|---:|---:|---|---|---|---|---|---|---:|---:|---:|---:|---|---|")
     for idx, row in enumerate(visible[:limit], 1):
         lines.append(source_coverage_row(row, idx))
+    lines.append("")
+
+
+def directional_edge_diagnostic_row(row: Mapping[str, Any], index: int) -> str:
+    return (
+        f"| {index} | {markdown_cell(row.get('surface_status'))} | {markdown_cell(row.get('direction'))} | "
+        f"{markdown_cell(row.get('strategy'))} | {markdown_cell(row.get('call_or_put'))} | "
+        f"{row.get('candidate_count')} | {row.get('distinct_ticker_count')} | "
+        f"{fmt_num(row.get('avg_expected_R'))} | {fmt_num(row.get('max_expected_R'))} | "
+        f"{row.get('positive_expected_R_count')} | {fmt_num(row.get('avg_probability_score'))} | "
+        f"{fmt_num(row.get('avg_validation_profit_factor'))} | {fmt_num(row.get('avg_baselines_beaten'))} | "
+        f"{markdown_cell(row.get('primary_diagnosis'))} | {markdown_cell(row.get('top_blockers'))} | "
+        f"{markdown_cell(row.get('top_examples'))} |"
+    )
+
+
+def append_directional_edge_diagnostics_table(
+    lines: List[str],
+    rows: Sequence[Mapping[str, Any]],
+    limit: int = 12,
+) -> None:
+    lines.append("## Directional Edge Diagnostics")
+    lines.append(
+        "- Lane-level proof for why each direction/structure became AUTO_APPROVED, TRADE_REVIEW, or AVOID."
+    )
+    if not rows:
+        lines.append("- No directional edge diagnostics were produced.")
+        lines.append("")
+        return
+    lines.append("| # | Surface | Bias | Strategy | Type | Candidates | Tickers | Avg ER | Max ER | Pos ER | Avg Score | Avg PF | Avg Baselines | Diagnosis | Top Blockers | Top Examples |")
+    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|")
+    for idx, row in enumerate(rows[:limit], 1):
+        lines.append(directional_edge_diagnostic_row(row, idx))
     lines.append("")
 
 
@@ -8618,6 +8796,7 @@ def render_daily_report(
     pattern_recommendations: Sequence[Mapping[str, Any]],
     catalyst_flow_leaders: Sequence[Mapping[str, Any]],
     source_coverage_rows: Sequence[Mapping[str, Any]],
+    directional_edge_rows: Sequence[Mapping[str, Any]],
     ticker_trend_rows: Sequence[Mapping[str, Any]],
     trade_review: Sequence[Mapping[str, Any]],
     watch: Sequence[Mapping[str, Any]],
@@ -8677,6 +8856,7 @@ def render_daily_report(
 
     append_pattern_recommendation_table(lines, pattern_recommendations, 8)
     append_source_coverage_table(lines, source_coverage_rows, 30)
+    append_directional_edge_diagnostics_table(lines, directional_edge_rows, 12)
     append_ticker_trend_edge_table(lines, ticker_trend_rows, metadata.get("risk_config", {}), 15)
     append_catalyst_flow_leader_table(lines, catalyst_flow_leaders, 40)
     append_ticket_table(lines, "AUTO_APPROVED Trade Tickets", actionable, "AUTO_APPROVED", 10, "No auto-approved trade tickets.")
@@ -8940,6 +9120,29 @@ def source_coverage_fieldnames() -> List[str]:
         "quote_open_interest",
         "bid_ask_spread_pct",
         "decision_artifact",
+    ]
+
+
+def directional_edge_diagnostic_fieldnames() -> List[str]:
+    return [
+        "surface_status",
+        "direction",
+        "strategy",
+        "call_or_put",
+        "candidate_count",
+        "distinct_ticker_count",
+        "avg_expected_R",
+        "max_expected_R",
+        "positive_expected_R_count",
+        "avg_expected_R_per_day",
+        "avg_probability_score",
+        "avg_success_probability_pct",
+        "avg_validation_profit_factor",
+        "avg_validation_scored_count",
+        "avg_baselines_beaten",
+        "top_blockers",
+        "primary_diagnosis",
+        "top_examples",
     ]
 
 
