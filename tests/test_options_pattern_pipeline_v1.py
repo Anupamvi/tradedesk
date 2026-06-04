@@ -41,6 +41,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     parse_option_symbol,
     run_historical_validation,
     score_signal_horizon,
+    select_signal_set,
     source_complete_dates,
     source_completeness_for_date,
     sources_for_date,
@@ -397,6 +398,72 @@ def test_source_rescue_signals_survive_rank_cap():
     assert len(signals) == 2
     assert signals[0]["ticker"] == "LOUD"
     assert any(s["ticker"] == "CRWD" and s["base_pattern_family"] == "CATALYST_FLOW_LEADER" for s in signals)
+
+
+def test_select_signal_set_retains_bearish_scenario_floor_when_bullish_dominates():
+    signals = [
+        {
+            "date": "2026-05-28",
+            "ticker": f"BULL{i}",
+            "direction": "bullish",
+            "pattern_family": "BULLISH_FLOW_EXPANSION",
+            "base_pattern_family": "BULLISH_FLOW_EXPANSION",
+            "pattern_score": 100.0 - i,
+            "hot_total_premium": 1_000_000.0,
+        }
+        for i in range(30)
+    ]
+    signals.extend(
+        [
+            {
+                "date": "2026-05-28",
+                "ticker": f"BEAR{i}",
+                "direction": "bearish",
+                "pattern_family": "BEARISH_PUT_FLOW_EXPANSION",
+                "base_pattern_family": "BEARISH_PUT_FLOW_EXPANSION",
+                "pattern_score": 10.0 - i,
+                "hot_total_premium": 500_000.0,
+            }
+            for i in range(4)
+        ]
+    )
+
+    selected = select_signal_set(signals, max_signals=10, source_rescue_max_extra=0, tradeable_gap_max_extra=0)
+
+    bearish = [row for row in selected if row["direction"] == "bearish"]
+    assert len(bearish) == 4
+    assert {row["ticker"] for row in bearish} == {"BEAR0", "BEAR1", "BEAR2", "BEAR3"}
+
+
+def test_select_signal_set_rescues_opposite_direction_for_same_ticker():
+    signals = [
+        {
+            "date": "2026-05-28",
+            "ticker": "AMD",
+            "direction": "bullish",
+            "pattern_family": "BULLISH_FLOW_EXPANSION",
+            "base_pattern_family": "BULLISH_FLOW_EXPANSION",
+            "pattern_score": 100.0,
+            "hot_total_premium": 1_000_000.0,
+        },
+        {
+            "date": "2026-05-28",
+            "ticker": "AMD",
+            "direction": "bearish",
+            "pattern_family": "TRADEABLE_SOURCE_GAP_RESCUE",
+            "base_pattern_family": "TRADEABLE_SOURCE_GAP_RESCUE",
+            "pattern_score": 1.0,
+            "hot_total_premium": 25_000.0,
+            "source_total_premium": 100_000.0,
+            "lead_option_symbol": "AMD260618P00500000",
+            "bid_ask_spread_pct": 0.10,
+            "liquidity_volume": 500,
+        },
+    ]
+
+    selected = select_signal_set(signals, max_signals=1, source_rescue_max_extra=0, tradeable_gap_max_extra=5)
+
+    assert {row["direction"] for row in selected if row["ticker"] == "AMD"} == {"bullish", "bearish"}
 
 
 def test_source_rescue_extra_rows_can_be_capped_for_validation():

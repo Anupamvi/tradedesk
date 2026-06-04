@@ -62,6 +62,7 @@ SOURCE_COVERAGE_MIN_PREMIUM = 50_000_000.0
 SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 500
 VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
 MISSED_MOVER_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
+MIN_DIRECTIONAL_SCENARIO_SIGNALS = 12
 GOAL_AUDIT_REQUIRED_TICKERS = ("AMD", "MU", "NVDA", "SNDK", "IBM", "CRWD", "HOOD", "NOW")
 TRADEABLE_GAP_MIN_SOURCE_PREMIUM = 10_000.0
 TRADEABLE_GAP_MIN_HOT_PREMIUM = 25_000.0
@@ -2174,41 +2175,67 @@ def select_signal_set(
     ranked.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
     selected: List[Dict[str, Any]] = ranked[:max_signals]
     selected_keys = {signal_identity_key(row) for row in selected}
-    selected_tickers = {str(row.get("ticker") or "") for row in selected}
-    best_rescue_by_ticker: Dict[str, Dict[str, Any]] = {}
+    selected_ticker_directions = {
+        (str(row.get("ticker") or ""), str(row.get("direction") or ""))
+        for row in selected
+    }
+    direction_counts = Counter(str(row.get("direction") or "") for row in selected)
+    min_directional = min(max_signals, MIN_DIRECTIONAL_SCENARIO_SIGNALS)
+    for direction in ("bullish", "bearish"):
+        needed = max(0, min_directional - direction_counts.get(direction, 0))
+        if not needed:
+            continue
+        for row in ranked:
+            if str(row.get("direction") or "") != direction:
+                continue
+            key = signal_identity_key(row)
+            if key in selected_keys:
+                continue
+            selected.append(row)
+            selected_keys.add(key)
+            selected_ticker_directions.add((str(row.get("ticker") or ""), direction))
+            direction_counts[direction] += 1
+            needed -= 1
+            if needed <= 0:
+                break
+    best_rescue_by_ticker_direction: Dict[Tuple[str, str], Dict[str, Any]] = {}
     for row in ranked:
         if not must_keep_source_rescue_signal(row):
             continue
         ticker = str(row.get("ticker") or "")
-        current = best_rescue_by_ticker.get(ticker)
+        direction = str(row.get("direction") or "")
+        key_td = (ticker, direction)
+        current = best_rescue_by_ticker_direction.get(key_td)
         if current is None or source_rescue_sort_key(row) > source_rescue_sort_key(current):
-            best_rescue_by_ticker[ticker] = dict(row)
-    rescue_rows = sorted(best_rescue_by_ticker.values(), key=source_rescue_sort_key, reverse=True)
+            best_rescue_by_ticker_direction[key_td] = dict(row)
+    rescue_rows = sorted(best_rescue_by_ticker_direction.values(), key=source_rescue_sort_key, reverse=True)
     for row in rescue_rows[: max(0, source_rescue_max_extra)]:
         key = signal_identity_key(row)
         if key in selected_keys:
             continue
         selected.append(row)
         selected_keys.add(key)
-        selected_tickers.add(str(row.get("ticker") or ""))
-    best_gap_by_ticker: Dict[str, Dict[str, Any]] = {}
+        selected_ticker_directions.add((str(row.get("ticker") or ""), str(row.get("direction") or "")))
+    best_gap_by_ticker_direction: Dict[Tuple[str, str], Dict[str, Any]] = {}
     for row in ranked:
         if not must_keep_tradeable_gap_signal(row):
             continue
         ticker = str(row.get("ticker") or "")
-        if ticker in selected_tickers:
+        direction = str(row.get("direction") or "")
+        key_td = (ticker, direction)
+        if key_td in selected_ticker_directions:
             continue
-        current = best_gap_by_ticker.get(ticker)
+        current = best_gap_by_ticker_direction.get(key_td)
         if current is None or tradeable_gap_sort_key(row) > tradeable_gap_sort_key(current):
-            best_gap_by_ticker[ticker] = dict(row)
-    gap_rows = sorted(best_gap_by_ticker.values(), key=tradeable_gap_sort_key, reverse=True)
+            best_gap_by_ticker_direction[key_td] = dict(row)
+    gap_rows = sorted(best_gap_by_ticker_direction.values(), key=tradeable_gap_sort_key, reverse=True)
     for row in gap_rows[: max(0, tradeable_gap_max_extra)]:
         key = signal_identity_key(row)
         if key in selected_keys:
             continue
         selected.append(row)
         selected_keys.add(key)
-        selected_tickers.add(str(row.get("ticker") or ""))
+        selected_ticker_directions.add((str(row.get("ticker") or ""), str(row.get("direction") or "")))
     selected.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
     return selected
 
