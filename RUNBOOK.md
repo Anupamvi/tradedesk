@@ -188,8 +188,9 @@ check Schwab token
 What Codex should do:
 
 - Check token age and approximate refresh expiry.
-- Run a Schwab quote smoke test.
-- Tell you if renewal is needed.
+- Run a local Schwab quote and option-chain smoke test from `tokens/schwab_token.json`.
+- Run the same smoke test on the GCP `tradedesk-monitor` VM from `/var/lib/tradedesk/tokens/schwab_token.json`.
+- Tell you whether local auth, GCP auth, or both need renewal.
 
 If renewal is needed, say:
 
@@ -202,7 +203,9 @@ What Codex should do:
 - Open Schwab login in the browser.
 - Wait for your MFA/approval.
 - Capture the callback automatically if possible.
-- Confirm the new token window.
+- Confirm the local token works.
+- Sync the refreshed token to the GCP trade-monitor VM when reachable.
+- Confirm the GCP token works and `trade-monitor.timer` is active/enabled.
 
 ## Non-Negotiable Rules
 

@@ -311,9 +311,17 @@ python -m uwos.schwab_position_analyzer
 
 ### Token Refresh (when expired)
 ```bash
-del "c:\uw_root\tokens\schwab_token.json"
-python -m uwos.schwab_position_analyzer --manual-auth
+python -m uwos.schwab_quotes \
+  --manual-auth \
+  --symbols-csv AAPL \
+  --chain-symbols-csv AAPL \
+  --strike-count 2
 ```
+
+After local renewal, the GCP `tradedesk-monitor` VM must also be updated and
+tested. The cloud app reads `/var/lib/tradedesk/tokens/schwab_token.json`; it
+does not automatically inherit the Mac token at `tokens/schwab_token.json`.
+Use the `schwab-token-refresh` Codex skill for the full local-plus-GCP workflow.
 
 ---
 

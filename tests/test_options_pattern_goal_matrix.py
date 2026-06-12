@@ -5,6 +5,57 @@ from pathlib import Path
 from scripts import options_pattern_goal_matrix as matrix
 
 
+def test_default_required_tickers_include_goal_major_names():
+    assert set(matrix.GOAL_MAJOR_REQUIRED_TICKERS) <= set(matrix.DEFAULT_REQUIRED_TICKERS)
+    assert set(matrix.GOAL_MAJOR_REQUIRED_TICKERS) == {
+        "AAPL",
+        "NVDA",
+        "MSFT",
+        "GOOG",
+        "GOOGL",
+        "PLTR",
+        "AMD",
+        "MU",
+        "META",
+        "HOOD",
+        "NOW",
+    }
+
+
+def test_build_matrix_row_reports_current_required_ticker_surface(tmp_path):
+    run_dir = tmp_path / "2026-05-29_run"
+    run_dir.mkdir()
+    (run_dir / "metadata.json").write_text(
+        '{"candidate_counts":{"auto_approved":0,"target_ready_candidates":1,"trade_review_candidates":0,'
+        '"avoid":0,"source_ticker_coverage":0},"daily_trade_decision":"TARGET_READY"}',
+        encoding="utf-8",
+    )
+    (run_dir / "goal_evidence.csv").write_text("requirement,status,evidence\n", encoding="utf-8")
+    (run_dir / "target_ready_candidates.csv").write_text(
+        "\n".join(
+            [
+                "ticker,direction,strategy,buy_or_sell,call_or_put,strike_rates,expiration_date,"
+                "suggested_entry_debit_credit_range,target_debit_credit,trade_legs",
+                "AAPL,bullish,Long Call Debit,BUY,CALL,210,2026-06-19,debit 7.50-7.70,"
+                "debit 7.50-7.70,Buy 1 AAPL 2026-06-19 210C @ debit 7.50-7.70 limit",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    row = matrix.build_matrix_row(
+        matrix.DateRun("2026-05-29", run_dir, True, False),
+        ("AAPL", "NVDA"),
+        "requested_dates;unbounded;date_count=1",
+    )
+
+    assert row["target_ready_count"] == 1
+    assert row["target_ready_tickers"] == "AAPL"
+    assert row["AAPL_status"] == "TARGET_READY:TARGET_READY"
+    assert row["NVDA_status"] == ""
+    assert row["required_ticker_surface_evidence"] == "covered=AAPL;missing=NVDA"
+
+
 def test_resolve_dates_uses_all_source_complete_scope_with_bounds(monkeypatch, tmp_path):
     monkeypatch.setattr(
         matrix,
@@ -111,6 +162,8 @@ def test_run_pipeline_uses_shared_bot_eod_cache(monkeypatch, tmp_path):
     assert captured["cwd"] == tmp_path / "base"
     cache_flag_index = captured["cmd"].index("--bot-eod-cache-dir")
     assert captured["cmd"][cache_flag_index + 1] == str(cache_dir)
+    top_candidates_index = captured["cmd"].index("--top-candidates-per-day")
+    assert captured["cmd"][top_candidates_index + 1] == "0"
 
 
 def test_main_uses_explicit_bot_eod_cache_dir_for_run_missing(monkeypatch, tmp_path):
@@ -125,8 +178,9 @@ def test_main_uses_explicit_bot_eod_cache_dir_for_run_missing(monkeypatch, tmp_p
     monkeypatch.setattr(matrix, "has_goal_artifacts", lambda out_dir: False)
     monkeypatch.setattr(matrix, "newest_existing_goal_run", lambda root, date: None)
 
-    def fake_run_pipeline(python, base, date, out_dir, bot_eod_cache_dir):
+    def fake_run_pipeline(python, base, date, out_dir, bot_eod_cache_dir, top_candidates_per_day):
         captured["bot_eod_cache_dir"] = bot_eod_cache_dir
+        captured["top_candidates_per_day"] = top_candidates_per_day
         return 1
 
     monkeypatch.setattr(matrix, "run_pipeline", fake_run_pipeline)
@@ -149,6 +203,7 @@ def test_main_uses_explicit_bot_eod_cache_dir_for_run_missing(monkeypatch, tmp_p
 
     assert rc == 1
     assert captured["bot_eod_cache_dir"] == cache_dir.resolve()
+    assert captured["top_candidates_per_day"] == 0
 
 
 def test_directional_scenario_gate_fails_when_bearish_source_disappears():
@@ -332,11 +387,12 @@ def test_portfolio_acceptance_summary_aggregates_auto_trades(tmp_path):
     summary = matrix.build_portfolio_acceptance_summary([{"date": "2026-05-29"}], trade_rows)
 
     assert trade_rows[0]["portfolio_gate_status"] == "PASS"
+    assert trade_rows[0]["risk_label"] == "send_now_candidate;portfolio_risk_labeled_not_hidden;debit_premium_at_risk"
     assert summary["portfolio_status"] == "PASS_WITH_WARNINGS"
     assert summary["trade_count"] == 1
     assert summary["gate_fail_trade_count"] == 0
     assert summary["avg_expected_R"] == 1.97
-    assert "AUTO_DIRECTION_CONCENTRATION_NO_BEARISH" in summary["warnings"]
+    assert "PORTFOLIO_DIRECTION_CONCENTRATION_NO_BEARISH" in summary["warnings"]
 
 
 def test_portfolio_acceptance_summary_fails_bad_auto_trade(tmp_path):
@@ -382,7 +438,130 @@ def test_portfolio_acceptance_no_trade_days_ignore_missing_artifact_rows():
     assert summary["non_evidence_date_count"] == 2
     assert summary["trade_day_count"] == 0
     assert summary["no_trade_day_count"] == 1
-    assert summary["portfolio_status"] == "NO_AUTO_TRADES"
+    assert summary["portfolio_status"] == "NO_APPROVED_OR_TARGET_READY_TRADES"
+
+
+def test_portfolio_acceptance_counts_target_ready_plans_separately(tmp_path):
+    run_dir = tmp_path / "2026-05-29_run"
+    run_dir.mkdir()
+    (run_dir / "metadata.json").write_text(
+        '{"risk_config":{"min_target_ready_expected_r":0.0,"min_target_ready_expected_r_per_day":0.0,'
+        '"min_target_ready_profit_factor":1.05,"min_target_ready_baselines_beaten":1}}',
+        encoding="utf-8",
+    )
+    (run_dir / "actionable_trades.csv").write_text(
+        "ticker,direction,strategy,buy_or_sell,call_or_put,strike_rates,expiration_date,"
+        "suggested_entry_debit_credit_range,trade_legs,max_risk_per_contract,probability_score,"
+        "success_probability_pct,expected_R,expected_R_per_day,validation_profit_factor,"
+        "validation_scored_count,beats_baselines_count,baselines_beaten_names,baselines_beaten_details\n",
+        encoding="utf-8",
+    )
+    (run_dir / "target_ready_candidates.csv").write_text(
+        "\n".join(
+            [
+                "target_ready_status,send_now,live_recheck_required,target_limit,target_debit_credit,"
+                "risk_label,why_target_ready,why_not_send_now,order_entry_missing_fields,"
+                "ticker,direction,strategy,buy_or_sell,call_or_put,strike_rates,expiration_date,"
+                "suggested_entry_debit_credit_range,trade_legs,max_risk_per_contract,probability_score,"
+                "success_probability_pct,expected_R,expected_R_per_day,validation_profit_factor,"
+                "validation_scored_count,beats_baselines_count,baselines_beaten_names,baselines_beaten_details,"
+                "block_reasons",
+                "TARGET_READY,no,yes,debit 7.50-7.70,debit 7.50-7.70,"
+                "risk_limit_labeled_not_hidden,target plan,MAX_RISK_EXCEEDS_PER_TRADE_LIMIT,,"
+                "AAPL,bullish,Long Call Debit,BUY,CALL,210,2026-06-19,"
+                "debit 7.50-7.70,Buy 1 AAPL 2026-06-19 210C @ debit 7.50-7.70 limit,"
+                "770.65,62,58,0.24,0.012,1.42,30,2,BASELINE_A;BASELINE_B,details,"
+                "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    trade_rows = matrix.build_portfolio_trade_rows([{"date": "2026-05-29", "run_dir": str(run_dir)}])
+    summary = matrix.build_portfolio_acceptance_summary([{"date": "2026-05-29"}], trade_rows)
+
+    assert len(trade_rows) == 1
+    assert trade_rows[0]["surface"] == "TARGET_READY"
+    assert trade_rows[0]["send_now"] == "no"
+    assert trade_rows[0]["live_recheck_required"] == "yes"
+    assert trade_rows[0]["portfolio_gate_status"] == "PASS"
+    assert summary["portfolio_status"] == "PASS_WITH_WARNINGS"
+    assert summary["auto_trade_count"] == 0
+    assert summary["target_ready_trade_count"] == 1
+    assert summary["target_ready_day_count"] == 1
+
+
+def test_confidence_summary_caps_no_trade_partial_proof_below_target():
+    summary = matrix.build_confidence_summary(
+        [{"date": "2026-05-29", "matrix_status": "PASS_DAILY_NOT_GLOBAL", "AAPL_status": "AVOID:AVOID"}],
+        {
+            "portfolio_status": "NO_APPROVED_OR_TARGET_READY_TRADES",
+            "trade_count": 0,
+            "auto_trade_count": 0,
+            "target_ready_trade_count": 0,
+            "gate_fail_trade_count": 0,
+            "avg_expected_R": "",
+            "gross_expected_R": "",
+            "avg_expected_R_per_day": "",
+            "avg_validation_profit_factor": "",
+        },
+        {"coverage_status": "PARTIAL_EXACT_SCOPE", "pipeline_failed_count": 0},
+        [],
+        "requested_dates;unbounded;date_count=1",
+        ("AAPL",),
+    )
+
+    assert summary["confidence_status"] == "BELOW_TARGET"
+    assert summary["target_confidence_met"] == "no"
+    assert summary["overall_confidence_score"] < 7
+    assert "no_approved_or_target_ready_trades" in summary["blockers"]
+    assert "regression_scope_not_all_source_complete" in summary["blockers"]
+
+
+def test_confidence_summary_reaches_threshold_for_full_scope_positive_target_ready():
+    trade_rows = [
+        {
+            "date": "2026-05-29",
+            "surface": "TARGET_READY",
+            "ticker": "AAPL",
+            "direction": "bullish",
+            "strategy": "Long Call Debit",
+            "buy_or_sell": "BUY",
+            "call_or_put": "CALL",
+            "strike_rates": "210",
+            "expiration_date": "2026-06-19",
+            "entry": "debit 7.50-7.70",
+            "target_debit_credit": "debit 7.50-7.70",
+            "trade_legs": "Buy 1 AAPL 2026-06-19 210C @ debit 7.50-7.70 limit",
+            "max_risk_per_contract": "770.65",
+            "probability_score": "62",
+            "expected_R": "0.24",
+            "expected_R_per_day": "0.012",
+            "validation_profit_factor": "1.42",
+            "beats_baselines_count": "2",
+            "portfolio_gate_status": "PASS",
+            "portfolio_gate_failures": "",
+        }
+    ]
+    portfolio = matrix.build_portfolio_acceptance_summary(
+        [{"date": "2026-05-29", "matrix_status": "PASS_SOURCE_COMPLETE_SCOPE"}],
+        trade_rows,
+    )
+    summary = matrix.build_confidence_summary(
+        [{"date": "2026-05-29", "matrix_status": "PASS_SOURCE_COMPLETE_SCOPE", "AAPL_status": "TARGET_READY:TARGET_READY"}],
+        portfolio,
+        {"coverage_status": "EXACT_FULL_SCOPE", "pipeline_failed_count": 0},
+        trade_rows,
+        "all_source_complete;unbounded;date_count=1",
+        ("AAPL",),
+    )
+
+    assert summary["overall_confidence_score"] >= 7
+    assert summary["profitability_confidence_score"] >= 7
+    assert summary["order_entry_confidence_score"] >= 7
+    assert summary["confidence_status"] == "BELOW_TARGET"
+    assert summary["target_confidence_met"] == "no"
+    assert "codexdaily_v3_v4_and_trade_desk_not_in_this_matrix_scope" in summary["blockers"]
 
 
 def test_scenario_no_edge_rows_aggregate_bearish_put_and_spread_lanes(tmp_path):

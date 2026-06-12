@@ -132,6 +132,7 @@ V4_TARGET_TICKET_COLUMNS = [
     "blocker before entry",
     "manual review instruction",
     "why this is worth reviewing tomorrow",
+    "display status",
     "final disposition",
     "setup family",
     "setup family key",
@@ -170,8 +171,8 @@ def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--date", default="", help="Dated UW folder date, e.g. 2026-05-20.")
     parser.add_argument("--base-dir", default="", help="Dated UW folder. Overrides --date.")
     parser.add_argument("--out-dir", default="", help="Output directory. Defaults to out/codexdaily_v4_YYYY-MM-DD.")
-    parser.add_argument("--max-tickers", type=int, default=60)
-    parser.add_argument("--max-candidates", type=int, default=50)
+    parser.add_argument("--max-tickers", type=int, default=0, help="Discovery cap. Default 0 scans every eligible source ticker.")
+    parser.add_argument("--max-candidates", type=int, default=0, help="Candidate cap. Default 0 keeps every constructed candidate before scoring.")
     parser.add_argument(
         "--max-final-trades",
         type=int,
@@ -878,6 +879,9 @@ def _hard_blocker_reason(row: pd.Series | dict[str, Any]) -> str:
     quote_width = safe_float(row.get("quote_width_pct"))
     if math.isfinite(quote_width) and quote_width > 0.65:
         return "extreme bid/ask width"
+    avg = safe_float(row.get("edge_avg_pnl"))
+    if _is_credit(row) and math.isfinite(avg) and avg <= 0:
+        return "negative_edge_avg_pnl"
     replay = _clean(row.get("replay_ev_verdict")).lower()
     edge = _clean(row.get("edge_verdict")).lower()
     if replay.startswith("negative") and edge not in {"acceptable", "positive", "thin_sample"}:
@@ -946,6 +950,8 @@ def _targetable(row: pd.Series | dict[str, Any]) -> bool:
     if _is_hard_blocked(row):
         return False
     if _safety_research_reason(row):
+        return False
+    if not _v4_nonnegative_ev(row):
         return False
     status = _clean(row.get("trade_status"))
     if status in {"Execute", "Watch"}:
@@ -1159,7 +1165,7 @@ def _manual_instruction(row: pd.Series | dict[str, Any], disposition: str) -> st
         return "One contract only; confirm news, OI/flow, spread width, and existing exposure before entering."
     if disposition == "Wheel/Cash":
         return "Confirm assignment quality, cash budget, no near-term earnings, and no duplicate exposure before selling premium."
-    return "Work only at the target limit next session; do not chase stale/post-close pricing."
+    return "NOT AN ORDER - target only; fresh Schwab quote, news, OI/flow, and re-score required before entry."
 
 
 def _why_review(row: pd.Series | dict[str, Any], top_flow: pd.DataFrame) -> str:
@@ -1193,6 +1199,7 @@ def _ticket_row_from_scored(
     avg_loss = -abs(max_loss * 0.50) if math.isfinite(max_loss) else math.nan
     return {
         "rank": rank,
+        "display status": _status_label(disposition),
         "lane": _lane(row, disposition),
         "ticker": _clean(row.get("ticker")).upper(),
         "trade legs": _trade_legs(row),
@@ -1260,6 +1267,7 @@ def _ticket_row_from_board(
         "blocker before entry": _clean(row.get("Required confirmation")),
         "manual review instruction": _manual_instruction(row, disposition),
         "why this is worth reviewing tomorrow": _clean(row.get("Why Execute, Scout, Research, or Avoid")),
+        "display status": _status_label(disposition),
         "final disposition": disposition,
         "setup family": _setup_family(row),
         "setup family key": _setup_family_key(row),
@@ -2212,7 +2220,7 @@ def _markdown_table(df: pd.DataFrame, columns: list[str] | None = None, *, max_r
 def _compact_ticket_table(tickets: pd.DataFrame) -> pd.DataFrame:
     columns = [
         "rank",
-        "final disposition",
+        "display status",
         "ticker",
         "setup family",
         "next-session swing entry target",
@@ -2232,7 +2240,7 @@ def _compact_ticket_table(tickets: pd.DataFrame) -> pd.DataFrame:
             return "Ready if quote still fits; OCO required"
         if disposition == "Scout":
             return "1-lot only; manual confirmation"
-        return blocker[:90] if blocker else "Work target only; do not chase"
+        return blocker[:90] if blocker else "NOT AN ORDER - target only; do not chase"
     out["entry status"] = tickets.apply(entry_status, axis=1)
     return out
 
@@ -2469,7 +2477,14 @@ def _v4_nonnegative_ev(row: pd.Series | dict[str, Any]) -> bool:
         return False
     avg = safe_float(row.get("edge_avg_pnl"))
     if math.isfinite(avg):
-        return avg >= 0
+        return avg > 0
+    if _is_credit(row) and (replay == "acceptable_secondary_income" or edge == "acceptable_secondary_income"):
+        sample = safe_float(row.get("edge_sample_size"))
+        win = safe_float(row.get("edge_win_rate"))
+        if math.isfinite(sample) and sample < 30:
+            return False
+        if math.isfinite(win) and win < 0.58:
+            return False
     return edge in {"positive", "acceptable", "acceptable_secondary_income", "thin_sample", "thin"}
 
 
@@ -2527,13 +2542,13 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame) -> pd.DataFrame:
 
 def _status_label(disposition: str) -> str:
     return {
-        "Execute": "🟢 Execute",
-        "Swing Target / Work Limit": "🔵 Swing Target / Work Limit",
-        "Scout": "🔵 Scout",
-        "Portfolio Repair": "🟡 Portfolio Repair",
-        "Wheel/Cash": "🔵 Wheel/Cash",
-        "Research": "🟡 Research",
-        "Avoid": "🔴 Avoid",
+        "Execute": "🟣 ENTER / Execute",
+        "Swing Target / Work Limit": "🔵 WORK LIMIT / Target Only",
+        "Scout": "🟡 SCOUT / Review",
+        "Portfolio Repair": "🟠 PORTFOLIO / Repair",
+        "Wheel/Cash": "🔵 WHEEL / Cash",
+        "Research": "🟡 RESEARCH / Review",
+        "Avoid": "🔴 AVOID",
     }.get(disposition, disposition)
 
 
@@ -2910,7 +2925,7 @@ def write_v4_outputs(
         "|:--|:--|",
         f"| Pipeline | {PIPELINE_NAME_V4} |",
         f"| Version | {PIPELINE_VERSION_V4} |",
-        "| Version lock | locked 2026-05-21 |",
+        "| Version lock | locked 2026-06-12; supersedes v4.0 |",
         f"| Run mode | {RUN_MODE_V4} |",
         f"| Data quality | {data_quality.get('status', 'unknown')} |",
         f"| Schwab status | {schwab_status} |",
@@ -3334,7 +3349,7 @@ def run_validation_harness_v4(
                 "|:--|:--|",
                 f"| Pipeline | {PIPELINE_NAME_V4} |",
                 f"| Version | {PIPELINE_VERSION_V4} |",
-                "| Version lock | locked 2026-05-21 |",
+                "| Version lock | locked 2026-06-12; supersedes v4.0 |",
                 "| Run mode | Systematic recent-date validation |",
                 f"| Selected dates | {', '.join(manifest['selected_dates'])} |",
                 "",
@@ -3408,7 +3423,7 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
                 "|:--|:--|",
                 f"| Pipeline | {PIPELINE_NAME_V4} |",
                 f"| Version | {PIPELINE_VERSION_V4} |",
-                "| Version lock | locked 2026-05-21 |",
+                "| Version lock | locked 2026-06-12; supersedes v4.0 |",
                 "| Run mode | Overlay |",
                 f"| Changed candidates | {len(changes)} |",
                 "",

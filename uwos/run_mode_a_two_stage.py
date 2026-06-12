@@ -7414,7 +7414,7 @@ def run():
             tolerance_note = ""
             if np.isfinite(miss_abs) and np.isfinite(tol_total):
                 tolerance_note = f" miss {miss_abs:.2f} <= tolerance {tol_total:.2f}"
-            return "ENTER", f"Pilot live quote is inside configured entry tolerance ({_target_limit_text().rstrip('.')}{tolerance_note})."
+            return "REVIEW", f"Pilot live quote is inside configured entry tolerance, but Pilot rows are manual-review only and cannot be ENTER ({_target_limit_text().rstrip('.')}{tolerance_note})."
         price_target_required = (
             live_status == "fails_live_entry_gate"
             or (gate_near_miss and not gate_pass_strict)
@@ -7432,6 +7432,40 @@ def run():
         if portfolio_review:
             return "REVIEW", f"Position review required before adding risk: {portfolio_cap_reason}."
         if ok_live:
+            confidence_model = str(row.get("confidence_model", "") or "").strip().lower()
+            confidence_score = fnum(row.get("confidence_score"))
+            hard_blockers = str(row.get("hard_blockers", "") or "").strip()
+            profit_safety_blockers = str(row.get("profit_safety_blockers", "") or "").strip()
+            quality_blockers = str(row.get("quality_blockers", "") or "").strip()
+            approval_blockers = str(row.get("approval_blockers", "") or "").strip()
+            blocker_text = ";".join(
+                part for part in [hard_blockers, profit_safety_blockers, quality_blockers, approval_blockers] if part
+            )
+            hist_success_pct = fnum(row.get("hist_success_pct"))
+            edge_pct = fnum(row.get("edge_pct"))
+            flow_confirmation = str(row.get("flow_confirmation", "") or "").strip().lower()
+            contract_flow_confirmation = str(row.get("contract_flow_confirmation", "") or "").strip().lower()
+            if execution_book in {"Pilot", "Scout"}:
+                return "REVIEW", f"{execution_book} book is manual-review only; use the target gate, do not treat as ENTER."
+            if confidence_model == "reject" or (np.isfinite(confidence_score) and confidence_score < 5):
+                return "REVIEW", f"Confidence guard blocked ENTER: model={confidence_model or 'unknown'}, score={confidence_score if np.isfinite(confidence_score) else 'unknown'}."
+            enter_blockers: list[str] = []
+            if hard_blockers:
+                enter_blockers.append("hard blocker present")
+            if profit_safety_blockers:
+                enter_blockers.append("profit-safety blocker present")
+            if np.isfinite(hist_success_pct) and hist_success_pct < 60.0:
+                enter_blockers.append(f"POP {hist_success_pct:.1f}%<60%")
+            if np.isfinite(edge_pct) and edge_pct < 5.0:
+                enter_blockers.append(f"edge {edge_pct:.1f}%<5%")
+            if "likelihood_verdict:FAIL" in blocker_text or "likelihood_strength_blocked" in blocker_text:
+                enter_blockers.append("likelihood blocked")
+            if contract_flow_confirmation in {"unknown", "contra", "weak_or_ambiguous"}:
+                enter_blockers.append(f"contract flow {contract_flow_confirmation}")
+            if flow_confirmation == "contra":
+                enter_blockers.append("flow contra")
+            if enter_blockers:
+                return "REVIEW", "ENTER guard blocked: " + "; ".join(enter_blockers[:5])
             if str(row.get("execution_book", "") or "").strip() in {"Core", "Tactical"} and not bool(row.get("high_enter_ready", False)):
                 reason = str(row.get("high_enter_reason", "") or row.get("profit_safety_blockers", "") or "High-confidence entry guard not satisfied.").strip()
                 return "REVIEW", reason

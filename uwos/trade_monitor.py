@@ -25,7 +25,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from uwos.paths import project_root
-from uwos.spread_positions import build_position_review_items, compute_spread_verdict, current_leg_keys
+from uwos.spread_positions import (
+    build_position_review_items,
+    compute_spread_metrics,
+    compute_spread_verdict,
+    current_leg_keys,
+)
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -33,6 +38,7 @@ from uwos.spread_positions import build_position_review_items, compute_spread_ve
 ROOT = project_root()
 STATE_FILE = ROOT / "out" / "trade_analysis" / "monitor_state.json"
 LOG_FILE = ROOT / "out" / "trade_analysis" / "monitor_log.jsonl"
+MANUAL_MONITORS_FILE = ROOT / "out" / "trade_analysis" / "manual_monitors.json"
 
 
 # ---------------------------------------------------------------------------
@@ -51,6 +57,7 @@ def load_notify_config() -> Dict[str, str]:
         "ntfy_manual_topic": os.environ.get("NTFY_MANUAL_TOPIC") or env.get("NTFY_MANUAL_TOPIC", ""),
         "manual_alert_prefix": os.environ.get("MANUAL_ALERT_PREFIX") or env.get("MANUAL_ALERT_PREFIX", "MANUAL MONITOR"),
         "manual_alert_tags": os.environ.get("MANUAL_ALERT_TAGS") or env.get("MANUAL_ALERT_TAGS", "rotating_light,warning"),
+        "manual_monitors_path": os.environ.get("MANUAL_MONITORS_PATH") or env.get("MANUAL_MONITORS_PATH", ""),
         "phone_notify_mode": (
             os.environ.get("PHONE_NOTIFY_MODE") or env.get("PHONE_NOTIFY_MODE", "ntfy")
         ).lower(),
@@ -482,6 +489,404 @@ def position_key(pos: Dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Manual brink monitors
+# ---------------------------------------------------------------------------
+
+def _manual_monitors_path() -> Path:
+    cfg = load_notify_config()
+    configured = str(cfg.get("manual_monitors_path") or "").strip()
+    return Path(configured).expanduser() if configured else MANUAL_MONITORS_FILE
+
+
+def load_manual_monitors(path: Optional[Path] = None) -> List[Dict[str, Any]]:
+    """Load explicit stop/roll monitors for specific open trades.
+
+    The file may be either a list or an object with a "monitors" list.
+    Missing config is fine; the generic monitor still runs.
+    """
+    path = path or _manual_monitors_path()
+    if not path.exists():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        _safe_print(f"  [manual-monitor] failed to read {path}: {exc}")
+        return []
+    monitors = payload.get("monitors", payload) if isinstance(payload, dict) else payload
+    if not isinstance(monitors, list):
+        return []
+    return [m for m in monitors if isinstance(m, dict) and m.get("enabled", True)]
+
+
+def _right_suffix(right: str) -> str:
+    return "P" if str(right).upper().startswith("P") else "C"
+
+
+def _same_number(left: Any, right: Any, tolerance: float = 0.01) -> bool:
+    if left is None or right is None:
+        return False
+    return abs(safe(left) - safe(right)) <= tolerance
+
+
+def _format_price(value: Any) -> str:
+    val = safe(value, None)
+    if val is None:
+        return "n/a"
+    return f"${val:.2f}"
+
+
+def _symbol_underlying(symbol: Any) -> str:
+    parts = str(symbol or "").split()
+    return parts[0] if parts else ""
+
+
+def _manual_key(monitor: Dict[str, Any]) -> str:
+    raw = str(monitor.get("id") or monitor.get("label") or monitor.get("ticker") or "monitor")
+    cleaned = "".join(ch if ch.isalnum() or ch in "._:-" else "-" for ch in raw.strip())
+    return f"MANUAL:{cleaned or 'monitor'}"
+
+
+def _payload_from_review_item(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert a spread/single position into common monitor fields."""
+    if item["kind"] == "SPREAD":
+        group = item["group"]
+        metrics = compute_spread_metrics(group)
+        right = str(metrics.get("put_call") or "").upper()
+        suffix = _right_suffix(right)
+        short_strike = metrics.get("short_strike")
+        long_strike = metrics.get("long_strike")
+        if metrics.get("net_type") == "credit":
+            legs = f"Sell ${safe(short_strike):g}{suffix} / Buy ${safe(long_strike):g}{suffix}"
+        else:
+            legs = f"Buy ${safe(long_strike):g}{suffix} / Sell ${safe(short_strike):g}{suffix}"
+        return {
+            "position_key": item["key"],
+            "kind": "SPREAD",
+            "underlying": metrics.get("underlying"),
+            "strategy": metrics.get("strategy"),
+            "net_type": metrics.get("net_type"),
+            "expiry": metrics.get("expiry"),
+            "put_call": right,
+            "short_strike": short_strike,
+            "long_strike": long_strike,
+            "strike": short_strike,
+            "legs": f"{legs} {metrics.get('expiry')}",
+            "spot": metrics.get("underlying_price"),
+            "dte": metrics.get("dte"),
+            "close_debit": metrics.get("current_exit_net"),
+            "short_delta": abs(safe(metrics.get("short_delta"), 0.0)),
+            "pnl": metrics.get("unrealized_pnl"),
+            "pct_max": metrics.get("pct_of_max_profit"),
+            "entry_net": metrics.get("entry_net_per_contract"),
+        }
+
+    pos = item["position"]
+    qty = safe(pos.get("qty"), 0.0)
+    right = str(pos.get("put_call") or "").upper()
+    suffix = _right_suffix(right)
+    strike = pos.get("strike")
+    side = "Sell" if qty < 0 else "Buy"
+    quote = pos.get("live_quote") or {}
+    greeks = pos.get("greeks") or {}
+    computed = pos.get("computed") or {}
+    return {
+        "position_key": item["key"],
+        "kind": "POSITION",
+        "underlying": pos.get("underlying") or _symbol_underlying(pos.get("symbol")),
+        "strategy": f"{'Short' if qty < 0 else 'Long'} {right.title()}",
+        "net_type": "credit" if qty < 0 else "debit",
+        "expiry": pos.get("expiry"),
+        "put_call": right,
+        "short_strike": strike if qty < 0 else None,
+        "long_strike": strike if qty > 0 else None,
+        "strike": strike,
+        "legs": f"{side} {abs(qty):g} ${safe(strike):g}{suffix} {pos.get('expiry')}",
+        "spot": (pos.get("underlying_quote") or {}).get("last"),
+        "dte": computed.get("dte"),
+        "close_debit": quote.get("ask") if qty < 0 else None,
+        "short_delta": abs(safe(greeks.get("delta"), 0.0)) if qty < 0 else None,
+        "pnl": computed.get("unrealized_pnl"),
+        "pct_max": computed.get("pct_of_max_profit"),
+        "entry_net": pos.get("avg_cost"),
+    }
+
+
+def _monitor_matches_payload(monitor: Dict[str, Any], payload: Dict[str, Any]) -> bool:
+    ticker = str(monitor.get("ticker") or monitor.get("underlying") or "").upper().strip()
+    if ticker and ticker != str(payload.get("underlying") or "").upper().strip():
+        return False
+
+    for field in ("expiry", "put_call", "strategy", "position_key"):
+        expected = monitor.get(field)
+        if expected is not None and str(expected).upper() != str(payload.get(field) or "").upper():
+            return False
+
+    for field in ("short_strike", "long_strike", "strike"):
+        if field in monitor and not _same_number(monitor.get(field), payload.get(field)):
+            return False
+
+    return True
+
+
+def _risk_direction(monitor: Dict[str, Any], payload: Dict[str, Any]) -> str:
+    configured = str(monitor.get("risk_direction") or "").lower().strip()
+    if configured in {"down", "below", "<=", "put"}:
+        return "down"
+    if configured in {"up", "above", ">=", "call"}:
+        return "up"
+    right = str(payload.get("put_call") or "").upper()
+    strategy = str(payload.get("strategy") or "").lower()
+    if "bear call" in strategy or (right == "CALL" and payload.get("net_type") == "credit"):
+        return "up"
+    return "down"
+
+
+def _spot_crossed(spot: Any, line: Any, direction: str) -> bool:
+    spot_val = safe(spot, None)
+    line_val = safe(line, None)
+    if spot_val is None or line_val is None:
+        return False
+    return spot_val <= line_val if direction == "down" else spot_val >= line_val
+
+
+def _metric_at_or_above(value: Any, line: Any) -> bool:
+    val = safe(value, None)
+    threshold = safe(line, None)
+    return val is not None and threshold is not None and val >= threshold
+
+
+def _metric_at_or_below(value: Any, line: Any) -> bool:
+    val = safe(value, None)
+    threshold = safe(line, None)
+    return val is not None and threshold is not None and val <= threshold
+
+
+def _manual_monitor_alert_for_payload(monitor: Dict[str, Any], payload: Dict[str, Any]) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+    label = str(monitor.get("label") or payload.get("strategy") or payload.get("underlying") or "manual monitor")
+    action_text = str(monitor.get("action") or "Close or roll the whole position as one order; do not leg out.")
+    direction = _risk_direction(monitor, payload)
+    triggers: List[str] = []
+    severity = "HOLD"
+
+    if "critical_spot" in monitor and _spot_crossed(payload.get("spot"), monitor.get("critical_spot"), direction):
+        severity = "CRITICAL"
+        op = "<=" if direction == "down" else ">="
+        triggers.append(f"spot {_format_price(payload.get('spot'))} {op} {_format_price(monitor.get('critical_spot'))}")
+    elif "warning_spot" in monitor and _spot_crossed(payload.get("spot"), monitor.get("warning_spot"), direction):
+        severity = "WARNING"
+        op = "<=" if direction == "down" else ">="
+        triggers.append(f"spot {_format_price(payload.get('spot'))} {op} {_format_price(monitor.get('warning_spot'))}")
+
+    if _metric_at_or_above(payload.get("close_debit"), monitor.get("critical_close_debit")):
+        severity = "CRITICAL"
+        triggers.append(
+            f"debit to close {_format_price(payload.get('close_debit'))} >= {_format_price(monitor.get('critical_close_debit'))}"
+        )
+    elif severity != "CRITICAL" and _metric_at_or_above(payload.get("close_debit"), monitor.get("warning_close_debit")):
+        severity = "WARNING"
+        triggers.append(
+            f"debit to close {_format_price(payload.get('close_debit'))} >= {_format_price(monitor.get('warning_close_debit'))}"
+        )
+
+    if _metric_at_or_above(payload.get("short_delta"), monitor.get("critical_short_delta")):
+        severity = "CRITICAL"
+        triggers.append(f"short delta {safe(payload.get('short_delta')):.2f} >= {safe(monitor.get('critical_short_delta')):.2f}")
+    elif severity != "CRITICAL" and _metric_at_or_above(payload.get("short_delta"), monitor.get("warning_short_delta")):
+        severity = "WARNING"
+        triggers.append(f"short delta {safe(payload.get('short_delta')):.2f} >= {safe(monitor.get('warning_short_delta')):.2f}")
+
+    if _metric_at_or_below(payload.get("dte"), monitor.get("critical_dte")):
+        severity = "CRITICAL"
+        triggers.append(f"DTE {safe(payload.get('dte')):.0f} <= {safe(monitor.get('critical_dte')):.0f}")
+    elif severity != "CRITICAL" and _metric_at_or_below(payload.get("dte"), monitor.get("warning_dte")):
+        severity = "WARNING"
+        triggers.append(f"DTE {safe(payload.get('dte')):.0f} <= {safe(monitor.get('warning_dte')):.0f}")
+
+    profit_hit = bool(monitor.get("alert_on_profit")) and _metric_at_or_below(
+        payload.get("close_debit"),
+        monitor.get("profit_close_debit"),
+    )
+    if profit_hit and severity == "HOLD":
+        severity = "PROFIT"
+        triggers.append(
+            f"profit target: debit to close {_format_price(payload.get('close_debit'))} <= {_format_price(monitor.get('profit_close_debit'))}"
+        )
+
+    verdict = "HOLD"
+    critical = False
+    if severity == "CRITICAL":
+        verdict = str(monitor.get("critical_verdict") or "CLOSE").upper()
+        if verdict not in {"CLOSE", "ROLL", "ASSESS"}:
+            verdict = "CLOSE"
+        critical = True
+    elif severity == "WARNING":
+        verdict = str(monitor.get("warning_verdict") or "ASSESS").upper()
+        if verdict not in {"CLOSE", "ROLL", "ASSESS"}:
+            verdict = "ASSESS"
+    elif severity == "PROFIT":
+        verdict = str(monitor.get("profit_verdict") or "CLOSE").upper()
+        if verdict not in {"CLOSE", "ROLL", "ASSESS"}:
+            verdict = "CLOSE"
+
+    reason = "thresholds clear"
+    if triggers:
+        reason = f"{label}: {'; '.join(triggers)}. {action_text}"
+
+    state = {
+        "verdict": verdict,
+        "reason": reason,
+        "category": payload.get("strategy", ""),
+        "pct_max": safe(payload.get("pct_max")),
+        "pnl": safe(payload.get("pnl")),
+        "dte": safe(payload.get("dte"), -1),
+        "ul_price": safe(payload.get("spot")),
+        "close_debit": safe(payload.get("close_debit"), None),
+        "short_delta": safe(payload.get("short_delta"), None),
+        "underlying": payload.get("underlying"),
+        "timestamp": dt.datetime.now().isoformat(),
+    }
+
+    if verdict == "HOLD":
+        return state, None
+
+    alert = {
+        "symbol": _manual_key(monitor),
+        "underlying": payload.get("underlying"),
+        "transition": "",
+        "verdict": verdict,
+        "reason": reason,
+        "category": payload.get("strategy", ""),
+        "pct_max": safe(payload.get("pct_max")),
+        "pnl": safe(payload.get("pnl")),
+        "dte": safe(payload.get("dte"), -1),
+        "ul_price": safe(payload.get("spot")),
+        "close_debit": safe(payload.get("close_debit"), None),
+        "short_delta": safe(payload.get("short_delta"), None),
+        "legs": payload.get("legs"),
+        "critical": critical,
+        "manual_monitor": True,
+    }
+    return state, alert
+
+
+def evaluate_manual_monitors(review_items: List[Dict[str, Any]], prev_state: Dict[str, Dict]) -> Tuple[List[Dict], Dict[str, Dict]]:
+    monitors = load_manual_monitors()
+    if not monitors:
+        return [], {}
+
+    payloads = [_payload_from_review_item(item) for item in review_items]
+    alerts: List[Dict] = []
+    state_updates: Dict[str, Dict] = {}
+
+    for monitor in monitors:
+        key = _manual_key(monitor)
+        payload = next((p for p in payloads if _monitor_matches_payload(monitor, p)), None)
+        if not payload:
+            state_updates[key] = {
+                "verdict": "CLOSED",
+                "reason": "Configured manual monitor no longer matches an open Schwab position.",
+                "category": "manual-monitor",
+                "pct_max": 0,
+                "pnl": 0,
+                "dte": 0,
+                "ul_price": 0,
+                "underlying": monitor.get("ticker") or monitor.get("underlying") or key,
+                "timestamp": dt.datetime.now().isoformat(),
+            }
+            continue
+
+        state, alert = _manual_monitor_alert_for_payload(monitor, payload)
+        state_updates[key] = state
+        if not alert:
+            continue
+
+        prev = prev_state.get(key, {})
+        prev_verdict = prev.get("verdict", "NEW")
+        alert["transition"] = f"{prev_verdict} -> {alert['verdict']}"
+
+        worsened_debit = False
+        close_debit = safe(alert.get("close_debit"), None)
+        prev_debit = safe(prev.get("close_debit"), None)
+        if close_debit is not None and prev_debit is not None:
+            worsened_debit = close_debit >= prev_debit + safe(monitor.get("realert_debit_step"), 0.75)
+
+        if prev_verdict != alert["verdict"] or (alert.get("critical") and worsened_debit):
+            alerts.append(alert)
+
+    return alerts, state_updates
+
+
+def manual_suppressed_position_keys(review_items: List[Dict[str, Any]]) -> set[str]:
+    """Return spread/leg keys whose generic alerts are replaced by manual monitors."""
+    monitors = load_manual_monitors()
+    if not monitors:
+        return set()
+
+    suppressed = set()
+    for item in review_items:
+        payload = _payload_from_review_item(item)
+        for monitor in monitors:
+            if not monitor.get("suppress_generic_alerts", True):
+                continue
+            if _monitor_matches_payload(monitor, payload):
+                key = payload.get("position_key")
+                if key:
+                    suppressed.add(str(key))
+                break
+    return suppressed
+
+
+PROFIT_ALERT_PHRASES = (
+    "max profit",
+    "nothing left to harvest",
+    "of max profit harvested",
+    "profit harvested",
+    "past 75% target",
+    "diminishing returns",
+    "take profit",
+    "take +",
+    "consider trimming",
+    "protect gains",
+    "strong, trail stop",
+    "gives back gains",
+)
+
+NOISE_ALERT_PHRASES = (
+    "expiration week with limited profit captured",
+)
+
+
+def is_risk_management_alert(alert: Dict[str, Any]) -> bool:
+    """True only for alerts that mean close/roll risk is developing.
+
+    Position monitor notifications are for failure prevention, not profit
+    harvesting. Trade ideas have their own notification path.
+    """
+    if alert.get("manual_monitor"):
+        return alert.get("verdict") in {"ASSESS", "CLOSE", "ROLL"}
+    if alert.get("verdict") == "CLOSED":
+        return False
+
+    reason = str(alert.get("reason") or "").lower()
+    if any(phrase in reason for phrase in PROFIT_ALERT_PHRASES):
+        return False
+    if any(phrase in reason for phrase in NOISE_ALERT_PHRASES):
+        return False
+    return alert.get("verdict") in {"ASSESS", "CLOSE", "ROLL"}
+
+
+def _is_profit_taking_reason(reason: str) -> bool:
+    text = str(reason or "").lower()
+    return any(phrase in text for phrase in PROFIT_ALERT_PHRASES)
+
+
+def _suppress_profit_taking_verdict(verdict: str, reason: str) -> Tuple[str, str, bool]:
+    if verdict in {"ASSESS", "CLOSE", "ROLL"} and _is_profit_taking_reason(reason):
+        return "HOLD", "profit-taking alert suppressed; monitoring risk/failure only", True
+    return verdict, reason, False
+
+
+# ---------------------------------------------------------------------------
 # Main monitor loop
 # ---------------------------------------------------------------------------
 
@@ -511,6 +916,7 @@ def run_scan() -> List[Dict]:
     prev_state = load_state()
     new_state = {}
     alerts = []
+    suppressed_generic_keys = manual_suppressed_position_keys(review_items)
 
     for item in review_items:
         if item["kind"] == "SPREAD":
@@ -532,6 +938,8 @@ def run_scan() -> List[Dict]:
             dte = safe(pos["computed"].get("dte"), -1)
             ul_price = safe((pos.get("underlying_quote") or {}).get("last"))
             underlying = pos.get("underlying", "") or pos.get("symbol", "")
+
+        verdict, reason, profit_suppressed = _suppress_profit_taking_verdict(verdict, reason)
 
         new_state[key] = {
             "verdict": verdict,
@@ -560,11 +968,13 @@ def run_scan() -> List[Dict]:
         is_deescalation = cur_rank < prev_rank
 
         # Allow de-escalation only if P&L improved by $300+
-        if is_deescalation:
+        if is_deescalation and not profit_suppressed:
             pnl_improvement = pnl - prev_pnl
             if pnl_improvement < 300:
                 verdict = prev_verdict
                 reason = prev.get("reason", reason) + " (sticky)"
+
+        verdict, reason, _ = _suppress_profit_taking_verdict(verdict, reason)
 
         # Update state with the FINAL verdict (after hysteresis), not the raw one
         new_state[key]["verdict"] = verdict
@@ -575,7 +985,7 @@ def run_scan() -> List[Dict]:
                     prev_verdict == verdict and
                     pnl < prev_pnl - 500)
 
-        if prev_verdict != verdict or worsened:
+        if key not in suppressed_generic_keys and (prev_verdict != verdict or worsened):
             alert = {
                 "symbol": key,
                 "underlying": underlying,
@@ -589,16 +999,23 @@ def run_scan() -> List[Dict]:
                 "ul_price": ul_price,
                 "critical": verdict in ("CLOSE", "ROLL"),
             }
-            alerts.append(alert)
+            if is_risk_management_alert(alert):
+                alerts.append(alert)
+
+    manual_alerts, manual_state = evaluate_manual_monitors(review_items, prev_state)
+    new_state.update(manual_state)
+    alerts.extend(manual_alerts)
 
     # Detect closed positions (in prev but not in new)
     for key, prev in prev_state.items():
+        if str(key).startswith("MANUAL:"):
+            continue
         # If a previous single leg is now represented by a spread-level state
         # row, do not emit a false "closed" alert for that still-open leg.
         if key in active_leg_keys:
             continue
         if key not in new_state and prev.get("verdict") != "CLOSED":
-            alerts.append({
+            alert = {
                 "symbol": key,
                 "underlying": key,
                 "transition": f"{prev.get('verdict', '?')} -> CLOSED",
@@ -610,7 +1027,9 @@ def run_scan() -> List[Dict]:
                 "dte": 0,
                 "ul_price": 0,
                 "critical": False,
-            })
+            }
+            if is_risk_management_alert(alert):
+                alerts.append(alert)
 
     save_state(new_state)
 
@@ -651,6 +1070,12 @@ def format_alert(alert: Dict) -> Tuple[str, str]:
         parts.append(f"DTE: {alert['dte']:.0f}")
     if alert.get("ul_price"):
         parts.append(f"Price: ${alert['ul_price']:.2f}")
+    if alert.get("close_debit") is not None:
+        parts.append(f"Close debit: ${alert['close_debit']:.2f}")
+    if alert.get("short_delta") is not None:
+        parts.append(f"Short delta: {alert['short_delta']:.2f}")
+    if alert.get("legs"):
+        parts.append(f"Legs: {alert['legs']}")
 
     body = " | ".join(parts)
     return title, body
@@ -907,8 +1332,16 @@ def run_once(force: bool = False, manual: bool = False) -> int:
     # Heartbeat: send once at market open (9:30-10:00 ET)
     if _is_market_open_window():
         state = load_state()
-        close_count = sum(1 for v in state.values() if v.get("verdict") == "CLOSE")
-        assess_count = sum(1 for v in state.values() if v.get("verdict") == "ASSESS")
+        close_count = sum(
+            1
+            for v in state.values()
+            if v.get("verdict") == "CLOSE" and is_risk_management_alert(v)
+        )
+        assess_count = sum(
+            1
+            for v in state.values()
+            if v.get("verdict") == "ASSESS" and is_risk_management_alert(v)
+        )
         notify("Trade Desk Active",
                f"Monitor running. {close_count} CLOSE, {assess_count} ASSESS positions.",
                priority="low", tags="white_check_mark")
@@ -922,7 +1355,7 @@ def run_once(force: bool = False, manual: bool = False) -> int:
         # Specific auth failure detection
         if "token" in err_msg.lower() or "auth" in err_msg.lower() or "401" in err_msg:
             notify("AUTH EXPIRED",
-                   "Schwab token expired. Run in terminal: del c:\\uw_root\\tokens\\schwab_token.json && python -m uwos.schwab_position_analyzer --manual-auth",
+                   "Schwab token expired. In Codex, run: renew Schwab token. Refresh local auth, sync the token to the GCP VM, and retest trade-monitor auth.",
                    priority="urgent", tags="rotating_light")
         else:
             notify("Monitor Error", err_msg, priority="high", tags="warning")
@@ -950,12 +1383,21 @@ def run_once(force: bool = False, manual: bool = False) -> int:
                         "critical": True,
                     })
 
+    alerts = [alert for alert in alerts if is_risk_management_alert(alert)]
+
     for alert in alerts:
         title, body = format_alert(alert)
         priority = "urgent" if alert.get("critical") else "default"
         tags = "rotating_light" if alert.get("critical") else "chart_with_upwards_trend"
         _safe_print(f"    {title}: {body}")
-        notify(title, body, priority=priority, tags=tags, critical=True, manual=manual)
+        notify(
+            title,
+            body,
+            priority=priority,
+            tags=tags,
+            critical=bool(alert.get("critical")),
+            manual=manual or bool(alert.get("manual_monitor")),
+        )
     total_alerts += len(alerts)
 
     # Mode 2: Trade ideas scanner during market hours, plus moving after-hours windows.

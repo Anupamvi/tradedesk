@@ -389,6 +389,33 @@ def test_select_ticker_pool_excludes_etfs_but_keeps_stocks() -> None:
     assert set(pool["ticker"]) == {"MSFT", "NFLX"}
 
 
+def test_select_ticker_pool_zero_means_uncapped() -> None:
+    df = pd.DataFrame(
+        [
+            {
+                "ticker": "AAA",
+                "close": 100,
+                "flow_total_premium": 150_000_000,
+                "total_open_interest": 100_000,
+                "avg30_volume": 1_000_000,
+                "issue_type": "Common Stock",
+            },
+            {
+                "ticker": "BBB",
+                "close": 80,
+                "flow_total_premium": 120_000_000,
+                "total_open_interest": 90_000,
+                "avg30_volume": 900_000,
+                "issue_type": "Common Stock",
+            },
+        ]
+    )
+
+    pool = select_ticker_pool(df, max_tickers=0)
+
+    assert set(pool["ticker"]) == {"AAA", "BBB"}
+
+
 def test_is_etf_row_does_not_match_etf_inside_netflix_name() -> None:
     netflix = pd.Series({"ticker": "NFLX", "issue_type": "Common Stock", "full_name": "NETFLIX INC"})
     yieldmax = pd.Series(
@@ -466,6 +493,11 @@ def test_generate_candidates_keeps_one_setup_per_selected_ticker_before_scoring(
     assert {"AAA", "NFLX"}.issubset(set(candidates["ticker"]))
     nflx = candidates[candidates["ticker"].eq("NFLX")].iloc[0]
     assert nflx["candidate_coverage_source"] == "per_ticker_coverage"
+
+    uncapped = generate_candidates(sc_pool, hot, pd.DataFrame(), asof=asof, max_candidates=0)
+
+    assert {"AAA", "NFLX"}.issubset(set(uncapped["ticker"]))
+    assert not uncapped["candidate_coverage_source"].eq("per_ticker_coverage").any()
 
 
 def test_live_selection_uses_high_conviction_decision_layer() -> None:

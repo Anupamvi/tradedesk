@@ -11,6 +11,7 @@ from codexuw.confirmations import apply_confirmation_evidence, build_confirmatio
 from codexuw.daily_v3 import parse_args, write_v3_data_error_report
 from codexuw.engine import assign_trade_statuses, select_final_trades
 from codexuw.fallback_income import apply_fallback_income_status, build_fallback_income_candidates
+from codexuw.leg_drift import build_leg_drift_audit
 from codexuw.lifecycle import apply_lifecycle_triggers
 from codexuw.liquidity_shift import (
     apply_liquidity_shift_context,
@@ -86,7 +87,7 @@ def test_v3_data_error_report_manifest_and_report_say_v3(tmp_path) -> None:
     report = Path(manifest["report_path"]).read_text(encoding="utf-8")
     data = json.loads((out_dir / "codexdaily_v3_manifest_2026-05-19.json").read_text(encoding="utf-8"))
     assert data["pipeline_name"] == "Codex Daily V3"
-    assert data["pipeline_version"] == "v3.0"
+    assert data["pipeline_version"] == "v3.1-exec-confidence-20260612-143405"
     assert "| Pipeline | Codex Daily V3 |" in report
     assert "Codex Daily V2" not in report
 
@@ -165,6 +166,95 @@ def test_credit_target_miss_becomes_visible_work_limit_not_research() -> None:
     assert "Work Limit" in board.iloc[0]["Status"]
 
 
+def test_negative_edge_credit_cannot_become_v3_work_limit() -> None:
+    scored = pd.DataFrame(
+        [
+            _candidate(
+                ticker="NOW",
+                credit=1.67,
+                mid_credit=1.67,
+                natural_credit=1.60,
+                required_entry=1.40,
+                confirmation_score=9.0,
+                replay_ev_verdict="acceptable_secondary_income",
+                edge_verdict="acceptable_secondary_income",
+                edge_sample_size=17,
+                edge_win_rate=0.5294117647,
+                edge_avg_pnl=-33.897,
+            )
+        ]
+    )
+
+    out = assign_trade_statuses(scored)
+    board = build_opportunity_board(scored=out, final=pd.DataFrame(), watchlist=pd.DataFrame(), portfolio={"status": "ok", "cash": 10_000})
+    targets = build_target_ticket_board(board)
+    now = board[board["Ticker"].eq("NOW")].iloc[0]
+
+    assert out.iloc[0]["trade_status"] in {"Research", "Avoid"}
+    assert "negative_edge_avg_pnl" in out.iloc[0]["trade_status_reason"]
+    assert "Work Limit" not in now["Status"]
+    assert "Scout" not in now["Status"]
+    assert "Execute" not in now["Status"]
+    assert targets.empty or "NOW" not in set(targets["Ticker"])
+
+
+def test_fallback_income_cannot_overwrite_negative_edge() -> None:
+    scored = pd.DataFrame(
+        [
+            _candidate(
+                ticker="NOW",
+                construction_source="fallback_income",
+                live_construction_source="fallback_income",
+                fallback_target_credit=1.40,
+                target_entry=1.40,
+                credit=1.67,
+                mid_credit=1.67,
+                natural_credit=1.60,
+                quote_width_pct=0.05,
+                edge_sample_size=17,
+                edge_win_rate=0.5294117647,
+                edge_avg_pnl=-33.897,
+                replay_ev_verdict="thin_sample",
+                edge_verdict="thin_sample",
+            )
+        ]
+    )
+
+    out = apply_fallback_income_status(scored)
+
+    assert out.iloc[0]["trade_status"] == "Avoid"
+    assert out.iloc[0]["trade_tier"] == "fallback-income-weak-edge"
+    assert out.iloc[0]["edge_verdict"] == "negative"
+    assert "acceptable_secondary_income cannot override" in out.iloc[0]["trade_status_reason"]
+
+
+def test_leg_drift_audit_flags_changed_short_strike_and_width() -> None:
+    recommendations = pd.DataFrame(
+        [
+            {
+                "ticker": "NOW",
+                "generated_at": "2026-05-30T19:03:35Z",
+                "trade": "Bull Put Credit Spread: sell NOW 2026-07-17 115P / buy NOW 2026-07-17 110P",
+            }
+        ]
+    )
+    fills = pd.DataFrame(
+        [
+            {
+                "ticker": "NOW",
+                "trade": "Bull Put Credit Spread: sell NOW 2026-07-17 120P / buy NOW 2026-07-17 110P",
+            }
+        ]
+    )
+
+    audit = build_leg_drift_audit(recommendations, fills)
+
+    assert bool(audit.iloc[0]["drift_detected"]) is True
+    assert audit.iloc[0]["status"] == "UNAPPROVED LEG DRIFT - re-score required"
+    assert "sell_strike_changed:115->120" in audit.iloc[0]["drift_reason"]
+    assert "width_changed:5->10" in audit.iloc[0]["drift_reason"]
+
+
 def test_debit_target_miss_becomes_visible_work_limit_not_research() -> None:
     scored = pd.DataFrame(
         [
@@ -232,6 +322,28 @@ def test_eod_swing_target_board_shows_targets_not_just_execute() -> None:
     assert "Next-session swing entry" in targets.columns
     assert targets["Swing trend evidence"].astype(str).str.contains("flow=directional").any()
     assert targets["Swing work instruction"].astype(str).str.contains("Work the limit|Target only", regex=True).any()
+
+
+def test_v3_board_and_targets_are_uncapped_by_default() -> None:
+    scored = pd.DataFrame(
+        [
+            _candidate(ticker=f"T{i:02d}", max_profit=100.0 + i, target_profit_total=60.0 + i)
+            for i in range(16)
+        ]
+    )
+
+    board = build_opportunity_board(
+        scored=scored,
+        final=scored,
+        watchlist=pd.DataFrame(),
+        portfolio={"status": "ok", "cash": 25_000},
+    )
+    targets = build_target_ticket_board(board)
+
+    execute_rows = board[board["Status"].astype(str).str.contains("Execute", regex=False)]
+    assert len(execute_rows) == 16
+    assert set(execute_rows["Ticker"]) <= set(targets["Ticker"])
+    assert len(targets) >= 16
 
 
 def test_v3_board_formats_trade_legs_as_human_order_legs() -> None:

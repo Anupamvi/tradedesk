@@ -175,6 +175,195 @@ class TestTradeMonitorConfig(unittest.TestCase):
         self.assertFalse(should_run)
         self.assertIn("after-hours quiet", reason)
 
+    def test_manual_monitor_triggers_on_spread_close_debit(self):
+        from uwos.trade_monitor import evaluate_manual_monitors
+
+        item = {
+            "kind": "SPREAD",
+            "key": "SPREAD:META:2026-06-18:PUT:short|long",
+            "group": {
+                "underlying": "META",
+                "expiry": "2026-06-18",
+                "put_call": "PUT",
+                "strategy": "Bull Put Credit",
+                "net_type": "credit",
+                "qty": 1,
+                "width": 10,
+                "short_symbol": "short",
+                "long_symbol": "long",
+                "short_strike": 600,
+                "long_strike": 590,
+                "short_leg": {
+                    "symbol": "short",
+                    "qty": -1,
+                    "avg_cost": 14.92,
+                    "live_quote": {"ask": 17.2},
+                    "greeks": {"delta": -0.46},
+                    "underlying_quote": {"last": 599},
+                    "computed": {"dte": 34, "unrealized_pnl": -210.0, "max_profit": 1492.0},
+                },
+                "long_leg": {
+                    "symbol": "long",
+                    "qty": 1,
+                    "avg_cost": 11.67,
+                    "live_quote": {"bid": 13.1},
+                    "greeks": {"delta": -0.33},
+                    "underlying_quote": {"last": 599},
+                    "computed": {"dte": 34, "unrealized_pnl": 168.0, "max_loss": 1167.0},
+                },
+            },
+        }
+        monitor = {
+            "id": "META-test",
+            "ticker": "META",
+            "expiry": "2026-06-18",
+            "put_call": "PUT",
+            "short_strike": 600,
+            "long_strike": 590,
+            "critical_spot": 600,
+            "critical_close_debit": 4.5,
+            "critical_short_delta": 0.45,
+        }
+
+        with patch("uwos.trade_monitor.load_manual_monitors", return_value=[monitor]):
+            alerts, state = evaluate_manual_monitors([item], {})
+
+        self.assertEqual(len(alerts), 1)
+        self.assertEqual(alerts[0]["verdict"], "CLOSE")
+        self.assertTrue(alerts[0]["manual_monitor"])
+        self.assertIn("Sell $600P / Buy $590P", alerts[0]["legs"])
+        self.assertEqual(state["MANUAL:META-test"]["verdict"], "CLOSE")
+
+    def test_manual_monitor_ignores_position_with_blank_symbol(self):
+        from uwos.trade_monitor import evaluate_manual_monitors
+
+        item = {
+            "kind": "POSITION",
+            "key": "",
+            "position": {
+                "symbol": "",
+                "asset_type": "CASH",
+                "qty": 0,
+                "computed": {},
+            },
+        }
+        with patch("uwos.trade_monitor.load_manual_monitors", return_value=[]):
+            alerts, state = evaluate_manual_monitors([item], {})
+
+        self.assertEqual(alerts, [])
+        self.assertEqual(state, {})
+
+    def test_manual_monitor_suppresses_generic_matching_spread(self):
+        from uwos.trade_monitor import manual_suppressed_position_keys
+
+        item = {
+            "kind": "SPREAD",
+            "key": "SPREAD:CRM:2026-05-29:CALL:short|long",
+            "group": {
+                "underlying": "CRM",
+                "expiry": "2026-05-29",
+                "put_call": "CALL",
+                "strategy": "Bear Call Credit",
+                "net_type": "credit",
+                "qty": 1,
+                "width": 5,
+                "short_symbol": "short",
+                "long_symbol": "long",
+                "short_strike": 180,
+                "long_strike": 185,
+                "short_leg": {
+                    "symbol": "short",
+                    "qty": -1,
+                    "avg_cost": 4.72,
+                    "live_quote": {"ask": 6.0},
+                    "greeks": {"delta": 0.41},
+                    "underlying_quote": {"last": 173},
+                    "computed": {"dte": 14, "unrealized_pnl": -30.0, "max_profit": 472.0},
+                },
+                "long_leg": {
+                    "symbol": "long",
+                    "qty": 1,
+                    "avg_cost": 3.47,
+                    "live_quote": {"bid": 4.0},
+                    "greeks": {"delta": 0.32},
+                    "underlying_quote": {"last": 173},
+                    "computed": {"dte": 14, "unrealized_pnl": 0.0, "max_loss": 347.0},
+                },
+            },
+        }
+        monitor = {
+            "id": "CRM-test",
+            "ticker": "CRM",
+            "expiry": "2026-05-29",
+            "put_call": "CALL",
+            "short_strike": 180,
+            "long_strike": 185,
+        }
+
+        with patch("uwos.trade_monitor.load_manual_monitors", return_value=[monitor]):
+            suppressed = manual_suppressed_position_keys([item])
+
+        self.assertEqual(suppressed, {"SPREAD:CRM:2026-05-29:CALL:short|long"})
+
+    def test_manual_monitor_does_not_alert_profit_by_default(self):
+        from uwos.trade_monitor import evaluate_manual_monitors
+
+        item = {
+            "kind": "POSITION",
+            "key": "META 260821P00510000",
+            "position": {
+                "symbol": "META 260821P00510000",
+                "underlying": "META",
+                "asset_type": "OPTION",
+                "put_call": "PUT",
+                "strike": 510,
+                "expiry": "2026-08-21",
+                "qty": -1,
+                "avg_cost": 42.0,
+                "live_quote": {"ask": 10.0},
+                "greeks": {"delta": -0.15},
+                "underlying_quote": {"last": 613},
+                "computed": {"dte": 98, "unrealized_pnl": 3200.0, "pct_of_max_profit": 75.0},
+            },
+        }
+        monitor = {
+            "id": "META-profit-test",
+            "ticker": "META",
+            "expiry": "2026-08-21",
+            "put_call": "PUT",
+            "strike": 510,
+            "profit_close_debit": 11.0,
+        }
+
+        with patch("uwos.trade_monitor.load_manual_monitors", return_value=[monitor]):
+            alerts, state = evaluate_manual_monitors([item], {})
+
+        self.assertEqual(alerts, [])
+        self.assertEqual(state["MANUAL:META-profit-test"]["verdict"], "HOLD")
+
+    def test_risk_filter_suppresses_profit_and_allows_failure(self):
+        from uwos.trade_monitor import is_risk_management_alert, _suppress_profit_taking_verdict
+
+        self.assertFalse(is_risk_management_alert({
+            "verdict": "CLOSE",
+            "reason": "90% of max profit — nothing left to harvest",
+        }))
+        self.assertFalse(is_risk_management_alert({
+            "verdict": "CLOSE",
+            "reason": "Bull Put Credit 700/690 spread: expiration week with limited profit captured; gamma risk now dominates theta",
+        }))
+        self.assertTrue(is_risk_management_alert({
+            "verdict": "ROLL",
+            "reason": "short leg ITM with 7 DTE; roll or close both legs together",
+        }))
+        verdict, reason, suppressed = _suppress_profit_taking_verdict(
+            "ASSESS",
+            "equity up +135% — consider trimming",
+        )
+        self.assertTrue(suppressed)
+        self.assertEqual(verdict, "HOLD")
+        self.assertIn("risk/failure", reason)
+
 
 if __name__ == "__main__":
     unittest.main()

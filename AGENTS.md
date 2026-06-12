@@ -25,6 +25,28 @@ python3 -m codexuw.daily \
 - V2 must still use Schwab live chains/pricing and Schwab portfolio state for execution decisions. Do not force trades when live edge, liquidity, catalyst, or risk controls do not support them.
 - Core investment holdings are protected by default. Do not recommend covered calls on long-term holdings unless the user explicitly allows the ticker or asks for `--portfolio-income-mode existing-core-review`.
 
+## Pattern Analysis V2 Default
+
+- Treat `pattern analysis`, `run pattern analysis`, `pattern-analysis`, and plain `pattern` requests as **Pattern Analysis V2** unless the user explicitly asks for V1, the frozen baseline, or `uwos.options_pattern_pipeline_v1`.
+- V2 is the hardened Pattern Analysis entrypoint: `python3 -m uwos.pattern_analysis_v2`.
+- The compatibility module `python3 -m uwos.options_pattern_pipeline_v2` routes to the same V2 engine.
+- Default V2 command for latest source-complete local UW data:
+
+```bash
+python3 -m uwos.pattern_analysis_v2 \
+  --base-dir /Users/anuppamvi/uw_root/tradedesk \
+  --as-of latest
+```
+
+- Default V2 dated output path is:
+
+```text
+/Users/anuppamvi/uw_root/tradedesk/out/pattern_analysis_v2/YYYY-MM-DD
+```
+
+- V2 emits ticket-first `AUTO_APPROVED`, `TRADE_REVIEW`, `AVOID`, and `NO_TRADE` decisions with decision boards, manifests, walk-forward performance, threshold sensitivity, calibration, shadow ledger, profitability audit, and runbook artifacts.
+- No trade/order placement.
+
 ## Pattern Pipeline V1 Baseline
 
 - `uwos/options_pattern_pipeline_v1_frozen_v1/` is the immutable backup copy of the Options Pattern Pipeline V1 baseline.

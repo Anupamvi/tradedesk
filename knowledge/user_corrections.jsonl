@@ -1,0 +1,9 @@
+{"date":"2026-06-01","source":"seed","lesson":"Do not suppress good trades solely due to portfolio risk; annotate and size-risk them."}
+{"date":"2026-06-01","source":"seed","lesson":"EOD files are next-day planning inputs; show target credit/debit and mark pending live recheck instead of hiding candidates because the market is closed."}
+{"date":"2026-06-01","source":"seed","lesson":"Missing target debit/credit must prevent green execution readiness."}
+{"date":"2026-06-01","source":"seed","lesson":"Reports must show plain-language buy/sell legs and expiration dates, not only OCC codes."}
+{"date":"2026-06-01","source":"seed","lesson":"Do not use arbitrary top-N cutoffs to hide candidates or audits."}
+{"date":"2026-06-01","source":"seed","lesson":"Do not promote low-quality tail tickers or junk speculative tickers into action rows without strong evidence."}
+{"date":"2026-06-01","source":"seed","lesson":"Preserve clear status icons and labels for green, yellow, blocked, and no-action rows."}
+{"date":"2026-06-01","source":"seed","lesson":"Major liquid tickers such as AAPL, NVDA, MSFT, GOOGL, GOOG, META, AMZN, TSLA, AMD, AVGO, PLTR, SPY, and QQQ must appear in coverage audit when source data exists."}
+{"date":"2026-06-01","source":"seed","lesson":"Multi-agent dispatch is mandatory for normal Options Agent runs when available."}

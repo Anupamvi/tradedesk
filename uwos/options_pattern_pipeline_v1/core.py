@@ -38,7 +38,9 @@ from .macro_geo import (
     render_pattern_observability_matrix,
 )
 
-PIPELINE_VERSION = "options_pattern_pipeline_v1.2"
+PIPELINE_VERSION = "options_pattern_pipeline_v1.3-exec-confidence-20260612-143405"
+PREVIOUS_PIPELINE_VERSIONS = ("options_pattern_pipeline_v1.2",)
+PIPELINE_RELEASED_AT = "2026-06-12T14:34:05-07:00"
 ARTIFACT_SCHEMA_VERSION = "options_pattern_artifacts_v1"
 DECISION_BOARD_SCHEMA_VERSION = "decision_board_v1"
 MANIFEST_SCHEMA_VERSION = "artifact_manifest_v1"
@@ -65,7 +67,20 @@ MISSED_MOVER_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
 MIN_DIRECTIONAL_SCENARIO_SIGNALS = 12
 MIN_DIRECTION_STRATEGY_SCENARIO_SIGNALS = 4
 MIN_TICKER_TREND_EDGE_SCORED = 8
-GOAL_AUDIT_REQUIRED_TICKERS = ("AMD", "MU", "NVDA", "SNDK", "IBM", "CRWD", "HOOD", "NOW")
+GOAL_MAJOR_REQUIRED_TICKERS = (
+    "AAPL",
+    "NVDA",
+    "MSFT",
+    "GOOG",
+    "GOOGL",
+    "PLTR",
+    "AMD",
+    "MU",
+    "META",
+    "HOOD",
+    "NOW",
+)
+GOAL_AUDIT_REQUIRED_TICKERS = GOAL_MAJOR_REQUIRED_TICKERS + ("SNDK", "IBM", "CRWD")
 TRADEABLE_GAP_MIN_SOURCE_PREMIUM = 10_000.0
 TRADEABLE_GAP_MIN_HOT_PREMIUM = 25_000.0
 TRADEABLE_GAP_MAX_EXTRA_SIGNALS = 25
@@ -90,6 +105,17 @@ HARD_TRADE_BLOCKERS = {
     "OPTION_LIQUIDITY_TOO_LOW",
     "DTE_TOO_SHORT_FOR_VALIDATION_HORIZONS",
 }
+ORDER_ENTRY_REQUIRED_FIELDS = (
+    "buy_or_sell",
+    "call_or_put",
+    "strike_rates",
+    "expiration_date",
+    "trade_legs",
+    "suggested_entry_debit_credit_range",
+    "max_risk_per_contract",
+    "stop_invalidation_rule",
+    "expected_R",
+)
 REGIME_TRADE_BLOCKERS = {"MARKET_REGIME_CONFLICT"}
 VALIDATION_TRADE_BLOCKERS = {
     "PATTERN_VALIDATION_NOT_PROVEN",
@@ -152,6 +178,10 @@ DEFAULT_RISK_CONFIG = {
     "min_regime_edge_review_expected_r": 0.05,
     "min_regime_edge_review_profit_factor": 1.20,
     "min_regime_edge_review_scored_outcomes": 20,
+    "min_target_ready_expected_r": 0.0,
+    "min_target_ready_expected_r_per_day": 0.0,
+    "min_target_ready_profit_factor": 1.05,
+    "min_target_ready_baselines_beaten": 1,
     "min_ticker_trend_scored_outcomes": 20,
     "min_ticker_trend_win_rate": 0.55,
     "min_ticker_trend_probability_score": 0.42,
@@ -388,7 +418,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--top-candidates-per-day",
         type=int,
         default=40,
-        help="Maximum discovered pattern candidates retained per date.",
+        help="Maximum discovered pattern candidates retained per date. Use 0 for uncapped acceptance runs.",
     )
     parser.add_argument(
         "--min-month-dates",
@@ -2212,6 +2242,8 @@ def select_signal_set(
 ) -> List[Dict[str, Any]]:
     ranked = [dict(row) for row in signals]
     ranked.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
+    if max_signals <= 0:
+        return ranked
     selected: List[Dict[str, Any]] = ranked[:max_signals]
     selected_keys = {signal_identity_key(row) for row in selected}
     selected_ticker_directions = {
@@ -3864,7 +3896,11 @@ def generate_baseline_signals(
     signals: List[Dict[str, Any]] = []
     by_date_real = Counter(str(s["date"]) for s in validation_signals)
     for snap in validation_snaps:
-        per_date_target = max(3, min(top_candidates_per_day, by_date_real.get(snap.signal_date, 5)))
+        real_count = by_date_real.get(snap.signal_date, 5)
+        if top_candidates_per_day <= 0:
+            per_date_target = max(3, real_count)
+        else:
+            per_date_target = max(3, min(top_candidates_per_day, real_count))
         signals.extend(unusual_volume_baseline(snap, pattern_config, per_date_target, risk_config))
         signals.extend(uw_flow_only_baseline(snap, pattern_config, per_date_target, risk_config))
         signals.extend(naive_catalyst_only_baseline(snap, pattern_config, per_date_target, risk_config))
@@ -6758,6 +6794,7 @@ def write_outputs(
     )
     actionable = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AUTO_APPROVED"])
     trade_review = build_trade_review_candidates(decision_enriched_rows)
+    target_ready = build_target_ready_candidates(decision_enriched_rows, run_controls["risk_config"])
     pattern_recommendations = build_pattern_recommendations(actionable, trade_review)
     catalyst_flow_leaders = build_catalyst_flow_leaders(decision_enriched_rows)
     watch = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "TRADE_REVIEW" and r.get("classification") == "WATCH"])
@@ -6777,7 +6814,7 @@ def write_outputs(
         row["daily_pattern_config_json"] = stable_json(daily_pattern_config)
         discovered_rows.append(row)
 
-    daily_decision = daily_trade_decision(actionable, trade_review, blocked)
+    daily_decision = daily_trade_decision(actionable, trade_review, blocked, target_ready)
     metadata = {
         "pipeline_version": PIPELINE_VERSION,
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
@@ -6820,6 +6857,7 @@ def write_outputs(
                     run_controls.get("baseline_comparison", []),
                 )
             ),
+            "target_ready_candidates": len(target_ready),
             "trade_review_candidates": len(trade_review),
             "avoid": len(blocked),
             "watchlist_research_setups": len(watch),
@@ -6841,6 +6879,7 @@ def write_outputs(
     paths = {
         "daily_report": str(out_dir / f"daily_report_{as_of}.md"),
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
+        "target_ready_candidates": str(out_dir / "target_ready_candidates.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
         "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
@@ -6923,6 +6962,11 @@ def write_outputs(
     metadata["goal_evidence_status"] = goal_evidence_overall_status(goal_rows)
 
     write_csv(Path(paths["actionable_trades"]), [trade_output_row(r) for r in actionable], trade_fieldnames())
+    write_csv(
+        Path(paths["target_ready_candidates"]),
+        [target_ready_output_row(r) for r in target_ready],
+        target_ready_fieldnames(),
+    )
     write_csv(
         Path(paths["pattern_recommendations"]),
         [pattern_recommendation_output_row(r, idx) for idx, r in enumerate(pattern_recommendations, 1)],
@@ -7032,6 +7076,7 @@ def write_outputs(
             as_of,
             snapshots[as_of],
             actionable,
+            target_ready,
             pattern_recommendations,
             catalyst_flow_leaders,
             source_coverage_rows,
@@ -7100,6 +7145,7 @@ def write_source_incomplete_outputs(
             "source_ticker_coverage": 0,
             "directional_edge_diagnostics": 0,
             "ticker_trend_edges": 0,
+            "target_ready_candidates": 0,
             "trade_review_candidates": 0,
             "avoid": 0,
             "watchlist_research_setups": 0,
@@ -7111,6 +7157,7 @@ def write_source_incomplete_outputs(
     paths = {
         "daily_report": str(out_dir / f"daily_report_{as_of}.md"),
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
+        "target_ready_candidates": str(out_dir / "target_ready_candidates.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
         "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
@@ -7155,6 +7202,7 @@ def write_source_incomplete_outputs(
         "regime_sector_validation": str(out_dir / "validation_by_regime_sector_ticker.csv"),
     }
     write_csv(Path(paths["actionable_trades"]), [], trade_fieldnames())
+    write_csv(Path(paths["target_ready_candidates"]), [], target_ready_fieldnames())
     write_csv(Path(paths["pattern_recommendations"]), [], pattern_recommendation_fieldnames())
     write_csv(Path(paths["catalyst_flow_leaders"]), [], catalyst_flow_leader_fieldnames())
     write_csv(Path(paths["source_ticker_coverage"]), [], source_coverage_fieldnames())
@@ -7361,9 +7409,12 @@ def daily_trade_decision(
     actionable: Sequence[Mapping[str, Any]],
     trade_review: Sequence[Mapping[str, Any]],
     blocked: Sequence[Mapping[str, Any]] = (),
+    target_ready: Sequence[Mapping[str, Any]] = (),
 ) -> str:
     if actionable:
         return "AUTO_APPROVED"
+    if target_ready:
+        return "TARGET_READY"
     if trade_review:
         return "TRADE_REVIEW"
     return "NO_TRADE"
@@ -7847,6 +7898,112 @@ def build_trade_review_candidates(rows: Sequence[Mapping[str, Any]]) -> List[Map
     return candidates
 
 
+def order_entry_missing_fields(row: Mapping[str, Any]) -> List[str]:
+    setup = trade_setup_fields(row)
+    values = {
+        "buy_or_sell": setup.get("buy_or_sell"),
+        "call_or_put": setup.get("call_or_put"),
+        "strike_rates": setup.get("strike_rates"),
+        "expiration_date": setup.get("expiration_date"),
+        "trade_legs": setup.get("trade_legs"),
+        "suggested_entry_debit_credit_range": setup.get("entry_range"),
+        "max_risk_per_contract": row.get("max_risk_per_contract"),
+        "stop_invalidation_rule": row.get("stop_rule")
+        or row.get("invalidation")
+        or row.get("invalidation_rule")
+        or row.get("review_close_rule"),
+        "expected_R": row.get("expected_R"),
+    }
+    missing = [
+        field
+        for field in ORDER_ENTRY_REQUIRED_FIELDS
+        if values.get(field) in (None, "")
+    ]
+    trade_legs = str(setup.get("trade_legs") or "")
+    if trade_legs.startswith("No complete"):
+        missing.append("complete_trade_legs")
+    return sorted(set(missing))
+
+
+def target_ready_skip_reasons(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> List[str]:
+    reasons = order_entry_missing_fields(row)
+    blockers = set(row.get("block_reasons") or [])
+    hard_contract_blockers = blockers & HARD_TRADE_BLOCKERS
+    if hard_contract_blockers:
+        reasons.extend(sorted(hard_contract_blockers))
+    hard_kill_switches = {
+        "KILL_SWITCH_SOURCE_INCOMPLETE",
+        "KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS",
+    }
+    reasons.extend(sorted(blockers & hard_kill_switches))
+    expected_r = num(row.get("expected_R"))
+    if expected_r is None or expected_r <= float(risk_config.get("min_target_ready_expected_r", 0.0)):
+        reasons.append("expected_R_not_target_ready")
+    expected_r_per_day = num(row.get("expected_R_per_day"))
+    if expected_r_per_day is None or expected_r_per_day <= float(
+        risk_config.get("min_target_ready_expected_r_per_day", 0.0)
+    ):
+        reasons.append("expected_R_per_day_not_target_ready")
+    pf = num(row.get("validation_profit_factor"))
+    if pf is None or pf < float(risk_config.get("min_target_ready_profit_factor", 1.05)):
+        reasons.append("profit_factor_below_target_ready")
+    baselines = int(num(row.get("beats_baselines_count")) or 0)
+    if baselines < int(risk_config.get("min_target_ready_baselines_beaten", 1)):
+        reasons.append("baselines_not_target_ready")
+    if "VALIDATION_EXPECTANCY_NEGATIVE" in blockers:
+        reasons.append("validation_expectancy_negative")
+    return sorted(set(reasons))
+
+
+def is_target_ready_candidate(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> bool:
+    if row.get("status") == "AUTO_APPROVED":
+        return True
+    return not target_ready_skip_reasons(row, risk_config)
+
+
+def target_ready_risk_label(row: Mapping[str, Any]) -> str:
+    blockers = set(row.get("block_reasons") or [])
+    labels: List[str] = []
+    if blockers & RISK_TRADE_BLOCKERS:
+        labels.append("risk_limit_labeled_not_hidden")
+    if blockers & REGIME_TRADE_BLOCKERS:
+        labels.append("macro_regime_risk")
+    if blockers & VALIDATION_TRADE_BLOCKERS:
+        labels.append("validation_review")
+    if blockers & EV_TRADE_BLOCKERS:
+        labels.append("ev_or_calibration_review")
+    if any(str(b).startswith(KILL_SWITCH_PREFIX) for b in blockers):
+        labels.append("run_kill_switch_review")
+    return ";".join(labels) or "target_entry_plan"
+
+
+def target_ready_reason_text(row: Mapping[str, Any]) -> str:
+    return (
+        f"target plan: expected_R={fmt_num(row.get('expected_R'))}; "
+        f"expected_R/day={fmt_num(row.get('expected_R_per_day'))}; "
+        f"PF={fmt_num(row.get('validation_profit_factor'))}; "
+        f"baselines={row.get('beats_baselines_count')}; "
+        f"entry={trade_setup_fields(row).get('entry_range')}"
+    )
+
+
+def build_target_ready_candidates(
+    rows: Sequence[Mapping[str, Any]],
+    risk_config: Mapping[str, Any],
+) -> List[Mapping[str, Any]]:
+    candidates_by_ticket: Dict[Tuple[str, str, str, str], Mapping[str, Any]] = {}
+    for row in rows:
+        if not is_target_ready_candidate(row, risk_config):
+            continue
+        key = trade_ticket_key(row)
+        current = candidates_by_ticket.get(key)
+        if current is None or trade_review_sort_key(row) > trade_review_sort_key(current):
+            candidates_by_ticket[key] = row
+    candidates = list(candidates_by_ticket.values())
+    candidates.sort(key=trade_review_sort_key, reverse=True)
+    return candidates
+
+
 def dedupe_rows_by_ticket(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
     best_by_ticket: Dict[Tuple[str, str, str, str], Mapping[str, Any]] = {}
     for row in rows:
@@ -7973,6 +8130,25 @@ def trade_review_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
             "review_priority": trade_review_rank(trade_review_status(r)),
             "promotion_needed": promotion_needed_text(r),
             "hard_blockers": ";".join(hard_trade_blockers(r)),
+        }
+    )
+    return row
+
+
+def target_ready_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
+    row = trade_review_output_row(r)
+    setup = trade_setup_fields(r)
+    row.update(
+        {
+            "target_ready_status": "SEND_NOW" if r.get("status") == "AUTO_APPROVED" else "TARGET_READY",
+            "send_now": "yes" if r.get("status") == "AUTO_APPROVED" else "no",
+            "live_recheck_required": "no" if r.get("status") == "AUTO_APPROVED" else "yes",
+            "target_limit": setup.get("entry_range"),
+            "target_debit_credit": setup.get("entry_range"),
+            "risk_label": target_ready_risk_label(r),
+            "why_target_ready": target_ready_reason_text(r),
+            "why_not_send_now": "" if r.get("status") == "AUTO_APPROVED" else blocker_text(r),
+            "order_entry_missing_fields": ";".join(order_entry_missing_fields(r)),
         }
     )
     return row
@@ -8478,6 +8654,41 @@ def append_trade_review_table(
     lines.append("")
 
 
+def target_ready_row(row: Mapping[str, Any], index: int) -> str:
+    setup = trade_setup_fields(row)
+    send_now = "yes" if row.get("status") == "AUTO_APPROVED" else "no"
+    live_recheck = "no" if row.get("status") == "AUTO_APPROVED" else "yes"
+    return (
+        f"| {index} | {markdown_cell('SEND_NOW' if send_now == 'yes' else 'TARGET_READY')} | "
+        f"{markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
+        f"{markdown_cell(setup.get('trade_legs'))} | {markdown_cell(setup.get('entry_range'))} | "
+        f"{money_text(row.get('max_risk_per_contract'))} | {fmt_num(row.get('expected_R'))} | "
+        f"{fmt_num(row.get('expected_R_per_day'))} | {fmt_num(row.get('validation_profit_factor'))} | "
+        f"{markdown_cell(target_ready_risk_label(row))} | {markdown_cell(live_recheck)} | "
+        f"{markdown_cell(blocker_text(row) if send_now == 'no' else '')} |"
+    )
+
+
+def append_target_ready_table(
+    lines: List[str],
+    rows: Sequence[Mapping[str, Any]],
+    limit: int = 20,
+) -> None:
+    lines.append("## Target-Ready Order Plans")
+    lines.append(
+        "- Complete tickets with target debit/credit for next-session planning; live recheck is required unless marked send-now."
+    )
+    if not rows:
+        lines.append("- No target-ready plans with complete legs, target price, positive edge, and baseline support.")
+        lines.append("")
+        return
+    lines.append("| # | Plan | Ticker | Bias | Trade Legs | Target Limit | Max Risk | Exp R | Exp R/Day | PF | Risk Label | Live Recheck | Why Not Send Now |")
+    lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---:|---|---|---|")
+    for idx, row in enumerate(rows[:limit], 1):
+        lines.append(target_ready_row(row, idx))
+    lines.append("")
+
+
 def recommendation_row(row: Mapping[str, Any], index: int) -> str:
     setup = trade_setup_fields(row)
     label = "AUTO_APPROVED" if row.get("status") == "AUTO_APPROVED" else "PATTERN_RECOMMENDATION"
@@ -8793,6 +9004,7 @@ def render_daily_report(
     as_of: str,
     snapshot: Snapshot,
     actionable: Sequence[Mapping[str, Any]],
+    target_ready: Sequence[Mapping[str, Any]],
     pattern_recommendations: Sequence[Mapping[str, Any]],
     catalyst_flow_leaders: Sequence[Mapping[str, Any]],
     source_coverage_rows: Sequence[Mapping[str, Any]],
@@ -8825,6 +9037,7 @@ def render_daily_report(
     regime = snapshot.market_regime
     lines.append("## Decision Summary")
     lines.append(f"- Approved trades: {len(actionable)}.")
+    lines.append(f"- Target-ready order plans: {len(target_ready)}.")
     lines.append(f"- Pattern recommendations: {len(pattern_recommendations)}.")
     lines.append(f"- Catalyst-flow leaders: {len(catalyst_flow_leaders)}.")
     lines.append(f"- Source ticker coverage names: {len(source_coverage_rows)}.")
@@ -8860,12 +9073,18 @@ def render_daily_report(
     append_ticker_trend_edge_table(lines, ticker_trend_rows, metadata.get("risk_config", {}), 15)
     append_catalyst_flow_leader_table(lines, catalyst_flow_leaders, 40)
     append_ticket_table(lines, "AUTO_APPROVED Trade Tickets", actionable, "AUTO_APPROVED", 10, "No auto-approved trade tickets.")
+    append_target_ready_table(lines, target_ready, 20)
     append_trade_review_table(lines, trade_review, 12)
     append_ticket_table(lines, "Trade-Review Watch Tickets", watch, "TRADE_REVIEW", 15, "No review watch tickets passed the daily screens.")
     append_ticket_table(lines, "Avoid / Blocked Tickets", blocked, "AVOID", 15, "No blocked tickets after daily classification.")
     append_strategy_glossary(
         lines,
-        list(actionable[:10]) + list(catalyst_flow_leaders[:40]) + list(trade_review[:12]) + list(watch[:15]) + list(blocked[:15]),
+        list(actionable[:10])
+        + list(target_ready[:20])
+        + list(catalyst_flow_leaders[:40])
+        + list(trade_review[:12])
+        + list(watch[:15])
+        + list(blocked[:15]),
     )
 
     lines.append("## Macro / Catalyst Read")
@@ -9039,6 +9258,20 @@ def trade_review_fieldnames() -> List[str]:
         "promotion_needed",
         "hard_blockers",
     ] + trade_fieldnames()
+
+
+def target_ready_fieldnames() -> List[str]:
+    return [
+        "target_ready_status",
+        "send_now",
+        "live_recheck_required",
+        "target_limit",
+        "target_debit_credit",
+        "risk_label",
+        "why_target_ready",
+        "why_not_send_now",
+        "order_entry_missing_fields",
+    ] + trade_review_fieldnames()
 
 
 def pattern_recommendation_fieldnames() -> List[str]:

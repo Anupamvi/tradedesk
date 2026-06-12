@@ -53,6 +53,16 @@ class FreshWheelReplayTests(unittest.TestCase):
 
         self.assertEqual([(day, path.name) for day, path in sessions], [(dt.date(2026, 4, 30), "2026-04-30")])
 
+    def test_iter_sessions_skips_overlay_folders_for_leakage_safe_replay(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _write_session(root, "2026-04-30")
+            _write_session(root, "2026-04-30_overlay_2026-05-01")
+
+            sessions = iter_sessions(root, dt.date(2026, 4, 1), dt.date(2026, 5, 1))
+
+        self.assertEqual([(day, path.name) for day, path in sessions], [(dt.date(2026, 4, 30), "2026-04-30")])
+
     def test_load_uw_option_contracts_parses_zipped_hot_chains(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             base = _write_session(Path(tmpdir), "2026-04-30")

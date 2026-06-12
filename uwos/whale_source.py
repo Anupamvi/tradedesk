@@ -125,6 +125,42 @@ def is_split_bot_eod_part(path: Path) -> bool:
     return _bot_eod_part_match(Path(path)) is not None
 
 
+def _split_part_index(path: Path) -> int:
+    match = _bot_eod_part_match(Path(path))
+    if not match:
+        return 0
+    try:
+        return int(match.group("index"))
+    except Exception:
+        return 0
+
+
+def split_bot_eod_parts_for(path: Path) -> list[Path]:
+    """Return all split bot-EOD parts for ``path``, or ``[path]`` for normal sources."""
+    path = Path(path)
+    match = _bot_eod_part_match(path)
+    if not match:
+        return [path]
+    stem = match.group("stem")
+    total_text = match.group("total")
+    total = int(total_text)
+    suffix = match.group("suffix")
+    parts = []
+    for candidate in path.parent.glob(f"{stem}.part-*-of-{total_text}.{suffix}"):
+        cm = _bot_eod_part_match(candidate)
+        if not cm:
+            continue
+        if cm.group("stem") == stem and int(cm.group("total")) == total and cm.group("suffix").lower() == suffix.lower():
+            parts.append(candidate)
+    parts = sorted(parts, key=_split_part_index)
+    if len(parts) != total:
+        found = ", ".join(p.name for p in parts) or "none"
+        raise FileNotFoundError(
+            f"Incomplete split bot EOD source for {stem}: expected {total} parts, found {len(parts)} ({found})"
+        )
+    return parts
+
+
 def _latest_path(paths: list[Path]) -> Path:
     return max(paths, key=lambda p: (p.stat().st_mtime, str(p)))
 
@@ -156,22 +192,18 @@ def find_bot_eod_source(base_dir: Path, date_str: str | None = None) -> Path:
         variants = [path for path in matches if not is_split_bot_eod_part(path)]
         if variants:
             return _latest_path(variants)
-        if any(is_split_bot_eod_part(path) for path in matches):
-            raise FileNotFoundError(
-                f"Split bot EOD files are not accepted for {date_str}; "
-                f"provide the full {BOT_EOD_PREFIX}{date_str}.csv/.zip in {base_dir}"
-            )
+        split_parts = [path for path in matches if is_split_bot_eod_part(path)]
+        if split_parts:
+            return sorted(split_parts, key=_split_part_index)[0]
 
     else:
         matches = collect([f"{BOT_EOD_PREFIX}*.zip", f"{BOT_EOD_PREFIX}*.csv"])
         candidates = [path for path in matches if not is_split_bot_eod_part(path)]
         if candidates:
             return _latest_path(candidates)
-        if any(is_split_bot_eod_part(path) for path in matches):
-            raise FileNotFoundError(
-                f"Split bot EOD files are not accepted; provide the full "
-                f"{BOT_EOD_PREFIX}YYYY-MM-DD.csv/.zip in {base_dir}"
-            )
+        split_parts = [path for path in matches if is_split_bot_eod_part(path)]
+        if split_parts:
+            return sorted(split_parts, key=lambda p: (infer_date_from_path(p), _split_part_index(p)))[-1]
 
     suffix = f" for {date_str}" if date_str else ""
     raise FileNotFoundError(f"Missing {BOT_EOD_PREFIX}YYYY-MM-DD CSV/ZIP{suffix} in {base_dir}")
@@ -321,10 +353,6 @@ def load_whale_flow_source(
 @contextmanager
 def open_bot_eod(path: Path) -> Iterator[tuple[object, str]]:
     path = Path(path)
-    if is_split_bot_eod_part(path):
-        raise FileNotFoundError(
-            f"Split bot EOD files are not accepted; provide the full bot EOD CSV/ZIP: {path}"
-        )
     if path.suffix.lower() == ".zip":
         zf = zipfile.ZipFile(path)
         try:
@@ -467,6 +495,7 @@ def load_yes_prime_whale_flow(
     input_path = Path(input_path)
     if not input_path.exists():
         raise FileNotFoundError(f"Missing bot EOD source: {input_path}")
+    input_parts = split_bot_eod_parts_for(input_path)
 
     gates = config.get("gates", {}) if isinstance(config, dict) else {}
     shield_cfg = config.get("shield", {}) if isinstance(config, dict) else {}
@@ -496,10 +525,13 @@ def load_yes_prime_whale_flow(
     top_trades = _empty_top_trades()
     report_date_ts = pd.to_datetime(infer_date_from_path(input_path), errors="coerce")
 
-    usecols = bot_eod_usecols(input_path)
+    usecols = bot_eod_usecols(input_parts[0])
     dtype = {col: BOT_EOD_DTYPE[col] for col in usecols}
+    source_labels: list[str] = []
 
-    with open_bot_eod(Path(input_path)) as (input_handle, source_label):
+    for input_part in input_parts:
+      with open_bot_eod(Path(input_part)) as (input_handle, source_label):
+        source_labels.append(source_label)
         for chunk in pd.read_csv(
             input_handle,
             chunksize=max(1, int(chunksize)),
@@ -682,7 +714,7 @@ def load_yes_prime_whale_flow(
 
     return WhaleFlow(
         source_path=Path(input_path),
-        source_label=source_label,
+        source_label=source_labels[0] if len(source_labels) == 1 else f"split_bot_eod:{len(source_labels)} parts",
         total_rows=total_rows,
         yes_prime_rows=yes_prime_rows,
         symbol_summary=symbol_summary,

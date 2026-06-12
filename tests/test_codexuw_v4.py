@@ -11,7 +11,9 @@ from codexuw.daily_v4 import (
     _disposition,
     _hard_blocker_reason,
     apply_v4_risk_cap,
+    apply_v4_professional_dispositions,
     apply_v4_safety_calibration,
+    build_v4_opportunity_board,
     build_no_miss_audit,
     build_construction_attempts,
     build_candidate_disposition,
@@ -100,10 +102,48 @@ def test_price_target_miss_stays_visible_as_v4_work_limit_ticket() -> None:
     assert len(tickets) == 1
     ticket = tickets.iloc[0]
     assert ticket["final disposition"] == "Swing Target / Work Limit"
+    assert not str(ticket["display status"]).startswith("🟢")
+    assert "NOT AN ORDER" in ticket["manual review instruction"]
     assert ticket["next-session swing entry target"] == ">= $0.90 credit"
     assert "sell AAA 2026-05-29 100P / buy AAA 2026-05-29 95P" in ticket["trade legs"]
     assert "AAA260529" not in ticket["trade legs"]
     assert "credit is 15.0% of $5 width" in ticket["target price methodology"]
+
+
+def test_negative_edge_credit_cannot_become_v4_swing_target() -> None:
+    scored = pd.DataFrame(
+        [
+            _candidate(
+                ticker="NOW",
+                credit=1.67,
+                mid_credit=1.67,
+                natural_credit=1.60,
+                required_entry=1.40,
+                target_entry=1.40,
+                confirmation_score=9.0,
+                score=7.8,
+                replay_ev_verdict="acceptable_secondary_income",
+                edge_verdict="thin_sample",
+                edge_sample_size=17,
+                edge_win_rate=0.5294117647,
+                edge_avg_pnl=-33.897,
+            )
+        ]
+    )
+
+    adjusted = apply_v4_professional_dispositions(scored)
+    board = build_v4_opportunity_board(adjusted, top_flow=pd.DataFrame())
+    tickets = build_v4_swing_target_tickets(
+        scored=adjusted,
+        board=pd.DataFrame(),
+        regime={"trend": "uptrend", "volatility": "low", "flow": "weak"},
+        top_flow=pd.DataFrame([{"rank": 1, "ticker": "NOW", "net_premium": 2_000_000, "flow_direction": "bullish"}]),
+    )
+
+    assert adjusted.iloc[0]["trade_status"] == "Avoid"
+    assert "negative_edge_avg_pnl" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+    assert not board[board["Ticker"].eq("NOW")]["Status"].astype(str).str.contains("WORK LIMIT|ENTER|SCOUT", regex=True).any()
+    assert tickets.empty
 
 
 def test_v4_hard_event_risk_blocks_target_ticket() -> None:

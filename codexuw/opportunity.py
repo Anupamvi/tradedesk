@@ -366,7 +366,7 @@ def _target_work_instruction(row: pd.Series | dict[str, Any]) -> str:
     if "Execute" in status:
         return f"Manual ticket can be worked at {entry} after fresh Schwab risk/news check."
     if "Work Limit" in status:
-        return f"Work the limit only at {entry}; do not chase current quote."
+        return f"NOT AN ORDER - target only at {entry}; fresh re-score required before entry."
     if "Scout" in status:
         return f"1-lot only at {entry} after listed confirmation clears."
     if "Repair" in status:
@@ -374,7 +374,7 @@ def _target_work_instruction(row: pd.Series | dict[str, Any]) -> str:
     return f"Target only at {entry}; blocker must clear before entry."
 
 
-def build_target_ticket_board(board: pd.DataFrame, *, max_rows: int = 12) -> pd.DataFrame:
+def build_target_ticket_board(board: pd.DataFrame, *, max_rows: int | None = 0) -> pd.DataFrame:
     """Compact EOD swing target sheet for the next session.
 
     This is deliberately broader than Execute. It keeps targetable Work Limit,
@@ -391,6 +391,9 @@ def build_target_ticket_board(board: pd.DataFrame, *, max_rows: int = 12) -> pd.
         & ~status_text.str.contains("Blocked|Avoid", regex=True, na=False)
         & ~trade_text.str.startswith("No ", na=False)
     )
+    if "edge_avg_pnl" in source.columns:
+        edge_avg = pd.to_numeric(source["edge_avg_pnl"], errors="coerce")
+        targetish &= ~(edge_avg <= 0)
     source = source[targetish].copy()
     if source.empty:
         return pd.DataFrame(columns=TARGET_TICKET_COLUMNS)
@@ -408,7 +411,9 @@ def build_target_ticket_board(board: pd.DataFrame, *, max_rows: int = 12) -> pd.
         }
     ).fillna(0)
     source["_target_rank"] = status_rank + lane_rank / 10.0
-    source = source.sort_values(["_target_rank", "Target profit"], ascending=[False, False]).head(max_rows)
+    source = source.sort_values(["_target_rank", "Target profit"], ascending=[False, False])
+    if max_rows and max_rows > 0:
+        source = source.head(int(max_rows))
     rows = []
     for rank, (_, row) in enumerate(source.iterrows(), start=1):
         rows.append(
@@ -679,7 +684,7 @@ def build_opportunity_board(
     final: pd.DataFrame,
     watchlist: pd.DataFrame | None,
     portfolio: dict[str, Any] | None,
-    max_rows: int = 18,
+    max_rows: int | None = 0,
 ) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str, str]] = set()
@@ -699,8 +704,10 @@ def build_opportunity_board(
             seen.add(key)
             rows.append(board_row)
 
+    active_cap = int(max_rows) if max_rows and max_rows > 0 else None
+
     if final is not None and not final.empty:
-        add_frame(final, max_rows)
+        add_frame(final, active_cap)
 
     if scored is not None and not scored.empty and "trade_status" in scored.columns:
         add_frame(_best_rows(scored, scored["trade_status"].astype(str).eq("Watch"), n=4))
@@ -767,7 +774,7 @@ def build_opportunity_board(
         if col not in board.columns:
             board[col] = ""
     board = apply_lifecycle_triggers(board, asof=None)
-    return board.head(max_rows)
+    return board.head(active_cap) if active_cap else board
 
 
 def opportunity_counts(board: pd.DataFrame) -> dict[str, int]:

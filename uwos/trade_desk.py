@@ -224,6 +224,34 @@ def _action_instruction(row: Dict[str, Any]) -> str:
     return "Hold; no action right now."
 
 
+def _spread_order_guidance(metrics: Dict[str, Any]) -> str:
+    entry = safe(metrics.get("entry_net_per_contract"), None)
+    current = safe(metrics.get("current_exit_net"), None)
+    net_type = str(metrics.get("net_type") or "")
+    if net_type == "credit":
+        parts = []
+        if current is not None:
+            parts.append(f"current close/roll debit about {_fmt_price(current)}")
+        if entry is not None:
+            parts.append(f"profit-take debit near {_fmt_price(entry * 0.40)}")
+            parts.append(f"danger review debit {_fmt_price(entry * 1.50)}")
+            parts.append(f"hard stop/roll debit {_fmt_price(entry * 1.75)}")
+        if metrics.get("breakeven") is not None:
+            parts.append(f"breakeven {_fmt_price(metrics.get('breakeven'))}")
+        parts.append("use one spread limit order; do not leg out")
+        return "; ".join(parts)
+    if net_type == "debit":
+        parts = []
+        if current is not None:
+            parts.append(f"current close credit about {_fmt_price(current)}")
+        if entry is not None:
+            parts.append(f"profit target credit near {_fmt_price(entry * 1.60)}")
+            parts.append(f"loss stop credit near {_fmt_price(entry * 0.50)}")
+        parts.append("use one spread limit order; do not leg out")
+        return "; ".join(parts)
+    return ""
+
+
 def _report_action(row: Dict[str, Any]) -> str:
     verdict = row.get("verdict")
     if verdict in {"CLOSE", "ROLL", "HOLD"}:
@@ -287,6 +315,8 @@ def _row_card(row: Dict[str, Any]) -> List[str]:
     lines.extend(_wrap_field("Do this", row.get("instruction")))
     lines.extend(_wrap_field("Why", row.get("reason")))
     lines.extend(_wrap_field("Legs", _compact_legs(row.get("position"))))
+    if row.get("order_guidance"):
+        lines.extend(_wrap_field("Order", row.get("order_guidance")))
     lines.extend(_wrap_field("Details", "; ".join(details)))
     lines.extend(_wrap_field("Risk", "; ".join(risk)))
     return lines
@@ -353,6 +383,9 @@ def build_recommendations(result: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "_raw_pnl_pct": metrics["pnl_on_risk_pct"],
                     "_raw_theta_day": metrics["theta_pnl_per_day"],
                     "_raw_gamma_risk": metrics["gamma_risk"],
+                    "_entry_net": metrics.get("entry_net_per_contract"),
+                    "_current_exit_net": metrics.get("current_exit_net"),
+                    "order_guidance": _spread_order_guidance(metrics),
                 })
             )
             continue

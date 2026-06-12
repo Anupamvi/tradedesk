@@ -1,0 +1,7 @@
+{
+  "activated_at": "2026-06-01T15:47:49",
+  "active_lesson_pack_path": "/Users/anuppamvi/uw_root/tradedesk/knowledge/options_agent_lesson_packs/options-agent-v5",
+  "active_lesson_pack_version": "options-agent-v5",
+  "regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+  "release_manifest": "/Users/anuppamvi/uw_root/tradedesk/knowledge/options_agent_lesson_packs/options-agent-v5/release_manifest.json"
+}

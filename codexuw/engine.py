@@ -197,7 +197,10 @@ def select_ticker_pool(sc: pd.DataFrame, *, max_tickers: int) -> pd.DataFrame:
         + pd.to_numeric(df.get("total_open_interest"), errors="coerce").fillna(0) * 20.0
         + pd.to_numeric(df.get("avg30_volume"), errors="coerce").fillna(0) * 2.0
     )
-    return df.sort_values("_liq_rank", ascending=False).head(max_tickers).drop(columns=["_liq_rank"])
+    ranked = df.sort_values("_liq_rank", ascending=False)
+    if max_tickers and max_tickers > 0:
+        ranked = ranked.head(max_tickers)
+    return ranked.drop(columns=["_liq_rank"])
 
 
 def _direction_sign(direction: object) -> int:
@@ -554,7 +557,8 @@ def generate_candidates(
         )
     else:
         rescue = pd.DataFrame()
-    base = df.sort_values("_pre_score", ascending=False).head(max_candidates)
+    ranked = df.sort_values("_pre_score", ascending=False)
+    base = ranked.head(max_candidates) if max_candidates and max_candidates > 0 else ranked
     # Keep at least one constructed setup per selected ticker. Otherwise a name
     # can survive universe selection, have usable chains, and still disappear
     # before scoring just because several tickers generated many same-name variants.
@@ -1308,6 +1312,8 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
         and decision_eligible
         and decision_tier == "secondary_income"
     )
+    edge_avg_pnl = safe_float(row.get("edge_avg_pnl"), math.nan)
+    edge_win_rate = safe_float(row.get("edge_win_rate"), math.nan)
     independent_confirmed_flow = (
         flow_quality in {"unclear", "spread_leg"}
         and edge_verdict in {"positive", "acceptable"}
@@ -1329,6 +1335,13 @@ def _execute_core_blockers(row: pd.Series, *, allow_proxy_ev: bool = False) -> l
         blockers.append("news_unconfirmed")
     if any(token.startswith("negative_live_expectancy:") for token in penalties):
         blockers.append("negative_live_expectancy")
+    if _is_credit_strategy(row) and math.isfinite(edge_avg_pnl) and edge_avg_pnl <= 0:
+        blockers.append("negative_edge_avg_pnl")
+    if _is_credit_strategy(row) and replay_verdict == "acceptable_secondary_income":
+        if math.isfinite(edge_sample_size) and edge_sample_size < 7.0:
+            blockers.append(f"secondary_income_thin_sample:n={int(edge_sample_size)}")
+        if math.isfinite(edge_win_rate) and edge_win_rate < 0.58:
+            blockers.append(f"secondary_income_low_win_rate:{edge_win_rate:.0%}")
     if any(token.startswith("recent_loss_family:") for token in penalties):
         blockers.append("recent_loss_family")
     if math.isfinite(edge_sample_size) and edge_sample_size < 7.0 and replay_verdict not in {"acceptable_secondary_income"}:
@@ -1674,13 +1687,18 @@ def assign_trade_statuses(
         reason = ""
         core_blockers = _execute_core_blockers(row)
         edge_verdict = str(row.get("edge_verdict") or "")
+        edge_avg_pnl = safe_float(row.get("edge_avg_pnl"), math.nan)
+        edge_nonnegative = not (math.isfinite(edge_avg_pnl) and edge_avg_pnl <= 0)
         edge_watch_ok = (
-            replay_verdict in {"acceptable", "positive", "acceptable_secondary_income"}
-            or edge_verdict in {"acceptable", "positive"}
-            or (
-                edge_verdict == "thin_sample"
-                and safe_float(row.get("edge_avg_pnl"), math.nan) >= 0
-                and confirmation_score >= 6.0
+            edge_nonnegative
+            and (
+                replay_verdict in {"acceptable", "positive", "acceptable_secondary_income"}
+                or edge_verdict in {"acceptable", "positive"}
+                or (
+                    edge_verdict == "thin_sample"
+                    and safe_float(row.get("edge_avg_pnl"), math.nan) > 0
+                    and confirmation_score >= 6.0
+                )
             )
         )
         watch_blockers = [
@@ -2208,7 +2226,7 @@ def select_final_trades(
         sector_risk[sector] += risk
         if ticker in AI_TECH:
             ai_risk += risk
-        if len(selected) >= max_final_trades:
+        if max_final_trades and max_final_trades > 0 and len(selected) >= int(max_final_trades):
             break
     if not selected:
         return pd.DataFrame()

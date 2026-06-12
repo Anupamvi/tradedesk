@@ -244,8 +244,8 @@ approval:
   # deserve Core/Tactical sizing. Daily discovery still comes only from the
   # dated UW source files plus live Schwab validation.
   enable_pilot_book: true
-  pilot_live_entry_enabled: true
-  pilot_enter_near_miss_within_tolerance: true
+  pilot_live_entry_enabled: false
+  pilot_enter_near_miss_within_tolerance: false
   pilot_size_mult: 0.10
   pilot_max_loss: 150
   pilot_min_ev_ml: 1.50
@@ -434,19 +434,19 @@ approval:
   regime_weekly_max_per_day: 1
   regime_weekly_max_per_ticker_day: 1
   regime_weekly_min_score: 125.0
-  regime_weekly_min_confidence_score: 4
+  regime_weekly_min_confidence_score: 7
   regime_weekly_promoted_confidence_score: 7
   regime_weekly_min_edge_score: 1
-  regime_weekly_min_edge_pct: -20.0
+  regime_weekly_min_edge_pct: 5.0
   regime_weekly_min_reward_risk: 1.20
   regime_weekly_max_debit_frac: 0.37
   regime_weekly_min_dte: 14
   regime_weekly_max_dte: 70
-  regime_weekly_bear_allowed_verdicts: [FAIL, UNKNOWN]
+  regime_weekly_bear_allowed_verdicts: [PASS]
   regime_weekly_bear_allowed_market_regimes: [neutral, risk_on]
   regime_weekly_bear_excluded_approval_prefixes: ["high/"]
-  regime_weekly_bear_min_edge_pct: -20.0
-  regime_weekly_bear_max_edge_pct: 0.0
+  regime_weekly_bear_min_edge_pct: 5.0
+  regime_weekly_bear_max_edge_pct: 999.0
   regime_weekly_bull_allowed_verdicts: [PASS]
   regime_weekly_bull_allowed_approval_prefixes: ["high/"]
   regime_weekly_bull_allowed_market_regimes: []

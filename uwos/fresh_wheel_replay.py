@@ -110,8 +110,12 @@ def iter_sessions(data_root: Path, start: dt.date | None, end: dt.date | None) -
     for path in data_root.iterdir():
         if not path.is_dir():
             continue
-        day = coerce_date(path.name[:10])
+        if len(path.name) != 10:
+            continue
+        day = coerce_date(path.name)
         if day is None:
+            continue
+        if path.name != day.isoformat():
             continue
         if start is not None and day < start:
             continue

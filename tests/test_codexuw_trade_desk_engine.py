@@ -243,6 +243,26 @@ def test_target_aware_selection_outputs_target_contribution_columns() -> None:
     assert final["target_contribution_pct"].iloc[0] == 0.018
 
 
+def test_zero_max_final_trades_means_uncapped_visibility() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(ticker="AAA", max_loss=100.0, score=8.0),
+            _credit_row(ticker="BBB", max_loss=100.0, score=7.8),
+        ]
+    )
+
+    final = select_final_trades(
+        assign_trade_statuses(scored),
+        regime={"sizing_stance": "normal"},
+        risk_budget=5_000,
+        recent_performance={"status": "unavailable"},
+        max_final_trades=0,
+        risk_config={"risk_mandate": "target-growth", "max_contracts_per_trade": 1},
+    )
+
+    assert final["ticker"].tolist() == ["AAA", "BBB"]
+
+
 def test_target_growth_mandate_can_size_more_than_capital_preservation() -> None:
     scored = pd.DataFrame([_credit_row(max_loss=100.0, credit=1.0, max_profit=100.0)])
     executable = assign_trade_statuses(scored)

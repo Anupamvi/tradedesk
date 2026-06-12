@@ -1,0 +1,6 @@
+schema_version: 1
+version: options-agent-v0
+status: active
+generated_at: '2026-06-01T00:00:00'
+prompt_budget_lines: 40
+lessons: []

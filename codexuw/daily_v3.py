@@ -99,9 +99,14 @@ def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--date", default="", help="Dated UW folder date, e.g. 2026-05-19.")
     parser.add_argument("--base-dir", default="", help="Dated UW folder. Overrides --date.")
     parser.add_argument("--out-dir", default="", help="Output directory. Defaults to out/codexdaily_v3_YYYY-MM-DD.")
-    parser.add_argument("--max-tickers", type=int, default=60)
-    parser.add_argument("--max-candidates", type=int, default=50)
-    parser.add_argument("--max-final-trades", type=int, default=8)
+    parser.add_argument("--max-tickers", type=int, default=0, help="Discovery cap. Default 0 scans every eligible source ticker.")
+    parser.add_argument("--max-candidates", type=int, default=0, help="Candidate cap. Default 0 keeps every constructed candidate before scoring.")
+    parser.add_argument(
+        "--max-final-trades",
+        type=int,
+        default=0,
+        help="Visibility cap for Execute rows. Default 0 shows all valid Execute/target rows; risk caps still control sizing.",
+    )
     parser.add_argument("--risk-budget", type=float, default=15_000.0)
     parser.add_argument("--bot-max-rows", type=int, default=0)
     parser.add_argument("--offline", action="store_true", help="Test-only: skip Schwab live chain validation.")
@@ -277,7 +282,7 @@ def write_v3_data_error_report(out_dir: Path, asof: dt.date, base_dir: Path, err
         "|:--|:--|",
         f"| Pipeline | {PIPELINE_NAME_V3} |",
         f"| Version | {PIPELINE_VERSION_V3} |",
-        "| Version lock | locked 2026-05-21 |",
+        "| Version lock | locked 2026-06-12; supersedes v3.0 |",
         "| Run mode | Data error |",
         "| Data quality | critical |",
         "| Schwab status | not checked because local UW data failed |",
@@ -383,8 +388,8 @@ def write_v3_outputs(
     liquidity_artifacts = write_liquidity_shift_artifacts(out_dir, asof, liquidity_shift)
     regime_json, regime_summary = write_v3_regime_artifact(out_dir, asof, v3_regime_context)
 
-    board = build_opportunity_board(scored=scored, final=final, watchlist=watchlist, portfolio=portfolio)
-    target_tickets = build_target_ticket_board(board)
+    board = build_opportunity_board(scored=scored, final=final, watchlist=watchlist, portfolio=portfolio, max_rows=0)
+    target_tickets = build_target_ticket_board(board, max_rows=0)
     board_path = out_dir / f"codexdaily_v3_opportunity_board_{asof}.csv"
     target_tickets_path = out_dir / f"codexdaily_v3_swing_target_tickets_{asof}.csv"
     board.to_csv(board_path, index=False)
@@ -499,6 +504,13 @@ def write_v3_outputs(
         "funnel": funnel,
         "opportunity_counts": counts,
         "swing_target_ticket_count": target_ticket_count,
+        "visible_signal_policy": {
+            "active_execute_cap": int(args.max_final_trades) if int(args.max_final_trades or 0) > 0 else None,
+            "active_board_cap": None,
+            "active_target_ticket_cap": None,
+            "max_final_trades_arg": int(args.max_final_trades or 0),
+            "risk_caps_size_and_label_only": True,
+        },
         "swing_target_ticket_profit_if_filled": round(target_ticket_profit, 2),
         "swing_target_ticket_max_loss_if_filled": round(target_ticket_risk, 2),
         "lane_coverage": lane_coverage,
@@ -542,7 +554,7 @@ def write_v3_outputs(
         "|:--|:--|",
         f"| Pipeline | {PIPELINE_NAME_V3} |",
         f"| Version | {PIPELINE_VERSION_V3} |",
-        "| Version lock | locked 2026-05-21 |",
+        "| Version lock | locked 2026-06-12; supersedes v3.0 |",
         f"| Run mode | {run_mode} |",
         f"| Data quality | {data_quality.get('status', 'unknown')} |",
         f"| Schwab status | {_schwab_status(data_quality)} |",

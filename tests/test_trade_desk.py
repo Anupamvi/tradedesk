@@ -343,6 +343,111 @@ class TestTradeDeskReport(unittest.TestCase):
         self.assertIn("theta decay makes recovery unlikely", rows[0]["reason"])
         self.assertIn("Close the whole spread", rows[0]["instruction"])
 
+    def test_now_like_credit_spread_near_short_strike_cannot_hold(self):
+        from uwos.trade_desk import build_recommendations, build_report
+
+        result = {
+            "as_of": "2026-06-03T16:00:00Z",
+            "positions": [
+                {
+                    "symbol": "NOW   260717P00120000",
+                    "underlying": "NOW",
+                    "asset_type": "OPTION",
+                    "put_call": "PUT",
+                    "strike": 120.0,
+                    "expiry": "2026-07-17",
+                    "qty": -1,
+                    "avg_cost": 6.31,
+                    "entry_date": "2026-06-01",
+                    "live_quote": {"ask": 7.70, "bid": 7.50},
+                    "greeks": {"delta": -0.49},
+                    "underlying_quote": {"last": 120.37},
+                    "computed": {"dte": 44, "unrealized_pnl": -250.0, "theta_pnl_per_day": 11.0},
+                },
+                {
+                    "symbol": "NOW   260717P00110000",
+                    "underlying": "NOW",
+                    "asset_type": "OPTION",
+                    "put_call": "PUT",
+                    "strike": 110.0,
+                    "expiry": "2026-07-17",
+                    "qty": 1,
+                    "avg_cost": 3.31,
+                    "entry_date": "2026-06-01",
+                    "live_quote": {"ask": 3.05, "bid": 2.85},
+                    "greeks": {"delta": -0.34},
+                    "underlying_quote": {"last": 120.37},
+                    "computed": {"dte": 44, "unrealized_pnl": 70.0, "theta_pnl_per_day": -5.0},
+                },
+            ],
+        }
+
+        rows = build_recommendations(result)
+
+        self.assertEqual(rows[0]["category"], "Bull Put Credit")
+        self.assertEqual(rows[0]["action"], "ROLL")
+        self.assertNotEqual(rows[0]["action"], "HOLD")
+        self.assertIn("close debit is", rows[0]["reason"])
+        self.assertIn("current close/roll debit", rows[0]["order_guidance"])
+
+        with tempfile.TemporaryDirectory() as td:
+            report = build_report(
+                result,
+                rows,
+                days=90,
+                symbol=None,
+                json_path=Path(td) / f"position_data_{dt.date.today().isoformat()}.json",
+            )
+        self.assertIn("Order: current close/roll debit", report)
+
+    def test_now_like_credit_spread_breakeven_breach_must_roll_or_close(self):
+        from uwos.trade_desk import build_recommendations
+
+        result = {
+            "as_of": "2026-06-05T16:00:00Z",
+            "positions": [
+                {
+                    "symbol": "NOW   260717P00120000",
+                    "underlying": "NOW",
+                    "asset_type": "OPTION",
+                    "put_call": "PUT",
+                    "strike": 120.0,
+                    "expiry": "2026-07-17",
+                    "qty": -1,
+                    "avg_cost": 6.31,
+                    "entry_date": "2026-06-01",
+                    "live_quote": {"ask": 8.00, "bid": 7.80},
+                    "greeks": {"delta": -0.59},
+                    "underlying_quote": {"last": 115.63},
+                    "computed": {"dte": 42, "unrealized_pnl": -285.0, "theta_pnl_per_day": 13.0},
+                },
+                {
+                    "symbol": "NOW   260717P00110000",
+                    "underlying": "NOW",
+                    "asset_type": "OPTION",
+                    "put_call": "PUT",
+                    "strike": 110.0,
+                    "expiry": "2026-07-17",
+                    "qty": 1,
+                    "avg_cost": 3.31,
+                    "entry_date": "2026-06-01",
+                    "live_quote": {"ask": 2.55, "bid": 2.30},
+                    "greeks": {"delta": -0.42},
+                    "underlying_quote": {"last": 115.63},
+                    "computed": {"dte": 42, "unrealized_pnl": 40.0, "theta_pnl_per_day": -6.0},
+                },
+            ],
+        }
+
+        rows = build_recommendations(result)
+
+        self.assertIn(rows[0]["action"], {"ROLL", "CLOSE"})
+        self.assertNotEqual(rows[0]["action"], "HOLD")
+        self.assertTrue(
+            "close debit" in rows[0]["reason"]
+            or "breakeven" in rows[0]["reason"]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

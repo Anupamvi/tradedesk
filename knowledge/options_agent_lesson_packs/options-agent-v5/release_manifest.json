@@ -1,0 +1,8 @@
+{
+  "candidate_path": "/Users/anuppamvi/uw_root/tradedesk/out/lessonengine/smoke_goal_check/lesson_candidates.proposed.yaml",
+  "lesson_count": 10,
+  "lesson_digest": "sha256:ae2656b04bada574163db28ceeb7f7043415d041e46252d7d5c6b6f6e50c71cd",
+  "regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+  "released_at": "2026-06-01T15:47:49",
+  "version": "options-agent-v5"
+}

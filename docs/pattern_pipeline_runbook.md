@@ -9,6 +9,20 @@ python3 -m uwos.options_pattern_pipeline_v1 \
   --out-dir /Users/anuppamvi/uw_root/tradedesk/out/options_pattern_pipeline_v1/YYYY-MM-DD
 ```
 
+Pattern Analysis V2 is now the default operator entrypoint:
+
+```bash
+python3 -m uwos.pattern_analysis_v2 \
+  --base-dir /Users/anuppamvi/uw_root/tradedesk \
+  --as-of latest
+```
+
+Its default output path is:
+
+```text
+/Users/anuppamvi/uw_root/tradedesk/out/pattern_analysis_v2/YYYY-MM-DD
+```
+
 Use `--as-of latest` to resolve the latest source-complete dated UW folder.
 
 ## Artifact Order

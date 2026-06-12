@@ -232,6 +232,30 @@ def _join_tokens(tokens: set[str]) -> str:
     return ";".join(sorted(tokens))
 
 
+def _secondary_income_evidence_blocker(row: pd.Series) -> tuple[str, str] | None:
+    """Return a blocker when fallback income would overwrite bad evidence.
+
+    Fallback income is a discovery lane. It must not convert negative or weak
+    replay evidence into `acceptable_secondary_income` simply because the live
+    credit looks attractive.
+    """
+    replay = str(row.get("replay_ev_verdict") or "").strip().lower()
+    edge = str(row.get("edge_verdict") or "").strip().lower()
+    avg = safe_float(row.get("edge_avg_pnl"), math.nan)
+    sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size"), math.nan))
+    win = safe_float(row.get("edge_win_rate"), safe_float(row.get("historical_win_rate"), math.nan))
+
+    if replay.startswith("negative") or edge == "negative":
+        return "negative_replay_edge", "Avoid"
+    if math.isfinite(avg) and avg <= 0:
+        return "negative_edge_avg_pnl", "Avoid"
+    if math.isfinite(sample) and sample < 7:
+        return f"secondary_income_thin_sample:n={int(sample)}", "Research"
+    if math.isfinite(win) and win < 0.58:
+        return f"secondary_income_low_win_rate:{win:.0%}", "Research"
+    return None
+
+
 def apply_fallback_income_status(scored: pd.DataFrame) -> pd.DataFrame:
     if scored.empty or "construction_source" not in scored.columns:
         return scored
@@ -255,6 +279,25 @@ def apply_fallback_income_status(scored: pd.DataFrame) -> pd.DataFrame:
             penalties.discard(token)
         out.at[idx, "penalties"] = _join_tokens(penalties)
         out.at[idx, "required_entry"] = target
+        evidence_blocker = _secondary_income_evidence_blocker(row)
+        if evidence_blocker:
+            blocker, disposition = evidence_blocker
+            penalties.add(blocker)
+            out.at[idx, "penalties"] = _join_tokens(penalties)
+            out.at[idx, "decision_eligible"] = False
+            out.at[idx, "decision_tier"] = ""
+            out.at[idx, "decision_reason"] = blocker
+            out.at[idx, "trade_status"] = disposition
+            out.at[idx, "trade_tier"] = "fallback-income-weak-edge"
+            out.at[idx, "trade_status_reason"] = (
+                f"fallback income blocked: {blocker}; acceptable_secondary_income cannot override weak/negative evidence"
+            )
+            out.at[idx, "what_must_improve"] = "need positive, adequately sampled fallback-income evidence before any target ticket"
+            out.at[idx, "primary_blocker"] = blocker
+            if blocker in {"negative_replay_edge", "negative_edge_avg_pnl"}:
+                out.at[idx, "replay_ev_verdict"] = "negative_replay_edge"
+                out.at[idx, "edge_verdict"] = "negative"
+            continue
         out.at[idx, "replay_ev_verdict"] = "acceptable_secondary_income"
         out.at[idx, "edge_verdict"] = "acceptable_secondary_income"
         out.at[idx, "decision_eligible"] = True

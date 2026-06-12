@@ -577,10 +577,18 @@ def find_best_debit_spread(
 
 
 class SchwabChainValidator:
-    def __init__(self, out_dir: Path, *, strike_count: int = 80, snapshot_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        out_dir: Path,
+        *,
+        strike_count: int = 80,
+        snapshot_dir: Path | None = None,
+        allow_live_fallback: bool = True,
+    ) -> None:
         self.out_dir = out_dir
         self.strike_count = strike_count
         self.snapshot_dir = Path(snapshot_dir).expanduser().resolve() if snapshot_dir else None
+        self.allow_live_fallback = allow_live_fallback
         self.service = None
         self.chains: dict[str, dict[str, Any]] = {}
         self.errors: dict[str, str] = {}
@@ -596,12 +604,17 @@ class SchwabChainValidator:
     def _snapshot_path(self, symbol: str) -> Path | None:
         if not self.snapshot_dir:
             return None
-        direct = self.snapshot_dir / f"{symbol}.json"
-        if direct.exists():
-            return direct
-        nested = self.snapshot_dir / "schwab_chains" / f"{symbol}.json"
-        if nested.exists():
-            return nested
+        candidates = [
+            self.snapshot_dir / f"{symbol}.json",
+            self.snapshot_dir / f"chain_{symbol}.json",
+            self.snapshot_dir / "schwab_chains" / f"{symbol}.json",
+            self.snapshot_dir / "schwab_chains" / f"chain_{symbol}.json",
+            self.snapshot_dir / "chains" / f"{symbol}.json",
+            self.snapshot_dir / "chains" / f"chain_{symbol}.json",
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
         return None
 
     def get_chain(self, ticker: str, from_date: dt.date, to_date: dt.date) -> dict[str, Any] | None:
@@ -618,6 +631,9 @@ class SchwabChainValidator:
             except Exception as exc:
                 self.errors[symbol] = f"snapshot load failed: {exc}"
                 return None
+        if self.snapshot_dir is not None and not self.allow_live_fallback:
+            self.errors[symbol] = f"snapshot missing for {symbol} in {self.snapshot_dir}"
+            return None
         try:
             chain = self._service().get_option_chain(
                 symbol,

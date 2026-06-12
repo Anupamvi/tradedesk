@@ -299,6 +299,36 @@ def compute_spread_metrics(group: Dict[str, Any]) -> Dict[str, Any]:
         else:
             close_net = max(long_bid - short_ask, 0.0)
 
+    entry_net_per_contract = abs(entry_cash_total) / (qty * 100.0) if qty > EPS else None
+    breakeven = None
+    if entry_net_per_contract is not None:
+        if net_type == "credit" and right == "PUT":
+            breakeven = short_strike - entry_net_per_contract
+        elif net_type == "credit" and right == "CALL":
+            breakeven = short_strike + entry_net_per_contract
+        elif net_type == "debit" and right == "CALL":
+            breakeven = long_strike + entry_net_per_contract
+        elif net_type == "debit" and right == "PUT":
+            breakeven = long_strike - entry_net_per_contract
+
+    distance_to_short_pct = None
+    breakeven_breached = False
+    short_strike_threatened = False
+    if spot is not None and short_strike > EPS:
+        if right == "PUT":
+            distance_to_short_pct = (spot - short_strike) / short_strike
+            breakeven_breached = breakeven is not None and spot <= breakeven
+        elif right == "CALL":
+            distance_to_short_pct = (short_strike - spot) / short_strike
+            breakeven_breached = breakeven is not None and spot >= breakeven
+        short_strike_threatened = distance_to_short_pct is not None and distance_to_short_pct <= 0.01
+
+    exit_net_to_entry = None
+    loss_vs_entry_credit = None
+    if net_type == "credit" and entry_net_per_contract is not None and entry_net_per_contract > EPS and close_net is not None:
+        exit_net_to_entry = close_net / entry_net_per_contract
+        loss_vs_entry_credit = close_net - entry_net_per_contract
+
     return {
         "underlying": group["underlying"],
         "expiry": group["expiry"],
@@ -322,10 +352,16 @@ def compute_spread_metrics(group: Dict[str, Any]) -> Dict[str, Any]:
         "gamma_risk": gamma,
         "max_profit": max_profit,
         "max_loss": max_loss,
-        "entry_net_per_contract": abs(entry_cash_total) / (qty * 100.0) if qty > EPS else None,
+        "entry_net_per_contract": entry_net_per_contract,
         "current_exit_net": close_net,
+        "breakeven": breakeven,
+        "distance_to_short_pct": distance_to_short_pct,
+        "exit_net_to_entry": exit_net_to_entry,
+        "loss_vs_entry_credit": loss_vs_entry_credit,
         "short_delta": safe_float((short_leg.get("greeks") or {}).get("delta"), None),
         "short_leg_itm": short_leg_itm,
+        "short_strike_threatened": short_strike_threatened,
+        "breakeven_breached": breakeven_breached,
         "between_strikes": between_strikes,
         "max_loss_zone": max_loss_zone,
         "debit_target_zone": debit_target_zone,
@@ -342,6 +378,8 @@ def compute_spread_verdict(group: Dict[str, Any]) -> Tuple[str, str, Dict[str, A
     pct_max = safe_float(m.get("pct_of_max_profit"), None)
     risk_pct = safe_float(m.get("pnl_on_risk_pct"), None)
     short_delta = safe_float(m.get("short_delta"), 0.0) or 0.0
+    exit_ratio = safe_float(m.get("exit_net_to_entry"), None)
+    distance_to_short_pct = safe_float(m.get("distance_to_short_pct"), None)
     unit_action = "close/roll both legs together; do not leg out"
     base = f"{strategy} {m['strike_pair']} spread"
 
@@ -361,8 +399,33 @@ def compute_spread_verdict(group: Dict[str, Any]) -> Tuple[str, str, Dict[str, A
             )
         if m["max_loss_zone"]:
             return (
+                "CLOSE" if dte is not None and dte <= 14 else "ROLL",
+                f"{base}: beyond long hedge and defined-risk loss zone; {unit_action}",
+                m,
+            )
+        if exit_ratio is not None and exit_ratio >= 1.75:
+            return (
+                "ROLL",
+                f"{base}: close debit is {exit_ratio:.2f}x entry credit; roll/close both legs before loss accelerates",
+                m,
+            )
+        if m["breakeven_breached"]:
+            return (
+                "ROLL",
+                f"{base}: underlying breached spread breakeven {m['breakeven']:.2f}; {unit_action}",
+                m,
+            )
+        if exit_ratio is not None and exit_ratio >= 1.50:
+            return (
+                "ROLL",
+                f"{base}: close debit is {exit_ratio:.2f}x entry credit; no HOLD, assess roll/close as one spread",
+                m,
+            )
+        if m["short_strike_threatened"]:
+            distance_text = f"{distance_to_short_pct:.1%} from short strike" if distance_to_short_pct is not None else "near short strike"
+            return (
                 "ASSESS",
-                f"{base}: beyond long hedge and defined-risk loss zone; manage the whole spread, not the short leg alone",
+                f"{base}: spot is {distance_text}; no HOLD near short strike, set stop or roll/close both legs",
                 m,
             )
         if m["short_leg_itm"] and dte is not None and dte <= 14:
@@ -385,8 +448,14 @@ def compute_spread_verdict(group: Dict[str, Any]) -> Tuple[str, str, Dict[str, A
             )
         if risk_pct is not None and risk_pct <= -60:
             return (
+                "ROLL",
+                f"{base}: loss is {risk_pct:.0f}% of defined risk; roll/close both legs together",
+                m,
+            )
+        if risk_pct is not None and risk_pct <= -30:
+            return (
                 "ASSESS",
-                f"{base}: loss is {risk_pct:.0f}% of defined risk; reassess whole spread",
+                f"{base}: loss is {risk_pct:.0f}% of defined risk; no blank-check HOLD, set stop or improve risk/reward",
                 m,
             )
         pct_text = f"{pct_max:.0f}% max" if pct_max is not None else "defined-risk"

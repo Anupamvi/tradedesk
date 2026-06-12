@@ -38,8 +38,30 @@ DEFAULT_DATES = (
     "2026-05-27",
     "2026-05-28",
 )
-DEFAULT_REQUIRED_TICKERS = ("AMD", "MU", "NVDA", "SNDK", "IBM", "CRWD", "HOOD", "NOW")
+GOAL_MAJOR_REQUIRED_TICKERS = (
+    "AAPL",
+    "NVDA",
+    "MSFT",
+    "GOOG",
+    "GOOGL",
+    "PLTR",
+    "AMD",
+    "MU",
+    "META",
+    "HOOD",
+    "NOW",
+)
+DEFAULT_REQUIRED_TICKERS = GOAL_MAJOR_REQUIRED_TICKERS + ("SNDK", "IBM", "CRWD")
 MIN_BEARISH_SOURCE_ROWS_FOR_SCENARIO_WARN = 5
+TARGET_READY_HARD_BLOCKERS = {
+    "NO_TRADEABLE_OPTION_QUOTE",
+    "OPTION_SPREAD_TOO_WIDE",
+    "OPTION_LIQUIDITY_TOO_LOW",
+    "DTE_TOO_SHORT_FOR_VALIDATION_HORIZONS",
+    "VALIDATION_EXPECTANCY_NEGATIVE",
+    "KILL_SWITCH_SOURCE_INCOMPLETE",
+    "KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS",
+}
 
 
 @dataclass(frozen=True)
@@ -97,6 +119,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Bot-EOD cache directory for per-date reruns. Default: <runs-root>/_cache/bot_eod.",
     )
+    parser.add_argument(
+        "--top-candidates-per-day",
+        type=int,
+        default=0,
+        help="Candidate cap for per-date reruns. Default 0 is uncapped for goal acceptance.",
+    )
     parser.add_argument("--run-missing", action="store_true", help="Run pipeline for dates without an exact suffix output.")
     parser.add_argument("--force", action="store_true", help="Rerun every requested date even if output exists.")
     parser.add_argument(
@@ -144,7 +172,7 @@ def main(argv: list[str] | None = None) -> int:
         should_run = args.force or (args.run_missing and not exact_suffix_output)
         returncode: int | None = None
         if should_run:
-            returncode = run_pipeline(args.python, base_dir, date, out_dir, bot_eod_cache_dir)
+            returncode = run_pipeline(args.python, base_dir, date, out_dir, bot_eod_cache_dir, args.top_candidates_per_day)
             exact_suffix_output = returncode == 0 and has_goal_artifacts(out_dir)
             if returncode != 0:
                 runs.append(DateRun(date, out_dir, exact_suffix_output, True, returncode))
@@ -160,6 +188,16 @@ def main(argv: list[str] | None = None) -> int:
     run_coverage_summary_rows = [build_run_coverage_summary(rows)]
     portfolio_trade_rows = build_portfolio_trade_rows(rows)
     portfolio_summary_rows = [build_portfolio_acceptance_summary(rows, portfolio_trade_rows)]
+    confidence_summary_rows = [
+        build_confidence_summary(
+            rows,
+            portfolio_summary_rows[0],
+            run_coverage_summary_rows[0],
+            portfolio_trade_rows,
+            date_scope,
+            args.required_tickers,
+        )
+    ]
     scenario_rows = build_scenario_no_edge_rows(rows)
     directional_edge_rows = build_directional_edge_matrix_rows(rows)
     directional_no_edge_rows = build_directional_no_edge_report_rows(directional_edge_rows)
@@ -174,6 +212,11 @@ def main(argv: list[str] | None = None) -> int:
         matrix_dir / "portfolio_acceptance_summary.csv",
         portfolio_summary_rows,
         portfolio_acceptance_summary_fieldnames(),
+    )
+    write_csv(
+        matrix_dir / "confidence_summary.csv",
+        confidence_summary_rows,
+        confidence_summary_fieldnames(),
     )
     write_csv(matrix_dir / "scenario_no_edge_summary.csv", scenario_rows, scenario_no_edge_fieldnames())
     write_csv(
@@ -198,6 +241,7 @@ def main(argv: list[str] | None = None) -> int:
             date_scope,
             portfolio_summary_rows[0],
             run_coverage_summary_rows[0],
+            confidence_summary_rows[0],
         ),
         encoding="utf-8",
     )
@@ -207,6 +251,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     (matrix_dir / "portfolio_acceptance_summary.md").write_text(
         render_portfolio_acceptance_markdown(portfolio_summary_rows[0], portfolio_trade_rows),
+        encoding="utf-8",
+    )
+    (matrix_dir / "confidence_summary.md").write_text(
+        render_confidence_summary_markdown(confidence_summary_rows[0]),
         encoding="utf-8",
     )
     (matrix_dir / "scenario_no_edge_summary.md").write_text(
@@ -280,7 +328,14 @@ def format_date_scope(scope_kind: str, from_date: str | None, to_date: str | Non
     return f"{scope_kind};{bound_text};date_count={date_count}"
 
 
-def run_pipeline(python: str, base_dir: Path, date: str, out_dir: Path, bot_eod_cache_dir: Path) -> int:
+def run_pipeline(
+    python: str,
+    base_dir: Path,
+    date: str,
+    out_dir: Path,
+    bot_eod_cache_dir: Path,
+    top_candidates_per_day: int = 0,
+) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
         python,
@@ -294,6 +349,8 @@ def run_pipeline(python: str, base_dir: Path, date: str, out_dir: Path, bot_eod_
         str(out_dir),
         "--bot-eod-cache-dir",
         str(bot_eod_cache_dir),
+        "--top-candidates-per-day",
+        str(top_candidates_per_day),
     ]
     print("RUN", " ".join(cmd), flush=True)
     return subprocess.run(cmd, cwd=base_dir).returncode
@@ -353,6 +410,7 @@ def build_matrix_row(run: DateRun, required_tickers: Iterable[str], date_scope: 
             "verdict": metadata.get("verdict", ""),
             "daily_trade_decision": metadata.get("daily_trade_decision", ""),
             "auto_approved_count": (metadata.get("candidate_counts") or {}).get("auto_approved", ""),
+            "target_ready_count": (metadata.get("candidate_counts") or {}).get("target_ready_candidates", ""),
             "trade_review_count": (metadata.get("candidate_counts") or {}).get("trade_review_candidates", ""),
             "avoid_count": (metadata.get("candidate_counts") or {}).get("avoid", ""),
             "source_coverage_count": (metadata.get("candidate_counts") or {}).get("source_ticker_coverage", ""),
@@ -375,11 +433,17 @@ def build_matrix_row(run: DateRun, required_tickers: Iterable[str], date_scope: 
             "flagged_missed_movers": miss_bucket_counts.get("FLAGGED_BY_PATTERN_PIPELINE", "")
             or extract_bucket_count(missed.get("evidence", ""), "FLAGGED_BY_PATTERN_PIPELINE"),
             "actionable_tickers": tickers_from_csv(out_dir / "actionable_trades.csv"),
+            "target_ready_tickers": tickers_from_csv(out_dir / "target_ready_candidates.csv"),
             "trade_review_tickers": tickers_from_csv(out_dir / "trade_review_candidates.csv"),
             "avoid_tickers": tickers_from_csv(out_dir / "blocked_candidates.csv"),
         }
     )
     ticker_status = required_ticker_details(out_dir, required_tickers)
+    covered_required = [ticker for ticker in required_tickers if ticker_status.get(ticker, {}).get("status")]
+    missing_required = [ticker for ticker in required_tickers if not ticker_status.get(ticker, {}).get("status")]
+    row["required_ticker_surface_evidence"] = (
+        f"covered={','.join(covered_required) or 'none'};missing={','.join(missing_required) or 'none'}"
+    )
     for ticker in required_tickers:
         row[f"{ticker}_status"] = ticker_status.get(ticker, {}).get("status", "")
         row[f"{ticker}_ticket"] = ticker_status.get(ticker, {}).get("ticket", "")
@@ -450,6 +514,7 @@ def required_ticker_details(out_dir: Path, tickers: Iterable[str]) -> dict[str, 
     result = {ticker: {"status": "", "ticket": "", "reason": ""} for ticker in tickers}
     sources = [
         ("TRADE", out_dir / "actionable_trades.csv", "ticker"),
+        ("TARGET_READY", out_dir / "target_ready_candidates.csv", "ticker"),
         ("REVIEW", out_dir / "trade_review_candidates.csv", "ticker"),
         ("AVOID", out_dir / "blocked_candidates.csv", "ticker"),
         ("COVERAGE", out_dir / "source_ticker_coverage.csv", "ticker"),
@@ -645,31 +710,86 @@ def build_portfolio_trade_rows(matrix_rows: Iterable[Mapping[str, Any]]) -> list
             gate_failures = list(auto_approved_goal_gate_failures(trade, risk_config))
             failures = missing + gate_failures
             rows.append(
-                {
-                    "date": date,
-                    "ticker": str(trade.get("ticker") or "").upper(),
-                    "direction": trade.get("direction", ""),
-                    "strategy": trade.get("strategy", ""),
-                    "buy_or_sell": trade.get("buy_or_sell", ""),
-                    "call_or_put": trade.get("call_or_put", ""),
-                    "strike_rates": trade.get("strike_rates", ""),
-                    "expiration_date": trade.get("expiration_date", ""),
-                    "entry": trade.get("suggested_entry_debit_credit_range", ""),
-                    "trade_legs": trade.get("trade_legs", ""),
-                    "max_risk_per_contract": trade.get("max_risk_per_contract", ""),
-                    "probability_score": trade.get("probability_score", ""),
-                    "success_probability_pct": trade.get("success_probability_pct", ""),
-                    "expected_R": trade.get("expected_R", ""),
-                    "expected_R_per_day": trade.get("expected_R_per_day", ""),
-                    "validation_profit_factor": trade.get("validation_profit_factor", ""),
-                    "validation_scored_count": trade.get("validation_scored_count", ""),
-                    "beats_baselines_count": trade.get("beats_baselines_count", ""),
-                    "baselines_beaten_names": trade.get("baselines_beaten_names", ""),
-                    "portfolio_gate_status": "PASS" if not failures else "FAIL",
-                    "portfolio_gate_failures": ";".join(failures),
-                }
+                portfolio_trade_row(
+                    date,
+                    trade,
+                    "AUTO_APPROVED",
+                    "yes",
+                    "no",
+                    auto_approved_risk_label(trade),
+                    failures,
+                )
+            )
+        for trade in read_csv(run_dir / "target_ready_candidates.csv"):
+            if str(trade.get("send_now") or "").strip().lower() == "yes":
+                continue
+            missing = portfolio_trade_missing_fields(trade)
+            gate_failures = target_ready_goal_gate_failures(trade, risk_config)
+            failures = missing + gate_failures
+            rows.append(
+                portfolio_trade_row(
+                    date,
+                    trade,
+                    clean_cell(trade.get("target_ready_status")) or "TARGET_READY",
+                    "no",
+                    clean_cell(trade.get("live_recheck_required")) or "yes",
+                    clean_cell(trade.get("risk_label")),
+                    failures,
+                )
             )
     return rows
+
+
+def auto_approved_risk_label(row: Mapping[str, Any]) -> str:
+    labels = ["send_now_candidate", "portfolio_risk_labeled_not_hidden"]
+    strategy = clean_cell(row.get("strategy")).lower()
+    buy_or_sell = clean_cell(row.get("buy_or_sell")).upper()
+    if "credit" in strategy:
+        labels.append("defined_risk_credit_spread_assignment_gap_risk")
+    elif "debit" in strategy or buy_or_sell == "BUY":
+        labels.append("debit_premium_at_risk")
+    else:
+        labels.append("defined_risk_requires_fresh_recheck")
+    return ";".join(labels)
+
+
+def portfolio_trade_row(
+    date: str,
+    trade: Mapping[str, Any],
+    surface: str,
+    send_now: str,
+    live_recheck_required: str,
+    risk_label: str,
+    failures: Sequence[str],
+) -> dict[str, Any]:
+    return {
+        "date": date,
+        "surface": surface,
+        "send_now": send_now,
+        "live_recheck_required": live_recheck_required,
+        "risk_label": risk_label,
+        "ticker": str(trade.get("ticker") or "").upper(),
+        "direction": trade.get("direction", ""),
+        "strategy": trade.get("strategy", ""),
+        "buy_or_sell": trade.get("buy_or_sell", ""),
+        "call_or_put": trade.get("call_or_put", ""),
+        "strike_rates": trade.get("strike_rates", ""),
+        "expiration_date": trade.get("expiration_date", ""),
+        "entry": trade.get("suggested_entry_debit_credit_range", ""),
+        "target_debit_credit": trade.get("target_debit_credit") or trade.get("target_limit") or trade.get("suggested_entry_debit_credit_range", ""),
+        "trade_legs": trade.get("trade_legs", ""),
+        "max_risk_per_contract": trade.get("max_risk_per_contract", ""),
+        "probability_score": trade.get("probability_score", ""),
+        "success_probability_pct": trade.get("success_probability_pct", ""),
+        "expected_R": trade.get("expected_R", ""),
+        "expected_R_per_day": trade.get("expected_R_per_day", ""),
+        "validation_profit_factor": trade.get("validation_profit_factor", ""),
+        "validation_scored_count": trade.get("validation_scored_count", ""),
+        "beats_baselines_count": trade.get("beats_baselines_count", ""),
+        "baselines_beaten_names": trade.get("baselines_beaten_names", ""),
+        "portfolio_gate_status": "PASS" if not failures else "FAIL",
+        "portfolio_gate_failures": ";".join(failures),
+    }
 
 
 def portfolio_trade_missing_fields(row: Mapping[str, Any]) -> list[str]:
@@ -694,6 +814,39 @@ def portfolio_trade_missing_fields(row: Mapping[str, Any]) -> list[str]:
     return [f"missing_{field}" for field in required if not clean_cell(row.get(field))]
 
 
+def target_ready_goal_gate_failures(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> list[str]:
+    failures: list[str] = []
+    order_missing = clean_cell(row.get("order_entry_missing_fields"))
+    if order_missing:
+        failures.extend(f"order_entry_missing_{field}" for field in order_missing.split(";") if field)
+    legs = clean_cell(row.get("trade_legs"), limit=2000)
+    if not legs or ("Buy 1 " not in legs and "Sell 1 " not in legs):
+        failures.append("trade_legs_not_plain_language")
+    target = clean_cell(row.get("target_debit_credit")) or clean_cell(row.get("target_limit"))
+    if not target:
+        failures.append("missing_target_debit_credit")
+    expected_r = to_float(row.get("expected_R"))
+    min_expected_r = to_float(risk_config.get("min_target_ready_expected_r")) or 0.0
+    if expected_r is None or expected_r <= min_expected_r:
+        failures.append(f"expected_R<={min_expected_r:g}")
+    expected_r_day = to_float(row.get("expected_R_per_day"))
+    min_expected_r_day = to_float(risk_config.get("min_target_ready_expected_r_per_day")) or 0.0
+    if expected_r_day is None or expected_r_day <= min_expected_r_day:
+        failures.append(f"expected_R_per_day<={min_expected_r_day:g}")
+    profit_factor = to_float(row.get("validation_profit_factor"))
+    min_profit_factor = to_float(risk_config.get("min_target_ready_profit_factor")) or 1.05
+    if profit_factor is None or profit_factor < min_profit_factor:
+        failures.append(f"profit_factor<{min_profit_factor:g}")
+    baselines = to_float(row.get("beats_baselines_count"))
+    min_baselines = int(to_float(risk_config.get("min_target_ready_baselines_beaten")) or 1)
+    if baselines is None or int(baselines) < min_baselines:
+        failures.append(f"baselines_beaten<{min_baselines}")
+    blockers = set(blocker_tokens(row))
+    for blocker in sorted(blockers & TARGET_READY_HARD_BLOCKERS):
+        failures.append(f"hard_blocker_{blocker}")
+    return failures
+
+
 def build_portfolio_acceptance_summary(
     matrix_rows: Sequence[Mapping[str, Any]],
     trade_rows: Sequence[Mapping[str, Any]],
@@ -703,6 +856,10 @@ def build_portfolio_acceptance_summary(
     ]
     evidence_dates = {row.get("date") for row in evidence_rows}
     trade_dates = {row.get("date") for row in trade_rows}
+    auto_rows = [row for row in trade_rows if row.get("surface") == "AUTO_APPROVED"]
+    target_ready_rows = [row for row in trade_rows if row.get("surface") == "TARGET_READY"]
+    auto_dates = {row.get("date") for row in auto_rows}
+    target_ready_dates = {row.get("date") for row in target_ready_rows}
     expected_rs = numeric_values(row.get("expected_R") for row in trade_rows)
     expected_r_days = numeric_values(row.get("expected_R_per_day") for row in trade_rows)
     probability_scores = numeric_values(row.get("probability_score") for row in trade_rows)
@@ -713,11 +870,11 @@ def build_portfolio_acceptance_summary(
     option_counts = Counter(str(row.get("call_or_put") or "UNKNOWN") for row in trade_rows)
     warnings: list[str] = []
     if trade_rows and not any(str(row.get("direction") or "") == "bearish" for row in trade_rows):
-        warnings.append("AUTO_DIRECTION_CONCENTRATION_NO_BEARISH")
+        warnings.append("PORTFOLIO_DIRECTION_CONCENTRATION_NO_BEARISH")
     if trade_rows and not any("PUT" in str(row.get("call_or_put") or "").upper() for row in trade_rows):
-        warnings.append("AUTO_STRUCTURE_CONCENTRATION_NO_PUT")
+        warnings.append("PORTFOLIO_STRUCTURE_CONCENTRATION_NO_PUT")
     if not trade_rows:
-        status = "NO_AUTO_TRADES"
+        status = "NO_APPROVED_OR_TARGET_READY_TRADES"
     elif failed:
         status = "FAIL"
     elif expected_rs and statistics.fmean(expected_rs) > 0 and warnings:
@@ -732,8 +889,12 @@ def build_portfolio_acceptance_summary(
         "evidence_date_count": len(evidence_dates),
         "non_evidence_date_count": len(matrix_rows) - len(evidence_dates),
         "trade_day_count": len(trade_dates),
+        "auto_trade_day_count": len(auto_dates),
+        "target_ready_day_count": len(target_ready_dates),
         "no_trade_day_count": len(evidence_dates - trade_dates),
         "trade_count": len(trade_rows),
+        "auto_trade_count": len(auto_rows),
+        "target_ready_trade_count": len(target_ready_rows),
         "gate_pass_trade_count": len(trade_rows) - len(failed),
         "gate_fail_trade_count": len(failed),
         "avg_expected_R": mean_or_blank(expected_rs),
@@ -750,6 +911,154 @@ def build_portfolio_acceptance_summary(
             f"{row.get('date')} {row.get('ticker')}:{row.get('portfolio_gate_failures')}" for row in failed[:20]
         ),
     }
+
+
+def build_confidence_summary(
+    matrix_rows: Sequence[Mapping[str, Any]],
+    portfolio_summary: Mapping[str, Any],
+    run_coverage_summary: Mapping[str, Any],
+    trade_rows: Sequence[Mapping[str, Any]],
+    date_scope: str,
+    required_tickers: Iterable[str],
+) -> dict[str, Any]:
+    blockers: list[str] = []
+    all_source_complete_scope = date_scope.startswith("all_source_complete;")
+    exact_full_scope = run_coverage_summary.get("coverage_status") == "EXACT_FULL_SCOPE"
+    if not all_source_complete_scope:
+        blockers.append("regression_scope_not_all_source_complete")
+    if not exact_full_scope:
+        blockers.append("run_coverage_not_exact_full_scope")
+    trade_count = int(to_float(portfolio_summary.get("trade_count")) or 0)
+    gate_fail_count = int(to_float(portfolio_summary.get("gate_fail_trade_count")) or 0)
+    avg_expected_r = to_float(portfolio_summary.get("avg_expected_R"))
+    gross_expected_r = to_float(portfolio_summary.get("gross_expected_R"))
+    avg_expected_r_day = to_float(portfolio_summary.get("avg_expected_R_per_day"))
+    avg_profit_factor = to_float(portfolio_summary.get("avg_validation_profit_factor"))
+    missing_required = required_ticker_missing_examples(matrix_rows, required_tickers)
+    if missing_required:
+        blockers.append("required_ticker_surface_missing")
+    if trade_count <= 0:
+        blockers.append("no_approved_or_target_ready_trades")
+    if gate_fail_count:
+        blockers.append("portfolio_trade_gate_failures")
+    if avg_expected_r is None or avg_expected_r <= 0:
+        blockers.append("avg_expected_R_not_positive")
+    if gross_expected_r is None or gross_expected_r <= 0:
+        blockers.append("gross_expected_R_not_positive")
+    if avg_profit_factor is None or avg_profit_factor < 1.05:
+        blockers.append("profit_factor_below_target")
+
+    profitability_score = 0.0
+    if trade_count:
+        profitability_score += 3.0
+    if avg_expected_r is not None and avg_expected_r > 0:
+        profitability_score += 2.0
+    if gross_expected_r is not None and gross_expected_r > 0:
+        profitability_score += 1.0
+    if avg_expected_r_day is not None and avg_expected_r_day > 0:
+        profitability_score += 1.0
+    if avg_profit_factor is not None and avg_profit_factor >= 1.05:
+        profitability_score += 1.0
+    if gate_fail_count == 0 and trade_count:
+        profitability_score += 1.0
+    if all_source_complete_scope and exact_full_scope:
+        profitability_score += 1.0
+    profitability_score = cap_confidence_score(profitability_score, all_source_complete_scope, exact_full_scope, trade_count)
+
+    order_entry_score = 0.0
+    if trade_count:
+        order_entry_score += 3.0
+    if trade_count and gate_fail_count == 0:
+        order_entry_score += 3.0
+    if trade_rows and all(clean_cell(row.get("target_debit_credit")) or clean_cell(row.get("entry")) for row in trade_rows):
+        order_entry_score += 1.0
+    if trade_rows and all(plain_language_legs(row.get("trade_legs")) for row in trade_rows):
+        order_entry_score += 1.0
+    if trade_rows and all(clean_cell(row.get("max_risk_per_contract")) for row in trade_rows):
+        order_entry_score += 1.0
+    if trade_rows and all(
+        clean_cell(row.get("buy_or_sell"))
+        and clean_cell(row.get("call_or_put"))
+        and clean_cell(row.get("strike_rates"))
+        and clean_cell(row.get("expiration_date"))
+        for row in trade_rows
+    ):
+        order_entry_score += 1.0
+    order_entry_score = cap_confidence_score(order_entry_score, all_source_complete_scope, exact_full_scope, trade_count)
+
+    coverage_score = 10.0
+    if not all_source_complete_scope:
+        coverage_score = min(coverage_score, 6.0)
+    if not exact_full_scope:
+        coverage_score = min(coverage_score, 5.0)
+    if missing_required:
+        coverage_score = min(coverage_score, 6.0)
+    if run_coverage_summary.get("pipeline_failed_count") not in (0, "0", "", None):
+        coverage_score = min(coverage_score, 3.0)
+
+    overall_score = round(min(profitability_score, order_entry_score, coverage_score), 1)
+    profitability_score = round(profitability_score, 1)
+    order_entry_score = round(order_entry_score, 1)
+    coverage_score = round(coverage_score, 1)
+    if overall_score < 7.0:
+        blockers.append("confidence_below_7")
+    blockers.append("codexdaily_v3_v4_and_trade_desk_not_in_this_matrix_scope")
+    if overall_score >= 7.0 and not blockers:
+        status = "READY_7_PLUS"
+    else:
+        status = "BELOW_TARGET"
+    return {
+        "confidence_status": status,
+        "target_confidence_met": "yes" if status == "READY_7_PLUS" else "no",
+        "overall_confidence_score": overall_score,
+        "profitability_confidence_score": profitability_score,
+        "order_entry_confidence_score": order_entry_score,
+        "coverage_confidence_score": coverage_score,
+        "date_scope": date_scope,
+        "coverage_status": run_coverage_summary.get("coverage_status", ""),
+        "portfolio_status": portfolio_summary.get("portfolio_status", ""),
+        "trade_count": trade_count,
+        "auto_trade_count": portfolio_summary.get("auto_trade_count", ""),
+        "target_ready_trade_count": portfolio_summary.get("target_ready_trade_count", ""),
+        "gate_fail_trade_count": gate_fail_count,
+        "avg_expected_R": portfolio_summary.get("avg_expected_R", ""),
+        "gross_expected_R": portfolio_summary.get("gross_expected_R", ""),
+        "avg_expected_R_per_day": portfolio_summary.get("avg_expected_R_per_day", ""),
+        "avg_validation_profit_factor": portfolio_summary.get("avg_validation_profit_factor", ""),
+        "missing_required_ticker_examples": ";".join(missing_required[:20]),
+        "blockers": ";".join(dict.fromkeys(blockers)),
+    }
+
+
+def cap_confidence_score(score: float, all_source_complete_scope: bool, exact_full_scope: bool, trade_count: int) -> float:
+    capped = min(score, 10.0)
+    if trade_count <= 0:
+        capped = min(capped, 3.0)
+    if not all_source_complete_scope:
+        capped = min(capped, 6.0)
+    if not exact_full_scope:
+        capped = min(capped, 5.0)
+    return capped
+
+
+def plain_language_legs(value: Any) -> bool:
+    text = clean_cell(value, limit=2000)
+    return bool(text) and ("Buy 1 " in text or "Sell 1 " in text)
+
+
+def required_ticker_missing_examples(
+    matrix_rows: Sequence[Mapping[str, Any]],
+    required_tickers: Iterable[str],
+) -> list[str]:
+    missing: list[str] = []
+    for row in matrix_rows:
+        if row.get("matrix_status") in {"MISSING_ARTIFACTS", "PIPELINE_FAILED"}:
+            continue
+        date = row.get("date") or "unknown_date"
+        for ticker in required_tickers:
+            if not clean_cell(row.get(f"{ticker}_status")):
+                missing.append(f"{date}:{ticker}")
+    return missing
 
 
 def build_scenario_no_edge_rows(matrix_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
@@ -1141,6 +1450,7 @@ def matrix_fieldnames(required_tickers: Iterable[str]) -> list[str]:
         "verdict",
         "daily_trade_decision",
         "auto_approved_count",
+        "target_ready_count",
         "trade_review_count",
         "avoid_count",
         "source_coverage_count",
@@ -1153,12 +1463,14 @@ def matrix_fieldnames(required_tickers: Iterable[str]) -> list[str]:
         "warn_requirements",
         "known_ticker_status",
         "known_ticker_evidence",
+        "required_ticker_surface_evidence",
         "high_source_status",
         "directional_scenario_status",
         "directional_scenario_evidence",
         "missed_mover_status",
         "missed_mover_evidence",
         "actionable_tickers",
+        "target_ready_tickers",
         "trade_review_tickers",
         "avoid_tickers",
     ] + [field for ticker in required_tickers for field in (f"{ticker}_status", f"{ticker}_ticket", f"{ticker}_reason")] + [
@@ -1189,6 +1501,10 @@ def run_coverage_summary_fieldnames() -> list[str]:
 def portfolio_trade_fieldnames() -> list[str]:
     return [
         "date",
+        "surface",
+        "send_now",
+        "live_recheck_required",
+        "risk_label",
         "ticker",
         "direction",
         "strategy",
@@ -1197,6 +1513,7 @@ def portfolio_trade_fieldnames() -> list[str]:
         "strike_rates",
         "expiration_date",
         "entry",
+        "target_debit_credit",
         "trade_legs",
         "max_risk_per_contract",
         "probability_score",
@@ -1219,8 +1536,12 @@ def portfolio_acceptance_summary_fieldnames() -> list[str]:
         "evidence_date_count",
         "non_evidence_date_count",
         "trade_day_count",
+        "auto_trade_day_count",
+        "target_ready_day_count",
         "no_trade_day_count",
         "trade_count",
+        "auto_trade_count",
+        "target_ready_trade_count",
         "gate_pass_trade_count",
         "gate_fail_trade_count",
         "avg_expected_R",
@@ -1234,6 +1555,30 @@ def portfolio_acceptance_summary_fieldnames() -> list[str]:
         "option_mix",
         "warnings",
         "failed_trade_examples",
+    ]
+
+
+def confidence_summary_fieldnames() -> list[str]:
+    return [
+        "confidence_status",
+        "target_confidence_met",
+        "overall_confidence_score",
+        "profitability_confidence_score",
+        "order_entry_confidence_score",
+        "coverage_confidence_score",
+        "date_scope",
+        "coverage_status",
+        "portfolio_status",
+        "trade_count",
+        "auto_trade_count",
+        "target_ready_trade_count",
+        "gate_fail_trade_count",
+        "avg_expected_R",
+        "gross_expected_R",
+        "avg_expected_R_per_day",
+        "avg_validation_profit_factor",
+        "missing_required_ticker_examples",
+        "blockers",
     ]
 
 
@@ -1326,6 +1671,7 @@ def render_matrix_markdown(
     date_scope: str,
     portfolio_summary: Mapping[str, Any] | None = None,
     run_coverage_summary: Mapping[str, Any] | None = None,
+    confidence_summary: Mapping[str, Any] | None = None,
 ) -> str:
     lines = [
         "# Options Pattern Goal Acceptance Matrix",
@@ -1336,8 +1682,8 @@ def render_matrix_markdown(
         "",
         "This is an acceptance gate, not proof that the rebuild goal is complete. The goal still requires every target date to be current, leakage-safe, and positive expectancy after costs/slippage versus baselines.",
         "",
-        "| Date | Status | Exact | Decision | Auto | Review | Avoid | Direction | Gap Misses | Known Tickers | Warnings |",
-        "|---|---|---|---|---:|---:|---:|---|---:|---|---|",
+        "| Date | Status | Exact | Decision | Auto | Target | Review | Avoid | Direction | Gap Misses | Known Tickers | Warnings |",
+        "|---|---|---|---|---:|---:|---:|---:|---|---:|---|---|",
     ]
     for row in rows:
         ticker_bits = []
@@ -1348,13 +1694,14 @@ def render_matrix_markdown(
         issue_bits = [bit for bit in (row.get("failed_requirements"), row.get("warn_requirements")) if bit]
         lines.append(
             "| {date} | {matrix_status} | {exact} | {daily_trade_decision} | {auto_approved_count} | "
-            "{trade_review_count} | {avoid_count} | {directional_status} | {candidate_generation_gaps} | "
+            "{target_ready_count} | {trade_review_count} | {avoid_count} | {directional_status} | {candidate_generation_gaps} | "
             "{tickers} | {warns} |".format(
                 date=row.get("date", ""),
                 matrix_status=row.get("matrix_status", ""),
                 exact=row.get("exact_suffix_output", ""),
                 daily_trade_decision=row.get("daily_trade_decision", ""),
                 auto_approved_count=row.get("auto_approved_count", ""),
+                target_ready_count=row.get("target_ready_count", ""),
                 trade_review_count=row.get("trade_review_count", ""),
                 avoid_count=row.get("avoid_count", ""),
                 directional_status=row.get("directional_scenario_status", ""),
@@ -1381,7 +1728,8 @@ def render_matrix_markdown(
                 "",
                 "## Portfolio Acceptance",
                 f"- Status: {portfolio_summary.get('portfolio_status')}",
-                f"- Trades: {portfolio_summary.get('trade_count')} across {portfolio_summary.get('trade_day_count')} trade days; no-trade days {portfolio_summary.get('no_trade_day_count')}.",
+                f"- Trades: {portfolio_summary.get('trade_count')} total: {portfolio_summary.get('auto_trade_count')} auto-approved/send-now and {portfolio_summary.get('target_ready_trade_count')} target-ready planning rows.",
+                f"- Trade days: {portfolio_summary.get('trade_day_count')} total; auto days {portfolio_summary.get('auto_trade_day_count')}; target-ready days {portfolio_summary.get('target_ready_day_count')}; no-trade days {portfolio_summary.get('no_trade_day_count')}.",
                 f"- Avg expected R: {portfolio_summary.get('avg_expected_R')}; gross expected R: {portfolio_summary.get('gross_expected_R')}.",
                 f"- Gate pass/fail: {portfolio_summary.get('gate_pass_trade_count')}/{portfolio_summary.get('gate_fail_trade_count')}.",
                 f"- Direction mix: {portfolio_summary.get('direction_mix') or 'none'}.",
@@ -1393,12 +1741,28 @@ def render_matrix_markdown(
                 "- Directional no-edge proof: `directional_no_edge_report.csv` and `directional_no_edge_report.md`.",
             ]
         )
+    if confidence_summary:
+        lines.extend(
+            [
+                "",
+                "## Confidence Summary",
+                f"- Status: {confidence_summary.get('confidence_status')}",
+                f"- Overall confidence: {confidence_summary.get('overall_confidence_score')}/10.",
+                f"- Profitability confidence: {confidence_summary.get('profitability_confidence_score')}/10.",
+                f"- Order-entry confidence: {confidence_summary.get('order_entry_confidence_score')}/10.",
+                f"- Coverage confidence: {confidence_summary.get('coverage_confidence_score')}/10.",
+                f"- Target met: {confidence_summary.get('target_confidence_met')}.",
+                f"- Blockers: {confidence_summary.get('blockers') or 'none'}.",
+                "- Full confidence proof: `confidence_summary.csv` and `confidence_summary.md`.",
+            ]
+        )
     lines.extend(["", "## Detail"])
     for row in rows:
         lines.append(f"### {row.get('date')} - {row.get('matrix_status')}")
         lines.append(f"- Run dir: `{row.get('run_dir')}`")
         lines.append(f"- Exact suffix output: {row.get('exact_suffix_output')}")
-        lines.append(f"- Known ticker evidence: {row.get('known_ticker_evidence') or 'n/a'}")
+        lines.append(f"- Required ticker evidence: {row.get('required_ticker_surface_evidence') or 'n/a'}")
+        lines.append(f"- Artifact ticker evidence: {row.get('known_ticker_evidence') or 'n/a'}")
         lines.append(f"- Directional scenario evidence: {row.get('directional_scenario_evidence') or 'n/a'}")
         lines.append(f"- Missed mover evidence: {row.get('missed_mover_evidence') or 'n/a'}")
         lines.append(f"- Miss bucket counts: {row.get('miss_bucket_counts') or 'n/a'}")
@@ -1421,7 +1785,7 @@ def render_portfolio_acceptance_markdown(
     lines = [
         "# Portfolio Acceptance Summary",
         "",
-        "This artifact aggregates the actual `AUTO_APPROVED` rows emitted by the matrix date set. It is not an order blotter; it is the acceptance proof that emitted trades carry executable fields, positive expected R after configured costs/slippage, and baseline evidence.",
+        "This artifact aggregates `AUTO_APPROVED` send-now rows and `TARGET_READY` next-session planning rows emitted by the matrix date set. It is not an order blotter; it is the acceptance proof that emitted plans carry executable fields, target debit/credit, positive expected R after configured costs/slippage, and baseline evidence.",
         "",
         "## Summary",
     ]
@@ -1431,22 +1795,38 @@ def render_portfolio_acceptance_markdown(
         [
             "",
             "## Trade Rows",
-            "| Date | Ticker | Direction | Strategy | Legs | Entry | Exp R | Prob Score | PF | Baselines | Gate | Failures |",
-            "|---|---|---|---|---|---|---:|---:|---:|---:|---|---|",
+            "| Date | Surface | Ticker | Direction | Strategy | Legs | Entry | Target | Exp R | Prob Score | PF | Baselines | Gate | Failures |",
+            "|---|---|---|---|---|---|---|---|---:|---:|---:|---:|---|---|",
         ]
     )
     for row in trade_rows[:60]:
         lines.append(
-            f"| {row.get('date')} | {row.get('ticker')} | {row.get('direction')} | "
+            f"| {row.get('date')} | {row.get('surface')} | {row.get('ticker')} | {row.get('direction')} | "
             f"{markdown_cell(row.get('strategy'))} | {markdown_cell(row.get('trade_legs'))} | "
-            f"{markdown_cell(row.get('entry'))} | {row.get('expected_R')} | {row.get('probability_score')} | "
+            f"{markdown_cell(row.get('entry'))} | {markdown_cell(row.get('target_debit_credit'))} | "
+            f"{row.get('expected_R')} | {row.get('probability_score')} | "
             f"{row.get('validation_profit_factor')} | {row.get('beats_baselines_count')} | "
             f"{row.get('portfolio_gate_status')} | {markdown_cell(row.get('portfolio_gate_failures'))} |"
         )
     if len(trade_rows) > 60:
         lines.append(f"- {len(trade_rows) - 60} additional trade rows omitted from Markdown; see `portfolio_trade_rows.csv`.")
     if not trade_rows:
-        lines.append("| n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | NO_AUTO_TRADES | n/a |")
+        lines.append("| n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | NO_APPROVED_OR_TARGET_READY_TRADES | n/a |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_confidence_summary_markdown(summary: Mapping[str, Any]) -> str:
+    lines = [
+        "# Confidence Summary",
+        "",
+        "This artifact scores the Options Pattern matrix only. It is intentionally capped when the regression is partial, has no approved/target-ready trades, has missing order-entry fields, or lacks positive expectancy after costs/slippage.",
+        "",
+        "## Scores",
+    ]
+    for field in confidence_summary_fieldnames():
+        value = summary.get(field)
+        lines.append(f"- {field}: {value if value not in (None, '') else 'n/a'}")
     lines.append("")
     return "\n".join(lines)
 

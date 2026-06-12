@@ -15,6 +15,11 @@ from uwos.options_pattern_pipeline_v1.macro_geo import (
     decompose_blockers,
 )
 from uwos.options_pattern_pipeline_v1.core import (
+    DEFAULT_RISK_CONFIG,
+    GOAL_MAJOR_REQUIRED_TICKERS,
+    PIPELINE_RELEASED_AT,
+    PIPELINE_VERSION,
+    PREVIOUS_PIPELINE_VERSIONS,
     assign_family_tiers,
     balanced_non_ready_trend_rows,
     build_artifact_manifest,
@@ -28,10 +33,12 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_pattern_recommendations,
     build_source_ticker_coverage_rows,
     build_shadow_ledger_rows,
+    build_target_ready_candidates,
     build_trade_review_candidates,
     build_ticker_trend_edge_rows,
     build_validation_splits,
     classify_daily_signals,
+    daily_trade_decision,
     decision_board_fieldnames,
     dedupe_rows_by_ticket,
     empty_validation_bundle,
@@ -53,6 +60,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     tradeable_gap_quote_eligible,
     trend_edge_strategy_fields,
     ticker_trend_no_edge_reason,
+    target_ready_output_row,
     pattern_recommendation_output_row,
     catalyst_flow_leader_output_row,
     trade_review_output_row,
@@ -68,6 +76,29 @@ class SnapshotStub:
         self.best_options = best_options or {}
         self.option_quotes = option_quotes or {}
         self.market_regime = market_regime or {"regime": "MIXED"}
+
+
+def test_default_goal_major_required_tickers_match_user_coverage_scope():
+    assert set(GOAL_MAJOR_REQUIRED_TICKERS) <= set(DEFAULT_RISK_CONFIG["goal_required_coverage_tickers"])
+    assert set(GOAL_MAJOR_REQUIRED_TICKERS) == {
+        "AAPL",
+        "NVDA",
+        "MSFT",
+        "GOOG",
+        "GOOGL",
+        "PLTR",
+        "AMD",
+        "MU",
+        "META",
+        "HOOD",
+        "NOW",
+    }
+
+
+def test_options_pattern_pipeline_version_retains_previous_live_version():
+    assert PIPELINE_VERSION == "options_pattern_pipeline_v1.3-exec-confidence-20260612-143405"
+    assert PREVIOUS_PIPELINE_VERSIONS == ("options_pattern_pipeline_v1.2",)
+    assert PIPELINE_RELEASED_AT == "2026-06-12T14:34:05-07:00"
 
 
 def test_macro_ticker_cleaner_strips_news_filename_prefix():
@@ -447,6 +478,26 @@ def test_select_signal_set_retains_bearish_scenario_floor_when_bullish_dominates
     bearish = [row for row in selected if row["direction"] == "bearish"]
     assert len(bearish) == 4
     assert {row["ticker"] for row in bearish} == {"BEAR0", "BEAR1", "BEAR2", "BEAR3"}
+
+
+def test_select_signal_set_zero_max_is_uncapped_for_acceptance_runs():
+    signals = [
+        {
+            "date": "2026-05-28",
+            "ticker": f"T{i}",
+            "direction": "bullish",
+            "pattern_family": "BULLISH_FLOW_EXPANSION",
+            "base_pattern_family": "BULLISH_FLOW_EXPANSION",
+            "strategy_kind": "long_option",
+            "pattern_score": 100.0 - i,
+            "hot_total_premium": 1_000_000.0 - i,
+        }
+        for i in range(5)
+    ]
+
+    selected = select_signal_set(signals, max_signals=0, source_rescue_max_extra=0, tradeable_gap_max_extra=0)
+
+    assert [row["ticker"] for row in selected] == ["T0", "T1", "T2", "T3", "T4"]
 
 
 def test_select_signal_set_rescues_opposite_direction_for_same_ticker():
@@ -3033,6 +3084,97 @@ def test_trade_review_board_keeps_reviewable_setups_visible():
     assert output[0]["trade_setup"] == "BUY PUT TSLA 410 exp 2026-06-18"
     assert output[1]["review_status"] == "MACRO_CONFLICT_REVIEW"
     assert "regime alignment" in output[1]["promotion_needed"]
+
+
+def test_target_ready_keeps_risk_labeled_complete_edge_visible():
+    row = {
+        "status": "AVOID",
+        "classification": "AVOID",
+        "ticker": "AAPL",
+        "direction": "bullish",
+        "confidence_tier": "PROVEN",
+        "probability_score": 62.0,
+        "success_probability_pct": 58.0,
+        "pattern_score": 12.0,
+        "block_reasons": ["MAX_RISK_EXCEEDS_PER_TRADE_LIMIT"],
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Call Debit",
+        "lead_option_symbol": "AAPL260619C00210000",
+        "expiry": "2026-06-19",
+        "option_type": "call",
+        "strike": 210,
+        "entry_range": "7.50-7.70",
+        "max_risk_per_contract": 770.65,
+        "expected_R": 0.24,
+        "expected_R_per_day": 0.012,
+        "validation_profit_factor": 1.42,
+        "beats_baselines_count": 2,
+        "stop_rule": "Close if option loses 50% of debit or thesis breaks.",
+    }
+
+    candidates = build_target_ready_candidates([row], DEFAULT_RISK_CONFIG)
+
+    assert candidates == [row]
+    assert daily_trade_decision([], [], [row], candidates) == "TARGET_READY"
+    output = target_ready_output_row(candidates[0])
+    assert output["target_ready_status"] == "TARGET_READY"
+    assert output["send_now"] == "no"
+    assert output["live_recheck_required"] == "yes"
+    assert output["target_debit_credit"] == "debit 7.50-7.70"
+    assert output["trade_legs"] == "Buy 1 AAPL 2026-06-19 210C @ debit 7.50-7.70 limit"
+    assert output["order_entry_missing_fields"] == ""
+    assert "risk_limit_labeled_not_hidden" in output["risk_label"]
+    assert "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT" in output["why_not_send_now"]
+
+
+def test_target_ready_excludes_incomplete_or_negative_edge_tickets():
+    complete_negative_edge = {
+        "status": "TRADE_REVIEW",
+        "classification": "WATCH",
+        "ticker": "NVDA",
+        "direction": "bearish",
+        "confidence_tier": "PROMISING",
+        "probability_score": 55.0,
+        "success_probability_pct": 53.0,
+        "pattern_score": 10.0,
+        "block_reasons": ["EXPECTED_R_NOT_POSITIVE_AFTER_COSTS"],
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Put Debit",
+        "lead_option_symbol": "NVDA260619P00130000",
+        "expiry": "2026-06-19",
+        "option_type": "put",
+        "strike": 130,
+        "entry_range": "4.20-4.35",
+        "max_risk_per_contract": 435.65,
+        "expected_R": -0.02,
+        "expected_R_per_day": -0.001,
+        "validation_profit_factor": 1.25,
+        "beats_baselines_count": 2,
+        "stop_rule": "Close if option loses 50% of debit or thesis breaks.",
+    }
+    incomplete_ticket = {
+        "status": "TRADE_REVIEW",
+        "classification": "WATCH",
+        "ticker": "MSFT",
+        "direction": "bullish",
+        "confidence_tier": "PROVEN",
+        "probability_score": 64.0,
+        "success_probability_pct": 59.0,
+        "pattern_score": 13.0,
+        "block_reasons": ["NO_TRADEABLE_OPTION_QUOTE"],
+        "expected_R": 0.31,
+        "expected_R_per_day": 0.014,
+        "validation_profit_factor": 1.55,
+        "beats_baselines_count": 2,
+        "stop_rule": "Close if option loses 50% of debit or thesis breaks.",
+    }
+
+    candidates = build_target_ready_candidates(
+        [complete_negative_edge, incomplete_ticket],
+        DEFAULT_RISK_CONFIG,
+    )
+
+    assert candidates == []
 
 
 def test_source_coverage_quote_does_not_cross_direction_unless_allowed():
