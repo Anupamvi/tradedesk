@@ -55,13 +55,14 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.1-contract-risk-20260709-193127"
+    assert core.PIPELINE_VERSION == "options-agent-v1.2-exact-reprice-20260710-093806"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.1-contract-risk-20260709-193127",
         "options-agent-v1.1-contract-risk-20260709-184846",
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-09T19:31:27-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-10T09:38:06-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -139,6 +140,52 @@ def test_green_ready_rows_are_not_counted_as_target_order_candidates() -> None:
     assert tickets["strategy_family"].tolist() == ["vertical_spread"]
     assert green["ready_to_enter"].tolist() == [True]
     assert target.empty
+
+
+def test_deep_route_support_can_clear_confidence_without_ticker_history_at_one_lot() -> None:
+    row = {
+        "ticker": "SPCX",
+        "strategy_route": "bull_call_debit",
+        "trade_plan": "BUY 1 SPCX 2026-08-07 157.5 Call / SELL 1 SPCX 2026-08-07 160 Call @ 0.94 DEBIT",
+        "entry_limit": 0.94,
+        "max_profit": 156.0,
+        "max_loss": 94.0,
+        "trade_quality_status": "reviewable",
+        "live_validation_status": "PASS",
+        "agent_support_count": 8,
+        "agent_caution_count": 5,
+        "agent_objective_blocker_count": 0,
+        "actual_forward_expectancy_status": "BLOCK",
+        "actual_forward_expectancy_sample_size": 0,
+        "actual_forward_strategy_expectancy_status": "PASS",
+        "actual_forward_strategy_expectancy_sample_size": core.MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE,
+        "actual_forward_strategy_expectancy_win_rate": 0.44,
+        "actual_forward_strategy_expectancy_avg_pnl": 20.0,
+        "actual_forward_strategy_expectancy_profit_factor": 1.25,
+        "profitability_calibration_status": "PASS",
+        "live_probability_proxy": 0.436,
+        "live_quote_width_pct": 0.034,
+        "live_theta_burn_pct": 0.003,
+    }
+    context = core.build_execution_context(
+        live_schwab=True,
+        chain_snapshot_dir=None,
+        portfolio_context={"status": "ok", "total_value": 100_000},
+        research_task_count=100,
+        external_review_count=100,
+        external_review_agent_count=5,
+        agent_dispatch_task_count=5,
+        agent_reviews_json=Path("/tmp/agentic_reviews.json"),
+        market_session_open=True,
+    )
+
+    score, rating, quality_score, quality_rating = core._execution_confidence(row, context, [])
+
+    assert score >= core.MIN_EXECUTION_CONFIDENCE_SCORE
+    assert rating in {"MEDIUM", "HIGH"}
+    assert quality_score >= core.MIN_EXECUTION_CONFIDENCE_SCORE
+    assert quality_rating in {"MEDIUM", "HIGH"}
+    assert "route PF 1.25 / n=40 / win 44% / avg P/L $20.00" in core._ticket_contract_risk_summary(row)
 
 
 def test_goal_confidence_gate_demotes_ready_rows_before_action_surfaces() -> None:
@@ -551,7 +598,7 @@ def test_goal_confidence_gap_audit_names_concrete_evidence_gaps() -> None:
     assert "profitability_gap_plan.csv" in by_area.loc["profitability_calibration", "source_artifacts"]
 
 
-def test_report_keeps_focus_review_diagnostics_when_goal_confidence_blocked() -> None:
+def test_report_keeps_focus_review_queue_without_internal_promotion_section() -> None:
     final = pd.DataFrame(
         [
             {
@@ -591,14 +638,40 @@ def test_report_keeps_focus_review_diagnostics_when_goal_confidence_blocked() ->
         },
     )
 
-    assert "## Promotion Readiness" in report
-    assert "Not promotable yet." in report
-    assert "profitability_confidence_goal" in report
-    assert "/tmp/promotion_readiness_audit.csv" in report
+    assert "## Promotion Readiness" not in report
+    assert "Not promotable yet." not in report
+    assert "/tmp/promotion_readiness_audit.csv" not in report
     assert "Overall profitability/send-now confidence is blocked, so these rows are diagnostics only." in report
     assert "| Ticker | Signal | Reason | Qty | Target Limit | Max Loss | Trade Plan |" in report
     assert "BUY 1 MSFT 2026-07-17 400 Put" in report
     assert "| MSFT | 🟡 YELLOW review |" in report
+
+
+def test_yellow_exact_review_block_is_labeled_watch_only() -> None:
+    row = {
+        "ready_to_enter": False,
+        "target_order_status": "target_order_candidate",
+        "execution_blockers": "",
+        "contract_review_status": "BLOCK",
+        "contract_review_missing_agents": "structure_builder; skeptic",
+    }
+
+    assert core._ticket_recheck_summary(row) == (
+        "watch-only; exact contract review missing (structure_builder; skeptic)"
+    )
+    assert core._ticket_order_readiness(row) == "target_order_after_exact_contract_review"
+    assert core._ticket_action(row) == "watch_only_until_exact_contract_review"
+    assert core._target_rows_require_watch_only_from_tickets(pd.DataFrame([row])) is True
+
+    earnings_row = {
+        "ready_to_enter": False,
+        "contract_review_status": "PASS",
+        "earnings_before_expiry": True,
+        "event_exit_deadline": "2026-08-17",
+    }
+    assert core._ticket_recheck_summary(earnings_row) == (
+        "conditional pre-earnings target; exit by 2026-08-17; do not carry through earnings"
+    )
 
 
 def test_promotion_readiness_audit_proves_blocked_promotion_without_counting_verdict_as_gate() -> None:
@@ -1484,6 +1557,67 @@ def test_live_credit_spread_preserves_both_leg_greeks_and_expected_move() -> Non
     assert tasks["contracts"][0]["live_long_theta"] == pytest.approx(-0.04)
 
 
+def test_contract_review_tasks_do_not_apply_an_implicit_top_n_cap() -> None:
+    priced = pd.DataFrame(
+        [
+            {
+                "ticker": f"T{idx}",
+                "strategy_route": "bull_call_debit",
+                "expiry": "2026-08-21",
+                "dte": 35,
+                "buy_leg": f"BUY 1 T{idx} 2026-08-21 100 Call",
+                "sell_leg": f"SELL 1 T{idx} 2026-08-21 105 Call",
+                "trade_plan": (
+                    f"BUY 1 T{idx} 2026-08-21 100 Call / "
+                    f"SELL 1 T{idx} 2026-08-21 105 Call @ 1.50 DEBIT"
+                ),
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "live_validation_status": "PASS",
+                "underlying_quality_tier": "core",
+                "score": 100.0 - idx,
+            }
+            for idx in range(61)
+        ]
+    )
+
+    tasks = core.build_contract_review_tasks(priced)
+    explicitly_limited = core.build_contract_review_tasks(priced, limit=10)
+
+    assert tasks["contract_count"] == 61
+    assert explicitly_limited["contract_count"] == 10
+    assert all(contract["dte"] == 35 for contract in tasks["contracts"])
+
+
+def test_contract_review_tasks_label_long_option_profit_as_target_not_theoretical_cap() -> None:
+    priced = pd.DataFrame(
+        [
+            {
+                "ticker": "AAPL",
+                "strategy_route": "long_call",
+                "structure": "long call",
+                "expiry": "2026-08-21",
+                "dte": 35,
+                "buy_leg": "BUY 1 AAPL 2026-08-21 205 Call",
+                "trade_plan": "BUY 1 AAPL 2026-08-21 205 Call @ 5.00 DEBIT",
+                "entry_limit": 5.00,
+                "target_exit": 9.00,
+                "max_profit": 400.0,
+                "max_loss": 500.0,
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "live_validation_status": "PASS",
+                "underlying_quality_tier": "core",
+            }
+        ]
+    )
+
+    task = core.build_contract_review_tasks(priced)["contracts"][0]
+
+    assert task["max_profit"] == pytest.approx(400.0)
+    assert task["planned_target_profit"] == pytest.approx(400.0)
+    assert task["theoretical_max_profit"] == "uncapped"
+    assert "planned profit at target exit" in task["profit_semantics"]
+
+
 def test_completed_contract_caution_is_not_reported_as_missing_review() -> None:
     row = {
         "recommendation_status": RecommendationStatus.ENTER.value,
@@ -1654,6 +1788,9 @@ def test_agent_dispatch_prompt_requires_pass_one_exact_contract_reviews(tmp_path
         assert "Dispatch-only/pass-1 writes live priced_candidates.csv" in prompt
         assert "If an exact contract task is present, review that contract" in prompt
         assert "A generic ticker review does not satisfy contract review coverage" in prompt
+        assert "Return supportive when an exact contract passes the policy" in prompt
+        assert "above 30%" in prompt
+        assert "theoretical_max_profit is uncapped" in prompt
 
 
 def test_external_pass_one_artifact_absence_review_is_caution_only(tmp_path: Path) -> None:
@@ -5085,6 +5222,10 @@ def test_route_expectancy_overrides_negative_vertical_family_for_bull_call(tmp_p
         {"ticker": f"BPCLOSS{idx}", "realized_pnl": -100.0, "strategy": "Bull Put Credit Spread"}
         for idx in range(80)
     )
+    rows.extend(
+        {"ticker": "NEW", "realized_pnl": -100.0, "strategy": "Long Call"}
+        for _ in range(core.MIN_TICKER_EXPECTANCY_SAMPLE_SIZE)
+    )
     (closed_dir / "closed_trades_acct_3326.jsonl").write_text(
         "\n".join(json.dumps(row) for row in rows) + "\n",
         encoding="utf-8",
@@ -5109,6 +5250,8 @@ def test_route_expectancy_overrides_negative_vertical_family_for_bull_call(tmp_p
     assert row["actual_forward_strategy_expectancy_sample_size"] == 42
     assert row["actual_forward_strategy_expectancy_profit_factor"] == 1.322
     assert "route-level evidence is preferred over broad strategy-family evidence" in row["actual_forward_strategy_expectancy_note"]
+    assert core._negative_strategy_expectancy_blocks_green(row) is False
+    assert core._positive_strategy_expectancy_ready_for_green(row) is True
 
 
 def test_ticker_route_negative_expectancy_overrides_positive_route_support(tmp_path: Path) -> None:
@@ -6075,6 +6218,116 @@ def test_agentic_review_contract_requires_required_ticker_lane_coverage(tmp_path
     assert context["agentic_reviews_ready"] is False
     assert context["agentic_review_coverage_basis"] == "subagent_lanes_and_required_tickers"
     assert "agentic_required_ticker_reviews_missing" in context["run_gate_blockers"]
+
+
+def test_agentic_ticker_lane_coverage_does_not_count_exact_contract_reviews(tmp_path: Path) -> None:
+    paths = output_paths("2026-05-22", root=tmp_path)
+    dispatch = core.build_agent_dispatch_plan(
+        {"tasks": [{"ticker": "AAPL", "score": 80}]},
+        "2026-05-22",
+        paths,
+    )
+    reviews = pd.DataFrame(
+        [
+            {
+                "ticker": "AAPL",
+                "agent": agent,
+                "agent_type": "subagent",
+                "contract_specific": agent == "catalyst_news",
+            }
+            for agent in ("catalyst_news", "macro_regime", "structure_builder", "skeptic")
+        ]
+    )
+
+    coverage = core.build_agentic_review_contract_coverage(dispatch, reviews)
+
+    assert coverage["status"] == "block"
+    assert coverage["required_review_missing_ticker_examples"] == ["AAPL"]
+
+
+def test_per_ticket_lane_gate_does_not_count_exact_contract_agents_as_generic_lanes() -> None:
+    priced = pd.DataFrame(
+        [
+            {
+                "ticker": "AAPL",
+                "strategy_route": "bull_call_debit",
+                "strategy_family": "vertical_spread",
+                "expiry": "2026-08-21",
+                "dte": 30,
+                "buy_leg": "BUY 1 AAPL 2026-08-21 200 Call",
+                "sell_leg": "SELL 1 AAPL 2026-08-21 205 Call",
+                "trade_plan": "BUY 1 AAPL 2026-08-21 200 Call / SELL 1 AAPL 2026-08-21 205 Call @ 1.00 DEBIT",
+                "entry_limit": 1.00,
+                "target_entry": 1.20,
+                "max_profit": 400.0,
+                "max_loss": 100.0,
+                "suggested_contracts": 1,
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "quality_status": "qualified",
+                "trade_quality_status": "reviewable",
+                "live_validation_status": "PASS",
+                "underlying_quality_tier": "core",
+                "live_probability_proxy": 0.55,
+                "live_quote_width_pct": 0.05,
+                "live_theta_burn_pct": 0.01,
+                "live_breakeven_expected_move_ratio": 0.40,
+            }
+        ]
+    )
+    key = core.contract_review_key(priced.iloc[0])
+    reviews = pd.DataFrame(
+        [
+            {
+                "ticker": "AAPL",
+                "agent": agent,
+                "agent_type": "subagent",
+                "verdict": "supportive",
+                "contract_specific": False,
+            }
+            for agent in ("catalyst_news", "macro_regime")
+        ]
+        + [
+            {
+                "ticker": "AAPL",
+                "agent": agent,
+                "agent_type": "subagent",
+                "verdict": "supportive",
+                "contract_specific": True,
+                "contract_key": key,
+                "strategy_route": "bull_call_debit",
+                "expiry": "2026-08-21",
+                "trade_plan": priced.iloc[0]["trade_plan"],
+            }
+            for agent in core.CONTRACT_REVIEW_REQUIRED_AGENTS
+        ]
+    )
+
+    reviewed = core.apply_agent_reviews(priced, reviews)
+    reviewed = _mark_strategy_expectancy_pass(reviewed, sample=core.MIN_EXPECTANCY_SAMPLE_SIZE)
+    row = reviewed.iloc[0].to_dict()
+    context = core.build_execution_context(
+        live_schwab=True,
+        chain_snapshot_dir=None,
+        portfolio_context={"status": "ok", "total_value": 100_000},
+        research_task_count=10,
+        external_review_count=len(reviews),
+        external_review_agent_count=4,
+        agent_dispatch_task_count=5,
+        agent_reviews_json=Path("/tmp/agentic_reviews.json"),
+        market_session_open=True,
+    )
+    blockers = core._execution_blockers_for_row(
+        row,
+        "ready",
+        row["trade_plan"],
+        row["entry_limit"],
+        row["suggested_contracts"],
+        context,
+    )
+
+    assert row["contract_review_status"] == "PASS"
+    assert row["external_agent_distinct_review_count"] == 2
+    assert "ticker_agentic_review_coverage_below_threshold" in blockers
 
 
 def test_execution_readiness_distinguishes_no_send_now_orders_from_ready_pipeline() -> None:
@@ -9288,6 +9541,85 @@ def test_profitability_calibration_records_route_replay_support_when_exact_bucke
     assert "cannot promote an exact contract to green" in row["note"]
     assert summary["actual_and_replay_pass_rows"] == 0
     assert summary["route_actual_and_replay_pass_rows"] == 1
+
+
+def test_profitability_calibration_allows_one_lot_hierarchical_route_pass_at_pf_floor() -> None:
+    actual = {
+        "status": "PASS",
+        "sample_size": core.MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE,
+        "win_rate": 0.44,
+        "avg_pnl": 20.0,
+        "profit_factor": 1.25,
+    }
+    route_replay = {
+        "status": "PASS",
+        "sample_size": core.MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE,
+        "win_rate": 0.50,
+        "avg_pnl": 15.0,
+        "profit_factor": 1.30,
+    }
+    sparse_exact_replay = {
+        "status": "BLOCK",
+        "sample_size": 0,
+        "win_rate": "",
+        "avg_pnl": "",
+        "profit_factor": "",
+    }
+
+    status, action, note = core._current_calibration_verdict(
+        ticker="AAPL",
+        key={"strategy_route": "bull_call_debit"},
+        actual_scope="actual_route",
+        actual_metrics=actual,
+        replay_metrics=sparse_exact_replay,
+        route_replay_metrics=route_replay,
+        replay_path=Path("replay.csv"),
+        replay_error="",
+    )
+
+    assert status == "PASS"
+    assert action == "eligible_for_one_lot_green_with_hierarchical_route_support"
+    assert "capped at one contract" in note
+
+    negative_exact_replay = {
+        "status": "BLOCK",
+        "sample_size": core.MIN_EXPECTANCY_SAMPLE_SIZE,
+        "win_rate": 0.30,
+        "avg_pnl": -10.0,
+        "profit_factor": 0.80,
+    }
+    blocked_status, _, _ = core._current_calibration_verdict(
+        ticker="AAPL",
+        key={"strategy_route": "bull_call_debit"},
+        actual_scope="actual_route",
+        actual_metrics=actual,
+        replay_metrics=negative_exact_replay,
+        route_replay_metrics=route_replay,
+        replay_path=Path("replay.csv"),
+        replay_error="",
+    )
+
+    assert blocked_status != "PASS"
+
+    mature_weak_exact_replay = {
+        "status": "BLOCK",
+        "sample_size": core.MIN_EXPECTANCY_SAMPLE_SIZE,
+        "win_rate": 0.30,
+        "avg_pnl": 5.0,
+        "profit_factor": 1.10,
+    }
+    weak_status, _, _ = core._current_calibration_verdict(
+        ticker="AAPL",
+        key={"strategy_route": "bull_call_debit"},
+        actual_scope="actual_route",
+        actual_metrics=actual,
+        replay_metrics=mature_weak_exact_replay,
+        route_replay_metrics=route_replay,
+        replay_path=Path("replay.csv"),
+        replay_error="",
+    )
+
+    assert weak_status != "PASS"
 
 
 def test_profitability_calibration_summary_names_bucket_shortfalls() -> None:
@@ -13014,8 +13346,8 @@ def test_run_pipeline_writes_independent_recommendation_artifacts(tmp_path: Path
     assert "Profitability confidence:" not in report
     assert "Order-entry confidence: 0.0/10" in report
     assert "Order mechanics confidence: 0.0/10" in report
-    assert "Goal confidence gap audit:" in report
-    assert "goal_confidence_gap_audit.csv" in report
+    assert "Goal confidence gap audit:" not in report
+    assert "goal_confidence_gap_audit.csv" not in report
     assert "profitability_evidence_backfill_plan.csv" in report
     assert "Outcome evidence audit:" in report
     assert "Broker outcome match audit:" in report
@@ -16441,6 +16773,106 @@ def test_live_debit_expected_move_falls_back_to_chain_iv_with_correct_ratio_dire
     )
 
 
+def test_live_debit_selection_prefers_quality_across_expiries() -> None:
+    asof = dt.date(2026, 7, 9)
+    short_expiry = dt.date(2026, 7, 17)
+    quality_expiry = dt.date(2026, 8, 14)
+    contracts = pd.DataFrame(
+        [
+            {"right": "C", "expiry": short_expiry},
+            {"right": "C", "expiry": quality_expiry},
+        ]
+    )
+    expiries = core._live_expiry_candidates(contracts, asof, short_expiry, "Bull Call")
+    alternatives = [
+        {
+            "live_status": "PASS",
+            "selected_expiry": short_expiry.isoformat(),
+            "dte": 8,
+            "spread_width": 1.0,
+            "debit": 0.30,
+            "reward_risk": 2.33,
+            "target_entry": 0.45,
+            "long_delta": 0.27,
+            "theta_burn_pct": 0.05,
+            "breakeven_expected_move_ratio": 0.70,
+            "quote_width_pct": 0.05,
+            "short_oi": 1_000,
+            "short_volume": 100,
+            "long_oi": 1_000,
+            "long_volume": 100,
+            "liq_score": 1_100,
+        },
+        {
+            "live_status": "PASS",
+            "selected_expiry": quality_expiry.isoformat(),
+            "dte": 36,
+            "spread_width": 1.0,
+            "debit": 0.40,
+            "reward_risk": 1.50,
+            "target_entry": 0.45,
+            "long_delta": 0.52,
+            "theta_burn_pct": 0.01,
+            "breakeven_expected_move_ratio": 0.55,
+            "quote_width_pct": 0.08,
+            "short_oi": 800,
+            "short_volume": 100,
+            "long_oi": 800,
+            "long_volume": 100,
+            "liq_score": 900,
+        },
+    ]
+
+    selected = core._select_live_alternative(
+        {"signal_premium": 1_000_000.0, "combined_flow_bias": 0.30},
+        alternatives,
+        entry_type="DEBIT",
+    )
+
+    assert expiries == [quality_expiry, short_expiry]
+    assert selected["selected_expiry"] == quality_expiry.isoformat()
+
+
+def test_live_long_option_selection_prefers_probability_and_theta_over_lowest_debit() -> None:
+    alternatives = [
+        {
+            "live_status": "PASS",
+            "selected_expiry": "2026-07-17",
+            "dte": 8,
+            "debit": 2.00,
+            "long_delta": 0.31,
+            "theta_burn_pct": 0.029,
+            "breakeven_distance_pct": 0.04,
+            "breakeven_expected_move_ratio": 0.80,
+            "quote_width_pct": 0.05,
+            "long_oi": 1_000,
+            "long_volume": 100,
+            "liq_score": 1_100,
+        },
+        {
+            "live_status": "PASS",
+            "selected_expiry": "2026-08-14",
+            "dte": 36,
+            "debit": 3.00,
+            "long_delta": 0.52,
+            "theta_burn_pct": 0.01,
+            "breakeven_distance_pct": 0.03,
+            "breakeven_expected_move_ratio": 0.55,
+            "quote_width_pct": 0.08,
+            "long_oi": 800,
+            "long_volume": 100,
+            "liq_score": 900,
+        },
+    ]
+
+    selected = core._select_live_long_option_alternative(
+        {"signal_premium": 1_000_000.0, "combined_flow_bias": 0.30},
+        alternatives,
+    )
+
+    assert selected["selected_expiry"] == "2026-08-14"
+
+
 def test_live_credit_expected_move_uses_breakeven_not_short_strike() -> None:
     from codexuw.schwab_live import find_credit_spread_alternatives
 
@@ -16584,7 +17016,7 @@ def test_ups_like_route_support_stays_yellow_and_is_capped_at_one_contract() -> 
     assert core.PROFITABILITY_CALIBRATION_BLOCKER in blockers
 
 
-def test_exact_contract_review_requires_supportive_structure_and_skeptic_verdicts() -> None:
+def test_exact_contract_review_allows_non_blocking_caution_but_rejects_missing_or_avoid() -> None:
     priced = pd.DataFrame(
         [
             {
@@ -16650,7 +17082,8 @@ def test_exact_contract_review_requires_supportive_structure_and_skeptic_verdict
         ignore_index=True,
     )
     caution_result = core.apply_agent_reviews(priced, caution_reviews)
-    assert caution_result["contract_review_status"].tolist() == ["WARN"]
+    assert caution_result["contract_review_status"].tolist() == ["PASS"]
+    assert "skeptic=caution" in caution_result["contract_review_verdicts"].iloc[0]
 
     supportive_reviews = caution_reviews.copy()
     exact_skeptic = supportive_reviews["contract_specific"].map(core._truthy) & supportive_reviews["agent"].eq("skeptic")
@@ -16658,6 +17091,180 @@ def test_exact_contract_review_requires_supportive_structure_and_skeptic_verdict
     supportive_result = core.apply_agent_reviews(priced, supportive_reviews)
     assert supportive_result["contract_review_status"].tolist() == ["PASS"]
     assert supportive_result["contract_review_count"].tolist() == [2]
+
+    improved_debit = priced.copy()
+    improved_debit.loc[0, "entry_limit"] = 1.60
+    improved_debit.loc[0, "trade_plan"] = (
+        "BUY 1 UPS 2026-08-21 115 Call / SELL 1 UPS 2026-08-21 120 Call @ 1.60 DEBIT"
+    )
+    improved_result = core.apply_agent_reviews(improved_debit, supportive_reviews)
+    assert improved_result["contract_review_status"].tolist() == ["PASS"]
+
+    worse_debit = priced.copy()
+    worse_debit.loc[0, "entry_limit"] = 1.80
+    worse_debit.loc[0, "trade_plan"] = (
+        "BUY 1 UPS 2026-08-21 115 Call / SELL 1 UPS 2026-08-21 120 Call @ 1.80 DEBIT"
+    )
+    worse_result = core.apply_agent_reviews(worse_debit, supportive_reviews)
+    assert worse_result["contract_review_status"].tolist() == ["BLOCK"]
+    assert worse_result["contract_review_count"].tolist() == [0]
+
+    mechanically_revalidated = worse_debit.assign(
+        recommendation_status=RecommendationStatus.ENTER.value,
+        trade_quality_status="reviewable",
+        quality_gate_reason="",
+        hard_rejects="",
+        target_entry=1.90,
+        dte=43,
+        max_profit=320.0,
+        max_loss=180.0,
+        spot_live=110.0,
+        breakeven=116.8,
+        live_probability_proxy=0.50,
+        live_theta_burn_pct=0.01,
+        live_breakeven_expected_move_ratio=0.50,
+        earnings_before_expiry=False,
+        macro_event_count_before_expiry=0,
+    )
+    unproven_result = core.apply_agent_reviews(mechanically_revalidated, supportive_reviews)
+    assert unproven_result["contract_review_status"].tolist() == ["BLOCK"]
+
+    mechanically_revalidated["construction_source"] = "reviewed_contract_fresh_reprice"
+    revalidated_result = core.apply_agent_reviews(mechanically_revalidated, supportive_reviews)
+    assert revalidated_result["contract_review_status"].tolist() == ["PASS"]
+    assert revalidated_result["contract_review_count"].tolist() == [2]
+
+
+def test_exact_credit_review_remains_valid_only_at_same_or_better_credit() -> None:
+    reviewed_row = {
+        "ticker": "AAPL",
+        "strategy_route": "bull_put_credit",
+        "expiry": "2026-08-21",
+        "buy_leg": "BUY 1 AAPL 2026-08-21 195 Put",
+        "sell_leg": "SELL 1 AAPL 2026-08-21 200 Put",
+        "trade_plan": "SELL 1 AAPL 2026-08-21 200 Put / BUY 1 AAPL 2026-08-21 195 Put @ 1.60 CREDIT",
+    }
+    review = {
+        "ticker": "AAPL",
+        "contract_specific": True,
+        "contract_key": core.contract_review_key(reviewed_row),
+        "strategy_route": "bull_put_credit",
+        "expiry": "2026-08-21",
+        "trade_plan": reviewed_row["trade_plan"],
+    }
+    better = {
+        **reviewed_row,
+        "entry_limit": 1.70,
+        "trade_plan": "SELL 1 AAPL 2026-08-21 200 Put / BUY 1 AAPL 2026-08-21 195 Put @ 1.70 CREDIT",
+    }
+    worse = {
+        **reviewed_row,
+        "entry_limit": 1.50,
+        "trade_plan": "SELL 1 AAPL 2026-08-21 200 Put / BUY 1 AAPL 2026-08-21 195 Put @ 1.50 CREDIT",
+    }
+
+    assert core._contract_review_applies_to_row(review, better) is True
+    assert core._contract_review_applies_to_row(review, worse) is False
+
+
+def test_fresh_reprice_keeps_exact_reviewed_spread_legs() -> None:
+    expiry = dt.date(2026, 8, 21)
+    reviewed = {
+        "ticker": "AAPL",
+        "strategy_route": "bull_call_debit",
+        "strategy_family": "vertical_spread",
+        "structure": "bull call debit spread",
+        "expiry": expiry.isoformat(),
+        "dte": 43,
+        "buy_leg": "BUY 1 AAPL 2026-08-21 100 Call",
+        "sell_leg": "SELL 1 AAPL 2026-08-21 105 Call",
+        "long_leg": "BUY 1 AAPL 2026-08-21 100 Call",
+        "short_leg": "SELL 1 AAPL 2026-08-21 105 Call",
+        "long_strike": 100.0,
+        "short_strike": 105.0,
+        "trade_plan": "BUY 1 AAPL 2026-08-21 100 Call / SELL 1 AAPL 2026-08-21 105 Call @ 2.10 DEBIT",
+        "entry_limit": 2.10,
+        "signal_premium": 1_000_000.0,
+        "combined_flow_bias": 0.80,
+        "macro_tape_candidate": False,
+        "live_expected_move_pct": 0.10,
+    }
+    contracts = pd.DataFrame(
+        [
+            {
+                "expiry": expiry,
+                "right": "C",
+                "strike": 100.0,
+                "symbol": "AAPL  260821C00100000",
+                "bid": 2.80,
+                "ask": 3.00,
+                "mark": 2.90,
+                "delta": 0.55,
+                "theta": -0.08,
+                "iv": 0.30,
+                "open_interest": 800,
+                "volume": 200,
+            },
+            {
+                "expiry": expiry,
+                "right": "C",
+                "strike": 105.0,
+                "symbol": "AAPL  260821C00105000",
+                "bid": 1.00,
+                "ask": 1.20,
+                "mark": 1.10,
+                "delta": 0.35,
+                "theta": -0.04,
+                "iv": 0.28,
+                "open_interest": 700,
+                "volume": 150,
+            },
+            {
+                "expiry": expiry,
+                "right": "C",
+                "strike": 101.0,
+                "symbol": "AAPL  260821C00101000",
+                "bid": 2.00,
+                "ask": 2.10,
+                "mark": 2.05,
+                "delta": 0.52,
+                "theta": -0.06,
+                "iv": 0.29,
+                "open_interest": 2_000,
+                "volume": 500,
+            },
+            {
+                "expiry": expiry,
+                "right": "C",
+                "strike": 106.0,
+                "symbol": "AAPL  260821C00106000",
+                "bid": 1.20,
+                "ask": 1.30,
+                "mark": 1.25,
+                "delta": 0.32,
+                "theta": -0.03,
+                "iv": 0.27,
+                "open_interest": 2_000,
+                "volume": 500,
+            },
+        ]
+    )
+
+    updated, error = core._fresh_reprice_reviewed_contract(
+        reviewed,
+        contracts,
+        spot=101.0,
+        asof_date=dt.date(2026, 7, 9),
+        chain_source="live:test",
+    )
+
+    assert error == ""
+    assert updated is not None
+    assert updated["long_strike"] == pytest.approx(100.0)
+    assert updated["short_strike"] == pytest.approx(105.0)
+    assert updated["entry_limit"] == pytest.approx(1.98)
+    assert core.contract_review_key(updated) == core.contract_review_key(reviewed)
+    assert updated["construction_source"] == "reviewed_contract_fresh_reprice"
 
 
 def test_exact_contract_blocker_does_not_poison_another_contract_for_same_ticker() -> None:
@@ -16737,6 +17344,71 @@ def test_exact_contract_blocker_does_not_poison_another_contract_for_same_ticker
     assert put_spread["contract_review_status"] == "PASS"
     assert "external_agent_objective_blocker" not in str(put_spread.get("hard_rejects", ""))
     assert "objectively invalid" not in put_spread["status_reason"]
+
+
+def test_internal_structure_blocker_does_not_poison_another_contract_for_same_ticker() -> None:
+    priced = pd.DataFrame(
+        [
+            {
+                "ticker": "HOOD",
+                "bias": "bullish",
+                "strategy_route": "long_call",
+                "expiry": "2026-07-17",
+                "buy_leg": "BUY 1 HOOD 2026-07-17 120 Call",
+                "sell_leg": "",
+                "full_ticket": "BUY 1 HOOD 2026-07-17 120 Call @ 2.71 DEBIT",
+                "trade_plan": "BUY 1 HOOD 2026-07-17 120 Call @ 2.71 DEBIT",
+                "recommendation_status": RecommendationStatus.AVOID.value,
+                "status_reason": "long call rejected",
+                "hard_rejects": "short_dte_theta_burn_above_3pct_per_day",
+                "live_validation_status": "PASS",
+                "underlying_quality_tier": "core",
+                "quality_status": "qualified",
+                "score": 70.0,
+                "signal_premium": 1_000_000.0,
+            },
+            {
+                "ticker": "HOOD",
+                "bias": "bullish",
+                "strategy_route": "bull_call_debit",
+                "expiry": "2026-07-17",
+                "buy_leg": "BUY 1 HOOD 2026-07-17 120 Call",
+                "sell_leg": "SELL 1 HOOD 2026-07-17 121 Call",
+                "full_ticket": "BUY 1 HOOD 2026-07-17 120 Call / SELL 1 HOOD 2026-07-17 121 Call @ 0.32 DEBIT",
+                "trade_plan": "BUY 1 HOOD 2026-07-17 120 Call / SELL 1 HOOD 2026-07-17 121 Call @ 0.32 DEBIT",
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "status_reason": "spread passes exact quality checks",
+                "hard_rejects": "",
+                "live_validation_status": "PASS",
+                "underlying_quality_tier": "core",
+                "quality_status": "qualified",
+                "score": 70.0,
+                "signal_premium": 1_000_000.0,
+            },
+        ]
+    )
+    reviews = core.build_internal_agent_reviews(
+        pd.DataFrame([{"ticker": "HOOD", "bias": "bullish"}]),
+        {"regime": "mixed", "status": "ok", "note": "mixed tape"},
+        pd.DataFrame(),
+        priced,
+        as_of="2026-07-09",
+    )
+    structure_reviews = reviews[reviews["agent"].isin(["structure", "skeptic"])]
+
+    assert structure_reviews["contract_specific"].map(core._truthy).all()
+    assert structure_reviews["contract_key"].nunique() == 2
+
+    reviewed = core.apply_agent_reviews(priced, reviews)
+    spread = reviewed.loc[reviewed["strategy_route"].eq("bull_call_debit")].iloc[0]
+    assert spread["recommendation_status"] == RecommendationStatus.ENTER.value
+    assert "external_agent_objective_blocker" not in str(spread.get("hard_rejects", ""))
+    assert "short_dte_theta_burn_above_3pct_per_day" not in spread["status_reason"]
+
+    ranked = core.apply_synthesis_ranking(reviewed, reviews, top_trades=2)
+    blocker_counts = ranked.set_index("strategy_route")["agent_objective_blocker_count"].to_dict()
+    assert blocker_counts["long_call"] == 2
+    assert blocker_counts["bull_call_debit"] == 0
 
 
 def test_dispatch_only_with_snapshot_writes_exact_contract_review_tasks(tmp_path: Path) -> None:

@@ -36,13 +36,14 @@ from uwos.lessonengine.core import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.1-contract-risk-20260709-193127"
+PIPELINE_VERSION = "options-agent-v1.2-exact-reprice-20260710-093806"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.1-contract-risk-20260709-193127",
     "options-agent-v1.1-contract-risk-20260709-184846",
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-09T19:31:27-07:00"
+PIPELINE_RELEASED_AT = "2026-07-10T09:38:06-07:00"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
 DEFAULT_DISCOVERY_LIMIT = 120
@@ -88,13 +89,14 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.1-contract-risk-20260709-193127",
+    "PIPELINE_VERSION": "options-agent-v1.2-exact-reprice-20260710-093806",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.1-contract-risk-20260709-193127",
         "options-agent-v1.1-contract-risk-20260709-184846",
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-09T19:31:27-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-10T09:38:06-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -127,12 +129,48 @@ MAX_BREAKEVEN_EXPECTED_MOVE_RATIO = 0.75
 SHORT_DTE_CONTRACT_RISK_DAYS = 14
 MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS = 0
 CONTRACT_REVIEW_REQUIRED_AGENTS = ("structure_builder", "skeptic")
+CONTRACT_AGENT_REVIEW_POLICY = {
+    "verdict_rule": (
+        "Return supportive when the exact contract passes the quantitative rules below and has no concrete "
+        "contract defect. Do not default a passing contract to caution merely because all options carry market risk."
+    ),
+    "quote_width": (
+        "Quote width is an objective blocker only above 30%, or above 20% when DTE is 14 or less. "
+        "A width at or below 10% is supportive absent another defect; 10%-20% is caution-only."
+    ),
+    "debit_probability": (
+        "A debit long-delta/probability proxy of at least 40% passes the send-now probability threshold. "
+        "30%-40% is caution-only; below 30% is an objective severe-probability defect."
+    ),
+    "theta": (
+        "Theta burn above 3% of debit per day is an objective blocker only when DTE is 14 or less. "
+        "Manageable theta at longer DTE is not by itself a caution."
+    ),
+    "expected_move": (
+        "A breakeven expected-move ratio above 75% is an objective blocker; a ratio at or below 75% passes."
+    ),
+    "event_risk": (
+        "Earnings before expiry with a future pre-earnings exit deadline is caution-only. A stale exit deadline is "
+        "an objective blocker. Routine scheduled macro events beyond 14 DTE are annotations, not cautions; a macro "
+        "event inside a 14-DTE contract is an objective send-now blocker."
+    ),
+    "long_option_profit": (
+        "For long_call and long_put tasks, max_profit and planned_target_profit are planned P/L at target_exit; "
+        "theoretical_max_profit is uncapped. Never block a long option because planned target P/L is finite."
+    ),
+    "blocker_type": (
+        "When objective_blocker=true, set blocker_type to the concrete defect: invalid_payoff_math, quote_width, "
+        "missing_greeks, excessive_theta, severe_probability, expected_move, stale_event, short_dte_macro_event, "
+        "liquidity, live_validation, or thesis_break."
+    ),
+}
 MIN_LIVE_LEG_LIQUIDITY = 100.0
 MARKET_TIME_ZONE = ZoneInfo("America/Los_Angeles")
 REGULAR_MARKET_OPEN = dt.time(6, 30)
 REGULAR_MARKET_CLOSE = dt.time(13, 0)
 MARKET_HOLIDAY_LOOKAHEAD_DAYS = 10
 MIN_EXPECTANCY_SAMPLE_SIZE = 30
+MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE = 40
 MIN_EXPECTANCY_WIN_RATE = 0.55
 MIN_EXPECTANCY_SKEW_WIN_RATE = 0.40
 MIN_EXPECTANCY_PROFIT_FACTOR = 1.20
@@ -972,7 +1010,98 @@ def _contract_review_matches_row(
     return all(review_value and review_value == row_value for review_value, row_value in comparisons)
 
 
-def build_contract_review_tasks(priced: pd.DataFrame, *, limit: int = 60) -> dict[str, Any]:
+def _contract_plan_identity_and_limit(value: Any) -> tuple[str, str, Optional[float]]:
+    text = _as_text(value)
+    match = re.match(
+        r"^(.*?)\s+@\s+([0-9]+(?:\.[0-9]+)?)\s+(DEBIT|CREDIT)\s*$",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return "", "", None
+    identity = re.sub(r"\s+", " ", match.group(1)).strip().upper()
+    return identity, match.group(3).upper(), float(match.group(2))
+
+
+def _fresh_repriced_contract_still_actionable(row: Mapping[str, Any]) -> bool:
+    """Keep an exact review attached after a worse fill only if all live mechanics still pass."""
+
+    if _as_text(row.get("construction_source")) != "reviewed_contract_fresh_reprice":
+        return False
+    if _as_text(row.get("live_validation_status")).upper() != "PASS":
+        return False
+    if _as_text(row.get("recommendation_status")).upper() not in {
+        RecommendationStatus.ENTER.value,
+        RecommendationStatus.ENTER_WITH_PORTFOLIO_RISK.value,
+    }:
+        return False
+    if _as_text(row.get("trade_quality_status")).lower() != "reviewable":
+        return False
+    if _as_text(row.get("quality_gate_reason")) or _as_text(row.get("hard_rejects")):
+        return False
+    entry = _as_float(row.get("entry_limit"))
+    target = _as_float(row.get("target_entry"))
+    entry_type = _entry_type_from_ticket(row.get("trade_plan") or row.get("full_ticket"))
+    if entry is None or entry <= 0 or target is None or target <= 0:
+        return False
+    if entry_type == "DEBIT" and entry > target + 0.005:
+        return False
+    if entry_type == "CREDIT" and entry + 0.005 < target:
+        return False
+    ticket = _as_text(row.get("trade_plan") or row.get("full_ticket"))
+    if _send_now_economics_blockers(row, ticket=ticket, entry_limit=entry):
+        return False
+    return True
+
+
+def _contract_review_applies_to_row(
+    review: Mapping[str, Any],
+    row: Mapping[str, Any],
+    *,
+    row_contract_key: str = "",
+) -> bool:
+    """Keep an exact review valid only when fresh pricing is no worse on unchanged legs."""
+
+    if _contract_review_matches_row(review, row, row_contract_key=row_contract_key):
+        return True
+    expected_key = row_contract_key or contract_review_key(row)
+    if not expected_key or not _truthy(review.get("contract_specific")):
+        return False
+    comparisons = (
+        (_as_text(review.get("contract_key")), expected_key),
+        (_as_text(review.get("ticker")).upper(), _as_text(row.get("ticker")).upper()),
+        (_as_text(review.get("strategy_route")), _as_text(row.get("strategy_route"))),
+        (_as_text(review.get("expiry")), _as_text(row.get("expiry"))),
+    )
+    if not all(review_value and review_value == row_value for review_value, row_value in comparisons):
+        return False
+    review_identity, review_entry_type, reviewed_limit = _contract_plan_identity_and_limit(
+        review.get("trade_plan")
+    )
+    row_identity, row_entry_type, row_plan_limit = _contract_plan_identity_and_limit(
+        row.get("trade_plan") or row.get("full_ticket")
+    )
+    if not review_identity or review_identity != row_identity or review_entry_type != row_entry_type:
+        return False
+    current_limit = _as_float(row.get("entry_limit"))
+    if current_limit is None:
+        current_limit = row_plan_limit
+    if reviewed_limit is None or current_limit is None or current_limit <= 0:
+        return False
+    if review_entry_type == "DEBIT" and current_limit <= reviewed_limit + 0.005:
+        return True
+    if review_entry_type == "CREDIT" and current_limit + 0.005 >= reviewed_limit:
+        return True
+    if _fresh_repriced_contract_still_actionable(row):
+        return True
+    return False
+
+
+def build_contract_review_tasks(
+    priced: pd.DataFrame,
+    *,
+    limit: Optional[int] = None,
+) -> dict[str, Any]:
     """Build exact post-pricing review tasks for structure and skeptic agents."""
 
     if priced is None or priced.empty:
@@ -1000,17 +1129,38 @@ def build_contract_review_tasks(priced: pd.DataFrame, *, limit: int = 60) -> dic
     working["contract_key"] = working.apply(contract_review_key, axis=1)
     working = working[working["contract_key"].astype(str).ne("")]
     working = working.sort_values(["__status_rank", "__score"], ascending=[True, False], kind="mergesort")
-    working = working.drop_duplicates(["contract_key"], keep="first").head(limit)
+    working = working.drop_duplicates(["contract_key"], keep="first")
+    if limit is not None:
+        working = working.head(max(int(limit), 0))
+    long_option = working.get("strategy_route", pd.Series("", index=working.index)).astype(str).isin(
+        {"long_call", "long_put"}
+    )
+    working["profit_semantics"] = "defined-risk theoretical max profit"
+    working.loc[long_option, "profit_semantics"] = "planned profit at target exit; theoretical upside is uncapped"
+    working["theoretical_max_profit"] = working.get(
+        "max_profit",
+        pd.Series("", index=working.index),
+    ).astype(object)
+    working.loc[long_option, "theoretical_max_profit"] = "uncapped"
+    working["planned_target_profit"] = ""
+    working.loc[long_option, "planned_target_profit"] = working.loc[long_option].get(
+        "max_profit",
+        pd.Series("", index=working.loc[long_option].index),
+    )
     fields = [
         "contract_key",
         "ticker",
         "strategy_route",
         "structure",
         "expiry",
+        "dte",
         "trade_plan",
         "entry_limit",
         "target_exit",
         "max_profit",
+        "profit_semantics",
+        "theoretical_max_profit",
+        "planned_target_profit",
         "max_loss",
         "spot_live",
         "breakeven",
@@ -1026,7 +1176,12 @@ def build_contract_review_tasks(priced: pd.DataFrame, *, limit: int = 60) -> dic
         "live_expected_move_pct",
         "live_breakeven_expected_move_ratio",
         "earnings_event_date",
+        "earnings_event_source",
+        "earnings_source_status",
         "earnings_before_expiry",
+        "event_exit_deadline",
+        "macro_calendar_status",
+        "macro_event_count_before_expiry",
         "macro_events_before_expiry",
         "contract_event_risk_note",
     ]
@@ -1528,6 +1683,7 @@ def run_pipeline(
         if live_schwab and chain_snapshot_dir is None
         else None
     )
+    fresh_exact_contract_reprice = bool(live_schwab and chain_snapshot_dir is None)
     dispatch_pricing_snapshot, dispatch_pricing_snapshot_status = _load_dispatch_pricing_snapshot(
         paths,
         prior_plan=prior_agent_dispatch_plan,
@@ -1535,13 +1691,42 @@ def run_pipeline(
         expected_reviews_json=paths["agentic_reviews"],
         external_agent_reviews=external_agent_reviews,
         max_snapshot_age_seconds=(
-            MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS
-            if live_schwab and chain_snapshot_dir is None
+            None
+            if fresh_exact_contract_reprice
+            else MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS
+            if live_schwab
             else None
         ),
     )
-    dispatch_pricing_snapshot_reused = dispatch_pricing_snapshot is not None
-    if dispatch_pricing_snapshot is not None:
+    dispatch_pricing_snapshot_reused = bool(
+        dispatch_pricing_snapshot is not None and not fresh_exact_contract_reprice
+    )
+    if dispatch_pricing_snapshot is not None and fresh_exact_contract_reprice:
+        priced = dispatch_pricing_snapshot["priced_candidates"].copy()
+        strategy_routing_audit = dispatch_pricing_snapshot["strategy_routing_audit"].copy()
+        dated_priced = priced.copy()
+        reviewed_contract_keys = {
+            _as_text(contract.get("contract_key"))
+            for contract in dispatch_pricing_snapshot["contract_review_tasks"].get("contracts", [])
+            if isinstance(contract, Mapping) and _as_text(contract.get("contract_key"))
+        }
+        priced, live_validation, validation_notes = validate_priced_candidates_live(
+            priced,
+            day,
+            paths["out_dir"],
+            chain_snapshot_dir=chain_snapshot_dir,
+            strike_count=chain_strike_count,
+            allow_live_fallback=True,
+            market_session_open=live_market_session_open,
+            reviewed_contract_keys=reviewed_contract_keys,
+        )
+        structure_attempts = build_structure_attempts(dated_priced, priced, live_validation)
+        contract_review_tasks = build_contract_review_tasks(priced)
+        dispatch_pricing_snapshot_status = "fresh_exact_contracts_repriced"
+        validation_notes.append(
+            f"pass 2 freshly repriced {len(reviewed_contract_keys)} exact subagent-reviewed contracts without changing legs"
+        )
+    elif dispatch_pricing_snapshot is not None:
         priced = dispatch_pricing_snapshot["priced_candidates"].copy()
         strategy_routing_audit = dispatch_pricing_snapshot["strategy_routing_audit"].copy()
         live_validation = dispatch_pricing_snapshot["live_chain_validation"].copy()
@@ -3135,6 +3320,7 @@ def build_agent_dispatch_plan(
             "Each subagent lane must return at least one review for every required_review_tickers item before "
             "adding optional broader-universe reviews."
         ),
+        "contract_review_policy": CONTRACT_AGENT_REVIEW_POLICY,
         "review_output_schema": {
             "ticker": "string ticker from the task list",
             "agent": "catalyst_news|macro_regime|structure_builder|skeptic|portfolio_management",
@@ -3142,6 +3328,7 @@ def build_agent_dispatch_plan(
             "confidence": "low|medium|high",
             "note": "concise evidence-backed reason",
             "objective_blocker": False,
+            "blocker_type": "required concrete defect code when objective_blocker=true; otherwise empty",
             "evidence": "optional source or observation",
             "contract_key": "exact key from contract_review_tasks.json when reviewing a priced contract",
             "contract_specific": "true only when the exact legs/expiry/quote were reviewed",
@@ -3191,7 +3378,7 @@ def build_agent_dispatch_plan(
                 "Call out missing legs, wide markets, and absent live validation.",
                 "Review every exact structure assigned in contract_review_tasks.json and copy its contract_key, "
                 "strategy_route, expiry, and trade_plan into a contract_specific=true review. Set an objective "
-                "blocker for invalid math, severe quote width, missing Greeks, excessive theta, or other exact-contract defects.",
+                "blocker only when the exact quantitative contract-review policy fails. Return supportive when it passes.",
             ],
         },
         {
@@ -3203,7 +3390,8 @@ def build_agent_dispatch_plan(
                 "Do not mark portfolio crowding as an objective blocker.",
                 "Review every exact structure assigned in contract_review_tasks.json and copy its contract_key, "
                 "strategy_route, expiry, and trade_plan into a contract_specific=true review. Try to disprove the "
-                "actual priced contract, including event crossings, probability, theta, quote quality, and evidence scope.",
+                "actual priced contract, including event crossings, probability, theta, quote quality, and evidence scope. "
+                "Return supportive when no concrete defect remains; do not manufacture a generic caution.",
             ],
         },
         {
@@ -3446,6 +3634,8 @@ def build_agentic_review_contract_coverage(
     agents_by_ticker: dict[str, set[str]] = {ticker: set() for ticker in required}
     if external_reviews is not None and not external_reviews.empty and {"ticker", "agent"}.issubset(external_reviews.columns):
         for _, review in external_reviews.iterrows():
+            if _truthy(review.get("contract_specific")):
+                continue
             ticker = _as_text(review.get("ticker")).upper()
             if ticker not in required_set:
                 continue
@@ -3490,7 +3680,10 @@ def _agent_dispatch_prompt(lane: Mapping[str, Any], common_context: Mapping[str,
             "In addition to ticker coverage, read contract_review_tasks.json and return one extra review for every "
             "assigned exact contract. Copy contract_key, strategy_route, expiry, and trade_plan exactly; set "
             "contract_specific=true only after reviewing those exact legs, quote, Greeks, event crossings, and sizing. "
-            "A generic ticker review does not satisfy contract review coverage.\n"
+            "A generic ticker review does not satisfy contract review coverage. Return supportive when an exact "
+            "contract passes the policy; caution is for a concrete non-blocking issue and avoid requires an objective "
+            "blocker with blocker_type.\n"
+            f"Exact contract review policy: {json.dumps(common_context.get('contract_review_policy', {}), sort_keys=True)}\n"
         )
     return (
         f"You are the Options Agent {lane.get('agent')} subagent for {common_context.get('as_of')}.\n"
@@ -3699,77 +3892,92 @@ def build_internal_agent_reviews(
             )
         )
 
-        if priced_row:
-            status = str(priced_row.get("recommendation_status") or "").strip().upper()
-            hard_rejects = str(priced_row.get("hard_rejects") or "").strip()
-            ticket = str(priced_row.get("full_ticket") or "").strip()
-            status_reason = str(priced_row.get("status_reason") or "").strip()
-            if hard_rejects:
-                structure_verdict = "avoid"
-                structure_note = f"objective structure blocker: {hard_rejects}"
-                objective_blocker = True
-                blocker_type = "execution"
-                confidence = "high"
-            elif not ticket:
-                structure_verdict = "caution"
-                structure_note = status_reason or "no executable ticket yet"
-                objective_blocker = False
-                blocker_type = ""
-                confidence = "high"
-            elif status == RecommendationStatus.WAIT_FOR_PRICE.value:
-                structure_verdict = "caution"
-                structure_note = status_reason or "entry price not ready"
-                objective_blocker = False
-                blocker_type = ""
-                confidence = "medium"
-            else:
-                structure_verdict = "supportive"
-                structure_note = status_reason or "structure has executable pricing"
-                objective_blocker = False
-                blocker_type = ""
-                confidence = "medium"
-            rows.append(
-                _agent_review_row(
-                    ticker,
-                    "structure",
-                    "structure",
-                    structure_verdict,
-                    confidence,
-                    structure_note,
-                    objective_blocker=objective_blocker,
-                    blocker_type=blocker_type,
-                    evidence=str(priced_row.get("full_ticket") or priced_row.get("invalidation") or ""),
-                    source_artifact="priced_candidates.csv",
-                    as_of=as_of,
-                )
+    reviewed_contracts: set[str] = set()
+    for priced_row in priced.to_dict("records"):
+        ticker = str(priced_row.get("ticker") or "").strip().upper()
+        row_contract_key = contract_review_key(priced_row)
+        if not ticker or not row_contract_key or row_contract_key in reviewed_contracts:
+            continue
+        reviewed_contracts.add(row_contract_key)
+        status = str(priced_row.get("recommendation_status") or "").strip().upper()
+        hard_rejects = str(priced_row.get("hard_rejects") or "").strip()
+        ticket = str(priced_row.get("trade_plan") or priced_row.get("full_ticket") or "").strip()
+        status_reason = str(priced_row.get("status_reason") or "").strip()
+        if hard_rejects:
+            structure_verdict = "avoid"
+            structure_note = f"objective structure blocker: {hard_rejects}"
+            objective_blocker = True
+            blocker_type = "execution"
+            confidence = "high"
+        elif not ticket:
+            structure_verdict = "caution"
+            structure_note = status_reason or "no executable ticket yet"
+            objective_blocker = False
+            blocker_type = ""
+            confidence = "high"
+        elif status == RecommendationStatus.WAIT_FOR_PRICE.value:
+            structure_verdict = "caution"
+            structure_note = status_reason or "entry price not ready"
+            objective_blocker = False
+            blocker_type = ""
+            confidence = "medium"
+        else:
+            structure_verdict = "supportive"
+            structure_note = status_reason or "structure has executable pricing"
+            objective_blocker = False
+            blocker_type = ""
+            confidence = "medium"
+        contract_fields = {
+            "contract_key": row_contract_key,
+            "contract_specific": True,
+            "strategy_route": str(priced_row.get("strategy_route") or "").strip(),
+            "expiry": str(priced_row.get("expiry") or "").strip(),
+            "trade_plan": ticket,
+        }
+        rows.append(
+            _agent_review_row(
+                ticker,
+                "structure",
+                "structure",
+                structure_verdict,
+                confidence,
+                structure_note,
+                objective_blocker=objective_blocker,
+                blocker_type=blocker_type,
+                evidence=str(priced_row.get("full_ticket") or priced_row.get("invalidation") or ""),
+                source_artifact="priced_candidates.csv",
+                as_of=as_of,
+                **contract_fields,
             )
+        )
 
-            skeptic_verdict = "supportive"
-            skeptic_note = "no objective blocker after structure review"
-            skeptic_objective = False
-            skeptic_blocker = ""
-            if hard_rejects:
-                skeptic_verdict = "avoid"
-                skeptic_note = f"objective blocker remains: {hard_rejects}"
-                skeptic_objective = True
-                skeptic_blocker = "thesis_or_execution"
-            elif status in {RecommendationStatus.REVIEW.value, RecommendationStatus.WAIT_FOR_PRICE.value}:
-                skeptic_verdict = "caution"
-                skeptic_note = status_reason or "requires human confirmation before entry"
-            rows.append(
-                _agent_review_row(
-                    ticker,
-                    "skeptic",
-                    "skeptic",
-                    skeptic_verdict,
-                    "medium",
-                    skeptic_note,
-                    objective_blocker=skeptic_objective,
-                    blocker_type=skeptic_blocker,
-                    source_artifact="priced_candidates.csv",
-                    as_of=as_of,
-                )
+        skeptic_verdict = "supportive"
+        skeptic_note = "no objective blocker after structure review"
+        skeptic_objective = False
+        skeptic_blocker = ""
+        if hard_rejects:
+            skeptic_verdict = "avoid"
+            skeptic_note = f"objective blocker remains: {hard_rejects}"
+            skeptic_objective = True
+            skeptic_blocker = "thesis_or_execution"
+        elif status in {RecommendationStatus.REVIEW.value, RecommendationStatus.WAIT_FOR_PRICE.value}:
+            skeptic_verdict = "caution"
+            skeptic_note = status_reason or "requires human confirmation before entry"
+        rows.append(
+            _agent_review_row(
+                ticker,
+                "skeptic",
+                "skeptic",
+                skeptic_verdict,
+                "medium",
+                skeptic_note,
+                objective_blocker=skeptic_objective,
+                blocker_type=skeptic_blocker,
+                source_artifact="priced_candidates.csv",
+                as_of=as_of,
+                **contract_fields,
             )
+        )
     return pd.DataFrame(rows, columns=AGENT_REVIEW_COLUMNS)
 
 
@@ -3860,12 +4068,10 @@ def apply_synthesis_ranking(
     _ = top_trades
     if final.empty:
         return final.copy()
-    review_summary = _review_summary_by_ticker(agent_review_board)
     rows: list[dict[str, Any]] = []
     for _, row in final.iterrows():
         out = row.to_dict()
-        ticker = str(out.get("ticker") or "").strip().upper()
-        summary = review_summary.get(ticker, {})
+        summary = _review_summary_for_row(agent_review_board, out)
         score, reason = _synthesis_score(out, summary, execution_context=execution_context)
         lesson_delta, lesson_reasons, lesson_rows = apply_synthesis_actions(
             out,
@@ -3932,9 +4138,10 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
             review
             for review in ticker_reviews
             if not _truthy(review.get("contract_specific"))
-            or (
-                row_contract_key
-                and _as_text(review.get("contract_key")) == row_contract_key
+            or _contract_review_applies_to_row(
+                review,
+                out,
+                row_contract_key=row_contract_key,
             )
         ]
         notes = [
@@ -3947,10 +4154,13 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
             for review in applicable_reviews
             if _is_external_or_subagent_agent_type(review.get("agent_type"))
         ]
+        generic_external_reviews = [
+            review for review in external_reviews if not _truthy(review.get("contract_specific"))
+        ]
         contract_reviews = [
             review
             for review in external_reviews
-            if _contract_review_matches_row(
+            if _contract_review_applies_to_row(
                 review,
                 out,
                 row_contract_key=row_contract_key,
@@ -3982,9 +4192,6 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
         contract_avoid_reviews = [
             review for review in contract_reviews if _as_text(review.get("verdict")).lower() == "avoid"
         ]
-        contract_caution_reviews = [
-            review for review in contract_reviews if _as_text(review.get("verdict")).lower() == "caution"
-        ]
         contract_review_required = bool(
             row_contract_key
             and _as_text(out.get("live_validation_status")).upper() == "PASS"
@@ -4011,16 +4218,13 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
             and not missing_contract_agents
             and not contract_objective_blockers
             and not contract_avoid_reviews
-            and not contract_caution_reviews
             else "BLOCK"
-            if contract_review_required and (missing_contract_agents or contract_objective_blockers or contract_avoid_reviews)
-            else "WARN"
             if contract_review_required
             else "NOT_REQUIRED"
         )
         external_notes = [
             f"{review.get('agent', 'external')}={review.get('verdict', '')}: {review.get('note', '')}".strip()
-            for review in external_reviews
+            for review in generic_external_reviews
             if str(review.get("note") or "").strip() or str(review.get("verdict") or "").strip()
             if not _is_portfolio_management_process_note(review)
             and not _is_portfolio_risk_review(review)
@@ -4028,11 +4232,11 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
         distinct_external_agents = sorted(
             {
                 str(review.get("agent") or "").strip()
-                for review in external_reviews
+                for review in generic_external_reviews
                 if str(review.get("agent") or "").strip()
             }
         )
-        out["external_agent_review_count"] = len(external_reviews)
+        out["external_agent_review_count"] = len(generic_external_reviews)
         out["external_agent_distinct_review_count"] = len(distinct_external_agents)
         out["external_agent_review_agents"] = "; ".join(distinct_external_agents)
         out["external_agent_review_note"] = "; ".join(_dedupe_notes(external_notes))
@@ -4592,6 +4796,167 @@ def _allowed_live_validation_tickers(priced: pd.DataFrame, *, enabled: bool) -> 
     return allowed, cap, len(tickers) - len(allowed)
 
 
+def _fresh_reprice_reviewed_contract(
+    row: Mapping[str, Any],
+    contracts: pd.DataFrame,
+    *,
+    spot: float,
+    asof_date: dt.date,
+    chain_source: str,
+) -> tuple[Optional[dict[str, Any]], str]:
+    """Reprice the exact reviewed legs without allowing pass 2 to choose replacements."""
+
+    from codexuw.schwab_live import find_credit_spread_alternatives, find_debit_spread_alternatives
+
+    reviewed_key = contract_review_key(row)
+    expiry = _row_date(row.get("expiry"))
+    if not reviewed_key or expiry is None:
+        return None, "reviewed contract identity or expiry is missing"
+    route = _as_text(row.get("strategy_route") or row.get("strategy")).lower()
+    if _strategy_family_from_ticket_row(row) == "short_put":
+        direction = "Short Put"
+        right = "P"
+        wanted_strikes = [_as_float(row.get("short_strike"))]
+    elif _route_prefers_long_option(row):
+        direction = _long_option_direction(row)
+        right = _direction_right(direction)
+        wanted_strikes = [_as_float(row.get("long_strike"))]
+    elif _route_prefers_debit_spread(row):
+        direction = _debit_direction(row)
+        right = _direction_right(direction)
+        wanted_strikes = [_as_float(row.get("long_strike")), _as_float(row.get("short_strike"))]
+    else:
+        direction = _credit_direction(row)
+        right = _direction_right(direction)
+        wanted_strikes = [_as_float(row.get("short_strike")), _as_float(row.get("long_strike"))]
+    wanted = [strike for strike in wanted_strikes if strike is not None and strike > 0]
+    expected_leg_count = 1 if direction in {"Short Put", "Long Call", "Long Put"} else 2
+    if len(wanted) != expected_leg_count:
+        return None, "reviewed contract strikes are incomplete"
+
+    strike_values = pd.to_numeric(contracts.get("strike", pd.Series(dtype=float)), errors="coerce")
+    expiry_values = contracts.get("expiry", pd.Series(dtype=object))
+    right_values = contracts.get("right", pd.Series(dtype=object)).astype(str)
+    strike_mask = pd.Series(False, index=contracts.index)
+    for strike in wanted:
+        strike_mask |= strike_values.sub(strike).abs().le(0.0001)
+    exact_chain = contracts[expiry_values.eq(expiry) & right_values.eq(right) & strike_mask].copy()
+    exact_strikes = {
+        round(float(value), 4)
+        for value in pd.to_numeric(exact_chain.get("strike", pd.Series(dtype=float)), errors="coerce").dropna()
+    }
+    if len(exact_strikes) != expected_leg_count:
+        return None, "fresh Schwab chain does not contain every reviewed leg"
+
+    if direction == "Short Put":
+        alternatives = _find_short_put_alternatives(
+            exact_chain,
+            expiry=expiry,
+            spot=spot,
+            expected_move_pct=_expected_move_pct_for_expiry(row, expiry, asof_date),
+            max_alternatives=2,
+        )
+        best = _select_live_short_put_alternative(row, alternatives)
+        if _as_text(best.get("live_status")).upper() != "PASS":
+            return None, _as_text(best.get("live_blocker") or best.get("live_status") or "exact short put failed fresh pricing")
+        updated = _apply_live_short_put(
+            row,
+            best,
+            expiry=expiry,
+            spot=spot,
+            asof_date=asof_date,
+            chain_source=chain_source,
+        )
+    elif direction in {"Long Call", "Long Put"}:
+        alternatives = _find_long_option_alternatives(
+            exact_chain,
+            direction=direction,
+            expiry=expiry,
+            spot=spot,
+            anchor_strike=wanted[0],
+            asof_date=asof_date,
+            max_alternatives=2,
+        )
+        best = _select_live_long_option_alternative(row, alternatives)
+        if _as_text(best.get("live_status")).upper() != "PASS":
+            return None, _as_text(best.get("live_blocker") or best.get("live_status") or "exact long option failed fresh pricing")
+        updated = _apply_live_long_option(
+            row,
+            best,
+            direction=direction,
+            expiry=expiry,
+            spot=spot,
+            asof_date=asof_date,
+            chain_source=chain_source,
+        )
+    elif route in {"bull_call_debit", "bear_put_debit"} or direction in {"Bull Call", "Bear Put"}:
+        alternatives = find_debit_spread_alternatives(
+            exact_chain,
+            direction=direction,
+            expiry=expiry,
+            spot=spot,
+            preferred_width=abs(wanted[1] - wanted[0]),
+            anchor_strike=_as_float(row.get("long_strike")),
+            expected_move_pct=_expected_move_pct_for_expiry(row, expiry, asof_date),
+            as_of_date=asof_date,
+            max_alternatives=4,
+        )
+        for alternative in alternatives:
+            alternative["selected_expiry"] = expiry.isoformat()
+            alternative["dte"] = (expiry - asof_date).days
+        best = _select_live_alternative(row, alternatives, entry_type="DEBIT")
+        if _as_text(best.get("live_status")).upper() != "PASS":
+            return None, _as_text(best.get("live_blocker") or best.get("live_status") or "exact debit spread failed fresh pricing")
+        updated = _apply_live_debit_spread(
+            row,
+            best,
+            direction=direction,
+            expiry=expiry,
+            spot=spot,
+            asof_date=asof_date,
+            chain_source=chain_source,
+        )
+    else:
+        alternatives = find_credit_spread_alternatives(
+            exact_chain,
+            direction=direction,
+            expiry=expiry,
+            spot=spot,
+            preferred_width=abs(wanted[1] - wanted[0]),
+            anchor_strike=_as_float(row.get("short_strike")),
+            expected_move_pct=_expected_move_pct_for_expiry(row, expiry, asof_date),
+            as_of_date=asof_date,
+            max_alternatives=4,
+        )
+        for alternative in alternatives:
+            alternative["selected_expiry"] = expiry.isoformat()
+            alternative["dte"] = (expiry - asof_date).days
+        best = _select_live_alternative(row, alternatives, entry_type="CREDIT")
+        if _as_text(best.get("live_status")).upper() != "PASS":
+            return None, _as_text(best.get("live_blocker") or best.get("live_status") or "exact credit spread failed fresh pricing")
+        updated = _apply_live_credit_spread(
+            row,
+            best,
+            direction=direction,
+            expiry=expiry,
+            spot=spot,
+            asof_date=asof_date,
+            chain_source=chain_source,
+        )
+
+    if contract_review_key(updated) != reviewed_key:
+        return None, "fresh exact-leg repricing changed the reviewed contract identity"
+    updated["live_validation_status"] = "PASS"
+    updated["live_validation_note"] = _append_reason(
+        updated.get("status_reason"),
+        "fresh Schwab quote retained the exact subagent-reviewed legs",
+    )
+    updated["live_chain_source"] = chain_source
+    updated["construction_source"] = "reviewed_contract_fresh_reprice"
+    updated["construction_reason"] = "fresh Schwab quote for the exact subagent-reviewed legs"
+    return updated, ""
+
+
 def validate_priced_candidates_live(
     priced: pd.DataFrame,
     as_of: str | dt.date,
@@ -4601,6 +4966,7 @@ def validate_priced_candidates_live(
     strike_count: int = 80,
     allow_live_fallback: bool = True,
     market_session_open: Optional[bool] = None,
+    reviewed_contract_keys: Optional[set[str]] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
     """Replace dated pricing with live/snapshot Schwab chain alternatives when available."""
 
@@ -4635,6 +5001,11 @@ def validate_priced_candidates_live(
     rows: list[dict[str, Any]] = []
     audit: list[dict[str, Any]] = []
     notes: list[str] = []
+    reviewed_keys = {
+        _as_text(value)
+        for value in (reviewed_contract_keys or set())
+        if _as_text(value)
+    }
     if live_ticker_cap_enabled and deferred_ticker_count > 0:
         notes.append(
             f"live Schwab chain validation limited to top {live_ticker_cap} tickers; "
@@ -4661,9 +5032,11 @@ def validate_priced_candidates_live(
             continue
 
         preferred_expiry = _row_date(current.get("expiry")) or _row_date(current.get("anchor_expiry"))
-        preferred_query_expiry = preferred_expiry if _live_expiry_in_range(asof_date, preferred_expiry) else None
-        query_from = preferred_query_expiry or (asof_date + dt.timedelta(days=MIN_LIVE_DTE))
-        query_to = preferred_query_expiry or (asof_date + dt.timedelta(days=MAX_LIVE_DTE))
+        # The validator caches one chain per ticker, so every first request must expose the
+        # full trade window. Otherwise a short-DTE anchor hides safer expiries from every
+        # later route for the same underlying.
+        query_from = asof_date + dt.timedelta(days=MIN_LIVE_DTE)
+        query_to = asof_date + dt.timedelta(days=MAX_LIVE_DTE)
         chain = validator.get_chain(ticker, query_from, query_to)
         if not chain:
             message = validator.errors.get(ticker, "no live chain returned")
@@ -4698,6 +5071,32 @@ def validate_priced_candidates_live(
             current["status_reason"] = _append_reason(current.get("status_reason"), message)
             rows.append(current)
             audit.append(_live_audit_row(current, "NO_USABLE_CHAIN", message, validator.sources.get(ticker, "")))
+            continue
+
+        current_contract_key = contract_review_key(current)
+        if current_contract_key and current_contract_key in reviewed_keys:
+            chain_source = validator.sources.get(ticker, "")
+            updated, exact_error = _fresh_reprice_reviewed_contract(
+                current,
+                contracts,
+                spot=spot,
+                asof_date=asof_date,
+                chain_source=chain_source,
+            )
+            if updated is None:
+                message = _append_reason(
+                    "fresh exact-contract repricing failed",
+                    exact_error or "reviewed legs are unavailable",
+                )
+                current["live_validation_status"] = "EXACT_CONTRACT_REPRICE_FAILED"
+                current["live_validation_note"] = message
+                current["recommendation_status"] = _preserve_non_entry_status(current)
+                current["status_reason"] = _append_reason(current.get("status_reason"), message)
+                rows.append(current)
+                audit.append(_live_audit_row(current, "EXACT_CONTRACT_REPRICE_FAILED", message, chain_source))
+                continue
+            rows.append(updated)
+            audit.append(_live_audit_row(updated, "PASS", updated["live_validation_note"], chain_source))
             continue
 
         if _strategy_family_from_ticket_row(current) == "short_put":
@@ -4756,8 +5155,13 @@ def validate_priced_candidates_live(
 
         if _route_prefers_long_option(current):
             long_direction = _long_option_direction(current)
-            long_expiry = _select_live_expiry(contracts, asof_date, preferred_expiry, long_direction)
-            if long_expiry is None:
+            long_expiries = _live_expiry_candidates(
+                contracts,
+                asof_date,
+                preferred_expiry,
+                long_direction,
+            )
+            if not long_expiries:
                 message = "no suitable Schwab-chain expiry for long-option construction"
                 if market_closed_live_recheck and _has_complete_target_math(current):
                     updated = _preserve_market_closed_target_recheck(current, message)
@@ -4771,15 +5175,20 @@ def validate_priced_candidates_live(
                 rows.append(current)
                 audit.append(_live_audit_row(current, "NO_LIVE_EXPIRY", message, validator.sources.get(ticker, "")))
                 continue
-            long_alternatives = _find_long_option_alternatives(
-                contracts,
-                direction=long_direction,
-                expiry=long_expiry,
-                spot=spot,
-                anchor_strike=_as_float(current.get("anchor_strike")),
-                asof_date=asof_date,
-                max_alternatives=8,
-            )
+            long_alternatives: list[dict[str, Any]] = []
+            for candidate_expiry in long_expiries:
+                expiry_alternatives = _find_long_option_alternatives(
+                    contracts,
+                    direction=long_direction,
+                    expiry=candidate_expiry,
+                    spot=spot,
+                    anchor_strike=_as_float(current.get("anchor_strike")),
+                    asof_date=asof_date,
+                    max_alternatives=8,
+                )
+                for alternative in expiry_alternatives:
+                    alternative["selected_expiry"] = candidate_expiry.isoformat()
+                long_alternatives.extend(expiry_alternatives)
             long_best = _select_live_long_option_alternative(current, long_alternatives)
             if long_best.get("live_status") != "PASS":
                 message = str(long_best.get("live_blocker") or long_best.get("live_status") or "live chain did not produce a valid long option")
@@ -4794,6 +5203,16 @@ def validate_priced_candidates_live(
                 current["status_reason"] = _append_reason(current.get("status_reason"), message)
                 rows.append(current)
                 audit.append(_live_audit_row(current, current["live_validation_status"], message, validator.sources.get(ticker, "")))
+                continue
+            long_expiry = _row_date(long_best.get("selected_expiry"))
+            if long_expiry is None:
+                message = "selected long-option alternative did not retain its expiry"
+                current["live_validation_status"] = "NO_LIVE_EXPIRY"
+                current["live_validation_note"] = message
+                current["recommendation_status"] = _preserve_non_entry_status(current)
+                current["status_reason"] = _append_reason(current.get("status_reason"), message)
+                rows.append(current)
+                audit.append(_live_audit_row(current, "NO_LIVE_EXPIRY", message, validator.sources.get(ticker, "")))
                 continue
             chain_source = validator.sources.get(ticker, "")
             updated = _apply_live_long_option(
@@ -4816,8 +5235,13 @@ def validate_priced_candidates_live(
 
         if _route_prefers_debit_spread(current):
             debit_direction = _debit_direction(current)
-            debit_expiry = _select_live_expiry(contracts, asof_date, preferred_expiry, debit_direction)
-            if debit_expiry is None:
+            debit_expiries = _live_expiry_candidates(
+                contracts,
+                asof_date,
+                preferred_expiry,
+                debit_direction,
+            )
+            if not debit_expiries:
                 message = "no suitable Schwab-chain expiry for debit-spread construction"
                 if market_closed_live_recheck and _has_complete_target_math(current):
                     updated = _preserve_market_closed_target_recheck(current, message)
@@ -4831,17 +5255,23 @@ def validate_priced_candidates_live(
                 rows.append(current)
                 audit.append(_live_audit_row(current, "NO_LIVE_EXPIRY", message, validator.sources.get(ticker, "")))
                 continue
-            debit_alternatives = find_debit_spread_alternatives(
-                contracts,
-                direction=debit_direction,
-                expiry=debit_expiry,
-                spot=spot,
-                preferred_width=_preferred_width(current),
-                anchor_strike=_as_float(current.get("anchor_strike")),
-                expected_move_pct=_expected_move_pct_for_expiry(current, debit_expiry, asof_date),
-                as_of_date=asof_date,
-                max_alternatives=8,
-            )
+            debit_alternatives: list[dict[str, Any]] = []
+            for candidate_expiry in debit_expiries:
+                expiry_alternatives = find_debit_spread_alternatives(
+                    contracts,
+                    direction=debit_direction,
+                    expiry=candidate_expiry,
+                    spot=spot,
+                    preferred_width=_preferred_width(current),
+                    anchor_strike=_as_float(current.get("anchor_strike")),
+                    expected_move_pct=_expected_move_pct_for_expiry(current, candidate_expiry, asof_date),
+                    as_of_date=asof_date,
+                    max_alternatives=8,
+                )
+                for alternative in expiry_alternatives:
+                    alternative["selected_expiry"] = candidate_expiry.isoformat()
+                    alternative["dte"] = (candidate_expiry - asof_date).days
+                debit_alternatives.extend(expiry_alternatives)
             debit_best = (
                 _select_live_alternative(current, debit_alternatives, entry_type="DEBIT")
                 if debit_alternatives
@@ -4860,6 +5290,16 @@ def validate_priced_candidates_live(
                 current["status_reason"] = _append_reason(current.get("status_reason"), message)
                 rows.append(current)
                 audit.append(_live_audit_row(current, current["live_validation_status"], message, validator.sources.get(ticker, "")))
+                continue
+            debit_expiry = _row_date(debit_best.get("selected_expiry"))
+            if debit_expiry is None:
+                message = "selected debit-spread alternative did not retain its expiry"
+                current["live_validation_status"] = "NO_LIVE_EXPIRY"
+                current["live_validation_note"] = message
+                current["recommendation_status"] = _preserve_non_entry_status(current)
+                current["status_reason"] = _append_reason(current.get("status_reason"), message)
+                rows.append(current)
+                audit.append(_live_audit_row(current, "NO_LIVE_EXPIRY", message, validator.sources.get(ticker, "")))
                 continue
             chain_source = validator.sources.get(ticker, "")
             updated = _apply_live_debit_spread(
@@ -6369,7 +6809,7 @@ def _live_debit_contract_quality_rejects(live: Mapping[str, Any], *, dte: int) -
     rejects: list[str] = []
     quote_width = _as_float(live.get("quote_width_pct"))
     if (
-        dte <= SHORT_DTE_CONTRACT_RISK_DAYS
+        0 < dte <= SHORT_DTE_CONTRACT_RISK_DAYS
         and quote_width is not None
         and quote_width > MAX_SHORT_DTE_LIVE_QUOTE_WIDTH_PCT
     ):
@@ -6381,7 +6821,7 @@ def _live_debit_contract_quality_rejects(live: Mapping[str, Any], *, dte: int) -
         rejects.append(f"debit_long_delta_below_{int(MIN_SEVERE_DEBIT_LONG_DELTA * 100)}pct")
     theta_burn = _as_float(live.get("theta_burn_pct"))
     if (
-        dte <= SHORT_DTE_CONTRACT_RISK_DAYS
+        0 < dte <= SHORT_DTE_CONTRACT_RISK_DAYS
         and theta_burn is not None
         and theta_burn > MAX_SHORT_DTE_THETA_BURN_PCT
     ):
@@ -6425,6 +6865,12 @@ def _live_alternative_quality_rejects(
             signal_premium=signal_premium,
             combined_flow_bias=combined_flow_bias,
             macro_tape_candidate=macro_tape_candidate,
+        )
+        rejects.extend(
+            _live_debit_contract_quality_rejects(
+                live,
+                dte=int(_as_float(live.get("dte")) or 0),
+            )
         )
     rejects.extend(_live_spread_quality_rejects(live))
     return rejects
@@ -6481,10 +6927,38 @@ def _select_live_alternative(
         if entry_type == "CREDIT":
             width = _as_float(alt.get("spread_width")) or 0.0
             entry_quality = ((_as_float(alt.get("credit")) or 0.0) / width) if width > 0 else 0.0
+            green_probability = 0.0
+            delta_fit = 0.0
+            theta_score = 0.0
+            breakeven_score = 0.0
+            dte_score = 0.0
         else:
             entry_quality = _as_float(alt.get("reward_risk")) or 0.0
+            probability = abs(_as_float(alt.get("long_delta")) or 0.0)
+            green_probability = 1.0 if probability >= MIN_DEBIT_LONG_DELTA_FOR_GREEN else 0.0
+            delta_fit = -abs(probability - 0.55) if probability > 0 else -1.0
+            theta_burn = _as_float(alt.get("theta_burn_pct"))
+            theta_score = -(theta_burn if theta_burn is not None else 1.0)
+            breakeven_ratio = _as_float(alt.get("breakeven_expected_move_ratio"))
+            breakeven_score = -(breakeven_ratio if breakeven_ratio is not None else 9.0)
+            dte = int(_as_float(alt.get("dte")) or 0)
+            dte_score = -abs(dte - 35) if dte > 0 else -100.0
         rank = _as_float(alt.get("_rank")) or 0.0
-        return (quality_pass, send_now, target_met, reject_penalty, entry_quality, min(liq, 10_000.0), quote_score, rank)
+        return (
+            quality_pass,
+            send_now,
+            target_met,
+            green_probability,
+            delta_fit,
+            theta_score,
+            breakeven_score,
+            reject_penalty,
+            entry_quality,
+            min(liq, 10_000.0),
+            quote_score,
+            dte_score,
+            rank,
+        )
 
     return max(valid, key=score)
 
@@ -7277,7 +7751,7 @@ def annotate_actual_forward_expectancy(
         elif strategy_metrics is None:
             family_metrics = metrics_by_family.get(family)
             route_metrics = metrics_by_route.get(route)
-            if _route_level_strategy_fallback_allowed(route, route_metrics, metrics) or _negative_route_strategy_metrics_available(route, route_metrics):
+            if _route_level_strategy_fallback_allowed(route, route_metrics, None) or _negative_route_strategy_metrics_available(route, route_metrics):
                 set_strategy_metrics(
                     idx,
                     route_metrics,
@@ -10963,6 +11437,46 @@ def _calibration_metrics_row(pnl_values: pd.Series, *, status_func: Any) -> dict
     return metrics
 
 
+def _hierarchical_route_calibration_ready(
+    *,
+    actual_scope: str,
+    actual_metrics: Mapping[str, Any],
+    replay_metrics: Mapping[str, Any],
+    route_replay_metrics: Mapping[str, Any],
+) -> bool:
+    """Allow one-lot green calibration from deep route evidence when exact buckets are sparse."""
+
+    if actual_scope not in {"actual_ticker_route", "actual_route"}:
+        return False
+    if _as_text(actual_metrics.get("status")).upper() != "PASS":
+        return False
+    if _as_text(route_replay_metrics.get("status")).upper() != "PASS":
+        return False
+    if int(actual_metrics.get("sample_size") or 0) < MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE:
+        return False
+    if int(route_replay_metrics.get("sample_size") or 0) < MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE:
+        return False
+    exact_replay_sample = int(replay_metrics.get("sample_size") or 0)
+    exact_replay_status = _as_text(replay_metrics.get("status")).upper()
+    if exact_replay_sample >= MIN_EXPECTANCY_SAMPLE_SIZE and exact_replay_status != "PASS":
+        return False
+    if _metrics_are_negative(replay_metrics, min_sample=MIN_EXPECTANCY_SAMPLE_SIZE):
+        return False
+    for metrics in (actual_metrics, route_replay_metrics):
+        avg_pnl = _as_float(metrics.get("avg_pnl"))
+        profit_factor = _as_float(metrics.get("profit_factor"))
+        win_rate = _as_float(metrics.get("win_rate"))
+        if avg_pnl is None or avg_pnl <= 0:
+            return False
+        if profit_factor is None or (
+            math.isfinite(profit_factor) and profit_factor < MIN_EXPECTANCY_PROFIT_FACTOR
+        ):
+            return False
+        if win_rate is None or win_rate < MIN_EXPECTANCY_SKEW_WIN_RATE:
+            return False
+    return True
+
+
 def _current_calibration_verdict(
     *,
     ticker: str,
@@ -10987,6 +11501,23 @@ def _current_calibration_verdict(
             "PASS",
             "eligible_for_green_if_all_execution_gates_pass",
             f"{ticker} {key_text} has PASS actual support via {actual_scope} and PASS replay bucket support.",
+        )
+    if _hierarchical_route_calibration_ready(
+        actual_scope=actual_scope,
+        actual_metrics=actual_metrics,
+        replay_metrics=replay_metrics,
+        route_replay_metrics=route_replay_metrics,
+    ):
+        return (
+            "PASS",
+            "eligible_for_one_lot_green_with_hierarchical_route_support",
+            (
+                f"{ticker} {key_text} has PASS route-level actual support via {actual_scope} "
+                f"(sample={actual_sample}, profit_factor={actual_metrics.get('profit_factor', '')}) and PASS "
+                f"leakage-safe route replay (sample={route_replay_sample}, "
+                f"profit_factor={route_replay_metrics.get('profit_factor', '')}). Exact buckets remain sparse, "
+                "so green eligibility is capped at one contract until bucket-precise evidence matures."
+            ),
         )
     if (
         actual_status == "PASS"
@@ -11083,7 +11614,11 @@ def synthesize_decision_board(
         "actual_forward_expectancy_note",
         "actual_forward_strategy_expectancy_status",
         "actual_forward_strategy_expectancy_sample_size",
+        "actual_forward_strategy_expectancy_win_rate",
+        "actual_forward_strategy_expectancy_avg_pnl",
+        "actual_forward_strategy_expectancy_profit_factor",
         "actual_forward_strategy_expectancy_family",
+        "actual_forward_strategy_expectancy_scope",
         "actual_forward_strategy_expectancy_note",
         "profitability_calibration_status",
         "profitability_calibration_scope",
@@ -11317,7 +11852,11 @@ def synthesize_decision_board(
                 "actual_forward_expectancy_note": row.get("actual_forward_expectancy_note", ""),
                 "actual_forward_strategy_expectancy_status": row.get("actual_forward_strategy_expectancy_status", ""),
                 "actual_forward_strategy_expectancy_sample_size": row.get("actual_forward_strategy_expectancy_sample_size", ""),
+                "actual_forward_strategy_expectancy_win_rate": row.get("actual_forward_strategy_expectancy_win_rate", ""),
+                "actual_forward_strategy_expectancy_avg_pnl": row.get("actual_forward_strategy_expectancy_avg_pnl", ""),
+                "actual_forward_strategy_expectancy_profit_factor": row.get("actual_forward_strategy_expectancy_profit_factor", ""),
                 "actual_forward_strategy_expectancy_family": row.get("actual_forward_strategy_expectancy_family", ""),
+                "actual_forward_strategy_expectancy_scope": row.get("actual_forward_strategy_expectancy_scope", ""),
                 "actual_forward_strategy_expectancy_note": row.get("actual_forward_strategy_expectancy_note", ""),
                 "profitability_calibration_status": row.get("profitability_calibration_status", ""),
                 "profitability_calibration_scope": row.get("profitability_calibration_scope", ""),
@@ -11433,7 +11972,11 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "actual_forward_expectancy_note",
         "actual_forward_strategy_expectancy_status",
         "actual_forward_strategy_expectancy_sample_size",
+        "actual_forward_strategy_expectancy_win_rate",
+        "actual_forward_strategy_expectancy_avg_pnl",
+        "actual_forward_strategy_expectancy_profit_factor",
         "actual_forward_strategy_expectancy_family",
+        "actual_forward_strategy_expectancy_scope",
         "actual_forward_strategy_expectancy_note",
         "profitability_calibration_status",
         "profitability_calibration_scope",
@@ -11535,7 +12078,11 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "actual_forward_expectancy_note",
         "actual_forward_strategy_expectancy_status",
         "actual_forward_strategy_expectancy_sample_size",
+        "actual_forward_strategy_expectancy_win_rate",
+        "actual_forward_strategy_expectancy_avg_pnl",
+        "actual_forward_strategy_expectancy_profit_factor",
         "actual_forward_strategy_expectancy_family",
+        "actual_forward_strategy_expectancy_scope",
         "actual_forward_strategy_expectancy_note",
         "external_agent_review_count",
         "external_agent_distinct_review_count",
@@ -12024,6 +12571,8 @@ def _order_readiness_sort_series(frame: pd.DataFrame) -> pd.Series:
         "target_order_after_portfolio_and_live_recheck": 3,
         "target_order_after_agentic_review": 2,
         "target_order_after_agentic_review_and_live_recheck": 2,
+        "target_order_after_exact_contract_review": 1,
+        "target_order_after_exact_contract_block": 1,
         "target_order_after_profitability_calibration": 1,
         "target_order_after_expectancy_evidence": 1,
     }
@@ -12091,6 +12640,10 @@ def _ticket_order_readiness(row: Mapping[str, Any]) -> str:
     target_status = str(row.get("target_order_status") or "").strip().lower()
     blockers = _blocker_set(row.get("execution_blockers"))
     if target_status in {"target_order_candidate", "target_order_wait_for_price"}:
+        if _as_text(row.get("contract_review_status")).upper() == "BLOCK":
+            if _as_text(row.get("contract_review_missing_agents")):
+                return "target_order_after_exact_contract_review"
+            return "target_order_after_exact_contract_block"
         if blockers == {GOAL_CONFIDENCE_GATE_BLOCKER}:
             return "target_order_after_goal_confidence"
         if blockers in ({"market_session_open_required"}, {"regular_session_quote_refresh_required"}):
@@ -12172,6 +12725,10 @@ def _ticket_action(row: Mapping[str, Any]) -> str:
         return "manual_confidence_review"
     if readiness in {"target_order_after_agentic_review", "target_order_after_agentic_review_and_live_recheck"}:
         return "complete_agentic_reviews_then_price_validation"
+    if readiness == "target_order_after_exact_contract_review":
+        return "watch_only_until_exact_contract_review"
+    if readiness == "target_order_after_exact_contract_block":
+        return "watch_only_exact_contract_blocked"
     if readiness in {"target_order_after_portfolio_sizing", "target_order_after_portfolio_and_live_recheck"}:
         return "load_portfolio_then_price_validation"
     if readiness == "target_order_after_market_open_and_live_recheck":
@@ -13180,6 +13737,12 @@ def _execution_confidence(
     strategy_expectancy_sample = int(_as_float(row.get("actual_forward_strategy_expectancy_sample_size")) or 0)
     ticker_expectancy_negative = _expectancy_values_are_negative(row, "actual_forward_expectancy")
     strategy_expectancy_negative = _expectancy_values_are_negative(row, "actual_forward_strategy_expectancy")
+    calibration_status = _as_text(row.get("profitability_calibration_status")).upper()
+    deep_hierarchical_route_support = bool(
+        strategy_expectancy_status == "PASS"
+        and strategy_expectancy_sample >= MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE
+        and calibration_status == "PASS"
+    )
     if expectancy_status == "PASS":
         score += 10 if expectancy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE else 5
         quality_score += 12 if expectancy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE else 5
@@ -13191,11 +13754,16 @@ def _execution_confidence(
             score -= 5
             quality_score -= 8
     elif expectancy_status == "BLOCK" and expectancy_sample <= 0:
-        score -= 15
-        quality_score -= 20
+        if not deep_hierarchical_route_support:
+            score -= 15
+            quality_score -= 20
     if strategy_expectancy_status == "PASS":
-        score += 5 if strategy_expectancy_sample >= 5 else 2
-        quality_score += 8 if strategy_expectancy_sample >= 5 else 4
+        if deep_hierarchical_route_support:
+            score += 10
+            quality_score += 12
+        else:
+            score += 5 if strategy_expectancy_sample >= 5 else 2
+            quality_score += 8 if strategy_expectancy_sample >= 5 else 4
     elif strategy_expectancy_status == "WARN":
         if strategy_expectancy_negative:
             score -= 12
@@ -13209,7 +13777,6 @@ def _execution_confidence(
     if not _positive_strategy_expectancy_ready_for_green(row):
         score -= 15
         quality_score -= 20
-    calibration_status = _as_text(row.get("profitability_calibration_status")).upper()
     if calibration_status == "PASS":
         score += 15
         quality_score += 15
@@ -19694,12 +20261,6 @@ def render_report(
         f"- Green send-now tickets: `{green_tickets_path}`" if green_tickets_path else "- Green send-now tickets: `green_trade_tickets.csv`",
         f"- Yellow target candidates: `{target_tickets_path}`" if target_tickets_path else "- Yellow target candidates: `target_order_candidates.csv`",
         f"- Confidence audit: `{confidence_audit_path}`" if confidence_audit_path else "- Confidence audit: `confidence_audit.csv`",
-        f"- Goal confidence gap audit: `{goal_gap_audit_path}`"
-        if goal_gap_audit_path
-        else "- Goal confidence gap audit: `goal_confidence_gap_audit.csv`",
-        f"- Promotion readiness audit: `{promotion_readiness_path}`"
-        if promotion_readiness_path
-        else "- Promotion readiness audit: `promotion_readiness_audit.csv`",
         f"- Outcome evidence audit: `{outcome_audit_path}`" if outcome_audit_path else "- Outcome evidence audit: `outcome_evidence_audit.csv`",
         f"- Broker outcome match audit: `{broker_match_path}`"
         if broker_match_path
@@ -19734,7 +20295,6 @@ def render_report(
     verbose_snapshot_lines = lines
     output_start = verbose_snapshot_lines.index("## Output Files")
     output_file_lines = verbose_snapshot_lines[output_start:]
-    promotion_readiness_lines = _render_promotion_readiness_summary(promotion_readiness_summary, promotion_readiness_path)
     lines = [
         f"# Options Agent Report - {day}",
         "",
@@ -19765,7 +20325,6 @@ def render_report(
     lines.extend(_render_review_queue(final, confidence_summary=confidence_summary))
     lines.extend(_render_coverage_audit(coverage_audit))
     lines.extend(output_file_lines)
-    lines.extend(promotion_readiness_lines)
     lines.extend(
         [
             "## Run Diagnostics",
@@ -19779,9 +20338,6 @@ def render_report(
             f"non-green gates: {execution_summary.get('blocking_gates', [])}",
             f"- Research/backtest profitability evidence: {profitability_rating}/10; "
             f"order-entry confidence: {order_entry_rating}/10; mechanics confidence: {order_mechanics_rating}/10",
-            f"- Goal confidence gap audit: {goal_gap_summary.get('status', 'unknown')} "
-            f"({goal_gap_summary.get('blocking_area_count', 0)} blocking areas: "
-            f"{goal_gap_summary.get('blocking_areas', [])})",
             f"- Live quote mode: {live_mode}; live validation rows: {row_counts.get('live_chain_validation', 0)}",
             (
                 "- Live spread quality audit: "
@@ -20009,7 +20565,8 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
         )
     else:
         lines.append(
-            "These are planning targets. Use the shown desired credit/debit as the starting limit, then refresh the Schwab quote before sending."
+            "These are not send-now orders. Use a target limit only when Action Check calls for a price recheck; "
+            "rows with exact-review, event, probability, or economics blocks are watch-only until that issue clears."
         )
     lines.append("")
     lines.extend(_render_ticket_rows(target))
@@ -20030,7 +20587,7 @@ def _target_rows_require_watch_only_from_tickets(target: pd.DataFrame) -> bool:
     watch_gate_rows = 0
     for _, row in target.iterrows():
         blockers = _blocker_set(row.get("execution_blockers"))
-        if blockers & {
+        if _as_text(row.get("contract_review_status")).upper() == "BLOCK" or blockers & {
             POSITION_PROFIT_MATERIALITY_BLOCKER,
             POSITIVE_STRATEGY_EXPECTANCY_BLOCKER,
             PROFITABILITY_CALIBRATION_BLOCKER,
@@ -20132,6 +20689,18 @@ def _ticket_confidence(row: Mapping[str, Any]) -> str:
 
 def _ticket_contract_risk_summary(row: Mapping[str, Any]) -> str:
     parts: list[str] = []
+    route_pf = _as_float(row.get("actual_forward_strategy_expectancy_profit_factor"))
+    route_sample = int(_as_float(row.get("actual_forward_strategy_expectancy_sample_size")) or 0)
+    route_win_rate = _as_float(row.get("actual_forward_strategy_expectancy_win_rate"))
+    route_avg_pnl = _as_float(row.get("actual_forward_strategy_expectancy_avg_pnl"))
+    if route_pf is not None and route_sample > 0:
+        pf_text = "inf" if math.isinf(route_pf) else f"{route_pf:.2f}"
+        evidence_parts = [f"route PF {pf_text}", f"n={route_sample}"]
+        if route_win_rate is not None:
+            evidence_parts.append(f"win {route_win_rate:.0%}")
+        if route_avg_pnl is not None:
+            evidence_parts.append(f"avg P/L ${route_avg_pnl:.2f}")
+        parts.append(" / ".join(evidence_parts))
     probability = _as_float(row.get("live_probability_proxy"))
     if probability is not None:
         parts.append(f"delta proxy {probability:.0%}")
@@ -20160,6 +20729,19 @@ def _ticket_contract_risk_summary(row: Mapping[str, Any]) -> str:
 def _ticket_recheck_summary(row: Mapping[str, Any]) -> str:
     if _truthy(row.get("ready_to_enter")):
         return "green ready; verify live quote before manual send"
+    if _as_text(row.get("contract_review_status")).upper() == "BLOCK":
+        missing_agents = _as_text(row.get("contract_review_missing_agents"))
+        if missing_agents:
+            return f"watch-only; exact contract review missing ({missing_agents})"
+        return "watch-only; exact contract review blocked"
+    if _truthy(row.get("earnings_before_expiry")):
+        exit_deadline = _as_text(row.get("event_exit_deadline")) or "the prior regular session"
+        return f"conditional pre-earnings target; exit by {exit_deadline}; do not carry through earnings"
+    dte = int(_as_float(row.get("dte")) or 0)
+    if dte <= SHORT_DTE_CONTRACT_RISK_DAYS and int(
+        _as_float(row.get("macro_event_count_before_expiry")) or 0
+    ) > 0:
+        return "watch-only; high-impact macro event occurs before expiry"
     labels = {
         "portfolio_context_required": "portfolio refresh",
         "fresh_live_schwab_required": "fresh Schwab chain",
@@ -21282,6 +21864,39 @@ def _review_summary_by_ticker(agent_review_board: pd.DataFrame) -> dict[str, dic
     return summary
 
 
+def _review_summary_for_row(
+    agent_review_board: pd.DataFrame,
+    row: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Summarize ticker-wide reviews plus exact reviews for this contract only."""
+
+    if agent_review_board.empty or "ticker" not in agent_review_board.columns:
+        return {}
+    ticker = _as_text(row.get("ticker")).upper()
+    if not ticker:
+        return {}
+    ticker_reviews = agent_review_board[
+        agent_review_board["ticker"].astype(str).str.upper().eq(ticker)
+    ]
+    if ticker_reviews.empty:
+        return {}
+    row_contract_key = contract_review_key(row)
+    applicable = ticker_reviews[
+        ticker_reviews.apply(
+            lambda review: not _truthy(review.get("contract_specific"))
+            or _contract_review_applies_to_row(
+                review.to_dict(),
+                row,
+                row_contract_key=row_contract_key,
+            ),
+            axis=1,
+        )
+    ]
+    if applicable.empty:
+        return {}
+    return _review_summary_by_ticker(applicable).get(ticker, {})
+
+
 def _synthesis_score(
     row: Mapping[str, Any],
     review_summary: Mapping[str, Any],
@@ -21438,12 +22053,19 @@ def _agent_review_row(
     evidence: str = "",
     source_artifact: str = "",
     as_of: str = "",
+    contract_key: str = "",
+    contract_specific: bool = False,
+    strategy_route: str = "",
+    expiry: str = "",
+    trade_plan: str = "",
 ) -> dict[str, Any]:
     ticker_text = str(ticker or "").strip().upper()
     agent_text = str(agent or "external").strip() or "external"
     stage_text = str(review_stage or agent_text).strip()
     return {
-        "candidate_id": f"{ticker_text}:{agent_text}:{stage_text}",
+        "candidate_id": ":".join(
+            part for part in (ticker_text, agent_text, stage_text, str(contract_key or "").strip()) if part
+        ),
         "ticker": ticker_text,
         "agent": agent_text,
         "agent_type": str(agent_type or "built_in").strip(),
@@ -21457,11 +22079,11 @@ def _agent_review_row(
         "evidence": str(evidence or "").strip(),
         "source_artifact": str(source_artifact or "").strip(),
         "as_of": str(as_of or "").strip(),
-        "contract_key": "",
-        "contract_specific": False,
-        "strategy_route": "",
-        "expiry": "",
-        "trade_plan": "",
+        "contract_key": str(contract_key or "").strip(),
+        "contract_specific": bool(contract_specific),
+        "strategy_route": str(strategy_route or "").strip(),
+        "expiry": str(expiry or "").strip(),
+        "trade_plan": str(trade_plan or "").strip(),
     }
 
 
@@ -21652,6 +22274,34 @@ def _select_live_expiry(
     if candidates:
         return min(candidates, key=lambda expiry: abs((expiry - asof_date).days - 35))
     return None
+
+
+def _live_expiry_candidates(
+    contracts: pd.DataFrame,
+    asof_date: dt.date,
+    preferred_expiry: Optional[dt.date],
+    direction: str,
+) -> list[dt.date]:
+    """Return every eligible expiry, ordered around the 35-DTE quality target."""
+
+    if contracts.empty:
+        return []
+    right = _direction_right(direction)
+    candidates = sorted(
+        {
+            expiry
+            for expiry in contracts.loc[contracts["right"].astype(str).eq(right), "expiry"].dropna().tolist()
+            if isinstance(expiry, dt.date) and _live_expiry_in_range(asof_date, expiry)
+        }
+    )
+    return sorted(
+        candidates,
+        key=lambda expiry: (
+            abs((expiry - asof_date).days - 35),
+            0 if expiry == preferred_expiry else 1,
+            expiry,
+        ),
+    )
 
 
 def _find_short_put_alternatives(
@@ -21883,7 +22533,7 @@ def _select_live_long_option_alternative(
 
     def score(alt: Mapping[str, Any]) -> tuple[float, ...]:
         if _as_text(alt.get("live_status")).upper() != "PASS":
-            return (-10.0, 0.0, 0.0, 0.0, 0.0)
+            return (-10.0,) + (0.0,) * 10
         debit = _as_float(alt.get("debit")) or 0.0
         rejects = _long_option_quality_rejects(
             entry_debit=debit,
@@ -21894,13 +22544,34 @@ def _select_live_long_option_alternative(
         )
         rejects.extend(_live_long_option_quality_rejects(alt))
         quality_pass = 1.0 if not rejects else 0.0
+        probability = abs(_as_float(alt.get("long_delta")) or 0.0)
+        green_probability = 1.0 if probability >= MIN_DEBIT_LONG_DELTA_FOR_GREEN else 0.0
+        delta_fit = -abs(probability - 0.55) if probability > 0 else -1.0
+        theta_burn = _as_float(alt.get("theta_burn_pct"))
+        theta_score = -(theta_burn if theta_burn is not None else 1.0)
+        breakeven_ratio = _as_float(alt.get("breakeven_expected_move_ratio"))
+        expected_move_score = -(breakeven_ratio if breakeven_ratio is not None else 9.0)
+        dte = int(_as_float(alt.get("dte")) or 0)
+        dte_score = -abs(dte - 35) if dte > 0 else -100.0
         liq = _as_float(alt.get("liq_score")) or 0.0
         quote_width = _as_float(alt.get("quote_width_pct"))
         quote_score = -(quote_width if quote_width is not None else 9.0)
         breakeven_distance = _as_float(alt.get("breakeven_distance_pct"))
-        breakeven_score = -(breakeven_distance if breakeven_distance is not None else 0.20)
+        breakeven_distance_score = -(breakeven_distance if breakeven_distance is not None else 0.20)
         rank = _as_float(alt.get("_rank")) or 0.0
-        return (quality_pass, -debit, min(liq, 10_000.0), quote_score, breakeven_score, rank)
+        return (
+            quality_pass,
+            green_probability,
+            delta_fit,
+            theta_score,
+            expected_move_score,
+            breakeven_distance_score,
+            min(liq, 10_000.0),
+            quote_score,
+            dte_score,
+            -debit,
+            rank,
+        )
 
     return max(valid, key=score)
 
