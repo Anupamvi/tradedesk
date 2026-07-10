@@ -330,6 +330,54 @@ def test_goal_confidence_blocked_rows_do_not_leak_onto_green_ticket_surface() ->
     assert target["ticker"].tolist() == ["CONF", "PRICE"]
 
 
+def test_goal_confidence_gate_replaces_stale_rating_annotation() -> None:
+    decision = pd.DataFrame(
+        [
+            {
+                "ticker": "CONF",
+                "ready_to_enter": True,
+                "execution_status": "ready",
+                "execution_gate_status": "pass",
+                "target_order_status": "target_order_candidate",
+                "execution_blockers": "",
+                "execution_confidence_score": 90.0,
+                "execution_confidence_rating": "HIGH",
+                "status_reason": "validated setup",
+            }
+        ]
+    )
+
+    first = core.apply_goal_confidence_gate_to_decision_board(
+        decision,
+        pd.DataFrame(
+            [
+                {"metric": "profitability_confidence_rating", "rating": 6.0, "status": "BLOCK"},
+                {"metric": "order_entry_confidence_rating", "rating": 10.0, "status": "PASS"},
+                {"metric": "order_mechanics_confidence_rating", "rating": 7.0, "status": "PASS"},
+                {"metric": "goal_confidence_gate", "rating": 6.0, "status": "BLOCK"},
+            ],
+            columns=core.CONFIDENCE_AUDIT_COLUMNS,
+        ),
+    )
+    second = core.apply_goal_confidence_gate_to_decision_board(
+        first.assign(ready_to_enter=True),
+        pd.DataFrame(
+            [
+                {"metric": "profitability_confidence_rating", "rating": 6.0, "status": "BLOCK"},
+                {"metric": "order_entry_confidence_rating", "rating": 0.0, "status": "BLOCK"},
+                {"metric": "order_mechanics_confidence_rating", "rating": 7.0, "status": "PASS"},
+                {"metric": "goal_confidence_gate", "rating": 0.0, "status": "BLOCK"},
+            ],
+            columns=core.CONFIDENCE_AUDIT_COLUMNS,
+        ),
+    )
+
+    reason = second["status_reason"].iloc[0]
+    assert reason.count("Overall confidence gate is blocked:") == 1
+    assert "order_entry_surface=0.0/10" in reason
+    assert "order_entry_surface=10.0/10" not in reason
+
+
 def test_route_only_profit_hypothesis_row_stays_off_yellow_target_surface() -> None:
     final = pd.DataFrame(
         [

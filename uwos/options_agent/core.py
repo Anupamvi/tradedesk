@@ -12655,7 +12655,7 @@ def apply_goal_confidence_gate_to_decision_board(
         f"order_mechanics={summary.get('order_mechanics_confidence_rating', 0.0)}/10."
     )
     out.loc[demote_mask, "status_reason"] = out.loc[demote_mask, "status_reason"].map(
-        lambda value: _append_reason(value, reason)
+        lambda value: _replace_reason_with_prefix(value, "Overall confidence gate is blocked:", reason)
     )
     out.loc[demote_mask, "synthesis_reason"] = out.loc[demote_mask, "synthesis_reason"].map(
         lambda value: _append_reason(value, "Demoted from the action surface because goal confidence gate is blocked.")
@@ -12663,6 +12663,13 @@ def apply_goal_confidence_gate_to_decision_board(
     out.loc[demote_mask, "status_icon"] = out.loc[demote_mask].apply(_decision_icon, axis=1)
     out.loc[demote_mask, "status_label"] = out.loc[demote_mask].apply(_decision_status_label, axis=1)
     return out
+
+
+def _replace_reason_with_prefix(value: Any, prefix: str, replacement: str) -> str:
+    parts = [part.strip() for part in _as_text(value).split(";") if part.strip()]
+    kept = [part for part in parts if not part.startswith(prefix)]
+    kept.append(replacement)
+    return "; ".join(_dedupe_notes(kept))
 
 
 def annotate_final_recommendations_with_execution_surface(
