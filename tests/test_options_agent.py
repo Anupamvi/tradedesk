@@ -1191,6 +1191,21 @@ def test_pipeline_source_provenance_uses_code_root_for_overlay_source(
     ).hexdigest()
 
 
+def test_write_json_replaces_non_finite_values_with_null(tmp_path: Path) -> None:
+    path = tmp_path / "strict.json"
+
+    core._write_json(path, {"nan": float("nan"), "infinity": float("inf"), "ok": 1.25})
+
+    text = path.read_text(encoding="utf-8")
+    assert "NaN" not in text
+    assert "Infinity" not in text
+    assert json.loads(text, parse_constant=lambda token: pytest.fail(token)) == {
+        "infinity": None,
+        "nan": None,
+        "ok": 1.25,
+    }
+
+
 def test_portfolio_risk_annotations_do_not_suppress_qualified_trade() -> None:
     candidate = {
         "ticker": "WMT",

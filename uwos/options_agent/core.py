@@ -21683,7 +21683,7 @@ def run_design_smoke(
     manifest = build_manifest(day, root=root, out_dir=paths["out_dir"])
     lesson_metadata = lesson_manifest_metadata(lesson_pack, paths)
     manifest.update({"lessonengine": lesson_metadata, **lesson_metadata})
-    paths["manifest"].write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _write_json(paths["manifest"], manifest)
     paths["report"].write_text(_smoke_report(day, manifest), encoding="utf-8")
     write_lesson_snapshots(lesson_pack, paths)
 
@@ -24088,7 +24088,35 @@ def _truthy(value: Any) -> bool:
 
 
 def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    sanitized = _strict_json_value(payload)
+    path.write_text(
+        json.dumps(sanitized, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _strict_json_value(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {str(key): _strict_json_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_strict_json_value(item) for item in value]
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, (dt.datetime, dt.date)):
+        return value.isoformat()
+    if isinstance(value, Enum):
+        return _strict_json_value(value.value)
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    item = getattr(value, "item", None)
+    if callable(item):
+        return _strict_json_value(item())
+    return value
 
 
 def _write_frame(df: pd.DataFrame, path: Path) -> None:
