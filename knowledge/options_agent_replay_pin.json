@@ -1,0 +1,8 @@
+{
+  "manifest_path": "codexuw_replay_options_agent_ytd_2026-01-02_to_2026-07-07_current_goal/codexuw_replay_manifest.json",
+  "manifest_sha256": "bb98a90c321a332d89db5f5734b9ebeff5bf0316612d30f4af70f7a659053e7f",
+  "replay_detail_path": "codexuw_replay_options_agent_ytd_2026-01-02_to_2026-07-07_current_goal/codexuw_replay_detail.csv",
+  "replay_detail_sha256": "1c963399d03c700e9c0c72b2bf8e433de937e9e9c1683a948c6450ccdbae9088",
+  "schema_version": "options_agent.replay_pin.v1",
+  "split_day": "2026-05-15"
+}

@@ -36,15 +36,16 @@ from uwos.lessonengine.core import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.2-blocker-carryforward-20260710-142154"
+PIPELINE_VERSION = "options-agent-v1.3-evidence-integrity-20260710-151249"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.2-blocker-carryforward-20260710-142154",
     "options-agent-v1.2-exact-reprice-20260710-093806",
     "options-agent-v1.1-contract-risk-20260709-193127",
     "options-agent-v1.1-contract-risk-20260709-184846",
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-10T14:21:54-07:00"
+PIPELINE_RELEASED_AT = "2026-07-10T15:12:49-07:00"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
 DEFAULT_DISCOVERY_LIMIT = 120
@@ -90,15 +91,16 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.2-blocker-carryforward-20260710-142154",
+    "PIPELINE_VERSION": "options-agent-v1.3-evidence-integrity-20260710-151249",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.2-blocker-carryforward-20260710-142154",
         "options-agent-v1.2-exact-reprice-20260710-093806",
         "options-agent-v1.1-contract-risk-20260709-193127",
         "options-agent-v1.1-contract-risk-20260709-184846",
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-10T14:21:54-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-10T15:12:49-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -131,6 +133,10 @@ MAX_BREAKEVEN_EXPECTED_MOVE_RATIO = 0.75
 SHORT_DTE_CONTRACT_RISK_DAYS = 14
 MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS = 0
 CONTRACT_REVIEW_REQUIRED_AGENTS = ("structure_builder", "skeptic")
+CONTRACT_REVIEW_CAPABLE_AGENTS = ("catalyst_news", *CONTRACT_REVIEW_REQUIRED_AGENTS)
+KNOWN_EXTERNAL_REVIEW_AGENTS = frozenset(
+    {"catalyst_news", "macro_regime", "structure_builder", "skeptic", "portfolio_management"}
+)
 PRICE_INDEPENDENT_CONTRACT_BLOCKER_TYPES = frozenset(
     {"stale_event", "short_dte_macro_event", "thesis_break"}
 )
@@ -856,7 +862,13 @@ def load_options_event_calendar(root: Optional[Path] = None) -> dict[str, Any]:
         except (OSError, json.JSONDecodeError):
             continue
         if isinstance(payload, Mapping):
-            return {**dict(payload), "status": "verified", "path": str(path)}
+            verified, validation_error = _options_event_calendar_is_verified(payload)
+            return {
+                **dict(payload),
+                "status": "verified" if verified else "invalid",
+                "validation_error": validation_error,
+                "path": str(path),
+            }
     return {
         "status": "unavailable",
         "path": "",
@@ -865,6 +877,33 @@ def load_options_event_calendar(root: Optional[Path] = None) -> dict[str, Any]:
         "macro_events": [],
         "corporate_events": [],
     }
+
+
+def _options_event_calendar_is_verified(payload: Mapping[str, Any]) -> tuple[bool, str]:
+    if _as_text(payload.get("schema_version")) != "options_agent.event_calendar.v1":
+        return False, "unsupported or missing event-calendar schema_version"
+    if _optional_iso_date(payload.get("verified_at")) is None:
+        return False, "event calendar missing verified_at"
+    if _optional_iso_date(payload.get("coverage_start")) is None or _optional_iso_date(payload.get("coverage_end")) is None:
+        return False, "event calendar coverage is incomplete"
+    sources = payload.get("macro_sources")
+    if not isinstance(sources, list) or not sources:
+        return False, "event calendar has no macro sources"
+    allowed_domains = ("bls.gov", "federalreserve.gov", "bea.gov")
+    if any(not any(domain in _as_text(source).lower() for domain in allowed_domains) for source in sources):
+        return False, "event calendar contains a non-authoritative macro source"
+    events = payload.get("macro_events")
+    if not isinstance(events, list) or not events:
+        return False, "event calendar has no macro events"
+    if any(
+        not isinstance(item, Mapping)
+        or _optional_iso_date(item.get("date")) is None
+        or not _as_text(item.get("event"))
+        or _as_text(item.get("impact")).lower() != "high"
+        for item in events
+    ):
+        return False, "event calendar contains malformed macro events"
+    return True, ""
 
 
 def _optional_iso_date(value: Any) -> Optional[dt.date]:
@@ -991,6 +1030,25 @@ def contract_review_key(row: Mapping[str, Any]) -> str:
     if not parts[0] or not parts[2] or not any(parts[3:]):
         return ""
     return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()[:20]
+
+
+def _required_contract_review_agents(row: Mapping[str, Any]) -> tuple[str, ...]:
+    required = list(CONTRACT_REVIEW_REQUIRED_AGENTS)
+    ticker = _as_text(row.get("ticker")).upper()
+    earnings_status = _as_text(row.get("earnings_source_status")).lower()
+    if earnings_status in {"missing", "unverified"} and ticker not in ACTIONABLE_ETF_ALLOWLIST:
+        required.insert(0, "catalyst_news")
+    return tuple(required)
+
+
+def _contract_event_verification_passed(row: Mapping[str, Any]) -> bool:
+    if _as_text(row.get("earnings_source_status")).lower() == "verified":
+        return True
+    agents = {_as_text(value) for value in _as_text(row.get("contract_review_agents")).split(";") if _as_text(value)}
+    return bool(
+        "catalyst_news" in agents
+        and _as_text(row.get("contract_review_status")).upper() == "PASS"
+    )
 
 
 def _contract_review_matches_row(
@@ -1156,7 +1214,7 @@ def build_contract_review_tasks(
     """Build exact post-pricing review tasks for structure and skeptic agents."""
 
     if priced is None or priced.empty:
-        return {"required_agents": list(CONTRACT_REVIEW_REQUIRED_AGENTS), "contracts": [], "contract_count": 0}
+        return {"required_agents": list(CONTRACT_REVIEW_CAPABLE_AGENTS), "contracts": [], "contract_count": 0}
     working = priced.copy()
     live_status = working.get("live_validation_status", pd.Series("", index=working.index)).astype(str).str.upper()
     status = working.get("recommendation_status", pd.Series("", index=working.index)).astype(str).str.upper()
@@ -1169,7 +1227,7 @@ def build_contract_review_tasks(
         & ticket.ne("")
     ].copy()
     if working.empty:
-        return {"required_agents": list(CONTRACT_REVIEW_REQUIRED_AGENTS), "contracts": [], "contract_count": 0}
+        return {"required_agents": list(CONTRACT_REVIEW_CAPABLE_AGENTS), "contracts": [], "contract_count": 0}
     working["__status_rank"] = status.loc[working.index].map(
         {"ENTER": 0, "ENTER_WITH_PORTFOLIO_RISK": 0, "WAIT_FOR_PRICE": 1, "REVIEW": 2}
     ).fillna(3)
@@ -1236,9 +1294,13 @@ def build_contract_review_tasks(
         "macro_events_before_expiry",
         "contract_event_risk_note",
     ]
-    contracts = [{field: row.get(field, "") for field in fields} for _, row in working.iterrows()]
+    contracts = []
+    for _, row in working.iterrows():
+        contract = {field: row.get(field, "") for field in fields}
+        contract["required_review_agents"] = list(_required_contract_review_agents(contract))
+        contracts.append(contract)
     return {
-        "required_agents": list(CONTRACT_REVIEW_REQUIRED_AGENTS),
+        "required_agents": list(CONTRACT_REVIEW_CAPABLE_AGENTS),
         "contracts": contracts,
         "contract_count": len(contracts),
     }
@@ -1399,6 +1461,7 @@ def build_manifest(
     return {
         "pipeline_name": PIPELINE_NAME,
         "pipeline_version": PIPELINE_VERSION,
+        "pipeline_source_provenance": _pipeline_source_provenance(resolved_root),
         "as_of": day,
         "source_root": str(resolved_root),
         "out_dir": str(paths["out_dir"]),
@@ -1410,6 +1473,39 @@ def build_manifest(
         ),
         "status_counts": {},
         "warnings": ["live data integrations are not wired in this smoke slice"],
+    }
+
+
+def _pipeline_source_provenance(root: Path) -> dict[str, Any]:
+    relative_paths = (
+        "uwos/options_agent/core.py",
+        "codexuw/schwab_live.py",
+        "knowledge/options_agent_event_calendar_2026.json",
+        "knowledge/options_agent_replay_pin.json",
+    )
+    fingerprints: dict[str, str] = {}
+    for relative_path in relative_paths:
+        path = Path(root) / relative_path
+        if path.exists():
+            fingerprints[relative_path] = hashlib.sha256(path.read_bytes()).hexdigest()
+    try:
+        sha = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        dirty = subprocess.run(
+            ["git", "-C", str(root), "diff", "--quiet", "HEAD", "--", *relative_paths],
+            check=False,
+        ).returncode != 0
+    except Exception:
+        sha = ""
+        dirty = True
+    return {
+        "git_sha": sha,
+        "relevant_files_dirty": dirty,
+        "file_sha256": fingerprints,
     }
 
 
@@ -1499,6 +1595,14 @@ def run_pipeline(
     )
     agent_dispatch_drift = _dispatch_plan_drift_summary(agent_dispatch_plan, current_agent_dispatch_plan)
     if dispatch_only:
+        dispatch_portfolio, dispatch_portfolio_notes = resolve_portfolio_context(
+            paths["out_dir"],
+            portfolio_context=portfolio_context,
+            portfolio_json=portfolio_json,
+            live_portfolio=live_portfolio,
+        )
+        source_notes = source_notes + dispatch_portfolio_notes
+        _write_json(paths["portfolio_context"], dispatch_portfolio)
         dispatch_priced, dispatch_strategy_routing_audit = price_candidates_with_routing_audit(
             date_dir,
             day,
@@ -1546,7 +1650,7 @@ def run_pipeline(
         dispatch_execution_context = build_execution_context(
             live_schwab=live_schwab,
             chain_snapshot_dir=chain_snapshot_dir,
-            portfolio_context=unavailable_portfolio_context("dispatch-only pass"),
+            portfolio_context=dispatch_portfolio,
             research_task_count=len(research_tasks.get("tasks", [])),
             external_review_count=0,
             agent_reviews_json=None,
@@ -1644,7 +1748,7 @@ def run_pipeline(
                     "goal_confidence_gap_audit": int(len(dispatch_goal_confidence_gap_audit)),
                     "promotion_readiness_audit": 0,
                 },
-                "portfolio_context_status": "not_loaded_dispatch_only",
+                "portfolio_context_status": dispatch_portfolio.get("status", "unknown"),
                 "market_price_regime": market_price_regime,
                 "market_regime": market_regime,
                 "outcome_evidence_audit_summary": summarize_outcome_evidence_audit(dispatch_outcome_evidence_audit),
@@ -1721,6 +1825,7 @@ def run_pipeline(
             structure_attempts=dispatch_structure_attempts,
             contract_review_tasks=dispatch_contract_review_tasks,
         )
+        _write_json(paths["portfolio_context"], dispatch_portfolio)
         write_lesson_snapshots(lesson_pack, paths)
         _write_frame(
             build_application_audit(pd.DataFrame(), pd.DataFrame(), lesson_pack),
@@ -1876,6 +1981,7 @@ def run_pipeline(
         portfolio_context=resolved_portfolio,
         research_task_count=len(research_tasks.get("tasks", [])),
         external_review_count=len(external_agent_reviews),
+        external_review_ticker_count=_distinct_external_review_ticker_count(external_agent_reviews),
         external_review_agent_count=_distinct_external_review_agent_count(external_agent_reviews),
         agent_dispatch_task_count=len(agent_dispatch_plan.get("subagent_tasks", [])),
         agent_reviews_json=agent_reviews_json,
@@ -3399,6 +3505,7 @@ def build_agent_dispatch_plan(
             "decision_board": str(paths["decision_board"]),
             "management_plan": str(paths["management_plan"]),
             "contract_review_tasks": str(paths["contract_review_tasks"]),
+            "portfolio_context": str(paths["portfolio_context"]),
         },
     }
     lanes = [
@@ -3409,6 +3516,7 @@ def build_agent_dispatch_plan(
             "focus": [
                 "Confirm whether catalyst context supports, cautions, or objectively invalidates each setup.",
                 "Use objective_blocker=true only for non-portfolio facts that should block entry.",
+                "For every exact contract that lists catalyst_news in required_review_agents, verify earnings against an issuer-investor-relations or SEC source, copy the exact contract identity, and include the source URL in evidence.",
             ],
         },
         {
@@ -3597,7 +3705,7 @@ def _load_dispatch_pricing_snapshot(
             for review in review_records
             if _contract_review_matches_row(review, contract, row_contract_key=contract_key)
         }
-        if any(agent not in matching_agents for agent in CONTRACT_REVIEW_REQUIRED_AGENTS):
+        if any(agent not in matching_agents for agent in _required_contract_review_agents(contract)):
             return None, "dispatch_contract_review_identity_mismatch"
     snapshot["contract_review_tasks"] = dict(task_payload)
     return snapshot, "reused_fresh_exact_contract_snapshot"
@@ -3726,7 +3834,7 @@ def _agent_dispatch_prompt(lane: Mapping[str, Any], common_context: Mapping[str,
     )
     lane_name = _as_text(lane.get("agent"))
     contract_clause = ""
-    if lane_name in CONTRACT_REVIEW_REQUIRED_AGENTS:
+    if lane_name in CONTRACT_REVIEW_CAPABLE_AGENTS:
         contract_clause = (
             "In addition to ticker coverage, read contract_review_tasks.json and return one extra review for every "
             "assigned exact contract. Copy contract_key, strategy_route, expiry, and trade_plan exactly; set "
@@ -3776,6 +3884,7 @@ def load_external_agent_reviews(path: Optional[Path]) -> tuple[pd.DataFrame, lis
     if not isinstance(reviews, list):
         return pd.DataFrame(columns=EXTERNAL_REVIEW_COLUMNS), ["external agent reviews JSON did not contain a review list"]
     rows = []
+    invalid_reviews: list[str] = []
     for review in reviews:
         if not isinstance(review, Mapping):
             continue
@@ -3798,6 +3907,27 @@ def load_external_agent_reviews(path: Optional[Path]) -> tuple[pd.DataFrame, lis
                 note,
                 "Pass-1 placeholder artifact absence is caution-only; pass-2 structure/live validation decides actionability.",
             )
+        legacy_external_portfolio_agent = bool(agent == "portfolio_risk" and default_agent_type == "external")
+        if agent not in KNOWN_EXTERNAL_REVIEW_AGENTS and not legacy_external_portfolio_agent:
+            invalid_reviews.append(f"{ticker or 'missing_ticker'}:{agent or 'missing_agent'}:unknown_agent")
+            continue
+        if not ticker or verdict not in {"supportive", "caution", "avoid"} or not note:
+            invalid_reviews.append(f"{ticker or 'missing_ticker'}:{agent}:invalid_required_fields")
+            continue
+        if objective_blocker and not blocker_type:
+            invalid_reviews.append(f"{ticker}:{agent}:objective_blocker_missing_type")
+            continue
+        contract_specific = _truthy(review.get("contract_specific"))
+        if contract_specific and any(
+            not _as_text(review.get(field))
+            for field in ("contract_key", "strategy_route", "expiry", "trade_plan")
+        ):
+            invalid_reviews.append(f"{ticker}:{agent}:incomplete_contract_identity")
+            continue
+        evidence = str(review.get("evidence") or "").strip()
+        if contract_specific and agent == "catalyst_news" and not re.search(r"https://", evidence, flags=re.IGNORECASE):
+            invalid_reviews.append(f"{ticker}:{agent}:issuer_source_url_required")
+            continue
         rows.append(
             {
                 "candidate_id": str(review.get("candidate_id") or f"{ticker}:{agent}:subagent_review").strip(),
@@ -3811,17 +3941,23 @@ def load_external_agent_reviews(path: Optional[Path]) -> tuple[pd.DataFrame, lis
                 "objective_blocker": objective_blocker,
                 "blocker_type": blocker_type,
                 "portfolio_risk_only": _truthy(review.get("portfolio_risk_only")) if "portfolio_risk_only" in review else "",
-                "evidence": str(review.get("evidence") or "").strip(),
+                "evidence": evidence,
                 "source_artifact": str(review.get("source_artifact") or "agentic_reviews.json").strip(),
                 "as_of": str(review.get("as_of") or "").strip(),
                 "contract_key": str(review.get("contract_key") or "").strip(),
-                "contract_specific": _truthy(review.get("contract_specific")),
+                "contract_specific": contract_specific,
                 "strategy_route": str(review.get("strategy_route") or "").strip(),
                 "expiry": str(review.get("expiry") or "").strip(),
                 "trade_plan": str(review.get("trade_plan") or "").strip(),
             }
         )
-    return pd.DataFrame(rows, columns=EXTERNAL_REVIEW_COLUMNS), []
+    warnings = []
+    if invalid_reviews:
+        warnings.append(
+            f"ignored {len(invalid_reviews)} invalid external agent reviews: "
+            + "; ".join(invalid_reviews[:10])
+        )
+    return pd.DataFrame(rows, columns=EXTERNAL_REVIEW_COLUMNS), warnings
 
 
 def _is_pass_one_artifact_absence_review(*, agent: str, note: str, objective_blocker: bool) -> bool:
@@ -4168,6 +4304,7 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
         out = row.to_dict()
         ticker = str(out.get("ticker") or "").strip().upper()
         ticker_reviews = grouped.get(ticker, [])
+        required_contract_agents = _required_contract_review_agents(out)
         if not ticker_reviews:
             row_contract_key = contract_review_key(out)
             contract_review_required = bool(
@@ -4179,7 +4316,7 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
             out["contract_review_count"] = 0
             out["contract_review_agents"] = ""
             out["contract_review_missing_agents"] = (
-                "; ".join(CONTRACT_REVIEW_REQUIRED_AGENTS) if contract_review_required else ""
+                "; ".join(required_contract_agents) if contract_review_required else ""
             )
             out["contract_review_status"] = "BLOCK" if contract_review_required else "NOT_REQUIRED"
             rows.append(out)
@@ -4235,7 +4372,7 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
             }
         )
         missing_contract_agents = [
-            agent for agent in CONTRACT_REVIEW_REQUIRED_AGENTS if agent not in contract_review_agents
+            agent for agent in required_contract_agents if agent not in contract_review_agents
         ]
         contract_review_verdicts = {
             agent: sorted(
@@ -4245,7 +4382,7 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
                     if _as_text(review.get("agent")) == agent and _as_text(review.get("verdict"))
                 }
             )
-            for agent in CONTRACT_REVIEW_REQUIRED_AGENTS
+            for agent in required_contract_agents
         }
         contract_objective_blockers = [
             review for review in contract_reviews if _truthy(review.get("objective_blocker"))
@@ -4264,7 +4401,7 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
         out["contract_review_missing_agents"] = "; ".join(missing_contract_agents) if contract_review_required else ""
         out["contract_review_verdicts"] = "; ".join(
             f"{agent}={','.join(contract_review_verdicts.get(agent, [])) or 'missing'}"
-            for agent in CONTRACT_REVIEW_REQUIRED_AGENTS
+            for agent in required_contract_agents
         ) if contract_review_required else ""
         out["contract_review_note"] = "; ".join(
             _dedupe_notes(
@@ -4784,13 +4921,13 @@ def _candidate_prefers_short_put(candidate: Mapping[str, Any], positive_strategy
 
 
 def _live_chain_ticker_cap() -> Optional[int]:
-    raw = os.environ.get("UWOS_OPTIONS_AGENT_LIVE_CHAIN_TICKER_CAP", "32").strip().lower()
+    raw = os.environ.get("UWOS_OPTIONS_AGENT_LIVE_CHAIN_TICKER_CAP", "all").strip().lower()
     if raw in {"", "0", "all", "none", "unlimited"}:
         return None
     try:
         value = int(float(raw))
     except (TypeError, ValueError):
-        return 32
+        return None
     return value if value > 0 else None
 
 
@@ -10503,6 +10640,9 @@ def _actual_calibration_frame(
 
 
 def _codexuw_profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.date] = None) -> tuple[pd.DataFrame, str, str]:
+    pinned_path, pin_error, pin_present = _codexuw_pinned_replay_path(out_root)
+    if pin_error:
+        return pd.DataFrame(), str(pinned_path or out_root / "pinned_codexuw_replay"), pin_error
     replay_paths = _codexuw_replay_detail_paths(out_root)
     if not replay_paths:
         return pd.DataFrame(), str(out_root / "codexuw_{*backtest*,replay*}/codexuw_replay_detail.csv"), "no codexuw replay detail source found"
@@ -10513,7 +10653,10 @@ def _codexuw_profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.da
         return pd.DataFrame(), str(path), f"codexuw replay source unreadable: {exc}"
     if "pnl_1x" not in df.columns:
         return pd.DataFrame(), str(path), "codexuw replay detail missing pnl_1x"
-    replay = df[pd.to_numeric(df["pnl_1x"], errors="coerce").notna()].copy()
+    replay, partition_error = _codexuw_heldout_replay_partition(df, path)
+    if partition_error:
+        return pd.DataFrame(), str(path), partition_error
+    replay = replay[pd.to_numeric(replay["pnl_1x"], errors="coerce").notna()].copy()
     replay = _filter_replay_by_exit_date(replay, "exit_day", as_of)
     if "exact_evaluated" in replay.columns:
         replay = replay[replay["exact_evaluated"].map(_truthy)].copy()
@@ -10538,12 +10681,88 @@ def _codexuw_profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.da
 
 
 def _codexuw_replay_detail_paths(out_root: Path) -> list[Path]:
+    pinned_path, pin_error, pin_present = _codexuw_pinned_replay_path(out_root)
+    if pin_present:
+        return [pinned_path] if pinned_path is not None and not pin_error else []
     paths: dict[Path, float] = {}
     for pattern in ("codexuw_*backtest*/codexuw_replay_detail.csv", "codexuw_replay*/codexuw_replay_detail.csv"):
         for path in out_root.glob(pattern):
             if _safe_non_v4_path(path):
                 paths[path] = path.stat().st_mtime
-    return [path for path, _ in sorted(paths.items(), key=lambda item: item[1], reverse=True)]
+    ordered = [path for path, _ in sorted(paths.items(), key=lambda item: item[1], reverse=True)]
+    manifested = [path for path in ordered if (path.parent / "codexuw_replay_manifest.json").exists()]
+    if manifested:
+        return manifested
+    # Legacy synthetic/unit-test bundles without dated observations are already
+    # pre-partitioned. A dated production replay must carry a split manifest.
+    undated: list[Path] = []
+    for path in ordered:
+        try:
+            columns = pd.read_csv(path, nrows=0).columns
+        except Exception:
+            continue
+        if "asof" not in columns:
+            undated.append(path)
+    return undated
+
+
+def _codexuw_pinned_replay_path(out_root: Path) -> tuple[Optional[Path], str, bool]:
+    pin_path = Path(out_root).parent / "knowledge" / "options_agent_replay_pin.json"
+    if not pin_path.exists():
+        return None, "", False
+    try:
+        payload = json.loads(pin_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return None, f"options-agent replay pin unreadable: {exc}", True
+    if not isinstance(payload, Mapping):
+        return None, "options-agent replay pin must be a JSON object", True
+    relative_path = _as_text(payload.get("replay_detail_path"))
+    expected_hash = _as_text(payload.get("replay_detail_sha256")).lower()
+    manifest_relative_path = _as_text(payload.get("manifest_path"))
+    expected_manifest_hash = _as_text(payload.get("manifest_sha256")).lower()
+    if not relative_path or not expected_hash or not manifest_relative_path or not expected_manifest_hash:
+        return None, "options-agent replay pin is missing required path/hash fields", True
+    replay_path = (Path(out_root) / relative_path).resolve()
+    manifest_path = (Path(out_root) / manifest_relative_path).resolve()
+    if not replay_path.exists() or not manifest_path.exists():
+        return replay_path, "options-agent pinned replay or manifest is missing", True
+    replay_hash = hashlib.sha256(replay_path.read_bytes()).hexdigest()
+    manifest_hash = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    if replay_hash != expected_hash:
+        return replay_path, "options-agent pinned replay hash mismatch", True
+    if manifest_hash != expected_manifest_hash:
+        return replay_path, "options-agent pinned replay manifest hash mismatch", True
+    if manifest_path.parent != replay_path.parent:
+        return replay_path, "options-agent pinned replay manifest must be beside replay detail", True
+    return replay_path, "", True
+
+
+def _codexuw_heldout_replay_partition(df: pd.DataFrame, path: Path) -> tuple[pd.DataFrame, str]:
+    """Return only the manifest-defined test partition for dated replay evidence."""
+
+    manifest_path = path.parent / "codexuw_replay_manifest.json"
+    if not manifest_path.exists():
+        if "asof" in df.columns:
+            return pd.DataFrame(), "dated codexuw replay requires a manifest-defined held-out split"
+        out = df.copy()
+        out["replay_validation_scope"] = "prepartitioned_undated"
+        return out, ""
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return pd.DataFrame(), f"codexuw replay manifest unreadable: {exc}"
+    split_day = _optional_iso_date(manifest.get("split_day")) if isinstance(manifest, Mapping) else None
+    if split_day is None:
+        return pd.DataFrame(), "codexuw replay manifest missing split_day"
+    if "asof" not in df.columns:
+        return pd.DataFrame(), "codexuw replay manifest requires an asof column"
+    asof_dates = pd.to_datetime(df["asof"], errors="coerce").dt.date
+    heldout = df[asof_dates.map(lambda value: bool(value and value > split_day))].copy()
+    if heldout.empty:
+        return pd.DataFrame(), f"codexuw replay has no held-out rows after split_day {split_day.isoformat()}"
+    heldout["replay_validation_scope"] = "heldout_test"
+    heldout["replay_split_day"] = split_day.isoformat()
+    return heldout, ""
 
 
 def _wheel_csp_profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.date] = None) -> tuple[pd.DataFrame, str, str]:
@@ -12561,6 +12780,13 @@ def _sort_trades_by_confidence(frame: pd.DataFrame) -> pd.DataFrame:
     )
     working["__calibration_scope_rank"] = _calibration_scope_rank_series(working)
     working["__order_readiness_rank"] = _order_readiness_sort_series(working)
+    working["__contract_review_rank"] = (
+        working.get("contract_review_status", pd.Series("", index=working.index))
+        .astype(str)
+        .str.upper()
+        .map({"PASS": 2, "NOT_REQUIRED": 1, "BLOCK": 0})
+        .fillna(0)
+    )
     execution_scores = _numeric_sort_series(working, "execution_confidence_score", default=-1.0)
     mechanics_scores = _numeric_sort_series(working, "order_mechanics_confidence_score", default=-1.0)
     trade_edge_scores = _numeric_sort_series(working, "trade_quality_confidence_score", default=-1.0)
@@ -12584,6 +12810,8 @@ def _sort_trades_by_confidence(frame: pd.DataFrame) -> pd.DataFrame:
     sorted_frame = working.sort_values(
         [
             "__ready_rank",
+            "__order_readiness_rank",
+            "__contract_review_rank",
             "__confidence_score",
             "__quality_confidence_rank",
             "__execution_confidence_rank",
@@ -12594,11 +12822,10 @@ def _sort_trades_by_confidence(frame: pd.DataFrame) -> pd.DataFrame:
             "__calibration_scope_rank",
             "__materiality_rank",
             "__synthesis_score",
-            "__order_readiness_rank",
             "__recommendation_rank",
             "__original_order",
         ],
-        ascending=[False, False, False, False, False, False, False, False, False, False, False, False, True, True],
+        ascending=[False, False, False, False, False, False, False, False, False, False, False, False, False, True, True],
         kind="mergesort",
     )
     return sorted_frame[original_columns].reset_index(drop=True)
@@ -12626,6 +12853,7 @@ def _order_readiness_sort_series(frame: pd.DataFrame) -> pd.Series:
         "target_order_after_quote_refresh": 5,
         "target_order_after_market_open_and_live_recheck": 5,
         "target_order_after_live_recheck": 5,
+        "target_order_after_goal_confidence": 5,
         "target_order_profit_hypothesis": 4,
         "target_order_wait_for_price": 4,
         "target_order_after_portfolio_sizing": 3,
@@ -12831,6 +13059,18 @@ def _distinct_external_review_agent_count(external_agent_reviews: pd.DataFrame) 
     )
 
 
+def _distinct_external_review_ticker_count(external_agent_reviews: pd.DataFrame) -> int:
+    if external_agent_reviews is None or external_agent_reviews.empty or "ticker" not in external_agent_reviews.columns:
+        return 0
+    return len(
+        {
+            _as_text(ticker).upper()
+            for ticker in external_agent_reviews["ticker"].dropna().tolist()
+            if _as_text(ticker)
+        }
+    )
+
+
 def _market_datetime(now: Optional[dt.datetime] = None) -> dt.datetime:
     current = now or dt.datetime.now(MARKET_TIME_ZONE)
     if current.tzinfo is None:
@@ -12942,6 +13182,7 @@ def build_execution_context(
     research_task_count: int,
     external_review_count: int,
     agent_reviews_json: Optional[Path],
+    external_review_ticker_count: Optional[int] = None,
     external_review_agent_count: Optional[int] = None,
     agent_dispatch_task_count: Optional[int] = None,
     market_session_open: Optional[bool] = None,
@@ -12959,7 +13200,10 @@ def build_execution_context(
     fresh_live_ready = bool(live_schwab and not snapshot_mode)
     market_session_ready = True if market_session_open is None else bool(market_session_open)
     market_session_recheck_required = bool(fresh_live_ready and not market_session_ready)
-    broad_review_coverage = float(external_review_count) / float(research_task_count) if research_task_count > 0 else 0.0
+    reviewed_ticker_count = int(
+        external_review_ticker_count if external_review_ticker_count is not None else external_review_count
+    )
+    broad_review_coverage = float(reviewed_ticker_count) / float(research_task_count) if research_task_count > 0 else 0.0
     review_agent_count = int(external_review_agent_count or 0)
     dispatch_task_count = int(agent_dispatch_task_count or 0)
     lane_review_coverage = float(review_agent_count) / float(dispatch_task_count) if dispatch_task_count > 0 else broad_review_coverage
@@ -13004,6 +13248,7 @@ def build_execution_context(
         "agentic_reviews_present": agentic_reviews_present,
         "agentic_reviews_ready": agentic_reviews_ready,
         "external_review_count": int(external_review_count),
+        "external_review_ticker_count": reviewed_ticker_count,
         "external_review_agent_count": review_agent_count,
         "research_task_count": int(research_task_count),
         "agent_dispatch_task_count": dispatch_task_count,
@@ -13453,6 +13698,14 @@ def _send_now_economics_blockers(
         return []
     blockers: list[str] = []
     dte = int(_as_float(row.get("dte")) or 0)
+    ticker = _as_text(row.get("ticker")).upper()
+    earnings_source_status = _as_text(row.get("earnings_source_status")).lower()
+    if (
+        ticker not in ACTIONABLE_ETF_ALLOWLIST
+        and earnings_source_status in {"missing", "unverified"}
+        and not _contract_event_verification_passed(row)
+    ):
+        blockers.append("send_now_earnings_calendar_unverified")
     if _truthy(row.get("earnings_before_expiry")):
         blockers.append("send_now_earnings_before_expiry")
     macro_event_count = int(_as_float(row.get("macro_event_count_before_expiry")) or 0)
@@ -16178,6 +16431,49 @@ def _entry_order_id_list(value: Any) -> list[str]:
     return [part.strip() for part in text.replace(";", ",").split(",") if part.strip()]
 
 
+def _deduplicate_actual_forward_outcomes(frame: pd.DataFrame) -> pd.DataFrame:
+    """Count one broker trade once when the same fill appears in multiple evidence sources."""
+
+    if frame is None or frame.empty or "entry_order_ids" not in frame.columns:
+        return frame.copy() if frame is not None else pd.DataFrame()
+    out = frame.copy()
+    out["__original_order"] = range(len(out))
+    out["__entry_order_key"] = out["entry_order_ids"].map(
+        lambda value: ",".join(sorted(set(_entry_order_id_list(value))))
+    )
+    keyed = out[out["__entry_order_key"].astype(str).ne("")].copy()
+    unkeyed = out[out["__entry_order_key"].astype(str).eq("")].copy()
+    if not keyed.empty:
+        source_priority = {
+            "schwab_closed_trades": 3,
+            "broker_backfilled_forward_outcomes": 2,
+            "codexuw_execute_outcome_ledger": 1,
+        }
+        keyed["__source_priority"] = keyed.get("source", pd.Series("", index=keyed.index)).map(
+            lambda value: source_priority.get(_as_text(value), 0)
+        )
+        identity_columns = ["__entry_order_key"]
+        if "canonical_ticker" in keyed.columns:
+            identity_columns.insert(0, "canonical_ticker")
+        elif "ticker" in keyed.columns:
+            identity_columns.insert(0, "ticker")
+        keyed = (
+            keyed.sort_values(
+                ["__source_priority", "__original_order"],
+                ascending=[False, True],
+                kind="mergesort",
+            )
+            .drop_duplicates(identity_columns, keep="first")
+            .drop(columns=["__source_priority"], errors="ignore")
+        )
+    combined = pd.concat([keyed, unkeyed], ignore_index=False)
+    return (
+        combined.sort_values("__original_order", kind="mergesort")
+        .drop(columns=["__original_order", "__entry_order_key"], errors="ignore")
+        .reset_index(drop=True)
+    )
+
+
 def _route_from_entry_order_ids(value: Any, order_routes: Mapping[str, str]) -> str:
     if not order_routes:
         return ""
@@ -16517,6 +16813,7 @@ def _actual_forward_outcome_frame(
     combined = pd.concat(frames, ignore_index=True)
     combined["ticker"] = combined["ticker"].astype(str).str.strip().str.upper()
     combined["canonical_ticker"] = combined["ticker"].map(canonical_ticker_key)
+    combined = _deduplicate_actual_forward_outcomes(combined)
     combined["__order_calibration"] = combined["entry_order_ids"].map(
         lambda value: _order_calibration_from_entry_order_ids(value, order_meta)
     )
@@ -17140,6 +17437,16 @@ def _expectancy_by_ticker_from_outcome_csv(
 
 
 def _expectancy_from_replay_history(out_root: Path, current_tickers: set[str]) -> list[dict[str, Any]]:
+    pinned_path, pin_error, pin_present = _codexuw_pinned_replay_path(out_root)
+    if pin_error:
+        return [
+            _expectancy_missing_row(
+                "codexuw_replay_history",
+                pinned_path or out_root / "pinned_codexuw_replay",
+                "replay_backtest",
+                pin_error,
+            )
+        ]
     paths = _codexuw_replay_detail_paths(out_root)
     if not paths:
         missing = out_root / "codexuw_{*backtest*,replay*}/codexuw_replay_detail.csv"
@@ -17149,6 +17456,9 @@ def _expectancy_from_replay_history(out_root: Path, current_tickers: set[str]) -
         df = pd.read_csv(path, low_memory=False)
     except Exception as exc:
         return [_expectancy_missing_row("codexuw_replay_history", path, "replay_backtest", f"source unreadable: {exc}")]
+    df, partition_error = _codexuw_heldout_replay_partition(df, path)
+    if partition_error:
+        return [_expectancy_missing_row("codexuw_replay_history", path, "replay_backtest", partition_error)]
 
     pnl = _numeric_frame_column(df, "pnl_1x")
     exact = df[pnl.notna()].copy()
@@ -17165,7 +17475,7 @@ def _expectancy_from_replay_history(out_root: Path, current_tickers: set[str]) -
             tickers=_ticker_set_from_frame(exact),
             current_tickers=current_tickers,
             open_or_unrealized_count=max(0, len(df) - len(exact)),
-            note="Broad exact replay history. Negative broad evidence blocks blanket profit claims.",
+            note="Held-out exact replay history. Negative broad evidence blocks blanket profit claims.",
         ),
         _expectancy_metrics_row(
             "codexuw_replay_decision_pass",
@@ -17175,7 +17485,7 @@ def _expectancy_from_replay_history(out_root: Path, current_tickers: set[str]) -
             tickers=_ticker_set_from_frame(decision_pass_current),
             current_tickers=current_tickers,
             open_or_unrealized_count=max(0, len(exact) - len(decision_pass)),
-            note="Narrow decision-pass replay slice for visible current tickets; useful evidence, not live proof by itself.",
+            note="Held-out decision-pass replay slice for visible current tickets; useful evidence, not live proof by itself.",
         ),
         _expectancy_metrics_row(
             "codexuw_replay_decision_pass_model",
@@ -17186,7 +17496,7 @@ def _expectancy_from_replay_history(out_root: Path, current_tickers: set[str]) -
             current_tickers=current_tickers,
             open_or_unrealized_count=max(0, len(exact) - len(decision_pass)),
             note=(
-                "Model-level leakage-safe decision-pass replay across the selected replay bundle. "
+                "Model-level held-out decision-pass replay across the manifest-defined test partition. "
                 "This can support broad replay confidence only when current-ticket calibration/bucket evidence is separately present."
             ),
         ),
@@ -20412,7 +20722,7 @@ def render_report(
                 f"lane {execution_context.get('external_review_agent_count', 0)}/"
                 f"{execution_context.get('agent_dispatch_task_count', 0)} "
                 f"({execution_context.get('agentic_review_lane_coverage_pct', 'unknown')}); "
-                f"broad rows {execution_context.get('external_review_count', row_counts.get('external_agent_reviews', 0))}/"
+                f"broad tickers {execution_context.get('external_review_ticker_count', 0)}/"
                 f"{execution_context.get('research_task_count', row_counts.get('research_tasks', 0))} "
                 f"({execution_context.get('broad_review_coverage_pct', 'unknown')})"
             ),

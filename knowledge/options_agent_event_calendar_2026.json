@@ -1,11 +1,16 @@
 {
+  "schema_version": "options_agent.event_calendar.v1",
   "version": "2026-v1",
+  "verified_at": "2026-07-10",
   "coverage_start": "2026-01-01",
   "coverage_end": "2026-12-31",
   "macro_sources": [
     "https://www.bls.gov/schedule/2026/",
     "https://www.bls.gov/schedule/news_release/cpi.htm",
-    "https://www.bls.gov/ppi/home.htm"
+    "https://www.bls.gov/schedule/news_release/ppi.htm",
+    "https://www.bls.gov/schedule/news_release/empsit.htm",
+    "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "https://www.bea.gov/news/schedule/"
   ],
   "macro_events": [
     {"date": "2026-01-13", "event": "CPI", "impact": "high"},
@@ -22,16 +27,31 @@
     {"date": "2026-06-11", "event": "PPI", "impact": "high"},
     {"date": "2026-07-14", "event": "CPI", "impact": "high"},
     {"date": "2026-07-15", "event": "PPI", "impact": "high"},
+    {"date": "2026-07-29", "event": "FOMC decision", "impact": "high"},
+    {"date": "2026-07-30", "event": "GDP and PCE", "impact": "high"},
+    {"date": "2026-08-07", "event": "Employment Situation", "impact": "high"},
     {"date": "2026-08-12", "event": "CPI", "impact": "high"},
     {"date": "2026-08-13", "event": "PPI", "impact": "high"},
+    {"date": "2026-08-26", "event": "GDP and PCE", "impact": "high"},
+    {"date": "2026-09-04", "event": "Employment Situation", "impact": "high"},
     {"date": "2026-09-10", "event": "PPI", "impact": "high"},
     {"date": "2026-09-11", "event": "CPI", "impact": "high"},
+    {"date": "2026-09-16", "event": "FOMC decision", "impact": "high"},
+    {"date": "2026-09-30", "event": "GDP and PCE", "impact": "high"},
+    {"date": "2026-10-02", "event": "Employment Situation", "impact": "high"},
     {"date": "2026-10-14", "event": "CPI", "impact": "high"},
     {"date": "2026-10-15", "event": "PPI", "impact": "high"},
+    {"date": "2026-10-28", "event": "FOMC decision", "impact": "high"},
+    {"date": "2026-10-29", "event": "GDP and PCE", "impact": "high"},
+    {"date": "2026-11-06", "event": "Employment Situation", "impact": "high"},
     {"date": "2026-11-10", "event": "CPI", "impact": "high"},
     {"date": "2026-11-13", "event": "PPI", "impact": "high"},
+    {"date": "2026-11-25", "event": "GDP and PCE", "impact": "high"},
+    {"date": "2026-12-04", "event": "Employment Situation", "impact": "high"},
+    {"date": "2026-12-09", "event": "FOMC decision", "impact": "high"},
     {"date": "2026-12-10", "event": "CPI", "impact": "high"},
-    {"date": "2026-12-15", "event": "PPI", "impact": "high"}
+    {"date": "2026-12-15", "event": "PPI", "impact": "high"},
+    {"date": "2026-12-23", "event": "GDP and PCE", "impact": "high"}
   ],
   "corporate_events": [
     {

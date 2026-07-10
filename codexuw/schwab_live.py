@@ -733,6 +733,7 @@ class SchwabChainValidator:
 
     def get_chain(self, ticker: str, from_date: dt.date, to_date: dt.date) -> dict[str, Any] | None:
         symbol = str(ticker).upper().strip()
+        api_symbol = {"BRKB": "BRK/B", "BRK.B": "BRK/B", "BRK-B": "BRK/B"}.get(symbol, symbol)
         if symbol in self.chains:
             return self.chains[symbol]
         snapshot_path = self._snapshot_path(symbol)
@@ -750,7 +751,7 @@ class SchwabChainValidator:
             return None
         try:
             chain = self._service().get_option_chain(
-                symbol,
+                api_symbol,
                 strike_count=self.strike_count,
                 include_underlying_quote=True,
                 from_date=from_date,
@@ -766,7 +767,7 @@ class SchwabChainValidator:
             return None
         try:
             chain = self._service().get_option_chain(
-                symbol,
+                api_symbol,
                 strike_count=self.strike_count,
                 include_underlying_quote=True,
             )

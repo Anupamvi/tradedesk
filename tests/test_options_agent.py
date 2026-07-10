@@ -55,15 +55,16 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.2-blocker-carryforward-20260710-142154"
+    assert core.PIPELINE_VERSION == "options-agent-v1.3-evidence-integrity-20260710-151249"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.2-blocker-carryforward-20260710-142154",
         "options-agent-v1.2-exact-reprice-20260710-093806",
         "options-agent-v1.1-contract-risk-20260709-193127",
         "options-agent-v1.1-contract-risk-20260709-184846",
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-10T14:21:54-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-10T15:12:49-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -1829,6 +1830,7 @@ def test_external_pass_one_artifact_absence_review_is_caution_only(tmp_path: Pat
                         "confidence": "high",
                         "note": "objective thesis break from confirmed delisting event",
                         "objective_blocker": True,
+                        "blocker_type": "thesis_break",
                     },
                 ]
             }
@@ -1847,6 +1849,44 @@ def test_external_pass_one_artifact_absence_review_is_caution_only(tmp_path: Pat
         ("GOOG", "skeptic"), "note"
     ]
     assert bool(by_ticker_agent.loc[("TSLA", "skeptic"), "objective_blocker"]) is True
+
+
+def test_external_agent_loader_rejects_unknown_lane_and_unverified_catalyst_contract(tmp_path: Path) -> None:
+    reviews_json = tmp_path / "agentic_reviews.json"
+    common = {
+        "ticker": "AAPL",
+        "verdict": "supportive",
+        "confidence": "high",
+        "note": "review completed",
+        "objective_blocker": False,
+    }
+    reviews_json.write_text(
+        json.dumps(
+            {
+                "reviews": [
+                    {**common, "agent": "invented_lane"},
+                    {
+                        **common,
+                        "agent": "catalyst_news",
+                        "contract_specific": True,
+                        "contract_key": "abc",
+                        "strategy_route": "bull_call_debit",
+                        "expiry": "2026-08-21",
+                        "trade_plan": "BUY 1 AAPL 2026-08-21 200 Call @ 5.00 DEBIT",
+                        "evidence": "stock screener only",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    reviews, warnings = core.load_external_agent_reviews(reviews_json)
+
+    assert reviews.empty
+    assert len(warnings) == 1
+    assert "unknown_agent" in warnings[0]
+    assert "issuer_source_url_required" in warnings[0]
 
 
 def test_agentic_pass_reuses_pass_one_dispatch_contract_for_matching_reviews(tmp_path: Path) -> None:
@@ -3188,6 +3228,33 @@ def test_trade_ticket_surfaces_sort_by_confidence() -> None:
     )
     sorted_mixed = core._sort_trades_by_confidence(mixed_readiness)
     assert sorted_mixed["ticker"].tolist() == ["HIGH_CONFIDENCE_TARGET", "LOW_PRICE_REFRESH"]
+
+
+def test_target_sort_places_exact_review_pass_before_blocked_high_confidence() -> None:
+    rows = pd.DataFrame(
+        [
+            {
+                "ticker": "BLOCKED",
+                "ready_to_enter": False,
+                "order_readiness": "target_order_after_exact_contract_review",
+                "contract_review_status": "BLOCK",
+                "trade_quality_confidence_score": 99,
+                "trade_quality_confidence_rating": "HIGH",
+            },
+            {
+                "ticker": "REVIEWED",
+                "ready_to_enter": False,
+                "order_readiness": "target_order_after_exact_contract_review",
+                "contract_review_status": "PASS",
+                "trade_quality_confidence_score": 70,
+                "trade_quality_confidence_rating": "MEDIUM",
+            },
+        ]
+    )
+
+    sorted_rows = core._sort_trades_by_confidence(rows)
+
+    assert sorted_rows["ticker"].tolist() == ["REVIEWED", "BLOCKED"]
 
 
 def test_ready_trade_tickets_sort_by_confidence_before_expectancy_status() -> None:
@@ -6633,6 +6700,47 @@ def test_codexuw_replay_loader_prefers_new_goal_replay_dirs(tmp_path: Path) -> N
     assert replay["ticker"].tolist() == ["NEW"]
     assert evidence_rows[1]["source_path"].endswith("codexuw_replay_goal_fixture/codexuw_replay_detail.csv")
     assert evidence_rows[1]["status"] == "WARN"
+
+
+def test_codexuw_replay_loader_uses_only_manifest_heldout_partition(tmp_path: Path) -> None:
+    replay_dir = tmp_path / "out" / "codexuw_replay_goal_fixture"
+    replay_dir.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "ticker": "TRAIN",
+                "asof": "2026-05-15",
+                "strategy": "Bull Call Debit Spread",
+                "entry_side": "DEBIT",
+                "pnl_1x": 500.0,
+                "exact_evaluated": True,
+                "decision_pass": True,
+            },
+            {
+                "ticker": "TEST",
+                "asof": "2026-05-16",
+                "strategy": "Bull Call Debit Spread",
+                "entry_side": "DEBIT",
+                "pnl_1x": -25.0,
+                "exact_evaluated": True,
+                "decision_pass": True,
+            },
+        ]
+    ).to_csv(replay_dir / "codexuw_replay_detail.csv", index=False)
+    (replay_dir / "codexuw_replay_manifest.json").write_text(
+        json.dumps({"split_day": "2026-05-15"}),
+        encoding="utf-8",
+    )
+
+    replay, _, error = core._codexuw_profitability_replay_frame(tmp_path / "out")
+    evidence = core._expectancy_from_replay_history(tmp_path / "out", {"TRAIN", "TEST"})
+
+    assert error == ""
+    assert replay["ticker"].tolist() == ["TEST"]
+    assert replay["replay_validation_scope"].tolist() == ["heldout_test"]
+    model = next(row for row in evidence if row["source"] == "codexuw_replay_decision_pass_model")
+    assert model["sample_size"] == 1
+    assert model["avg_pnl"] == -25.0
 
 
 def test_wheel_csp_replay_loader_combines_goal_replays_without_duplicate_signals(tmp_path: Path) -> None:
@@ -11405,6 +11513,48 @@ def test_broker_backfilled_forward_outcomes_feed_expectancy_and_audit(tmp_path: 
     assert audit_summary["forward_broker_backfill_realized_count"] == 1
 
 
+def test_actual_forward_outcomes_do_not_double_count_broker_backfill_and_closed_trade(tmp_path: Path) -> None:
+    closed_dir = tmp_path / "out" / "schwab_pull_state"
+    closed_dir.mkdir(parents=True)
+    (closed_dir / "closed_trades_acct_3326.jsonl").write_text(
+        json.dumps(
+            {
+                "ticker": "RKLB",
+                "strategy": "Bull Call Debit Spread",
+                "realized_pnl": 155.0,
+                "entry_order_ids": ["1006322921251"],
+                "opened_at": "2026-05-12T14:03:15+00:00",
+                "expiry": "2026-05-22",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    backfilled = pd.DataFrame(
+        [
+            {
+                "ticker": "RKLB",
+                "strategy": "Bull Call Debit Spread",
+                "strategy_family": "vertical_spread",
+                "realized_pnl": 155.0,
+                "entry_order_ids": "1006322921251",
+                "opened_at": "2026-05-12T14:03:15+00:00",
+                "expiry": "2026-05-22",
+            }
+        ]
+    )
+
+    actual = core._actual_forward_outcome_frame(
+        tmp_path,
+        tmp_path / "out",
+        broker_backfilled_forward_outcomes=backfilled,
+    )
+
+    assert len(actual) == 1
+    assert actual.iloc[0]["source"] == "schwab_closed_trades"
+    assert actual.iloc[0]["realized_pnl"] == 155.0
+
+
 def test_expectancy_evidence_includes_broker_matched_outcomes_as_diagnostic_only(tmp_path: Path) -> None:
     broker_matched = pd.DataFrame(
         [
@@ -13844,6 +13994,32 @@ def test_live_validation_cap_defers_lower_priority_tickers_without_schwab_fetch(
     assert live["live_validation_status"].tolist() == ["CHAIN_UNAVAILABLE", "LIVE_CHAIN_DEFERRED"]
 
 
+def test_live_chain_default_has_no_ticker_cap(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("UWOS_OPTIONS_AGENT_LIVE_CHAIN_TICKER_CAP", raising=False)
+
+    assert core._live_chain_ticker_cap() is None
+
+
+def test_schwab_chain_validator_maps_berkshire_alias_for_api(tmp_path: Path) -> None:
+    from codexuw.schwab_live import SchwabChainValidator
+
+    calls = []
+
+    class FakeService:
+        def get_option_chain(self, symbol, **kwargs):
+            calls.append(symbol)
+            return {"symbol": symbol, "callExpDateMap": {}, "putExpDateMap": {}}
+
+    validator = SchwabChainValidator(tmp_path)
+    validator.service = FakeService()
+
+    chain = validator.get_chain("BRKB", dt.date(2026, 7, 17), dt.date(2026, 8, 21))
+
+    assert calls == ["BRK/B"]
+    assert chain["symbol"] == "BRK/B"
+    assert "BRKB" in validator.chains
+
+
 def test_live_expiry_selection_stays_inside_daily_trade_window() -> None:
     asof = dt.date(2026, 5, 22)
     contracts = pd.DataFrame(
@@ -14594,6 +14770,7 @@ def test_external_agent_objective_blocker_blocks_without_hiding_row(tmp_path: Pa
                         "confidence": "high",
                         "note": "objective thesis break",
                         "objective_blocker": True,
+                        "blocker_type": "thesis_break",
                     }
                 ]
             }
@@ -16660,6 +16837,45 @@ def test_verified_event_overrides_fix_ups_earnings_and_hd_macro_crossing() -> No
     assert "CPI 2026-07-14" in annotated.loc["HD", "macro_events_before_expiry"]
     assert "PPI 2026-07-15" in annotated.loc["HD", "macro_events_before_expiry"]
     assert "short-DTE contract crosses" in annotated.loc["HD", "contract_event_risk_note"]
+    assert calendar["status"] == "verified"
+    assert any(event["event"] == "FOMC decision" and event["date"] == "2026-07-29" for event in calendar["macro_events"])
+
+
+def test_unverified_equity_earnings_blocks_send_now_without_sourced_catalyst_review() -> None:
+    row = {
+        "ticker": "AAPL",
+        "recommendation_status": RecommendationStatus.ENTER.value,
+        "strategy_route": "long_call",
+        "dte": 30,
+        "earnings_source_status": "unverified",
+        "earnings_before_expiry": False,
+        "macro_calendar_status": "verified",
+        "macro_event_count_before_expiry": 0,
+        "contract_review_status": "BLOCK",
+        "contract_review_agents": "structure_builder; skeptic",
+        "live_probability_proxy": 0.55,
+        "live_quote_width_pct": 0.05,
+        "live_theta_burn_pct": 0.01,
+        "live_breakeven_expected_move_ratio": 0.50,
+    }
+
+    blocked = core._send_now_economics_blockers(
+        row,
+        ticket="BUY 1 AAPL 2026-08-21 200 Call @ 5.00 DEBIT",
+        entry_limit=5.0,
+    )
+    verified = core._send_now_economics_blockers(
+        {
+            **row,
+            "contract_review_status": "PASS",
+            "contract_review_agents": "catalyst_news; structure_builder; skeptic",
+        },
+        ticket="BUY 1 AAPL 2026-08-21 200 Call @ 5.00 DEBIT",
+        entry_limit=5.0,
+    )
+
+    assert "send_now_earnings_calendar_unverified" in blocked
+    assert "send_now_earnings_calendar_unverified" not in verified
 
 
 def test_hd_like_short_dte_debit_is_rejected_for_quote_width_and_theta() -> None:
@@ -17521,7 +17737,7 @@ def test_pass_two_reuses_dispatch_contract_and_preserves_exact_reviews(
     )
     task = json.loads(paths["dispatch_contract_review_tasks"].read_text())["contracts"][0]
     reviews = []
-    for agent in ("structure_builder", "skeptic"):
+    for agent in task["required_review_agents"]:
         reviews.append(
             {
                 "ticker": task["ticker"],
@@ -17536,6 +17752,7 @@ def test_pass_two_reuses_dispatch_contract_and_preserves_exact_reviews(
                 "strategy_route": task["strategy_route"],
                 "expiry": task["expiry"],
                 "trade_plan": task["trade_plan"],
+                "evidence": "https://investor.example.com/earnings" if agent == "catalyst_news" else "priced contract artifacts",
             }
         )
     paths["agentic_reviews"].write_text(json.dumps({"reviews": reviews}), encoding="utf-8")
@@ -17586,7 +17803,7 @@ def test_pass_two_reuses_dispatch_contract_and_preserves_exact_reviews(
     reviewed = priced[priced["contract_key"].astype(str).eq(task["contract_key"])]
 
     assert manifest["agentic_orchestration"]["dispatch_pricing_snapshot_reused"] is True
-    assert reviewed["contract_review_count"].tolist() == [2]
+    assert reviewed["contract_review_count"].tolist() == [len(task["required_review_agents"])]
     assert reviewed["contract_review_status"].tolist() == ["PASS"]
     assert reviewed["contract_review_missing_agents"].tolist() == [""]
     assert not priced["hard_rejects"].astype(str).str.lower().str.contains(r"(?:^|; )nan(?:;|$)").any()
