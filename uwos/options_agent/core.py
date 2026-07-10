@@ -1483,26 +1483,31 @@ def _pipeline_source_provenance(root: Path) -> dict[str, Any]:
         "knowledge/options_agent_event_calendar_2026.json",
         "knowledge/options_agent_replay_pin.json",
     )
+    requested_root = Path(root)
+    code_root = requested_root
+    if not (code_root / "uwos/options_agent/core.py").exists():
+        code_root = project_root()
     fingerprints: dict[str, str] = {}
     for relative_path in relative_paths:
-        path = Path(root) / relative_path
+        path = code_root / relative_path
         if path.exists():
             fingerprints[relative_path] = hashlib.sha256(path.read_bytes()).hexdigest()
     try:
         sha = subprocess.run(
-            ["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
+            ["git", "-C", str(code_root), "rev-parse", "--short", "HEAD"],
             check=True,
             capture_output=True,
             text=True,
         ).stdout.strip()
         dirty = subprocess.run(
-            ["git", "-C", str(root), "diff", "--quiet", "HEAD", "--", *relative_paths],
+            ["git", "-C", str(code_root), "diff", "--quiet", "HEAD", "--", *relative_paths],
             check=False,
         ).returncode != 0
     except Exception:
         sha = ""
         dirty = True
     return {
+        "code_root": str(code_root),
         "git_sha": sha,
         "relevant_files_dirty": dirty,
         "file_sha256": fingerprints,

@@ -1,4 +1,5 @@
 import datetime as dt
+import hashlib
 import importlib.abc
 import inspect
 import json
@@ -1171,6 +1172,23 @@ def test_default_output_paths_use_options_agent_namespace(tmp_path: Path) -> Non
     assert paths["broker_matched_outcomes"].name == "broker_matched_outcomes.csv"
     assert paths["execution_fill_quality"].name == "execution_fill_quality.csv"
     assert paths["goal_confidence_gap_audit"].name == "goal_confidence_gap_audit.csv"
+
+
+def test_pipeline_source_provenance_uses_code_root_for_overlay_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    code_root = tmp_path / "code"
+    core_path = code_root / "uwos" / "options_agent" / "core.py"
+    core_path.parent.mkdir(parents=True)
+    core_path.write_text("# pinned code\n", encoding="utf-8")
+    monkeypatch.setattr(core, "project_root", lambda: code_root)
+
+    provenance = core._pipeline_source_provenance(tmp_path / "overlay")
+
+    assert provenance["code_root"] == str(code_root)
+    assert provenance["file_sha256"]["uwos/options_agent/core.py"] == hashlib.sha256(
+        core_path.read_bytes()
+    ).hexdigest()
 
 
 def test_portfolio_risk_annotations_do_not_suppress_qualified_trade() -> None:
