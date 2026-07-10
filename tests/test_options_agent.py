@@ -6959,11 +6959,12 @@ def test_strategy_cohort_prefers_current_route_over_broad_vertical_family(tmp_pa
         actual_frame=actual,
     )
 
-    assert row["status"] == "WARN"
+    assert row["status"] == "PASS"
     assert row["sample_size"] == core.MIN_EXPECTANCY_SAMPLE_SIZE
     assert row["avg_pnl"] == 76.0
     assert "current ticket strategy routes: bull_call_debit" in row["note"]
     assert "unrelated spread variants" in row["note"]
+    assert "exact contracts still require profitability calibration" in row["note"]
 
 
 def test_strategy_outcome_atlas_surfaces_positive_and_negative_strategy_families(tmp_path: Path) -> None:
@@ -9737,6 +9738,69 @@ def test_profitability_calibration_allows_one_lot_hierarchical_route_pass_at_pf_
         actual_metrics=actual,
         replay_metrics=negative_exact_replay,
         route_replay_metrics=route_replay,
+        replay_path=Path("replay.csv"),
+        replay_error="",
+    )
+
+    assert blocked_status != "PASS"
+
+
+def test_profitability_calibration_borrows_passing_heldout_model_for_positive_route() -> None:
+    actual = {
+        "status": "PASS",
+        "sample_size": core.MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE,
+        "win_rate": 0.44,
+        "avg_pnl": 20.0,
+        "profit_factor": 1.25,
+    }
+    route_replay = {
+        "status": "WARN",
+        "sample_size": core.MIN_HIERARCHICAL_ROUTE_REPLAY_SAMPLE_SIZE,
+        "win_rate": 0.70,
+        "avg_pnl": 45.0,
+        "profit_factor": 1.80,
+    }
+    model_replay = {
+        "status": "PASS",
+        "sample_size": core.MIN_EXPECTANCY_SAMPLE_SIZE,
+        "win_rate": 0.70,
+        "avg_pnl": 35.0,
+        "profit_factor": 1.60,
+    }
+    sparse_exact_replay = {
+        "status": "BLOCK",
+        "sample_size": 0,
+        "win_rate": "",
+        "avg_pnl": "",
+        "profit_factor": "",
+    }
+
+    status, action, note = core._current_calibration_verdict(
+        ticker="AAPL",
+        key={"strategy_route": "bull_call_debit"},
+        actual_scope="actual_route",
+        actual_metrics=actual,
+        replay_metrics=sparse_exact_replay,
+        route_replay_metrics=route_replay,
+        model_replay_metrics=model_replay,
+        replay_path=Path("replay.csv"),
+        replay_error="",
+    )
+
+    assert status == "PASS"
+    assert action == "eligible_for_one_lot_green_with_hierarchical_route_support"
+    assert "held-out model support" in note
+
+    route_replay["avg_pnl"] = -5.0
+    route_replay["profit_factor"] = 0.80
+    blocked_status, _, _ = core._current_calibration_verdict(
+        ticker="AAPL",
+        key={"strategy_route": "bull_call_debit"},
+        actual_scope="actual_route",
+        actual_metrics=actual,
+        replay_metrics=sparse_exact_replay,
+        route_replay_metrics=route_replay,
+        model_replay_metrics=model_replay,
         replay_path=Path("replay.csv"),
         replay_error="",
     )
@@ -12928,6 +12992,49 @@ def test_report_uses_position_scaled_profit_loss_for_target_order_tables() -> No
             "edge HIGH; entry NOT_EXECUTION_READY / 0; order HIGH / 88 | "
             "contract metrics unavailable | credit/width too weak for send-now |"
         ) in report
+
+
+def test_report_keeps_uncalibrated_watch_plans_out_of_target_order_table() -> None:
+    base = {
+        "ready_to_enter": False,
+        "execution_status": "needs_confidence",
+        "execution_gate_status": "blocked",
+        "target_order_status": "target_order_candidate",
+        "suggested_contracts": 1,
+        "entry_limit": 1.0,
+        "target_exit": 1.8,
+        "max_profit": 100.0,
+        "max_loss": 100.0,
+        "live_validation_status": "PASS",
+        "trade_quality_confidence_rating": "HIGH",
+        "execution_confidence_rating": "NOT_EXECUTION_READY",
+        "underlying_quality_tier": "core",
+    }
+    final = pd.DataFrame(
+        [
+            {
+                **base,
+                "ticker": "CALPASS",
+                "trade_plan": "BUY 1 CALPASS 2026-08-21 100 Call @ 1.00 DEBIT",
+                "profitability_calibration_status": "PASS",
+            },
+            {
+                **base,
+                "ticker": "CALWARN",
+                "trade_plan": "BUY 1 CALWARN 2026-08-21 100 Call @ 1.00 DEBIT",
+                "profitability_calibration_status": "WARN",
+            },
+        ]
+    )
+
+    report = core.render_report("2026-07-10", final, pd.DataFrame(), {"row_counts": {}, "warnings": []})
+    target_section = report.split("## Target Orders - Target Credits/Debits", 1)[1].split(
+        "## Watch Plans - Not Orders", 1
+    )[0]
+
+    assert "CALPASS" in target_section
+    assert "CALWARN" not in target_section
+    assert "1 additional plans lack passing profitability calibration" in report
 
 
 def test_report_snapshot_counts_review_only_visible_tickets() -> None:

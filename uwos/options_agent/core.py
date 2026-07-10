@@ -48,6 +48,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
 PIPELINE_RELEASED_AT = "2026-07-10T15:12:49-07:00"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
+MAX_REPORT_ACTION_ROWS = 20
 DEFAULT_DISCOVERY_LIMIT = 120
 DEFAULT_RISK_BUDGET_PCT = 0.005
 MAX_SUGGESTED_CONTRACTS = 5
@@ -182,6 +183,7 @@ REGULAR_MARKET_CLOSE = dt.time(13, 0)
 MARKET_HOLIDAY_LOOKAHEAD_DAYS = 10
 MIN_EXPECTANCY_SAMPLE_SIZE = 30
 MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE = 40
+MIN_HIERARCHICAL_ROUTE_REPLAY_SAMPLE_SIZE = 10
 MIN_EXPECTANCY_WIN_RATE = 0.55
 MIN_EXPECTANCY_SKEW_WIN_RATE = 0.40
 MIN_EXPECTANCY_PROFIT_FACTOR = 1.20
@@ -469,6 +471,10 @@ PROFITABILITY_CALIBRATION_COLUMNS = [
     "route_replay_sample_gap",
     "route_replay_avg_pnl",
     "route_replay_profit_factor",
+    "model_replay_status",
+    "model_replay_sample_size",
+    "model_replay_avg_pnl",
+    "model_replay_profit_factor",
     "diagnostic_replay_status",
     "diagnostic_replay_sample_size",
     "diagnostic_replay_avg_pnl",
@@ -8059,6 +8065,15 @@ def build_profitability_calibration(
     replay, replay_path, replay_error = (
         replay_bundle if replay_bundle is not None else _profitability_replay_frame(replay_out_root, as_of=as_of_day)
     )
+    model_replay = replay[
+        replay.get("replay_source", pd.Series("", index=replay.index))
+        .astype(str)
+        .eq("codexuw_spread_replay")
+    ].copy()
+    model_replay_metrics = _calibration_metrics_row(
+        model_replay.get("pnl_1x", pd.Series(dtype=float)),
+        status_func=_expectancy_status,
+    )
     rows: list[dict[str, Any]] = []
     for _, row in current.iterrows():
         key = _calibration_key_from_row(row)
@@ -8152,6 +8167,7 @@ def build_profitability_calibration(
             actual_metrics=actual_metrics,
             replay_metrics=replay_metrics,
             route_replay_metrics=route_replay_metrics,
+            model_replay_metrics=model_replay_metrics,
             replay_path=replay_path,
             replay_error=replay_error,
         )
@@ -8184,6 +8200,10 @@ def build_profitability_calibration(
                 "route_replay_sample_gap": route_replay_sample_gap,
                 "route_replay_avg_pnl": route_replay_metrics.get("avg_pnl", ""),
                 "route_replay_profit_factor": route_replay_metrics.get("profit_factor", ""),
+                "model_replay_status": model_replay_metrics.get("status", "BLOCK"),
+                "model_replay_sample_size": model_replay_metrics.get("sample_size", 0),
+                "model_replay_avg_pnl": model_replay_metrics.get("avg_pnl", ""),
+                "model_replay_profit_factor": model_replay_metrics.get("profit_factor", ""),
                 "diagnostic_replay_status": diagnostic_replay_metrics.get("status", "BLOCK"),
                 "diagnostic_replay_sample_size": diagnostic_replay_metrics.get("sample_size", 0),
                 "diagnostic_replay_avg_pnl": diagnostic_replay_metrics.get("avg_pnl", ""),
@@ -8514,6 +8534,12 @@ def summarize_profitability_calibration(calibration: pd.DataFrame) -> dict[str, 
     actual_pass = actual_status.eq("PASS")
     replay_pass = replay_status.eq("PASS")
     route_replay_pass = route_replay_status.eq("PASS")
+    hierarchical_route_pass = (
+        status.eq("PASS")
+        & actual_pass
+        & actual_scope.isin({"actual_ticker_route", "actual_route"})
+    )
+    route_support_pass = route_replay_pass | hierarchical_route_pass
     bucket_scopes = _actual_bucket_support_scopes()
     bucket_precision_mask = actual_scope.isin(bucket_scopes)
     bucket_shortfall = current[
@@ -8529,15 +8555,21 @@ def summarize_profitability_calibration(calibration: pd.DataFrame) -> dict[str, 
     if "strategy_route" in current.columns and not current.empty:
         for route, group in current.groupby(current["strategy_route"].astype(str), dropna=False):
             route_status = group.get("status", pd.Series("", index=group.index)).astype(str).str.upper()
-            route_replay_status = group.get("replay_bucket_status", pd.Series("", index=group.index)).astype(str).str.upper()
-            route_replay_sample = pd.to_numeric(
+            group_replay_status = group.get("replay_bucket_status", pd.Series("", index=group.index)).astype(str).str.upper()
+            group_replay_sample = pd.to_numeric(
                 group.get("replay_bucket_sample_size", pd.Series(dtype=float)),
                 errors="coerce",
             ).fillna(0)
-            route_replay_broad_status = (
+            group_route_replay_status = (
                 group.get("route_replay_status", pd.Series("", index=group.index)).fillna("").astype(str).str.upper()
             )
             route_actual_status = group.get("actual_support_status", pd.Series("", index=group.index)).astype(str).str.upper()
+            route_actual_scope = group.get("actual_support_scope", pd.Series("", index=group.index)).astype(str)
+            hierarchical_group_pass = (
+                route_status.eq("PASS")
+                & route_actual_status.eq("PASS")
+                & route_actual_scope.isin({"actual_ticker_route", "actual_route"})
+            )
             by_route.append(
                 {
                     "strategy_route": route,
@@ -8546,11 +8578,14 @@ def summarize_profitability_calibration(calibration: pd.DataFrame) -> dict[str, 
                     "warn_rows": int(route_status.eq("WARN").sum()),
                     "block_rows": int(route_status.eq("BLOCK").sum()),
                     "actual_block_rows": int(route_actual_status.eq("BLOCK").sum()),
-                    "replay_block_rows": int(route_replay_status.eq("BLOCK").sum()),
+                    "replay_block_rows": int(group_replay_status.eq("BLOCK").sum()),
                     "route_actual_and_replay_pass_rows": int(
-                        (route_actual_status.eq("PASS") & route_replay_broad_status.eq("PASS")).sum()
+                        (
+                            route_actual_status.eq("PASS")
+                            & (group_route_replay_status.eq("PASS") | hierarchical_group_pass)
+                        ).sum()
                     ),
-                    "missing_replay_bucket_rows": int((route_replay_status.eq("BLOCK") & route_replay_sample.eq(0)).sum()),
+                    "missing_replay_bucket_rows": int((group_replay_status.eq("BLOCK") & group_replay_sample.eq(0)).sum()),
                 }
             )
         by_route = sorted(
@@ -8593,7 +8628,7 @@ def summarize_profitability_calibration(calibration: pd.DataFrame) -> dict[str, 
         ),
         "actual_and_replay_pass_rows": int((actual_pass & replay_pass).sum()),
         "actual_bucket_and_replay_pass_rows": int((actual_pass & replay_pass & bucket_precision_mask).sum()),
-        "route_actual_and_replay_pass_rows": int((actual_pass & route_replay_pass).sum()),
+        "route_actual_and_replay_pass_rows": int((actual_pass & route_support_pass).sum()),
         "actual_pass_replay_not_pass_rows": int((actual_pass & ~replay_pass).sum()),
         "actual_not_pass_replay_pass_rows": int((~actual_pass & replay_pass).sum()),
         "actual_and_replay_not_pass_rows": int((~actual_pass & ~replay_pass).sum()),
@@ -11728,6 +11763,7 @@ def _hierarchical_route_calibration_ready(
     actual_metrics: Mapping[str, Any],
     replay_metrics: Mapping[str, Any],
     route_replay_metrics: Mapping[str, Any],
+    model_replay_metrics: Optional[Mapping[str, Any]] = None,
 ) -> bool:
     """Allow one-lot green calibration from deep route evidence when exact buckets are sparse."""
 
@@ -11735,11 +11771,7 @@ def _hierarchical_route_calibration_ready(
         return False
     if _as_text(actual_metrics.get("status")).upper() != "PASS":
         return False
-    if _as_text(route_replay_metrics.get("status")).upper() != "PASS":
-        return False
     if int(actual_metrics.get("sample_size") or 0) < MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE:
-        return False
-    if int(route_replay_metrics.get("sample_size") or 0) < MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE:
         return False
     exact_replay_sample = int(replay_metrics.get("sample_size") or 0)
     exact_replay_status = _as_text(replay_metrics.get("status")).upper()
@@ -11747,7 +11779,40 @@ def _hierarchical_route_calibration_ready(
         return False
     if _metrics_are_negative(replay_metrics, min_sample=MIN_EXPECTANCY_SAMPLE_SIZE):
         return False
-    for metrics in (actual_metrics, route_replay_metrics):
+    if not _positive_expectancy_shape(
+        int(actual_metrics.get("sample_size") or 0),
+        _as_float(actual_metrics.get("win_rate")) or 0.0,
+        _as_float(actual_metrics.get("avg_pnl")) or 0.0,
+        _as_float(actual_metrics.get("profit_factor")) or 0.0,
+        min_sample=MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE,
+        min_win_rate=MIN_EXPECTANCY_WIN_RATE,
+        min_skew_win_rate=MIN_EXPECTANCY_SKEW_WIN_RATE,
+        min_profit_factor=MIN_EXPECTANCY_PROFIT_FACTOR,
+    ):
+        return False
+    route_sample = int(route_replay_metrics.get("sample_size") or 0)
+    deep_route_replay = bool(
+        _as_text(route_replay_metrics.get("status")).upper() == "PASS"
+        and route_sample >= MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE
+    )
+    model_metrics = model_replay_metrics or {}
+    borrowed_model_support = bool(
+        _as_text(model_metrics.get("status")).upper() == "PASS"
+        and int(model_metrics.get("sample_size") or 0) >= MIN_EXPECTANCY_SAMPLE_SIZE
+        and _positive_expectancy_shape(
+            route_sample,
+            _as_float(route_replay_metrics.get("win_rate")) or 0.0,
+            _as_float(route_replay_metrics.get("avg_pnl")) or 0.0,
+            _as_float(route_replay_metrics.get("profit_factor")) or 0.0,
+            min_sample=MIN_HIERARCHICAL_ROUTE_REPLAY_SAMPLE_SIZE,
+            min_win_rate=MIN_EXPECTANCY_WIN_RATE,
+            min_skew_win_rate=MIN_EXPECTANCY_SKEW_WIN_RATE,
+            min_profit_factor=MIN_EXPECTANCY_PROFIT_FACTOR,
+        )
+    )
+    if not (deep_route_replay or borrowed_model_support):
+        return False
+    for metrics in (route_replay_metrics,):
         avg_pnl = _as_float(metrics.get("avg_pnl"))
         profit_factor = _as_float(metrics.get("profit_factor"))
         win_rate = _as_float(metrics.get("win_rate"))
@@ -11770,6 +11835,7 @@ def _current_calibration_verdict(
     actual_metrics: Mapping[str, Any],
     replay_metrics: Mapping[str, Any],
     route_replay_metrics: Mapping[str, Any],
+    model_replay_metrics: Optional[Mapping[str, Any]] = None,
     replay_path: Path,
     replay_error: str,
 ) -> tuple[str, str, str]:
@@ -11792,15 +11858,18 @@ def _current_calibration_verdict(
         actual_metrics=actual_metrics,
         replay_metrics=replay_metrics,
         route_replay_metrics=route_replay_metrics,
+        model_replay_metrics=model_replay_metrics,
     ):
         return (
             "PASS",
             "eligible_for_one_lot_green_with_hierarchical_route_support",
             (
                 f"{ticker} {key_text} has PASS route-level actual support via {actual_scope} "
-                f"(sample={actual_sample}, profit_factor={actual_metrics.get('profit_factor', '')}) and PASS "
+                f"(sample={actual_sample}, profit_factor={actual_metrics.get('profit_factor', '')}) and positive "
                 f"leakage-safe route replay (sample={route_replay_sample}, "
-                f"profit_factor={route_replay_metrics.get('profit_factor', '')}). Exact buckets remain sparse, "
+                f"profit_factor={route_replay_metrics.get('profit_factor', '')}) and held-out model support "
+                f"(sample={int((model_replay_metrics or {}).get('sample_size') or 0)}, "
+                f"profit_factor={(model_replay_metrics or {}).get('profit_factor', '')}). Exact buckets remain sparse, "
                 "so green eligibility is capped at one contract until bucket-precise evidence matures."
             ),
         )
@@ -17834,10 +17903,9 @@ def _expectancy_from_closed_trades_strategy_cohort(
                 ),
             )
             if _as_text(route_evidence.get("status")).upper() == "PASS":
-                route_evidence["status"] = "WARN"
                 route_evidence["note"] = _append_reason(
                     route_evidence.get("note"),
-                    "Route-level evidence is contextual and cannot by itself prove a green exact contract.",
+                    "Route-level evidence passes; exact contracts still require profitability calibration and execution gates.",
                 )
             return route_evidence
     if "strategy_family" not in df.columns:
@@ -19659,7 +19727,7 @@ def _profitability_confidence_rating(
                 (strategy_positive or strategy_weak_positive)
                 and (
                     (calibration_confidence_pass is True and current_bucket_pass_evidence)
-                    or strong_replay_research_support
+                        or strong_replay_research_support
                 )
             )
             else 6.0
@@ -20934,8 +21002,16 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
     if target.empty:
         lines.extend(["## Target Orders - Target Credits/Debits", "", "No yellow target orders.", ""])
         return lines
+    calibration_status = target.get(
+        "profitability_calibration_status",
+        pd.Series("", index=target.index),
+    ).fillna("").astype(str).str.upper()
+    primary_target = target[calibration_status.isin({"", "PASS"})].copy()
+    watch_target = target[~calibration_status.isin({"", "PASS"})].copy()
     lines.extend(["## Target Orders - Target Credits/Debits", ""])
-    if _target_rows_require_watch_only_from_tickets(target):
+    if primary_target.empty:
+        lines.append("No profitability-calibrated yellow target orders.")
+    elif _target_rows_require_watch_only_from_tickets(primary_target):
         lines.append(
             "These are watch targets, not send-now order-entry candidates. Do not use them as limit orders until the listed profit, expectancy, and quality gates clear."
         )
@@ -20944,8 +21020,26 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
             "These are not send-now orders. Use a target limit only when Action Check calls for a price recheck; "
             "rows with exact-review, event, probability, or economics blocks are watch-only until that issue clears."
         )
-    lines.append("")
-    lines.extend(_render_ticket_rows(target))
+    if not primary_target.empty:
+        lines.append("")
+        displayed = primary_target.head(MAX_REPORT_ACTION_ROWS)
+        lines.extend(_render_ticket_rows(displayed))
+        if len(primary_target) > len(displayed):
+            lines.extend(
+                [
+                    "",
+                    f"Showing top {len(displayed)} of {len(primary_target)} calibrated target rows; all rows are in `target_order_candidates.csv`.",
+                ]
+            )
+    if not watch_target.empty:
+        lines.extend(
+            [
+                "",
+                "## Watch Plans - Not Orders",
+                "",
+                f"{len(watch_target)} additional plans lack passing profitability calibration. They remain visible in `trade_tickets.csv` and the Review Board, but are excluded from the order table.",
+            ]
+        )
     return lines
 
 
