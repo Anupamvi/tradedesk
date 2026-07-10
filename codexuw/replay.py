@@ -11,7 +11,9 @@ from typing import Any
 import pandas as pd
 
 from .catalysts import earnings_crosses_expiry, earnings_event_date
+from .credit_policy import CREDIT_POLICY_VERSION, assess_credit_spread, credit_spread_edge_lane
 from .data import aggregate_bot_flow, infer_asof_date, load_hot_chains, load_stock_screener, safe_float
+from .debit_policy import DEBIT_POLICY_VERSION, assess_debit_spread
 from .engine import detect_regime, generate_candidates, replay_quality_pattern, select_ticker_pool, validated_addon_income_lane
 from .occ import build_occ_symbol, parse_occ_symbol
 
@@ -349,6 +351,7 @@ def simulate_spread_exit(
     slippage_pct: float,
     profit_take_pct: float,
     stop_loss_mult: float,
+    debit_time_stop_dte: int = -1,
 ) -> dict[str, Any]:
     expiry = row.get("expiry")
     asof = row.get("asof")
@@ -391,6 +394,21 @@ def simulate_spread_exit(
                     "exact_evaluated": True,
                     "exit_day": day,
                     "exit_reason": "stop_loss",
+                    "exit_value": exit_value,
+                    "target_exit_value": target_value,
+                    "stop_exit_value": stop_value,
+                    "pnl_1x": pnl * 100.0,
+                    "return_on_risk": pnl / max(entry_debit, 0.01),
+                    "exact_win": pnl > 0,
+                    "quote_days_seen": quote_days_seen,
+                }
+            if debit_time_stop_dte >= 0 and (expiry - day).days <= debit_time_stop_dte:
+                pnl = exit_value - entry_debit
+                return {
+                    **entry,
+                    "exact_evaluated": True,
+                    "exit_day": day,
+                    "exit_reason": f"time_stop_{debit_time_stop_dte}dte",
                     "exit_value": exit_value,
                     "target_exit_value": target_value,
                     "stop_exit_value": stop_value,
@@ -491,12 +509,17 @@ def _split_metrics(df: pd.DataFrame, split_day: dt.date | None) -> dict[str, Any
         groups["test"] = df[df["asof"] > split_day]
     for name, part in groups.items():
         ev = part[part["exact_evaluated"].eq(True)].copy() if not part.empty else part
+        gross_profit = float(ev.loc[ev["pnl_1x"] > 0, "pnl_1x"].sum()) if not ev.empty else 0.0
+        gross_loss = float(-ev.loc[ev["pnl_1x"] < 0, "pnl_1x"].sum()) if not ev.empty else 0.0
         out[name] = {
             "rows": int(len(part)),
             "evaluated": int(len(ev)),
             "win_rate": float(ev["exact_win"].mean()) if not ev.empty else None,
             "avg_pnl_1x": float(ev["pnl_1x"].mean()) if not ev.empty else None,
             "total_pnl_1x": float(ev["pnl_1x"].sum()) if not ev.empty else None,
+            "gross_profit_1x": gross_profit if not ev.empty else None,
+            "gross_loss_1x": gross_loss if not ev.empty else None,
+            "profit_factor": gross_profit / gross_loss if gross_loss > 0 else (math.inf if gross_profit > 0 else None),
             "max_drawdown_1x": _max_drawdown(ev.sort_values(["asof", "ticker"])["pnl_1x"]) if not ev.empty else None,
             "avg_entry_credit_pct_width": float(ev["entry_credit_pct_width"].mean()) if "entry_credit_pct_width" in ev.columns and not ev.empty else None,
             "avg_entry_debit_pct_width": float(ev["entry_debit_pct_width"].mean()) if "entry_debit_pct_width" in ev.columns and not ev.empty else None,
@@ -735,7 +758,20 @@ def _secondary_income_eligible(
     )
 
 
-def apply_replay_decision_selection(detail: pd.DataFrame, *, max_selected_per_day: int = 8) -> pd.DataFrame:
+def _entry_fillable(row: pd.Series | dict[str, Any]) -> bool:
+    value = row.get("exact_fillable")
+    if value is not None and not pd.isna(value):
+        return _truthy(value)
+    return _truthy(row.get("exact_evaluated"))
+
+
+def apply_replay_decision_selection(
+    detail: pd.DataFrame,
+    *,
+    max_selected_per_day: int = 8,
+    max_credit_selected_per_day: int = 1,
+    max_debit_selected_per_day: int = 1,
+) -> pd.DataFrame:
     if detail.empty:
         return detail
     out = detail.copy()
@@ -744,15 +780,15 @@ def apply_replay_decision_selection(detail: pd.DataFrame, *, max_selected_per_da
     out["decision_reason"] = ""
     out["decision_tier"] = ""
     primary_eligible: list[tuple[int, str, float]] = []
+    debit_eligible: list[tuple[int, str, float]] = []
     secondary_eligible: list[tuple[int, str, float]] = []
     for idx, row in out.iterrows():
-        if not _truthy(row.get("exact_evaluated")):
-            out.at[idx, "decision_reason"] = str(row.get("exact_reason") or row.get("fill_reason") or "not_exact_evaluated")
+        if not _entry_fillable(row):
+            out.at[idx, "decision_reason"] = str(row.get("fill_reason") or row.get("exact_reason") or "not_entry_fillable")
             continue
         credit_pct = safe_float(row.get("entry_credit_pct_width"))
         debit_pct = safe_float(row.get("entry_debit_pct_width"))
         reward_risk = safe_float(row.get("reward_risk"))
-        pnl = safe_float(row.get("pnl_1x"))
         _distance, _expected, ratio = _distance_expected(row)
         align = _flow_alignment(row)
         dte = safe_float(row.get("dte"))
@@ -766,14 +802,25 @@ def apply_replay_decision_selection(detail: pd.DataFrame, *, max_selected_per_da
         elif _is_debit_strategy(row):
             if not math.isfinite(debit_pct) or debit_pct <= 0:
                 out.at[idx, "decision_reason"] = "decision_debit_missing_entry_price"
+                continue
             elif debit_pct >= 1.0:
                 out.at[idx, "decision_reason"] = "decision_debit_impossible_above_width"
-            elif _truthy(row.get("exact_win")) is False or (math.isfinite(pnl) and pnl <= 0):
-                out.at[idx, "decision_reason"] = "decision_negative_debit_replay_pnl"
-            elif debit_pct > 0.45:
+                continue
+            elif str(row.get("entry_price_annotation") or "") == "entry_debit_above_target" or debit_pct > 0.45:
                 out.at[idx, "decision_reason"] = "decision_debit_above_target_watch_annotation"
                 out.at[idx, "decision_tier"] = "debit_watch_annotation"
-            elif math.isfinite(reward_risk) and reward_risk < 0.80:
+                continue
+            else:
+                debit_ok, debit_reasons = assess_debit_spread(
+                    row,
+                    live=False,
+                    expected_move_ratio=ratio,
+                    flow_alignment=align,
+                )
+                if not debit_ok:
+                    out.at[idx, "decision_reason"] = "decision_debit_policy:" + "|".join(debit_reasons)
+                    continue
+            if math.isfinite(reward_risk) and reward_risk < 0.80:
                 out.at[idx, "decision_reason"] = "decision_debit_reward_risk_below_0_80"
             elif not math.isfinite(ratio) or ratio < 0.75:
                 out.at[idx, "decision_reason"] = "decision_debit_breakeven_not_reachable"
@@ -782,44 +829,36 @@ def apply_replay_decision_selection(detail: pd.DataFrame, *, max_selected_per_da
             else:
                 out.at[idx, "decision_reason"] = "decision_eligible"
                 out.at[idx, "decision_tier"] = "directional_debit"
-                primary_eligible.append((idx, _date_key(row.get("asof")), score))
-        elif not math.isfinite(credit_pct) or credit_pct < 0.16:
-            out.at[idx, "decision_reason"] = "decision_credit_below_16pct_width"
-        elif _secondary_income_eligible(credit_pct=credit_pct, ratio=ratio, align=align, score=score, dte=dte) and ratio < 0.65:
-            out.at[idx, "decision_reason"] = "decision_secondary_income_eligible"
-            out.at[idx, "decision_tier"] = "secondary_income"
-            secondary_eligible.append((idx, _date_key(row.get("asof")), score))
-        elif not math.isfinite(ratio) or ratio < 0.65:
-            out.at[idx, "decision_reason"] = "decision_insufficient_expected_move_buffer"
-        elif not math.isfinite(align) or align < 0.10:
-            out.at[idx, "decision_reason"] = "decision_weak_flow_alignment"
-        elif credit_pct > 0.30:
-            out.at[idx, "decision_reason"] = "decision_credit_above_30pct_width"
+                debit_eligible.append((idx, _date_key(row.get("asof")), score))
         else:
+            credit_ok, credit_reasons = assess_credit_spread(
+                row,
+                live=False,
+                expected_move_ratio=ratio,
+                flow_alignment=align,
+            )
+            if not credit_ok:
+                out.at[idx, "decision_reason"] = "decision_credit_policy:" + "|".join(credit_reasons)
+                continue
+            lane = credit_spread_edge_lane(row, expected_move_ratio=ratio)
             out.at[idx, "decision_reason"] = "decision_eligible"
-            out.at[idx, "decision_tier"] = "primary"
+            out.at[idx, "decision_tier"] = f"credit_{lane}"
             primary_eligible.append((idx, _date_key(row.get("asof")), score))
     primary_by_day: dict[str, list[tuple[int, float]]] = {}
     for idx, day, score in primary_eligible:
         primary_by_day.setdefault(day, []).append((idx, score))
     selected_days: set[str] = set()
     for day, day_items in primary_by_day.items():
+        credit_cap = max(0, min(max_selected_per_day, max_credit_selected_per_day))
+        if credit_cap <= 0:
+            continue
         selected_for_day = 0
         for idx, _score in sorted(day_items, key=lambda item: item[1], reverse=True):
-            row = out.loc[idx]
-            is_addon = selected_for_day > 0 and validated_addon_income_lane(
-                row.get("direction"),
-                safe_float(row.get("entry_credit_pct_width")),
-            )
-            if selected_for_day > 0 and not is_addon:
-                continue
             out.at[idx, "decision_pass"] = True
-            out.at[idx, "decision_reason"] = (
-                "decision_selected_validated_addon_income_lane" if is_addon else "decision_selected_strongest_flow_aligned"
-            )
+            out.at[idx, "decision_reason"] = "decision_selected_credit_edge_sleeve"
             selected_for_day += 1
             selected_days.add(day)
-            if selected_for_day >= max_selected_per_day:
+            if selected_for_day >= credit_cap:
                 break
     secondary_by_day: dict[str, list[tuple[int, float]]] = {}
     for idx, day, score in secondary_eligible:
@@ -843,6 +882,30 @@ def apply_replay_decision_selection(detail: pd.DataFrame, *, max_selected_per_da
             selected_for_day += 1
             selected_days.add(day)
             if selected_for_day >= max_selected_per_day:
+                break
+
+    selected_tickers_by_day: dict[str, set[str]] = {}
+    selected = out[out["decision_pass"].map(_truthy)]
+    for idx, row in selected.iterrows():
+        day = _date_key(row.get("asof"))
+        selected_tickers_by_day.setdefault(day, set()).add(str(row.get("ticker") or "").upper())
+    debit_by_day: dict[str, list[tuple[int, float]]] = {}
+    for idx, day, score in debit_eligible:
+        debit_by_day.setdefault(day, []).append((idx, score))
+    for day, day_items in debit_by_day.items():
+        selected_for_day = 0
+        selected_tickers = selected_tickers_by_day.setdefault(day, set())
+        for idx, _score in sorted(day_items, key=lambda item: item[1], reverse=True):
+            ticker = str(out.at[idx, "ticker"] or "").upper()
+            if ticker and ticker in selected_tickers:
+                continue
+            out.at[idx, "decision_pass"] = True
+            out.at[idx, "decision_reason"] = "decision_selected_independent_debit_sleeve"
+            out.at[idx, "decision_tier"] = "directional_debit_medium"
+            selected_for_day += 1
+            if ticker:
+                selected_tickers.add(ticker)
+            if selected_for_day >= max(0, max_debit_selected_per_day):
                 break
     return out
 
@@ -1133,23 +1196,28 @@ def write_replay_asof_report(detail: pd.DataFrame, out_dir: Path, asof: dt.date)
 
 
 def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
-    if not bool(rec.get("exact_evaluated")):
-        return False, str(rec.get("exact_reason") or rec.get("fill_reason") or "not_exact_evaluated")
+    if not _entry_fillable(rec):
+        return False, str(rec.get("fill_reason") or rec.get("exact_reason") or "not_entry_fillable")
     if _is_debit_strategy(rec):
         debit_pct = safe_float(rec.get("entry_debit_pct_width"))
         width = safe_float(rec.get("entry_width"))
         debit = safe_float(rec.get("entry_debit"))
         reward_risk = safe_float(rec.get("reward_risk"))
         quote_width = safe_float(rec.get("entry_quote_width_pct"))
-        pnl = safe_float(rec.get("pnl_1x"))
         _distance, _expected, ratio = _distance_expected(pd.Series(rec))
         align = _flow_alignment(pd.Series(rec))
+        debit_ok, debit_reasons = assess_debit_spread(
+            rec,
+            live=False,
+            expected_move_ratio=ratio,
+            flow_alignment=align,
+        )
+        if not debit_ok:
+            return False, "debit_policy:" + "|".join(debit_reasons)
         if not math.isfinite(debit) or not math.isfinite(width) or debit <= 0 or debit >= width:
             return False, "debit_entry_impossible"
         if math.isfinite(quote_width) and quote_width > 0.80:
             return False, "debit_quote_too_wide"
-        if math.isfinite(pnl) and pnl < 0:
-            return False, "negative_exact_debit_replay"
         if not math.isfinite(align) or align <= 0:
             return False, "no_flow_edge_alignment"
         if math.isfinite(ratio) and ratio < 0.65:
@@ -1159,7 +1227,7 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
         if math.isfinite(reward_risk) and reward_risk < 0.35:
             return False, "replay_guard_debit_unattractive_reward_risk"
         if math.isfinite(debit_pct) and debit_pct > 0.45:
-            return True, "validated_debit_replay_edge_entry_debit_above_target_annotation"
+            return False, "entry_debit_above_target"
         return True, "validated_debit_replay_edge"
     credit_pct = safe_float(rec.get("entry_credit_pct_width"))
     if not math.isfinite(credit_pct) or credit_pct < 0.16:
@@ -1206,7 +1274,10 @@ def run_replay(
     slippage_pct: float = 0.10,
     profit_take_pct: float = 0.60,
     stop_loss_mult: float = 2.0,
+    debit_time_stop_dte: int = -1,
     max_selected_per_day: int = 8,
+    max_credit_selected_per_day: int = 1,
+    max_debit_selected_per_day: int = 1,
     monthly_profit_target: float = 10_000.0,
 ) -> Path:
     folders = dated_folders(root, start, end)
@@ -1232,14 +1303,13 @@ def run_replay(
             day_summaries.append({"date": asof, "status": "load_error", "error": str(exc)})
             continue
         pool = select_ticker_pool(sc, max_tickers=max_tickers)
-        try:
-            bot_flow = aggregate_bot_flow(
-                folder,
-                pool["ticker"].tolist(),
-                max_rows=bot_max_rows if bot_max_rows > 0 else None,
-            )
-        except Exception:
-            bot_flow = pd.DataFrame()
+        bot_flow = aggregate_bot_flow(
+            folder,
+            pool["ticker"].tolist(),
+            max_rows=bot_max_rows if bot_max_rows > 0 else None,
+            allow_missing=True,
+        )
+        bot_source_status = str(bot_flow.attrs.get("source_status") or "unknown")
         candidates = generate_candidates(pool, hot, bot_flow, asof=asof, max_candidates=max_candidates)
         if candidates.empty:
             day_summaries.append({"date": asof, "status": "no_candidates", "candidates": 0})
@@ -1252,6 +1322,7 @@ def run_replay(
         candidates["credit_pct_proxy"] = candidates["estimated_eod_credit"] / width_base
         candidates["debit_pct_proxy"] = candidates["estimated_eod_debit"] / width_base
         candidates["replay_price_annotation"] = ""
+        candidates["bot_flow_source_status"] = bot_source_status
         credit_mask = (
             candidates["strategy_kind"].astype(str).eq("Credit")
             & (pd.to_numeric(candidates["credit_pct_proxy"], errors="coerce").fillna(0) >= 0.12)
@@ -1284,6 +1355,7 @@ def run_replay(
                 slippage_pct=slippage_pct,
                 profit_take_pct=profit_take_pct,
                 stop_loss_mult=stop_loss_mult,
+                debit_time_stop_dte=debit_time_stop_dte,
             )
             rec = cand.to_dict()
             rec.update({"regime": regime.get("trend"), **result, **exact})
@@ -1307,11 +1379,21 @@ def run_replay(
                 "win_rate": wins / evaluated if evaluated else None,
                 "exact_evaluated": int(exact_evaluated),
                 "exact_pnl_1x": exact_pnl,
+                "bot_flow_source_status": bot_source_status,
             }
         )
     out_dir.mkdir(parents=True, exist_ok=True)
     detail = pd.DataFrame(rows)
-    detail = apply_replay_decision_selection(detail, max_selected_per_day=max_selected_per_day) if not detail.empty else detail
+    detail = (
+        apply_replay_decision_selection(
+            detail,
+            max_selected_per_day=max_selected_per_day,
+            max_credit_selected_per_day=max_credit_selected_per_day,
+            max_debit_selected_per_day=max_debit_selected_per_day,
+        )
+        if not detail.empty
+        else detail
+    )
     summary = pd.DataFrame(day_summaries)
     detail.to_csv(out_dir / "codexuw_replay_detail.csv", index=False)
     summary.to_csv(out_dir / "codexuw_replay_by_day.csv", index=False)
@@ -1337,6 +1419,8 @@ def run_replay(
         "max_candidates": max_candidates,
         "max_eval_candidates": max_eval_candidates,
         "max_selected_per_day": max_selected_per_day,
+        "max_credit_selected_per_day": max_credit_selected_per_day,
+        "max_debit_selected_per_day": max_debit_selected_per_day,
         "bot_max_rows": bot_max_rows,
         "evaluated": int(len(evaluated)),
         "win_rate": float(evaluated["win"].mean()) if not evaluated.empty else None,
@@ -1345,6 +1429,11 @@ def run_replay(
         "slippage_pct": slippage_pct,
         "profit_take_pct": profit_take_pct,
         "stop_loss_mult": stop_loss_mult,
+        "debit_time_stop_dte": debit_time_stop_dte,
+        "debit_policy_version": DEBIT_POLICY_VERSION,
+        "credit_policy_version": CREDIT_POLICY_VERSION,
+        "selection_outcome_independent": True,
+        "selection_basis": "entry-fill, price, flow, earnings, expected-move and reward/risk fields only; no exact_win or pnl_1x",
         "split_day": str(split_day) if split_day else "",
         "exact_metrics": metrics,
         "guarded_exact_metrics": guarded_metrics,
@@ -1360,7 +1449,7 @@ def run_replay(
         f"- History days loaded: {payload['days']}",
         f"- Entry days scanned: {payload['entry_days']}",
         f"- Discovery settings: max tickers {max_tickers}; max candidates {max_candidates}; max exact-eval candidates {max_eval_candidates}",
-        f"- Decision selection: strongest setup per day plus validated add-on Bear Call lane; max selected per day {max_selected_per_day}",
+        f"- Decision selection: outcome-blind credit edge sleeve capped at {max_credit_selected_per_day} per day, plus independent debit sleeve capped at {max_debit_selected_per_day} per day",
         f"- Breach-evaluated candidates: {payload['evaluated']}",
         f"- Breach win rate: {payload['win_rate']:.1%}" if payload["win_rate"] is not None else "- Breach win rate: n/a",
         f"- Exact-spread evaluated candidates: {metrics.get('all', {}).get('evaluated', 0)}",
@@ -1376,6 +1465,8 @@ def run_replay(
         f"- Decision-selected win rate: {decision_metrics.get('all', {}).get('win_rate'):.1%}" if decision_metrics.get("all", {}).get("win_rate") is not None else "- Decision-selected win rate: n/a",
         f"- Decision-selected avg PnL/spread: ${decision_metrics.get('all', {}).get('avg_pnl_1x'):,.2f}" if decision_metrics.get("all", {}).get("avg_pnl_1x") is not None else "- Decision-selected avg PnL/spread: n/a",
         f"- Decision-selected max drawdown: ${decision_metrics.get('all', {}).get('max_drawdown_1x'):,.2f}" if decision_metrics.get("all", {}).get("max_drawdown_1x") is not None else "- Decision-selected max drawdown: n/a",
+        f"- Decision-selected profit factor: {decision_metrics.get('all', {}).get('profit_factor'):.3f}" if decision_metrics.get("all", {}).get("profit_factor") is not None else "- Decision-selected profit factor: n/a",
+        "- Selection integrity: entry-time fields only; outcomes are attached after selection and never used to qualify a trade.",
         f"- Monthly P/L target: ${monthly_profit_target:,.0f}",
         f"- Train/test split day: {payload['split_day'] or 'n/a'}",
         f"- Fill model: entry at mid less {slippage_pct:.0%}; exits at mid plus {slippage_pct:.0%}; {profit_take_pct:.0%} profit target; {stop_loss_mult:.1f}x credit stop; expiry settlement fallback.",
@@ -1506,10 +1597,18 @@ def main() -> None:
     parser.add_argument("--max-candidates", type=int, default=50)
     parser.add_argument("--max-eval-candidates", type=int, default=50)
     parser.add_argument("--max-selected-per-day", type=int, default=8)
+    parser.add_argument("--max-credit-selected-per-day", type=int, default=1)
+    parser.add_argument("--max-debit-selected-per-day", type=int, default=1)
     parser.add_argument("--bot-max-rows", type=int, default=0)
     parser.add_argument("--slippage-pct", type=float, default=0.10)
     parser.add_argument("--profit-take-pct", type=float, default=0.60)
     parser.add_argument("--stop-loss-mult", type=float, default=2.0)
+    parser.add_argument(
+        "--debit-time-stop-dte",
+        type=int,
+        default=-1,
+        help="Optional debit-spread DTE time stop; disabled by default because the 7-DTE rule failed replay validation.",
+    )
     parser.add_argument("--monthly-profit-target", type=float, default=10_000.0)
     args = parser.parse_args()
     entry_date = parse_date(args.entry_date)
@@ -1532,7 +1631,10 @@ def main() -> None:
         slippage_pct=args.slippage_pct,
         profit_take_pct=args.profit_take_pct,
         stop_loss_mult=args.stop_loss_mult,
+        debit_time_stop_dte=args.debit_time_stop_dte,
         max_selected_per_day=args.max_selected_per_day,
+        max_credit_selected_per_day=args.max_credit_selected_per_day,
+        max_debit_selected_per_day=args.max_debit_selected_per_day,
         monthly_profit_target=args.monthly_profit_target,
     )
     print(f"Wrote: {report}")

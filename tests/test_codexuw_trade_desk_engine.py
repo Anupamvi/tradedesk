@@ -48,7 +48,9 @@ def _credit_row(**overrides) -> dict:
         "distance_pct": 0.05,
         "expected_move_ratio": 0.85,
         "iv30d": 0.24,
+        "realized_volatility_30d": 0.25,
         "combined_flow_bias": 0.12,
+        "bot_flow_source_status": "bot_eod_loaded",
         "score": 7.5,
         "confidence": "High",
         "live_status": "PASS",
@@ -64,6 +66,7 @@ def _credit_row(**overrides) -> dict:
         "oi_carryover_status": "supportive",
         "replay_ev_verdict": "acceptable",
         "edge_sample_size": 10,
+        "edge_profit_factor": 1.30,
         "edge_win_rate": 0.65,
         "edge_avg_pnl": 45.0,
         "confirmation_score": 8.0,
@@ -251,6 +254,42 @@ def test_v4_contrary_exact_leg_oi_cannot_execute() -> None:
 
     assert out["trade_status"].iloc[0] == "Watch"
     assert "exact-leg OI" in out["v4_direct_disposition_reason"].iloc[0]
+
+
+def test_v4_only_one_same_ticker_structure_can_execute() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(
+                ticker="MRVL",
+                short_strike=230.0,
+                long_strike=225.0,
+                required_entry=0.90,
+                mid_credit=1.30,
+                natural_credit=1.10,
+                edge_verdict="acceptable",
+                oi_carryover_status="supportive",
+            ),
+            _credit_row(
+                ticker="MRVL",
+                short_strike=232.5,
+                long_strike=227.5,
+                required_entry=0.90,
+                mid_credit=1.35,
+                natural_credit=1.05,
+                edge_verdict="acceptable",
+                oi_carryover_status="matched_unconfirmed",
+            ),
+        ]
+    )
+
+    out = apply_v4_professional_dispositions(scored, asof=ASOF)
+
+    assert out["trade_status"].eq("Execute").sum() == 1
+    assert out["trade_status"].eq("Watch").sum() == 1
+    kept = out[out["trade_status"].eq("Execute")].iloc[0]
+    alternative = out[out["trade_status"].eq("Watch")].iloc[0]
+    assert kept["oi_carryover_status"] == "supportive"
+    assert "do not stack" in alternative["v4_direct_disposition_reason"]
 
 
 def test_portfolio_exposure_annotates_without_hard_rejecting_valid_trade() -> None:
@@ -937,11 +976,13 @@ def test_index_primary_mode_lets_index_income_compete_with_single_name_execute()
 def test_replay_edge_model_positive_match_promotes_live_credit_candidate(tmp_path) -> None:
     replay_dir = tmp_path / "codexuw_replay_edge"
     replay_dir.mkdir()
-    pd.DataFrame(
-        [
+    history_rows = []
+    for i in range(8):
+        won = i < 6
+        history_rows.append(
             {
-                "asof": "2026-04-20",
-                "ticker": "AAA",
+                "asof": f"2026-04-{20 + i:02d}",
+                "ticker": f"H{i}",
                 "sector": "Technology",
                 "direction": "Bull Put",
                 "strategy": "Bull Put Credit Spread",
@@ -952,68 +993,26 @@ def test_replay_edge_model_positive_match_promotes_live_credit_candidate(tmp_pat
                 "long_strike_eod": 90.0,
                 "entry_credit_pct_width": 0.22,
                 "entry_quote_width_pct": 0.12,
+                "expected_move_ratio": 0.85,
                 "iv_rank": 45,
                 "iv30d": 0.25,
                 "combined_flow_bias": 0.12,
                 "flow_quality": "directional",
                 "regime": "range",
                 "exact_evaluated": True,
-                "exact_win": True,
-                "pnl_1x": 90.0,
-            },
-            {
-                "asof": "2026-04-21",
-                "ticker": "AAA",
-                "sector": "Technology",
-                "direction": "Bull Put",
-                "strategy": "Bull Put Credit Spread",
-                "expiry": "2026-05-15",
-                "dte": 18,
-                "stock_price_eod": 101.0,
-                "short_strike_eod": 96.0,
-                "long_strike_eod": 91.0,
-                "entry_credit_pct_width": 0.21,
-                "entry_quote_width_pct": 0.10,
-                "iv_rank": 46,
-                "iv30d": 0.25,
-                "combined_flow_bias": 0.11,
-                "flow_quality": "directional",
-                "regime": "range",
-                "exact_evaluated": True,
-                "exact_win": True,
-                "pnl_1x": 80.0,
-            },
-            {
-                "asof": "2026-04-22",
-                "ticker": "AAA",
-                "sector": "Technology",
-                "direction": "Bull Put",
-                "strategy": "Bull Put Credit Spread",
-                "expiry": "2026-05-15",
-                "dte": 18,
-                "stock_price_eod": 102.0,
-                "short_strike_eod": 97.0,
-                "long_strike_eod": 92.0,
-                "entry_credit_pct_width": 0.20,
-                "entry_quote_width_pct": 0.10,
-                "iv_rank": 46,
-                "iv30d": 0.25,
-                "combined_flow_bias": 0.11,
-                "flow_quality": "directional",
-                "regime": "range",
-                "exact_evaluated": True,
-                "exact_win": False,
-                "pnl_1x": -30.0,
-            },
-        ]
-    ).to_csv(replay_dir / "codexuw_replay_detail.csv", index=False)
+                "decision_pass": True,
+                "exact_win": won,
+                "pnl_1x": 80.0 if won else -30.0,
+            }
+        )
+    pd.DataFrame(history_rows).to_csv(replay_dir / "codexuw_replay_detail.csv", index=False)
 
     scored = pd.DataFrame([_credit_row(replay_ev_verdict="structure_proxy", regime_trend="range")])
     edged = apply_replay_edge_model(scored, tmp_path)
 
     assert edged["edge_verdict"].iloc[0] == "positive"
     assert edged["replay_ev_verdict"].iloc[0] == "positive"
-    assert edged["edge_sample_size"].iloc[0] == 3
+    assert edged["edge_sample_size"].iloc[0] == 8
 
 
 def test_replay_edge_model_negative_match_hard_rejects_execute(tmp_path) -> None:
@@ -1033,14 +1032,17 @@ def test_replay_edge_model_negative_match_hard_rejects_execute(tmp_path) -> None
                 "long_strike_eod": 90.0,
                 "entry_credit_pct_width": 0.22,
                 "entry_quote_width_pct": 0.12,
+                "expected_move_ratio": 0.85,
                 "iv30d": 0.25,
                 "combined_flow_bias": 0.12,
+                "flow_quality": "directional",
                 "regime": "range",
                 "exact_evaluated": True,
+                "decision_pass": True,
                 "exact_win": False,
                 "pnl_1x": -80.0,
             }
-            for i in range(3)
+            for i in range(8)
         ]
     ).to_csv(replay_dir / "codexuw_replay_detail.csv", index=False)
 
@@ -1050,6 +1052,61 @@ def test_replay_edge_model_negative_match_hard_rejects_execute(tmp_path) -> None
     assert edged["edge_verdict"].iloc[0] == "negative"
     assert "negative_replay_edge" in edged["hard_rejects"].iloc[0]
     assert out["trade_status"].iloc[0] == "Avoid"
+
+
+def test_v4_edge_history_is_namespaced_and_asof_safe(tmp_path) -> None:
+    v4_dir = tmp_path / "codexdaily_v4_edge_history_v1"
+    other_dir = tmp_path / "codexuw_replay_options_agent"
+    v4_dir.mkdir()
+    other_dir.mkdir()
+
+    def history_row(asof: str, exit_day: str, pnl: float) -> dict:
+        return {
+            "asof": asof,
+            "exit_day": exit_day,
+            "ticker": "AAA",
+            "direction": "Bull Put",
+            "strategy": "Bull Put Credit Spread",
+            "dte": 10,
+            "expiry": "2026-05-15",
+            "short_strike_eod": 100.0,
+            "long_strike_eod": 95.0,
+            "entry_credit_pct_width": 0.26,
+            "expected_move_ratio": 0.85,
+            "combined_flow_bias": 0.12,
+            "flow_quality": "directional",
+            "regime": "range",
+            "iv30d": 0.24,
+            "entry_quote_width_pct": 0.15,
+            "next_earnings_dt": "2026-08-01",
+            "exact_evaluated": True,
+            "decision_pass": True,
+            "exact_win": pnl > 0,
+            "pnl_1x": pnl,
+        }
+
+    pd.DataFrame(
+        [
+            history_row("2026-04-01", "2026-04-10", 50.0),
+            history_row("2026-04-02", "2026-04-11", 40.0),
+            history_row("2026-04-03", "2026-04-12", 30.0),
+            history_row("2026-05-06", "2026-05-08", -500.0),
+        ]
+    ).to_csv(v4_dir / "codexuw_replay_detail.csv", index=False)
+    pd.DataFrame([history_row("2026-04-04", "2026-04-13", -500.0) for _ in range(3)]).to_csv(
+        other_dir / "codexuw_replay_detail.csv", index=False
+    )
+
+    edged = apply_replay_edge_model(
+        pd.DataFrame([_credit_row(regime_trend="range")]),
+        tmp_path,
+        asof=dt.date(2026, 5, 5),
+        history_namespace="codexdaily_v4_edge_history",
+    )
+
+    assert edged["edge_sample_size"].iloc[0] == 3
+    assert edged["edge_verdict"].iloc[0] == "thin_sample"
+    assert edged["edge_history_namespace"].iloc[0] == "codexdaily_v4_edge_history"
 
 
 def test_thin_replay_sample_can_watch_but_not_execute() -> None:

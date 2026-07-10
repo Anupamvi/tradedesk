@@ -22,6 +22,8 @@ from .data import (
     read_csv_export,
     safe_float,
 )
+from .credit_policy import assess_credit_spread, credit_spread_confidence
+from .debit_policy import assess_debit_spread, debit_spread_confidence
 from .daily import infer_report_mode, latest_dated_folder, live_planning_validation_note
 from .engine import (
     apply_catalyst_context,
@@ -935,6 +937,17 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
         return "news/catalyst caution requires review"
     if _clean(row.get("oi_carryover_status")).lower() == "contrary":
         return "exact-leg OI conflicts with the trade direction"
+    if _is_debit(row):
+        debit_ok, debit_reasons = assess_debit_spread(row, live=True)
+        if not debit_ok:
+            return "debit quality policy: " + "; ".join(debit_reasons)
+    if _is_credit(row):
+        credit_ok, credit_reasons = assess_credit_spread(row, live=True)
+        if not credit_ok:
+            return "credit quality policy: " + "; ".join(credit_reasons)
+    bot_source = _clean(row.get("bot_flow_source_status")).lower()
+    if bot_source.startswith("missing_bot_eod") and _clean(row.get("flow_quality")).lower() != "directional":
+        return "aggregate bot option flow unavailable and contract flow is not independently directional"
     sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size")))
     if math.isfinite(sample) and sample < 8:
         return f"historical edge sample too thin for Execute (n={int(sample)})"
@@ -1105,10 +1118,12 @@ def _target_methodology(row: pd.Series | dict[str, Any]) -> str:
 
 def _hold_window(row: pd.Series | dict[str, Any]) -> str:
     dte = safe_float(row.get("dte"))
+    if _is_debit(row):
+        return "Hold only while the directional thesis remains confirmed; review at 7 DTE, but do not force an unvalidated time-stop exit."
     if math.isfinite(dte) and dte <= 10:
         return "1-5 trading days; do not carry unmanaged expiration-week gamma"
     if math.isfinite(dte) and dte <= 30:
-        return "2-10 trading days; reassess by 7 DTE"
+        return "2-10 trading days; reassess at 7 DTE and exit on thesis or price invalidation"
     return "3-15 trading days; reassess if thesis or volatility regime changes"
 
 
@@ -1326,6 +1341,10 @@ def _lane(row: pd.Series | dict[str, Any], disposition: str) -> str:
 def _suggested_size(row: pd.Series | dict[str, Any], disposition: str) -> str:
     contracts = safe_float(row.get("contracts"))
     if disposition == "Execute":
+        if _is_debit(row) and _clean(row.get("debit_policy_tier")).lower() == "medium":
+            return "1 contract only; Medium debit sleeve"
+        if _is_credit(row) and _clean(row.get("credit_policy_tier")).lower() == "medium":
+            return "1 contract only; Medium credit sleeve"
         qty = int(contracts) if math.isfinite(contracts) and contracts > 0 else 1
         return f"{qty} contract{'s' if qty != 1 else ''}; only if all live checks still pass"
     if disposition == "Scout":
@@ -2542,6 +2561,10 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
             out[col] = ""
     if "v4_pre_disposition_status" not in out.columns:
         out["v4_pre_disposition_status"] = out["trade_status"]
+    if "debit_policy_tier" not in out.columns:
+        out["debit_policy_tier"] = ""
+    if "credit_policy_tier" not in out.columns:
+        out["credit_policy_tier"] = ""
     for idx, row in out.iterrows():
         hard = _hard_blocker_reason(row)
         if hard:
@@ -2563,12 +2586,26 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
         ev_ok = _v4_nonnegative_ev(row)
         has_risk = math.isfinite(_max_loss_value(row)) and _max_loss_value(row) > 0 and math.isfinite(_target_profit_value(row))
         execute_quality_blocker = _execute_quality_blocker(row)
+        debit_tier = ""
+        credit_tier = ""
+        if _is_debit(row):
+            debit_tier, _ = debit_spread_confidence(row, live=True)
+            out.at[idx, "debit_policy_tier"] = debit_tier
+        elif _is_credit(row):
+            credit_tier, _ = credit_spread_confidence(row, live=True)
+            out.at[idx, "credit_policy_tier"] = credit_tier
         if target_met and ev_ok and has_risk and quote_width <= 0.20 and not execute_quality_blocker:
             out.at[idx, "trade_status"] = "Execute"
-            out.at[idx, "trade_tier"] = "Execute V4 Direct"
+            out.at[idx, "trade_tier"] = (
+                f"Execute V4 Direct - {debit_tier.title()} Debit" if debit_tier else "Execute V4 Direct"
+            )
+            if credit_tier:
+                out.at[idx, "trade_tier"] = f"Execute V4 Direct - {credit_tier.title()} Credit"
             out.at[idx, "v4_direct_disposition_reason"] = (
                 "V4 direct Execute: Schwab reference meets target, no hard blocker, non-negative setup EV, "
-                "defined OCO required before order entry."
+                + (f"{debit_tier} debit-policy tier, " if debit_tier else "")
+                + (f"{credit_tier} credit-policy tier, " if credit_tier else "")
+                + "defined OCO required before order entry."
             )
             out.at[idx, "trade_status_reason"] = _append_note(row.get("trade_status_reason"), out.at[idx, "v4_direct_disposition_reason"])
         elif target_met and ev_ok and has_risk:
@@ -2585,6 +2622,103 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
             out.at[idx, "trade_status"] = "Research"
             out.at[idx, "trade_tier"] = "Research"
             out.at[idx, "v4_direct_disposition_reason"] = _blocker_text(row)
+
+    execute_rows = out[out["trade_status"].astype(str).eq("Execute")]
+    for ticker, group in execute_rows.groupby(execute_rows["ticker"].astype(str).str.upper()):
+        if len(group) <= 1:
+            continue
+
+        def preference(item: tuple[Any, pd.Series]) -> tuple[float, float, float]:
+            _, candidate = item
+            oi_status = _clean(candidate.get("oi_carryover_status")).lower()
+            oi_bonus = {"supportive": 10.0, "matched_unconfirmed": 5.0, "mixed": 2.0}.get(oi_status, 0.0)
+            flow_bonus = 2.0 if _clean(candidate.get("flow_quality")).lower() == "directional" else 0.0
+            return (
+                _ticket_rank(candidate, "Execute") + oi_bonus + flow_bonus,
+                safe_float(candidate.get("edge_sample_size"), 0.0),
+                -safe_float(candidate.get("quote_width_pct"), 9.0),
+            )
+
+        ranked = sorted(group.iterrows(), key=preference, reverse=True)
+        keep_idx = ranked[0][0]
+        for idx, _ in ranked[1:]:
+            reason = f"Alternative {ticker} structure; keep only the highest-ranked same-ticker Execute and do not stack correlated variants."
+            out.at[idx, "trade_status"] = "Watch"
+            out.at[idx, "trade_tier"] = "work-limit-alternative-structure"
+            out.at[idx, "v4_direct_disposition_reason"] = f"V4 Work Limit: {reason}"
+            out.at[idx, "trade_status_reason"] = _append_note(out.at[idx, "trade_status_reason"], reason)
+        out.at[keep_idx, "trade_status_reason"] = _append_note(
+            out.at[keep_idx, "trade_status_reason"],
+            f"Selected as the highest-ranked {ticker} structure; alternative same-ticker variants are Work Limit only.",
+        )
+    return out
+
+
+def apply_v4_credit_sleeve_cap(scored: pd.DataFrame, *, max_execute: int = 1) -> pd.DataFrame:
+    """Keep only the highest-ranked immediate credit Execute; preserve alternatives as Work Limit."""
+    if scored is None or scored.empty:
+        return scored.copy() if scored is not None else pd.DataFrame()
+    out = scored.copy()
+    execute = out[out["trade_status"].astype(str).eq("Execute")]
+    credit_rows = execute[execute.apply(_is_credit, axis=1)]
+    if len(credit_rows) <= max_execute:
+        return out
+    ranked = sorted(
+        credit_rows.iterrows(),
+        key=lambda item: (
+            _ticket_rank(item[1], "Execute"),
+            safe_float(item[1].get("edge_sample_size"), 0.0),
+            -safe_float(item[1].get("quote_width_pct"), 9.0),
+        ),
+        reverse=True,
+    )
+    keep = {idx for idx, _ in ranked[: max(0, max_execute)]}
+    for idx, _ in ranked:
+        if idx in keep:
+            continue
+        reason = "Independent credit sleeve is capped at one immediate Execute; keep lower-ranked credits as Work Limit."
+        out.at[idx, "trade_status"] = "Watch"
+        out.at[idx, "trade_tier"] = "work-limit-credit-sleeve-cap"
+        out.at[idx, "v4_direct_disposition_reason"] = f"V4 Work Limit: {reason}"
+        out.at[idx, "trade_status_reason"] = _append_note(out.at[idx, "trade_status_reason"], reason)
+    return out
+
+
+def apply_v4_prospective_book_concentration(scored: pd.DataFrame) -> pd.DataFrame:
+    """Keep one immediate Execute per sector and preserve alternatives as Work Limit."""
+    if scored is None or scored.empty:
+        return scored.copy() if scored is not None else pd.DataFrame()
+    out = scored.copy()
+    out["proposed_book_concentration_action"] = ""
+    execute = out[out["trade_status"].astype(str).eq("Execute")]
+    if execute.empty or "sector" not in execute.columns:
+        return out
+    sectors = execute["sector"].astype(str).str.strip()
+    for sector, group in execute.groupby(sectors):
+        if not sector or sector.lower() in {"unknown", "nan", "none"} or len(group) <= 1:
+            continue
+
+        def preference(item: tuple[Any, pd.Series]) -> tuple[float, float, float]:
+            _, candidate = item
+            return (
+                _ticket_rank(candidate, "Execute"),
+                safe_float(candidate.get("edge_sample_size"), 0.0),
+                -safe_float(candidate.get("quote_width_pct"), 9.0),
+            )
+
+        ranked = sorted(group.iterrows(), key=preference, reverse=True)
+        keep_idx = ranked[0][0]
+        out.at[keep_idx, "proposed_book_concentration_action"] = f"primary {sector} Execute"
+        for idx, _ in ranked[1:]:
+            reason = (
+                f"Proposed-book sector concentration: another higher-ranked {sector} setup is already Execute; "
+                "keep this valid setup as Work Limit rather than stacking correlated same-session risk."
+            )
+            out.at[idx, "trade_status"] = "Watch"
+            out.at[idx, "trade_tier"] = "work-limit-sector-concentration"
+            out.at[idx, "v4_direct_disposition_reason"] = f"V4 Work Limit: {reason}"
+            out.at[idx, "trade_status_reason"] = _append_note(out.at[idx, "trade_status_reason"], reason)
+            out.at[idx, "proposed_book_concentration_action"] = "downgraded to Work Limit"
     return out
 
 
@@ -2712,6 +2846,8 @@ def write_v4_outputs(
     )
     scored = apply_v4_safety_calibration(scored, safety_calibration)
     scored = apply_v4_professional_dispositions(scored, asof=asof)
+    scored = apply_v4_credit_sleeve_cap(scored)
+    scored = apply_v4_prospective_book_concentration(scored)
     board = build_v4_opportunity_board(scored, top_flow=top_flow)
     tickets = build_v4_swing_target_tickets(scored=scored, board=board, regime=regime, top_flow=top_flow)
     tickets, risk_cap_audit = apply_v4_risk_cap(tickets, portfolio)
@@ -3203,7 +3339,9 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         base_dir,
         bot_tickers,
         max_rows=args.bot_max_rows if args.bot_max_rows > 0 else None,
+        allow_missing=True,
     )
+    bot_flow_source_status = str(bot_flow.attrs.get("source_status") or "unknown")
 
     candidates = generate_candidates(pool, hot_chains, bot_flow, asof=asof, max_candidates=args.max_candidates)
     if not index_pool.empty:
@@ -3234,6 +3372,7 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
             keep="first",
         )
 
+    candidates["bot_flow_source_status"] = bot_flow_source_status
     scored = live_validate_and_score(
         candidates,
         asof=asof,
@@ -3243,7 +3382,12 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         schwab_snapshot_dir=Path(args.schwab_snapshot_dir).expanduser().resolve() if args.schwab_snapshot_dir else None,
     )
     scored = apply_oi_carryover(scored, chain_oi)
-    scored = apply_replay_edge_model(scored, base_dir.parent / "out")
+    scored = apply_replay_edge_model(
+        scored,
+        base_dir.parent / "out",
+        asof=asof,
+        history_namespace="codexdaily_v4_edge_history_v2_2026-07-10",
+    )
 
     if args.skip_portfolio or args.offline:
         portfolio = unavailable_portfolio_context("skipped" if args.skip_portfolio else "offline")
@@ -3467,6 +3611,8 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
     after = apply_oi_carryover(before, chain_oi)
     after = assign_trade_statuses(after, index_income_mode="primary")
     after = apply_v4_professional_dispositions(after, asof=asof)
+    after = apply_v4_credit_sleeve_cap(after)
+    after = apply_v4_prospective_book_concentration(after)
     top_flow = _read_prior_v4_top_flow(prior, asof)
     board = build_v4_opportunity_board(after, top_flow=top_flow)
     changes = _compare_v4_overlay_changes(before, after)

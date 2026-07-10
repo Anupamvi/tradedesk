@@ -170,14 +170,60 @@ def load_chain_oi(base_dir: Path, asof: dt.date) -> pd.DataFrame:
     return df
 
 
+BOT_FLOW_COLUMNS = [
+    "ticker",
+    "bot_bull_premium",
+    "bot_bear_premium",
+    "bot_total_premium",
+    "bot_call_ask_premium",
+    "bot_call_bid_premium",
+    "bot_put_ask_premium",
+    "bot_put_bid_premium",
+    "bot_multileg_premium",
+    "bot_open_interest_sum",
+    "bot_volume_sum",
+    "bot_unique_expiries",
+    "bot_unique_strikes",
+    "bot_trades",
+    "bot_flow_bias",
+    "bot_multileg_ratio",
+    "bot_volume_oi_ratio",
+]
+
+
+def _empty_bot_flow(*, source_status: str, source_path: str = "", dp_equity_present: bool = False) -> pd.DataFrame:
+    out = pd.DataFrame(columns=BOT_FLOW_COLUMNS)
+    out.attrs["source_status"] = source_status
+    out.attrs["source_path"] = source_path
+    out.attrs["dp_equity_present"] = bool(dp_equity_present)
+    return out
+
+
 def aggregate_bot_flow(
     base_dir: Path,
     tickers: Iterable[str],
     *,
     chunksize: int = 750_000,
     max_rows: int | None = None,
+    allow_missing: bool = False,
 ) -> pd.DataFrame:
-    path = find_export(base_dir, "bot-eod-report-")
+    try:
+        path = find_export(base_dir, "bot-eod-report-")
+    except FileNotFoundError:
+        if not allow_missing:
+            raise
+        try:
+            dp_path = find_export(base_dir, "dp-eod-report-")
+        except FileNotFoundError:
+            dp_path = None
+        # DP is equity dark-pool data and cannot be substituted for side-aware
+        # option flow. Keep the date usable while explicitly marking degraded
+        # evidence instead of fabricating bot-flow semantics.
+        return _empty_bot_flow(
+            source_status="missing_bot_eod_dp_equity_only" if dp_path else "missing_bot_eod",
+            source_path=str(dp_path or ""),
+            dp_equity_present=dp_path is not None,
+        )
     wanted = {str(t).upper().strip() for t in tickers if str(t).strip()}
     usecols = [
         "underlying_symbol",
@@ -252,31 +298,14 @@ def aggregate_bot_flow(
         if max_rows and rows_seen >= max_rows:
             break
     if not parts:
-        return pd.DataFrame(
-            columns=[
-                "ticker",
-                "bot_bull_premium",
-                "bot_bear_premium",
-                "bot_total_premium",
-                "bot_call_ask_premium",
-                "bot_call_bid_premium",
-                "bot_put_ask_premium",
-                "bot_put_bid_premium",
-                "bot_multileg_premium",
-                "bot_open_interest_sum",
-                "bot_volume_sum",
-                "bot_unique_expiries",
-                "bot_unique_strikes",
-                "bot_trades",
-                "bot_flow_bias",
-                "bot_multileg_ratio",
-                "bot_volume_oi_ratio",
-            ]
-        )
+        return _empty_bot_flow(source_status="bot_eod_no_matching_rows", source_path=str(path))
     out = pd.concat(parts, ignore_index=True).groupby("underlying_symbol", as_index=False).sum()
     out = out.rename(columns={"underlying_symbol": "ticker"})
     denom = out["bot_total_premium"].where(out["bot_total_premium"].abs() > 0)
     out["bot_flow_bias"] = (out["bot_bull_premium"] - out["bot_bear_premium"]) / denom
     out["bot_multileg_ratio"] = out["bot_multileg_premium"] / denom
     out["bot_volume_oi_ratio"] = out["bot_volume_sum"] / out["bot_open_interest_sum"].where(out["bot_open_interest_sum"].abs() > 0)
+    out.attrs["source_status"] = "bot_eod_loaded"
+    out.attrs["source_path"] = str(path)
+    out.attrs["dp_equity_present"] = False
     return out

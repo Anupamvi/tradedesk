@@ -922,6 +922,17 @@ def test_validation_harness_uses_systematic_recent_source_complete_dates(tmp_pat
     assert [path.name for path in selected] == ["2026-05-19", "2026-05-18"]
 
 
+def test_validation_accepts_dp_only_bundle_as_explicit_degraded_history(tmp_path) -> None:
+    folder = tmp_path / "2026-03-23"
+    folder.mkdir()
+    for prefix in ["stock-screener-", "hot-chains-", "dp-eod-report-"]:
+        (folder / f"{prefix}2026-03-23.csv").write_text("ticker\nAAA\n", encoding="utf-8")
+
+    selected = select_systematic_date_folders(tmp_path, as_of=dt.date(2026, 3, 23), latest_n=5)
+
+    assert selected == [folder]
+
+
 def _write_bot_report(base_dir: Path, rows: list[dict]) -> None:
     base_dir.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(base_dir / f"bot-eod-report-{ASOF}.csv", index=False)

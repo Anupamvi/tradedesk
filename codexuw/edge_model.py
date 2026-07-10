@@ -8,6 +8,8 @@ from typing import Any
 import pandas as pd
 
 from .data import safe_float
+from .credit_policy import assess_credit_spread
+from .debit_policy import assess_debit_spread
 
 
 CREDIT_DIRECTIONS = {"Bull Put", "Bear Call"}
@@ -181,6 +183,21 @@ def _iv_bucket(row: pd.Series | dict[str, Any]) -> str:
     return "unknown"
 
 
+def _iv_hv_bucket(row: pd.Series | dict[str, Any]) -> str:
+    ratio = safe_float(row.get("iv_hv_ratio"))
+    if not math.isfinite(ratio) or ratio <= 0:
+        implied = safe_float(row.get("iv30d"))
+        realized = safe_float(row.get("realized_volatility_30d"), safe_float(row.get("volatility")))
+        ratio = implied / realized if math.isfinite(implied) and math.isfinite(realized) and realized > 0 else math.nan
+    if not math.isfinite(ratio):
+        return "unknown"
+    if ratio < 0.90:
+        return "lt0.90"
+    if ratio < 1.00:
+        return "0.90-1.00"
+    return "1.00+"
+
+
 def _quote_bucket(row: pd.Series | dict[str, Any]) -> str:
     value = safe_float(row.get("quote_width_pct"), safe_float(row.get("entry_quote_width_pct")))
     if not math.isfinite(value):
@@ -230,6 +247,7 @@ def _feature_record(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
         "oi_carryover_status": str(row.get("oi_carryover_status", "") or ""),
         "regime_trend": trend,
         "iv_bucket": _iv_bucket(row),
+        "iv_hv_bucket": _iv_hv_bucket(row),
         "quote_quality_bucket": _quote_bucket(row),
         "earnings_bucket": _earnings_bucket(row),
     }
@@ -302,8 +320,27 @@ def _empty_edge(reason: str = "no replay detail matched candidate pattern") -> d
     }
 
 
-def load_replay_edge_history(out_root: Path) -> pd.DataFrame:
-    paths = sorted(out_root.rglob("codexuw_replay_detail.csv"), key=lambda path: path.stat().st_mtime, reverse=True)
+def load_replay_edge_history(
+    out_root: Path,
+    *,
+    asof: object | None = None,
+    history_namespace: str | None = None,
+) -> pd.DataFrame:
+    if history_namespace:
+        roots = [
+            child
+            for child in out_root.iterdir()
+            if child.is_dir() and child.name.startswith(history_namespace)
+        ] if out_root.exists() else []
+        if out_root.is_dir() and out_root.name.startswith(history_namespace):
+            roots.append(out_root)
+        paths = sorted(
+            {path for root in roots for path in root.rglob("codexuw_replay_detail.csv")},
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )
+    else:
+        paths = sorted(out_root.rglob("codexuw_replay_detail.csv"), key=lambda path: path.stat().st_mtime, reverse=True)
     frames: list[pd.DataFrame] = []
     for path in paths:
         try:
@@ -314,6 +351,12 @@ def load_replay_edge_history(out_root: Path) -> pd.DataFrame:
             continue
         df = df[df["exact_evaluated"].map(_truthy)].copy()
         df = df[pd.to_numeric(df["pnl_1x"], errors="coerce").notna()].copy()
+        if asof is not None:
+            cutoff = pd.to_datetime(asof, errors="coerce")
+            if not pd.isna(cutoff):
+                source_day = pd.to_datetime(df.get("asof"), errors="coerce")
+                exit_day = pd.to_datetime(df.get("exit_day"), errors="coerce")
+                df = df[source_day.lt(cutoff) & exit_day.lt(cutoff)].copy()
         if df.empty:
             continue
         df["edge_source_file"] = str(path)
@@ -329,7 +372,7 @@ def load_replay_edge_history(out_root: Path) -> pd.DataFrame:
         "short_strike_eod",
         "long_strike_eod",
         "entry_credit_pct_width",
-        "pnl_1x",
+        "entry_debit_pct_width",
     ]
     history = history.drop_duplicates(subset=[c for c in key_cols if c in history.columns], keep="first")
     features = pd.DataFrame([_feature_record(row) for _, row in history.iterrows()])
@@ -343,6 +386,27 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
         return _empty_edge("no replay detail files with exact P/L were found")
     feat = _feature_record(row)
     df = history.copy()
+    if feat["strategy_kind"] == "Credit":
+        candidate_policy_ok, _ = assess_credit_spread(row, live=False)
+        if not candidate_policy_ok:
+            return _empty_edge("candidate does not meet the accepted distance-qualified credit policy")
+        selected = df.get("decision_pass", pd.Series(False, index=df.index)).map(_truthy)
+        policy_ok = df.apply(lambda item: assess_credit_spread(item, live=False)[0], axis=1)
+        df = df[selected & policy_ok].copy()
+        if df.empty:
+            return _empty_edge("no decision-selected distance-qualified credit replay history matched candidate")
+    if feat["strategy_kind"] == "Debit" and "bot_flow_source_status" in df.columns:
+        full_bot = df["bot_flow_source_status"].astype(str).eq("bot_eod_loaded")
+        directional_contract = df.get("flow_quality", pd.Series("", index=df.index)).astype(str).eq("directional")
+        df = df[full_bot | directional_contract].copy()
+        if df.empty:
+            return _empty_edge("no side-aware bot or directional-contract debit replay history matched candidate")
+
+    debit_policy_mask = pd.Series(False, index=df.index)
+    if feat["strategy_kind"] == "Debit":
+        candidate_policy_ok, _ = assess_debit_spread(row, live=False)
+        if candidate_policy_ok:
+            debit_policy_mask = df.apply(lambda item: assess_debit_spread(item, live=False)[0], axis=1)
 
     match_specs = [
         (
@@ -352,7 +416,8 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
             & (df["dte_bucket"].eq(feat["dte_bucket"]))
             & (df["premium_bucket"].eq(feat["premium_bucket"]))
             & (df["expected_move_bucket"].eq(feat["expected_move_bucket"]))
-            & (df["regime_trend"].eq(feat["regime_trend"])),
+            & (df["regime_trend"].eq(feat["regime_trend"]))
+            & (df["iv_hv_bucket"].eq(feat["iv_hv_bucket"])),
         ),
         ("ticker_direction", (df["ticker"].eq(feat["ticker"])) & (df["direction"].eq(feat["direction"]))),
         (
@@ -362,6 +427,17 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
             & (df["regime_trend"].eq(feat["regime_trend"]))
             & (df["dte_bucket"].eq(feat["dte_bucket"]))
             & (df["premium_bucket"].eq(feat["premium_bucket"])),
+        ),
+        (
+            "debit_policy_sleeve",
+            debit_policy_mask
+            & (df["direction"].eq(feat["direction"]))
+            & (df["strategy_kind"].eq("Debit")),
+        ),
+        (
+            "credit_policy_sleeve",
+            (df["direction"].eq(feat["direction"]))
+            & (df["strategy_kind"].eq("Credit")),
         ),
         (
             "broad_pattern",
@@ -379,13 +455,16 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
     ]
     best_level = "unavailable"
     best = pd.DataFrame()
+    minimum_sample = 8
     for level, mask in match_specs:
+        if feat["strategy_kind"] == "Debit" and level == "broad_pattern":
+            continue
         part = df[mask].copy()
         if part.empty:
             continue
         best_level = level
         best = part
-        if len(part) >= 3:
+        if len(part) >= minimum_sample:
             break
     if best.empty:
         return _empty_edge(
@@ -393,14 +472,15 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
         )
 
     metrics = _metrics(best)
-    verdict = _verdict(metrics)
+    verdict = "thin_sample" if metrics["edge_sample_size"] < minimum_sample else _verdict(metrics)
     sample = metrics["edge_sample_size"]
     win_rate = safe_float(metrics["edge_win_rate"])
     avg_pnl = safe_float(metrics["edge_avg_pnl"])
     reason = (
         f"{best_level} replay match: {feat['direction']} {feat['strategy_kind']} "
         f"{feat['dte_bucket']} DTE, {feat['premium_bucket']} premium, "
-        f"{feat['expected_move_bucket']} expected-move bucket; sample {sample}, "
+        f"{feat['expected_move_bucket']} expected-move bucket, "
+        f"{feat['iv_hv_bucket']} IV/HV bucket; sample {sample}, "
         f"win {win_rate:.1%}, avg P/L ${avg_pnl:.2f}"
         if math.isfinite(win_rate) and math.isfinite(avg_pnl)
         else f"{best_level} replay match with sample {sample}"
@@ -413,11 +493,20 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
     }
 
 
-def apply_replay_edge_model(scored: pd.DataFrame, out_root: Path) -> pd.DataFrame:
+def apply_replay_edge_model(
+    scored: pd.DataFrame,
+    out_root: Path,
+    *,
+    asof: object | None = None,
+    history_namespace: str | None = None,
+) -> pd.DataFrame:
     if scored.empty:
         return scored
-    history = load_replay_edge_history(out_root)
+    history = load_replay_edge_history(out_root, asof=asof, history_namespace=history_namespace)
     out = scored.copy()
+    out["edge_history_namespace"] = history_namespace or "legacy_all_replays"
+    out["edge_history_cutoff"] = str(asof or "")
+    out["edge_history_rows"] = int(len(history))
     for col in EDGE_COLUMNS:
         if col not in out.columns:
             out[col] = math.nan if col not in {"edge_match_level", "edge_verdict", "edge_reason"} else ""

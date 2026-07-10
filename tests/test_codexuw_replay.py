@@ -5,7 +5,7 @@ import datetime as dt
 import pandas as pd
 
 from codexuw.engine import replay_quality_pattern
-from codexuw.replay import apply_replay_decision_selection, simulate_spread_exit, write_replay_asof_report
+from codexuw.replay import _guard_result, apply_replay_decision_selection, simulate_spread_exit, write_replay_asof_report
 
 
 def _row() -> pd.Series:
@@ -267,7 +267,7 @@ def test_decision_selection_keeps_only_strongest_flow_aligned_trade_per_day() ->
 
     assert selected["decision_pass"].sum() == 1
     assert bool(selected.loc[selected["ticker"].eq("AAA"), "decision_pass"].iloc[0]) is True
-    assert selected.loc[selected["ticker"].eq("BBB"), "decision_reason"].iloc[0] == "decision_weak_flow_alignment"
+    assert selected.loc[selected["ticker"].eq("BBB"), "decision_reason"].iloc[0] == "decision_credit_policy:flow_alignment_below_0.10"
 
 
 def test_decision_selection_blocks_near_earnings() -> None:
@@ -329,7 +329,101 @@ def test_decision_selection_retains_above_target_debit_as_annotation() -> None:
     assert selected["decision_tier"].iloc[0] == "debit_watch_annotation"
 
 
-def test_decision_selection_uses_secondary_income_sleeve_only_without_primary() -> None:
+def test_decision_selection_never_reads_future_debit_outcome() -> None:
+    detail = pd.DataFrame(
+        [
+            {
+                "asof": dt.date(2026, 4, 20),
+                "ticker": "LOSS",
+                "direction": "Bull Call",
+                "strategy": "Bull Call Debit Spread",
+                "exact_fillable": True,
+                "exact_evaluated": True,
+                "exact_win": False,
+                "pnl_1x": -125.0,
+                "entry_debit_pct_width": 0.25,
+                "breakeven_distance_pct": 0.05,
+                "reward_risk": 1.6,
+                "iv30d": 0.30,
+                    "combined_flow_bias": 0.20,
+                    "bot_flow_source_status": "bot_eod_loaded",
+                    "flow_quality": "directional",
+                    "regime": "uptrend",
+                    "entry_quote_width_pct": 0.10,
+                "dte": 21,
+                "next_earnings_dt": "2026-08-01",
+            }
+        ]
+    )
+
+    selected = apply_replay_decision_selection(detail, max_selected_per_day=1)
+
+    assert bool(selected["decision_pass"].iloc[0]) is True
+    assert selected["decision_reason"].iloc[0] == "decision_selected_independent_debit_sleeve"
+
+
+def test_replay_guard_never_uses_future_debit_pnl() -> None:
+    record = {
+        "direction": "Bull Call",
+        "strategy": "Bull Call Debit Spread",
+        "exact_fillable": True,
+        "exact_evaluated": True,
+        "pnl_1x": -150.0,
+        "entry_debit": 1.50,
+        "entry_width": 5.0,
+        "entry_debit_pct_width": 0.30,
+        "breakeven_distance_pct": 0.05,
+        "reward_risk": 2.0,
+        "entry_quote_width_pct": 0.10,
+        "iv30d": 0.30,
+        "combined_flow_bias": 0.20,
+        "bot_flow_source_status": "bot_eod_loaded",
+        "regime": "uptrend",
+        "dte": 21,
+        "iv_rank": 40.0,
+        "flow_quality": "directional",
+    }
+
+    passed, reason = _guard_result(record)
+
+    assert passed is True
+    assert reason == "validated_debit_replay_edge"
+
+
+def test_debit_time_stop_closes_before_expiration() -> None:
+    row = _row().copy()
+    row["direction"] = "Bull Call"
+    row["strategy"] = "Bull Call Debit Spread"
+    row["long_strike_eod"] = 100.0
+    row["short_strike_eod"] = 105.0
+    row["long_leg_eod"] = "XYZ260116C00100000"
+    row["short_leg_eod"] = "XYZ260116C00105000"
+    quote_history = {
+        dt.date(2026, 1, 2): {
+            "XYZ260116C00100000": {"bid": 2.90, "ask": 3.10, "mark": 3.00, "mid": 3.00},
+            "XYZ260116C00105000": {"bid": 1.40, "ask": 1.60, "mark": 1.50, "mid": 1.50},
+        },
+        dt.date(2026, 1, 9): {
+            "XYZ260116C00100000": {"bid": 2.50, "ask": 2.70, "mark": 2.60, "mid": 2.60},
+            "XYZ260116C00105000": {"bid": 1.20, "ask": 1.40, "mark": 1.30, "mid": 1.30},
+        },
+    }
+
+    result = simulate_spread_exit(
+        row,
+        close_history={},
+        quote_history=quote_history,
+        slippage_pct=0.10,
+        profit_take_pct=0.60,
+        stop_loss_mult=2.0,
+        debit_time_stop_dte=7,
+    )
+
+    assert result["exact_evaluated"] is True
+    assert result["exit_reason"] == "time_stop_7dte"
+
+
+def test_decision_selection_requires_distance_even_with_volatility_edge() -> None:
     detail = pd.DataFrame(
         [
             {
@@ -341,6 +435,7 @@ def test_decision_selection_uses_secondary_income_sleeve_only_without_primary() 
                 "entry_credit_pct_width": 0.24,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.45,
+                "realized_volatility_30d": 0.50,
                 "dte": 23,
                 "combined_flow_bias": -0.20,
                 "next_earnings_dt": "2026-06-10",
@@ -369,6 +464,7 @@ def test_decision_selection_uses_secondary_income_sleeve_only_without_primary() 
                 "entry_credit_pct_width": 0.24,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.45,
+                "realized_volatility_30d": 0.50,
                 "dte": 23,
                 "combined_flow_bias": -0.20,
                 "next_earnings_dt": "2026-06-10",
@@ -379,14 +475,18 @@ def test_decision_selection_uses_secondary_income_sleeve_only_without_primary() 
 
     selected = apply_replay_decision_selection(detail, max_selected_per_day=1)
 
-    assert bool(selected.loc[selected["ticker"].eq("SEC"), "decision_pass"].iloc[0]) is True
-    assert selected.loc[selected["ticker"].eq("SEC"), "decision_reason"].iloc[0] == "decision_selected_secondary_income_sleeve"
+    assert bool(selected.loc[selected["ticker"].eq("SEC"), "decision_pass"].iloc[0]) is False
+    assert "credit_short_strike_inside_distance_buffer" in selected.loc[
+        selected["ticker"].eq("SEC"), "decision_reason"
+    ].iloc[0]
     assert bool(selected.loc[selected["ticker"].eq("PRI"), "decision_pass"].iloc[0]) is True
     assert bool(selected.loc[selected["ticker"].eq("SEC2"), "decision_pass"].iloc[0]) is False
-    assert selected.loc[selected["ticker"].eq("SEC2"), "decision_reason"].iloc[0] == "decision_secondary_income_eligible"
+    assert "credit_short_strike_inside_distance_buffer" in selected.loc[
+        selected["ticker"].eq("SEC2"), "decision_reason"
+    ].iloc[0]
 
 
-def test_decision_selection_allows_only_validated_addon_lane_after_strongest() -> None:
+def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
     detail = pd.DataFrame(
         [
             {
@@ -434,6 +534,6 @@ def test_decision_selection_allows_only_validated_addon_lane_after_strongest() -
     selected = apply_replay_decision_selection(detail, max_selected_per_day=8)
 
     assert selected.loc[selected["ticker"].eq("TOP"), "decision_pass"].iloc[0]
-    assert selected.loc[selected["ticker"].eq("ADD"), "decision_pass"].iloc[0]
-    assert selected.loc[selected["ticker"].eq("ADD"), "decision_reason"].iloc[0] == "decision_selected_validated_addon_income_lane"
+    assert not selected.loc[selected["ticker"].eq("ADD"), "decision_pass"].iloc[0]
+    assert selected.loc[selected["ticker"].eq("ADD"), "decision_reason"].iloc[0] == "decision_eligible"
     assert not selected.loc[selected["ticker"].eq("SKIP"), "decision_pass"].iloc[0]

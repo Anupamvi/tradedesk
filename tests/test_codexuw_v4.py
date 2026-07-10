@@ -10,6 +10,7 @@ from codexuw.daily_v4 import (
     _default_out_dir,
     _disposition,
     _hard_blocker_reason,
+    apply_v4_prospective_book_concentration,
     apply_v4_risk_cap,
     apply_v4_professional_dispositions,
     apply_v4_safety_calibration,
@@ -65,6 +66,7 @@ def _candidate(**overrides) -> dict:
         "edge_verdict": "acceptable",
         "replay_ev_verdict": "acceptable",
         "edge_sample_size": 12,
+        "edge_profit_factor": 1.30,
         "edge_win_rate": 0.62,
         "edge_avg_pnl": 24.0,
         "confirmation_score": 7.2,
@@ -279,6 +281,64 @@ def test_v4_target_ticket_includes_gap_risk_and_oco_bracket_for_execute() -> Non
     assert "BUY TO CLOSE" in tickets.iloc[0]["OCO bracket order logic"]
 
 
+def test_v4_proposed_book_keeps_one_execute_per_sector_and_preserves_visibility() -> None:
+    scored = pd.DataFrame(
+        [
+            _candidate(ticker="BEST", sector="Technology", trade_status="Execute", score=8.5, edge_sample_size=30),
+            _candidate(ticker="ALT", sector="Technology", trade_status="Execute", score=7.0, edge_sample_size=20),
+            _candidate(ticker="HEALTH", sector="Healthcare", trade_status="Execute", score=7.5, edge_sample_size=25),
+        ]
+    )
+
+    adjusted = apply_v4_prospective_book_concentration(scored)
+
+    assert adjusted.loc[adjusted["ticker"].eq("BEST"), "trade_status"].iloc[0] == "Execute"
+    assert adjusted.loc[adjusted["ticker"].eq("HEALTH"), "trade_status"].iloc[0] == "Execute"
+    alt = adjusted.loc[adjusted["ticker"].eq("ALT")].iloc[0]
+    assert alt["trade_status"] == "Watch"
+    assert alt["trade_tier"] == "work-limit-sector-concentration"
+    assert "Proposed-book sector concentration" in alt["trade_status_reason"]
+
+
+def test_v4_debit_execute_requires_full_policy_evidence() -> None:
+    weak = _candidate(
+        ticker="DEBIT",
+        direction="Bull Call",
+        strategy="Bull Call Debit Spread",
+        trade_status="Execute",
+        penalties="",
+        hard_rejects="",
+        debit=1.25,
+        mid_debit=1.25,
+        natural_debit=1.20,
+        debit_pct_width=0.25,
+        credit=None,
+        credit_pct_width=None,
+        required_entry=1.30,
+        target_entry=1.30,
+        max_profit=375.0,
+        max_loss=125.0,
+        reward_risk=2.5,
+        expected_move_ratio=1.5,
+        combined_flow_bias=0.20,
+        flow_quality="directional",
+        bot_flow_source_status="bot_eod_loaded",
+        regime_trend="uptrend",
+        dte=21,
+        quote_width_pct=0.10,
+        iv_rank=40,
+        oi_carryover_status="supportive",
+        edge_sample_size=25,
+        edge_profit_factor=0.90,
+        edge_avg_pnl=5.0,
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([weak]), asof=ASOF)
+
+    assert adjusted["trade_status"].iloc[0] != "Execute"
+    assert "debit_edge_pf_below_1.15" in adjusted["v4_direct_disposition_reason"].iloc[0]
+
+
 def test_v4_hard_risk_cap_truncates_or_downgrades_target_signals() -> None:
     tickets = pd.DataFrame(
         [
@@ -406,8 +466,8 @@ def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path) -> None:
     base_dir.mkdir()
     scored = pd.DataFrame(
         [
-            _candidate(ticker="AAA", trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, natural_credit=1.0, required_entry=0.9, target_entry=0.9),
-            _candidate(ticker="BBB", trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, natural_credit=1.1, required_entry=0.9, target_entry=0.9),
+                _candidate(ticker="AAA", trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, natural_credit=1.0, required_entry=0.9, target_entry=0.9, credit_pct_width=0.20, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded"),
+                _candidate(ticker="BBB", sector="Healthcare", trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, natural_credit=1.1, required_entry=0.9, target_entry=0.9, credit_pct_width=0.22, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded"),
         ]
     )
     top_flow = pd.DataFrame(
@@ -441,7 +501,8 @@ def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path) -> None:
         liquidity_summary={"status": "ok"},
     )
 
-    assert manifest["opportunity_counts"]["execute"] == 2
+    assert manifest["opportunity_counts"]["execute"] == 1
+    assert manifest["opportunity_counts"]["swing_target_work_limit"] == 1
     assert manifest["visible_signal_policy"]["active_execute_cap"] is None
     assert manifest["visible_signal_policy"]["max_final_trades_arg"] == 1
     assert manifest["visible_signal_policy"]["aggregate_risk_budget_applied"] is False

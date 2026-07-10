@@ -18,7 +18,17 @@ def _source_complete(folder: Path) -> bool:
     try:
         find_export(folder, "stock-screener-")
         find_export(folder, "hot-chains-")
+    except FileNotFoundError:
+        return False
+    try:
         find_export(folder, "bot-eod-report-")
+        return True
+    except FileNotFoundError:
+        pass
+    try:
+        # DP proves that the dated EOD bundle exists, but downstream loaders
+        # must retain its equity-only semantics and mark bot flow as missing.
+        find_export(folder, "dp-eod-report-")
         return True
     except FileNotFoundError:
         return False
