@@ -22,6 +22,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     PREVIOUS_PIPELINE_VERSIONS,
     assign_family_tiers,
     balanced_non_ready_trend_rows,
+    blocker_text,
     build_artifact_manifest,
     build_signal,
     build_catalyst_flow_leaders,
@@ -33,6 +34,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_pattern_recommendations,
     build_source_ticker_coverage_rows,
     build_shadow_ledger_rows,
+    build_scout_call_candidates,
     build_target_ready_candidates,
     build_trade_review_candidates,
     build_ticker_trend_edge_rows,
@@ -42,12 +44,14 @@ from uwos.options_pattern_pipeline_v1.core import (
     decision_board_fieldnames,
     dedupe_rows_by_ticket,
     empty_validation_bundle,
+    final_verdict,
     generate_signals_for_snapshot,
     goal_evidence_overall_status,
     missed_mover_bucket,
     normalize_header,
     prepare_decision_rows,
     parse_option_symbol,
+    resolve_run_verdict,
     run_historical_validation,
     score_signal_horizon,
     select_signal_set,
@@ -56,11 +60,13 @@ from uwos.options_pattern_pipeline_v1.core import (
     source_complete_dates,
     source_completeness_for_date,
     sources_for_date,
+    trade_fieldnames,
     trade_output_row,
     tradeable_gap_quote_eligible,
     trend_edge_strategy_fields,
     ticker_trend_no_edge_reason,
     target_ready_output_row,
+    scout_call_output_row,
     pattern_recommendation_output_row,
     catalyst_flow_leader_output_row,
     trade_review_output_row,
@@ -96,9 +102,56 @@ def test_default_goal_major_required_tickers_match_user_coverage_scope():
 
 
 def test_options_pattern_pipeline_version_retains_previous_live_version():
-    assert PIPELINE_VERSION == "options_pattern_pipeline_v1.3-exec-confidence-20260612-143405"
-    assert PREVIOUS_PIPELINE_VERSIONS == ("options_pattern_pipeline_v1.2",)
-    assert PIPELINE_RELEASED_AT == "2026-06-12T14:34:05-07:00"
+    assert PIPELINE_VERSION == "options_pattern_pipeline_v1.5-promotion-bridge-20260707-000000"
+    assert PREVIOUS_PIPELINE_VERSIONS == (
+        "options_pattern_pipeline_v1.2",
+        "options_pattern_pipeline_v1.3",
+        "options_pattern_pipeline_v1.4",
+    )
+    assert PIPELINE_RELEASED_AT == "2026-07-07T00:00:00-07:00"
+
+
+def test_final_verdict_requires_today_actionable_for_production_ready():
+    validation_bundle = {
+        "family_tiers": {
+            "PROVEN_FAMILY": {"confidence_tier": "PROVEN"},
+            "PROMISING_FAMILY": {"confidence_tier": "PROMISING"},
+        },
+        "validation_scorecard": [{"pattern_family": "PROVEN_FAMILY"}],
+    }
+
+    assert final_verdict(validation_bundle, [], actionable_rows=[]) == "USABLE_NEEDS_MORE_VALIDATION"
+    assert final_verdict(validation_bundle, [], actionable_rows=[{"ticker": "AAPL"}]) == "PRODUCTION_READY"
+
+
+def test_final_verdict_is_not_yet_proven_without_proven_family_or_actionable():
+    validation_bundle = {
+        "family_tiers": {
+            "PROMISING_FAMILY": {"confidence_tier": "PROMISING"},
+            "RESEARCH_FAMILY": {"confidence_tier": "RESEARCH_ONLY"},
+        },
+        "validation_scorecard": [{"pattern_family": "PROMISING_FAMILY"}],
+    }
+
+    assert final_verdict(validation_bundle, [], actionable_rows=[]) == "NOT_YET_PROVEN"
+
+
+def test_resolve_run_verdict_prefers_written_metadata_verdict(tmp_path):
+    metadata_path = tmp_path / "metadata.json"
+    metadata_path.write_text('{"verdict": "PRODUCTION_READY"}')
+
+    assert resolve_run_verdict({"family_tiers": {}}, [], {"metadata": str(metadata_path)}) == "PRODUCTION_READY"
+
+
+def test_resolve_run_verdict_falls_back_when_metadata_is_unreadable(tmp_path):
+    metadata_path = tmp_path / "metadata.json"
+    metadata_path.write_text("{")
+    validation_bundle = {"family_tiers": {"EDGE": {"confidence_tier": "PROVEN"}}}
+
+    assert (
+        resolve_run_verdict(validation_bundle, [], {"metadata": str(metadata_path)})
+        == "USABLE_NEEDS_MORE_VALIDATION"
+    )
 
 
 def test_macro_ticker_cleaner_strips_news_filename_prefix():
@@ -1153,6 +1206,60 @@ def test_goal_evidence_uses_ticker_trend_gates_for_ticker_trend_auto_approval():
 
     expectancy_row = next(row for row in rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
     assert expectancy_row["status"] == "PASS"
+
+
+def test_goal_evidence_fails_auto_approval_when_pattern_is_not_proven():
+    decision_board = [
+        {
+            "status": "AUTO_APPROVED",
+            "ticker": "ASTS",
+            "full_ticket": "BUY CALL ASTS 40 exp 2026-06-18",
+            "buy_sell": "BUY",
+            "call_put": "CALL",
+            "strikes": "40",
+            "expiration": "2026-06-18",
+            "entry": "debit 3.00-3.10",
+            "max_risk": 310.0,
+            "expected_R": 0.681731,
+            "expected_R_per_day": 0.136346,
+            "probability_score": 56.13,
+            "calibrated_probability": 0.565217,
+            "validation_profit_factor": 5.051584,
+            "validation_scored_count": 40,
+            "beats_baselines_count": 6,
+            "baselines_beaten_names": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY",
+            "baselines_beaten_details": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.05,edge_R=0.73,scored=20",
+            "confidence_tier": "PROMISING",
+            "blockers": "PATTERN_VALIDATION_NOT_PROVEN",
+        }
+    ]
+    validation_bundle = {
+        "splits": [{"name": "cumulative_to_2026-05"}],
+        "validation_gate_scorecard": [{"pattern_family": "x"}],
+        "baseline_comparison": [{"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY"}],
+    }
+
+    rows = build_goal_evidence_rows(
+        "2026-05-28",
+        SnapshotStub({"ASTS": {"ticker": "ASTS", "flow_total_premium": 217_000_000.0}}),
+        decision_board,
+        [
+            {
+                "ticker": "ASTS",
+                "decision_surface_status": "AUTO_APPROVED",
+                "source_gap_reason": "surfaced in decision board",
+                "decision_artifact": "actionable_trades.csv",
+            }
+        ],
+        [],
+        validation_bundle,
+        {"risk_config": {"goal_required_coverage_tickers": ["ASTS"]}},
+        {"source_complete": True, "missing_sources": []},
+    )
+
+    expectancy_row = next(row for row in rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
+    assert expectancy_row["status"] == "FAIL"
+    assert "pattern_not_proven" in expectancy_row["evidence"]
 
 
 def test_goal_evidence_fails_auto_approval_without_baseline_names():
@@ -2415,7 +2522,14 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
             "pattern_family": family,
             "base_pattern_family": "CATALYST_FLOW_LEADER",
             "classification": "WATCH",
-            "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+            "block_reasons": [
+                "PATTERN_VALIDATION_NOT_PROVEN",
+                "PROFIT_FACTOR_BELOW_AUTO_APPROVAL",
+                "VALIDATION_EXPECTANCY_NEGATIVE",
+                "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS",
+                "EXPECTED_R_PER_DAY_NOT_POSITIVE",
+                "DOES_NOT_BEAT_TWO_BASELINES",
+            ],
             "confidence_tier": "PROMISING",
             "strategy_kind": "long_option",
             "strategy_type": "Long Call Debit",
@@ -2464,7 +2578,7 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
             "validation_failure_probability": 12 / 34,
             "validation_probability_score": 0.45,
             "validation_average_net_r": 0.1,
-            "validation_profit_factor": 1.3,
+            "validation_profit_factor": 1.19,
             "beats_baselines_count": 6,
             "baselines_beaten_names": "BASELINE_FAMILY_ONLY_SHOULD_NOT_SURVIVE_TICKER_TREND",
             "baselines_beaten_details": "BASELINE_FAMILY_ONLY_SHOULD_NOT_SURVIVE_TICKER_TREND:baseline_avg_R=-9,edge_R=9,scored=99",
@@ -2490,6 +2604,11 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
     assert rows[0]["success_probability_pct"] > 55
     assert rows[0]["expected_R"] > 0
     assert "PATTERN_VALIDATION_NOT_PROVEN" not in rows[0]["block_reasons"]
+    assert "PROFIT_FACTOR_BELOW_AUTO_APPROVAL" not in rows[0]["block_reasons"]
+    assert "VALIDATION_EXPECTANCY_NEGATIVE" not in rows[0]["block_reasons"]
+    assert "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS" not in rows[0]["block_reasons"]
+    assert "EXPECTED_R_PER_DAY_NOT_POSITIVE" not in rows[0]["block_reasons"]
+    assert "DOES_NOT_BEAT_TWO_BASELINES" not in rows[0]["block_reasons"]
     assert "Not actionable" not in rows[0]["why_actionable_now"]
     assert "all auto-approval gates passed" in rows[0]["why_actionable_now"]
     assert "pattern not proven out-of-sample" not in rows[0]["major_risks"]
@@ -2522,6 +2641,100 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
     assert amd_edge["beats_baselines_count"] == 2
     assert amd_edge["baselines_beaten_names"] == "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY"
     assert controls["run_kill_switches"] == []
+
+
+def test_proven_soft_calibration_bridge_promotes_complete_positive_ev_ticket():
+    family = "SOURCE_PREMIUM_COVERAGE_RESCUE__BULLISH__LONG_OPTION__TECHNOLOGY"
+    daily_rows = [
+        {
+            "ticker": "IBM",
+            "direction": "bullish",
+            "pattern_family": family,
+            "base_pattern_family": "SOURCE_PREMIUM_COVERAGE_RESCUE",
+            "classification": "WATCH",
+            "block_reasons": [],
+            "confidence_tier": "PROVEN",
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "option_type": "call",
+            "strike": 300,
+            "expiry": "2026-07-17",
+            "lead_option_symbol": "IBM260717C00300000",
+            "entry_bid": 9.15,
+            "entry_ask": 9.25,
+            "entry_range": "9.15-9.25",
+            "bid_ask_spread_pct": 0.011,
+            "max_risk_per_contract": 930.65,
+            "liquidity_volume": 5000,
+            "liquidity_open_interest": 8000,
+            "quote_source": "bot_eod",
+            "current_market_alignment": "RISK_ON",
+            "market_regime": "RISK_ON",
+            "success_probability_pct": 53.44,
+            "probability_score": 48.51,
+            "trade_success_probability_pct": 53.44,
+            "trade_probability_score": 48.51,
+        }
+    ]
+    validation_bundle = empty_validation_bundle()
+    validation_bundle["splits"] = [{"name": "cumulative_to_2026-06_holdout"}]
+    validation_bundle["validation_gate_scorecard"] = [{"pattern_family": family}]
+    validation_bundle["baseline_comparison"] = [
+        {"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY", "average_net_r": -0.31, "scored_count": 20},
+        {"baseline": "BASELINE_NAIVE_UW_FLOW_ONLY", "average_net_r": -0.05, "scored_count": 20},
+    ]
+    validation_bundle["family_tiers"] = {
+        family: {
+            "confidence_tier": "PROVEN",
+            "validation_scored_count": 99,
+            "validation_win_count": 45,
+            "validation_success_probability": 45 / 99,
+            "validation_failure_probability": 54 / 99,
+            "validation_probability_score": 0.40520496556336705,
+            "validation_average_net_r": 0.1703507792310215,
+            "validation_profit_factor": 1.5409045613372128,
+            "beats_baselines_count": 6,
+            "baselines_beaten_names": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY",
+            "baselines_beaten_details": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.31,edge_R=0.48,scored=20",
+        }
+    }
+
+    rows, controls = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        {"source_complete": True},
+        {},
+    )
+
+    assert rows[0]["status"] == "AUTO_APPROVED"
+    assert rows[0]["classification"] == "TRADE"
+    assert rows[0]["approval_bridge"] == "PROVEN_SOFT_CALIBRATION"
+    assert rows[0]["block_reasons"] == []
+    trade_row = trade_output_row(rows[0])
+    assert "approval_bridge" in trade_fieldnames()
+    assert trade_row["approval_bridge"] == "PROVEN_SOFT_CALIBRATION"
+    assert "approval_bridge=PROVEN_SOFT_CALIBRATION" in trade_row["auto_approval_gate_evidence"]
+
+    decision_board = build_decision_board_rows(rows, "2026-07-06", True, "AUTO_APPROVED", {})
+    goal_rows = build_goal_evidence_rows(
+        "2026-07-06",
+        SnapshotStub({"IBM": {"ticker": "IBM", "flow_total_premium": 250_000_000.0}}),
+        decision_board,
+        [
+            {
+                "ticker": "IBM",
+                "decision_surface_status": "AUTO_APPROVED",
+                "source_gap_reason": "surfaced in decision board",
+                "decision_artifact": "actionable_trades.csv",
+            }
+        ],
+        [],
+        validation_bundle,
+        controls,
+        {"source_complete": True, "missing_sources": []},
+    )
+    auto_gate = next(row for row in goal_rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
+    assert auto_gate["status"] == "PASS"
 
 
 def test_trend_edge_strategy_fields_labels_bearish_structures():
@@ -3124,7 +3337,7 @@ def test_target_ready_keeps_risk_labeled_complete_edge_visible():
     assert output["trade_legs"] == "Buy 1 AAPL 2026-06-19 210C @ debit 7.50-7.70 limit"
     assert output["order_entry_missing_fields"] == ""
     assert "risk_limit_labeled_not_hidden" in output["risk_label"]
-    assert "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT" in output["why_not_send_now"]
+    assert "max risk $770.65 exceeds configured trade limit" in output["why_not_send_now"]
 
 
 def test_target_ready_excludes_incomplete_or_negative_edge_tickets():
@@ -3175,6 +3388,66 @@ def test_target_ready_excludes_incomplete_or_negative_edge_tickets():
     )
 
     assert candidates == []
+
+
+def test_scout_call_candidates_surface_blocked_bullish_calls_without_approval():
+    scout_call = {
+        "status": "AVOID",
+        "classification": "AVOID",
+        "ticker": "NVDA",
+        "direction": "bullish",
+        "confidence_tier": "PROMISING",
+        "probability_score": 37.0,
+        "success_probability_pct": 44.0,
+        "pattern_score": 11.0,
+        "block_reasons": [
+            "MARKET_REGIME_CONFLICT",
+            "PATTERN_VALIDATION_NOT_PROVEN",
+            "CALIBRATION_SCORE_MISSING_OR_WEAK",
+        ],
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Call Debit",
+        "lead_option_symbol": "NVDA260717C00200000",
+        "expiry": "2026-07-17",
+        "option_type": "call",
+        "strike": 200,
+        "entry_bid": 3.60,
+        "entry_ask": 3.80,
+        "entry_range": "3.60-3.80",
+        "bid_ask_spread_pct": 0.054,
+        "max_risk_per_contract": 390.65,
+        "expected_R": 0.22,
+        "expected_R_per_day": 0.044,
+        "validation_profit_factor": 1.66,
+        "beats_baselines_count": 2,
+        "flow_total_premium": 1_188_031_273.0,
+        "flow_call_premium_share": 0.6543,
+        "flow_call_ask_premium_share": 0.6602,
+    }
+    approved_call = dict(scout_call, status="AUTO_APPROVED", classification="TRADE", ticker="AAPL")
+    quote_dead_call = dict(
+        scout_call,
+        ticker="MSFT",
+        block_reasons=["NO_TRADEABLE_OPTION_QUOTE", "PATTERN_VALIDATION_NOT_PROVEN"],
+    )
+    put = dict(
+        scout_call,
+        ticker="TSLA",
+        direction="bearish",
+        strategy_type="Long Put Debit",
+        lead_option_symbol="TSLA260717P00300000",
+        option_type="put",
+    )
+
+    candidates = build_scout_call_candidates([quote_dead_call, approved_call, put, scout_call])
+
+    assert candidates == [scout_call]
+    output = scout_call_output_row(candidates[0], 1)
+    assert output["scout_lane"] == "CONTRARIAN_CALL_REVIEW"
+    assert output["contrarian_call_setup"] == "yes"
+    assert output["trade_legs"] == "Buy 1 NVDA 2026-07-17 200C @ debit 3.60-3.80 limit"
+    assert "mechanically conflicts with bullish" in output["why_not_send_now"]
+    assert output["scout_score"] > output["probability_score"]
 
 
 def test_source_coverage_quote_does_not_cross_direction_unless_allowed():
@@ -3512,6 +3785,140 @@ def test_validated_regime_edge_surfaces_trade_review_instead_of_blanket_avoid():
     assert recommendation["breakeven_success_probability_pct"] == 28.57
     assert recommendation["edge_vs_breakeven_pct"] > 0
     assert "Validated historical edge" in recommendation["why_recommended"]
+    assert "regime OOS edge passed review" in recommendation["why_not_auto_approved"]
+    assert "manual catalyst confirmation" in recommendation["why_not_auto_approved"]
+
+
+def test_validated_regime_edge_bridge_promotes_market_conflict_only_ticker_trend():
+    family = "SOURCE_PREMIUM_COVERAGE_RESCUE__BULLISH__LONG_OPTION__TECHNOLOGY"
+    daily_rows = [
+        {
+            "date": "2026-07-07",
+            "classification": "WATCH",
+            "ticker": "HOOD",
+            "direction": "bullish",
+            "pattern_family": family,
+            "base_pattern_family": "SOURCE_PREMIUM_COVERAGE_RESCUE",
+            "confidence_tier": "PROMISING",
+            "probability_score": 43.0,
+            "success_probability_pct": 51.0,
+            "pattern_score": 12.0,
+            "block_reasons": ["MARKET_REGIME_CONFLICT"],
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "lead_option_symbol": "HOOD260717C00100000",
+            "expiry": "2026-07-17",
+            "option_type": "call",
+            "strike": 100,
+            "entry_bid": 5.05,
+            "entry_ask": 5.20,
+            "entry_range": "5.05-5.20",
+            "bid_ask_spread_pct": 0.029,
+            "max_risk_per_contract": 520.65,
+            "liquidity_volume": 4200,
+            "liquidity_open_interest": 9000,
+            "dte": 10,
+            "quote_source": "bot_eod",
+            "current_market_alignment": "RISK_OFF",
+            "market_regime": "RISK_OFF",
+        }
+    ]
+    hood_outcomes = []
+    for idx in range(25):
+        win = idx % 2 == 0 or idx == 1
+        hood_outcomes.append(
+            {
+                "split": "cumulative_to_2026-06_holdout",
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "signal_date": "2026-06-01",
+                "pattern_family": family,
+                "ticker": "HOOD",
+                "direction": "bullish",
+                "strategy_kind": "long_option",
+                "market_regime": "RISK_OFF",
+                "status": "SCORED",
+                "net_r": 1.2 if win else -0.15,
+                "win": int(win),
+            }
+        )
+    other_family_outcomes = [
+        {
+            "split": "cumulative_to_2026-06_holdout",
+            "sample": "VALIDATION",
+            "horizon": "5d",
+            "signal_date": "2026-06-02",
+            "pattern_family": family,
+            "ticker": "LRCX",
+            "direction": "bullish",
+            "strategy_kind": "long_option",
+            "market_regime": "RISK_ON",
+            "status": "SCORED",
+            "net_r": 0.65 if idx < 20 else -0.25,
+            "win": int(idx < 20),
+        }
+        for idx in range(35)
+    ]
+    validation_bundle = empty_validation_bundle()
+    validation_bundle["splits"] = [{"name": "cumulative_to_2026-06_holdout"}]
+    validation_bundle["validation_gate_scorecard"] = [{"pattern_family": family, "signal_count": 60, "scored_count": 60}]
+    validation_bundle["baseline_comparison"] = [
+        {"baseline": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY", "average_net_r": -0.10, "scored_count": 20},
+        {"baseline": "BASELINE_NAIVE_UW_FLOW_ONLY", "average_net_r": -0.05, "scored_count": 20},
+    ]
+    validation_bundle["family_tiers"] = {
+        family: {
+            "confidence_tier": "PROVEN",
+            "validation_scored_count": 60,
+            "validation_win_count": 34,
+            "validation_success_probability": 34 / 60,
+            "validation_failure_probability": 26 / 60,
+            "validation_probability_score": 0.50,
+            "validation_average_net_r": 0.48,
+            "validation_profit_factor": 4.9,
+            "beats_baselines_count": 3,
+            "baselines_beaten_names": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY",
+            "baselines_beaten_details": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.10,edge_R=0.58,scored=20",
+        }
+    }
+    validation_bundle["outcomes"] = hood_outcomes + other_family_outcomes
+
+    rows, controls = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        {"source_complete": True},
+        {},
+    )
+
+    assert rows[0]["status"] == "AUTO_APPROVED"
+    assert rows[0]["classification"] == "TRADE"
+    assert rows[0]["approval_bridge"] == "VALIDATED_REGIME_EDGE"
+    assert rows[0]["regime_edge_review_passed"] == "yes"
+    assert "MARKET_REGIME_CONFLICT" not in rows[0]["block_reasons"]
+    assert rows[0]["auto_min_scored_outcomes"] == controls["risk_config"]["min_ticker_trend_scored_outcomes"]
+    assert "same-regime OOS evidence bridged" in rows[0]["why_actionable_now"]
+    trade_row = trade_output_row(rows[0])
+    assert trade_row["approval_bridge"] == "VALIDATED_REGIME_EDGE"
+    assert "approval_bridge=VALIDATED_REGIME_EDGE" in trade_row["auto_approval_gate_evidence"]
+    assert "ticker_trend_scope=ticker_direction_strategy" in trade_row["auto_approval_gate_evidence"]
+
+
+def test_blocker_text_explains_probability_thresholds_instead_of_raw_codes():
+    row = {
+        "block_reasons": ["CALIBRATION_SCORE_MISSING_OR_WEAK", "CONFIDENCE_BAND_TOO_WEAK"],
+        "probability_score": 46.77,
+        "calibrated_probability": 0.5168,
+        "confidence_lower_bound": 0.4163,
+        "auto_min_probability_score": 0.50,
+        "auto_min_calibrated_probability": 0.50,
+        "auto_min_confidence_lower_bound": 0.45,
+    }
+
+    text = blocker_text(row)
+
+    assert "probability score 46.77% < 50.00% auto floor" in text
+    assert "confidence lower bound 41.63% < 45.00% auto floor" in text
+    assert "CALIBRATION_SCORE_MISSING_OR_WEAK" not in text
 
 
 def test_decision_board_schema_accepts_no_trade_contract():

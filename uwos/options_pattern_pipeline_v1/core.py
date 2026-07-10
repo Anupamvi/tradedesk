@@ -38,9 +38,13 @@ from .macro_geo import (
     render_pattern_observability_matrix,
 )
 
-PIPELINE_VERSION = "options_pattern_pipeline_v1.3-exec-confidence-20260612-143405"
-PREVIOUS_PIPELINE_VERSIONS = ("options_pattern_pipeline_v1.2",)
-PIPELINE_RELEASED_AT = "2026-06-12T14:34:05-07:00"
+PIPELINE_VERSION = "options_pattern_pipeline_v1.5-promotion-bridge-20260707-000000"
+PREVIOUS_PIPELINE_VERSIONS = (
+    "options_pattern_pipeline_v1.2",
+    "options_pattern_pipeline_v1.3",
+    "options_pattern_pipeline_v1.4",
+)
+PIPELINE_RELEASED_AT = "2026-07-07T00:00:00-07:00"
 ARTIFACT_SCHEMA_VERSION = "options_pattern_artifacts_v1"
 DECISION_BOARD_SCHEMA_VERSION = "decision_board_v1"
 MANIFEST_SCHEMA_VERSION = "artifact_manifest_v1"
@@ -130,6 +134,10 @@ EV_TRADE_BLOCKERS = {
     "CALIBRATION_SCORE_MISSING_OR_WEAK",
     "CONFIDENCE_BAND_TOO_WEAK",
 }
+SOFT_CALIBRATION_BLOCKERS = {
+    "CALIBRATION_SCORE_MISSING_OR_WEAK",
+    "CONFIDENCE_BAND_TOO_WEAK",
+}
 RISK_TRADE_BLOCKERS = {
     "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT",
     "CAPACITY_TOO_SMALL_FOR_INTENDED_SIZE",
@@ -190,6 +198,14 @@ DEFAULT_RISK_CONFIG = {
     "max_ticker_trend_drawdown_r": -8.0,
     "max_ticker_trend_losing_streak": 8,
     "min_ticker_trend_breakeven_edge_pct": 5.0,
+    "allow_proven_soft_calibration_promotion": True,
+    "min_proven_soft_probability_score": 0.47,
+    "min_proven_soft_calibrated_probability": 0.52,
+    "min_proven_soft_expected_r": 0.10,
+    "min_proven_soft_profit_factor": 1.30,
+    "min_proven_soft_scored_outcomes": 60,
+    "min_proven_soft_baselines_beaten": 4,
+    "allow_validated_regime_edge_promotion": True,
     "min_high_premium_ticker_trend_flow_premium": 1_000_000_000.0,
     "min_high_premium_ticker_trend_scored_outcomes": 15,
     "min_high_premium_ticker_trend_win_rate": 0.58,
@@ -590,7 +606,7 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
         "as_of": as_of,
         "out_dir": str(out_dir),
         "output_paths": output_paths,
-        "verdict": final_verdict(validation_bundle, daily_rows),
+        "verdict": resolve_run_verdict(validation_bundle, daily_rows, output_paths),
     }
 
 
@@ -3077,10 +3093,21 @@ def final_actionability_text(row: Mapping[str, Any]) -> str:
     blocker_summary = "; ".join(decompose_blockers(blockers)[:5])
     ticker_evidence = str(row.get("ticker_trend_evidence") or "")
     if status == "AUTO_APPROVED":
+        if row.get("approval_bridge") == "VALIDATED_REGIME_EDGE":
+            detail = f"; {ticker_evidence}" if ticker_evidence else ""
+            return (
+                "Executable regime-validated edge; same-regime OOS evidence bridged "
+                f"the mechanical market-regime conflict{detail}; all auto-approval gates passed."
+            )
         if ticker_evidence:
             return f"Executable ticker-specific trend edge; {ticker_evidence}; all auto-approval gates passed."
         return "Executable pattern trade; all configured auto-approval gates passed."
     if status == "TRADE_REVIEW":
+        if ticker_evidence:
+            return (
+                f"Review only; ticker-specific trend edge is present ({ticker_evidence}) "
+                f"but pattern-level blockers remain: {blocker_summary or 'manual confirmation is still required'}"
+            )
         return "Review only because " + (blocker_summary or "manual confirmation is still required")
     if status == "AVOID":
         return "Avoid because " + (blocker_summary or "required trade gates were not met")
@@ -3090,8 +3117,13 @@ def final_actionability_text(row: Mapping[str, Any]) -> str:
 def historical_evidence_summary_text(row: Mapping[str, Any]) -> str:
     validation_note = str(row.get("validation_note") or "").strip()
     ticker_evidence = str(row.get("ticker_trend_evidence") or "").strip()
-    if row.get("status") == "AUTO_APPROVED" and ticker_evidence:
-        summary = f"Auto-approved by ticker-specific trend validation after costs/slippage: {ticker_evidence}."
+    if ticker_evidence:
+        prefix = (
+            "Auto-approved by ticker-specific trend validation after costs/slippage"
+            if row.get("status") == "AUTO_APPROVED"
+            else "Ticker-specific trend validation after costs/slippage"
+        )
+        summary = f"{prefix}: {ticker_evidence}."
         if validation_note:
             summary += f" Family-level context: {validation_note}"
         return summary
@@ -3116,6 +3148,8 @@ def auto_approval_gate_evidence_text(row: Mapping[str, Any]) -> str:
     ]
     if row.get("ticker_trend_scope"):
         parts.append(f"ticker_trend_scope={row.get('ticker_trend_scope')}")
+    if row.get("approval_bridge"):
+        parts.append(f"approval_bridge={row.get('approval_bridge')}")
     return "; ".join(parts)
 
 
@@ -4858,6 +4892,91 @@ def ticker_trend_evidence_text(stats: Mapping[str, Any]) -> str:
     )
 
 
+def proven_soft_calibration_promotion_eligible(
+    row: Mapping[str, Any],
+    blockers: Iterable[str],
+    expected_r: Optional[float],
+    expected_r_per_day: Optional[float],
+    calibrated_probability: Optional[float],
+    probability_score: Optional[float],
+    validation_profit_factor: Optional[float],
+    validation_scored: int,
+    baselines_beaten: int,
+    risk_config: Mapping[str, Any],
+) -> bool:
+    if not risk_config.get("allow_proven_soft_calibration_promotion", True):
+        return False
+    blocker_set = set(blockers)
+    if not blocker_set or not blocker_set <= SOFT_CALIBRATION_BLOCKERS:
+        return False
+    if str(row.get("confidence_tier") or "") != "PROVEN":
+        return False
+    return (
+        expected_r is not None
+        and expected_r >= float(risk_config.get("min_proven_soft_expected_r", 0.10))
+        and expected_r_per_day is not None
+        and expected_r_per_day > float(risk_config.get("min_expected_r_per_day", 0.0))
+        and calibrated_probability is not None
+        and calibrated_probability >= float(risk_config.get("min_proven_soft_calibrated_probability", 0.52))
+        and probability_score is not None
+        and probability_score >= float(risk_config.get("min_proven_soft_probability_score", 0.47))
+        and validation_profit_factor is not None
+        and validation_profit_factor >= float(risk_config.get("min_proven_soft_profit_factor", 1.30))
+        and validation_scored >= int(risk_config.get("min_proven_soft_scored_outcomes", 60))
+        and baselines_beaten >= int(risk_config.get("min_proven_soft_baselines_beaten", 4))
+    )
+
+
+def validated_regime_edge_promotion_eligible(
+    blockers: Iterable[str],
+    edge_review_reason: str,
+    expected_r: Optional[float],
+    expected_r_per_day: Optional[float],
+    calibrated_probability: Optional[float],
+    active_probability_score: Optional[float],
+    confidence_lower: Optional[float],
+    validation_profit_factor: Optional[float],
+    validation_scored: int,
+    baselines_beaten: int,
+    max_risk: Optional[float],
+    capacity: int,
+    quote_validation_status: str,
+    probability_floor: float,
+    calibrated_floor: float,
+    confidence_floor: float,
+    scored_floor: int,
+    risk_config: Mapping[str, Any],
+) -> bool:
+    if not risk_config.get("allow_validated_regime_edge_promotion", True):
+        return False
+    if set(blockers) != {"MARKET_REGIME_CONFLICT"}:
+        return False
+    if edge_review_reason != "VALIDATED_FAMILY_AND_REGIME_EDGE_REVIEW":
+        return False
+    if quote_validation_status.startswith("FAILED"):
+        return False
+    if quote_validation_status.startswith("SKIPPED") and risk_config.get("live_quote_required_for_auto", False):
+        return False
+    return (
+        expected_r is not None
+        and expected_r >= float(risk_config.get("min_expected_r", 0.0))
+        and expected_r_per_day is not None
+        and expected_r_per_day > float(risk_config.get("min_expected_r_per_day", 0.0))
+        and calibrated_probability is not None
+        and calibrated_probability >= calibrated_floor
+        and active_probability_score is not None
+        and active_probability_score >= probability_floor
+        and confidence_lower is not None
+        and confidence_lower >= confidence_floor
+        and validation_profit_factor is not None
+        and validation_profit_factor >= float(risk_config.get("min_profit_factor", 1.2))
+        and validation_scored >= scored_floor
+        and baselines_beaten >= int(risk_config.get("min_baselines_beaten", 2))
+        and (max_risk is None or max_risk <= float(risk_config.get("max_risk_per_trade", 1500.0)))
+        and capacity >= 1
+    )
+
+
 def enrich_decision_row(
     row: Mapping[str, Any],
     tier_info: Mapping[str, Any],
@@ -4870,6 +4989,8 @@ def enrich_decision_row(
 ) -> Dict[str, Any]:
     enriched = dict(row)
     blockers = set(enriched.get("block_reasons") or [])
+    if str(enriched.get("confidence_tier") or "") != "PROVEN":
+        blockers.add("PATTERN_VALIDATION_NOT_PROVEN")
     setup = trade_setup_fields(enriched)
     p = probability_decimal(enriched)
     if p is None:
@@ -4893,6 +5014,10 @@ def enrich_decision_row(
     baselines_beaten_details = str(tier_info.get("baselines_beaten_details") or "")
     probability_score = probability_decimal_from_pct(enriched.get("probability_score"))
     confidence_lower = num(tier_info.get("validation_probability_score"))
+    if confidence_lower is None:
+        confidence_lower = num(enriched.get("_base_probability_score"))
+    if confidence_lower is None:
+        confidence_lower = probability_decimal_from_pct(enriched.get("pattern_probability_score"))
     confidence_upper = wilson_upper_bound(
         int(num(tier_info.get("validation_win_count")) or num(family_stats.get("win_count")) or 0),
         validation_scored,
@@ -4902,6 +5027,7 @@ def enrich_decision_row(
     fill = fill_cost_fields(enriched, risk_config)
     max_risk = num(enriched.get("max_risk_per_contract"))
     ticker = str(enriched.get("ticker") or "")
+    approval_bridge = ""
     ticker_trend = select_qualified_ticker_trend(enriched, ticker_trend_stats, risk_config)
     if ticker_trend:
         calibrated_probability = num(ticker_trend.get("win_rate"))
@@ -4936,7 +5062,12 @@ def enrich_decision_row(
         blockers.add("EXPECTED_R_PER_DAY_NOT_POSITIVE")
     if validation_profit_factor is None or validation_profit_factor < float(risk_config.get("min_profit_factor", 1.2)):
         blockers.add("PROFIT_FACTOR_BELOW_AUTO_APPROVAL")
-    if validation_scored < int(risk_config.get("min_oos_scored_outcomes", 30)):
+    scored_floor = (
+        int(risk_config.get("min_ticker_trend_scored_outcomes", 20))
+        if ticker_trend
+        else int(risk_config.get("min_oos_scored_outcomes", 30))
+    )
+    if validation_scored < scored_floor:
         blockers.add("LIMITED_OUT_OF_SAMPLE_SAMPLE")
     if baselines_beaten < int(risk_config.get("min_baselines_beaten", 2)):
         blockers.add("DOES_NOT_BEAT_TWO_BASELINES")
@@ -4985,20 +5116,48 @@ def enrich_decision_row(
     for switch in run_kill_switches:
         blockers.add(switch)
     if ticker_trend:
-        ticker_trend_sample_meets_auto_min = validation_scored >= int(
-            risk_config.get("min_ticker_trend_scored_outcomes", 20)
+        blockers.difference_update(
+            {
+                "PATTERN_VALIDATION_NOT_PROVEN",
+                "FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP",
+                "FAMILY_VALIDATION_LOSING_STREAK_TOO_LONG",
+            }
         )
-        for trend_overridden_blocker in (
-            "PATTERN_VALIDATION_NOT_PROVEN",
-            "LIMITED_OUT_OF_SAMPLE_SAMPLE",
-            "CALIBRATION_SCORE_MISSING_OR_WEAK",
-            "CONFIDENCE_BAND_TOO_WEAK",
-            "FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP",
-            "FAMILY_VALIDATION_LOSING_STREAK_TOO_LONG",
+        if expected_r is not None and expected_r > float(risk_config.get("min_expected_r", 0.0)):
+            blockers.discard("EXPECTED_R_NOT_POSITIVE_AFTER_COSTS")
+            blockers.discard("VALIDATION_EXPECTANCY_NEGATIVE")
+        if expected_r_per_day is not None and expected_r_per_day > float(risk_config.get("min_expected_r_per_day", 0.0)):
+            blockers.discard("EXPECTED_R_PER_DAY_NOT_POSITIVE")
+        if validation_profit_factor is not None and validation_profit_factor >= float(risk_config.get("min_profit_factor", 1.2)):
+            blockers.discard("PROFIT_FACTOR_BELOW_AUTO_APPROVAL")
+        if validation_scored >= scored_floor:
+            blockers.discard("LIMITED_OUT_OF_SAMPLE_SAMPLE")
+        if baselines_beaten >= int(risk_config.get("min_baselines_beaten", 2)):
+            blockers.discard("DOES_NOT_BEAT_TWO_BASELINES")
+        if (
+            active_probability_score is not None
+            and active_probability_score >= probability_floor
+            and calibrated_probability is not None
+            and calibrated_probability >= calibrated_floor
         ):
-            if trend_overridden_blocker == "LIMITED_OUT_OF_SAMPLE_SAMPLE" and not ticker_trend_sample_meets_auto_min:
-                continue
-            blockers.discard(trend_overridden_blocker)
+            blockers.discard("CALIBRATION_SCORE_MISSING_OR_WEAK")
+        if confidence_lower is not None and confidence_lower >= confidence_floor:
+            blockers.discard("CONFIDENCE_BAND_TOO_WEAK")
+
+    if proven_soft_calibration_promotion_eligible(
+        enriched,
+        blockers,
+        expected_r,
+        expected_r_per_day,
+        calibrated_probability,
+        probability_score,
+        validation_profit_factor,
+        validation_scored,
+        baselines_beaten,
+        risk_config,
+    ):
+        blockers.difference_update(SOFT_CALIBRATION_BLOCKERS)
+        approval_bridge = "PROVEN_SOFT_CALIBRATION"
 
     has_ticket = "No complete" not in str(setup.get("trade_setup") or "")
     edge_review, edge_review_reason, edge_review_evidence = qualifies_for_validated_edge_review(
@@ -5010,6 +5169,28 @@ def enrich_decision_row(
         str(enriched.get("current_market_alignment") or enriched.get("market_regime") or "UNKNOWN"),
         baselines_beaten,
     )
+    if validated_regime_edge_promotion_eligible(
+        blockers,
+        edge_review_reason,
+        expected_r,
+        expected_r_per_day,
+        calibrated_probability,
+        active_probability_score,
+        confidence_lower,
+        validation_profit_factor,
+        validation_scored,
+        baselines_beaten,
+        max_risk,
+        capacity,
+        quote_validation_status,
+        probability_floor,
+        calibrated_floor,
+        confidence_floor,
+        scored_floor,
+        risk_config,
+    ):
+        blockers.discard("MARKET_REGIME_CONFLICT")
+        approval_bridge = "VALIDATED_REGIME_EDGE"
     hard_or_reject = hard_review_blockers(blockers)
     flow_leader_review = catalyst_flow_leader_review_candidate(enriched, blockers, has_ticket)
     has_review_probability_and_ev = expected_r is not None and num(enriched.get("probability_score")) is not None
@@ -5051,8 +5232,23 @@ def enrich_decision_row(
             "confidence_lower_bound": confidence_lower,
             "confidence_upper_bound": confidence_upper,
             "confidence_uncertainty_band": confidence_band_text(confidence_lower, confidence_upper),
+            "auto_min_expected_R": float(risk_config.get("min_expected_r", 0.0)),
+            "auto_min_expected_R_per_day": float(risk_config.get("min_expected_r_per_day", 0.0)),
+            "auto_min_probability_score": probability_floor,
+            "auto_min_calibrated_probability": calibrated_floor,
+            "auto_min_confidence_lower_bound": confidence_floor,
+            "auto_min_profit_factor": float(risk_config.get("min_profit_factor", 1.2)),
+            "auto_min_scored_outcomes": scored_floor,
+            "auto_min_baselines_beaten": int(risk_config.get("min_baselines_beaten", 2)),
+            "auto_max_family_drawdown_R": float(risk_config.get("max_family_drawdown_r", -12.0)),
+            "auto_max_family_losing_streak": int(risk_config.get("max_family_losing_streak", 12)),
+            "family_drawdown_proxy_R": family_drawdown,
+            "family_max_losing_streak": family_losing_streak,
+            "regime_edge_review_passed": "yes" if edge_review_reason == "VALIDATED_FAMILY_AND_REGIME_EDGE_REVIEW" else "no",
+            "regime_edge_review_evidence": edge_review_evidence if edge_review_reason == "VALIDATED_FAMILY_AND_REGIME_EDGE_REVIEW" else "",
             "capacity_estimate_contracts": capacity,
             "live_quote_validation_status": quote_validation_status,
+            "approval_bridge": approval_bridge,
             "fill_model": fill["fill_model"],
             "slippage_estimate": fill["slippage_estimate"],
             "fees_commissions": fill["fees_commissions"],
@@ -5305,6 +5501,7 @@ def build_decision_board_rows(
                 "event_risk": row.get("event_risk"),
                 "regime_alignment": row.get("regime_alignment"),
                 "live_quote_validation_status": row.get("live_quote_validation_status"),
+                "approval_bridge": row.get("approval_bridge"),
                 "catalyst_thesis": row.get("reason_summary"),
                 "UW_evidence": row.get("uw_evidence"),
                 "edge_review_reason": row.get("edge_review_reason"),
@@ -5353,6 +5550,7 @@ def no_trade_decision_board_row(
         "probability_score": "",
         "calibrated_probability": "",
         "validation_tier": "",
+        "approval_bridge": "",
         "blockers": "NO_REVIEWABLE_TICKETS",
         "promotion_requirements": "new source-complete evidence, valid quote, positive EV, validation edge, and no kill-switches",
         "kill_switch_triggered": "",
@@ -5453,6 +5651,7 @@ def decision_board_fieldnames() -> List[str]:
         "event_risk",
         "regime_alignment",
         "live_quote_validation_status",
+        "approval_bridge",
         "catalyst_thesis",
         "UW_evidence",
         "edge_review_reason",
@@ -6071,7 +6270,7 @@ def render_profitability_audit(
         "## Top Blockers",
     ]
     for blocker, count in blockers.most_common(12):
-        lines.append(f"- {blocker}: {count}")
+        lines.append(f"- {blocker_summary_label(blocker)} (`{blocker}`): {count}")
     if not blockers:
         lines.append("- none")
     lines.extend(
@@ -6620,6 +6819,12 @@ def auto_approved_goal_gate_failures(row: Mapping[str, Any], risk_config: Mappin
         expected_r = num(row.get("expected_R"))
         probability_score = probability_decimal_from_pct(row.get("probability_score"))
         calibrated = num(row.get("calibrated_probability"))
+        if str(row.get("approval_bridge") or "") == "PROVEN_SOFT_CALIBRATION":
+            min_expected_r = float(risk_config.get("min_proven_soft_expected_r", 0.10))
+            min_scored = int(risk_config.get("min_proven_soft_scored_outcomes", 60))
+            min_profit_factor = float(risk_config.get("min_proven_soft_profit_factor", 1.30))
+            min_probability = float(risk_config.get("min_proven_soft_probability_score", 0.47))
+            min_calibrated = float(risk_config.get("min_proven_soft_calibrated_probability", 0.52))
 
     if (expected_r or 0.0) <= min_expected_r:
         failures.append("expected_R")
@@ -6641,6 +6846,12 @@ def auto_approved_goal_gate_failures(row: Mapping[str, Any], risk_config: Mappin
         failures.append("probability_score")
     if calibrated is None or calibrated < min_calibrated:
         failures.append("calibrated_probability")
+    blocker_text = join_reason_list(row.get("blockers") or row.get("block_reasons") or "")
+    if "PATTERN_VALIDATION_NOT_PROVEN" in blocker_text:
+        failures.append("pattern_not_proven")
+    confidence_tier = str(row.get("confidence_tier") or "").strip()
+    if confidence_tier and confidence_tier != "PROVEN" and not uses_ticker_trend:
+        failures.append("pattern_not_proven")
     if row.get("blockers"):
         failures.append("blockers_present")
     return failures
@@ -6795,6 +7006,7 @@ def write_outputs(
     actionable = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AUTO_APPROVED"])
     trade_review = build_trade_review_candidates(decision_enriched_rows)
     target_ready = build_target_ready_candidates(decision_enriched_rows, run_controls["risk_config"])
+    scout_calls = build_scout_call_candidates(decision_enriched_rows)
     pattern_recommendations = build_pattern_recommendations(actionable, trade_review)
     catalyst_flow_leaders = build_catalyst_flow_leaders(decision_enriched_rows)
     watch = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "TRADE_REVIEW" and r.get("classification") == "WATCH"])
@@ -6847,6 +7059,7 @@ def write_outputs(
         "candidate_counts": {
             "auto_approved": len(actionable),
             "pattern_recommendations": len(pattern_recommendations),
+            "scout_call_candidates": len(scout_calls),
             "catalyst_flow_leaders": len(catalyst_flow_leaders),
             "source_ticker_coverage": len(source_coverage_rows),
             "directional_edge_diagnostics": len(directional_edge_rows),
@@ -6880,6 +7093,7 @@ def write_outputs(
         "daily_report": str(out_dir / f"daily_report_{as_of}.md"),
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
         "target_ready_candidates": str(out_dir / "target_ready_candidates.csv"),
+        "scout_call_candidates": str(out_dir / "scout_call_candidates.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
         "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
@@ -6966,6 +7180,11 @@ def write_outputs(
         Path(paths["target_ready_candidates"]),
         [target_ready_output_row(r) for r in target_ready],
         target_ready_fieldnames(),
+    )
+    write_csv(
+        Path(paths["scout_call_candidates"]),
+        [scout_call_output_row(r, idx) for idx, r in enumerate(scout_calls, 1)],
+        scout_call_fieldnames(),
     )
     write_csv(
         Path(paths["pattern_recommendations"]),
@@ -7077,6 +7296,7 @@ def write_outputs(
             snapshots[as_of],
             actionable,
             target_ready,
+            scout_calls,
             pattern_recommendations,
             catalyst_flow_leaders,
             source_coverage_rows,
@@ -7141,6 +7361,7 @@ def write_source_incomplete_outputs(
         "candidate_counts": {
             "auto_approved": 0,
             "pattern_recommendations": 0,
+            "scout_call_candidates": 0,
             "catalyst_flow_leaders": 0,
             "source_ticker_coverage": 0,
             "directional_edge_diagnostics": 0,
@@ -7158,6 +7379,7 @@ def write_source_incomplete_outputs(
         "daily_report": str(out_dir / f"daily_report_{as_of}.md"),
         "actionable_trades": str(out_dir / "actionable_trades.csv"),
         "target_ready_candidates": str(out_dir / "target_ready_candidates.csv"),
+        "scout_call_candidates": str(out_dir / "scout_call_candidates.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
         "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
@@ -7203,6 +7425,7 @@ def write_source_incomplete_outputs(
     }
     write_csv(Path(paths["actionable_trades"]), [], trade_fieldnames())
     write_csv(Path(paths["target_ready_candidates"]), [], target_ready_fieldnames())
+    write_csv(Path(paths["scout_call_candidates"]), [], scout_call_fieldnames())
     write_csv(Path(paths["pattern_recommendations"]), [], pattern_recommendation_fieldnames())
     write_csv(Path(paths["catalyst_flow_leaders"]), [], catalyst_flow_leader_fieldnames())
     write_csv(Path(paths["source_ticker_coverage"]), [], source_coverage_fieldnames())
@@ -7372,12 +7595,25 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "avg_loss_R": r.get("avg_loss_R"),
         "payoff_ratio": r.get("payoff_ratio"),
         "calibrated_probability": r.get("calibrated_probability"),
+        "confidence_lower_bound": r.get("confidence_lower_bound"),
+        "confidence_upper_bound": r.get("confidence_upper_bound"),
+        "auto_min_probability_score": r.get("auto_min_probability_score"),
+        "auto_min_calibrated_probability": r.get("auto_min_calibrated_probability"),
+        "auto_min_confidence_lower_bound": r.get("auto_min_confidence_lower_bound"),
+        "auto_min_profit_factor": r.get("auto_min_profit_factor"),
+        "auto_min_scored_outcomes": r.get("auto_min_scored_outcomes"),
+        "auto_min_baselines_beaten": r.get("auto_min_baselines_beaten"),
         "validation_scored_count": r.get("validation_scored_count"),
         "validation_profit_factor": r.get("validation_profit_factor"),
+        "family_drawdown_proxy_R": r.get("family_drawdown_proxy_R"),
+        "family_max_losing_streak": r.get("family_max_losing_streak"),
+        "auto_max_family_drawdown_R": r.get("auto_max_family_drawdown_R"),
+        "auto_max_family_losing_streak": r.get("auto_max_family_losing_streak"),
         "beats_baselines_count": r.get("beats_baselines_count"),
         "baselines_beaten_names": r.get("baselines_beaten_names"),
         "baselines_beaten_details": r.get("baselines_beaten_details"),
         "auto_approval_gate_evidence": auto_approval_gate_evidence_text(r),
+        "approval_bridge": r.get("approval_bridge"),
         "capacity_estimate_contracts": r.get("capacity_estimate_contracts"),
         "live_quote_validation_status": r.get("live_quote_validation_status"),
         "position_size_tier": r.get("position_size_tier"),
@@ -7396,6 +7632,8 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "ticker_trend_evidence": r.get("ticker_trend_evidence"),
         "edge_review_reason": r.get("edge_review_reason"),
         "edge_review_evidence": r.get("edge_review_evidence"),
+        "regime_edge_review_passed": r.get("regime_edge_review_passed"),
+        "regime_edge_review_evidence": r.get("regime_edge_review_evidence"),
         "current_market_regime_alignment": r.get("current_market_alignment"),
         "liquidity_quote_sanity": quote_sanity_text(r),
         "major_risks": r.get("major_risks"),
@@ -8004,6 +8242,128 @@ def build_target_ready_candidates(
     return candidates
 
 
+def build_scout_call_candidates(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
+    candidates_by_ticket: Dict[Tuple[str, str, str, str], Mapping[str, Any]] = {}
+    for row in rows:
+        if not is_scout_call_candidate(row):
+            continue
+        key = trade_ticket_key(row)
+        current = candidates_by_ticket.get(key)
+        if current is None or scout_call_sort_key(row) > scout_call_sort_key(current):
+            candidates_by_ticket[key] = row
+    candidates = list(candidates_by_ticket.values())
+    candidates.sort(key=scout_call_sort_key, reverse=True)
+    return candidates
+
+
+def is_scout_call_candidate(row: Mapping[str, Any]) -> bool:
+    if row.get("status") == "AUTO_APPROVED":
+        return False
+    setup = trade_setup_fields(row)
+    if str(row.get("direction") or "").lower() != "bullish":
+        return False
+    if str(setup.get("buy_or_sell") or "").upper() != "BUY":
+        return False
+    if str(setup.get("call_or_put") or "").upper() != "CALL":
+        return False
+    if "No complete" in str(setup.get("trade_setup") or ""):
+        return False
+    blockers = set(row.get("block_reasons") or [])
+    hard_kill_switches = {
+        "KILL_SWITCH_SOURCE_INCOMPLETE",
+        "KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS",
+    }
+    if blockers & (HARD_TRADE_BLOCKERS | QUOTE_TRADE_BLOCKERS | hard_kill_switches):
+        return False
+    non_scout_risk_blockers = {
+        "EXCLUDED_TICKER_OR_INSTRUMENT",
+        "MANUAL_ONLY_TICKER_OR_INSTRUMENT",
+        "HIGH_NOTIONAL_INDEX_GUARDRAIL",
+        "CAPACITY_TOO_SMALL_FOR_INTENDED_SIZE",
+    }
+    if blockers & non_scout_risk_blockers:
+        return False
+    return any(
+        num(row.get(key)) is not None
+        for key in (
+            "probability_score",
+            "success_probability_pct",
+            "expected_R",
+            "flow_total_premium",
+            "hot_total_premium",
+        )
+    )
+
+
+def scout_call_sort_key(row: Mapping[str, Any]) -> Tuple[float, int, float, float, float, float]:
+    return (
+        scout_call_score(row),
+        trade_review_rank(trade_review_status(row)),
+        num(row.get("probability_score")) or -1.0,
+        num(row.get("success_probability_pct")) or -1.0,
+        num(row.get("expected_R")) if num(row.get("expected_R")) is not None else -999.0,
+        scout_call_flow_premium(row),
+    )
+
+
+def scout_call_flow_premium(row: Mapping[str, Any]) -> float:
+    return max(num(row.get("flow_total_premium")) or 0.0, num(row.get("hot_total_premium")) or 0.0)
+
+
+def scout_call_score(row: Mapping[str, Any]) -> float:
+    probability = num(row.get("probability_score")) or 0.0
+    success = num(row.get("success_probability_pct")) or 0.0
+    expected_r = num(row.get("expected_R")) or 0.0
+    flow_premium = scout_call_flow_premium(row)
+    call_pressure = max(
+        num(row.get("flow_call_premium_share")) or 0.0,
+        num(row.get("flow_call_ask_premium_share")) or 0.0,
+    )
+    blockers = set(row.get("block_reasons") or [])
+    score = probability + (success * 0.25)
+    score += max(min(expected_r * 10.0, 20.0), -10.0)
+    if flow_premium > 0:
+        score += min(max(math.log10(flow_premium / 1_000_000.0), 0.0) * 3.0, 18.0)
+    score += call_pressure * 10.0
+    if "MARKET_REGIME_CONFLICT" in blockers:
+        score += 3.0
+    if str(row.get("confidence_tier") or "") == "PROMISING":
+        score += 2.0
+    elif str(row.get("confidence_tier") or "") == "PROVEN":
+        score += 4.0
+    if blockers & RISK_TRADE_BLOCKERS:
+        score -= 5.0
+    return round(score, 2)
+
+
+def scout_call_lane(row: Mapping[str, Any]) -> str:
+    blockers = set(row.get("block_reasons") or [])
+    if "MARKET_REGIME_CONFLICT" in blockers:
+        return "CONTRARIAN_CALL_REVIEW"
+    if row.get("edge_review_reason"):
+        return "VALIDATED_EDGE_CALL_REVIEW"
+    if str(row.get("base_pattern_family") or "") == "CATALYST_FLOW_LEADER":
+        return "FLOW_LEADER_CALL_REVIEW"
+    if "PATTERN_VALIDATION_NOT_PROVEN" in blockers:
+        return "UNPROVEN_PATTERN_CALL_REVIEW"
+    return "MANUAL_ALPHA_CALL_REVIEW"
+
+
+def scout_call_reason_text(row: Mapping[str, Any]) -> str:
+    flow_text = money_text(scout_call_flow_premium(row))
+    call_share = max(
+        num(row.get("flow_call_premium_share")) or 0.0,
+        num(row.get("flow_call_ask_premium_share")) or 0.0,
+    )
+    return (
+        f"Manual-alpha call scout: score={fmt_num(scout_call_score(row))}; "
+        f"success={pct_text(row.get('success_probability_pct'))}; "
+        f"prob_score={pct_text(row.get('probability_score'))}; "
+        f"expected_R={fmt_num(row.get('expected_R'))}; PF={fmt_num(row.get('validation_profit_factor'))}; "
+        f"flow={flow_text}; call_pressure={fmt_pct(call_share)}; blockers={blocker_text(row)}"
+    )
+
+
 def dedupe_rows_by_ticket(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
     best_by_ticket: Dict[Tuple[str, str, str, str], Mapping[str, Any]] = {}
     for row in rows:
@@ -8149,6 +8509,26 @@ def target_ready_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
             "why_target_ready": target_ready_reason_text(r),
             "why_not_send_now": "" if r.get("status") == "AUTO_APPROVED" else blocker_text(r),
             "order_entry_missing_fields": ";".join(order_entry_missing_fields(r)),
+        }
+    )
+    return row
+
+
+def scout_call_output_row(r: Mapping[str, Any], rank: int) -> Dict[str, Any]:
+    row = trade_review_output_row(r)
+    setup = trade_setup_fields(r)
+    blockers = set(r.get("block_reasons") or [])
+    row.update(
+        {
+            "scout_rank": rank,
+            "scout_lane": scout_call_lane(r),
+            "scout_score": scout_call_score(r),
+            "contrarian_call_setup": "yes" if "MARKET_REGIME_CONFLICT" in blockers else "no",
+            "entry_limit": setup.get("entry_range"),
+            "breakeven_success_probability_pct": breakeven_success_probability_pct(r),
+            "edge_vs_breakeven_pct": edge_vs_breakeven_pct(r),
+            "why_scout": scout_call_reason_text(r),
+            "why_not_send_now": blocker_text(r),
         }
     )
     return row
@@ -8575,12 +8955,95 @@ def strategy_plain_english(strategy: str) -> str:
 
 
 def blocker_text(row: Mapping[str, Any]) -> str:
-    blockers = row.get("blocker_categories") or row.get("block_reasons") or []
+    blockers = row.get("block_reasons") or row.get("blocker_categories") or []
     if isinstance(blockers, str):
         parts = [p.strip() for p in blockers.split(";") if p.strip()]
     else:
         parts = [str(p).strip() for p in blockers if str(p).strip()]
-    return "; ".join(parts[:5])
+    return "; ".join(blocker_detail_text(row, part) for part in parts[:5])
+
+
+def blocker_summary_label(blocker: str) -> str:
+    return {
+        "CALIBRATION_SCORE_MISSING_OR_WEAK": "probability score or calibrated probability did not clear the auto floor",
+        "CONFIDENCE_BAND_TOO_WEAK": "sample-adjusted lower confidence bound did not clear the auto floor",
+        "PATTERN_VALIDATION_NOT_PROVEN": "pattern family is not PROVEN, or ticker trend did not bridge it",
+        "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS": "expected R after fees/slippage is not positive",
+        "EXPECTED_R_PER_DAY_NOT_POSITIVE": "expected R per day is not positive",
+        "PROFIT_FACTOR_BELOW_AUTO_APPROVAL": "validation profit factor is below auto-approval floor",
+        "VALIDATION_EXPECTANCY_NEGATIVE": "historical validation expectancy is negative",
+        "FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP": "family drawdown is beyond the configured limit",
+        "FAMILY_VALIDATION_LOSING_STREAK_TOO_LONG": "family losing streak is beyond the configured limit",
+        "MARKET_REGIME_CONFLICT": "current market regime mechanically conflicts with the setup direction",
+        "DOES_NOT_BEAT_TWO_BASELINES": "candidate did not beat enough simple baselines",
+        "LIMITED_OUT_OF_SAMPLE_SAMPLE": "too few scored out-of-sample outcomes",
+        "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT": "ticket risk exceeds the configured trade cap",
+    }.get(blocker, blocker.replace("_", " ").lower())
+
+
+def blocker_detail_text(row: Mapping[str, Any], blocker: str) -> str:
+    if blocker == "CALIBRATION_SCORE_MISSING_OR_WEAK":
+        details: List[str] = []
+        score = probability_decimal_from_pct(row.get("probability_score"))
+        min_score = num(row.get("auto_min_probability_score"))
+        calibrated = num(row.get("calibrated_probability"))
+        min_calibrated = num(row.get("auto_min_calibrated_probability"))
+        if min_score is not None and (score is None or score < min_score):
+            details.append(f"probability score {pct_text(row.get('probability_score')) or 'missing'} < {fmt_pct(min_score)} auto floor")
+        if min_calibrated is not None and (calibrated is None or calibrated < min_calibrated):
+            details.append(f"calibrated probability {fmt_pct(calibrated)} < {fmt_pct(min_calibrated)} auto floor")
+        return "; ".join(details) or "calibration below auto threshold"
+    if blocker == "CONFIDENCE_BAND_TOO_WEAK":
+        lower = num(row.get("confidence_lower_bound"))
+        if lower is None:
+            lower = probability_decimal_from_pct(row.get("pattern_probability_score"))
+        floor = num(row.get("auto_min_confidence_lower_bound"))
+        if floor is not None:
+            return f"confidence lower bound {fmt_pct(lower)} < {fmt_pct(floor)} auto floor"
+        return "confidence lower bound below auto floor"
+    if blocker == "MARKET_REGIME_CONFLICT":
+        regime = str(row.get("current_market_alignment") or row.get("market_regime") or "UNKNOWN")
+        direction = str(row.get("direction") or "setup")
+        if str(row.get("regime_edge_review_passed") or "").lower() == "yes":
+            evidence = str(row.get("regime_edge_review_evidence") or row.get("edge_review_evidence") or "").strip()
+            suffix = f": {evidence}" if evidence else ""
+            return f"{regime} mechanically conflicts with {direction}, but regime OOS edge passed review{suffix}; auto still needs manual catalyst confirmation"
+        return f"{regime} mechanically conflicts with {direction}; no qualifying regime-specific OOS edge cleared review"
+    if blocker == "PATTERN_VALIDATION_NOT_PROVEN":
+        tier = str(row.get("confidence_tier") or "missing")
+        scored = row.get("validation_scored_count")
+        pf = row.get("validation_profit_factor")
+        return f"family tier {tier}; auto requires PROVEN family or qualified ticker trend (scored={scored}, PF={fmt_num(pf)})"
+    if blocker == "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS":
+        floor = num(row.get("auto_min_expected_R"))
+        return f"expected_R {fmt_num(row.get('expected_R'))} <= {fmt_num(floor if floor is not None else 0.0)} after costs"
+    if blocker == "EXPECTED_R_PER_DAY_NOT_POSITIVE":
+        floor = num(row.get("auto_min_expected_R_per_day"))
+        return f"expected_R/day {fmt_num(row.get('expected_R_per_day'))} <= {fmt_num(floor if floor is not None else 0.0)}"
+    if blocker == "PROFIT_FACTOR_BELOW_AUTO_APPROVAL":
+        floor = num(row.get("auto_min_profit_factor"))
+        return f"profit factor {fmt_num(row.get('validation_profit_factor'))} < {fmt_num(floor if floor is not None else DEFAULT_RISK_CONFIG['min_profit_factor'])} auto floor"
+    if blocker == "LIMITED_OUT_OF_SAMPLE_SAMPLE":
+        floor = num(row.get("auto_min_scored_outcomes"))
+        return f"scored OOS outcomes {row.get('validation_scored_count') or 'missing'} < {int(floor or DEFAULT_RISK_CONFIG['min_oos_scored_outcomes'])} auto floor"
+    if blocker == "DOES_NOT_BEAT_TWO_BASELINES":
+        floor = num(row.get("auto_min_baselines_beaten"))
+        return f"baselines beaten {row.get('beats_baselines_count') or 0} < {int(floor or DEFAULT_RISK_CONFIG['min_baselines_beaten'])}"
+    if blocker == "VALIDATION_EXPECTANCY_NEGATIVE":
+        return f"validation expectancy is not positive enough for auto approval; expected_R={fmt_num(row.get('expected_R'))}"
+    if blocker == "FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP":
+        return (
+            f"family drawdown {fmt_num(row.get('family_drawdown_proxy_R'))} "
+            f"< {fmt_num(row.get('auto_max_family_drawdown_R'))} limit"
+        )
+    if blocker == "FAMILY_VALIDATION_LOSING_STREAK_TOO_LONG":
+        return (
+            f"family losing streak {row.get('family_max_losing_streak') or 'missing'} "
+            f"> {row.get('auto_max_family_losing_streak') or DEFAULT_RISK_CONFIG['max_family_losing_streak']} limit"
+        )
+    if blocker == "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT":
+        return f"max risk {money_text(row.get('max_risk_per_contract'))} exceeds configured trade limit"
+    return blocker
 
 
 def ticket_row(
@@ -8686,6 +9149,38 @@ def append_target_ready_table(
     lines.append("|---:|---|---|---|---|---:|---:|---:|---:|---:|---|---|---|")
     for idx, row in enumerate(rows[:limit], 1):
         lines.append(target_ready_row(row, idx))
+    lines.append("")
+
+
+def scout_call_row(row: Mapping[str, Any], index: int) -> str:
+    setup = trade_setup_fields(row)
+    return (
+        f"| {index} | {markdown_cell(scout_call_lane(row))} | {markdown_cell(row.get('ticker'))} | "
+        f"{markdown_cell(setup.get('trade_legs'))} | {markdown_cell(setup.get('entry_range'))} | "
+        f"{money_text(row.get('max_risk_per_contract'))} | {fmt_num(scout_call_score(row))} | "
+        f"{pct_text(row.get('success_probability_pct'))} | {pct_text(row.get('probability_score'))} | "
+        f"{fmt_num(row.get('expected_R'))} | {fmt_num(row.get('validation_profit_factor'))} | "
+        f"{markdown_cell(blocker_text(row))} | {markdown_cell(promotion_needed_text(row))} |"
+    )
+
+
+def append_scout_call_table(
+    lines: List[str],
+    rows: Sequence[Mapping[str, Any]],
+    limit: int = 20,
+) -> None:
+    lines.append("## Manual-Alpha Call Scout")
+    lines.append(
+        "- Ranked bullish call tickets that are not send-now but are tradeable enough for manual review; strict AUTO_APPROVED gates are unchanged."
+    )
+    if not rows:
+        lines.append("- No complete, quote-clean bullish call tickets survived the scout filters.")
+        lines.append("")
+        return
+    lines.append("| # | Scout Lane | Ticker | Call Ticket | Entry | Max Risk | Scout Score | Success | Prob Score | Exp R | PF | Why Not Send Now | Promotion Needed |")
+    lines.append("|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|")
+    for idx, row in enumerate(rows[:limit], 1):
+        lines.append(scout_call_row(row, idx))
     lines.append("")
 
 
@@ -9005,6 +9500,7 @@ def render_daily_report(
     snapshot: Snapshot,
     actionable: Sequence[Mapping[str, Any]],
     target_ready: Sequence[Mapping[str, Any]],
+    scout_calls: Sequence[Mapping[str, Any]],
     pattern_recommendations: Sequence[Mapping[str, Any]],
     catalyst_flow_leaders: Sequence[Mapping[str, Any]],
     source_coverage_rows: Sequence[Mapping[str, Any]],
@@ -9038,6 +9534,7 @@ def render_daily_report(
     lines.append("## Decision Summary")
     lines.append(f"- Approved trades: {len(actionable)}.")
     lines.append(f"- Target-ready order plans: {len(target_ready)}.")
+    lines.append(f"- Manual-alpha call scout candidates: {len(scout_calls)}.")
     lines.append(f"- Pattern recommendations: {len(pattern_recommendations)}.")
     lines.append(f"- Catalyst-flow leaders: {len(catalyst_flow_leaders)}.")
     lines.append(f"- Source ticker coverage names: {len(source_coverage_rows)}.")
@@ -9068,6 +9565,7 @@ def render_daily_report(
     lines.append("")
 
     append_pattern_recommendation_table(lines, pattern_recommendations, 8)
+    append_scout_call_table(lines, scout_calls, 20)
     append_source_coverage_table(lines, source_coverage_rows, 30)
     append_directional_edge_diagnostics_table(lines, directional_edge_rows, 12)
     append_ticker_trend_edge_table(lines, ticker_trend_rows, metadata.get("risk_config", {}), 15)
@@ -9081,6 +9579,7 @@ def render_daily_report(
         lines,
         list(actionable[:10])
         + list(target_ready[:20])
+        + list(scout_calls[:20])
         + list(catalyst_flow_leaders[:40])
         + list(trade_review[:12])
         + list(watch[:15])
@@ -9214,12 +9713,25 @@ def trade_fieldnames() -> List[str]:
         "avg_loss_R",
         "payoff_ratio",
         "calibrated_probability",
+        "confidence_lower_bound",
+        "confidence_upper_bound",
+        "auto_min_probability_score",
+        "auto_min_calibrated_probability",
+        "auto_min_confidence_lower_bound",
+        "auto_min_profit_factor",
+        "auto_min_scored_outcomes",
+        "auto_min_baselines_beaten",
         "validation_scored_count",
         "validation_profit_factor",
+        "family_drawdown_proxy_R",
+        "family_max_losing_streak",
+        "auto_max_family_drawdown_R",
+        "auto_max_family_losing_streak",
         "beats_baselines_count",
         "baselines_beaten_names",
         "baselines_beaten_details",
         "auto_approval_gate_evidence",
+        "approval_bridge",
         "capacity_estimate_contracts",
         "live_quote_validation_status",
         "position_size_tier",
@@ -9238,6 +9750,8 @@ def trade_fieldnames() -> List[str]:
         "ticker_trend_evidence",
         "edge_review_reason",
         "edge_review_evidence",
+        "regime_edge_review_passed",
+        "regime_edge_review_evidence",
         "current_market_regime_alignment",
         "liquidity_quote_sanity",
         "major_risks",
@@ -9271,6 +9785,20 @@ def target_ready_fieldnames() -> List[str]:
         "why_target_ready",
         "why_not_send_now",
         "order_entry_missing_fields",
+    ] + trade_review_fieldnames()
+
+
+def scout_call_fieldnames() -> List[str]:
+    return [
+        "scout_rank",
+        "scout_lane",
+        "scout_score",
+        "contrarian_call_setup",
+        "entry_limit",
+        "breakeven_success_probability_pct",
+        "edge_vs_breakeven_pct",
+        "why_scout",
+        "why_not_send_now",
     ] + trade_review_fieldnames()
 
 
@@ -9578,10 +10106,25 @@ def final_verdict(
         return "PRODUCTION_READY"
     tiers = [v.get("confidence_tier") for v in validation_bundle.get("family_tiers", {}).values()]
     if any(t == "PROVEN" for t in tiers):
-        return "PRODUCTION_READY"
-    if any(t == "PROMISING" for t in tiers) or validation_bundle.get("validation_scorecard"):
-        return "USABLE_NEEDS_MORE_VALIDATION" if any(t == "PROMISING" for t in tiers) else "NOT_YET_PROVEN"
+        return "USABLE_NEEDS_MORE_VALIDATION"
     return "NOT_YET_PROVEN"
+
+
+def resolve_run_verdict(
+    validation_bundle: Mapping[str, Any],
+    daily_rows: Sequence[Mapping[str, Any]],
+    output_paths: Mapping[str, str],
+) -> str:
+    fallback = final_verdict(validation_bundle, daily_rows)
+    metadata_path = output_paths.get("metadata")
+    if not metadata_path:
+        return fallback
+    try:
+        metadata = json.loads(Path(metadata_path).read_text())
+    except (OSError, TypeError, json.JSONDecodeError):
+        return fallback
+    metadata_verdict = metadata.get("verdict")
+    return str(metadata_verdict) if metadata_verdict else fallback
 
 
 def parse_option_symbol(symbol: str) -> Optional[Dict[str, Any]]:
