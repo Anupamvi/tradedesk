@@ -110,6 +110,20 @@ def test_pre_registration_fill_is_rejected(tmp_path):
     assert match.reason == BrokerMatchReason.PRE_REGISTRATION_FILL
 
 
+def test_fill_after_quote_validity_window_is_not_matched(tmp_path):
+    registry = _registry(tmp_path)
+    _register(registry)
+
+    match = registry.match_broker_fill(
+        account_id="acct-123",
+        fill_timestamp=NOW + dt.timedelta(minutes=16),
+        legs=_legs(),
+    )
+
+    assert not match.matched
+    assert match.reason == BrokerMatchReason.NO_ACTIVE_RECOMMENDATION
+
+
 def test_later_downgrade_does_not_erase_an_already_valid_fill(tmp_path, monkeypatch):
     registry = _registry(tmp_path)
     green = _register(registry)

@@ -20,7 +20,8 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+DEFAULT_VALIDITY_MINUTES = 15
 GREEN_STATUS = "GREEN"
 _OCC_RE = re.compile(r"^[A-Z0-9.]{1,8}\d{6}[CP]\d{8}$")
 
@@ -70,6 +71,7 @@ class RecommendationEvent:
     sequence: int
     event_id: str
     registered_at: dt.datetime
+    valid_until: dt.datetime
     logical_recommendation_id: str
     account_id: str
     recommendation_date: dt.date
@@ -89,6 +91,9 @@ class RecommendationEvent:
     def is_active(self) -> bool:
         return self.eligible and self.status == GREEN_STATUS
 
+    def is_active_at(self, timestamp: dt.datetime) -> bool:
+        return self.is_active and self.registered_at <= timestamp <= self.valid_until
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
@@ -96,6 +101,7 @@ class RecommendationEvent:
             "sequence": self.sequence,
             "event_id": self.event_id,
             "registered_at": _format_utc(self.registered_at),
+            "valid_until": _format_utc(self.valid_until),
             "logical_recommendation_id": self.logical_recommendation_id,
             "account_id": self.account_id,
             "recommendation_date": self.recommendation_date.isoformat(),
@@ -125,6 +131,9 @@ class RecommendationEvent:
                 event_id=str(row["event_id"]),
                 registered_at=_parse_utc_datetime(
                     row["registered_at"], field_name="registered_at"
+                ),
+                valid_until=_parse_utc_datetime(
+                    row["valid_until"], field_name="valid_until"
                 ),
                 logical_recommendation_id=_required_text(
                     row["logical_recommendation_id"], "logical_recommendation_id"
@@ -170,6 +179,7 @@ class ForwardRecommendationRegistry:
         code_provenance: Mapping[str, Any],
         run_provenance: Mapping[str, Any],
         live_current_date: bool = False,
+        valid_until: dt.datetime | str | None = None,
     ) -> RecommendationEvent:
         """Append a state event, or return the latest event for an identical retry."""
 
@@ -183,6 +193,13 @@ class ForwardRecommendationRegistry:
         explicitly_live = _strict_bool(live_current_date, "live_current_date")
 
         registered_at = _utc_now()
+        expires_at = (
+            _parse_utc_datetime(valid_until, field_name="valid_until")
+            if valid_until is not None
+            else registered_at + dt.timedelta(minutes=DEFAULT_VALIDITY_MINUTES)
+        )
+        if expires_at < registered_at:
+            raise RegistryValidationError("valid_until cannot precede registered_at")
         eligible = explicitly_live and rec_date == registered_at.date()
         if eligible:
             eligibility_reason = "live_current_date"
@@ -197,6 +214,7 @@ class ForwardRecommendationRegistry:
             "recommendation_date": rec_date.isoformat(),
             "status": normalized_status,
             "live_current_date": explicitly_live,
+            "valid_until": _format_utc(expires_at),
             "legs": [leg.to_dict() for leg in normalized_legs],
             "code_provenance": code,
             "run_provenance": run,
@@ -220,6 +238,7 @@ class ForwardRecommendationRegistry:
                     sequence=max((item.sequence for item in events), default=0) + 1,
                     event_id=str(uuid.uuid4()),
                     registered_at=registered_at,
+                    valid_until=expires_at,
                     logical_recommendation_id=logical_id,
                     account_id=account,
                     recommendation_date=rec_date,
@@ -271,10 +290,11 @@ class ForwardRecommendationRegistry:
     ) -> tuple[RecommendationEvent, ...]:
         """Return current eligible GREEN recommendations after supersession."""
 
+        now = _utc_now()
         return tuple(
             event
             for event in self.current_state(account_id=account_id)
-            if event.is_active
+            if event.is_active_at(now)
         )
 
     def match_broker_fill(
@@ -295,7 +315,7 @@ class ForwardRecommendationRegistry:
             for event in _latest_by_key(
                 item for item in events if item.registered_at <= filled_at
             ).values()
-            if event.is_active
+            if event.is_active_at(filled_at)
         )
 
         same_structure = [event for event in active if event.legs == fill_legs]
@@ -505,6 +525,7 @@ def _event_request_payload(event: RecommendationEvent) -> dict[str, Any]:
         "recommendation_date": event.recommendation_date.isoformat(),
         "status": event.status,
         "live_current_date": event.live_current_date,
+        "valid_until": _format_utc(event.valid_until),
         "legs": [leg.to_dict() for leg in event.legs],
         "code_provenance": dict(event.code_provenance),
         "run_provenance": dict(event.run_provenance),
