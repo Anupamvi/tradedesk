@@ -43,6 +43,21 @@ def test_find_export_prefers_latest_or_current_snapshot(tmp_path) -> None:
     assert find_export(base_dir, "chain-oi-changes-") == latest
 
 
+def test_find_export_point_in_time_rejects_future_latest_alias(tmp_path) -> None:
+    base_dir = tmp_path / "2026-05-01"
+    base_dir.mkdir()
+    same_day = base_dir / "chain-oi-changes-2026-05-01.csv"
+    future_latest = base_dir / "chain-oi-changes-latest-2026-05-02.csv"
+    same_day.write_text("same-day", encoding="utf-8")
+    future_latest.write_text("future", encoding="utf-8")
+
+    assert find_export(
+        base_dir,
+        "chain-oi-changes-",
+        asof_ceiling=dt.date(2026, 5, 1),
+    ) == same_day
+
+
 def test_daily_defaults_to_eight_final_trades(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(
         "sys.argv",

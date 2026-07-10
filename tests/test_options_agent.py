@@ -436,7 +436,7 @@ def test_route_only_profit_hypothesis_row_stays_off_yellow_target_surface() -> N
     assert tickets["ticker"].tolist() == ["EDGE"]
     assert tickets["order_readiness"].tolist() == ["target_order_after_profitability_calibration"]
     assert green.empty
-    assert target["ticker"].tolist() == ["EDGE"]
+    assert target.empty
 
 
 def test_final_recommendations_output_does_not_leak_enter_for_non_ready_rows() -> None:
@@ -11243,47 +11243,51 @@ def test_broker_outcome_match_audit_requires_unique_exact_contract_match(tmp_pat
     assert recommendation_aapl["match_status"] == "BLOCK"
     assert recommendation_aapl["blocker"] == "no_pre_entry_exact_contract_match"
     assert "leakage-safe realized P/L backfill is blocked" in recommendation_aapl["note"]
-    assert options_tsla["match_status"] == "PASS"
+    assert options_tsla["match_status"] == "BLOCK"
+    assert options_tsla["blocker"] == "legacy_options_agent_history_not_prospective"
     assert options_tsla["matched_report_dates"] == "2026-05-27"
     assert "2026-05-27/decision_board.csv" in options_tsla["matched_run_ids"]
     assert options_tsla["matched_readiness_scope"] == "green_ready"
     assert options_tsla["matched_ready_to_enter_count"] == 1
-    assert options_meta["match_status"] == "PASS"
+    assert options_meta["match_status"] == "BLOCK"
+    assert options_meta["blocker"] == "legacy_options_agent_history_not_prospective"
     assert options_meta["matched_recommendation_count"] == 1
     assert options_meta["matched_readiness_scope"] == "yellow_or_recheck"
     assert options_meta["matched_ready_to_enter_count"] == 0
     assert options_meta["matched_target_order_count"] >= 1
     assert "current_code_full_v041_guardrail_2026-05-14/trade_tickets.csv" in options_meta["matched_run_ids"]
     assert "current_code_full_v044_agentic_2026-05-14/trade_tickets.csv" in options_meta["matched_run_ids"]
-    assert "Duplicate same-date Options Agent artifact rows collapsed" in options_meta["note"]
+    assert "diagnostic only" in options_meta["note"]
     assert options_aapl["match_status"] == "BLOCK"
     assert options_aapl["blocker"] == "no_pre_entry_exact_contract_match"
     assert set(aapl_rows["match_status"]) == {"BLOCK"}
-    assert set(aapl_rows["blocker"]) == {"no_exact_contract_match", "no_pre_entry_exact_contract_match"}
-    assert summary["backfillable_rows"] == 4
-    assert summary["backfillable_closed_trades"] == 3
+    assert {"no_exact_contract_match", "no_pre_entry_exact_contract_match", "forward_registry_missing"}.issubset(
+        set(aapl_rows["blocker"])
+    )
+    assert summary["backfillable_rows"] == 2
+    assert summary["backfillable_closed_trades"] == 1
     assert summary["ambiguous_rows"] == 1
     assert summary["ambiguous_closed_trades"] == 1
-    assert summary["unmatched_closed_trades"] == 1
+    assert summary["unmatched_closed_trades"] == 3
     assert summary["backfillable_by_source"] == {
         "codexuw_execute_outcome_ledger": 1,
         "codexuw_recommendation_outcome_ledger": 1,
-        "options_agent_history": 2,
     }
     assert summary["backfillable_closed_trades_by_source"] == {
         "codexuw_execute_outcome_ledger": 1,
         "codexuw_recommendation_outcome_ledger": 1,
-        "options_agent_history": 2,
     }
     assert summary["blocked_by_source"] == {
         "codexuw_execute_outcome_ledger": 4,
         "codexuw_recommendation_outcome_ledger": 3,
-        "options_agent_history": 3,
+        "options_agent_forward_registry": 5,
+        "options_agent_history": 5,
     }
     assert summary["unmatched_closed_trades_by_source"] == {
         "codexuw_execute_outcome_ledger": 4,
         "codexuw_recommendation_outcome_ledger": 3,
-        "options_agent_history": 3,
+        "options_agent_forward_registry": 5,
+        "options_agent_history": 5,
     }
     assert summary["ambiguous_by_source"] == {"codexuw_recommendation_outcome_ledger": 1}
 
@@ -11392,13 +11396,14 @@ def test_options_agent_broker_match_uses_latest_pre_entry_recommendation(tmp_pat
     audit = core.build_broker_outcome_match_audit(tmp_path)
     row = audit[audit["match_source"].eq("options_agent_history")].iloc[0]
 
-    assert row["match_status"] == "PASS"
+    assert row["match_status"] == "BLOCK"
+    assert row["blocker"] == "legacy_options_agent_history_not_prospective"
     assert row["matched_report_dates"] == "2026-06-04"
     assert row["matched_readiness_scope"] == "green_ready"
     assert row["matched_ready_to_enter_count"] == 1
     assert row["matched_target_order_count"] == 0
     assert row["matched_live_validation_status"] == "PASS"
-    assert "Latest pre-entry Options Agent exact match selected" in row["note"]
+    assert "diagnostic only" in row["note"]
     assert "2026-05-28/trade_tickets.csv" not in row["matched_run_ids"]
     assert "2026-06-04_overlay_2026-06-05/trade_tickets.csv" in row["matched_run_ids"]
 
@@ -15163,15 +15168,15 @@ def test_confidence_audit_counts_goal_gated_rows_for_order_entry_mechanics() -> 
     assert "no_green_ready_orders" not in profitability["blockers"]
     assert "profitability_calibration_not_proven" not in profitability["blockers"]
     assert "profitability_calibration=PASS on 1 ticket/proof rows" in profitability["evidence"]
-    assert order_entry["status"] == "BLOCK"
-    assert order_entry["rating"] == 0.0
-    assert order_entry["sample_size"] == 0
+    assert order_entry["status"] == "PASS"
+    assert order_entry["rating"] >= core.MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING
+    assert order_entry["sample_size"] == 1
     assert "goal_gate_neutral_ready_rows=2" in order_entry["evidence"]
     assert "goal_gate_neutral_qualified_rows=1" in order_entry["evidence"]
     assert "visible_order_candidate_rows=2" in order_entry["evidence"]
-    assert "no_green_ready_orders" in order_entry["blockers"]
+    assert "no_green_ready_orders" not in order_entry["blockers"]
     assert summary["status"] == "block"
-    assert summary["order_entry_confidence_rating"] == 0.0
+    assert summary["order_entry_confidence_rating"] >= core.MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING
 
 
 def test_confidence_audit_separates_yellow_order_mechanics_from_send_now_gate() -> None:
@@ -15617,10 +15622,46 @@ def test_small_calibrated_short_put_counts_for_order_entry_after_goal_gate() -> 
     assert gated_tickets["ready_to_enter"].tolist() == [False]
     assert gated_tickets["order_readiness"].tolist() == ["target_order_after_goal_confidence"]
     assert gated_tickets["execution_blockers"].tolist() == [core.GOAL_CONFIDENCE_GATE_BLOCKER]
-    assert order_entry["status"] == "BLOCK"
-    assert order_entry["rating"] == 0.0
+    assert order_entry["status"] == "PASS"
+    assert order_entry["rating"] >= core.MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING
+    assert "proof_origin=goal_gate_neutral" in order_entry["evidence"]
     assert "goal_gate_neutral_qualified_rows=1" in order_entry["evidence"]
-    assert "no_green_ready_orders" in order_entry["blockers"]
+    assert "no_green_ready_orders" not in order_entry["blockers"]
+
+
+def test_target_ticket_preserves_and_displays_intended_limit() -> None:
+    decision = pd.DataFrame(
+        [
+            {
+                "ticker": "AMZN",
+                "strategy_route": "bull_call_debit",
+                "strategy_family": "vertical_spread",
+                "structure": "bull call debit spread",
+                "status_icon": "yellow",
+                "status_label": "TARGET",
+                "ready_to_enter": False,
+                "execution_status": "waiting_for_price",
+                "execution_gate_status": "pass",
+                "target_order_status": "target_order_wait_for_price",
+                "live_validation_status": "PASS",
+                "trade_plan": "BUY 1 AMZN 2026-07-24 242.5 Call / SELL 1 AMZN 2026-07-24 245 Call @ 1.59 DEBIT",
+                "entry_limit": 1.59,
+                "target_entry": 1.12,
+                "suggested_contracts": 1,
+                "max_profit": 91.0,
+                "max_loss": 159.0,
+                "order_mechanics_confidence_rating": "HIGH",
+                "trade_quality_confidence_rating": "HIGH",
+                "profitability_calibration_status": "PASS",
+            }
+        ]
+    )
+
+    tickets = core.build_trade_tickets(decision)
+
+    assert tickets["target_entry"].tolist() == [1.12]
+    assert core._ticket_limit_display(tickets.iloc[0]) == "<=1.12 DEBIT"
+    assert "current debit 1.59 is too high" in core._ticket_recheck_summary(tickets.iloc[0])
 
 
 def test_confidence_audit_does_not_name_strategy_cohort_gap_without_action_candidates() -> None:

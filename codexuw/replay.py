@@ -52,7 +52,7 @@ def load_close_history(folders: list[Path]) -> dict[dt.date, pd.DataFrame]:
     for folder in folders:
         day = infer_asof_date(folder)
         try:
-            sc = load_stock_screener(folder)
+            sc = load_stock_screener(folder, point_in_time=True)
         except Exception:
             continue
         out[day] = sc[["ticker", "close", "sector"]].copy()
@@ -64,7 +64,7 @@ def load_hot_history(folders: list[Path]) -> dict[dt.date, pd.DataFrame]:
     for folder in folders:
         day = infer_asof_date(folder)
         try:
-            out[day] = load_hot_chains(folder, day)
+            out[day] = load_hot_chains(folder, day, point_in_time=True)
         except Exception:
             continue
     return out
@@ -1297,8 +1297,8 @@ def run_replay(
     for folder in entry_folders:
         asof = infer_asof_date(folder)
         try:
-            sc = load_stock_screener(folder)
-            hot = load_hot_chains(folder, asof)
+            sc = load_stock_screener(folder, point_in_time=True)
+            hot = load_hot_chains(folder, asof, point_in_time=True)
         except Exception as exc:
             day_summaries.append({"date": asof, "status": "load_error", "error": str(exc)})
             continue
@@ -1433,6 +1433,8 @@ def run_replay(
         "debit_policy_version": DEBIT_POLICY_VERSION,
         "credit_policy_version": CREDIT_POLICY_VERSION,
         "selection_outcome_independent": True,
+        "point_in_time_export_ceiling": True,
+        "point_in_time_export_policy": "reject export filenames dated after each entry folder as-of date",
         "selection_basis": "entry-fill, price, flow, earnings, expected-move and reward/risk fields only; no exact_win or pnl_1x",
         "split_day": str(split_day) if split_day else "",
         "exact_metrics": metrics,

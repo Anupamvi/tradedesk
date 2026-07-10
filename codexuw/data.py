@@ -5,7 +5,7 @@ import math
 import re
 import zipfile
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 import pandas as pd
 
@@ -53,6 +53,36 @@ def _export_candidates(base_dir: Path, prefix: str) -> list[Path]:
     return candidates
 
 
+def _export_date(path: Path) -> Optional[dt.date]:
+    matches = re.findall(r"20\d{2}-\d{2}-\d{2}", path.name)
+    parsed: list[dt.date] = []
+    for value in matches:
+        try:
+            parsed.append(dt.date.fromisoformat(value))
+        except ValueError:
+            continue
+    return max(parsed) if parsed else None
+
+
+def _point_in_time_candidates(candidates: list[Path], asof_ceiling: Optional[dt.date]) -> list[Path]:
+    if asof_ceiling is None:
+        return candidates
+    eligible = [
+        path
+        for path in candidates
+        if (candidate_date := _export_date(path)) is None or candidate_date <= asof_ceiling
+    ]
+    if eligible:
+        return eligible
+    dated = sorted(
+        f"{path.name}:{_export_date(path)}"
+        for path in candidates
+    )
+    raise FileNotFoundError(
+        f"No point-in-time export dated on or before {asof_ceiling.isoformat()}; candidates={dated}"
+    )
+
+
 def _preferred_export(candidates: list[Path]) -> Path:
     live_names = ("latest", "current", "live", "next")
     live_candidates = [path for path in candidates if any(token in path.name.lower() for token in live_names)]
@@ -61,11 +91,17 @@ def _preferred_export(candidates: list[Path]) -> Path:
     return candidates[0]
 
 
-def find_export_bundle(base_dir: Path, prefix: str) -> list[Path]:
+def find_export_bundle(
+    base_dir: Path,
+    prefix: str,
+    *,
+    asof_ceiling: Optional[dt.date] = None,
+) -> list[Path]:
     """Return one complete export or every validated part of a split ZIP export."""
     candidates = _export_candidates(base_dir, prefix)
     if not candidates:
         raise FileNotFoundError(f"No {prefix}*.csv or {prefix}*.zip found under {base_dir}")
+    candidates = _point_in_time_candidates(candidates, asof_ceiling)
 
     unsplit = [path for path in candidates if _SPLIT_PART_RE.match(path.name) is None]
     if unsplit:
@@ -92,8 +128,8 @@ def find_export_bundle(base_dir: Path, prefix: str) -> list[Path]:
     return [parts[index] for index in range(1, total + 1)]
 
 
-def find_export(base_dir: Path, prefix: str) -> Path:
-    bundle = find_export_bundle(base_dir, prefix)
+def find_export(base_dir: Path, prefix: str, *, asof_ceiling: Optional[dt.date] = None) -> Path:
+    bundle = find_export_bundle(base_dir, prefix, asof_ceiling=asof_ceiling)
     if len(bundle) != 1:
         raise ValueError(
             f"Export {prefix!r} is a {len(bundle)}-part bundle; "
@@ -130,8 +166,9 @@ def iter_csv_export_bundle(paths: Iterable[Path], **kwargs):
         yield from iter_csv_export(path, **kwargs)
 
 
-def load_stock_screener(base_dir: Path) -> pd.DataFrame:
-    path = find_export(base_dir, "stock-screener-")
+def load_stock_screener(base_dir: Path, *, point_in_time: bool = False) -> pd.DataFrame:
+    ceiling = infer_asof_date(base_dir) if point_in_time else None
+    path = find_export(base_dir, "stock-screener-", asof_ceiling=ceiling)
     df = read_csv_export(path)
     numeric_cols = [
         "call_volume",
@@ -169,8 +206,8 @@ def load_stock_screener(base_dir: Path) -> pd.DataFrame:
     return df
 
 
-def load_hot_chains(base_dir: Path, asof: dt.date) -> pd.DataFrame:
-    path = find_export(base_dir, "hot-chains-")
+def load_hot_chains(base_dir: Path, asof: dt.date, *, point_in_time: bool = False) -> pd.DataFrame:
+    path = find_export(base_dir, "hot-chains-", asof_ceiling=asof if point_in_time else None)
     df = read_csv_export(path)
     parsed = df["option_symbol"].map(parse_occ_symbol)
     df["ticker"] = parsed.map(lambda x: x.root if x else "")
@@ -189,8 +226,8 @@ def load_hot_chains(base_dir: Path, asof: dt.date) -> pd.DataFrame:
     return df
 
 
-def load_chain_oi(base_dir: Path, asof: dt.date) -> pd.DataFrame:
-    path = find_export(base_dir, "chain-oi-changes-")
+def load_chain_oi(base_dir: Path, asof: dt.date, *, point_in_time: bool = False) -> pd.DataFrame:
+    path = find_export(base_dir, "chain-oi-changes-", asof_ceiling=asof if point_in_time else None)
     df = read_csv_export(path)
     parsed = df["option_symbol"].map(parse_occ_symbol)
     df["ticker"] = parsed.map(lambda x: x.root if x else df.get("underlying_symbol", ""))

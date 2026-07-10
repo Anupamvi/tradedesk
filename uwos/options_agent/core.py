@@ -33,6 +33,11 @@ from uwos.lessonengine.core import (
     load_active_lesson_pack,
     write_lesson_snapshots,
 )
+from uwos.options_agent.forward_registry import (
+    BrokerMatchReason,
+    ForwardRecommendationRegistry,
+    RegistryValidationError,
+)
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
@@ -46,6 +51,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v0",
 )
 PIPELINE_RELEASED_AT = "2026-07-10T15:12:49-07:00"
+DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
 MAX_REPORT_ACTION_ROWS = 20
@@ -1485,6 +1491,7 @@ def build_manifest(
 def _pipeline_source_provenance(root: Path) -> dict[str, Any]:
     relative_paths = (
         "uwos/options_agent/core.py",
+        "uwos/options_agent/forward_registry.py",
         "codexuw/schwab_live.py",
         "knowledge/options_agent_event_calendar_2026.json",
         "knowledge/options_agent_replay_pin.json",
@@ -1518,6 +1525,170 @@ def _pipeline_source_provenance(root: Path) -> dict[str, Any]:
         "relevant_files_dirty": dirty,
         "file_sha256": fingerprints,
     }
+
+
+def _directed_registry_legs(row: Mapping[str, Any]) -> list[dict[str, Any]]:
+    text = _as_text(row.get("trade_plan") or row.get("full_ticket"))
+    pattern = re.compile(
+        r"\b(BUY|SELL)\s+(\d+)\s+([A-Z][A-Z0-9.\-]{0,9})\s+"
+        r"(20\d{2}-\d{2}-\d{2})\s+([0-9]+(?:\.[0-9]+)?)\s+(CALL|PUT)\b",
+        re.IGNORECASE,
+    )
+    legs: list[dict[str, Any]] = []
+    for match in pattern.finditer(text):
+        symbol = _human_option_leg_symbol_key(
+            ticker=match.group(3),
+            expiry=match.group(4),
+            strike=match.group(5),
+            option_type=match.group(6),
+        )
+        if symbol:
+            legs.append(
+                {
+                    "side": match.group(1).upper(),
+                    "ratio": int(match.group(2)),
+                    "occ_symbol": symbol,
+                }
+            )
+    return legs
+
+
+def _registry_logical_recommendation_id(
+    *,
+    account_id: str,
+    recommendation_date: dt.date,
+    legs: Sequence[Mapping[str, Any]],
+) -> str:
+    directed = "|".join(
+        f"{_as_text(leg.get('side')).upper()}:{int(_as_float(leg.get('ratio')) or 0)}:{_as_text(leg.get('occ_symbol')).upper()}"
+        for leg in legs
+    )
+    digest = hashlib.sha256(
+        f"{account_id}|{recommendation_date.isoformat()}|{directed}".encode("utf-8")
+    ).hexdigest()[:24]
+    return f"oa-{recommendation_date.isoformat()}-{digest}"
+
+
+def _prospective_registry_status_for_ticket(row: Mapping[str, Any]) -> str:
+    if _truthy(row.get("ready_to_enter")):
+        return "GREEN"
+    target_status = _as_text(row.get("target_order_status")).lower()
+    if target_status == "target_order_wait_for_price":
+        return "WAIT_FOR_PRICE"
+    if target_status == "target_order_candidate":
+        return "TARGET"
+    return "REVIEW"
+
+
+def register_prospective_options_agent_recommendations(
+    trade_tickets: pd.DataFrame,
+    *,
+    root: Path,
+    out_dir: Path,
+    source_date: str,
+    live_schwab: bool,
+    live_portfolio: bool,
+    chain_snapshot_dir: Optional[Path],
+    agent_reviews_json: Optional[Path],
+    registry_path: Optional[Path] = None,
+    recommendation_date: Optional[dt.date] = None,
+) -> dict[str, Any]:
+    registry_path = registry_path or (project_root() / "out" / "options_agent_forward_registry.jsonl")
+    eligible_live_run = bool(
+        live_schwab
+        and live_portfolio
+        and chain_snapshot_dir is None
+        and agent_reviews_json is not None
+    )
+    summary: dict[str, Any] = {
+        "path": str(registry_path),
+        "status": "skipped_not_final_live_run" if not eligible_live_run else "registered",
+        "registered_events": 0,
+        "idempotent_events": 0,
+        "revoked_events": 0,
+        "errors": [],
+    }
+    if not eligible_live_run:
+        return summary
+
+    account_id = _as_text(os.getenv("OPTIONS_AGENT_ACCOUNT_ID")) or DEFAULT_FORWARD_REGISTRY_ACCOUNT
+    recommendation_date = recommendation_date or dt.datetime.now(dt.timezone.utc).date()
+    registry = ForwardRecommendationRegistry(registry_path)
+    code_provenance = _pipeline_source_provenance(root)
+    run_base = {
+        "pipeline_name": PIPELINE_NAME,
+        "pipeline_version": PIPELINE_VERSION,
+        "source_date": source_date,
+        "out_dir": str(out_dir),
+        "live_schwab": True,
+        "live_portfolio": True,
+        "agent_reviews_json": str(agent_reviews_json),
+    }
+    current_ids: set[str] = set()
+    frame = trade_tickets if trade_tickets is not None else pd.DataFrame()
+    for _, row in frame.iterrows():
+        if _as_text(row.get("live_validation_status")).upper() != "PASS":
+            continue
+        legs = _directed_registry_legs(row)
+        if not legs:
+            summary["errors"].append(f"{_as_text(row.get('ticker'))}:directed_legs_missing")
+            continue
+        logical_id = _registry_logical_recommendation_id(
+            account_id=account_id,
+            recommendation_date=recommendation_date,
+            legs=legs,
+        )
+        current_ids.add(logical_id)
+        before = len(registry.events())
+        try:
+            registry.register(
+                logical_recommendation_id=logical_id,
+                account_id=account_id,
+                recommendation_date=recommendation_date,
+                status=_prospective_registry_status_for_ticket(row),
+                legs=legs,
+                code_provenance=code_provenance,
+                run_provenance={
+                    **run_base,
+                    "ticker": _as_text(row.get("ticker")).upper(),
+                    "trade_plan": _as_text(row.get("trade_plan")),
+                    "entry_limit": _round_or_blank(_as_float(row.get("entry_limit")), 4),
+                    "target_entry": _round_or_blank(_as_float(row.get("target_entry")), 4),
+                },
+                live_current_date=True,
+            )
+        except (OSError, RegistryValidationError) as exc:
+            summary["errors"].append(f"{_as_text(row.get('ticker'))}:{exc}")
+            continue
+        after = len(registry.events())
+        if after == before:
+            summary["idempotent_events"] += 1
+        else:
+            summary["registered_events"] += 1
+
+    for active in registry.current_active_state(account_id=account_id):
+        if active.logical_recommendation_id in current_ids:
+            continue
+        try:
+            registry.register(
+                logical_recommendation_id=active.logical_recommendation_id,
+                account_id=account_id,
+                recommendation_date=active.recommendation_date,
+                status="REVOKED",
+                legs=[leg.to_dict() for leg in active.legs],
+                code_provenance=code_provenance,
+                run_provenance={**run_base, "reason": "absent_from_latest_final_live_ticket_surface"},
+                live_current_date=active.recommendation_date == recommendation_date,
+            )
+            summary["revoked_events"] += 1
+        except (OSError, RegistryValidationError) as exc:
+            summary["errors"].append(f"{active.logical_recommendation_id}:{exc}")
+    if summary["errors"]:
+        summary["status"] = "registered_with_errors"
+    summary["current_active_green"] = len(registry.current_active_state(account_id=account_id))
+    summary["event_count"] = len(registry.events())
+    summary["account_id"] = account_id
+    return summary
 
 
 def run_pipeline(
@@ -2180,7 +2351,18 @@ def run_pipeline(
     )
     final_output = annotate_final_recommendations_with_execution_surface(final, decision_board)
     coverage_audit = build_coverage_audit(raw_universe, candidates, priced, decision_board, no_trade)
+    forward_registry_summary = register_prospective_options_agent_recommendations(
+        trade_tickets,
+        root=resolved_root,
+        out_dir=paths["out_dir"],
+        source_date=day,
+        live_schwab=live_schwab,
+        live_portfolio=live_portfolio,
+        chain_snapshot_dir=chain_snapshot_dir,
+        agent_reviews_json=agent_reviews_json,
+    )
     manifest = build_manifest(day, root=resolved_root, out_dir=paths["out_dir"])
+    manifest.setdefault("artifacts", {})["forward_recommendation_registry"] = forward_registry_summary["path"]
     live_readiness_notes = []
     if not live_schwab and chain_snapshot_dir is None:
         live_readiness_notes.append(
@@ -2220,7 +2402,7 @@ def run_pipeline(
                 "sizing_audit": int(len(sizing_audit)),
                 "management_plan": int(len(management_plan)),
                 "ready_to_enter": _ready_to_enter_count(decision_board),
-                "target_order_candidates": _target_order_candidate_count(decision_board),
+                "target_order_candidates": int(len(target_order_tickets)),
                 "execution_readiness": int(len(execution_readiness)),
                 "expectancy_evidence": int(len(expectancy_evidence)),
                 "outcome_evidence_audit": int(len(outcome_evidence_audit)),
@@ -2287,6 +2469,7 @@ def run_pipeline(
                     "runner": "Codex options-agent skill with multi_agent_v1",
                 },
             "agent_review_summary": summarize_agent_reviews(agent_review_board),
+            "forward_recommendation_registry": forward_registry_summary,
             "lessonengine": lesson_metadata,
             **lesson_metadata,
             "warnings": source_notes
@@ -10782,6 +10965,14 @@ def _codexuw_pinned_replay_path(out_root: Path) -> tuple[Optional[Path], str, bo
         return replay_path, "options-agent pinned replay manifest hash mismatch", True
     if manifest_path.parent != replay_path.parent:
         return replay_path, "options-agent pinned replay manifest must be beside replay detail", True
+    try:
+        manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return replay_path, f"options-agent pinned replay manifest unreadable: {exc}", True
+    if not isinstance(manifest_payload, Mapping) or not _truthy(
+        manifest_payload.get("point_in_time_export_ceiling")
+    ):
+        return replay_path, "options-agent pinned replay lacks point-in-time export ceiling proof", True
     return replay_path, "", True
 
 
@@ -12374,6 +12565,7 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "sell_leg",
         "buy_leg",
         "entry_limit",
+        "target_entry",
         "entry_type",
         "max_profit",
         "max_loss",
@@ -12484,6 +12676,7 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "underlying_quality_reason",
         "target_order_status",
         "execution_blockers",
+        "target_entry",
     ):
         if column not in working.columns:
             working[column] = "pass" if column == "execution_gate_status" else ""
@@ -12576,6 +12769,10 @@ def split_trade_ticket_surfaces(trade_tickets: pd.DataFrame) -> tuple[pd.DataFra
         return trade_tickets.copy(), trade_tickets.copy()
     readiness = trade_tickets.get("order_readiness", pd.Series("", index=trade_tickets.index)).astype(str)
     live_status = trade_tickets.get("live_validation_status", pd.Series("", index=trade_tickets.index)).astype(str).str.upper()
+    calibration_status = trade_tickets.get(
+        "profitability_calibration_status",
+        pd.Series("", index=trade_tickets.index),
+    ).fillna("").astype(str).str.upper()
     ready = trade_tickets[trade_tickets["ready_to_enter"].map(_truthy)].copy()
     target = trade_tickets[
         trade_tickets["target_order_status"]
@@ -12585,6 +12782,7 @@ def split_trade_ticket_surfaces(trade_tickets: pd.DataFrame) -> tuple[pd.DataFra
         & ~trade_tickets["ready_to_enter"].map(_truthy)
         & readiness.str.startswith("target_order")
         & live_status.eq("PASS")
+        & calibration_status.isin({"", "PASS"})
     ].copy()
     return (
         _sort_trades_by_confidence(ready).reset_index(drop=True),
@@ -14023,6 +14221,12 @@ def _target_order_status(
         return "review_only_profitability_calibration"
     if live_status != "PASS":
         return "review_only_live_validation"
+    target_entry = _as_float(row.get("target_entry"))
+    if target_entry is not None and target_entry > 0 and entry_limit is not None:
+        if entry_type == "DEBIT" and entry_limit > target_entry:
+            return "target_order_wait_for_price"
+        if entry_type == "CREDIT" and entry_limit < target_entry:
+            return "target_order_wait_for_price"
     if (
         low_quality_confidence
         and not materiality_floor_target
@@ -14743,6 +14947,8 @@ def build_broker_outcome_match_audit(root: Path) -> pd.DataFrame:
             columns=BROKER_OUTCOME_MATCH_AUDIT_COLUMNS,
         )
     orders = _raw_order_payload_lookup(orders_path)
+    forward_registry_path = _evidence_file_path(root, out_root, "options_agent_forward_registry.jsonl")
+    forward_registry = ForwardRecommendationRegistry(forward_registry_path)
     rows: list[dict[str, Any]] = []
     for _, closed_row in closed.iterrows():
         order_ids = _entry_order_id_list(closed_row.get("entry_order_ids"))
@@ -14761,6 +14967,17 @@ def build_broker_outcome_match_audit(root: Path) -> pd.DataFrame:
                     orders_path=orders_path,
                 )
             )
+        rows.append(
+            _prospective_registry_broker_match_row(
+                closed_row,
+                order_ids=order_ids,
+                orders=orders,
+                registry=forward_registry,
+                registry_path=forward_registry_path,
+                closed_path=closed_path,
+                orders_path=orders_path,
+            )
+        )
     out = pd.DataFrame(rows, columns=BROKER_OUTCOME_MATCH_AUDIT_COLUMNS)
     status_rank = {"PASS": 0, "WARN": 1, "BLOCK": 2}
     out["__status_rank"] = out["match_status"].map(lambda value: status_rank.get(_as_text(value).upper(), 9))
@@ -14770,6 +14987,111 @@ def build_broker_outcome_match_audit(root: Path) -> pd.DataFrame:
         kind="mergesort",
     )
     return out[BROKER_OUTCOME_MATCH_AUDIT_COLUMNS].reset_index(drop=True)
+
+
+def _prospective_registry_broker_match_row(
+    closed_row: Mapping[str, Any],
+    *,
+    order_ids: Sequence[str],
+    orders: Mapping[str, Mapping[str, Any]],
+    registry: ForwardRecommendationRegistry,
+    registry_path: Path,
+    closed_path: Path,
+    orders_path: Path,
+) -> dict[str, Any]:
+    directed_legs: list[dict[str, Any]] = []
+    fill_times: list[str] = []
+    account_ids: set[str] = set()
+    for order_id in order_ids:
+        order = orders.get(_as_text(order_id))
+        if not order:
+            continue
+        account_number = re.sub(r"\D", "", _as_text(order.get("accountNumber")))
+        if account_number:
+            account_ids.add(f"acct_{account_number[-4:]}")
+        for activity in order.get("orderActivityCollection", []) or []:
+            if not isinstance(activity, Mapping) or _as_text(activity.get("executionType")).upper() != "FILL":
+                continue
+            for execution_leg in activity.get("executionLegs", []) or []:
+                if isinstance(execution_leg, Mapping) and _as_text(execution_leg.get("time")):
+                    fill_times.append(_as_text(execution_leg.get("time")))
+        for leg in order.get("orderLegCollection", []) or []:
+            if not isinstance(leg, Mapping):
+                continue
+            instruction = _as_text(leg.get("instruction")).upper()
+            if not instruction.endswith("_TO_OPEN"):
+                continue
+            side = "BUY" if instruction.startswith("BUY") else "SELL" if instruction.startswith("SELL") else ""
+            symbol = _option_symbol_key(_mapping_get(_mapping_get(leg, "instrument") or {}, "symbol"))
+            quantity = int(_as_float(leg.get("quantity")) or 0)
+            if side and symbol and quantity > 0:
+                directed_legs.append({"side": side, "qty": quantity, "occ_symbol": symbol})
+        for fallback in (order.get("closeTime"), order.get("enteredTime")):
+            if _as_text(fallback):
+                fill_times.append(_as_text(fallback))
+
+    ticker = _as_text(_mapping_get(closed_row, "ticker")).upper()
+    expiry = _as_text(_mapping_get(closed_row, "expiry"))
+    strategy = _as_text(_mapping_get(closed_row, "strategy"))
+    opened_at = _as_text(_mapping_get(closed_row, "opened_at"))
+    closed_at = _as_text(_mapping_get(closed_row, "closed_at"))
+    closed_key = "|".join(part for part in [ticker, expiry, ",".join(order_ids), opened_at, closed_at] if part)
+    account_id = sorted(account_ids)[0] if len(account_ids) == 1 else ""
+    fill_timestamp = min(fill_times) if fill_times else opened_at
+    if not registry_path.exists():
+        matched = False
+        reason = "forward_registry_missing"
+        recommendation = None
+    elif not account_id or not directed_legs or not fill_timestamp:
+        matched = False
+        reason = "broker_directed_fill_identity_missing"
+        recommendation = None
+    else:
+        try:
+            result = registry.match_broker_fill(
+                account_id=account_id,
+                fill_timestamp=fill_timestamp,
+                legs=directed_legs,
+            )
+            matched = result.matched
+            reason = result.reason.value.lower()
+            recommendation = result.recommendation
+        except (OSError, RegistryValidationError, ValueError) as exc:
+            matched = False
+            reason = f"forward_registry_match_error:{exc}"
+            recommendation = None
+    return {
+        "match_source": "options_agent_forward_registry",
+        "match_status": "PASS" if matched else "BLOCK",
+        "closed_trade_key": closed_key,
+        "ticker": ticker,
+        "strategy": strategy,
+        "strategy_family": _normal_strategy_family(strategy),
+        "expiry": expiry,
+        "opened_at": opened_at,
+        "closed_at": closed_at,
+        "realized_pnl": _round_or_blank(_as_float(_mapping_get(closed_row, "realized_pnl")), 2),
+        "entry_order_ids": ",".join(order_ids),
+        "entry_symbols": ",".join(sorted({_as_text(leg.get('occ_symbol')) for leg in directed_legs})),
+        "entry_leg_count": int(len(directed_legs)),
+        "matched_recommendation_count": 1 if matched else 0,
+        "matched_trade_keys": recommendation.logical_recommendation_id if recommendation else "",
+        "matched_report_dates": recommendation.recommendation_date.isoformat() if recommendation else "",
+        "matched_run_ids": _as_text(recommendation.run_provenance.get("out_dir")) if recommendation else "",
+        "matched_readiness_scope": "green_ready" if matched else "",
+        "matched_ready_to_enter_count": 1 if matched else 0,
+        "matched_target_order_count": 0,
+        "matched_order_readiness": "prospective_registered_green" if matched else "",
+        "matched_live_validation_status": "PASS" if matched else "",
+        "can_backfill_realized_pnl": bool(matched),
+        "blocker": "" if matched else reason,
+        "source_path": f"registry={registry_path}; closed={closed_path}; raw_orders={orders_path}",
+        "note": (
+            "Prospective registry matched account, directed legs, ratios, and post-registration broker fill."
+            if matched
+            else "No eligible prospective Options Agent registration matched this broker fill."
+        ),
+    }
 
 
 def summarize_broker_outcome_match_audit(match_audit: pd.DataFrame) -> dict[str, Any]:
@@ -14963,7 +15285,11 @@ def build_broker_backfilled_forward_outcomes(match_audit: pd.DataFrame) -> pd.Da
 
     if match_audit is None or match_audit.empty:
         return pd.DataFrame(columns=BROKER_BACKFILLED_FORWARD_OUTCOME_COLUMNS)
-    forward_sources = {"codexuw_execute_outcome_ledger", "codexuw_recommendation_outcome_ledger"}
+    forward_sources = {
+        "codexuw_execute_outcome_ledger",
+        "codexuw_recommendation_outcome_ledger",
+        "options_agent_forward_registry",
+    }
     audit = match_audit[
         match_audit.get("match_source", pd.Series("", index=match_audit.index)).astype(str).isin(forward_sources)
         & match_audit.get("match_status", pd.Series("", index=match_audit.index)).astype(str).str.upper().eq("PASS")
@@ -15015,7 +15341,11 @@ def _broker_matched_scope_from_parts(match_sources: Any, readiness_scope: Any) -
     }
     if "options_agent_history" in sources:
         return "options_agent_green_history" if _as_text(readiness_scope) == "green_ready" else "options_agent_diagnostic_history"
-    if sources & {"codexuw_execute_outcome_ledger", "codexuw_recommendation_outcome_ledger"}:
+    if sources & {
+        "codexuw_execute_outcome_ledger",
+        "codexuw_recommendation_outcome_ledger",
+        "options_agent_forward_registry",
+    }:
         return "historical_recommendation_ledger"
     return "unknown"
 
@@ -15551,6 +15881,14 @@ def _broker_outcome_match_row(
                 "Latest pre-entry Options Agent exact match selected from older same-contract history; "
                 + note
             )
+    if match_source == "options_agent_history" and unique_matches:
+        status = "BLOCK"
+        blocker = "legacy_options_agent_history_not_prospective"
+        can_backfill = False
+        note = (
+            "Legacy Options Agent artifacts are mutable and lack an immutable registration timestamp; "
+            "the contract match is diagnostic only and cannot backfill forward profitability evidence."
+        )
     readiness = _matched_options_agent_readiness(match_source, unique_matches)
     return {
         "match_source": match_source,
@@ -16412,8 +16750,9 @@ def _count_rows_for_ticker_strategy(frame: pd.DataFrame, ticker: str, family: st
 
 
 def _closed_trades_evidence_path(root: Path, out_root: Path) -> Path:
+    account_scope = _as_text(os.getenv("OPTIONS_AGENT_ACCOUNT_ID")) or DEFAULT_FORWARD_REGISTRY_ACCOUNT
     candidates = [
-        evidence_root / "schwab_pull_state" / "closed_trades_acct_3326.jsonl"
+        evidence_root / "schwab_pull_state" / f"closed_trades_{account_scope}.jsonl"
         for evidence_root in _evidence_out_root_candidates(root, out_root)
     ]
     for candidate in candidates:
@@ -16423,8 +16762,9 @@ def _closed_trades_evidence_path(root: Path, out_root: Path) -> Path:
 
 
 def _raw_orders_evidence_path(root: Path, out_root: Path) -> Path:
+    account_scope = _as_text(os.getenv("OPTIONS_AGENT_ACCOUNT_ID")) or DEFAULT_FORWARD_REGISTRY_ACCOUNT
     candidates = [
-        evidence_root / "schwab_pull_state" / "raw_orders_acct_3326.jsonl"
+        evidence_root / "schwab_pull_state" / f"raw_orders_{account_scope}.jsonl"
         for evidence_root in _evidence_out_root_candidates(root, out_root)
     ]
     for candidate in candidates:
@@ -19789,10 +20129,16 @@ def _order_entry_confidence_rating(
     execution_fill_quality: Optional[pd.DataFrame] = None,
 ) -> tuple[float, int, str, list[str], str]:
     actual_ready = _ready_ticket_frame(trade_tickets)
-    if actual_ready.empty:
-        goal_neutral = _goal_gate_neutral_ticket_frame(trade_tickets)
-        goal_neutral_qualified = _order_entry_qualified_ticket_frame(goal_neutral)
-        visible_surface = _order_mechanics_candidate_frame(trade_tickets)
+    goal_neutral = _goal_gate_neutral_ticket_frame(trade_tickets)
+    goal_neutral_qualified = _order_entry_qualified_ticket_frame(goal_neutral)
+    visible_surface = _order_mechanics_candidate_frame(trade_tickets)
+    if not actual_ready.empty:
+        ready = actual_ready
+        proof_origin = "green_ready"
+    elif not goal_neutral_qualified.empty:
+        ready = goal_neutral_qualified
+        proof_origin = "goal_gate_neutral"
+    else:
         evidence = [
             "ready_to_enter_rows=0",
             f"goal_gate_neutral_ready_rows={len(goal_neutral)}",
@@ -19810,10 +20156,6 @@ def _order_entry_confidence_rating(
             _dedupe_notes(blockers),
             "Order-entry confidence is executable-only: yellow or review rows can pass mechanics, but cannot pass order-entry until at least one row has ready_to_enter=true.",
         )
-
-    ready = actual_ready
-    proof_origin = "green_ready"
-    goal_neutral = pd.DataFrame()
     visible_fill_quality_source_count = len(ready)
     visible_fill_quality_excluded_count = 0
     if execution_fill_quality is not None and proof_origin == "visible_non_send_now" and not ready.empty:
@@ -19827,7 +20169,11 @@ def _order_entry_confidence_rating(
             ready = fill_quality_ready
 
     blockers: list[str] = []
-    evidence: list[str] = [f"ready_to_enter_rows={len(actual_ready)}", f"proof_origin={proof_origin}"]
+    evidence: list[str] = [
+        f"ready_to_enter_rows={len(actual_ready)}",
+        f"proof_origin={proof_origin}",
+        f"visible_order_candidate_rows={len(visible_surface)}",
+    ]
     if proof_origin == "goal_gate_neutral":
         evidence.append(f"goal_gate_neutral_ready_rows={len(goal_neutral)}")
         evidence.append(f"goal_gate_neutral_qualified_rows={len(ready)}")
@@ -20563,6 +20909,7 @@ def render_report(
     broker_match_summary = manifest.get("broker_outcome_match_audit_summary", {}) or {}
     broker_matched_summary = manifest.get("broker_matched_outcomes_summary", {}) or {}
     broker_backfilled_summary = manifest.get("broker_backfilled_forward_outcomes_summary", {}) or {}
+    forward_registry_summary = manifest.get("forward_recommendation_registry", {}) or {}
     calibrated_order_summary = manifest.get("calibrated_order_entry_blocker_summary", {}) or {}
     strategy_atlas_summary = manifest.get("strategy_outcome_atlas_summary", {}) or {}
     calibration_summary = manifest.get("profitability_calibration_summary", {}) or {}
@@ -20686,10 +21033,14 @@ def render_report(
         f"(sample {broker_matched_summary.get('sample_size', 0)}, "
         f"avg P/L {broker_matched_summary.get('avg_pnl', '')}, "
         f"profit factor {broker_matched_summary.get('profit_factor', '')})",
-        f"- Broker-backfilled forward outcomes: {broker_backfilled_summary.get('status', 'unknown')} "
+            f"- Broker-backfilled forward outcomes: {broker_backfilled_summary.get('status', 'unknown')} "
         f"(sample {broker_backfilled_summary.get('sample_size', 0)}, "
         f"avg P/L {broker_backfilled_summary.get('avg_pnl', '')}, "
-        f"profit factor {broker_backfilled_summary.get('profit_factor', '')})",
+            f"profit factor {broker_backfilled_summary.get('profit_factor', '')})",
+            f"- Prospective recommendation registry: {forward_registry_summary.get('status', 'unknown')} "
+            f"({forward_registry_summary.get('registered_events', 0)} new, "
+            f"{forward_registry_summary.get('current_active_green', 0)} active green; "
+            "legacy mutable artifacts are diagnostic only)",
         f"- Profitability calibration: {calibration_summary.get('status', 'unknown')} "
         f"({calibration_summary.get('pass_rows', 0)} pass / {calibration_summary.get('current_trade_rows', 0)} current rows)",
         f"- Calibration blockers: {calibration_blocker_detail}" if calibration_blocker_detail else "- Calibration blockers: none",
@@ -21007,6 +21358,16 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
         return lines
     tickets = build_trade_tickets(final)
     ready, target = split_trade_ticket_surfaces(tickets)
+    ticket_target_status = tickets.get("target_order_status", pd.Series("", index=tickets.index)).astype(str).str.lower()
+    ticket_calibration_status = tickets.get(
+        "profitability_calibration_status",
+        pd.Series("", index=tickets.index),
+    ).fillna("").astype(str).str.upper()
+    watch_target = tickets[
+        ticket_target_status.isin({"target_order_candidate", "target_order_wait_for_price"})
+        & ~tickets.get("ready_to_enter", pd.Series(False, index=tickets.index)).map(_truthy)
+        & ~ticket_calibration_status.isin({"", "PASS"})
+    ].copy()
 
     lines.extend(["## Send Now Orders", ""])
     if ready.empty:
@@ -21017,12 +21378,7 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
     if target.empty:
         lines.extend(["## Target Orders - Target Credits/Debits", "", "No yellow target orders.", ""])
         return lines
-    calibration_status = target.get(
-        "profitability_calibration_status",
-        pd.Series("", index=target.index),
-    ).fillna("").astype(str).str.upper()
-    primary_target = target[calibration_status.isin({"", "PASS"})].copy()
-    watch_target = target[~calibration_status.isin({"", "PASS"})].copy()
+    primary_target = target.copy()
     lines.extend(["## Target Orders - Target Credits/Debits", ""])
     if primary_target.empty:
         lines.append("No profitability-calibrated yellow target orders.")
@@ -21151,9 +21507,19 @@ def _ticket_structure(row: Mapping[str, Any]) -> str:
 
 
 def _ticket_limit_display(row: Mapping[str, Any]) -> str:
-    entry = _display_value(row.get("entry_limit"))
     entry_type = _as_text(row.get("entry_type")) or _entry_type_from_ticket(row.get("trade_plan"))
-    return f"{entry} {entry_type}".strip()
+    target_status = _as_text(row.get("target_order_status")).lower()
+    target_entry = _as_float(row.get("target_entry"))
+    is_target = (
+        not _truthy(row.get("ready_to_enter"))
+        and target_status in {"target_order_candidate", "target_order_wait_for_price"}
+        and target_entry is not None
+        and target_entry > 0
+    )
+    value = target_entry if is_target else _as_float(row.get("entry_limit"))
+    entry = _display_value(value)
+    comparator = "<=" if is_target and entry_type.upper() == "DEBIT" else ">=" if is_target and entry_type.upper() == "CREDIT" else ""
+    return f"{comparator}{entry} {entry_type}".strip()
 
 
 def _ticket_confidence(row: Mapping[str, Any]) -> str:
@@ -21214,6 +21580,14 @@ def _ticket_contract_risk_summary(row: Mapping[str, Any]) -> str:
 def _ticket_recheck_summary(row: Mapping[str, Any]) -> str:
     if _truthy(row.get("ready_to_enter")):
         return "green ready; verify live quote before manual send"
+    entry_type = _as_text(row.get("entry_type")) or _entry_type_from_ticket(row.get("trade_plan"))
+    entry_limit = _as_float(row.get("entry_limit"))
+    target_entry = _as_float(row.get("target_entry"))
+    if entry_limit is not None and target_entry is not None and target_entry > 0:
+        if entry_type.upper() == "DEBIT" and entry_limit > target_entry:
+            return f"wait for debit at or below {_display_value(target_entry)}; current debit {_display_value(entry_limit)} is too high"
+        if entry_type.upper() == "CREDIT" and entry_limit < target_entry:
+            return f"wait for credit at or above {_display_value(target_entry)}; current credit {_display_value(entry_limit)} is too low"
     if _as_text(row.get("contract_review_status")).upper() == "BLOCK":
         missing_agents = _as_text(row.get("contract_review_missing_agents"))
         if missing_agents:
