@@ -10893,6 +10893,22 @@ def _codexuw_profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.da
         replay = replay[replay["exact_evaluated"].map(_truthy)].copy()
     if "decision_pass" in replay.columns:
         replay = replay[replay["decision_pass"].map(_truthy)].copy()
+    if replay.empty:
+        for column in [
+            "strategy_route",
+            "entry_type",
+            "direction_bucket",
+            "regime",
+            "dte_bucket",
+            "iv_rank_bucket",
+            "economics_bucket",
+            "liquidity_bucket",
+            "replay_source",
+            "replay_source_path",
+        ]:
+            if column not in replay.columns:
+                replay[column] = pd.Series(dtype=object)
+        return replay, str(path), ""
     replay["strategy_route"] = replay.get("strategy", pd.Series("", index=replay.index)).map(_strategy_route_from_text)
     replay["entry_type"] = replay.get("entry_side", pd.Series("", index=replay.index)).astype(str).str.upper()
     if "strategy_kind" in replay.columns:

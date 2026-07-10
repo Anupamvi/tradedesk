@@ -6824,6 +6824,34 @@ def test_codexuw_replay_loader_uses_only_manifest_heldout_partition(tmp_path: Pa
     assert model["avg_pnl"] == -25.0
 
 
+def test_codexuw_replay_loader_returns_empty_when_heldout_has_no_decision_rows(tmp_path: Path) -> None:
+    replay_dir = tmp_path / "out" / "codexuw_replay_goal_fixture"
+    replay_dir.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "ticker": "TEST",
+                "asof": "2026-05-16",
+                "strategy": "Bull Call Debit Spread",
+                "entry_side": "DEBIT",
+                "pnl_1x": -25.0,
+                "exact_evaluated": True,
+                "decision_pass": False,
+            }
+        ]
+    ).to_csv(replay_dir / "codexuw_replay_detail.csv", index=False)
+    (replay_dir / "codexuw_replay_manifest.json").write_text(
+        json.dumps({"split_day": "2026-05-15"}),
+        encoding="utf-8",
+    )
+
+    replay, _, error = core._codexuw_profitability_replay_frame(tmp_path / "out")
+
+    assert error == ""
+    assert replay.empty
+    assert "strategy_route" in replay.columns
+
+
 def test_wheel_csp_replay_loader_combines_goal_replays_without_duplicate_signals(tmp_path: Path) -> None:
     out = tmp_path / "out"
     old_dir = out / "fresh_wheel_replay_old"
