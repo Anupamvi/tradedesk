@@ -360,7 +360,7 @@ def test_goal_confidence_gate_replaces_stale_rating_annotation() -> None:
         ),
     )
     second = core.apply_goal_confidence_gate_to_decision_board(
-        first.assign(ready_to_enter=True),
+        first,
         pd.DataFrame(
             [
                 {"metric": "profitability_confidence_rating", "rating": 6.0, "status": "BLOCK"},

@@ -2138,6 +2138,14 @@ def run_pipeline(
             outcome_evidence_audit=outcome_evidence_audit,
             execution_fill_quality=execution_fill_quality,
         )
+    final_confidence_board = apply_goal_confidence_gate_to_decision_board(decision_board, confidence_audit)
+    if not final_confidence_board.equals(decision_board):
+        decision_board = final_confidence_board
+        trade_tickets = build_trade_tickets(decision_board)
+        green_trade_tickets, target_order_tickets = split_trade_ticket_surfaces(trade_tickets)
+        execution_fill_quality = build_execution_fill_quality_audit(final, trade_tickets)
+        market_open_recheck_queue = build_market_open_recheck_queue(trade_tickets)
+        execution_readiness = build_execution_readiness(decision_board, execution_context)
     profitability_evidence_backfill_plan = build_profitability_evidence_backfill_plan(
         outcome_evidence_audit,
         broker_outcome_match_audit,
