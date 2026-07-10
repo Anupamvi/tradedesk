@@ -55,14 +55,15 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.2-exact-reprice-20260710-093806"
+    assert core.PIPELINE_VERSION == "options-agent-v1.2-blocker-carryforward-20260710-142154"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.2-exact-reprice-20260710-093806",
         "options-agent-v1.1-contract-risk-20260709-193127",
         "options-agent-v1.1-contract-risk-20260709-184846",
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-10T09:38:06-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-10T14:21:54-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -17165,6 +17166,64 @@ def test_exact_credit_review_remains_valid_only_at_same_or_better_credit() -> No
 
     assert core._contract_review_applies_to_row(review, better) is True
     assert core._contract_review_applies_to_row(review, worse) is False
+
+
+def test_price_independent_exact_blocker_survives_worse_fresh_reprice() -> None:
+    reviewed = {
+        "ticker": "PEP",
+        "strategy_route": "bull_call_debit",
+        "expiry": "2026-08-21",
+        "buy_leg": "BUY 1 PEP 2026-08-21 135 Call",
+        "sell_leg": "SELL 1 PEP 2026-08-21 140 Call",
+        "trade_plan": "BUY 1 PEP 2026-08-21 135 Call / SELL 1 PEP 2026-08-21 140 Call @ 2.70 DEBIT",
+        "entry_limit": 2.70,
+        "recommendation_status": RecommendationStatus.ENTER.value,
+        "live_validation_status": "PASS",
+        "underlying_quality_tier": "core",
+    }
+    key = core.contract_review_key(reviewed)
+    reviews = pd.DataFrame(
+        [
+            {
+                "ticker": "PEP",
+                "agent": agent,
+                "agent_type": "subagent",
+                "verdict": "avoid",
+                "objective_blocker": True,
+                "blocker_type": "stale_event",
+                "contract_specific": True,
+                "contract_key": key,
+                "strategy_route": reviewed["strategy_route"],
+                "expiry": reviewed["expiry"],
+                "trade_plan": reviewed["trade_plan"],
+                "note": "pre-earnings exit deadline is stale",
+            }
+            for agent in core.CONTRACT_REVIEW_REQUIRED_AGENTS
+        ]
+    )
+    repriced = pd.DataFrame(
+        [
+            {
+                **reviewed,
+                "entry_limit": 2.90,
+                "trade_plan": "BUY 1 PEP 2026-08-21 135 Call / SELL 1 PEP 2026-08-21 140 Call @ 2.90 DEBIT",
+            }
+        ]
+    )
+
+    blocked = core.apply_agent_reviews(repriced, reviews).iloc[0]
+
+    assert blocked["contract_review_status"] == "BLOCK"
+    assert blocked["contract_review_count"] == 2
+    assert blocked["contract_review_missing_agents"] == ""
+    assert blocked["recommendation_status"] == RecommendationStatus.AVOID.value
+    assert "external_agent_objective_blocker" in blocked["hard_rejects"]
+
+    price_sensitive_reviews = reviews.copy()
+    price_sensitive_reviews["blocker_type"] = "quote_width"
+    price_sensitive = core.apply_agent_reviews(repriced, price_sensitive_reviews).iloc[0]
+    assert price_sensitive["contract_review_count"] == 0
+    assert price_sensitive["recommendation_status"] == RecommendationStatus.ENTER.value
 
 
 def test_fresh_reprice_keeps_exact_reviewed_spread_legs() -> None:

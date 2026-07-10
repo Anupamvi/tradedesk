@@ -36,14 +36,15 @@ from uwos.lessonengine.core import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.2-exact-reprice-20260710-093806"
+PIPELINE_VERSION = "options-agent-v1.2-blocker-carryforward-20260710-142154"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.2-exact-reprice-20260710-093806",
     "options-agent-v1.1-contract-risk-20260709-193127",
     "options-agent-v1.1-contract-risk-20260709-184846",
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-10T09:38:06-07:00"
+PIPELINE_RELEASED_AT = "2026-07-10T14:21:54-07:00"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
 DEFAULT_DISCOVERY_LIMIT = 120
@@ -89,14 +90,15 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.2-exact-reprice-20260710-093806",
+    "PIPELINE_VERSION": "options-agent-v1.2-blocker-carryforward-20260710-142154",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.2-exact-reprice-20260710-093806",
         "options-agent-v1.1-contract-risk-20260709-193127",
         "options-agent-v1.1-contract-risk-20260709-184846",
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-10T09:38:06-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-10T14:21:54-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -129,6 +131,9 @@ MAX_BREAKEVEN_EXPECTED_MOVE_RATIO = 0.75
 SHORT_DTE_CONTRACT_RISK_DAYS = 14
 MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS = 0
 CONTRACT_REVIEW_REQUIRED_AGENTS = ("structure_builder", "skeptic")
+PRICE_INDEPENDENT_CONTRACT_BLOCKER_TYPES = frozenset(
+    {"stale_event", "short_dte_macro_event", "thesis_break"}
+)
 CONTRACT_AGENT_REVIEW_POLICY = {
     "verdict_rule": (
         "Return supportive when the exact contract passes the quantitative rules below and has no concrete "
@@ -1023,6 +1028,56 @@ def _contract_plan_identity_and_limit(value: Any) -> tuple[str, str, Optional[fl
     return identity, match.group(3).upper(), float(match.group(2))
 
 
+def _contract_review_identity_matches_row(
+    review: Mapping[str, Any],
+    row: Mapping[str, Any],
+    *,
+    row_contract_key: str = "",
+) -> bool:
+    """Match unchanged contract legs while ignoring the moving limit price."""
+
+    expected_key = row_contract_key or contract_review_key(row)
+    if not expected_key or not _truthy(review.get("contract_specific")):
+        return False
+    comparisons = (
+        (_as_text(review.get("contract_key")), expected_key),
+        (_as_text(review.get("ticker")).upper(), _as_text(row.get("ticker")).upper()),
+        (_as_text(review.get("strategy_route")), _as_text(row.get("strategy_route"))),
+        (_as_text(review.get("expiry")), _as_text(row.get("expiry"))),
+    )
+    if not all(review_value and review_value == row_value for review_value, row_value in comparisons):
+        return False
+    review_identity, review_entry_type, _ = _contract_plan_identity_and_limit(review.get("trade_plan"))
+    row_identity, row_entry_type, _ = _contract_plan_identity_and_limit(
+        row.get("trade_plan") or row.get("full_ticket")
+    )
+    return bool(
+        review_identity
+        and review_identity == row_identity
+        and review_entry_type
+        and review_entry_type == row_entry_type
+    )
+
+
+def _price_independent_contract_blocker_applies_to_row(
+    review: Mapping[str, Any],
+    row: Mapping[str, Any],
+    *,
+    row_contract_key: str = "",
+) -> bool:
+    """Carry objective event/thesis blocks across repricing of unchanged legs."""
+
+    return bool(
+        _truthy(review.get("objective_blocker"))
+        and _as_text(review.get("blocker_type")).lower() in PRICE_INDEPENDENT_CONTRACT_BLOCKER_TYPES
+        and _contract_review_identity_matches_row(
+            review,
+            row,
+            row_contract_key=row_contract_key,
+        )
+    )
+
+
 def _fresh_repriced_contract_still_actionable(row: Mapping[str, Any]) -> bool:
     """Keep an exact review attached after a worse fill only if all live mechanics still pass."""
 
@@ -1065,15 +1120,11 @@ def _contract_review_applies_to_row(
     if _contract_review_matches_row(review, row, row_contract_key=row_contract_key):
         return True
     expected_key = row_contract_key or contract_review_key(row)
-    if not expected_key or not _truthy(review.get("contract_specific")):
-        return False
-    comparisons = (
-        (_as_text(review.get("contract_key")), expected_key),
-        (_as_text(review.get("ticker")).upper(), _as_text(row.get("ticker")).upper()),
-        (_as_text(review.get("strategy_route")), _as_text(row.get("strategy_route"))),
-        (_as_text(review.get("expiry")), _as_text(row.get("expiry"))),
-    )
-    if not all(review_value and review_value == row_value for review_value, row_value in comparisons):
+    if not _contract_review_identity_matches_row(
+        review,
+        row,
+        row_contract_key=expected_key,
+    ):
         return False
     review_identity, review_entry_type, reviewed_limit = _contract_plan_identity_and_limit(
         review.get("trade_plan")
@@ -4143,6 +4194,11 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
                 out,
                 row_contract_key=row_contract_key,
             )
+            or _price_independent_contract_blocker_applies_to_row(
+                review,
+                out,
+                row_contract_key=row_contract_key,
+            )
         ]
         notes = [
             f"{review.get('agent', 'external')}={review.get('verdict', '')}: {review.get('note', '')}".strip()
@@ -4161,6 +4217,11 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
             review
             for review in external_reviews
             if _contract_review_applies_to_row(
+                review,
+                out,
+                row_contract_key=row_contract_key,
+            )
+            or _price_independent_contract_blocker_applies_to_row(
                 review,
                 out,
                 row_contract_key=row_contract_key,
