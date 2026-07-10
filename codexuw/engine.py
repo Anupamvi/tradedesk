@@ -10,6 +10,7 @@ from typing import Any
 
 import pandas as pd
 
+from .catalysts import earnings_crosses_expiry, earnings_event_date
 from .data import safe_float
 from .edge_model import EDGE_COLUMNS, apply_replay_edge_model
 from .occ import build_occ_symbol, parse_occ_symbol
@@ -666,7 +667,9 @@ def _score_trade(row: pd.Series, regime: dict[str, Any], asof: dt.date) -> tuple
             score -= 1.0
 
     earnings_days = _earnings_days(row, asof)
-    if math.isfinite(earnings_days) and earnings_days <= 7:
+    if earnings_crosses_expiry(row, asof=asof):
+        hard.append(f"earnings_crosses_expiry:{earnings_event_date(row)}")
+    elif math.isfinite(earnings_days) and 0 <= earnings_days <= 7 and pd.isna(row.get("expiry")):
         hard.append(f"earnings_within_7d:{int(earnings_days)}")
 
     liq = min(safe_float(row.get("short_oi"), 0.0) + safe_float(row.get("short_volume"), 0.0), safe_float(row.get("long_oi"), 0.0) + safe_float(row.get("long_volume"), 0.0))
@@ -1165,7 +1168,9 @@ def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date 
             out.at[idx, "decision_reason"] = "decision_marginal_live_liquidity"
         elif safe_float(row.get("score"), 0.0) < 5.0:
             out.at[idx, "decision_reason"] = "decision_score_below_medium"
-        elif math.isfinite(earnings_days) and 0 <= earnings_days <= 10:
+        elif earnings_crosses_expiry(row, asof=asof):
+            out.at[idx, "decision_reason"] = f"decision_earnings_crosses_expiry:{earnings_event_date(row)}"
+        elif math.isfinite(earnings_days) and 0 <= earnings_days <= 10 and pd.isna(row.get("expiry")):
             out.at[idx, "decision_reason"] = f"decision_earnings_within_10d:{int(earnings_days)}"
         elif not math.isfinite(credit_pct) or credit_pct < 0.16:
             out.at[idx, "decision_reason"] = "decision_credit_below_16pct_width"
@@ -1571,7 +1576,11 @@ def apply_confirmation_framework(
         else:
             checks["iv_premium_quality"] = safe_float(row.get("credit_pct_width")) >= 0.18
         earnings_days = _earnings_days(row, asof)
-        checks["earnings_news_risk"] = not (math.isfinite(earnings_days) and 0 <= earnings_days <= 7) and catalyst_status != "caution"
+        checks["earnings_news_risk"] = (
+            not earnings_crosses_expiry(row, asof=asof)
+            and not (math.isfinite(earnings_days) and 0 <= earnings_days <= 7 and pd.isna(row.get("expiry")))
+            and catalyst_status not in {"caution", "unknown"}
+        )
         if _is_debit_strategy(row):
             checks["expected_move_buffer"] = math.isfinite(expected_ratio) and expected_ratio >= 1.0
         else:
@@ -3041,7 +3050,7 @@ def apply_data_quality_gate(scored: pd.DataFrame, data_quality: dict[str, Any] |
             row_blockers.append("data_gate_missing_portfolio_state")
         penalties = _token_set(row.get("penalties"))
         catalyst_status = str(row.get("catalyst_status") or "").strip().lower()
-        if "browser_news_notes_present" in blockers or "news_unconfirmed" in penalties or catalyst_status == "unknown":
+        if "news_unconfirmed" in penalties or catalyst_status == "unknown":
             row_blockers.append("data_gate_news_unconfirmed")
         if row_blockers:
             out.at[idx, "data_quality_blockers"] = ";".join(row_blockers)

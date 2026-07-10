@@ -5,10 +5,12 @@ import json
 import math
 import re
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Iterable
 
 import pandas as pd
+import requests
 
 
 POSITIVE_WORDS = {
@@ -69,6 +71,12 @@ PRIMARY_EVENT_TOKENS = {
     "revenue report",
     "results released",
 }
+NASDAQ_EARNINGS_URL = "https://api.nasdaq.com/api/calendar/earnings"
+NASDAQ_HEADERS = {
+    "Accept": "application/json, text/plain, */*",
+    "Referer": "https://www.nasdaq.com/",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+}
 
 
 def _read_browser_texts(base_dir: Path) -> list[tuple[str, str]]:
@@ -127,6 +135,148 @@ def _parse_date(value: object) -> dt.date | None:
     return parsed.date()
 
 
+def earnings_event_date(row: pd.Series | dict[str, Any]) -> dt.date | None:
+    for key in ["catalyst_earnings_date", "next_earnings_dt", "next_earnings_date", "earnings_date"]:
+        value = row.get(key)
+        parsed = _parse_date(value)
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def earnings_crosses_expiry(
+    row: pd.Series | dict[str, Any],
+    *,
+    asof: dt.date | None = None,
+) -> bool:
+    event_date = earnings_event_date(row)
+    expiry = _parse_date(row.get("expiry"))
+    if event_date is None or expiry is None:
+        return False
+    if asof is not None and event_date < asof:
+        return False
+    return event_date <= expiry
+
+
+def _event_from_record(record: dict[str, Any], *, default_source: str = "") -> dict[str, Any] | None:
+    ticker = str(record.get("ticker") or record.get("symbol") or "").upper().strip()
+    event_date = _parse_date(
+        record.get("earnings_date")
+        or record.get("next_earnings_date")
+        or record.get("event_date")
+        or record.get("date")
+        or record.get("report_date")
+    )
+    if not ticker or event_date is None:
+        return None
+    return {
+        "ticker": ticker,
+        "event_date": event_date,
+        "status": str(record.get("catalyst_status") or record.get("status") or "").lower().strip(),
+        "note": str(record.get("catalyst_note") or record.get("note") or record.get("event") or ""),
+        "source": str(record.get("source") or record.get("source_url") or default_source),
+        "confidence": str(record.get("confidence") or record.get("source_confidence") or "unknown"),
+        "resolution": str(record.get("resolution") or "structured"),
+    }
+
+
+def _fetch_nasdaq_day(day: dt.date) -> list[dict[str, Any]]:
+    try:
+        response = requests.get(
+            NASDAQ_EARNINGS_URL,
+            params={"date": day.isoformat()},
+            headers=NASDAQ_HEADERS,
+            timeout=12,
+        )
+        response.raise_for_status()
+        return list(((response.json().get("data") or {}).get("rows") or []))
+    except Exception:
+        return []
+
+
+def _fetch_nasdaq_earnings_events(
+    tickers: Iterable[str],
+    *,
+    start: dt.date,
+    through: dt.date,
+    cache_path: Path | None = None,
+) -> tuple[dict[str, dict[str, Any]], str]:
+    wanted = {str(ticker).upper().strip() for ticker in tickers if str(ticker).strip()}
+    through = min(through, start + dt.timedelta(days=120))
+    if not wanted or through < start:
+        return {}, "not_needed"
+
+    if cache_path is not None and cache_path.exists():
+        try:
+            payload = json.loads(cache_path.read_text(encoding="utf-8"))
+            cached_start = _parse_date(payload.get("start"))
+            cached_through = _parse_date(payload.get("through"))
+            cached_tickers = {str(ticker).upper() for ticker in payload.get("queried_tickers", [])}
+            if cached_start and cached_through and cached_start <= start and cached_through >= through and wanted <= cached_tickers:
+                events: dict[str, dict[str, Any]] = {}
+                for record in payload.get("events", []):
+                    event = _event_from_record(record, default_source=NASDAQ_EARNINGS_URL)
+                    if event and event["ticker"] in wanted:
+                        events[event["ticker"]] = event
+                return events, "cache"
+        except Exception:
+            pass
+
+    days = []
+    cursor = start
+    while cursor <= through:
+        if cursor.weekday() < 5:
+            days.append(cursor)
+        cursor += dt.timedelta(days=1)
+
+    matched: dict[str, dict[str, Any]] = {}
+    records: list[dict[str, Any]] = []
+    successful_days = 0
+    with ThreadPoolExecutor(max_workers=min(8, max(1, len(days)))) as pool:
+        futures = {pool.submit(_fetch_nasdaq_day, day): day for day in days}
+        for future in as_completed(futures):
+            day = futures[future]
+            rows = future.result()
+            if rows:
+                successful_days += 1
+            for raw in rows:
+                ticker = str(raw.get("symbol") or "").upper().strip()
+                if ticker not in wanted:
+                    continue
+                record = {
+                    "ticker": ticker,
+                    "earnings_date": day.isoformat(),
+                    "status": "",
+                    "note": f"Nasdaq web earnings calendar; timing={raw.get('time') or 'not supplied'}.",
+                    "source": f"{NASDAQ_EARNINGS_URL}?date={day.isoformat()}",
+                    "confidence": "secondary_calendar",
+                    "resolution": "web_nasdaq",
+                }
+                records.append(record)
+                event = _event_from_record(record, default_source=NASDAQ_EARNINGS_URL)
+                existing = matched.get(ticker)
+                if event and (existing is None or event["event_date"] < existing["event_date"]):
+                    matched[ticker] = event
+
+    if cache_path is not None and successful_days:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(
+            json.dumps(
+                {
+                    "source": NASDAQ_EARNINGS_URL,
+                    "start": start.isoformat(),
+                    "through": through.isoformat(),
+                    "queried_tickers": sorted(wanted),
+                    "events": records,
+                },
+                indent=2,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+    return matched, "web" if successful_days else "unavailable"
+
+
 def _parse_dates_from_text(text: str) -> list[dt.date]:
     dates: list[dt.date] = []
     for match in re.finditer(r"\b(20\d{2}-\d{2}-\d{2})\b", str(text)):
@@ -183,7 +333,9 @@ def _load_structured_events(base_dir: Path) -> dict[str, dict[str, Any]]:
                 "event_date": event_date,
                 "status": str(_first_present(row, ["catalyst_status", "status", "risk_status"]) or "").lower().strip(),
                 "note": str(_first_present(row, ["catalyst_note", "note", "event", "description"]) or ""),
-                "source": str(path),
+                "source": str(_first_present(row, ["source", "source_url"]) or path),
+                "confidence": str(_first_present(row, ["confidence", "source_confidence"]) or "structured"),
+                "resolution": str(_first_present(row, ["resolution"]) or "structured"),
             }
     return events
 
@@ -258,11 +410,51 @@ def _status_from_event(event_date: dt.date | None, asof: dt.date | None, explici
     return "unknown", "No structured catalyst date/status available.", math.nan
 
 
-def load_catalyst_context(base_dir: Path, tickers: Iterable[str], *, asof: dt.date | None = None) -> pd.DataFrame:
+def load_catalyst_context(
+    base_dir: Path,
+    tickers: Iterable[str],
+    *,
+    asof: dt.date | None = None,
+    fallback_earnings: dict[str, object] | None = None,
+    resolve_web: bool = False,
+    web_through: dt.date | None = None,
+    event_exempt_tickers: Iterable[str] | None = None,
+) -> pd.DataFrame:
     texts = _read_browser_texts(base_dir)
     structured_events = _load_structured_events(base_dir)
+    ticker_list = sorted({str(ticker or "").strip().upper() for ticker in tickers if str(ticker or "").strip()})
+    exempt = {str(ticker).upper().strip() for ticker in (event_exempt_tickers or [])}
+    for ticker, value in (fallback_earnings or {}).items():
+        ticker = str(ticker).upper().strip()
+        event_date = _parse_date(value)
+        if not ticker or event_date is None:
+            continue
+        existing = structured_events.get(ticker)
+        if existing is None or existing.get("event_date") is None or event_date < existing["event_date"]:
+            structured_events[ticker] = {
+                "event_date": event_date,
+                "status": "",
+                "note": "Earnings date carried from UW stock-screener next_earnings_dt.",
+                "source": "stock_screener.next_earnings_dt",
+                "confidence": "UW_estimated_or_scheduled",
+                "resolution": "stock_screener",
+            }
+
+    web_status = "not_requested"
+    if resolve_web and asof is not None and web_through is not None:
+        web_events, web_status = _fetch_nasdaq_earnings_events(
+            [ticker for ticker in ticker_list if ticker not in exempt],
+            start=asof,
+            through=web_through,
+            cache_path=base_dir / "browser_text" / f"earnings-calendar-web-{asof}.json",
+        )
+        for ticker, event in web_events.items():
+            existing = structured_events.get(ticker)
+            if existing is None or existing.get("event_date") is None or event["event_date"] < existing["event_date"]:
+                structured_events[ticker] = event
+
     rows = []
-    for ticker_raw in tickers:
+    for ticker_raw in ticker_list:
         ticker = str(ticker_raw or "").strip().upper()
         if not ticker:
             continue
@@ -281,6 +473,8 @@ def load_catalyst_context(base_dir: Path, tickers: Iterable[str], *, asof: dt.da
                         "status": "",
                         "note": "Earnings/event date extracted from local browser capture.",
                         "source": name,
+                        "confidence": "local_capture",
+                        "resolution": "local_browser_capture",
                     }
                     break
         for name, text in texts:
@@ -302,7 +496,11 @@ def load_catalyst_context(base_dir: Path, tickers: Iterable[str], *, asof: dt.da
                 source_hits.append(event_source)
         elif not source_hits:
             status = "unknown"
-            note = "No local browser/news capture matched ticker."
+            note = (
+                "No structured, local, or web earnings/news evidence matched ticker."
+                if resolve_web
+                else "No local browser/news capture matched ticker."
+            )
             days = math.nan
         elif neg > pos + 2:
             status = "caution"
@@ -329,6 +527,9 @@ def load_catalyst_context(base_dir: Path, tickers: Iterable[str], *, asof: dt.da
                 "negative_hits": int(neg),
                 "catalyst_sources": ";".join(source_hits[:5]),
                 "catalyst_snippet": " | ".join(x for x in snippets[:2] if x),
+                "catalyst_resolution": str(structured_event.get("resolution") or ("event_exempt" if ticker in exempt else "unresolved")),
+                "catalyst_source_confidence": str(structured_event.get("confidence") or ("not_applicable" if ticker in exempt else "unresolved")),
+                "catalyst_web_lookup": web_status,
             }
         )
     return pd.DataFrame(rows)

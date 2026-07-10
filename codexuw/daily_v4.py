@@ -10,7 +10,7 @@ from typing import Any
 
 import pandas as pd
 
-from .catalysts import load_catalyst_context
+from .catalysts import earnings_crosses_expiry, earnings_event_date, load_catalyst_context
 from .confirmations import apply_confirmation_evidence, build_confirmation_evidence
 from .data import (
     aggregate_bot_flow,
@@ -37,6 +37,7 @@ from .engine import (
     build_data_quality_status,
     detect_regime,
     generate_candidates,
+    is_etf_row,
     live_validate_and_score,
     select_index_fallback_pool,
     select_ticker_pool,
@@ -106,6 +107,12 @@ EXECUTE_QUALITY_BLOCKER_TOKENS = {
     "no_flow_edge_alignment": "flow and edge are not aligned",
     "price_action_trend": "price-action trend confirmation failed",
     "decision_score_below_medium": "decision score below Execute threshold",
+    "news_catalyst_caution": "news/catalyst caution requires review",
+    "news_unconfirmed": "earnings/news evidence is unresolved",
+    "oi_carryover_contrary": "exact-leg OI conflicts with the trade direction",
+    "thin_replay_sample": "historical edge sample is too thin for Execute",
+    "data_gate_missing_portfolio_state": "portfolio state is unavailable",
+    "data_gate_news_unconfirmed": "ticker news/earnings evidence is unresolved",
 }
 
 V4_TARGET_TICKET_COLUMNS = [
@@ -867,6 +874,10 @@ def _hard_blocker_reason(row: pd.Series | dict[str, Any]) -> str:
     if hard:
         return hard
     penalties = _clean(row.get("penalties")).lower()
+    asof = _parse_date(_clean(row.get("v4_asof") or row.get("asof")))
+    event_date = earnings_event_date(row)
+    if earnings_crosses_expiry(row, asof=asof):
+        return f"earnings/event {event_date} occurs on or before expiry"
     earnings_days = safe_float(row.get("catalyst_earnings_days"))
     catalyst_status = _clean(row.get("catalyst_status")).lower()
     if math.isfinite(earnings_days) and 0 <= earnings_days <= 7 and (
@@ -876,6 +887,15 @@ def _hard_blocker_reason(row: pd.Series | dict[str, Any]) -> str:
     live_status = _clean(row.get("live_status"))
     if live_status and live_status not in {"PASS", "pass"}:
         return live_status
+    natural = safe_float(row.get("natural_debit") if _is_debit(row) else row.get("natural_credit"))
+    spread_width = safe_float(row.get("spread_width"))
+    if math.isfinite(natural) and natural <= 0:
+        return "invalid non-positive combination natural price"
+    if math.isfinite(natural) and math.isfinite(spread_width) and spread_width > 0 and natural >= spread_width:
+        return "invalid combination natural price at or above spread width"
+    combination_width = _combination_quote_width_ratio(row)
+    if math.isfinite(combination_width) and combination_width > 0.65:
+        return "extreme combination bid/ask width"
     quote_width = safe_float(row.get("quote_width_pct"))
     if math.isfinite(quote_width) and quote_width > 0.65:
         return "extreme bid/ask width"
@@ -903,11 +923,21 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
             _clean(row.get("penalties")),
             _clean(row.get("primary_blocker")),
             _clean(row.get("what_must_improve")),
+            _clean(row.get("data_quality_blockers")),
         ]
     ).lower()
     for token, reason in EXECUTE_QUALITY_BLOCKER_TOKENS.items():
         if token in text:
             return reason
+    if not is_etf_row(row) and earnings_event_date(row) is None and _clean(row.get("catalyst_status")).lower() in {"", "unknown"}:
+        return "earnings date unresolved; web or structured confirmation required"
+    if _clean(row.get("catalyst_status")).lower() == "caution":
+        return "news/catalyst caution requires review"
+    if _clean(row.get("oi_carryover_status")).lower() == "contrary":
+        return "exact-leg OI conflicts with the trade direction"
+    sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size")))
+    if math.isfinite(sample) and sample < 8:
+        return f"historical edge sample too thin for Execute (n={int(sample)})"
     return ""
 
 
@@ -2451,8 +2481,21 @@ def _build_v4_regime_context(
 
 def _v4_current_entry_price(row: pd.Series | dict[str, Any]) -> float:
     if _is_debit(row):
-        return safe_float(row.get("mid_debit"), safe_float(row.get("debit")))
-    return safe_float(row.get("mid_credit"), safe_float(row.get("credit")))
+        return safe_float(row.get("natural_debit"), safe_float(row.get("mid_debit"), safe_float(row.get("debit"))))
+    return safe_float(row.get("natural_credit"), safe_float(row.get("mid_credit"), safe_float(row.get("credit"))))
+
+
+def _combination_quote_width_ratio(row: pd.Series | dict[str, Any]) -> float:
+    if _is_debit(row):
+        mid = safe_float(row.get("mid_debit"))
+        natural = safe_float(row.get("natural_debit"))
+    else:
+        mid = safe_float(row.get("mid_credit"))
+        natural = safe_float(row.get("natural_credit"))
+    width = safe_float(row.get("spread_width"))
+    if math.isfinite(mid) and math.isfinite(natural) and math.isfinite(width) and width > 0:
+        return abs(mid - natural) / width
+    return math.nan
 
 
 def _v4_entry_target_value(row: pd.Series | dict[str, Any]) -> float:
@@ -2488,10 +2531,12 @@ def _v4_nonnegative_ev(row: pd.Series | dict[str, Any]) -> bool:
     return edge in {"positive", "acceptable", "acceptable_secondary_income", "thin_sample", "thin"}
 
 
-def apply_v4_professional_dispositions(scored: pd.DataFrame) -> pd.DataFrame:
+def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | None = None) -> pd.DataFrame:
     if scored is None or scored.empty:
         return scored.copy() if scored is not None else pd.DataFrame()
     out = _normalize_v4_dataframe(scored)
+    if asof is not None:
+        out["v4_asof"] = asof.isoformat()
     for col in ["trade_status", "trade_tier", "trade_status_reason", "v4_direct_disposition_reason"]:
         if col not in out.columns:
             out[col] = ""
@@ -2512,6 +2557,9 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame) -> pd.DataFrame:
             continue
         target_met = _v4_target_met(row)
         quote_width = safe_float(row.get("quote_width_pct"), 9.0)
+        combination_width = _combination_quote_width_ratio(row)
+        if math.isfinite(combination_width):
+            quote_width = max(quote_width, combination_width)
         ev_ok = _v4_nonnegative_ev(row)
         has_risk = math.isfinite(_max_loss_value(row)) and _max_loss_value(row) > 0 and math.isfinite(_target_profit_value(row))
         execute_quality_blocker = _execute_quality_blocker(row)
@@ -2663,7 +2711,7 @@ def write_v4_outputs(
         lookback_days=14,
     )
     scored = apply_v4_safety_calibration(scored, safety_calibration)
-    scored = apply_v4_professional_dispositions(scored)
+    scored = apply_v4_professional_dispositions(scored, asof=asof)
     board = build_v4_opportunity_board(scored, top_flow=top_flow)
     tickets = build_v4_swing_target_tickets(scored=scored, board=board, regime=regime, top_flow=top_flow)
     tickets, risk_cap_audit = apply_v4_risk_cap(tickets, portfolio)
@@ -3077,6 +3125,33 @@ def write_v4_outputs(
     return manifest
 
 
+def _fallback_earnings_from_scored(scored: pd.DataFrame, *, asof: dt.date) -> dict[str, dt.date]:
+    fallback: dict[str, dt.date] = {}
+    if scored is None or scored.empty or "ticker" not in scored.columns:
+        return fallback
+    for _, row in scored.iterrows():
+        ticker = _clean(row.get("ticker")).upper()
+        parsed = pd.to_datetime(row.get("next_earnings_dt"), errors="coerce")
+        if not ticker or pd.isna(parsed):
+            continue
+        event_date = parsed.date()
+        if event_date < asof:
+            continue
+        existing = fallback.get(ticker)
+        if existing is None or event_date < existing:
+            fallback[ticker] = event_date
+    return fallback
+
+
+def _maximum_candidate_expiry(scored: pd.DataFrame, *, asof: dt.date) -> dt.date:
+    if scored is None or scored.empty or "expiry" not in scored.columns:
+        return asof + dt.timedelta(days=90)
+    parsed = pd.to_datetime(scored["expiry"], errors="coerce").dropna()
+    if parsed.empty:
+        return asof + dt.timedelta(days=90)
+    return min(parsed.max().date(), asof + dt.timedelta(days=120))
+
+
 def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> dict[str, Any]:
     asof = infer_asof_date(base_dir)
     input_provenance = build_input_provenance(base_dir)
@@ -3191,7 +3266,21 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         catalysts = None
     else:
         catalyst_tickers = sorted(set(scored["ticker"].dropna().astype(str).str.upper())) if not scored.empty and "ticker" in scored.columns else []
-        catalysts = load_catalyst_context(base_dir, catalyst_tickers, asof=asof)
+        event_exempt_tickers = {
+            _clean(row.get("ticker")).upper()
+            for _, row in scored.iterrows()
+            if _clean(row.get("ticker")) and is_etf_row(row)
+        }
+        live_web_window = abs((dt.date.today() - asof).days) <= 7
+        catalysts = load_catalyst_context(
+            base_dir,
+            catalyst_tickers,
+            asof=asof,
+            fallback_earnings=_fallback_earnings_from_scored(scored, asof=asof),
+            resolve_web=bool(not args.offline and live_web_window),
+            web_through=_maximum_candidate_expiry(scored, asof=asof),
+            event_exempt_tickers=event_exempt_tickers,
+        )
     if catalysts is not None:
         scored = apply_catalyst_context(scored, catalysts)
     macro = build_macro_event_gates(base_dir=base_dir, asof=asof, stock_screener=stock_screener, regime=regime)
@@ -3377,7 +3466,7 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
     chain_oi = _load_overlay_chain_oi_file(overlay_file, asof=asof)
     after = apply_oi_carryover(before, chain_oi)
     after = assign_trade_statuses(after, index_income_mode="primary")
-    after = apply_v4_professional_dispositions(after)
+    after = apply_v4_professional_dispositions(after, asof=asof)
     top_flow = _read_prior_v4_top_flow(prior, asof)
     board = build_v4_opportunity_board(after, top_flow=top_flow)
     changes = _compare_v4_overlay_changes(before, after)

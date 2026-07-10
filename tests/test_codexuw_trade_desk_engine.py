@@ -4,6 +4,8 @@ import datetime as dt
 
 import pandas as pd
 
+from codexuw.catalysts import load_catalyst_context
+from codexuw.daily_v4 import apply_v4_professional_dispositions
 from codexuw.engine import (
     apply_confidence_components,
     apply_data_quality_gate,
@@ -116,6 +118,139 @@ def _debit_row(**overrides) -> dict:
     }
     row.update(overrides)
     return row
+
+
+def test_catalyst_context_uses_uw_fallback_earnings_date(tmp_path) -> None:
+    event_date = ASOF + dt.timedelta(days=20)
+    out = load_catalyst_context(
+        tmp_path,
+        ["CORZ"],
+        asof=ASOF,
+        fallback_earnings={"CORZ": event_date},
+    )
+
+    row = out.iloc[0]
+    assert row["catalyst_earnings_date"] == event_date
+    assert row["catalyst_resolution"] == "stock_screener"
+    assert row["catalyst_status"] == "mixed"
+
+
+def test_v4_earnings_crossing_expiry_cannot_execute() -> None:
+    event_date = ASOF + dt.timedelta(days=5)
+    scored = pd.DataFrame(
+        [
+            _credit_row(
+                expiry=ASOF + dt.timedelta(days=20),
+                catalyst_status="mixed",
+                catalyst_earnings_date=event_date,
+                catalyst_earnings_days=5,
+                required_entry=1.20,
+                mid_credit=1.30,
+                natural_credit=1.25,
+                edge_verdict="acceptable",
+            )
+        ]
+    )
+
+    out = apply_v4_professional_dispositions(scored, asof=ASOF)
+
+    assert out["trade_status"].iloc[0] == "Avoid"
+    assert "on or before expiry" in out["v4_direct_disposition_reason"].iloc[0]
+
+
+def test_v4_known_earnings_after_expiry_can_execute() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(
+                expiry=ASOF + dt.timedelta(days=10),
+                catalyst_status="mixed",
+                catalyst_earnings_date=ASOF + dt.timedelta(days=20),
+                catalyst_earnings_days=20,
+                required_entry=1.20,
+                mid_credit=1.30,
+                natural_credit=1.25,
+                edge_verdict="acceptable",
+            )
+        ]
+    )
+
+    out = apply_v4_professional_dispositions(scored, asof=ASOF)
+
+    assert out["trade_status"].iloc[0] == "Execute"
+
+
+def test_v4_unknown_single_name_earnings_cannot_execute() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(
+                catalyst_status="unknown",
+                required_entry=1.20,
+                mid_credit=1.30,
+                natural_credit=1.25,
+                edge_verdict="acceptable",
+            )
+        ]
+    )
+
+    out = apply_v4_professional_dispositions(scored, asof=ASOF)
+
+    assert out["trade_status"].iloc[0] == "Watch"
+    assert "earnings date unresolved" in out["v4_direct_disposition_reason"].iloc[0]
+
+
+def test_v4_invalid_natural_credit_cannot_execute() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(
+                required_entry=1.20,
+                mid_credit=1.30,
+                natural_credit=-0.10,
+                edge_verdict="acceptable",
+            )
+        ]
+    )
+
+    out = apply_v4_professional_dispositions(scored, asof=ASOF)
+
+    assert out["trade_status"].iloc[0] == "Avoid"
+    assert "non-positive" in out["v4_direct_disposition_reason"].iloc[0]
+
+
+def test_v4_mid_target_without_natural_fill_becomes_work_limit() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(
+                required_entry=1.20,
+                mid_credit=1.30,
+                natural_credit=1.00,
+                edge_verdict="acceptable",
+            )
+        ]
+    )
+
+    out = apply_v4_professional_dispositions(scored, asof=ASOF)
+
+    assert out["trade_status"].iloc[0] == "Watch"
+    assert out["trade_tier"].iloc[0] == "work-limit-price-target"
+
+
+def test_v4_contrary_exact_leg_oi_cannot_execute() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(
+                required_entry=1.20,
+                mid_credit=1.30,
+                natural_credit=1.25,
+                oi_carryover_status="contrary",
+                edge_verdict="acceptable",
+            )
+        ]
+    )
+
+    out = apply_v4_professional_dispositions(scored, asof=ASOF)
+
+    assert out["trade_status"].iloc[0] == "Watch"
+    assert "exact-leg OI" in out["v4_direct_disposition_reason"].iloc[0]
 
 
 def test_portfolio_exposure_annotates_without_hard_rejecting_valid_trade() -> None:

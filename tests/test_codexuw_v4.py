@@ -69,6 +69,9 @@ def _candidate(**overrides) -> dict:
         "edge_avg_pnl": 24.0,
         "confirmation_score": 7.2,
         "score": 6.5,
+        "catalyst_status": "mixed",
+        "catalyst_earnings_date": "2026-08-01",
+        "catalyst_earnings_days": 73,
         "target_entry": 0.90,
         "price_annotation": "current credit $0.75 is below target $0.90; show as work-limit",
     }
@@ -403,8 +406,8 @@ def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path) -> None:
     base_dir.mkdir()
     scored = pd.DataFrame(
         [
-            _candidate(ticker="AAA", trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, required_entry=0.9, target_entry=0.9),
-            _candidate(ticker="BBB", trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, required_entry=0.9, target_entry=0.9),
+            _candidate(ticker="AAA", trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, natural_credit=1.0, required_entry=0.9, target_entry=0.9),
+            _candidate(ticker="BBB", trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, natural_credit=1.1, required_entry=0.9, target_entry=0.9),
         ]
     )
     top_flow = pd.DataFrame(

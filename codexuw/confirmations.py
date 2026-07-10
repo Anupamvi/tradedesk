@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 
+from .catalysts import earnings_crosses_expiry, earnings_event_date
 from .data import safe_float
 
 
@@ -52,6 +53,8 @@ def _vwap_confirms(row: pd.Series | dict[str, Any]) -> bool:
 
 def _news_confirmation(row: pd.Series | dict[str, Any], *, asof: dt.date, browser_news_present: bool) -> tuple[str, str]:
     catalyst = str(row.get("catalyst_status") or "").strip().lower()
+    if earnings_crosses_expiry(row, asof=asof):
+        return "blocked", f"earnings/event {earnings_event_date(row)} occurs on or before expiry"
     if catalyst == "caution":
         return "blocked", "catalyst_status=caution"
     if catalyst in {"supportive", "mixed"}:

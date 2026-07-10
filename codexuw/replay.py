@@ -10,6 +10,7 @@ from typing import Any
 
 import pandas as pd
 
+from .catalysts import earnings_crosses_expiry, earnings_event_date
 from .data import aggregate_bot_flow, infer_asof_date, load_hot_chains, load_stock_screener, safe_float
 from .engine import detect_regime, generate_candidates, replay_quality_pattern, select_ticker_pool, validated_addon_income_lane
 from .occ import build_occ_symbol, parse_occ_symbol
@@ -681,7 +682,9 @@ def _replay_trade_score(row: pd.Series) -> float:
         elif quote_width > 0.50:
             score -= 0.75
     earnings_days = _earnings_days_from_record(row)
-    if earnings_days is not None and 0 <= earnings_days <= 7:
+    if earnings_crosses_expiry(row) or (
+        earnings_days is not None and 0 <= earnings_days <= 7 and pd.isna(row.get("expiry"))
+    ):
         score -= 0.5
     return round(max(0.0, min(10.0, score)), 2)
 
@@ -756,7 +759,9 @@ def apply_replay_decision_selection(detail: pd.DataFrame, *, max_selected_per_da
         earnings_days = _earnings_days_from_record(row)
         score = _decision_sort_score(row)
         out.at[idx, "decision_score"] = score
-        if earnings_days is not None and 0 <= earnings_days <= 10:
+        if earnings_crosses_expiry(row):
+            out.at[idx, "decision_reason"] = f"decision_earnings_crosses_expiry:{earnings_event_date(row)}"
+        elif earnings_days is not None and 0 <= earnings_days <= 10 and pd.isna(row.get("expiry")):
             out.at[idx, "decision_reason"] = f"decision_earnings_within_10d:{earnings_days}"
         elif _is_debit_strategy(row):
             if not math.isfinite(debit_pct) or debit_pct <= 0:
@@ -853,7 +858,9 @@ def _replay_confidence(score: float) -> str:
 def _replay_risk_notes(row: pd.Series) -> str:
     notes: list[str] = []
     earnings_days = _earnings_days_from_record(row)
-    if earnings_days is not None and 0 <= earnings_days <= 7:
+    if earnings_crosses_expiry(row):
+        notes.append(f"earnings {earnings_event_date(row)} occurs on or before expiry")
+    elif earnings_days is not None and 0 <= earnings_days <= 7 and pd.isna(row.get("expiry")):
         notes.append(f"earnings proximity in source data: {earnings_days} day(s)")
     if _is_debit_strategy(row) and str(row.get("entry_price_annotation") or "") == "entry_debit_above_target":
         target = safe_float(row.get("target_debit"), safe_float(row.get("target_entry_debit")))
