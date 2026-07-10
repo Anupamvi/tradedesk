@@ -7,7 +7,7 @@ from typing import Any, Callable
 
 import pandas as pd
 
-from .data import find_export, infer_asof_date
+from .data import find_export, find_export_bundle, infer_asof_date
 from .opportunity import PIPELINE_NAME_V3, PIPELINE_VERSION_V3
 
 
@@ -21,7 +21,7 @@ def _source_complete(folder: Path) -> bool:
     except FileNotFoundError:
         return False
     try:
-        find_export(folder, "bot-eod-report-")
+        find_export_bundle(folder, "bot-eod-report-")
         return True
     except FileNotFoundError:
         pass

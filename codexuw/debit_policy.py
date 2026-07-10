@@ -6,14 +6,13 @@ from typing import Any
 from .data import safe_float
 
 
-DEBIT_POLICY_VERSION = "debit-v2.0-medium-high-sleeve"
+DEBIT_POLICY_VERSION = "debit-v2.1-maturity-gap"
 
 
 DEBIT_POLICY = {
     "Bull Call": {
         "allowed_regimes": {"uptrend"},
-        "min_dte": 7,
-        "max_dte": 45,
+        "allowed_dte_ranges": ((7, 10), (22, 45)),
         "max_debit_pct_width": 0.45,
         "min_reward_risk": 1.25,
         "min_expected_move_ratio": 1.00,
@@ -23,8 +22,7 @@ DEBIT_POLICY = {
     },
     "Bear Put": {
         "allowed_regimes": {"downtrend", "range"},
-        "min_dte": 14,
-        "max_dte": 45,
+        "allowed_dte_ranges": ((14, 45),),
         "max_debit_pct_width": 0.40,
         "min_reward_risk": 1.25,
         "min_expected_move_ratio": 1.25,
@@ -45,6 +43,10 @@ def _direction_sign(direction: str) -> int:
     if direction == "Bear Put":
         return -1
     return 0
+
+
+def _has_full_bot_flow(value: object) -> bool:
+    return _clean(value).lower() in {"bot_eod_loaded", "bot_eod_split_bundle_loaded"}
 
 
 def _flow_alignment(row: dict[str, Any] | Any) -> float:
@@ -69,7 +71,7 @@ def assess_debit_spread(
     reasons: list[str] = []
     source = _clean(row.get("bot_flow_source_status")).lower()
     flow_quality = _clean(row.get("flow_quality")).lower()
-    full_bot_flow = source == "bot_eod_loaded"
+    full_bot_flow = _has_full_bot_flow(source)
     directional_contract_flow = flow_quality == "directional"
     if not full_bot_flow and not directional_contract_flow:
         reasons.append("side_aware_bot_or_directional_contract_flow_required")
@@ -80,8 +82,10 @@ def assess_debit_spread(
             reasons.append(f"regime_not_aligned:{regime or 'unknown'}")
 
     dte = safe_float(row.get("dte"))
-    if not math.isfinite(dte) or not policy["min_dte"] <= dte <= policy["max_dte"]:
-        reasons.append(f"dte_outside_{policy['min_dte']}_{policy['max_dte']}")
+    allowed_dte_ranges = policy["allowed_dte_ranges"]
+    if not math.isfinite(dte) or not any(low <= dte <= high for low, high in allowed_dte_ranges):
+        allowed = "_or_".join(f"{low}_{high}" for low, high in allowed_dte_ranges)
+        reasons.append(f"dte_outside_{allowed}")
 
     debit_pct = safe_float(row.get("entry_debit_pct_width"), safe_float(row.get("debit_pct_width")))
     if not math.isfinite(debit_pct) or debit_pct <= 0 or debit_pct > policy["max_debit_pct_width"]:
@@ -149,7 +153,7 @@ def debit_spread_confidence(
         return "qualified", []
 
     high_reasons: list[str] = []
-    if _clean(row.get("bot_flow_source_status")).lower() != "bot_eod_loaded":
+    if not _has_full_bot_flow(row.get("bot_flow_source_status")):
         high_reasons.append("high_requires_full_bot_flow")
     if _clean(row.get("flow_quality")).lower() != "directional":
         high_reasons.append("high_requires_directional_contract_flow")

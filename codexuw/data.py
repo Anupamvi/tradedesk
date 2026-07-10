@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import math
+import re
 import zipfile
 from pathlib import Path
 from typing import Iterable
@@ -38,18 +39,67 @@ def dte_from_expiry(value: object, asof: dt.date) -> float:
     return math.nan
 
 
-def find_export(base_dir: Path, prefix: str) -> Path:
+_SPLIT_PART_RE = re.compile(
+    r"^(?P<stem>.+)\.part-(?P<part>\d+)-of-(?P<total>\d+)\.zip$",
+    re.IGNORECASE,
+)
+
+
+def _export_candidates(base_dir: Path, prefix: str) -> list[Path]:
     candidates = sorted(base_dir.glob(f"{prefix}*.csv")) + sorted(base_dir.glob(f"{prefix}*.zip"))
     if not candidates:
         unzipped = base_dir / "_unzipped_mode_a"
         candidates = sorted(unzipped.glob(f"{prefix}*.csv")) + sorted(unzipped.glob(f"{prefix}*.zip"))
-    if not candidates:
-        raise FileNotFoundError(f"No {prefix}*.csv or {prefix}*.zip found under {base_dir}")
+    return candidates
+
+
+def _preferred_export(candidates: list[Path]) -> Path:
     live_names = ("latest", "current", "live", "next")
     live_candidates = [path for path in candidates if any(token in path.name.lower() for token in live_names)]
     if live_candidates:
         return sorted(live_candidates, key=lambda path: (path.stat().st_mtime, path.name), reverse=True)[0]
     return candidates[0]
+
+
+def find_export_bundle(base_dir: Path, prefix: str) -> list[Path]:
+    """Return one complete export or every validated part of a split ZIP export."""
+    candidates = _export_candidates(base_dir, prefix)
+    if not candidates:
+        raise FileNotFoundError(f"No {prefix}*.csv or {prefix}*.zip found under {base_dir}")
+
+    unsplit = [path for path in candidates if _SPLIT_PART_RE.match(path.name) is None]
+    if unsplit:
+        return [_preferred_export(unsplit)]
+
+    groups: dict[tuple[str, int], dict[int, Path]] = {}
+    for path in candidates:
+        match = _SPLIT_PART_RE.match(path.name)
+        if match is None:
+            continue
+        total = int(match.group("total"))
+        part = int(match.group("part"))
+        groups.setdefault((match.group("stem"), total), {})[part] = path
+    if not groups:
+        raise FileNotFoundError(f"No usable {prefix} export found under {base_dir}")
+
+    (stem, total), parts = sorted(groups.items(), key=lambda item: item[0][0])[0]
+    missing = sorted(set(range(1, total + 1)) - set(parts))
+    if missing:
+        raise ValueError(
+            f"Incomplete split export {stem}: missing part(s) {missing}; "
+            f"found {len(parts)} of {total} under {base_dir}"
+        )
+    return [parts[index] for index in range(1, total + 1)]
+
+
+def find_export(base_dir: Path, prefix: str) -> Path:
+    bundle = find_export_bundle(base_dir, prefix)
+    if len(bundle) != 1:
+        raise ValueError(
+            f"Export {prefix!r} is a {len(bundle)}-part bundle; "
+            "use find_export_bundle() so no rows are silently dropped"
+        )
+    return bundle[0]
 
 
 def read_csv_export(path: Path, **kwargs) -> pd.DataFrame:
@@ -73,6 +123,11 @@ def iter_csv_export(path: Path, **kwargs):
                 yield from pd.read_csv(handle, **kwargs)
     else:
         yield from pd.read_csv(path, **kwargs)
+
+
+def iter_csv_export_bundle(paths: Iterable[Path], **kwargs):
+    for path in paths:
+        yield from iter_csv_export(path, **kwargs)
 
 
 def load_stock_screener(base_dir: Path) -> pd.DataFrame:
@@ -208,7 +263,7 @@ def aggregate_bot_flow(
     allow_missing: bool = False,
 ) -> pd.DataFrame:
     try:
-        path = find_export(base_dir, "bot-eod-report-")
+        paths = find_export_bundle(base_dir, "bot-eod-report-")
     except FileNotFoundError:
         if not allow_missing:
             raise
@@ -242,7 +297,7 @@ def aggregate_bot_flow(
     ]
     rows_seen = 0
     parts = []
-    for chunk in iter_csv_export(path, usecols=usecols, chunksize=chunksize):
+    for chunk in iter_csv_export_bundle(paths, usecols=usecols, chunksize=chunksize):
         rows_seen += len(chunk)
         chunk["underlying_symbol"] = chunk["underlying_symbol"].astype(str).str.upper().str.strip()
         if wanted:
@@ -298,14 +353,17 @@ def aggregate_bot_flow(
         if max_rows and rows_seen >= max_rows:
             break
     if not parts:
-        return _empty_bot_flow(source_status="bot_eod_no_matching_rows", source_path=str(path))
+        return _empty_bot_flow(
+            source_status="bot_eod_no_matching_rows",
+            source_path=";".join(str(path) for path in paths),
+        )
     out = pd.concat(parts, ignore_index=True).groupby("underlying_symbol", as_index=False).sum()
     out = out.rename(columns={"underlying_symbol": "ticker"})
     denom = out["bot_total_premium"].where(out["bot_total_premium"].abs() > 0)
     out["bot_flow_bias"] = (out["bot_bull_premium"] - out["bot_bear_premium"]) / denom
     out["bot_multileg_ratio"] = out["bot_multileg_premium"] / denom
     out["bot_volume_oi_ratio"] = out["bot_volume_sum"] / out["bot_open_interest_sum"].where(out["bot_open_interest_sum"].abs() > 0)
-    out.attrs["source_status"] = "bot_eod_loaded"
-    out.attrs["source_path"] = str(path)
+    out.attrs["source_status"] = "bot_eod_split_bundle_loaded" if len(paths) > 1 else "bot_eod_loaded"
+    out.attrs["source_path"] = ";".join(str(path) for path in paths)
     out.attrs["dp_equity_present"] = False
     return out

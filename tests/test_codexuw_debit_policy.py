@@ -43,6 +43,27 @@ def test_spread_leg_contract_is_rejected_even_with_bot_flow():
     assert "contract_flow_spread_leg" in reasons
 
 
+def test_bull_call_intermediate_maturity_gap_is_rejected():
+    ok, reasons = assess_debit_spread(_bull_row(dte=15), live=False)
+    assert not ok
+    assert "dte_outside_7_10_or_22_45" in reasons
+
+
+def test_complete_split_bot_bundle_counts_as_full_flow():
+    high, reasons = debit_spread_confidence(
+        _bull_row(
+            bot_flow_source_status="bot_eod_split_bundle_loaded",
+            flow_quality="directional",
+            oi_carryover_status="supportive",
+            edge_sample_size=24,
+            edge_profit_factor=1.50,
+        ),
+        live=True,
+    )
+    assert high == "high"
+    assert reasons == []
+
+
 def test_medium_and_high_live_tiers_are_explicit():
     medium, medium_reasons = debit_spread_confidence(_bull_row(), live=True)
     assert medium == "medium"

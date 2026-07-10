@@ -243,7 +243,7 @@ def test_decision_selection_keeps_only_strongest_flow_aligned_trade_per_day() ->
                 "entry_credit_pct_width": 0.20,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.20,
-                "dte": 21,
+                "dte": 22,
                 "combined_flow_bias": -0.12,
                 "exact_evaluated": True,
             },
@@ -256,7 +256,7 @@ def test_decision_selection_keeps_only_strongest_flow_aligned_trade_per_day() ->
                 "entry_credit_pct_width": 0.20,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.20,
-                "dte": 21,
+                "dte": 22,
                 "combined_flow_bias": -0.05,
                 "exact_evaluated": True,
             },
@@ -350,7 +350,7 @@ def test_decision_selection_never_reads_future_debit_outcome() -> None:
                     "flow_quality": "directional",
                     "regime": "uptrend",
                     "entry_quote_width_pct": 0.10,
-                "dte": 21,
+                "dte": 22,
                 "next_earnings_dt": "2026-08-01",
             }
         ]
@@ -379,7 +379,7 @@ def test_replay_guard_never_uses_future_debit_pnl() -> None:
         "combined_flow_bias": 0.20,
         "bot_flow_source_status": "bot_eod_loaded",
         "regime": "uptrend",
-        "dte": 21,
+        "dte": 22,
         "iv_rank": 40.0,
         "flow_quality": "directional",
     }

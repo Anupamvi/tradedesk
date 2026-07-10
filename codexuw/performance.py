@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 import math
 from pathlib import Path
 from typing import Any
@@ -67,7 +68,29 @@ def summarize_recent_replay(detail: pd.DataFrame, *, window: int = 20) -> dict[s
     }
 
 
-def load_recent_performance(out_root: Path, *, window: int = 20) -> dict[str, Any]:
+def load_recent_performance(
+    out_root: Path,
+    *,
+    window: int = 20,
+    asof: dt.date | None = None,
+    history_namespace: str | None = None,
+) -> dict[str, Any]:
+    if history_namespace:
+        from .edge_model import load_replay_edge_history
+
+        detail = load_replay_edge_history(
+            out_root,
+            asof=asof or dt.date.max,
+            history_namespace=history_namespace,
+        )
+        if detail.empty:
+            return {"status": "unavailable", "reason": "namespaced_replay_history_unavailable"}
+        summary = summarize_recent_replay(detail, window=window)
+        summary["history_namespace"] = history_namespace
+        sources = sorted(set(detail.get("edge_source_file", pd.Series(dtype=str)).dropna().astype(str)))
+        summary["source"] = sources[-1] if sources else ""
+        return summary
+
     patterns = [
         "codexuw_audit_decision_select_*/codexuw_replay_detail.csv",
         "codexuw_replay_*decision*/codexuw_replay_detail.csv",

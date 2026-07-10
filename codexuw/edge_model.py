@@ -12,6 +12,10 @@ from .credit_policy import assess_credit_spread
 from .debit_policy import assess_debit_spread
 
 
+EDGE_HISTORY_NAMESPACE = "codexdaily_v4_edge_history_v2_2026-07-10_debit_v21"
+PACKAGED_HISTORY_DIR = Path(__file__).resolve().parent / "history"
+
+
 CREDIT_DIRECTIONS = {"Bull Put", "Bear Call"}
 BULLISH_DIRECTIONS = {"Bull Put", "Bull Call"}
 BEARISH_DIRECTIONS = {"Bear Call", "Bear Put"}
@@ -327,6 +331,7 @@ def load_replay_edge_history(
     history_namespace: str | None = None,
 ) -> pd.DataFrame:
     if history_namespace:
+        packaged = PACKAGED_HISTORY_DIR / f"{history_namespace}.csv.gz"
         roots = [
             child
             for child in out_root.iterdir()
@@ -339,6 +344,8 @@ def load_replay_edge_history(
             key=lambda path: path.stat().st_mtime,
             reverse=True,
         )
+        if packaged.exists():
+            paths = [packaged]
     else:
         paths = sorted(out_root.rglob("codexuw_replay_detail.csv"), key=lambda path: path.stat().st_mtime, reverse=True)
     frames: list[pd.DataFrame] = []

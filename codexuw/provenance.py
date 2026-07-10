@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-from .data import find_export
+from .data import find_export, find_export_bundle
 
 
 EXPORT_PREFIXES = {
@@ -100,10 +100,20 @@ def build_input_provenance(base_dir: Path) -> dict[str, Any]:
     exports: dict[str, Any] = {}
     for label, prefix in EXPORT_PREFIXES.items():
         try:
-            path = find_export(base_dir, prefix)
+            if label == "bot_eod_report":
+                bundle = find_export_bundle(base_dir, prefix)
+            else:
+                bundle = [find_export(base_dir, prefix)]
         except FileNotFoundError:
             continue
-        exports[label] = file_fingerprint(path)
+        if len(bundle) == 1:
+            exports[label] = file_fingerprint(bundle[0])
+        else:
+            exports[label] = {
+                "bundle": "complete_split_export",
+                "part_count": len(bundle),
+                "parts": [file_fingerprint(path) for path in bundle],
+            }
 
     browser_texts: list[dict[str, Any]] = []
     browser_dir = base_dir / "browser_text"

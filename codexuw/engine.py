@@ -768,25 +768,32 @@ def live_validate_and_score(
                 contracts = chain_to_contracts(chain)
                 expected_move = _expected_move_pct(pd.Series(base))
                 anchor = safe_float(base.get("anchor_strike"), safe_float(base.get("short_strike_eod")))
-                if _is_debit_strategy(cand):
+                expiry_value = pd.to_datetime(cand.get("expiry"), errors="coerce")
+                if pd.isna(expiry_value):
+                    live_alternatives = [
+                        {"live_status": "missing_expiry_or_right", "live_blocker": "candidate expiry is missing or invalid"}
+                    ]
+                elif _is_debit_strategy(cand):
                     live_alternatives = find_debit_spread_alternatives(
                         contracts,
                         direction=str(cand["direction"]),
-                        expiry=cand["expiry"],
+                        expiry=expiry_value.date(),
                         spot=spot,
                         preferred_width=safe_float(cand.get("preferred_width"), math.nan),
                         anchor_strike=anchor,
                         expected_move_pct=expected_move,
+                        as_of_date=asof,
                     )
                 else:
                     live_alternatives = find_credit_spread_alternatives(
                         contracts,
                         direction=str(cand["direction"]),
-                        expiry=cand["expiry"],
+                        expiry=expiry_value.date(),
                         spot=spot,
                         preferred_width=safe_float(cand.get("preferred_width"), math.nan),
                         anchor_strike=anchor,
                         expected_move_pct=expected_move,
+                        as_of_date=asof,
                     )
                 for live in live_alternatives:
                     live["stock_price_live"] = spot

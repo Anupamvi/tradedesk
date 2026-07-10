@@ -44,6 +44,7 @@ from .engine import (
     select_index_fallback_pool,
     select_ticker_pool,
 )
+from .edge_model import EDGE_HISTORY_NAMESPACE
 from .fallback_income import apply_fallback_income_status, build_fallback_income_candidates
 from .liquidity_shift import (
     FIXED_LIQUID_UNIVERSE,
@@ -479,11 +480,17 @@ def _compare_v4_overlay_changes(before: pd.DataFrame, after: pd.DataFrame) -> pd
         )
         old_mid = safe_float(old.get("mid_credit"), safe_float(old.get("mid_debit"))) if not old.empty else math.nan
         new_mid = safe_float(new.get("mid_credit"), safe_float(new.get("mid_debit"))) if not new.empty else math.nan
-        live_changed = (
-            "not refreshed"
-            if (math.isfinite(old_mid) and math.isfinite(new_mid) and abs(old_mid - new_mid) < 0.005)
-            else "changed" if math.isfinite(old_mid) and math.isfinite(new_mid) else "not available"
-        )
+        pricing_refreshed = _clean(new.get("overlay_live_pricing_refreshed")).lower() in {"true", "1", "yes"}
+        if math.isfinite(old_mid) and math.isfinite(new_mid):
+            same_price = abs(old_mid - new_mid) < 0.005
+            live_changed = (
+                "refreshed_unchanged" if pricing_refreshed and same_price
+                else "refreshed_changed" if pricing_refreshed
+                else "not refreshed" if same_price
+                else "changed"
+            )
+        else:
+            live_changed = "not available"
         if old_status == new_status and old_oi == new_oi and live_changed == "not refreshed":
             continue
         rank_delta = _recommendation_rank(new_status) - _recommendation_rank(old_status)
@@ -3386,7 +3393,7 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         scored,
         base_dir.parent / "out",
         asof=asof,
-        history_namespace="codexdaily_v4_edge_history_v2_2026-07-10",
+        history_namespace=EDGE_HISTORY_NAMESPACE,
     )
 
     if args.skip_portfolio or args.offline:
@@ -3434,7 +3441,11 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
     recent_performance = (
         {"status": "unavailable", "reason": "skipped"}
         if args.skip_recent_performance
-        else load_recent_performance(base_dir.parent / "out")
+        else load_recent_performance(
+            base_dir.parent / "out",
+            asof=asof,
+            history_namespace=EDGE_HISTORY_NAMESPACE,
+        )
     )
     live_outcomes = load_live_outcome_performance(base_dir.parent / "out")
     scored = apply_confirmation_framework(scored, asof=asof, regime=regime, recent_performance=recent_performance)
@@ -3606,17 +3617,104 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
     overlay_date = _parse_date(args.overlay_date) or _infer_overlay_date_from_name(overlay_file) or asof
     prior = Path(args.prior_out_dir).expanduser().resolve() if args.prior_out_dir else root / "out" / f"codexdaily_v4_{asof}"
     out_dir = Path(args.out_dir).expanduser().resolve() if args.out_dir else _default_out_dir(root, asof, "overlay", overlay_date)
+    out_dir.mkdir(parents=True, exist_ok=True)
     before = _normalize_v4_dataframe(_read_prior_v4_scored(prior, asof))
-    chain_oi = _load_overlay_chain_oi_file(overlay_file, asof=asof)
-    after = apply_oi_carryover(before, chain_oi)
+    prior_manifest = _read_json(prior / f"codexdaily_v4_manifest_{asof}.json")
+    regime = prior_manifest.get("market_regime") or {
+        "trend": "range",
+        "flow": "unknown",
+        "volatility": "unknown",
+        "transition": False,
+    }
+
+    after = live_validate_and_score(
+        before,
+        asof=overlay_date,
+        out_dir=out_dir,
+        regime=regime,
+        require_live=True,
+    )
+    repriced_row_count = int(len(after))
+    after["overlay_live_pricing_refreshed"] = True
+    after["overlay_evaluation_date"] = str(overlay_date)
+    if "expiry" in after.columns:
+        expiry = pd.to_datetime(after["expiry"], errors="coerce")
+        after["dte"] = (expiry - pd.Timestamp(overlay_date)).dt.days
+
+    chain_oi = _load_overlay_chain_oi_file(overlay_file, asof=overlay_date)
+    after = apply_oi_carryover(after, chain_oi)
+    after = apply_replay_edge_model(
+        after,
+        root / "out",
+        asof=overlay_date,
+        history_namespace=EDGE_HISTORY_NAMESPACE,
+    )
+
+    try:
+        portfolio = fetch_portfolio_context(out_dir, portfolio_income_mode="trading-sleeve-only")
+    except Exception as exc:
+        portfolio = unavailable_portfolio_context(str(exc))
+    after = apply_portfolio_context(after, portfolio)
+
+    base_dir = root / str(asof)
+    catalyst_tickers = sorted(set(after["ticker"].dropna().astype(str).str.upper())) if not after.empty else []
+    event_exempt_tickers = {
+        _clean(row.get("ticker")).upper()
+        for _, row in after.iterrows()
+        if _clean(row.get("ticker")) and is_etf_row(row)
+    }
+    catalysts = load_catalyst_context(
+        base_dir,
+        catalyst_tickers,
+        asof=overlay_date,
+        fallback_earnings=_fallback_earnings_from_scored(after, asof=overlay_date),
+        resolve_web=abs((dt.date.today() - overlay_date).days) <= 7,
+        web_through=_maximum_candidate_expiry(after, asof=overlay_date),
+        event_exempt_tickers=event_exempt_tickers,
+    )
+    after = apply_catalyst_context(after, catalysts)
+    after = apply_final_quality_guards(after)
+    after = apply_high_conviction_decision_marks(after, asof=overlay_date)
+    recent_performance = load_recent_performance(
+        root / "out",
+        asof=overlay_date,
+        history_namespace=EDGE_HISTORY_NAMESPACE,
+    )
+    live_outcomes = load_live_outcome_performance(root / "out")
+    after = apply_confirmation_framework(
+        after,
+        asof=overlay_date,
+        regime=regime,
+        recent_performance=recent_performance,
+    )
+    after = apply_confidence_components(after, live_outcomes=live_outcomes)
+    loss_review = load_recent_loss_review(root / "out", asof=overlay_date)
+    after = apply_loss_review(after, loss_review)
     after = assign_trade_statuses(after, index_income_mode="primary")
-    after = apply_v4_professional_dispositions(after, asof=asof)
+    after = apply_fallback_income_status(after)
+    after = apply_v4_professional_dispositions(after, asof=overlay_date)
+    after = after.copy()
+    after["_overlay_exact_key"] = after.apply(_overlay_candidate_key, axis=1)
+    after["_overlay_status_rank"] = after.apply(
+        lambda row: _recommendation_rank(row.get("trade_status") or row.get("v4_disposition")),
+        axis=1,
+    )
+    overlay_sort = ["_overlay_status_rank"]
+    for column in ["decision_score", "live_execution_confidence", "score"]:
+        if column in after.columns:
+            after[column] = pd.to_numeric(after[column], errors="coerce")
+            overlay_sort.append(column)
+    after = (
+        after.sort_values(overlay_sort, ascending=[False] * len(overlay_sort), na_position="last")
+        .drop_duplicates("_overlay_exact_key", keep="first")
+        .drop(columns=["_overlay_exact_key", "_overlay_status_rank"])
+        .reset_index(drop=True)
+    )
     after = apply_v4_credit_sleeve_cap(after)
     after = apply_v4_prospective_book_concentration(after)
     top_flow = _read_prior_v4_top_flow(prior, asof)
     board = build_v4_opportunity_board(after, top_flow=top_flow)
     changes = _compare_v4_overlay_changes(before, after)
-    out_dir.mkdir(parents=True, exist_ok=True)
     scored_path = out_dir / f"codexdaily_v4_overlay_scored_reference_{asof}_{overlay_date}.csv"
     board_path = out_dir / f"codexdaily_v4_overlay_opportunity_board_{asof}_{overlay_date}.csv"
     changes_path = out_dir / f"codexdaily_v4_overlay_changes_{asof}_{overlay_date}.csv"
@@ -3632,9 +3730,16 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
         "overlay_date": str(overlay_date),
         "prior_out_dir": str(prior),
         "overlay_file": str(overlay_file),
+        "evaluation_date": str(overlay_date),
+        "live_pricing_refreshed": True,
+        "portfolio_status": portfolio.get("status", "unknown"),
+        "edge_history_namespace": EDGE_HISTORY_NAMESPACE,
+        "recent_performance": recent_performance,
+        "repriced_candidate_rows_before_exact_dedupe": repriced_row_count,
+        "candidate_rows_after_exact_dedupe": int(len(after)),
         "changed_candidate_rows": int(len(changes)),
         "execute_rows": int(board["Status"].astype(str).str.contains("Execute", regex=False).sum()) if not board.empty else 0,
-        "scout_rows": int(board["Status"].astype(str).str.contains("Scout", regex=False).sum()) if not board.empty else 0,
+        "scout_rows": int(board["Status"].astype(str).str.contains("scout", case=False, regex=False).sum()) if not board.empty else 0,
         "artifacts": {
             "overlay_scored_reference": str(scored_path),
             "overlay_opportunity_board": str(board_path),
