@@ -57,6 +57,11 @@ def chain_spot(chain: dict[str, Any]) -> float:
     return math.nan
 
 
+def _chain_error_is_timeout(error: Any) -> bool:
+    text = str(error or "").lower()
+    return "timeout" in text or "timed out" in text
+
+
 def option_mid(row: pd.Series) -> float:
     bid = safe_float(row.get("bid"))
     ask = safe_float(row.get("ask"))
@@ -647,6 +652,9 @@ class SchwabChainValidator:
             return chain
         except Exception as exc:
             dated_error = str(exc)
+        if _chain_error_is_timeout(dated_error):
+            self.errors[symbol] = f"dated chain failed: {dated_error}; undated fallback skipped after timeout"
+            return None
         try:
             chain = self._service().get_option_chain(
                 symbol,

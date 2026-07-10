@@ -5,6 +5,11 @@ import inspect
 import json
 import os
 import re
+import signal
+import subprocess
+import sys
+import threading
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
@@ -22,6 +27,7 @@ except ImportError:
 DEFAULT_CALLBACK_URL = "https://127.0.0.1"
 DEFAULT_TOKEN_PATH = "./tokens/schwab_token.json"
 DEFAULT_SYMBOLS = ["AAPL", "SPY"]
+DEFAULT_OPTION_CHAIN_TIMEOUT_SECONDS = 12.0
 COMPACT_OCC_RE = re.compile(r"^([A-Z\.]{1,6})(\d{6})([CP])(\d{8})$")
 SCHWAB_OCC_RE = re.compile(r"^([A-Z\. ]{6})(\d{6})([CP])(\d{8})$")
 
@@ -38,6 +44,73 @@ def _safe_float(value: Any) -> Optional[float]:
 def _is_refresh_token_error(exc: Exception) -> bool:
     text = str(exc)
     return ("refresh_token_authentication_error" in text) or ("unsupported_token_type" in text)
+
+
+def _is_timeout_error(exc: Exception) -> bool:
+    if isinstance(exc, TimeoutError):
+        return True
+    name = type(exc).__name__.lower()
+    text = str(exc).lower()
+    return "timeout" in name or "timed out" in text
+
+
+def _redact_schwab_error_text(value: Any) -> str:
+    text = str(value or "")
+    text = re.sub(r"apikey=[^&\s'\"<>]+", "apikey=REDACTED", text)
+    api_key = os.environ.get("SCHWAB_API_KEY", "").strip()
+    if api_key:
+        text = text.replace(api_key, "REDACTED")
+    return text
+
+
+def _option_chain_timeout_seconds() -> float:
+    raw = os.environ.get("UWOS_SCHWAB_OPTION_CHAIN_TIMEOUT_SECONDS", "").strip()
+    if not raw:
+        return DEFAULT_OPTION_CHAIN_TIMEOUT_SECONDS
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_OPTION_CHAIN_TIMEOUT_SECONDS
+    if value <= 0:
+        return DEFAULT_OPTION_CHAIN_TIMEOUT_SECONDS
+    return value
+
+
+def _option_chain_subprocess_enabled(*, manual_auth: bool, interactive_login: bool) -> bool:
+    if os.environ.get("UWOS_SCHWAB_OPTION_CHAIN_CHILD", "").strip() == "1":
+        return False
+    raw = os.environ.get("UWOS_SCHWAB_OPTION_CHAIN_SUBPROCESS", "auto").strip().lower()
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    return not manual_auth and not interactive_login
+
+
+@contextmanager
+def _main_thread_timeout(seconds: float, message: str):
+    if (
+        seconds <= 0
+        or threading.current_thread() is not threading.main_thread()
+        or not hasattr(signal, "setitimer")
+        or not hasattr(signal, "SIGALRM")
+    ):
+        yield
+        return
+
+    def _raise_timeout(signum: int, frame: Any) -> None:
+        raise TimeoutError(message)
+
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    signal.signal(signal.SIGALRM, _raise_timeout)
+    previous_timer = signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer[0] > 0:
+            signal.setitimer(signal.ITIMER_REAL, previous_timer[0], previous_timer[1])
 
 
 def _to_date(value: Any) -> Optional[dt.date]:
@@ -282,6 +355,69 @@ class SchwabLiveDataService:
         self.interactive_login = interactive_login
         self._client = None
         self.auth_mode = "unknown"
+
+    def _get_option_chain_via_subprocess(
+        self,
+        *,
+        symbol: str,
+        strike_count: Optional[int],
+        include_underlying_quote: bool,
+        from_date: Optional[dt.date],
+        to_date: Optional[dt.date],
+        timeout_seconds: float,
+    ) -> Dict[str, Any]:
+        cmd = [
+            sys.executable,
+            "-m",
+            "uwos.schwab_chain_fetch",
+            "--symbol",
+            symbol,
+            "--timeout-seconds",
+            str(timeout_seconds),
+        ]
+        if strike_count is not None:
+            cmd.extend(["--strike-count", str(int(strike_count))])
+        if not include_underlying_quote:
+            cmd.append("--no-include-underlying-quote")
+        if from_date is not None:
+            cmd.extend(["--from-date", from_date.isoformat()])
+        if to_date is not None:
+            cmd.extend(["--to-date", to_date.isoformat()])
+
+        env = os.environ.copy()
+        env["UWOS_SCHWAB_OPTION_CHAIN_CHILD"] = "1"
+        env["UWOS_SCHWAB_OPTION_CHAIN_SUBPROCESS"] = "0"
+        env["SCHWAB_API_KEY"] = self.config.api_key
+        env["SCHWAB_APP_SECRET"] = self.config.app_secret
+        env["SCHWAB_CALLBACK_URL"] = self.config.callback_url
+        env["SCHWAB_TOKEN_PATH"] = self.config.token_path
+        env["UWOS_SCHWAB_OPTION_CHAIN_TIMEOUT_SECONDS"] = str(timeout_seconds)
+        process_timeout = max(timeout_seconds + 3.0, timeout_seconds * 1.5)
+        try:
+            completed = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=process_timeout,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(
+                f"Schwab option-chain request timed out for {symbol} after {timeout_seconds:.1f}s"
+            ) from exc
+        if completed.returncode != 0:
+            detail = _redact_schwab_error_text((completed.stderr or completed.stdout or "").strip())
+            if not detail:
+                detail = f"child process exited {completed.returncode}"
+            if "timed out" in detail.lower() or "timeout" in detail.lower():
+                raise RuntimeError(
+                    f"Schwab option-chain request timed out for {symbol} after {timeout_seconds:.1f}s: {detail[:500]}"
+                )
+            raise RuntimeError(f"Schwab option-chain subprocess failed for {symbol}: {detail[:500]}")
+        try:
+            return json.loads(completed.stdout)
+        except Exception as exc:
+            raise RuntimeError(f"Schwab option-chain subprocess returned invalid JSON for {symbol}") from exc
 
     @property
     def token_path(self) -> Path:
@@ -589,7 +725,6 @@ class SchwabLiveDataService:
         from_date: Any = None,
         to_date: Any = None,
     ) -> Dict[str, Any]:
-        client = self.connect()
         kwargs: Dict[str, Any] = {
             "include_underlying_quote": include_underlying_quote,
         }
@@ -602,15 +737,69 @@ class SchwabLiveDataService:
         if parsed_to is not None:
             kwargs["to_date"] = parsed_to
 
+        timeout_seconds = _option_chain_timeout_seconds()
+        if _option_chain_subprocess_enabled(
+            manual_auth=self.manual_auth,
+            interactive_login=self.interactive_login,
+        ):
+            return self._get_option_chain_via_subprocess(
+                symbol=symbol,
+                strike_count=strike_count,
+                include_underlying_quote=include_underlying_quote,
+                from_date=parsed_from,
+                to_date=parsed_to,
+                timeout_seconds=timeout_seconds,
+            )
+
+        client = self.connect()
+        params: Dict[str, Any] = {
+            "apikey": getattr(client, "api_key", self.config.api_key),
+            "symbol": symbol,
+            "includeUnderlyingQuote": include_underlying_quote,
+        }
+        if strike_count is not None:
+            params["strikeCount"] = int(strike_count)
+        if parsed_from is not None:
+            params["fromDate"] = parsed_from.isoformat()
+        if parsed_to is not None:
+            params["toDate"] = parsed_to.isoformat()
+        session = getattr(client, "session", None)
+        has_previous_timeout = session is not None and hasattr(session, "timeout")
+        previous_timeout = getattr(session, "timeout", None) if has_previous_timeout else None
+        if hasattr(client, "set_timeout"):
+            client.set_timeout(timeout_seconds)
+        elif session is not None and hasattr(session, "timeout"):
+            session.timeout = timeout_seconds
         try:
-            response = client.get_option_chain(symbol, **kwargs)
+            with _main_thread_timeout(
+                timeout_seconds,
+                f"Schwab option-chain request timed out for {symbol} after {timeout_seconds:.1f}s",
+            ):
+                if session is not None and hasattr(session, "get"):
+                    response = session.get(
+                        "https://api.schwabapi.com/marketdata/v1/chains",
+                        params=params,
+                        timeout=timeout_seconds,
+                    )
+                else:
+                    response = client.get_option_chain(symbol, **kwargs)
         except Exception as exc:
             if _is_refresh_token_error(exc):
                 raise RuntimeError(
                     "Schwab token refresh failed (stale/revoked refresh token). "
                     "Re-auth once with: python -m uwos.schwab_quotes --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
                 ) from exc
+            if _is_timeout_error(exc):
+                raise RuntimeError(
+                    f"Schwab option-chain request timed out for {symbol} after {timeout_seconds:.1f}s"
+                ) from exc
             raise
+        finally:
+            if has_previous_timeout:
+                if hasattr(client, "set_timeout"):
+                    client.set_timeout(previous_timeout)
+                else:
+                    session.timeout = previous_timeout
         response.raise_for_status()
         return response.json()
 
