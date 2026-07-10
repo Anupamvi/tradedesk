@@ -31,6 +31,9 @@ def _iter_contracts(exp_map: dict[str, Any], right: str):
                     "ask": safe_float(contract.get("ask")),
                     "mark": safe_float(contract.get("mark")),
                     "delta": safe_float(contract.get("delta")),
+                    "theta": safe_float(contract.get("theta")),
+                    "gamma": safe_float(contract.get("gamma")),
+                    "vega": safe_float(contract.get("vega")),
                     "iv": safe_float(contract.get("volatility")),
                     "open_interest": safe_float(contract.get("openInterest"), 0.0),
                     "volume": safe_float(contract.get("totalVolume"), 0.0),
@@ -85,7 +88,9 @@ def _same_expiry_contracts(contracts: pd.DataFrame, expiry: dt.date, right: str)
     if contracts.empty:
         return contracts
     out = contracts[(contracts["expiry"] == expiry) & (contracts["right"] == right)].copy()
-    for col in ["strike", "bid", "ask", "mark", "delta", "open_interest", "volume"]:
+    for col in ["strike", "bid", "ask", "mark", "delta", "theta", "gamma", "vega", "open_interest", "volume"]:
+        if col not in out.columns:
+            out[col] = math.nan
         out[col] = pd.to_numeric(out[col], errors="coerce")
     out["mid"] = out.apply(option_mid, axis=1)
     out["quote_width"] = out["ask"] - out["bid"]
@@ -145,11 +150,21 @@ def _credit_spread_candidates(
             continue
         credit_pct = realistic_credit / actual_width if actual_width > 0 else math.nan
         pop = 1.0 - delta_abs if math.isfinite(delta_abs) and delta_abs > 0 else math.nan
+        breakeven = (
+            short_strike - realistic_credit
+            if direction == "Bull Put"
+            else short_strike + realistic_credit
+        )
+        breakeven_distance_pct = abs(breakeven - spot) / spot if spot else math.nan
         short_liq = safe_float(short.get("open_interest"), 0.0) + safe_float(short.get("volume"), 0.0)
         long_liq = safe_float(long.get("open_interest"), 0.0) + safe_float(long.get("volume"), 0.0)
         short_qwp = safe_float(short.get("quote_width_pct"))
         long_qwp = safe_float(long.get("quote_width_pct"))
         quote_penalty = max(short_qwp if math.isfinite(short_qwp) else 0.0, long_qwp if math.isfinite(long_qwp) else 0.0)
+        short_iv = safe_float(short.get("iv"))
+        long_iv = safe_float(long.get("iv"))
+        finite_ivs = [value for value in (short_iv, long_iv) if math.isfinite(value) and value > 0]
+        spread_iv = sum(finite_ivs) / len(finite_ivs) if finite_ivs else math.nan
         if distance_pct < 0.015:
             continue
         if math.isfinite(delta_abs) and not (0.08 <= delta_abs <= 0.35):
@@ -174,7 +189,16 @@ def _credit_spread_candidates(
                 "buy_leg_mid": long_mid,
                 "pop_delta_proxy": pop,
                 "short_delta": safe_float(short.get("delta")),
+                "long_delta": safe_float(long.get("delta")),
+                "short_theta": safe_float(short.get("theta")),
+                "long_theta": safe_float(long.get("theta")),
+                "net_theta": safe_float(long.get("theta")) - safe_float(short.get("theta")),
+                "short_iv": short_iv,
+                "long_iv": long_iv,
+                "spread_iv": spread_iv,
                 "distance_pct": distance_pct,
+                "breakeven": breakeven,
+                "breakeven_distance_pct": breakeven_distance_pct,
                 "short_oi": safe_float(short.get("open_interest"), 0.0),
                 "short_volume": safe_float(short.get("volume"), 0.0),
                 "long_oi": safe_float(long.get("open_interest"), 0.0),
@@ -225,6 +249,7 @@ def find_credit_spread_alternatives(
     preferred_width: float | None = None,
     anchor_strike: float | None = None,
     expected_move_pct: float | None = None,
+    as_of_date: dt.date | None = None,
     max_alternatives: int = 5,
 ) -> list[dict[str, Any]]:
     right = "P" if direction == "Bull Put" else "C"
@@ -253,10 +278,30 @@ def find_credit_spread_alternatives(
         selected.append((label, reason, row))
 
     anchor = safe_float(anchor_strike)
-    expected = safe_float(expected_move_pct)
+    provided_expected = safe_float(expected_move_pct)
+    reference_day = as_of_date
+    dte = max((expiry - reference_day).days, 0) if reference_day is not None else 0
+
+    def row_expected_move(spread_iv: Any) -> float:
+        if math.isfinite(provided_expected) and provided_expected > 0:
+            return provided_expected
+        annualized_iv = safe_float(spread_iv)
+        if annualized_iv > 3.0:
+            annualized_iv /= 100.0
+        if not math.isfinite(annualized_iv) or annualized_iv <= 0 or dte <= 0:
+            return math.nan
+        return annualized_iv * math.sqrt(dte / 365.0)
+
     df = df.copy()
     df["_anchor_distance"] = (df["short_strike"] - anchor).abs() if math.isfinite(anchor) else math.inf
-    df["_expected_move_ratio"] = df["distance_pct"].map(lambda value: _expected_move_ratio(safe_float(value), expected))
+    df["_expected_move_pct"] = df["spread_iv"].map(row_expected_move)
+    df["_expected_move_ratio"] = df.apply(
+        lambda row: _expected_move_ratio(
+            safe_float(row.get("breakeven_distance_pct")),
+            safe_float(row.get("_expected_move_pct")),
+        ),
+        axis=1,
+    )
     preferred = safe_float(preferred_width)
     df["_width_pref_distance"] = (df["spread_width"] - preferred).abs() if math.isfinite(preferred) else 0.0
 
@@ -269,8 +314,10 @@ def find_credit_spread_alternatives(
     )
     add(
         "expected_move_safe",
-        "short strike has the best expected-move buffer among realistic spreads",
-        df[df["_expected_move_ratio"].fillna(0.0) >= 0.65] if math.isfinite(expected) else df,
+        "breakeven has the best expected-move buffer among realistic spreads",
+        df[df["_expected_move_ratio"].fillna(0.0) >= 0.65]
+        if df["_expected_move_pct"].notna().any()
+        else df,
         ["_expected_move_ratio", "_rank"],
         [False, False],
     )
@@ -304,14 +351,17 @@ def find_credit_spread_alternatives(
         out = row.drop(labels=[c for c in row.index if str(c).startswith("_")], errors="ignore").to_dict()
         width = safe_float(out.get("spread_width"))
         target_entry = round(width * 0.18, 2) if math.isfinite(width) and width > 0 else math.nan
-        ratio = _expected_move_ratio(safe_float(out.get("distance_pct")), expected)
+        expected = safe_float(row.get("_expected_move_pct"))
+        ratio = _expected_move_ratio(safe_float(out.get("breakeven_distance_pct")), expected)
         out.update(
             {
                 "construction_source": label,
                 "construction_reason": reason,
                 "anchor_strike": anchor if math.isfinite(anchor) else math.nan,
                 "target_entry": target_entry,
+                "expected_move_pct": expected if math.isfinite(expected) else math.nan,
                 "expected_move_ratio": ratio,
+                "breakeven_expected_move_ratio": ratio,
                 "liquidity_summary": _liq_summary(pd.Series(out)),
             }
         )
@@ -404,6 +454,10 @@ def _debit_spread_candidates(
         long_qwp = safe_float(long.get("quote_width_pct"))
         short_qwp = safe_float(short.get("quote_width_pct"))
         quote_penalty = max(long_qwp if math.isfinite(long_qwp) else 0.0, short_qwp if math.isfinite(short_qwp) else 0.0)
+        short_iv = safe_float(short.get("iv"))
+        long_iv = safe_float(long.get("iv"))
+        finite_ivs = [value for value in (short_iv, long_iv) if math.isfinite(value) and value > 0]
+        spread_iv = sum(finite_ivs) / len(finite_ivs) if finite_ivs else math.nan
         if math.isfinite(delta_abs) and not (0.25 <= delta_abs <= 0.75):
             continue
         if math.isfinite(breakeven_distance_pct) and breakeven_distance_pct < -0.01:
@@ -428,7 +482,21 @@ def _debit_spread_candidates(
                 "buy_leg_ask": long_ask,
                 "buy_leg_mid": long_mid,
                 "pop_delta_proxy": math.nan,
+                "short_delta": safe_float(short.get("delta")),
                 "long_delta": safe_float(long.get("delta")),
+                "short_theta": safe_float(short.get("theta")),
+                "long_theta": safe_float(long.get("theta")),
+                "net_theta": safe_float(long.get("theta")) - safe_float(short.get("theta")),
+                "short_iv": short_iv,
+                "long_iv": long_iv,
+                "spread_iv": spread_iv,
+                "theta_burn_pct": (
+                    abs(safe_float(long.get("theta")) - safe_float(short.get("theta"))) / realistic_debit
+                    if realistic_debit > 0
+                    and math.isfinite(safe_float(long.get("theta")))
+                    and math.isfinite(safe_float(short.get("theta")))
+                    else math.nan
+                ),
                 "distance_pct": abs((long_strike - spot) / spot) if spot else math.nan,
                 "breakeven": breakeven,
                 "breakeven_distance_pct": breakeven_distance_pct,
@@ -466,6 +534,17 @@ def _debit_expected_move_ratio(breakeven_distance_pct: float, expected_move_pct:
     return expected / max(distance, 0.001)
 
 
+def _debit_breakeven_expected_move_ratio(
+    breakeven_distance_pct: float,
+    expected_move_pct: float | None,
+) -> float:
+    expected = safe_float(expected_move_pct)
+    distance = safe_float(breakeven_distance_pct)
+    if not math.isfinite(expected) or expected <= 0 or not math.isfinite(distance):
+        return math.nan
+    return max(distance, 0.0) / expected
+
+
 def find_debit_spread_alternatives(
     contracts: pd.DataFrame,
     *,
@@ -475,6 +554,7 @@ def find_debit_spread_alternatives(
     preferred_width: float | None = None,
     anchor_strike: float | None = None,
     expected_move_pct: float | None = None,
+    as_of_date: dt.date | None = None,
     max_alternatives: int = 4,
 ) -> list[dict[str, Any]]:
     if direction not in {"Bull Call", "Bear Put"}:
@@ -505,10 +585,30 @@ def find_debit_spread_alternatives(
         selected.append((label, reason, row))
 
     anchor = safe_float(anchor_strike)
-    expected = safe_float(expected_move_pct)
+    provided_expected = safe_float(expected_move_pct)
+    reference_day = as_of_date or dt.date.today()
+    dte = max((expiry - reference_day).days, 0)
+
+    def row_expected_move(spread_iv: Any) -> float:
+        if math.isfinite(provided_expected) and provided_expected > 0:
+            return provided_expected
+        annualized_iv = safe_float(spread_iv)
+        if annualized_iv > 3.0:
+            annualized_iv /= 100.0
+        if not math.isfinite(annualized_iv) or annualized_iv <= 0 or dte <= 0:
+            return math.nan
+        return annualized_iv * math.sqrt(dte / 365.0)
+
     df = df.copy()
     df["_anchor_distance"] = (df["long_strike"] - anchor).abs() if math.isfinite(anchor) else math.inf
-    df["_expected_move_ratio"] = df["breakeven_distance_pct"].map(lambda value: _debit_expected_move_ratio(safe_float(value), expected))
+    df["_expected_move_pct"] = df["spread_iv"].map(row_expected_move)
+    df["_expected_move_ratio"] = df.apply(
+        lambda row: _debit_expected_move_ratio(
+            safe_float(row.get("breakeven_distance_pct")),
+            safe_float(row.get("_expected_move_pct")),
+        ),
+        axis=1,
+    )
 
     add(
         "flow_anchored",
@@ -520,7 +620,9 @@ def find_debit_spread_alternatives(
     add(
         "breakout",
         "higher-confirmation breakout structure with reachable breakeven",
-        df[df["_expected_move_ratio"].fillna(0.0) >= 1.0] if math.isfinite(expected) else df,
+        df[df["_expected_move_ratio"].fillna(0.0) >= 1.0]
+        if df["_expected_move_pct"].notna().any()
+        else df,
         ["_expected_move_ratio", "_rank"],
         [False, False],
     )
@@ -547,14 +649,21 @@ def find_debit_spread_alternatives(
         out = row.drop(labels=[c for c in row.index if str(c).startswith("_")], errors="ignore").to_dict()
         width = safe_float(out.get("spread_width"))
         target_entry = round(width * 0.45, 2) if math.isfinite(width) and width > 0 else math.nan
-        ratio = _debit_expected_move_ratio(safe_float(out.get("breakeven_distance_pct")), expected)
+        expected = safe_float(row.get("_expected_move_pct"))
+        ratio = safe_float(row.get("_expected_move_ratio"))
+        breakeven_expected_ratio = _debit_breakeven_expected_move_ratio(
+            safe_float(out.get("breakeven_distance_pct")),
+            expected,
+        )
         out.update(
             {
                 "construction_source": label,
                 "construction_reason": reason,
                 "anchor_strike": anchor if math.isfinite(anchor) else math.nan,
                 "target_entry": target_entry,
+                "expected_move_pct": expected,
                 "expected_move_ratio": ratio,
+                "breakeven_expected_move_ratio": breakeven_expected_ratio,
                 "liquidity_summary": _liq_summary(pd.Series(out)),
             }
         )

@@ -1,0 +1,52 @@
+{
+  "version": "2026-v1",
+  "coverage_start": "2026-01-01",
+  "coverage_end": "2026-12-31",
+  "macro_sources": [
+    "https://www.bls.gov/schedule/2026/",
+    "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "https://www.bls.gov/ppi/home.htm"
+  ],
+  "macro_events": [
+    {"date": "2026-01-13", "event": "CPI", "impact": "high"},
+    {"date": "2026-01-30", "event": "PPI", "impact": "high"},
+    {"date": "2026-02-13", "event": "CPI", "impact": "high"},
+    {"date": "2026-02-27", "event": "PPI", "impact": "high"},
+    {"date": "2026-03-11", "event": "CPI", "impact": "high"},
+    {"date": "2026-03-18", "event": "PPI", "impact": "high"},
+    {"date": "2026-04-10", "event": "CPI", "impact": "high"},
+    {"date": "2026-04-14", "event": "PPI", "impact": "high"},
+    {"date": "2026-05-12", "event": "CPI", "impact": "high"},
+    {"date": "2026-05-13", "event": "PPI", "impact": "high"},
+    {"date": "2026-06-10", "event": "CPI", "impact": "high"},
+    {"date": "2026-06-11", "event": "PPI", "impact": "high"},
+    {"date": "2026-07-14", "event": "CPI", "impact": "high"},
+    {"date": "2026-07-15", "event": "PPI", "impact": "high"},
+    {"date": "2026-08-12", "event": "CPI", "impact": "high"},
+    {"date": "2026-08-13", "event": "PPI", "impact": "high"},
+    {"date": "2026-09-10", "event": "PPI", "impact": "high"},
+    {"date": "2026-09-11", "event": "CPI", "impact": "high"},
+    {"date": "2026-10-14", "event": "CPI", "impact": "high"},
+    {"date": "2026-10-15", "event": "PPI", "impact": "high"},
+    {"date": "2026-11-10", "event": "CPI", "impact": "high"},
+    {"date": "2026-11-13", "event": "PPI", "impact": "high"},
+    {"date": "2026-12-10", "event": "CPI", "impact": "high"},
+    {"date": "2026-12-15", "event": "PPI", "impact": "high"}
+  ],
+  "corporate_events": [
+    {
+      "ticker": "UPS",
+      "date": "2026-07-28",
+      "event": "earnings",
+      "source": "https://investors.ups.com/news-events/ir-calendar",
+      "verified_at": "2026-07-09"
+    },
+    {
+      "ticker": "HD",
+      "date": "2026-08-18",
+      "event": "earnings",
+      "source": "https://ir.homedepot.com/events-and-presentations",
+      "verified_at": "2026-07-09"
+    }
+  ]
+}
