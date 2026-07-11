@@ -56,8 +56,10 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.6-true-ytd-replay-20260711-033758"
+    assert core.PIPELINE_VERSION == "options-agent-v1.8-promoted-decision-pass-20260711-093930"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.7-selector-promotion-20260711-092235",
+        "options-agent-v1.6-true-ytd-replay-20260711-033758",
         "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419",
         "options-agent-v1.4-shadow-evidence-20260710-232043",
         "options-agent-v1.3-evidence-integrity-20260710-151249",
@@ -68,7 +70,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-11T03:37:58-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-11T09:39:30-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -7137,6 +7139,218 @@ def test_options_agent_walkforward_summary_requires_sample_and_day_diversity() -
     assert pass_summary["status"] == "pass"
     assert pass_summary["sample_size"] == 30
     assert pass_summary["day_count"] == 10
+
+    sampled_failure = sufficient.copy()
+    sampled_failure["realized_pnl"] = [100.0 if idx % 3 else -250.0 for idx in range(len(sampled_failure))]
+    failed_summary = core.summarize_options_agent_walkforward_replay(sampled_failure)
+
+    assert failed_summary["status"] == "block"
+    assert "profit_factor_below_minimum" in failed_summary["blocking_reasons"]
+    assert "average_pnl_not_positive" in failed_summary["blocking_reasons"]
+
+
+def test_selector_challenger_requires_pre_split_and_heldout_profitability(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dates = pd.bdate_range("2026-01-02", periods=100)
+    frame = pd.DataFrame(
+        [
+            {
+                "signal_date": day,
+                "outcome_available_date": day,
+                "realized_pnl": 100.0 if idx % 4 else -50.0,
+                "ticker": f"T{idx:03d}",
+                "strategy_route": "bull_call_debit",
+                "regime": "risk_on",
+                "dte_bucket": "dte_15_30",
+                "liquidity_bucket": "liquidity_deep",
+                "economics_bucket": "debit_width_mid",
+                "decision_score": 100.0 - idx,
+                "flow_total_premium": 1_000_000.0,
+                "source_contract_oi": 2_000.0,
+                "entry_quote_width_pct": 0.05,
+            }
+            for idx, day in enumerate(dates)
+        ]
+    )
+    policy = {
+        "policy_id": "synthetic_promotable_policy",
+        "group_columns": ("strategy_route", "regime"),
+        "lookback_days": 0,
+        "minimum_training_sample": 20,
+        "daily_cap": 1,
+        "rank_mode": "decision_score",
+    }
+    monkeypatch.setattr(
+        core,
+        "_selector_challenger_replay_frame",
+        lambda _out_root, as_of=None: (frame, dates[59].date(), "synthetic.csv", ""),
+    )
+    monkeypatch.setattr(core, "SELECTOR_CHALLENGER_POLICIES", (policy,))
+
+    audit = core.build_selector_challenger_audit(tmp_path)
+    summary = core.summarize_selector_challenger_audit(audit)
+
+    assert set(audit["partition"]) == {"pre_split", "heldout_test", "overall"}
+    assert audit["partition_status"].eq("PASS").all()
+    assert audit["promotion_status"].eq("PROMOTED").all()
+    assert summary["status"] == "pass"
+    assert summary["promoted_policy_ids"] == ["synthetic_promotable_policy"]
+
+
+def test_selector_challenger_summary_rejects_policy_with_failed_heldout_partition() -> None:
+    audit = pd.DataFrame(
+        [
+            {
+                "policy_id": "overfit_policy",
+                "partition": "pre_split",
+                "sample_size": 40,
+                "profit_factor": 2.40,
+                "avg_pnl": 50.0,
+                "promotion_status": "REJECTED",
+            },
+            {
+                "policy_id": "overfit_policy",
+                "partition": "heldout_test",
+                "sample_size": 30,
+                "profit_factor": 0.60,
+                "avg_pnl": -40.0,
+                "promotion_status": "REJECTED",
+            },
+        ]
+    )
+
+    summary = core.summarize_selector_challenger_audit(audit)
+
+    assert summary["status"] == "block"
+    assert summary["promoted_policy_ids"] == []
+    assert summary["best_heldout_policy_id"] == "overfit_policy"
+    assert summary["best_heldout_profit_factor"] == 0.60
+
+
+def test_promoted_selector_policy_keeps_one_credit_and_one_debit_sleeve() -> None:
+    rows = pd.DataFrame(
+        [
+            {
+                "ticker": "CREDIT1",
+                "strategy_route": "bull_put_credit",
+                "entry_type": "CREDIT",
+                "underlying_quality_tier": "core",
+                "regime": "risk_on",
+                "dte": 30,
+                "credit_width_ratio": 0.22,
+                "combined_flow_bias": 0.30,
+                "live_distance_pct": 0.08,
+                "live_expected_move_pct": 0.08,
+                "live_quote_width_pct": 0.10,
+                "synthesis_score": 150.0,
+            },
+            {
+                "ticker": "CREDIT2",
+                "strategy_route": "bear_call_credit",
+                "entry_type": "CREDIT",
+                "underlying_quality_tier": "core",
+                "regime": "risk_off",
+                "dte": 30,
+                "credit_width_ratio": 0.20,
+                "combined_flow_bias": -0.20,
+                "live_distance_pct": 0.08,
+                "live_expected_move_pct": 0.08,
+                "live_quote_width_pct": 0.10,
+                "synthesis_score": 100.0,
+            },
+            {
+                "ticker": "DEBIT1",
+                "strategy_route": "bull_call_debit",
+                "entry_type": "DEBIT",
+                "underlying_quality_tier": "core",
+                "regime": "risk_on",
+                "iv_rank": 50.0,
+                "dte": 30,
+                "debit_width_ratio": 0.30,
+                "combined_flow_bias": 0.30,
+                "live_breakeven_expected_move_ratio": 0.50,
+                "live_quote_width_pct": 0.10,
+                "max_profit": 700.0,
+                "max_loss": 300.0,
+                "synthesis_score": 140.0,
+            },
+            {
+                "ticker": "UNSUPPORTED",
+                "strategy_route": "long_call",
+                "entry_type": "DEBIT",
+                "underlying_quality_tier": "core",
+                "regime": "risk_on",
+                "dte": 30,
+                "combined_flow_bias": 0.40,
+                "live_quote_width_pct": 0.05,
+                "synthesis_score": 200.0,
+            },
+            {
+                "ticker": "DEBIT_BAD_REGIME",
+                "strategy_route": "bull_call_debit",
+                "entry_type": "DEBIT",
+                "underlying_quality_tier": "core",
+                "regime": "risk_off",
+                "iv_rank": 40.0,
+                "dte": 30,
+                "debit_width_ratio": 0.30,
+                "combined_flow_bias": 0.30,
+                "live_breakeven_expected_move_ratio": 0.50,
+                "live_quote_width_pct": 0.10,
+                "max_profit": 700.0,
+                "max_loss": 300.0,
+                "synthesis_score": 160.0,
+            },
+            {
+                "ticker": "DEBIT_BAD_IV",
+                "strategy_route": "bull_call_debit",
+                "entry_type": "DEBIT",
+                "underlying_quality_tier": "core",
+                "regime": "risk_on",
+                "iv_rank": 60.0,
+                "dte": 30,
+                "debit_width_ratio": 0.30,
+                "combined_flow_bias": 0.30,
+                "live_breakeven_expected_move_ratio": 0.50,
+                "live_quote_width_pct": 0.10,
+                "max_profit": 700.0,
+                "max_loss": 300.0,
+                "synthesis_score": 170.0,
+            },
+        ]
+    )
+
+    annotated = core.annotate_selector_policy(rows).set_index("ticker")
+
+    assert annotated.at["CREDIT1", "selector_policy_status"] == "PASS"
+    assert annotated.at["CREDIT2", "selector_policy_status"] == "NOT_SELECTED_DAILY_CAP"
+    assert annotated.at["DEBIT1", "selector_policy_status"] == "PASS"
+    assert annotated.at["UNSUPPORTED", "selector_policy_status"] == "BLOCK"
+    assert "unsupported_selector_route" in annotated.at["UNSUPPORTED", "selector_policy_reason"]
+    assert "debit_regime_not_aligned:risk_off" in annotated.at[
+        "DEBIT_BAD_REGIME", "selector_policy_reason"
+    ]
+    assert "debit_iv_rank_above_55" in annotated.at["DEBIT_BAD_IV", "selector_policy_reason"]
+
+
+def test_nonselected_selector_row_is_an_order_entry_blocker() -> None:
+    blockers = core._execution_blockers_for_row(
+        {
+            "recommendation_status": "REVIEW",
+            "live_validation_status": "PASS",
+            "selector_policy_status": "NOT_SELECTED_DAILY_CAP",
+        },
+        "needs_review",
+        "BUY 1 TEST 2026-08-21 100 Call / SELL 1 TEST 2026-08-21 105 Call @ 1.00 DEBIT",
+        1.0,
+        1,
+        core._execution_context_or_default({}),
+    )
+
+    assert core.SELECTOR_POLICY_BLOCKER in blockers
+    assert core.SELECTOR_POLICY_BLOCKER in core._order_entry_review_only_blockers()
 
 
 def test_wheel_csp_replay_loader_combines_goal_replays_without_duplicate_signals(tmp_path: Path) -> None:
@@ -17175,6 +17389,95 @@ def test_profitability_confidence_names_sampled_negative_walkforward_replay() ->
     assert rating <= 3.0
     assert "options_agent_walkforward_replay_negative" in blockers
     assert "options_agent_walkforward_replay=negative" in evidence
+
+
+def test_profitability_confidence_blocks_sampled_walkforward_below_pf_gate() -> None:
+    expectancy = pd.DataFrame(
+        [
+            {
+                "source": "options_agent_walkforward_replay_model",
+                "evidence_type": "options_agent_walkforward_replay_model",
+                "status": "BLOCK",
+                "sample_size": 40,
+                "win_rate": 0.60,
+                "avg_pnl": 5.0,
+                "total_pnl": 200.0,
+                "profit_factor": 1.10,
+            },
+            {
+                "source": "codexuw_replay_decision_pass_model",
+                "evidence_type": "replay_backtest_decision_pass_model",
+                "status": "PASS",
+                "sample_size": 120,
+                "win_rate": 0.75,
+                "avg_pnl": 80.0,
+                "total_pnl": 9600.0,
+                "profit_factor": 2.50,
+            },
+            {
+                "source": "expectancy_summary",
+                "evidence_type": "summary",
+                "status": "PASS",
+                "sample_size": 160,
+            },
+        ]
+    )
+
+    rating, _, evidence, blockers, next_action = core._profitability_confidence_rating(
+        pd.DataFrame(),
+        pd.DataFrame(),
+        expectancy,
+        pd.DataFrame(),
+    )
+
+    assert rating <= 3.0
+    assert "options_agent_walkforward_replay_below_profitability_gate" in blockers
+    assert "options_agent_walkforward_replay=below_pf_gate" in evidence
+    assert "selector failed its own sampled walk-forward profitability gate" in next_action
+
+
+def test_promoted_selector_challenger_replaces_failed_legacy_walkforward_gate() -> None:
+    expectancy = pd.DataFrame(
+        [
+            {
+                "source": "options_agent_walkforward_replay_model",
+                "evidence_type": "options_agent_walkforward_replay_model",
+                "status": "BLOCK",
+                "sample_size": 48,
+                "win_rate": 0.46,
+                "avg_pnl": -23.17,
+                "total_pnl": -1112.25,
+                "profit_factor": 0.714,
+            },
+            {
+                "source": "options_agent_selector_challenger_model",
+                "evidence_type": "options_agent_selector_challenger_model",
+                "status": "PASS",
+                "sample_size": 36,
+                "win_rate": 0.61,
+                "avg_pnl": 24.0,
+                "total_pnl": 864.0,
+                "profit_factor": 1.35,
+            },
+            {
+                "source": "expectancy_summary",
+                "evidence_type": "summary",
+                "status": "PASS",
+                "sample_size": 84,
+            },
+        ]
+    )
+
+    _, _, evidence, blockers, _ = core._profitability_confidence_rating(
+        pd.DataFrame(),
+        pd.DataFrame(),
+        expectancy,
+        pd.DataFrame(),
+    )
+
+    assert "selector_challenger=PROMOTED" in evidence
+    assert "options_agent_walkforward_replay_negative" not in blockers
+    assert "selector_challenger_not_promoted" not in blockers
 
 
 def test_confidence_audit_names_actual_bucket_precision_gap_when_route_support_exists() -> None:
