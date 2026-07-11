@@ -3533,6 +3533,45 @@ def test_trade_tickets_keep_green_before_higher_confidence_yellow() -> None:
     assert sorted_tickets["ticker"].tolist() == ["GREENLOW", "YELLOWHIGH"]
 
 
+def test_trade_tickets_keep_all_targets_before_review_only_rows() -> None:
+    tickets = pd.DataFrame(
+        [
+            {
+                "ticker": "REVIEW_HIGH",
+                "ready_to_enter": False,
+                "order_readiness": "not_ready_wait_for_price",
+                "trade_quality_confidence_score": 99,
+                "trade_quality_confidence_rating": "HIGH",
+                "synthesis_score": 100,
+            },
+            {
+                "ticker": "PROFIT_FLOOR_TARGET",
+                "ready_to_enter": False,
+                "order_readiness": "target_order_profit_floor",
+                "trade_quality_confidence_score": 40,
+                "trade_quality_confidence_rating": "LOW",
+                "synthesis_score": 10,
+            },
+            {
+                "ticker": "CASH_RISK_TARGET",
+                "ready_to_enter": False,
+                "order_readiness": "target_order_after_cash_risk",
+                "trade_quality_confidence_score": 30,
+                "trade_quality_confidence_rating": "LOW",
+                "synthesis_score": 5,
+            },
+        ]
+    )
+
+    sorted_tickets = core._sort_trades_by_confidence(tickets)
+
+    assert sorted_tickets["ticker"].tolist() == [
+        "PROFIT_FLOOR_TARGET",
+        "CASH_RISK_TARGET",
+        "REVIEW_HIGH",
+    ]
+
+
 def test_final_recommendations_sort_by_calibrated_confidence_before_synthesis_score() -> None:
     final = pd.DataFrame(
         [
@@ -14616,6 +14655,30 @@ def test_schwab_chain_validator_maps_berkshire_alias_for_api(tmp_path: Path) -> 
     assert calls == ["BRK/B"]
     assert chain["symbol"] == "BRK/B"
     assert "BRKB" in validator.chains
+
+
+def test_class_share_aliases_match_evidence_and_schwab_api(tmp_path: Path) -> None:
+    from codexuw.schwab_live import SchwabChainValidator
+
+    calls = []
+
+    class FakeService:
+        def get_option_chain(self, symbol, **kwargs):
+            calls.append(symbol)
+            return {"symbol": symbol, "callExpDateMap": {}, "putExpDateMap": {}}
+
+    validator = SchwabChainValidator(tmp_path)
+    validator.service = FakeService()
+
+    chain = validator.get_chain("BFB", dt.date(2026, 7, 17), dt.date(2026, 8, 21))
+
+    assert core.canonical_ticker_key("BF.B") == "BFB"
+    assert core.canonical_ticker_key("BF/B") == "BFB"
+    assert core.tickers_match("BF-B", "BFB")
+    assert core.tickers_match("BRK/B", "BRKB")
+    assert calls == ["BF/B"]
+    assert chain["symbol"] == "BF/B"
+    assert "BFB" in validator.chains
 
 
 def test_live_expiry_selection_stays_inside_daily_trade_window() -> None:

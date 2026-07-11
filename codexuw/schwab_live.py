@@ -733,7 +733,14 @@ class SchwabChainValidator:
 
     def get_chain(self, ticker: str, from_date: dt.date, to_date: dt.date) -> dict[str, Any] | None:
         symbol = str(ticker).upper().strip()
-        api_symbol = {"BRKB": "BRK/B", "BRK.B": "BRK/B", "BRK-B": "BRK/B"}.get(symbol, symbol)
+        api_symbol = {
+            "BFB": "BF/B",
+            "BF.B": "BF/B",
+            "BF-B": "BF/B",
+            "BRKB": "BRK/B",
+            "BRK.B": "BRK/B",
+            "BRK-B": "BRK/B",
+        }.get(symbol, symbol)
         if symbol in self.chains:
             return self.chains[symbol]
         snapshot_path = self._snapshot_path(symbol)

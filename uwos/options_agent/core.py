@@ -281,7 +281,12 @@ CORE_AUDIT_TICKERS = tuple(dict.fromkeys((*CORE_MEGA_CAP_TICKERS, *CORE_INDEX_ET
 TICKER_CANONICAL_GROUPS = {
     "GOOG": "GOOG_GOOGL",
     "GOOGL": "GOOG_GOOGL",
+    "BF.B": "BFB",
+    "BF-B": "BFB",
+    "BF/B": "BFB",
+    "BFB": "BFB",
     "BRK.B": "BRKB",
+    "BRK/B": "BRKB",
     "BRK-B": "BRKB",
     "BRKB": "BRKB",
 }
@@ -13611,7 +13616,10 @@ def _order_readiness_sort_series(frame: pd.DataFrame) -> pd.Series:
         "target_order_after_profitability_calibration": 1,
         "target_order_after_expectancy_evidence": 1,
     }
-    return frame["order_readiness"].map(lambda value: ranks.get(_as_text(value), 0))
+    readiness = frame["order_readiness"].map(_as_text)
+    ranked = readiness.map(ranks)
+    target_fallback = readiness.str.startswith("target_order_").map(lambda value: 1 if value else 0)
+    return ranked.fillna(target_fallback).astype(int)
 
 
 def build_market_open_recheck_queue(trade_tickets: pd.DataFrame) -> pd.DataFrame:
