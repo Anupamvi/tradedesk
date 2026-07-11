@@ -5634,6 +5634,27 @@ def validate_priced_candidates_live(
             audit.append(_live_audit_row(updated, "PASS", updated["live_validation_note"], chain_source))
             continue
 
+        if reviewed_keys:
+            message = (
+                "contract was not included in the immutable pass-1 review snapshot; "
+                "keep as diagnostic and do not construct replacement legs"
+            )
+            current["live_validation_status"] = "REVIEW_SNAPSHOT_EXCLUDED"
+            current["live_validation_note"] = message
+            current["recommendation_status"] = _preserve_non_entry_status(current)
+            current["status_reason"] = _append_reason(current.get("status_reason"), message)
+            current["construction_source"] = "unreviewed_snapshot_diagnostic"
+            rows.append(current)
+            audit.append(
+                _live_audit_row(
+                    current,
+                    "REVIEW_SNAPSHOT_EXCLUDED",
+                    message,
+                    validator.sources.get(ticker, ""),
+                )
+            )
+            continue
+
         if _strategy_family_from_ticket_row(current) == "short_put":
             expiry = _select_live_expiry(contracts, asof_date, preferred_expiry, "Bull Put")
             if expiry is None:

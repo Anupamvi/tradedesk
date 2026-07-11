@@ -14256,6 +14256,41 @@ def test_snapshot_validation_can_fallback_to_debit_target_candidate(tmp_path: Pa
     assert tickets["entry_type"].tolist() == ["DEBIT"]
 
 
+def test_review_snapshot_prevents_untasked_contract_reconstruction(tmp_path: Path) -> None:
+    snapshot_dir = tmp_path / "snapshots"
+    _write_wmt_call_debit_snapshot(snapshot_dir)
+    priced = pd.DataFrame(
+        [
+            {
+                "ticker": "WMT",
+                "bias": "bullish",
+                "structure": "bull put spread",
+                "quality_status": "qualified",
+                "recommendation_status": RecommendationStatus.REVIEW.value,
+                "expiry": "2026-06-19",
+                "anchor_expiry": "2026-06-19",
+                "anchor_strike": 100.0,
+                "status_reason": "diagnostic row excluded from pass-1 contract tasks",
+            }
+        ]
+    )
+
+    updated, live, _ = core.validate_priced_candidates_live(
+        priced,
+        "2026-05-22",
+        tmp_path / "out",
+        chain_snapshot_dir=snapshot_dir,
+        allow_live_fallback=False,
+        reviewed_contract_keys={"reviewed-contract-key"},
+    )
+
+    assert updated["live_validation_status"].tolist() == ["REVIEW_SNAPSHOT_EXCLUDED"]
+    assert updated["construction_source"].tolist() == ["unreviewed_snapshot_diagnostic"]
+    assert updated.get("buy_leg", pd.Series([""])).fillna("").tolist() == [""]
+    assert "do not construct replacement legs" in updated["live_validation_note"].iloc[0]
+    assert live["live_validation_status"].tolist() == ["REVIEW_SNAPSHOT_EXCLUDED"]
+
+
 def test_live_validation_prefers_clean_debit_alternative_over_flow_anchored_reject(tmp_path: Path) -> None:
     snapshot_dir = tmp_path / "snapshots"
     _write_wmt_call_debit_with_better_breakout_snapshot(snapshot_dir)
