@@ -2108,6 +2108,8 @@ def run_pipeline(
             )
         structure_attempts = build_structure_attempts(dated_priced, priced, live_validation)
         contract_review_tasks = build_contract_review_tasks(priced)
+    priced = annotate_contract_event_risk(priced, as_of=day, event_calendar=event_calendar)
+    contract_review_tasks = build_contract_review_tasks(priced)
     contract_review_drift = _contract_review_task_drift_summary(
         _load_contract_review_task_payload(paths["dispatch_contract_review_tasks"]),
         contract_review_tasks,
@@ -2115,7 +2117,6 @@ def run_pipeline(
     agent_dispatch_drift = {**agent_dispatch_drift, **contract_review_drift}
     if contract_review_drift.get("contract_status") == "drift":
         agent_dispatch_drift["status"] = "drift"
-    priced = annotate_contract_event_risk(priced, as_of=day, event_calendar=event_calendar)
     pre_portfolio_agent_reviews = build_internal_agent_reviews(candidates, market_regime, catalyst_reviews, priced, as_of=day)
     actionable_agent_reviews = combine_agent_reviews(pre_portfolio_agent_reviews, external_agent_reviews, as_of=day)
     priced = apply_agent_reviews(priced, actionable_agent_reviews)
