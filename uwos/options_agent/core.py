@@ -20989,7 +20989,11 @@ def render_report(
     elif target_count > 0:
         next_action = "use yellow target credits/debits as target-limit starting points"
     elif review_ticket_count > 0:
-        next_action = "review mechanically valid tickets; collect profitability evidence before target/order promotion"
+        next_action = (
+            "do not enter review rows; require at least "
+            f"{MIN_EXPECTANCY_SAMPLE_SIZE} nonduplicated matching outcomes with PF >= "
+            f"{MIN_EXPECTANCY_PROFIT_FACTOR:.2f} before promotion"
+        )
     elif blocking_gates:
         next_action = "resolve blocking gates before treating any row as an order"
     else:

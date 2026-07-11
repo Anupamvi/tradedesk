@@ -13205,7 +13205,10 @@ def test_report_snapshot_counts_review_only_visible_tickets() -> None:
     assert "- Review-only candidates: 1" in report
     assert "- Research/backtest profitability evidence: 0.0/10 (not order-entry readiness)" in report
     assert "No yellow target orders." in report
-    assert "Next action: review mechanically valid tickets; collect profitability evidence before target/order promotion" in report
+    assert (
+        "Next action: do not enter review rows; require at least 30 nonduplicated matching outcomes "
+        "with PF >= 1.20 before promotion"
+    ) in report
     assert "- Trade rows: 0 green send-now, 0 target-order candidates, 1 review-only visible tickets" in report
     assert report.index("## Focus Review Queue - Not Trades") < report.index("## Review Board - Not Orders")
 
