@@ -926,6 +926,42 @@ def _options_event_calendar_is_verified(payload: Mapping[str, Any]) -> tuple[boo
         for item in events
     ):
         return False, "event calendar contains malformed macro events"
+    corporate_events = payload.get("corporate_events", [])
+    if not isinstance(corporate_events, list):
+        return False, "event calendar corporate_events must be a list"
+    blocked_corporate_hosts = {
+        "earningswhispers.com",
+        "finance.yahoo.com",
+        "marketbeat.com",
+        "nasdaq.com",
+        "tipranks.com",
+        "zacks.com",
+    }
+    for item in corporate_events:
+        if not isinstance(item, Mapping):
+            return False, "event calendar contains a malformed corporate event"
+        source = _as_text(item.get("source"))
+        source_match = re.match(r"^https://([^/\s]+)(?:/|$)", source, flags=re.IGNORECASE)
+        source_host = source_match.group(1).lower() if source_match else ""
+        source_type = _as_text(item.get("source_type")).lower()
+        if (
+            not _as_text(item.get("ticker"))
+            or _optional_iso_date(item.get("date")) is None
+            or _as_text(item.get("event")).lower() != "earnings"
+            or _optional_iso_date(item.get("verified_at")) is None
+            or source_type not in {"issuer_ir", "sec_filing"}
+            or not source_host
+        ):
+            return False, "event calendar contains a malformed corporate event"
+        if source_type == "sec_filing" and not (
+            source_host == "sec.gov" or source_host.endswith(".sec.gov")
+        ):
+            return False, "SEC corporate event source is not hosted by sec.gov"
+        if source_type == "issuer_ir" and any(
+            source_host == host or source_host.endswith(f".{host}")
+            for host in blocked_corporate_hosts
+        ):
+            return False, "issuer corporate event uses a third-party earnings source"
     return True, ""
 
 

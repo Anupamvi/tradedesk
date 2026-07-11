@@ -59,6 +59,7 @@
       "date": "2026-07-28",
       "event": "earnings",
       "source": "https://investors.ups.com/news-events/ir-calendar",
+      "source_type": "issuer_ir",
       "verified_at": "2026-07-09"
     },
     {
@@ -66,6 +67,7 @@
       "date": "2026-08-18",
       "event": "earnings",
       "source": "https://ir.homedepot.com/events-and-presentations",
+      "source_type": "issuer_ir",
       "verified_at": "2026-07-09"
     },
     {
@@ -73,6 +75,7 @@
       "date": "2026-07-22",
       "event": "earnings",
       "source": "https://www.ibm.com/investor/events",
+      "source_type": "issuer_ir",
       "verified_at": "2026-07-10"
     },
     {
@@ -80,6 +83,7 @@
       "date": "2026-07-23",
       "event": "earnings",
       "source": "https://www.intc.com/news-events/ir-calendar/detail/20260723-q2-2026-intel-corporation-earnings-conference-call",
+      "source_type": "issuer_ir",
       "verified_at": "2026-07-10"
     },
     {
@@ -87,6 +91,7 @@
       "date": "2026-07-29",
       "event": "earnings",
       "source": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4",
+      "source_type": "issuer_ir",
       "verified_at": "2026-07-10"
     }
   ]

@@ -17545,6 +17545,29 @@ def test_verified_event_overrides_fix_ups_earnings_and_hd_macro_crossing() -> No
     assert corporate["MSFT"]["source"].startswith("https://www.microsoft.com/")
 
 
+def test_event_calendar_rejects_third_party_or_mislabeled_corporate_sources() -> None:
+    calendar = core.load_options_event_calendar(core.project_root())
+    payload = {key: value for key, value in calendar.items() if key not in {"status", "validation_error", "path"}}
+
+    third_party = json.loads(json.dumps(payload))
+    third_party["corporate_events"][0]["source"] = "https://finance.yahoo.com/calendar/earnings"
+    verified, error = core._options_event_calendar_is_verified(third_party)
+    assert not verified
+    assert error == "issuer corporate event uses a third-party earnings source"
+
+    mislabeled_sec = json.loads(json.dumps(payload))
+    mislabeled_sec["corporate_events"][0]["source_type"] = "sec_filing"
+    verified, error = core._options_event_calendar_is_verified(mislabeled_sec)
+    assert not verified
+    assert error == "SEC corporate event source is not hosted by sec.gov"
+
+    missing_provenance = json.loads(json.dumps(payload))
+    missing_provenance["corporate_events"][0].pop("source_type")
+    verified, error = core._options_event_calendar_is_verified(missing_provenance)
+    assert not verified
+    assert error == "event calendar contains a malformed corporate event"
+
+
 def test_agent_review_cannot_bypass_unverified_equity_earnings() -> None:
     row = {
         "ticker": "AAPL",
