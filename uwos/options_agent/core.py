@@ -17978,8 +17978,14 @@ def _actual_forward_metrics_by_strategy_route(frame: pd.DataFrame) -> dict[str, 
     scoped = frame[frame["strategy_route"].astype(str).str.strip().ne("")].copy()
     if scoped.empty:
         return {}
+    scoped["__metrics_route"] = scoped["strategy_route"].astype(str)
+    managed_roll_route = scoped.get("strategy", pd.Series("", index=scoped.index)).map(_strategy_route_from_text)
+    roll_mask = scoped["strategy_route"].astype(str).eq("roll_adjustment") & managed_roll_route.isin(
+        {"short_put", "short_call"}
+    )
+    scoped.loc[roll_mask, "__metrics_route"] = managed_roll_route.loc[roll_mask]
     metrics: dict[str, dict[str, Any]] = {}
-    for route, group in scoped.groupby("strategy_route"):
+    for route, group in scoped.groupby("__metrics_route"):
         pnl = pd.to_numeric(group.get("realized_pnl", pd.Series(dtype=float)), errors="coerce").dropna()
         if pnl.empty:
             continue
@@ -18002,7 +18008,7 @@ def _actual_forward_metrics_by_strategy_route(frame: pd.DataFrame) -> dict[str, 
             "strategy_route": route_text,
             "strategy_family": _strategy_family_from_route(route_text),
             "note": (
-                f"Route-level actual/forward realized support from {', '.join(source_tickers)} "
+                f"Managed route-level actual/forward realized support from {', '.join(source_tickers)} "
                 f"for {route_text}: sample={sample}, avg_pnl={_round_or_blank(avg_pnl, 2)}, "
                 f"win_rate={_round_or_blank(win_rate, 4)}, profit_factor={_round_or_blank(profit_factor, 3)}."
             ),

@@ -8026,6 +8026,39 @@ def test_price_candidates_routes_bearish_core_to_put_debit_and_audits_credit_rou
     assert routing.loc[routing["strategy"].eq("bear_call_credit"), "route_status"].tolist() == ["construction_failed"]
 
 
+def test_actual_route_metrics_include_short_option_roll_lifecycle_outcomes() -> None:
+    frame = pd.DataFrame(
+        [
+            {"ticker": "WMT", "strategy": "short_put", "strategy_route": "short_put", "realized_pnl": 100.0},
+            {
+                "ticker": "WMT",
+                "strategy": "short_put",
+                "strategy_route": "roll_adjustment",
+                "realized_pnl": -25.0,
+            },
+            {
+                "ticker": "AAPL",
+                "strategy": "short_call",
+                "strategy_route": "roll_adjustment",
+                "realized_pnl": 30.0,
+            },
+            {
+                "ticker": "SPY",
+                "strategy": "vertical_spread",
+                "strategy_route": "roll_adjustment",
+                "realized_pnl": 10.0,
+            },
+        ]
+    )
+
+    metrics = core._actual_forward_metrics_by_strategy_route(frame)
+
+    assert metrics["short_put"]["sample_size"] == 2
+    assert metrics["short_put"]["avg_pnl"] == 37.5
+    assert metrics["short_call"]["sample_size"] == 1
+    assert metrics["roll_adjustment"]["sample_size"] == 1
+
+
 def test_strategy_routing_prefers_route_evidence_over_broad_vertical_family(tmp_path: Path) -> None:
     _write_minimal_uw_fixture(tmp_path)
     closed_dir = tmp_path / "out" / "schwab_pull_state"
