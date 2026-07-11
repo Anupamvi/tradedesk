@@ -3191,7 +3191,7 @@ def test_market_open_recheck_queue_includes_only_market_session_only_targets() -
     assert queue["recheck_action"].str.contains("ready_to_enter=true").tolist() == [True, True]
 
 
-def test_market_session_only_targets_are_yellow_until_ready() -> None:
+def test_market_session_only_targets_are_review_until_live_validated() -> None:
     row = {
         "ready_to_enter": False,
         "target_order_status": "target_order_candidate",
@@ -3199,12 +3199,28 @@ def test_market_session_only_targets_are_yellow_until_ready() -> None:
         "trade_plan": "SELL 1 SESSION 2026-06-05 100 Call / BUY 1 SESSION 2026-06-05 105 Call @ 0.65 CREDIT",
     }
 
-    assert core._decision_badge(row) == "🟡 YELLOW target"
+    assert core._decision_badge(row) == "🟡 YELLOW review"
     assert core._decision_icon(row) == "🟡"
-    assert core._decision_status_label(row) == "YELLOW target"
+    assert core._decision_status_label(row) == "YELLOW review"
     assert core._ticket_order_readiness(row) == "target_order_price_validation"
     assert core._ticket_action(row) == "work_target_limit"
     assert "shown target limit" in core._ticket_next_step(row)
+
+
+def test_calibration_blocked_plan_is_review_not_yellow_target() -> None:
+    row = {
+        "ready_to_enter": False,
+        "target_order_status": "target_order_candidate",
+        "order_readiness": "target_order_after_profitability_calibration",
+        "live_validation_status": "PASS",
+        "profitability_calibration_status": "BLOCK",
+        "trade_plan": "BUY 1 TEST 2026-08-21 100 Call @ 5.00 DEBIT",
+    }
+
+    assert core._decision_badge(row) == "🟡 YELLOW review"
+    assert core._decision_status_label(row) == "YELLOW review"
+    _, target = core.split_trade_ticket_surfaces(pd.DataFrame([row]))
+    assert target.empty
 
 
 def test_not_actionable_trade_plan_rows_are_red_no_action() -> None:

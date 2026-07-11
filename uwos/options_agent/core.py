@@ -13273,23 +13273,8 @@ def split_trade_ticket_surfaces(trade_tickets: pd.DataFrame) -> tuple[pd.DataFra
 
     if trade_tickets.empty:
         return trade_tickets.copy(), trade_tickets.copy()
-    readiness = trade_tickets.get("order_readiness", pd.Series("", index=trade_tickets.index)).astype(str)
-    live_status = trade_tickets.get("live_validation_status", pd.Series("", index=trade_tickets.index)).astype(str).str.upper()
-    calibration_status = trade_tickets.get(
-        "profitability_calibration_status",
-        pd.Series("", index=trade_tickets.index),
-    ).fillna("").astype(str).str.upper()
     ready = trade_tickets[trade_tickets["ready_to_enter"].map(_truthy)].copy()
-    target = trade_tickets[
-        trade_tickets["target_order_status"]
-        .astype(str)
-        .str.lower()
-        .isin(["target_order_candidate", "target_order_wait_for_price"])
-        & ~trade_tickets["ready_to_enter"].map(_truthy)
-        & readiness.str.startswith("target_order")
-        & live_status.eq("PASS")
-        & calibration_status.isin({"", "PASS"})
-    ].copy()
+    target = trade_tickets[trade_tickets.apply(_target_surface_eligible, axis=1)].copy()
     return (
         _sort_trades_by_confidence(ready).reset_index(drop=True),
         _sort_trades_by_confidence(target).reset_index(drop=True),
@@ -22577,7 +22562,7 @@ def _coverage_state_label(status: Any) -> str:
         "READY_TICKET": "GREEN ready",
         "TARGET_ORDER_CANDIDATE": "YELLOW coverage",
         "REVIEW_TICKET": "YELLOW review",
-        "UNVALIDATED_CHAIN": "YELLOW target",
+        "UNVALIDATED_CHAIN": "YELLOW review",
         "CANDIDATE_NOT_STRUCTURED": "YELLOW candidate",
         "STRUCTURED_NOT_TOP_FINAL": "YELLOW structured",
         "STRUCTURE_MISSING": "YELLOW no-structure",
@@ -22597,7 +22582,7 @@ def _decision_badge(row: Mapping[str, Any]) -> str:
     if _truthy(row.get("ready_to_enter")):
         return f"{_coverage_icon('green')} GREEN ready"
     target_status = _as_text(row.get("target_order_status"))
-    if target_status in {"target_order_candidate", "target_order_wait_for_price"}:
+    if _target_surface_eligible(row):
         return f"{_coverage_icon('yellow')} YELLOW target"
     if target_status.startswith("not_actionable"):
         return f"{_coverage_icon('red')} RED no-action"
@@ -22629,7 +22614,7 @@ def _decision_status_label(row: Mapping[str, Any]) -> str:
     if _truthy(row.get("ready_to_enter")):
         return "GREEN ready"
     target_status = _as_text(row.get("target_order_status"))
-    if target_status in {"target_order_candidate", "target_order_wait_for_price"}:
+    if _target_surface_eligible(row):
         return "YELLOW target"
     if target_status.startswith("not_actionable"):
         return "RED no-action"
@@ -22639,6 +22624,25 @@ def _decision_status_label(row: Mapping[str, Any]) -> str:
     if _as_text(row.get("trade_plan")):
         return "YELLOW review"
     return "GRAY review"
+
+
+def _target_surface_eligible(row: Mapping[str, Any]) -> bool:
+    """Return whether a row belongs on the actual yellow target-order surface."""
+
+    if _truthy(row.get("ready_to_enter")):
+        return False
+    if _as_text(row.get("target_order_status")).lower() not in {
+        "target_order_candidate",
+        "target_order_wait_for_price",
+    }:
+        return False
+    if _as_text(row.get("live_validation_status")).upper() != "PASS":
+        return False
+    calibration_status = _as_text(row.get("profitability_calibration_status")).upper()
+    if calibration_status not in {"", "PASS"}:
+        return False
+    readiness = _as_text(row.get("order_readiness"))
+    return not readiness or readiness.startswith("target_order")
 
 
 def _is_market_session_only_target(row: Mapping[str, Any]) -> bool:
