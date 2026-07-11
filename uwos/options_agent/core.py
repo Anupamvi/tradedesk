@@ -23008,7 +23008,7 @@ def _coverage_badge(row: Mapping[str, Any]) -> str:
     if state == "READY_TICKET":
         color = "green"
     elif state == "TARGET_ORDER_CANDIDATE":
-        color = "yellow"
+        color = "gray"
     elif state in {"NON_ACTIONABLE_UNDERLYING", "BLOCKED_FINAL_ROW", "SOURCE_MISSING"}:
         color = "red"
     else:
@@ -23035,7 +23035,7 @@ def _coverage_state_label(status: Any) -> str:
     state = _as_text(status)
     return {
         "READY_TICKET": "GREEN ready",
-        "TARGET_ORDER_CANDIDATE": "YELLOW coverage",
+        "TARGET_ORDER_CANDIDATE": "GRAY coverage",
         "REVIEW_TICKET": "GRAY review",
         "UNVALIDATED_CHAIN": "GRAY review",
         "CANDIDATE_NOT_STRUCTURED": "GRAY candidate",

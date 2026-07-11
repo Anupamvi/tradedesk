@@ -189,6 +189,14 @@
       "source": "https://investors.att.com/news-and-events/events-and-presentations",
       "source_type": "issuer_ir",
       "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "MRK",
+      "date": "2026-08-04",
+      "event": "earnings",
+      "source": "https://www.merck.com/events/q2-2026-earnings-call/",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
     }
   ]
 }
