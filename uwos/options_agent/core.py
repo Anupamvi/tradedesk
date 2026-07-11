@@ -459,6 +459,7 @@ PROFITABILITY_CALIBRATION_COLUMNS = [
     "iv_rank_bucket",
     "economics_bucket",
     "liquidity_bucket",
+    "contract_key",
     "status",
     "sample_size",
     "win_rate",
@@ -10818,10 +10819,42 @@ def _liquidity_bucket(row: Mapping[str, Any]) -> str:
     return "liquidity_thin"
 
 
+def _replay_contract_identity(row: Mapping[str, Any]) -> str:
+    explicit = _as_text(_mapping_get(row, "contract_key") or _mapping_get(row, "option_symbol"))
+    if explicit:
+        return explicit.upper()
+    source_contract = _as_text(_mapping_get(row, "source_contract"))
+    short_leg = _as_text(_mapping_get(row, "short_leg_eod") or _mapping_get(row, "short_leg"))
+    long_leg = _as_text(_mapping_get(row, "long_leg_eod") or _mapping_get(row, "long_leg"))
+    if source_contract or short_leg or long_leg:
+        return "|".join(part.upper() for part in (source_contract, short_leg, long_leg) if part)
+    expiry = _as_text(_mapping_get(row, "expiry"))
+    short_strike = _as_text(_mapping_get(row, "short_strike_eod") or _mapping_get(row, "short_strike"))
+    long_strike = _as_text(_mapping_get(row, "long_strike_eod") or _mapping_get(row, "long_strike"))
+    if expiry and (short_strike or long_strike):
+        return "|".join((expiry, short_strike, long_strike))
+    return ""
+
+
 def _profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.date] = None) -> tuple[pd.DataFrame, str, str]:
     frames: list[pd.DataFrame] = []
     source_paths: list[str] = []
     errors: list[str] = []
+
+    walkforward = build_options_agent_walkforward_replay_audit(out_root, as_of=as_of)
+    if not walkforward.empty:
+        walkforward_replay = walkforward.copy()
+        walkforward_replay["pnl_1x"] = pd.to_numeric(
+            walkforward_replay.get("realized_pnl", pd.Series(dtype=float)),
+            errors="coerce",
+        )
+        walkforward_replay["replay_source"] = "options_agent_walkforward_replay"
+        walkforward_replay["replay_source_path"] = walkforward_replay.get(
+            "source_path", pd.Series("", index=walkforward_replay.index)
+        )
+        walkforward_replay["replay_validation_scope"] = "outcome_blind_expanding_window"
+        frames.append(walkforward_replay)
+        source_paths.extend(sorted({_as_text(value) for value in walkforward_replay["replay_source_path"] if _as_text(value)}))
 
     codex_replay, codex_path, codex_error = _codexuw_profitability_replay_frame(out_root, as_of=as_of)
     if not codex_replay.empty:
@@ -10846,6 +10879,43 @@ def _profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.date] = No
 
     if frames:
         replay = pd.concat(frames, ignore_index=True, sort=False)
+        replay["__replay_date"] = pd.Series("", index=replay.index, dtype=object)
+        for column in ("signal_date", "asof", "entry_date"):
+            if column in replay.columns:
+                values = replay[column].map(lambda value: _date_key(_parse_optional_date_value(value)))
+                replay["__replay_date"] = replay["__replay_date"].where(
+                    replay["__replay_date"].astype(str).str.strip().ne(""),
+                    values,
+                )
+        replay["__route"] = replay.get("strategy_route", pd.Series("", index=replay.index)).map(_as_text)
+        replay["__ticker"] = replay.get("ticker", pd.Series("", index=replay.index)).map(
+            lambda value: _as_text(value).upper()
+        )
+        replay["__contract_key"] = replay.apply(_replay_contract_identity, axis=1)
+        walkforward_mask = replay.get("replay_source", pd.Series("", index=replay.index)).astype(str).eq(
+            "options_agent_walkforward_replay"
+        )
+        walkforward_keys = {
+            (row["__replay_date"], row["__ticker"], row["__route"], row["__contract_key"])
+            for _, row in replay[walkforward_mask].iterrows()
+            if row["__replay_date"] and row["__contract_key"]
+        }
+        if walkforward_keys:
+            duplicate_other = (~walkforward_mask) & replay.apply(
+                lambda row: (
+                    row["__replay_date"],
+                    row["__ticker"],
+                    row["__route"],
+                    row["__contract_key"],
+                )
+                in walkforward_keys,
+                axis=1,
+            )
+            replay = replay[~duplicate_other].copy()
+        replay = replay.drop(
+            columns=["__replay_date", "__route", "__ticker", "__contract_key"],
+            errors="ignore",
+        )
         replay = _backfill_regime_from_history(
             replay,
             out_root,
@@ -11039,7 +11109,13 @@ OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS = (
     "signal_date",
     "ticker",
     "strategy_route",
+    "entry_type",
+    "direction_bucket",
     "regime",
+    "dte_bucket",
+    "iv_rank_bucket",
+    "economics_bucket",
+    "liquidity_bucket",
     "training_sample_size",
     "training_day_count",
     "training_profit_factor",
@@ -11161,12 +11237,20 @@ def build_options_agent_walkforward_replay_audit(
         for rank, (_, row) in enumerate(current.iterrows(), start=1):
             key = (_as_text(row.get("strategy_route")), _as_text(row.get("regime")))
             training = qualified[key]
+            entry_type = _as_text(row.get("entry_side") or row.get("strategy_kind")).upper()
             selected_rows.append(
                 {
                     "signal_date": pd.Timestamp(signal_day).date().isoformat(),
                     "ticker": row.get("ticker", ""),
                     "strategy_route": key[0],
+                    "entry_type": entry_type,
+                    "direction_bucket": _direction_bucket_from_row(row, key[0]),
                     "regime": key[1],
+                    "dte_bucket": _dte_bucket(row.get("dte")),
+                    "iv_rank_bucket": _iv_rank_bucket(row.get("iv_rank")),
+                    "economics_bucket": _economics_bucket(row, entry_type),
+                    "liquidity_bucket": _liquidity_bucket(row),
+                    "contract_key": _replay_contract_identity(row),
                     "training_sample_size": int(training["sample_size"]),
                     "training_day_count": int(training["day_count"]),
                     "training_profit_factor": round(training["profit_factor"], 6),
@@ -14941,6 +15025,7 @@ def build_expectancy_evidence(
             )
         )
     rows.extend(_expectancy_from_replay_history(replay_out_root, current_tickers))
+    rows.extend(_expectancy_from_options_agent_walkforward_replay(replay_out_root, current_tickers))
     rows.append(_expectancy_from_closed_trades(closed_trades_path, current_tickers))
     rows.extend(_expectancy_by_ticker_from_closed_trades(closed_trades_path, current_tickers))
     rows.extend(
@@ -18149,6 +18234,50 @@ def _expectancy_from_replay_history(out_root: Path, current_tickers: set[str]) -
     ]
 
 
+def _expectancy_from_options_agent_walkforward_replay(
+    out_root: Path,
+    current_tickers: set[str],
+) -> list[dict[str, Any]]:
+    audit = build_options_agent_walkforward_replay_audit(out_root)
+    source_path = out_root / "options_agent_walkforward_replay_audit.csv"
+    if audit.empty:
+        missing = _expectancy_missing_row(
+            "options_agent_walkforward_replay_model",
+            source_path,
+            "options_agent_walkforward_replay_model",
+            "No outcome-blind expanding-window selections are available.",
+        )
+        return [missing]
+    current = _filter_frame_to_tickers(audit, current_tickers)
+    model_row = _expectancy_metrics_row(
+        "options_agent_walkforward_replay_model",
+        source_path,
+        "options_agent_walkforward_replay_model",
+        pd.to_numeric(audit.get("realized_pnl", pd.Series(dtype=float)), errors="coerce"),
+        tickers=_ticker_set_from_frame(audit),
+        current_tickers=current_tickers,
+        open_or_unrealized_count=0,
+        note=(
+            "Options Agent expanding-window replay selected from prior-date route/regime evidence and entry-time fields only; "
+            "ticker/day/route/regime duplicates are removed."
+        ),
+    )
+    current_row = _expectancy_metrics_row(
+        "options_agent_walkforward_replay_current_tickers",
+        source_path,
+        "options_agent_walkforward_replay_current_tickers",
+        pd.to_numeric(current.get("realized_pnl", pd.Series(dtype=float)), errors="coerce"),
+        tickers=_ticker_set_from_frame(current),
+        current_tickers=current_tickers,
+        open_or_unrealized_count=max(0, len(audit) - len(current)),
+        note=(
+            "Options Agent expanding-window replay restricted to visible current-ticket tickers; "
+            "this remains non-promotable below the standard sample threshold."
+        ),
+    )
+    return [current_row, model_row]
+
+
 def _expectancy_from_closed_trades(path: Path, current_tickers: set[str]) -> dict[str, Any]:
     if not _safe_non_v4_path(path):
         return _expectancy_missing_row("schwab_closed_trades", path, "actual_closed_trades", "v4-derived source intentionally ignored")
@@ -20110,8 +20239,14 @@ def _profitability_confidence_rating(
     else:
         blockers.append("current_strategy_cohort_not_proven")
 
-    replay_rows = _evidence_rows(expectancy, {"replay_backtest_decision_pass"})
-    replay_model_rows = _evidence_rows(expectancy, {"replay_backtest_decision_pass_model"})
+    replay_rows = _evidence_rows(
+        expectancy,
+        {"replay_backtest_decision_pass", "options_agent_walkforward_replay_current_tickers"},
+    )
+    replay_model_rows = _evidence_rows(
+        expectancy,
+        {"replay_backtest_decision_pass_model", "options_agent_walkforward_replay_model"},
+    )
     replay_positive = _positive_evidence_row(replay_rows, min_sample=MIN_EXPECTANCY_SAMPLE_SIZE)
     strong_replay_sample = max(MIN_EXPECTANCY_SAMPLE_SIZE * 3, 90)
     replay_strong_positive = _strong_positive_evidence_row(replay_rows, min_sample=strong_replay_sample)
@@ -20126,7 +20261,10 @@ def _profitability_confidence_rating(
         else _strong_positive_evidence_row(replay_model_rows, min_sample=strong_replay_sample)
     )
     decision_replay_strong = replay_strong_positive or replay_model_strong_positive
-    replay_partial = _positive_evidence_row(replay_rows, min_sample=1)
+    replay_partial = _positive_evidence_row(replay_rows, min_sample=1) or _positive_evidence_row(
+        replay_model_rows,
+        min_sample=1,
+    )
     if replay_positive:
         rating += 1.5
         evidence.append("leakage_safe_replay_decision_pass=PASS")
