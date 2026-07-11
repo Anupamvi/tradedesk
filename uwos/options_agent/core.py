@@ -1065,13 +1065,9 @@ def _required_contract_review_agents(row: Mapping[str, Any]) -> tuple[str, ...]:
 
 
 def _contract_event_verification_passed(row: Mapping[str, Any]) -> bool:
-    if _as_text(row.get("earnings_source_status")).lower() == "verified":
-        return True
-    agents = {_as_text(value) for value in _as_text(row.get("contract_review_agents")).split(";") if _as_text(value)}
-    return bool(
-        "catalyst_news" in agents
-        and _as_text(row.get("contract_review_status")).upper() == "PASS"
-    )
+    """Require the authoritative event-calendar annotation, not an agent verdict."""
+
+    return _as_text(row.get("earnings_source_status")).lower() == "verified"
 
 
 def _contract_review_matches_row(
@@ -14475,7 +14471,7 @@ def _send_now_economics_blockers(
     macro_event_count = int(_as_float(row.get("macro_event_count_before_expiry")) or 0)
     if dte <= SHORT_DTE_CONTRACT_RISK_DAYS and macro_event_count > 0:
         blockers.append("send_now_high_impact_macro_event_before_expiry")
-    if dte <= SHORT_DTE_CONTRACT_RISK_DAYS and _as_text(row.get("macro_calendar_status")).lower() == "unverified":
+    if _as_text(row.get("macro_calendar_status")).lower() != "verified":
         blockers.append("send_now_macro_calendar_unverified")
     if entry_type == "CREDIT":
         if _strategy_family_from_ticket_row(row) == "short_put":

@@ -17538,7 +17538,7 @@ def test_verified_event_overrides_fix_ups_earnings_and_hd_macro_crossing() -> No
     assert any(event["event"] == "FOMC decision" and event["date"] == "2026-07-29" for event in calendar["macro_events"])
 
 
-def test_unverified_equity_earnings_blocks_send_now_without_sourced_catalyst_review() -> None:
+def test_agent_review_cannot_bypass_unverified_equity_earnings() -> None:
     row = {
         "ticker": "AAPL",
         "recommendation_status": RecommendationStatus.ENTER.value,
@@ -17561,7 +17561,7 @@ def test_unverified_equity_earnings_blocks_send_now_without_sourced_catalyst_rev
         ticket="BUY 1 AAPL 2026-08-21 200 Call @ 5.00 DEBIT",
         entry_limit=5.0,
     )
-    verified = core._send_now_economics_blockers(
+    agent_reviewed = core._send_now_economics_blockers(
         {
             **row,
             "contract_review_status": "PASS",
@@ -17572,7 +17572,32 @@ def test_unverified_equity_earnings_blocks_send_now_without_sourced_catalyst_rev
     )
 
     assert "send_now_earnings_calendar_unverified" in blocked
-    assert "send_now_earnings_calendar_unverified" not in verified
+    assert "send_now_earnings_calendar_unverified" in agent_reviewed
+
+
+def test_unverified_macro_calendar_blocks_long_dte_send_now() -> None:
+    row = {
+        "ticker": "AAPL",
+        "recommendation_status": RecommendationStatus.ENTER.value,
+        "strategy_route": "long_call",
+        "dte": 45,
+        "earnings_source_status": "verified",
+        "earnings_before_expiry": False,
+        "macro_calendar_status": "unverified",
+        "macro_event_count_before_expiry": 0,
+        "live_probability_proxy": 0.55,
+        "live_quote_width_pct": 0.05,
+        "live_theta_burn_pct": 0.01,
+        "live_breakeven_expected_move_ratio": 0.50,
+    }
+
+    blockers = core._send_now_economics_blockers(
+        row,
+        ticket="BUY 1 AAPL 2026-08-21 200 Call @ 5.00 DEBIT",
+        entry_limit=5.0,
+    )
+
+    assert "send_now_macro_calendar_unverified" in blockers
 
 
 def test_hd_like_short_dte_debit_is_rejected_for_quote_width_and_theta() -> None:
@@ -18035,11 +18060,13 @@ def test_exact_contract_review_allows_non_blocking_caution_but_rejects_missing_o
         spot_live=110.0,
         breakeven=116.8,
         live_probability_proxy=0.50,
-        live_theta_burn_pct=0.01,
-        live_breakeven_expected_move_ratio=0.50,
-        earnings_before_expiry=False,
-        macro_event_count_before_expiry=0,
-    )
+            live_theta_burn_pct=0.01,
+            live_breakeven_expected_move_ratio=0.50,
+            earnings_source_status="verified",
+            earnings_before_expiry=False,
+            macro_calendar_status="verified",
+            macro_event_count_before_expiry=0,
+        )
     unproven_result = core.apply_agent_reviews(mechanically_revalidated, supportive_reviews)
     assert unproven_result["contract_review_status"].tolist() == ["BLOCK"]
 
