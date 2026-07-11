@@ -1,6 +1,6 @@
 {
   "schema_version": "options_agent.event_calendar.v1",
-  "version": "2026-v1",
+  "version": "2026-v2",
   "verified_at": "2026-07-10",
   "coverage_start": "2026-01-01",
   "coverage_end": "2026-12-31",
@@ -67,6 +67,27 @@
       "event": "earnings",
       "source": "https://ir.homedepot.com/events-and-presentations",
       "verified_at": "2026-07-09"
+    },
+    {
+      "ticker": "IBM",
+      "date": "2026-07-22",
+      "event": "earnings",
+      "source": "https://www.ibm.com/investor/events",
+      "verified_at": "2026-07-10"
+    },
+    {
+      "ticker": "INTC",
+      "date": "2026-07-23",
+      "event": "earnings",
+      "source": "https://www.intc.com/news-events/ir-calendar/detail/20260723-q2-2026-intel-corporation-earnings-conference-call",
+      "verified_at": "2026-07-10"
+    },
+    {
+      "ticker": "MSFT",
+      "date": "2026-07-29",
+      "event": "earnings",
+      "source": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4",
+      "verified_at": "2026-07-10"
     }
   ]
 }

@@ -17536,6 +17536,13 @@ def test_verified_event_overrides_fix_ups_earnings_and_hd_macro_crossing() -> No
     assert "short-DTE contract crosses" in annotated.loc["HD", "contract_event_risk_note"]
     assert calendar["status"] == "verified"
     assert any(event["event"] == "FOMC decision" and event["date"] == "2026-07-29" for event in calendar["macro_events"])
+    corporate = {event["ticker"]: event for event in calendar["corporate_events"]}
+    assert corporate["IBM"]["date"] == "2026-07-22"
+    assert corporate["IBM"]["source"] == "https://www.ibm.com/investor/events"
+    assert corporate["INTC"]["date"] == "2026-07-23"
+    assert corporate["INTC"]["source"].startswith("https://www.intc.com/")
+    assert corporate["MSFT"]["date"] == "2026-07-29"
+    assert corporate["MSFT"]["source"].startswith("https://www.microsoft.com/")
 
 
 def test_agent_review_cannot_bypass_unverified_equity_earnings() -> None:
