@@ -18273,6 +18273,49 @@ def test_fresh_reprice_keeps_exact_reviewed_spread_legs() -> None:
     assert updated["construction_source"] == "reviewed_contract_fresh_reprice"
 
 
+def test_contract_review_drift_allows_required_agent_relaxation() -> None:
+    prior = {
+        "contracts": [
+            {
+                "contract_key": "relaxed",
+                "required_review_agents": ["catalyst_news", "structure_builder", "skeptic"],
+            },
+            {
+                "contract_key": "expanded",
+                "required_review_agents": ["structure_builder", "skeptic"],
+            },
+        ]
+    }
+    current = {
+        "contracts": [
+            {
+                "contract_key": "relaxed",
+                "required_review_agents": ["structure_builder", "skeptic"],
+            },
+            {
+                "contract_key": "expanded",
+                "required_review_agents": ["catalyst_news", "structure_builder", "skeptic"],
+            },
+        ]
+    }
+
+    summary = core._contract_review_task_drift_summary(prior, current)
+
+    assert summary["contract_status"] == "drift"
+    assert summary["changed_required_agent_contract_count"] == 1
+    assert summary["changed_required_agent_contract_examples"] == ["expanded"]
+    assert summary["relaxed_required_agent_contract_count"] == 1
+    assert summary["relaxed_required_agent_contract_examples"] == ["relaxed"]
+
+    relaxed_only = core._contract_review_task_drift_summary(
+        {"contracts": [prior["contracts"][0]]},
+        {"contracts": [current["contracts"][0]]},
+    )
+    assert relaxed_only["contract_status"] == "stable"
+    assert relaxed_only["changed_required_agent_contract_count"] == 0
+    assert relaxed_only["relaxed_required_agent_contract_count"] == 1
+
+
 def test_exact_contract_blocker_does_not_poison_another_contract_for_same_ticker() -> None:
     priced = pd.DataFrame(
         [

@@ -4045,8 +4045,16 @@ def _contract_review_task_drift_summary(
     current = _contract_agents(current_contract_tasks)
     added = sorted(set(current) - set(prior))
     removed = sorted(set(prior) - set(current))
+    shared_keys = set(prior) & set(current)
     changed_agents = sorted(
-        key for key in set(prior) & set(current) if prior.get(key) != current.get(key)
+        key
+        for key in shared_keys
+        if not set(current.get(key, ())).issubset(set(prior.get(key, ())))
+    )
+    relaxed_agents = sorted(
+        key
+        for key in shared_keys
+        if set(current.get(key, ())) < set(prior.get(key, ()))
     )
     comparable = bool(prior)
     drift = bool(added or removed or changed_agents) if comparable else False
@@ -4056,9 +4064,11 @@ def _contract_review_task_drift_summary(
         "added_contract_count": len(added),
         "removed_contract_count": len(removed),
         "changed_required_agent_contract_count": len(changed_agents),
+        "relaxed_required_agent_contract_count": len(relaxed_agents),
         "added_contract_examples": added[:20],
         "removed_contract_examples": removed[:20],
         "changed_required_agent_contract_examples": changed_agents[:20],
+        "relaxed_required_agent_contract_examples": relaxed_agents[:20],
         "contract_snapshot_available": comparable,
         "contract_status": "drift" if drift else "stable" if comparable else "not_comparable",
     }
