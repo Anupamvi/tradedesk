@@ -56,6 +56,10 @@ DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
 MAX_REPORT_ACTION_ROWS = 20
 MAX_REPORT_REVIEW_ROWS = 10
+MIN_WALKFORWARD_TRAIN_SAMPLE_SIZE = 20
+MIN_WALKFORWARD_TRAIN_DAYS = 4
+MAX_WALKFORWARD_SELECTIONS_PER_DAY = 2
+MIN_WALKFORWARD_TEST_DAYS = 10
 DEFAULT_DISCOVERY_LIMIT = 120
 DEFAULT_RISK_BUDGET_PCT = 0.005
 MAX_SUGGESTED_CONTRACTS = 5
@@ -1391,6 +1395,7 @@ def output_paths(
         "route_opportunity_gap": resolved_out / "route_opportunity_gap.csv",
         "profitability_evidence_backfill_plan": resolved_out / "profitability_evidence_backfill_plan.csv",
         "profitability_bucket_atlas": resolved_out / "profitability_bucket_atlas.csv",
+        "options_agent_walkforward_replay_audit": resolved_out / "options_agent_walkforward_replay_audit.csv",
         "monthly_feasibility": resolved_out / "monthly_feasibility.csv",
         "confidence_audit": resolved_out / "confidence_audit.csv",
         "confidence_audit_json": resolved_out / "confidence_audit.json",
@@ -2147,6 +2152,10 @@ def run_pipeline(
         if not final.empty
         else (pd.DataFrame(), "", "")
     )
+    options_agent_walkforward_replay_audit = build_options_agent_walkforward_replay_audit(
+        shared_replay_out_root,
+        as_of=parse_as_of(day),
+    )
     profitability_calibration = build_profitability_calibration(
         resolved_root,
         final,
@@ -2417,6 +2426,7 @@ def run_pipeline(
                 "route_opportunity_gap": int(len(route_opportunity_gap)),
                 "profitability_evidence_backfill_plan": int(len(profitability_evidence_backfill_plan)),
                 "profitability_bucket_atlas": int(len(profitability_bucket_atlas)),
+                "options_agent_walkforward_replay_audit": int(len(options_agent_walkforward_replay_audit)),
                 "monthly_feasibility": int(len(monthly_feasibility)),
                 "confidence_audit": int(len(confidence_audit)),
                 "goal_confidence_gap_audit": int(len(goal_confidence_gap_audit)),
@@ -2447,6 +2457,9 @@ def run_pipeline(
                 profitability_evidence_backfill_plan
             ),
             "profitability_bucket_atlas_summary": summarize_profitability_bucket_atlas(profitability_bucket_atlas),
+            "options_agent_walkforward_replay_summary": summarize_options_agent_walkforward_replay(
+                options_agent_walkforward_replay_audit
+            ),
             "monthly_feasibility_summary": summarize_monthly_feasibility(monthly_feasibility),
             "confidence_audit_summary": summarize_confidence_audit(confidence_audit),
             "goal_confidence_gap_audit_summary": summarize_goal_confidence_gap_audit(goal_confidence_gap_audit),
@@ -2550,6 +2563,7 @@ def run_pipeline(
     _write_frame(route_opportunity_gap, paths["route_opportunity_gap"])
     _write_frame(profitability_evidence_backfill_plan, paths["profitability_evidence_backfill_plan"])
     _write_frame(profitability_bucket_atlas, paths["profitability_bucket_atlas"])
+    _write_frame(options_agent_walkforward_replay_audit, paths["options_agent_walkforward_replay_audit"])
     _write_frame(monthly_feasibility, paths["monthly_feasibility"])
     _write_frame(confidence_audit, paths["confidence_audit"])
     _write_json(paths["confidence_audit_json"], summarize_confidence_audit(confidence_audit))
@@ -11019,6 +11033,190 @@ def _codexuw_heldout_replay_partition(df: pd.DataFrame, path: Path) -> tuple[pd.
     heldout["replay_validation_scope"] = "heldout_test"
     heldout["replay_split_day"] = split_day.isoformat()
     return heldout, ""
+
+
+OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS = (
+    "signal_date",
+    "ticker",
+    "strategy_route",
+    "regime",
+    "training_sample_size",
+    "training_day_count",
+    "training_profit_factor",
+    "training_avg_pnl",
+    "training_win_rate",
+    "selection_rank_for_day",
+    "selection_score",
+    "realized_pnl",
+    "source_path",
+    "selection_policy",
+)
+
+
+def build_options_agent_walkforward_replay_audit(
+    out_root: Path,
+    *,
+    as_of: Optional[dt.date] = None,
+) -> pd.DataFrame:
+    """Build an outcome-blind expanding-window audit for Options Agent routes."""
+
+    pinned_path, pin_error, _ = _codexuw_pinned_replay_path(out_root)
+    if pin_error or pinned_path is None or not pinned_path.exists():
+        return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
+    try:
+        raw = pd.read_csv(pinned_path, low_memory=False)
+    except Exception:
+        return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
+    required = {"asof", "ticker", "pnl_1x", "exact_evaluated", "regime"}
+    if raw.empty or not required.issubset(raw.columns):
+        return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
+
+    frame = raw[raw["exact_evaluated"].map(_truthy)].copy()
+    frame["signal_date"] = pd.to_datetime(frame["asof"], errors="coerce")
+    frame["realized_pnl"] = pd.to_numeric(frame["pnl_1x"], errors="coerce")
+    frame = frame[frame["signal_date"].notna() & frame["realized_pnl"].notna()].copy()
+    if as_of is not None:
+        frame = frame[frame["signal_date"].dt.date <= as_of].copy()
+        frame = _filter_replay_by_exit_date(frame, "exit_day", as_of)
+    if frame.empty:
+        return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
+
+    frame["strategy_route"] = frame.get("strategy", pd.Series("", index=frame.index)).map(_strategy_route_from_text)
+    frame["regime"] = frame["regime"].map(_regime_bucket)
+    frame = frame[
+        frame["strategy_route"].astype(str).str.strip().ne("")
+        & frame["regime"].astype(str).str.strip().ne("")
+    ].copy()
+    if frame.empty:
+        return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
+
+    for column in ("decision_score", "flow_total_premium", "source_contract_oi", "entry_quote_width_pct"):
+        frame[column] = pd.to_numeric(frame.get(column, pd.Series(index=frame.index, dtype=float)), errors="coerce")
+    frame["ticker"] = frame["ticker"].map(lambda value: _as_text(value).upper())
+    frame = frame.sort_values(
+        [
+            "signal_date",
+            "ticker",
+            "strategy_route",
+            "regime",
+            "decision_score",
+            "flow_total_premium",
+            "source_contract_oi",
+            "entry_quote_width_pct",
+        ],
+        ascending=[True, True, True, True, False, False, False, True],
+        kind="mergesort",
+    ).drop_duplicates(["signal_date", "ticker", "strategy_route", "regime"], keep="first")
+
+    selected_rows: list[dict[str, Any]] = []
+    policy = (
+        f"expanding_window_train_n>={MIN_WALKFORWARD_TRAIN_SAMPLE_SIZE};"
+        f"train_days>={MIN_WALKFORWARD_TRAIN_DAYS};train_pf>={MIN_EXPECTANCY_PROFIT_FACTOR:.2f};"
+        f"train_avg_pnl>0;train_win_rate>={MIN_EXPECTANCY_WIN_RATE:.2f};"
+        f"dedupe=ticker_day_route_regime;daily_cap={MAX_WALKFORWARD_SELECTIONS_PER_DAY};"
+        "rank=entry_time_fields_only"
+    )
+    for signal_day in sorted(frame["signal_date"].dropna().unique()):
+        history = frame[frame["signal_date"] < signal_day]
+        current = frame[frame["signal_date"] == signal_day].copy()
+        qualified: dict[tuple[str, str], dict[str, float]] = {}
+        for key, group in history.groupby(["strategy_route", "regime"], dropna=False):
+            pnl = pd.to_numeric(group["realized_pnl"], errors="coerce").dropna()
+            gross_profit = float(pnl[pnl > 0].sum())
+            gross_loss = float(-pnl[pnl < 0].sum())
+            profit_factor = gross_profit / gross_loss if gross_loss > 0 else (math.inf if gross_profit > 0 else math.nan)
+            day_count = int(group["signal_date"].nunique())
+            avg_pnl = float(pnl.mean()) if not pnl.empty else math.nan
+            win_rate = float((pnl > 0).mean()) if not pnl.empty else math.nan
+            if (
+                len(pnl) >= MIN_WALKFORWARD_TRAIN_SAMPLE_SIZE
+                and day_count >= MIN_WALKFORWARD_TRAIN_DAYS
+                and math.isfinite(avg_pnl)
+                and avg_pnl > 0
+                and profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR
+                and win_rate >= MIN_EXPECTANCY_WIN_RATE
+            ):
+                qualified[(_as_text(key[0]), _as_text(key[1]))] = {
+                    "sample_size": float(len(pnl)),
+                    "day_count": float(day_count),
+                    "profit_factor": float(profit_factor),
+                    "avg_pnl": avg_pnl,
+                    "win_rate": win_rate,
+                }
+        if not qualified:
+            continue
+        current = current[
+            current.apply(
+                lambda row: (_as_text(row.get("strategy_route")), _as_text(row.get("regime"))) in qualified,
+                axis=1,
+            )
+        ].copy()
+        if current.empty:
+            continue
+        current = current.sort_values(
+            ["decision_score", "flow_total_premium", "source_contract_oi", "entry_quote_width_pct", "ticker"],
+            ascending=[False, False, False, True, True],
+            kind="mergesort",
+        ).head(MAX_WALKFORWARD_SELECTIONS_PER_DAY)
+        for rank, (_, row) in enumerate(current.iterrows(), start=1):
+            key = (_as_text(row.get("strategy_route")), _as_text(row.get("regime")))
+            training = qualified[key]
+            selected_rows.append(
+                {
+                    "signal_date": pd.Timestamp(signal_day).date().isoformat(),
+                    "ticker": row.get("ticker", ""),
+                    "strategy_route": key[0],
+                    "regime": key[1],
+                    "training_sample_size": int(training["sample_size"]),
+                    "training_day_count": int(training["day_count"]),
+                    "training_profit_factor": round(training["profit_factor"], 6),
+                    "training_avg_pnl": round(training["avg_pnl"], 4),
+                    "training_win_rate": round(training["win_rate"], 6),
+                    "selection_rank_for_day": rank,
+                    "selection_score": _round_or_blank(_as_float(row.get("decision_score")), 6),
+                    "realized_pnl": round(float(row["realized_pnl"]), 4),
+                    "source_path": str(pinned_path),
+                    "selection_policy": policy,
+                }
+            )
+    return pd.DataFrame(selected_rows, columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
+
+
+def summarize_options_agent_walkforward_replay(audit: pd.DataFrame) -> dict[str, Any]:
+    if audit is None or audit.empty:
+        return {
+            "status": "block",
+            "sample_size": 0,
+            "day_count": 0,
+            "profit_factor": None,
+            "reason": "no outcome-blind walk-forward selections",
+        }
+    pnl = pd.to_numeric(audit.get("realized_pnl", pd.Series(dtype=float)), errors="coerce").dropna()
+    gross_profit = float(pnl[pnl > 0].sum())
+    gross_loss = float(-pnl[pnl < 0].sum())
+    profit_factor = gross_profit / gross_loss if gross_loss > 0 else (math.inf if gross_profit > 0 else math.nan)
+    day_count = int(audit.get("signal_date", pd.Series(dtype=object)).astype(str).nunique())
+    avg_pnl = float(pnl.mean()) if not pnl.empty else math.nan
+    pass_gate = (
+        len(pnl) >= MIN_EXPECTANCY_SAMPLE_SIZE
+        and day_count >= MIN_WALKFORWARD_TEST_DAYS
+        and profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR
+        and math.isfinite(avg_pnl)
+        and avg_pnl > 0
+    )
+    return {
+        "status": "pass" if pass_gate else "warn",
+        "sample_size": int(len(pnl)),
+        "required_sample_size": MIN_EXPECTANCY_SAMPLE_SIZE,
+        "day_count": day_count,
+        "required_day_count": MIN_WALKFORWARD_TEST_DAYS,
+        "profit_factor": round(profit_factor, 6) if math.isfinite(profit_factor) else None,
+        "required_profit_factor": MIN_EXPECTANCY_PROFIT_FACTOR,
+        "avg_pnl": round(avg_pnl, 4) if math.isfinite(avg_pnl) else None,
+        "win_rate": round(float((pnl > 0).mean()), 6) if not pnl.empty else None,
+        "selection_outcome_independent": True,
+        "dedupe_key": "signal_date,ticker,strategy_route,regime",
+    }
 
 
 def _wheel_csp_profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.date] = None) -> tuple[pd.DataFrame, str, str]:
@@ -20936,6 +21134,7 @@ def render_report(
     intersection_gap_summary = manifest.get("profitability_calibration_intersection_gap_summary", {}) or {}
     route_gap_summary = manifest.get("route_opportunity_gap_summary", {}) or {}
     backfill_plan_summary = manifest.get("profitability_evidence_backfill_plan_summary", {}) or {}
+    walkforward_summary = manifest.get("options_agent_walkforward_replay_summary", {}) or {}
     live_quality_summary = manifest.get("live_spread_quality_summary", {}) or {}
     fill_quality_summary = manifest.get("execution_fill_quality_summary", {}) or {}
     warnings = manifest.get("warnings", []) or []
@@ -21203,6 +21402,10 @@ def render_report(
             f"- Broker matched outcomes: {broker_matched_summary.get('expectancy_status', 'unknown')}; "
             f"tickers {broker_matched_summary.get('matched_tickers', [])}; "
             f"total P/L {broker_matched_summary.get('total_pnl', '')}",
+            f"- Options Agent walk-forward replay: {walkforward_summary.get('status', 'unknown')}; "
+            f"sample {walkforward_summary.get('sample_size', 0)}/{walkforward_summary.get('required_sample_size', MIN_EXPECTANCY_SAMPLE_SIZE)}; "
+            f"days {walkforward_summary.get('day_count', 0)}/{walkforward_summary.get('required_day_count', MIN_WALKFORWARD_TEST_DAYS)}; "
+            f"PF {walkforward_summary.get('profit_factor', '')}",
             f"- Raw discovery: {row_counts.get('raw_universe', 0)} UW rows, "
             f"{row_counts.get('candidate_generation', 0)} generated candidates, "
             f"{row_counts.get('catalyst_evidence', 0)} catalyst rows, "
@@ -22447,6 +22650,11 @@ def run_design_smoke(
     _write_csv(paths["route_opportunity_gap"], ROUTE_OPPORTUNITY_GAP_COLUMNS, [])
     _write_csv(paths["profitability_evidence_backfill_plan"], PROFITABILITY_EVIDENCE_BACKFILL_PLAN_COLUMNS, [])
     _write_csv(paths["profitability_bucket_atlas"], PROFITABILITY_BUCKET_ATLAS_COLUMNS, [])
+    _write_csv(
+        paths["options_agent_walkforward_replay_audit"],
+        OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS,
+        [],
+    )
     _write_csv(paths["monthly_feasibility"], ("metric", "value", "status", "note"), [])
     _write_csv(paths["goal_confidence_gap_audit"], GOAL_CONFIDENCE_GAP_AUDIT_COLUMNS, [])
     _write_csv(paths["promotion_readiness_audit"], PROMOTION_READINESS_AUDIT_COLUMNS, [])

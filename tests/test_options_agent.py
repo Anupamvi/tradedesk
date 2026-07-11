@@ -6878,6 +6878,89 @@ def test_codexuw_replay_loader_returns_empty_when_heldout_has_no_decision_rows(t
     assert "strategy_route" in replay.columns
 
 
+def test_options_agent_walkforward_replay_selection_is_outcome_blind(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    replay_path = tmp_path / "codexuw_replay_detail.csv"
+    rows = []
+    for day in range(1, 5):
+        for ticker_idx in range(5):
+            rows.append(
+                {
+                    "asof": f"2026-06-0{day}",
+                    "ticker": f"T{ticker_idx}",
+                    "strategy": "Bear Call Credit Spread",
+                    "regime": "range",
+                    "exact_evaluated": True,
+                    "decision_score": ticker_idx,
+                    "pnl_1x": 100.0,
+                }
+            )
+    rows.extend(
+        [
+            {
+                "asof": "2026-06-05",
+                "ticker": "HIGH",
+                "strategy": "Bear Call Credit Spread",
+                "regime": "range",
+                "exact_evaluated": True,
+                "decision_score": 3.0,
+                "pnl_1x": -500.0,
+            },
+            {
+                "asof": "2026-06-05",
+                "ticker": "MID",
+                "strategy": "Bear Call Credit Spread",
+                "regime": "range",
+                "exact_evaluated": True,
+                "decision_score": 2.0,
+                "pnl_1x": 25.0,
+            },
+            {
+                "asof": "2026-06-05",
+                "ticker": "LOW",
+                "strategy": "Bear Call Credit Spread",
+                "regime": "range",
+                "exact_evaluated": True,
+                "decision_score": 1.0,
+                "pnl_1x": 1_000.0,
+            },
+        ]
+    )
+    pd.DataFrame(rows).to_csv(replay_path, index=False)
+    monkeypatch.setattr(
+        core,
+        "_codexuw_pinned_replay_path",
+        lambda _out_root: (replay_path, "", True),
+    )
+
+    audit = core.build_options_agent_walkforward_replay_audit(tmp_path)
+
+    assert audit["ticker"].tolist() == ["HIGH", "MID"]
+    assert audit["realized_pnl"].tolist() == [-500.0, 25.0]
+    assert audit["selection_rank_for_day"].tolist() == [1, 2]
+
+
+def test_options_agent_walkforward_summary_requires_sample_and_day_diversity() -> None:
+    insufficient = pd.DataFrame(
+        [
+            {"signal_date": f"2026-06-{day:02d}", "realized_pnl": 100.0 if idx % 2 == 0 else -25.0}
+            for idx, day in enumerate(range(1, 11))
+        ]
+    )
+    sufficient = pd.concat([insufficient, insufficient, insufficient], ignore_index=True)
+
+    partial_summary = core.summarize_options_agent_walkforward_replay(insufficient)
+    pass_summary = core.summarize_options_agent_walkforward_replay(sufficient)
+
+    assert partial_summary["status"] == "warn"
+    assert partial_summary["sample_size"] == 10
+    assert pass_summary["status"] == "pass"
+    assert pass_summary["sample_size"] == 30
+    assert pass_summary["day_count"] == 10
+
+
 def test_wheel_csp_replay_loader_combines_goal_replays_without_duplicate_signals(tmp_path: Path) -> None:
     out = tmp_path / "out"
     old_dir = out / "fresh_wheel_replay_old"
