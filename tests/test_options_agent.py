@@ -6915,6 +6915,7 @@ def test_options_agent_walkforward_replay_selection_is_outcome_blind(
             rows.append(
                 {
                     "asof": f"2026-06-0{day}",
+                    "exit_day": f"2026-06-0{day}",
                     "ticker": f"T{ticker_idx}",
                     "strategy": "Bear Call Credit Spread",
                     "regime": "range",
@@ -6927,6 +6928,7 @@ def test_options_agent_walkforward_replay_selection_is_outcome_blind(
         [
             {
                 "asof": "2026-06-05",
+                "exit_day": "2026-06-06",
                 "ticker": "HIGH",
                 "strategy": "Bear Call Credit Spread",
                 "regime": "range",
@@ -6936,6 +6938,7 @@ def test_options_agent_walkforward_replay_selection_is_outcome_blind(
             },
             {
                 "asof": "2026-06-05",
+                "exit_day": "2026-06-06",
                 "ticker": "MID",
                 "strategy": "Bear Call Credit Spread",
                 "regime": "range",
@@ -6945,6 +6948,7 @@ def test_options_agent_walkforward_replay_selection_is_outcome_blind(
             },
             {
                 "asof": "2026-06-05",
+                "exit_day": "2026-06-06",
                 "ticker": "LOW",
                 "strategy": "Bear Call Credit Spread",
                 "regime": "range",
@@ -6966,6 +6970,50 @@ def test_options_agent_walkforward_replay_selection_is_outcome_blind(
     assert audit["ticker"].tolist() == ["HIGH", "MID"]
     assert audit["realized_pnl"].tolist() == [-500.0, 25.0]
     assert audit["selection_rank_for_day"].tolist() == [1, 2]
+
+
+def test_options_agent_walkforward_excludes_unavailable_outcomes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    replay_path = tmp_path / "codexuw_replay_detail.csv"
+    rows = []
+    for day in range(1, 5):
+        for ticker_idx in range(5):
+            rows.append(
+                {
+                    "asof": f"2026-06-0{day}",
+                    "exit_day": "2026-06-10",
+                    "ticker": f"T{ticker_idx}",
+                    "strategy": "Bear Call Credit Spread",
+                    "regime": "range",
+                    "exact_evaluated": True,
+                    "decision_score": ticker_idx,
+                    "pnl_1x": 100.0,
+                }
+            )
+    rows.append(
+        {
+            "asof": "2026-06-05",
+            "exit_day": "2026-06-06",
+            "ticker": "TEST",
+            "strategy": "Bear Call Credit Spread",
+            "regime": "range",
+            "exact_evaluated": True,
+            "decision_score": 10.0,
+            "pnl_1x": 100.0,
+        }
+    )
+    pd.DataFrame(rows).to_csv(replay_path, index=False)
+    monkeypatch.setattr(
+        core,
+        "_codexuw_pinned_replay_path",
+        lambda _out_root: (replay_path, "", True),
+    )
+
+    audit = core.build_options_agent_walkforward_replay_audit(tmp_path)
+
+    assert audit.empty
 
 
 def test_options_agent_walkforward_summary_requires_sample_and_day_diversity() -> None:

@@ -11262,14 +11262,19 @@ def build_options_agent_walkforward_replay_audit(
         raw = pd.read_csv(pinned_path, low_memory=False)
     except Exception:
         return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
-    required = {"asof", "ticker", "pnl_1x", "exact_evaluated", "regime"}
+    required = {"asof", "exit_day", "ticker", "pnl_1x", "exact_evaluated", "regime"}
     if raw.empty or not required.issubset(raw.columns):
         return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
 
     frame = raw[raw["exact_evaluated"].map(_truthy)].copy()
     frame["signal_date"] = pd.to_datetime(frame["asof"], errors="coerce")
+    frame["outcome_available_date"] = pd.to_datetime(frame["exit_day"], errors="coerce")
     frame["realized_pnl"] = pd.to_numeric(frame["pnl_1x"], errors="coerce")
-    frame = frame[frame["signal_date"].notna() & frame["realized_pnl"].notna()].copy()
+    frame = frame[
+        frame["signal_date"].notna()
+        & frame["outcome_available_date"].notna()
+        & frame["realized_pnl"].notna()
+    ].copy()
     if as_of is not None:
         frame = frame[frame["signal_date"].dt.date <= as_of].copy()
         frame = _filter_replay_by_exit_date(frame, "exit_day", as_of)
@@ -11308,11 +11313,12 @@ def build_options_agent_walkforward_replay_audit(
         f"expanding_window_train_n>={MIN_WALKFORWARD_TRAIN_SAMPLE_SIZE};"
         f"train_days>={MIN_WALKFORWARD_TRAIN_DAYS};train_pf>={MIN_EXPECTANCY_PROFIT_FACTOR:.2f};"
         f"train_avg_pnl>0;train_win_rate>={MIN_EXPECTANCY_WIN_RATE:.2f};"
-        f"dedupe=ticker_day_route_regime;daily_cap={MAX_WALKFORWARD_SELECTIONS_PER_DAY};"
+        f"outcome_available=exit_day<signal_day;dedupe=ticker_day_route_regime;"
+        f"daily_cap={MAX_WALKFORWARD_SELECTIONS_PER_DAY};"
         "rank=entry_time_fields_only"
     )
     for signal_day in sorted(frame["signal_date"].dropna().unique()):
-        history = frame[frame["signal_date"] < signal_day]
+        history = frame[frame["outcome_available_date"] < signal_day]
         current = frame[frame["signal_date"] == signal_day].copy()
         qualified: dict[tuple[str, str], dict[str, float]] = {}
         for key, group in history.groupby(["strategy_route", "regime"], dropna=False):

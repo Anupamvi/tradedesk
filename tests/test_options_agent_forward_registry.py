@@ -222,6 +222,21 @@ def test_exact_later_fill_matches_one_active_recommendation_and_normalizes_ratio
     assert match.recommendation == recommendation
 
 
+def test_schwab_basic_utc_offset_fill_timestamp_is_accepted(tmp_path):
+    registry = _registry(tmp_path)
+    recommendation = _register(registry)
+
+    match = registry.match_broker_fill(
+        account_id="acct-123",
+        fill_timestamp="2026-07-10T18:30:01+0000",
+        legs=_legs(),
+    )
+
+    assert match.matched
+    assert match.reason == BrokerMatchReason.MATCHED
+    assert match.recommendation == recommendation
+
+
 def test_core_registers_only_final_live_directed_tickets(tmp_path):
     tickets = pd.DataFrame(
         [

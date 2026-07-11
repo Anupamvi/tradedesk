@@ -465,6 +465,8 @@ def _parse_utc_datetime(value: dt.datetime | str, *, field_name: str) -> dt.date
         candidate = value.strip()
         if candidate.endswith("Z"):
             candidate = candidate[:-1] + "+00:00"
+        else:
+            candidate = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", candidate)
         try:
             value = dt.datetime.fromisoformat(candidate)
         except ValueError as exc:
