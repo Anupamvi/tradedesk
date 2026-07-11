@@ -7032,6 +7032,40 @@ def test_wheel_csp_replay_loader_combines_goal_replays_without_duplicate_signals
     assert replay.loc[replay["ticker"].eq("DUP"), "pnl_1x"].tolist() == [20.0]
 
 
+def test_wheel_csp_replay_counts_one_managed_lifecycle_per_contract() -> None:
+    base = {
+        "signal_date": "2026-05-01",
+        "ticker": "WMT",
+        "action": "OPEN_CSP",
+        "option_symbol": "WMT260619P00090000",
+        "expiry": "2026-06-19",
+        "strike": 90,
+        "entry_date": "2026-05-01",
+    }
+    terminal = pd.DataFrame(
+        [
+            {**base, "exit_date": "2026-05-08", "exit_reason": "horizon_mark", "pnl_1x": -25.0},
+            {**base, "exit_date": "2026-05-15", "exit_reason": "horizon_mark", "pnl_1x": 10.0},
+            {**base, "exit_date": "2026-05-20", "exit_reason": "hit_50pct_target", "pnl_1x": 100.0},
+        ]
+    )
+    horizon_only = pd.DataFrame(
+        [
+            {**base, "exit_date": "2026-05-08", "exit_reason": "horizon_mark", "pnl_1x": -25.0},
+            {**base, "exit_date": "2026-05-15", "exit_reason": "horizon_mark", "pnl_1x": 10.0},
+            {**base, "exit_date": "2026-05-30", "exit_reason": "horizon_mark", "pnl_1x": 50.0},
+        ]
+    )
+
+    terminal_result = core._dedupe_wheel_csp_replay_frame(terminal)
+    horizon_result = core._dedupe_wheel_csp_replay_frame(horizon_only)
+
+    assert terminal_result["exit_reason"].tolist() == ["hit_50pct_target"]
+    assert terminal_result["pnl_1x"].tolist() == [100.0]
+    assert horizon_result["exit_date"].tolist() == ["2026-05-15"]
+    assert horizon_result["pnl_1x"].tolist() == [10.0]
+
+
 def test_expectancy_evidence_does_not_pass_on_unrelated_positive_actual_history(tmp_path: Path) -> None:
     out = tmp_path / "out"
     closed_dir = out / "schwab_pull_state"
@@ -8780,20 +8814,24 @@ def test_profitability_calibration_uses_leakage_safe_wheel_csp_replay_for_short_
             }
         ]
     ).to_csv(signal_dir / "hot-chains-2026-04-01.csv", index=False)
-    past_rows = [
-        {
-            "signal_date": "2026-04-01",
-            "ticker": "WMT",
-            "action": "OPEN_CSP",
-            "option_symbol": "WMT260717P00095000",
-            "entry_credit": 2.50,
-            "dte": 38,
-            "exit_date": "2026-05-01",
-            "pnl_per_contract": 150.0,
-            "outcome_status": "scored",
-        }
-        for idx in range(core.MIN_EXPECTANCY_SAMPLE_SIZE)
-    ]
+    past_rows = []
+    for idx in range(core.MIN_EXPECTANCY_SAMPLE_SIZE):
+        signal_day = dt.date(2026, 3, 1) + dt.timedelta(days=idx)
+        past_rows.append(
+            {
+                "signal_date": signal_day.isoformat(),
+                "ticker": "WMT",
+                "action": "OPEN_CSP",
+                "option_symbol": "WMT260717P00095000",
+                "entry_credit": 2.50,
+                "dte": 38,
+                "exit_date": (signal_day + dt.timedelta(days=30)).isoformat(),
+                "pnl_per_contract": 150.0,
+                "outcome_status": "scored",
+                "regime": "mixed",
+                "source_contract_oi": 1500,
+            }
+        )
     future_rows = [
         {
             "signal_date": "2026-06-01",
@@ -8876,16 +8914,16 @@ def test_wheel_replay_backfills_missing_regime_from_source_day_before_stale_hist
         [
             {
                 "signal_date": "2026-04-01",
-                "ticker": "WMT",
+                "ticker": f"WMT{idx}",
                 "action": "OPEN_CSP",
-                "option_symbol": "WMT260517P00095000",
+                "option_symbol": f"WMT{idx}260517P00095000",
                 "entry_credit": 2.50,
                 "dte": 38,
                 "exit_date": "2026-05-01",
                 "pnl_per_contract": 150.0,
                 "outcome_status": "scored",
             }
-            for _ in range(core.MIN_EXPECTANCY_SAMPLE_SIZE)
+            for idx in range(core.MIN_EXPECTANCY_SAMPLE_SIZE)
         ]
     ).to_csv(wheel_dir / "fresh-wheel-replay-outcomes-2026-04-01_2026-05-01.csv", index=False)
     final = pd.DataFrame(

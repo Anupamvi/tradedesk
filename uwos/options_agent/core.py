@@ -11342,8 +11342,6 @@ def _wheel_csp_profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.
 def _dedupe_wheel_csp_replay_frame(frame: pd.DataFrame) -> pd.DataFrame:
     if frame is None or frame.empty:
         return pd.DataFrame()
-    if "replay_source_path" not in frame.columns:
-        return frame.reset_index(drop=True)
     key_columns = [
         column
         for column in (
@@ -11354,24 +11352,28 @@ def _dedupe_wheel_csp_replay_frame(frame: pd.DataFrame) -> pd.DataFrame:
             "expiry",
             "strike",
             "entry_date",
-            "exit_date",
         )
         if column in frame.columns
     ]
     if not key_columns:
         return frame.reset_index(drop=True)
-    keep: list[bool] = []
-    selected_source_by_key: dict[tuple[str, ...], str] = {}
-    for _, row in frame.iterrows():
-        key = tuple(_as_text(row.get(column)) for column in key_columns)
-        source_path = _as_text(row.get("replay_source_path"))
-        selected_source = selected_source_by_key.get(key)
-        if selected_source is None:
-            selected_source_by_key[key] = source_path
-            keep.append(True)
-            continue
-        keep.append(source_path == selected_source)
-    return frame[pd.Series(keep, index=frame.index)].reset_index(drop=True)
+    out = frame.copy()
+    out["__original_order"] = range(len(out))
+    exit_reason = out.get("exit_reason", pd.Series("", index=out.index)).map(_as_text).str.lower()
+    out["__terminal_priority"] = exit_reason.map(lambda value: 1 if value in {"", "horizon_mark"} else 0)
+    signal_date = pd.to_datetime(out.get("signal_date", pd.Series("", index=out.index)), errors="coerce")
+    exit_date = pd.to_datetime(out.get("exit_date", pd.Series("", index=out.index)), errors="coerce")
+    out["__horizon_distance"] = ((exit_date - signal_date).dt.days - 14).abs().fillna(10_000)
+    out["__exit_date"] = exit_date
+    out = out.sort_values(
+        ["__terminal_priority", "__horizon_distance", "__exit_date"],
+        ascending=[True, True, True],
+        kind="mergesort",
+    ).drop_duplicates(key_columns, keep="first").sort_values("__original_order", kind="mergesort")
+    return out.drop(
+        columns=["__original_order", "__terminal_priority", "__horizon_distance", "__exit_date"],
+        errors="ignore",
+    ).reset_index(drop=True)
 
 
 def _convert_wheel_csp_replay_frame(raw: pd.DataFrame, *, path: Path, as_of: Optional[dt.date]) -> pd.DataFrame:
