@@ -1034,9 +1034,18 @@ def annotate_contract_event_risk(
         verified_event_date = _optional_iso_date(verified_event.get("date")) if verified_event else None
         source_days = _as_float(row.get("days_to_earnings"))
         fallback_event_date = day + dt.timedelta(days=int(source_days)) if source_days is not None and source_days >= 0 else None
-        earnings_date = verified_event_date or fallback_event_date
-        earnings_source = _as_text(verified_event.get("source")) if verified_event else "stock_screener.next_earnings_dt"
-        earnings_source_status = "verified" if verified_event_date is not None else "unverified" if fallback_event_date else "missing"
+        is_etf = ticker in ACTIONABLE_ETF_ALLOWLIST or _as_text(row.get("issue_type")).upper() == "ETF"
+        earnings_date = None if is_etf else verified_event_date or fallback_event_date
+        earnings_source = (
+            "not_applicable_etf"
+            if is_etf
+            else _as_text(verified_event.get("source")) if verified_event else "stock_screener.next_earnings_dt"
+        )
+        earnings_source_status = (
+            "not_applicable"
+            if is_etf
+            else "verified" if verified_event_date is not None else "unverified" if fallback_event_date else "missing"
+        )
         earnings_before_expiry = bool(expiry and earnings_date and day <= earnings_date <= expiry)
         exit_deadline = _previous_regular_market_day(earnings_date) if earnings_before_expiry and earnings_date else None
 
@@ -1115,7 +1124,7 @@ def _required_contract_review_agents(row: Mapping[str, Any]) -> tuple[str, ...]:
 def _contract_event_verification_passed(row: Mapping[str, Any]) -> bool:
     """Require the authoritative event-calendar annotation, not an agent verdict."""
 
-    return _as_text(row.get("earnings_source_status")).lower() == "verified"
+    return _as_text(row.get("earnings_source_status")).lower() in {"verified", "not_applicable"}
 
 
 def _contract_review_matches_row(

@@ -93,6 +93,102 @@
       "source": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4",
       "source_type": "issuer_ir",
       "verified_at": "2026-07-10"
+    },
+    {
+      "ticker": "BMY",
+      "date": "2026-07-30",
+      "event": "earnings",
+      "source": "https://investors.bms.com/iframes/press-releases/press-release-details/2026/Bristol-Myers-Squibb-to-Report-Results-for-Second-Quarter-2026-on-July-30-2026/default.aspx",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "VZ",
+      "date": "2026-07-24",
+      "event": "earnings",
+      "source": "https://www.verizon.com/about/news/verizon-to-report-earnings-july-24-2026",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "PFE",
+      "date": "2026-08-04",
+      "event": "earnings",
+      "source": "https://investors.pfizer.com/Investors/news-events/default.aspx?showevents=PAST",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "CMCSA",
+      "date": "2026-07-23",
+      "event": "earnings",
+      "source": "https://www.cmcsa.com/news-releases/news-release-details/comcast-host-second-quarter-2026-earnings-conference-call",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "NOW",
+      "date": "2026-07-22",
+      "event": "earnings",
+      "source": "https://newsroom.servicenow.com/press-releases/details/2026/ServiceNow-to-Announce-Second-Quarter-2026-Financial-Results-on-July-22/default.aspx",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "JPM",
+      "date": "2026-07-14",
+      "event": "earnings",
+      "source": "https://www.jpmorganchase.com/ir/news/2026/jpmc-to-host-second-quarter-2026-earnings-call",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "C",
+      "date": "2026-07-14",
+      "event": "earnings",
+      "source": "https://www.citigroup.com/global/investors",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "WFC",
+      "date": "2026-07-14",
+      "event": "earnings",
+      "source": "https://www.wellsfargo.com/about/investor-relations/",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "BAC",
+      "date": "2026-07-14",
+      "event": "earnings",
+      "source": "https://investor.bankofamerica.com/events-and-presentations/events/detail/20260714-q2-2026-bank-of-america-earnings-conference-call",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "NEM",
+      "date": "2026-07-23",
+      "event": "earnings",
+      "source": "https://investors.newmont.com/investors/events-and-presentations/default.aspx",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "BX",
+      "date": "2026-07-23",
+      "event": "earnings",
+      "source": "https://www.blackstone.com/news/press/blackstone-announces-second-quarter-2026-investor-call/",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "T",
+      "date": "2026-07-22",
+      "event": "earnings",
+      "source": "https://investors.att.com/news-and-events/events-and-presentations",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
     }
   ]
 }

@@ -17652,6 +17652,45 @@ def test_verified_event_overrides_fix_ups_earnings_and_hd_macro_crossing() -> No
     assert corporate["INTC"]["source"].startswith("https://www.intc.com/")
     assert corporate["MSFT"]["date"] == "2026-07-29"
     assert corporate["MSFT"]["source"].startswith("https://www.microsoft.com/")
+    assert corporate["BMY"]["date"] == "2026-07-30"
+    assert corporate["VZ"]["date"] == "2026-07-24"
+    assert corporate["PFE"]["date"] == "2026-08-04"
+    assert corporate["CMCSA"]["date"] == "2026-07-23"
+    assert corporate["NOW"]["date"] == "2026-07-22"
+    assert corporate["JPM"]["date"] == "2026-07-14"
+    assert corporate["C"]["date"] == "2026-07-14"
+    assert corporate["WFC"]["date"] == "2026-07-14"
+    assert corporate["BAC"]["date"] == "2026-07-14"
+    assert corporate["NEM"]["date"] == "2026-07-23"
+    assert corporate["BX"]["date"] == "2026-07-23"
+    assert corporate["T"]["date"] == "2026-07-22"
+
+
+def test_etf_contracts_mark_earnings_not_applicable() -> None:
+    calendar = core.load_options_event_calendar(core.project_root())
+    contracts = pd.DataFrame(
+        [
+            {
+                "ticker": "SPY",
+                "issue_type": "ETF",
+                "expiry": "2026-08-21",
+                "dte": 43,
+                "days_to_earnings": 12,
+            }
+        ]
+    )
+
+    annotated = core.annotate_contract_event_risk(
+        contracts,
+        as_of="2026-07-09",
+        event_calendar=calendar,
+    ).iloc[0]
+
+    assert annotated["earnings_source_status"] == "not_applicable"
+    assert annotated["earnings_event_source"] == "not_applicable_etf"
+    assert annotated["earnings_event_date"] == ""
+    assert not bool(annotated["earnings_before_expiry"])
+    assert core._contract_event_verification_passed(annotated)
 
 
 def test_event_calendar_rejects_third_party_or_mislabeled_corporate_sources() -> None:
