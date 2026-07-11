@@ -18,11 +18,13 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
+from zoneinfo import ZoneInfo
 
 
 SCHEMA_VERSION = 2
 DEFAULT_VALIDITY_MINUTES = 15
 GREEN_STATUS = "GREEN"
+MARKET_TIMEZONE = ZoneInfo("America/New_York")
 _OCC_RE = re.compile(r"^[A-Z0-9.]{1,8}\d{6}[CP]\d{8}$")
 
 
@@ -179,6 +181,7 @@ class ForwardRecommendationRegistry:
         code_provenance: Mapping[str, Any],
         run_provenance: Mapping[str, Any],
         live_current_date: bool = False,
+        live_market_session_date: dt.date | str | None = None,
         valid_until: dt.datetime | str | None = None,
     ) -> RecommendationEvent:
         """Append a state event, or return the latest event for an identical retry."""
@@ -193,6 +196,19 @@ class ForwardRecommendationRegistry:
         explicitly_live = _strict_bool(live_current_date, "live_current_date")
 
         registered_at = _utc_now()
+        registered_market_date = registered_at.astimezone(MARKET_TIMEZONE).date()
+        effective_market_date = (
+            _parse_date(live_market_session_date)
+            if live_market_session_date is not None
+            else registered_market_date
+        )
+        session_age_days = (registered_market_date - effective_market_date).days
+        if session_age_days < 0 or session_age_days > 7:
+            raise RegistryValidationError(
+                "live_market_session_date must be current or within the prior 7 calendar days"
+            )
+        if live_market_session_date is not None:
+            run = {**run, "live_market_session_date": effective_market_date.isoformat()}
         expires_at = (
             _parse_utc_datetime(valid_until, field_name="valid_until")
             if valid_until is not None
@@ -200,10 +216,14 @@ class ForwardRecommendationRegistry:
         )
         if expires_at < registered_at:
             raise RegistryValidationError("valid_until cannot precede registered_at")
-        eligible = explicitly_live and rec_date == registered_at.date()
+        eligible = explicitly_live and rec_date == effective_market_date
         if eligible:
-            eligibility_reason = "live_current_date"
-        elif rec_date != registered_at.date():
+            eligibility_reason = (
+                "live_market_session_date"
+                if live_market_session_date is not None
+                else "live_current_date"
+            )
+        elif rec_date != effective_market_date:
             eligibility_reason = "backdated_or_future_recommendation_date"
         else:
             eligibility_reason = "not_explicitly_registered_live"

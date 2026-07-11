@@ -203,6 +203,108 @@ def test_backdated_registration_is_recorded_but_never_active(tmp_path):
     assert registry.current_active_state() == ()
 
 
+def test_live_registration_uses_new_york_market_date_after_midnight_utc(tmp_path, monkeypatch):
+    after_midnight_utc = dt.datetime(2026, 7, 11, 0, 30, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(forward_registry, "_utc_now", lambda: after_midnight_utc)
+    registry = _registry(tmp_path)
+
+    market_date_event = _register(
+        registry,
+        recommendation_date=dt.date(2026, 7, 10),
+    )
+    utc_date_event = _register(
+        registry,
+        logical_id="utc-date-event",
+        recommendation_date=dt.date(2026, 7, 11),
+    )
+
+    assert market_date_event.eligible
+    assert market_date_event.recommendation_date == dt.date(2026, 7, 10)
+    assert market_date_event.registered_at == after_midnight_utc
+    assert not utc_date_event.eligible
+    assert utc_date_event.eligibility_reason == "backdated_or_future_recommendation_date"
+
+
+def test_weekend_registration_accepts_bounded_latest_market_session(tmp_path, monkeypatch):
+    saturday = dt.datetime(2026, 7, 11, 16, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(forward_registry, "_utc_now", lambda: saturday)
+    registry = _registry(tmp_path)
+
+    event = _register(
+        registry,
+        recommendation_date=dt.date(2026, 7, 10),
+        live_market_session_date=dt.date(2026, 7, 10),
+    )
+
+    assert event.eligible
+    assert event.eligibility_reason == "live_market_session_date"
+    assert event.run_provenance["live_market_session_date"] == "2026-07-10"
+
+
+def test_live_market_session_override_rejects_arbitrary_backdating(tmp_path, monkeypatch):
+    saturday = dt.datetime(2026, 7, 11, 16, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(forward_registry, "_utc_now", lambda: saturday)
+    registry = _registry(tmp_path)
+
+    with pytest.raises(forward_registry.RegistryValidationError, match="prior 7 calendar days"):
+        _register(
+            registry,
+            recommendation_date=dt.date(2026, 7, 1),
+            live_market_session_date=dt.date(2026, 7, 1),
+        )
+
+
+def test_shadow_recommendation_is_pending_and_cannot_authorize_execution(tmp_path):
+    registry = _registry(tmp_path)
+    event = _register(
+        registry,
+        status="REVIEW",
+        code_provenance={"git_commit": "abc123"},
+        run_provenance={
+            "ticker": "SPY",
+            "trade_plan": "BUY 1 SPY 2026-07-17 630 Call / SELL 1 SPY 2026-07-17 635 Call @ 2.00 DEBIT",
+            "strategy_route": "bull_call_spread",
+            "entry_type": "DEBIT",
+            "entry_limit": 2.0,
+            "target_entry": 1.9,
+            "target_exit": 3.2,
+            "expiry": "2026-07-17",
+        },
+    )
+
+    shadow = core.build_prospective_shadow_recommendations(registry.path)
+
+    assert len(shadow) == 1
+    row = shadow.iloc[0]
+    assert row["logical_recommendation_id"] == event.logical_recommendation_id
+    assert row["registration_status"] == "VALID_PROSPECTIVE"
+    assert row["outcome_status"] == "OPEN_SHADOW_PENDING"
+    assert row["evaluation_due_date"] == "2026-07-17"
+    assert not bool(row["execution_permission"])
+    assert not bool(row["contributes_to_expectancy"])
+    assert row["code_git_sha"] == "abc123"
+
+
+def test_shadow_recommendation_excludes_non_market_registration(tmp_path, monkeypatch):
+    saturday = dt.datetime(2026, 7, 11, 16, 0, tzinfo=dt.timezone.utc)
+    monkeypatch.setattr(forward_registry, "_utc_now", lambda: saturday)
+    registry = _registry(tmp_path)
+    _register(
+        registry,
+        recommendation_date=dt.date(2026, 7, 11),
+        status="REVIEW",
+    )
+
+    shadow = core.build_prospective_shadow_recommendations(registry.path)
+
+    assert len(shadow) == 1
+    row = shadow.iloc[0]
+    assert row["registration_status"] == "INVALID_NON_MARKET_DATE"
+    assert row["outcome_status"] == "INVALID_REGISTRATION"
+    assert not bool(row["execution_permission"])
+    assert not bool(row["contributes_to_expectancy"])
+
+
 def test_exact_later_fill_matches_one_active_recommendation_and_normalizes_ratio(tmp_path):
     registry = _registry(tmp_path)
     recommendation = _register(registry)

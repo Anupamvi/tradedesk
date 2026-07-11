@@ -41,8 +41,9 @@ from uwos.options_agent.forward_registry import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.3-evidence-integrity-20260710-151249"
+PIPELINE_VERSION = "options-agent-v1.4-shadow-evidence-20260710-232043"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.3-evidence-integrity-20260710-151249",
     "options-agent-v1.2-blocker-carryforward-20260710-142154",
     "options-agent-v1.2-exact-reprice-20260710-093806",
     "options-agent-v1.1-contract-risk-20260709-193127",
@@ -50,7 +51,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-10T15:12:49-07:00"
+PIPELINE_RELEASED_AT = "2026-07-10T23:20:43-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -103,8 +104,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.3-evidence-integrity-20260710-151249",
+    "PIPELINE_VERSION": "options-agent-v1.4-shadow-evidence-20260710-232043",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.3-evidence-integrity-20260710-151249",
         "options-agent-v1.2-blocker-carryforward-20260710-142154",
         "options-agent-v1.2-exact-reprice-20260710-093806",
         "options-agent-v1.1-contract-risk-20260709-193127",
@@ -112,7 +114,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-10T15:12:49-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-10T23:20:43-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -1425,6 +1427,7 @@ def output_paths(
         "broker_outcome_match_audit": resolved_out / "broker_outcome_match_audit.csv",
         "broker_matched_outcomes": resolved_out / "broker_matched_outcomes.csv",
         "broker_backfilled_forward_outcomes": resolved_out / "broker_backfilled_forward_outcomes.csv",
+        "prospective_shadow_recommendations": resolved_out / "prospective_shadow_recommendations.csv",
         "strategy_outcome_atlas": resolved_out / "strategy_outcome_atlas.csv",
         "profitability_calibration": resolved_out / "profitability_calibration.csv",
         "profitability_gap_plan": resolved_out / "profitability_gap_plan.csv",
@@ -1624,6 +1627,118 @@ def _prospective_registry_status_for_ticket(row: Mapping[str, Any]) -> str:
     return "REVIEW"
 
 
+PROSPECTIVE_SHADOW_RECOMMENDATION_COLUMNS = [
+    "schema_version",
+    "logical_recommendation_id",
+    "recommendation_date",
+    "registered_at",
+    "registration_status",
+    "recommendation_status",
+    "ticker",
+    "strategy_route",
+    "entry_type",
+    "entry_limit",
+    "target_entry",
+    "target_exit",
+    "expiry",
+    "trade_plan",
+    "legs_json",
+    "evaluation_policy",
+    "evaluation_due_date",
+    "outcome_status",
+    "realized_pnl",
+    "execution_permission",
+    "contributes_to_expectancy",
+    "code_git_sha",
+    "source_registry",
+    "note",
+]
+
+
+def _add_regular_market_days(day: dt.date, sessions: int) -> dt.date:
+    current = day
+    remaining = max(int(sessions), 0)
+    while remaining > 0:
+        current += dt.timedelta(days=1)
+        if is_regular_market_day(current):
+            remaining -= 1
+    return current
+
+
+def _latest_regular_market_day_on_or_before(day: dt.date) -> dt.date:
+    current = day
+    for _ in range(MARKET_HOLIDAY_LOOKAHEAD_DAYS + 7):
+        if is_regular_market_day(current):
+            return current
+        current -= dt.timedelta(days=1)
+    raise RuntimeError("could not find the latest regular market session")
+
+
+def build_prospective_shadow_recommendations(registry_path: Path) -> pd.DataFrame:
+    """Freeze the first live observation for each exact recommendation as shadow-only evidence."""
+
+    registry_path = Path(registry_path)
+    if not registry_path.exists():
+        return pd.DataFrame(columns=PROSPECTIVE_SHADOW_RECOMMENDATION_COLUMNS)
+    try:
+        events = ForwardRecommendationRegistry(registry_path).events()
+    except Exception:
+        return pd.DataFrame(columns=PROSPECTIVE_SHADOW_RECOMMENDATION_COLUMNS)
+    first_by_id: dict[tuple[str, str], Any] = {}
+    for event in events:
+        if not event.eligible or event.status not in {"GREEN", "TARGET", "WAIT_FOR_PRICE", "REVIEW"}:
+            continue
+        first_by_id.setdefault(event.logical_key, event)
+    rows: list[dict[str, Any]] = []
+    for event in first_by_id.values():
+        provenance = dict(event.run_provenance)
+        recommendation_date = event.recommendation_date
+        regular_market_date = is_regular_market_day(recommendation_date)
+        registration_status = "VALID_PROSPECTIVE" if regular_market_date else "INVALID_NON_MARKET_DATE"
+        trade_plan = _as_text(provenance.get("trade_plan"))
+        entry_type = _as_text(provenance.get("entry_type")) or _entry_type_from_ticket(trade_plan)
+        expiry = _as_text(provenance.get("expiry")) or _expiry_from_symbol_keys(
+            [leg.occ_symbol for leg in event.legs]
+        )
+        rows.append(
+            {
+                "schema_version": "options_agent.shadow_recommendation.v1",
+                "logical_recommendation_id": event.logical_recommendation_id,
+                "recommendation_date": recommendation_date.isoformat(),
+                "registered_at": event.registered_at.isoformat(),
+                "registration_status": registration_status,
+                "recommendation_status": event.status,
+                "ticker": _as_text(provenance.get("ticker")).upper(),
+                "strategy_route": _as_text(provenance.get("strategy_route"))
+                or _strategy_route_from_text(trade_plan),
+                "entry_type": entry_type,
+                "entry_limit": _round_or_blank(_as_float(provenance.get("entry_limit")), 4),
+                "target_entry": _round_or_blank(_as_float(provenance.get("target_entry")), 4),
+                "target_exit": _round_or_blank(_as_float(provenance.get("target_exit")), 4),
+                "expiry": expiry,
+                "trade_plan": trade_plan,
+                "legs_json": json.dumps([leg.to_dict() for leg in event.legs], sort_keys=True),
+                "evaluation_policy": "exact_quotes_after_5_regular_sessions_v1",
+                "evaluation_due_date": _add_regular_market_days(recommendation_date, 5).isoformat(),
+                "outcome_status": "OPEN_SHADOW_PENDING" if regular_market_date else "INVALID_REGISTRATION",
+                "realized_pnl": "",
+                "execution_permission": False,
+                "contributes_to_expectancy": False,
+                "code_git_sha": _as_text(event.code_provenance.get("git_sha") or event.code_provenance.get("git_commit")),
+                "source_registry": str(registry_path),
+                "note": (
+                    "Prospective shadow row only; not an order and not evidence until exact future quotes score the fixed horizon."
+                    if regular_market_date
+                    else "Registration date was not a regular U.S. market day; excluded from all evidence."
+                ),
+            }
+        )
+    return pd.DataFrame(rows, columns=PROSPECTIVE_SHADOW_RECOMMENDATION_COLUMNS).sort_values(
+        ["recommendation_date", "logical_recommendation_id"],
+        kind="mergesort",
+    ).reset_index(drop=True)
+
+
 def register_prospective_options_agent_recommendations(
     trade_tickets: pd.DataFrame,
     *,
@@ -1656,7 +1771,9 @@ def register_prospective_options_agent_recommendations(
         return summary
 
     account_id = _as_text(os.getenv("OPTIONS_AGENT_ACCOUNT_ID")) or DEFAULT_FORWARD_REGISTRY_ACCOUNT
-    recommendation_date = recommendation_date or dt.datetime.now(dt.timezone.utc).date()
+    recommendation_date = recommendation_date or _latest_regular_market_day_on_or_before(
+        dt.datetime.now(ZoneInfo("America/New_York")).date()
+    )
     registry = ForwardRecommendationRegistry(registry_path)
     code_provenance = _pipeline_source_provenance(root)
     run_base = {
@@ -1698,8 +1815,15 @@ def register_prospective_options_agent_recommendations(
                     "trade_plan": _as_text(row.get("trade_plan")),
                     "entry_limit": _round_or_blank(_as_float(row.get("entry_limit")), 4),
                     "target_entry": _round_or_blank(_as_float(row.get("target_entry")), 4),
+                    "target_exit": _round_or_blank(_as_float(row.get("target_exit")), 4),
+                    "entry_type": _entry_type_from_ticket(row.get("trade_plan")),
+                    "strategy_route": _as_text(row.get("strategy_route")),
+                    "expiry": _as_text(row.get("expiry")),
+                    "max_profit": _round_or_blank(_as_float(row.get("max_profit")), 2),
+                    "max_loss": _round_or_blank(_as_float(row.get("max_loss")), 2),
                 },
                 live_current_date=True,
+                live_market_session_date=recommendation_date,
             )
         except (OSError, RegistryValidationError) as exc:
             summary["errors"].append(f"{_as_text(row.get('ticker'))}:{exc}")
@@ -2417,6 +2541,13 @@ def run_pipeline(
         chain_snapshot_dir=chain_snapshot_dir,
         agent_reviews_json=agent_reviews_json,
     )
+    prospective_shadow_recommendations = build_prospective_shadow_recommendations(
+        Path(forward_registry_summary["path"])
+    )
+    shadow_valid = prospective_shadow_recommendations.get(
+        "registration_status",
+        pd.Series("", index=prospective_shadow_recommendations.index),
+    ).astype(str).eq("VALID_PROSPECTIVE")
     manifest = build_manifest(day, root=resolved_root, out_dir=paths["out_dir"])
     manifest.setdefault("artifacts", {})["forward_recommendation_registry"] = forward_registry_summary["path"]
     live_readiness_notes = []
@@ -2465,6 +2596,7 @@ def run_pipeline(
                 "broker_outcome_match_audit": int(len(broker_outcome_match_audit)),
                 "broker_matched_outcomes": int(len(broker_matched_outcomes)),
                 "broker_backfilled_forward_outcomes": int(len(broker_backfilled_forward_outcomes)),
+                "prospective_shadow_recommendations": int(len(prospective_shadow_recommendations)),
                 "strategy_outcome_atlas": int(len(strategy_outcome_atlas)),
                 "profitability_calibration": int(len(profitability_calibration)),
                 "profitability_gap_plan": int(len(profitability_gap_plan)),
@@ -2536,6 +2668,37 @@ def run_pipeline(
                 },
             "agent_review_summary": summarize_agent_reviews(agent_review_board),
             "forward_recommendation_registry": forward_registry_summary,
+            "prospective_shadow_recommendation_summary": {
+                "rows": int(len(prospective_shadow_recommendations)),
+                "valid_prospective_rows": int(shadow_valid.sum()),
+                "invalid_registration_rows": int((~shadow_valid).sum()),
+                "pending_rows": int(
+                    prospective_shadow_recommendations.get(
+                        "outcome_status",
+                        pd.Series("", index=prospective_shadow_recommendations.index),
+                    )
+                    .astype(str)
+                    .eq("OPEN_SHADOW_PENDING")
+                    .sum()
+                ),
+                "contributing_rows": int(
+                    prospective_shadow_recommendations.get(
+                        "contributes_to_expectancy",
+                        pd.Series(False, index=prospective_shadow_recommendations.index),
+                    )
+                    .map(_truthy)
+                    .sum()
+                ),
+                "execution_permission_rows": int(
+                    prospective_shadow_recommendations.get(
+                        "execution_permission",
+                        pd.Series(False, index=prospective_shadow_recommendations.index),
+                    )
+                    .map(_truthy)
+                    .sum()
+                ),
+                "evaluation_policy": "exact_quotes_after_5_regular_sessions_v1",
+            },
             "lessonengine": lesson_metadata,
             **lesson_metadata,
             "warnings": source_notes
@@ -2612,6 +2775,7 @@ def run_pipeline(
     _write_frame(broker_outcome_match_audit, paths["broker_outcome_match_audit"])
     _write_frame(broker_matched_outcomes, paths["broker_matched_outcomes"])
     _write_frame(broker_backfilled_forward_outcomes, paths["broker_backfilled_forward_outcomes"])
+    _write_frame(prospective_shadow_recommendations, paths["prospective_shadow_recommendations"])
     _write_frame(strategy_outcome_atlas, paths["strategy_outcome_atlas"])
     _write_frame(profitability_calibration, paths["profitability_calibration"])
     _write_frame(profitability_gap_plan, paths["profitability_gap_plan"])
@@ -23006,6 +23170,11 @@ def run_design_smoke(
     _write_csv(paths["broker_outcome_match_audit"], BROKER_OUTCOME_MATCH_AUDIT_COLUMNS, [])
     _write_csv(paths["broker_matched_outcomes"], BROKER_MATCHED_OUTCOME_COLUMNS, [])
     _write_csv(paths["broker_backfilled_forward_outcomes"], BROKER_BACKFILLED_FORWARD_OUTCOME_COLUMNS, [])
+    _write_csv(
+        paths["prospective_shadow_recommendations"],
+        PROSPECTIVE_SHADOW_RECOMMENDATION_COLUMNS,
+        [],
+    )
     _write_csv(paths["profitability_calibration"], PROFITABILITY_CALIBRATION_COLUMNS, [])
     _write_csv(paths["profitability_gap_plan"], PROFITABILITY_GAP_PLAN_COLUMNS, [])
     _write_csv(
