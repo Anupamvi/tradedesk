@@ -701,7 +701,7 @@ def test_report_keeps_focus_review_queue_without_internal_promotion_section() ->
     assert "Overall profitability/send-now confidence is blocked, so these rows are diagnostics only." in report
     assert "| Ticker | Signal | Reason | Qty | Reviewed / Target Price | Max Loss | Trade Plan |" in report
     assert "BUY 1 MSFT 2026-07-17 400 Put" in report
-    assert "| MSFT | 🟡 YELLOW review |" in report
+    assert "| MSFT | ⚪ GRAY review |" in report
 
 
 def test_no_green_reason_leads_with_profitability_calibration_cause() -> None:
@@ -3202,9 +3202,9 @@ def test_market_session_only_targets_are_review_until_live_validated() -> None:
         "trade_plan": "SELL 1 SESSION 2026-06-05 100 Call / BUY 1 SESSION 2026-06-05 105 Call @ 0.65 CREDIT",
     }
 
-    assert core._decision_badge(row) == "🟡 YELLOW review"
-    assert core._decision_icon(row) == "🟡"
-    assert core._decision_status_label(row) == "YELLOW review"
+    assert core._decision_badge(row) == "⚪ GRAY review"
+    assert core._decision_icon(row) == "⚪"
+    assert core._decision_status_label(row) == "GRAY review"
     assert core._ticket_order_readiness(row) == "target_order_price_validation"
     assert core._ticket_action(row) == "work_target_limit"
     assert "shown target limit" in core._ticket_next_step(row)
@@ -3220,8 +3220,8 @@ def test_calibration_blocked_plan_is_review_not_yellow_target() -> None:
         "trade_plan": "BUY 1 TEST 2026-08-21 100 Call @ 5.00 DEBIT",
     }
 
-    assert core._decision_badge(row) == "🟡 YELLOW review"
-    assert core._decision_status_label(row) == "YELLOW review"
+    assert core._decision_badge(row) == "⚪ GRAY review"
+    assert core._decision_status_label(row) == "GRAY review"
     _, target = core.split_trade_ticket_surfaces(pd.DataFrame([row]))
     assert target.empty
 
@@ -14115,8 +14115,8 @@ def test_run_pipeline_writes_independent_recommendation_artifacts(tmp_path: Path
     assert final["visible_in_final_board"].tolist() == [True]
     assert final["recommendation_status"].tolist() == [RecommendationStatus.REVIEW.value]
     assert final["max_profit"].tolist() == [100.0]
-    assert decision["status_label"].tolist() == ["YELLOW review"]
-    assert decision["status_icon"].tolist() == ["🟡"]
+    assert decision["status_label"].tolist() == ["GRAY review"]
+    assert decision["status_icon"].tolist() == ["⚪"]
     assert decision["final_action"].tolist() == [RecommendationStatus.REVIEW.value]
     assert decision["execution_status"].tolist() == ["needs_review"]
     assert tickets.empty
@@ -15233,7 +15233,7 @@ def test_weak_flow_debit_spread_without_outcome_support_is_not_send_now() -> Non
 
     assert decision["ready_to_enter"].tolist() == [False]
     assert decision["execution_status"].tolist() == ["waiting_for_price"]
-    assert decision["status_label"].tolist() == ["YELLOW review"]
+    assert decision["status_label"].tolist() == ["GRAY review"]
     assert "send_now_debit_directional_edge_below_threshold" in decision["execution_blockers"].iloc[0]
     green, target = core.split_trade_ticket_surfaces(tickets)
     assert tickets["ready_to_enter"].tolist() == [False]

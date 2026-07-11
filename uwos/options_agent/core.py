@@ -1064,6 +1064,8 @@ def annotate_contract_event_risk(
         ]
         macro_text = "; ".join(f"{name} {event_date.isoformat()}" for event_date, name in contract_macro_events)
         event_notes: list[str] = []
+        if earnings_source_status in {"missing", "unverified"}:
+            event_notes.append("authoritative earnings date is unverified; order entry is blocked")
         if earnings_before_expiry and earnings_date:
             event_notes.append(
                 f"earnings {earnings_date.isoformat()} before expiry; exit by {exit_deadline.isoformat() if exit_deadline else 'prior session'}"
@@ -22876,7 +22878,12 @@ def _render_review_queue(
     lines.append("| Ticker | Signal | Reason | Qty | Reviewed / Target Price | Max Loss | Trade Plan |")
     lines.append("|---|---|---|---:|---:|---:|---|")
     for _, row in review.head(MAX_REPORT_REVIEW_ROWS).iterrows():
-        reason = _as_text(row.get("quality_gate_reason")) or _as_text(row.get("status_reason")) or _ticket_next_step(row)
+        reason = (
+            _as_text(row.get("contract_event_risk_note"))
+            or _as_text(row.get("quality_gate_reason"))
+            or _as_text(row.get("status_reason"))
+            or _ticket_next_step(row)
+        )
         lines.append(
             "| {ticker} | {icon} | {reason} | {qty} | {entry} | {position_loss} | {trade_plan} |".format(
                 ticker=_report_cell(row.get("ticker")),
@@ -22998,7 +23005,14 @@ def _coverage_icon(color: Any) -> str:
 
 def _coverage_badge(row: Mapping[str, Any]) -> str:
     state = _coverage_display_status(row)
-    color = "red" if state == "NON_ACTIONABLE_UNDERLYING" else _as_text(row.get("status_color"))
+    if state == "READY_TICKET":
+        color = "green"
+    elif state == "TARGET_ORDER_CANDIDATE":
+        color = "yellow"
+    elif state in {"NON_ACTIONABLE_UNDERLYING", "BLOCKED_FINAL_ROW", "SOURCE_MISSING"}:
+        color = "red"
+    else:
+        color = "gray"
     label = _coverage_state_label(state)
     return f"{_coverage_icon(color)} {label}".strip()
 
@@ -23022,15 +23036,15 @@ def _coverage_state_label(status: Any) -> str:
     return {
         "READY_TICKET": "GREEN ready",
         "TARGET_ORDER_CANDIDATE": "YELLOW coverage",
-        "REVIEW_TICKET": "YELLOW review",
-        "UNVALIDATED_CHAIN": "YELLOW review",
-        "CANDIDATE_NOT_STRUCTURED": "YELLOW candidate",
-        "STRUCTURED_NOT_TOP_FINAL": "YELLOW structured",
-        "STRUCTURE_MISSING": "YELLOW no-structure",
-        "MACRO_TAPE_CANDIDATE": "YELLOW macro",
-        "MACRO_TAPE_NO_LIVE_EDGE": "YELLOW macro no-edge",
+        "REVIEW_TICKET": "GRAY review",
+        "UNVALIDATED_CHAIN": "GRAY review",
+        "CANDIDATE_NOT_STRUCTURED": "GRAY candidate",
+        "STRUCTURED_NOT_TOP_FINAL": "GRAY structured",
+        "STRUCTURE_MISSING": "GRAY no-structure",
+        "MACRO_TAPE_CANDIDATE": "GRAY macro",
+        "MACRO_TAPE_NO_LIVE_EDGE": "GRAY macro no-edge",
         "MACRO_TAPE_REJECTED": "GRAY macro rejected",
-        "FINAL_NO_TICKET": "YELLOW no-ticket",
+        "FINAL_NO_TICKET": "GRAY no-ticket",
         "NON_ACTIONABLE_UNDERLYING": "RED no-action",
         "BLOCKED_FINAL_ROW": "RED blocked",
         "NO_DIRECTIONAL_EDGE": "GRAY no-edge",
@@ -23051,7 +23065,7 @@ def _decision_badge(row: Mapping[str, Any]) -> str:
     if execution == "blocked":
         return f"{_coverage_icon('red')} RED blocked"
     if _as_text(row.get("trade_plan")):
-        return f"{_coverage_icon('yellow')} YELLOW review"
+        return f"{_coverage_icon('gray')} GRAY review"
     return f"{_coverage_icon('gray')} GRAY review"
 
 
@@ -23059,15 +23073,13 @@ def _decision_icon(row: Mapping[str, Any]) -> str:
     if _truthy(row.get("ready_to_enter")):
         return _coverage_icon("green")
     target_status = _as_text(row.get("target_order_status"))
-    if target_status in {"target_order_candidate", "target_order_wait_for_price"}:
+    if _target_surface_eligible(row):
         return _coverage_icon("yellow")
     if target_status.startswith("not_actionable"):
         return _coverage_icon("red")
     execution = _as_text(row.get("execution_status"))
     if execution == "blocked":
         return _coverage_icon("red")
-    if _as_text(row.get("trade_plan")):
-        return _coverage_icon("yellow")
     return _coverage_icon("gray")
 
 
@@ -23082,8 +23094,6 @@ def _decision_status_label(row: Mapping[str, Any]) -> str:
     execution = _as_text(row.get("execution_status"))
     if execution == "blocked":
         return "RED blocked"
-    if _as_text(row.get("trade_plan")):
-        return "YELLOW review"
     return "GRAY review"
 
 
