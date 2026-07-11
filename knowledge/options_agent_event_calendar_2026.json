@@ -197,6 +197,14 @@
       "source": "https://www.merck.com/events/q2-2026-earnings-call/",
       "source_type": "issuer_ir",
       "verified_at": "2026-07-11"
+    },
+    {
+      "ticker": "TSLA",
+      "date": "2026-07-22",
+      "event": "earnings",
+      "source": "https://ir.tesla.com/press-release/tesla-second-quarter-2026-production-deliveries-and-deployments",
+      "source_type": "issuer_ir",
+      "verified_at": "2026-07-11"
     }
   ]
 }

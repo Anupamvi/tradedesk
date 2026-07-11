@@ -17665,6 +17665,7 @@ def test_verified_event_overrides_fix_ups_earnings_and_hd_macro_crossing() -> No
     assert corporate["BX"]["date"] == "2026-07-23"
     assert corporate["T"]["date"] == "2026-07-22"
     assert corporate["MRK"]["date"] == "2026-08-04"
+    assert corporate["TSLA"]["date"] == "2026-07-22"
 
 
 def test_etf_contracts_mark_earnings_not_applicable() -> None:
