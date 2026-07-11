@@ -8140,7 +8140,7 @@ def test_short_put_family_fallback_is_explicit_and_does_not_mask_negative_ticker
     assert bad_row["actual_forward_strategy_expectancy_status"] == "BLOCK"
 
 
-def test_short_put_cash_risk_blocks_green_but_keeps_yellow_target_surface() -> None:
+def test_short_put_cash_risk_is_portfolio_acknowledgement_not_execution_blocker() -> None:
     final = pd.DataFrame(
         [
             {
@@ -8194,15 +8194,18 @@ def test_short_put_cash_risk_blocks_green_but_keeps_yellow_target_surface() -> N
     decision = core.synthesize_decision_board(final, market_regime={"regime": "mixed"}, execution_context=context)
     tickets = core.build_trade_tickets(decision)
 
-    assert decision["ready_to_enter"].tolist() == [False]
+    assert decision["ready_to_enter"].tolist() == [True]
     assert decision["target_order_status"].tolist() == ["target_order_candidate"]
-    assert "short_put_cash_required_above_75pct_cash" in decision["execution_blockers"].iloc[0]
-    assert "short_put_account_risk_above_2.00%" in decision["execution_blockers"].iloc[0]
+    assert "short_put_cash_required_above_75pct_cash" not in decision["execution_blockers"].iloc[0]
+    assert "short_put_account_risk_above_2.00%" not in decision["execution_blockers"].iloc[0]
     assert "send_now_credit_width_below_30pct" not in decision["execution_blockers"].iloc[0]
+    assert decision["requires_portfolio_ack"].tolist() == [True]
+    assert "cash required above 75% of portfolio cash" in decision["portfolio_risk_note"].iloc[0]
+    assert "account risk above 2.00%" in decision["portfolio_risk_note"].iloc[0]
     assert tickets["ticker"].tolist() == ["PUTRISK"]
-    assert tickets["ready_to_enter"].tolist() == [False]
-    assert tickets["order_readiness"].tolist() == ["target_order_after_cash_risk"]
-    assert tickets["action"].tolist() == ["resize_or_skip_until_cash_risk_clears"]
+    assert tickets["ready_to_enter"].tolist() == [True]
+    assert tickets["order_readiness"].tolist() == ["ready_to_enter"]
+    assert tickets["action"].tolist() == ["manual_entry_with_portfolio_ack"]
 
 
 def test_goal_gate_does_not_hide_cash_risk_ticket_readiness() -> None:

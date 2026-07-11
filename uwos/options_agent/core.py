@@ -12617,7 +12617,15 @@ def synthesize_decision_board(
         ticket = _as_text(row.get("trade_plan")) or _as_text(row.get("full_ticket"))
         entry_limit = _as_float(row.get("entry_limit"))
         live_validation_status = _as_text(row.get("live_validation_status")).upper()
-        portfolio_flag = _truthy(row.get("portfolio_risk_flag"))
+        cash_risk_annotations = _short_put_cash_risk_blockers(row)
+        portfolio_risk_note = _as_text(row.get("portfolio_risk_note"))
+        if cash_risk_annotations:
+            portfolio_risk_note = _append_reason(
+                portfolio_risk_note,
+                "portfolio sizing acknowledgement: "
+                + "; ".join(_short_put_cash_risk_annotation(blocker) for blocker in cash_risk_annotations),
+            )
+        portfolio_flag = _truthy(row.get("portfolio_risk_flag")) or bool(cash_risk_annotations)
         underlying_tier = _as_text(row.get("underlying_quality_tier")) or "unknown"
         underlying_reason = _as_text(row.get("underlying_quality_reason"))
         suggested_contracts = int(_as_float(row.get("suggested_contracts")) or 0)
@@ -12841,7 +12849,7 @@ def synthesize_decision_board(
                 "synthesis_reason": row.get("synthesis_reason", ""),
                 "status_reason": row.get("status_reason", ""),
                 "sizing_note": row.get("sizing_note", ""),
-                "portfolio_risk_note": row.get("portfolio_risk_note", ""),
+                "portfolio_risk_note": portfolio_risk_note,
                 "visible_in_final_board": bool(row.get("visible_in_final_board", True)),
             }
         decision_row["status_icon"] = _decision_icon(decision_row)
@@ -14236,6 +14244,17 @@ def _short_put_cash_risk_blockers(row: Mapping[str, Any]) -> list[str]:
     return blockers
 
 
+def _short_put_cash_risk_annotation(blocker: str) -> str:
+    if blocker == "short_put_cash_risk_unavailable":
+        return "cash requirement unavailable"
+    if blocker == "short_put_cash_required_above_75pct_cash":
+        return "cash required above 75% of portfolio cash"
+    if blocker.startswith("short_put_account_risk_above_"):
+        threshold = blocker.removeprefix("short_put_account_risk_above_")
+        return f"account risk above {threshold}"
+    return blocker
+
+
 def _execution_blockers_for_row(
     row: Mapping[str, Any],
     execution_status: str,
@@ -14313,7 +14332,6 @@ def _execution_blockers_for_row(
                 blockers.append(POSITION_PROFIT_MATERIALITY_BLOCKER)
             if not _positive_strategy_expectancy_ready_for_green(row):
                 blockers.append(POSITIVE_STRATEGY_EXPECTANCY_BLOCKER)
-        blockers.extend(_short_put_cash_risk_blockers(row))
     blockers.extend(_send_now_economics_blockers(row, ticket=ticket, entry_limit=entry_limit))
     if execution_status == "needs_sizing":
         blockers.append("sizing_required")
