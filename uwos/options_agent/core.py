@@ -55,6 +55,7 @@ DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
 MAX_REPORT_ACTION_ROWS = 20
+MAX_REPORT_REVIEW_ROWS = 10
 DEFAULT_DISCOVERY_LIMIT = 120
 DEFAULT_RISK_BUDGET_PCT = 0.005
 MAX_SUGGESTED_CONTRACTS = 5
@@ -21298,10 +21299,19 @@ def _plain_no_green_reason(
     if target_count <= 0 and review_ticket_count <= 0:
         reasons.append("no current candidate survived into the order surface")
 
+    calibration_status = _as_text(calibration_summary.get("status")).lower()
+    calibration_failed = bool(calibration_status and calibration_status not in {"pass", "passed", "ok"})
+    if calibration_failed:
+        reasons.append("point-in-time profitability calibration is not passing")
+
     entry_rating = _as_float(confidence_summary.get("order_entry_confidence_rating")) or 0.0
     mechanics_rating = _as_float(confidence_summary.get("order_mechanics_confidence_rating")) or 0.0
     if entry_rating < MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING:
-        reasons.append("order-entry confidence is below the send threshold")
+        reasons.append(
+            "no ticket qualifies for send-now entry"
+            if calibration_failed
+            else "order-entry confidence is below the send threshold"
+        )
     if mechanics_rating < MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING:
         reasons.append("order mechanics are below the send threshold")
 
@@ -21323,10 +21333,6 @@ def _plain_no_green_reason(
         reasons.append("agent review coverage is incomplete")
     elif not _truthy(execution_context.get("agentic_reviews_ready")) and blockers:
         reasons.append("agent review coverage is incomplete")
-
-    calibration_status = _as_text(calibration_summary.get("status")).lower()
-    if calibration_status and calibration_status not in {"pass", "passed", "ok"}:
-        reasons.append("exact profitability bucket proof is not passing")
 
     return "; ".join(dict.fromkeys(reasons[:6])) or "send-now gates did not pass"
 
@@ -21852,9 +21858,9 @@ def _render_review_queue(
     )
     lines.append("These are not orders. This section is limited to validated rows and focus tickers; tail unvalidated rows stay in CSV artifacts.")
     lines.append("")
-    lines.append("| Ticker | Signal | Reason | Qty | Target Limit | Max Loss | Trade Plan |")
+    lines.append("| Ticker | Signal | Reason | Qty | Reviewed / Target Price | Max Loss | Trade Plan |")
     lines.append("|---|---|---|---:|---:|---:|---|")
-    for _, row in review.head(25).iterrows():
+    for _, row in review.head(MAX_REPORT_REVIEW_ROWS).iterrows():
         reason = _as_text(row.get("quality_gate_reason")) or _as_text(row.get("status_reason")) or _ticket_next_step(row)
         lines.append(
             "| {ticker} | {icon} | {reason} | {qty} | {entry} | {position_loss} | {trade_plan} |".format(
@@ -21867,8 +21873,10 @@ def _render_review_queue(
                 trade_plan=_report_cell(row.get("trade_plan")),
             )
         )
-    if len(review) > 25:
-        lines.append(f"| ... |  | {len(review) - 25} additional review rows in decision_board.csv |  |  |  |  |")
+    if len(review) > MAX_REPORT_REVIEW_ROWS:
+        lines.append(
+            f"| ... |  | {len(review) - MAX_REPORT_REVIEW_ROWS} additional review rows in decision_board.csv |  |  |  |  |"
+        )
     lines.append("")
     return lines
 

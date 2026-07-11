@@ -696,9 +696,32 @@ def test_report_keeps_focus_review_queue_without_internal_promotion_section() ->
     assert "Not promotable yet." not in report
     assert "/tmp/promotion_readiness_audit.csv" not in report
     assert "Overall profitability/send-now confidence is blocked, so these rows are diagnostics only." in report
-    assert "| Ticker | Signal | Reason | Qty | Target Limit | Max Loss | Trade Plan |" in report
+    assert "| Ticker | Signal | Reason | Qty | Reviewed / Target Price | Max Loss | Trade Plan |" in report
     assert "BUY 1 MSFT 2026-07-17 400 Put" in report
     assert "| MSFT | 🟡 YELLOW review |" in report
+
+
+def test_no_green_reason_leads_with_profitability_calibration_cause() -> None:
+    reason = core._plain_no_green_reason(
+        green_count=0,
+        target_count=0,
+        review_ticket_count=2,
+        live_mode="live_schwab",
+        row_counts={"live_chain_validation": 2},
+        portfolio_context_status="live",
+        blocking_gates=[],
+        execution_context={"agentic_reviews_ready": True},
+        calibration_summary={"status": "block"},
+        confidence_summary={
+            "order_entry_confidence_rating": 0.0,
+            "order_mechanics_confidence_rating": 7.0,
+        },
+    )
+
+    assert reason == (
+        "point-in-time profitability calibration is not passing; "
+        "no ticket qualifies for send-now entry"
+    )
 
 
 def test_yellow_exact_review_block_is_labeled_watch_only() -> None:
@@ -857,7 +880,7 @@ def test_report_keeps_focus_review_diagnostics_when_goal_confidence_passes() -> 
         },
     )
 
-    assert "| Ticker | Signal | Reason | Qty | Target Limit | Max Loss | Trade Plan |" in report
+    assert "| Ticker | Signal | Reason | Qty | Reviewed / Target Price | Max Loss | Trade Plan |" in report
     assert "BUY 1 MSFT 2026-07-17 400 Put" in report
 
 
