@@ -56,8 +56,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.4-shadow-evidence-20260710-232043"
+    assert core.PIPELINE_VERSION == "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.4-shadow-evidence-20260710-232043",
         "options-agent-v1.3-evidence-integrity-20260710-151249",
         "options-agent-v1.2-blocker-carryforward-20260710-142154",
         "options-agent-v1.2-exact-reprice-20260710-093806",
@@ -66,7 +67,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-10T23:20:43-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-11T03:04:19-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True

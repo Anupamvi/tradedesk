@@ -305,6 +305,34 @@ def test_shadow_recommendation_excludes_non_market_registration(tmp_path, monkey
     assert not bool(row["contributes_to_expectancy"])
 
 
+def test_shadow_expectancy_selection_caps_each_session_at_two_unique_tickers(tmp_path):
+    registry = _registry(tmp_path)
+    for logical_id, ticker in (
+        ("first-spy", "SPY"),
+        ("second-spy", "SPY"),
+        ("third-qqq", "QQQ"),
+        ("fourth-iwm", "IWM"),
+    ):
+        _register(
+            registry,
+            logical_id=logical_id,
+            status="REVIEW",
+            run_provenance={"ticker": ticker, "strategy_route": "bull_call_debit"},
+        )
+
+    shadow = core.build_prospective_shadow_recommendations(registry.path)
+    selected = shadow[shadow["selected_for_expectancy"].map(bool)].sort_values(
+        "evidence_selection_rank"
+    )
+
+    assert selected["ticker"].tolist() == ["SPY", "QQQ"]
+    assert selected["evidence_selection_rank"].tolist() == [1, 2]
+    assert set(shadow["evidence_selection_policy"]) == {
+        "top_2_unique_tickers_by_frozen_rank_then_sequence_v1"
+    }
+    assert not shadow["execution_permission"].map(bool).any()
+
+
 def test_exact_later_fill_matches_one_active_recommendation_and_normalizes_ratio(tmp_path):
     registry = _registry(tmp_path)
     recommendation = _register(registry)
