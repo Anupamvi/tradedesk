@@ -56,8 +56,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419"
+    assert core.PIPELINE_VERSION == "options-agent-v1.6-true-ytd-replay-20260711-033758"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419",
         "options-agent-v1.4-shadow-evidence-20260710-232043",
         "options-agent-v1.3-evidence-integrity-20260710-151249",
         "options-agent-v1.2-blocker-carryforward-20260710-142154",
@@ -67,7 +68,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-11T03:04:19-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-11T03:37:58-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -6959,6 +6960,52 @@ def test_codexuw_replay_loader_returns_empty_when_heldout_has_no_decision_rows(t
     assert error == ""
     assert replay.empty
     assert "strategy_route" in replay.columns
+
+
+def test_pinned_replay_rejects_truncation_history_count_and_split_drift(tmp_path: Path) -> None:
+    out = tmp_path / "out"
+    replay_dir = out / "codexuw_replay_fixture"
+    knowledge = tmp_path / "knowledge"
+    replay_dir.mkdir(parents=True)
+    knowledge.mkdir()
+    detail = replay_dir / "codexuw_replay_detail.csv"
+    manifest = replay_dir / "codexuw_replay_manifest.json"
+    detail.write_text("ticker,pnl_1x\nSPY,10\n", encoding="utf-8")
+
+    def write_pin(manifest_payload):
+        manifest.write_text(json.dumps(manifest_payload, sort_keys=True), encoding="utf-8")
+        (knowledge / "options_agent_replay_pin.json").write_text(
+            json.dumps(
+                {
+                    "replay_detail_path": str(detail.relative_to(out)),
+                    "replay_detail_sha256": hashlib.sha256(detail.read_bytes()).hexdigest(),
+                    "manifest_path": str(manifest.relative_to(out)),
+                    "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
+                    "expected_history_days": 141,
+                    "split_day": "2026-05-19",
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    valid = {
+        "point_in_time_export_ceiling": True,
+        "max_days": 0,
+        "days": 141,
+        "split_day": "2026-05-19",
+    }
+    write_pin(valid)
+    pinned, error, present = core._codexuw_pinned_replay_path(out)
+    assert present and error == "" and pinned == detail.resolve()
+
+    write_pin({**valid, "max_days": 30})
+    assert "disable max_days truncation" in core._codexuw_pinned_replay_path(out)[1]
+
+    write_pin({**valid, "days": 30})
+    assert "history-day count mismatch" in core._codexuw_pinned_replay_path(out)[1]
+
+    write_pin({**valid, "split_day": "2026-06-01"})
+    assert "split_day mismatch" in core._codexuw_pinned_replay_path(out)[1]
 
 
 def test_options_agent_walkforward_replay_selection_is_outcome_blind(
@@ -17084,6 +17131,50 @@ def test_confidence_audit_rates_weak_positive_strategy_support_at_seven() -> Non
     assert "leakage_safe_replay_decision_pass_model=PASS" in profitability["evidence"]
     assert "broker_matched_options_agent_outcomes_sample_too_small" in profitability["blockers"]
     assert "replay_decision_pass_sample_too_small" not in profitability["blockers"]
+
+
+def test_profitability_confidence_names_sampled_negative_walkforward_replay() -> None:
+    expectancy = pd.DataFrame(
+        [
+            {
+                "source": "options_agent_walkforward_replay_model",
+                "evidence_type": "options_agent_walkforward_replay_model",
+                "status": "BLOCK",
+                "sample_size": 48,
+                "win_rate": 0.4583,
+                "avg_pnl": -23.17,
+                "total_pnl": -1112.25,
+                "profit_factor": 0.714,
+            },
+            {
+                "source": "codexuw_replay_decision_pass_model",
+                "evidence_type": "replay_backtest_decision_pass_model",
+                "status": "WARN",
+                "sample_size": 12,
+                "win_rate": 0.8333,
+                "avg_pnl": 60.02,
+                "total_pnl": 720.2,
+                "profit_factor": 5.277,
+            },
+            {
+                "source": "expectancy_summary",
+                "evidence_type": "summary",
+                "status": "BLOCK",
+                "sample_size": 60,
+            },
+        ]
+    )
+
+    rating, _, evidence, blockers, _ = core._profitability_confidence_rating(
+        pd.DataFrame(),
+        pd.DataFrame(),
+        expectancy,
+        pd.DataFrame(),
+    )
+
+    assert rating <= 3.0
+    assert "options_agent_walkforward_replay_negative" in blockers
+    assert "options_agent_walkforward_replay=negative" in evidence
 
 
 def test_confidence_audit_names_actual_bucket_precision_gap_when_route_support_exists() -> None:

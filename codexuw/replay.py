@@ -1412,6 +1412,7 @@ def run_replay(
         "start": str(start) if start else "",
         "end": str(end) if end else "",
         "days": len(folders),
+        "max_days": max_days,
         "entry_days": len(entry_folders),
         "entry_start": str(entry_start) if entry_start else "",
         "entry_end": str(entry_end) if entry_end else "",

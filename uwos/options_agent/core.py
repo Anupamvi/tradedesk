@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419"
+PIPELINE_VERSION = "options-agent-v1.6-true-ytd-replay-20260711-033758"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419",
     "options-agent-v1.4-shadow-evidence-20260710-232043",
     "options-agent-v1.3-evidence-integrity-20260710-151249",
     "options-agent-v1.2-blocker-carryforward-20260710-142154",
@@ -58,7 +59,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-11T03:04:19-07:00"
+PIPELINE_RELEASED_AT = "2026-07-11T03:37:58-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -111,8 +112,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419",
+    "PIPELINE_VERSION": "options-agent-v1.6-true-ytd-replay-20260711-033758",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419",
         "options-agent-v1.4-shadow-evidence-20260710-232043",
         "options-agent-v1.3-evidence-integrity-20260710-151249",
         "options-agent-v1.2-blocker-carryforward-20260710-142154",
@@ -122,7 +124,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-11T03:04:19-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-11T03:37:58-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -11550,6 +11552,8 @@ def _codexuw_pinned_replay_path(out_root: Path) -> tuple[Optional[Path], str, bo
     expected_hash = _as_text(payload.get("replay_detail_sha256")).lower()
     manifest_relative_path = _as_text(payload.get("manifest_path"))
     expected_manifest_hash = _as_text(payload.get("manifest_sha256")).lower()
+    expected_split_day = _as_text(payload.get("split_day"))
+    expected_history_days = int(_as_float(payload.get("expected_history_days")) or 0)
     if not relative_path or not expected_hash or not manifest_relative_path or not expected_manifest_hash:
         return None, "options-agent replay pin is missing required path/hash fields", True
     replay_path = (Path(out_root) / relative_path).resolve()
@@ -11572,6 +11576,13 @@ def _codexuw_pinned_replay_path(out_root: Path) -> tuple[Optional[Path], str, bo
         manifest_payload.get("point_in_time_export_ceiling")
     ):
         return replay_path, "options-agent pinned replay lacks point-in-time export ceiling proof", True
+    manifest_max_days = _as_float(manifest_payload.get("max_days"))
+    if manifest_max_days is None or int(manifest_max_days) != 0:
+        return replay_path, "options-agent pinned replay must disable max_days truncation", True
+    if expected_history_days <= 0 or int(_as_float(manifest_payload.get("days")) or 0) != expected_history_days:
+        return replay_path, "options-agent pinned replay history-day count mismatch", True
+    if not expected_split_day or _as_text(manifest_payload.get("split_day")) != expected_split_day:
+        return replay_path, "options-agent pinned replay split_day mismatch", True
     return replay_path, "", True
 
 
@@ -20921,6 +20932,25 @@ def _profitability_confidence_rating(
         evidence.append("leakage_safe_replay_decision_pass=partial_positive")
     else:
         blockers.append("replay_decision_pass_not_positive")
+
+    walkforward_model_rows = replay_model_rows[
+        replay_model_rows.get("evidence_type", pd.Series("", index=replay_model_rows.index))
+        .astype(str)
+        .eq("options_agent_walkforward_replay_model")
+    ]
+    walkforward_negative = _losing_evidence_row(
+        walkforward_model_rows,
+        min_sample=MIN_EXPECTANCY_SAMPLE_SIZE,
+    )
+    if walkforward_negative:
+        blockers.append("options_agent_walkforward_replay_negative")
+        evidence.append(
+            _evidence_row_brief(
+                walkforward_negative,
+                "options_agent_walkforward_replay=negative",
+            )
+        )
+        rating = min(rating, 3.0)
 
     strong_replay_research_support = bool(
         decision_replay_strong
