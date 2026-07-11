@@ -12118,6 +12118,43 @@ def test_pattern_validation_replay_concatenates_all_leakage_safe_sources(tmp_pat
     assert set(replay["strategy_route"]) == {"long_call", "bull_put_credit"}
 
 
+def test_pattern_validation_replay_counts_one_fixed_horizon_per_contract(tmp_path: Path) -> None:
+    validation_dir = tmp_path / "out" / "options_pattern_pipeline_v1" / "2026-06-09"
+    validation_dir.mkdir(parents=True)
+    rows = [
+        {
+            "sample": "VALIDATION",
+            "status": "SCORED",
+            "blocked": False,
+            "strategy_type": "Long Call Debit",
+            "net_r": pnl,
+            "signal_date": "2026-05-01",
+            "target_date": target,
+            "managed_exit_date": target,
+            "horizon": horizon,
+            "lead_option_symbol": "AAPL260620C00200000",
+            "ticker": "AAPL",
+        }
+        for horizon, target, pnl in [
+            ("1d", "2026-05-02", -0.50),
+            ("3d", "2026-05-06", -0.25),
+            ("5d", "2026-05-08", 0.40),
+            ("10d", "2026-05-15", 0.90),
+        ]
+    ]
+    pd.DataFrame(rows).to_csv(validation_dir / "validation_details.csv", index=False)
+
+    replay, _, error = core._pattern_validation_replay_frame(
+        tmp_path / "out",
+        as_of=dt.date(2026, 6, 9),
+    )
+
+    assert error == ""
+    assert len(replay) == 1
+    assert replay["horizon"].tolist() == ["5d"]
+    assert replay["pnl_1x"].tolist() == [0.40]
+
+
 def test_pattern_validation_replay_source_selection_caps_large_history_without_undated_leakage(tmp_path: Path) -> None:
     root = tmp_path / "out" / "options_pattern_pipeline_v1"
     names = [

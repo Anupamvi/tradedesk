@@ -11580,27 +11580,29 @@ PATTERN_VALIDATION_REPLAY_USECOLS = {
 
 
 def _dedupe_pattern_validation_replay_frame(frame: pd.DataFrame) -> pd.DataFrame:
-    """Deduplicate pattern replay rows while preserving newest-source priority."""
+    """Keep one fixed-horizon outcome per exact pattern recommendation."""
 
     if frame is None or frame.empty:
         return pd.DataFrame()
-    dedupe_columns = [
+    out = frame.copy()
+    horizon_priority = {"5d": 0, "10d": 1, "3d": 2, "20d": 3, "1d": 4}
+    out["__horizon_priority"] = out.get("horizon", pd.Series("", index=out.index)).map(
+        lambda value: horizon_priority.get(_as_text(value).lower(), len(horizon_priority))
+    )
+    lead = out.get("lead_option_symbol", pd.Series("", index=out.index)).map(_as_text)
+    legs = out.get("legs_json", pd.Series("", index=out.index)).map(_as_text)
+    out["__contract_identity"] = lead + "|" + legs
+    missing_contract = out["__contract_identity"].eq("|")
+    out.loc[missing_contract, "__contract_identity"] = out.index[missing_contract].map(lambda value: f"row:{value}")
+    key_columns = [
         column
-        for column in [
-            "signal_date",
-            "target_date",
-            "managed_exit_date",
-            "ticker",
-            "strategy_type",
-            "lead_option_symbol",
-            "horizon",
-            "pattern_family",
-        ]
-        if column in frame.columns
+        for column in ("signal_date", "ticker", "strategy_type", "__contract_identity")
+        if column in out.columns
     ]
-    if not dedupe_columns:
-        return frame.reset_index(drop=True)
-    return frame.drop_duplicates(dedupe_columns, keep="first").reset_index(drop=True)
+    out = out.sort_values("__horizon_priority", kind="mergesort")
+    if key_columns:
+        out = out.drop_duplicates(key_columns, keep="first")
+    return out.drop(columns=["__horizon_priority", "__contract_identity"], errors="ignore").reset_index(drop=True)
 
 
 def _convert_pattern_validation_replay_frame(raw: pd.DataFrame, *, path: Path, as_of: Optional[dt.date]) -> pd.DataFrame:
