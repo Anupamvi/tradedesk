@@ -2108,6 +2108,13 @@ def run_pipeline(
             )
         structure_attempts = build_structure_attempts(dated_priced, priced, live_validation)
         contract_review_tasks = build_contract_review_tasks(priced)
+    contract_review_drift = _contract_review_task_drift_summary(
+        _load_contract_review_task_payload(paths["dispatch_contract_review_tasks"]),
+        contract_review_tasks,
+    )
+    agent_dispatch_drift = {**agent_dispatch_drift, **contract_review_drift}
+    if contract_review_drift.get("contract_status") == "drift":
+        agent_dispatch_drift["status"] = "drift"
     priced = annotate_contract_event_risk(priced, as_of=day, event_calendar=event_calendar)
     pre_portfolio_agent_reviews = build_internal_agent_reviews(candidates, market_regime, catalyst_reviews, priced, as_of=day)
     actionable_agent_reviews = combine_agent_reviews(pre_portfolio_agent_reviews, external_agent_reviews, as_of=day)
@@ -2470,7 +2477,13 @@ def run_pipeline(
             "execution_fill_quality_summary": summarize_execution_fill_quality(execution_fill_quality),
             "execution_context": execution_context,
                 "agentic_orchestration": {
-                    "status": "reviews_ingested" if not external_agent_reviews.empty else "awaiting_subagents",
+                    "status": (
+                        "contract_drift_requires_reviews"
+                        if agent_dispatch_drift.get("contract_status") == "drift"
+                        else "reviews_ingested"
+                        if not external_agent_reviews.empty
+                        else "awaiting_subagents"
+                    ),
                     "dispatch_plan": str(paths["agent_dispatch_plan"]),
                     "expected_reviews_json": str(paths["agentic_reviews"]),
                     "ingested_reviews_json": str(Path(agent_reviews_json).expanduser().resolve()) if agent_reviews_json else "",
@@ -2509,6 +2522,13 @@ def run_pipeline(
                 []
                 if trade_tickets.empty
                 else ["verify the live Schwab quote immediately before any manual order entry"]
+            )
+            + (
+                []
+                if agent_dispatch_drift.get("contract_status") != "drift"
+                else [
+                    "exact contract review set drifted from the reviewed dispatch snapshot; newly added or changed contracts remain review-only"
+                ]
             ),
         }
     )
@@ -3987,6 +4007,58 @@ def _dispatch_plan_drift_summary(
         "added_required_ticker_examples": added[:20],
         "removed_required_ticker_examples": removed[:20],
         "status": "drift" if added or removed else "stable",
+    }
+
+
+def _load_contract_review_task_payload(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return dict(payload) if isinstance(payload, Mapping) else {}
+
+
+def _contract_review_task_drift_summary(
+    review_contract_tasks: Mapping[str, Any],
+    current_contract_tasks: Mapping[str, Any],
+) -> dict[str, Any]:
+    def _contract_agents(payload: Mapping[str, Any]) -> dict[str, tuple[str, ...]]:
+        result: dict[str, tuple[str, ...]] = {}
+        for contract in payload.get("contracts", []) if isinstance(payload, Mapping) else []:
+            if not isinstance(contract, Mapping):
+                continue
+            key = _as_text(contract.get("contract_key"))
+            if not key:
+                continue
+            explicit_agents = contract.get("required_review_agents")
+            agents = (
+                tuple(_as_text(agent) for agent in explicit_agents if _as_text(agent))
+                if isinstance(explicit_agents, (list, tuple, set))
+                else _required_contract_review_agents(contract)
+            )
+            result[key] = tuple(sorted(agents))
+        return result
+
+    prior = _contract_agents(review_contract_tasks)
+    current = _contract_agents(current_contract_tasks)
+    added = sorted(set(current) - set(prior))
+    removed = sorted(set(prior) - set(current))
+    changed_agents = sorted(
+        key for key in set(prior) & set(current) if prior.get(key) != current.get(key)
+    )
+    comparable = bool(prior)
+    drift = bool(added or removed or changed_agents) if comparable else False
+    return {
+        "reviewed_contract_count": len(prior),
+        "current_contract_count": len(current),
+        "added_contract_count": len(added),
+        "removed_contract_count": len(removed),
+        "changed_required_agent_contract_count": len(changed_agents),
+        "added_contract_examples": added[:20],
+        "removed_contract_examples": removed[:20],
+        "changed_required_agent_contract_examples": changed_agents[:20],
+        "contract_snapshot_available": comparable,
+        "contract_status": "drift" if drift else "stable" if comparable else "not_comparable",
     }
 
 

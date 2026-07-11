@@ -2025,6 +2025,32 @@ def test_agentic_pass_reuses_pass_one_dispatch_contract_for_matching_reviews(tmp
     assert drift["added_required_ticker_examples"] == ["INTC", "QCOM"]
 
 
+def test_contract_review_drift_compares_exact_keys_and_required_agents() -> None:
+    prior = {
+        "contracts": [
+            {"contract_key": "AAPL|OLD", "required_review_agents": ["structure_builder", "skeptic"]},
+            {"contract_key": "MSFT|KEEP", "required_review_agents": ["structure_builder", "skeptic"]},
+            {"contract_key": "NVDA|AGENTS", "required_review_agents": ["structure_builder"]},
+        ]
+    }
+    current = {
+        "contracts": [
+            {"contract_key": "MSFT|KEEP", "required_review_agents": ["structure_builder", "skeptic"]},
+            {"contract_key": "NVDA|AGENTS", "required_review_agents": ["structure_builder", "skeptic"]},
+            {"contract_key": "AMZN|NEW", "required_review_agents": ["structure_builder", "skeptic"]},
+        ]
+    }
+
+    drift = core._contract_review_task_drift_summary(prior, current)
+
+    assert drift["contract_status"] == "drift"
+    assert drift["reviewed_contract_count"] == 3
+    assert drift["current_contract_count"] == 3
+    assert drift["added_contract_examples"] == ["AMZN|NEW"]
+    assert drift["removed_contract_examples"] == ["AAPL|OLD"]
+    assert drift["changed_required_agent_contract_examples"] == ["NVDA|AGENTS"]
+
+
 def test_trade_quality_gates_reject_junk_setups() -> None:
     rejects = core._trade_quality_rejects(
         entry_credit=0.05,
