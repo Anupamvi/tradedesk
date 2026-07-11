@@ -388,6 +388,7 @@ def test_route_only_profit_hypothesis_row_stays_off_yellow_target_surface() -> N
                 "full_ticket": "SELL 1 EDGE 2026-07-17 235 Put / BUY 1 EDGE 2026-07-17 230 Put @ 1.08 CREDIT",
                 "trade_plan": "SELL 1 EDGE 2026-07-17 235 Put / BUY 1 EDGE 2026-07-17 230 Put @ 1.08 CREDIT",
                 "entry_limit": 1.08,
+                "target_entry": 0.90,
                 "suggested_contracts": 8,
                 "max_profit": 108.0,
                 "max_loss": 392.0,
@@ -432,8 +433,10 @@ def test_route_only_profit_hypothesis_row_stays_off_yellow_target_surface() -> N
     green, target = core.split_trade_ticket_surfaces(tickets)
 
     assert decision["ready_to_enter"].tolist() == [False]
+    assert decision["target_entry"].tolist() == [0.90]
     assert decision["target_order_status"].tolist() == ["target_order_candidate"]
     assert tickets["ticker"].tolist() == ["EDGE"]
+    assert tickets["target_entry"].tolist() == [0.90]
     assert tickets["order_readiness"].tolist() == ["target_order_after_profitability_calibration"]
     assert green.empty
     assert target.empty
