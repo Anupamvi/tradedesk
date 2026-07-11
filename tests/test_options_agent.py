@@ -7843,6 +7843,51 @@ def test_price_candidates_includes_short_put_when_short_put_family_evidence_pass
     assert routing.loc[routing["strategy"].eq("bull_call_debit"), "route_status"].tolist() == ["construction_failed"]
 
 
+def test_short_put_replay_bridge_constructs_only_with_near_ready_positive_actual_evidence() -> None:
+    candidate = {
+        "ticker": "WMT",
+        "bias": "bullish",
+        "underlying_quality_tier": "core",
+        "macro_tape_candidate": True,
+        "combined_flow_bias": 0.50,
+    }
+    near_ready = {
+        "short_put": {
+            "status": "WARN",
+            "sample_size": core.MIN_EXPECTANCY_SAMPLE_SIZE - 5,
+            "avg_pnl": 2.0,
+            "profit_factor": 1.01,
+        }
+    }
+    negative = {
+        "short_put": {
+            "status": "BLOCK",
+            "sample_size": core.MIN_EXPECTANCY_SAMPLE_SIZE,
+            "avg_pnl": -20.0,
+            "profit_factor": 0.50,
+        }
+    }
+
+    bridged = core._candidate_strategy_routes(
+        candidate,
+        set(),
+        near_ready,
+        {},
+        replay_supported_routes={"short_put"},
+    )
+    blocked = core._candidate_strategy_routes(
+        candidate,
+        set(),
+        negative,
+        {},
+        replay_supported_routes={"short_put"},
+    )
+
+    assert bridged[0]["strategy"] == "short_put"
+    assert bridged[0]["route_reason"] == "positive_short_put_replay_with_near_ready_actual_evidence"
+    assert "short_put" not in {row["strategy"] for row in blocked}
+
+
 def test_price_candidates_includes_near_ready_long_call_route_without_promoting(tmp_path: Path) -> None:
     _write_minimal_uw_fixture(tmp_path)
     hot_path = tmp_path / "2026-05-22" / "hot-chains-2026-05-22.csv"

@@ -4797,10 +4797,17 @@ def price_candidates_with_routing_audit(
     route_metrics = _closed_trade_strategy_route_metrics(root)
     positive_strategy_routes = _positive_closed_trade_strategy_routes(root, metrics_by_route=route_metrics)
     positive_strategy_routes.update(_positive_closed_trade_strategy_families(root, metrics_by_family=strategy_metrics))
+    replay_supported_routes = _positive_replay_strategy_routes(root, as_of=parse_as_of(as_of))
     for _, candidate in qualified.iterrows():
         candidate_rows: list[dict[str, Any]] = []
         candidate_errors: list[dict[str, Any]] = []
-        routes = _candidate_strategy_routes(candidate, positive_strategy_routes, route_metrics, strategy_metrics)
+        routes = _candidate_strategy_routes(
+            candidate,
+            positive_strategy_routes,
+            route_metrics,
+            strategy_metrics,
+            replay_supported_routes=replay_supported_routes,
+        )
         for route in routes:
             constructed = _construct_strategy_route(candidate, hot, route)
             constructed = _attach_strategy_route_metadata(constructed, route)
@@ -4883,11 +4890,35 @@ def _positive_closed_trade_strategy_routes(
     return positive
 
 
+def _positive_replay_strategy_routes(root: Optional[Path], *, as_of: dt.date) -> set[str]:
+    if root is None:
+        return set()
+    resolved_root = Path(root).expanduser().resolve()
+    out_root = resolved_root if resolved_root.name == "out" else resolved_root / "out"
+    replay_root = _evidence_out_root_with_replay(resolved_root, out_root)
+    replay, _, _ = _profitability_replay_frame(replay_root, as_of=as_of)
+    if replay.empty or "strategy_route" not in replay.columns:
+        return set()
+    positive: set[str] = set()
+    for route, group in replay.groupby("strategy_route", dropna=False):
+        route_text = _as_text(route)
+        if not route_text:
+            continue
+        metrics = _calibration_metrics_row(
+            pd.to_numeric(group.get("pnl_1x", pd.Series(dtype=float)), errors="coerce"),
+            status_func=_expectancy_status,
+        )
+        if _as_text(metrics.get("status")).upper() == "PASS":
+            positive.add(route_text)
+    return positive
+
+
 def _candidate_strategy_routes(
     candidate: Mapping[str, Any],
     positive_strategy_routes: set[str],
     metrics_by_route: Mapping[str, Mapping[str, Any]],
     metrics_by_family: Mapping[str, Mapping[str, Any]],
+    replay_supported_routes: Optional[set[str]] = None,
 ) -> list[dict[str, Any]]:
     bias = _as_text(candidate.get("bias")).lower()
     if bias not in {"bullish", "bearish"}:
@@ -4901,8 +4932,23 @@ def _candidate_strategy_routes(
 
     routes: list[dict[str, Any]] = []
     if bias == "bullish":
-        if ENABLE_CASH_SECURED_PUT_ROUTE and _candidate_prefers_short_put(candidate, positive_strategy_routes):
-            routes.append(_strategy_route("short_put", "positive_short_put_family_evidence"))
+        short_put_replay_bridge = bool(
+            replay_supported_routes
+            and "short_put" in replay_supported_routes
+            and _route_has_positive_or_near_ready_actual_evidence("short_put", metrics_by_route)
+        )
+        short_put_supported_routes = set(positive_strategy_routes)
+        if short_put_replay_bridge:
+            short_put_supported_routes.add("short_put")
+        if ENABLE_CASH_SECURED_PUT_ROUTE and _candidate_prefers_short_put(candidate, short_put_supported_routes):
+            routes.append(
+                _strategy_route(
+                    "short_put",
+                    "positive_short_put_actual_evidence"
+                    if "short_put" in positive_strategy_routes
+                    else "positive_short_put_replay_with_near_ready_actual_evidence",
+                )
+            )
         if _route_has_positive_or_near_ready_actual_evidence("long_call", metrics_by_route):
             routes.append(_strategy_route("long_call", "bullish_core_long_call_actual_evidence_route"))
         routes.extend(
