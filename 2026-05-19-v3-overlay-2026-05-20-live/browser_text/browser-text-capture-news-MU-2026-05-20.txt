@@ -1,0 +1,8 @@
+MU live research capture for Codex Daily V3 overlay run.
+Capture time: 2026-05-20 during US market hours.
+Sources:
+- Reuters/TradingView recent MU coverage: Morgan Stanley upgraded MU to Overweight, citing stronger DRAM pricing and easing HBM concerns; MU had been one of the strongest S&P 500 performers year to date.
+- Reuters Morning Bid, 2026-05-20: Nvidia earnings after the bell are a major semiconductor and AI-capex event; chip sentiment is exposed to the result.
+Trading impact:
+- Catalyst status: mixed/supportive for memory fundamentals, but event risk is high because NVDA earnings can move the whole AI/semi complex.
+- For bullish MU exposure, avoid chasing after sharp intraday spikes; require support hold, VWAP confirmation, and acceptable close/roll plan for existing MU exposure.

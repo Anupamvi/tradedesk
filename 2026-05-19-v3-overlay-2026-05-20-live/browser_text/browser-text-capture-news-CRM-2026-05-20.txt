@@ -1,0 +1,7 @@
+CRM live research capture for Codex Daily V3 overlay run.
+Capture time: 2026-05-20 during US market hours.
+Sources:
+- Salesforce investor relations, 2026-05-06: CRM first quarter fiscal 2027 results will be released on 2026-05-27 after market close.
+Trading impact:
+- Catalyst status: caution for live trading on 2026-05-20 because earnings are 7 calendar days away.
+- Do not open a new CRM short-premium spread that would carry into earnings unless explicitly planned as an earnings-risk trade with reduced size and predefined exit before the event.

@@ -1,0 +1,10 @@
+Macro and index context for 2026-06-01 candidates:
+
+SPY / QQQ / IWM:
+- Reuters-linked market coverage on 2026-06-01 reported U.S. index futures higher as Nvidia and Microsoft AI initiatives supported mega-cap tech.
+- The same coverage described lingering Middle East / U.S.-Iran uncertainty and higher oil prices as macro risk.
+- The prior tape closed May near record highs, so index credit/debit setups should not be chased unless UW flow, replay edge, Schwab liquidity, and live credit are all clean.
+- Trading implication: mixed macro backdrop. AI strength can support Nasdaq and semis, but broad index setups need conservative sizing and strong live confirmation.
+
+Sources:
+- Reuters via Investing.com, U.S. stock futures / AI push / Middle East risk, 2026-06-01: https://ca.investing.com/news/stock-market-news/wall-street-futures-gain-as-ai-advances-overshadow-usiran-tensions-4668371

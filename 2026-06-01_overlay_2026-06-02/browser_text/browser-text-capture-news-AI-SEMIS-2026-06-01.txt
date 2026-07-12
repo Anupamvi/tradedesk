@@ -1,0 +1,29 @@
+AI, semiconductor, and memory context for 2026-06-01 candidates:
+
+NVDA:
+- Reuters and AP reported on 2026-06-01 that Nvidia unveiled the RTX Spark AI PC chip, with Microsoft collaboration and planned laptop/desktop launches from Microsoft, Dell, HP, Lenovo, ASUS, MSI and others.
+- Reuters reported Nvidia shares were higher while competing PC-chip names were weaker, reinforcing relative AI-chip leadership.
+- Trading implication: supportive catalyst context for NVDA and AI infrastructure, but the daily engine should still require clean UW direction, replay edge, liquidity, and Schwab executable pricing.
+
+MSFT:
+- Microsoft is directly tied to the Nvidia AI PC launch and the current AI software/PC narrative.
+- Trading implication: supportive context, but not enough by itself to override marginal-liquidity, OI, replay, or portfolio gates.
+
+MU:
+- Reuters-linked coverage from 2026-05-26 reported Micron shares rallied after UBS sharply raised its target on stronger AI demand and long-term supply deals.
+- Trading implication: supportive AI memory backdrop, with high-beta/no-chase discipline after the move.
+
+TSM:
+- Reuters-linked coverage from April reported TSMC raised annual revenue guidance and increased capex plans to meet AI-chip demand.
+- Middle East conflict was noted as a potential semiconductor input-chain risk, though TSMC described safety stock and diversified sourcing.
+- Trading implication: supportive AI-demand context with macro/geopolitical risk; bearish TSM setups should need very clean flow.
+
+SNDK / STX:
+- AI storage and memory demand remain thematically supportive, but no fresh ticker-specific June 1 execution catalyst was verified for a standalone options entry.
+- Trading implication: mixed/supportive sector context only; let liquidity, replay, and UW flow decide.
+
+Sources:
+- Reuters via Investing.com, Nvidia AI PC chip with Microsoft, 2026-06-01: https://ca.investing.com/news/stock-market-news/nvidia-launches-new-chip-to-bring-ai-directly-to-personal-computers-4667868
+- AP, Nvidia AI PC chip and Microsoft/Dell rollout, 2026-06-01: https://apnews.com/article/nvidia-microsoft-ai-laptops-jensen-chip-c807f7333b93b9927b62b1240dcf65a1
+- Reuters via Investing.com, Micron AI demand / UBS target, 2026-05-26: https://www.investing.com/news/stock-market-news/micron-closes-in-on-1-trillion-market-value-as-ubs-triples-shareprice-target-4710257
+- Reuters via Investing.com, TSMC AI demand / revenue forecast / capex, 2026-04-16: https://www.investing.com/news/stock-market-news/tsmc-lifts-revenue-forecast-pledges-more-capital-spending-to-meet-ai-chip-demand-4616954

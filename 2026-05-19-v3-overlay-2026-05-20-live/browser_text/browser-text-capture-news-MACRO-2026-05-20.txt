@@ -1,0 +1,9 @@
+MACRO live research capture for Codex Daily V3 overlay run.
+Capture time: 2026-05-20 during US market hours.
+Sources:
+- Reuters Morning Bid via Investing.com, 2026-05-20: Nvidia reports after the bell; options imply roughly a 6.5% move. Long-end Treasury yield stress, a 20-year auction, and Fed minutes are active macro risks.
+- Federal Reserve calendar/news references in market coverage: April FOMC minutes due 2026-05-20 at 2:00 PM ET.
+Trading impact:
+- Treat index and semiconductor trades as event-risk trades until after NVDA earnings and Fed minutes.
+- Risk-on semi flow is not enough by itself; require live VWAP confirmation, tight Schwab spread pricing, and small size.
+- Bearish index premium is acceptable only if price rejects resistance intraday; avoid fighting a broad relief rally into NVDA.

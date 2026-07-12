@@ -49,6 +49,31 @@ def test_bull_call_intermediate_maturity_gap_is_rejected():
     assert "dte_outside_7_10_or_22_45" in reasons
 
 
+def test_bear_put_requires_validated_directional_flow_floor():
+    ok, reasons = assess_debit_spread(
+        _bull_row(
+            direction="Bear Put",
+            regime="downtrend",
+            dte=28,
+            combined_flow_bias=-0.19,
+        ),
+        live=False,
+    )
+    assert not ok
+    assert "flow_alignment_below_0.20" in reasons
+
+    ok, reasons = assess_debit_spread(
+        _bull_row(
+            direction="Bear Put",
+            regime="downtrend",
+            dte=28,
+            combined_flow_bias=-0.20,
+        ),
+        live=False,
+    )
+    assert ok, reasons
+
+
 def test_complete_split_bot_bundle_counts_as_full_flow():
     high, reasons = debit_spread_confidence(
         _bull_row(

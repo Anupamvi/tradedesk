@@ -1,0 +1,86 @@
+{
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-19-v3-overlay-2026-05-20-live/browser_text/browser-text-capture-news-CRM-2026-05-20.txt": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-20T15:22:05.820589+00:00",
+      "name": "browser-text-capture-news-CRM-2026-05-20.txt",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-20-v3-overlay-from-2026-05-19-live/browser_text/browser-text-capture-news-CRM-2026-05-20.txt",
+      "sha256": "e3d2783e5d702b9cce5be2739331782ded7a2255ce081cb7844cb85c368fdf47",
+      "size_bytes": 551
+    },
+    "signature": {
+      "mtime_ns": 1779290525820588633,
+      "size_bytes": 551
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-19-v3-overlay-2026-05-20-live/browser_text/browser-text-capture-news-MACRO-2026-05-20.txt": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-20T15:22:05.819392+00:00",
+      "name": "browser-text-capture-news-MACRO-2026-05-20.txt",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-20-v3-overlay-from-2026-05-19-live/browser_text/browser-text-capture-news-MACRO-2026-05-20.txt",
+      "sha256": "e60351b838b29cec6ddd239a70fdfedd5e83555152253a6acdab2d5d992083ad",
+      "size_bytes": 809
+    },
+    "signature": {
+      "mtime_ns": 1779290525819391791,
+      "size_bytes": 809
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-19-v3-overlay-2026-05-20-live/browser_text/browser-text-capture-news-MU-2026-05-20.txt": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-20T15:22:05.821117+00:00",
+      "name": "browser-text-capture-news-MU-2026-05-20.txt",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-20-v3-overlay-from-2026-05-19-live/browser_text/browser-text-capture-news-MU-2026-05-20.txt",
+      "sha256": "f23072ab9255fbb16430bbe50f7fa3a954147153dc705c4fe3b785347f0b935b",
+      "size_bytes": 798
+    },
+    "signature": {
+      "mtime_ns": 1779290525821117220,
+      "size_bytes": 798
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-19-v3-overlay-2026-05-20-live/browser_text/browser-text-capture-news-TSLA-2026-05-20.txt": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-20T15:22:05.820250+00:00",
+      "name": "browser-text-capture-news-TSLA-2026-05-20.txt",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-20-v3-overlay-from-2026-05-19-live/browser_text/browser-text-capture-news-TSLA-2026-05-20.txt",
+      "sha256": "662c91a7b7944ffda3d955712064c2ca2a23fe908d56a703167ac0bf8c8149a8",
+      "size_bytes": 888
+    },
+    "signature": {
+      "mtime_ns": 1779290525820250339,
+      "size_bytes": 888
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-19/browser_text/browser-text-capture-news-MACRO-2026-05-19.txt": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-20T02:14:25.069848+00:00",
+      "name": "browser-text-capture-news-MACRO-2026-05-19.txt",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-20-v3-overlay-from-2026-05-19-live/browser_text/browser-text-capture-news-MACRO-2026-05-19.txt",
+      "sha256": "2661bed26ff5367765de2db73557e215cbec2d249cf9825478e6fbc60a950239",
+      "size_bytes": 1016
+    },
+    "signature": {
+      "mtime_ns": 1779243265069847718,
+      "size_bytes": 1016
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-19/browser_text/browser-text-capture-news-SEMI-2026-05-19.txt": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-20T02:14:25.070064+00:00",
+      "name": "browser-text-capture-news-SEMI-2026-05-19.txt",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-20-v3-overlay-from-2026-05-19-live/browser_text/browser-text-capture-news-SEMI-2026-05-19.txt",
+      "sha256": "ee520d5ef996c7fff20da3f209c0b8ac7dbe13ee716647fdef103c9e47685fe7",
+      "size_bytes": 981
+    },
+    "signature": {
+      "mtime_ns": 1779243265070063718,
+      "size_bytes": 981
+    }
+  }
+}

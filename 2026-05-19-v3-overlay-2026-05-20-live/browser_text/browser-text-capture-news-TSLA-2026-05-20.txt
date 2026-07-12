@@ -1,0 +1,9 @@
+TSLA live research capture for Codex Daily V3 overlay run.
+Capture time: 2026-05-20 during US market hours.
+Sources:
+- Recent Reuters/Investing.com Tesla Q1 coverage: Tesla beat Q1 revenue/EPS estimates but raised 2026 capex above $25B; management framed the spend around autonomy, AI, robotics, Cybercab, Optimus, Semi, Megapack, and compute buildout.
+- Recent UBS note coverage: UBS moved TSLA to Neutral from Sell after the pullback but still framed near-term demand, capex, competition, and robotaxi/Optimus execution as key uncertainties.
+Trading impact:
+- Catalyst status: mixed, no near-term earnings blocker found in this capture.
+- TSLA remains sentiment- and momentum-driven; bearish call spreads require live rejection/VWAP confirmation rather than flow alone.
+- If TSLA is above tape VWAP or pushing toward short strikes, do not enter bear calls even if credit is attractive.

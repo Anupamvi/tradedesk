@@ -6,7 +6,7 @@ from typing import Any
 from .data import safe_float
 
 
-DEBIT_POLICY_VERSION = "debit-v2.1-maturity-gap"
+DEBIT_POLICY_VERSION = "debit-v2.2-flow-quality"
 
 
 DEBIT_POLICY = {
@@ -26,7 +26,7 @@ DEBIT_POLICY = {
         "max_debit_pct_width": 0.40,
         "min_reward_risk": 1.25,
         "min_expected_move_ratio": 1.25,
-        "min_flow_alignment": 0.15,
+        "min_flow_alignment": 0.20,
         "max_quote_width_pct": 0.35,
         "max_iv_rank": 45.0,
     },

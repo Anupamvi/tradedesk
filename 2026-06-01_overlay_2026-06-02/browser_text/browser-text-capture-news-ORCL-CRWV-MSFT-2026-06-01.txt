@@ -1,0 +1,23 @@
+Cloud, AI infrastructure, and software context for 2026-06-01 candidates:
+
+ORCL:
+- Oracle remains tied to the AI infrastructure and OpenAI/Stargate buildout narrative.
+- Reuters-linked coverage from late April reported Oracle and CoreWeave sold off when OpenAI growth concerns hit the AI infrastructure complex; Oracle funding/capex concerns also remained a market focus.
+- Trading implication: mixed. AI cloud demand is supportive, but near-term event/funding sensitivity means ORCL should not receive a clean supportive override unless the daily engine finds strong flow, replay, and live pricing.
+
+CRWV:
+- CoreWeave is a direct AI-infrastructure proxy with OpenAI and Nvidia exposure.
+- Reuters-linked coverage described CoreWeave selling off with Oracle after OpenAI growth concerns, even though AI demand was not necessarily broken.
+- Trading implication: mixed/high-beta. Do not clear a CRWV trade solely from broad AI strength.
+
+MSFT:
+- Microsoft is supported by the Nvidia AI PC collaboration and software rebound context.
+- Trading implication: supportive, but only as a catalyst input; the engine should still respect marginal liquidity, OI/replay, and portfolio gates.
+
+NOW / GOOG / AMZN:
+- Broad cloud/software AI context is constructive but not a single-name catalyst for execution unless local flow/replay confirms.
+- Trading implication: mixed/supportive sector context only.
+
+Sources:
+- Reuters via Investing.com, Oracle/CoreWeave AI selloff on OpenAI growth concerns, 2026-04-28: https://www.investing.com/news/stock-market-news/oracle-coreweave-shares-drop-after-report-flags-openai-growth-worries-4641199
+- Reuters via Investing.com, Nvidia AI PC chip with Microsoft, 2026-06-01: https://ca.investing.com/news/stock-market-news/nvidia-launches-new-chip-to-bring-ai-directly-to-personal-computers-4667868

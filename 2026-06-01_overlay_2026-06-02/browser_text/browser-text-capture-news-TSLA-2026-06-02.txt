@@ -1,0 +1,8 @@
+2026-06-02 TSLA context for Codex Daily V3 overlay.
+
+Sources:
+- MarketScreener/Reuters broader risk and AI-market context, 2026-06-02: https://www.marketscreener.com/news/wall-street-futures-tick-lower-after-record-highs-hpe-soars-ce7f5dded98bf720
+
+Summary:
+- TSLA remains high beta and headline-sensitive. Existing 06-01 notes already cover TSLA/RKLB/space context.
+- For TSLA bear-call candidates: require live resistance confirmation and do not rely on flow alone. Avoid entering if broad beta squeeze resumes or if credit is below the work limit.

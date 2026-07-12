@@ -1,0 +1,107 @@
+{
+  "/Users/anuppamvi/Downloads/chain-oi-changes-2026-06-01.zip": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-01T13:51:12.489228+00:00",
+      "name": "chain-oi-changes-latest-2026-06-01.zip",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-29_overlay_2026-06-01/chain-oi-changes-latest-2026-06-01.zip",
+      "sha256": "c04bac91a475b491b8a2d8591620e66128bc2ddd5ab7a958fcbb55f98347d23e",
+      "size_bytes": 19765400,
+      "zip_members": [
+        {
+          "crc": "a91cda7d",
+          "name": "chain-oi-changes-2026-06-01.csv",
+          "size_bytes": 61318949
+        }
+      ]
+    },
+    "signature": {
+      "mtime_ns": 1780321872489228399,
+      "size_bytes": 19765400
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-29/bot-eod-report-2026-05-29.zip": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-30T18:48:02.946480+00:00",
+      "name": "bot-eod-report-2026-05-29.zip",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-29_overlay_2026-06-01/bot-eod-report-2026-05-29.zip",
+      "sha256": "01b61dcb5495f02eb1f7446d4698ac77c5da1936723e5290594f565b4b9c5e0e",
+      "size_bytes": 1203333983,
+      "zip_members": [
+        {
+          "crc": "7ec147fc",
+          "name": "bot-eod-report-2026-05-29.csv",
+          "size_bytes": 3648676854
+        }
+      ]
+    },
+    "signature": {
+      "mtime_ns": 1780166882946479471,
+      "size_bytes": 1203333983
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-29/dp-eod-report-2026-05-29.zip": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-30T18:48:33.682244+00:00",
+      "name": "dp-eod-report-2026-05-29.zip",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-29_overlay_2026-06-01/dp-eod-report-2026-05-29.zip",
+      "sha256": "0ffe9d4c75da9080da3df1d07f80c686c11c936ebfbf0b3a68d766a9441e3d7a",
+      "size_bytes": 20399505,
+      "zip_members": [
+        {
+          "crc": "2780b944",
+          "name": "dp-eod-report-2026-05-29.csv",
+          "size_bytes": 71873549
+        }
+      ]
+    },
+    "signature": {
+      "mtime_ns": 1780166913682244341,
+      "size_bytes": 20399505
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-29/hot-chains-2026-05-29.zip": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-30T18:48:12.842925+00:00",
+      "name": "hot-chains-2026-05-29.zip",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-29_overlay_2026-06-01/hot-chains-2026-05-29.zip",
+      "sha256": "20e2f44b473e0fe9633e75b45860920998759c50acb65e0dd4e1ff198dacfedc",
+      "size_bytes": 3540019,
+      "zip_members": [
+        {
+          "crc": "1934ba42",
+          "name": "hot-chains-2026-05-29.csv",
+          "size_bytes": 9048239
+        }
+      ]
+    },
+    "signature": {
+      "mtime_ns": 1780166892842925310,
+      "size_bytes": 3540019
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/2026-05-29/stock-screener-2026-05-29.zip": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-05-30T18:48:23.032735+00:00",
+      "name": "stock-screener-2026-05-29.zip",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-05-29_overlay_2026-06-01/stock-screener-2026-05-29.zip",
+      "sha256": "9216922b9eeffb26a15c858ce8fab7cc19d9e309ffa4c47f224543415aadac05",
+      "size_bytes": 1096674,
+      "zip_members": [
+        {
+          "crc": "d065e40c",
+          "name": "stock-screener-2026-05-29.csv",
+          "size_bytes": 2370794
+        }
+      ]
+    },
+    "signature": {
+      "mtime_ns": 1780166903032734984,
+      "size_bytes": 1096674
+    }
+  }
+}

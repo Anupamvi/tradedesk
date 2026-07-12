@@ -1,0 +1,10 @@
+2026-06-02 CRWV/CoreWeave context for Codex Daily V3 overlay.
+
+Sources:
+- Investing.com/Reuters-style company note, recent CRWV risk context: https://www.investing.com/news/company-news/why-is-coreweave-stock-sliding-today-93CH-4641903
+- TechTimes, 2026-06-02 CRWV/Nvidia Vera Rubin infrastructure note: https://www.techtimes.com/articles/317595/20260602/coreweave-beats-all-rivals-nvidia-vera-rubin-nvl72-crwv-stock-surges-14.htm
+
+Summary:
+- CRWV remains a very high-beta AI infrastructure name. Bullish catalysts include Nvidia/CoreWeave demand narratives and data-center backlog enthusiasm.
+- Risks remain elevated: customer concentration, valuation/extension, debt/capex intensity, and sharp headline-driven reversals.
+- For CRWV spreads: assignment-quality and volatility risk must be treated as manual checks. Defined-risk spreads are preferred over cash-secured puts unless the user explicitly wants assignment exposure.

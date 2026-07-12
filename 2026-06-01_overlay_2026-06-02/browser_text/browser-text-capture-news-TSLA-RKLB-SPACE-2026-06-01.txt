@@ -1,0 +1,19 @@
+TSLA, RKLB, and space/high-beta context for 2026-06-01 candidates:
+
+TSLA:
+- Reuters-linked coverage from May reported Tesla robotaxi service in Dallas and Houston was still beta-like, with long waits, intermittent availability, and drop-off issues.
+- Tesla's valuation remains heavily tied to the robotaxi narrative, and analysts have treated rollout pace as a material catalyst.
+- Trading implication: catalyst status is caution. Bearish premium setups can be directionally sensible only if fresh flow and live credit are strong; do not treat TSLA news as cleared.
+
+RKLB:
+- Rocket Lab reported Q1 2026 results on 2026-05-07 with record $200M quarterly revenue, over $2.2B backlog, and strong launch-contract activity.
+- The stock remains a high-beta space/aerospace name where sharp rallies and reversals can overwhelm ordinary credit-spread edge.
+- Trading implication: mixed/supportive company context but caution on high-beta options; require clean OI, replay, and liquidity.
+
+ASTS / RDW:
+- Space/satellite names remain high-beta and catalyst-sensitive. No fresh June 1 ticker-specific execution catalyst was verified in this pass.
+- Trading implication: mixed/caution sector context; no standalone catalyst override.
+
+Sources:
+- Reuters via Investing.com, Tesla robotaxi rollout wait-time issues, 2026-05-12: https://ca.investing.com/news/stock-market-news/teslas-robotaxi-rollout-features-texassized-wait-times-4629137
+- Rocket Lab Q1 2026 results, 2026-05-07: https://investors.rocketlabcorp.com/node/12416/pdf

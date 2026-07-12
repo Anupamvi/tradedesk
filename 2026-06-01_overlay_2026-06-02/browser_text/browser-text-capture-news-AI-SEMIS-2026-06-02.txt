@@ -1,0 +1,10 @@
+2026-06-02 AI/semiconductor context for Codex Daily V3 overlay.
+
+Sources:
+- TechRadar, Nvidia Computex RTX Spark coverage, 2026-06-01/02: https://www.techradar.com/computing/computing-components/watch-out-apple-nvidia-just-unveiled-its-rtx-spark-arm-superchip-to-take-on-the-m5-at-computex-2026
+- MarketScreener/Reuters market context, 2026-06-02: https://www.marketscreener.com/news/wall-street-futures-tick-lower-after-record-highs-hpe-soars-ce7f5dded98bf720
+
+Summary:
+- NVDA remains the dominant AI momentum name. Computex/AI PC chip headlines are supportive for NVDA sentiment and can pressure AMD/INTC relative strength.
+- AI infrastructure remains the leadership theme, but after recent record highs the risk is chase/extension rather than absent demand.
+- For NVDA/semiconductor spreads: bullish put spreads can be considered only if live pricing, OI carryover, and risk budget all pass. Avoid marginal credits where replay edge is thin or negative.

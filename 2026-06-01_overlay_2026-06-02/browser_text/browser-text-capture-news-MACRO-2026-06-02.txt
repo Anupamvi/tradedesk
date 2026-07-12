@@ -1,0 +1,10 @@
+2026-06-02 macro/market context for Codex Daily V3 overlay.
+
+Sources:
+- AP, 2026-06-01: https://apnews.com/article/5045f5cc9eed81f1dec2006234e1337c
+- Reuters via MarketScreener, 2026-06-02: https://www.marketscreener.com/news/wall-street-futures-tick-lower-after-record-highs-hpe-soars-ce7f5dded98bf720
+
+Summary:
+- US indexes set fresh records on 2026-06-01 despite higher oil tied to renewed US-Iran/geopolitical risk. Tape remains AI-led and momentum-friendly, but oil/inflation/rate risk is not cleanly gone.
+- Reuters premarket context on 2026-06-02 showed S&P 500 and Nasdaq 100 futures easing after record highs. AI infrastructure confidence remains high, but rate-cut expectations are limited.
+- For overlay decisions: do not over-trust broad-market bullish flow without live price confirmation. Index trades need extra caution after record-high extension.
