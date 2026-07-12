@@ -1,0 +1,405 @@
+{
+  "lesson_count": 10,
+  "lesson_pack_digest": "sha256:ae2656b04bada574163db28ceeb7f7043415d041e46252d7d5c6b6f6e50c71cd",
+  "lesson_pack_source": "/Users/anuppamvi/uw_root/tradedesk/knowledge/options_agent_lesson_packs/options-agent-v5/lessons.yaml",
+  "lesson_pack_version": "options-agent-v5",
+  "lessons": [
+    {
+      "actions": {
+        "decision_board": {
+          "forbid_market_closed_as_hard_blocker": true
+        },
+        "regression_gate": {
+          "fixture": "eod_market_closed_target_candidate"
+        },
+        "report_contract": {
+          "require_ready_to_enter_false": true,
+          "require_target_limit": true
+        },
+        "subagent_prompt": {
+          "inject": true
+        },
+        "synthesis_scoring": {
+          "valid_target_math_visibility": "preserve_yellow"
+        }
+      },
+      "applies_to": [
+        "decision_board",
+        "regression_gate",
+        "report_contract",
+        "subagent_prompt",
+        "synthesis_scoring"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "user_correction:/Users/anuppamvi/uw_root/tradedesk/knowledge/user_corrections.jsonl#2"
+      ],
+      "failure_mode": "EOD_TARGET_SUPPRESSION",
+      "id": "OA-002",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 80,
+      "rule": "EOD target candidates with valid target credit/debit are next-day planning rows; keep them yellow-visible with ready_to_enter=false until live recheck passes.",
+      "severity": "hard",
+      "status": "active"
+    },
+    {
+      "actions": {
+        "decision_board": {
+          "block_low_quality_action_without_strong_evidence": true
+        },
+        "regression_gate": {
+          "fixture": "junk_ticker_action_filter"
+        },
+        "subagent_prompt": {
+          "inject": true
+        },
+        "synthesis_scoring": {
+          "excluded_underlying_delta": -40,
+          "speculative_underlying_delta": -20
+        }
+      },
+      "applies_to": [
+        "decision_board",
+        "regression_gate",
+        "subagent_prompt",
+        "synthesis_scoring"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "user_correction:/Users/anuppamvi/uw_root/tradedesk/knowledge/user_corrections.jsonl#6"
+      ],
+      "failure_mode": "JUNK_TICKER_PROMOTION",
+      "id": "OA-006",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 80,
+      "rule": "Do not promote low-quality tail tickers into action rows without explicit strong evidence.",
+      "severity": "hard",
+      "status": "active"
+    },
+    {
+      "actions": {
+        "decision_board": {
+          "block_green_when_target_price_missing": true
+        },
+        "regression_gate": {
+          "fixture": "missing_target_price_green_block"
+        },
+        "report_contract": {
+          "require_target_limit": true
+        },
+        "subagent_prompt": {
+          "inject": true
+        },
+        "synthesis_scoring": {
+          "missing_target_price_delta": -25
+        }
+      },
+      "applies_to": [
+        "decision_board",
+        "regression_gate",
+        "report_contract",
+        "subagent_prompt",
+        "synthesis_scoring"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "user_correction:/Users/anuppamvi/uw_root/tradedesk/knowledge/user_corrections.jsonl#3"
+      ],
+      "failure_mode": "MISSING_TARGET_PRICE_GREEN",
+      "id": "OA-003",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 80,
+      "rule": "Missing target debit/credit must prevent green execution readiness.",
+      "severity": "hard",
+      "status": "active"
+    },
+    {
+      "actions": {
+        "regression_gate": {
+          "fixture": "agent_dispatch_plan_required"
+        },
+        "subagent_prompt": {
+          "inject": true
+        }
+      },
+      "applies_to": [
+        "regression_gate",
+        "subagent_prompt"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "user_correction:/Users/anuppamvi/uw_root/tradedesk/knowledge/user_corrections.jsonl#9"
+      ],
+      "failure_mode": "MULTI_AGENT_NOT_MANDATORY",
+      "id": "OA-009",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 80,
+      "rule": "Multi-agent dispatch is mandatory for normal Options Agent runs when available.",
+      "severity": "hard",
+      "status": "active"
+    },
+    {
+      "actions": {
+        "decision_board": {
+          "forbid_portfolio_only_suppression": true
+        },
+        "regression_gate": {
+          "fixture": "portfolio_risk_annotation_only"
+        },
+        "report_contract": {
+          "require_portfolio_annotation_visible": true
+        },
+        "subagent_prompt": {
+          "inject": true
+        }
+      },
+      "applies_to": [
+        "decision_board",
+        "regression_gate",
+        "report_contract",
+        "subagent_prompt"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "user_correction:/Users/anuppamvi/uw_root/tradedesk/knowledge/user_corrections.jsonl#1"
+      ],
+      "failure_mode": "PORTFOLIO_RISK_SUPPRESSION",
+      "id": "OA-001",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 80,
+      "rule": "Do not suppress otherwise-good trades solely due to portfolio risk; annotate the risk and size-risk it.",
+      "severity": "hard",
+      "status": "active"
+    },
+    {
+      "actions": {
+        "regression_gate": {
+          "fixture": "report_buy_sell_expiration_contract"
+        },
+        "report_contract": {
+          "require_buy_sell_legs": true,
+          "require_expiration": true,
+          "require_target_limit": true
+        },
+        "subagent_prompt": {
+          "inject": true
+        }
+      },
+      "applies_to": [
+        "regression_gate",
+        "report_contract",
+        "subagent_prompt"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "user_correction:/Users/anuppamvi/uw_root/tradedesk/knowledge/user_corrections.jsonl#4"
+      ],
+      "failure_mode": "REPORT_LEG_DETAIL_MISSING",
+      "id": "OA-004",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 80,
+      "rule": "Reports must show plain-language buy/sell legs, expiration dates, and target debit/credit instead of relying on OCC codes.",
+      "severity": "hard",
+      "status": "active"
+    },
+    {
+      "actions": {
+        "regression_gate": {
+          "fixture": "negative_closed_trade_outcome_penalty"
+        },
+        "subagent_prompt": {
+          "inject": true
+        },
+        "synthesis_scoring": {
+          "negative_closed_outcome_delta": -10,
+          "negative_closed_outcome_tickers": [
+            "AAPL",
+            "ACHR",
+            "AMZN",
+            "ASTS",
+            "AVAV",
+            "AVGO",
+            "BABA",
+            "BMNR",
+            "C",
+            "CRM",
+            "FFIV",
+            "GLD",
+            "GOOG",
+            "HOOD",
+            "INTC",
+            "IONQ",
+            "JNJ",
+            "META",
+            "MSFT",
+            "MU",
+            "NFLX",
+            "NVDA",
+            "NVO",
+            "ORCL",
+            "PANW",
+            "PATH",
+            "PBR",
+            "PFE",
+            "PLTR",
+            "RCAT",
+            "RKLB",
+            "RTX",
+            "SCHW",
+            "SNDK",
+            "SPY",
+            "T",
+            "TSLA",
+            "WMT",
+            "XOM"
+          ]
+        }
+      },
+      "applies_to": [
+        "regression_gate",
+        "subagent_prompt",
+        "synthesis_scoring"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "closed_trade_outcome:/Users/anuppamvi/uw_root/tradedesk/out/schwab_pull_state/closed_trades_acct_3326.jsonl#3",
+        "closed_trade_outcome:/Users/anuppamvi/uw_root/tradedesk/out/schwab_pull_state/closed_trades_acct_3326.jsonl#4",
+        "closed_trade_outcome:/Users/anuppamvi/uw_root/tradedesk/out/schwab_pull_state/closed_trades_acct_3326.jsonl#17",
+        "closed_trade_outcome:/Users/anuppamvi/uw_root/tradedesk/out/schwab_pull_state/closed_trades_acct_3326.jsonl#18",
+        "closed_trade_outcome:/Users/anuppamvi/uw_root/tradedesk/out/schwab_pull_state/closed_trades_acct_3326.jsonl#19",
+        "closed_trade_outcome:/Users/anuppamvi/uw_root/tradedesk/out/schwab_pull_state/closed_trades_acct_3326.jsonl#22",
+        "closed_trade_outcome:/Users/anuppamvi/uw_root/tradedesk/out/schwab_pull_state/closed_trades_acct_3326.jsonl#23",
+        "closed_trade_outcome:/Users/anuppamvi/uw_root/tradedesk/out/schwab_pull_state/closed_trades_acct_3326.jsonl#25"
+      ],
+      "failure_mode": "NEGATIVE_CLOSED_TRADE_OUTCOME",
+      "id": "OA-010",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 100,
+      "rule": "Repeated or material closed-trade losses should penalize the same ticker/strategy until positive actual outcome evidence returns.",
+      "severity": "medium",
+      "status": "active"
+    },
+    {
+      "actions": {
+        "coverage_audit": {
+          "require_full_visibility": true
+        },
+        "regression_gate": {
+          "fixture": "no_top_n_visibility_suppression"
+        },
+        "subagent_prompt": {
+          "inject": true
+        }
+      },
+      "applies_to": [
+        "coverage_audit",
+        "regression_gate",
+        "subagent_prompt"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "user_correction:/Users/anuppamvi/uw_root/tradedesk/knowledge/user_corrections.jsonl#5"
+      ],
+      "failure_mode": "ARBITRARY_TOP_N_SUPPRESSION",
+      "id": "OA-005",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 50,
+      "rule": "Do not use arbitrary top-N cutoffs to hide candidates, coverage rows, or no-trade audits.",
+      "severity": "medium",
+      "status": "active"
+    },
+    {
+      "actions": {
+        "coverage_audit": {
+          "require_major_focus_tickers": [
+            "AAPL",
+            "NVDA",
+            "MSFT",
+            "GOOG",
+            "GOOGL",
+            "META",
+            "AMZN",
+            "TSLA",
+            "AMD",
+            "AVGO",
+            "PLTR",
+            "SPY",
+            "QQQ"
+          ]
+        },
+        "regression_gate": {
+          "fixture": "major_ticker_coverage_audit"
+        },
+        "subagent_prompt": {
+          "inject": true
+        }
+      },
+      "applies_to": [
+        "coverage_audit",
+        "regression_gate",
+        "subagent_prompt"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "user_correction:/Users/anuppamvi/uw_root/tradedesk/knowledge/user_corrections.jsonl#8"
+      ],
+      "failure_mode": "MAJOR_TICKER_COVERAGE_MISSING",
+      "id": "OA-008",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 50,
+      "rule": "Major liquid tickers must appear in coverage audit when source data exists.",
+      "severity": "medium",
+      "status": "active"
+    },
+    {
+      "actions": {
+        "coverage_audit": {
+          "require_status_color": true
+        },
+        "regression_gate": {
+          "fixture": "status_icon_visibility"
+        },
+        "report_contract": {
+          "require_status_labels": true
+        }
+      },
+      "applies_to": [
+        "coverage_audit",
+        "regression_gate",
+        "report_contract"
+      ],
+      "confidence": 100,
+      "created_at": "2026-06-01T15:47:49",
+      "evidence": [
+        "user_correction:/Users/anuppamvi/uw_root/tradedesk/knowledge/user_corrections.jsonl#7"
+      ],
+      "failure_mode": "STATUS_VISIBILITY_MISSING",
+      "id": "OA-007",
+      "last_validated_at": "2026-06-01T15:47:49",
+      "promotion_regression_run": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent_regression/smoke_goal_check_options-agent-v5_dated",
+      "risk_score": 50,
+      "rule": "Preserve clear green, yellow, blocked, and no-action status labels/icons in reports and audits.",
+      "severity": "medium",
+      "status": "active"
+    }
+  ],
+  "prompt_budget_lines": 40
+}

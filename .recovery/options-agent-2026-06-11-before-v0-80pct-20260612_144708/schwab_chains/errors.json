@@ -1,0 +1,3 @@
+{
+  "BRKB": "dated chain failed: Client error '400 Bad Request' for url 'https://api.schwabapi.com/marketdata/v1/chains?apikey=eBcIcuWWtLc9nSdyjoHuWiuMzbJASPPYpzRakIyI9jO0ciP7&symbol=BRKB&strikeCount=80&includeUnderlyingQuote=true&fromDate=2026-06-18&toDate=2026-06-18'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400; undated fallback failed: Client error '400 Bad Request' for url 'https://api.schwabapi.com/marketdata/v1/chains?apikey=eBcIcuWWtLc9nSdyjoHuWiuMzbJASPPYpzRakIyI9jO0ciP7&symbol=BRKB&strikeCount=80&includeUnderlyingQuote=true'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+}

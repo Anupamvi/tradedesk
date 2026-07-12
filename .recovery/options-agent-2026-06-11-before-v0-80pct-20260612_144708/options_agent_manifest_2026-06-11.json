@@ -1,0 +1,1275 @@
+{
+  "agent_review_summary": {
+    "by_agent_type": {
+      "built_in": 8039,
+      "subagent": 78
+    },
+    "by_verdict": {
+      "avoid": 69,
+      "caution": 1865,
+      "supportive": 6183
+    },
+    "external_reviews_present": true,
+    "objective_blockers": 68,
+    "portfolio_risk_only": 31,
+    "total": 8117
+  },
+  "agentic_orchestration": {
+    "dispatch_plan": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agent_dispatch_plan.json",
+    "expected_reviews_json": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agentic_reviews.json",
+    "ingested_review_count": 78,
+    "ingested_reviews_json": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agentic_reviews.json",
+    "runner": "Codex options-agent skill with multi_agent_v1",
+    "status": "reviews_ingested",
+    "subagent_task_count": 5
+  },
+  "agents": [
+    {
+      "inputs": [
+        "dated UW folder",
+        "Schwab positions",
+        "live quotes"
+      ],
+      "name": "data",
+      "outputs": [
+        "source_inventory.json",
+        "raw_universe.csv"
+      ],
+      "role": "Verify dated UW sources and normalize raw market data."
+    },
+    {
+      "inputs": [
+        "raw_universe.csv",
+        "multi-day UW history"
+      ],
+      "name": "flow_oi",
+      "outputs": [
+        "candidate_generation.csv",
+        "agent_reviews/flow_oi.md"
+      ],
+      "role": "Score flow, OI, repeat activity, and directional pressure."
+    },
+    {
+      "inputs": [
+        "index quotes",
+        "volatility proxy",
+        "macro calendar"
+      ],
+      "name": "market_regime",
+      "outputs": [
+        "agent_reviews/market_regime.md"
+      ],
+      "role": "Classify broad market conditions and structure preference."
+    },
+    {
+      "inputs": [
+        "candidate_generation.csv",
+        "news/calendar context"
+      ],
+      "name": "catalyst",
+      "outputs": [
+        "catalyst_evidence.csv",
+        "catalyst_reviews.csv",
+        "agent_reviews/catalyst.md"
+      ],
+      "role": "Check earnings, news, analyst, filing, and macro event risk."
+    },
+    {
+      "inputs": [
+        "candidate_generation.csv",
+        "market_regime.json",
+        "catalyst_evidence.csv",
+        "catalyst_reviews.csv"
+      ],
+      "name": "research_dispatch",
+      "outputs": [
+        "research_tasks.json",
+        "external_agent_reviews.csv"
+      ],
+      "role": "Package top setups for external or subagent review and normalize returned reviews."
+    },
+    {
+      "inputs": [
+        "candidate_generation.csv",
+        "external_agent_reviews.csv",
+        "Schwab option chains"
+      ],
+      "name": "structure",
+      "outputs": [
+        "priced_candidates.csv",
+        "live_spread_quality_audit.csv",
+        "structure_attempts.csv",
+        "agent_reviews/structure.md"
+      ],
+      "role": "Construct executable option tickets and compute payoff math."
+    },
+    {
+      "inputs": [
+        "priced_candidates.csv",
+        "Schwab positions"
+      ],
+      "name": "portfolio_risk",
+      "outputs": [
+        "risk_audit.csv",
+        "agent_reviews/portfolio_risk.md"
+      ],
+      "role": "Annotate exposure, concentration, and buying-power risks."
+    },
+    {
+      "inputs": [
+        "final_recommendations.csv",
+        "options_agent_portfolio_context.json"
+      ],
+      "name": "sizing",
+      "outputs": [
+        "sizing_audit.csv",
+        "agent_reviews/sizing.md"
+      ],
+      "role": "Calculate suggested contract count and account-risk annotations without suppressing trades."
+    },
+    {
+      "inputs": [
+        "final_recommendations.csv",
+        "decision_board.csv",
+        "sizing_audit.csv"
+      ],
+      "name": "management",
+      "outputs": [
+        "management_plan.csv",
+        "agent_reviews/management.md"
+      ],
+      "role": "Write entry, target-exit, invalidation, and review-trigger plans for visible recommendations."
+    },
+    {
+      "inputs": [
+        "priced_candidates.csv",
+        "risk_audit.csv",
+        "sizing_audit.csv",
+        "external_agent_reviews.csv",
+        "agent reviews"
+      ],
+      "name": "skeptic",
+      "outputs": [
+        "no_trade_audit.csv",
+        "agent_reviews/skeptic.md"
+      ],
+      "role": "Try to invalidate each trade and preserve near-miss reasons."
+    },
+    {
+      "inputs": [
+        "all agent outputs",
+        "external_agent_reviews.csv"
+      ],
+      "name": "synthesis",
+      "outputs": [
+        "final_recommendations.csv",
+        "options_agent_report.md"
+      ],
+      "role": "Rank visible recommendations and write the final board."
+    }
+  ],
+  "artifacts": {
+    "agent_dispatch_plan": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agent_dispatch_plan.json",
+    "agent_orchestration": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agent_orchestration.json",
+    "agent_review_board": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agent_review_board.csv",
+    "agent_reviews_dir": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agent_reviews",
+    "agentic_reviews": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agentic_reviews.json",
+    "broker_matched_outcomes": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/broker_matched_outcomes.csv",
+    "broker_outcome_match_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/broker_outcome_match_audit.csv",
+    "candidate_generation": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/candidate_generation.csv",
+    "catalyst_evidence": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/catalyst_evidence.csv",
+    "catalyst_reviews": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/catalyst_reviews.csv",
+    "confidence_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/confidence_audit.csv",
+    "confidence_audit_json": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/confidence_audit.json",
+    "coverage_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/ticker_coverage_audit.csv",
+    "decision_board": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/decision_board.csv",
+    "execution_fill_quality": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/execution_fill_quality.csv",
+    "execution_readiness": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/execution_readiness.csv",
+    "expectancy_evidence": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/expectancy_evidence.csv",
+    "external_agent_reviews": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/external_agent_reviews.csv",
+    "final_recommendations": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/final_recommendations.csv",
+    "green_trade_tickets": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/green_trade_tickets.csv",
+    "lessons_application_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/lessons_application_audit.csv",
+    "lessons_snapshot_json": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/lessons_snapshot.json",
+    "lessons_snapshot_md": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/lessons_snapshot.md",
+    "live_chain_validation": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/live_chain_validation.csv",
+    "live_spread_quality_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/live_spread_quality_audit.csv",
+    "management_plan": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/management_plan.csv",
+    "manifest": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/options_agent_manifest_2026-06-11.json",
+    "market_open_recheck_queue": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_open_recheck_queue.csv",
+    "market_price_regime": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime.json",
+    "market_regime": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_regime.json",
+    "monthly_feasibility": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/monthly_feasibility.csv",
+    "no_trade_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/no_trade_audit.csv",
+    "outcome_evidence_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/outcome_evidence_audit.csv",
+    "portfolio_context": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/options_agent_portfolio_context.json",
+    "priced_candidates": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/priced_candidates.csv",
+    "profitability_bucket_atlas": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/profitability_bucket_atlas.csv",
+    "profitability_calibration": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/profitability_calibration.csv",
+    "profitability_gap_plan": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/profitability_gap_plan.csv",
+    "raw_universe": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/raw_universe.csv",
+    "report": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/options_agent_report_2026-06-11.md",
+    "research_tasks": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/research_tasks.json",
+    "risk_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/risk_audit.csv",
+    "route_opportunity_gap": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/route_opportunity_gap.csv",
+    "sizing_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/sizing_audit.csv",
+    "source_inventory": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/source_inventory.json",
+    "strategy_outcome_atlas": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/strategy_outcome_atlas.csv",
+    "strategy_routing_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/strategy_routing_audit.csv",
+    "structure_attempts": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/structure_attempts.csv",
+    "target_order_candidates": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/target_order_candidates.csv",
+    "trade_tickets": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/trade_tickets.csv"
+  },
+  "as_of": "2026-06-11",
+  "broker_matched_outcomes_summary": {
+    "avg_pnl": -83.17,
+    "expectancy_status": "BLOCK",
+    "match_sources": [
+      "codexuw_execute_outcome_ledger",
+      "codexuw_recommendation_outcome_ledger"
+    ],
+    "matched_tickers": [
+      "CRM",
+      "HOOD",
+      "META",
+      "RKLB",
+      "WMT"
+    ],
+    "profit_factor": 0.26,
+    "sample_size": 6,
+    "status": "not_positive",
+    "total_pnl": -499.0,
+    "win_rate": 0.3333
+  },
+  "broker_outcome_match_audit_summary": {
+    "ambiguous_rows": 0,
+    "backfillable_by_source": {
+      "codexuw_execute_outcome_ledger": 6,
+      "codexuw_recommendation_outcome_ledger": 1
+    },
+    "backfillable_examples": [
+      "CRM|2026-05-29|1006341666623|2026-05-13T14:17:35+00:00|2026-05-19T14:37:37+00:00",
+      "HOOD|2026-05-29|1006376025594|2026-05-15T14:11:32+00:00|2026-05-22T14:47:02+00:00",
+      "META|2026-06-18|1006358643160|2026-05-14T14:14:15+00:00|2026-06-08T13:42:20+00:00",
+      "RKLB|2026-05-22|1006322921251|2026-05-12T14:03:15+00:00|2026-05-20T14:17:06+00:00",
+      "WMT|2026-06-18|1006284290941|2026-05-08T13:45:06+00:00|2026-05-08T14:13:02+00:00",
+      "WMT|2026-06-18|1006287318995|2026-05-08T14:21:05+00:00|2026-05-27T14:26:44+00:00",
+      "META|2026-06-18|1006358643160|2026-05-14T14:14:15+00:00|2026-06-08T13:42:20+00:00"
+    ],
+    "backfillable_rows": 7,
+    "closed_trade_rows": 156,
+    "match_source_counts": {
+      "codexuw_execute_outcome_ledger": 156,
+      "codexuw_recommendation_outcome_ledger": 156
+    },
+    "match_status_counts": {
+      "BLOCK": 305,
+      "PASS": 7
+    },
+    "rows": 312,
+    "status": "exact_matches_available",
+    "unmatched_rows": 305
+  },
+  "calibrated_order_entry_blocker_summary": {
+    "blocked_rows": 0,
+    "blocker_counts": {},
+    "calibrated_rows": 0,
+    "examples": [],
+    "ready_rows": 0
+  },
+  "chain_snapshot_dir": "",
+  "code_git_sha": "13284b2",
+  "confidence_audit_summary": {
+    "blockers": "expectancy_summary_not_positive; actual_closed_or_forward_outcomes_not_positive; broker_matched_recommendation_outcomes_negative; forward_outcome_ledgers_have_no_realized_pnl; current_strategy_cohort_negative; profitability_calibration_not_proven; no_actual_and_replay_bucket_pass; green_ticket_structure_expectancy_missing; monthly_feasibility_not_proven; green_structure_expectancy_not_all_pass; green_profitability_calibration_not_all_pass; green_execution_fill_quality_not_all_pass",
+    "blocking_metrics": [
+      "profitability_confidence_rating",
+      "order_entry_confidence_rating",
+      "goal_confidence_gate"
+    ],
+    "goal_threshold": 7.0,
+    "order_entry_confidence_rating": 5.0,
+    "profitability_confidence_rating": 3.0,
+    "required_next_action": "Do not loosen green gates; collect/prove positive closed/replay expectancy and produce validated green rows.",
+    "status": "block"
+  },
+  "execution_context": {
+    "agent_dispatch_task_count": 5,
+    "agentic_review_coverage_basis": "subagent_lanes",
+    "agentic_review_coverage_pct": 1.0,
+    "agentic_review_lane_coverage_pct": 1.0,
+    "agentic_reviews_present": true,
+    "agentic_reviews_ready": true,
+    "broad_review_coverage_pct": 0.0199,
+    "external_review_agent_count": 5,
+    "external_review_count": 78,
+    "external_review_coverage_pct": 1.0,
+    "fresh_live_quotes_ready": true,
+    "market_session_gate_required": false,
+    "market_session_open": false,
+    "market_session_recheck_required": true,
+    "min_agentic_review_coverage_pct": 0.8,
+    "min_agentic_review_lanes_per_ticker": 4,
+    "monthly_profit_target": 10000.0,
+    "portfolio_ready": true,
+    "portfolio_status": "ok",
+    "portfolio_total_value": 727191.67,
+    "quote_mode": "live_schwab",
+    "research_task_count": 3916,
+    "run_gate_blockers": []
+  },
+  "execution_fill_quality_summary": {
+    "block_rows": 20,
+    "green_block_rows": 0,
+    "pass_rows": 110,
+    "status": "review",
+    "total_rows": 133,
+    "warn_rows": 3,
+    "yellow_block_rows": 0
+  },
+  "execution_readiness_summary": {
+    "blocking_gates": [],
+    "status": "execution_ready"
+  },
+  "expectancy_evidence_summary": {
+    "blocking_sources": [
+      "codexuw_execute_outcome_ledger",
+      "codexuw_recommendation_outcome_ledger",
+      "codexuw_replay_all_exact",
+      "schwab_closed_trades",
+      "schwab_closed_trades_by_ticker",
+      "schwab_closed_trades_by_ticker",
+      "schwab_closed_trades_by_ticker",
+      "schwab_closed_trades_by_ticker",
+      "schwab_closed_trades_by_ticker",
+      "schwab_closed_trades_by_ticker",
+      "schwab_closed_trades_by_ticker",
+      "schwab_closed_trades_by_ticker_strategy",
+      "schwab_closed_trades_by_ticker_strategy",
+      "schwab_closed_trades_by_ticker_strategy",
+      "schwab_closed_trades_by_ticker_strategy",
+      "schwab_closed_trades_by_ticker_strategy",
+      "schwab_closed_trades_by_ticker_strategy",
+      "schwab_closed_trades_by_ticker_strategy",
+      "schwab_closed_trades_strategy_cohort",
+      "broker_matched_outcomes",
+      "expectancy_summary"
+    ],
+    "note": "Actual closed-trade evidence is not positive enough; monthly-target evidence remains insufficient.",
+    "sample_size": 1467,
+    "status": "not_proven",
+    "summary_status": "BLOCK"
+  },
+  "lesson_count": 10,
+  "lesson_pack_digest": "sha256:ae2656b04bada574163db28ceeb7f7043415d041e46252d7d5c6b6f6e50c71cd",
+  "lesson_pack_source": "/Users/anuppamvi/uw_root/tradedesk/knowledge/options_agent_lesson_packs/options-agent-v5/lessons.yaml",
+  "lesson_pack_version": "options-agent-v5",
+  "lessonengine": {
+    "code_git_sha": "13284b2",
+    "lesson_count": 10,
+    "lesson_pack_digest": "sha256:ae2656b04bada574163db28ceeb7f7043415d041e46252d7d5c6b6f6e50c71cd",
+    "lesson_pack_source": "/Users/anuppamvi/uw_root/tradedesk/knowledge/options_agent_lesson_packs/options-agent-v5/lessons.yaml",
+    "lesson_pack_version": "options-agent-v5",
+    "lessonengine_schema_version": 1,
+    "lessons_application_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/lessons_application_audit.csv",
+    "lessons_snapshot_json": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/lessons_snapshot.json",
+    "lessons_snapshot_md": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/lessons_snapshot.md",
+    "prompt_budget_lines": 40
+  },
+  "lessonengine_schema_version": 1,
+  "lessons_application_audit": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/lessons_application_audit.csv",
+  "lessons_snapshot_json": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/lessons_snapshot.json",
+  "lessons_snapshot_md": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/lessons_snapshot.md",
+  "live_schwab_requested": true,
+  "live_spread_quality_summary": {
+    "block_rows": 20,
+    "deferred_market_closed_rows": 0,
+    "liquidity_block_rows": 6,
+    "pass_rows": 112,
+    "quote_width_block_rows": 15,
+    "status": "blocked_bad_live_markets",
+    "total_rows": 135
+  },
+  "market_price_regime": {
+    "as_of": "2026-06-11",
+    "avg_index_move_pct": 0.031652,
+    "avg_mega_cap_move_pct": 0.024654,
+    "chain_snapshot_dir": "",
+    "directional_threshold_pct": 0.0075,
+    "mega_cap_negative_breadth": 0.1,
+    "mega_cap_positive_breadth": 0.6,
+    "note": "index price tape is bullish",
+    "readings": [
+      {
+        "close": 295.63,
+        "move_pct": -0.001543,
+        "prev_close": 291.58,
+        "score": 72.73,
+        "source": "schwab_live_or_snapshot",
+        "spot": 291.13,
+        "ticker": "AAPL",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 390.34,
+        "move_pct": -0.01666,
+        "prev_close": 397.36,
+        "score": 74.73,
+        "source": "schwab_live_or_snapshot",
+        "spot": 390.74,
+        "ticker": "MSFT",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 204.87,
+        "move_pct": 0.0238,
+        "prev_close": 200.42,
+        "score": 68.44,
+        "source": "schwab_live_or_snapshot",
+        "spot": 205.19,
+        "ticker": "NVDA",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 241.51,
+        "move_pct": 0.002311,
+        "prev_close": 238.0,
+        "score": 68.55,
+        "source": "schwab_live_or_snapshot",
+        "spot": 238.55,
+        "ticker": "AMZN",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 568.43,
+        "move_pct": -0.007005,
+        "prev_close": 570.98,
+        "score": 68.74,
+        "source": "schwab_live_or_snapshot",
+        "spot": 566.98,
+        "ticker": "META",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 356.56,
+        "move_pct": 0.013699,
+        "prev_close": 353.32,
+        "score": 77.68,
+        "source": "schwab_live_or_snapshot",
+        "spot": 358.16,
+        "ticker": "GOOG",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 357.77,
+        "move_pct": 0.00926,
+        "prev_close": 356.38,
+        "score": 67.0,
+        "source": "schwab_live_or_snapshot",
+        "spot": 359.68,
+        "ticker": "GOOGL",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 399.15,
+        "move_pct": 0.065096,
+        "prev_close": 381.59,
+        "score": 68.58,
+        "source": "schwab_live_or_snapshot",
+        "spot": 406.43,
+        "ticker": "TSLA",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 488.45,
+        "move_pct": 0.130791,
+        "prev_close": 452.4,
+        "score": 73.71,
+        "source": "schwab_live_or_snapshot",
+        "spot": 511.57,
+        "ticker": "AMD",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 385.57,
+        "move_pct": 0.026794,
+        "prev_close": 372.1,
+        "score": 70.81,
+        "source": "schwab_live_or_snapshot",
+        "spot": 382.07,
+        "ticker": "AVGO",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 737.76,
+        "move_pct": 0.022497,
+        "prev_close": 725.43,
+        "score": 70.35,
+        "source": "schwab_live_or_snapshot",
+        "spot": 741.75,
+        "ticker": "SPY",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 717.12,
+        "move_pct": 0.039859,
+        "prev_close": 693.69,
+        "score": 75.06,
+        "source": "schwab_live_or_snapshot",
+        "spot": 721.34,
+        "ticker": "QQQ",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 290.41,
+        "move_pct": 0.038646,
+        "prev_close": 282.05,
+        "score": 74.05,
+        "source": "schwab_live_or_snapshot",
+        "spot": 292.95,
+        "ticker": "IWM",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 509.36,
+        "move_pct": 0.025607,
+        "prev_close": 500.25,
+        "score": 63.46,
+        "source": "schwab_live_or_snapshot",
+        "spot": 513.06,
+        "ticker": "DIA",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 131.08,
+        "move_pct": -0.017049,
+        "prev_close": 130.21,
+        "score": 68.02,
+        "source": "schwab_live_or_snapshot",
+        "spot": 127.99,
+        "ticker": "PLTR",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 92.23,
+        "move_pct": 0.079088,
+        "prev_close": 86.36,
+        "score": 69.62,
+        "source": "schwab_live_or_snapshot",
+        "spot": 93.19,
+        "ticker": "HOOD",
+        "underlying_quality_tier": "liquid"
+      },
+      {
+        "close": 120.5,
+        "move_pct": 0.003732,
+        "prev_close": 120.59,
+        "score": 63.8,
+        "source": "schwab_live_or_snapshot",
+        "spot": 121.04,
+        "ticker": "WMT",
+        "underlying_quality_tier": "core"
+      },
+      {
+        "close": 44.83,
+        "move_pct": 0.074852,
+        "prev_close": 42.35,
+        "score": 30.86,
+        "source": "schwab_live_or_snapshot",
+        "spot": 45.52,
+        "ticker": "URA",
+        "underlying_quality_tier": "excluded"
+      },
+      {
+        "close": 44.61,
+        "move_pct": -0.027682,
+        "prev_close": 46.6,
+        "score": 59.96,
+        "source": "schwab_live_or_snapshot",
+        "spot": 45.31,
+        "ticker": "DVN",
+        "underlying_quality_tier": "liquid"
+      },
+      {
+        "close": 57.86,
+        "move_pct": 0.064235,
+        "prev_close": 54.02,
+        "score": 31.67,
+        "source": "schwab_live_or_snapshot",
+        "spot": 57.49,
+        "ticker": "OKLO",
+        "underlying_quality_tier": "speculative"
+      }
+    ],
+    "readings_by_ticker": {
+      "AAPL": {
+        "close": 295.63,
+        "move_pct": -0.001543,
+        "prev_close": 291.58,
+        "score": 72.73,
+        "source": "schwab_live_or_snapshot",
+        "spot": 291.13,
+        "ticker": "AAPL",
+        "underlying_quality_tier": "core"
+      },
+      "AMD": {
+        "close": 488.45,
+        "move_pct": 0.130791,
+        "prev_close": 452.4,
+        "score": 73.71,
+        "source": "schwab_live_or_snapshot",
+        "spot": 511.57,
+        "ticker": "AMD",
+        "underlying_quality_tier": "core"
+      },
+      "AMZN": {
+        "close": 241.51,
+        "move_pct": 0.002311,
+        "prev_close": 238.0,
+        "score": 68.55,
+        "source": "schwab_live_or_snapshot",
+        "spot": 238.55,
+        "ticker": "AMZN",
+        "underlying_quality_tier": "core"
+      },
+      "AVGO": {
+        "close": 385.57,
+        "move_pct": 0.026794,
+        "prev_close": 372.1,
+        "score": 70.81,
+        "source": "schwab_live_or_snapshot",
+        "spot": 382.07,
+        "ticker": "AVGO",
+        "underlying_quality_tier": "core"
+      },
+      "DIA": {
+        "close": 509.36,
+        "move_pct": 0.025607,
+        "prev_close": 500.25,
+        "score": 63.46,
+        "source": "schwab_live_or_snapshot",
+        "spot": 513.06,
+        "ticker": "DIA",
+        "underlying_quality_tier": "core"
+      },
+      "DVN": {
+        "close": 44.61,
+        "move_pct": -0.027682,
+        "prev_close": 46.6,
+        "score": 59.96,
+        "source": "schwab_live_or_snapshot",
+        "spot": 45.31,
+        "ticker": "DVN",
+        "underlying_quality_tier": "liquid"
+      },
+      "GOOG": {
+        "close": 356.56,
+        "move_pct": 0.013699,
+        "prev_close": 353.32,
+        "score": 77.68,
+        "source": "schwab_live_or_snapshot",
+        "spot": 358.16,
+        "ticker": "GOOG",
+        "underlying_quality_tier": "core"
+      },
+      "GOOGL": {
+        "close": 357.77,
+        "move_pct": 0.00926,
+        "prev_close": 356.38,
+        "score": 67.0,
+        "source": "schwab_live_or_snapshot",
+        "spot": 359.68,
+        "ticker": "GOOGL",
+        "underlying_quality_tier": "core"
+      },
+      "HOOD": {
+        "close": 92.23,
+        "move_pct": 0.079088,
+        "prev_close": 86.36,
+        "score": 69.62,
+        "source": "schwab_live_or_snapshot",
+        "spot": 93.19,
+        "ticker": "HOOD",
+        "underlying_quality_tier": "liquid"
+      },
+      "IWM": {
+        "close": 290.41,
+        "move_pct": 0.038646,
+        "prev_close": 282.05,
+        "score": 74.05,
+        "source": "schwab_live_or_snapshot",
+        "spot": 292.95,
+        "ticker": "IWM",
+        "underlying_quality_tier": "core"
+      },
+      "META": {
+        "close": 568.43,
+        "move_pct": -0.007005,
+        "prev_close": 570.98,
+        "score": 68.74,
+        "source": "schwab_live_or_snapshot",
+        "spot": 566.98,
+        "ticker": "META",
+        "underlying_quality_tier": "core"
+      },
+      "MSFT": {
+        "close": 390.34,
+        "move_pct": -0.01666,
+        "prev_close": 397.36,
+        "score": 74.73,
+        "source": "schwab_live_or_snapshot",
+        "spot": 390.74,
+        "ticker": "MSFT",
+        "underlying_quality_tier": "core"
+      },
+      "NVDA": {
+        "close": 204.87,
+        "move_pct": 0.0238,
+        "prev_close": 200.42,
+        "score": 68.44,
+        "source": "schwab_live_or_snapshot",
+        "spot": 205.19,
+        "ticker": "NVDA",
+        "underlying_quality_tier": "core"
+      },
+      "OKLO": {
+        "close": 57.86,
+        "move_pct": 0.064235,
+        "prev_close": 54.02,
+        "score": 31.67,
+        "source": "schwab_live_or_snapshot",
+        "spot": 57.49,
+        "ticker": "OKLO",
+        "underlying_quality_tier": "speculative"
+      },
+      "PLTR": {
+        "close": 131.08,
+        "move_pct": -0.017049,
+        "prev_close": 130.21,
+        "score": 68.02,
+        "source": "schwab_live_or_snapshot",
+        "spot": 127.99,
+        "ticker": "PLTR",
+        "underlying_quality_tier": "core"
+      },
+      "QQQ": {
+        "close": 717.12,
+        "move_pct": 0.039859,
+        "prev_close": 693.69,
+        "score": 75.06,
+        "source": "schwab_live_or_snapshot",
+        "spot": 721.34,
+        "ticker": "QQQ",
+        "underlying_quality_tier": "core"
+      },
+      "SPY": {
+        "close": 737.76,
+        "move_pct": 0.022497,
+        "prev_close": 725.43,
+        "score": 70.35,
+        "source": "schwab_live_or_snapshot",
+        "spot": 741.75,
+        "ticker": "SPY",
+        "underlying_quality_tier": "core"
+      },
+      "TSLA": {
+        "close": 399.15,
+        "move_pct": 0.065096,
+        "prev_close": 381.59,
+        "score": 68.58,
+        "source": "schwab_live_or_snapshot",
+        "spot": 406.43,
+        "ticker": "TSLA",
+        "underlying_quality_tier": "core"
+      },
+      "URA": {
+        "close": 44.83,
+        "move_pct": 0.074852,
+        "prev_close": 42.35,
+        "score": 30.86,
+        "source": "schwab_live_or_snapshot",
+        "spot": 45.52,
+        "ticker": "URA",
+        "underlying_quality_tier": "excluded"
+      },
+      "WMT": {
+        "close": 120.5,
+        "move_pct": 0.003732,
+        "prev_close": 120.59,
+        "score": 63.8,
+        "source": "schwab_live_or_snapshot",
+        "spot": 121.04,
+        "ticker": "WMT",
+        "underlying_quality_tier": "core"
+      }
+    },
+    "regime": "risk_on",
+    "sizing_stance": "normal",
+    "source": "Schwab option chain underlying quote",
+    "source_mode": "schwab_live",
+    "status": "ok",
+    "tape_direction": "bullish"
+  },
+  "market_regime": {
+    "avg_index_flow_bias": 0.009,
+    "avg_index_price_move_pct": 0.031652,
+    "note": "index price tape leans bullish",
+    "price_tape_direction": "bullish",
+    "readings": [
+      {
+        "bias": "bullish",
+        "combined_flow_bias": 0.025764967660224562,
+        "score": 75.06,
+        "signal_premium": 3752529798.0,
+        "ticker": "QQQ"
+      },
+      {
+        "bias": "bullish",
+        "combined_flow_bias": 0.02544453378517735,
+        "score": 74.05,
+        "signal_premium": 451498518.0,
+        "ticker": "IWM"
+      },
+      {
+        "bias": "bullish",
+        "combined_flow_bias": 0.027493392793677966,
+        "score": 70.35,
+        "signal_premium": 3717837878.0,
+        "ticker": "SPY"
+      },
+      {
+        "bias": "bullish",
+        "combined_flow_bias": -0.04253639407455457,
+        "score": 63.46,
+        "signal_premium": 26891591.0,
+        "ticker": "DIA"
+      }
+    ],
+    "regime": "risk_on",
+    "sizing_stance": "normal",
+    "status": "ok"
+  },
+  "mode": "agentic_synthesis_pass",
+  "monthly_feasibility_summary": {
+    "blocking_metrics": [
+      "expectancy_evidence",
+      "ready_ticket_expectancy_evidence"
+    ],
+    "note": "Monthly-target evidence remains insufficient while any BLOCK metric remains.",
+    "pass_metrics": [
+      "ready_ticket_count",
+      "one_cycle_max_profit",
+      "cycles_needed_at_max_profit"
+    ],
+    "status": "not_proven"
+  },
+  "out_dir": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11",
+  "outcome_evidence_audit_summary": {
+    "blocking_sources": [
+      "codexuw_execute_outcome_ledger",
+      "codexuw_recommendation_outcome_ledger",
+      "broker_matched_outcomes"
+    ],
+    "broker_backfill_realized_count": 6,
+    "broker_backfill_status": "block",
+    "contributing_sources": [
+      "schwab_closed_trades"
+    ],
+    "current_ticker_realized_count": 98,
+    "forward_sources_without_realized_outcomes": [
+      "codexuw_execute_outcome_ledger",
+      "codexuw_recommendation_outcome_ledger"
+    ],
+    "latest_evidence_by_source": {
+      "broker_matched_outcomes": "2026-06-08",
+      "codexuw_execute_outcome_ledger": "2026-06-04",
+      "codexuw_recommendation_outcome_ledger": "2026-06-09",
+      "schwab_closed_trades": "2026-06-12"
+    },
+    "realized_pnl_count": 162,
+    "source_rows": 4,
+    "source_status_counts": {
+      "BLOCK": 3,
+      "WARN": 1
+    },
+    "status": "block"
+  },
+  "pipeline_name": "Options Agent",
+  "pipeline_version": "options-agent-v0",
+  "portfolio_context_status": "ok",
+  "profitability_bucket_atlas_summary": {
+    "actual_pass_rows": 0,
+    "block_rows": 30,
+    "bucket_rows": 219,
+    "current_pass_bucket_rows": 0,
+    "current_ticket_bucket_rows": 38,
+    "pass_bucket_examples": [],
+    "pass_rows": 0,
+    "primary_gap_counts": {
+      "actual_bucket_missing": 128,
+      "actual_bucket_sample_gap": 91
+    },
+    "replay_pass_rows": 1,
+    "status": "no_actual_and_replay_bucket_pass",
+    "warn_rows": 189
+  },
+  "profitability_calibration_summary": {
+    "actual_family_only_rows": 0,
+    "actual_support_scope_counts": {
+      "actual_route": 105,
+      "actual_route_bucket": 4,
+      "actual_ticker_route": 26
+    },
+    "actual_support_status_counts": {
+      "BLOCK": 63,
+      "WARN": 72
+    },
+    "block_rows": 0,
+    "blocking_routes": [
+      "bear_call_credit",
+      "bear_put_debit",
+      "bull_call_debit",
+      "bull_put_credit"
+    ],
+    "bucket_blocker_examples": [
+      {
+        "actual_sample_gap": 29,
+        "actual_sample_size": 1,
+        "actual_scope": "actual_ticker_route",
+        "actual_status": "WARN",
+        "direction_bucket": "bullish",
+        "dte_bucket": "dte_0_14",
+        "economics_bucket": "debit_reward_risk_high",
+        "liquidity_bucket": "liquidity_deep",
+        "replay_relaxed_dimensions": "liquidity_bucket",
+        "replay_sample_gap": 30,
+        "replay_sample_size": 0,
+        "replay_status": "BLOCK",
+        "strategy_route": "bull_call_debit",
+        "ticker": "AMD"
+      },
+      {
+        "actual_sample_gap": 29,
+        "actual_sample_size": 1,
+        "actual_scope": "actual_ticker_route",
+        "actual_status": "WARN",
+        "direction_bucket": "bullish",
+        "dte_bucket": "dte_0_14",
+        "economics_bucket": "debit_reward_risk_high",
+        "liquidity_bucket": "liquidity_adequate",
+        "replay_relaxed_dimensions": "liquidity_bucket",
+        "replay_sample_gap": 30,
+        "replay_sample_size": 0,
+        "replay_status": "BLOCK",
+        "strategy_route": "bull_call_debit",
+        "ticker": "AVGO"
+      },
+      {
+        "actual_sample_gap": 29,
+        "actual_sample_size": 1,
+        "actual_scope": "actual_ticker_route",
+        "actual_status": "WARN",
+        "direction_bucket": "bullish",
+        "dte_bucket": "dte_0_14",
+        "economics_bucket": "debit_reward_risk_high",
+        "liquidity_bucket": "liquidity_adequate",
+        "replay_relaxed_dimensions": "liquidity_bucket",
+        "replay_sample_gap": 30,
+        "replay_sample_size": 0,
+        "replay_status": "BLOCK",
+        "strategy_route": "bull_call_debit",
+        "ticker": "AVGO"
+      },
+      {
+        "actual_sample_gap": 29,
+        "actual_sample_size": 1,
+        "actual_scope": "actual_ticker_route",
+        "actual_status": "WARN",
+        "direction_bucket": "bullish",
+        "dte_bucket": "dte_0_14",
+        "economics_bucket": "debit_reward_risk_high",
+        "liquidity_bucket": "liquidity_adequate",
+        "replay_relaxed_dimensions": "liquidity_bucket",
+        "replay_sample_gap": 30,
+        "replay_sample_size": 0,
+        "replay_status": "BLOCK",
+        "strategy_route": "bull_call_debit",
+        "ticker": "C"
+      },
+      {
+        "actual_sample_gap": 29,
+        "actual_sample_size": 1,
+        "actual_scope": "actual_ticker_route",
+        "actual_status": "WARN",
+        "direction_bucket": "bullish",
+        "dte_bucket": "dte_0_14",
+        "economics_bucket": "debit_reward_risk_high",
+        "liquidity_bucket": "liquidity_deep",
+        "replay_relaxed_dimensions": "liquidity_bucket",
+        "replay_sample_gap": 30,
+        "replay_sample_size": 0,
+        "replay_status": "BLOCK",
+        "strategy_route": "bull_call_debit",
+        "ticker": "ORCL"
+      },
+      {
+        "actual_sample_gap": 29,
+        "actual_sample_size": 1,
+        "actual_scope": "actual_ticker_route",
+        "actual_status": "WARN",
+        "direction_bucket": "bullish",
+        "dte_bucket": "dte_31_60",
+        "economics_bucket": "debit_reward_risk_weak",
+        "liquidity_bucket": "liquidity_deep",
+        "replay_relaxed_dimensions": "dte_bucket",
+        "replay_sample_gap": 30,
+        "replay_sample_size": 0,
+        "replay_status": "BLOCK",
+        "strategy_route": "bull_call_debit",
+        "ticker": "PANW"
+      }
+    ],
+    "bucket_precision_rows": 4,
+    "bucket_shortfall_routes": [
+      "bear_call_credit",
+      "bear_put_debit",
+      "bull_call_debit",
+      "bull_put_credit"
+    ],
+    "bucket_shortfall_rows": 135,
+    "current_trade_rows": 135,
+    "missing_replay_bucket_rows": 91,
+    "missing_replay_routes": [
+      "bear_call_credit",
+      "bear_put_debit",
+      "bull_call_debit",
+      "bull_put_credit"
+    ],
+    "pass_rows": 0,
+    "replay_bucket_status_counts": {
+      "BLOCK": 93,
+      "WARN": 42
+    },
+    "routes": [
+      {
+        "actual_block_rows": 62,
+        "block_rows": 0,
+        "missing_replay_bucket_rows": 68,
+        "pass_rows": 0,
+        "replay_block_rows": 68,
+        "rows": 83,
+        "strategy_route": "bull_call_debit",
+        "warn_rows": 83
+      },
+      {
+        "actual_block_rows": 0,
+        "block_rows": 0,
+        "missing_replay_bucket_rows": 20,
+        "pass_rows": 0,
+        "replay_block_rows": 20,
+        "rows": 26,
+        "strategy_route": "bear_put_debit",
+        "warn_rows": 26
+      },
+      {
+        "actual_block_rows": 1,
+        "block_rows": 0,
+        "missing_replay_bucket_rows": 2,
+        "pass_rows": 0,
+        "replay_block_rows": 4,
+        "rows": 20,
+        "strategy_route": "bull_put_credit",
+        "warn_rows": 20
+      },
+      {
+        "actual_block_rows": 0,
+        "block_rows": 0,
+        "missing_replay_bucket_rows": 1,
+        "pass_rows": 0,
+        "replay_block_rows": 1,
+        "rows": 6,
+        "strategy_route": "bear_call_credit",
+        "warn_rows": 6
+      }
+    ],
+    "status": "block",
+    "warn_rows": 135
+  },
+  "profitability_gap_plan_summary": {
+    "blocking_rows": 38,
+    "gap_rows": 38,
+    "primary_gap_counts": {
+      "actual_closed_outcomes_negative_or_weak": 14,
+      "actual_closed_outcomes_sample_gap": 24
+    },
+    "status": "block",
+    "top_gaps": [
+      {
+        "actual_gap": 0,
+        "current_tickers": "AVGO,C,CRM,CSCO,INTC,MU,NOW,SNOW,V",
+        "gap_rank": 1,
+        "primary_gap": "actual_closed_outcomes_negative_or_weak",
+        "relaxed_dimensions": "liquidity_bucket",
+        "replay_gap": 30,
+        "strategy_route": "bull_call_debit"
+      },
+      {
+        "actual_gap": 0,
+        "current_tickers": "CSCO,CVX,SPY",
+        "gap_rank": 2,
+        "primary_gap": "actual_closed_outcomes_negative_or_weak",
+        "relaxed_dimensions": "",
+        "replay_gap": 28,
+        "strategy_route": "bull_call_debit"
+      },
+      {
+        "actual_gap": 0,
+        "current_tickers": "CMCSA,DIS,NEM,SHOP,T",
+        "gap_rank": 3,
+        "primary_gap": "actual_closed_outcomes_negative_or_weak",
+        "relaxed_dimensions": "dte_bucket",
+        "replay_gap": 30,
+        "strategy_route": "bull_call_debit"
+      },
+      {
+        "actual_gap": 0,
+        "current_tickers": "AAPL,BMY,UBER,XOM",
+        "gap_rank": 4,
+        "primary_gap": "actual_closed_outcomes_negative_or_weak",
+        "relaxed_dimensions": "dte_bucket,liquidity_bucket",
+        "replay_gap": 30,
+        "strategy_route": "bull_call_debit"
+      },
+      {
+        "actual_gap": 0,
+        "current_tickers": "KO,NEE,PANW",
+        "gap_rank": 5,
+        "primary_gap": "actual_closed_outcomes_negative_or_weak",
+        "relaxed_dimensions": "dte_bucket",
+        "replay_gap": 30,
+        "strategy_route": "bull_call_debit"
+      },
+      {
+        "actual_gap": 0,
+        "current_tickers": "GLW,JPM,MO,TXN,VRT,XLB",
+        "gap_rank": 6,
+        "primary_gap": "actual_closed_outcomes_negative_or_weak",
+        "relaxed_dimensions": "",
+        "replay_gap": 29,
+        "strategy_route": "bull_call_debit"
+      }
+    ]
+  },
+  "prompt_budget_lines": 40,
+  "route_opportunity_gap_summary": {
+    "bucket_calibration_routes": [],
+    "candidate_expansion_routes": [
+      "short_put"
+    ],
+    "current_route_execution_gap_routes": [],
+    "near_ready_routes": [],
+    "negative_or_weak_routes": [
+      "bull_call_debit"
+    ],
+    "route_rows": 10,
+    "status": "review",
+    "status_counts": {
+      "actual_outcomes_negative_or_weak": 1,
+      "evidence_ready_no_current_ticket": 1,
+      "not_proven": 8
+    }
+  },
+  "row_counts": {
+    "agent_dispatch_tasks": 5,
+    "agent_review_board": 8117,
+    "broker_matched_outcomes": 6,
+    "broker_outcome_match_audit": 312,
+    "candidate_generation": 3916,
+    "catalyst_evidence": 3918,
+    "catalyst_reviews": 3916,
+    "confidence_audit": 3,
+    "coverage_audit": 3918,
+    "decision_board": 135,
+    "execution_fill_quality": 133,
+    "execution_readiness": 17,
+    "expectancy_evidence": 56,
+    "external_agent_reviews": 78,
+    "final_recommendations": 135,
+    "green_trade_tickets": 47,
+    "lessons_application_audit": 175,
+    "live_chain_validation": 135,
+    "live_spread_quality_audit": 135,
+    "management_plan": 135,
+    "market_open_recheck_queue": 0,
+    "monthly_feasibility": 10,
+    "no_trade_audit": 3828,
+    "outcome_evidence_audit": 4,
+    "priced_candidates": 135,
+    "profitability_bucket_atlas": 219,
+    "profitability_calibration": 135,
+    "profitability_gap_plan": 38,
+    "raw_universe": 6239,
+    "ready_to_enter": 54,
+    "research_tasks": 3916,
+    "risk_audit": 31,
+    "route_opportunity_gap": 10,
+    "sizing_audit": 135,
+    "strategy_outcome_atlas": 62,
+    "strategy_routing_audit": 176,
+    "structure_attempts": 270,
+    "target_order_candidates": 34,
+    "target_order_ticket_rows": 34,
+    "trade_tickets": 81
+  },
+  "source_dir": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11",
+  "source_inventory": {
+    "as_of": "2026-06-11",
+    "source_dir": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11",
+    "sources": {
+      "bot_eod": {
+        "path": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11/bot-eod-report-2026-06-11.zip",
+        "size_bytes": 1221308723,
+        "status": "present"
+      },
+      "chain_oi": {
+        "path": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11/chain-oi-changes-2026-06-11.zip",
+        "size_bytes": 19041788,
+        "status": "present"
+      },
+      "hot_chains": {
+        "path": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11/hot-chains-2026-06-11.zip",
+        "size_bytes": 2906964,
+        "status": "present"
+      },
+      "stock_screener": {
+        "path": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11/stock-screener-2026-06-11.zip",
+        "size_bytes": 1144399,
+        "status": "present"
+      }
+    }
+  },
+  "source_root": "/Users/anuppamvi/uw_root/tradedesk",
+  "status_counts": {
+    "AVOID": 39,
+    "ENTER": 64,
+    "ENTER_WITH_PORTFOLIO_RISK": 28,
+    "REVIEW": 3,
+    "WAIT_FOR_PRICE": 1
+  },
+  "strategy_outcome_atlas_summary": {
+    "blocking_current_ticker_strategy_rows": 56,
+    "current_ticker_strategy_rows": 56,
+    "negative_current_strategy_families": [
+      "vertical_spread"
+    ],
+    "positive_strategy_families": [
+      "short_put"
+    ],
+    "status": "strategy_outcomes_positive_for_some_families",
+    "strategy_family_rows": 6
+  },
+  "visibility_invariant": "portfolio annotations stay in portfolio_risk_note and risk_audit.csv; they must not hide an otherwise qualified trade",
+  "warnings": [
+    "broad research-task coverage is low; execution readiness is based on subagent lane coverage plus per-ticket lane coverage",
+    "verify the live Schwab quote immediately before any manual order entry"
+  ]
+}
