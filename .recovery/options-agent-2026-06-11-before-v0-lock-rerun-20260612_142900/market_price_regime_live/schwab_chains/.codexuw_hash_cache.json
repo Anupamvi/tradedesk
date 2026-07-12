@@ -1,0 +1,282 @@
+{
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/AAPL.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:27.646995+00:00",
+      "name": "AAPL.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/AAPL.json",
+      "sha256": "9616ca65e42f49b3aba8257464a741ae93bcd8defbfca156129513d697f92c8b",
+      "size_bytes": 2116640
+    },
+    "signature": {
+      "mtime_ns": 1781276187646994732,
+      "size_bytes": 2116640
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/AMD.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.017238+00:00",
+      "name": "AMD.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/AMD.json",
+      "sha256": "0329ab67ba1ed4decb15c77f85c298a54a689070aecfb487639d8692fa519824",
+      "size_bytes": 2180340
+    },
+    "signature": {
+      "mtime_ns": 1781276188017238203,
+      "size_bytes": 2180340
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/AMZN.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:27.774884+00:00",
+      "name": "AMZN.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/AMZN.json",
+      "sha256": "e1f42c495991a00ed487c7ad0a66cbe1644db5bab948d72749d6667a0a194845",
+      "size_bytes": 1852449
+    },
+    "signature": {
+      "mtime_ns": 1781276187774884200,
+      "size_bytes": 1852449
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/AVGO.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.068650+00:00",
+      "name": "AVGO.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/AVGO.json",
+      "sha256": "fe03aadc4bf1ec302e663843c56143b16b29781619b0e7bb562a9dd534c51928",
+      "size_bytes": 2694047
+    },
+    "signature": {
+      "mtime_ns": 1781276188068650316,
+      "size_bytes": 2694047
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/DIA.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.321180+00:00",
+      "name": "DIA.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/DIA.json",
+      "sha256": "ed779b71e617f9eed95132aca8505badc2769a4e7954217ea8837529ca56ffdd",
+      "size_bytes": 1886916
+    },
+    "signature": {
+      "mtime_ns": 1781276188321180291,
+      "size_bytes": 1886916
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/DVN.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.466111+00:00",
+      "name": "DVN.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/DVN.json",
+      "sha256": "3f10b3a8c9360f870dade7f23e597b07f930699e2612310e5936995699215d09",
+      "size_bytes": 1146812
+    },
+    "signature": {
+      "mtime_ns": 1781276188466111325,
+      "size_bytes": 1146812
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/GOOG.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:27.868733+00:00",
+      "name": "GOOG.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/GOOG.json",
+      "sha256": "b4a1287783b5420506025468292b22ba87e06c3fc557d4099b2ec40f5712369e",
+      "size_bytes": 1761966
+    },
+    "signature": {
+      "mtime_ns": 1781276187868733330,
+      "size_bytes": 1761966
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/GOOGL.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:27.919806+00:00",
+      "name": "GOOGL.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/GOOGL.json",
+      "sha256": "15f10045d348c423d79d3720be630203ec05bd113a2ed9a0f005f8e5898a30d8",
+      "size_bytes": 2583517
+    },
+    "signature": {
+      "mtime_ns": 1781276187919806026,
+      "size_bytes": 2583517
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/HOOD.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.391986+00:00",
+      "name": "HOOD.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/HOOD.json",
+      "sha256": "366cc1efdcbbcd2c18a2ddadd5734acdf7b5bff6aaf70baafe6a2c1a8b9ca595",
+      "size_bytes": 1615895
+    },
+    "signature": {
+      "mtime_ns": 1781276188391985723,
+      "size_bytes": 1615895
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/IWM.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.282294+00:00",
+      "name": "IWM.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/IWM.json",
+      "sha256": "9725361b819beeae70977fd8975d4980b8519280f504580aad7eaf559a976139",
+      "size_bytes": 3160806
+    },
+    "signature": {
+      "mtime_ns": 1781276188282293737,
+      "size_bytes": 3160806
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/META.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:27.832600+00:00",
+      "name": "META.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/META.json",
+      "sha256": "43169f19301779d084f9b768c1e2dc8db0ae77362b987a05890a8bfd1d99c3b2",
+      "size_bytes": 2795994
+    },
+    "signature": {
+      "mtime_ns": 1781276187832600447,
+      "size_bytes": 2795994
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/MSFT.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:27.690578+00:00",
+      "name": "MSFT.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/MSFT.json",
+      "sha256": "2f8999c153bef0f5eb4f5ba9e8a7fb1b25e72ea545d6976856878f39d7cba77d",
+      "size_bytes": 2338888
+    },
+    "signature": {
+      "mtime_ns": 1781276187690577459,
+      "size_bytes": 2338888
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/NVDA.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:27.739076+00:00",
+      "name": "NVDA.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/NVDA.json",
+      "sha256": "01ff1067492505bdb6dc8e04e2b0e0c72a29190fa6f68211dce804ff20da0e4d",
+      "size_bytes": 2518326
+    },
+    "signature": {
+      "mtime_ns": 1781276187739076277,
+      "size_bytes": 2518326
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/OKLO.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.492207+00:00",
+      "name": "OKLO.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/OKLO.json",
+      "sha256": "807e593df4854675cef20be3ff2005200f7e9f31590bed06512545f46c31a987",
+      "size_bytes": 1303838
+    },
+    "signature": {
+      "mtime_ns": 1781276188492207362,
+      "size_bytes": 1303838
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/PLTR.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.360141+00:00",
+      "name": "PLTR.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/PLTR.json",
+      "sha256": "9918357baaf9876a6a92add919dfd0e4a7c55bdfca32fd62453d4395ab9eb981",
+      "size_bytes": 1972207
+    },
+    "signature": {
+      "mtime_ns": 1781276188360140637,
+      "size_bytes": 1972207
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/QQQ.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.219968+00:00",
+      "name": "QQQ.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/QQQ.json",
+      "sha256": "ffeece55506567fc790b594a0ed6dcd7c791182b02c77c6016de98ac7fc3f0af",
+      "size_bytes": 3733014
+    },
+    "signature": {
+      "mtime_ns": 1781276188219968317,
+      "size_bytes": 3733014
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/SPY.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.142164+00:00",
+      "name": "SPY.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/SPY.json",
+      "sha256": "4acb2efedbc961c7fdb813ba945581dce6e32506ab84c81a324b0f20de66e220",
+      "size_bytes": 3734053
+    },
+    "signature": {
+      "mtime_ns": 1781276188142163668,
+      "size_bytes": 3734053
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/TSLA.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:27.975089+00:00",
+      "name": "TSLA.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/TSLA.json",
+      "sha256": "2699cbb1b1b7cb8af09081fc7f8ed063ab9e20f8100b0f0d0a5102210fad63f7",
+      "size_bytes": 2799922
+    },
+    "signature": {
+      "mtime_ns": 1781276187975088894,
+      "size_bytes": 2799922
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/URA.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.443788+00:00",
+      "name": "URA.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/URA.json",
+      "sha256": "6f956c15a66c34eadd683ec9a59515dcd64d9ee11784e8bcbe17ae02e9347992",
+      "size_bytes": 1283127
+    },
+    "signature": {
+      "mtime_ns": 1781276188443787753,
+      "size_bytes": 1283127
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/WMT.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:56:28.418384+00:00",
+      "name": "WMT.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/market_price_regime_live/schwab_chains/WMT.json",
+      "sha256": "b668f149e9378fb93319b0a5c4eed3ceec207d33195d81aa2fd6e98da38d87fa",
+      "size_bytes": 1339077
+    },
+    "signature": {
+      "mtime_ns": 1781276188418383884,
+      "size_bytes": 1339077
+    }
+  }
+}
