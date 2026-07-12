@@ -1,0 +1,13 @@
+{
+  "blockers": "expectancy_summary_not_positive; actual_closed_or_forward_outcomes_not_positive; current_strategy_cohort_negative; profitability_calibration_not_proven; no_green_ready_orders; monthly_feasibility_not_proven",
+  "blocking_metrics": [
+    "profitability_confidence_rating",
+    "order_entry_confidence_rating",
+    "goal_confidence_gate"
+  ],
+  "goal_threshold": 7.0,
+  "order_entry_confidence_rating": 0.0,
+  "profitability_confidence_rating": 2.5,
+  "required_next_action": "Do not loosen green gates; collect/prove positive closed/replay expectancy and produce validated green rows.",
+  "status": "block"
+}
