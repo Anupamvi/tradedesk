@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.9-quality-sleeves-20260711-170521"
+PIPELINE_VERSION = "options-agent-v1.10-clean-execution-surface-20260711-175928"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.9-quality-sleeves-20260711-170521",
     "options-agent-v1.8-promoted-decision-pass-20260711-093930",
     "options-agent-v1.7-selector-promotion-20260711-092235",
     "options-agent-v1.6-true-ytd-replay-20260711-033758",
@@ -62,7 +63,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-11T17:05:21-07:00"
+PIPELINE_RELEASED_AT = "2026-07-11T17:59:28-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -119,8 +120,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.9-quality-sleeves-20260711-170521",
+    "PIPELINE_VERSION": "options-agent-v1.10-clean-execution-surface-20260711-175928",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.9-quality-sleeves-20260711-170521",
         "options-agent-v1.8-promoted-decision-pass-20260711-093930",
         "options-agent-v1.7-selector-promotion-20260711-092235",
         "options-agent-v1.6-true-ytd-replay-20260711-033758",
@@ -134,7 +136,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-11T17:05:21-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-11T17:59:28-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -1058,6 +1060,13 @@ def annotate_contract_event_risk(
             else "verified" if verified_event_date is not None else "unverified" if fallback_event_date else "missing"
         )
         earnings_before_expiry = bool(expiry and earnings_date and day <= earnings_date <= expiry)
+        if (
+            earnings_source_status == "unverified"
+            and expiry is not None
+            and earnings_date is not None
+            and expiry < earnings_date
+        ):
+            earnings_source_status = "provisional_after_expiry"
         exit_deadline = _previous_regular_market_day(earnings_date) if earnings_before_expiry and earnings_date else None
 
         calendar_covered = bool(
@@ -1077,6 +1086,10 @@ def annotate_contract_event_risk(
         event_notes: list[str] = []
         if earnings_source_status in {"missing", "unverified"}:
             event_notes.append("authoritative earnings date is unverified; order entry is blocked")
+        elif earnings_source_status == "provisional_after_expiry" and earnings_date:
+            event_notes.append(
+                f"dated UW earnings {earnings_date.isoformat()} is after expiry; exact catalyst review still required"
+            )
         if earnings_before_expiry and earnings_date:
             event_notes.append(
                 f"earnings {earnings_date.isoformat()} before expiry; exit by {exit_deadline.isoformat() if exit_deadline else 'prior session'}"
@@ -1129,7 +1142,7 @@ def _required_contract_review_agents(row: Mapping[str, Any]) -> tuple[str, ...]:
     required = list(CONTRACT_REVIEW_REQUIRED_AGENTS)
     ticker = _as_text(row.get("ticker")).upper()
     earnings_status = _as_text(row.get("earnings_source_status")).lower()
-    if earnings_status in {"missing", "unverified"} and ticker not in ACTIONABLE_ETF_ALLOWLIST:
+    if earnings_status in {"missing", "unverified", "provisional_after_expiry"} and ticker not in ACTIONABLE_ETF_ALLOWLIST:
         required.insert(0, "catalyst_news")
     return tuple(required)
 
@@ -1137,7 +1150,11 @@ def _required_contract_review_agents(row: Mapping[str, Any]) -> tuple[str, ...]:
 def _contract_event_verification_passed(row: Mapping[str, Any]) -> bool:
     """Require the authoritative event-calendar annotation, not an agent verdict."""
 
-    return _as_text(row.get("earnings_source_status")).lower() in {"verified", "not_applicable"}
+    return _as_text(row.get("earnings_source_status")).lower() in {
+        "verified",
+        "not_applicable",
+        "provisional_after_expiry",
+    }
 
 
 def _contract_review_matches_row(
@@ -15122,8 +15139,6 @@ def build_execution_context(
     blockers: list[str] = []
     if not fresh_live_ready:
         blockers.append("fresh_live_schwab_required")
-    if not portfolio_ready:
-        blockers.append("portfolio_context_required")
     if not agentic_reviews_present:
         blockers.append("agentic_reviews_required")
     elif not agentic_reviews_ready:
@@ -15137,6 +15152,7 @@ def build_execution_context(
         "market_session_gate_required": False,
         "market_session_recheck_required": market_session_recheck_required,
         "portfolio_ready": portfolio_ready,
+        "portfolio_required_for_one_lot": False,
         "portfolio_status": str(portfolio.get("status") or "unknown"),
         "portfolio_total_value": total_value,
         "agentic_reviews_present": agentic_reviews_present,
@@ -15511,9 +15527,15 @@ def _execution_blockers_for_row(
     suggested_contracts: int,
     execution_context: Mapping[str, Any],
 ) -> list[str]:
-    blockers = list(execution_context.get("run_gate_blockers") or [])
     live_status = _as_text(row.get("live_validation_status")).upper()
     status = _as_text(row.get("recommendation_status")).upper()
+    selector_policy_status = _as_text(row.get("selector_policy_status")).upper()
+    action_surface_candidate = not selector_policy_status or selector_policy_status == "PASS"
+    blockers = (
+        list(execution_context.get("run_gate_blockers") or [])
+        if action_surface_candidate
+        else []
+    )
     if status == RecommendationStatus.AVOID.value or _as_text(row.get("hard_rejects")):
         blockers.append("objective_blocker")
     review_resolved_for_recheck = _review_resolved_for_target_recheck(
@@ -15540,6 +15562,7 @@ def _execution_blockers_for_row(
     if (
         live_status == "PASS"
         and status in {RecommendationStatus.ENTER.value, RecommendationStatus.ENTER_WITH_PORTFOLIO_RISK.value}
+        and action_surface_candidate
         and contract_review_status != "PASS"
     ):
         if contract_review_missing_agents:
@@ -15554,15 +15577,14 @@ def _execution_blockers_for_row(
         blockers.append("positive_entry_limit_required")
     if suggested_contracts <= 0:
         blockers.append("positive_contract_size_required")
-    if _profitability_calibration_status_blocks_target(row):
+    if action_surface_candidate and _profitability_calibration_status_blocks_target(row):
         blockers.append(PROFITABILITY_CALIBRATION_BLOCKER)
-    if _profitability_calibration_actual_support_negative(row):
+    if action_surface_candidate and _profitability_calibration_actual_support_negative(row):
         blockers.append(PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER)
-    if _negative_route_family_evidence_blocks_action(row):
+    if action_surface_candidate and _negative_route_family_evidence_blocks_action(row):
         blockers.append(NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER)
     if _as_text(row.get("quality_gate_reason")):
         blockers.append("trade_quality_review_required")
-    selector_policy_status = _as_text(row.get("selector_policy_status")).upper()
     if selector_policy_status and selector_policy_status != "PASS":
         blockers.append(SELECTOR_POLICY_BLOCKER)
     entry_like_statuses = {
@@ -15571,9 +15593,9 @@ def _execution_blockers_for_row(
         RecommendationStatus.REVIEW.value,
         RecommendationStatus.WAIT_FOR_PRICE.value,
     }
-    if status in entry_like_statuses and _negative_strategy_expectancy_blocks_green(row):
+    if action_surface_candidate and status in entry_like_statuses and _negative_strategy_expectancy_blocks_green(row):
         blockers.append(NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER)
-    if status in {RecommendationStatus.ENTER.value, RecommendationStatus.ENTER_WITH_PORTFOLIO_RISK.value}:
+    if action_surface_candidate and status in {RecommendationStatus.ENTER.value, RecommendationStatus.ENTER_WITH_PORTFOLIO_RISK.value}:
         if not _v0_late_evidence_gates_diagnostic_only():
             if _is_position_profit_below_green_floor(
                 row,
@@ -15595,6 +15617,9 @@ def _send_now_economics_blockers(
     ticket: str,
     entry_limit: Optional[float],
 ) -> list[str]:
+    selector_status = _as_text(row.get("selector_policy_status")).upper()
+    if selector_status and selector_status != "PASS":
+        return []
     if _as_text(row.get("recommendation_status")).upper() not in {
         RecommendationStatus.ENTER.value,
         RecommendationStatus.ENTER_WITH_PORTFOLIO_RISK.value,
@@ -15920,7 +15945,7 @@ def _execution_confidence(
         quality_score += 5.0
     if execution_context.get("fresh_live_quotes_ready"):
         score += 10.0
-    if execution_context.get("portfolio_ready"):
+    if (_as_float(row.get("max_loss")) or 0.0) > 0:
         score += 5.0
     if execution_context.get("agentic_reviews_ready"):
         score += 5.0
@@ -16127,24 +16152,6 @@ def _order_mechanics_confidence(
         score += 8.0
     else:
         mechanical_blockers.append("fresh_live_schwab_required")
-    if execution_context.get("portfolio_ready"):
-        score += 6.0
-    else:
-        mechanical_blockers.append("portfolio_context_required")
-    if execution_context.get("agentic_reviews_ready"):
-        score += 6.0
-    else:
-        mechanical_blockers.append("agentic_reviews_required")
-
-    configured_min_lanes = _as_float(execution_context.get("min_agentic_review_lanes_per_ticker"))
-    min_lanes = int(MIN_AGENTIC_REVIEW_LANES_PER_TICKER if configured_min_lanes is None else configured_min_lanes)
-    distinct_review_count = int(_as_float(row.get("external_agent_distinct_review_count")) or 0)
-    if min_lanes > 0 and distinct_review_count >= min_lanes:
-        score += 5.0
-        quality_score += 4.0
-    elif min_lanes > 0:
-        mechanical_blockers.append("ticker_agentic_review_coverage_below_threshold")
-
     if _as_text(row.get("quality_gate_reason")) or _as_text(row.get("hard_rejects")):
         quality_score -= 35.0
         mechanical_blockers.append("objective_quality_reject")
@@ -16243,9 +16250,13 @@ def build_execution_readiness(decision_board: pd.DataFrame, execution_context: M
         },
         {
             "gate": "portfolio_sizing",
-            "status": "PASS" if execution_context.get("portfolio_ready") else "BLOCK",
-            "detail": f"portfolio_status={execution_context.get('portfolio_status')}; total_value={execution_context.get('portfolio_total_value')}",
-            "affected_rows": len(decision_board),
+            "status": "INFO",
+            "detail": (
+                "execution_blocker=false; one_lot_defined_risk_allowed=true; "
+                f"portfolio_status={execution_context.get('portfolio_status')}; "
+                f"total_value={execution_context.get('portfolio_total_value')}"
+            ),
+            "affected_rows": 0,
         },
         {
             "gate": "agentic_reviews",
@@ -23003,6 +23014,24 @@ def render_report(
         calibration_summary=calibration_summary,
         confidence_summary=confidence_summary,
     )
+    if green_count == 0 and target_count > 0:
+        no_green_reason = _target_no_green_reason(computed_target)
+    elif green_count == 0 and target_count == 0 and final is not None and not final.empty:
+        selector_status = final.get(
+            "selector_policy_status",
+            pd.Series("", index=final.index),
+        ).fillna("").astype(str).str.upper()
+        selected_rows = final[selector_status.eq("PASS")]
+        if not selected_rows.empty:
+            selected_blockers: set[str] = set()
+            for value in selected_rows.get("execution_blockers", pd.Series("", index=selected_rows.index)):
+                selected_blockers.update(_blocker_set(value))
+            if selected_blockers & {
+                NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER,
+                PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER,
+            }:
+                no_green_reason = "the promoted selector's top setup has negative realized strategy evidence"
+                next_action = "skip the selected setup; wait for the next dated run"
     lines = [
         f"# Options Agent Report - {day}",
         "",
@@ -23111,9 +23140,18 @@ def render_report(
         else "- Route opportunity gaps: `route_opportunity_gap.csv`",
         "",
     ]
-    verbose_snapshot_lines = lines
-    output_start = verbose_snapshot_lines.index("## Output Files")
-    output_file_lines = verbose_snapshot_lines[output_start:]
+    decision_board_path = _as_text(artifacts.get("decision_board"))
+    manifest_path = _as_text(artifacts.get("manifest"))
+    output_file_lines = [
+        "## Files",
+        "",
+        f"- All reviewed tickets: `{trade_tickets_path}`" if trade_tickets_path else "- All reviewed tickets: `trade_tickets.csv`",
+        f"- Green orders: `{green_tickets_path}`" if green_tickets_path else "- Green orders: `green_trade_tickets.csv`",
+        f"- Yellow targets: `{target_tickets_path}`" if target_tickets_path else "- Yellow targets: `target_order_candidates.csv`",
+        f"- Full decision diagnostics: `{decision_board_path}`" if decision_board_path else "- Full decision diagnostics: `decision_board.csv`",
+        f"- Run manifest: `{manifest_path}`" if manifest_path else "- Run manifest: `options_agent_manifest_*.json`",
+        "",
+    ]
     lines = [
         f"# Options Agent Report - {day}",
         "",
@@ -23122,7 +23160,6 @@ def render_report(
         f"- Executable status: {executable_status}",
         f"- Green send-now orders: {green_count}",
         f"- Yellow target orders: {target_count}",
-        f"- Review-only candidates: {review_ticket_count}",
         f"- Order-entry confidence: {order_entry_rating}/10",
         f"- Order mechanics confidence: {order_mechanics_rating}/10",
         f"- Current-day profitability confidence: {profitability_rating}/10",
@@ -23141,114 +23178,8 @@ def render_report(
         )
     lines.extend(_render_actionable_tickets(final))
     lines.extend(_render_market_open_recheck_queue(final))
-    lines.extend(_render_review_queue(final, confidence_summary=confidence_summary))
-    lines.extend(_render_coverage_audit(coverage_audit))
+    lines.extend(_render_selected_setup_result(final))
     lines.extend(output_file_lines)
-    lines.extend(
-        [
-            "## Run Diagnostics",
-            "",
-            "Diagnostics explain confidence and coverage. They are not the order surface.",
-            "",
-            f"- Trade rows: {green_count} green send-now, "
-            f"{target_count} target-order candidates, {review_ticket_count} review-only visible tickets",
-            f"- Executable status: {executable_status}; no-green reason: {no_green_reason}",
-            f"- Send-now readiness: {execution_summary.get('status', 'unknown')}; "
-            f"non-green gates: {execution_summary.get('blocking_gates', [])}",
-            f"- Current-day profitability confidence: {profitability_rating}/10; "
-            f"order-entry confidence: {order_entry_rating}/10; mechanics confidence: {order_mechanics_rating}/10",
-            f"- Live quote mode: {live_mode}; live validation rows: {row_counts.get('live_chain_validation', 0)}",
-            (
-                "- Live spread quality audit: "
-                f"{live_quality_summary.get('status', 'not_evaluated')}; "
-                f"{live_quality_summary.get('block_rows', 0)} blocked "
-                f"({live_quality_summary.get('quote_width_block_rows', 0)} quote-width, "
-                f"{live_quality_summary.get('liquidity_block_rows', 0)} liquidity)"
-            ),
-            (
-                "- Agentic review coverage: "
-                f"lane {execution_context.get('external_review_agent_count', 0)}/"
-                f"{execution_context.get('agent_dispatch_task_count', 0)} "
-                f"({execution_context.get('agentic_review_lane_coverage_pct', 'unknown')}); "
-                f"broad tickers {execution_context.get('external_review_ticker_count', 0)}/"
-                f"{execution_context.get('research_task_count', row_counts.get('research_tasks', 0))} "
-                f"({execution_context.get('broad_review_coverage_pct', 'unknown')})"
-            ),
-            f"- Structure attempt rows: {row_counts.get('structure_attempts', 0)}",
-            f"- Final visible rows: {row_counts.get('final_recommendations', 0)}",
-            f"- Structural status counts, not order readiness: {status_counts}",
-            f"- Portfolio context: {manifest.get('portfolio_context_status', 'unknown')}",
-            f"- Outcome evidence audit: {outcome_audit_summary.get('status', 'unknown')}; "
-            f"contributing sources {outcome_audit_summary.get('contributing_sources', [])}; "
-            f"blocking sources {outcome_audit_summary.get('blocking_sources', [])}",
-            f"- Broker outcome match audit: {broker_match_summary.get('status', 'unknown')}; "
-            f"exact backfill rows {broker_match_summary.get('backfillable_by_source', {})}; "
-            f"blocked rows {broker_match_summary.get('blocked_by_source', {})}; "
-            f"unmatched closed trades {broker_match_summary.get('unmatched_closed_trades_by_source', {})}; "
-            f"ambiguous rows {broker_match_summary.get('ambiguous_rows', 0)}",
-            f"- Broker matched outcomes: {broker_matched_summary.get('expectancy_status', 'unknown')}; "
-            f"tickers {broker_matched_summary.get('matched_tickers', [])}; "
-            f"total P/L {broker_matched_summary.get('total_pnl', '')}",
-            f"- Legacy selector baseline"
-            f"{' (superseded)' if selector_challenger_summary.get('promoted_policy_ids') else ''}: "
-            f"{walkforward_summary.get('status', 'unknown')}; "
-            f"sample {walkforward_summary.get('sample_size', 0)}/{walkforward_summary.get('required_sample_size', MIN_EXPECTANCY_SAMPLE_SIZE)}; "
-            f"days {walkforward_summary.get('day_count', 0)}/{walkforward_summary.get('required_day_count', MIN_WALKFORWARD_TEST_DAYS)}; "
-            f"PF {walkforward_summary.get('profit_factor', '')}/{walkforward_summary.get('required_profit_factor', MIN_EXPECTANCY_PROFIT_FACTOR)}; "
-            f"avg P/L {walkforward_summary.get('avg_pnl', '')}; "
-            f"reasons {walkforward_summary.get('blocking_reasons', [])}",
-            f"- Selector challengers: {selector_challenger_summary.get('status', 'unknown')}; "
-            f"policies {selector_challenger_summary.get('policy_count', 0)}; "
-            f"promoted {selector_challenger_summary.get('promoted_policy_ids', [])}; "
-            f"promoted PF {selector_challenger_summary.get('promoted_profit_factor', '')} "
-            f"n={selector_challenger_summary.get('promoted_sample_size', 0)}; "
-            f"best held-out {selector_challenger_summary.get('best_heldout_policy_id', '')} "
-            f"PF {selector_challenger_summary.get('best_heldout_profit_factor', '')} "
-            f"n={selector_challenger_summary.get('best_heldout_sample_size', 0)}",
-            f"- Raw discovery: {row_counts.get('raw_universe', 0)} UW rows, "
-            f"{row_counts.get('candidate_generation', 0)} generated candidates, "
-            f"{row_counts.get('catalyst_evidence', 0)} catalyst rows, "
-            f"{row_counts.get('agent_review_board', 0)} review rows",
-            f"- Agentic dispatch tasks: {row_counts.get('agent_dispatch_tasks', 0)}; "
-            f"review status: {agentic.get('status', 'unknown')}",
-            f"- Agent review verdicts: {review_summary.get('by_verdict', {})}; "
-            f"objective blockers: {review_summary.get('objective_blockers', 0)}",
-            f"- Strategy outcome atlas: positive families {strategy_atlas_summary.get('positive_strategy_families', [])}; "
-            f"positive current routes {strategy_atlas_summary.get('positive_current_strategy_routes', [])}; "
-            f"negative current families {strategy_atlas_summary.get('negative_current_strategy_families', [])}; "
-            f"blocking current ticker-strategy rows {strategy_atlas_summary.get('blocking_current_ticker_strategy_rows', 0)}",
-            f"- Route opportunity gaps: {route_gap_detail}",
-            "",
-        ]
-    )
-    lines.extend(_render_execution_quality(final))
-    lines.extend(["## Decision Board Summary", ""])
-    if final.empty:
-        lines.append("No final recommendation rows were produced.")
-    else:
-        lines.append(
-            "Full ranked rows are in `decision_board.csv`; rejected setup-quality rows stay audit-visible in `final_recommendations.csv`."
-        )
-        lines.append("")
-        lines.append("| Status | Count |")
-        lines.append("|---|---:|")
-        if "execution_status" in final.columns:
-            for status, count in final["execution_status"].astype(str).value_counts().sort_index().items():
-                lines.append(f"| {status} | {count} |")
-    lines.extend(["", "## Near Miss / No Trade Audit", ""])
-    if no_trade.empty:
-        lines.append("No near misses captured.")
-    else:
-        lines.append(f"Showing first 20 of {len(no_trade)} rows; full audit is in `no_trade_audit.csv`.")
-        lines.append("")
-        lines.append("| Ticker | Bias | Score | Reason |")
-        lines.append("|---|---|---:|---|")
-        for _, row in no_trade.head(20).iterrows():
-            lines.append(
-                f"| {row.get('ticker', '')} | {row.get('bias', '')} | {row.get('score', '')} | {str(row.get('reason', '')).replace('|', '/')} |"
-            )
-        if len(no_trade) > 20:
-            lines.append(f"| ... |  |  | {len(no_trade) - 20} additional no-trade rows in no_trade_audit.csv |")
     if warnings:
         lines.extend(["", "## Warnings", ""])
         for warning in warnings:
@@ -23325,10 +23256,6 @@ def _plain_no_green_reason(
     if live_mode != "live_schwab" or live_validation_rows <= 0:
         reasons.append("fresh Schwab live-chain validation is missing")
 
-    portfolio_status = _as_text(portfolio_context_status).lower()
-    if portfolio_status in {"", "missing", "not_available", "required", "unknown", "unavailable", "error"}:
-        reasons.append("portfolio sizing/context is missing")
-
     blockers = _plain_blocker_set(blocking_gates)
     if blockers & {
         "agentic_reviews_required",
@@ -23341,6 +23268,37 @@ def _plain_no_green_reason(
         reasons.append("agent review coverage is incomplete")
 
     return "; ".join(dict.fromkeys(reasons[:6])) or "send-now gates did not pass"
+
+
+def _target_no_green_reason(targets: pd.DataFrame) -> str:
+    if targets is None or targets.empty:
+        return "no yellow target is available"
+    blockers: set[str] = set()
+    exact_review_pending = False
+    calibration_pending = False
+    for _, row in targets.iterrows():
+        blockers.update(_blocker_set(row.get("execution_blockers")))
+        exact_review_pending = exact_review_pending or bool(
+            _as_text(row.get("contract_review_status")).upper() == "BLOCK"
+            and _as_text(row.get("contract_review_missing_agents"))
+        )
+        calibration_pending = calibration_pending or bool(
+            _as_text(row.get("profitability_calibration_status")).upper() not in {"", "PASS"}
+        )
+    reasons: list[str] = []
+    if exact_review_pending:
+        reasons.append("exact-contract review is pending")
+    if "fresh_live_schwab_required" in blockers:
+        reasons.append("the saved quote must be refreshed in live Schwab")
+    if calibration_pending:
+        reasons.append("route evidence supports a yellow target but the exact bucket is not green-calibrated")
+    if blockers & {
+        "send_now_earnings_before_expiry",
+        "send_now_high_impact_macro_event_before_expiry",
+        "send_now_macro_calendar_unverified",
+    }:
+        reasons.append("contract event review is not clear")
+    return "; ".join(reasons) or "the yellow target has not cleared every send-now gate"
 
 
 def _plain_blocker_set(value: Any) -> set[str]:
@@ -23415,7 +23373,7 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
         lines.append("No profitability-calibrated yellow target orders.")
     elif _target_rows_require_watch_only_from_tickets(primary_target):
         lines.append(
-            "These are watch targets, not send-now order-entry candidates. Do not use them as limit orders until the listed profit, expectancy, and quality gates clear."
+            "These are not send-now orders. Follow Action Check and never pay more than the shown debit or accept less than the shown credit."
         )
     else:
         lines.append(
@@ -23602,8 +23560,10 @@ def _ticket_contract_risk_summary(row: Mapping[str, Any]) -> str:
     event_note = _as_text(row.get("contract_event_risk_note"))
     if event_note:
         parts.append(event_note)
-    contract_review = _as_text(row.get("contract_review_status"))
-    if contract_review:
+    contract_review = _as_text(row.get("contract_review_status")).upper()
+    if contract_review == "BLOCK" and _as_text(row.get("contract_review_missing_agents")):
+        parts.append("exact review pending")
+    elif contract_review:
         parts.append(f"exact review {contract_review}")
     return "; ".join(parts) or "contract metrics unavailable"
 
@@ -23622,7 +23582,7 @@ def _ticket_recheck_summary(row: Mapping[str, Any]) -> str:
     if _as_text(row.get("contract_review_status")).upper() == "BLOCK":
         missing_agents = _as_text(row.get("contract_review_missing_agents"))
         if missing_agents:
-            return f"watch-only; exact contract review missing ({missing_agents})"
+            return f"pending exact contract review ({missing_agents}); do not enter yet"
         return "watch-only; exact contract review blocked"
     if _truthy(row.get("earnings_before_expiry")):
         exit_deadline = _as_text(row.get("event_exit_deadline")) or "the prior regular session"
@@ -23650,6 +23610,7 @@ def _ticket_recheck_summary(row: Mapping[str, Any]) -> str:
         "execution_confidence_below_threshold": "confidence review",
         NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER: "route family evidence negative",
         NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER: "negative realized strategy history",
+        PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER: "exact route/economics bucket is negative",
         POSITIVE_STRATEGY_EXPECTANCY_BLOCKER: "positive strategy expectancy required",
         f"send_now_credit_below_{MIN_SEND_NOW_CREDIT:.2f}": "credit too small for send-now",
         "send_now_credit_below_1.00": "credit too small for send-now",
@@ -23789,6 +23750,7 @@ def _display_blocker_label(blocker: Any) -> str:
         "contract_specific_agent_review_blocked": "exact contract review blocked",
         NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER: "route family evidence negative",
         NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER: "negative realized strategy history",
+        PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER: "exact route/economics bucket is negative",
         POSITIVE_STRATEGY_EXPECTANCY_BLOCKER: "positive strategy expectancy required",
         PROFITABILITY_CALIBRATION_BLOCKER: "route/economics profitability calibration required",
         SELECTOR_POLICY_BLOCKER: "not selected by promoted profitability policy",
@@ -23833,18 +23795,25 @@ def _render_review_queue(
         lines.append("")
     watchlist = set(CORE_AUDIT_TICKERS)
     target_status = final.get("target_order_status", pd.Series("", index=final.index)).astype(str).str.lower()
+    ticker_series = final.get("ticker", pd.Series("", index=final.index)).astype(str).str.upper()
+    _, rendered_targets = split_trade_ticket_surfaces(build_trade_tickets(final))
+    action_tickers = set(
+        rendered_targets.get("ticker", pd.Series(dtype=str)).astype(str).str.upper()
+    )
     live_status = final.get("live_validation_status", pd.Series("", index=final.index)).astype(str).str.upper()
     underlying_tier = final.get("underlying_quality_tier", pd.Series("", index=final.index)).astype(str).str.lower()
+    selector_status = final.get("selector_policy_status", pd.Series("", index=final.index)).fillna("").astype(str).str.upper()
     review = final[
         final["trade_plan"].astype(str).str.strip().ne("")
         & final["entry_limit"].map(lambda value: (_as_float(value) or 0.0) > 0)
         & ~final["ready_to_enter"].map(_truthy)
         & ~final["execution_status"].astype(str).str.lower().eq("blocked")
-        & ~target_status.isin(["target_order_candidate", "target_order_wait_for_price"])
         & ~target_status.str.startswith("not_actionable")
         & ~target_status.str.startswith("blocked")
+        & ~ticker_series.isin(action_tickers)
         & live_status.eq("PASS")
         & underlying_tier.eq("core")
+        & selector_status.isin({"", "PASS"})
     ].copy()
     if review.empty:
         lines.extend(["No focus-review candidates remain after actionability and setup-quality gates.", ""])
@@ -23892,6 +23861,68 @@ def _render_review_queue(
         )
     lines.append("")
     return lines
+
+
+def _render_selected_setup_result(final: pd.DataFrame) -> list[str]:
+    """Show only the promoted selector's rejected result when no order row exists."""
+
+    if final is None or final.empty:
+        return []
+    selector_pass = final.get(
+        "selector_policy_status",
+        pd.Series("", index=final.index),
+    ).fillna("").astype(str).str.upper().eq("PASS")
+    target_candidate = final.get(
+        "target_order_status",
+        pd.Series("", index=final.index),
+    ).fillna("").astype(str).str.lower().isin({"target_order_candidate", "target_order_wait_for_price"})
+    selected = final[
+        (selector_pass | target_candidate)
+        & ~final.get("ready_to_enter", pd.Series(False, index=final.index)).map(_truthy)
+        & ~final.apply(_target_surface_eligible, axis=1)
+    ].copy()
+    if selected.empty:
+        return []
+    selected["_selector_score"] = pd.to_numeric(
+        selected.get("selector_policy_score", pd.Series(0, index=selected.index)),
+        errors="coerce",
+    ).fillna(0.0)
+    selected = selected.sort_values("_selector_score", ascending=False).head(1)
+    row = selected.iloc[0]
+    row_blockers = _blocker_set(row.get("execution_blockers"))
+    hidden = {
+        "fresh_live_schwab_required",
+        "agentic_reviews_required",
+        "contract_specific_agent_reviews_missing",
+        GOAL_CONFIDENCE_GATE_BLOCKER,
+    }
+    priority = [
+        NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER,
+        PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER,
+        NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER,
+        PROFITABILITY_CALIBRATION_BLOCKER,
+        POSITIVE_STRATEGY_EXPECTANCY_BLOCKER,
+    ]
+    ordered_blockers = [blocker for blocker in priority if blocker in row_blockers]
+    ordered_blockers.extend(sorted(row_blockers - set(priority) - hidden))
+    blocker_labels = [_display_blocker_label(blocker) for blocker in ordered_blockers]
+    reason = "; ".join(_dedupe_notes(blocker_labels[:4]))
+    if not reason:
+        reason = _short_report_reason(
+            row.get("status_reason") or row.get("selector_policy_reason"),
+            max_parts=3,
+        )
+    return [
+        "## Selected Setup Result",
+        "",
+        "The promoted selector chose this setup, but it did not qualify for an order.",
+        "",
+        "| Ticker | Structure | Trade Plan | Result |",
+        "|---|---|---|---|",
+        f"| {_report_cell(row.get('ticker'))} | {_report_cell(_ticket_structure(row))} | "
+        f"{_report_cell(row.get('trade_plan'))} | {_report_cell(reason or 'not order-qualified')} |",
+        "",
+    ]
 
 
 def _row_position_amount(row: Mapping[str, Any], one_lot_column: str, position_column: str) -> Any:
@@ -23968,7 +23999,8 @@ def _render_coverage_audit(coverage_audit: Optional[pd.DataFrame]) -> list[str]:
     lines.append("")
     lines.append("| Ticker | Signal | Bias | Score | State | Why | Next Step |")
     lines.append("|---|---|---|---:|---|---|---|")
-    for _, row in coverage_audit.head(30).iterrows():
+    displayed = coverage_audit.head(8)
+    for _, row in displayed.iterrows():
         lines.append(
             "| {ticker} | {signal} | {bias} | {score} | {state} | {reason} | {next_step} |".format(
                 ticker=_report_cell(row.get("ticker")),
@@ -23979,6 +24011,10 @@ def _render_coverage_audit(coverage_audit: Optional[pd.DataFrame]) -> list[str]:
                 reason=_report_cell(_short_report_reason(row.get("reason"), max_parts=3)),
                 next_step=_report_cell(_coverage_display_next_step(row)),
             )
+        )
+    if len(coverage_audit) > len(displayed):
+        lines.append(
+            f"| ... |  |  |  |  | {len(coverage_audit) - len(displayed)} additional rows in ticker_coverage_audit.csv |  |"
         )
     lines.append("")
     return lines

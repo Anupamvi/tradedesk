@@ -56,8 +56,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.9-quality-sleeves-20260711-170521"
+    assert core.PIPELINE_VERSION == "options-agent-v1.10-clean-execution-surface-20260711-175928"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.9-quality-sleeves-20260711-170521",
         "options-agent-v1.8-promoted-decision-pass-20260711-093930",
         "options-agent-v1.7-selector-promotion-20260711-092235",
         "options-agent-v1.6-true-ytd-replay-20260711-033758",
@@ -71,7 +72,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-11T17:05:21-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-11T17:59:28-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -701,10 +702,9 @@ def test_report_keeps_focus_review_queue_without_internal_promotion_section() ->
     assert "## Promotion Readiness" not in report
     assert "Not promotable yet." not in report
     assert "/tmp/promotion_readiness_audit.csv" not in report
-    assert "Overall profitability/send-now confidence is blocked, so these rows are diagnostics only." in report
-    assert "| Ticker | Signal | Reason | Qty | Reviewed / Target Price | Max Loss | Trade Plan |" in report
-    assert "BUY 1 MSFT 2026-07-17 400 Put" in report
-    assert "| MSFT | ⚪ GRAY review |" in report
+    assert "Focus Review Queue" not in report
+    assert "BUY 1 MSFT 2026-07-17 400 Put" not in report
+    assert "Full decision diagnostics" in report
 
 
 def test_no_green_reason_leads_with_profitability_calibration_cause() -> None:
@@ -740,7 +740,7 @@ def test_yellow_exact_review_block_is_labeled_watch_only() -> None:
     }
 
     assert core._ticket_recheck_summary(row) == (
-        "watch-only; exact contract review missing (structure_builder; skeptic)"
+        "pending exact contract review (structure_builder; skeptic); do not enter yet"
     )
     assert core._ticket_order_readiness(row) == "target_order_after_exact_contract_review"
     assert core._ticket_action(row) == "watch_only_until_exact_contract_review"
@@ -886,8 +886,9 @@ def test_report_keeps_focus_review_diagnostics_when_goal_confidence_passes() -> 
         },
     )
 
-    assert "| Ticker | Signal | Reason | Qty | Reviewed / Target Price | Max Loss | Trade Plan |" in report
-    assert "BUY 1 MSFT 2026-07-17 400 Put" in report
+    assert "Focus Review Queue" not in report
+    assert "BUY 1 MSFT 2026-07-17 400 Put" not in report
+    assert "Full decision diagnostics" in report
 
 
 def _write_minimal_uw_fixture(root: Path) -> None:
@@ -13793,8 +13794,9 @@ def test_report_labels_no_trade_section_as_preview_of_full_csv() -> None:
 
     report = core.render_report("2026-05-22", pd.DataFrame(), no_trade, {"row_counts": {}, "warnings": []})
 
-    assert "Showing first 20 of 22 rows; full audit is in `no_trade_audit.csv`." in report
-    assert "2 additional no-trade rows in no_trade_audit.csv" in report
+    assert "Near Miss / No Trade Audit" not in report
+    assert "MISS0" not in report
+    assert "Full decision diagnostics" in report
 
 
 def test_report_uses_position_scaled_profit_loss_for_target_order_tables() -> None:
@@ -13946,15 +13948,16 @@ def test_report_snapshot_counts_review_only_visible_tickets() -> None:
     assert "- Executable status: NOT TRADE READY" in report
     assert "- Green send-now orders: 0" in report
     assert "- Yellow target orders: 0" in report
-    assert "- Review-only candidates: 1" in report
+    assert "Review-only candidates" not in report
     assert "- Current-day profitability confidence: 0.0/10" in report
     assert "No yellow target orders." in report
     assert (
         "Next action: do not enter review rows; require at least 30 nonduplicated matching outcomes "
         "with PF >= 1.20 before promotion"
     ) in report
-    assert "- Trade rows: 0 green send-now, 0 target-order candidates, 1 review-only visible tickets" in report
-    assert report.index("## Focus Review Queue - Not Trades") < report.index("## Review Board - Not Orders")
+    assert "Run Diagnostics" not in report
+    assert "Focus Review Queue" not in report
+    assert "Review Board" not in report
 
 
 def test_zero_quantity_contract_risk_reports_unit_theta_not_position_theta() -> None:
@@ -14094,13 +14097,7 @@ def test_report_coverage_audit_blanks_nan_rank_values() -> None:
         ]
     )
 
-    report = core.render_report(
-        "2026-05-22",
-        pd.DataFrame(),
-        pd.DataFrame(),
-        {"row_counts": {}, "warnings": []},
-        coverage,
-    )
+    report = "\n".join(core._render_coverage_audit(coverage))
 
     assert "| NVDA | ⚪ GRAY no-edge | neutral | 72.71 | GRAY no-edge | neutral flow bias | wait for directional flow |" in report
     assert "| URA | 🔴 RED no-action |" in report
@@ -14155,13 +14152,7 @@ def test_coverage_audit_marks_speculative_and_excluded_candidates_non_actionable
     assert by_ticker.loc["DVN", "coverage_status"] == "NON_ACTIONABLE_UNDERLYING"
     assert by_ticker.loc["DVN", "status_color"] == "red"
 
-    report = core.render_report(
-        "2026-05-22",
-        pd.DataFrame(),
-        pd.DataFrame(),
-        {"row_counts": {}, "warnings": []},
-        coverage,
-    )
+    report = "\n".join(core._render_coverage_audit(coverage))
 
     assert "| URA | 🔴 RED no-action |" in report
     assert "| OKLO | 🔴 RED no-action |" in report
@@ -14394,7 +14385,8 @@ def test_run_pipeline_writes_independent_recommendation_artifacts(tmp_path: Path
     assert manifest["agent_review_summary"]["by_agent_type"]["built_in"] == len(review_board)
     assert manifest["agent_review_summary"]["portfolio_risk_only"] == 0
     assert manifest["agentic_orchestration"]["status"] == "awaiting_subagents"
-    assert "Profitability gap plan" in report
+    assert "Full decision diagnostics" in report
+    assert "Profitability gap plan" not in report
     assert manifest["artifacts"]["profitability_gap_plan"].endswith("profitability_gap_plan.csv")
     assert manifest["artifacts"]["profitability_evidence_backfill_plan"].endswith(
         "profitability_evidence_backfill_plan.csv"
@@ -14478,13 +14470,13 @@ def test_run_pipeline_writes_independent_recommendation_artifacts(tmp_path: Path
     assert "Expectancy evidence" not in report
     assert "Monthly Readiness Gate" not in report
     assert "Monthly target is not proven" not in report
-    assert "Structure attempt rows: 1" in report
-    assert "Live spread quality audit" in report
-    assert "Execution fill quality" in report
+    assert "Structure attempt rows: 1" not in report
+    assert "Live spread quality audit" not in report
+    assert "Execution fill quality" not in report
     assert "Send Now Orders" in report
     assert "Target Orders - Target Credits/Debits" in report
     assert "No yellow target orders." in report
-    assert "Structural status counts, not order readiness" in report
+    assert "Structural status counts, not order readiness" not in report
     assert "## Top Line" in report
     assert "Current-day profitability confidence" in report
     assert "Profitability confidence:" not in report
@@ -14492,14 +14484,14 @@ def test_run_pipeline_writes_independent_recommendation_artifacts(tmp_path: Path
     assert "Order mechanics confidence: 0.0/10" in report
     assert "Goal confidence gap audit:" not in report
     assert "goal_confidence_gap_audit.csv" not in report
-    assert "profitability_evidence_backfill_plan.csv" in report
-    assert "Outcome evidence audit:" in report
-    assert "Broker outcome match audit:" in report
-    assert "Broker matched outcomes:" in report
-    assert "Profitability calibration:" in report
-    assert "Profitability evidence backfill:" in report
-    assert "Route opportunity gaps:" in report
-    assert "Strategy outcome atlas:" in report
+    assert "profitability_evidence_backfill_plan.csv" not in report
+    assert "Outcome evidence audit:" not in report
+    assert "Broker outcome match audit:" not in report
+    assert "Broker matched outcomes:" not in report
+    assert "Profitability calibration:" not in report
+    assert "Profitability evidence backfill:" not in report
+    assert "Route opportunity gaps:" not in report
+    assert "Strategy outcome atlas:" not in report
     assert "SELL 1 WMT 2026-06-19 95 Put / BUY 1 WMT 2026-06-19 90 Put @ 1.00 CREDIT" not in report
     assert "No green send-now orders" in report
     assert "WMT260619P00095000" not in report
@@ -15798,7 +15790,7 @@ def test_external_portfolio_avoid_annotates_without_blocking_ready_trade(tmp_pat
     assert decision["execution_status"].tolist() == ["needs_fresh_live_quote"]
     assert decision["requires_portfolio_ack"].tolist() == [False]
     assert "fresh_live_schwab_required" in decision["execution_blockers"].iloc[0]
-    assert "portfolio_context_required" in decision["execution_blockers"].iloc[0]
+    assert "portfolio_context_required" not in decision["execution_blockers"].iloc[0]
     assert tickets["ready_to_enter"].tolist() == [False]
     assert tickets["target_order_status"].tolist() == ["target_order_candidate"]
     assert "portfolio annotation only" not in report
@@ -18110,6 +18102,89 @@ def test_etf_contracts_mark_earnings_not_applicable() -> None:
     assert annotated["earnings_event_date"] == ""
     assert not bool(annotated["earnings_before_expiry"])
     assert core._contract_event_verification_passed(annotated)
+
+
+def test_dated_earnings_after_expiry_is_provisional_not_a_hard_send_block() -> None:
+    annotated = core.annotate_contract_event_risk(
+        pd.DataFrame(
+            [
+                {
+                    "ticker": "WMT",
+                    "expiry": "2026-08-07",
+                    "dte": 28,
+                    "days_to_earnings": 41,
+                }
+            ]
+        ),
+        as_of="2026-07-10",
+        event_calendar=core.load_options_event_calendar(core.project_root()),
+    ).iloc[0]
+    row = {
+        **annotated.to_dict(),
+        "recommendation_status": RecommendationStatus.ENTER.value,
+        "selector_policy_status": "PASS",
+        "macro_calendar_status": "verified",
+        "macro_event_count_before_expiry": 0,
+        "live_probability_proxy": 0.46,
+        "live_quote_width_pct": 0.08,
+        "live_theta_burn_pct": 0.01,
+        "live_breakeven_expected_move_ratio": 0.39,
+    }
+
+    blockers = core._send_now_economics_blockers(
+        row,
+        ticket="BUY 1 WMT 2026-08-07 115 Call / SELL 1 WMT 2026-08-07 120 Call @ 1.73 DEBIT",
+        entry_limit=1.73,
+    )
+
+    assert annotated["earnings_source_status"] == "provisional_after_expiry"
+    assert annotated["earnings_event_date"] == "2026-08-20"
+    assert not bool(annotated["earnings_before_expiry"])
+    assert "catalyst_news" in core._required_contract_review_agents(annotated)
+    assert "send_now_earnings_calendar_unverified" not in blockers
+
+
+def test_run_gates_only_attach_to_promoted_selector_rows() -> None:
+    context = core.build_execution_context(
+        live_schwab=False,
+        chain_snapshot_dir=Path("/tmp/snapshot"),
+        portfolio_context={"status": "unavailable"},
+        research_task_count=10,
+        external_review_count=0,
+        agent_reviews_json=None,
+    )
+    base = {
+        "ticker": "WMT",
+        "recommendation_status": RecommendationStatus.ENTER.value,
+        "live_validation_status": "PASS",
+        "contract_review_status": "BLOCK",
+        "contract_review_missing_agents": "catalyst_news; structure_builder; skeptic",
+        "profitability_calibration_status": "WARN",
+        "suggested_contracts": 1,
+    }
+
+    selected = core._execution_blockers_for_row(
+        {**base, "selector_policy_status": "PASS"},
+        "ready",
+        "BUY 1 WMT 2026-08-07 115 Call @ 1.73 DEBIT",
+        1.73,
+        1,
+        context,
+    )
+    rejected = core._execution_blockers_for_row(
+        {**base, "selector_policy_status": "BLOCK"},
+        "ready",
+        "BUY 1 WMT 2026-08-07 115 Call @ 1.73 DEBIT",
+        1.73,
+        1,
+        context,
+    )
+
+    assert "fresh_live_schwab_required" in selected
+    assert "agentic_reviews_required" in selected
+    assert "contract_specific_agent_reviews_missing" in selected
+    assert core.PROFITABILITY_CALIBRATION_BLOCKER in selected
+    assert rejected == [core.SELECTOR_POLICY_BLOCKER]
 
 
 def test_event_calendar_rejects_third_party_or_mislabeled_corporate_sources() -> None:
