@@ -25671,16 +25671,17 @@ def _apply_live_short_put(
     out = dict(row)
     credit = _as_float(live.get("credit")) or 0.0
     short_strike = _as_float(live.get("short_strike")) or 0.0
-    target_entry = _as_float(live.get("target_entry")) or MIN_SEND_NOW_CREDIT
+    quality_target_entry = _as_float(live.get("target_entry")) or MIN_SEND_NOW_CREDIT
     max_profit = round(credit * 100, 2)
     max_loss = round(max((short_strike - credit) * 100, 0.0), 2)
     breakeven = short_strike - credit
-    status = RecommendationStatus.ENTER.value if credit >= target_entry else RecommendationStatus.WAIT_FOR_PRICE.value
+    status = RecommendationStatus.ENTER.value if credit >= quality_target_entry else RecommendationStatus.WAIT_FOR_PRICE.value
+    target_entry = max(credit, quality_target_entry) if status == RecommendationStatus.ENTER.value else quality_target_entry
     source_label = "Schwab snapshot chain" if str(chain_source).startswith("snapshot:") else "live Schwab chain"
     note = (
         f"{source_label} short put validated at {credit:.2f} credit"
         if status == RecommendationStatus.ENTER.value
-        else f"{source_label} found {credit:.2f} short-put credit below target {target_entry:.2f}"
+        else f"{source_label} found {credit:.2f} short-put credit below target {quality_target_entry:.2f}"
     )
     hard_rejects = ""
     quality_rejects = _short_put_quality_rejects(
@@ -25783,18 +25784,19 @@ def _apply_live_credit_spread(
     width = _as_float(live.get("spread_width")) or 0.0
     short_strike = _as_float(live.get("short_strike")) or 0.0
     long_strike = _as_float(live.get("long_strike")) or 0.0
-    target_entry = _as_float(live.get("target_entry")) or round(width * 0.18, 2)
+    quality_target_entry = _as_float(live.get("target_entry")) or round(width * 0.18, 2)
     max_profit = round(credit * 100, 2)
     max_loss = round(max((width - credit) * 100, 0.0), 2)
     credit_width_ratio = round(credit / width, 4) if width > 0 else 0.0
     breakeven = short_strike - credit if direction == "Bull Put" else short_strike + credit
     net_theta_value = _as_float(live.get("net_theta"))
-    status = RecommendationStatus.ENTER.value if credit >= target_entry else RecommendationStatus.WAIT_FOR_PRICE.value
+    status = RecommendationStatus.ENTER.value if credit >= quality_target_entry else RecommendationStatus.WAIT_FOR_PRICE.value
+    target_entry = max(credit, quality_target_entry) if status == RecommendationStatus.ENTER.value else quality_target_entry
     source_label = "Schwab snapshot chain" if str(chain_source).startswith("snapshot:") else "live Schwab chain"
     note = (
         f"{source_label} {direction} validated at {credit:.2f} credit"
         if status == RecommendationStatus.ENTER.value
-        else f"{source_label} found {credit:.2f} credit below target {target_entry:.2f}"
+        else f"{source_label} found {credit:.2f} credit below target {quality_target_entry:.2f}"
     )
     hard_rejects = ""
     quality_rejects = _trade_quality_rejects(
@@ -25918,7 +25920,7 @@ def _apply_live_debit_spread(
     width = _as_float(live.get("spread_width")) or 0.0
     short_strike = _as_float(live.get("short_strike")) or 0.0
     long_strike = _as_float(live.get("long_strike")) or 0.0
-    target_entry = _as_float(live.get("target_entry")) or round(width * 0.45, 2)
+    quality_target_entry = _as_float(live.get("target_entry")) or round(width * 0.45, 2)
     max_profit = round(max((width - debit) * 100, 0.0), 2)
     max_loss = round(debit * 100, 2)
     debit_width_ratio = round(debit / width, 4) if width > 0 else 0.0
@@ -25926,12 +25928,13 @@ def _apply_live_debit_spread(
     dte = (expiry - asof_date).days
     long_delta_value = _as_float(live.get("long_delta"))
     net_theta_value = _as_float(live.get("net_theta"))
-    status = RecommendationStatus.ENTER.value if debit <= target_entry else RecommendationStatus.WAIT_FOR_PRICE.value
+    status = RecommendationStatus.ENTER.value if debit <= quality_target_entry else RecommendationStatus.WAIT_FOR_PRICE.value
+    target_entry = min(debit, quality_target_entry) if status == RecommendationStatus.ENTER.value else quality_target_entry
     source_label = "Schwab snapshot chain" if str(chain_source).startswith("snapshot:") else "live Schwab chain"
     note = (
         f"{source_label} {direction} validated at {debit:.2f} debit"
         if status == RecommendationStatus.ENTER.value
-        else f"{source_label} found {debit:.2f} debit above target {target_entry:.2f}"
+        else f"{source_label} found {debit:.2f} debit above target {quality_target_entry:.2f}"
     )
     hard_rejects = ""
     quality_rejects = _debit_trade_quality_rejects(

@@ -1546,6 +1546,32 @@ def test_live_debit_fallback_keeps_route_reason_consistent() -> None:
     assert updated["strategy_route"] == "bear_put_debit"
     assert updated["structure"] == "bear put debit spread"
     assert updated["route_reason"] == "bearish_core_defined_risk_downside_route"
+    assert updated["target_entry"] == 1.25
+
+
+def test_live_short_put_target_credit_never_loosens_below_validated_credit() -> None:
+    updated = core._apply_live_short_put(
+        {
+            "ticker": "WMT",
+            "signal_premium": 5_000_000,
+            "combined_flow_bias": 0.5,
+        },
+        {
+            "credit": 1.10,
+            "target_entry": 0.75,
+            "short_strike": 100.0,
+            "short_leg": "WMT  260821P00100000",
+            "short_delta": -0.20,
+            "quote_width_pct": 0.05,
+            "short_oi": 2_000,
+            "short_volume": 200,
+        },
+        expiry=dt.date(2026, 8, 21),
+        spot=110.0,
+        asof_date=dt.date(2026, 7, 10),
+    )
+
+    assert updated["target_entry"] == pytest.approx(1.10)
 
 
 def test_live_long_call_validation_preserves_single_leg_route_and_gates() -> None:
@@ -1666,6 +1692,7 @@ def test_live_credit_spread_preserves_both_leg_greeks_and_expected_move() -> Non
     assert updated["live_net_theta_per_contract"] == pytest.approx(4.0)
     assert updated["live_expected_move_pct"] == pytest.approx(0.07)
     assert updated["live_breakeven_expected_move_ratio"] == pytest.approx(0.44)
+    assert updated["target_entry"] == pytest.approx(1.60)
     assert tasks["contract_count"] == 1
     assert tasks["contracts"][0]["live_long_delta"] == pytest.approx(-0.16)
     assert tasks["contracts"][0]["live_short_theta"] == pytest.approx(-0.08)
