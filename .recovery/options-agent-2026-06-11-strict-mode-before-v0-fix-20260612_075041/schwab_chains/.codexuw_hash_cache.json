@@ -1,0 +1,1220 @@
+{
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AAPL.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.505876+00:00",
+      "name": "AAPL.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AAPL.json",
+      "sha256": "8629a2bd324eb03366d795b7809afac16605f7eb72ce2e1b6ae4b51a2554e77d",
+      "size_bytes": 257957
+    },
+    "signature": {
+      "mtime_ns": 1781275346505876192,
+      "size_bytes": 257957
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ABBV.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.770285+00:00",
+      "name": "ABBV.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ABBV.json",
+      "sha256": "581a00c07ffd2c681460c31745c7d6f5131566e8152b8bfdd82a1eb3146ffc88",
+      "size_bytes": 198343
+    },
+    "signature": {
+      "mtime_ns": 1781275346770285049,
+      "size_bytes": 198343
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ABT.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.187268+00:00",
+      "name": "ABT.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ABT.json",
+      "sha256": "20ac37b231787035f54e8f0c62c611ccf11cc427678f6b511fd9eb02c8f884b7",
+      "size_bytes": 233152
+    },
+    "signature": {
+      "mtime_ns": 1781275346187267839,
+      "size_bytes": 233152
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ADBE.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.299144+00:00",
+      "name": "ADBE.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ADBE.json",
+      "sha256": "06c7048f9c67ac2b90796def568f65d015e1b71e406e0d89224c1d4984d7a951",
+      "size_bytes": 312218
+    },
+    "signature": {
+      "mtime_ns": 1781275346299144252,
+      "size_bytes": 312218
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AMAT.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.347441+00:00",
+      "name": "AMAT.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AMAT.json",
+      "sha256": "de176401dd3310eba0e50fa5ecd41b91d782c28d722cbd7a02a0ebab67ecb5a0",
+      "size_bytes": 1972043
+    },
+    "signature": {
+      "mtime_ns": 1781275346347440912,
+      "size_bytes": 1972043
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AMD.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.471615+00:00",
+      "name": "AMD.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AMD.json",
+      "sha256": "a1141dc5e2c2a823bee855f3842471cb7407337d635930e35a2d8bec24737b5c",
+      "size_bytes": 312622
+    },
+    "signature": {
+      "mtime_ns": 1781275346471614918,
+      "size_bytes": 312622
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AMZN.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.632044+00:00",
+      "name": "AMZN.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AMZN.json",
+      "sha256": "1ac138533b01ce7a21f22c50c575704f4da903b3cd56b830ea3668c333c6bd86",
+      "size_bytes": 300626
+    },
+    "signature": {
+      "mtime_ns": 1781275346632043949,
+      "size_bytes": 300626
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ANET.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.662146+00:00",
+      "name": "ANET.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ANET.json",
+      "sha256": "e8d94c970e81086b342a5715fa3a35b3a735366dcfbf6e85deb7ac094a774f19",
+      "size_bytes": 230377
+    },
+    "signature": {
+      "mtime_ns": 1781275346662145721,
+      "size_bytes": 230377
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AVGO.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.543113+00:00",
+      "name": "AVGO.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/AVGO.json",
+      "sha256": "06abbe0123209c98b803a1f1c93d9023b514e10e3ac48750c05c6053767e9f37",
+      "size_bytes": 312577
+    },
+    "signature": {
+      "mtime_ns": 1781275346543112594,
+      "size_bytes": 312577
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BA.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.275287+00:00",
+      "name": "BA.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BA.json",
+      "sha256": "3e215bff8f9f76116275b5142a3756c0046b351b1e472307e28663d941cc624d",
+      "size_bytes": 284054
+    },
+    "signature": {
+      "mtime_ns": 1781275346275286610,
+      "size_bytes": 284054
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BAC.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.697030+00:00",
+      "name": "BAC.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BAC.json",
+      "sha256": "b81780fb3c994ab5f67f5e264a8e10d740b8718b3d6c83e802ce113630927fe1",
+      "size_bytes": 198253
+    },
+    "signature": {
+      "mtime_ns": 1781275346697030038,
+      "size_bytes": 198253
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BKNG.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.235517+00:00",
+      "name": "BKNG.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BKNG.json",
+      "sha256": "1a2868d3ae405178e6990461f100c1847c83e6a08b7c02502a8d650279b25af8",
+      "size_bytes": 312407
+    },
+    "signature": {
+      "mtime_ns": 1781275346235516582,
+      "size_bytes": 312407
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BMY.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.603082+00:00",
+      "name": "BMY.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BMY.json",
+      "sha256": "bcbd1d311ef0245c505e8fe3df182d733e3d9b3f2d8eb40b302343e70c5203a2",
+      "size_bytes": 62966
+    },
+    "signature": {
+      "mtime_ns": 1781275346603082012,
+      "size_bytes": 62966
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BX.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.431925+00:00",
+      "name": "BX.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/BX.json",
+      "sha256": "ef8c25c94bfeb5e57fff5200b2bf25e3938dfb0d930c9a9157350999a0ac52a5",
+      "size_bytes": 263634
+    },
+    "signature": {
+      "mtime_ns": 1781275346431924639,
+      "size_bytes": 263634
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/C.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.573297+00:00",
+      "name": "C.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/C.json",
+      "sha256": "3693006bb3cc9aa436fb0c218bad265dad5f17eca6744288375fc65a1e6ec4f9",
+      "size_bytes": 217570
+    },
+    "signature": {
+      "mtime_ns": 1781275346573296491,
+      "size_bytes": 217570
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CMCSA.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.683759+00:00",
+      "name": "CMCSA.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CMCSA.json",
+      "sha256": "0bbd968fd18ccb011f69ad6184ef47a4824230cbfa1a8ebfaebd941aaaae2948",
+      "size_bytes": 125117
+    },
+    "signature": {
+      "mtime_ns": 1781275346683758695,
+      "size_bytes": 125117
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/COP.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.351861+00:00",
+      "name": "COP.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/COP.json",
+      "sha256": "2c28cf68f711002ab3febd697e7bd442ca464df290f10c6cf24c5e69f0cc6b0f",
+      "size_bytes": 124890
+    },
+    "signature": {
+      "mtime_ns": 1781275346351861290,
+      "size_bytes": 124890
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CRM.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.479075+00:00",
+      "name": "CRM.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CRM.json",
+      "sha256": "173e86da8b03b74afa187a16404d8ad7a400b0685932cf6a677a8efcec3f70ec",
+      "size_bytes": 311204
+    },
+    "signature": {
+      "mtime_ns": 1781275346479074840,
+      "size_bytes": 311204
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CSCO.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.690875+00:00",
+      "name": "CSCO.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CSCO.json",
+      "sha256": "494e8aea9667d43257def637e2cac881b7c198b01b7f7a848b3e04af2f9423fa",
+      "size_bytes": 257515
+    },
+    "signature": {
+      "mtime_ns": 1781275346690875200,
+      "size_bytes": 257515
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CSX.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.813888+00:00",
+      "name": "CSX.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CSX.json",
+      "sha256": "588f64c3bbfa068472dc62ebc674c3bb83fa6ad54cc9184db57979364891dead",
+      "size_bytes": 748288
+    },
+    "signature": {
+      "mtime_ns": 1781275346813888082,
+      "size_bytes": 748288
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CVS.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.442514+00:00",
+      "name": "CVS.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CVS.json",
+      "sha256": "c74f90742e6fdf4685143ccdae41eca2ffe94b8532f3e737b16d330eaa77ee46",
+      "size_bytes": 74632
+    },
+    "signature": {
+      "mtime_ns": 1781275346442513980,
+      "size_bytes": 74632
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CVX.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.720157+00:00",
+      "name": "CVX.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/CVX.json",
+      "sha256": "74aa0ad3bd3d858f605314c6c61acf225fa468b9a957825aab3fb715865be857",
+      "size_bytes": 206447
+    },
+    "signature": {
+      "mtime_ns": 1781275346720156929,
+      "size_bytes": 206447
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/DDOG.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.227218+00:00",
+      "name": "DDOG.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/DDOG.json",
+      "sha256": "93169314123d385f7f65460cdfffcd377af4c180ccaf3246070ca222a84d8efa",
+      "size_bytes": 1874616
+    },
+    "signature": {
+      "mtime_ns": 1781275346227217909,
+      "size_bytes": 1874616
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/DELL.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.492102+00:00",
+      "name": "DELL.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/DELL.json",
+      "sha256": "9063cdfc74c3674529712cab3977647be7751f1b0162e15ad6e0318852435be5",
+      "size_bytes": 312386
+    },
+    "signature": {
+      "mtime_ns": 1781275346492101807,
+      "size_bytes": 312386
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/DIA.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.791423+00:00",
+      "name": "DIA.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/DIA.json",
+      "sha256": "61caa3546fb078d03db1f5cd4b05b6362f8f308323475acb71d3b146a4c18da7",
+      "size_bytes": 179197
+    },
+    "signature": {
+      "mtime_ns": 1781275346791423315,
+      "size_bytes": 179197
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/DIS.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.731955+00:00",
+      "name": "DIS.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/DIS.json",
+      "sha256": "f6a7abf3fdcfd3b1390d84091ac9ef1b8c5ae5cffb9b0ca31da23258122a50e0",
+      "size_bytes": 94028
+    },
+    "signature": {
+      "mtime_ns": 1781275346731954646,
+      "size_bytes": 94028
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/FCX.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.516337+00:00",
+      "name": "FCX.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/FCX.json",
+      "sha256": "3c388e653dfd3a451ac21a40102d81726df6ff8376d9e73a8e1bc838ce505e0d",
+      "size_bytes": 63099
+    },
+    "signature": {
+      "mtime_ns": 1781275346516336950,
+      "size_bytes": 63099
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/GLW.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.523474+00:00",
+      "name": "GLW.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/GLW.json",
+      "sha256": "6fe1ae8e4dd62baaadc588701e8566221cf18d0f8f96d68c008ae6cc7fd620fc",
+      "size_bytes": 287623
+    },
+    "signature": {
+      "mtime_ns": 1781275346523474330,
+      "size_bytes": 287623
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/GOOG.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.260857+00:00",
+      "name": "GOOG.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/GOOG.json",
+      "sha256": "3d262828e6954e29fd03c862ce55ae70220ed1b8028558d0052b2170eab94b09",
+      "size_bytes": 312597
+    },
+    "signature": {
+      "mtime_ns": 1781275346260857142,
+      "size_bytes": 312597
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/GOOGL.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.679397+00:00",
+      "name": "GOOGL.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/GOOGL.json",
+      "sha256": "2089d27c87c3a95324a25cb2e775f5a8cdd497db7689ef46135fb535aadece61",
+      "size_bytes": 313217
+    },
+    "signature": {
+      "mtime_ns": 1781275346679397108,
+      "size_bytes": 313217
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/HD.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.714048+00:00",
+      "name": "HD.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/HD.json",
+      "sha256": "cf2e4127d6c342edac1d6ea57a2619c8b721ed55e98494808c446a87d391fbc4",
+      "size_bytes": 310922
+    },
+    "signature": {
+      "mtime_ns": 1781275346714048300,
+      "size_bytes": 310922
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/IBM.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.567282+00:00",
+      "name": "IBM.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/IBM.json",
+      "sha256": "da93ba06354be294e39578fa05ab46c7781c79903a4cd4fd3e006122a087df82",
+      "size_bytes": 291943
+    },
+    "signature": {
+      "mtime_ns": 1781275346567281986,
+      "size_bytes": 291943
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/INTC.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.456846+00:00",
+      "name": "INTC.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/INTC.json",
+      "sha256": "3cae9ea404e9474b456c1c20029488d69408883e325a3a2f75a142eb6d378eed",
+      "size_bytes": 300967
+    },
+    "signature": {
+      "mtime_ns": 1781275346456845782,
+      "size_bytes": 300967
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/IWM.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.449124+00:00",
+      "name": "IWM.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/IWM.json",
+      "sha256": "7a4c35543f7ff1013635f349b8d3f29cfaf06a77a1e1ae1a085f4bc9ce403bca",
+      "size_bytes": 292580
+    },
+    "signature": {
+      "mtime_ns": 1781275346449123943,
+      "size_bytes": 292580
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/JNJ.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.292087+00:00",
+      "name": "JNJ.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/JNJ.json",
+      "sha256": "690ea8d7c9848484dd323f4352d61c5b13c9284763bc7ad012c8ac43d96a7d60",
+      "size_bytes": 148433
+    },
+    "signature": {
+      "mtime_ns": 1781275346292086789,
+      "size_bytes": 148433
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/JPM.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.588205+00:00",
+      "name": "JPM.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/JPM.json",
+      "sha256": "3ef2ae249db9c819497473626eaafa265bbc4dd700ab3d795ac1b79c3ca56723",
+      "size_bytes": 288278
+    },
+    "signature": {
+      "mtime_ns": 1781275346588205085,
+      "size_bytes": 288278
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/KO.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.665326+00:00",
+      "name": "KO.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/KO.json",
+      "sha256": "5b6bead220e85b84e327cff30d8a085d495097ff3b00b3dd11be2271f21a4df2",
+      "size_bytes": 93745
+    },
+    "signature": {
+      "mtime_ns": 1781275346665326265,
+      "size_bytes": 93745
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/LRCX.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.484194+00:00",
+      "name": "LRCX.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/LRCX.json",
+      "sha256": "2aa2de6683c57c40a7b335c7cf894eba62caf24c3521507ef779fe913959f00e",
+      "size_bytes": 172554
+    },
+    "signature": {
+      "mtime_ns": 1781275346484193718,
+      "size_bytes": 172554
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/META.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.610620+00:00",
+      "name": "META.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/META.json",
+      "sha256": "3fd2baeb5ce709bd7dc5f5817ebd0acad5ea4c0b27be269e76f9e68dcf237110",
+      "size_bytes": 312787
+    },
+    "signature": {
+      "mtime_ns": 1781275346610619976,
+      "size_bytes": 312787
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MO.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.796261+00:00",
+      "name": "MO.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MO.json",
+      "sha256": "d89eac33077695a869897d61983b2be3b4211a67825dd9f319fb9dd1c3e895be",
+      "size_bytes": 174336
+    },
+    "signature": {
+      "mtime_ns": 1781275346796261152,
+      "size_bytes": 174336
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MRK.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.837028+00:00",
+      "name": "MRK.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MRK.json",
+      "sha256": "9e9a3cfdf202e82f86c1afbe14135e8a4daeecfc6f0ef887d4be1c6bead773c3",
+      "size_bytes": 229205
+    },
+    "signature": {
+      "mtime_ns": 1781275346837028183,
+      "size_bytes": 229205
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MRVL.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.410254+00:00",
+      "name": "MRVL.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MRVL.json",
+      "sha256": "0dff4d3197eb947be0b074db47bc4417b66b580c01103fd1c9cc322ab05713da",
+      "size_bytes": 313048
+    },
+    "signature": {
+      "mtime_ns": 1781275346410254165,
+      "size_bytes": 313048
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MS.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.822983+00:00",
+      "name": "MS.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MS.json",
+      "sha256": "0f235c1945dfc7e97ff144d5a6100496c7132c0ce72ce5fd046f53af92a91e1c",
+      "size_bytes": 121034
+    },
+    "signature": {
+      "mtime_ns": 1781275346822983172,
+      "size_bytes": 121034
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MSFT.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.439592+00:00",
+      "name": "MSFT.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MSFT.json",
+      "sha256": "d2a9cf45ed5da20fd03813fd27de1ef11d49b294a25a515ddbeaa244d1109bd0",
+      "size_bytes": 313247
+    },
+    "signature": {
+      "mtime_ns": 1781275346439591936,
+      "size_bytes": 313247
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MU.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.306704+00:00",
+      "name": "MU.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/MU.json",
+      "sha256": "5257f801903e3d9e5771e3679e7417062a23773a9d1c945ec0391bef3f2ffae6",
+      "size_bytes": 313285
+    },
+    "signature": {
+      "mtime_ns": 1781275346306704299,
+      "size_bytes": 313285
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NEE.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.840304+00:00",
+      "name": "NEE.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NEE.json",
+      "sha256": "49013f3a27423227bb66a601ca1dbdba558c627c458e6e16e4eca98f7d3e8536",
+      "size_bytes": 82197
+    },
+    "signature": {
+      "mtime_ns": 1781275346840303644,
+      "size_bytes": 82197
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NEM.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.763831+00:00",
+      "name": "NEM.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NEM.json",
+      "sha256": "747549df6b6989a6037bddc8dec39b02dee9c6f36441eb0c3e79250b81ce6b07",
+      "size_bytes": 1461918
+    },
+    "signature": {
+      "mtime_ns": 1781275346763830794,
+      "size_bytes": 1461918
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NFLX.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.728472+00:00",
+      "name": "NFLX.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NFLX.json",
+      "sha256": "75222180eb41a3daae8f7d1055a0d3125f798a717d0a840ad96183f476e12835",
+      "size_bytes": 312281
+    },
+    "signature": {
+      "mtime_ns": 1781275346728472102,
+      "size_bytes": 312281
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NOW.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.513566+00:00",
+      "name": "NOW.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NOW.json",
+      "sha256": "afaf29e83bfbbae0f405e3c5672c3d17d2078c2a98da6ca0fa63591985a8a1a9",
+      "size_bytes": 311722
+    },
+    "signature": {
+      "mtime_ns": 1781275346513565531,
+      "size_bytes": 311722
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NVDA.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.639882+00:00",
+      "name": "NVDA.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/NVDA.json",
+      "sha256": "a013cafc40e816251f778f6dcb4b4f18f47f2ce26e8b5ad0aa0097626e913463",
+      "size_bytes": 313004
+    },
+    "signature": {
+      "mtime_ns": 1781275346639881997,
+      "size_bytes": 313004
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ORCL.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.418018+00:00",
+      "name": "ORCL.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/ORCL.json",
+      "sha256": "e823d677c61652cd2a60be1045d43228b2cb1dc8452957780d4a1c1184433c9b",
+      "size_bytes": 312272
+    },
+    "signature": {
+      "mtime_ns": 1781275346418017712,
+      "size_bytes": 312272
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PANW.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.580803+00:00",
+      "name": "PANW.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PANW.json",
+      "sha256": "512b796b44c74739afc5fcb603af6be0f9272ccf0f3b229ca0cf1867a3b968be",
+      "size_bytes": 320373
+    },
+    "signature": {
+      "mtime_ns": 1781275346580802788,
+      "size_bytes": 320373
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PEP.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.246657+00:00",
+      "name": "PEP.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PEP.json",
+      "sha256": "e1f560918dc32e329525584a432f39796e6571f6d78ca5aae7a5ab49407b333c",
+      "size_bytes": 90393
+    },
+    "signature": {
+      "mtime_ns": 1781275346246657090,
+      "size_bytes": 90393
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PFE.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.778115+00:00",
+      "name": "PFE.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PFE.json",
+      "sha256": "5b49a2981d2829cf972944359b920204d1a66d9792161825f4439d9a91020996",
+      "size_bytes": 155408
+    },
+    "signature": {
+      "mtime_ns": 1781275346778114596,
+      "size_bytes": 155408
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PG.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.546083+00:00",
+      "name": "PG.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PG.json",
+      "sha256": "c7722bf8a9320a05e8a30191e8e5e22c20267139794b30eb7238ae9e65c62e72",
+      "size_bytes": 90149
+    },
+    "signature": {
+      "mtime_ns": 1781275346546083096,
+      "size_bytes": 90149
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PLTR.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.648915+00:00",
+      "name": "PLTR.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/PLTR.json",
+      "sha256": "eb0a3fb9af03dddabc9217505661f75bc52f8587230a721b26122ed7905a76bc",
+      "size_bytes": 312289
+    },
+    "signature": {
+      "mtime_ns": 1781275346648914961,
+      "size_bytes": 312289
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/QCOM.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.531253+00:00",
+      "name": "QCOM.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/QCOM.json",
+      "sha256": "d5a12db2f273ebf5ca8d001ff353958e49e5474bbc51aa44844b0c15cb1537cc",
+      "size_bytes": 308066
+    },
+    "signature": {
+      "mtime_ns": 1781275346531252710,
+      "size_bytes": 308066
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/QQQ.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.425415+00:00",
+      "name": "QQQ.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/QQQ.json",
+      "sha256": "8bc0ddb2d1d0ba9b518c8ef8c7459cb0387692f7e54c1844ab1ad6ccac14b7cf",
+      "size_bytes": 312503
+    },
+    "signature": {
+      "mtime_ns": 1781275346425414593,
+      "size_bytes": 312503
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SBUX.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.819056+00:00",
+      "name": "SBUX.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SBUX.json",
+      "sha256": "eccded18ef1c13e6bb309aa54c26bfaad82f56ff5addc8c0012bf826e816aca9",
+      "size_bytes": 151887
+    },
+    "signature": {
+      "mtime_ns": 1781275346819055461,
+      "size_bytes": 151887
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SCHW.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.551948+00:00",
+      "name": "SCHW.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SCHW.json",
+      "sha256": "3ff4b680f461c66865c4bb56b7a58f34fe9d4417e4457b6ad3c1e2ebb84d0e95",
+      "size_bytes": 214621
+    },
+    "signature": {
+      "mtime_ns": 1781275346551948309,
+      "size_bytes": 214621
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SHOP.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.382536+00:00",
+      "name": "SHOP.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SHOP.json",
+      "sha256": "8f245cea6e37049a59234873cce0c1a4f9729b93c67ec938e872bdc620525f01",
+      "size_bytes": 1466578
+    },
+    "signature": {
+      "mtime_ns": 1781275346382535729,
+      "size_bytes": 1466578
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SLB.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.592778+00:00",
+      "name": "SLB.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SLB.json",
+      "sha256": "321f06a6e907e02a4831a5c52f3e49eda889d6241be8bb1779c716b02737f02f",
+      "size_bytes": 167134
+    },
+    "signature": {
+      "mtime_ns": 1781275346592778380,
+      "size_bytes": 167134
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SLV.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.282285+00:00",
+      "name": "SLV.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SLV.json",
+      "sha256": "250c9530cb95a94ecf30b5d1b5bd7f2719c349c7855ee52704177268a234229b",
+      "size_bytes": 311281
+    },
+    "signature": {
+      "mtime_ns": 1781275346282285282,
+      "size_bytes": 311281
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SMH.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.268120+00:00",
+      "name": "SMH.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SMH.json",
+      "sha256": "d7a389ff45f15aaabd29d7126a884c6ddc9e4a4af4c0d836b3ffc12ac0150e39",
+      "size_bytes": 312405
+    },
+    "signature": {
+      "mtime_ns": 1781275346268120230,
+      "size_bytes": 312405
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SNDK.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.499481+00:00",
+      "name": "SNDK.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SNDK.json",
+      "sha256": "c9285fefcf9178923a6b752d37982d17ca2a4a5127b998481399f7bae5b426ab",
+      "size_bytes": 316355
+    },
+    "signature": {
+      "mtime_ns": 1781275346499480688,
+      "size_bytes": 316355
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SNOW.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.390530+00:00",
+      "name": "SNOW.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SNOW.json",
+      "sha256": "e1fb8fda98340360383be8b153fec0d88e5147d5ecaae2d2540e2b4a8ac562cc",
+      "size_bytes": 312579
+    },
+    "signature": {
+      "mtime_ns": 1781275346390529526,
+      "size_bytes": 312579
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SPY.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.559839+00:00",
+      "name": "SPY.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/SPY.json",
+      "sha256": "b7b5f950b5fa2da339af9c8dbafdeecfbb2e7ad351934fa1e3196fad1571fe07",
+      "size_bytes": 312891
+    },
+    "signature": {
+      "mtime_ns": 1781275346559838647,
+      "size_bytes": 312891
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/T.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.180255+00:00",
+      "name": "T.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/T.json",
+      "sha256": "64ecc7f39fb864258b2107bae440ceb5f1a6212b70dd6164dba4aa3d43c5a67a",
+      "size_bytes": 85926
+    },
+    "signature": {
+      "mtime_ns": 1781275346180255459,
+      "size_bytes": 85926
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/TLT.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.535501+00:00",
+      "name": "TLT.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/TLT.json",
+      "sha256": "5cf42aa2763edb52daaa919807603b8c70732804917f11043134a8d5361b8c8d",
+      "size_bytes": 159904
+    },
+    "signature": {
+      "mtime_ns": 1781275346535501422,
+      "size_bytes": 159904
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/TSLA.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.618023+00:00",
+      "name": "TSLA.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/TSLA.json",
+      "sha256": "db298b8d31f7090399855a4c7b6dc8877bbd3a07a29787ff15bc062e82a2101a",
+      "size_bytes": 312960
+    },
+    "signature": {
+      "mtime_ns": 1781275346618023064,
+      "size_bytes": 312960
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/TXN.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.706025+00:00",
+      "name": "TXN.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/TXN.json",
+      "sha256": "3b331bb587e28e46ff47efa6c86c10d8931081f4cc403546e25d863cce593b80",
+      "size_bytes": 310762
+    },
+    "signature": {
+      "mtime_ns": 1781275346706025128,
+      "size_bytes": 310762
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/UBER.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.773604+00:00",
+      "name": "UBER.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/UBER.json",
+      "sha256": "882a0180af51231ad9637834d66b8ffc1cedf0d46fd154c356bd50bf364156da",
+      "size_bytes": 90502
+    },
+    "signature": {
+      "mtime_ns": 1781275346773603926,
+      "size_bytes": 90502
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/UNH.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.671457+00:00",
+      "name": "UNH.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/UNH.json",
+      "sha256": "0e9d41b8e023d5778ebd270df2af559e3052f31f32efd3e316cf29632885811a",
+      "size_bytes": 237046
+    },
+    "signature": {
+      "mtime_ns": 1781275346671456686,
+      "size_bytes": 237046
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/UPS.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.238435+00:00",
+      "name": "UPS.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/UPS.json",
+      "sha256": "0b2db6900abb97c8842c7762f9188ca060d6ba9977d363e55ae2d0067a519685",
+      "size_bytes": 94088
+    },
+    "signature": {
+      "mtime_ns": 1781275346238435209,
+      "size_bytes": 94088
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/V.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.831218+00:00",
+      "name": "V.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/V.json",
+      "sha256": "ec484f2dc5139fa915a2776b8a1e9f48ce2cae88aee9cdae5a241c6187b40448",
+      "size_bytes": 309712
+    },
+    "signature": {
+      "mtime_ns": 1781275346831218095,
+      "size_bytes": 309712
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/VRT.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.398332+00:00",
+      "name": "VRT.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/VRT.json",
+      "sha256": "1c3d8b65432fc658dd1be7b580a6e02688a05c3bf5beddb668aabb40fd485345",
+      "size_bytes": 311425
+    },
+    "signature": {
+      "mtime_ns": 1781275346398331657,
+      "size_bytes": 311425
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/VZ.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.249509+00:00",
+      "name": "VZ.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/VZ.json",
+      "sha256": "5714d1e4911e0865d5b6e40ac50fe0d03559dbbdb683d2cbd6f4de5e18181277",
+      "size_bytes": 97717
+    },
+    "signature": {
+      "mtime_ns": 1781275346249508550,
+      "size_bytes": 97717
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/WDC.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.463671+00:00",
+      "name": "WDC.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/WDC.json",
+      "sha256": "7cb9177e3229aedf3bf95ea7364d4ce4d164ec94e2a5bf756b8138c466f0f539",
+      "size_bytes": 274193
+    },
+    "signature": {
+      "mtime_ns": 1781275346463670870,
+      "size_bytes": 274193
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/WFC.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.624883+00:00",
+      "name": "WFC.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/WFC.json",
+      "sha256": "c1beb0341c1f940dd9f2a973bf070069d612dd33b0e7ef3a1c4e2720215a6050",
+      "size_bytes": 252641
+    },
+    "signature": {
+      "mtime_ns": 1781275346624883194,
+      "size_bytes": 252641
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/WMT.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.785876+00:00",
+      "name": "WMT.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/WMT.json",
+      "sha256": "68d5051231b2b37d8ab8d56571f8021a2561291be35f13101802cc164139ba46",
+      "size_bytes": 280347
+    },
+    "signature": {
+      "mtime_ns": 1781275346785875602,
+      "size_bytes": 280347
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLB.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.287673+00:00",
+      "name": "XLB.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLB.json",
+      "sha256": "1385ce21a557948d117a7f0cfd579ecba2bd11c47c00d4b59a68415a2c13375b",
+      "size_bytes": 205736
+    },
+    "signature": {
+      "mtime_ns": 1781275346287672411,
+      "size_bytes": 205736
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLI.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.403116+00:00",
+      "name": "XLI.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLI.json",
+      "sha256": "74e16b7cc682263de1f0fa5d417f512079bcc09ba0faa4de72febc586a596a01",
+      "size_bytes": 183094
+    },
+    "signature": {
+      "mtime_ns": 1781275346403116160,
+      "size_bytes": 183094
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLK.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.655278+00:00",
+      "name": "XLK.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLK.json",
+      "sha256": "382df823e5f474ab76c0f438f8b6e8f7c473acec7e13923f4dc78506153a58b8",
+      "size_bytes": 215024
+    },
+    "signature": {
+      "mtime_ns": 1781275346655278258,
+      "size_bytes": 215024
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLU.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.253555+00:00",
+      "name": "XLU.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLU.json",
+      "sha256": "dfdd2aa60356cf8231b5c5d8a631125500b72b9bc7e8e44ea3247a910928536e",
+      "size_bytes": 139936
+    },
+    "signature": {
+      "mtime_ns": 1781275346253555136,
+      "size_bytes": 139936
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLV.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.243905+00:00",
+      "name": "XLV.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLV.json",
+      "sha256": "ed3c97fff5d00e420a8e18a661639b0b3ca60fc8b47c3aefeba084958cb61d52",
+      "size_bytes": 217298
+    },
+    "signature": {
+      "mtime_ns": 1781275346243904671,
+      "size_bytes": 217298
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLY.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.597181+00:00",
+      "name": "XLY.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XLY.json",
+      "sha256": "a37bbb323accb7c09c411530bc548d014702e9f53dc763b050a64a264ec12db6",
+      "size_bytes": 163445
+    },
+    "signature": {
+      "mtime_ns": 1781275346597181133,
+      "size_bytes": 163445
+    }
+  },
+  "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XOM.json": {
+    "fingerprint": {
+      "hash_cache": "miss",
+      "mtime_utc": "2026-06-12T14:42:26.600791+00:00",
+      "name": "XOM.json",
+      "path": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/schwab_chains/XOM.json",
+      "sha256": "26c41ce21a5f9e4cc0e7a68fd4ef2284308515b3bd942d0d0405950a16b6ed2d",
+      "size_bytes": 129138
+    },
+    "signature": {
+      "mtime_ns": 1781275346600790385,
+      "size_bytes": 129138
+    }
+  }
+}
