@@ -1,0 +1,39 @@
+{
+  "avg_index_flow_bias": 0.009,
+  "avg_index_price_move_pct": 0.027288,
+  "note": "index price tape leans bullish",
+  "price_tape_direction": "bullish",
+  "readings": [
+    {
+      "bias": "bullish",
+      "combined_flow_bias": 0.025764967660224562,
+      "score": 75.06,
+      "signal_premium": 3752529798.0,
+      "ticker": "QQQ"
+    },
+    {
+      "bias": "bullish",
+      "combined_flow_bias": 0.02544453378517735,
+      "score": 74.05,
+      "signal_premium": 451498518.0,
+      "ticker": "IWM"
+    },
+    {
+      "bias": "bullish",
+      "combined_flow_bias": 0.027493392793677966,
+      "score": 70.35,
+      "signal_premium": 3717837878.0,
+      "ticker": "SPY"
+    },
+    {
+      "bias": "bullish",
+      "combined_flow_bias": -0.04253639407455457,
+      "score": 63.46,
+      "signal_premium": 26891591.0,
+      "ticker": "DIA"
+    }
+  ],
+  "regime": "risk_on",
+  "sizing_stance": "normal",
+  "status": "ok"
+}
