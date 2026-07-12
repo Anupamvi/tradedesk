@@ -1,0 +1,13 @@
+{
+  "blockers": "expectancy_summary_not_positive; actual_closed_or_forward_outcomes_sample_too_small; current_strategy_cohort_negative; replay_decision_pass_sample_too_small; profitability_calibration_not_proven; green_ticket_structure_expectancy_missing; monthly_feasibility_not_proven; green_structure_expectancy_not_all_pass; green_profitability_calibration_not_all_pass; green_execution_fill_quality_not_all_pass",
+  "blocking_metrics": [
+    "profitability_confidence_rating",
+    "order_entry_confidence_rating",
+    "goal_confidence_gate"
+  ],
+  "goal_threshold": 7.0,
+  "order_entry_confidence_rating": 5.0,
+  "profitability_confidence_rating": 3.0,
+  "required_next_action": "Do not loosen green gates; collect/prove positive closed/replay expectancy and produce validated green rows.",
+  "status": "block"
+}
