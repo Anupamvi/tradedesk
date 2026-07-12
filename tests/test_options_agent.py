@@ -56,8 +56,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.8-promoted-decision-pass-20260711-093930"
+    assert core.PIPELINE_VERSION == "options-agent-v1.9-quality-sleeves-20260711-170521"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.8-promoted-decision-pass-20260711-093930",
         "options-agent-v1.7-selector-promotion-20260711-092235",
         "options-agent-v1.6-true-ytd-replay-20260711-033758",
         "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419",
@@ -70,7 +71,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-11T09:39:30-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-11T17:05:21-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -7272,6 +7273,7 @@ def test_promoted_selector_policy_keeps_one_credit_and_one_debit_sleeve() -> Non
                 "combined_flow_bias": 0.30,
                 "live_breakeven_expected_move_ratio": 0.50,
                 "live_quote_width_pct": 0.10,
+                "live_probability_proxy": 0.55,
                 "max_profit": 700.0,
                 "max_loss": 300.0,
                 "synthesis_score": 140.0,
@@ -7288,20 +7290,21 @@ def test_promoted_selector_policy_keeps_one_credit_and_one_debit_sleeve() -> Non
                 "synthesis_score": 200.0,
             },
             {
-                "ticker": "DEBIT_BAD_REGIME",
+                "ticker": "DEBIT_MIXED_REGIME",
                 "strategy_route": "bull_call_debit",
                 "entry_type": "DEBIT",
                 "underlying_quality_tier": "core",
-                "regime": "risk_off",
+                "regime": "mixed",
                 "iv_rank": 40.0,
                 "dte": 30,
                 "debit_width_ratio": 0.30,
                 "combined_flow_bias": 0.30,
                 "live_breakeven_expected_move_ratio": 0.50,
                 "live_quote_width_pct": 0.10,
+                "live_probability_proxy": 0.55,
                 "max_profit": 700.0,
                 "max_loss": 300.0,
-                "synthesis_score": 160.0,
+                "synthesis_score": 100.0,
             },
             {
                 "ticker": "DEBIT_BAD_IV",
@@ -7315,9 +7318,27 @@ def test_promoted_selector_policy_keeps_one_credit_and_one_debit_sleeve() -> Non
                 "combined_flow_bias": 0.30,
                 "live_breakeven_expected_move_ratio": 0.50,
                 "live_quote_width_pct": 0.10,
+                "live_probability_proxy": 0.55,
                 "max_profit": 700.0,
                 "max_loss": 300.0,
                 "synthesis_score": 170.0,
+            },
+            {
+                "ticker": "DEBIT_LOW_PROBABILITY",
+                "strategy_route": "bull_call_debit",
+                "entry_type": "DEBIT",
+                "underlying_quality_tier": "core",
+                "regime": "mixed",
+                "iv_rank": 40.0,
+                "dte": 30,
+                "debit_width_ratio": 0.30,
+                "combined_flow_bias": 0.30,
+                "live_breakeven_expected_move_ratio": 0.50,
+                "live_quote_width_pct": 0.10,
+                "live_probability_proxy": 0.35,
+                "max_profit": 700.0,
+                "max_loss": 300.0,
+                "synthesis_score": 180.0,
             },
         ]
     )
@@ -7327,12 +7348,15 @@ def test_promoted_selector_policy_keeps_one_credit_and_one_debit_sleeve() -> Non
     assert annotated.at["CREDIT1", "selector_policy_status"] == "PASS"
     assert annotated.at["CREDIT2", "selector_policy_status"] == "NOT_SELECTED_DAILY_CAP"
     assert annotated.at["DEBIT1", "selector_policy_status"] == "PASS"
+    assert annotated.at["DEBIT1", "selector_policy_id"] == core.PROMOTED_SELECTOR_POLICY_ID
     assert annotated.at["UNSUPPORTED", "selector_policy_status"] == "BLOCK"
     assert "unsupported_selector_route" in annotated.at["UNSUPPORTED", "selector_policy_reason"]
-    assert "debit_regime_not_aligned:risk_off" in annotated.at[
-        "DEBIT_BAD_REGIME", "selector_policy_reason"
-    ]
+    assert annotated.at["DEBIT_MIXED_REGIME", "selector_policy_status"] == "NOT_SELECTED_DAILY_CAP"
+    assert "debit_regime_not_aligned" not in annotated.at["DEBIT_MIXED_REGIME", "selector_policy_reason"]
     assert "debit_iv_rank_above_55" in annotated.at["DEBIT_BAD_IV", "selector_policy_reason"]
+    assert "debit_probability_proxy_below_40pct" in annotated.at[
+        "DEBIT_LOW_PROBABILITY", "selector_policy_reason"
+    ]
 
 
 def test_nonselected_selector_row_is_an_order_entry_blocker() -> None:
@@ -13129,6 +13153,68 @@ def test_profitability_calibration_blocks_yellow_target_row_until_bucket_proven(
     assert tickets.empty
 
 
+def test_positive_hierarchical_route_support_can_form_quality_yellow_target() -> None:
+    row = {
+        "ticker": "WMT",
+        "ready_to_enter": False,
+        "target_order_status": "target_order_candidate",
+        "order_readiness": "target_order_after_profitability_calibration",
+        "live_validation_status": "PASS",
+        "selector_policy_status": "PASS",
+        "trade_quality_confidence_rating": "MEDIUM",
+        "contract_review_status": "PASS",
+        "profitability_calibration_status": "WARN",
+        "profitability_calibration_actual_status": "WARN",
+        "profitability_calibration_actual_sample_size": 41,
+        "profitability_calibration_actual_avg_pnl": 20.61,
+        "profitability_calibration_actual_profit_factor": 1.272,
+        "actual_forward_strategy_expectancy_status": "PASS",
+        "actual_forward_strategy_expectancy_sample_size": 41,
+        "actual_forward_strategy_expectancy_avg_pnl": 20.61,
+        "actual_forward_strategy_expectancy_profit_factor": 1.272,
+        "actual_forward_strategy_expectancy_family": "vertical_spread",
+        "execution_blockers": (
+            "portfolio_context_required; profitability_calibration_required_for_green; "
+            "goal_confidence_gate_blocked"
+        ),
+    }
+
+    green, yellow = core.split_trade_ticket_surfaces(pd.DataFrame([row]))
+
+    assert green.empty
+    assert yellow["ticker"].tolist() == ["WMT"]
+
+
+def test_hierarchical_yellow_remains_visible_when_exact_review_is_pending() -> None:
+    row = {
+        "ticker": "WMT",
+        "ready_to_enter": False,
+        "target_order_status": "target_order_candidate",
+        "live_validation_status": "PASS",
+        "selector_policy_status": "PASS",
+        "trade_quality_confidence_rating": "MEDIUM",
+        "contract_review_status": "BLOCK",
+        "contract_review_missing_agents": "structure_builder; skeptic",
+        "profitability_calibration_status": "WARN",
+        "profitability_calibration_actual_status": "WARN",
+        "profitability_calibration_actual_sample_size": 41,
+        "profitability_calibration_actual_avg_pnl": 20.61,
+        "profitability_calibration_actual_profit_factor": 1.272,
+        "actual_forward_strategy_expectancy_status": "PASS",
+        "actual_forward_strategy_expectancy_sample_size": 41,
+        "actual_forward_strategy_expectancy_avg_pnl": 20.61,
+        "actual_forward_strategy_expectancy_profit_factor": 1.272,
+        "execution_blockers": "contract_specific_agent_reviews_missing; profitability_calibration_required_for_green",
+    }
+
+    green, yellow = core.split_trade_ticket_surfaces(pd.DataFrame([row]))
+
+    assert green.empty
+    assert yellow["ticker"].tolist() == ["WMT"]
+    assert core._ticket_order_readiness(yellow.iloc[0]) == "target_order_after_exact_contract_review"
+    assert core._target_rows_require_watch_only_from_tickets(yellow) is True
+
+
 def test_negative_route_family_evidence_keeps_row_off_yellow_target_surface() -> None:
     final = pd.DataFrame(
         [
@@ -13834,7 +13920,7 @@ def test_report_snapshot_counts_review_only_visible_tickets() -> None:
     assert "- Green send-now orders: 0" in report
     assert "- Yellow target orders: 0" in report
     assert "- Review-only candidates: 1" in report
-    assert "- Research/backtest profitability evidence: 0.0/10 (not order-entry readiness)" in report
+    assert "- Current-day profitability confidence: 0.0/10" in report
     assert "No yellow target orders." in report
     assert (
         "Next action: do not enter review rows; require at least 30 nonduplicated matching outcomes "
@@ -14373,8 +14459,7 @@ def test_run_pipeline_writes_independent_recommendation_artifacts(tmp_path: Path
     assert "No yellow target orders." in report
     assert "Structural status counts, not order readiness" in report
     assert "## Top Line" in report
-    assert "Research/backtest profitability evidence" in report
-    assert "not order-entry readiness" in report
+    assert "Current-day profitability confidence" in report
     assert "Profitability confidence:" not in report
     assert "Order-entry confidence: 0.0/10" in report
     assert "Order mechanics confidence: 0.0/10" in report
@@ -17732,8 +17817,10 @@ def test_confidence_audit_counts_route_positive_support_without_global_actual_ne
     assert "actual_closed_or_forward_outcomes_not_positive" not in profitability["blockers"]
     assert "actual_closed_route_or_broad_outcomes=PASS route_or_broad_rows=1" in profitability["evidence"]
     assert "actual_bucket_precision_gap" in profitability["blockers"]
-    assert profitability["rating"] == 7.0
-    assert profitability["status"] == "PASS"
+    assert profitability["rating"] == 4.0
+    assert profitability["status"] == "BLOCK"
+    assert "no_actionable_green_or_yellow_trade_surface" in profitability["blockers"]
+    assert "current_day_action_surface=0 green/0 yellow" in profitability["evidence"]
     assert "leakage_safe_replay_decision_pass_model_strong=PASS" in profitability["evidence"]
 
 
@@ -18195,6 +18282,64 @@ def test_live_debit_expected_move_falls_back_to_chain_iv_with_correct_ratio_dire
     )
 
 
+def test_live_debit_builder_widens_token_seed_to_material_quality_spread() -> None:
+    from codexuw.schwab_live import find_debit_spread_alternatives
+
+    expiry = dt.date(2026, 8, 7)
+    contracts = pd.DataFrame(
+        [
+            {
+                "expiry": expiry,
+                "right": "C",
+                "strike": 115.0,
+                "symbol": "WMT 260807C00115000",
+                "bid": 2.52,
+                "ask": 2.64,
+                "mark": 2.58,
+                "delta": 0.457,
+                "theta": -0.055,
+                "iv": 24.567,
+                "open_interest": 737,
+                "volume": 59,
+            },
+            {
+                "expiry": expiry,
+                "right": "C",
+                "strike": 120.0,
+                "symbol": "WMT 260807C00120000",
+                "bid": 0.91,
+                "ask": 0.99,
+                "mark": 0.95,
+                "delta": 0.225,
+                "theta": -0.041,
+                "iv": 23.956,
+                "open_interest": 589,
+                "volume": 151,
+            },
+        ]
+    )
+
+    alternatives = find_debit_spread_alternatives(
+        contracts,
+        direction="Bull Call",
+        expiry=expiry,
+        spot=113.90,
+        preferred_width=1.0,
+        anchor_strike=117.0,
+        expected_move_pct=0.06,
+        as_of_date=dt.date(2026, 7, 10),
+    )
+
+    actionable = next(item for item in alternatives if item["construction_source"] == "actionable_quality")
+    assert actionable["long_strike"] == 115.0
+    assert actionable["short_strike"] == 120.0
+    assert actionable["spread_width"] == 5.0
+    assert actionable["debit"] == pytest.approx(1.73)
+    assert actionable["reward_risk"] > 1.5
+    assert actionable["long_delta"] >= core.MIN_DEBIT_LONG_DELTA_FOR_GREEN
+    assert actionable["quote_width_pct"] < 0.10
+
+
 def test_live_debit_selection_prefers_quality_across_expiries() -> None:
     asof = dt.date(2026, 7, 9)
     short_expiry = dt.date(2026, 7, 17)
@@ -18253,6 +18398,65 @@ def test_live_debit_selection_prefers_quality_across_expiries() -> None:
 
     assert expiries == [quality_expiry, short_expiry]
     assert selected["selected_expiry"] == quality_expiry.isoformat()
+
+
+def test_live_debit_selection_prefers_pre_earnings_quality_expiry() -> None:
+    pre_earnings = {
+        "live_status": "PASS",
+        "selected_expiry": "2026-08-07",
+        "dte": 28,
+        "spread_width": 5.0,
+        "debit": 1.73,
+        "reward_risk": 1.89,
+        "target_entry": 2.25,
+        "long_delta": 0.457,
+        "theta_burn_pct": 0.01,
+        "breakeven_expected_move_ratio": 0.42,
+        "quote_width_pct": 0.08,
+        "short_oi": 589,
+        "short_volume": 151,
+        "long_oi": 737,
+        "long_volume": 59,
+        "liq_score": 740,
+    }
+    post_earnings = {
+        **pre_earnings,
+        "selected_expiry": "2026-08-21",
+        "dte": 42,
+        "debit": 1.70,
+        "reward_risk": 1.94,
+        "quote_width_pct": 0.07,
+    }
+
+    selected = core._select_live_alternative(
+        {
+            "signal_premium": 10_000_000.0,
+            "combined_flow_bias": 0.17,
+            "next_earnings_dt": "2026-08-20",
+        },
+        [post_earnings, pre_earnings],
+        entry_type="DEBIT",
+    )
+
+    assert selected["selected_expiry"] == "2026-08-07"
+
+
+def test_strategy_route_propagates_earnings_date_to_live_pricing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        core,
+        "construct_debit_spread",
+        lambda candidate, hot, *, direction: {"ticker": candidate["ticker"], "trade_plan": "test", "entry_limit": 1.0},
+    )
+
+    row = core._construct_strategy_route(
+        {"ticker": "WMT", "next_earnings_dt": "2026-08-20"},
+        pd.DataFrame(),
+        {"strategy": "bull_call_debit", "entry_type": "DEBIT", "direction": "Bull Call"},
+    )
+
+    assert row["next_earnings_dt"] == "2026-08-20"
 
 
 def test_live_long_option_selection_prefers_probability_and_theta_over_lowest_debit() -> None:

@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.8-promoted-decision-pass-20260711-093930"
+PIPELINE_VERSION = "options-agent-v1.9-quality-sleeves-20260711-170521"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.8-promoted-decision-pass-20260711-093930",
     "options-agent-v1.7-selector-promotion-20260711-092235",
     "options-agent-v1.6-true-ytd-replay-20260711-033758",
     "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419",
@@ -61,7 +62,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-11T09:39:30-07:00"
+PIPELINE_RELEASED_AT = "2026-07-11T17:05:21-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -74,6 +75,7 @@ MIN_WALKFORWARD_TEST_DAYS = 10
 MIN_SELECTOR_PROMOTION_SAMPLE_SIZE = 30
 MIN_SELECTOR_PROMOTION_DAY_COUNT = 10
 MIN_SELECTOR_HELDOUT_SAMPLE_SIZE = 10
+PROMOTED_SELECTOR_POLICY_ID = "quality_sleeves_cap2_v2"
 DEFAULT_DISCOVERY_LIMIT = 120
 DEFAULT_RISK_BUDGET_PCT = 0.005
 MAX_SUGGESTED_CONTRACTS = 5
@@ -117,8 +119,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.8-promoted-decision-pass-20260711-093930",
+    "PIPELINE_VERSION": "options-agent-v1.9-quality-sleeves-20260711-170521",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.8-promoted-decision-pass-20260711-093930",
         "options-agent-v1.7-selector-promotion-20260711-092235",
         "options-agent-v1.6-true-ytd-replay-20260711-033758",
         "options-agent-v1.5-fixed-horizon-outcomes-20260711-030419",
@@ -131,7 +134,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-11T09:39:30-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-11T17:05:21-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -2530,9 +2533,10 @@ def run_pipeline(
         execution_context=execution_context,
     )
     final = apply_calibrated_final_ranking(final)
+    selector_summary = summarize_selector_challenger_audit(selector_challenger_audit)
     final = annotate_selector_policy(
         final,
-        enabled=summarize_selector_challenger_audit(selector_challenger_audit).get("status") == "pass",
+        enabled=PROMOTED_SELECTOR_POLICY_ID in set(selector_summary.get("promoted_policy_ids", []) or []),
     )
     no_trade = build_no_trade_audit(candidates, priced, top_trades=top_trades, raw_universe=raw_universe)
     risk_audit = build_risk_audit(final)
@@ -5583,7 +5587,7 @@ def _construct_strategy_route(candidate: Mapping[str, Any], hot: pd.DataFrame, r
         constructed = construct_debit_spread(candidate, hot, direction=_as_text(route.get("direction")))
     else:
         constructed = construct_credit_spread(candidate, hot)
-    for column in ("iv_rank", "iv30d", "candidate_source"):
+    for column in ("iv_rank", "iv30d", "candidate_source", "next_earnings_dt"):
         if not _as_text(constructed.get(column)):
             constructed[column] = candidate.get(column, "")
     return constructed
@@ -7870,10 +7874,13 @@ def _select_live_alternative(
         return {"live_status": "no_live_alternative", "live_blocker": "no alternative returned"}
 
     entry_type = entry_type.upper()
+    earnings_date = _row_date(row.get("earnings_event_date") or row.get("next_earnings_dt"))
 
     def score(alt: Mapping[str, Any]) -> tuple[float, ...]:
         rejects = _live_alternative_quality_rejects(row, alt, entry_type=entry_type)
         quality_pass = 1.0 if not rejects else 0.0
+        alternative_expiry = _row_date(alt.get("selected_expiry"))
+        pre_earnings = 1.0 if not earnings_date or not alternative_expiry or alternative_expiry < earnings_date else 0.0
         send_now = 1.0 if quality_pass and _live_alternative_send_now_economics(alt, entry_type=entry_type) else 0.0
         target_met = 1.0 if quality_pass and _live_alternative_target_met(alt, entry_type=entry_type) else 0.0
         reject_penalty = -float(len(rejects))
@@ -7902,6 +7909,7 @@ def _select_live_alternative(
         rank = _as_float(alt.get("_rank")) or 0.0
         return (
             quality_pass,
+            pre_earnings,
             send_now,
             target_met,
             green_probability,
@@ -11903,6 +11911,17 @@ SELECTOR_CHALLENGER_AUDIT_COLUMNS = (
 
 SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
     {
+        "policy_id": PROMOTED_SELECTOR_POLICY_ID,
+        "group_columns": (),
+        "lookback_days": 0,
+        "minimum_training_sample": 0,
+        "daily_cap": 2,
+        "daily_sleeve_cap": 1,
+        "rank_mode": "selector_quality_score",
+        "entry_filter_profile": "quality_sleeves_v2",
+        "use_training_gate": False,
+    },
+    {
         "policy_id": "decision_pass_cap2_v1",
         "group_columns": (),
         "lookback_days": 0,
@@ -11995,11 +12014,24 @@ def _selector_challenger_replay_frame(
         lambda row: _as_text(row.get("entry_side") or row.get("strategy_kind")).upper(),
         axis=1,
     )
+    frame["entry_type"] = entry_type
     frame["economics_bucket"] = [
         _economics_bucket(row, side)
         for (_, row), side in zip(frame.iterrows(), entry_type)
     ]
-    for column in ("decision_score", "flow_total_premium", "source_contract_oi", "entry_quote_width_pct"):
+    for column in (
+        "decision_score",
+        "flow_total_premium",
+        "source_contract_oi",
+        "entry_quote_width_pct",
+        "combined_flow_bias",
+        "entry_credit_pct_width",
+        "entry_debit_pct_width",
+        "reward_risk",
+        "expected_move_ratio",
+        "iv_rank",
+        "dte",
+    ):
         frame[column] = pd.to_numeric(
             frame.get(column, pd.Series(index=frame.index, dtype=float)),
             errors="coerce",
@@ -12048,6 +12080,39 @@ def _selector_training_metrics(pnl: pd.Series, day_count: int) -> Optional[dict[
     }
 
 
+def _selector_v2_replay_assessment(row: Mapping[str, Any]) -> tuple[bool, float, list[str], str]:
+    """Map point-in-time replay fields into the promoted live selector contract."""
+
+    mapped = dict(row)
+    entry_type = _as_text(row.get("entry_type") or row.get("entry_side") or row.get("strategy_kind")).upper()
+    expected_move_ratio = _as_float(row.get("expected_move_ratio"))
+    earnings = _row_date(row.get("next_earnings_dt"))
+    expiry = _row_date(row.get("expiry"))
+    mapped.update(
+        {
+            "strategy_route": _as_text(row.get("strategy_route")) or _strategy_route_from_text(row.get("strategy")),
+            "entry_type": entry_type,
+            "underlying_quality_tier": "core",
+            "hard_rejects": "",
+            "earnings_before_expiry": bool(earnings and expiry and earnings <= expiry),
+            "live_quote_width_pct": row.get("entry_quote_width_pct"),
+            "credit_width_ratio": row.get("entry_credit_pct_width"),
+            "debit_width_ratio": row.get("entry_debit_pct_width"),
+            "live_distance_pct": expected_move_ratio if entry_type == "CREDIT" else "",
+            "live_expected_move_pct": 1.0 if entry_type == "CREDIT" else "",
+            "live_breakeven_expected_move_ratio": (
+                1.0 / expected_move_ratio
+                if entry_type == "DEBIT" and expected_move_ratio is not None and expected_move_ratio > 0
+                else ""
+            ),
+            "max_profit": row.get("reward_risk"),
+            "max_loss": 1.0,
+            "synthesis_score": row.get("decision_score"),
+        }
+    )
+    return _selector_policy_row_assessment(mapped, require_live_probability=False)
+
+
 def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any]) -> pd.DataFrame:
     selected: list[pd.Series] = []
     group_columns = list(policy.get("group_columns") or ())
@@ -12064,6 +12129,40 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
         for column in required_true_columns:
             current = current[current.get(column, pd.Series(False, index=current.index)).map(_truthy)].copy()
         if current.empty:
+            continue
+        if _as_text(policy.get("entry_filter_profile")) == "quality_sleeves_v2":
+            assessments = current.apply(_selector_v2_replay_assessment, axis=1)
+            current["__selector_eligible"] = assessments.map(lambda value: bool(value[0]))
+            current["__selector_score"] = assessments.map(lambda value: float(value[1]))
+            current["__selector_sleeve"] = assessments.map(lambda value: _as_text(value[3]).upper())
+            current = current[current["__selector_eligible"]].copy()
+            if current.empty:
+                continue
+            sleeve_cap = int(_as_float(policy.get("daily_sleeve_cap")) or 1)
+            seen_tickers: set[str] = set()
+            for sleeve in ("CREDIT", "DEBIT"):
+                ranked = current[current["__selector_sleeve"].eq(sleeve)].sort_values(
+                    [
+                        "__selector_score",
+                        "decision_score",
+                        "flow_total_premium",
+                        "source_contract_oi",
+                        "entry_quote_width_pct",
+                        "ticker",
+                    ],
+                    ascending=[False, False, False, False, True, True],
+                    kind="mergesort",
+                )
+                selected_in_sleeve = 0
+                for _, selected_row in ranked.iterrows():
+                    ticker = _as_text(selected_row.get("ticker"))
+                    if ticker in seen_tickers:
+                        continue
+                    selected.append(selected_row)
+                    seen_tickers.add(ticker)
+                    selected_in_sleeve += 1
+                    if selected_in_sleeve >= sleeve_cap:
+                        break
             continue
         if not use_training_gate:
             ranked = current.sort_values(
@@ -13476,7 +13575,11 @@ def _selector_policy_expected_move_ratio(row: Mapping[str, Any], entry_type: str
     return distance / expected_move
 
 
-def _selector_policy_row_assessment(row: Mapping[str, Any]) -> tuple[bool, float, list[str], str]:
+def _selector_policy_row_assessment(
+    row: Mapping[str, Any],
+    *,
+    require_live_probability: bool = True,
+) -> tuple[bool, float, list[str], str]:
     route = _as_text(row.get("strategy_route")) or _strategy_route_from_row(row)
     entry_type = _as_text(row.get("entry_type")).upper() or _entry_type_from_route(route)
     reasons: list[str] = []
@@ -13503,8 +13606,8 @@ def _selector_policy_row_assessment(row: Mapping[str, Any]) -> tuple[bool, float
             reasons.append("credit_flow_alignment_below_0.10")
         if expected_move_ratio is None or expected_move_ratio < 0.75:
             reasons.append("credit_distance_expected_move_below_0.75")
-        if quote_width is None or quote_width > 0.35:
-            reasons.append("credit_quote_width_above_0.35")
+        if quote_width is None or quote_width > 0.25:
+            reasons.append("credit_quote_width_above_0.25")
         if expected_move_ratio is not None:
             score += min(2.0, max(0.0, expected_move_ratio))
         if flow_alignment is not None:
@@ -13520,14 +13623,10 @@ def _selector_policy_row_assessment(row: Mapping[str, Any]) -> tuple[bool, float
         max_loss = _as_float(row.get("max_loss"))
         if max_profit is not None and max_loss is not None and max_loss > 0:
             reward_risk = max_profit / max_loss
-        valid_dte = (7 <= dte <= 10 or 22 <= dte <= 45) if route == "bull_call_debit" else 14 <= dte <= 45
+        valid_dte = 14 <= dte <= 45
         minimum_expected_move_ratio = 1.00 if route == "bull_call_debit" else 1.25
-        regime = _regime_bucket(row.get("regime"))
-        allowed_regimes = {"risk_on"} if route == "bull_call_debit" else {"mixed", "risk_off"}
         maximum_iv_rank = 55.0 if route == "bull_call_debit" else 45.0
         iv_rank = _as_float(row.get("iv_rank"))
-        if regime not in allowed_regimes:
-            reasons.append(f"debit_regime_not_aligned:{regime or 'unknown'}")
         if iv_rank is not None and iv_rank > maximum_iv_rank:
             reasons.append(f"debit_iv_rank_above_{int(maximum_iv_rank)}")
         if not valid_dte:
@@ -13536,12 +13635,17 @@ def _selector_policy_row_assessment(row: Mapping[str, Any]) -> tuple[bool, float
             reasons.append(f"debit_width_above_{max_debit_width:.2f}")
         if reward_risk is None or reward_risk < 1.25:
             reasons.append("debit_reward_risk_below_1.25")
-        if flow_alignment is None or flow_alignment < 0.20:
-            reasons.append("debit_flow_alignment_below_0.20")
+        if flow_alignment is None or flow_alignment < 0.15:
+            reasons.append("debit_flow_alignment_below_0.15")
         if expected_move_ratio is None or expected_move_ratio < minimum_expected_move_ratio:
             reasons.append(f"debit_expected_move_ratio_below_{minimum_expected_move_ratio:.2f}")
-        if quote_width is None or quote_width > 0.35:
-            reasons.append("debit_quote_width_above_0.35")
+        if quote_width is None or quote_width > 0.25:
+            reasons.append("debit_quote_width_above_0.25")
+        probability = abs(_as_float(row.get("live_probability_proxy")) or 0.0)
+        if require_live_probability and probability < MIN_DEBIT_LONG_DELTA_FOR_GREEN:
+            reasons.append(
+                f"debit_probability_proxy_below_{int(MIN_DEBIT_LONG_DELTA_FOR_GREEN * 100)}pct"
+            )
         if expected_move_ratio is not None:
             score += min(2.0, max(0.0, expected_move_ratio))
         if flow_alignment is not None:
@@ -13555,7 +13659,7 @@ def _selector_policy_row_assessment(row: Mapping[str, Any]) -> tuple[bool, float
         reasons.append("selector_entry_type_unknown")
         sleeve = entry_type or "UNKNOWN"
     if quote_width is not None:
-        score -= max(0.0, quote_width - 0.35)
+        score -= max(0.0, quote_width - 0.25)
     score += min(0.5, max(0.0, (_as_float(row.get("synthesis_score")) or 0.0) / 400.0))
     return not reasons, round(score, 6), reasons, sleeve
 
@@ -13580,7 +13684,7 @@ def annotate_selector_policy(final: pd.DataFrame, *, enabled: bool = True) -> pd
     eligible_by_sleeve: dict[str, list[tuple[float, Any]]] = {"CREDIT": [], "DEBIT": []}
     for idx, row in out.iterrows():
         eligible, score, reasons, sleeve = _selector_policy_row_assessment(row)
-        out.at[idx, "selector_policy_id"] = "decision_pass_cap2_v1"
+        out.at[idx, "selector_policy_id"] = PROMOTED_SELECTOR_POLICY_ID
         out.at[idx, "selector_policy_score"] = score
         out.at[idx, "selector_policy_sleeve"] = sleeve
         if eligible and sleeve in eligible_by_sleeve:
@@ -21872,6 +21976,11 @@ def _profitability_confidence_rating(
 
     ready = _ready_ticket_frame(trade_tickets)
     goal_neutral_ready = _order_entry_qualified_ticket_frame(_goal_gate_neutral_ticket_frame(trade_tickets))
+    target_surface = (
+        trade_tickets[trade_tickets.apply(_target_surface_eligible, axis=1)].copy()
+        if trade_tickets is not None and not trade_tickets.empty
+        else pd.DataFrame()
+    )
     if ready.empty:
         if goal_neutral_ready.empty:
             visible_surface = _order_mechanics_candidate_frame(trade_tickets)
@@ -21900,6 +22009,13 @@ def _profitability_confidence_rating(
         else:
             blockers.append("green_ticket_structure_expectancy_missing")
             rating = min(rating, 6.0)
+
+    if ready.empty and target_surface.empty:
+        blockers.append("no_actionable_green_or_yellow_trade_surface")
+        evidence.append("current_day_action_surface=0 green/0 yellow")
+        rating = min(rating, 4.0)
+    elif ready.empty:
+        evidence.append(f"current_day_action_surface=0 green/{len(target_surface)} yellow")
 
     monthly = summarize_monthly_feasibility(monthly_feasibility if monthly_feasibility is not None else pd.DataFrame())
     if monthly.get("status") == "capacity_and_expectancy_positive_not_guaranteed":
@@ -22841,7 +22957,18 @@ def render_report(
     if green_count > 0:
         next_action = "review Send Now Orders; enter manually only after final quote check"
     elif target_count > 0 and target_rows_are_watch_only:
-        next_action = "watch yellow rows; do not use as limit orders until profit and expectancy gates clear"
+        exact_review_pending = bool(
+            not computed_target.empty
+            and computed_target.get(
+                "contract_review_status",
+                pd.Series("", index=computed_target.index),
+            ).astype(str).str.upper().eq("BLOCK").any()
+        )
+        next_action = (
+            "complete exact-contract review for yellow rows, then refresh the Schwab quote before entry"
+            if exact_review_pending
+            else "clear the listed watch gate, then refresh the Schwab quote before entry"
+        )
     elif target_count > 0:
         next_action = "use yellow target credits/debits as target-limit starting points"
     elif review_ticket_count > 0:
@@ -22892,7 +23019,7 @@ def render_report(
         f"- Next action: {next_action}",
         f"- Live quote mode: {live_mode}",
         f"- Portfolio context: {manifest.get('portfolio_context_status', 'unknown')}",
-        f"- Profitability confidence: {_as_float(confidence_summary.get('profitability_confidence_rating')) or 0.0}/10",
+        f"- Current-day profitability confidence: {_as_float(confidence_summary.get('profitability_confidence_rating')) or 0.0}/10",
         f"- Order-entry surface confidence: {_as_float(confidence_summary.get('order_entry_confidence_rating')) or 0.0}/10",
         f"- Order mechanics confidence: {_as_float(confidence_summary.get('order_mechanics_confidence_rating')) or 0.0}/10",
         f"- Goal confidence gap audit: {goal_gap_summary.get('status', 'unknown')} "
@@ -22998,7 +23125,7 @@ def render_report(
         f"- Review-only candidates: {review_ticket_count}",
         f"- Order-entry confidence: {order_entry_rating}/10",
         f"- Order mechanics confidence: {order_mechanics_rating}/10",
-        f"- Research/backtest profitability evidence: {profitability_rating}/10 (not order-entry readiness)",
+        f"- Current-day profitability confidence: {profitability_rating}/10",
         f"- Why no green order: {no_green_reason}" if green_count == 0 else "- Green order note: verify the final Schwab quote manually before sending.",
         f"- Next action: {next_action}",
         "",
@@ -23028,7 +23155,7 @@ def render_report(
             f"- Executable status: {executable_status}; no-green reason: {no_green_reason}",
             f"- Send-now readiness: {execution_summary.get('status', 'unknown')}; "
             f"non-green gates: {execution_summary.get('blocking_gates', [])}",
-            f"- Research/backtest profitability evidence: {profitability_rating}/10; "
+            f"- Current-day profitability confidence: {profitability_rating}/10; "
             f"order-entry confidence: {order_entry_rating}/10; mechanics confidence: {order_mechanics_rating}/10",
             f"- Live quote mode: {live_mode}; live validation rows: {row_counts.get('live_chain_validation', 0)}",
             (
@@ -23270,6 +23397,7 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
         ticket_target_status.isin({"target_order_candidate", "target_order_wait_for_price"})
         & ~tickets.get("ready_to_enter", pd.Series(False, index=tickets.index)).map(_truthy)
         & ~ticket_calibration_status.isin({"", "PASS"})
+        & ~tickets.apply(_target_surface_eligible, axis=1)
     ].copy()
 
     lines.extend(["## Send Now Orders", ""])
@@ -23974,7 +24102,15 @@ def _target_surface_eligible(row: Mapping[str, Any]) -> bool:
         return False
     calibration_status = _as_text(row.get("profitability_calibration_status")).upper()
     if calibration_status not in {"", "PASS"}:
-        return False
+        blockers = _blocker_set(row.get("execution_blockers"))
+        hierarchical_yellow = bool(
+            calibration_status == "WARN"
+            and _as_text(row.get("selector_policy_status")).upper() == "PASS"
+            and _as_text(row.get("trade_quality_confidence_rating")).upper() in {"MEDIUM", "HIGH"}
+            and _positive_actual_support_target_allowed(row, blockers)
+        )
+        if not hierarchical_yellow:
+            return False
     readiness = _as_text(row.get("order_readiness"))
     return not readiness or readiness.startswith("target_order")
 

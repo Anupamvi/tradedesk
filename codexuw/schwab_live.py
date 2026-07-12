@@ -403,7 +403,13 @@ def _debit_spread_candidates(
     if chain.empty:
         return pd.DataFrame()
 
-    width = float(preferred_width or price_width_bucket(spot))
+    # Preserve wider intentional structures, but widen undersized seed spreads
+    # to the normal live-chain width for the underlying price bucket.
+    preferred = safe_float(preferred_width)
+    width = max(
+        float(price_width_bucket(spot)),
+        float(preferred) if math.isfinite(preferred) and preferred > 0 else 0.0,
+    )
     rows: list[dict[str, Any]] = []
     strikes = sorted(float(x) for x in chain["strike"].dropna().unique())
     by_strike = {float(r["strike"]): r for _, r in chain.iterrows()}
@@ -608,6 +614,28 @@ def find_debit_spread_alternatives(
             safe_float(row.get("_expected_move_pct")),
         ),
         axis=1,
+    )
+    df["_breakeven_expected_move_ratio"] = df.apply(
+        lambda row: _debit_breakeven_expected_move_ratio(
+            safe_float(row.get("breakeven_distance_pct")),
+            safe_float(row.get("_expected_move_pct")),
+        ),
+        axis=1,
+    )
+
+    actionable = df[
+        (df["reward_risk"] >= 1.50)
+        & (df["long_delta"].abs() >= 0.40)
+        & (df["quote_width_pct"] <= 0.25)
+        & (df["liq_score"] >= 100)
+        & (df["_breakeven_expected_move_ratio"] <= 0.75)
+    ]
+    add(
+        "actionable_quality",
+        "material-width spread with send-now probability, reward/risk, liquidity, and quote quality",
+        actionable,
+        ["_rank", "reward_risk", "liq_score", "quote_width_pct"],
+        [False, False, False, True],
     )
 
     add(
