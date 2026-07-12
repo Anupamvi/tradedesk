@@ -1,0 +1,418 @@
+{
+  "agentic_orchestration": {
+    "dispatch_plan": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agent_dispatch_plan.json",
+    "expected_reviews_json": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agentic_reviews.json",
+    "ingested_review_count": 78,
+    "ingested_reviews_json": "/Users/anuppamvi/uw_root/tradedesk/out/options_agent/2026-06-11/agentic_reviews.json",
+    "runner": "Codex options-agent skill with multi_agent_v1",
+    "status": "reviews_ingested",
+    "subagent_task_count": 5
+  },
+  "agents": [
+    {
+      "inputs": [
+        "dated UW folder",
+        "Schwab positions",
+        "live quotes"
+      ],
+      "name": "data",
+      "outputs": [
+        "source_inventory.json",
+        "raw_universe.csv"
+      ],
+      "role": "Verify dated UW sources and normalize raw market data."
+    },
+    {
+      "inputs": [
+        "raw_universe.csv",
+        "multi-day UW history"
+      ],
+      "name": "flow_oi",
+      "outputs": [
+        "candidate_generation.csv",
+        "agent_reviews/flow_oi.md"
+      ],
+      "role": "Score flow, OI, repeat activity, and directional pressure."
+    },
+    {
+      "inputs": [
+        "index quotes",
+        "volatility proxy",
+        "macro calendar"
+      ],
+      "name": "market_regime",
+      "outputs": [
+        "agent_reviews/market_regime.md"
+      ],
+      "role": "Classify broad market conditions and structure preference."
+    },
+    {
+      "inputs": [
+        "candidate_generation.csv",
+        "news/calendar context"
+      ],
+      "name": "catalyst",
+      "outputs": [
+        "catalyst_evidence.csv",
+        "catalyst_reviews.csv",
+        "agent_reviews/catalyst.md"
+      ],
+      "role": "Check earnings, news, analyst, filing, and macro event risk."
+    },
+    {
+      "inputs": [
+        "candidate_generation.csv",
+        "market_regime.json",
+        "catalyst_evidence.csv",
+        "catalyst_reviews.csv"
+      ],
+      "name": "research_dispatch",
+      "outputs": [
+        "research_tasks.json",
+        "external_agent_reviews.csv"
+      ],
+      "role": "Package top setups for external or subagent review and normalize returned reviews."
+    },
+    {
+      "inputs": [
+        "candidate_generation.csv",
+        "external_agent_reviews.csv",
+        "Schwab option chains"
+      ],
+      "name": "structure",
+      "outputs": [
+        "priced_candidates.csv",
+        "live_spread_quality_audit.csv",
+        "structure_attempts.csv",
+        "agent_reviews/structure.md"
+      ],
+      "role": "Construct executable option tickets and compute payoff math."
+    },
+    {
+      "inputs": [
+        "priced_candidates.csv",
+        "Schwab positions"
+      ],
+      "name": "portfolio_risk",
+      "outputs": [
+        "risk_audit.csv",
+        "agent_reviews/portfolio_risk.md"
+      ],
+      "role": "Annotate exposure, concentration, and buying-power risks."
+    },
+    {
+      "inputs": [
+        "final_recommendations.csv",
+        "options_agent_portfolio_context.json"
+      ],
+      "name": "sizing",
+      "outputs": [
+        "sizing_audit.csv",
+        "agent_reviews/sizing.md"
+      ],
+      "role": "Calculate suggested contract count and account-risk annotations without suppressing trades."
+    },
+    {
+      "inputs": [
+        "final_recommendations.csv",
+        "decision_board.csv",
+        "sizing_audit.csv"
+      ],
+      "name": "management",
+      "outputs": [
+        "management_plan.csv",
+        "agent_reviews/management.md"
+      ],
+      "role": "Write entry, target-exit, invalidation, and review-trigger plans for visible recommendations."
+    },
+    {
+      "inputs": [
+        "priced_candidates.csv",
+        "risk_audit.csv",
+        "sizing_audit.csv",
+        "external_agent_reviews.csv",
+        "agent reviews"
+      ],
+      "name": "skeptic",
+      "outputs": [
+        "no_trade_audit.csv",
+        "agent_reviews/skeptic.md"
+      ],
+      "role": "Try to invalidate each trade and preserve near-miss reasons."
+    },
+    {
+      "inputs": [
+        "all agent outputs",
+        "external_agent_reviews.csv"
+      ],
+      "name": "synthesis",
+      "outputs": [
+        "final_recommendations.csv",
+        "options_agent_report.md"
+      ],
+      "role": "Rank visible recommendations and write the final board."
+    }
+  ],
+  "as_of": "2026-06-11",
+  "execution_model": "two-pass Codex multi-agent dispatch plus deterministic local synthesis",
+  "handoffs": [
+    {
+      "artifact": "raw_universe.csv",
+      "from": "data",
+      "to": "flow_oi"
+    },
+    {
+      "artifact": "raw_universe.csv",
+      "from": "data",
+      "to": "market_regime"
+    },
+    {
+      "artifact": "candidate_generation.csv",
+      "from": "flow_oi",
+      "to": "catalyst"
+    },
+    {
+      "artifact": "catalyst_evidence.csv",
+      "from": "catalyst",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "candidate_generation.csv",
+      "from": "flow_oi",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "market_regime.json",
+      "from": "market_regime",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "catalyst_reviews.csv",
+      "from": "catalyst",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "research_tasks.json",
+      "from": "research_dispatch",
+      "to": "external_subagents"
+    },
+    {
+      "artifact": "agent_dispatch_plan.json",
+      "from": "research_dispatch",
+      "to": "codex_subagents"
+    },
+    {
+      "artifact": "agentic_reviews.json",
+      "from": "codex_subagents",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "external_agent_reviews.csv",
+      "from": "external_subagents",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "agent_review_board.csv",
+      "from": "market_regime",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "agent_review_board.csv",
+      "from": "catalyst",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "candidate_generation.csv",
+      "from": "flow_oi",
+      "to": "structure"
+    },
+    {
+      "artifact": "market_regime.json",
+      "from": "market_regime",
+      "to": "structure"
+    },
+    {
+      "artifact": "catalyst_reviews.csv",
+      "from": "catalyst",
+      "to": "structure"
+    },
+    {
+      "artifact": "agent_review_board.csv",
+      "from": "research_dispatch",
+      "to": "structure"
+    },
+    {
+      "artifact": "strategy_routing_audit.csv",
+      "from": "structure",
+      "to": "synthesis"
+    },
+    {
+      "artifact": "structure_attempts.csv",
+      "from": "structure",
+      "to": "synthesis"
+    },
+    {
+      "artifact": "live_spread_quality_audit.csv",
+      "from": "structure",
+      "to": "synthesis"
+    },
+    {
+      "artifact": "priced_candidates.csv",
+      "from": "structure",
+      "to": "portfolio_risk"
+    },
+    {
+      "artifact": "agent_review_board.csv",
+      "from": "structure",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "agent_review_board.csv",
+      "from": "research_dispatch",
+      "to": "skeptic"
+    },
+    {
+      "artifact": "risk_audit.csv",
+      "from": "portfolio_risk",
+      "to": "skeptic"
+    },
+    {
+      "artifact": "final_recommendations.csv",
+      "from": "portfolio_risk",
+      "to": "sizing"
+    },
+    {
+      "artifact": "sizing_audit.csv",
+      "from": "sizing",
+      "to": "skeptic"
+    },
+    {
+      "artifact": "sizing_audit.csv",
+      "from": "sizing",
+      "to": "management"
+    },
+    {
+      "artifact": "decision_board.csv",
+      "from": "synthesis",
+      "to": "management"
+    },
+    {
+      "artifact": "agent_review_board.csv",
+      "from": "portfolio_risk",
+      "to": "research_dispatch"
+    },
+    {
+      "artifact": "no_trade_audit.csv",
+      "from": "skeptic",
+      "to": "synthesis"
+    },
+    {
+      "artifact": "sizing_audit.csv",
+      "from": "sizing",
+      "to": "synthesis"
+    },
+    {
+      "artifact": "management_plan.csv",
+      "from": "management",
+      "to": "synthesis"
+    },
+    {
+      "artifact": "execution_readiness.csv",
+      "from": "synthesis",
+      "to": "execution_readiness"
+    },
+    {
+      "artifact": "expectancy_evidence.csv",
+      "from": "outcome_evidence",
+      "to": "monthly_feasibility"
+    },
+    {
+      "artifact": "monthly_feasibility.csv",
+      "from": "execution_readiness",
+      "to": "monthly_feasibility"
+    },
+    {
+      "artifact": "agent_review_board.csv",
+      "from": "research_dispatch",
+      "to": "synthesis"
+    },
+    {
+      "artifact": "final_recommendations.csv",
+      "from": "portfolio_risk",
+      "to": "synthesis"
+    },
+    {
+      "artifact": "management_plan.csv",
+      "from": "management",
+      "to": "user"
+    },
+    {
+      "artifact": "decision_board.csv",
+      "from": "synthesis",
+      "to": "user"
+    },
+    {
+      "artifact": "trade_tickets.csv",
+      "from": "synthesis",
+      "to": "manual_entry"
+    },
+    {
+      "artifact": "green_trade_tickets.csv",
+      "from": "synthesis",
+      "to": "manual_entry"
+    },
+    {
+      "artifact": "target_order_candidates.csv",
+      "from": "synthesis",
+      "to": "manual_entry"
+    }
+  ],
+  "pipeline_name": "Options Agent",
+  "pipeline_version": "options-agent-v0",
+  "row_counts": {
+    "agent_dispatch_tasks": 5,
+    "agent_review_board": 8117,
+    "candidate_generation": 3916,
+    "catalyst_evidence": 3918,
+    "catalyst_reviews": 3916,
+    "confidence_audit": 3,
+    "coverage_audit": 3918,
+    "decision_board": 135,
+    "execution_fill_quality": 133,
+    "execution_readiness": 16,
+    "expectancy_evidence": 55,
+    "external_agent_reviews": 78,
+    "final_recommendations": 135,
+    "green_trade_tickets": 49,
+    "lessons_application_audit": 175,
+    "live_chain_validation": 135,
+    "live_spread_quality_audit": 133,
+    "management_plan": 135,
+    "market_open_recheck_queue": 0,
+    "monthly_feasibility": 10,
+    "no_trade_audit": 3828,
+    "priced_candidates": 135,
+    "profitability_calibration": 135,
+    "profitability_gap_plan": 40,
+    "raw_universe": 6239,
+    "ready_to_enter": 57,
+    "research_tasks": 3916,
+    "risk_audit": 31,
+    "route_opportunity_gap": 10,
+    "sizing_audit": 135,
+    "strategy_outcome_atlas": 61,
+    "strategy_routing_audit": 176,
+    "structure_attempts": 270,
+    "target_order_candidates": 91,
+    "target_order_ticket_rows": 34,
+    "trade_tickets": 83
+  },
+  "status_counts": {
+    "AVOID": 35,
+    "ENTER": 65,
+    "ENTER_WITH_PORTFOLIO_RISK": 28,
+    "REVIEW": 3,
+    "WAIT_FOR_PRICE": 4
+  },
+  "visibility_invariant": "portfolio annotations stay in portfolio_risk_note and risk_audit.csv; they must not hide an otherwise qualified trade"
+}
