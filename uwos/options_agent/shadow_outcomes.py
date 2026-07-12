@@ -53,6 +53,8 @@ OUTCOME_COLUMNS = [
     "quote_source",
     "quote_snapshot_json",
     "legs_json",
+    "recommendation_pipeline_version",
+    "selector_policy_id",
     "recommendation_code_git_sha",
 ]
 ATTEMPT_COLUMNS = [
@@ -300,6 +302,8 @@ def _score_row(
         "quote_source": "schwab_exact_option_quotes",
         "quote_snapshot_json": json.dumps(snapshots, sort_keys=True, separators=(",", ":")),
         "legs_json": _text(row.get("legs_json")),
+        "recommendation_pipeline_version": _text(row.get("pipeline_version")),
+        "selector_policy_id": _text(row.get("selector_policy_id")),
         "recommendation_code_git_sha": _text(row.get("code_git_sha")),
     }, ""
 

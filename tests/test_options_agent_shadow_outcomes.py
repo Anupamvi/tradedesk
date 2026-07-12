@@ -31,6 +31,8 @@ def _shadow(*, logical_id="oa-shadow-1", entry_type="DEBIT", entry_limit=2.0, du
                 "economics_bucket": "debit_rr_mid",
                 "liquidity_bucket": "liquidity_deep",
                 "selected_for_expectancy": True,
+                "pipeline_version": core.PIPELINE_VERSION,
+                "selector_policy_id": core.PROMOTED_SELECTOR_POLICY_ID,
                 "entry_limit": entry_limit,
                 "expiry": "2026-07-24",
                 "trade_plan": "BUY SPY call / SELL SPY call",
@@ -89,6 +91,8 @@ def test_debit_shadow_uses_conservative_liquidation_and_appends_once(tmp_path):
     assert outcomes.iloc[0]["realized_pnl"] == -20.0
     assert bool(outcomes.iloc[0]["exact_evaluated"])
     assert bool(outcomes.iloc[0]["contributes_to_expectancy"])
+    assert outcomes.iloc[0]["selector_policy_id"] == core.PROMOTED_SELECTOR_POLICY_ID
+    assert outcomes.iloc[0]["recommendation_pipeline_version"] == core.PIPELINE_VERSION
     assert attempts.iloc[0]["status"] == "SCORED"
     assert repeated_attempts.iloc[0]["status"] == "ALREADY_SCORED"
     assert summary["new_outcome_rows"] == 1
@@ -174,6 +178,19 @@ def test_nonselected_exact_shadow_is_diagnostic_and_not_expectancy(tmp_path):
     assert not bool(outcomes.iloc[0]["contributes_to_expectancy"])
     assert outcomes.iloc[0]["outcome_status"] == "SCORED_EXACT_FIXED_HORIZON_DIAGNOSTIC"
     assert summary["contributing_rows"] == 0
+
+
+def test_actual_evidence_excludes_shadow_outcomes_from_obsolete_selector() -> None:
+    outcomes = pd.DataFrame(
+        [
+            {"selector_policy_id": core.PROMOTED_SELECTOR_POLICY_ID, "realized_pnl": 100.0},
+            {"selector_policy_id": "obsolete_selector", "realized_pnl": 10_000.0},
+        ]
+    )
+
+    active = core._active_selector_shadow_outcomes(outcomes)
+
+    assert active["realized_pnl"].tolist() == [100.0]
 
 
 def test_scored_shadow_enters_actual_calibration_and_expectancy_once(tmp_path):

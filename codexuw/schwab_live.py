@@ -84,6 +84,23 @@ def price_width_bucket(spot: float) -> float:
     return 10.0
 
 
+def _credit_width_candidates(spot: float, preferred_width: float | None) -> tuple[float, ...]:
+    """Return anchor and risk-sized widths for live credit-spread construction."""
+
+    preferred = safe_float(preferred_width)
+    standard = float(price_width_bucket(spot))
+    widths = [preferred, standard, min(standard, 5.0)]
+    if standard >= 5.0:
+        widths.append(2.5)
+    return tuple(
+        dict.fromkeys(
+            round(float(width), 4)
+            for width in widths
+            if math.isfinite(width) and width > 0
+        )
+    )
+
+
 def _same_expiry_contracts(contracts: pd.DataFrame, expiry: dt.date, right: str) -> pd.DataFrame:
     if contracts.empty:
         return contracts
@@ -111,7 +128,7 @@ def _credit_spread_candidates(
     if chain.empty:
         return pd.DataFrame()
 
-    width = float(preferred_width or price_width_bucket(spot))
+    widths = _credit_width_candidates(spot, preferred_width)
     rows: list[dict[str, Any]] = []
     strikes = sorted(float(x) for x in chain["strike"].dropna().unique())
     by_strike = {float(r["strike"]): r for _, r in chain.iterrows()}
@@ -123,54 +140,69 @@ def _credit_spread_candidates(
         if direction == "Bull Put":
             if short_strike >= spot:
                 continue
-            long_candidates = [s for s in strikes if s < short_strike and abs((short_strike - s) - width) <= max(0.51, width * 0.35)]
             distance_pct = (spot - short_strike) / spot
             delta_abs = abs(safe_float(short.get("delta")))
         else:
             if short_strike <= spot:
                 continue
-            long_candidates = [s for s in strikes if s > short_strike and abs((s - short_strike) - width) <= max(0.51, width * 0.35)]
             distance_pct = (short_strike - spot) / spot
             delta_abs = abs(safe_float(short.get("delta")))
-        if not long_candidates:
-            continue
-        long_strike = min(long_candidates, key=lambda s: abs(abs(s - short_strike) - width))
-        long = by_strike[long_strike]
-        actual_width = abs(long_strike - short_strike)
-        short_bid = safe_float(short.get("bid"))
-        short_ask = safe_float(short.get("ask"))
-        long_bid = safe_float(long.get("bid"))
-        long_ask = safe_float(long.get("ask"))
-        short_mid = option_mid(short)
-        long_mid = option_mid(long)
-        natural_credit = short_bid - long_ask
-        mid_credit = short_mid - long_mid
-        realistic_credit = max(natural_credit, mid_credit * 0.90)
-        if not math.isfinite(realistic_credit) or realistic_credit <= 0:
-            continue
-        credit_pct = realistic_credit / actual_width if actual_width > 0 else math.nan
-        pop = 1.0 - delta_abs if math.isfinite(delta_abs) and delta_abs > 0 else math.nan
-        breakeven = (
-            short_strike - realistic_credit
-            if direction == "Bull Put"
-            else short_strike + realistic_credit
-        )
-        breakeven_distance_pct = abs(breakeven - spot) / spot if spot else math.nan
-        short_liq = safe_float(short.get("open_interest"), 0.0) + safe_float(short.get("volume"), 0.0)
-        long_liq = safe_float(long.get("open_interest"), 0.0) + safe_float(long.get("volume"), 0.0)
-        short_qwp = safe_float(short.get("quote_width_pct"))
-        long_qwp = safe_float(long.get("quote_width_pct"))
-        quote_penalty = max(short_qwp if math.isfinite(short_qwp) else 0.0, long_qwp if math.isfinite(long_qwp) else 0.0)
-        short_iv = safe_float(short.get("iv"))
-        long_iv = safe_float(long.get("iv"))
-        finite_ivs = [value for value in (short_iv, long_iv) if math.isfinite(value) and value > 0]
-        spread_iv = sum(finite_ivs) / len(finite_ivs) if finite_ivs else math.nan
         if distance_pct < 0.015:
             continue
         if math.isfinite(delta_abs) and not (0.08 <= delta_abs <= 0.35):
             continue
-        rows.append(
-            {
+        for width in widths:
+            if direction == "Bull Put":
+                long_candidates = [
+                    strike
+                    for strike in strikes
+                    if strike < short_strike
+                    and abs((short_strike - strike) - width) <= max(0.51, width * 0.35)
+                ]
+            else:
+                long_candidates = [
+                    strike
+                    for strike in strikes
+                    if strike > short_strike
+                    and abs((strike - short_strike) - width) <= max(0.51, width * 0.35)
+                ]
+            if not long_candidates:
+                continue
+            long_strike = min(long_candidates, key=lambda strike: abs(abs(strike - short_strike) - width))
+            long = by_strike[long_strike]
+            actual_width = abs(long_strike - short_strike)
+            short_bid = safe_float(short.get("bid"))
+            short_ask = safe_float(short.get("ask"))
+            long_bid = safe_float(long.get("bid"))
+            long_ask = safe_float(long.get("ask"))
+            short_mid = option_mid(short)
+            long_mid = option_mid(long)
+            natural_credit = short_bid - long_ask
+            mid_credit = short_mid - long_mid
+            realistic_credit = max(natural_credit, mid_credit * 0.90)
+            if not math.isfinite(realistic_credit) or realistic_credit <= 0:
+                continue
+            credit_pct = realistic_credit / actual_width if actual_width > 0 else math.nan
+            pop = 1.0 - delta_abs if math.isfinite(delta_abs) and delta_abs > 0 else math.nan
+            breakeven = (
+                short_strike - realistic_credit
+                if direction == "Bull Put"
+                else short_strike + realistic_credit
+            )
+            breakeven_distance_pct = abs(breakeven - spot) / spot if spot else math.nan
+            short_liq = safe_float(short.get("open_interest"), 0.0) + safe_float(short.get("volume"), 0.0)
+            long_liq = safe_float(long.get("open_interest"), 0.0) + safe_float(long.get("volume"), 0.0)
+            short_qwp = safe_float(short.get("quote_width_pct"))
+            long_qwp = safe_float(long.get("quote_width_pct"))
+            quote_penalty = max(
+                short_qwp if math.isfinite(short_qwp) else 0.0,
+                long_qwp if math.isfinite(long_qwp) else 0.0,
+            )
+            short_iv = safe_float(short.get("iv"))
+            long_iv = safe_float(long.get("iv"))
+            finite_ivs = [value for value in (short_iv, long_iv) if math.isfinite(value) and value > 0]
+            spread_iv = sum(finite_ivs) / len(finite_ivs) if finite_ivs else math.nan
+            rows.append({
                 "live_status": "PASS",
                 "short_leg": short.get("symbol", ""),
                 "long_leg": long.get("symbol", ""),
@@ -205,12 +237,12 @@ def _credit_spread_candidates(
                 "long_volume": safe_float(long.get("volume"), 0.0),
                 "quote_width_pct": quote_penalty,
                 "liq_score": min(short_liq, long_liq),
-            }
-        )
+            })
 
     df = pd.DataFrame(rows)
     if df.empty:
         return df
+    df = df.drop_duplicates(["short_strike", "long_strike"], keep="first")
     delta_target_penalty = (df["short_delta"].abs().fillna(0.22) - 0.22).abs().clip(upper=0.20)
     df["_rank"] = (
         df["credit_pct_width"].clip(upper=0.45) * 4.0
@@ -304,6 +336,21 @@ def find_credit_spread_alternatives(
     )
     preferred = safe_float(preferred_width)
     df["_width_pref_distance"] = (df["spread_width"] - preferred).abs() if math.isfinite(preferred) else 0.0
+
+    actionable = df[
+        df["credit_pct_width"].between(0.16, 0.30, inclusive="both")
+        & (df["_expected_move_ratio"] >= 0.75)
+        & (df["quote_width_pct"] <= 0.25)
+        & (df["liq_score"] >= 100)
+        & (((df["spread_width"] - df["credit"]) * 100.0) <= 750.0)
+    ]
+    add(
+        "actionable_quality",
+        "risk-sized spread with expected-move buffer, credit, liquidity, and quote quality",
+        actionable,
+        ["_expected_move_ratio", "credit_pct_width", "liq_score", "quote_width_pct", "_rank"],
+        [False, False, False, True, False],
+    )
 
     add(
         "flow_anchored",

@@ -316,7 +316,7 @@ def test_shadow_expectancy_selection_caps_each_session_at_two_unique_tickers(tmp
         _register(
             registry,
             logical_id=logical_id,
-            status="REVIEW",
+            status="TARGET",
             run_provenance={"ticker": ticker, "strategy_route": "bull_call_debit"},
         )
 
@@ -328,9 +328,32 @@ def test_shadow_expectancy_selection_caps_each_session_at_two_unique_tickers(tmp
     assert selected["ticker"].tolist() == ["SPY", "QQQ"]
     assert selected["evidence_selection_rank"].tolist() == [1, 2]
     assert set(shadow["evidence_selection_policy"]) == {
-        "top_2_unique_tickers_by_frozen_rank_then_sequence_v1"
+        "top_2_actionable_unique_tickers_by_frozen_rank_then_sequence_v2"
     }
     assert not shadow["execution_permission"].map(bool).any()
+
+
+def test_shadow_expectancy_selection_excludes_gray_review_rows(tmp_path):
+    registry = _registry(tmp_path)
+    _register(
+        registry,
+        logical_id="gray-review",
+        status="REVIEW",
+        run_provenance={"ticker": "SPY", "strategy_route": "bull_call_debit"},
+    )
+    _register(
+        registry,
+        logical_id="yellow-target",
+        status="TARGET",
+        run_provenance={"ticker": "QQQ", "strategy_route": "bull_call_debit"},
+    )
+
+    shadow = core.build_prospective_shadow_recommendations(registry.path)
+
+    selected = shadow[shadow["selected_for_expectancy"].map(bool)]
+    assert selected["ticker"].tolist() == ["QQQ"]
+    review = shadow[shadow["ticker"].eq("SPY")].iloc[0]
+    assert review["evidence_selection_status"] == "DIAGNOSTIC_NOT_SELECTED"
 
 
 def test_exact_later_fill_matches_one_active_recommendation_and_normalizes_ratio(tmp_path):

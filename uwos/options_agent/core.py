@@ -47,8 +47,10 @@ from uwos.options_agent.shadow_outcomes import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.13-universe-credit-recovery-20260712-062526"
+PIPELINE_VERSION = "options-agent-v1.15-regime-debit-parity-20260712-130352"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.14-width-and-evidence-integrity-20260712-122120",
+    "options-agent-v1.13-universe-credit-recovery-20260712-062526",
     "options-agent-v1.12-live-route-recovery-20260711-204623",
     "options-agent-v1.11-diversified-selector-20260711-190842",
     "options-agent-v1.10-clean-execution-surface-20260711-175928",
@@ -66,7 +68,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-12T06:25:26-07:00"
+PIPELINE_RELEASED_AT = "2026-07-12T13:03:52-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -80,7 +82,7 @@ MIN_SELECTOR_PROMOTION_SAMPLE_SIZE = 30
 MIN_SELECTOR_PROMOTION_DAY_COUNT = 10
 MIN_SELECTOR_HELDOUT_SAMPLE_SIZE = 10
 MAX_SELECTOR_SECOND_SLOT_STRUCTURAL_SCORE_GAP = 0.35
-PROMOTED_SELECTOR_POLICY_ID = "quality_sleeves_cap2_v2"
+PROMOTED_SELECTOR_POLICY_ID = "quality_sleeves_regime_cap2_v3"
 DEFAULT_DISCOVERY_LIMIT = 120
 DEFAULT_RISK_BUDGET_PCT = 0.005
 MAX_SUGGESTED_CONTRACTS = 5
@@ -124,8 +126,10 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.13-universe-credit-recovery-20260712-062526",
+    "PIPELINE_VERSION": "options-agent-v1.15-regime-debit-parity-20260712-130352",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.14-width-and-evidence-integrity-20260712-122120",
+        "options-agent-v1.13-universe-credit-recovery-20260712-062526",
         "options-agent-v1.12-live-route-recovery-20260711-204623",
         "options-agent-v1.11-diversified-selector-20260711-190842",
         "options-agent-v1.10-clean-execution-surface-20260711-175928",
@@ -143,7 +147,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-12T06:25:26-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-12T13:03:52-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -1723,6 +1727,8 @@ PROSPECTIVE_SHADOW_RECOMMENDATION_COLUMNS = [
     "evidence_selection_policy",
     "execution_permission",
     "contributes_to_expectancy",
+    "pipeline_version",
+    "selector_policy_id",
     "code_git_sha",
     "source_registry",
     "note",
@@ -1809,9 +1815,11 @@ def build_prospective_shadow_recommendations(registry_path: Path) -> pd.DataFram
                 "selected_for_expectancy": False,
                 "evidence_selection_rank": "",
                 "evidence_selection_status": "INVALID" if not regular_market_date else "DIAGNOSTIC_NOT_SELECTED",
-                "evidence_selection_policy": "top_2_unique_tickers_by_frozen_rank_then_sequence_v1",
+                "evidence_selection_policy": "top_2_actionable_unique_tickers_by_frozen_rank_then_sequence_v2",
                 "execution_permission": False,
                 "contributes_to_expectancy": False,
+                "pipeline_version": _as_text(provenance.get("pipeline_version")),
+                "selector_policy_id": _as_text(provenance.get("selector_policy_id")),
                 "code_git_sha": _as_text(event.code_provenance.get("git_sha") or event.code_provenance.get("git_commit")),
                 "source_registry": str(registry_path),
                 "note": (
@@ -1825,9 +1833,12 @@ def build_prospective_shadow_recommendations(registry_path: Path) -> pd.DataFram
         ["recommendation_date", "logical_recommendation_id"],
         kind="mergesort",
     ).reset_index(drop=True)
-    for recommendation_date, group in out[
+    selectable_statuses = {"GREEN", "TARGET", "WAIT_FOR_PRICE"}
+    selectable = out[
         out["registration_status"].astype(str).eq("VALID_PROSPECTIVE")
-    ].groupby("recommendation_date", sort=True):
+        & out["recommendation_status"].astype(str).str.upper().isin(selectable_statuses)
+    ]
+    for recommendation_date, group in selectable.groupby("recommendation_date", sort=True):
         ordered = group.assign(
             __frozen_rank=pd.to_numeric(group["frozen_recommendation_rank"], errors="coerce").fillna(
                 math.inf
@@ -1981,6 +1992,7 @@ def register_prospective_options_agent_recommendations(
                     ),
                     "synthesis_score": _round_or_blank(_as_float(row.get("synthesis_score")), 4),
                     "order_readiness": _as_text(row.get("order_readiness")),
+                    "selector_policy_id": _as_text(row.get("selector_policy_id")),
                 },
                 live_current_date=True,
                 live_market_session_date=recommendation_date,
@@ -8836,10 +8848,12 @@ def annotate_actual_forward_expectancy(
         out.at[idx, "actual_forward_expectancy_profit_factor"] = metrics["profit_factor"]
         out.at[idx, "actual_forward_expectancy_source_tickers"] = metrics["source_tickers"]
         out.at[idx, "actual_forward_expectancy_note"] = metrics["note"]
-        strategy_metrics = metrics_by_ticker_route.get((key, route)) if route else None
+        ticker_route_metrics = metrics_by_ticker_route.get((key, route)) if route else None
+        ticker_family_metrics = metrics_by_strategy.get((key, family)) if family else None
+        strategy_metrics = ticker_route_metrics
         strategy_scope = "ticker_route" if strategy_metrics is not None else ""
-        if strategy_metrics is None and family:
-            strategy_metrics = metrics_by_strategy.get((key, family))
+        if strategy_metrics is None and ticker_family_metrics is not None:
+            strategy_metrics = ticker_family_metrics
             strategy_scope = "ticker_strategy" if strategy_metrics is not None else ""
         if not family and not route:
             out.at[idx, "actual_forward_strategy_expectancy_status"] = "BLOCK"
@@ -8891,6 +8905,24 @@ def annotate_actual_forward_expectancy(
                     strategy_metrics,
                     family_label=_as_text(strategy_metrics.get("strategy_family")) or family,
                     scope=strategy_scope or "ticker_strategy",
+                )
+            elif (
+                ticker_family_metrics is not None
+                and ticker_family_metrics is not strategy_metrics
+                and _metrics_are_negative(
+                    ticker_family_metrics,
+                    min_sample=MIN_TICKER_EXPECTANCY_SAMPLE_SIZE,
+                )
+            ):
+                set_strategy_metrics(
+                    idx,
+                    ticker_family_metrics,
+                    family_label=family,
+                    scope="ticker_strategy",
+                    note_suffix=(
+                        f" Sparse ticker-route evidence for {ticker or 'ticker'} did not override "
+                        "the sufficiently sampled negative ticker strategy-family history."
+                    ),
                 )
             elif strategy_status != "PASS" and _route_level_strategy_fallback_allowed(route, route_metrics, strategy_metrics):
                 set_strategy_metrics(
@@ -8956,14 +8988,9 @@ def build_profitability_calibration(
     replay, replay_path, replay_error = (
         replay_bundle if replay_bundle is not None else _profitability_replay_frame(replay_out_root, as_of=as_of_day)
     )
-    model_replay = replay[
-        replay.get("replay_source", pd.Series("", index=replay.index))
-        .astype(str)
-        .eq("codexuw_spread_replay")
-    ].copy()
-    model_replay_metrics = _calibration_metrics_row(
-        model_replay.get("pnl_1x", pd.Series(dtype=float)),
-        status_func=_expectancy_status,
+    model_replay, _model_replay_error = _active_selector_replay_support_frame(
+        replay_out_root,
+        as_of=as_of_day,
     )
     rows: list[dict[str, Any]] = []
     for _, row in current.iterrows():
@@ -9041,6 +9068,11 @@ def build_profitability_calibration(
         route_replay = _route_replay_calibration_slice(replay, route)
         route_replay_metrics = _calibration_metrics_row(
             route_replay.get("pnl_1x", pd.Series(dtype=float)),
+            status_func=_expectancy_status,
+        )
+        model_route_replay = _route_replay_calibration_slice(model_replay, route)
+        model_replay_metrics = _calibration_metrics_row(
+            model_route_replay.get("pnl_1x", pd.Series(dtype=float)),
             status_func=_expectancy_status,
         )
         diagnostic_replay, diagnostic_relaxed_dimensions = _diagnostic_replay_calibration_slice(replay, key)
@@ -9145,6 +9177,8 @@ def annotate_profitability_calibration(final: pd.DataFrame, calibration: pd.Data
     for column in columns:
         if column not in out.columns:
             out[column] = ""
+        else:
+            out[column] = out[column].astype(object)
     if out.empty:
         return out
     lookup = _profitability_calibration_lookup(calibration)
@@ -9428,7 +9462,7 @@ def summarize_profitability_calibration(calibration: pd.DataFrame) -> dict[str, 
     hierarchical_route_pass = (
         status.eq("PASS")
         & actual_pass
-        & actual_scope.isin({"actual_ticker_route", "actual_route"})
+        & actual_scope.isin({"actual_ticker_route", "actual_route", *_actual_bucket_support_scopes()})
     )
     route_support_pass = route_replay_pass | hierarchical_route_pass
     bucket_scopes = _actual_bucket_support_scopes()
@@ -12059,7 +12093,7 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         "daily_sleeve_cap": 1,
         "second_slot_max_structural_score_gap": MAX_SELECTOR_SECOND_SLOT_STRUCTURAL_SCORE_GAP,
         "rank_mode": "selector_quality_score",
-        "entry_filter_profile": "quality_sleeves_v2",
+        "entry_filter_profile": "quality_sleeves_regime_v3",
         "use_training_gate": False,
     },
     {
@@ -12221,7 +12255,7 @@ def _selector_training_metrics(pnl: pd.Series, day_count: int) -> Optional[dict[
     }
 
 
-def _selector_v2_replay_assessment(row: Mapping[str, Any]) -> tuple[bool, float, list[str], str]:
+def _selector_v3_replay_assessment(row: Mapping[str, Any]) -> tuple[bool, float, list[str], str]:
     """Map point-in-time replay fields into the promoted live selector contract."""
 
     mapped = dict(row)
@@ -12249,6 +12283,7 @@ def _selector_v2_replay_assessment(row: Mapping[str, Any]) -> tuple[bool, float,
             "max_profit": row.get("reward_risk"),
             "max_loss": 1.0,
             "synthesis_score": row.get("decision_score"),
+            "selector_replay_mode": True,
         }
     )
     return _selector_policy_row_assessment(mapped, require_live_probability=False)
@@ -12271,8 +12306,8 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
             current = current[current.get(column, pd.Series(False, index=current.index)).map(_truthy)].copy()
         if current.empty:
             continue
-        if _as_text(policy.get("entry_filter_profile")) == "quality_sleeves_v2":
-            assessments = current.apply(_selector_v2_replay_assessment, axis=1)
+        if _as_text(policy.get("entry_filter_profile")) == "quality_sleeves_regime_v3":
+            assessments = current.apply(_selector_v3_replay_assessment, axis=1)
             current["__selector_eligible"] = assessments.map(lambda value: bool(value[0]))
             current["__selector_score"] = assessments.map(lambda value: float(value[1]))
             current["__selector_structural_score"] = current.apply(
@@ -12606,6 +12641,54 @@ def summarize_selector_challenger_audit(audit: pd.DataFrame) -> dict[str, Any]:
         "required_heldout_sample_size": MIN_SELECTOR_HELDOUT_SAMPLE_SIZE,
         "required_partition_day_count": MIN_SELECTOR_PROMOTION_DAY_COUNT,
     }
+
+
+def _active_selector_replay_support_frame(
+    out_root: Path,
+    *,
+    as_of: Optional[dt.date] = None,
+) -> tuple[pd.DataFrame, str]:
+    """Return selected replay rows only after the active policy passes both frozen partitions."""
+
+    frame, split_day, source_path, error = _selector_challenger_replay_frame(out_root, as_of=as_of)
+    if error or frame.empty or split_day is None:
+        return pd.DataFrame(), error or "active selector replay unavailable"
+    policy = next(
+        (
+            candidate
+            for candidate in SELECTOR_CHALLENGER_POLICIES
+            if _as_text(candidate.get("policy_id")) == PROMOTED_SELECTOR_POLICY_ID
+        ),
+        None,
+    )
+    if policy is None:
+        return pd.DataFrame(), f"active selector policy {PROMOTED_SELECTOR_POLICY_ID} is not configured"
+    selected = _select_challenger_policy_rows(frame, policy)
+    partition_rows = [
+        _selector_partition_metrics(
+            selected[selected["signal_date"].dt.date <= split_day].copy(),
+            policy=policy,
+            partition="pre_split",
+            source_path=source_path,
+        ),
+        _selector_partition_metrics(
+            selected[selected["signal_date"].dt.date > split_day].copy(),
+            policy=policy,
+            partition="heldout_test",
+            source_path=source_path,
+        ),
+    ]
+    failed = [row for row in partition_rows if row["partition_status"] != "PASS"]
+    if failed:
+        detail = "; ".join(
+            f"{row['partition']}:{row['blocking_reasons']}" for row in failed
+        )
+        return pd.DataFrame(), f"active selector is not promoted as of {as_of or 'latest'}: {detail}"
+    out = selected.copy()
+    out["pnl_1x"] = pd.to_numeric(out["realized_pnl"], errors="coerce")
+    out["replay_source"] = "options_agent_active_selector_replay"
+    out["selector_policy_id"] = PROMOTED_SELECTOR_POLICY_ID
+    return out[out["pnl_1x"].notna()].reset_index(drop=True), ""
 
 
 def _wheel_csp_profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.date] = None) -> tuple[pd.DataFrame, str, str]:
@@ -13574,7 +13657,11 @@ def _hierarchical_route_calibration_ready(
 ) -> bool:
     """Allow one-lot green calibration from deep route evidence when exact buckets are sparse."""
 
-    if actual_scope not in {"actual_ticker_route", "actual_route"}:
+    if actual_scope not in {
+        "actual_ticker_route",
+        "actual_route",
+        *_actual_bucket_support_scopes(),
+    }:
         return False
     if _as_text(actual_metrics.get("status")).upper() != "PASS":
         return False
@@ -13603,35 +13690,31 @@ def _hierarchical_route_calibration_ready(
         and route_sample >= MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE
     )
     model_metrics = model_replay_metrics or {}
-    borrowed_model_support = bool(
-        _as_text(model_metrics.get("status")).upper() == "PASS"
-        and int(model_metrics.get("sample_size") or 0) >= MIN_EXPECTANCY_SAMPLE_SIZE
-        and _positive_expectancy_shape(
-            route_sample,
-            _as_float(route_replay_metrics.get("win_rate")) or 0.0,
-            _as_float(route_replay_metrics.get("avg_pnl")) or 0.0,
-            _as_float(route_replay_metrics.get("profit_factor")) or 0.0,
-            min_sample=MIN_HIERARCHICAL_ROUTE_REPLAY_SAMPLE_SIZE,
-            min_win_rate=MIN_EXPECTANCY_WIN_RATE,
-            min_skew_win_rate=MIN_EXPECTANCY_SKEW_WIN_RATE,
-            min_profit_factor=MIN_EXPECTANCY_PROFIT_FACTOR,
-        )
+    model_sample = int(model_metrics.get("sample_size") or 0)
+    promoted_selector_route_support = _positive_expectancy_shape(
+        model_sample,
+        _as_float(model_metrics.get("win_rate")) or 0.0,
+        _as_float(model_metrics.get("avg_pnl")) or 0.0,
+        _as_float(model_metrics.get("profit_factor")) or 0.0,
+        min_sample=MIN_HIERARCHICAL_ROUTE_REPLAY_SAMPLE_SIZE,
+        min_win_rate=MIN_EXPECTANCY_WIN_RATE,
+        min_skew_win_rate=MIN_EXPECTANCY_SKEW_WIN_RATE,
+        min_profit_factor=MIN_EXPECTANCY_PROFIT_FACTOR,
     )
-    if not (deep_route_replay or borrowed_model_support):
+    if not (deep_route_replay or promoted_selector_route_support):
         return False
-    for metrics in (route_replay_metrics,):
-        avg_pnl = _as_float(metrics.get("avg_pnl"))
-        profit_factor = _as_float(metrics.get("profit_factor"))
-        win_rate = _as_float(metrics.get("win_rate"))
-        if avg_pnl is None or avg_pnl <= 0:
-            return False
-        if profit_factor is None or (
-            math.isfinite(profit_factor) and profit_factor < MIN_EXPECTANCY_PROFIT_FACTOR
-        ):
-            return False
-        if win_rate is None or win_rate < MIN_EXPECTANCY_SKEW_WIN_RATE:
-            return False
-    return True
+    supporting_metrics = route_replay_metrics if deep_route_replay else model_metrics
+    avg_pnl = _as_float(supporting_metrics.get("avg_pnl"))
+    profit_factor = _as_float(supporting_metrics.get("profit_factor"))
+    win_rate = _as_float(supporting_metrics.get("win_rate"))
+    return bool(
+        avg_pnl is not None
+        and avg_pnl > 0
+        and profit_factor is not None
+        and (math.isinf(profit_factor) or profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR)
+        and win_rate is not None
+        and win_rate >= MIN_EXPECTANCY_SKEW_WIN_RATE
+    )
 
 
 def _current_calibration_verdict(
@@ -13672,9 +13755,9 @@ def _current_calibration_verdict(
             "eligible_for_one_lot_green_with_hierarchical_route_support",
             (
                 f"{ticker} {key_text} has PASS route-level actual support via {actual_scope} "
-                f"(sample={actual_sample}, profit_factor={actual_metrics.get('profit_factor', '')}) and positive "
-                f"leakage-safe route replay (sample={route_replay_sample}, "
-                f"profit_factor={route_replay_metrics.get('profit_factor', '')}) and held-out model support "
+                f"(sample={actual_sample}, profit_factor={actual_metrics.get('profit_factor', '')}); "
+                f"diagnostic route replay sample={route_replay_sample}, "
+                f"profit_factor={route_replay_metrics.get('profit_factor', '')}; promoted selector route support "
                 f"(sample={int((model_replay_metrics or {}).get('sample_size') or 0)}, "
                 f"profit_factor={(model_replay_metrics or {}).get('profit_factor', '')}). Exact buckets remain sparse, "
                 "so green eligibility is capped at one contract until bucket-precise evidence matures."
@@ -13801,12 +13884,26 @@ def _selector_policy_row_assessment(
         reasons.append("underlying_not_core")
     if _as_text(row.get("hard_rejects")):
         reasons.append("objective_quality_reject")
+    if _as_text(row.get("actual_forward_strategy_expectancy_status")).upper() == "BLOCK":
+        reasons.append("actual_strategy_expectancy_negative")
     if _truthy(row.get("earnings_before_expiry")):
         reasons.append("earnings_before_expiry")
     dte = int(_as_float(row.get("dte")) or 0)
     quote_width = _as_float(row.get("live_quote_width_pct"))
     flow_alignment = _selector_policy_flow_alignment(row, route)
     expected_move_ratio = _selector_policy_expected_move_ratio(row, entry_type)
+    regime = _regime_bucket(row.get("regime") or row.get("market_regime"))
+    macro_event_count = int(_as_float(row.get("macro_event_count_before_expiry")) or 0)
+    macro_calendar_status = _as_text(row.get("macro_calendar_status")).lower()
+    replay_mode = _truthy(row.get("selector_replay_mode"))
+    if dte <= SHORT_DTE_CONTRACT_RISK_DAYS and macro_event_count > 0:
+        reasons.append("short_dte_macro_event_before_expiry")
+    if (
+        dte <= SHORT_DTE_CONTRACT_RISK_DAYS
+        and not replay_mode
+        and macro_calendar_status != "verified"
+    ):
+        reasons.append("short_dte_macro_calendar_unverified")
     score = 0.0
     if entry_type == "CREDIT":
         credit_width = _as_float(row.get("credit_width_ratio"))
@@ -13835,7 +13932,14 @@ def _selector_policy_row_assessment(
         max_loss = _as_float(row.get("max_loss"))
         if max_profit is not None and max_loss is not None and max_loss > 0:
             reward_risk = max_profit / max_loss
-        valid_dte = 14 <= dte <= 45
+        if route == "bull_call_debit":
+            valid_dte = 7 <= dte <= 10 or 22 <= dte <= 45
+            if regime != "risk_on":
+                reasons.append(f"debit_regime_not_aligned:{regime}")
+        else:
+            valid_dte = 14 <= dte <= 45
+            if regime not in {"risk_off", "mixed"}:
+                reasons.append(f"debit_regime_not_aligned:{regime}")
         minimum_expected_move_ratio = 1.00 if route == "bull_call_debit" else 1.25
         maximum_iv_rank = 55.0 if route == "bull_call_debit" else 45.0
         iv_rank = _as_float(row.get("iv_rank"))
@@ -13847,8 +13951,8 @@ def _selector_policy_row_assessment(
             reasons.append(f"debit_width_above_{max_debit_width:.2f}")
         if reward_risk is None or reward_risk < 1.25:
             reasons.append("debit_reward_risk_below_1.25")
-        if flow_alignment is None or flow_alignment < 0.15:
-            reasons.append("debit_flow_alignment_below_0.15")
+        if flow_alignment is None or flow_alignment < 0.20:
+            reasons.append("debit_flow_alignment_below_0.20")
         if expected_move_ratio is None or expected_move_ratio < minimum_expected_move_ratio:
             reasons.append(f"debit_expected_move_ratio_below_{minimum_expected_move_ratio:.2f}")
         if quote_width is None or quote_width > 0.25:
@@ -14644,7 +14748,7 @@ def apply_goal_confidence_gate_to_decision_board(
     decision_board: pd.DataFrame,
     confidence_audit: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Demote executable-looking rows when the overall confidence goal is blocked."""
+    """Remove send-now permission when the overall confidence goal is blocked."""
 
     if decision_board is None or decision_board.empty:
         return decision_board.copy() if decision_board is not None else pd.DataFrame()
@@ -14655,13 +14759,19 @@ def apply_goal_confidence_gate_to_decision_board(
     if "ready_to_enter" not in out.columns:
         return out
     ready_mask = out["ready_to_enter"].map(_truthy)
+    existing_blockers = out.get(
+        "execution_blockers",
+        pd.Series("", index=out.index),
+    ).map(_blocker_set)
+    previously_demoted_mask = existing_blockers.map(
+        lambda blockers: GOAL_CONFIDENCE_GATE_BLOCKER in blockers
+    )
     target_status = (
         out.get("target_order_status", pd.Series("", index=out.index))
         .astype(str)
         .str.lower()
     )
-    target_mask = target_status.isin({"target_order_candidate", "target_order_wait_for_price", "ready_to_enter"})
-    demote_mask = ready_mask | target_mask
+    demote_mask = ready_mask | previously_demoted_mask
     if not bool(demote_mask.any()):
         return out
     for column in ["execution_blockers", "status_reason", "synthesis_reason"]:
@@ -14714,7 +14824,7 @@ def apply_goal_confidence_gate_to_decision_board(
         lambda value: _replace_reason_with_prefix(value, "Overall confidence gate is blocked:", reason)
     )
     out.loc[demote_mask, "synthesis_reason"] = out.loc[demote_mask, "synthesis_reason"].map(
-        lambda value: _append_reason(value, "Demoted from the action surface because goal confidence gate is blocked.")
+        lambda value: _append_reason(value, "Send-now permission removed because goal confidence gate is blocked.")
     )
     out.loc[demote_mask, "status_icon"] = out.loc[demote_mask].apply(_decision_icon, axis=1)
     out.loc[demote_mask, "status_label"] = out.loc[demote_mask].apply(_decision_status_label, axis=1)
@@ -16219,13 +16329,30 @@ def _execution_confidence(
     expectancy_sample = int(_as_float(row.get("actual_forward_expectancy_sample_size")) or 0)
     strategy_expectancy_status = _as_text(row.get("actual_forward_strategy_expectancy_status")).upper()
     strategy_expectancy_sample = int(_as_float(row.get("actual_forward_strategy_expectancy_sample_size")) or 0)
+    strategy_expectancy_avg = _as_float(row.get("actual_forward_strategy_expectancy_avg_pnl"))
+    strategy_expectancy_profit_factor = _as_float(
+        row.get("actual_forward_strategy_expectancy_profit_factor")
+    )
     ticker_expectancy_negative = _expectancy_values_are_negative(row, "actual_forward_expectancy")
     strategy_expectancy_negative = _expectancy_values_are_negative(row, "actual_forward_strategy_expectancy")
     calibration_status = _as_text(row.get("profitability_calibration_status")).upper()
+    calibration_actual_status = _as_text(row.get("profitability_calibration_actual_status")).upper()
+    selector_policy_pass = _as_text(row.get("selector_policy_status")).upper() == "PASS"
     deep_hierarchical_route_support = bool(
         strategy_expectancy_status == "PASS"
         and strategy_expectancy_sample >= MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE
-        and calibration_status == "PASS"
+        and strategy_expectancy_avg is not None
+        and strategy_expectancy_avg > 0
+        and strategy_expectancy_profit_factor is not None
+        and strategy_expectancy_profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR
+        and (
+            calibration_status == "PASS"
+            or (
+                selector_policy_pass
+                and calibration_status == "WARN"
+                and calibration_actual_status == "PASS"
+            )
+        )
     )
     if expectancy_status == "PASS":
         score += 10 if expectancy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE else 5
@@ -16317,6 +16444,8 @@ def _execution_confidence(
         quality_score -= 30
     if execution_blockers:
         score -= min(len(execution_blockers) * 8.0, 32.0)
+    if expectancy_status == "BLOCK" and expectancy_sample <= 0 and deep_hierarchical_route_support:
+        quality_score = min(quality_score, 79.0)
     score = round(max(0.0, min(100.0, score)), 2)
     quality_score = round(max(0.0, min(100.0, quality_score)), 2)
     if execution_blockers:
@@ -18039,6 +18168,15 @@ def _closed_trades_outcome_evidence_audit_row(path: Path, *, current_tickers: se
     )
 
 
+def _active_selector_shadow_outcomes(frame: pd.DataFrame) -> pd.DataFrame:
+    """Keep prospective outcomes attributable to the selector used by this release."""
+
+    if frame is None or frame.empty or "selector_policy_id" not in frame.columns:
+        return pd.DataFrame(columns=frame.columns if frame is not None else None)
+    selector = frame["selector_policy_id"].fillna("").astype(str)
+    return frame[selector.eq(PROMOTED_SELECTOR_POLICY_ID)].copy()
+
+
 def _shadow_outcome_evidence_audit_row(
     root: Path,
     out_root: Path,
@@ -18068,6 +18206,7 @@ def _shadow_outcome_evidence_audit_row(
         frame = read_shadow_outcomes(path)
     except Exception as exc:
         return _outcome_evidence_missing_row(path, source, evidence_type, f"source_unreadable:{exc}")
+    frame = _active_selector_shadow_outcomes(frame)
     exact = frame.get("exact_evaluated", pd.Series(False, index=frame.index)).map(_truthy)
     contributing = frame.get(
         "contributes_to_expectancy", pd.Series(False, index=frame.index)
@@ -19132,6 +19271,7 @@ def _actual_forward_outcome_frame(
     if _safe_non_v4_path(shadow_path) and shadow_path.exists():
         try:
             shadow = read_shadow_outcomes(shadow_path)
+            shadow = _active_selector_shadow_outcomes(shadow)
             exact = shadow.get("exact_evaluated", pd.Series(False, index=shadow.index)).map(_truthy)
             contributing = shadow.get(
                 "contributes_to_expectancy", pd.Series(False, index=shadow.index)
@@ -19943,7 +20083,15 @@ def _expectancy_from_selector_challenger_audit(
             "options_agent_selector_challenger_model",
             "No frozen selector challenger partition evidence is available.",
         )
-    heldout = frame[frame["partition"].astype(str).eq("heldout_test")].copy()
+    policy_frame = frame[frame["policy_id"].astype(str).eq(PROMOTED_SELECTOR_POLICY_ID)].copy()
+    if policy_frame.empty:
+        return _expectancy_missing_row(
+            "options_agent_selector_challenger_model",
+            source_path,
+            "options_agent_selector_challenger_model",
+            f"Selector challenger audit has no rows for active policy {PROMOTED_SELECTOR_POLICY_ID}.",
+        )
+    heldout = policy_frame[policy_frame["partition"].astype(str).eq("heldout_test")].copy()
     if heldout.empty:
         return _expectancy_missing_row(
             "options_agent_selector_challenger_model",
@@ -19956,11 +20104,9 @@ def _expectancy_from_selector_challenger_audit(
         & heldout["partition_status"].astype(str).str.upper().eq("PASS")
     ].copy()
     if not promoted.empty:
-        promoted_ids = set(promoted["policy_id"].astype(str))
-        candidates = frame[
-            frame["partition"].astype(str).eq("overall")
-            & frame["policy_id"].astype(str).isin(promoted_ids)
-            & frame["promotion_status"].astype(str).str.upper().eq("PROMOTED")
+        candidates = policy_frame[
+            policy_frame["partition"].astype(str).eq("overall")
+            & policy_frame["promotion_status"].astype(str).str.upper().eq("PROMOTED")
         ].copy()
     else:
         candidates = heldout
@@ -20043,6 +20189,7 @@ def _expectancy_from_shadow_outcomes(
         frame = read_shadow_outcomes(path)
     except Exception as exc:
         return _expectancy_missing_row(source, path, evidence_type, f"source unreadable: {exc}")
+    frame = _active_selector_shadow_outcomes(frame)
     exact = frame.get("exact_evaluated", pd.Series(False, index=frame.index)).map(_truthy)
     contributing = frame.get(
         "contributes_to_expectancy", pd.Series(False, index=frame.index)
@@ -22307,6 +22454,9 @@ def _profitability_confidence_rating(
             else 6.0
         )
         rating = min(rating, broker_cap)
+    if not actual_positive and not broker_matched_positive:
+        blockers.append("no_positive_pipeline_attributed_outcomes")
+        rating = min(rating, 6.0)
     rating = round(max(0.0, min(10.0, rating)), 1)
     if rating >= MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING:
         next_action = "Profitability evidence clears the goal threshold; keep green gates strict and monitor realized outcomes."
@@ -23372,6 +23522,21 @@ def render_report(
     ]
     decision_board_path = _as_text(artifacts.get("decision_board"))
     manifest_path = _as_text(artifacts.get("manifest"))
+    selector_summary = manifest.get("selector_challenger_audit_summary", {}) or {}
+    selector_profit_factor = _as_float(selector_summary.get("promoted_profit_factor"))
+    selector_sample_size = int(_as_float(selector_summary.get("promoted_sample_size")) or 0)
+    heldout_profit_factor = _as_float(selector_summary.get("best_heldout_profit_factor"))
+    heldout_sample_size = int(_as_float(selector_summary.get("best_heldout_sample_size")) or 0)
+    selector_replay_line = ""
+    if selector_profit_factor is not None and selector_sample_size > 0:
+        selector_replay_line = (
+            f"- Active selector replay: PF {selector_profit_factor:.3f} on {selector_sample_size} trades"
+            + (
+                f"; held-out PF {heldout_profit_factor:.3f} on {heldout_sample_size} trades"
+                if heldout_profit_factor is not None and heldout_sample_size > 0
+                else ""
+            )
+        )
     output_file_lines = [
         "## Files",
         "",
@@ -23393,6 +23558,7 @@ def render_report(
         f"- Order-entry confidence: {order_entry_rating}/10",
         f"- Order mechanics confidence: {order_mechanics_rating}/10",
         f"- Current-day profitability confidence: {profitability_rating}/10",
+        *([selector_replay_line] if selector_replay_line else []),
         f"- Why no green order: {no_green_reason}" if green_count == 0 else "- Green order note: verify the final Schwab quote manually before sending.",
         f"- Next action: {next_action}",
         "",
