@@ -56,8 +56,10 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.11-diversified-selector-20260711-190842"
+    assert core.PIPELINE_VERSION == "options-agent-v1.13-universe-credit-recovery-20260712-062526"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.12-live-route-recovery-20260711-204623",
+        "options-agent-v1.11-diversified-selector-20260711-190842",
         "options-agent-v1.10-clean-execution-surface-20260711-175928",
         "options-agent-v1.9-quality-sleeves-20260711-170521",
         "options-agent-v1.8-promoted-decision-pass-20260711-093930",
@@ -73,7 +75,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-11T19:08:42-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-12T06:25:26-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -4626,13 +4628,13 @@ def test_expanded_audit_writes_repeatable_goal_and_live_recheck_artifacts(tmp_pa
     live_spread_quality_md = artifacts.paths["live_spread_quality_proof_packet_md"].read_text(encoding="utf-8")
     assert "Live Spread Quality Proof Packet" in live_spread_quality_md
     assert "Bad live/snapshot spread markets were blocked" in live_spread_quality_md
-    assert quality_packet["status"].tolist() == ["PASS_CORE_ONLY_TICKETS"]
+    assert quality_packet["status"].tolist() == ["PASS_CORE_OR_LIQUID_TICKETS"]
     assert quality_packet["not_core_or_liquid_ticket_rows"].tolist() == [0]
     assert quality_packet["liquid_non_core_ticket_rows"].tolist() == [0]
     assert "OKLO" in quality_packet["focus_speculative_examples"].iloc[0]
     assert "URA" in quality_packet["focus_excluded_examples"].iloc[0]
     quality_md = artifacts.paths["underlying_quality_proof_packet_md"].read_text(encoding="utf-8")
-    assert "Only core large-cap/index/ETF underlyings" in quality_md
+    assert "Only core or liquid underlyings" in quality_md
     assert "DVN" in quality_md
     assert action_surface_quality_packet["status"].tolist() == ["PASS_ACTION_SURFACES_EXCLUDE_LOW_QUALITY_UNDERLYINGS"]
     assert action_surface_quality_packet["ticket_bad_underlying_rows"].tolist() == [0]
@@ -6764,13 +6766,13 @@ def test_target_order_candidates_exclude_unvalidated_and_low_quality_underlyings
         pd.DataFrame(),
     )
 
-    assert tickets["ticker"].tolist() == ["NFLX"]
+    assert tickets["ticker"].tolist() == ["NFLX", "GM"]
     green, yellow = core.split_trade_ticket_surfaces(tickets)
     assert green.empty
-    assert yellow["ticker"].tolist() == ["NFLX"]
+    assert yellow["ticker"].tolist() == ["NFLX", "GM"]
     assert monthly.loc[monthly["metric"].eq("ready_ticket_count"), "value"].tolist() == [0]
     assert monthly.loc[monthly["metric"].eq("ready_ticket_count"), "status"].tolist() == ["BLOCK"]
-    assert monthly.loc[monthly["metric"].eq("target_order_candidate_count"), "value"].tolist() == [1]
+    assert monthly.loc[monthly["metric"].eq("target_order_candidate_count"), "value"].tolist() == [2]
     assert decision.loc[decision["ticker"].eq("OKLO"), "target_order_status"].tolist() == [
         "not_actionable_underlying_quality"
     ]
@@ -6784,7 +6786,7 @@ def test_target_order_candidates_exclude_unvalidated_and_low_quality_underlyings
         "review_only_live_validation"
     ]
     assert decision.loc[decision["ticker"].eq("GM"), "target_order_status"].tolist() == [
-        "not_actionable_underlying_quality"
+        "target_order_candidate"
     ]
 
 
@@ -7259,7 +7261,7 @@ def test_selector_challenger_summary_rejects_policy_with_failed_heldout_partitio
     assert summary["best_heldout_profit_factor"] == 0.60
 
 
-def test_selector_promotion_blocks_single_ticker_concentration() -> None:
+def test_selector_promotion_reports_ticker_concentration_without_suppressing_trades() -> None:
     selected = pd.DataFrame(
         {
             "signal_date": pd.bdate_range("2026-01-02", periods=20),
@@ -7278,8 +7280,8 @@ def test_selector_promotion_blocks_single_ticker_concentration() -> None:
 
     assert row["top_ticker"] == "WMT"
     assert row["top_ticker_share"] == 1.0
-    assert row["partition_status"] == "BLOCK"
-    assert "ticker_concentration_above_maximum" in row["blocking_reasons"]
+    assert row["partition_status"] == "PASS"
+    assert "ticker_concentration_above_maximum" not in row["blocking_reasons"]
 
 
 def test_promoted_selector_policy_keeps_one_credit_and_one_debit_sleeve() -> None:
@@ -7411,71 +7413,84 @@ def test_promoted_selector_policy_keeps_one_credit_and_one_debit_sleeve() -> Non
     ]
 
 
-def test_live_selector_blocks_negative_strategy_and_exact_bucket_evidence() -> None:
-    base = {
-        "strategy_route": "bull_call_debit",
-        "entry_type": "DEBIT",
-        "underlying_quality_tier": "core",
-        "iv_rank": 40.0,
-        "dte": 30,
-        "debit_width_ratio": 0.30,
-        "combined_flow_bias": 0.30,
-        "live_breakeven_expected_move_ratio": 0.50,
-        "live_quote_width_pct": 0.10,
-        "live_probability_proxy": 0.55,
-        "max_profit": 700.0,
-        "max_loss": 300.0,
-        "synthesis_score": 200.0,
-    }
+def test_promoted_selector_fills_second_slot_with_distinct_same_sleeve_ticker() -> None:
     rows = pd.DataFrame(
         [
             {
-                **base,
-                "ticker": "NEGTICKER",
-                "actual_forward_expectancy_status": "BLOCK",
-                "actual_forward_expectancy_sample_size": core.MIN_TICKER_EXPECTANCY_SAMPLE_SIZE,
-                "actual_forward_strategy_expectancy_status": "PASS",
-                "actual_forward_strategy_expectancy_sample_size": 40,
-                "actual_forward_strategy_expectancy_avg_pnl": 20.0,
-                "actual_forward_strategy_expectancy_profit_factor": 1.30,
-            },
-            {
-                **base,
-                "ticker": "NEGSTRAT",
-                "actual_forward_strategy_expectancy_status": "BLOCK",
-                "actual_forward_strategy_expectancy_sample_size": 20,
-                "actual_forward_strategy_expectancy_avg_pnl": -10.0,
-                "actual_forward_strategy_expectancy_profit_factor": 0.80,
-            },
-            {
-                **base,
-                "ticker": "NEGBUCKET",
-                "actual_forward_strategy_expectancy_status": "PASS",
-                "actual_forward_strategy_expectancy_sample_size": 40,
-                "actual_forward_strategy_expectancy_avg_pnl": 20.0,
-                "actual_forward_strategy_expectancy_profit_factor": 1.30,
-                "profitability_calibration_actual_sample_size": 4,
-                "profitability_calibration_actual_avg_pnl": -25.0,
-                "profitability_calibration_actual_profit_factor": 0.50,
-            },
+                "ticker": ticker,
+                "strategy_route": "bull_call_debit",
+                "entry_type": "DEBIT",
+                "underlying_quality_tier": "core",
+                "iv_rank": 40.0,
+                "dte": 30,
+                "debit_width_ratio": 0.30,
+                "combined_flow_bias": flow,
+                "live_breakeven_expected_move_ratio": 0.50,
+                "live_quote_width_pct": 0.10,
+                "live_probability_proxy": 0.55,
+                "max_profit": 700.0,
+                "max_loss": 300.0,
+                "synthesis_score": 150.0,
+            }
+            for ticker, flow in (("TOP", 0.30), ("SECOND", 0.25), ("TOO_FAR", 0.15))
         ]
     )
 
     annotated = core.annotate_selector_policy(rows).set_index("ticker")
 
-    assert annotated.at["NEGTICKER", "selector_policy_status"] == "BLOCK"
-    assert "ticker_expectancy_negative" in annotated.at["NEGTICKER", "selector_policy_reason"]
-    assert annotated.at["NEGSTRAT", "selector_policy_status"] == "BLOCK"
-    assert "strategy_expectancy_negative" in annotated.at["NEGSTRAT", "selector_policy_reason"]
-    assert annotated.at["NEGBUCKET", "selector_policy_status"] == "BLOCK"
-    assert "exact_bucket_expectancy_negative" in annotated.at["NEGBUCKET", "selector_policy_reason"]
+    assert annotated.at["TOP", "selector_policy_status"] == "PASS"
+    assert annotated.at["SECOND", "selector_policy_status"] == "PASS"
+    assert "second distinct ticker" in annotated.at["SECOND", "selector_policy_reason"]
+    assert annotated.at["TOO_FAR", "selector_policy_status"] == "NOT_SELECTED_DAILY_CAP"
 
 
-def test_live_selector_skips_recent_ticker_and_selects_next_candidate() -> None:
-    base = {
+def test_live_selector_does_not_duplicate_downstream_expectancy_gates() -> None:
+    rows = pd.DataFrame(
+        [
+            {
+                "ticker": "WMT",
+                "strategy_route": "bull_call_debit",
+                "entry_type": "DEBIT",
+                "underlying_quality_tier": "core",
+                "iv_rank": 40.0,
+                "dte": 30,
+                "debit_width_ratio": 0.30,
+                "combined_flow_bias": 0.30,
+                "live_breakeven_expected_move_ratio": 0.50,
+                "live_quote_width_pct": 0.10,
+                "live_probability_proxy": 0.55,
+                "max_profit": 700.0,
+                "max_loss": 300.0,
+                "synthesis_score": 200.0,
+                "actual_forward_expectancy_status": "BLOCK",
+                "actual_forward_expectancy_sample_size": core.MIN_TICKER_EXPECTANCY_SAMPLE_SIZE,
+                "actual_forward_strategy_expectancy_status": "BLOCK",
+                "actual_forward_strategy_expectancy_sample_size": 20,
+                "actual_forward_strategy_expectancy_avg_pnl": -10.0,
+                "actual_forward_strategy_expectancy_profit_factor": 0.80,
+                "profitability_calibration_actual_sample_size": 4,
+                "profitability_calibration_actual_avg_pnl": -25.0,
+                "profitability_calibration_actual_profit_factor": 0.50,
+            }
+        ]
+    )
+
+    annotated = core.annotate_selector_policy(rows).iloc[0]
+
+    assert annotated["selector_policy_status"] == "PASS"
+    assert "ticker_expectancy_negative" not in annotated["selector_policy_reason"]
+    assert "strategy_expectancy_negative" not in annotated["selector_policy_reason"]
+    assert "exact_bucket_expectancy_negative" not in annotated["selector_policy_reason"]
+
+
+def test_liquid_underlying_is_actionable_for_candidate_and_selector_paths() -> None:
+    row = {
+        "ticker": "NKE",
+        "bias": "bullish",
+        "score": 70.0,
+        "underlying_quality_tier": "liquid",
         "strategy_route": "bull_call_debit",
         "entry_type": "DEBIT",
-        "underlying_quality_tier": "core",
         "iv_rank": 40.0,
         "dte": 30,
         "debit_width_ratio": 0.30,
@@ -7486,35 +7501,80 @@ def test_live_selector_skips_recent_ticker_and_selects_next_candidate() -> None:
         "max_profit": 700.0,
         "max_loss": 300.0,
     }
-    rows = pd.DataFrame(
+
+    eligible, _, reasons, _ = core._selector_policy_row_assessment(row)
+
+    assert core._quality_status(row) == "qualified"
+    assert eligible is True
+    assert "underlying_not_core" not in reasons
+
+
+def test_selector_allows_same_best_ticker_on_consecutive_sessions() -> None:
+    frame = pd.DataFrame(
         [
-            {**base, "ticker": "WMT", "synthesis_score": 200.0},
-            {**base, "ticker": "AAPL", "synthesis_score": 150.0},
+            {
+                "signal_date": day,
+                "outcome_available_date": day,
+                "realized_pnl": 100.0,
+                "ticker": "WMT",
+                "strategy_route": "bull_call_debit",
+                "entry_type": "DEBIT",
+                "regime": "risk_on",
+                "dte": 30,
+                "iv_rank": 40.0,
+                "entry_debit_pct_width": 0.30,
+                "reward_risk": 2.0,
+                "expected_move_ratio": 2.0,
+                "combined_flow_bias": 0.30,
+                "entry_quote_width_pct": 0.10,
+                "decision_score": 100.0,
+                "flow_total_premium": 1_000_000.0,
+                "source_contract_oi": 2_000.0,
+            }
+            for day in pd.to_datetime(["2026-07-08", "2026-07-09"])
         ]
     )
 
-    annotated = core.annotate_selector_policy(rows, excluded_tickers={"WMT"}).set_index("ticker")
+    selected = core._select_challenger_policy_rows(frame, core.SELECTOR_CHALLENGER_POLICIES[0])
 
-    assert annotated.at["WMT", "selector_policy_status"] == "BLOCK"
-    assert "recent_selector_ticker_cooldown" in annotated.at["WMT", "selector_policy_reason"]
-    assert annotated.at["AAPL", "selector_policy_status"] == "PASS"
+    assert selected["ticker"].tolist() == ["WMT", "WMT"]
+    assert selected["signal_date"].dt.date.tolist() == [dt.date(2026, 7, 8), dt.date(2026, 7, 9)]
 
 
-def test_recent_selector_tickers_uses_latest_prior_run(tmp_path: Path) -> None:
-    history_root = tmp_path / core.DEFAULT_OUTPUT_NAMESPACE
-    for day, rows in {
-        "2026-07-08": [("AAPL", "PASS")],
-        "2026-07-09": [("WMT", "PASS"), ("QCOM", "BLOCK")],
-        "2026-07-10": [("MSFT", "PASS")],
-    }.items():
-        run_dir = history_root / day
-        run_dir.mkdir(parents=True)
-        pd.DataFrame(rows, columns=["ticker", "selector_policy_status"]).to_csv(
-            run_dir / "decision_board.csv",
-            index=False,
-        )
+def test_selected_setup_results_show_all_distinct_selector_passes() -> None:
+    final = pd.DataFrame(
+        [
+            {
+                "ticker": "CRWD",
+                "strategy_route": "bull_call_debit",
+                "structure": "bull call debit spread",
+                "trade_plan": "BUY 1 CRWD 2026-08-21 195 Call / SELL 1 CRWD 2026-08-21 200 Call @ 1.68 DEBIT",
+                "selector_policy_status": "PASS",
+                "selector_policy_score": 5.84,
+                "ready_to_enter": False,
+                "target_order_status": "not_actionable_profitability_calibration",
+                "execution_blockers": core.PROFITABILITY_CALIBRATION_BLOCKER,
+            },
+            {
+                "ticker": "WMT",
+                "strategy_route": "bear_put_debit",
+                "structure": "bear put debit spread",
+                "trade_plan": "BUY 1 WMT 2026-07-24 114 Put / SELL 1 WMT 2026-07-24 109 Put @ 1.66 DEBIT",
+                "selector_policy_status": "PASS",
+                "selector_policy_score": 5.27,
+                "ready_to_enter": False,
+                "target_order_status": "not_actionable_negative_strategy_expectancy",
+                "execution_blockers": core.NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER,
+            },
+        ]
+    )
 
-    assert core._recent_selector_tickers(tmp_path, as_of=dt.date(2026, 7, 10)) == {"WMT"}
+    rendered = "\n".join(core._render_selected_setup_result(final))
+
+    assert "## Selected Setup Results" in rendered
+    assert "these distinct setups" in rendered
+    assert "| CRWD |" in rendered
+    assert "| WMT |" in rendered
 
 
 def test_nonselected_selector_row_is_an_order_entry_blocker() -> None:
@@ -8415,6 +8475,60 @@ def test_price_candidates_includes_short_put_when_short_put_family_evidence_pass
     assert routing["strategy"].tolist() == ["short_put", "bull_call_debit", "bull_put_credit"]
     assert routing.loc[routing["strategy"].eq("short_put"), "route_status"].tolist() == ["constructed"]
     assert routing.loc[routing["strategy"].eq("bull_call_debit"), "route_status"].tolist() == ["construction_failed"]
+
+
+def test_failed_dated_route_is_preserved_for_live_chain_recovery(tmp_path: Path) -> None:
+    _write_minimal_uw_fixture(tmp_path)
+    snapshot_dir = tmp_path / "snapshots"
+    _write_wmt_call_debit_snapshot(snapshot_dir)
+    candidates = pd.DataFrame(
+        [
+            {
+                "ticker": "WMT",
+                "bias": "bullish",
+                "close": 100.0,
+                "quality_status": "qualified",
+                "score": 80,
+                "signal_premium": 5_000_000,
+                "combined_flow_bias": 0.35,
+                "iv30d": 0.30,
+                "issue_type": "Common Stock",
+                "marketcap": 650_000_000_000,
+                "avg30_volume": 20_000_000,
+                "total_volume": 15_000_000,
+                "total_open_interest": 500_000,
+                "underlying_quality_tier": "core",
+            }
+        ]
+    )
+
+    priced, routing = core.price_candidates_with_routing_audit(
+        tmp_path / "2026-05-22",
+        "2026-05-22",
+        candidates,
+        root=tmp_path,
+        preserve_failed_routes_for_live=True,
+    )
+    recovery = priced[priced["strategy_route"].eq("bull_call_debit")]
+
+    assert routing.loc[routing["strategy"].eq("bull_call_debit"), "route_status"].tolist() == [
+        "construction_failed"
+    ]
+    assert len(recovery) == 1
+    assert recovery["trade_plan"].fillna("").tolist() == [""]
+
+    updated, live, _ = core.validate_priced_candidates_live(
+        recovery,
+        "2026-05-22",
+        tmp_path / "out",
+        chain_snapshot_dir=snapshot_dir,
+        allow_live_fallback=False,
+    )
+
+    assert updated["live_validation_status"].tolist() == ["PASS"]
+    assert updated["strategy_route"].tolist() == ["bull_call_debit"]
+    assert updated["trade_plan"].str.contains("DEBIT", regex=False).tolist() == [True]
+    assert live["live_validation_status"].tolist() == ["PASS"]
 
 
 def test_short_put_replay_bridge_constructs_only_with_near_ready_positive_actual_evidence() -> None:
@@ -14279,8 +14393,8 @@ def test_coverage_audit_marks_speculative_and_excluded_candidates_non_actionable
     assert by_ticker.loc["URA", "status_color"] == "red"
     assert by_ticker.loc["OKLO", "coverage_status"] == "NON_ACTIONABLE_UNDERLYING"
     assert by_ticker.loc["OKLO", "status_color"] == "red"
-    assert by_ticker.loc["DVN", "coverage_status"] == "NON_ACTIONABLE_UNDERLYING"
-    assert by_ticker.loc["DVN", "status_color"] == "red"
+    assert by_ticker.loc["DVN", "coverage_status"] == "CANDIDATE_NOT_STRUCTURED"
+    assert by_ticker.loc["DVN", "status_color"] == "yellow"
 
     report = "\n".join(core._render_coverage_audit(coverage))
 
@@ -14288,7 +14402,7 @@ def test_coverage_audit_marks_speculative_and_excluded_candidates_non_actionable
     assert "| OKLO | 🔴 RED no-action |" in report
     assert "YELLOW candidate | URA" not in report
     assert "YELLOW candidate | OKLO" not in report
-    assert "| DVN | 🔴 RED no-action |" in report
+    assert "| DVN | ⚪ GRAY candidate |" in report
 
 
 def test_action_surface_underlying_quality_proof_blocks_audit_only_names_on_action_surfaces() -> None:
@@ -14331,7 +14445,7 @@ def test_action_surface_underlying_quality_proof_blocks_audit_only_names_on_acti
     assert packet["focus_bad_actionable_tickers"].tolist() == ["LOWQ"]
 
 
-def test_action_surface_underlying_quality_proof_blocks_liquid_non_core_action_rows() -> None:
+def test_action_surface_underlying_quality_proof_allows_liquid_action_rows() -> None:
     packet = audit.build_action_surface_underlying_quality_proof_packet(
         tickets=pd.DataFrame(
             [
@@ -14362,8 +14476,8 @@ def test_action_surface_underlying_quality_proof_blocks_liquid_non_core_action_r
         ),
     )
 
-    assert packet["status"].tolist() == ["FAIL_LOW_QUALITY_UNDERLYING_ACTION_SURFACE"]
-    assert packet["ticket_bad_underlying_rows"].tolist() == [1]
+    assert packet["status"].tolist() == ["PASS_ACTION_SURFACES_EXCLUDE_LOW_QUALITY_UNDERLYINGS"]
+    assert packet["ticket_bad_underlying_rows"].tolist() == [0]
     assert packet["market_open_recheck_bad_underlying_rows"].tolist() == [0]
     assert packet["focus_bad_actionable_rows"].tolist() == [0]
     assert packet["audit_only_focus_rows"].tolist() == [1]
@@ -14806,6 +14920,110 @@ def test_snapshot_validation_can_fallback_to_debit_target_candidate(tmp_path: Pa
     assert live["trade_plan"].str.contains("DEBIT", regex=False).tolist() == [True]
     assert decision["target_order_status"].tolist() == ["target_order_candidate"]
     assert tickets["entry_type"].tolist() == ["DEBIT"]
+
+
+def test_live_credit_validation_searches_every_eligible_expiry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from codexuw import schwab_live
+
+    snapshot_dir = tmp_path / "snapshots"
+    snapshot_dir.mkdir()
+    payload = {
+        "status": "SUCCESS",
+        "symbol": "NKE",
+        "underlyingPrice": 100.0,
+        "putExpDateMap": {
+            expiry: {
+                "95.0": [
+                    {
+                        "symbol": f"NKE {expiry} P95",
+                        "strikePrice": 95.0,
+                        "bid": 1.0,
+                        "ask": 1.1,
+                        "mark": 1.05,
+                        "delta": -0.25,
+                        "openInterest": 1_000,
+                        "totalVolume": 100,
+                    }
+                ]
+            }
+            for expiry in ("2026-05-29:7", "2026-06-19:28")
+        },
+        "callExpDateMap": {},
+    }
+    (snapshot_dir / "NKE.json").write_text(json.dumps(payload), encoding="utf-8")
+    seen_expiries: list[dt.date] = []
+
+    def fake_credit_alternatives(*args, expiry: dt.date, **kwargs):
+        seen_expiries.append(expiry)
+        compatible = expiry == dt.date(2026, 6, 19)
+        return [
+            {
+                "live_status": "PASS",
+                "short_leg": f"NKE {expiry} P95",
+                "long_leg": f"NKE {expiry} P90",
+                "short_strike": 95.0,
+                "long_strike": 90.0,
+                "spread_width": 5.0,
+                "credit": 1.10 if compatible else 1.40,
+                "mid_credit": 1.15,
+                "natural_credit": 1.10,
+                "target_entry": 0.90,
+                "pop_delta_proxy": 0.75,
+                "short_delta": -0.25,
+                "long_delta": -0.10,
+                "short_theta": -0.05,
+                "long_theta": -0.02,
+                "net_theta": 0.03,
+                "distance_pct": 0.05,
+                "expected_move_pct": 0.08,
+                "breakeven_expected_move_ratio": 0.90 if compatible else 0.40,
+                "quote_width_pct": 0.10,
+                "short_oi": 1_000,
+                "short_volume": 100,
+                "long_oi": 900,
+                "long_volume": 90,
+                "liq_score": 990,
+                "construction_source": "test",
+                "construction_reason": "test multi-expiry credit search",
+            }
+        ]
+
+    monkeypatch.setattr(schwab_live, "find_credit_spread_alternatives", fake_credit_alternatives)
+    priced = pd.DataFrame(
+        [
+            {
+                "ticker": "NKE",
+                "bias": "bullish",
+                "strategy_route": "bull_put_credit",
+                "structure": "bull put spread",
+                "quality_status": "qualified",
+                "recommendation_status": RecommendationStatus.REVIEW.value,
+                "expiry": "2026-05-29",
+                "anchor_expiry": "2026-05-29",
+                "anchor_strike": 95.0,
+                "signal_premium": 10_000_000.0,
+                "combined_flow_bias": 0.30,
+                "underlying_quality_tier": "liquid",
+                "trade_quality_status": "reviewable",
+                "status_reason": "dated credit structure requires live validation",
+            }
+        ]
+    )
+
+    updated, _, _ = core.validate_priced_candidates_live(
+        priced,
+        "2026-05-22",
+        tmp_path / "out",
+        chain_snapshot_dir=snapshot_dir,
+        allow_live_fallback=False,
+    )
+
+    assert set(seen_expiries) == {dt.date(2026, 5, 29), dt.date(2026, 6, 19)}
+    assert updated["expiry"].tolist() == ["2026-06-19"]
+    assert updated["dte"].tolist() == [28]
 
 
 def test_review_snapshot_prevents_untasked_contract_reconstruction(tmp_path: Path) -> None:
@@ -18671,6 +18889,48 @@ def test_live_debit_selection_prefers_pre_earnings_quality_expiry() -> None:
     )
 
     assert selected["selected_expiry"] == "2026-08-07"
+
+
+def test_live_credit_selection_prefers_selector_compatible_expiry() -> None:
+    short_expiry = {
+        "live_status": "PASS",
+        "selected_expiry": "2026-07-17",
+        "dte": 7,
+        "spread_width": 5.0,
+        "credit": 1.40,
+        "target_entry": 0.90,
+        "breakeven_expected_move_ratio": 0.40,
+        "expected_move_pct": 0.08,
+        "distance_pct": 0.04,
+        "quote_width_pct": 0.05,
+        "short_oi": 1_000,
+        "short_volume": 100,
+        "long_oi": 1_000,
+        "long_volume": 100,
+        "liq_score": 1_100,
+    }
+    quality_expiry = {
+        **short_expiry,
+        "selected_expiry": "2026-08-14",
+        "dte": 35,
+        "credit": 1.10,
+        "breakeven_expected_move_ratio": 0.90,
+    }
+
+    selected = core._select_live_alternative(
+        {
+            "ticker": "NKE",
+            "bias": "bullish",
+            "strategy_route": "bull_put_credit",
+            "underlying_quality_tier": "liquid",
+            "signal_premium": 10_000_000.0,
+            "combined_flow_bias": 0.30,
+        },
+        [short_expiry, quality_expiry],
+        entry_type="CREDIT",
+    )
+
+    assert selected["selected_expiry"] == "2026-08-14"
 
 
 def test_strategy_route_propagates_earnings_date_to_live_pricing(

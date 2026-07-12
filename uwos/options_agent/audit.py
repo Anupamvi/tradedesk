@@ -1627,7 +1627,7 @@ def build_underlying_quality_proof_packet(
     speculative_rows = int(ticket_tiers.eq("speculative").sum())
     excluded_rows = int(ticket_tiers.eq("excluded").sum())
     unknown_rows = int(ticket_tiers.isin(["", "unknown"]).sum())
-    bad_mask = ~ticket_tiers.eq("core")
+    bad_mask = ~ticket_tiers.isin(["core", "liquid"])
     bad_ticket_rows = int(bad_mask.sum())
     bad_tickets = tickets.loc[bad_mask] if not tickets.empty else tickets
     green_bad_rows = 0
@@ -1641,16 +1641,14 @@ def build_underlying_quality_proof_packet(
     elif bad_ticket_rows > 0:
         status = "FAIL_NON_ACTIONABLE_TICKETS_PRESENT"
     else:
-        status = "PASS_CORE_ONLY_TICKETS"
+        status = "PASS_CORE_OR_LIQUID_TICKETS"
 
     claim = (
-        "Only core large-cap/index/ETF underlyings reached user-facing trade tickets."
+        "Only core or liquid underlyings reached user-facing trade tickets."
         if bad_ticket_rows == 0 and len(tickets) > 0
         else "Non-core or non-actionable underlyings reached the user-facing ticket surface and must be fixed."
     )
-    note = (
-        "Liquid non-core underlyings remain audit-visible, but the production action surface is core-only."
-    )
+    note = "Speculative, excluded, unknown, or missing-tier underlyings remain audit-only."
     return pd.DataFrame(
         [
             {
@@ -2250,10 +2248,10 @@ def build_action_surface_underlying_quality_proof_packet(
     ticket_tiers = _quality_tiers(tickets)
     queue_tiers = _action_surface_tiers(market_open_recheck_queue, focus_coverage)
     focus_tiers = _quality_tiers(focus_coverage)
-    ticket_bad = ~ticket_tiers.eq("core")
-    queue_bad = ~queue_tiers.eq("core")
+    ticket_bad = ~ticket_tiers.isin(["core", "liquid"])
+    queue_bad = ~queue_tiers.isin(["core", "liquid"])
     focus_status = focus_coverage.get("coverage_status", pd.Series(dtype=object)).fillna("").astype(str).str.upper()
-    focus_bad_actionable = ~focus_tiers.eq("core") & focus_status.ne("NON_ACTIONABLE_UNDERLYING")
+    focus_bad_actionable = ~focus_tiers.isin(["core", "liquid"]) & focus_status.ne("NON_ACTIONABLE_UNDERLYING")
     audit_only_focus = focus_status.eq("NON_ACTIONABLE_UNDERLYING")
     bad_count = int(ticket_bad.sum() + queue_bad.sum() + focus_bad_actionable.sum())
     if bad_count > 0:
@@ -2263,13 +2261,11 @@ def build_action_surface_underlying_quality_proof_packet(
     else:
         status = "PASS_ACTION_SURFACES_EXCLUDE_LOW_QUALITY_UNDERLYINGS"
     claim = (
-        "Only core large-cap/index/ETF underlyings are present on ticket, live-recheck, or action-looking focus surfaces."
+        "Only core or liquid underlyings are present on ticket, live-recheck, or action-looking focus surfaces."
         if status.startswith("PASS")
         else "One or more non-core, excluded, speculative, unknown, or missing-tier underlying still appears on an action-looking surface."
     )
-    note = (
-        "Liquid non-core names remain audit-visible, but ticket and live-recheck action surfaces require core underlyings unless a future explicit override is added."
-    )
+    note = "Speculative, excluded, unknown, or missing-tier underlyings remain audit-only."
     return pd.DataFrame(
         [
             {
