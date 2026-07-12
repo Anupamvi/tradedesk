@@ -56,8 +56,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.10-clean-execution-surface-20260711-175928"
+    assert core.PIPELINE_VERSION == "options-agent-v1.11-diversified-selector-20260711-190842"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.10-clean-execution-surface-20260711-175928",
         "options-agent-v1.9-quality-sleeves-20260711-170521",
         "options-agent-v1.8-promoted-decision-pass-20260711-093930",
         "options-agent-v1.7-selector-promotion-20260711-092235",
@@ -72,7 +73,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-11T17:59:28-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-11T19:08:42-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -7258,6 +7259,29 @@ def test_selector_challenger_summary_rejects_policy_with_failed_heldout_partitio
     assert summary["best_heldout_profit_factor"] == 0.60
 
 
+def test_selector_promotion_blocks_single_ticker_concentration() -> None:
+    selected = pd.DataFrame(
+        {
+            "signal_date": pd.bdate_range("2026-01-02", periods=20),
+            "ticker": ["WMT"] * 20,
+            "strategy_route": ["bull_call_debit"] * 20,
+            "realized_pnl": [100.0] * 20,
+        }
+    )
+
+    row = core._selector_partition_metrics(
+        selected,
+        policy={"policy_id": "concentrated"},
+        partition="heldout_test",
+        source_path="synthetic.csv",
+    )
+
+    assert row["top_ticker"] == "WMT"
+    assert row["top_ticker_share"] == 1.0
+    assert row["partition_status"] == "BLOCK"
+    assert "ticker_concentration_above_maximum" in row["blocking_reasons"]
+
+
 def test_promoted_selector_policy_keeps_one_credit_and_one_debit_sleeve() -> None:
     rows = pd.DataFrame(
         [
@@ -7385,6 +7409,112 @@ def test_promoted_selector_policy_keeps_one_credit_and_one_debit_sleeve() -> Non
     assert "debit_probability_proxy_below_40pct" in annotated.at[
         "DEBIT_LOW_PROBABILITY", "selector_policy_reason"
     ]
+
+
+def test_live_selector_blocks_negative_strategy_and_exact_bucket_evidence() -> None:
+    base = {
+        "strategy_route": "bull_call_debit",
+        "entry_type": "DEBIT",
+        "underlying_quality_tier": "core",
+        "iv_rank": 40.0,
+        "dte": 30,
+        "debit_width_ratio": 0.30,
+        "combined_flow_bias": 0.30,
+        "live_breakeven_expected_move_ratio": 0.50,
+        "live_quote_width_pct": 0.10,
+        "live_probability_proxy": 0.55,
+        "max_profit": 700.0,
+        "max_loss": 300.0,
+        "synthesis_score": 200.0,
+    }
+    rows = pd.DataFrame(
+        [
+            {
+                **base,
+                "ticker": "NEGTICKER",
+                "actual_forward_expectancy_status": "BLOCK",
+                "actual_forward_expectancy_sample_size": core.MIN_TICKER_EXPECTANCY_SAMPLE_SIZE,
+                "actual_forward_strategy_expectancy_status": "PASS",
+                "actual_forward_strategy_expectancy_sample_size": 40,
+                "actual_forward_strategy_expectancy_avg_pnl": 20.0,
+                "actual_forward_strategy_expectancy_profit_factor": 1.30,
+            },
+            {
+                **base,
+                "ticker": "NEGSTRAT",
+                "actual_forward_strategy_expectancy_status": "BLOCK",
+                "actual_forward_strategy_expectancy_sample_size": 20,
+                "actual_forward_strategy_expectancy_avg_pnl": -10.0,
+                "actual_forward_strategy_expectancy_profit_factor": 0.80,
+            },
+            {
+                **base,
+                "ticker": "NEGBUCKET",
+                "actual_forward_strategy_expectancy_status": "PASS",
+                "actual_forward_strategy_expectancy_sample_size": 40,
+                "actual_forward_strategy_expectancy_avg_pnl": 20.0,
+                "actual_forward_strategy_expectancy_profit_factor": 1.30,
+                "profitability_calibration_actual_sample_size": 4,
+                "profitability_calibration_actual_avg_pnl": -25.0,
+                "profitability_calibration_actual_profit_factor": 0.50,
+            },
+        ]
+    )
+
+    annotated = core.annotate_selector_policy(rows).set_index("ticker")
+
+    assert annotated.at["NEGTICKER", "selector_policy_status"] == "BLOCK"
+    assert "ticker_expectancy_negative" in annotated.at["NEGTICKER", "selector_policy_reason"]
+    assert annotated.at["NEGSTRAT", "selector_policy_status"] == "BLOCK"
+    assert "strategy_expectancy_negative" in annotated.at["NEGSTRAT", "selector_policy_reason"]
+    assert annotated.at["NEGBUCKET", "selector_policy_status"] == "BLOCK"
+    assert "exact_bucket_expectancy_negative" in annotated.at["NEGBUCKET", "selector_policy_reason"]
+
+
+def test_live_selector_skips_recent_ticker_and_selects_next_candidate() -> None:
+    base = {
+        "strategy_route": "bull_call_debit",
+        "entry_type": "DEBIT",
+        "underlying_quality_tier": "core",
+        "iv_rank": 40.0,
+        "dte": 30,
+        "debit_width_ratio": 0.30,
+        "combined_flow_bias": 0.30,
+        "live_breakeven_expected_move_ratio": 0.50,
+        "live_quote_width_pct": 0.10,
+        "live_probability_proxy": 0.55,
+        "max_profit": 700.0,
+        "max_loss": 300.0,
+    }
+    rows = pd.DataFrame(
+        [
+            {**base, "ticker": "WMT", "synthesis_score": 200.0},
+            {**base, "ticker": "AAPL", "synthesis_score": 150.0},
+        ]
+    )
+
+    annotated = core.annotate_selector_policy(rows, excluded_tickers={"WMT"}).set_index("ticker")
+
+    assert annotated.at["WMT", "selector_policy_status"] == "BLOCK"
+    assert "recent_selector_ticker_cooldown" in annotated.at["WMT", "selector_policy_reason"]
+    assert annotated.at["AAPL", "selector_policy_status"] == "PASS"
+
+
+def test_recent_selector_tickers_uses_latest_prior_run(tmp_path: Path) -> None:
+    history_root = tmp_path / core.DEFAULT_OUTPUT_NAMESPACE
+    for day, rows in {
+        "2026-07-08": [("AAPL", "PASS")],
+        "2026-07-09": [("WMT", "PASS"), ("QCOM", "BLOCK")],
+        "2026-07-10": [("MSFT", "PASS")],
+    }.items():
+        run_dir = history_root / day
+        run_dir.mkdir(parents=True)
+        pd.DataFrame(rows, columns=["ticker", "selector_policy_status"]).to_csv(
+            run_dir / "decision_board.csv",
+            index=False,
+        )
+
+    assert core._recent_selector_tickers(tmp_path, as_of=dt.date(2026, 7, 10)) == {"WMT"}
 
 
 def test_nonselected_selector_row_is_an_order_entry_blocker() -> None:

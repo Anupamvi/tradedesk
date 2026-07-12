@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.10-clean-execution-surface-20260711-175928"
+PIPELINE_VERSION = "options-agent-v1.11-diversified-selector-20260711-190842"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.10-clean-execution-surface-20260711-175928",
     "options-agent-v1.9-quality-sleeves-20260711-170521",
     "options-agent-v1.8-promoted-decision-pass-20260711-093930",
     "options-agent-v1.7-selector-promotion-20260711-092235",
@@ -63,7 +64,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-11T17:59:28-07:00"
+PIPELINE_RELEASED_AT = "2026-07-11T19:08:42-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -76,6 +77,7 @@ MIN_WALKFORWARD_TEST_DAYS = 10
 MIN_SELECTOR_PROMOTION_SAMPLE_SIZE = 30
 MIN_SELECTOR_PROMOTION_DAY_COUNT = 10
 MIN_SELECTOR_HELDOUT_SAMPLE_SIZE = 10
+MAX_SELECTOR_TICKER_SHARE = 0.25
 PROMOTED_SELECTOR_POLICY_ID = "quality_sleeves_cap2_v2"
 DEFAULT_DISCOVERY_LIMIT = 120
 DEFAULT_RISK_BUDGET_PCT = 0.005
@@ -120,8 +122,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.10-clean-execution-surface-20260711-175928",
+    "PIPELINE_VERSION": "options-agent-v1.11-diversified-selector-20260711-190842",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.10-clean-execution-surface-20260711-175928",
         "options-agent-v1.9-quality-sleeves-20260711-170521",
         "options-agent-v1.8-promoted-decision-pass-20260711-093930",
         "options-agent-v1.7-selector-promotion-20260711-092235",
@@ -136,7 +139,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-11T17:59:28-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-11T19:08:42-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -2554,6 +2557,7 @@ def run_pipeline(
     final = annotate_selector_policy(
         final,
         enabled=PROMOTED_SELECTOR_POLICY_ID in set(selector_summary.get("promoted_policy_ids", []) or []),
+        excluded_tickers=_recent_selector_tickers(resolved_out_root, as_of=parse_as_of(day)),
     )
     no_trade = build_no_trade_audit(candidates, priced, top_trades=top_trades, raw_universe=raw_universe)
     risk_audit = build_risk_audit(final)
@@ -11916,6 +11920,11 @@ SELECTOR_CHALLENGER_AUDIT_COLUMNS = (
     "total_pnl",
     "max_drawdown",
     "win_rate",
+    "unique_ticker_count",
+    "top_ticker",
+    "top_ticker_count",
+    "top_ticker_share",
+    "max_top_ticker_share",
     "partition_status",
     "promotion_status",
     "blocking_reasons",
@@ -11934,6 +11943,7 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         "minimum_training_sample": 0,
         "daily_cap": 2,
         "daily_sleeve_cap": 1,
+        "ticker_cooldown_sessions": 1,
         "rank_mode": "selector_quality_score",
         "entry_filter_profile": "quality_sleeves_v2",
         "use_training_gate": False,
@@ -12141,6 +12151,7 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
     rank_mode = _as_text(policy.get("rank_mode"))
     required_true_columns = tuple(policy.get("required_true_columns") or ())
     use_training_gate = bool(policy.get("use_training_gate", True))
+    previous_profile_selected_tickers: set[str] = set()
     for signal_day in sorted(frame["signal_date"].dropna().unique()):
         current = frame[frame["signal_date"] == signal_day].copy()
         for column in required_true_columns:
@@ -12154,8 +12165,10 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
             current["__selector_sleeve"] = assessments.map(lambda value: _as_text(value[3]).upper())
             current = current[current["__selector_eligible"]].copy()
             if current.empty:
+                previous_profile_selected_tickers = set()
                 continue
             sleeve_cap = int(_as_float(policy.get("daily_sleeve_cap")) or 1)
+            cooldown_enabled = int(_as_float(policy.get("ticker_cooldown_sessions")) or 0) > 0
             seen_tickers: set[str] = set()
             for sleeve in ("CREDIT", "DEBIT"):
                 ranked = current[current["__selector_sleeve"].eq(sleeve)].sort_values(
@@ -12173,13 +12186,14 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
                 selected_in_sleeve = 0
                 for _, selected_row in ranked.iterrows():
                     ticker = _as_text(selected_row.get("ticker"))
-                    if ticker in seen_tickers:
+                    if ticker in seen_tickers or (cooldown_enabled and ticker in previous_profile_selected_tickers):
                         continue
                     selected.append(selected_row)
                     seen_tickers.add(ticker)
                     selected_in_sleeve += 1
                     if selected_in_sleeve >= sleeve_cap:
                         break
+            previous_profile_selected_tickers = set(seen_tickers)
             continue
         if not use_training_gate:
             ranked = current.sort_values(
@@ -12289,6 +12303,11 @@ def _selector_partition_metrics(
     day_count = int(metrics["day_count"]) if metrics else 0
     profit_factor = metrics["profit_factor"] if metrics else math.nan
     avg_pnl = metrics["avg_pnl"] if metrics else math.nan
+    ticker_counts = selected.get("ticker", pd.Series(dtype=str)).astype(str).value_counts()
+    unique_ticker_count = int(len(ticker_counts))
+    top_ticker = _as_text(ticker_counts.index[0]) if not ticker_counts.empty else ""
+    top_ticker_count = int(ticker_counts.iloc[0]) if not ticker_counts.empty else 0
+    top_ticker_share = float(top_ticker_count / sample_size) if sample_size > 0 else math.nan
     blocking_reasons: list[str] = []
     required_sample_size = (
         MIN_SELECTOR_HELDOUT_SAMPLE_SIZE
@@ -12303,6 +12322,8 @@ def _selector_partition_metrics(
         blocking_reasons.append("profit_factor_below_minimum")
     if not math.isfinite(avg_pnl) or avg_pnl <= 0:
         blocking_reasons.append("average_pnl_not_positive")
+    if sample_size >= MIN_SELECTOR_HELDOUT_SAMPLE_SIZE and top_ticker_share > MAX_SELECTOR_TICKER_SHARE:
+        blocking_reasons.append("ticker_concentration_above_maximum")
     return {
         "policy_id": _as_text(policy.get("policy_id")),
         "partition": partition,
@@ -12320,6 +12341,11 @@ def _selector_partition_metrics(
         "total_pnl": round(float(pnl.sum()), 4) if not pnl.empty else "",
         "max_drawdown": round(_series_max_drawdown(pnl), 4) if not pnl.empty else "",
         "win_rate": round(metrics["win_rate"], 6) if metrics else "",
+        "unique_ticker_count": unique_ticker_count,
+        "top_ticker": top_ticker,
+        "top_ticker_count": top_ticker_count,
+        "top_ticker_share": round(top_ticker_share, 6) if math.isfinite(top_ticker_share) else "",
+        "max_top_ticker_share": MAX_SELECTOR_TICKER_SHARE,
         "partition_status": "PASS" if not blocking_reasons else "BLOCK",
         "promotion_status": "PENDING",
         "blocking_reasons": "; ".join(blocking_reasons),
@@ -12398,11 +12424,21 @@ def summarize_selector_challenger_audit(audit: pd.DataFrame) -> dict[str, Any]:
     promoted_overall = audit[
         audit["partition"].astype(str).eq("overall")
         & audit["promotion_status"].astype(str).str.upper().eq("PROMOTED")
+        & audit["policy_id"].astype(str).eq(PROMOTED_SELECTOR_POLICY_ID)
     ].sort_values(
         ["profit_factor", "sample_size", "avg_pnl"],
         ascending=[False, False, False],
         kind="mergesort",
     ).head(1)
+    if promoted_overall.empty:
+        promoted_overall = audit[
+            audit["partition"].astype(str).eq("overall")
+            & audit["promotion_status"].astype(str).str.upper().eq("PROMOTED")
+        ].sort_values(
+            ["profit_factor", "sample_size", "avg_pnl"],
+            ascending=[False, False, False],
+            kind="mergesort",
+        ).head(1)
     promoted_overall_row = promoted_overall.iloc[0].to_dict() if not promoted_overall.empty else {}
     return {
         "status": "pass" if promoted else "block",
@@ -12413,6 +12449,9 @@ def summarize_selector_challenger_audit(audit: pd.DataFrame) -> dict[str, Any]:
         "promoted_day_count": int(_as_float(promoted_overall_row.get("day_count")) or 0),
         "promoted_avg_pnl": _as_float(promoted_overall_row.get("avg_pnl")),
         "promoted_win_rate": _as_float(promoted_overall_row.get("win_rate")),
+        "promoted_unique_ticker_count": int(_as_float(promoted_overall_row.get("unique_ticker_count")) or 0),
+        "promoted_top_ticker": _as_text(promoted_overall_row.get("top_ticker")),
+        "promoted_top_ticker_share": _as_float(promoted_overall_row.get("top_ticker_share")),
         "best_heldout_policy_id": _as_text(best_row.get("policy_id")),
         "best_heldout_profit_factor": _as_float(best_row.get("profit_factor")),
         "best_heldout_sample_size": int(_as_float(best_row.get("sample_size")) or 0),
@@ -13608,11 +13647,40 @@ def _selector_policy_row_assessment(
         reasons.append("objective_quality_reject")
     if _truthy(row.get("earnings_before_expiry")):
         reasons.append("earnings_before_expiry")
+    ticker_expectancy_status = _as_text(row.get("actual_forward_expectancy_status")).upper()
+    ticker_expectancy_sample = int(_as_float(row.get("actual_forward_expectancy_sample_size")) or 0)
+    if (
+        ticker_expectancy_status == "BLOCK"
+        and ticker_expectancy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE
+    ):
+        reasons.append("ticker_expectancy_negative")
+    strategy_expectancy_status = _as_text(row.get("actual_forward_strategy_expectancy_status")).upper()
+    strategy_expectancy_sample = int(_as_float(row.get("actual_forward_strategy_expectancy_sample_size")) or 0)
+    strategy_expectancy_avg = _as_float(row.get("actual_forward_strategy_expectancy_avg_pnl"))
+    strategy_expectancy_pf = _as_float(row.get("actual_forward_strategy_expectancy_profit_factor"))
+    strategy_evidence_present = "actual_forward_strategy_expectancy_status" in row
+    if strategy_evidence_present and strategy_expectancy_status == "BLOCK" and strategy_expectancy_sample > 0:
+        reasons.append("strategy_expectancy_negative")
+    elif strategy_evidence_present and strategy_expectancy_sample > 0 and (
+        (strategy_expectancy_avg is not None and strategy_expectancy_avg < 0)
+        or (strategy_expectancy_pf is not None and strategy_expectancy_pf < 1.0)
+    ):
+        reasons.append("strategy_expectancy_negative")
+    actual_bucket_sample = int(_as_float(row.get("profitability_calibration_actual_sample_size")) or 0)
+    actual_bucket_avg = _as_float(row.get("profitability_calibration_actual_avg_pnl"))
+    actual_bucket_pf = _as_float(row.get("profitability_calibration_actual_profit_factor"))
+    if actual_bucket_sample > 0 and (
+        (actual_bucket_avg is not None and actual_bucket_avg < 0)
+        or (actual_bucket_pf is not None and actual_bucket_pf < 1.0)
+    ):
+        reasons.append("exact_bucket_expectancy_negative")
     dte = int(_as_float(row.get("dte")) or 0)
     quote_width = _as_float(row.get("live_quote_width_pct"))
     flow_alignment = _selector_policy_flow_alignment(row, route)
     expected_move_ratio = _selector_policy_expected_move_ratio(row, entry_type)
     score = 0.0
+    if strategy_expectancy_status == "PASS" and strategy_expectancy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE:
+        score += 0.5
     if entry_type == "CREDIT":
         credit_width = _as_float(row.get("credit_width_ratio"))
         if not 7 <= dte <= 45:
@@ -13681,7 +13749,39 @@ def _selector_policy_row_assessment(
     return not reasons, round(score, 6), reasons, sleeve
 
 
-def annotate_selector_policy(final: pd.DataFrame, *, enabled: bool = True) -> pd.DataFrame:
+def _recent_selector_tickers(out_root: Path, *, as_of: dt.date) -> set[str]:
+    history_root = Path(out_root) / DEFAULT_OUTPUT_NAMESPACE
+    if not history_root.exists():
+        return set()
+    candidates: list[tuple[dt.date, float, Path]] = []
+    for run_dir in history_root.iterdir():
+        if not run_dir.is_dir() or not _safe_non_v4_path(run_dir):
+            continue
+        report_day = _parse_optional_date_value(_options_agent_history_report_date(run_dir))
+        decision_path = run_dir / "decision_board.csv"
+        if report_day is None or report_day >= as_of or not decision_path.exists():
+            continue
+        candidates.append((report_day, decision_path.stat().st_mtime, decision_path))
+    if not candidates:
+        return set()
+    latest_day = max(item[0] for item in candidates)
+    latest = max((item for item in candidates if item[0] == latest_day), key=lambda item: item[1])
+    try:
+        decision = pd.read_csv(latest[2])
+    except Exception:
+        return set()
+    if decision.empty or not {"ticker", "selector_policy_status"}.issubset(decision.columns):
+        return set()
+    selected = decision[decision["selector_policy_status"].astype(str).str.upper().eq("PASS")]
+    return {_as_text(value).upper() for value in selected["ticker"] if _as_text(value)}
+
+
+def annotate_selector_policy(
+    final: pd.DataFrame,
+    *,
+    enabled: bool = True,
+    excluded_tickers: Optional[set[str]] = None,
+) -> pd.DataFrame:
     """Apply the promoted decision-pass selector to the current recommendation surface."""
 
     columns = [
@@ -13698,9 +13798,14 @@ def annotate_selector_policy(final: pd.DataFrame, *, enabled: bool = True) -> pd
         out[column] = ""
     if out.empty or not enabled:
         return out
+    cooldown_tickers = {_as_text(value).upper() for value in (excluded_tickers or set()) if _as_text(value)}
     eligible_by_sleeve: dict[str, list[tuple[float, Any]]] = {"CREDIT": [], "DEBIT": []}
     for idx, row in out.iterrows():
         eligible, score, reasons, sleeve = _selector_policy_row_assessment(row)
+        ticker = _as_text(row.get("ticker")).upper()
+        if ticker and ticker in cooldown_tickers:
+            reasons = [*reasons, "recent_selector_ticker_cooldown"]
+            eligible = False
         out.at[idx, "selector_policy_id"] = PROMOTED_SELECTOR_POLICY_ID
         out.at[idx, "selector_policy_score"] = score
         out.at[idx, "selector_policy_sleeve"] = sleeve
