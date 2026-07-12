@@ -1,0 +1,26 @@
+{
+  "as_of": "2026-06-11",
+  "source_dir": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11",
+  "sources": {
+    "bot_eod": {
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11/bot-eod-report-2026-06-11.zip",
+      "size_bytes": 1221308723,
+      "status": "present"
+    },
+    "chain_oi": {
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11/chain-oi-changes-2026-06-11.zip",
+      "size_bytes": 19041788,
+      "status": "present"
+    },
+    "hot_chains": {
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11/hot-chains-2026-06-11.zip",
+      "size_bytes": 2906964,
+      "status": "present"
+    },
+    "stock_screener": {
+      "path": "/Users/anuppamvi/uw_root/tradedesk/2026-06-11/stock-screener-2026-06-11.zip",
+      "size_bytes": 1144399,
+      "status": "present"
+    }
+  }
+}
