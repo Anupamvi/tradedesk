@@ -1,0 +1,417 @@
+{
+  "as_of": "2026-06-11",
+  "avg_index_move_pct": 0.027288,
+  "chain_snapshot_dir": "",
+  "directional_threshold_pct": 0.0075,
+  "note": "index price tape is bullish",
+  "readings": [
+    {
+      "close": 295.63,
+      "move_pct": -0.004596,
+      "prev_close": 291.58,
+      "score": 72.73,
+      "source": "schwab_live_or_snapshot",
+      "spot": 290.24,
+      "ticker": "AAPL",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 390.34,
+      "move_pct": -0.031231,
+      "prev_close": 397.36,
+      "score": 74.73,
+      "source": "schwab_live_or_snapshot",
+      "spot": 384.95,
+      "ticker": "MSFT",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 204.87,
+      "move_pct": 0.019409,
+      "prev_close": 200.42,
+      "score": 68.44,
+      "source": "schwab_live_or_snapshot",
+      "spot": 204.31,
+      "ticker": "NVDA",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 241.51,
+      "move_pct": -0.008866,
+      "prev_close": 238.0,
+      "score": 68.55,
+      "source": "schwab_live_or_snapshot",
+      "spot": 235.89,
+      "ticker": "AMZN",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 568.43,
+      "move_pct": -0.010806,
+      "prev_close": 570.98,
+      "score": 68.74,
+      "source": "schwab_live_or_snapshot",
+      "spot": 564.81,
+      "ticker": "META",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 356.56,
+      "move_pct": 0.016048,
+      "prev_close": 353.32,
+      "score": 77.68,
+      "source": "schwab_live_or_snapshot",
+      "spot": 358.99,
+      "ticker": "GOOG",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 357.77,
+      "move_pct": 0.011701,
+      "prev_close": 356.38,
+      "score": 67.0,
+      "source": "schwab_live_or_snapshot",
+      "spot": 360.55,
+      "ticker": "GOOGL",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 399.15,
+      "move_pct": 0.029325,
+      "prev_close": 381.59,
+      "score": 68.58,
+      "source": "schwab_live_or_snapshot",
+      "spot": 392.78,
+      "ticker": "TSLA",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 488.45,
+      "move_pct": 0.122657,
+      "prev_close": 452.4,
+      "score": 73.71,
+      "source": "schwab_live_or_snapshot",
+      "spot": 507.89,
+      "ticker": "AMD",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 385.57,
+      "move_pct": 0.015399,
+      "prev_close": 372.1,
+      "score": 70.81,
+      "source": "schwab_live_or_snapshot",
+      "spot": 377.83,
+      "ticker": "AVGO",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 737.76,
+      "move_pct": 0.016928,
+      "prev_close": 725.43,
+      "score": 70.35,
+      "source": "schwab_live_or_snapshot",
+      "spot": 737.71,
+      "ticker": "SPY",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 717.12,
+      "move_pct": 0.031023,
+      "prev_close": 693.69,
+      "score": 75.06,
+      "source": "schwab_live_or_snapshot",
+      "spot": 715.21,
+      "ticker": "QQQ",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 290.41,
+      "move_pct": 0.038752,
+      "prev_close": 282.05,
+      "score": 74.05,
+      "source": "schwab_live_or_snapshot",
+      "spot": 292.98,
+      "ticker": "IWM",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 509.36,
+      "move_pct": 0.022449,
+      "prev_close": 500.25,
+      "score": 63.46,
+      "source": "schwab_live_or_snapshot",
+      "spot": 511.48,
+      "ticker": "DIA",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 131.08,
+      "move_pct": -0.015821,
+      "prev_close": 130.21,
+      "score": 68.02,
+      "source": "schwab_live_or_snapshot",
+      "spot": 128.15,
+      "ticker": "PLTR",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 92.23,
+      "move_pct": 0.079667,
+      "prev_close": 86.36,
+      "score": 69.62,
+      "source": "schwab_live_or_snapshot",
+      "spot": 93.24,
+      "ticker": "HOOD",
+      "underlying_quality_tier": "liquid"
+    },
+    {
+      "close": 120.5,
+      "move_pct": -0.006883,
+      "prev_close": 120.59,
+      "score": 63.8,
+      "source": "schwab_live_or_snapshot",
+      "spot": 119.76,
+      "ticker": "WMT",
+      "underlying_quality_tier": "core"
+    },
+    {
+      "close": 44.83,
+      "move_pct": 0.066116,
+      "prev_close": 42.35,
+      "score": 30.86,
+      "source": "schwab_live_or_snapshot",
+      "spot": 45.15,
+      "ticker": "URA",
+      "underlying_quality_tier": "excluded"
+    },
+    {
+      "close": 44.61,
+      "move_pct": -0.027039,
+      "prev_close": 46.6,
+      "score": 59.96,
+      "source": "schwab_live_or_snapshot",
+      "spot": 45.34,
+      "ticker": "DVN",
+      "underlying_quality_tier": "liquid"
+    },
+    {
+      "close": 57.86,
+      "move_pct": 0.055535,
+      "prev_close": 54.02,
+      "score": 31.67,
+      "source": "schwab_live_or_snapshot",
+      "spot": 57.02,
+      "ticker": "OKLO",
+      "underlying_quality_tier": "speculative"
+    }
+  ],
+  "readings_by_ticker": {
+    "AAPL": {
+      "close": 295.63,
+      "move_pct": -0.004596,
+      "prev_close": 291.58,
+      "score": 72.73,
+      "source": "schwab_live_or_snapshot",
+      "spot": 290.24,
+      "ticker": "AAPL",
+      "underlying_quality_tier": "core"
+    },
+    "AMD": {
+      "close": 488.45,
+      "move_pct": 0.122657,
+      "prev_close": 452.4,
+      "score": 73.71,
+      "source": "schwab_live_or_snapshot",
+      "spot": 507.89,
+      "ticker": "AMD",
+      "underlying_quality_tier": "core"
+    },
+    "AMZN": {
+      "close": 241.51,
+      "move_pct": -0.008866,
+      "prev_close": 238.0,
+      "score": 68.55,
+      "source": "schwab_live_or_snapshot",
+      "spot": 235.89,
+      "ticker": "AMZN",
+      "underlying_quality_tier": "core"
+    },
+    "AVGO": {
+      "close": 385.57,
+      "move_pct": 0.015399,
+      "prev_close": 372.1,
+      "score": 70.81,
+      "source": "schwab_live_or_snapshot",
+      "spot": 377.83,
+      "ticker": "AVGO",
+      "underlying_quality_tier": "core"
+    },
+    "DIA": {
+      "close": 509.36,
+      "move_pct": 0.022449,
+      "prev_close": 500.25,
+      "score": 63.46,
+      "source": "schwab_live_or_snapshot",
+      "spot": 511.48,
+      "ticker": "DIA",
+      "underlying_quality_tier": "core"
+    },
+    "DVN": {
+      "close": 44.61,
+      "move_pct": -0.027039,
+      "prev_close": 46.6,
+      "score": 59.96,
+      "source": "schwab_live_or_snapshot",
+      "spot": 45.34,
+      "ticker": "DVN",
+      "underlying_quality_tier": "liquid"
+    },
+    "GOOG": {
+      "close": 356.56,
+      "move_pct": 0.016048,
+      "prev_close": 353.32,
+      "score": 77.68,
+      "source": "schwab_live_or_snapshot",
+      "spot": 358.99,
+      "ticker": "GOOG",
+      "underlying_quality_tier": "core"
+    },
+    "GOOGL": {
+      "close": 357.77,
+      "move_pct": 0.011701,
+      "prev_close": 356.38,
+      "score": 67.0,
+      "source": "schwab_live_or_snapshot",
+      "spot": 360.55,
+      "ticker": "GOOGL",
+      "underlying_quality_tier": "core"
+    },
+    "HOOD": {
+      "close": 92.23,
+      "move_pct": 0.079667,
+      "prev_close": 86.36,
+      "score": 69.62,
+      "source": "schwab_live_or_snapshot",
+      "spot": 93.24,
+      "ticker": "HOOD",
+      "underlying_quality_tier": "liquid"
+    },
+    "IWM": {
+      "close": 290.41,
+      "move_pct": 0.038752,
+      "prev_close": 282.05,
+      "score": 74.05,
+      "source": "schwab_live_or_snapshot",
+      "spot": 292.98,
+      "ticker": "IWM",
+      "underlying_quality_tier": "core"
+    },
+    "META": {
+      "close": 568.43,
+      "move_pct": -0.010806,
+      "prev_close": 570.98,
+      "score": 68.74,
+      "source": "schwab_live_or_snapshot",
+      "spot": 564.81,
+      "ticker": "META",
+      "underlying_quality_tier": "core"
+    },
+    "MSFT": {
+      "close": 390.34,
+      "move_pct": -0.031231,
+      "prev_close": 397.36,
+      "score": 74.73,
+      "source": "schwab_live_or_snapshot",
+      "spot": 384.95,
+      "ticker": "MSFT",
+      "underlying_quality_tier": "core"
+    },
+    "NVDA": {
+      "close": 204.87,
+      "move_pct": 0.019409,
+      "prev_close": 200.42,
+      "score": 68.44,
+      "source": "schwab_live_or_snapshot",
+      "spot": 204.31,
+      "ticker": "NVDA",
+      "underlying_quality_tier": "core"
+    },
+    "OKLO": {
+      "close": 57.86,
+      "move_pct": 0.055535,
+      "prev_close": 54.02,
+      "score": 31.67,
+      "source": "schwab_live_or_snapshot",
+      "spot": 57.02,
+      "ticker": "OKLO",
+      "underlying_quality_tier": "speculative"
+    },
+    "PLTR": {
+      "close": 131.08,
+      "move_pct": -0.015821,
+      "prev_close": 130.21,
+      "score": 68.02,
+      "source": "schwab_live_or_snapshot",
+      "spot": 128.15,
+      "ticker": "PLTR",
+      "underlying_quality_tier": "core"
+    },
+    "QQQ": {
+      "close": 717.12,
+      "move_pct": 0.031023,
+      "prev_close": 693.69,
+      "score": 75.06,
+      "source": "schwab_live_or_snapshot",
+      "spot": 715.21,
+      "ticker": "QQQ",
+      "underlying_quality_tier": "core"
+    },
+    "SPY": {
+      "close": 737.76,
+      "move_pct": 0.016928,
+      "prev_close": 725.43,
+      "score": 70.35,
+      "source": "schwab_live_or_snapshot",
+      "spot": 737.71,
+      "ticker": "SPY",
+      "underlying_quality_tier": "core"
+    },
+    "TSLA": {
+      "close": 399.15,
+      "move_pct": 0.029325,
+      "prev_close": 381.59,
+      "score": 68.58,
+      "source": "schwab_live_or_snapshot",
+      "spot": 392.78,
+      "ticker": "TSLA",
+      "underlying_quality_tier": "core"
+    },
+    "URA": {
+      "close": 44.83,
+      "move_pct": 0.066116,
+      "prev_close": 42.35,
+      "score": 30.86,
+      "source": "schwab_live_or_snapshot",
+      "spot": 45.15,
+      "ticker": "URA",
+      "underlying_quality_tier": "excluded"
+    },
+    "WMT": {
+      "close": 120.5,
+      "move_pct": -0.006883,
+      "prev_close": 120.59,
+      "score": 63.8,
+      "source": "schwab_live_or_snapshot",
+      "spot": 119.76,
+      "ticker": "WMT",
+      "underlying_quality_tier": "core"
+    }
+  },
+  "regime": "risk_on",
+  "sizing_stance": "normal",
+  "source": "Schwab option chain underlying quote",
+  "source_mode": "schwab_live",
+  "status": "ok",
+  "tape_direction": "bullish"
+}
