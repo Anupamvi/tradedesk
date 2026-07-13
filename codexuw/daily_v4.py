@@ -45,6 +45,7 @@ from .engine import (
     select_ticker_pool,
 )
 from .edge_model import EDGE_HISTORY_NAMESPACE
+from .integrity_v42 import apply_schwab_price_context
 from .fallback_income import apply_fallback_income_status, build_fallback_income_candidates
 from .liquidity_shift import (
     FIXED_LIQUID_UNIVERSE,
@@ -3389,6 +3390,12 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         schwab_snapshot_dir=Path(args.schwab_snapshot_dir).expanduser().resolve() if args.schwab_snapshot_dir else None,
     )
     scored = apply_oi_carryover(scored, chain_oi)
+    scored = apply_schwab_price_context(
+        scored,
+        out_dir=out_dir,
+        asof=asof,
+        offline=bool(args.offline),
+    )
     scored = apply_replay_edge_model(
         scored,
         base_dir.parent / "out",

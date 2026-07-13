@@ -12,7 +12,7 @@ from .credit_policy import assess_credit_spread
 from .debit_policy import assess_debit_spread
 
 
-EDGE_HISTORY_NAMESPACE = "codexdaily_v4_edge_history_v2_2026-07-10_debit_v21"
+EDGE_HISTORY_NAMESPACE = "codexdaily_v4_edge_history_v2_2026-07-10"
 PACKAGED_HISTORY_DIR = Path(__file__).resolve().parent / "history"
 
 

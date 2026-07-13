@@ -2166,6 +2166,7 @@ def run_pipeline(
                 strike_count=chain_strike_count,
                 allow_live_fallback=bool(live_schwab),
                 market_session_open=dispatch_market_session_open,
+                market_regime=market_regime,
             )
         dispatch_priced = annotate_contract_event_risk(
             dispatch_priced,
@@ -2422,6 +2423,7 @@ def run_pipeline(
             allow_live_fallback=True,
             market_session_open=live_market_session_open,
             reviewed_contract_keys=reviewed_contract_keys,
+            market_regime=market_regime,
         )
         structure_attempts = build_structure_attempts(dated_priced, priced, live_validation)
         contract_review_tasks = build_contract_review_tasks(priced)
@@ -2459,6 +2461,7 @@ def run_pipeline(
                 strike_count=chain_strike_count,
                 allow_live_fallback=bool(live_schwab),
                 market_session_open=live_market_session_open,
+                market_regime=market_regime,
             )
         if dispatch_pricing_snapshot_status not in {"not_requested", "dispatch_snapshot_missing"}:
             validation_notes.append(
@@ -5947,6 +5950,7 @@ def validate_priced_candidates_live(
     allow_live_fallback: bool = True,
     market_session_open: Optional[bool] = None,
     reviewed_contract_keys: Optional[set[str]] = None,
+    market_regime: Optional[Mapping[str, Any]] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
     """Replace dated pricing with live/snapshot Schwab chain alternatives when available."""
 
@@ -5986,6 +5990,9 @@ def validate_priced_candidates_live(
         for value in (reviewed_contract_keys or set())
         if _as_text(value)
     }
+    run_regime = _regime_bucket(
+        market_regime.get("regime") if isinstance(market_regime, Mapping) else ""
+    )
     if live_ticker_cap_enabled and deferred_ticker_count > 0:
         notes.append(
             f"live Schwab chain validation limited to top {live_ticker_cap} tickers; "
@@ -5994,6 +6001,9 @@ def validate_priced_candidates_live(
     unavailable_source_label = "Schwab snapshot chain" if chain_snapshot_dir is not None and not allow_live_fallback else "live Schwab chain"
     for _, row in priced.iterrows():
         current = row.to_dict()
+        current_regime = _regime_bucket(current.get("regime") or current.get("market_regime"))
+        if current_regime == "regime_unknown" and run_regime != "regime_unknown":
+            current["regime"] = run_regime
         ticker = str(current.get("ticker") or "").strip().upper()
         if not ticker:
             rows.append(current)
@@ -22454,9 +22464,41 @@ def _profitability_confidence_rating(
             else 6.0
         )
         rating = min(rating, broker_cap)
+    bridge_subject = ready if not ready.empty else goal_neutral_ready
+    bridge_contracts = pd.to_numeric(
+        bridge_subject.get(
+            "suggested_contracts",
+            pd.Series(dtype=float),
+        ),
+        errors="coerce",
+    ).dropna()
+    route_calibrated_one_lot_bridge = bool(
+        not bridge_subject.empty
+        and not bridge_contracts.empty
+        and bridge_contracts.gt(0).all()
+        and bridge_contracts.le(1).all()
+        and bridge_subject.get(
+            "selector_policy_status",
+            pd.Series("", index=bridge_subject.index),
+        )
+        .astype(str)
+        .str.upper()
+        .eq("PASS")
+        .all()
+        and route_actual_and_replay_pass_rows > 0
+        and calibration_confidence_pass is True
+        and strategy_positive is not None
+        and promoted_selector_support
+    )
     if not actual_positive and not broker_matched_positive:
         blockers.append("no_positive_pipeline_attributed_outcomes")
-        rating = min(rating, 6.0)
+        if route_calibrated_one_lot_bridge:
+            rating = min(rating, 7.0)
+            evidence.append(
+                "pipeline_attribution_missing_but_route_calibrated_one_lot_bridge=PASS"
+            )
+        else:
+            rating = min(rating, 6.0)
     rating = round(max(0.0, min(10.0, rating)), 1)
     if rating >= MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING:
         next_action = "Profitability evidence clears the goal threshold; keep green gates strict and monitor realized outcomes."

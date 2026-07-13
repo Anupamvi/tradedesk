@@ -15369,6 +15369,111 @@ def test_live_credit_validation_searches_every_eligible_expiry(
     assert updated["dte"].tolist() == [28]
 
 
+def test_live_debit_validation_uses_run_regime_when_selecting_contracts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from codexuw import schwab_live
+
+    snapshot_dir = tmp_path / "snapshots"
+    snapshot_dir.mkdir()
+    payload = {
+        "status": "SUCCESS",
+        "symbol": "NKE",
+        "underlyingPrice": 100.0,
+        "putExpDateMap": {},
+        "callExpDateMap": {
+            expiry: {
+                "100.0": [
+                    {
+                        "symbol": f"NKE {expiry} C100",
+                        "strikePrice": 100.0,
+                        "bid": 2.0,
+                        "ask": 2.1,
+                        "mark": 2.05,
+                        "delta": 0.50,
+                        "openInterest": 1_000,
+                        "totalVolume": 100,
+                    }
+                ]
+            }
+            for expiry in ("2026-05-29:7", "2026-06-19:28")
+        },
+    }
+    (snapshot_dir / "NKE.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    def fake_debit_alternatives(*args, expiry: dt.date, **kwargs):
+        short_dte = expiry == dt.date(2026, 5, 29)
+        return [
+            {
+                "live_status": "PASS",
+                "short_leg": f"NKE {expiry} C105",
+                "long_leg": f"NKE {expiry} C100",
+                "short_strike": 105.0,
+                "long_strike": 100.0,
+                "spread_width": 5.0,
+                "debit": 2.0,
+                "mid_debit": 1.95,
+                "natural_debit": 2.0,
+                "target_entry": 2.25,
+                "reward_risk": 1.50,
+                "long_delta": 0.55 if short_dte else 0.50,
+                "short_delta": 0.25,
+                "long_theta": -0.03,
+                "short_theta": -0.01,
+                "net_theta": -0.02,
+                "theta_burn_pct": 0.01,
+                "distance_pct": 0.02,
+                "expected_move_pct": 0.05,
+                "breakeven_expected_move_ratio": 0.40,
+                "quote_width_pct": 0.05,
+                "short_oi": 1_000,
+                "short_volume": 100,
+                "long_oi": 900,
+                "long_volume": 90,
+                "liq_score": 990,
+                "construction_source": "test",
+                "construction_reason": "test regime-aware debit selection",
+            }
+        ]
+
+    monkeypatch.setattr(schwab_live, "find_debit_spread_alternatives", fake_debit_alternatives)
+    priced = pd.DataFrame(
+        [
+            {
+                "ticker": "NKE",
+                "bias": "bullish",
+                "strategy_route": "bull_call_debit",
+                "structure": "bull call debit spread",
+                "quality_status": "qualified",
+                "recommendation_status": RecommendationStatus.REVIEW.value,
+                "expiry": "2026-05-29",
+                "anchor_expiry": "2026-05-29",
+                "anchor_strike": 100.0,
+                "signal_premium": 10_000_000.0,
+                "combined_flow_bias": 0.30,
+                "iv_rank": 40.0,
+                "underlying_quality_tier": "liquid",
+                "trade_quality_status": "reviewable",
+                "status_reason": "dated debit structure requires live validation",
+            }
+        ]
+    )
+
+    updated, _, _ = core.validate_priced_candidates_live(
+        priced,
+        "2026-05-22",
+        tmp_path / "out",
+        chain_snapshot_dir=snapshot_dir,
+        allow_live_fallback=False,
+        market_regime={"regime": "risk_on"},
+    )
+
+    assert updated["regime"].tolist() == ["risk_on"]
+    assert updated["expiry"].tolist() == ["2026-06-19"]
+    assert updated["dte"].tolist() == [28]
+
+
 def test_review_snapshot_prevents_untasked_contract_reconstruction(tmp_path: Path) -> None:
     snapshot_dir = tmp_path / "snapshots"
     _write_wmt_call_debit_snapshot(snapshot_dir)
@@ -18275,6 +18380,127 @@ def test_promoted_selector_challenger_replaces_failed_legacy_walkforward_gate() 
     assert "options_agent_walkforward_replay_negative" not in blockers
     assert "selector_challenger_not_promoted" not in blockers
     assert "no_positive_pipeline_attributed_outcomes" in blockers
+
+
+def test_profitability_confidence_allows_strict_route_calibrated_one_lot_bridge() -> None:
+    tickets = pd.DataFrame(
+        [
+            {
+                "ticker": "XLV",
+                "strategy_route": "bull_call_debit",
+                "ready_to_enter": False,
+                "target_order_status": "target_order_candidate",
+                "execution_blockers": core.GOAL_CONFIDENCE_GATE_BLOCKER,
+                "live_validation_status": "PASS",
+                "entry_limit": 1.39,
+                "suggested_contracts": 1,
+                "order_mechanics_confidence_rating": "HIGH",
+                "trade_quality_confidence_rating": "MEDIUM",
+                "actual_forward_strategy_expectancy_status": "PASS",
+                "profitability_calibration_status": "PASS",
+                "selector_policy_status": "PASS",
+                "trade_plan": (
+                    "BUY 1 XLV 2026-08-21 164 Call / "
+                    "SELL 1 XLV 2026-08-21 168 Call @ 1.39 DEBIT"
+                ),
+            }
+        ]
+    )
+    expectancy = pd.DataFrame(
+        [
+            {
+                "source": "schwab_closed_trades_strategy_cohort",
+                "evidence_type": "actual_closed_trades_strategy_cohort",
+                "status": "PASS",
+                "sample_size": 41,
+                "win_rate": 0.439,
+                "avg_pnl": 20.61,
+                "profit_factor": 1.272,
+            },
+            {
+                "source": "options_agent_selector_challenger_model",
+                "evidence_type": "options_agent_selector_challenger_model",
+                "status": "PASS",
+                "sample_size": 59,
+                "win_rate": 0.6102,
+                "avg_pnl": 30.03,
+                "profit_factor": 1.823,
+            },
+            {
+                "source": "codexuw_replay_decision_pass_model",
+                "evidence_type": "replay_backtest_decision_pass_model",
+                "status": "PASS",
+                "sample_size": 59,
+                "win_rate": 0.6102,
+                "avg_pnl": 30.03,
+                "profit_factor": 1.823,
+            },
+            {
+                "source": "expectancy_summary",
+                "evidence_type": "summary",
+                "status": "BLOCK",
+                "sample_size": 1123,
+            },
+        ]
+    )
+    calibration = pd.DataFrame(
+        [
+            {
+                "scope": "current_trade_calibration",
+                "ticker": "XLV",
+                "strategy_route": "bull_call_debit",
+                "status": "PASS",
+                "actual_support_status": "PASS",
+                "actual_support_scope": "actual_route",
+                "actual_support_sample_size": 41,
+                "actual_support_avg_pnl": 20.61,
+                "actual_support_profit_factor": 1.272,
+                "replay_bucket_status": "BLOCK",
+                "replay_bucket_sample_size": 0,
+                "route_replay_status": "PASS",
+                "route_replay_sample_size": 59,
+            }
+        ]
+    )
+
+    rating, _, evidence, blockers, _ = core._profitability_confidence_rating(
+        pd.DataFrame(),
+        tickets,
+        expectancy,
+        pd.DataFrame(),
+        profitability_calibration=calibration,
+    )
+
+    assert rating == 7.0
+    assert "pipeline_attribution_missing_but_route_calibrated_one_lot_bridge=PASS" in evidence
+    assert "no_positive_pipeline_attributed_outcomes" in blockers
+
+    pre_gate_tickets = tickets.copy()
+    pre_gate_tickets["ready_to_enter"] = True
+    pre_gate_tickets["execution_blockers"] = ""
+    pre_gate_rating, _, pre_gate_evidence, _, _ = core._profitability_confidence_rating(
+        pd.DataFrame(),
+        pre_gate_tickets,
+        expectancy,
+        pd.DataFrame(),
+        profitability_calibration=calibration,
+    )
+
+    assert pre_gate_rating == 7.0
+    assert "pipeline_attribution_missing_but_route_calibrated_one_lot_bridge=PASS" in pre_gate_evidence
+
+    two_lot_tickets = tickets.copy()
+    two_lot_tickets["suggested_contracts"] = 2
+    two_lot_rating, _, two_lot_evidence, _, _ = core._profitability_confidence_rating(
+        pd.DataFrame(),
+        two_lot_tickets,
+        expectancy,
+        pd.DataFrame(),
+        profitability_calibration=calibration,
+    )
+
+    assert two_lot_rating <= 6.0
+    assert "route_calibrated_one_lot_bridge=PASS" not in two_lot_evidence
 
 
 def test_confidence_audit_names_actual_bucket_precision_gap_when_route_support_exists() -> None:

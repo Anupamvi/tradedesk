@@ -452,12 +452,12 @@ def generate_candidates(
                 bot_metrics = bot.loc[ticker].to_dict() if not bot.empty and ticker in bot.index else {}
                 dte = int((expiry - asof).days) if isinstance(expiry, dt.date) else math.nan
                 iv30d = safe_float(row.get("iv30d"))
-                realized_volatility_30d = safe_float(row.get("volatility"))
-                iv_hv_ratio = (
-                    iv30d / realized_volatility_30d
-                    if math.isfinite(iv30d) and math.isfinite(realized_volatility_30d) and realized_volatility_30d > 0
-                    else math.nan
-                )
+                # The UW export's generic ``volatility`` field has no stable,
+                # documented unit contract. V4.2 calculates annualized HV from
+                # Schwab daily returns instead of silently relabeling this value.
+                raw_uw_volatility = safe_float(row.get("volatility"))
+                realized_volatility_30d = math.nan
+                iv_hv_ratio = math.nan
                 expected_move = iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
                 if direction in CREDIT_DIRECTIONS:
                     expected_ratio = distance_pct / expected_move if math.isfinite(distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
@@ -495,9 +495,11 @@ def generate_candidates(
                     "flow_total_premium": safe_float(row.get("flow_total_premium"), 0.0),
                     "iv_rank": safe_float(row.get("iv_rank")),
                     "iv30d": safe_float(row.get("iv30d")),
+                    "raw_uw_volatility": raw_uw_volatility,
                     "realized_volatility_30d": realized_volatility_30d,
+                    "realized_volatility_source": "unvalidated_uw_field_not_used",
                     "iv_hv_ratio": iv_hv_ratio,
-                    "iv_hv_spread": iv30d - realized_volatility_30d if math.isfinite(iv30d) and math.isfinite(realized_volatility_30d) else math.nan,
+                    "iv_hv_spread": math.nan,
                     "implied_move_perc": safe_float(row.get("implied_move_perc")),
                     "next_earnings_dt": row.get("next_earnings_dt"),
                     "edge_type": _edge_text(direction, row, exp_contracts),
