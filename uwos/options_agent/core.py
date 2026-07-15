@@ -47,8 +47,10 @@ from uwos.options_agent.shadow_outcomes import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.15-regime-debit-parity-20260712-130352"
+PIPELINE_VERSION = "options-agent-v1.17-probationary-route-confidence-20260714-055506"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.16-economic-capacity-20260713-211035",
+    "options-agent-v1.15-regime-debit-parity-20260712-130352",
     "options-agent-v1.14-width-and-evidence-integrity-20260712-122120",
     "options-agent-v1.13-universe-credit-recovery-20260712-062526",
     "options-agent-v1.12-live-route-recovery-20260711-204623",
@@ -68,7 +70,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-12T13:03:52-07:00"
+PIPELINE_RELEASED_AT = "2026-07-14T05:55:06-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -82,10 +84,14 @@ MIN_SELECTOR_PROMOTION_SAMPLE_SIZE = 30
 MIN_SELECTOR_PROMOTION_DAY_COUNT = 10
 MIN_SELECTOR_HELDOUT_SAMPLE_SIZE = 10
 MAX_SELECTOR_SECOND_SLOT_STRUCTURAL_SCORE_GAP = 0.35
-PROMOTED_SELECTOR_POLICY_ID = "quality_sleeves_regime_cap2_v3"
+PROMOTED_SELECTOR_POLICY_ID = "quality_sleeves_economic_cap2_v5"
 DEFAULT_DISCOVERY_LIMIT = 120
 DEFAULT_RISK_BUDGET_PCT = 0.005
-MAX_SUGGESTED_CONTRACTS = 5
+MAX_SUGGESTED_CONTRACTS = 20
+MIN_ROUTE_SCALE_SAMPLE_SIZE = 10
+ECONOMIC_EXPECTANCY_PRIOR_SAMPLE_SIZE = 30
+MIN_MONTHLY_CAPACITY_MONTHS = 6
+MIN_MONTHLY_PROFITABLE_MONTH_RATE = 0.75
 MIN_GREEN_POSITION_MAX_PROFIT = 150.0
 MIN_GREEN_POSITION_MAX_PROFIT_PORTFOLIO_PCT = 0.0002
 MIN_TRADE_CREDIT = 0.25
@@ -126,8 +132,10 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.15-regime-debit-parity-20260712-130352",
+    "PIPELINE_VERSION": "options-agent-v1.17-probationary-route-confidence-20260714-055506",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.16-economic-capacity-20260713-211035",
+        "options-agent-v1.15-regime-debit-parity-20260712-130352",
         "options-agent-v1.14-width-and-evidence-integrity-20260712-122120",
         "options-agent-v1.13-universe-credit-recovery-20260712-062526",
         "options-agent-v1.12-live-route-recovery-20260711-204623",
@@ -147,7 +155,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-12T13:03:52-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-14T05:55:06-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -230,12 +238,18 @@ MARKET_HOLIDAY_LOOKAHEAD_DAYS = 10
 MIN_EXPECTANCY_SAMPLE_SIZE = 30
 MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE = 40
 MIN_HIERARCHICAL_ROUTE_REPLAY_SAMPLE_SIZE = 10
+MIN_PROBATIONARY_ACTUAL_ROUTE_SAMPLE_SIZE = 3
+MIN_PROBATIONARY_ROUTE_REPLAY_SAMPLE_SIZE = 10
+MIN_PROBATIONARY_MODEL_ROUTE_PROFIT_FACTOR = 1.50
+MIN_PROBATIONARY_ACTUAL_WIN_RATE = 0.33
+MAX_PROBATIONARY_ORDER_ENTRY_CONFIDENCE_RATING = 8.0
 MIN_EXPECTANCY_WIN_RATE = 0.55
 MIN_EXPECTANCY_SKEW_WIN_RATE = 0.40
 MIN_EXPECTANCY_PROFIT_FACTOR = 1.20
 MIN_TICKER_EXPECTANCY_SAMPLE_SIZE = 3
 MIN_TICKER_EXPECTANCY_WIN_RATE = 0.50
 MIN_TICKER_EXPECTANCY_PROFIT_FACTOR = 1.10
+ACTUAL_EXPECTANCY_LOOKBACK_DAYS = 365
 MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING = 7.0
 MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING = 7.0
 MAX_REQUIRED_SUBAGENT_REVIEW_TICKERS = 150
@@ -2498,6 +2512,7 @@ def run_pipeline(
         final,
         resolved_root,
         broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
+        as_of_date=day,
     )
     if not final.empty:
         final = final.copy()
@@ -2513,6 +2528,7 @@ def run_pipeline(
             resolved_root,
             resolved_out_root,
             broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
+            as_of=day,
         )
         if not final.empty
         else pd.DataFrame()
@@ -2531,6 +2547,11 @@ def run_pipeline(
         shared_replay_out_root,
         as_of=parse_as_of(day),
     )
+    active_selector_replay, active_selector_replay_error = _active_selector_replay_support_frame(
+        shared_replay_out_root,
+        as_of=parse_as_of(day),
+    )
+    active_selector_replay.attrs["error"] = active_selector_replay_error
     profitability_calibration = build_profitability_calibration(
         resolved_root,
         final,
@@ -2579,6 +2600,9 @@ def run_pipeline(
         final,
         enabled=PROMOTED_SELECTOR_POLICY_ID in set(selector_summary.get("promoted_policy_ids", []) or []),
     )
+    final = apply_evidence_aware_size_caps(final)
+    final = annotate_economic_expectancy(final)
+    final = apply_calibrated_final_ranking(final)
     no_trade = build_no_trade_audit(candidates, priced, top_trades=top_trades, raw_universe=raw_universe)
     risk_audit = build_risk_audit(final)
     sizing_audit = build_sizing_audit(final)
@@ -2597,6 +2621,8 @@ def run_pipeline(
         broker_matched_outcomes=broker_matched_outcomes,
         broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
         selector_challenger_audit=selector_challenger_audit,
+        as_of_date=day,
+        actual_frame=shared_actual_frame,
     )
     outcome_evidence_audit = build_outcome_evidence_audit(
         resolved_root,
@@ -2606,7 +2632,12 @@ def run_pipeline(
         broker_matched_outcomes=broker_matched_outcomes,
         broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
     )
-    strategy_outcome_atlas = build_strategy_outcome_atlas(resolved_root, decision_board, trade_tickets)
+    strategy_outcome_atlas = build_strategy_outcome_atlas(
+        resolved_root,
+        decision_board,
+        trade_tickets,
+        as_of_date=day,
+    )
     route_opportunity_gap = build_route_opportunity_gap(
         resolved_root,
         decision_board,
@@ -2629,7 +2660,13 @@ def run_pipeline(
     profitability_calibration_intersection_gap = build_profitability_calibration_intersection_gap(
         profitability_calibration
     )
-    monthly_feasibility = build_monthly_feasibility(decision_board, trade_tickets, execution_context, expectancy_evidence)
+    monthly_feasibility = build_monthly_feasibility(
+        decision_board,
+        trade_tickets,
+        execution_context,
+        expectancy_evidence,
+        selector_replay=active_selector_replay,
+    )
     confidence_audit = build_confidence_audit(
         decision_board,
         trade_tickets,
@@ -2657,6 +2694,8 @@ def run_pipeline(
             broker_matched_outcomes=broker_matched_outcomes,
             broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
             selector_challenger_audit=selector_challenger_audit,
+            as_of_date=day,
+            actual_frame=shared_actual_frame,
         )
         outcome_evidence_audit = build_outcome_evidence_audit(
             resolved_root,
@@ -2666,7 +2705,12 @@ def run_pipeline(
             broker_matched_outcomes=broker_matched_outcomes,
             broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
         )
-        strategy_outcome_atlas = build_strategy_outcome_atlas(resolved_root, decision_board, trade_tickets)
+        strategy_outcome_atlas = build_strategy_outcome_atlas(
+            resolved_root,
+            decision_board,
+            trade_tickets,
+            as_of_date=day,
+        )
         route_opportunity_gap = build_route_opportunity_gap(
             resolved_root,
             decision_board,
@@ -2688,7 +2732,13 @@ def run_pipeline(
         profitability_calibration_intersection_gap = build_profitability_calibration_intersection_gap(
             profitability_calibration
         )
-        monthly_feasibility = build_monthly_feasibility(decision_board, trade_tickets, execution_context, expectancy_evidence)
+        monthly_feasibility = build_monthly_feasibility(
+            decision_board,
+            trade_tickets,
+            execution_context,
+            expectancy_evidence,
+            selector_replay=active_selector_replay,
+        )
         confidence_audit = build_confidence_audit(
             decision_board,
             trade_tickets,
@@ -5017,6 +5067,14 @@ def apply_synthesis_ranking(
     return ranked.reset_index(drop=True)
 
 
+def _clear_resolved_exact_catalyst_review_requirement(value: Any) -> str:
+    return "; ".join(
+        part
+        for part in (_as_text(item).strip() for item in _as_text(value).split(";"))
+        if part and part.lower() != "exact catalyst review still required"
+    )
+
+
 def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataFrame:
     """Apply normalized agent reviews before portfolio annotation."""
 
@@ -5151,6 +5209,9 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
             if contract_review_required
             else "NOT_REQUIRED"
         )
+        if out["contract_review_status"] == "PASS" and "catalyst_news" in contract_review_agents:
+            for field in ("contract_event_risk_note", "status_reason"):
+                out[field] = _clear_resolved_exact_catalyst_review_requirement(out.get(field))
         external_notes = [
             f"{review.get('agent', 'external')}={review.get('verdict', '')}: {review.get('note', '')}".strip()
             for review in generic_external_reviews
@@ -5307,8 +5368,9 @@ def price_candidates_with_routing_audit(
     qualified = candidates[candidates["quality_status"].eq("qualified")]
     if limit is not None:
         qualified = qualified.head(int(limit))
-    strategy_metrics = _closed_trade_strategy_family_metrics(root)
-    route_metrics = _closed_trade_strategy_route_metrics(root)
+    evidence_as_of = parse_as_of(as_of)
+    strategy_metrics = _closed_trade_strategy_family_metrics(root, as_of=evidence_as_of)
+    route_metrics = _closed_trade_strategy_route_metrics(root, as_of=evidence_as_of)
     positive_strategy_routes = _positive_closed_trade_strategy_routes(root, metrics_by_route=route_metrics)
     positive_strategy_routes.update(_positive_closed_trade_strategy_families(root, metrics_by_family=strategy_metrics))
     replay_supported_routes = _positive_replay_strategy_routes(root, as_of=parse_as_of(as_of))
@@ -5340,33 +5402,38 @@ def price_candidates_with_routing_audit(
     return pd.DataFrame(rows), pd.DataFrame(audit_rows, columns=STRATEGY_ROUTING_AUDIT_COLUMNS)
 
 
-def _closed_trade_strategy_family_metrics(root: Optional[Path]) -> dict[str, dict[str, Any]]:
+def _closed_trade_strategy_family_metrics(
+    root: Optional[Path],
+    *,
+    as_of: str | dt.date | None = None,
+) -> dict[str, dict[str, Any]]:
     if root is None:
         return {}
     resolved_root = Path(root).expanduser().resolve()
     out_root = resolved_root if resolved_root.name == "out" else resolved_root / "out"
-    path = _closed_trades_evidence_path(resolved_root, out_root)
-    if not _safe_non_v4_path(path) or not path.exists():
+    working = _actual_calibration_frame(resolved_root, out_root, as_of=as_of)
+    if working.empty or "realized_pnl" not in working.columns:
         return {}
-    frame, error = _read_closed_trades_frame(path)
-    if error or frame.empty or not {"strategy", "realized_pnl"}.issubset(frame.columns):
-        return {}
-    working = frame.copy()
     working["ticker"] = working.get("ticker", pd.Series("", index=working.index)).astype(str).str.upper()
     working["canonical_ticker"] = working["ticker"].map(canonical_ticker_key)
-    working["strategy_family"] = working["strategy"].map(_normal_strategy_family)
+    if "strategy_family" not in working.columns:
+        working["strategy_family"] = working.get("strategy", pd.Series("", index=working.index)).map(_normal_strategy_family)
     working["realized_pnl"] = pd.to_numeric(working["realized_pnl"], errors="coerce")
     return _actual_forward_metrics_by_strategy_family(
         working[working["realized_pnl"].notna() & working["strategy_family"].astype(str).str.strip().ne("")]
     )
 
 
-def _closed_trade_strategy_route_metrics(root: Optional[Path]) -> dict[str, dict[str, Any]]:
+def _closed_trade_strategy_route_metrics(
+    root: Optional[Path],
+    *,
+    as_of: str | dt.date | None = None,
+) -> dict[str, dict[str, Any]]:
     if root is None:
         return {}
     resolved_root = Path(root).expanduser().resolve()
     out_root = resolved_root if resolved_root.name == "out" else resolved_root / "out"
-    actual = _actual_calibration_frame(resolved_root, out_root)
+    actual = _actual_calibration_frame(resolved_root, out_root, as_of=as_of)
     return _actual_forward_metrics_by_strategy_route(actual)
 
 
@@ -8504,6 +8571,7 @@ def apply_position_sizing(
             account_risk_pct = round(max_position_loss / total_value, 4) if total_value > 0 else 0.0
 
         row["suggested_contracts"] = int(suggested_contracts)
+        row["risk_sized_contracts"] = int(suggested_contracts)
         row["risk_budget"] = round(risk_budget, 2) if risk_budget else 0.0
         row["portfolio_total_value"] = round(total_value, 2) if total_value else 0.0
         row["portfolio_cash"] = round(cash, 2) if cash else 0.0
@@ -8527,6 +8595,10 @@ def apply_evidence_aware_size_caps(frame: pd.DataFrame) -> pd.DataFrame:
     for _, source_row in frame.iterrows():
         row = source_row.to_dict()
         current_size = max(int(_as_float(row.get("suggested_contracts")) or 0), 0)
+        risk_sized_contracts = max(
+            int(_as_float(row.get("risk_sized_contracts")) or current_size),
+            0,
+        )
         cap = 1
         ticker_status = _as_text(row.get("actual_forward_expectancy_status")).upper()
         ticker_sample = int(_as_float(row.get("actual_forward_expectancy_sample_size")) or 0)
@@ -8535,12 +8607,55 @@ def apply_evidence_aware_size_caps(frame: pd.DataFrame) -> pd.DataFrame:
         replay_status = _as_text(row.get("profitability_calibration_replay_status")).upper()
         replay_sample = int(_as_float(row.get("profitability_calibration_replay_sample_size")) or 0)
         exact_scope = calibration_scope in _actual_bucket_support_scopes()
-        event_risk = _truthy(row.get("earnings_before_expiry")) or int(
-            _as_float(row.get("macro_event_count_before_expiry")) or 0
-        ) > 0
+        dte = int(_as_float(row.get("dte")) or 0)
+        event_risk = _truthy(row.get("earnings_before_expiry")) or (
+            dte <= SHORT_DTE_CONTRACT_RISK_DAYS
+            and int(_as_float(row.get("macro_event_count_before_expiry")) or 0) > 0
+        )
         probability_proxy = _as_float(row.get("live_probability_proxy"))
         quote_width = _as_float(row.get("live_quote_width_pct"))
         theta_burn = _as_float(row.get("live_theta_burn_pct"))
+
+        strategy_status = _as_text(
+            row.get("actual_forward_strategy_expectancy_status")
+        ).upper()
+        strategy_sample = int(
+            _as_float(row.get("actual_forward_strategy_expectancy_sample_size")) or 0
+        )
+        strategy_avg_pnl = _as_float(
+            row.get("actual_forward_strategy_expectancy_avg_pnl")
+        )
+        strategy_profit_factor = _as_float(
+            row.get("actual_forward_strategy_expectancy_profit_factor")
+        )
+        route_replay_status = _as_text(
+            row.get("profitability_calibration_route_replay_status")
+        ).upper()
+        route_replay_sample = int(
+            _as_float(row.get("profitability_calibration_route_replay_sample_size")) or 0
+        )
+        route_replay_avg_pnl = _as_float(
+            row.get("profitability_calibration_route_replay_avg_pnl")
+        )
+        route_replay_profit_factor = _as_float(
+            row.get("profitability_calibration_route_replay_profit_factor")
+        )
+        model_replay_status = _as_text(
+            row.get("profitability_calibration_model_replay_status")
+        ).upper()
+        model_replay_sample = int(
+            _as_float(row.get("profitability_calibration_model_replay_sample_size")) or 0
+        )
+        model_replay_avg_pnl = _as_float(
+            row.get("profitability_calibration_model_replay_avg_pnl")
+        )
+        model_replay_profit_factor = _as_float(
+            row.get("profitability_calibration_model_replay_profit_factor")
+        )
+        probationary_model_route = _probationary_model_route_ticket_ready(
+            row,
+            require_selector=True,
+        )
 
         if (
             not event_risk
@@ -8552,6 +8667,33 @@ def apply_evidence_aware_size_caps(frame: pd.DataFrame) -> pd.DataFrame:
             and replay_sample >= MIN_EXPECTANCY_SAMPLE_SIZE
         ):
             cap = 2
+        route_scale_supported = bool(
+            not event_risk
+            and not probationary_model_route
+            and _as_text(row.get("selector_policy_status")).upper() == "PASS"
+            and strategy_status in {"PASS", "WARN"}
+            and strategy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE
+            and strategy_avg_pnl is not None
+            and strategy_avg_pnl > 0
+            and strategy_profit_factor is not None
+            and strategy_profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR
+            and route_replay_status in {"PASS", "WARN"}
+            and route_replay_sample >= MIN_ROUTE_SCALE_SAMPLE_SIZE
+            and route_replay_avg_pnl is not None
+            and route_replay_avg_pnl > 0
+            and route_replay_profit_factor is not None
+            and route_replay_profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR
+            and model_replay_status in {"PASS", "WARN"}
+            and model_replay_sample >= MIN_ROUTE_SCALE_SAMPLE_SIZE
+            and model_replay_avg_pnl is not None
+            and model_replay_avg_pnl > 0
+            and model_replay_profit_factor is not None
+            and model_replay_profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR
+        )
+        if route_scale_supported:
+            cap = max(cap, 2)
+        if probationary_model_route:
+            cap = 1
         if (
             cap >= 2
             and ticker_sample >= 10
@@ -8570,7 +8712,7 @@ def apply_evidence_aware_size_caps(frame: pd.DataFrame) -> pd.DataFrame:
         ):
             cap = MAX_SUGGESTED_CONTRACTS
 
-        adjusted_size = min(current_size, cap) if current_size > 0 else 0
+        adjusted_size = min(risk_sized_contracts, cap) if risk_sized_contracts > 0 else 0
         max_loss = _as_float(row.get("max_loss")) or 0.0
         total_value = _as_float(row.get("portfolio_total_value")) or 0.0
         row["suggested_contracts"] = adjusted_size
@@ -8580,10 +8722,16 @@ def apply_evidence_aware_size_caps(frame: pd.DataFrame) -> pd.DataFrame:
         row["account_risk_pct"] = (
             round(row["max_position_loss"] / total_value, 4) if total_value > 0 else 0.0
         )
-        if current_size > adjusted_size:
+        row["risk_sized_contracts"] = risk_sized_contracts
+        if risk_sized_contracts > adjusted_size:
             row["sizing_note"] = _append_reason(
                 row.get("sizing_note"),
-                f"evidence-aware cap reduced size from {current_size} to {adjusted_size}; exact bucket/ticker proof does not support scaling",
+                f"evidence-aware cap reduced risk size from {risk_sized_contracts} to {adjusted_size}",
+            )
+        elif adjusted_size > current_size:
+            row["sizing_note"] = _append_reason(
+                row.get("sizing_note"),
+                f"validated selector/route evidence raised size from {current_size} to {adjusted_size}",
             )
         elif adjusted_size > 0:
             row["sizing_note"] = _append_reason(
@@ -8600,11 +8748,14 @@ def build_sizing_audit(final: pd.DataFrame) -> pd.DataFrame:
     columns = [
         "ticker",
         "suggested_contracts",
+        "risk_sized_contracts",
+        "evidence_size_cap",
         "risk_budget",
         "max_loss",
         "max_position_loss",
         "account_risk_pct",
         "buying_power_effect",
+        "expected_position_pnl",
         "sizing_risk_flag",
         "sizing_note",
         "visibility_action",
@@ -8617,11 +8768,14 @@ def build_sizing_audit(final: pd.DataFrame) -> pd.DataFrame:
             {
                 "ticker": row.get("ticker", ""),
                 "suggested_contracts": row.get("suggested_contracts", 0),
+                "risk_sized_contracts": row.get("risk_sized_contracts", 0),
+                "evidence_size_cap": row.get("evidence_size_cap", 0),
                 "risk_budget": row.get("risk_budget", 0.0),
                 "max_loss": row.get("max_loss", ""),
                 "max_position_loss": row.get("max_position_loss", 0.0),
                 "account_risk_pct": row.get("account_risk_pct", 0.0),
                 "buying_power_effect": row.get("buying_power_effect", 0.0),
+                "expected_position_pnl": row.get("expected_position_pnl", 0.0),
                 "sizing_risk_flag": row.get("sizing_risk_flag", False),
                 "sizing_note": row.get("sizing_note", ""),
                 "visibility_action": "annotated_not_hidden",
@@ -8745,6 +8899,7 @@ def annotate_actual_forward_expectancy(
     root: Path,
     *,
     broker_backfilled_forward_outcomes: Optional[pd.DataFrame] = None,
+    as_of_date: str | dt.date | None = None,
 ) -> pd.DataFrame:
     """Attach ticker and structure-aligned actual/forward outcome support before green-ticket gating."""
 
@@ -8781,6 +8936,7 @@ def annotate_actual_forward_expectancy(
         root,
         out_root,
         broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
+        as_of=as_of_date,
     )
     metrics_by_key = _actual_forward_metrics_by_canonical_ticker(evidence_frame)
     metrics_by_strategy = _actual_forward_metrics_by_canonical_ticker_strategy(evidence_frame)
@@ -8829,6 +8985,17 @@ def annotate_actual_forward_expectancy(
                     note_suffix=(
                         f" No ticker-specific {ticker or 'ticker'} {route or 'route'} rows exist; "
                         "route-level evidence is preferred over broad strategy-family evidence."
+                    ),
+                )
+            elif route_metrics:
+                set_strategy_metrics(
+                    idx,
+                    route_metrics,
+                    family_label=_as_text(route_metrics.get("strategy_family")) or family,
+                    scope="strategy_route",
+                    note_suffix=(
+                        f" No ticker-specific {ticker or 'ticker'} {route or 'route'} rows exist; "
+                        "under-sampled route evidence is retained instead of being replaced by a mixed strategy-family cohort."
                     ),
                 )
             elif _family_level_strategy_fallback_allowed(family, family_metrics, None) or _negative_family_strategy_metrics_available(family_metrics):
@@ -8884,6 +9051,17 @@ def annotate_actual_forward_expectancy(
                     note_suffix=(
                         f" No ticker-specific {ticker or 'ticker'} {route or 'route'} rows exist; "
                         "route-level evidence is preferred over broad strategy-family evidence."
+                    ),
+                )
+            elif route_metrics:
+                set_strategy_metrics(
+                    idx,
+                    route_metrics,
+                    family_label=_as_text(route_metrics.get("strategy_family")) or family,
+                    scope="strategy_route",
+                    note_suffix=(
+                        f" No ticker-specific {ticker or 'ticker'} {route or 'route'} rows exist; "
+                        "under-sampled route evidence is retained instead of being replaced by a mixed strategy-family cohort."
                     ),
                 )
             elif _family_level_strategy_fallback_allowed(family, family_metrics, metrics) or _negative_family_strategy_metrics_available(family_metrics):
@@ -8956,6 +9134,17 @@ def annotate_actual_forward_expectancy(
                         "known-negative route evidence."
                     ),
                 )
+            elif strategy_status != "PASS" and route_metrics:
+                set_strategy_metrics(
+                    idx,
+                    route_metrics,
+                    family_label=_as_text(route_metrics.get("strategy_family")) or family,
+                    scope="strategy_route",
+                    note_suffix=(
+                        f" Sparse ticker-specific {ticker or 'ticker'} {route or 'route'} support did not override "
+                        "the under-sampled route cohort; a mixed strategy-family cohort is not a route-level substitute."
+                    ),
+                )
             elif strategy_status != "PASS" and _negative_family_strategy_metrics_available(family_metrics):
                 set_strategy_metrics(
                     idx,
@@ -8992,9 +9181,13 @@ def build_profitability_calibration(
     if current_rows is None or current_rows.empty:
         return pd.DataFrame(columns=PROFITABILITY_CALIBRATION_COLUMNS)
 
-    current = current_rows.copy()
-    actual = actual_frame.copy() if actual_frame is not None else _actual_calibration_frame(root, out_root)
     as_of_day = parse_as_of(as_of_date) if as_of_date is not None else None
+    current = current_rows.copy()
+    actual = (
+        actual_frame.copy()
+        if actual_frame is not None
+        else _actual_calibration_frame(root, out_root, as_of=as_of_day)
+    )
     replay, replay_path, replay_error = (
         replay_bundle if replay_bundle is not None else _profitability_replay_frame(replay_out_root, as_of=as_of_day)
     )
@@ -9178,6 +9371,14 @@ def annotate_profitability_calibration(final: pd.DataFrame, calibration: pd.Data
         "profitability_calibration_replay_sample_size",
         "profitability_calibration_replay_avg_pnl",
         "profitability_calibration_replay_profit_factor",
+        "profitability_calibration_route_replay_status",
+        "profitability_calibration_route_replay_sample_size",
+        "profitability_calibration_route_replay_avg_pnl",
+        "profitability_calibration_route_replay_profit_factor",
+        "profitability_calibration_model_replay_status",
+        "profitability_calibration_model_replay_sample_size",
+        "profitability_calibration_model_replay_avg_pnl",
+        "profitability_calibration_model_replay_profit_factor",
         "profitability_calibration_key",
         "profitability_calibration_note",
     ]
@@ -9209,6 +9410,14 @@ def annotate_profitability_calibration(final: pd.DataFrame, calibration: pd.Data
             out.at[idx, "profitability_calibration_replay_sample_size"] = 0
             out.at[idx, "profitability_calibration_replay_avg_pnl"] = ""
             out.at[idx, "profitability_calibration_replay_profit_factor"] = ""
+            out.at[idx, "profitability_calibration_route_replay_status"] = "BLOCK"
+            out.at[idx, "profitability_calibration_route_replay_sample_size"] = 0
+            out.at[idx, "profitability_calibration_route_replay_avg_pnl"] = ""
+            out.at[idx, "profitability_calibration_route_replay_profit_factor"] = ""
+            out.at[idx, "profitability_calibration_model_replay_status"] = "BLOCK"
+            out.at[idx, "profitability_calibration_model_replay_sample_size"] = 0
+            out.at[idx, "profitability_calibration_model_replay_avg_pnl"] = ""
+            out.at[idx, "profitability_calibration_model_replay_profit_factor"] = ""
             out.at[idx, "profitability_calibration_key"] = _calibration_key_text(key)
             out.at[idx, "profitability_calibration_note"] = (
                 f"No profitability calibration row exists for {ticker or 'ticker'} {_calibration_key_text(key)}."
@@ -9225,8 +9434,131 @@ def annotate_profitability_calibration(final: pd.DataFrame, calibration: pd.Data
         out.at[idx, "profitability_calibration_replay_sample_size"] = match.get("replay_bucket_sample_size", "")
         out.at[idx, "profitability_calibration_replay_avg_pnl"] = match.get("replay_bucket_avg_pnl", "")
         out.at[idx, "profitability_calibration_replay_profit_factor"] = match.get("replay_bucket_profit_factor", "")
+        out.at[idx, "profitability_calibration_route_replay_status"] = match.get("route_replay_status", "")
+        out.at[idx, "profitability_calibration_route_replay_sample_size"] = match.get("route_replay_sample_size", "")
+        out.at[idx, "profitability_calibration_route_replay_avg_pnl"] = match.get("route_replay_avg_pnl", "")
+        out.at[idx, "profitability_calibration_route_replay_profit_factor"] = match.get("route_replay_profit_factor", "")
+        out.at[idx, "profitability_calibration_model_replay_status"] = match.get("model_replay_status", "")
+        out.at[idx, "profitability_calibration_model_replay_sample_size"] = match.get("model_replay_sample_size", "")
+        out.at[idx, "profitability_calibration_model_replay_avg_pnl"] = match.get("model_replay_avg_pnl", "")
+        out.at[idx, "profitability_calibration_model_replay_profit_factor"] = match.get("model_replay_profit_factor", "")
         out.at[idx, "profitability_calibration_key"] = _calibration_key_text(match)
         out.at[idx, "profitability_calibration_note"] = match.get("note", "")
+    return out
+
+
+def annotate_economic_expectancy(final: pd.DataFrame) -> pd.DataFrame:
+    """Attach a sample-shrunk one-contract P/L estimate from passing evidence only."""
+
+    columns = [
+        "expected_pnl_one_contract",
+        "expected_position_pnl",
+        "expected_return_on_risk",
+        "expected_pnl_source",
+        "expected_pnl_sample_size",
+        "expected_pnl_confidence_status",
+    ]
+    if final is None:
+        return pd.DataFrame(columns=columns)
+    out = final.copy()
+    for column in columns:
+        if column not in out.columns:
+            out[column] = ""
+    if out.empty:
+        return out
+
+    source_specs = (
+        (
+            "ticker_actual",
+            "actual_forward_expectancy_status",
+            "actual_forward_expectancy_sample_size",
+            "actual_forward_expectancy_avg_pnl",
+            "actual_forward_expectancy_profit_factor",
+            MIN_EXPECTANCY_SAMPLE_SIZE,
+        ),
+        (
+            "strategy_actual",
+            "actual_forward_strategy_expectancy_status",
+            "actual_forward_strategy_expectancy_sample_size",
+            "actual_forward_strategy_expectancy_avg_pnl",
+            "actual_forward_strategy_expectancy_profit_factor",
+            MIN_TICKER_EXPECTANCY_SAMPLE_SIZE,
+        ),
+        (
+            "calibration_actual",
+            "profitability_calibration_actual_status",
+            "profitability_calibration_actual_sample_size",
+            "profitability_calibration_actual_avg_pnl",
+            "profitability_calibration_actual_profit_factor",
+            MIN_EXPECTANCY_SAMPLE_SIZE,
+        ),
+        (
+            "exact_replay",
+            "profitability_calibration_replay_status",
+            "profitability_calibration_replay_sample_size",
+            "profitability_calibration_replay_avg_pnl",
+            "profitability_calibration_replay_profit_factor",
+            MIN_EXPECTANCY_SAMPLE_SIZE,
+        ),
+        (
+            "route_replay",
+            "profitability_calibration_route_replay_status",
+            "profitability_calibration_route_replay_sample_size",
+            "profitability_calibration_route_replay_avg_pnl",
+            "profitability_calibration_route_replay_profit_factor",
+            MIN_ROUTE_SCALE_SAMPLE_SIZE,
+        ),
+        (
+            "selector_model_replay",
+            "profitability_calibration_model_replay_status",
+            "profitability_calibration_model_replay_sample_size",
+            "profitability_calibration_model_replay_avg_pnl",
+            "profitability_calibration_model_replay_profit_factor",
+            MIN_ROUTE_SCALE_SAMPLE_SIZE,
+        ),
+    )
+    for idx, row in out.iterrows():
+        estimates: list[tuple[str, str, int, float]] = []
+        for name, status_col, sample_col, avg_col, pf_col, minimum_sample in source_specs:
+            status = _as_text(row.get(status_col)).upper()
+            sample = int(_as_float(row.get(sample_col)) or 0)
+            avg_pnl = _as_float(row.get(avg_col))
+            profit_factor = _as_float(row.get(pf_col))
+            if (
+                status in {"PASS", "WARN"}
+                and sample >= minimum_sample
+                and avg_pnl is not None
+                and avg_pnl > 0
+                and profit_factor is not None
+                and profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR
+            ):
+                shrunk_avg = avg_pnl * sample / (
+                    sample + ECONOMIC_EXPECTANCY_PRIOR_SAMPLE_SIZE
+                )
+                estimates.append((name, status, sample, shrunk_avg))
+        if not estimates:
+            out.at[idx, "expected_pnl_one_contract"] = 0.0
+            out.at[idx, "expected_position_pnl"] = 0.0
+            out.at[idx, "expected_return_on_risk"] = 0.0
+            out.at[idx, "expected_pnl_source"] = "no passing positive evidence"
+            out.at[idx, "expected_pnl_sample_size"] = 0
+            out.at[idx, "expected_pnl_confidence_status"] = "BLOCK"
+            continue
+        conservative = min(value for _, _, _, value in estimates)
+        contracts = max(int(_as_float(row.get("suggested_contracts")) or 0), 0)
+        max_loss = _as_float(row.get("max_loss")) or 0.0
+        out.at[idx, "expected_pnl_one_contract"] = round(conservative, 2)
+        out.at[idx, "expected_position_pnl"] = round(conservative * contracts, 2)
+        out.at[idx, "expected_return_on_risk"] = (
+            round(conservative / max_loss, 4) if max_loss > 0 else 0.0
+        )
+        out.at[idx, "expected_pnl_source"] = ",".join(name for name, _, _, _ in estimates)
+        out.at[idx, "expected_pnl_sample_size"] = min(sample for _, _, sample, _ in estimates)
+        out.at[idx, "expected_pnl_confidence_status"] = (
+            "PASS"
+            if len(estimates) >= 2 and all(status == "PASS" for _, status, _, _ in estimates)
+            else "WARN"
+        )
     return out
 
 
@@ -9278,6 +9610,11 @@ def apply_calibrated_final_ranking(final: pd.DataFrame) -> pd.DataFrame:
         "external_agent_distinct_review_count",
         default=0.0,
     )
+    working["__expected_position_pnl"] = _numeric_sort_series(
+        working,
+        "expected_position_pnl",
+        default=0.0,
+    )
     working["__calibration_sample"] = _numeric_sort_series(
         working,
         "profitability_calibration_sample_size",
@@ -9311,6 +9648,7 @@ def apply_calibrated_final_ranking(final: pd.DataFrame) -> pd.DataFrame:
             "__execution_confidence_score",
             "__quality_confidence_rank",
             "__external_lane_count",
+            "__expected_position_pnl",
             "__position_profit",
             "__calibration_sample",
             "__actual_sample",
@@ -9322,6 +9660,7 @@ def apply_calibrated_final_ranking(final: pd.DataFrame) -> pd.DataFrame:
             "__original_order",
         ],
         ascending=[
+            False,
             False,
             False,
             False,
@@ -10486,7 +10825,11 @@ def build_profitability_bucket_atlas(
     out_root = root if root.name == "out" else root / "out"
     replay_out_root = _evidence_out_root_with_replay(root, out_root)
     as_of_day = parse_as_of(as_of_date) if as_of_date is not None else None
-    actual = actual_frame.copy() if actual_frame is not None else _actual_calibration_frame(root, out_root)
+    actual = (
+        actual_frame.copy()
+        if actual_frame is not None
+        else _actual_calibration_frame(root, out_root, as_of=as_of_day)
+    )
     replay, replay_path, replay_error = (
         replay_bundle if replay_bundle is not None else _profitability_replay_frame(replay_out_root, as_of=as_of_day)
     )
@@ -10957,7 +11300,11 @@ def build_route_opportunity_gap(
     out_root = root if root.name == "out" else root / "out"
     replay_out_root = _evidence_out_root_with_replay(root, out_root)
     as_of_day = parse_as_of(as_of_date) if as_of_date is not None else None
-    actual = actual_frame.copy() if actual_frame is not None else _actual_calibration_frame(root, out_root)
+    actual = (
+        actual_frame.copy()
+        if actual_frame is not None
+        else _actual_calibration_frame(root, out_root, as_of=as_of_day)
+    )
     replay, replay_path, replay_error = (
         replay_bundle if replay_bundle is not None else _profitability_replay_frame(replay_out_root, as_of=as_of_day)
     )
@@ -11664,11 +12011,13 @@ def _actual_calibration_frame(
     out_root: Path,
     *,
     broker_backfilled_forward_outcomes: Optional[pd.DataFrame] = None,
+    as_of: str | dt.date | None = None,
 ) -> pd.DataFrame:
     actual = _actual_forward_outcome_frame(
         root,
         out_root,
         broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
+        as_of=as_of,
     )
     if actual is None or actual.empty:
         return pd.DataFrame()
@@ -12102,8 +12451,8 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         "daily_cap": 2,
         "daily_sleeve_cap": 1,
         "second_slot_max_structural_score_gap": MAX_SELECTOR_SECOND_SLOT_STRUCTURAL_SCORE_GAP,
-        "rank_mode": "selector_quality_score",
-        "entry_filter_profile": "quality_sleeves_regime_v3",
+        "rank_mode": "selector_economic_score",
+        "entry_filter_profile": "quality_sleeves_regime_v5",
         "use_training_gate": False,
     },
     {
@@ -12265,7 +12614,7 @@ def _selector_training_metrics(pnl: pd.Series, day_count: int) -> Optional[dict[
     }
 
 
-def _selector_v3_replay_assessment(row: Mapping[str, Any]) -> tuple[bool, float, list[str], str]:
+def _selector_v4_replay_assessment(row: Mapping[str, Any]) -> tuple[bool, float, list[str], str]:
     """Map point-in-time replay fields into the promoted live selector contract."""
 
     mapped = dict(row)
@@ -12316,8 +12665,11 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
             current = current[current.get(column, pd.Series(False, index=current.index)).map(_truthy)].copy()
         if current.empty:
             continue
-        if _as_text(policy.get("entry_filter_profile")) == "quality_sleeves_regime_v3":
-            assessments = current.apply(_selector_v3_replay_assessment, axis=1)
+        if _as_text(policy.get("entry_filter_profile")) in {
+            "quality_sleeves_regime_v4",
+            "quality_sleeves_regime_v5",
+        }:
+            assessments = current.apply(_selector_v4_replay_assessment, axis=1)
             current["__selector_eligible"] = assessments.map(lambda value: bool(value[0]))
             current["__selector_score"] = assessments.map(lambda value: float(value[1]))
             current["__selector_structural_score"] = current.apply(
@@ -12325,6 +12677,17 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
                 axis=1,
             )
             current["__selector_sleeve"] = assessments.map(lambda value: _as_text(value[3]).upper())
+            current["__selector_target_profit"] = current.apply(
+                _selector_one_lot_target_profit,
+                axis=1,
+            )
+            current["__selector_economic_score"] = current.apply(
+                lambda row: _selector_economic_score(
+                    row["__selector_score"],
+                    row["__selector_target_profit"],
+                ),
+                axis=1,
+            )
             current = current[current["__selector_eligible"]].copy()
             if current.empty:
                 continue
@@ -12337,8 +12700,14 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
             seen_tickers: set[str] = set()
             selected_structural_scores: list[float] = []
             for sleeve in ("CREDIT", "DEBIT"):
+                rank_column = (
+                    "__selector_economic_score"
+                    if rank_mode == "selector_economic_score"
+                    else "__selector_score"
+                )
                 ranked = current[current["__selector_sleeve"].eq(sleeve)].sort_values(
                     [
+                        rank_column,
                         "__selector_score",
                         "decision_score",
                         "flow_total_premium",
@@ -12346,11 +12715,13 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
                         "entry_quote_width_pct",
                         "ticker",
                     ],
-                    ascending=[False, False, False, False, True, True],
+                    ascending=[False, False, False, False, False, True, True],
                     kind="mergesort",
                 )
                 selected_in_sleeve = 0
                 for _, selected_row in ranked.iterrows():
+                    if len(seen_tickers) >= daily_cap:
+                        break
                     ticker = _as_text(selected_row.get("ticker"))
                     if ticker in seen_tickers:
                         continue
@@ -12360,9 +12731,12 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
                     selected_in_sleeve += 1
                     if selected_in_sleeve >= sleeve_cap:
                         break
+                if len(seen_tickers) >= daily_cap:
+                    break
             if len(seen_tickers) < daily_cap and selected_structural_scores:
                 ranked_remaining = current.sort_values(
                     [
+                        rank_column,
                         "__selector_score",
                         "decision_score",
                         "flow_total_premium",
@@ -12370,7 +12744,7 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
                         "entry_quote_width_pct",
                         "ticker",
                     ],
-                    ascending=[False, False, False, False, True, True],
+                    ascending=[False, False, False, False, False, True, True],
                     kind="mergesort",
                 )
                 daily_best_structural_score = max(selected_structural_scores)
@@ -12640,6 +13014,8 @@ def summarize_selector_challenger_audit(audit: pd.DataFrame) -> dict[str, Any]:
         "promoted_day_count": int(_as_float(promoted_overall_row.get("day_count")) or 0),
         "promoted_avg_pnl": _as_float(promoted_overall_row.get("avg_pnl")),
         "promoted_win_rate": _as_float(promoted_overall_row.get("win_rate")),
+        "promoted_selection_start": _as_text(promoted_overall_row.get("partition_start")),
+        "promoted_selection_end": _as_text(promoted_overall_row.get("partition_end")),
         "promoted_unique_ticker_count": int(_as_float(promoted_overall_row.get("unique_ticker_count")) or 0),
         "promoted_top_ticker": _as_text(promoted_overall_row.get("top_ticker")),
         "promoted_top_ticker_share": _as_float(promoted_overall_row.get("top_ticker_share")),
@@ -13551,14 +13927,13 @@ def _select_actual_calibration_support(
             best_bucket_scope = scope
             best_bucket_metrics = metrics
 
-    broad_candidates = [
+    route_candidates = [
         ("actual_ticker_route", ticker_route, _ticker_expectancy_status),
         ("actual_route", route, _expectancy_status),
-        ("actual_strategy_family", family, _expectancy_status),
     ]
     best_scope = "missing"
     best_metrics = _calibration_metrics_row(pd.Series(dtype=float), status_func=_expectancy_status)
-    for scope, frame, status_func in broad_candidates:
+    for scope, frame, status_func in route_candidates:
         if frame is None or frame.empty:
             continue
         metrics = _calibration_metrics_row(frame.get("realized_pnl", pd.Series(dtype=float)), status_func=status_func)
@@ -13566,10 +13941,28 @@ def _select_actual_calibration_support(
             if _metrics_are_negative(best_bucket_metrics, min_sample=MIN_EXPECTANCY_SAMPLE_SIZE):
                 return best_bucket_scope, best_bucket_metrics
             return scope, metrics
-        if best_scope == "missing":
+        if int(metrics.get("sample_size") or 0) > int(best_metrics.get("sample_size") or 0):
             best_scope = scope
             best_metrics = metrics
-    if int(best_bucket_metrics.get("sample_size") or 0) > 0:
+
+    if best_scope == "missing" and family is not None and not family.empty:
+        family_metrics = _calibration_metrics_row(
+            family.get("realized_pnl", pd.Series(dtype=float)),
+            status_func=_expectancy_status,
+        )
+        best_scope = "actual_strategy_family"
+        best_metrics = family_metrics
+
+    bucket_sample = int(best_bucket_metrics.get("sample_size") or 0)
+    broad_sample = int(best_metrics.get("sample_size") or 0)
+    if _metrics_are_negative(
+        best_bucket_metrics,
+        min_sample=MIN_PROBATIONARY_ACTUAL_ROUTE_SAMPLE_SIZE,
+    ):
+        return best_bucket_scope, best_bucket_metrics
+    if broad_sample > bucket_sample:
+        return best_scope, best_metrics
+    if bucket_sample > 0:
         return best_bucket_scope, best_bucket_metrics
     return best_scope, best_metrics
 
@@ -13727,6 +14120,83 @@ def _hierarchical_route_calibration_ready(
     )
 
 
+def _probationary_model_route_calibration_ready(
+    *,
+    actual_scope: str,
+    actual_metrics: Mapping[str, Any],
+    replay_metrics: Mapping[str, Any],
+    route_replay_metrics: Mapping[str, Any],
+    model_replay_metrics: Optional[Mapping[str, Any]] = None,
+) -> bool:
+    """Allow one-lot probation only when three evidence layers agree.
+
+    The active-selector frame is available only after the policy passes its
+    frozen pre-split and held-out gates. Route and actual samples remain
+    under-sized here, so this bridge never authorizes scaling beyond one lot.
+    """
+
+    if actual_scope not in {
+        "actual_ticker_route",
+        "actual_route",
+        *_actual_bucket_support_scopes(),
+    }:
+        return False
+    actual_sample = int(actual_metrics.get("sample_size") or 0)
+    actual_avg = _as_float(actual_metrics.get("avg_pnl"))
+    actual_pf = _as_float(actual_metrics.get("profit_factor"))
+    actual_win_rate = _as_float(actual_metrics.get("win_rate"))
+    if not (
+        _as_text(actual_metrics.get("status")).upper() in {"PASS", "WARN"}
+        and actual_sample >= MIN_PROBATIONARY_ACTUAL_ROUTE_SAMPLE_SIZE
+        and actual_avg is not None
+        and actual_avg > 0
+        and actual_pf is not None
+        and (math.isinf(actual_pf) or actual_pf >= MIN_EXPECTANCY_PROFIT_FACTOR)
+        and actual_win_rate is not None
+        and actual_win_rate >= MIN_PROBATIONARY_ACTUAL_WIN_RATE
+    ):
+        return False
+
+    exact_sample = int(replay_metrics.get("sample_size") or 0)
+    if exact_sample >= MIN_PROBATIONARY_ACTUAL_ROUTE_SAMPLE_SIZE and _metrics_are_negative(
+        replay_metrics,
+        min_sample=MIN_PROBATIONARY_ACTUAL_ROUTE_SAMPLE_SIZE,
+    ):
+        return False
+
+    route_sample = int(route_replay_metrics.get("sample_size") or 0)
+    route_avg = _as_float(route_replay_metrics.get("avg_pnl"))
+    route_pf = _as_float(route_replay_metrics.get("profit_factor"))
+    if not (
+        _as_text(route_replay_metrics.get("status")).upper() in {"PASS", "WARN"}
+        and route_sample >= MIN_PROBATIONARY_ROUTE_REPLAY_SAMPLE_SIZE
+        and route_avg is not None
+        and route_avg > 0
+        and route_pf is not None
+        and (math.isinf(route_pf) or route_pf >= MIN_EXPECTANCY_PROFIT_FACTOR)
+    ):
+        return False
+
+    model_metrics = model_replay_metrics or {}
+    model_sample = int(model_metrics.get("sample_size") or 0)
+    model_avg = _as_float(model_metrics.get("avg_pnl"))
+    model_pf = _as_float(model_metrics.get("profit_factor"))
+    model_win_rate = _as_float(model_metrics.get("win_rate"))
+    return bool(
+        _as_text(model_metrics.get("status")).upper() in {"PASS", "WARN"}
+        and model_sample >= MIN_PROBATIONARY_ROUTE_REPLAY_SAMPLE_SIZE
+        and model_avg is not None
+        and model_avg > 0
+        and model_pf is not None
+        and (
+            math.isinf(model_pf)
+            or model_pf >= MIN_PROBATIONARY_MODEL_ROUTE_PROFIT_FACTOR
+        )
+        and model_win_rate is not None
+        and model_win_rate >= MIN_EXPECTANCY_SKEW_WIN_RATE
+    )
+
+
 def _current_calibration_verdict(
     *,
     ticker: str,
@@ -13771,6 +14241,26 @@ def _current_calibration_verdict(
                 f"(sample={int((model_replay_metrics or {}).get('sample_size') or 0)}, "
                 f"profit_factor={(model_replay_metrics or {}).get('profit_factor', '')}). Exact buckets remain sparse, "
                 "so green eligibility is capped at one contract until bucket-precise evidence matures."
+            ),
+        )
+    if _probationary_model_route_calibration_ready(
+        actual_scope=actual_scope,
+        actual_metrics=actual_metrics,
+        replay_metrics=replay_metrics,
+        route_replay_metrics=route_replay_metrics,
+        model_replay_metrics=model_replay_metrics,
+    ):
+        return (
+            "PASS",
+            "eligible_for_one_lot_probation_with_model_route_support",
+            (
+                f"{ticker} {key_text} has positive sparse actual route support via {actual_scope} "
+                f"(sample={actual_sample}, profit_factor={actual_metrics.get('profit_factor', '')}), "
+                f"positive route replay (sample={route_replay_sample}, "
+                f"profit_factor={route_replay_metrics.get('profit_factor', '')}), and positive promoted-selector "
+                f"route support (sample={int((model_replay_metrics or {}).get('sample_size') or 0)}, "
+                f"profit_factor={(model_replay_metrics or {}).get('profit_factor', '')}). This is a one-contract "
+                "probationary bridge, not exact-bucket proof; any mature exact-bucket negative evidence blocks it."
             ),
         )
     if (
@@ -13872,6 +14362,62 @@ def _selector_policy_expected_move_ratio(row: Mapping[str, Any], entry_type: str
     return distance / expected_move
 
 
+def _selector_one_lot_target_profit(row: Mapping[str, Any]) -> float:
+    """Return planned one-contract profit using only entry-time ticket economics."""
+
+    entry_type = _as_text(row.get("entry_type")).upper() or _entry_type_from_route(
+        _as_text(row.get("strategy_route"))
+    )
+    if entry_type == "DEBIT":
+        entry = next(
+            (
+                value
+                for value in (
+                    _as_float(row.get("entry_limit")),
+                    _as_float(row.get("entry_debit")),
+                    _as_float(row.get("entry_price")),
+                )
+                if value is not None and value > 0
+            ),
+            None,
+        )
+        target_exit = _as_float(row.get("target_exit")) or _as_float(
+            row.get("target_exit_value")
+        )
+        if entry is not None and target_exit is not None and target_exit > entry:
+            return round((target_exit - entry) * 100.0, 2)
+        if entry is not None:
+            return round(entry * 0.80 * 100.0, 2)
+    elif entry_type == "CREDIT":
+        entry = next(
+            (
+                value
+                for value in (
+                    _as_float(row.get("entry_limit")),
+                    _as_float(row.get("entry_credit")),
+                    _as_float(row.get("entry_price")),
+                )
+                if value is not None and value > 0
+            ),
+            None,
+        )
+        target_exit = _as_float(row.get("target_exit")) or _as_float(
+            row.get("target_exit_value")
+        )
+        if entry is not None and target_exit is not None and 0 <= target_exit < entry:
+            return round((entry - target_exit) * 100.0, 2)
+        if entry is not None:
+            return round(entry * 0.65 * 100.0, 2)
+    max_profit = _as_float(row.get("max_profit"))
+    return round(max(max_profit or 0.0, 1.0), 2)
+
+
+def _selector_economic_score(quality_score: Any, target_profit: Any) -> float:
+    quality = max(_as_float(quality_score) or 0.0, 0.0)
+    planned_profit = max(_as_float(target_profit) or 0.0, 1.0)
+    return round(quality * math.sqrt(planned_profit), 6)
+
+
 def _selector_structural_score(score: float, row: Mapping[str, Any]) -> float:
     synthesis_score = _as_float(row.get("synthesis_score"))
     if synthesis_score is None:
@@ -13894,8 +14440,6 @@ def _selector_policy_row_assessment(
         reasons.append("underlying_not_core")
     if _as_text(row.get("hard_rejects")):
         reasons.append("objective_quality_reject")
-    if _as_text(row.get("actual_forward_strategy_expectancy_status")).upper() == "BLOCK":
-        reasons.append("actual_strategy_expectancy_negative")
     if _truthy(row.get("earnings_before_expiry")):
         reasons.append("earnings_before_expiry")
     dte = int(_as_float(row.get("dte")) or 0)
@@ -13943,7 +14487,7 @@ def _selector_policy_row_assessment(
         if max_profit is not None and max_loss is not None and max_loss > 0:
             reward_risk = max_profit / max_loss
         if route == "bull_call_debit":
-            valid_dte = 7 <= dte <= 10 or 22 <= dte <= 45
+            valid_dte = 7 <= dte <= 45
             if regime != "risk_on":
                 reasons.append(f"debit_regime_not_aligned:{regime}")
         else:
@@ -13997,6 +14541,7 @@ def annotate_selector_policy(final: pd.DataFrame, *, enabled: bool = True) -> pd
         "selector_policy_id",
         "selector_policy_status",
         "selector_policy_score",
+        "selector_policy_economic_score",
         "selector_policy_sleeve",
         "selector_policy_reason",
     ]
@@ -14007,14 +14552,20 @@ def annotate_selector_policy(final: pd.DataFrame, *, enabled: bool = True) -> pd
         out[column] = ""
     if out.empty or not enabled:
         return out
-    eligible_by_sleeve: dict[str, list[tuple[float, Any]]] = {"CREDIT": [], "DEBIT": []}
+    eligible_by_sleeve: dict[str, list[tuple[float, float, Any]]] = {
+        "CREDIT": [],
+        "DEBIT": [],
+    }
     for idx, row in out.iterrows():
         eligible, score, reasons, sleeve = _selector_policy_row_assessment(row)
+        target_profit = _selector_one_lot_target_profit(row)
+        economic_score = _selector_economic_score(score, target_profit)
         out.at[idx, "selector_policy_id"] = PROMOTED_SELECTOR_POLICY_ID
         out.at[idx, "selector_policy_score"] = score
+        out.at[idx, "selector_policy_economic_score"] = economic_score
         out.at[idx, "selector_policy_sleeve"] = sleeve
         if eligible and sleeve in eligible_by_sleeve:
-            eligible_by_sleeve[sleeve].append((score, idx))
+            eligible_by_sleeve[sleeve].append((economic_score, score, idx))
             out.at[idx, "selector_policy_status"] = "ELIGIBLE"
             out.at[idx, "selector_policy_reason"] = "entry-time selector rules passed"
         else:
@@ -14029,11 +14580,12 @@ def annotate_selector_policy(final: pd.DataFrame, *, enabled: bool = True) -> pd
             eligible_by_sleeve[sleeve],
             key=lambda item: (
                 -item[0],
-                _as_text(out.at[item[1], "ticker"]),
-                int(item[1]) if isinstance(item[1], int) else 0,
+                -item[1],
+                _as_text(out.at[item[2], "ticker"]),
+                int(item[2]) if isinstance(item[2], int) else 0,
             ),
         )
-        for score, idx in ranked:
+        for _, score, idx in ranked:
             ticker = _as_text(out.at[idx, "ticker"]).upper()
             if ticker and ticker in selected_tickers:
                 continue
@@ -14048,12 +14600,13 @@ def annotate_selector_policy(final: pd.DataFrame, *, enabled: bool = True) -> pd
             [item for sleeve_rows in eligible_by_sleeve.values() for item in sleeve_rows],
             key=lambda item: (
                 -item[0],
-                _as_text(out.at[item[1], "ticker"]),
-                int(item[1]) if isinstance(item[1], int) else 0,
+                -item[1],
+                _as_text(out.at[item[2], "ticker"]),
+                int(item[2]) if isinstance(item[2], int) else 0,
             ),
         )
         daily_best_structural_score = max(selected_structural_scores)
-        for score, idx in ranked_remaining:
+        for _, score, idx in ranked_remaining:
             ticker = _as_text(out.at[idx, "ticker"]).upper()
             if idx in selected_indices or (ticker and ticker in selected_tickers):
                 continue
@@ -14074,7 +14627,7 @@ def annotate_selector_policy(final: pd.DataFrame, *, enabled: bool = True) -> pd
             if len(selected_tickers) >= MAX_WALKFORWARD_SELECTIONS_PER_DAY:
                 break
     for sleeve, sleeve_rows in eligible_by_sleeve.items():
-        for _, idx in sleeve_rows:
+        for _, _, idx in sleeve_rows:
             if idx in selected_indices:
                 out.at[idx, "selector_policy_status"] = "PASS"
                 out.at[idx, "selector_policy_reason"] = selected_reasons[idx]
@@ -14113,6 +14666,7 @@ def synthesize_decision_board(
         "selector_policy_id",
         "selector_policy_status",
         "selector_policy_score",
+        "selector_policy_economic_score",
         "selector_policy_sleeve",
         "selector_policy_reason",
         "actual_forward_expectancy_status",
@@ -14137,6 +14691,14 @@ def synthesize_decision_board(
         "profitability_calibration_replay_sample_size",
         "profitability_calibration_replay_avg_pnl",
         "profitability_calibration_replay_profit_factor",
+        "profitability_calibration_route_replay_status",
+        "profitability_calibration_route_replay_sample_size",
+        "profitability_calibration_route_replay_avg_pnl",
+        "profitability_calibration_route_replay_profit_factor",
+        "profitability_calibration_model_replay_status",
+        "profitability_calibration_model_replay_sample_size",
+        "profitability_calibration_model_replay_avg_pnl",
+        "profitability_calibration_model_replay_profit_factor",
         "profitability_calibration_key",
         "profitability_calibration_note",
         "external_agent_review_count",
@@ -14165,6 +14727,7 @@ def synthesize_decision_board(
         "sell_leg",
         "buy_leg",
         "suggested_contracts",
+        "risk_sized_contracts",
         "entry_limit",
         "target_entry",
         "max_profit",
@@ -14197,6 +14760,12 @@ def synthesize_decision_board(
         "max_position_loss",
         "account_risk_pct",
         "evidence_size_cap",
+        "expected_pnl_one_contract",
+        "expected_position_pnl",
+        "expected_return_on_risk",
+        "expected_pnl_source",
+        "expected_pnl_sample_size",
+        "expected_pnl_confidence_status",
         "remaining_upside",
         "target_exit",
         "invalidation",
@@ -14365,6 +14934,7 @@ def synthesize_decision_board(
                 "selector_policy_id": row.get("selector_policy_id", ""),
                 "selector_policy_status": row.get("selector_policy_status", ""),
                 "selector_policy_score": row.get("selector_policy_score", ""),
+                "selector_policy_economic_score": row.get("selector_policy_economic_score", ""),
                 "selector_policy_sleeve": row.get("selector_policy_sleeve", ""),
                 "selector_policy_reason": row.get("selector_policy_reason", ""),
                 "actual_forward_expectancy_status": row.get("actual_forward_expectancy_status", ""),
@@ -14389,6 +14959,14 @@ def synthesize_decision_board(
                 "profitability_calibration_replay_sample_size": row.get("profitability_calibration_replay_sample_size", ""),
                 "profitability_calibration_replay_avg_pnl": row.get("profitability_calibration_replay_avg_pnl", ""),
                 "profitability_calibration_replay_profit_factor": row.get("profitability_calibration_replay_profit_factor", ""),
+                "profitability_calibration_route_replay_status": row.get("profitability_calibration_route_replay_status", ""),
+                "profitability_calibration_route_replay_sample_size": row.get("profitability_calibration_route_replay_sample_size", ""),
+                "profitability_calibration_route_replay_avg_pnl": row.get("profitability_calibration_route_replay_avg_pnl", ""),
+                "profitability_calibration_route_replay_profit_factor": row.get("profitability_calibration_route_replay_profit_factor", ""),
+                "profitability_calibration_model_replay_status": row.get("profitability_calibration_model_replay_status", ""),
+                "profitability_calibration_model_replay_sample_size": row.get("profitability_calibration_model_replay_sample_size", ""),
+                "profitability_calibration_model_replay_avg_pnl": row.get("profitability_calibration_model_replay_avg_pnl", ""),
+                "profitability_calibration_model_replay_profit_factor": row.get("profitability_calibration_model_replay_profit_factor", ""),
                 "profitability_calibration_key": row.get("profitability_calibration_key", ""),
                 "profitability_calibration_note": row.get("profitability_calibration_note", ""),
                 "external_agent_review_count": int(_as_float(row.get("external_agent_review_count")) or 0),
@@ -14417,6 +14995,7 @@ def synthesize_decision_board(
                 "sell_leg": row.get("sell_leg", row.get("short_leg", "")),
                 "buy_leg": row.get("buy_leg", row.get("long_leg", "")),
                 "suggested_contracts": suggested_contracts,
+                "risk_sized_contracts": row.get("risk_sized_contracts", suggested_contracts),
                 "entry_limit": row.get("entry_limit", ""),
                 "target_entry": row.get("target_entry", ""),
                 "max_profit": row.get("max_profit", ""),
@@ -14449,6 +15028,12 @@ def synthesize_decision_board(
                 "max_position_loss": row.get("max_position_loss", ""),
                 "account_risk_pct": row.get("account_risk_pct", ""),
                 "evidence_size_cap": row.get("evidence_size_cap", ""),
+                "expected_pnl_one_contract": row.get("expected_pnl_one_contract", ""),
+                "expected_position_pnl": row.get("expected_position_pnl", ""),
+                "expected_return_on_risk": row.get("expected_return_on_risk", ""),
+                "expected_pnl_source": row.get("expected_pnl_source", ""),
+                "expected_pnl_sample_size": row.get("expected_pnl_sample_size", ""),
+                "expected_pnl_confidence_status": row.get("expected_pnl_confidence_status", ""),
                 "remaining_upside": row.get("remaining_upside", ""),
                 "target_exit": row.get("target_exit", ""),
                 "invalidation": row.get("invalidation", ""),
@@ -14491,6 +15076,7 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "selector_policy_id",
         "selector_policy_status",
         "selector_policy_score",
+        "selector_policy_economic_score",
         "selector_policy_sleeve",
         "selector_policy_reason",
         "actual_forward_expectancy_status",
@@ -14515,6 +15101,14 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "profitability_calibration_replay_sample_size",
         "profitability_calibration_replay_avg_pnl",
         "profitability_calibration_replay_profit_factor",
+        "profitability_calibration_route_replay_status",
+        "profitability_calibration_route_replay_sample_size",
+        "profitability_calibration_route_replay_avg_pnl",
+        "profitability_calibration_route_replay_profit_factor",
+        "profitability_calibration_model_replay_status",
+        "profitability_calibration_model_replay_sample_size",
+        "profitability_calibration_model_replay_avg_pnl",
+        "profitability_calibration_model_replay_profit_factor",
         "profitability_calibration_key",
         "profitability_calibration_note",
         "external_agent_review_count",
@@ -14532,6 +15126,7 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "target_order_status",
         "execution_blockers",
         "suggested_contracts",
+        "risk_sized_contracts",
         "trade_plan",
         "expiry",
         "dte",
@@ -14572,6 +15167,12 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "max_position_loss",
         "account_risk_pct",
         "evidence_size_cap",
+        "expected_pnl_one_contract",
+        "expected_position_pnl",
+        "expected_return_on_risk",
+        "expected_pnl_source",
+        "expected_pnl_sample_size",
+        "expected_pnl_confidence_status",
         "target_exit",
         "invalidation",
         "synthesis_score",
@@ -14603,6 +15204,7 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "selector_policy_id",
         "selector_policy_status",
         "selector_policy_score",
+        "selector_policy_economic_score",
         "selector_policy_sleeve",
         "selector_policy_reason",
         "actual_forward_expectancy_status",
@@ -14616,6 +15218,14 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "actual_forward_strategy_expectancy_family",
         "actual_forward_strategy_expectancy_scope",
         "actual_forward_strategy_expectancy_note",
+        "profitability_calibration_route_replay_status",
+        "profitability_calibration_route_replay_sample_size",
+        "profitability_calibration_route_replay_avg_pnl",
+        "profitability_calibration_route_replay_profit_factor",
+        "profitability_calibration_model_replay_status",
+        "profitability_calibration_model_replay_sample_size",
+        "profitability_calibration_model_replay_avg_pnl",
+        "profitability_calibration_model_replay_profit_factor",
         "external_agent_review_count",
         "external_agent_distinct_review_count",
         "external_agent_review_agents",
@@ -14650,6 +15260,13 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "macro_events_before_expiry",
         "contract_event_risk_note",
         "evidence_size_cap",
+        "risk_sized_contracts",
+        "expected_pnl_one_contract",
+        "expected_position_pnl",
+        "expected_return_on_risk",
+        "expected_pnl_source",
+        "expected_pnl_sample_size",
+        "expected_pnl_confidence_status",
         "underlying_quality_tier",
         "underlying_quality_reason",
         "target_order_status",
@@ -15062,6 +15679,11 @@ def _sort_trades_by_confidence(frame: pd.DataFrame) -> pd.DataFrame:
     working["__quality_confidence_rank"] = _rating_sort_series(working, "trade_quality_confidence_rating")
     working["__execution_confidence_rank"] = target_ranks.where(~ready_mask, ready_ranks)
     working["__external_lane_count"] = _numeric_sort_series(working, "external_agent_distinct_review_count", default=0.0)
+    working["__expected_position_pnl"] = _numeric_sort_series(
+        working,
+        "expected_position_pnl",
+        default=0.0,
+    )
     working["__synthesis_score"] = _numeric_sort_series(working, "synthesis_score", default=-1.0)
     working["__recommendation_rank"] = _numeric_sort_series(working, "recommendation_rank", default=1_000_000.0)
     working["__original_order"] = range(len(working))
@@ -15074,6 +15696,7 @@ def _sort_trades_by_confidence(frame: pd.DataFrame) -> pd.DataFrame:
             "__quality_confidence_rank",
             "__execution_confidence_rank",
             "__external_lane_count",
+            "__expected_position_pnl",
             "__calibration_status_rank",
             "__actual_status_rank",
             "__replay_status_rank",
@@ -15083,7 +15706,7 @@ def _sort_trades_by_confidence(frame: pd.DataFrame) -> pd.DataFrame:
             "__recommendation_rank",
             "__original_order",
         ],
-        ascending=[False, False, False, False, False, False, False, False, False, False, False, False, False, True, True],
+        ascending=[False, False, False, False, False, False, False, False, False, False, False, False, False, False, True, True],
         kind="mergesort",
     )
     return sorted_frame[original_columns].reset_index(drop=True)
@@ -15178,7 +15801,7 @@ def build_market_open_recheck_queue(trade_tickets: pd.DataFrame) -> pd.DataFrame
     ].copy()
     if queue.empty:
         return pd.DataFrame(columns=columns)
-    queue["required_recheck"] = "fresh Schwab quote + portfolio context + agentic lanes still passing"
+    queue["required_recheck"] = "fresh Schwab quote; agentic lanes must still pass"
     queue["recheck_action"] = "refresh the target limit in Schwab; enter only if this row moves to green ready_to_enter=true"
     queue = _sort_trades_by_confidence(queue)
     return queue[columns].reset_index(drop=True)
@@ -15658,6 +16281,8 @@ def _positive_strategy_expectancy_ready_for_green(row: Mapping[str, Any]) -> boo
         return True
     if _current_edge_override_reason(row):
         return True
+    if _probationary_model_route_ticket_ready(row, require_selector=True):
+        return True
     if not _strategy_expectancy_annotation_present(row):
         return False
     status = _as_text(row.get("actual_forward_strategy_expectancy_status")).upper()
@@ -15665,6 +16290,83 @@ def _positive_strategy_expectancy_ready_for_green(row: Mapping[str, Any]) -> boo
     if status != "PASS" or sample < MIN_TICKER_EXPECTANCY_SAMPLE_SIZE:
         return False
     return not _expectancy_values_are_negative(row, "actual_forward_strategy_expectancy")
+
+
+def _probationary_model_route_ticket_ready(
+    row: Mapping[str, Any],
+    *,
+    require_selector: bool,
+) -> bool:
+    """Return whether a row satisfies the one-lot model-backed route bridge."""
+
+    if _as_text(row.get("profitability_calibration_status")).upper() != "PASS":
+        return False
+    if require_selector and _as_text(row.get("selector_policy_status")).upper() != "PASS":
+        return False
+    exact_status = _as_text(row.get("profitability_calibration_replay_status")).upper()
+    exact_sample = int(
+        _as_float(row.get("profitability_calibration_replay_sample_size")) or 0
+    )
+    if exact_status == "PASS":
+        return False
+    if exact_sample >= MIN_PROBATIONARY_ACTUAL_ROUTE_SAMPLE_SIZE and (
+        _expectancy_values_are_negative(row, "profitability_calibration_replay")
+    ):
+        return False
+
+    actual_sample = int(
+        _as_float(row.get("profitability_calibration_actual_sample_size")) or 0
+    )
+    actual_avg = _as_float(row.get("profitability_calibration_actual_avg_pnl"))
+    actual_pf = _as_float(row.get("profitability_calibration_actual_profit_factor"))
+    strategy_sample = int(
+        _as_float(row.get("actual_forward_strategy_expectancy_sample_size")) or 0
+    )
+    strategy_avg = _as_float(row.get("actual_forward_strategy_expectancy_avg_pnl"))
+    strategy_pf = _as_float(
+        row.get("actual_forward_strategy_expectancy_profit_factor")
+    )
+    route_sample = int(
+        _as_float(row.get("profitability_calibration_route_replay_sample_size")) or 0
+    )
+    route_avg = _as_float(row.get("profitability_calibration_route_replay_avg_pnl"))
+    route_pf = _as_float(
+        row.get("profitability_calibration_route_replay_profit_factor")
+    )
+    model_sample = int(
+        _as_float(row.get("profitability_calibration_model_replay_sample_size")) or 0
+    )
+    model_avg = _as_float(row.get("profitability_calibration_model_replay_avg_pnl"))
+    model_pf = _as_float(
+        row.get("profitability_calibration_model_replay_profit_factor")
+    )
+    return bool(
+        MIN_PROBATIONARY_ACTUAL_ROUTE_SAMPLE_SIZE
+        <= actual_sample
+        < MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE
+        and actual_avg is not None
+        and actual_avg > 0
+        and actual_pf is not None
+        and (math.isinf(actual_pf) or actual_pf >= MIN_EXPECTANCY_PROFIT_FACTOR)
+        and strategy_sample >= MIN_PROBATIONARY_ACTUAL_ROUTE_SAMPLE_SIZE
+        and strategy_avg is not None
+        and strategy_avg > 0
+        and strategy_pf is not None
+        and (math.isinf(strategy_pf) or strategy_pf >= MIN_EXPECTANCY_PROFIT_FACTOR)
+        and route_sample >= MIN_PROBATIONARY_ROUTE_REPLAY_SAMPLE_SIZE
+        and route_avg is not None
+        and route_avg > 0
+        and route_pf is not None
+        and (math.isinf(route_pf) or route_pf >= MIN_EXPECTANCY_PROFIT_FACTOR)
+        and model_sample >= MIN_PROBATIONARY_ROUTE_REPLAY_SAMPLE_SIZE
+        and model_avg is not None
+        and model_avg > 0
+        and model_pf is not None
+        and (
+            math.isinf(model_pf)
+            or model_pf >= MIN_PROBATIONARY_MODEL_ROUTE_PROFIT_FACTOR
+        )
+    )
 
 
 def _profitability_calibration_ready_for_green(row: Mapping[str, Any]) -> bool:
@@ -15827,6 +16529,7 @@ def _positive_actual_support_target_allowed(row: Mapping[str, Any], blockers: se
     )
     strategy_avg = _as_float(row.get("actual_forward_strategy_expectancy_avg_pnl"))
     strategy_profit_factor = _as_float(row.get("actual_forward_strategy_expectancy_profit_factor"))
+    strategy_scope = _as_text(row.get("actual_forward_strategy_expectancy_scope"))
     strategy_actual_positive = bool(
         strategy_status == "PASS"
         and strategy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE
@@ -15835,7 +16538,25 @@ def _positive_actual_support_target_allowed(row: Mapping[str, Any], blockers: se
         and (strategy_profit_factor is None or strategy_profit_factor >= 1.0)
         and not _expectancy_values_are_negative(row, "actual_forward_strategy_expectancy")
     )
-    return bool(calibration_actual_positive or strategy_actual_positive)
+    sparse_route_actual_positive = bool(
+        _as_text(row.get("selector_policy_status")).upper() == "PASS"
+        and strategy_status == "WARN"
+        and strategy_scope in {"ticker_route", "strategy_route"}
+        and strategy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE
+        and strategy_avg is not None
+        and strategy_avg > 0
+        and strategy_profit_factor is not None
+        and (
+            math.isinf(strategy_profit_factor)
+            or strategy_profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR
+        )
+        and not _expectancy_values_are_negative(row, "actual_forward_strategy_expectancy")
+    )
+    return bool(
+        calibration_actual_positive
+        or strategy_actual_positive
+        or sparse_route_actual_positive
+    )
 
 
 def _short_put_cash_risk_blockers(row: Mapping[str, Any]) -> list[str]:
@@ -16364,6 +17085,13 @@ def _execution_confidence(
             )
         )
     )
+    probationary_model_route_support = _probationary_model_route_ticket_ready(
+        row,
+        require_selector=True,
+    )
+    model_backed_route_support = bool(
+        deep_hierarchical_route_support or probationary_model_route_support
+    )
     if expectancy_status == "PASS":
         score += 10 if expectancy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE else 5
         quality_score += 12 if expectancy_sample >= MIN_TICKER_EXPECTANCY_SAMPLE_SIZE else 5
@@ -16375,7 +17103,7 @@ def _execution_confidence(
             score -= 5
             quality_score -= 8
     elif expectancy_status == "BLOCK" and expectancy_sample <= 0:
-        if not deep_hierarchical_route_support:
+        if not model_backed_route_support:
             score -= 15
             quality_score -= 20
     if strategy_expectancy_status == "PASS":
@@ -16389,6 +17117,9 @@ def _execution_confidence(
         if strategy_expectancy_negative:
             score -= 12
             quality_score -= 18
+        elif probationary_model_route_support:
+            score += 8
+            quality_score += 10
         else:
             score += 2
             quality_score += 4
@@ -16454,7 +17185,7 @@ def _execution_confidence(
         quality_score -= 30
     if execution_blockers:
         score -= min(len(execution_blockers) * 8.0, 32.0)
-    if expectancy_status == "BLOCK" and expectancy_sample <= 0 and deep_hierarchical_route_support:
+    if expectancy_status == "BLOCK" and expectancy_sample <= 0 and model_backed_route_support:
         quality_score = min(quality_score, 79.0)
     score = round(max(0.0, min(100.0, score)), 2)
     quality_score = round(max(0.0, min(100.0, quality_score)), 2)
@@ -16679,6 +17410,9 @@ def build_expectancy_evidence(
     broker_matched_outcomes: Optional[pd.DataFrame] = None,
     broker_backfilled_forward_outcomes: Optional[pd.DataFrame] = None,
     selector_challenger_audit: Optional[pd.DataFrame] = None,
+    *,
+    as_of_date: str | dt.date | None = None,
+    actual_frame: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """Build a non-v4 evidence ledger for expectancy and monthly-target claims."""
 
@@ -16692,7 +17426,12 @@ def build_expectancy_evidence(
     current_strategy_routes = _current_ticket_strategy_routes(decision_board, trade_tickets)
     current_strategy_families_by_ticker = _current_ticket_strategy_families_by_ticker(decision_board, trade_tickets)
     closed_trades_path = _closed_trades_evidence_path(root, out_root)
-    actual_frame = _actual_calibration_frame(root, out_root)
+    as_of_day = parse_as_of(as_of_date) if as_of_date is not None else None
+    actual = (
+        actual_frame.copy()
+        if actual_frame is not None
+        else _actual_calibration_frame(root, out_root, as_of=as_of_day)
+    )
     rows: list[dict[str, Any]] = []
 
     rows.append(
@@ -16701,6 +17440,7 @@ def build_expectancy_evidence(
             source="codexuw_execute_outcome_ledger",
             evidence_type="forward_realized_outcomes",
             current_tickers=current_tickers,
+            as_of=as_of_day,
         )
     )
     rows.extend(
@@ -16709,6 +17449,7 @@ def build_expectancy_evidence(
             source="codexuw_execute_outcome_ledger_by_ticker",
             evidence_type="forward_realized_outcomes_by_ticker",
             current_tickers=current_tickers,
+            as_of=as_of_day,
         )
     )
     rows.append(
@@ -16717,6 +17458,7 @@ def build_expectancy_evidence(
             source="codexuw_recommendation_outcome_ledger",
             evidence_type="forward_recommendation_outcomes",
             current_tickers=current_tickers,
+            as_of=as_of_day,
         )
     )
     if broker_backfilled_forward_outcomes is not None:
@@ -16724,24 +17466,31 @@ def build_expectancy_evidence(
             _expectancy_from_broker_backfilled_forward_outcomes(
                 broker_backfilled_forward_outcomes,
                 current_tickers,
+                as_of=as_of_day,
             )
         )
-    rows.append(_expectancy_from_shadow_outcomes(root, out_root, current_tickers))
-    rows.extend(_expectancy_from_replay_history(replay_out_root, current_tickers))
-    rows.extend(_expectancy_from_options_agent_walkforward_replay(replay_out_root, current_tickers))
+    rows.append(_expectancy_from_shadow_outcomes(root, out_root, current_tickers, as_of=as_of_day))
+    rows.extend(_expectancy_from_replay_history(replay_out_root, current_tickers, as_of=as_of_day))
+    rows.extend(_expectancy_from_options_agent_walkforward_replay(replay_out_root, current_tickers, as_of=as_of_day))
     rows.append(
         _expectancy_from_selector_challenger_audit(
             replay_out_root,
             selector_challenger_audit,
         )
     )
-    rows.append(_expectancy_from_closed_trades(closed_trades_path, current_tickers))
-    rows.extend(_expectancy_by_ticker_from_closed_trades(closed_trades_path, current_tickers))
+    rows.append(_expectancy_from_closed_trades(closed_trades_path, current_tickers, actual_frame=actual))
+    rows.extend(
+        _expectancy_by_ticker_from_closed_trades(
+            closed_trades_path,
+            current_tickers,
+            actual_frame=actual,
+        )
+    )
     rows.extend(
         _expectancy_by_ticker_strategy_from_closed_trades(
             closed_trades_path,
             current_strategy_families_by_ticker,
-            actual_frame=actual_frame,
+            actual_frame=actual,
         )
     )
     rows.append(
@@ -16749,12 +17498,24 @@ def build_expectancy_evidence(
             closed_trades_path,
             current_strategy_families,
             current_strategy_routes=current_strategy_routes,
-            actual_frame=actual_frame,
+            actual_frame=actual,
         )
     )
     if broker_matched_outcomes is not None:
-        rows.append(_expectancy_from_broker_matched_outcomes(broker_matched_outcomes, current_tickers))
-        rows.append(_expectancy_from_options_agent_broker_matched_outcomes(broker_matched_outcomes, current_tickers))
+        rows.append(
+            _expectancy_from_broker_matched_outcomes(
+                broker_matched_outcomes,
+                current_tickers,
+                as_of=as_of_day,
+            )
+        )
+        rows.append(
+            _expectancy_from_options_agent_broker_matched_outcomes(
+                broker_matched_outcomes,
+                current_tickers,
+                as_of=as_of_day,
+            )
+        )
     rows.append(_expectancy_summary_row(rows))
     return pd.DataFrame(rows, columns=EXPECTANCY_EVIDENCE_COLUMNS)
 
@@ -16775,36 +17536,51 @@ def build_outcome_evidence_audit(
     execute_ledger_path = _evidence_file_path(root, out_root, "codexuw_execute_outcome_ledger.csv")
     recommendation_ledger_path = _evidence_file_path(root, out_root, "codexuw_recommendation_outcome_ledger.csv")
     current_tickers = _current_ticket_tickers(decision_board, trade_tickets)
+    as_of_day = parse_as_of(as_of_date) if as_of_date is not None else None
     rows = [
         _csv_outcome_evidence_audit_row(
             execute_ledger_path,
             source="codexuw_execute_outcome_ledger",
             evidence_type="forward_realized_outcomes",
             current_tickers=current_tickers,
+            as_of=as_of_day,
         ),
         _csv_outcome_evidence_audit_row(
             recommendation_ledger_path,
             source="codexuw_recommendation_outcome_ledger",
             evidence_type="forward_recommendation_outcomes",
             current_tickers=current_tickers,
+            as_of=as_of_day,
         ),
         _closed_trades_outcome_evidence_audit_row(
             _closed_trades_evidence_path(root, out_root),
             current_tickers=current_tickers,
+            as_of=as_of_day,
         ),
-        _shadow_outcome_evidence_audit_row(root, out_root, current_tickers=current_tickers),
+        _shadow_outcome_evidence_audit_row(
+            root,
+            out_root,
+            current_tickers=current_tickers,
+            as_of=as_of_day,
+        ),
     ]
     if broker_backfilled_forward_outcomes is not None:
         rows.append(
             _broker_backfilled_forward_outcome_evidence_audit_row(
                 broker_backfilled_forward_outcomes,
                 current_tickers=current_tickers,
+                as_of=as_of_day,
             )
         )
     if broker_matched_outcomes is not None:
-        rows.append(_broker_matched_outcome_evidence_audit_row(broker_matched_outcomes, current_tickers=current_tickers))
+        rows.append(
+            _broker_matched_outcome_evidence_audit_row(
+                broker_matched_outcomes,
+                current_tickers=current_tickers,
+                as_of=as_of_day,
+            )
+        )
     if as_of_date is not None:
-        as_of_day = parse_as_of(as_of_date)
         for row in rows:
             latest = _parse_optional_date_value(row.get("latest_evidence_date"))
             if latest is not None and latest > as_of_day:
@@ -18141,6 +18917,7 @@ def _csv_outcome_evidence_audit_row(
     source: str,
     evidence_type: str,
     current_tickers: set[str],
+    as_of: str | dt.date | None = None,
 ) -> dict[str, Any]:
     if not _safe_non_v4_path(path):
         return _outcome_evidence_missing_row(path, source, evidence_type, "unsafe_v4_path")
@@ -18150,6 +18927,7 @@ def _csv_outcome_evidence_audit_row(
         frame = pd.read_csv(path)
     except Exception as exc:
         return _outcome_evidence_missing_row(path, source, evidence_type, f"source_unreadable:{exc}")
+    frame = _filter_outcome_audit_frame_as_of(frame, as_of)
     return _outcome_evidence_frame_row(
         frame,
         path=path,
@@ -18159,7 +18937,12 @@ def _csv_outcome_evidence_audit_row(
     )
 
 
-def _closed_trades_outcome_evidence_audit_row(path: Path, *, current_tickers: set[str]) -> dict[str, Any]:
+def _closed_trades_outcome_evidence_audit_row(
+    path: Path,
+    *,
+    current_tickers: set[str],
+    as_of: str | dt.date | None = None,
+) -> dict[str, Any]:
     source = "schwab_closed_trades"
     evidence_type = "actual_closed_trades"
     if not _safe_non_v4_path(path):
@@ -18169,6 +18952,7 @@ def _closed_trades_outcome_evidence_audit_row(path: Path, *, current_tickers: se
     frame, error = _read_closed_trades_frame(path)
     if error:
         return _outcome_evidence_missing_row(path, source, evidence_type, f"source_unreadable:{error}")
+    frame = _filter_outcome_audit_frame_as_of(frame, as_of)
     return _outcome_evidence_frame_row(
         frame,
         path=path,
@@ -18192,6 +18976,7 @@ def _shadow_outcome_evidence_audit_row(
     out_root: Path,
     *,
     current_tickers: set[str],
+    as_of: str | dt.date | None = None,
 ) -> dict[str, Any]:
     source = "options_agent_shadow_outcomes"
     evidence_type = "prospective_fixed_horizon_exact_quotes"
@@ -18222,6 +19007,7 @@ def _shadow_outcome_evidence_audit_row(
         "contributes_to_expectancy", pd.Series(False, index=frame.index)
     ).map(_truthy)
     frame = frame[exact & contributing].copy()
+    frame = _filter_outcome_audit_frame_as_of(frame, as_of)
     return _outcome_evidence_frame_row(
         frame,
         path=path,
@@ -18231,13 +19017,18 @@ def _shadow_outcome_evidence_audit_row(
     )
 
 
-def _broker_matched_outcome_evidence_audit_row(outcomes: pd.DataFrame, *, current_tickers: set[str]) -> dict[str, Any]:
+def _broker_matched_outcome_evidence_audit_row(
+    outcomes: pd.DataFrame,
+    *,
+    current_tickers: set[str],
+    as_of: str | dt.date | None = None,
+) -> dict[str, Any]:
     source = "broker_matched_outcomes"
     evidence_type = "broker_matched_recommendation_outcomes"
     path = Path("broker_matched_outcomes.csv")
     if outcomes is None or outcomes.empty:
         return _outcome_evidence_missing_row(path, source, evidence_type, "no_exact_broker_matches")
-    frame = outcomes.copy()
+    frame = _filter_outcome_audit_frame_as_of(outcomes, as_of)
     pnl = pd.to_numeric(frame.get("realized_pnl", pd.Series(dtype=float)), errors="coerce").dropna()
     summary = summarize_broker_matched_outcomes(frame)
     status = _as_text(summary.get("expectancy_status")).upper() or "BLOCK"
@@ -18278,13 +19069,14 @@ def _broker_backfilled_forward_outcome_evidence_audit_row(
     outcomes: pd.DataFrame,
     *,
     current_tickers: set[str],
+    as_of: str | dt.date | None = None,
 ) -> dict[str, Any]:
     source = "broker_backfilled_forward_outcomes"
     evidence_type = "forward_realized_outcomes"
     path = Path("broker_backfilled_forward_outcomes.csv")
     if outcomes is None or outcomes.empty:
         return _outcome_evidence_missing_row(path, source, evidence_type, "no_exact_forward_ledger_broker_backfills")
-    frame = outcomes.copy()
+    frame = _filter_outcome_audit_frame_as_of(outcomes, as_of)
     pnl = pd.to_numeric(frame.get("realized_pnl", pd.Series(dtype=float)), errors="coerce").dropna()
     tickers = _ticker_set_from_frame(frame)
     matched_current = _matched_current_tickers(tickers, current_tickers)
@@ -18446,7 +19238,13 @@ def _file_mtime_iso(path: Path) -> str:
         return ""
 
 
-def build_strategy_outcome_atlas(root: Path, decision_board: pd.DataFrame, trade_tickets: pd.DataFrame) -> pd.DataFrame:
+def build_strategy_outcome_atlas(
+    root: Path,
+    decision_board: pd.DataFrame,
+    trade_tickets: pd.DataFrame,
+    *,
+    as_of_date: str | dt.date | None = None,
+) -> pd.DataFrame:
     """Summarize actual closed-trade outcomes by strategy family and current ticket strategy."""
 
     root = Path(root).expanduser().resolve()
@@ -18486,7 +19284,7 @@ def build_strategy_outcome_atlas(root: Path, decision_board: pd.DataFrame, trade
             ],
             columns=STRATEGY_OUTCOME_ATLAS_COLUMNS,
         )
-    actual = _actual_calibration_frame(root, out_root)
+    actual = _actual_calibration_frame(root, out_root, as_of=as_of_date)
     if actual is not None and not actual.empty:
         closed = actual.copy()
         error = ""
@@ -19201,6 +19999,74 @@ def tickers_match(left: Any, right: Any) -> bool:
     return bool(left_key and right_key and left_key == right_key)
 
 
+ACTUAL_OUTCOME_AVAILABILITY_COLUMNS = (
+    "closed_at",
+    "exit_date",
+    "exit_day",
+    "observation_session_date",
+    "outcome_date",
+    "evaluation_date",
+    "evaluated_at",
+)
+
+
+def _filter_actual_outcomes_as_of(
+    frame: pd.DataFrame,
+    as_of: str | dt.date | None,
+) -> pd.DataFrame:
+    """Keep only outcomes that were known and recent enough on the run date."""
+
+    if frame is None or frame.empty or as_of is None:
+        return frame.copy() if frame is not None else pd.DataFrame()
+    as_of_day = parse_as_of(as_of)
+    earliest_day = as_of_day - dt.timedelta(days=ACTUAL_EXPECTANCY_LOOKBACK_DAYS)
+    out = frame.copy()
+    available = pd.Series(pd.NaT, index=out.index, dtype="datetime64[ns]")
+    for column in ACTUAL_OUTCOME_AVAILABILITY_COLUMNS:
+        if column not in out.columns:
+            continue
+        parsed = pd.to_datetime(out[column], errors="coerce", utc=True).dt.tz_localize(None)
+        available = available.where(available.notna(), parsed)
+    out["outcome_available_date"] = available
+    available_day = available.dt.normalize()
+    as_of_timestamp = pd.Timestamp(as_of_day)
+    earliest_timestamp = pd.Timestamp(earliest_day)
+    eligible = (
+        available_day.notna()
+        & available_day.le(as_of_timestamp)
+        & available_day.ge(earliest_timestamp)
+    )
+    return out[eligible].copy()
+
+
+def _filter_outcome_audit_frame_as_of(
+    frame: pd.DataFrame,
+    as_of: str | dt.date | None,
+) -> pd.DataFrame:
+    """Date an evidence source without discarding its open, unrealized rows."""
+
+    if frame is None or frame.empty or as_of is None:
+        return frame.copy() if frame is not None else pd.DataFrame()
+    as_of_day = parse_as_of(as_of)
+    earliest_day = as_of_day - dt.timedelta(days=ACTUAL_EXPECTANCY_LOOKBACK_DAYS)
+    out = frame.copy()
+    available = pd.Series(pd.NaT, index=out.index, dtype="datetime64[ns]")
+    for column in (*ACTUAL_OUTCOME_AVAILABILITY_COLUMNS, "report_date", "asof", "date"):
+        if column not in out.columns:
+            continue
+        parsed = pd.to_datetime(out[column], errors="coerce", utc=True).dt.tz_localize(None)
+        available = available.where(available.notna(), parsed)
+    available_day = available.dt.normalize()
+    pnl = pd.to_numeric(out.get("realized_pnl", pd.Series(math.nan, index=out.index)), errors="coerce")
+    dated_in_window = (
+        available_day.notna()
+        & available_day.le(pd.Timestamp(as_of_day))
+        & available_day.ge(pd.Timestamp(earliest_day))
+    )
+    undated_open = available.isna() & pnl.isna()
+    return out[dated_in_window | undated_open].copy()
+
+
 def _canonical_ticker_set(values: Iterable[Any]) -> set[str]:
     return {canonical_ticker_key(value) for value in values if canonical_ticker_key(value)}
 
@@ -19221,6 +20087,7 @@ def _actual_forward_outcome_frame(
     out_root: Path,
     *,
     broker_backfilled_forward_outcomes: Optional[pd.DataFrame] = None,
+    as_of: str | dt.date | None = None,
 ) -> pd.DataFrame:
     frames: list[pd.DataFrame] = []
     order_meta = _raw_order_calibration_lookup(root, out_root)
@@ -19235,31 +20102,21 @@ def _actual_forward_outcome_frame(
             execute = pd.read_csv(execute_path)
             if {"ticker", "realized_pnl"}.issubset(execute.columns):
                 columns = ["ticker", "realized_pnl"]
-                if "strategy" in execute.columns:
-                    columns.append("strategy")
-                if "entry_order_ids" in execute.columns:
-                    columns.append("entry_order_ids")
-                if "opened_at" in execute.columns:
-                    columns.append("opened_at")
-                if "expiry" in execute.columns:
-                    columns.append("expiry")
-                if "regime" in execute.columns:
-                    columns.append("regime")
-                if "direction" in execute.columns:
-                    columns.append("direction")
+                for column in (
+                    "strategy",
+                    "entry_order_ids",
+                    "opened_at",
+                    "expiry",
+                    "regime",
+                    "direction",
+                    *ACTUAL_OUTCOME_AVAILABILITY_COLUMNS,
+                ):
+                    if column in execute.columns and column not in columns:
+                        columns.append(column)
                 frame = execute[columns].copy()
-                if "strategy" not in frame.columns:
-                    frame["strategy"] = ""
-                if "entry_order_ids" not in frame.columns:
-                    frame["entry_order_ids"] = ""
-                if "opened_at" not in frame.columns:
-                    frame["opened_at"] = ""
-                if "expiry" not in frame.columns:
-                    frame["expiry"] = ""
-                if "regime" not in frame.columns:
-                    frame["regime"] = ""
-                if "direction" not in frame.columns:
-                    frame["direction"] = ""
+                for column in ("strategy", "entry_order_ids", "opened_at", "expiry", "regime", "direction"):
+                    if column not in frame.columns:
+                        frame[column] = ""
                 frames.append(frame.assign(source="codexuw_execute_outcome_ledger"))
         except Exception:
             pass
@@ -19267,7 +20124,14 @@ def _actual_forward_outcome_frame(
         backfilled = broker_backfilled_forward_outcomes.copy()
         if {"ticker", "realized_pnl"}.issubset(backfilled.columns):
             columns = ["ticker", "realized_pnl"]
-            for column in ("strategy", "strategy_family", "entry_order_ids", "opened_at", "expiry"):
+            for column in (
+                "strategy",
+                "strategy_family",
+                "entry_order_ids",
+                "opened_at",
+                "expiry",
+                *ACTUAL_OUTCOME_AVAILABILITY_COLUMNS,
+            ):
                 if column in backfilled.columns:
                     columns.append(column)
             frame = backfilled[columns].copy()
@@ -19296,18 +20160,17 @@ def _actual_forward_outcome_frame(
         closed, error = _read_closed_trades_frame(closed_path)
         if not error and {"ticker", "realized_pnl"}.issubset(closed.columns):
             columns = ["ticker", "realized_pnl"]
-            if "strategy" in closed.columns:
-                columns.append("strategy")
-            if "entry_order_ids" in closed.columns:
-                columns.append("entry_order_ids")
-            if "opened_at" in closed.columns:
-                columns.append("opened_at")
-            if "expiry" in closed.columns:
-                columns.append("expiry")
-            if "regime" in closed.columns:
-                columns.append("regime")
-            if "direction" in closed.columns:
-                columns.append("direction")
+            for column in (
+                "strategy",
+                "entry_order_ids",
+                "opened_at",
+                "expiry",
+                "regime",
+                "direction",
+                *ACTUAL_OUTCOME_AVAILABILITY_COLUMNS,
+            ):
+                if column in closed.columns and column not in columns:
+                    columns.append(column)
             frame = closed[columns].copy()
             if "strategy" not in frame.columns:
                 frame["strategy"] = ""
@@ -19328,6 +20191,9 @@ def _actual_forward_outcome_frame(
     combined["ticker"] = combined["ticker"].astype(str).str.strip().str.upper()
     combined["canonical_ticker"] = combined["ticker"].map(canonical_ticker_key)
     combined = _deduplicate_actual_forward_outcomes(combined)
+    combined = _filter_actual_outcomes_as_of(combined, as_of)
+    if combined.empty:
+        return combined
     combined["__order_calibration"] = combined["entry_order_ids"].map(
         lambda value: _order_calibration_from_entry_order_ids(value, order_meta)
     )
@@ -19738,19 +20604,12 @@ def _metrics_are_negative(metrics: Mapping[str, Any], *, min_sample: int) -> boo
 
 
 def _current_ticket_tickers(decision_board: pd.DataFrame, trade_tickets: pd.DataFrame) -> set[str]:
-    if trade_tickets is not None and not trade_tickets.empty and "ticker" in trade_tickets.columns:
-        ticket_tickers = {
-            str(value).strip().upper()
-            for value in trade_tickets["ticker"].dropna().tolist()
-            if str(value).strip()
-        }
-        if ticket_tickers:
-            return ticket_tickers
-    if decision_board is None or decision_board.empty or "ticker" not in decision_board.columns:
+    frame = _current_action_candidate_frame(decision_board, trade_tickets)
+    if frame is None or frame.empty or "ticker" not in frame.columns:
         return set()
     return {
         str(value).strip().upper()
-        for value in decision_board["ticker"].dropna().tolist()
+        for value in frame["ticker"].dropna().tolist()
         if str(value).strip()
     }
 
@@ -19797,36 +20656,38 @@ def _current_ticket_strategy_families_by_ticker(
 
 def _current_action_candidate_frame(decision_board: pd.DataFrame, trade_tickets: pd.DataFrame) -> pd.DataFrame:
     if trade_tickets is not None and not trade_tickets.empty:
-        return trade_tickets.copy()
+        tickets = trade_tickets.copy()
+        ready = tickets.get("ready_to_enter", pd.Series(False, index=tickets.index)).map(_truthy)
+        target = tickets.apply(_target_surface_eligible, axis=1)
+        if bool((ready | target).any()):
+            return tickets[ready | target].copy()
+        if not {"target_order_status", "selector_policy_status"}.intersection(tickets.columns):
+            # Legacy callers supplied an already-filtered ticket frame without
+            # action-surface columns. Preserve that contract without allowing
+            # modern rejected review rows to contaminate current-ticket evidence.
+            return tickets
     if decision_board is None or decision_board.empty:
         return pd.DataFrame()
     frame = decision_board.copy()
-    target_status = frame.get("target_order_status", pd.Series("", index=frame.index)).astype(str).str.lower()
     ready = frame.get("ready_to_enter", pd.Series(False, index=frame.index)).map(_truthy)
-    action_target = target_status.isin({"target_order_candidate", "target_order_wait_for_price", "ready_to_enter"})
+    if "live_validation_status" in frame.columns:
+        action_target = frame.apply(_target_surface_eligible, axis=1)
+    else:
+        action_target = frame.get(
+            "target_order_status",
+            pd.Series("", index=frame.index),
+        ).astype(str).str.lower().isin({"target_order_candidate", "target_order_wait_for_price"})
     if bool((ready | action_target).any()):
         return frame[ready | action_target].copy()
-    final_action = frame.get("final_action", pd.Series("", index=frame.index)).astype(str).str.upper()
-    non_actionable = (
-        target_status.str.startswith("not_actionable")
-        | target_status.str.startswith("blocked")
-    )
-    review_only = target_status.str.startswith("review_only")
-    action_like = final_action.isin(
-        {
-            RecommendationStatus.ENTER.value,
-            RecommendationStatus.ENTER_WITH_PORTFOLIO_RISK.value,
-            RecommendationStatus.WAIT_FOR_PRICE.value,
-        }
-    )
-    action_candidates = frame[action_like & (~non_actionable | review_only)].copy()
-    if not action_candidates.empty:
-        return action_candidates
-    visible = frame.get("visible_in_final_board", pd.Series(False, index=frame.index)).map(_truthy)
-    visible_review = frame[visible & review_only].copy()
-    if not visible_review.empty:
-        return visible_review
-    return frame[visible & ~non_actionable].copy()
+    selector_pass = frame.get(
+        "selector_policy_status",
+        pd.Series("", index=frame.index),
+    ).fillna("").astype(str).str.upper().eq("PASS")
+    if bool(selector_pass.any()):
+        return frame[selector_pass].copy()
+    if not {"target_order_status", "selector_policy_status"}.intersection(frame.columns):
+        return frame
+    return pd.DataFrame(columns=frame.columns)
 
 
 def _normal_strategy_family(value: Any) -> str:
@@ -19906,6 +20767,7 @@ def _expectancy_from_outcome_csv(
     source: str,
     evidence_type: str,
     current_tickers: set[str],
+    as_of: str | dt.date | None = None,
 ) -> dict[str, Any]:
     if not _safe_non_v4_path(path):
         return _expectancy_missing_row(source, path, evidence_type, "v4-derived source intentionally ignored")
@@ -19915,6 +20777,7 @@ def _expectancy_from_outcome_csv(
         df = pd.read_csv(path, low_memory=False)
     except Exception as exc:
         return _expectancy_missing_row(source, path, evidence_type, f"source unreadable: {exc}")
+    df = _filter_actual_outcomes_as_of(df, as_of)
     current_df = _filter_frame_to_tickers(df, current_tickers)
     pnl = _numeric_frame_column(current_df, "realized_pnl")
     realized = current_df[pnl.notna()].copy()
@@ -19947,6 +20810,7 @@ def _expectancy_by_ticker_from_outcome_csv(
     source: str,
     evidence_type: str,
     current_tickers: set[str],
+    as_of: str | dt.date | None = None,
 ) -> list[dict[str, Any]]:
     if not _safe_non_v4_path(path) or not path.exists() or not current_tickers:
         return []
@@ -19956,6 +20820,7 @@ def _expectancy_by_ticker_from_outcome_csv(
         return []
     if not {"ticker", "realized_pnl"}.issubset(df.columns):
         return []
+    df = _filter_actual_outcomes_as_of(df, as_of)
     current_df = _filter_frame_to_tickers(df, current_tickers)
     pnl = _numeric_frame_column(current_df, "realized_pnl")
     realized = current_df[pnl.notna()].copy()
@@ -19969,7 +20834,12 @@ def _expectancy_by_ticker_from_outcome_csv(
     )
 
 
-def _expectancy_from_replay_history(out_root: Path, current_tickers: set[str]) -> list[dict[str, Any]]:
+def _expectancy_from_replay_history(
+    out_root: Path,
+    current_tickers: set[str],
+    *,
+    as_of: str | dt.date | None = None,
+) -> list[dict[str, Any]]:
     pinned_path, pin_error, pin_present = _codexuw_pinned_replay_path(out_root)
     if pin_error:
         return [
@@ -19992,6 +20862,7 @@ def _expectancy_from_replay_history(out_root: Path, current_tickers: set[str]) -
     df, partition_error = _codexuw_heldout_replay_partition(df, path)
     if partition_error:
         return [_expectancy_missing_row("codexuw_replay_history", path, "replay_backtest", partition_error)]
+    df = _filter_actual_outcomes_as_of(df, as_of)
 
     pnl = _numeric_frame_column(df, "pnl_1x")
     exact = df[pnl.notna()].copy()
@@ -20039,8 +20910,13 @@ def _expectancy_from_replay_history(out_root: Path, current_tickers: set[str]) -
 def _expectancy_from_options_agent_walkforward_replay(
     out_root: Path,
     current_tickers: set[str],
+    *,
+    as_of: str | dt.date | None = None,
 ) -> list[dict[str, Any]]:
-    audit = build_options_agent_walkforward_replay_audit(out_root)
+    audit = build_options_agent_walkforward_replay_audit(
+        out_root,
+        as_of=parse_as_of(as_of) if as_of is not None else None,
+    )
     source_path = out_root / "options_agent_walkforward_replay_audit.csv"
     if audit.empty:
         missing = _expectancy_missing_row(
@@ -20153,14 +21029,22 @@ def _expectancy_from_selector_challenger_audit(
     }
 
 
-def _expectancy_from_closed_trades(path: Path, current_tickers: set[str]) -> dict[str, Any]:
+def _expectancy_from_closed_trades(
+    path: Path,
+    current_tickers: set[str],
+    *,
+    actual_frame: Optional[pd.DataFrame] = None,
+) -> dict[str, Any]:
     if not _safe_non_v4_path(path):
         return _expectancy_missing_row("schwab_closed_trades", path, "actual_closed_trades", "v4-derived source intentionally ignored")
     if not path.exists():
         return _expectancy_missing_row("schwab_closed_trades", path, "actual_closed_trades", "source missing")
-    df, error = _read_closed_trades_frame(path)
-    if error:
-        return _expectancy_missing_row("schwab_closed_trades", path, "actual_closed_trades", f"source unreadable: {error}")
+    if actual_frame is not None:
+        df = actual_frame.copy()
+    else:
+        df, error = _read_closed_trades_frame(path)
+        if error:
+            return _expectancy_missing_row("schwab_closed_trades", path, "actual_closed_trades", f"source unreadable: {error}")
     current_df = _filter_frame_to_tickers(df, current_tickers)
     if current_df.empty:
         return _expectancy_metrics_row(
@@ -20189,6 +21073,8 @@ def _expectancy_from_shadow_outcomes(
     root: Path,
     out_root: Path,
     current_tickers: set[str],
+    *,
+    as_of: str | dt.date | None = None,
 ) -> dict[str, Any]:
     source = "options_agent_shadow_outcomes"
     evidence_type = "prospective_fixed_horizon_exact_quotes"
@@ -20205,6 +21091,7 @@ def _expectancy_from_shadow_outcomes(
         "contributes_to_expectancy", pd.Series(False, index=frame.index)
     ).map(_truthy)
     frame = frame[exact & contributing].copy()
+    frame = _filter_actual_outcomes_as_of(frame, as_of)
     return _expectancy_metrics_row(
         source,
         path,
@@ -20220,11 +21107,21 @@ def _expectancy_from_shadow_outcomes(
     )
 
 
-def _expectancy_by_ticker_from_closed_trades(path: Path, current_tickers: set[str]) -> list[dict[str, Any]]:
+def _expectancy_by_ticker_from_closed_trades(
+    path: Path,
+    current_tickers: set[str],
+    *,
+    actual_frame: Optional[pd.DataFrame] = None,
+) -> list[dict[str, Any]]:
     if not _safe_non_v4_path(path) or not path.exists() or not current_tickers:
         return []
-    df, error = _read_closed_trades_frame(path)
-    if error or df.empty or not {"ticker", "realized_pnl"}.issubset(df.columns):
+    if actual_frame is not None:
+        df = actual_frame.copy()
+    else:
+        df, error = _read_closed_trades_frame(path)
+        if error:
+            return []
+    if df.empty or not {"ticker", "realized_pnl"}.issubset(df.columns):
         return []
     current_df = _filter_frame_to_tickers(df, current_tickers)
     return _expectancy_by_current_ticker_rows(
@@ -20326,7 +21223,12 @@ def _expectancy_by_current_ticker_rows(
     return rows
 
 
-def _expectancy_from_broker_matched_outcomes(outcomes: pd.DataFrame, current_tickers: set[str]) -> dict[str, Any]:
+def _expectancy_from_broker_matched_outcomes(
+    outcomes: pd.DataFrame,
+    current_tickers: set[str],
+    *,
+    as_of: str | dt.date | None = None,
+) -> dict[str, Any]:
     source = "broker_matched_outcomes"
     evidence_type = "broker_matched_recommendation_outcomes"
     path = Path("broker_matched_outcomes.csv")
@@ -20337,7 +21239,7 @@ def _expectancy_from_broker_matched_outcomes(outcomes: pd.DataFrame, current_tic
             evidence_type,
             "No exact broker-to-recommendation matched outcomes are available.",
         )
-    frame = outcomes.copy()
+    frame = _filter_actual_outcomes_as_of(outcomes, as_of)
     source_paths = sorted(
         {
             part.strip()
@@ -20367,13 +21269,16 @@ def _expectancy_from_broker_matched_outcomes(outcomes: pd.DataFrame, current_tic
 def _expectancy_from_options_agent_broker_matched_outcomes(
     outcomes: pd.DataFrame,
     current_tickers: set[str],
+    *,
+    as_of: str | dt.date | None = None,
 ) -> dict[str, Any]:
     source = "broker_matched_options_agent_outcomes"
     evidence_type = "broker_matched_options_agent_outcomes"
     path = Path("broker_matched_outcomes.csv")
-    frame = _broker_matched_scope_frame(outcomes, "options_agent_green_history")
+    filtered_outcomes = _filter_actual_outcomes_as_of(outcomes, as_of)
+    frame = _broker_matched_scope_frame(filtered_outcomes, "options_agent_green_history")
     if frame.empty:
-        diagnostic = _broker_matched_scope_frame(outcomes, "options_agent_diagnostic_history")
+        diagnostic = _broker_matched_scope_frame(filtered_outcomes, "options_agent_diagnostic_history")
         diagnostic_note = ""
         if not diagnostic.empty:
             pnl = pd.to_numeric(diagnostic.get("realized_pnl", pd.Series(dtype=float)), errors="coerce").dropna()
@@ -20416,6 +21321,8 @@ def _expectancy_from_options_agent_broker_matched_outcomes(
 def _expectancy_from_broker_backfilled_forward_outcomes(
     outcomes: pd.DataFrame,
     current_tickers: set[str],
+    *,
+    as_of: str | dt.date | None = None,
 ) -> dict[str, Any]:
     source = "broker_backfilled_forward_outcomes"
     evidence_type = "forward_realized_outcomes"
@@ -20427,7 +21334,7 @@ def _expectancy_from_broker_backfilled_forward_outcomes(
             evidence_type,
             "No exact Schwab matches could be backfilled into forward outcome evidence.",
         )
-    frame = outcomes.copy()
+    frame = _filter_actual_outcomes_as_of(outcomes, as_of)
     source_paths = sorted(
         {
             part.strip()
@@ -20826,8 +21733,12 @@ def _ticker_set_from_frame(frame: pd.DataFrame) -> set[str]:
 
 
 def _filter_frame_to_tickers(frame: pd.DataFrame, tickers: set[str]) -> pd.DataFrame:
-    if frame is None or frame.empty or not tickers or "ticker" not in frame.columns:
-        return frame.copy() if frame is not None else pd.DataFrame()
+    if frame is None:
+        return pd.DataFrame()
+    if frame.empty or "ticker" not in frame.columns:
+        return frame.copy()
+    if not tickers:
+        return frame.iloc[0:0].copy()
     current_keys = _canonical_ticker_set(tickers)
     ticker_keys = frame["ticker"].astype(str).str.strip().str.upper().map(canonical_ticker_key)
     return frame[ticker_keys.isin(current_keys)].copy()
@@ -20850,19 +21761,27 @@ def build_monthly_feasibility(
     trade_tickets: pd.DataFrame,
     execution_context: Mapping[str, Any],
     expectancy_evidence: Optional[pd.DataFrame] = None,
+    selector_replay: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
-    """Estimate whether current executable candidates can plausibly support the monthly target."""
+    """Measure target capacity from selected realized replay, not theoretical max profit."""
 
     columns = ["metric", "value", "status", "note"]
     tickets = trade_tickets.copy() if trade_tickets is not None else pd.DataFrame()
     ready = tickets[tickets.get("ready_to_enter", pd.Series(False, index=tickets.index)).map(_truthy)].copy()
-    target_candidates = tickets[
-        tickets.get("target_order_status", pd.Series("", index=tickets.index))
-        .astype(str)
-        .str.lower()
-        .isin(["target_order_candidate", "target_order_wait_for_price"])
-        & ~tickets.get("ready_to_enter", pd.Series(False, index=tickets.index)).map(_truthy)
-    ].copy()
+    if {
+        "target_order_status",
+        "ready_to_enter",
+        "live_validation_status",
+    }.issubset(tickets.columns):
+        target_candidates = tickets[tickets.apply(_target_surface_eligible, axis=1)].copy()
+    else:
+        target_candidates = tickets[
+            tickets.get("target_order_status", pd.Series("", index=tickets.index))
+            .astype(str)
+            .str.lower()
+            .isin(["target_order_candidate", "target_order_wait_for_price"])
+            & ~tickets.get("ready_to_enter", pd.Series(False, index=tickets.index)).map(_truthy)
+        ].copy()
     max_profit = _position_sum(ready, "max_profit", "position_max_profit")
     max_loss = _position_sum(ready, "max_loss", "position_max_loss")
     target_max_profit = _position_sum(target_candidates, "max_profit", "position_max_profit")
@@ -20893,15 +21812,157 @@ def build_monthly_feasibility(
         },
     ]
     cycles_needed = math.ceil(target / max_profit) if max_profit > 0 else math.inf
-    feasible = math.isfinite(cycles_needed) and cycles_needed <= 4 and bool(execution_context.get("fresh_live_quotes_ready")) and bool(execution_context.get("portfolio_ready"))
     rows.append(
         {
             "metric": "cycles_needed_at_max_profit",
             "value": cycles_needed if math.isfinite(cycles_needed) else "",
-            "status": "PASS" if feasible else "BLOCK",
-            "note": "Requires actual fills and full max-profit capture; expectancy evidence still required.",
+            "status": "INFO",
+            "note": "Theoretical diagnostic only; excluded from monthly feasibility because full max-profit capture is not an expectancy estimate.",
         }
     )
+    if selector_replay is not None:
+        replay = selector_replay.copy()
+        if replay.empty:
+            replay_pnl = pd.Series(dtype=float)
+            monthly_pnl = pd.Series(dtype=float)
+        else:
+            replay_pnl = pd.to_numeric(
+                replay.get("pnl_1x", replay.get("realized_pnl", pd.Series(dtype=float))),
+                errors="coerce",
+            )
+            signal_dates = pd.to_datetime(
+                replay.get("signal_date", replay.get("asof", pd.Series(index=replay.index, dtype=object))),
+                errors="coerce",
+            )
+            valid = replay_pnl.notna() & signal_dates.notna()
+            replay_pnl = replay_pnl[valid]
+            signal_dates = signal_dates[valid]
+            if replay_pnl.empty:
+                monthly_pnl = pd.Series(dtype=float)
+            else:
+                observed = replay_pnl.groupby(signal_dates.dt.to_period("M")).sum()
+                full_months = pd.period_range(observed.index.min(), observed.index.max(), freq="M")
+                monthly_pnl = observed.reindex(full_months, fill_value=0.0).astype(float)
+        gross_profit = float(replay_pnl[replay_pnl > 0].sum()) if not replay_pnl.empty else 0.0
+        gross_loss = float(-replay_pnl[replay_pnl < 0].sum()) if not replay_pnl.empty else 0.0
+        selector_profit_factor = (
+            gross_profit / gross_loss
+            if gross_loss > 0
+            else math.inf if gross_profit > 0 else 0.0
+        )
+        month_count = int(len(monthly_pnl))
+        one_contract_monthly_avg = float(monthly_pnl.mean()) if month_count else 0.0
+        monthly_median = float(monthly_pnl.median()) if month_count else 0.0
+        monthly_p25 = float(monthly_pnl.quantile(0.25)) if month_count else 0.0
+        profitable_month_rate = float((monthly_pnl > 0).mean()) if month_count else 0.0
+        action_surface = tickets[
+            tickets.get("ready_to_enter", pd.Series(False, index=tickets.index)).map(_truthy)
+            | tickets.index.isin(target_candidates.index)
+        ].copy()
+        action_sizes = pd.to_numeric(
+            action_surface.get("suggested_contracts", pd.Series(dtype=float)),
+            errors="coerce",
+        ).dropna()
+        action_sizes = action_sizes[action_sizes > 0]
+        approved_contract_scale = int(action_sizes.max()) if not action_sizes.empty else 1
+        expected_monthly_pnl = one_contract_monthly_avg * approved_contract_scale
+        target_attainment_ratio = expected_monthly_pnl / target if target > 0 else 0.0
+        required_contract_scale = (
+            target / one_contract_monthly_avg
+            if one_contract_monthly_avg > 0
+            else math.inf
+        )
+        capacity_pass = bool(
+            month_count >= MIN_MONTHLY_CAPACITY_MONTHS
+            and selector_profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR
+            and one_contract_monthly_avg > 0
+            and monthly_p25 > 0
+            and profitable_month_rate >= MIN_MONTHLY_PROFITABLE_MONTH_RATE
+            and expected_monthly_pnl >= target
+        )
+        capacity_note = (
+            f"Active selector realized ${one_contract_monthly_avg:,.2f}/month at one contract "
+            f"and ${expected_monthly_pnl:,.2f}/month at approved scale {approved_contract_scale}; "
+            f"required average scale is {required_contract_scale:.2f} contracts."
+            if math.isfinite(required_contract_scale)
+            else "Active selector has no positive average monthly P/L; required scale is undefined."
+        )
+        rows.extend(
+            [
+                {
+                    "metric": "selector_replay_trade_count",
+                    "value": int(len(replay_pnl)),
+                    "status": "INFO",
+                    "note": "Outcome-available selections from the promoted leakage-safe selector.",
+                },
+                {
+                    "metric": "selector_month_count",
+                    "value": month_count,
+                    "status": "PASS" if month_count >= MIN_MONTHLY_CAPACITY_MONTHS else "BLOCK",
+                    "note": f"Requires at least {MIN_MONTHLY_CAPACITY_MONTHS} calendar months including zero months.",
+                },
+                {
+                    "metric": "selector_profit_factor",
+                    "value": round(selector_profit_factor, 4) if math.isfinite(selector_profit_factor) else math.inf,
+                    "status": "PASS" if selector_profit_factor >= MIN_EXPECTANCY_PROFIT_FACTOR else "BLOCK",
+                    "note": "Profit factor across selected one-contract replay outcomes.",
+                },
+                {
+                    "metric": "selector_one_contract_monthly_avg_pnl",
+                    "value": round(one_contract_monthly_avg, 2),
+                    "status": "PASS" if one_contract_monthly_avg > 0 else "BLOCK",
+                    "note": "Average realized monthly P/L before scaling.",
+                },
+                {
+                    "metric": "selector_monthly_median_pnl",
+                    "value": round(monthly_median, 2),
+                    "status": "INFO",
+                    "note": "Median one-contract calendar-month P/L.",
+                },
+                {
+                    "metric": "selector_monthly_p25_pnl",
+                    "value": round(monthly_p25, 2),
+                    "status": "PASS" if monthly_p25 > 0 else "BLOCK",
+                    "note": "Lower-quartile one-contract calendar-month P/L must remain positive.",
+                },
+                {
+                    "metric": "selector_profitable_month_rate",
+                    "value": round(profitable_month_rate, 4),
+                    "status": "PASS" if profitable_month_rate >= MIN_MONTHLY_PROFITABLE_MONTH_RATE else "BLOCK",
+                    "note": f"Requires at least {MIN_MONTHLY_PROFITABLE_MONTH_RATE:.0%} profitable months.",
+                },
+                {
+                    "metric": "approved_contract_scale",
+                    "value": approved_contract_scale,
+                    "status": "INFO",
+                    "note": "Largest size currently approved on the green/yellow action surface; defaults to one when no action row exists.",
+                },
+                {
+                    "metric": "expected_monthly_pnl",
+                    "value": round(expected_monthly_pnl, 2),
+                    "status": "PASS" if expected_monthly_pnl >= target else "BLOCK",
+                    "note": "Replay monthly average multiplied by currently approved contract scale.",
+                },
+                {
+                    "metric": "target_attainment_ratio",
+                    "value": round(target_attainment_ratio, 4),
+                    "status": "PASS" if target_attainment_ratio >= 1.0 else "BLOCK",
+                    "note": "Expected monthly P/L divided by the monthly target.",
+                },
+                {
+                    "metric": "required_contract_scale",
+                    "value": round(required_contract_scale, 2) if math.isfinite(required_contract_scale) else "",
+                    "status": "PASS" if approved_contract_scale >= required_contract_scale else "BLOCK",
+                    "note": "Average contracts per selected replay trade required to reach the target at observed expectancy.",
+                },
+                {
+                    "metric": "monthly_profit_capacity",
+                    "value": round(expected_monthly_pnl, 2),
+                    "status": "PASS" if capacity_pass else "BLOCK",
+                    "note": capacity_note,
+                },
+            ]
+        )
     evidence_summary = summarize_expectancy_evidence(expectancy_evidence if expectancy_evidence is not None else pd.DataFrame())
     evidence_positive = evidence_summary.get("summary_status") == "PASS"
     rows.append(
@@ -20981,6 +22042,10 @@ def summarize_monthly_feasibility(monthly_feasibility: pd.DataFrame) -> dict[str
         return {"status": "unknown"}
     blockers = monthly_feasibility[monthly_feasibility["status"].astype(str).str.upper().eq("BLOCK")]
     pass_metrics = monthly_feasibility[monthly_feasibility["status"].astype(str).str.upper().eq("PASS")]
+    metric_values = {
+        _as_text(row.get("metric")): row.get("value")
+        for _, row in monthly_feasibility.iterrows()
+    }
     return {
         "status": "not_proven" if not blockers.empty else "capacity_and_expectancy_positive_not_guaranteed",
         "blocking_metrics": blockers["metric"].astype(str).tolist(),
@@ -20990,6 +22055,14 @@ def summarize_monthly_feasibility(monthly_feasibility: pd.DataFrame) -> dict[str
             if not blockers.empty
             else "Ready-ticket capacity and expectancy evidence are positive, but the monthly target is still not guaranteed."
         ),
+        "expected_monthly_pnl": _as_float(metric_values.get("expected_monthly_pnl")),
+        "monthly_profit_target": _as_float(metric_values.get("monthly_profit_target")),
+        "target_attainment_ratio": _as_float(metric_values.get("target_attainment_ratio")),
+        "approved_contract_scale": _as_float(metric_values.get("approved_contract_scale")),
+        "required_contract_scale": _as_float(metric_values.get("required_contract_scale")),
+        "selector_month_count": _as_float(metric_values.get("selector_month_count")),
+        "selector_monthly_p25": _as_float(metric_values.get("selector_monthly_p25_pnl")),
+        "profitable_month_rate": _as_float(metric_values.get("selector_profitable_month_rate")),
     }
 
 
@@ -21661,7 +22734,20 @@ def build_goal_confidence_gap_audit(
         if trade_tickets is not None and not trade_tickets.empty
         else pd.Series(dtype=str)
     )
-    target_count = int(target_status.isin(["target_order_candidate", "target_order_wait_for_price"]).sum())
+    ready_mask = (
+        trade_tickets.get(
+            "ready_to_enter",
+            pd.Series(False, index=trade_tickets.index),
+        ).map(_truthy)
+        if trade_tickets is not None and not trade_tickets.empty
+        else pd.Series(dtype=bool)
+    )
+    target_count = int(
+        (
+            target_status.isin(["target_order_candidate", "target_order_wait_for_price"])
+            & ~ready_mask
+        ).sum()
+    )
     readiness_summary = summarize_execution_readiness(execution_readiness)
     entry_rating_value = _as_float(entry.get("rating")) or 0.0
     order_surface_pass = entry_rating_value >= MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING and not visible_surface.empty
@@ -21755,7 +22841,7 @@ def build_promotion_readiness_audit(
                 "status": "PASS" if passed else "BLOCK",
                 "current_value": _as_text(current_value),
                 "required_value": required_value,
-                "blocking_evidence": _as_text(blocking_evidence),
+                "blocking_evidence": "" if passed else _as_text(blocking_evidence),
                 "required_evidence": required_evidence,
                 "source_artifacts": source_artifacts,
             }
@@ -21776,7 +22862,20 @@ def build_promotion_readiness_audit(
         if trade_tickets is not None and not trade_tickets.empty
         else pd.Series(dtype=str)
     )
-    target_count = int(target_status.isin(["target_order_candidate", "target_order_wait_for_price"]).sum())
+    ready_mask = (
+        trade_tickets.get(
+            "ready_to_enter",
+            pd.Series(False, index=trade_tickets.index),
+        ).map(_truthy)
+        if trade_tickets is not None and not trade_tickets.empty
+        else pd.Series(dtype=bool)
+    )
+    target_count = int(
+        (
+            target_status.isin(["target_order_candidate", "target_order_wait_for_price"])
+            & ~ready_mask
+        ).sum()
+    )
 
     profit_rating = _as_float(confidence_summary.get("profitability_confidence_rating")) or 0.0
     entry_rating = _as_float(confidence_summary.get("order_entry_confidence_rating")) or 0.0
@@ -22080,7 +23179,7 @@ def _profitability_confidence_rating(
     else:
         blockers.append("broker_matched_options_agent_outcomes_missing")
         evidence.append("broker_matched_options_agent=no_exact_pipeline_attribution")
-        rating = min(rating, 6.0)
+        rating = min(rating, 7.0)
 
     outcome_summary = (
         summarize_outcome_evidence_audit(outcome_evidence_audit)
@@ -22102,7 +23201,7 @@ def _profitability_confidence_rating(
                     "forward_outcome_ledgers_empty_but_route_calibration_support_present="
                     + f"{route_or_broad_support_rows} rows"
                 )
-                rating = min(rating, 6.0)
+                rating = min(rating, 7.0)
             else:
                 rating = min(rating, 3.0)
         elif forward_without_realized:
@@ -22395,15 +23494,28 @@ def _profitability_confidence_rating(
             evidence.append(f"goal_gate_neutral_ready_rows={len(goal_neutral_ready)}")
     else:
         rating += 1.0
-        ready_strategy_pass = ready[
-            ready.get("actual_forward_strategy_expectancy_status", pd.Series("", index=ready.index))
+        literal_strategy_status_pass = (
+            ready.get(
+                "actual_forward_strategy_expectancy_status",
+                pd.Series("", index=ready.index),
+            )
             .astype(str)
             .str.upper()
             .eq("PASS")
-        ]
-        if len(ready_strategy_pass) == len(ready):
-            rating += 1.0
-            evidence.append("green_ticket_structure_expectancy=PASS")
+        )
+        ready_strategy_support = literal_strategy_status_pass | ready.apply(
+            _positive_strategy_expectancy_ready_for_green,
+            axis=1,
+        )
+        if bool(ready_strategy_support.all()):
+            literal_strategy_pass = bool(literal_strategy_status_pass.all())
+            if literal_strategy_pass:
+                rating += 1.0
+                evidence.append("green_ticket_structure_expectancy=PASS")
+            else:
+                evidence.append(
+                    "green_ticket_probationary_model_route_support=PASS; one_lot_only"
+                )
         else:
             blockers.append("green_ticket_structure_expectancy_missing")
             rating = min(rating, 6.0)
@@ -22420,12 +23532,78 @@ def _profitability_confidence_rating(
         rating += 0.5
     else:
         blockers.append("monthly_feasibility_not_proven")
+    target_attainment_ratio = _as_float(monthly.get("target_attainment_ratio"))
+    if target_attainment_ratio is not None:
+        expected_monthly_pnl = _as_float(monthly.get("expected_monthly_pnl")) or 0.0
+        monthly_target = _as_float(monthly.get("monthly_profit_target")) or MONTHLY_PROFIT_TARGET
+        approved_scale = _as_float(monthly.get("approved_contract_scale")) or 1.0
+        required_scale = _as_float(monthly.get("required_contract_scale"))
+        evidence.append(
+            "monthly_replay_capacity="
+            + f"${expected_monthly_pnl:,.2f}/${monthly_target:,.2f} target "
+            + f"at approved_scale={approved_scale:g}; attainment={target_attainment_ratio:.1%}"
+            + (f"; required_scale={required_scale:.2f}" if required_scale is not None else "")
+        )
+        if target_attainment_ratio < 1.0:
+            blockers.append("monthly_target_capacity_shortfall")
+            evidence.append(
+                "monthly_target_capacity_is_separate_from_statistical_profitability_confidence"
+            )
+
+    bridge_subject = ready if not ready.empty else goal_neutral_ready
+    bridge_contracts = pd.to_numeric(
+        bridge_subject.get(
+            "suggested_contracts",
+            pd.Series(dtype=float),
+        ),
+        errors="coerce",
+    ).dropna()
+    probationary_model_route_bridge = bool(
+        not bridge_subject.empty
+        and not bridge_contracts.empty
+        and bridge_contracts.gt(0).all()
+        and bridge_contracts.le(1).all()
+        and bridge_subject.apply(
+            lambda row: _probationary_model_route_ticket_ready(
+                row,
+                require_selector=True,
+            ),
+            axis=1,
+        ).all()
+        and promoted_selector_support
+    )
+    route_calibrated_one_lot_bridge = bool(
+        not bridge_subject.empty
+        and not bridge_contracts.empty
+        and bridge_contracts.gt(0).all()
+        and bridge_contracts.le(1).all()
+        and bridge_subject.get(
+            "selector_policy_status",
+            pd.Series("", index=bridge_subject.index),
+        )
+        .astype(str)
+        .str.upper()
+        .eq("PASS")
+        .all()
+        and (
+            route_actual_and_replay_pass_rows > 0
+            or probationary_model_route_bridge
+        )
+        and calibration_confidence_pass is True
+        and (strategy_positive is not None or probationary_model_route_bridge)
+        and promoted_selector_support
+    )
+    if probationary_model_route_bridge:
+        rating += 1.0
+        evidence.append(
+            "probationary_model_route_one_lot_bridge=PASS; exact_bucket_scaling_disabled"
+        )
 
     if strategy_negative:
         rating = min(rating, 3.0)
     elif strategy_weak_positive:
         rating = min(rating, 7.0)
-    elif not strategy_positive:
+    elif not strategy_positive and not probationary_model_route_bridge:
         rating = min(rating, 6.0)
     if profitability_calibration is not None and calibration_confidence_pass is False:
         rating = min(rating, research_support_cap)
@@ -22454,7 +23632,7 @@ def _profitability_confidence_rating(
         broker_cap = (
             7.0
             if (
-                (strategy_positive or strategy_weak_positive)
+                (strategy_positive or strategy_weak_positive or probationary_model_route_bridge)
                 and (
                     (calibration_confidence_pass is True and current_bucket_pass_evidence)
                     or strong_replay_research_support
@@ -22464,44 +23642,35 @@ def _profitability_confidence_rating(
             else 6.0
         )
         rating = min(rating, broker_cap)
-    bridge_subject = ready if not ready.empty else goal_neutral_ready
-    bridge_contracts = pd.to_numeric(
-        bridge_subject.get(
-            "suggested_contracts",
-            pd.Series(dtype=float),
-        ),
-        errors="coerce",
-    ).dropna()
-    route_calibrated_one_lot_bridge = bool(
-        not bridge_subject.empty
-        and not bridge_contracts.empty
-        and bridge_contracts.gt(0).all()
-        and bridge_contracts.le(1).all()
-        and bridge_subject.get(
-            "selector_policy_status",
-            pd.Series("", index=bridge_subject.index),
-        )
-        .astype(str)
-        .str.upper()
-        .eq("PASS")
-        .all()
-        and route_actual_and_replay_pass_rows > 0
-        and calibration_confidence_pass is True
-        and strategy_positive is not None
-        and promoted_selector_support
-    )
     if not actual_positive and not broker_matched_positive:
         blockers.append("no_positive_pipeline_attributed_outcomes")
         if route_calibrated_one_lot_bridge:
             rating = min(rating, 7.0)
             evidence.append(
-                "pipeline_attribution_missing_but_route_calibrated_one_lot_bridge=PASS"
+                "pipeline_attribution_missing_but_"
+                + (
+                    "probationary_model_route_one_lot_bridge=PASS"
+                    if probationary_model_route_bridge
+                    else "route_calibrated_one_lot_bridge=PASS"
+                )
             )
         else:
             rating = min(rating, 6.0)
     rating = round(max(0.0, min(10.0, rating)), 1)
-    if rating >= MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING:
+    if rating >= MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING and (
+        target_attainment_ratio is not None and target_attainment_ratio < 1.0
+    ):
+        next_action = (
+            "Statistical profitability confidence clears the goal threshold, but approved sizing does not support the "
+            "$10k monthly target; keep probationary rows at one lot and validate realized fills before scaling."
+        )
+    elif rating >= MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING:
         next_action = "Profitability evidence clears the goal threshold; keep green gates strict and monitor realized outcomes."
+    elif target_attainment_ratio is not None and target_attainment_ratio < 1.0:
+        next_action = (
+            "The promoted selector is profitable but does not have enough replayed monthly dollar capacity at approved sizing; "
+            "improve one-contract expectancy/frequency or validate the required risk scale without weakening quality gates."
+        )
     elif (
         walkforward_negative
         or (walkforward_sampled and not walkforward_positive)
@@ -22630,6 +23799,8 @@ def _order_entry_confidence_rating(
     if bool(execution_context.get("portfolio_ready")):
         rating += 1.0
         evidence.append("portfolio_ready=true")
+    elif _one_lot_defined_risk_surface_ready(ready):
+        evidence.append("portfolio_unavailable_one_lot_defined_risk_allowed=true")
     elif visible_target_sizing_available:
         evidence.append("portfolio_refresh_deferred_for_target_orders")
         rating_cap = min(rating_cap, MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING)
@@ -22675,11 +23846,31 @@ def _order_entry_confidence_rating(
     if proof_origin == "visible_non_send_now":
         evidence.append("row_level_expectancy_deferred_to_profitability_confidence")
     else:
-        strategy_ok = ready.get("actual_forward_strategy_expectancy_status", pd.Series("", index=ready.index)).astype(str).str.upper().eq("PASS")
+        literal_strategy_pass = ready.get(
+            "actual_forward_strategy_expectancy_status",
+            pd.Series("", index=ready.index),
+        ).astype(str).str.upper().eq("PASS")
+        probationary_strategy_support = ready.apply(
+            lambda row: _probationary_model_route_ticket_ready(
+                row,
+                require_selector=True,
+            ),
+            axis=1,
+        )
+        strategy_ok = literal_strategy_pass | probationary_strategy_support
         strategy_all_pass = bool(strategy_ok.all())
         if strategy_all_pass:
             rating += 1.0
-            evidence.append(f"{surface_label}_structure_expectancy=PASS")
+            if bool(probationary_strategy_support.any()):
+                rating_cap = min(
+                    rating_cap,
+                    MAX_PROBATIONARY_ORDER_ENTRY_CONFIDENCE_RATING,
+                )
+                evidence.append(
+                    f"{surface_label}_probationary_model_route_support=PASS; one_lot_only"
+                )
+            else:
+                evidence.append(f"{surface_label}_structure_expectancy=PASS")
         else:
             blockers.append(f"{surface_label}_structure_expectancy_not_all_pass")
             rating_cap = min(rating_cap, 5.0)
@@ -22821,6 +24012,8 @@ def _order_mechanics_confidence_rating(
     if bool(execution_context.get("portfolio_ready")):
         rating += 1.0
         evidence.append("portfolio_ready=true")
+    elif _one_lot_defined_risk_surface_ready(candidates):
+        evidence.append("portfolio_unavailable_one_lot_defined_risk_allowed=true")
     else:
         blockers.append("portfolio_not_ready")
         rating_cap = min(rating_cap, 8.0)
@@ -22937,6 +24130,32 @@ def _ready_ticket_frame(trade_tickets: pd.DataFrame) -> pd.DataFrame:
     return trade_tickets[ready].copy()
 
 
+def _one_lot_defined_risk_surface_ready(trade_tickets: pd.DataFrame) -> bool:
+    if trade_tickets is None or trade_tickets.empty:
+        return False
+    contracts = pd.to_numeric(
+        trade_tickets.get(
+            "suggested_contracts",
+            pd.Series(0.0, index=trade_tickets.index),
+        ),
+        errors="coerce",
+    )
+    max_loss = pd.to_numeric(
+        trade_tickets.get(
+            "max_loss",
+            pd.Series(dtype=float, index=trade_tickets.index),
+        ),
+        errors="coerce",
+    )
+    return bool(
+        contracts.notna().all()
+        and contracts.eq(1).all()
+        and max_loss.notna().all()
+        and max_loss.gt(0).all()
+        and max_loss.le(MAX_ONE_LOT_LOSS).all()
+    )
+
+
 def _goal_gate_neutral_ticket_frame(trade_tickets: pd.DataFrame) -> pd.DataFrame:
     if trade_tickets is None or trade_tickets.empty:
         return pd.DataFrame()
@@ -22962,7 +24181,17 @@ def _order_entry_qualified_ticket_frame(trade_tickets: pd.DataFrame) -> pd.DataF
     mask &= frame.get("suggested_contracts", pd.Series(0.0, index=frame.index)).map(lambda value: (_as_float(value) or 0.0) > 0)
     mask &= confidence_rating.astype(str).str.upper().isin({"MEDIUM", "HIGH"})
     mask &= frame.get("trade_quality_confidence_rating", pd.Series("", index=frame.index)).astype(str).str.upper().isin({"MEDIUM", "HIGH"})
-    mask &= frame.get("actual_forward_strategy_expectancy_status", pd.Series("", index=frame.index)).astype(str).str.upper().eq("PASS")
+    mask &= frame.apply(
+        lambda row: (
+            _as_text(row.get("actual_forward_strategy_expectancy_status")).upper()
+            == "PASS"
+            or _probationary_model_route_ticket_ready(
+                row,
+                require_selector=True,
+            )
+        ),
+        axis=1,
+    )
     if "profitability_calibration_status" in frame.columns:
         mask &= frame["profitability_calibration_status"].astype(str).str.upper().eq("PASS")
     return frame[mask].copy()
@@ -23340,6 +24569,7 @@ def render_report(
     backfill_plan_summary = manifest.get("profitability_evidence_backfill_plan_summary", {}) or {}
     walkforward_summary = manifest.get("options_agent_walkforward_replay_summary", {}) or {}
     selector_challenger_summary = manifest.get("selector_challenger_audit_summary", {}) or {}
+    monthly_feasibility_summary = manifest.get("monthly_feasibility_summary", {}) or {}
     live_quality_summary = manifest.get("live_spread_quality_summary", {}) or {}
     fill_quality_summary = manifest.get("execution_fill_quality_summary", {}) or {}
     warnings = manifest.get("warnings", []) or []
@@ -23405,11 +24635,7 @@ def render_report(
     elif target_count > 0:
         next_action = "use yellow target credits/debits as target-limit starting points"
     elif review_ticket_count > 0:
-        next_action = (
-            "do not enter review rows; require at least "
-            f"{MIN_EXPECTANCY_SAMPLE_SIZE} nonduplicated matching outcomes with PF >= "
-            f"{MIN_EXPECTANCY_PROFIT_FACTOR:.2f} before promotion"
-        )
+        next_action = "do not enter review-only rows; use the dated rejection summary below"
     elif blocking_gates:
         next_action = "resolve blocking gates before treating any row as an order"
     else:
@@ -23423,7 +24649,24 @@ def render_report(
         and order_entry_rating >= MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING
         and order_mechanics_rating >= MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING
     )
-    executable_status = "TRADE READY" if executable_ready else "NOT TRADE READY"
+    probationary_green_count = int(
+        computed_green.apply(
+            lambda row: _probationary_model_route_ticket_ready(
+                row,
+                require_selector=True,
+            ),
+            axis=1,
+        ).sum()
+    ) if not computed_green.empty else 0
+    all_green_rows_probationary = bool(
+        green_count > 0 and probationary_green_count == green_count
+    )
+    if executable_ready and all_green_rows_probationary:
+        executable_status = "ONE-LOT PROBATION READY"
+    elif executable_ready:
+        executable_status = "TRADE READY"
+    else:
+        executable_status = "NOT TRADE READY"
     no_green_reason = _plain_no_green_reason(
         green_count=green_count,
         target_count=target_count,
@@ -23439,21 +24682,11 @@ def render_report(
     if green_count == 0 and target_count > 0:
         no_green_reason = _target_no_green_reason(computed_target)
     elif green_count == 0 and target_count == 0 and final is not None and not final.empty:
-        selector_status = final.get(
-            "selector_policy_status",
-            pd.Series("", index=final.index),
-        ).fillna("").astype(str).str.upper()
-        selected_rows = final[selector_status.eq("PASS")]
-        if not selected_rows.empty:
-            selected_blockers: set[str] = set()
-            for value in selected_rows.get("execution_blockers", pd.Series("", index=selected_rows.index)):
-                selected_blockers.update(_blocker_set(value))
-            if selected_blockers & {
-                NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER,
-                PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER,
-            }:
-                no_green_reason = "one or more promoted-selector setups have negative realized strategy evidence"
-                next_action = "skip blocked selected setups; wait for the next dated run"
+        dated_reason, dated_action = _current_pipeline_no_action_summary(final)
+        if dated_reason:
+            no_green_reason = dated_reason
+        if dated_action:
+            next_action = dated_action
     lines = [
         f"# Options Agent Report - {day}",
         "",
@@ -23567,17 +24800,50 @@ def render_report(
     selector_summary = manifest.get("selector_challenger_audit_summary", {}) or {}
     selector_profit_factor = _as_float(selector_summary.get("promoted_profit_factor"))
     selector_sample_size = int(_as_float(selector_summary.get("promoted_sample_size")) or 0)
+    selector_day_count = int(_as_float(selector_summary.get("promoted_day_count")) or 0)
     heldout_profit_factor = _as_float(selector_summary.get("best_heldout_profit_factor"))
     heldout_sample_size = int(_as_float(selector_summary.get("best_heldout_sample_size")) or 0)
+    selector_selection_end = _parse_optional_date_value(selector_summary.get("promoted_selection_end"))
+    report_day = _parse_optional_date_value(day)
+    selector_selection_age = (
+        (report_day - selector_selection_end).days
+        if report_day is not None and selector_selection_end is not None
+        else None
+    )
     selector_replay_line = ""
     if selector_profit_factor is not None and selector_sample_size > 0:
+        heldout_detail = ""
+        if heldout_sample_size >= MIN_SELECTOR_HELDOUT_SAMPLE_SIZE and heldout_profit_factor is not None:
+            heldout_detail = f"; held-out PF {heldout_profit_factor:.3f} on {heldout_sample_size} trades"
+            if heldout_sample_size < MIN_SELECTOR_PROMOTION_SAMPLE_SIZE:
+                heldout_detail += " (small sample; not standalone proof)"
+        elif heldout_sample_size > 0:
+            heldout_detail = (
+                f"; held-out sample {heldout_sample_size} trades "
+                f"(below {MIN_SELECTOR_HELDOUT_SAMPLE_SIZE}-trade held-out minimum)"
+            )
         selector_replay_line = (
             f"- Active selector replay: PF {selector_profit_factor:.3f} on {selector_sample_size} trades"
+            + (f" across {selector_day_count} days" if selector_day_count > 0 else "")
+            + heldout_detail
             + (
-                f"; held-out PF {heldout_profit_factor:.3f} on {heldout_sample_size} trades"
-                if heldout_profit_factor is not None and heldout_sample_size > 0
+                f"; last selected setup {selector_selection_end.isoformat()} ({selector_selection_age} calendar days before this run)"
+                if selector_selection_end is not None and selector_selection_age is not None
                 else ""
             )
+        )
+    capacity_line = ""
+    expected_monthly_pnl = _as_float(monthly_feasibility_summary.get("expected_monthly_pnl"))
+    monthly_target = _as_float(monthly_feasibility_summary.get("monthly_profit_target"))
+    target_ratio = _as_float(monthly_feasibility_summary.get("target_attainment_ratio"))
+    approved_scale = _as_float(monthly_feasibility_summary.get("approved_contract_scale"))
+    required_scale = _as_float(monthly_feasibility_summary.get("required_contract_scale"))
+    if expected_monthly_pnl is not None and monthly_target is not None:
+        capacity_line = (
+            f"- Replay economic capacity: ${expected_monthly_pnl:,.0f}/month at approved "
+            f"{approved_scale or 1:g}-contract scale"
+            + (f" ({target_ratio:.1%} of ${monthly_target:,.0f} target)" if target_ratio is not None else "")
+            + (f"; required average scale {required_scale:.1f} contracts" if required_scale is not None else "")
         )
     output_file_lines = [
         "## Files",
@@ -23601,7 +24867,14 @@ def render_report(
         f"- Order mechanics confidence: {order_mechanics_rating}/10",
         f"- Current-day profitability confidence: {profitability_rating}/10",
         *([selector_replay_line] if selector_replay_line else []),
-        f"- Why no green order: {no_green_reason}" if green_count == 0 else "- Green order note: verify the final Schwab quote manually before sending.",
+        *([capacity_line] if capacity_line else []),
+        f"- Why no green order: {no_green_reason}"
+        if green_count == 0
+        else (
+            "- Green order note: one-lot probation only; verify the final Schwab quote manually before sending."
+            if all_green_rows_probationary
+            else "- Green order note: verify the final Schwab quote manually before sending."
+        ),
         f"- Next action: {next_action}",
         "",
     ]
@@ -23706,6 +24979,86 @@ def _plain_no_green_reason(
         reasons.append("agent review coverage is incomplete")
 
     return "; ".join(dict.fromkeys(reasons[:6])) or "send-now gates did not pass"
+
+
+def _current_pipeline_no_action_summary(final: pd.DataFrame) -> tuple[str, str]:
+    """Explain a zero-order run from its dated selector and execution rows."""
+
+    if final is None or final.empty:
+        return "", ""
+    selector_status = final.get(
+        "selector_policy_status",
+        pd.Series("", index=final.index),
+    ).fillna("").astype(str).str.upper()
+    selected = final[selector_status.eq("PASS")].copy()
+    if selected.empty:
+        counts: dict[str, int] = {}
+        for value in final.get("selector_policy_reason", pd.Series("", index=final.index)):
+            for blocker in _blocker_set(value):
+                label = _selector_rejection_label(blocker)
+                counts[label] = counts.get(label, 0) + 1
+        leaders = sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:4]
+        detail = ", ".join(f"{label} ({count})" for label, count in leaders)
+        reason = "no setup passed the promoted selector"
+        if detail:
+            reason += f"; leading dated rejections: {detail}"
+        return reason, "no order today; inspect the leading dated rejections and rerun on the next data set"
+
+    counts = {}
+    ignored = {
+        SELECTOR_POLICY_BLOCKER,
+        GOAL_CONFIDENCE_GATE_BLOCKER,
+        "execution_confidence_below_threshold",
+    }
+    for value in selected.get("execution_blockers", pd.Series("", index=selected.index)):
+        for blocker in _blocker_set(value) - ignored:
+            label = _display_blocker_label(blocker)
+            counts[label] = counts.get(label, 0) + 1
+    leaders = sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:4]
+    detail = ", ".join(f"{label} ({count})" for label, count in leaders)
+    reason = f"the promoted selector found {len(selected)} setup{'s' if len(selected) != 1 else ''}, but none cleared the order surface"
+    if detail:
+        reason += f"; remaining gates: {detail}"
+    if any(
+        label in {"negative realized strategy history", "exact route/economics bucket is negative"}
+        for label, _ in leaders
+    ):
+        action = "skip the selected negative-evidence setups; rerun on the next dated data set"
+    else:
+        action = "use Selected Setup Results below to resolve the remaining setup-specific gates; do not enter blocked rows"
+    return reason, action
+
+
+def _selector_rejection_label(reason: Any) -> str:
+    text = _as_text(reason)
+    labels = {
+        "actual_strategy_expectancy_negative": "negative realized strategy history",
+        "earnings_before_expiry": "earnings before expiry",
+        "objective_quality_reject": "objective contract-quality failure",
+        "short_dte_macro_event_before_expiry": "short-DTE macro event risk",
+        "unsupported_selector_route": "route not supported by the promoted selector",
+    }
+    if text in labels:
+        return labels[text]
+    if text.startswith("debit_flow_alignment_below_") or text.startswith("credit_flow_alignment_below_"):
+        return "directional flow below route threshold"
+    if text.startswith("debit_regime_not_aligned:"):
+        return "route and market regime do not align"
+    if text.startswith("debit_iv_rank_above_"):
+        return "IV rank above debit-route limit"
+    if text.startswith("debit_reward_risk_below_"):
+        return "debit reward/risk below minimum"
+    if text.startswith("debit_width_above_") or text.startswith("credit_width_outside_"):
+        return "spread economics outside route range"
+    if text.startswith("debit_quote_width_above_") or text.startswith("credit_quote_width_above_"):
+        return "quote too wide"
+    if text.startswith("debit_probability_proxy_below_"):
+        return "probability proxy below debit-route minimum"
+    if text == "debit_dte_outside_route_policy":
+        return "DTE outside route policy"
+    if text.startswith("credit_distance_expected_move_below_"):
+        return "short strike too close versus expected move"
+    return _display_blocker_label(text)
 
 
 def _target_no_green_reason(targets: pd.DataFrame) -> str:
@@ -23830,12 +25183,22 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
                 ]
             )
     if not watch_target.empty:
+        watch_count = len(watch_target)
+        watch_note = (
+            "1 additional plan lacks passing profitability calibration. It remains visible in "
+            "`trade_tickets.csv` but is excluded from the order table."
+            if watch_count == 1
+            else (
+                f"{watch_count} additional plans lack passing profitability calibration. They remain visible in "
+                "`trade_tickets.csv` but are excluded from the order table."
+            )
+        )
         lines.extend(
             [
                 "",
                 "## Watch Plans - Not Orders",
                 "",
-                f"{len(watch_target)} additional plans lack passing profitability calibration. They remain visible in `trade_tickets.csv` and the Review Board, but are excluded from the order table.",
+                watch_note,
             ]
         )
     return lines
@@ -23979,6 +25342,13 @@ def _ticket_contract_risk_summary(row: Mapping[str, Any]) -> str:
         if route_avg_pnl is not None:
             evidence_parts.append(f"avg P/L ${route_avg_pnl:.2f}")
         parts.append(" / ".join(evidence_parts))
+    expected_position_pnl = _as_float(row.get("expected_position_pnl"))
+    expected_pnl_status = _as_text(row.get("expected_pnl_confidence_status")).upper()
+    if expected_position_pnl is not None:
+        parts.append(
+            f"conservative expected P/L ${expected_position_pnl:.2f}/position"
+            + (f" ({expected_pnl_status})" if expected_pnl_status else "")
+        )
     probability = _as_float(row.get("live_probability_proxy"))
     if probability is not None:
         parts.append(f"delta proxy {probability:.0%}")
@@ -24049,7 +25419,7 @@ def _ticket_recheck_summary(row: Mapping[str, Any]) -> str:
         NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER: "route family evidence negative",
         NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER: "negative realized strategy history",
         PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER: "exact route/economics bucket is negative",
-        POSITIVE_STRATEGY_EXPECTANCY_BLOCKER: "positive strategy expectancy required",
+        POSITIVE_STRATEGY_EXPECTANCY_BLOCKER: "more profitable route history required for green",
         f"send_now_credit_below_{MIN_SEND_NOW_CREDIT:.2f}": "credit too small for send-now",
         "send_now_credit_below_1.00": "credit too small for send-now",
         f"send_now_credit_width_below_{int(MIN_SEND_NOW_CREDIT_WIDTH_RATIO * 100)}pct": "credit/width too weak for send-now",
@@ -24135,7 +25505,7 @@ def _render_market_open_recheck_queue(final: pd.DataFrame) -> list[str]:
         lines.append(
             "| {ticker} | {signal} | {structure} | {expiry} | {qty} | {entry} | {position_profit} | {position_loss} | {required} |".format(
                 ticker=_report_cell(row.get("ticker")),
-                signal=_report_cell(_decision_badge(row)),
+                signal="🟡 YELLOW target",
                 structure=_report_cell(_ticket_structure(row)),
                 expiry=_report_cell(_ticket_expiry(row)),
                 qty=row.get("suggested_contracts", ""),
@@ -24189,7 +25559,7 @@ def _display_blocker_label(blocker: Any) -> str:
         NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER: "route family evidence negative",
         NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER: "negative realized strategy history",
         PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER: "exact route/economics bucket is negative",
-        POSITIVE_STRATEGY_EXPECTANCY_BLOCKER: "positive strategy expectancy required",
+        POSITIVE_STRATEGY_EXPECTANCY_BLOCKER: "more profitable route history required for green",
         PROFITABILITY_CALIBRATION_BLOCKER: "route/economics profitability calibration required",
         SELECTOR_POLICY_BLOCKER: "not selected by promoted profitability policy",
         "send_now_earnings_before_expiry": "earnings before expiry",
@@ -24591,10 +25961,19 @@ def _target_surface_eligible(row: Mapping[str, Any]) -> bool:
     calibration_status = _as_text(row.get("profitability_calibration_status")).upper()
     if calibration_status not in {"", "PASS"}:
         blockers = _blocker_set(row.get("execution_blockers"))
+        mechanics_rating = _as_text(row.get("order_mechanics_confidence_rating")).upper()
+        if not mechanics_rating:
+            mechanics_rating = _as_text(row.get("trade_quality_confidence_rating")).upper()
+        contract_review_status = _as_text(row.get("contract_review_status")).upper()
+        contract_review_pending = bool(
+            contract_review_status == "BLOCK"
+            and _as_text(row.get("contract_review_missing_agents"))
+        )
         hierarchical_yellow = bool(
             calibration_status == "WARN"
             and _as_text(row.get("selector_policy_status")).upper() == "PASS"
-            and _as_text(row.get("trade_quality_confidence_rating")).upper() in {"MEDIUM", "HIGH"}
+            and mechanics_rating in {"MEDIUM", "HIGH"}
+            and (contract_review_status != "BLOCK" or contract_review_pending)
             and _positive_actual_support_target_allowed(row, blockers)
         )
         if not hierarchical_yellow:

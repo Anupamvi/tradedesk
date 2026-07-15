@@ -19,9 +19,6 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from openpyxl import load_workbook
-
-
 DEFAULT_START_DATE = date(2026, 4, 1)
 DEFAULT_SHEET_NAME = "Codex Schwab Numbers"
 LEGACY_GENERATED_SHEETS = ["Schwab Apr-May 2026"]
@@ -191,6 +188,8 @@ def load_positions(schwab_json: Path) -> dict[str, dict[str, Any]]:
 
 
 def load_manual_text(export_xlsx: Path) -> str:
+    from openpyxl import load_workbook
+
     wb = load_workbook(export_xlsx, data_only=True)
     texts: list[str] = []
     if "Options" not in wb.sheetnames:
@@ -418,22 +417,28 @@ def premium_income_for_row(
 ) -> tuple[float, str]:
     """User-facing premium-income accounting.
 
-    Credit entries are counted when opened. Open marks are ignored. A closed or
-    partially closed credit trade contributes a loss only when realized P/L is
-    negative. Debit entries contribute nothing until closed/partial, then use
-    realized P/L.
+    Open credit entries count collected premium and ignore open marks. Once a
+    trade is closed, credit and debit trades both count only realized P/L so
+    entry credit is not counted again after paying to close. Partial credit
+    trades retain the provisional-credit treatment until the remaining legs
+    are closed.
     """
 
     has_realized = realized_pnl is not None
-    is_closed_or_partial = status.startswith("CLOSED") or status == "PARTIAL OPEN"
+    if status.startswith("CLOSED") and has_realized:
+        return float(realized_pnl or 0.0), "closed trade counted at realized P/L"
+    if status == "PARTIAL OPEN":
+        if entry_cash > 0:
+            closed_loss = min(float(realized_pnl or 0.0), 0.0)
+            value = entry_cash + closed_loss
+            return value, (
+                f"partial credit counted {money(entry_cash)}; "
+                f"realized closed loss {money(closed_loss)}"
+            )
+        if has_realized:
+            return float(realized_pnl or 0.0), "partial debit trade counted at realized P/L"
     if entry_cash > 0:
-        closed_loss = min(float(realized_pnl or 0.0), 0.0) if is_closed_or_partial else 0.0
-        value = entry_cash + closed_loss
-        if closed_loss < 0:
-            return value, f"credit counted {money(entry_cash)}; realized closed loss {money(closed_loss)}"
-        return value, f"credit counted {money(entry_cash)}; open/closed without counted loss"
-    if is_closed_or_partial and has_realized:
-        return float(realized_pnl or 0.0), "debit trade counted only after close/partial realization"
+        return entry_cash, f"open credit counted {money(entry_cash)}; open mark ignored"
     return 0.0, "debit trade ignored until closed"
 
 
@@ -471,7 +476,9 @@ def premium_income_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
             {
                 "rows": 0,
                 "status_mix": defaultdict(int),
+                "gross_credit_collected": 0.0,
                 "credit_income_counted": 0.0,
+                "closed_credit_profit_counted": 0.0,
                 "closed_debit_profit_counted": 0.0,
                 "closed_losses_counted": 0.0,
                 "premium_income_total": 0.0,
@@ -485,9 +492,16 @@ def premium_income_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         premium_value = float(row.get("premium_income_value") or 0.0)
         status = str(row.get("status", ""))
         if entry_cash > 0:
-            bucket["credit_income_counted"] += entry_cash
-            if (status.startswith("CLOSED") or status == "PARTIAL OPEN") and realized < 0:
-                bucket["closed_losses_counted"] += realized
+            bucket["gross_credit_collected"] += entry_cash
+            if status == "OPEN":
+                bucket["credit_income_counted"] += entry_cash
+            elif status == "PARTIAL OPEN":
+                bucket["credit_income_counted"] += premium_value
+            elif status.startswith("CLOSED"):
+                if realized >= 0:
+                    bucket["closed_credit_profit_counted"] += realized
+                else:
+                    bucket["closed_losses_counted"] += realized
         elif status.startswith("CLOSED") or status == "PARTIAL OPEN":
             if realized >= 0:
                 bucket["closed_debit_profit_counted"] += realized
@@ -502,7 +516,9 @@ def premium_income_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         normalized[month] = {
             "rows": bucket["rows"],
             "status_mix": dict(sorted(bucket["status_mix"].items())),
+            "gross_credit_collected": round(bucket["gross_credit_collected"], 2),
             "credit_income_counted": round(bucket["credit_income_counted"], 2),
+            "closed_credit_profit_counted": round(bucket["closed_credit_profit_counted"], 2),
             "closed_debit_profit_counted": round(bucket["closed_debit_profit_counted"], 2),
             "closed_losses_counted": round(bucket["closed_losses_counted"], 2),
             "premium_income_total": round(bucket["premium_income_total"], 2),
@@ -510,7 +526,13 @@ def premium_income_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         }
     totals = {
         "rows": sum(v["rows"] for v in normalized.values()),
+        "gross_credit_collected": round(
+            sum(v["gross_credit_collected"] for v in normalized.values()), 2
+        ),
         "credit_income_counted": round(sum(v["credit_income_counted"] for v in normalized.values()), 2),
+        "closed_credit_profit_counted": round(
+            sum(v["closed_credit_profit_counted"] for v in normalized.values()), 2
+        ),
         "closed_debit_profit_counted": round(
             sum(v["closed_debit_profit_counted"] for v in normalized.values()), 2
         ),

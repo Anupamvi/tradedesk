@@ -163,30 +163,32 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertNotIn("SECRET123", text)
 
     def test_analyze_symbol_prefers_covered_call_when_schwab_position_has_shares(self) -> None:
-        action, _ = analyze_symbol(
-            row=_universe_row(),
-            service=FakeSchwabService(),
-            quote={},
-            position=Position(symbol="AMZN", shares=200, avg_cost=240.0),
-            asof=dt.date(2026, 4, 30),
-            config=WheelConfig(account_size=250_000, min_option_volume=1, enable_covered_strangles=False),
-            out_dir=Path(tempfile.gettempdir()),
-        )
+        with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
+            action, _ = analyze_symbol(
+                row=_universe_row(),
+                service=FakeSchwabService(),
+                quote={},
+                position=Position(symbol="AMZN", shares=200, avg_cost=240.0),
+                asof=dt.date(2026, 4, 30),
+                config=WheelConfig(account_size=250_000, min_option_volume=1, enable_covered_strangles=False),
+                out_dir=Path(tempfile.gettempdir()),
+            )
 
         self.assertEqual(action.action, "SELL_COVERED_CALL")
         self.assertEqual(action.contracts, 2)
         self.assertEqual(action.option_symbol, "AMZN  260618C00310000")
 
     def test_analyze_symbol_prefers_covered_strangle_when_shares_and_put_budget_exist(self) -> None:
-        action, _ = analyze_symbol(
-            row=_universe_row(),
-            service=FakeSchwabService(),
-            quote={},
-            position=Position(symbol="AMZN", shares=200, avg_cost=240.0),
-            asof=dt.date(2026, 4, 30),
-            config=WheelConfig(account_size=250_000, min_option_volume=1),
-            out_dir=Path(tempfile.gettempdir()),
-        )
+        with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
+            action, _ = analyze_symbol(
+                row=_universe_row(),
+                service=FakeSchwabService(),
+                quote={},
+                position=Position(symbol="AMZN", shares=200, avg_cost=240.0),
+                asof=dt.date(2026, 4, 30),
+                config=WheelConfig(account_size=250_000, min_option_volume=1),
+                out_dir=Path(tempfile.gettempdir()),
+            )
 
         self.assertEqual(action.action, "SELL_COVERED_STRANGLE")
         self.assertEqual(action.option_symbol, "AMZN  260618C00310000")
@@ -198,15 +200,16 @@ class FreshWheelSchwabTests(unittest.TestCase):
         chain["callExpDateMap"]["2026-06-18:49"]["340.0"][0].update(
             {"symbol": "AMZN  260618C00340000", "bid": 0.9, "ask": 1.0, "mark": 0.95, "delta": 0.16}
         )
-        action, _ = analyze_symbol(
-            row=_universe_row(flow_score=70.0, next_earnings=dt.date(2027, 1, 30)),
-            service=FakeSchwabService(chain),
-            quote={},
-            position=None,
-            asof=dt.date(2026, 4, 30),
-            config=WheelConfig(account_size=250_000, min_option_volume=1),
-            out_dir=Path(tempfile.gettempdir()),
-        )
+        with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
+            action, _ = analyze_symbol(
+                row=_universe_row(flow_score=70.0, next_earnings=dt.date(2027, 1, 30)),
+                service=FakeSchwabService(chain),
+                quote={},
+                position=None,
+                asof=dt.date(2026, 4, 30),
+                config=WheelConfig(account_size=250_000, min_option_volume=1),
+                out_dir=Path(tempfile.gettempdir()),
+            )
 
         self.assertEqual(action.action, "OPEN_CSP_WITH_CALL_OVERLAY")
         self.assertEqual(action.long_option_symbol, "AMZN  260618C00340000")
@@ -221,15 +224,16 @@ class FreshWheelSchwabTests(unittest.TestCase):
             {"bid": 65.0, "ask": 65.2, "mark": 65.1, "delta": 0.78}
         )
 
-        action, _ = analyze_symbol(
-            row=_universe_row(flow_score=70.0, next_earnings=dt.date(2027, 1, 30)),
-            service=FakeSchwabService(chain),
-            quote={},
-            position=None,
-            asof=dt.date(2026, 4, 30),
-            config=WheelConfig(account_size=250_000, min_option_volume=1),
-            out_dir=Path(tempfile.gettempdir()),
-        )
+        with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
+            action, _ = analyze_symbol(
+                row=_universe_row(flow_score=70.0, next_earnings=dt.date(2027, 1, 30)),
+                service=FakeSchwabService(chain),
+                quote={},
+                position=None,
+                asof=dt.date(2026, 4, 30),
+                config=WheelConfig(account_size=250_000, min_option_volume=1),
+                out_dir=Path(tempfile.gettempdir()),
+            )
 
         self.assertEqual(action.action, "OPEN_LEAPS_COVERED_STRANGLE")
         self.assertEqual(action.long_option_symbol, "AMZN  261120C00220000")
@@ -237,15 +241,16 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertEqual(action.paired_option_symbol, "AMZN  260618P00255000")
 
     def test_allocate_contracts_respects_account_size(self) -> None:
-        action, _ = analyze_symbol(
-            row=_universe_row(),
-            service=FakeSchwabService(),
-            quote={},
-            position=None,
-            asof=dt.date(2026, 4, 30),
-            config=WheelConfig(account_size=100_000, min_option_volume=1),
-            out_dir=Path(tempfile.gettempdir()),
-        )
+        with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
+            action, _ = analyze_symbol(
+                row=_universe_row(),
+                service=FakeSchwabService(),
+                quote={},
+                position=None,
+                asof=dt.date(2026, 4, 30),
+                config=WheelConfig(account_size=100_000, min_option_volume=1),
+                out_dir=Path(tempfile.gettempdir()),
+            )
         action.action = "OPEN_CSP"
 
         allocate_contracts([action], WheelConfig(account_size=100_000))
@@ -301,15 +306,16 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertEqual(action.estimated_credit, 780.0)
 
     def test_analyze_symbol_blocks_replay_tail_loss_csp_names(self) -> None:
-        action, _ = analyze_symbol(
-            row=_universe_row(ticker="ORCL", full_name="Oracle Corp", close=180.0, quality_score=92.0),
-            service=FakeSchwabService(_chain(root="ORCL", spot=180.0, put_strike=160.0, call_strike=200.0)),
-            quote={},
-            position=None,
-            asof=dt.date(2026, 4, 30),
-            config=WheelConfig(account_size=250_000, min_option_volume=1),
-            out_dir=Path(tempfile.gettempdir()),
-        )
+        with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
+            action, _ = analyze_symbol(
+                row=_universe_row(ticker="ORCL", full_name="Oracle Corp", close=180.0, quality_score=92.0),
+                service=FakeSchwabService(_chain(root="ORCL", spot=180.0, put_strike=160.0, call_strike=200.0)),
+                quote={},
+                position=None,
+                asof=dt.date(2026, 4, 30),
+                config=WheelConfig(account_size=250_000, min_option_volume=1),
+                out_dir=Path(tempfile.gettempdir()),
+            )
 
         self.assertEqual(action.action, "WATCH_ONLY")
         self.assertIn("replay block", "; ".join(action.blockers))
@@ -320,9 +326,9 @@ class FreshWheelSchwabTests(unittest.TestCase):
             base.mkdir()
             screener_csv = (
                 "date,ticker,full_name,sector,issue_type,is_index,close,marketcap,avg30_volume,total_open_interest,"
-                "bullish_premium,bearish_premium,next_earnings_date\n"
-                "2026-04-30,AMZN,Amazon.com Inc,Consumer Cyclical,Common Stock,f,280,1800000000000,20000000,2000000,1000000,500000,2026-07-30\n"
-                "2026-04-30,JUNK,Junk Inc,Other,Common Stock,f,5,1000000,1000,10,0,0,\n"
+                "bullish_premium,bearish_premium,next_earnings_date,iv30d\n"
+                "2026-04-30,AMZN,Amazon.com Inc,Consumer Cyclical,Common Stock,f,280,1800000000000,20000000,2000000,1000000,500000,2026-07-30,0.40\n"
+                "2026-04-30,JUNK,Junk Inc,Other,Common Stock,f,5,1000000,1000,10,0,0,,0.40\n"
             )
             with zipfile.ZipFile(base / "stock-screener-2026-04-30.zip", "w") as zf:
                 zf.writestr("stock-screener-2026-04-30.csv", screener_csv)
@@ -333,6 +339,57 @@ class FreshWheelSchwabTests(unittest.TestCase):
 
         self.assertEqual([row.ticker for row in universe], ["AMZN"])
         self.assertGreater(universe[0].quality_score, 80.0)
+
+    def test_build_universe_uses_objective_lanes_for_high_premium_ibm(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "2026-07-14"
+            base.mkdir()
+            screener_csv = (
+                "date,ticker,full_name,sector,issue_type,is_index,close,marketcap,avg30_volume,total_open_interest,"
+                "bullish_premium,bearish_premium,next_earnings_date,iv30d\n"
+                "2026-07-14,QUALITY,Quality Inc,Technology,Common Stock,f,300,1500000000000,25000000,3000000,60000000,40000000,2026-09-01,0.35\n"
+                "2026-07-14,TACT,Tactical Inc,Technology,Common Stock,f,100,50000000000,15000000,800000,900000000,100000000,2026-09-01,1.20\n"
+                "2026-07-14,IBM,International Business Machines,Technology,Common Stock,f,216,272000000000,8000000,565000,197000000,253000000,2026-07-22,0.59\n"
+            )
+            with zipfile.ZipFile(base / "stock-screener-2026-07-14.zip", "w") as zf:
+                zf.writestr("stock-screener-2026-07-14.csv", screener_csv)
+            with zipfile.ZipFile(base / "hot-chains-2026-07-14.zip", "w") as zf:
+                zf.writestr(
+                    "hot-chains-2026-07-14.csv",
+                    "option_symbol,volume,open_interest,premium,ask_side_volume,bid_side_volume\n",
+                )
+
+            universe = build_universe(base, WheelConfig(max_symbols=3))
+
+        self.assertEqual([row.ticker for row in universe], ["QUALITY", "TACT", "IBM"])
+        ibm = universe[-1]
+        self.assertEqual(ibm.selection_lane, "premium")
+        self.assertLess(ibm.flow_score, WheelConfig().tactical_min_flow_score)
+        self.assertNotIn("curated", "; ".join(ibm.reasons).lower())
+
+    def test_build_universe_appends_held_round_lot_outside_candidate_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "2026-07-14"
+            base.mkdir()
+            screener_csv = (
+                "date,ticker,full_name,sector,issue_type,is_index,close,marketcap,avg30_volume,total_open_interest,"
+                "bullish_premium,bearish_premium,next_earnings_date,iv30d\n"
+                "2026-07-14,TOP,Top Inc,Technology,Common Stock,f,300,1500000000000,25000000,3000000,60000000,40000000,2026-09-01,0.35\n"
+                "2026-07-14,HELD,Held Inc,Technology,Common Stock,f,10,1000000000,500000,10000,100000,100000,2026-09-01,0.50\n"
+            )
+            with zipfile.ZipFile(base / "stock-screener-2026-07-14.zip", "w") as zf:
+                zf.writestr("stock-screener-2026-07-14.csv", screener_csv)
+            with zipfile.ZipFile(base / "hot-chains-2026-07-14.zip", "w") as zf:
+                zf.writestr(
+                    "hot-chains-2026-07-14.csv",
+                    "option_symbol,volume,open_interest,premium,ask_side_volume,bid_side_volume\n",
+                )
+
+            universe = build_universe(base, WheelConfig(max_symbols=1), position_symbols={"HELD"})
+
+        self.assertEqual([row.ticker for row in universe], ["TOP", "HELD"])
+        self.assertEqual(universe[-1].selection_lane, "position")
+        self.assertIn("outside candidate limit", "; ".join(universe[-1].reasons))
 
     def test_write_outputs_manifest_records_schwab_only_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

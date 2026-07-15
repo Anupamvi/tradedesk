@@ -15,24 +15,6 @@ import pandas as pd
 
 from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
-
-CORE_OWNERSHIP_UNIVERSE: dict[str, dict[str, Any]] = {
-    "MSFT": {"tier": 1, "thesis": "cloud, AI platform, recurring enterprise cash flow"},
-    "GOOGL": {"tier": 1, "thesis": "search, cloud, AI infrastructure, high-margin cash flow"},
-    "AMZN": {"tier": 1, "thesis": "AWS plus commerce scale with long reinvestment runway"},
-    "NVDA": {"tier": 1, "thesis": "AI infrastructure leader with very deep option liquidity"},
-    "AVGO": {"tier": 1, "thesis": "semis plus infrastructure software cash-flow compounder"},
-    "AAPL": {"tier": 1, "thesis": "device ecosystem and services cash generator"},
-    "META": {"tier": 1, "thesis": "ad platform cash flow plus AI product leverage"},
-    "COST": {"tier": 1, "thesis": "membership retail compounder"},
-    "JPM": {"tier": 2, "thesis": "best-in-class large bank with liquid listed options"},
-    "BRK/B": {"tier": 2, "thesis": "diversified quality conglomerate"},
-    "BRK-B": {"tier": 2, "thesis": "diversified quality conglomerate"},
-    "AMD": {"tier": 3, "thesis": "AI and data-center beta, higher volatility"},
-    "NFLX": {"tier": 3, "thesis": "streaming platform with strong trend but higher gaps"},
-    "PLTR": {"tier": 3, "thesis": "high-growth software with rich premium and high volatility"},
-}
-
 REPLAY_BLOCKED_CSP: dict[str, str] = {
     "ORCL": "2026 YTD replay tail loss: 5 scored CSPs, 40% hit rate, -$4,224.50 total PnL",
     "PG": "2026 YTD replay tail loss: one scored CSP, -$1,080.00 PnL",
@@ -271,8 +253,10 @@ class WheelConfig:
     enable_tactical_sleeve: bool = True
     tactical_sleeve_pct: float = 0.15
     tactical_single_name_cash_pct: float = 0.05
-    tactical_symbol_quota_pct: float = 0.35
-    tactical_min_symbols: int = 8
+    quality_symbol_quota_pct: float = 0.40
+    tactical_symbol_quota_pct: float = 0.30
+    premium_symbol_quota_pct: float = 0.30
+    tactical_min_symbols: int = 0
     tactical_min_confidence: float = 68.0
     tactical_min_yield_pct: float = 1.50
     tactical_min_discount_pct: float = 4.0
@@ -305,6 +289,7 @@ class UniverseRow:
     total_premium: float = 0.0
     iv30d: float = 0.0
     tactical_score: float = 0.0
+    selection_lane: str = ""
     reasons: list[str] = field(default_factory=list)
 
 
@@ -365,13 +350,34 @@ class WheelAction:
     blockers: list[str] = field(default_factory=list)
 
 
+def objective_ownership_tier(
+    *,
+    marketcap: float,
+    avg30_volume: float,
+    total_open_interest: float,
+    iv30d: float,
+    issue_type: str,
+) -> int:
+    if issue_type.upper() == "ETF":
+        return 4
+    iv_decimal = iv30d / 100.0 if iv30d > 3.0 else iv30d
+    moderate_iv = 0.0 < iv_decimal <= 0.70
+    if moderate_iv and marketcap >= 500_000_000_000 and avg30_volume >= 10_000_000 and total_open_interest >= 2_000_000:
+        return 1
+    if moderate_iv and marketcap >= 100_000_000_000 and avg30_volume >= 1_000_000 and total_open_interest >= 250_000:
+        return 2
+    if marketcap >= 25_000_000_000 and avg30_volume >= 1_000_000 and total_open_interest >= 50_000:
+        return 3
+    return 4
+
+
 def score_universe_row(row: pd.Series, hot_row: dict[str, Any], config: WheelConfig) -> UniverseRow:
     ticker = normalize_symbol(str(row.get("ticker", "")))
-    profile = CORE_OWNERSHIP_UNIVERSE.get(ticker, {})
     marketcap = safe_float(row.get("marketcap"), 0.0)
     close = safe_float(row.get("close"), 0.0)
     avg30_volume = safe_float(row.get("avg30_volume"), 0.0)
     total_oi = safe_float(row.get("total_open_interest"), 0.0)
+    iv30d = safe_float(row.get("iv30d"), 0.0)
     issue_type = str(row.get("issue_type") or "").strip()
     sector = str(row.get("sector") or "").strip()
     full_name = str(row.get("full_name") or ticker).strip()
@@ -381,10 +387,16 @@ def score_universe_row(row: pd.Series, hot_row: dict[str, Any], config: WheelCon
 
     score = 0.0
     reasons: list[str] = []
-    tier = int(profile.get("tier", 4))
-    if profile:
-        score += {1: 36.0, 2: 28.0, 3: 20.0}.get(tier, 12.0)
-        reasons.append(f"curated ownership tier {tier}")
+    tier = objective_ownership_tier(
+        marketcap=marketcap,
+        avg30_volume=avg30_volume,
+        total_open_interest=total_oi,
+        iv30d=iv30d,
+        issue_type=issue_type,
+    )
+    score += {1: 30.0, 2: 20.0, 3: 10.0}.get(tier, 0.0)
+    if tier <= 3:
+        reasons.append(f"objective ownership tier {tier} from size, liquidity, and IV")
     if marketcap >= 500_000_000_000:
         score += 22.0
         reasons.append("mega-cap durability")
@@ -423,7 +435,6 @@ def score_universe_row(row: pd.Series, hot_row: dict[str, Any], config: WheelCon
     flow_score = max(0.0, min(100.0, 50.0 + flow_bias * 25.0 + hot_bias * 15.0))
     score += max(-6.0, min(8.0, (flow_score - 50.0) / 5.0))
     quality_score = max(0.0, min(100.0, score))
-    iv30d = safe_float(row.get("iv30d"), 0.0)
     iv_for_score = iv30d * 100.0 if 0.0 < iv30d <= 3.0 else iv30d
     premium_score = min(math.log1p(total_premium) / math.log1p(2_000_000_000.0) * 26.0, 26.0)
     iv_score = min(max(iv_for_score, 0.0) / 80.0 * 18.0, 18.0)
@@ -442,7 +453,7 @@ def score_universe_row(row: pd.Series, hot_row: dict[str, Any], config: WheelCon
             + operating_bonus,
         ),
     )
-    if ticker not in CORE_OWNERSHIP_UNIVERSE and tactical_score >= config.tactical_min_score:
+    if tier > 2 and flow_score >= config.tactical_min_flow_score and tactical_score >= config.tactical_min_score:
         reasons.append("tactical premium/flow candidate")
 
     return UniverseRow(
@@ -457,7 +468,7 @@ def score_universe_row(row: pd.Series, hot_row: dict[str, Any], config: WheelCon
         next_earnings=next_earnings,
         quality_score=round(quality_score, 1),
         flow_score=round(flow_score, 1),
-        thesis=str(profile.get("thesis") or f"{full_name} selected from UW liquidity and flow context"),
+        thesis=f"{full_name} ranked from UW size, liquidity, premium, and flow data",
         tier=tier,
         total_premium=round(total_premium, 2),
         iv30d=round(iv30d, 4),
@@ -469,7 +480,7 @@ def score_universe_row(row: pd.Series, hot_row: dict[str, Any], config: WheelCon
 def is_tactical_universe_row(row: UniverseRow, config: WheelConfig) -> bool:
     if not config.enable_tactical_sleeve:
         return False
-    if row.ticker in CORE_OWNERSHIP_UNIVERSE or row.ticker in REPLAY_BLOCKED_CSP:
+    if row.selection_lane == "position" or row.tier <= 2 or row.ticker in REPLAY_BLOCKED_CSP:
         return False
     if row.issue_type.upper() == "ETF":
         return False
@@ -478,40 +489,67 @@ def is_tactical_universe_row(row: UniverseRow, config: WheelConfig) -> bool:
     return row.tactical_score >= config.tactical_min_score
 
 
-def build_universe(base_dir: Path, config: WheelConfig) -> list[UniverseRow]:
+def build_universe(
+    base_dir: Path,
+    config: WheelConfig,
+    position_symbols: Iterable[str] = (),
+) -> list[UniverseRow]:
     screener = load_screener(base_dir)
     hot = load_hot_chain_summary(base_dir)
     hot_by_ticker = {normalize_symbol(str(row["ticker"])): row for _, row in hot.iterrows()} if not hot.empty else {}
+    managed_symbols = {normalize_symbol(symbol) for symbol in position_symbols if normalize_symbol(symbol)}
     rows: list[UniverseRow] = []
     for _, row in screener.iterrows():
         ticker = normalize_symbol(str(row.get("ticker", "")))
         if not ticker:
             continue
         item = score_universe_row(row, hot_by_ticker.get(ticker, {}), config)
-        if item.close < 20.0:
-            continue
-        if item.marketcap < config.min_market_cap and item.ticker not in CORE_OWNERSHIP_UNIVERSE:
-            continue
-        if item.avg30_volume < config.min_avg30_volume and item.ticker not in CORE_OWNERSHIP_UNIVERSE:
-            continue
-        if item.total_open_interest < config.min_total_option_oi and item.ticker not in CORE_OWNERSHIP_UNIVERSE:
-            continue
+        is_managed_position = item.ticker in managed_symbols and item.issue_type.upper() in {"COMMON STOCK", "ADR", "ETF"}
+        if not is_managed_position:
+            if item.close < 20.0:
+                continue
+            if item.marketcap < config.min_market_cap:
+                continue
+            if item.avg30_volume < config.min_avg30_volume:
+                continue
+            if item.total_open_interest < config.min_total_option_oi:
+                continue
         rows.append(item)
-    rows.sort(key=lambda item: (item.quality_score, item.flow_score, item.marketcap), reverse=True)
-    core = [item for item in rows if item.ticker in CORE_OWNERSHIP_UNIVERSE]
+
+    quality = sorted(
+        [item for item in rows if item.tier <= 2 and item.issue_type.upper() != "ETF"],
+        key=lambda item: (item.quality_score, item.total_premium, item.flow_score, item.marketcap),
+        reverse=True,
+    )
     tactical = sorted(
         [item for item in rows if is_tactical_universe_row(item, config)],
         key=lambda item: (item.tactical_score, item.total_premium, item.flow_score, item.marketcap),
         reverse=True,
     )
-    tactical_symbols = {item.ticker for item in tactical}
-    rest = [item for item in rows if item.ticker not in CORE_OWNERSHIP_UNIVERSE and item.ticker not in tactical_symbols]
-    tactical_quota = min(max(config.tactical_min_symbols, int(config.max_symbols * config.tactical_symbol_quota_pct)), config.max_symbols)
-    core_quota = max(config.max_symbols - tactical_quota, 0)
+    premium = sorted(
+        [item for item in rows if item.issue_type.upper() != "ETF" and item.total_premium > 0.0],
+        key=lambda item: (item.total_premium, item.quality_score, item.tactical_score, item.marketcap),
+        reverse=True,
+    )
+    ranked = sorted(
+        rows,
+        key=lambda item: (max(item.quality_score, item.tactical_score), item.total_premium, item.marketcap),
+        reverse=True,
+    )
+    quality_quota = min(round(config.max_symbols * config.quality_symbol_quota_pct), config.max_symbols)
+    tactical_quota = min(
+        max(config.tactical_min_symbols, round(config.max_symbols * config.tactical_symbol_quota_pct)),
+        config.max_symbols - quality_quota,
+    )
+    premium_quota = min(
+        round(config.max_symbols * config.premium_symbol_quota_pct),
+        config.max_symbols - quality_quota - tactical_quota,
+    )
+    quality_quota += config.max_symbols - quality_quota - tactical_quota - premium_quota
     selected: list[UniverseRow] = []
     seen: set[str] = set()
 
-    def add_items(items: Sequence[UniverseRow], limit: int | None = None) -> None:
+    def add_items(items: Sequence[UniverseRow], lane: str, limit: int | None = None) -> None:
         added = 0
         for item in items:
             if len(selected) >= config.max_symbols:
@@ -521,12 +559,44 @@ def build_universe(base_dir: Path, config: WheelConfig) -> list[UniverseRow]:
             if item.ticker in seen:
                 continue
             seen.add(item.ticker)
+            item.selection_lane = lane
+            item.reasons.append(f"selected by objective {lane} lane")
             selected.append(item)
             added += 1
 
-    add_items(core, core_quota)
-    add_items(tactical, tactical_quota)
-    add_items(core + tactical + rest)
+    add_items(quality, "quality", quality_quota)
+    add_items(tactical, "tactical", tactical_quota)
+    add_items(premium, "premium", premium_quota)
+    add_items(ranked, "ranked")
+
+    for item in rows:
+        if item.ticker not in managed_symbols or item.ticker in seen:
+            continue
+        item.selection_lane = "position"
+        item.reasons.append("held round-lot position appended outside candidate limit")
+        selected.append(item)
+        seen.add(item.ticker)
+
+    for ticker in sorted(managed_symbols - seen):
+        selected.append(
+            UniverseRow(
+                ticker=ticker,
+                full_name=ticker,
+                sector="",
+                issue_type="Common Stock",
+                close=0.0,
+                marketcap=0.0,
+                avg30_volume=0.0,
+                total_open_interest=0.0,
+                next_earnings=None,
+                quality_score=0.0,
+                flow_score=0.0,
+                thesis=f"{ticker} held position missing from dated UW screener",
+                tier=4,
+                selection_lane="position",
+                reasons=["held round-lot position missing from dated UW screener; contract evaluation withheld"],
+            )
+        )
     return selected
 
 
@@ -1107,7 +1177,7 @@ def analyze_symbol(
         elif row.ticker in REPLAY_CAUTION_CSP:
             csp_reasons.append(f"replay caution: {REPLAY_CAUTION_CSP[row.ticker]}")
         if action != "WATCH_ONLY" and sleeve == "tactical":
-            csp_reasons.append("tactical sleeve: high UW premium/flow; sized separately from core ownership wheel cash")
+            csp_reasons.append("tactical sleeve: high UW premium/flow; sized separately from primary wheel cash")
             if (
                 confidence >= config.tactical_min_confidence
                 and premium_yield_pct >= config.tactical_min_yield_pct
@@ -1824,6 +1894,7 @@ def write_outputs(
         f"- UW source folder: `{base_dir}`",
         "- Live quote and option-chain source: `Schwab API`",
         "- Yahoo/yfinance: `not used`",
+        "- Universe selection: objective quality, tactical-flow, and total-premium lanes; no hard-coded ticker roster; held round-lot positions appended",
         f"- Schwab position fetch: `{position_status}`",
         f"- Account-size assumption: `${config.account_size:,.0f}`",
         f"- Monthly income target: `${config.target_monthly_income_low:,.0f}` to `${config.target_monthly_income_high:,.0f}`",
@@ -1950,9 +2021,15 @@ def write_outputs(
             "live_source": "Schwab API",
             "yahoo_yfinance_used": False,
             "position_status": position_status,
+            "universe_policy": "objective quality/tactical/premium lanes plus held round-lot positions; no hard-coded ticker roster",
         },
         "counts": {
             "universe": len(universe),
+            "candidate_rows": len([row for row in universe if row.selection_lane != "position"]),
+            "position_rows": len([row for row in universe if row.selection_lane == "position"]),
+            "quality_lane_rows": len([row for row in universe if row.selection_lane == "quality"]),
+            "tactical_lane_rows": len([row for row in universe if row.selection_lane == "tactical"]),
+            "premium_lane_rows": len([row for row in universe if row.selection_lane == "premium"]),
             "actions": len(actions),
             "immediate_orders": len(tradeable),
             "strong_entries": len(strong_entries),
@@ -1983,7 +2060,6 @@ def run_fresh_wheel(
     skip_positions: bool = False,
 ) -> dict[str, Path]:
     asof = dt.datetime.strptime(base_dir.name[:10], "%Y-%m-%d").date()
-    universe = build_universe(base_dir, config)
     service = SchwabLiveDataService(SchwabAuthConfig.from_env(load_dotenv_file=True), interactive_login=False)
     if skip_positions:
         positions, position_status, schwab_account_value = {}, "skipped", None
@@ -1996,6 +2072,12 @@ def run_fresh_wheel(
         else:
             config.account_size = 250_000.0
             position_status = f"{position_status}; account_size_fallback=$250,000"
+    managed_position_symbols = {
+        symbol
+        for symbol, position in positions.items()
+        if symbol and position.shares >= 100 and position.avg_cost > 0.0
+    }
+    universe = build_universe(base_dir, config, position_symbols=managed_position_symbols)
     quote_symbols = [schwab_symbol(row.ticker) for row in universe]
     quotes = service.get_quotes(quote_symbols) if quote_symbols else {}
     chain_dir = out_dir / "schwab_chains"
@@ -2003,6 +2085,20 @@ def run_fresh_wheel(
     actions: list[WheelAction] = []
     chain_errors: dict[str, str] = {}
     for row in universe:
+        if row.selection_lane == "position" and row.close <= 0.0:
+            actions.append(
+                WheelAction(
+                    ticker=row.ticker,
+                    action="WATCH_ONLY",
+                    confidence=0.0,
+                    spot=0.0,
+                    quality_score=0.0,
+                    flow_score=0.0,
+                    thesis=row.thesis,
+                    blockers=["held round-lot position missing from dated UW screener; no option contract evaluated"],
+                )
+            )
+            continue
         try:
             action, chain = analyze_symbol(
                 row=row,
