@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from uwos.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.17-probationary-route-confidence-20260714-055506"
+PIPELINE_VERSION = "options-agent-v1.18-directional-oi-local-review-20260715-095055"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.17-probationary-route-confidence-20260714-055506",
     "options-agent-v1.16-economic-capacity-20260713-211035",
     "options-agent-v1.15-regime-debit-parity-20260712-130352",
     "options-agent-v1.14-width-and-evidence-integrity-20260712-122120",
@@ -70,7 +71,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-14T05:55:06-07:00"
+PIPELINE_RELEASED_AT = "2026-07-15T09:50:55-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -84,7 +85,8 @@ MIN_SELECTOR_PROMOTION_SAMPLE_SIZE = 30
 MIN_SELECTOR_PROMOTION_DAY_COUNT = 10
 MIN_SELECTOR_HELDOUT_SAMPLE_SIZE = 10
 MAX_SELECTOR_SECOND_SLOT_STRUCTURAL_SCORE_GAP = 0.35
-PROMOTED_SELECTOR_POLICY_ID = "quality_sleeves_economic_cap2_v5"
+PROMOTED_SELECTOR_POLICY_ID = "quality_sleeves_economic_cap2_v6"
+MIN_BEAR_PUT_DEBIT_FLOW_ALIGNMENT = 0.175
 DEFAULT_DISCOVERY_LIMIT = 120
 DEFAULT_RISK_BUDGET_PCT = 0.005
 MAX_SUGGESTED_CONTRACTS = 20
@@ -132,8 +134,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.17-probationary-route-confidence-20260714-055506",
+    "PIPELINE_VERSION": "options-agent-v1.18-directional-oi-local-review-20260715-095055",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.17-probationary-route-confidence-20260714-055506",
         "options-agent-v1.16-economic-capacity-20260713-211035",
         "options-agent-v1.15-regime-debit-parity-20260712-130352",
         "options-agent-v1.14-width-and-evidence-integrity-20260712-122120",
@@ -155,7 +158,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-14T05:55:06-07:00",
+    "PIPELINE_RELEASED_AT": "2026-07-15T09:50:55-07:00",
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -2059,6 +2062,7 @@ def run_pipeline(
     chain_snapshot_dir: Optional[Path] = None,
     chain_strike_count: int = 80,
     agent_reviews_json: Optional[Path] = None,
+    single_process_reviews: bool = False,
     dispatch_only: bool = False,
     lesson_pack_version: Optional[str] = None,
     lesson_pack_path: Optional[Path] = None,
@@ -2395,7 +2399,6 @@ def run_pipeline(
         )
         return paths
     external_agent_reviews, review_notes = load_external_agent_reviews(agent_reviews_json)
-    agentic_contract_coverage = build_agentic_review_contract_coverage(agent_dispatch_plan, external_agent_reviews)
     live_market_session_open = (
         is_regular_market_session_open()
         if live_schwab and chain_snapshot_dir is None
@@ -2494,7 +2497,30 @@ def run_pipeline(
     if contract_review_drift.get("contract_status") == "drift":
         agent_dispatch_drift["status"] = "drift"
     pre_portfolio_agent_reviews = build_internal_agent_reviews(candidates, market_regime, catalyst_reviews, priced, as_of=day)
-    actionable_agent_reviews = combine_agent_reviews(pre_portfolio_agent_reviews, external_agent_reviews, as_of=day)
+    deterministic_local_reviews = (
+        build_single_process_execution_reviews(
+            pre_portfolio_agent_reviews,
+            agent_dispatch_plan,
+            priced,
+            as_of=day,
+        )
+        if single_process_reviews
+        else pd.DataFrame(columns=AGENT_REVIEW_COLUMNS)
+    )
+    execution_agent_reviews = combine_agent_reviews(
+        external_agent_reviews,
+        deterministic_local_reviews,
+        as_of=day,
+    )
+    agentic_contract_coverage = build_agentic_review_contract_coverage(
+        agent_dispatch_plan,
+        execution_agent_reviews,
+    )
+    actionable_agent_reviews = combine_agent_reviews(
+        pre_portfolio_agent_reviews,
+        execution_agent_reviews,
+        as_of=day,
+    )
     priced = apply_agent_reviews(priced, actionable_agent_reviews)
     resolved_portfolio, portfolio_notes = resolve_portfolio_context(
         paths["out_dir"],
@@ -2568,11 +2594,12 @@ def run_pipeline(
         chain_snapshot_dir=chain_snapshot_dir,
         portfolio_context=resolved_portfolio,
         research_task_count=len(research_tasks.get("tasks", [])),
-        external_review_count=len(external_agent_reviews),
-        external_review_ticker_count=_distinct_external_review_ticker_count(external_agent_reviews),
-        external_review_agent_count=_distinct_external_review_agent_count(external_agent_reviews),
+        external_review_count=len(execution_agent_reviews),
+        external_review_ticker_count=_distinct_external_review_ticker_count(execution_agent_reviews),
+        external_review_agent_count=_distinct_external_review_agent_count(execution_agent_reviews),
         agent_dispatch_task_count=len(agent_dispatch_plan.get("subagent_tasks", [])),
         agent_reviews_json=agent_reviews_json,
+        review_mode="deterministic_local" if single_process_reviews else "external",
         market_session_open=live_market_session_open,
         required_review_ticker_count=agentic_contract_coverage.get("required_review_ticker_count", 0),
         required_review_ticker_reviewed_count=agentic_contract_coverage.get("required_review_ticker_reviewed_count", 0),
@@ -2584,7 +2611,7 @@ def run_pipeline(
     agent_review_board = combine_agent_reviews(
         pre_portfolio_agent_reviews,
         portfolio_agent_reviews,
-        external_agent_reviews,
+        execution_agent_reviews,
         as_of=day,
     )
     final = apply_synthesis_ranking(
@@ -2793,6 +2820,13 @@ def run_pipeline(
     )
     final_output = annotate_final_recommendations_with_execution_surface(final, decision_board)
     coverage_audit = build_coverage_audit(raw_universe, candidates, priced, decision_board, no_trade)
+    effective_reviews_path = (
+        agent_reviews_json
+        if agent_reviews_json is not None
+        else paths["agentic_reviews"]
+        if single_process_reviews
+        else None
+    )
     forward_registry_summary = register_prospective_options_agent_recommendations(
         trade_tickets,
         root=resolved_root,
@@ -2801,7 +2835,7 @@ def run_pipeline(
         live_schwab=live_schwab,
         live_portfolio=live_portfolio,
         chain_snapshot_dir=chain_snapshot_dir,
-        agent_reviews_json=agent_reviews_json,
+        agent_reviews_json=effective_reviews_path,
     )
     prospective_shadow_recommendations = build_prospective_shadow_recommendations(
         Path(forward_registry_summary["path"])
@@ -2826,7 +2860,13 @@ def run_pipeline(
         )
     manifest.update(
         {
-            "mode": "agentic_synthesis_pass" if agent_reviews_json else "agentic_local_preview",
+            "mode": (
+                "deterministic_local_synthesis"
+                if single_process_reviews
+                else "agentic_synthesis_pass"
+                if agent_reviews_json
+                else "agentic_local_preview"
+            ),
             "source_dir": str(date_dir),
             "source_inventory": inventory,
             "status_counts": _status_counts(final_output),
@@ -2837,7 +2877,9 @@ def run_pipeline(
                 "catalyst_reviews": int(len(catalyst_reviews)),
                 "research_tasks": len(research_tasks.get("tasks", [])),
                 "agent_dispatch_tasks": len(agent_dispatch_plan.get("subagent_tasks", [])),
-                "external_agent_reviews": int(len(external_agent_reviews)),
+                "external_agent_reviews": int(len(execution_agent_reviews)),
+                "provided_external_agent_reviews": int(len(external_agent_reviews)),
+                "deterministic_local_reviews": int(len(deterministic_local_reviews)),
                 "agent_review_board": int(len(agent_review_board)),
                 "contract_review_tasks": int(contract_review_tasks.get("contract_count", 0)),
                 "structure_attempts": int(len(structure_attempts)),
@@ -2921,26 +2963,38 @@ def run_pipeline(
             "live_spread_quality_summary": summarize_live_spread_quality(live_spread_quality_audit),
             "execution_fill_quality_summary": summarize_execution_fill_quality(execution_fill_quality),
             "execution_context": execution_context,
-                "agentic_orchestration": {
-                    "status": (
-                        "contract_drift_requires_reviews"
-                        if agent_dispatch_drift.get("contract_status") == "drift"
-                        else "reviews_ingested"
-                        if not external_agent_reviews.empty
-                        else "awaiting_subagents"
-                    ),
-                    "dispatch_plan": str(paths["agent_dispatch_plan"]),
-                    "expected_reviews_json": str(paths["agentic_reviews"]),
-                    "ingested_reviews_json": str(Path(agent_reviews_json).expanduser().resolve()) if agent_reviews_json else "",
-                    "subagent_task_count": len(agent_dispatch_plan.get("subagent_tasks", [])),
-                    "ingested_review_count": int(len(external_agent_reviews)),
-                    "dispatch_plan_reused_for_reviews": bool(agent_dispatch_plan is prior_agent_dispatch_plan),
-                    "dispatch_pricing_snapshot_reused": dispatch_pricing_snapshot_reused,
-                    "dispatch_pricing_snapshot_status": dispatch_pricing_snapshot_status,
-                    "dispatch_plan_drift": agent_dispatch_drift,
-                    "required_review_coverage": agentic_contract_coverage,
-                    "runner": "Codex options-agent skill with multi_agent_v1",
-                },
+            "agentic_orchestration": {
+                "status": (
+                    "deterministic_local_reviews_complete"
+                    if single_process_reviews and not execution_agent_reviews.empty
+                    else "contract_drift_requires_reviews"
+                    if agent_dispatch_drift.get("contract_status") == "drift"
+                    else "reviews_ingested"
+                    if not execution_agent_reviews.empty
+                    else "awaiting_subagents"
+                ),
+                "dispatch_plan": str(paths["agent_dispatch_plan"]),
+                "expected_reviews_json": str(paths["agentic_reviews"]),
+                "ingested_reviews_json": str(Path(effective_reviews_path).expanduser().resolve())
+                if effective_reviews_path
+                else "",
+                "subagent_task_count": len(agent_dispatch_plan.get("subagent_tasks", [])),
+                "subagents_spawned": 0 if single_process_reviews else "external_orchestrator_managed",
+                "ingested_review_count": int(len(execution_agent_reviews)),
+                "provided_external_review_count": int(len(external_agent_reviews)),
+                "deterministic_local_review_count": int(len(deterministic_local_reviews)),
+                "review_mode": "deterministic_local" if single_process_reviews else "external",
+                "dispatch_plan_reused_for_reviews": bool(agent_dispatch_plan is prior_agent_dispatch_plan),
+                "dispatch_pricing_snapshot_reused": dispatch_pricing_snapshot_reused,
+                "dispatch_pricing_snapshot_status": dispatch_pricing_snapshot_status,
+                "dispatch_plan_drift": agent_dispatch_drift,
+                "required_review_coverage": agentic_contract_coverage,
+                "runner": (
+                    "Options Agent deterministic single-process review"
+                    if single_process_reviews
+                    else "Codex options-agent skill with multi_agent_v1"
+                ),
+            },
             "agent_review_summary": summarize_agent_reviews(agent_review_board),
             "forward_recommendation_registry": forward_registry_summary,
             "prospective_shadow_recommendation_summary": {
@@ -2982,18 +3036,24 @@ def run_pipeline(
             + review_notes
             + portfolio_notes
             + live_readiness_notes
-            + ([] if agent_reviews_json else ["agentic subagent reviews not ingested yet; run the skill two-pass dispatch"])
             + (
                 []
-                if not agent_reviews_json
+                if agent_reviews_json or single_process_reviews
+                else ["agentic subagent reviews not ingested yet; run the skill two-pass dispatch"]
+            )
+            + (
+                []
+                if (not agent_reviews_json and not single_process_reviews)
                 or execution_context.get("agentic_review_coverage_pct", 0) >= MIN_AGENTIC_REVIEW_COVERAGE
                 else ["agentic review lane coverage is below the execution threshold; target tickets remain visible but green orders are blocked"]
             )
             + (
                 []
-                if not agent_reviews_json
+                if (not agent_reviews_json and not single_process_reviews)
                 or execution_context.get("broad_review_coverage_pct", 0) >= MIN_AGENTIC_REVIEW_COVERAGE
-                else ["broad research-task coverage is low; execution readiness is based on subagent lane coverage plus per-ticket lane coverage"]
+                else [
+                    "broad research-task coverage is low; execution readiness uses review-lane coverage plus per-ticket exact-contract coverage"
+                ]
             )
             + (
                 []
@@ -3002,7 +3062,7 @@ def run_pipeline(
             )
             + (
                 []
-                if agent_dispatch_drift.get("contract_status") != "drift"
+                if single_process_reviews or agent_dispatch_drift.get("contract_status") != "drift"
                 else [
                     "exact contract review set drifted from the reviewed dispatch snapshot; newly added or changed contracts remain review-only"
                 ]
@@ -3018,15 +3078,15 @@ def run_pipeline(
     _write_json(paths["research_tasks"], research_tasks)
     _write_json(paths["agent_dispatch_plan"], agent_dispatch_plan)
     _write_json(paths["contract_review_tasks"], contract_review_tasks)
-    if agent_reviews_json is None:
+    if execution_agent_reviews.empty:
         _write_json(paths["agentic_reviews"], {"reviews": []})
     else:
-        _write_json(paths["agentic_reviews"], {"reviews": external_agent_reviews.to_dict("records")})
+        _write_json(paths["agentic_reviews"], {"reviews": execution_agent_reviews.to_dict("records")})
     _write_frame(raw_universe, paths["raw_universe"])
     _write_frame(candidates, paths["candidate_generation"])
     _write_frame(catalyst_evidence, paths["catalyst_evidence"])
     _write_frame(catalyst_reviews, paths["catalyst_reviews"])
-    _write_frame(external_agent_reviews, paths["external_agent_reviews"])
+    _write_frame(execution_agent_reviews, paths["external_agent_reviews"])
     _write_frame(agent_review_board, paths["agent_review_board"])
     _write_frame(structure_attempts, paths["structure_attempts"])
     _write_frame(strategy_routing_audit, paths["strategy_routing_audit"])
@@ -3307,7 +3367,12 @@ def build_raw_universe(
     universe["ticker"] = universe["ticker"].astype(str).str.upper().str.strip()
 
     seed = universe.copy()
-    seed["seed_premium"] = seed[["screen_total_premium", "hot_total_premium"]].fillna(0).max(axis=1)
+    seed_premium_columns = [
+        column
+        for column in ("screen_total_premium", "hot_total_premium", "oi_directional_premium")
+        if column in seed.columns
+    ]
+    seed["seed_premium"] = seed[seed_premium_columns].fillna(0).max(axis=1)
     tickers = seed.sort_values("seed_premium", ascending=False)["ticker"].dropna().tolist()
     if discovery_limit is not None:
         tickers = tickers[: int(discovery_limit)]
@@ -3317,17 +3382,25 @@ def build_raw_universe(
     except Exception as exc:
         notes.append(f"bot_eod aggregation unavailable: {exc}")
 
-    for col in ("screen_flow_bias", "hot_flow_bias", "bot_flow_bias"):
+    for col in ("screen_flow_bias", "hot_flow_bias", "bot_flow_bias", "oi_directional_bias"):
         if col not in universe.columns:
             universe[col] = math.nan
-    for col in ("screen_total_premium", "hot_total_premium", "bot_total_premium", "positive_oi_change"):
+    for col in (
+        "screen_total_premium",
+        "hot_total_premium",
+        "bot_total_premium",
+        "oi_directional_premium",
+        "positive_oi_change",
+    ):
         if col not in universe.columns:
             universe[col] = 0.0
 
     universe["combined_flow_bias"] = universe.apply(_combined_flow_bias, axis=1)
     universe["bias"] = universe["combined_flow_bias"].map(_bias_label)
     universe["flow_bias_label"] = universe["bias"]
-    universe["signal_premium"] = universe[["screen_total_premium", "hot_total_premium", "bot_total_premium"]].fillna(0).max(axis=1)
+    universe["signal_premium"] = universe[
+        ["screen_total_premium", "hot_total_premium", "bot_total_premium", "oi_directional_premium"]
+    ].fillna(0).max(axis=1)
     quality_rows = universe.apply(
         lambda row: pd.Series(_underlying_quality(row), index=["underlying_quality_tier", "underlying_quality_reason"]),
         axis=1,
@@ -3674,21 +3747,98 @@ def aggregate_hot_chains(hot: pd.DataFrame) -> pd.DataFrame:
 
 
 def aggregate_chain_oi(chain_oi: pd.DataFrame) -> pd.DataFrame:
-    """Aggregate chain OI changes by ticker."""
+    """Aggregate chain OI changes and infer opening-flow direction by ticker."""
 
     if chain_oi.empty:
         return pd.DataFrame(columns=["ticker"])
     df = chain_oi.copy()
     df["ticker"] = df.apply(_clean_chain_oi_ticker, axis=1)
     df = df[df["ticker"].astype(bool)].copy()
-    df["positive_oi_change"] = pd.to_numeric(df.get("oi_diff_plain", 0), errors="coerce").fillna(0).clip(lower=0)
-    return df.groupby("ticker", as_index=False).agg(
+    for column in ("oi_diff_plain", "volume", "curr_oi", "dte"):
+        df[column] = pd.to_numeric(
+            df.get(column, pd.Series(0.0, index=df.index)),
+            errors="coerce",
+        ).fillna(0.0)
+    df["positive_oi_change"] = df["oi_diff_plain"].clip(lower=0)
+    aggregate = df.groupby("ticker", as_index=False).agg(
         oi_diff_plain=("oi_diff_plain", "sum"),
         positive_oi_change=("positive_oi_change", "sum"),
         chain_oi_volume=("volume", "sum"),
         curr_oi=("curr_oi", "sum"),
         oi_avg_dte=("dte", "mean"),
     )
+
+    opening = df[df["positive_oi_change"] > 0].copy()
+    if opening.empty or "option_symbol" not in opening.columns:
+        aggregate["oi_bullish_premium"] = 0.0
+        aggregate["oi_bearish_premium"] = 0.0
+        aggregate["oi_directional_premium"] = 0.0
+        aggregate["oi_directional_bias"] = math.nan
+        aggregate["positive_call_oi_change"] = 0.0
+        aggregate["positive_put_oi_change"] = 0.0
+        return aggregate
+
+    parsed = opening["option_symbol"].map(_parse_occ_symbol)
+    opening["right"] = parsed.map(lambda value: _as_text(value.get("right")) if value else "")
+    for column in (
+        "prev_ask_volume",
+        "prev_bid_volume",
+        "prev_total_premium",
+        "avg_price",
+    ):
+        opening[column] = pd.to_numeric(
+            opening.get(column, pd.Series(0.0, index=opening.index)),
+            errors="coerce",
+        ).fillna(0.0)
+    opening["oi_effective_premium"] = opening["prev_total_premium"]
+    missing_premium = opening["oi_effective_premium"] <= 0
+    opening.loc[missing_premium, "oi_effective_premium"] = (
+        opening.loc[missing_premium, "avg_price"].abs()
+        * opening.loc[missing_premium, "volume"].clip(lower=1.0)
+        * 100.0
+    )
+    side_volume = (opening["prev_ask_volume"] + opening["prev_bid_volume"]).replace(0, math.nan)
+    opening["oi_ask_premium"] = (
+        opening["oi_effective_premium"] * opening["prev_ask_volume"] / side_volume
+    ).replace([math.inf, -math.inf], math.nan).fillna(0.0)
+    opening["oi_bid_premium"] = (
+        opening["oi_effective_premium"] * opening["prev_bid_volume"] / side_volume
+    ).replace([math.inf, -math.inf], math.nan).fillna(0.0)
+    is_call = opening["right"].eq("C")
+    is_put = opening["right"].eq("P")
+    opening["oi_bullish_premium"] = 0.0
+    opening["oi_bearish_premium"] = 0.0
+    opening.loc[is_call, "oi_bullish_premium"] = opening.loc[is_call, "oi_ask_premium"]
+    opening.loc[is_put, "oi_bullish_premium"] = opening.loc[is_put, "oi_bid_premium"]
+    opening.loc[is_put, "oi_bearish_premium"] = opening.loc[is_put, "oi_ask_premium"]
+    opening.loc[is_call, "oi_bearish_premium"] = opening.loc[is_call, "oi_bid_premium"]
+    opening["positive_call_oi_change"] = opening["positive_oi_change"].where(is_call, 0.0)
+    opening["positive_put_oi_change"] = opening["positive_oi_change"].where(is_put, 0.0)
+    directional = opening.groupby("ticker", as_index=False).agg(
+        oi_bullish_premium=("oi_bullish_premium", "sum"),
+        oi_bearish_premium=("oi_bearish_premium", "sum"),
+        positive_call_oi_change=("positive_call_oi_change", "sum"),
+        positive_put_oi_change=("positive_put_oi_change", "sum"),
+    )
+    directional["oi_directional_premium"] = (
+        directional["oi_bullish_premium"] + directional["oi_bearish_premium"]
+    )
+    denominator = directional["oi_directional_premium"].where(
+        directional["oi_directional_premium"] > 0
+    )
+    directional["oi_directional_bias"] = (
+        directional["oi_bullish_premium"] - directional["oi_bearish_premium"]
+    ) / denominator
+    out = aggregate.merge(directional, on="ticker", how="left")
+    for column in (
+        "oi_bullish_premium",
+        "oi_bearish_premium",
+        "oi_directional_premium",
+        "positive_call_oi_change",
+        "positive_put_oi_change",
+    ):
+        out[column] = pd.to_numeric(out[column], errors="coerce").fillna(0.0)
+    return out
 
 
 def _clean_chain_oi_ticker(row: Mapping[str, Any]) -> str:
@@ -4949,6 +5099,184 @@ def build_internal_agent_reviews(
     return pd.DataFrame(rows, columns=AGENT_REVIEW_COLUMNS)
 
 
+def build_single_process_execution_reviews(
+    internal_reviews: pd.DataFrame,
+    dispatch_plan: Mapping[str, Any],
+    priced: pd.DataFrame,
+    *,
+    as_of: str,
+) -> pd.DataFrame:
+    """Build an auditable four-lane review packet without spawning subagents."""
+
+    required_tickers = _required_review_tickers_from_dispatch_plan(dispatch_plan)
+    if not required_tickers:
+        required_tickers = _ordered_review_tickers(priced, pd.DataFrame())
+    internal_records = (
+        internal_reviews.to_dict("records")
+        if internal_reviews is not None and not internal_reviews.empty
+        else []
+    )
+    generic_lookup = {
+        (_as_text(review.get("ticker")).upper(), _as_text(review.get("agent"))): review
+        for review in internal_records
+        if not _truthy(review.get("contract_specific"))
+    }
+    priced_by_ticker: dict[str, list[dict[str, Any]]] = {}
+    for row in priced.to_dict("records") if priced is not None and not priced.empty else []:
+        ticker = _as_text(row.get("ticker")).upper()
+        if ticker:
+            priced_by_ticker.setdefault(ticker, []).append(row)
+
+    rows: list[dict[str, Any]] = []
+    for ticker in required_tickers:
+        for source_agent, local_agent, stage in (
+            ("market_regime", "macro_regime", "single_process_macro_regime"),
+            ("catalyst", "catalyst_news", "single_process_catalyst_news"),
+        ):
+            source = generic_lookup.get((ticker, source_agent), {})
+            rows.append(
+                _agent_review_row(
+                    ticker,
+                    local_agent,
+                    stage,
+                    _as_text(source.get("verdict")) or "caution",
+                    _as_text(source.get("confidence")) or "medium",
+                    _as_text(source.get("note")) or f"{local_agent} evidence unavailable",
+                    agent_type="deterministic_local",
+                    objective_blocker=_truthy(source.get("objective_blocker")),
+                    blocker_type=_as_text(source.get("blocker_type")),
+                    evidence=_as_text(source.get("evidence")),
+                    source_artifact=_as_text(source.get("source_artifact")) or "single_process_review",
+                    as_of=as_of,
+                )
+            )
+
+        ticker_contracts = priced_by_ticker.get(ticker, [])
+        clean_contracts = [
+            row
+            for row in ticker_contracts
+            if _as_text(row.get("trade_plan") or row.get("full_ticket"))
+            and not _as_text(row.get("hard_rejects"))
+            and _as_text(row.get("live_validation_status")).upper() == "PASS"
+        ]
+        rows.append(
+            _agent_review_row(
+                ticker,
+                "structure_builder",
+                "single_process_structure_coverage",
+                "supportive" if clean_contracts else "caution",
+                "high" if ticker_contracts else "medium",
+                (
+                    f"{len(clean_contracts)} clean live-priced contract(s) available for exact review"
+                    if clean_contracts
+                    else "no clean live-priced contract available; ticker remains research-only"
+                ),
+                agent_type="deterministic_local",
+                source_artifact="priced_candidates.csv",
+                as_of=as_of,
+            )
+        )
+        rows.append(
+            _agent_review_row(
+                ticker,
+                "skeptic",
+                "single_process_skeptic_coverage",
+                "supportive" if clean_contracts else "caution",
+                "medium",
+                (
+                    "at least one exact contract has no objective execution defect"
+                    if clean_contracts
+                    else "no exact contract clears the objective execution checks"
+                ),
+                agent_type="deterministic_local",
+                source_artifact="priced_candidates.csv",
+                as_of=as_of,
+            )
+        )
+
+    seen_exact: set[tuple[str, str]] = set()
+    for review in internal_records:
+        if not _truthy(review.get("contract_specific")):
+            continue
+        source_agent = _as_text(review.get("agent"))
+        local_agent = "structure_builder" if source_agent == "structure" else source_agent
+        if local_agent not in CONTRACT_REVIEW_REQUIRED_AGENTS:
+            continue
+        contract_key = _as_text(review.get("contract_key"))
+        dedupe_key = (contract_key, local_agent)
+        if not contract_key or dedupe_key in seen_exact:
+            continue
+        seen_exact.add(dedupe_key)
+        rows.append(
+            _agent_review_row(
+                _as_text(review.get("ticker")),
+                local_agent,
+                f"single_process_exact_{local_agent}",
+                _as_text(review.get("verdict")) or "caution",
+                _as_text(review.get("confidence")) or "medium",
+                _as_text(review.get("note")) or "exact contract reviewed deterministically",
+                agent_type="deterministic_local",
+                objective_blocker=_truthy(review.get("objective_blocker")),
+                blocker_type=_as_text(review.get("blocker_type")),
+                evidence=_as_text(review.get("evidence")),
+                source_artifact=_as_text(review.get("source_artifact")) or "priced_candidates.csv",
+                as_of=as_of,
+                contract_key=contract_key,
+                contract_specific=True,
+                strategy_route=_as_text(review.get("strategy_route")),
+                expiry=_as_text(review.get("expiry")),
+                trade_plan=_as_text(review.get("trade_plan")),
+            )
+        )
+
+    seen_catalyst_contracts: set[str] = set()
+    for contract in priced.to_dict("records") if priced is not None and not priced.empty else []:
+        if "catalyst_news" not in _required_contract_review_agents(contract):
+            continue
+        contract_key = contract_review_key(contract)
+        if not contract_key or contract_key in seen_catalyst_contracts:
+            continue
+        seen_catalyst_contracts.add(contract_key)
+        earnings_status = _as_text(contract.get("earnings_source_status")).lower()
+        if earnings_status in {"missing", "unverified"}:
+            verdict = "avoid"
+            objective = True
+            blocker_type = "stale_event"
+            note = "earnings calendar is not authoritative for this exact contract"
+        elif earnings_status == "provisional_after_expiry":
+            verdict = "caution"
+            objective = False
+            blocker_type = ""
+            note = "earnings is provisionally after expiry; verify the date before entry"
+        else:
+            verdict = "supportive"
+            objective = False
+            blocker_type = ""
+            note = "contract event-calendar check passed"
+        rows.append(
+            _agent_review_row(
+                _as_text(contract.get("ticker")),
+                "catalyst_news",
+                "single_process_exact_catalyst_news",
+                verdict,
+                "high",
+                note,
+                agent_type="deterministic_local",
+                objective_blocker=objective,
+                blocker_type=blocker_type,
+                evidence=_as_text(contract.get("contract_event_risk_note")),
+                source_artifact="options_event_calendar.csv",
+                as_of=as_of,
+                contract_key=contract_key,
+                contract_specific=True,
+                strategy_route=_as_text(contract.get("strategy_route")),
+                expiry=_as_text(contract.get("expiry")),
+                trade_plan=_as_text(contract.get("trade_plan") or contract.get("full_ticket")),
+            )
+        )
+    return pd.DataFrame(rows, columns=AGENT_REVIEW_COLUMNS)
+
+
 def build_portfolio_agent_reviews(final: pd.DataFrame, *, as_of: str) -> pd.DataFrame:
     """Emit portfolio-risk agent reviews after portfolio annotations are applied."""
 
@@ -5017,6 +5345,7 @@ def _is_external_or_subagent_agent_type(value: Any) -> bool:
     return bool(
         agent_type == "external"
         or agent_type == "subagent"
+        or agent_type == "deterministic_local"
         or agent_type.startswith("external_")
         or agent_type.startswith("subagent_")
     )
@@ -6952,6 +7281,10 @@ def construct_credit_spread(candidate: Mapping[str, Any], hot: pd.DataFrame) -> 
         "score": round(float(candidate.get("score") or 0), 2),
         "signal_premium": round(float(candidate.get("signal_premium") or 0), 2),
         "combined_flow_bias": candidate.get("combined_flow_bias", ""),
+        "oi_directional_bias": candidate.get("oi_directional_bias", ""),
+        "oi_directional_premium": candidate.get("oi_directional_premium", ""),
+        "oi_bullish_premium": candidate.get("oi_bullish_premium", ""),
+        "oi_bearish_premium": candidate.get("oi_bearish_premium", ""),
         "quality_status": candidate.get("quality_status"),
         "recommendation_status": status,
         "status_reason": liquidity_note,
@@ -7116,6 +7449,10 @@ def construct_debit_spread(candidate: Mapping[str, Any], hot: pd.DataFrame, *, d
         "score": round(float(candidate.get("score") or 0), 2),
         "signal_premium": round(float(candidate.get("signal_premium") or 0), 2),
         "combined_flow_bias": candidate.get("combined_flow_bias", ""),
+        "oi_directional_bias": candidate.get("oi_directional_bias", ""),
+        "oi_directional_premium": candidate.get("oi_directional_premium", ""),
+        "oi_bullish_premium": candidate.get("oi_bullish_premium", ""),
+        "oi_bearish_premium": candidate.get("oi_bearish_premium", ""),
         "quality_status": candidate.get("quality_status"),
         "recommendation_status": status,
         "status_reason": liquidity_note,
@@ -7254,6 +7591,10 @@ def construct_long_option(candidate: Mapping[str, Any], hot: pd.DataFrame, *, di
         "score": round(float(candidate.get("score") or 0), 2),
         "signal_premium": round(float(candidate.get("signal_premium") or 0), 2),
         "combined_flow_bias": candidate.get("combined_flow_bias", ""),
+        "oi_directional_bias": candidate.get("oi_directional_bias", ""),
+        "oi_directional_premium": candidate.get("oi_directional_premium", ""),
+        "oi_bullish_premium": candidate.get("oi_bullish_premium", ""),
+        "oi_bearish_premium": candidate.get("oi_bearish_premium", ""),
         "quality_status": candidate.get("quality_status"),
         "recommendation_status": status,
         "status_reason": liquidity_note,
@@ -7377,6 +7718,10 @@ def construct_short_put(candidate: Mapping[str, Any], hot: pd.DataFrame) -> dict
         "score": round(float(candidate.get("score") or 0), 2),
         "signal_premium": round(float(candidate.get("signal_premium") or 0), 2),
         "combined_flow_bias": candidate.get("combined_flow_bias", ""),
+        "oi_directional_bias": candidate.get("oi_directional_bias", ""),
+        "oi_directional_premium": candidate.get("oi_directional_premium", ""),
+        "oi_bullish_premium": candidate.get("oi_bullish_premium", ""),
+        "oi_bearish_premium": candidate.get("oi_bearish_premium", ""),
         "quality_status": candidate.get("quality_status"),
         "recommendation_status": status,
         "status_reason": liquidity_note,
@@ -7437,6 +7782,10 @@ def priced_error_row(candidate: Mapping[str, Any], structure: str, reason: str) 
         "score": round(float(candidate.get("score") or 0), 2),
         "signal_premium": round(float(candidate.get("signal_premium") or 0), 2),
         "combined_flow_bias": candidate.get("combined_flow_bias", ""),
+        "oi_directional_bias": candidate.get("oi_directional_bias", ""),
+        "oi_directional_premium": candidate.get("oi_directional_premium", ""),
+        "oi_bullish_premium": candidate.get("oi_bullish_premium", ""),
+        "oi_bearish_premium": candidate.get("oi_bearish_premium", ""),
         "quality_status": candidate.get("quality_status"),
         "recommendation_status": RecommendationStatus.REVIEW.value,
         "status_reason": f"{reason}; live chain expansion required",
@@ -12452,7 +12801,7 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         "daily_sleeve_cap": 1,
         "second_slot_max_structural_score_gap": MAX_SELECTOR_SECOND_SLOT_STRUCTURAL_SCORE_GAP,
         "rank_mode": "selector_economic_score",
-        "entry_filter_profile": "quality_sleeves_regime_v5",
+        "entry_filter_profile": "quality_sleeves_regime_v6",
         "use_training_gate": False,
     },
     {
@@ -12668,6 +13017,7 @@ def _select_challenger_policy_rows(frame: pd.DataFrame, policy: Mapping[str, Any
         if _as_text(policy.get("entry_filter_profile")) in {
             "quality_sleeves_regime_v4",
             "quality_sleeves_regime_v5",
+            "quality_sleeves_regime_v6",
         }:
             assessments = current.apply(_selector_v4_replay_assessment, axis=1)
             current["__selector_eligible"] = assessments.map(lambda value: bool(value[0]))
@@ -14426,6 +14776,21 @@ def _selector_structural_score(score: float, row: Mapping[str, Any]) -> float:
     return round(float(score) - synthesis_component, 6)
 
 
+def _selector_mature_negative_evidence_reasons(row: Mapping[str, Any]) -> list[str]:
+    """Keep known losing evidence from consuming a scarce daily selector slot."""
+
+    if _v0_late_evidence_gates_diagnostic_only() or _current_edge_override_reason(row):
+        return []
+    reasons: list[str] = []
+    if _negative_strategy_expectancy_blocks_green(row):
+        reasons.append("mature_negative_strategy_expectancy")
+    if _profitability_calibration_actual_support_negative(row):
+        reasons.append("mature_negative_calibration_actuals")
+    if _negative_route_family_evidence_blocks_action(row):
+        reasons.append("mature_negative_route_family_evidence")
+    return _dedupe_notes(reasons)
+
+
 def _selector_policy_row_assessment(
     row: Mapping[str, Any],
     *,
@@ -14505,8 +14870,17 @@ def _selector_policy_row_assessment(
             reasons.append(f"debit_width_above_{max_debit_width:.2f}")
         if reward_risk is None or reward_risk < 1.25:
             reasons.append("debit_reward_risk_below_1.25")
-        if flow_alignment is None or flow_alignment < 0.20:
-            reasons.append("debit_flow_alignment_below_0.20")
+        minimum_flow_alignment = (
+            MIN_BEAR_PUT_DEBIT_FLOW_ALIGNMENT
+            if route == "bear_put_debit"
+            else 0.20
+        )
+        if flow_alignment is None or flow_alignment < minimum_flow_alignment:
+            reasons.append(
+                "debit_flow_alignment_below_0.175"
+                if route == "bear_put_debit"
+                else "debit_flow_alignment_below_0.20"
+            )
         if expected_move_ratio is None or expected_move_ratio < minimum_expected_move_ratio:
             reasons.append(f"debit_expected_move_ratio_below_{minimum_expected_move_ratio:.2f}")
         if quote_width is None or quote_width > 0.25:
@@ -14558,6 +14932,8 @@ def annotate_selector_policy(final: pd.DataFrame, *, enabled: bool = True) -> pd
     }
     for idx, row in out.iterrows():
         eligible, score, reasons, sleeve = _selector_policy_row_assessment(row)
+        reasons.extend(_selector_mature_negative_evidence_reasons(row))
+        eligible = bool(eligible and not reasons)
         target_profit = _selector_one_lot_target_profit(row)
         economic_score = _selector_economic_score(score, target_profit)
         out.at[idx, "selector_policy_id"] = PROMOTED_SELECTOR_POLICY_ID
@@ -16066,6 +16442,7 @@ def build_execution_context(
     research_task_count: int,
     external_review_count: int,
     agent_reviews_json: Optional[Path],
+    review_mode: str = "external",
     external_review_ticker_count: Optional[int] = None,
     external_review_agent_count: Optional[int] = None,
     agent_dispatch_task_count: Optional[int] = None,
@@ -16102,7 +16479,11 @@ def build_execution_context(
     review_coverage = lane_review_coverage if dispatch_task_count > 0 else broad_review_coverage
     if required_ticker_count > 0:
         review_coverage = min(review_coverage, required_ticker_coverage)
-    agentic_reviews_present = bool(agent_reviews_json and external_review_count > 0)
+    normalized_review_mode = _as_text(review_mode).lower() or "external"
+    deterministic_local_mode = normalized_review_mode == "deterministic_local"
+    agentic_reviews_present = bool(
+        external_review_count > 0 and (agent_reviews_json or deterministic_local_mode)
+    )
     required_ticker_reviews_ready = bool(required_ticker_count <= 0 or required_ticker_missing_count == 0)
     agentic_reviews_ready = bool(
         agentic_reviews_present
@@ -16130,6 +16511,7 @@ def build_execution_context(
         "portfolio_total_value": total_value,
         "agentic_reviews_present": agentic_reviews_present,
         "agentic_reviews_ready": agentic_reviews_ready,
+        "review_mode": normalized_review_mode,
         "external_review_count": int(external_review_count),
         "external_review_ticker_count": reviewed_ticker_count,
         "external_review_agent_count": review_agent_count,
@@ -16139,7 +16521,11 @@ def build_execution_context(
         "agentic_review_lane_coverage_pct": round(lane_review_coverage, 4),
         "agentic_review_coverage_pct": round(review_coverage, 4),
         "agentic_review_coverage_basis": (
-            "subagent_lanes_and_required_tickers"
+            "deterministic_local_lanes_and_required_tickers"
+            if deterministic_local_mode and required_ticker_count > 0
+            else "deterministic_local_lanes"
+            if deterministic_local_mode
+            else "subagent_lanes_and_required_tickers"
             if required_ticker_count > 0
             else "subagent_lanes"
             if dispatch_task_count > 0
@@ -16171,6 +16557,7 @@ def _execution_context_or_default(execution_context: Optional[Mapping[str, Any]]
         "portfolio_total_value": 100_000.0,
         "agentic_reviews_present": True,
         "agentic_reviews_ready": True,
+        "review_mode": "unit_test_permissive",
         "external_review_count": 1,
         "external_review_agent_count": 1,
         "research_task_count": 1,
@@ -26528,6 +26915,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Optional JSON reviews from external/subagents to feed into synthesis.",
     )
     parser.add_argument(
+        "--single-process-reviews",
+        action="store_true",
+        help=(
+            "Run deterministic four-lane and exact-contract reviews in this process. "
+            "Use when subagent delegation is explicitly disabled."
+        ),
+    )
+    parser.add_argument(
         "--dispatch-only",
         action="store_true",
         help="Write pass-1 agent dispatch artifacts, then stop before pricing and synthesis.",
@@ -26566,6 +26961,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         chain_snapshot_dir=chain_snapshot_dir,
         chain_strike_count=args.chain_strike_count,
         agent_reviews_json=agent_reviews_json,
+        single_process_reviews=args.single_process_reviews,
         dispatch_only=args.dispatch_only,
         lesson_pack_version=args.lesson_pack_version or None,
         lesson_pack_path=lesson_pack_path,
@@ -26587,6 +26983,7 @@ def _combined_flow_bias(row: Mapping[str, Any]) -> float:
         ("bot_flow_bias", "bot_total_premium"),
         ("hot_flow_bias", "hot_total_premium"),
         ("screen_flow_bias", "screen_total_premium"),
+        ("oi_directional_bias", "oi_directional_premium"),
     ):
         bias = _as_float(row.get(bias_col))
         premium = _as_float(row.get(premium_col)) or 0.0
@@ -26639,7 +27036,12 @@ def _flow_reason(row: Mapping[str, Any]) -> str:
     premium = _as_float(row.get("signal_premium")) or 0.0
     flow_bias = _as_float(row.get("combined_flow_bias")) or 0.0
     tier = _as_text(row.get("underlying_quality_tier")) or "unknown"
-    return f"{bias} flow bias {flow_bias:.2f}; signal premium ${premium:,.0f}; {tier} underlying; score {score:.1f}"
+    oi_bias = _as_float(row.get("oi_directional_bias"))
+    oi_note = f"; opening-OI bias {oi_bias:.2f}" if oi_bias is not None and math.isfinite(oi_bias) else ""
+    return (
+        f"{bias} flow bias {flow_bias:.2f}{oi_note}; signal premium ${premium:,.0f}; "
+        f"{tier} underlying; score {score:.1f}"
+    )
 
 
 def _status_counts(df: pd.DataFrame) -> dict[str, int]:

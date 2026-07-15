@@ -57,8 +57,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.17-probationary-route-confidence-20260714-055506"
+    assert core.PIPELINE_VERSION == "options-agent-v1.18-directional-oi-local-review-20260715-095055"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.17-probationary-route-confidence-20260714-055506",
         "options-agent-v1.16-economic-capacity-20260713-211035",
         "options-agent-v1.15-regime-debit-parity-20260712-130352",
         "options-agent-v1.14-width-and-evidence-integrity-20260712-122120",
@@ -80,7 +81,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-14T05:55:06-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-15T09:50:55-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -106,6 +107,191 @@ def test_goal_runtime_guard_blocks_v0_drift(monkeypatch: pytest.MonkeyPatch) -> 
 
     with pytest.raises(RuntimeError, match="strict goal runtime defaults drifted"):
         core.assert_strict_goal_runtime_defaults()
+
+
+def test_chain_oi_aggregation_uses_option_side_and_trade_side_for_direction() -> None:
+    chain = pd.DataFrame(
+        [
+            {
+                "underlying_symbol": "AAPL",
+                "option_symbol": "AAPL260821C00100000",
+                "oi_diff_plain": 10,
+                "curr_oi": 100,
+                "volume": 10,
+                "dte": 30,
+                "prev_total_premium": 1_000,
+                "prev_ask_volume": 10,
+                "prev_bid_volume": 0,
+                "avg_price": 1.0,
+            },
+            {
+                "underlying_symbol": "AAPL",
+                "option_symbol": "AAPL260821P00095000",
+                "oi_diff_plain": 20,
+                "curr_oi": 100,
+                "volume": 10,
+                "dte": 30,
+                "prev_total_premium": 500,
+                "prev_ask_volume": 0,
+                "prev_bid_volume": 10,
+                "avg_price": 1.0,
+            },
+            {
+                "underlying_symbol": "AAPL",
+                "option_symbol": "AAPL260821P00090000",
+                "oi_diff_plain": 30,
+                "curr_oi": 100,
+                "volume": 10,
+                "dte": 30,
+                "prev_total_premium": 750,
+                "prev_ask_volume": 10,
+                "prev_bid_volume": 0,
+                "avg_price": 1.0,
+            },
+            {
+                "underlying_symbol": "AAPL",
+                "option_symbol": "AAPL260821C00105000",
+                "oi_diff_plain": 40,
+                "curr_oi": 100,
+                "volume": 10,
+                "dte": 30,
+                "prev_total_premium": 250,
+                "prev_ask_volume": 0,
+                "prev_bid_volume": 10,
+                "avg_price": 1.0,
+            },
+        ]
+    )
+
+    row = core.aggregate_chain_oi(chain).iloc[0]
+
+    assert row["oi_bullish_premium"] == pytest.approx(1_500.0)
+    assert row["oi_bearish_premium"] == pytest.approx(1_000.0)
+    assert row["oi_directional_premium"] == pytest.approx(2_500.0)
+    assert row["oi_directional_bias"] == pytest.approx(0.20)
+    assert row["positive_call_oi_change"] == pytest.approx(50.0)
+    assert row["positive_put_oi_change"] == pytest.approx(50.0)
+
+
+def test_single_process_reviews_cover_tickers_and_exact_contracts() -> None:
+    priced = pd.DataFrame(
+        [
+            {
+                "ticker": "WMT",
+                "bias": "bullish",
+                "strategy_route": "bull_call_debit",
+                "expiry": "2026-08-21",
+                "buy_leg": "BUY 1 WMT 2026-08-21 100 Call",
+                "sell_leg": "SELL 1 WMT 2026-08-21 105 Call",
+                "trade_plan": "BUY 1 WMT 2026-08-21 100 Call / SELL 1 WMT 2026-08-21 105 Call @ 1.50 DEBIT",
+                "full_ticket": "BUY 1 WMT 2026-08-21 100 Call / SELL 1 WMT 2026-08-21 105 Call @ 1.50 DEBIT",
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "status_reason": "live spread passes",
+                "hard_rejects": "",
+                "live_validation_status": "PASS",
+                "underlying_quality_tier": "core",
+                "earnings_source_status": "verified",
+            }
+        ]
+    )
+    internal = core.build_internal_agent_reviews(
+        pd.DataFrame([{"ticker": "WMT", "bias": "bullish"}]),
+        {"regime": "risk_on", "status": "ok", "note": "risk-on tape"},
+        pd.DataFrame(
+            [
+                {
+                    "ticker": "WMT",
+                    "catalyst_status": "clear",
+                    "catalyst_note": "no event conflict",
+                }
+            ]
+        ),
+        priced,
+        as_of="2026-07-15",
+    )
+    dispatch_plan = {
+        "common_context": {"required_review_tickers": ["WMT"]},
+        "subagent_tasks": [{"agent": agent} for agent in core.KNOWN_EXTERNAL_REVIEW_AGENTS],
+    }
+
+    local = core.build_single_process_execution_reviews(
+        internal,
+        dispatch_plan,
+        priced,
+        as_of="2026-07-15",
+    )
+    generic = local[~local["contract_specific"].map(core._truthy)]
+    exact = local[local["contract_specific"].map(core._truthy)]
+    coverage = core.build_agentic_review_contract_coverage(dispatch_plan, local)
+    reviewed = core.apply_agent_reviews(priced, local).iloc[0]
+    context = core.build_execution_context(
+        live_schwab=True,
+        chain_snapshot_dir=None,
+        portfolio_context={"status": "ok", "total_value": 100_000},
+        research_task_count=1,
+        external_review_count=len(local),
+        external_review_ticker_count=1,
+        external_review_agent_count=4,
+        agent_dispatch_task_count=5,
+        agent_reviews_json=None,
+        review_mode="deterministic_local",
+        required_review_ticker_count=1,
+        required_review_ticker_reviewed_count=1,
+        required_review_ticker_missing_count=0,
+        required_review_ticker_coverage_pct=1.0,
+    )
+
+    assert {"catalyst_news", "macro_regime", "structure_builder", "skeptic"}.issubset(
+        set(generic["agent"])
+    )
+    assert {"structure_builder", "skeptic"}.issubset(set(exact["agent"]))
+    assert set(local["agent_type"]) == {"deterministic_local"}
+    assert coverage["status"] == "pass"
+    assert reviewed["contract_review_status"] == "PASS"
+    assert context["agentic_reviews_ready"] is True
+    assert "agentic_reviews_required" not in context["run_gate_blockers"]
+
+
+def test_single_process_exact_catalyst_review_preserves_unverified_event_block() -> None:
+    priced = pd.DataFrame(
+        [
+            {
+                "ticker": "WMT",
+                "bias": "bullish",
+                "strategy_route": "bull_call_debit",
+                "expiry": "2026-08-21",
+                "buy_leg": "BUY 1 WMT 2026-08-21 100 Call",
+                "sell_leg": "SELL 1 WMT 2026-08-21 105 Call",
+                "trade_plan": "BUY 1 WMT 2026-08-21 100 Call / SELL 1 WMT 2026-08-21 105 Call @ 1.50 DEBIT",
+                "full_ticket": "BUY 1 WMT 2026-08-21 100 Call / SELL 1 WMT 2026-08-21 105 Call @ 1.50 DEBIT",
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "status_reason": "event verification pending",
+                "hard_rejects": "",
+                "live_validation_status": "PASS",
+                "underlying_quality_tier": "core",
+                "earnings_source_status": "unverified",
+            }
+        ]
+    )
+    internal = core.build_internal_agent_reviews(
+        pd.DataFrame([{"ticker": "WMT", "bias": "bullish"}]),
+        {"regime": "risk_on", "status": "ok", "note": "risk-on tape"},
+        pd.DataFrame(),
+        priced,
+        as_of="2026-07-15",
+    )
+    local = core.build_single_process_execution_reviews(
+        internal,
+        {"common_context": {"required_review_tickers": ["WMT"]}},
+        priced,
+        as_of="2026-07-15",
+    )
+
+    reviewed = core.apply_agent_reviews(priced, local).iloc[0]
+
+    assert reviewed["recommendation_status"] == RecommendationStatus.AVOID.value
+    assert reviewed["contract_review_status"] == "BLOCK"
+    assert "external_agent_objective_blocker" in reviewed["hard_rejects"]
 
 
 def test_green_ready_rows_are_not_counted_as_target_order_candidates() -> None:
@@ -7712,7 +7898,8 @@ def test_promoted_selector_fills_second_slot_with_distinct_same_sleeve_ticker() 
         ("bull_call_debit", "mixed", 30, 0.25, False, "debit_regime_not_aligned:mixed"),
         ("bear_put_debit", "risk_off", 30, -0.25, True, ""),
         ("bear_put_debit", "risk_on", 30, -0.25, False, "debit_regime_not_aligned:risk_on"),
-        ("bear_put_debit", "risk_off", 30, -0.19, False, "debit_flow_alignment_below_0.20"),
+        ("bear_put_debit", "risk_off", 30, -0.18, True, ""),
+        ("bear_put_debit", "risk_off", 30, -0.17, False, "debit_flow_alignment_below_0.175"),
     ],
 )
 def test_selector_debit_policy_matches_validated_regime_dte_and_flow_contract(
@@ -7779,7 +7966,7 @@ def test_selector_blocks_short_dte_trade_crossing_verified_macro_events() -> Non
     assert "short_dte_macro_event_before_expiry" in reasons
 
 
-def test_live_selector_matches_replay_and_leaves_expectancy_to_action_gate() -> None:
+def test_live_selector_does_not_spend_daily_slot_on_mature_negative_expectancy() -> None:
     rows = pd.DataFrame(
         [
             {
@@ -7807,17 +7994,39 @@ def test_live_selector_matches_replay_and_leaves_expectancy_to_action_gate() -> 
                 "profitability_calibration_actual_sample_size": 4,
                 "profitability_calibration_actual_avg_pnl": -25.0,
                 "profitability_calibration_actual_profit_factor": 0.50,
-            }
+            },
+            {
+                "ticker": "MSFT",
+                "strategy_route": "bull_call_debit",
+                "entry_type": "DEBIT",
+                "underlying_quality_tier": "core",
+                "regime": "risk_on",
+                "iv_rank": 40.0,
+                "dte": 30,
+                "debit_width_ratio": 0.30,
+                "combined_flow_bias": 0.25,
+                "live_breakeven_expected_move_ratio": 0.50,
+                "live_quote_width_pct": 0.10,
+                "live_probability_proxy": 0.55,
+                "max_profit": 700.0,
+                "max_loss": 300.0,
+                "synthesis_score": 150.0,
+                "actual_forward_strategy_expectancy_status": "PASS",
+                "actual_forward_strategy_expectancy_sample_size": 20,
+                "actual_forward_strategy_expectancy_avg_pnl": 15.0,
+                "actual_forward_strategy_expectancy_profit_factor": 1.30,
+            },
         ]
     )
 
-    annotated = core.annotate_selector_policy(rows).iloc[0]
+    annotated = core.annotate_selector_policy(rows).set_index("ticker")
 
-    assert annotated["selector_policy_status"] == "PASS"
-    assert "ticker_expectancy_negative" not in annotated["selector_policy_reason"]
-    assert "actual_strategy_expectancy_negative" not in annotated["selector_policy_reason"]
-    assert "exact_bucket_expectancy_negative" not in annotated["selector_policy_reason"]
-    assert core._negative_strategy_expectancy_blocks_green(annotated) is True
+    assert annotated.at["WMT", "selector_policy_status"] == "BLOCK"
+    assert "mature_negative_strategy_expectancy" in annotated.at[
+        "WMT", "selector_policy_reason"
+    ]
+    assert annotated.at["MSFT", "selector_policy_status"] == "PASS"
+    assert core._negative_strategy_expectancy_blocks_green(annotated.loc["WMT"]) is True
 
 
 def test_liquid_underlying_is_actionable_for_candidate_and_selector_paths() -> None:

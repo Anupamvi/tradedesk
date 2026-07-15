@@ -394,15 +394,16 @@ class FreshWheelSchwabTests(unittest.TestCase):
     def test_write_outputs_manifest_records_schwab_only_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir)
-            action, _ = analyze_symbol(
-                row=_universe_row(),
-                service=FakeSchwabService(),
-                quote={},
-                position=None,
-                asof=dt.date(2026, 4, 30),
-                config=WheelConfig(account_size=250_000, min_option_volume=1),
-                out_dir=out,
-            )
+            with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
+                action, _ = analyze_symbol(
+                    row=_universe_row(),
+                    service=FakeSchwabService(),
+                    quote={},
+                    position=None,
+                    asof=dt.date(2026, 4, 30),
+                    config=WheelConfig(account_size=250_000, min_option_volume=1),
+                    out_dir=out,
+                )
             outputs = write_outputs(
                 out,
                 dt.date(2026, 4, 30),
@@ -421,6 +422,9 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertIn("## Weekly Focus", report)
         self.assertIn("## Action Board", report)
         self.assertIn("| Status | Ticker | Type | Exp | Strike | Trade / Trigger |", report)
+        self.assertIn("Sell Jun 18, 2026 $255 put", report)
+        self.assertIn("$5.00+ credit", report)
+        self.assertNotIn("260618P00255000", report)
         self.assertRegex(report, "🟢 STRONG|🔵 SECONDARY|🟡 ALERT|🟠 WAIT|🔴 AVOID")
 
 

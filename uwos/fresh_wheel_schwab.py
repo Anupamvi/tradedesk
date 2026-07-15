@@ -1129,7 +1129,7 @@ def analyze_symbol(
             reasons=chain_warnings
             + [
                 f"covered strangle: {position.shares} shares cover call; put is cash-secured",
-                f"range {downside_be:.2f} to {upside_be:.2f} after ${covered_strangle.put_credit + covered_strangle.call_credit:.2f} credit",
+                f"range ${downside_be:.2f} to ${upside_be:.2f} after ${covered_strangle.put_credit + covered_strangle.call_credit:.2f} credit",
             ],
         ), chain
 
@@ -1166,8 +1166,8 @@ def analyze_symbol(
         action = "OPEN_CSP" if confidence >= 78.0 and discount_pct >= 3.0 else "SET_CSP_ALERT"
         sleeve = "tactical" if is_tactical_universe_row(row, config) else "core"
         csp_reasons = chain_warnings + [
-            f"Schwab put chain selected {csp.dte} DTE {csp.strike:g}P",
-            f"net assignment {csp.strike - limit_for_sell(csp):.2f}, {discount_pct:.1f}% below spot before credit",
+            f"Schwab put chain selected {csp.dte} DTE ${csp.strike:g} put",
+            f"net assignment ${csp.strike - limit_for_sell(csp):.2f}, {discount_pct:.1f}% below spot before credit",
         ]
         csp_blockers: list[str] = []
         if row.ticker in REPLAY_BLOCKED_CSP:
@@ -1610,13 +1610,13 @@ def _is_strong_entry(action: WheelAction) -> bool:
 
 def _entry_tier(action: WheelAction) -> str:
     if action.action == "OPEN_TACTICAL_CSP" and _is_tradeable(action):
-        return "TACTICAL"
+        return "SECONDARY"
     if _is_strong_entry(action):
         return "STRONG"
     if _is_tradeable(action):
         return "SECONDARY"
     if action.action == "TACTICAL_RANGE_ALERT":
-        return "TACTICAL_ALERT"
+        return "ALERT"
     if action.action == "SET_CSP_ALERT":
         return "ALERT"
     if action.action == "WAIT_POST_EARNINGS":
@@ -1626,9 +1626,9 @@ def _entry_tier(action: WheelAction) -> str:
 
 def _status_icon(action: WheelAction) -> str:
     if action.action == "OPEN_TACTICAL_CSP" and _is_tradeable(action):
-        return "🟣 TACTICAL"
+        return "🔵 SECONDARY"
     if action.action == "TACTICAL_RANGE_ALERT":
-        return "🟣 TACTICAL ALERT"
+        return "🟡 ALERT"
     if _is_strong_entry(action):
         return "🟢 STRONG"
     if _is_tradeable(action):
@@ -1640,40 +1640,85 @@ def _status_icon(action: WheelAction) -> str:
     return "🔴 AVOID"
 
 
-def _action_ticket(action: WheelAction) -> str:
+def _human_expiry(value: dt.date | None) -> str:
+    if value is None:
+        return "-"
+    return f"{value:%b} {value.day}, {value.year}"
+
+
+def _option_leg(verb: str, expiry: dt.date | None, strike: float | None, right: str) -> str:
+    if expiry is None or strike is None:
+        return verb
+    return f"{verb} {_human_expiry(expiry)} ${strike:g} {right}"
+
+
+def _option_right_from_symbol(symbol: str) -> str:
+    match = re.search(r"\d{6}([CP])\d{8}$", str(symbol or "").strip())
+    return "call" if match and match.group(1) == "C" else "put"
+
+
+def _action_ticket(action: WheelAction, *, include_trigger: bool = True) -> str:
     if action.action == "OPEN_PMCC":
-        return f"Long {action.long_option_symbol} / short {action.option_symbol}"
+        return (
+            f"{_option_leg('Buy', action.long_expiry, action.long_strike, 'call')} + "
+            f"{_option_leg('sell', action.expiry, action.strike, 'call')}"
+        )
     if action.action == "OPEN_CSP_WITH_CALL_OVERLAY":
-        return f"Sell {action.option_symbol} / buy {action.long_option_symbol}"
+        return (
+            f"{_option_leg('Sell', action.expiry, action.strike, 'put')} + "
+            f"{_option_leg('buy', action.long_expiry, action.long_strike, 'call')}"
+        )
     if action.action == "SELL_COVERED_STRANGLE":
-        return f"Sell {action.paired_option_symbol} / sell covered {action.option_symbol}"
+        return (
+            f"{_option_leg('Sell', action.paired_expiry, action.paired_strike, 'put')} + "
+            f"{_option_leg('sell covered', action.expiry, action.strike, 'call')}"
+        )
     if action.action == "OPEN_LEAPS_COVERED_STRANGLE":
-        return f"Buy {action.long_option_symbol} / sell {action.option_symbol} / sell {action.paired_option_symbol}"
-    if action.action in {"SET_CSP_ALERT", "TACTICAL_RANGE_ALERT"} and action.alert_price is not None:
-        return f"Trigger <= ${action.alert_price:.2f}; sell {action.option_symbol}"
-    if action.option_symbol:
-        return action.option_symbol
+        return (
+            f"{_option_leg('Buy', action.long_expiry, action.long_strike, 'call')} + "
+            f"{_option_leg('sell', action.expiry, action.strike, 'call')} + "
+            f"{_option_leg('sell', action.paired_expiry, action.paired_strike, 'put')}"
+        )
+    if action.action == "SELL_COVERED_CALL":
+        return _option_leg("Sell covered", action.expiry, action.strike, "call")
+    if action.action in {"OPEN_CSP", "OPEN_TACTICAL_CSP", "SET_CSP_ALERT", "TACTICAL_RANGE_ALERT"}:
+        if include_trigger and action.alert_price is not None:
+            return f"At stock <= ${action.alert_price:.2f}: {_option_leg('sell', action.expiry, action.strike, 'put')}"
+        return _option_leg("Sell", action.expiry, action.strike, "put")
+    if action.option_symbol and action.expiry and action.strike is not None:
+        return _option_leg("Blocked: sell", action.expiry, action.strike, _option_right_from_symbol(action.option_symbol))
     return action.action.replace("_", " ")
 
 
 def _action_expiry(action: WheelAction) -> str:
-    if action.action == "OPEN_CSP_WITH_CALL_OVERLAY" and action.long_expiry:
-        return f"{action.expiry.isoformat() if action.expiry else '-'} / {action.long_expiry.isoformat()}"
-    if action.action == "SELL_COVERED_STRANGLE" and action.paired_expiry:
-        return f"{action.paired_expiry.isoformat()} / {action.expiry.isoformat() if action.expiry else '-'}"
-    if action.action == "OPEN_LEAPS_COVERED_STRANGLE" and action.long_expiry and action.paired_expiry:
-        return f"{action.long_expiry.isoformat()} / {action.expiry.isoformat() if action.expiry else '-'} / {action.paired_expiry.isoformat()}"
-    return action.expiry.isoformat() if action.expiry else "-"
+    expiries: list[dt.date] = []
+    if action.action in {"OPEN_CSP_WITH_CALL_OVERLAY", "OPEN_PMCC", "OPEN_LEAPS_COVERED_STRANGLE"} and action.long_expiry:
+        expiries.append(action.long_expiry)
+    if action.action in {"SELL_COVERED_STRANGLE", "OPEN_LEAPS_COVERED_STRANGLE"} and action.paired_expiry:
+        expiries.append(action.paired_expiry)
+    if action.expiry:
+        expiries.append(action.expiry)
+    unique = list(dict.fromkeys(expiries))
+    return " / ".join(_human_expiry(value) for value in unique) if unique else "-"
 
 
 def _action_strike(action: WheelAction) -> str:
     if action.action == "OPEN_CSP_WITH_CALL_OVERLAY" and action.long_strike is not None:
-        return f"P{action.strike:g} / C{action.long_strike:g}" if action.strike is not None else f"C{action.long_strike:g}"
+        return f"${action.strike:g} put / ${action.long_strike:g} call" if action.strike is not None else f"${action.long_strike:g} call"
     if action.action == "SELL_COVERED_STRANGLE" and action.paired_strike is not None:
-        return f"P{action.paired_strike:g} / C{action.strike:g}" if action.strike is not None else f"P{action.paired_strike:g}"
+        return f"${action.paired_strike:g} put / ${action.strike:g} call" if action.strike is not None else f"${action.paired_strike:g} put"
     if action.action == "OPEN_LEAPS_COVERED_STRANGLE" and action.long_strike is not None and action.paired_strike is not None:
-        return f"LC{action.long_strike:g} / SC{action.strike:g} / P{action.paired_strike:g}" if action.strike is not None else f"LC{action.long_strike:g} / P{action.paired_strike:g}"
-    return f"{action.strike:g}" if action.strike is not None else "-"
+        return (
+            f"${action.long_strike:g} long call / ${action.strike:g} short call / ${action.paired_strike:g} put"
+            if action.strike is not None
+            else f"${action.long_strike:g} long call / ${action.paired_strike:g} put"
+        )
+    if action.action == "OPEN_PMCC" and action.long_strike is not None:
+        return f"${action.long_strike:g} long call / ${action.strike:g} short call" if action.strike is not None else f"${action.long_strike:g} long call"
+    if action.strike is None:
+        return "-"
+    right = "call" if action.action == "SELL_COVERED_CALL" else _option_right_from_symbol(action.option_symbol)
+    return f"${action.strike:g} {right}"
 
 
 def _action_type(action: WheelAction) -> str:
@@ -1705,12 +1750,12 @@ def _action_limit(action: WheelAction) -> str:
         return "-"
     if action.action == "OPEN_CSP_WITH_CALL_OVERLAY":
         net = action.limit_price - (action.long_limit_price or 0.0)
-        return f"{net:.2f}+ net"
+        return f"${net:.2f}+ net credit"
     if action.action == "SELL_COVERED_STRANGLE":
-        return f"{action.limit_price + (action.paired_limit_price or 0.0):.2f}+ net"
+        return f"${action.limit_price + (action.paired_limit_price or 0.0):.2f}+ net credit"
     if action.action == "OPEN_LEAPS_COVERED_STRANGLE":
-        return f"{action.limit_price + (action.paired_limit_price or 0.0):.2f}+ credit"
-    return f"{action.limit_price:.2f}+"
+        return f"${action.limit_price + (action.paired_limit_price or 0.0):.2f}+ credit"
+    return f"${action.limit_price:.2f}+ credit"
 
 
 def _action_context(action: WheelAction) -> str:
@@ -1924,7 +1969,7 @@ def write_outputs(
         )
     if tactical_entries:
         lines.append(
-            f"| 🟣 TACTICAL | Basket | Tactical sleeve | - | - | {len(tactical_entries)} tactical rows are separate from core cash-secured-put budget | - | - | ${sum(a.estimated_credit for a in tactical_entries):,.0f} | - | - | Use this sleeve only for high-premium names you accept as shorter-term assignment risk |"
+            f"| 🔵 SECONDARY | Basket | Tactical sleeve | - | - | {len(tactical_entries)} tactical rows are separate from primary cash-secured-put budget | - | - | ${sum(a.estimated_credit for a in tactical_entries):,.0f} | - | - | Use this sleeve only for high-premium names you accept as shorter-term assignment risk |"
         )
     lines.extend(
         [
@@ -1954,29 +1999,26 @@ def write_outputs(
         ]
     )
     if tradeable:
-        lines.extend(["| Tier | Ticker | Action | Exp | Strike | Contracts | Ticket | Credit | Cash/Debit | Yield | Confidence |", "| --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |"])
+        lines.extend(
+            [
+                "| Tier | Ticker | Trade | Expiry | Strike(s) | Qty | Limit Credit | Est. Credit | Cash/Debit | Yield | Confidence |",
+                "| --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
         for action in tradeable:
-            ticket = action.option_symbol
-            if action.action == "OPEN_PMCC":
-                ticket = f"Long {action.long_option_symbol} / Short {action.option_symbol}"
-            elif action.action == "OPEN_CSP_WITH_CALL_OVERLAY":
-                ticket = f"Sell {action.option_symbol} / Buy {action.long_option_symbol}"
-            elif action.action == "SELL_COVERED_STRANGLE":
-                ticket = f"Sell {action.paired_option_symbol} / Sell covered {action.option_symbol}"
-            elif action.action == "OPEN_LEAPS_COVERED_STRANGLE":
-                ticket = f"Buy {action.long_option_symbol} / Sell {action.option_symbol} / Sell {action.paired_option_symbol}"
             lines.append(
-                f"| {_entry_tier(action)} | {action.ticker} | {action.action} | {_action_expiry(action)} | {_action_strike(action)} | {action.contracts} | {ticket} @ {_action_limit(action)} | "
+                f"| {_entry_tier(action)} | {action.ticker} | {_action_ticket(action, include_trigger=False)} | {_action_expiry(action)} | "
+                f"{_action_strike(action)} | {action.contracts} | {_action_limit(action)} | "
                 f"${action.estimated_credit:,.0f} | ${max(action.cash_required, action.pmcc_debit):,.0f} | {_premium_yield_pct(action):.2f}% | {action.confidence:.1f} |"
             )
     else:
         lines.append("No immediate Schwab-backed orders passed all gates.")
     lines.extend(["", "## Alerts", ""])
     if alerts:
-        lines.extend(["| Ticker | Sleeve | Trigger | Ticket | Limit | Confidence | Why |", "| --- | --- | ---: | --- | ---: | ---: | --- |"])
+        lines.extend(["| Ticker | Sleeve | Stock Trigger | Trade | Limit Credit | Confidence | Why |", "| --- | --- | ---: | --- | ---: | ---: | --- |"])
         for action in alerts:
             lines.append(
-                f"| {action.ticker} | {action.sleeve} | {action.alert_price:.2f} | {action.option_symbol} | {action.limit_price or 0:.2f} | "
+                f"| {action.ticker} | {action.sleeve} | ${action.alert_price:.2f} | {_action_ticket(action, include_trigger=False)} | {_action_limit(action)} | "
                 f"{action.confidence:.1f} | {'; '.join(action.reasons + action.blockers)} |"
             )
     else:
