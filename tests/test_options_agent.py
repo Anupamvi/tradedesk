@@ -15923,6 +15923,27 @@ def test_report_top_line_names_active_selector_replay_profit_factor() -> None:
     assert "small sample; not standalone proof" in report
 
 
+def test_report_top_line_discloses_next_day_chain_oi_overlay() -> None:
+    report = core.render_report(
+        "2026-07-15",
+        pd.DataFrame(),
+        pd.DataFrame(),
+        {
+            "row_counts": {},
+            "warnings": [],
+            "source_inventory": {
+                "sources": {
+                    "chain_oi": {
+                        "path": "/tmp/chain-oi-changes-latest-2026-07-16.csv",
+                    }
+                }
+            },
+        },
+    )
+
+    assert "- Data basis: 2026-07-15 EOD + 2026-07-16 chain-OI overlay" in report
+
+
 def test_report_labels_probationary_green_without_overstating_trade_readiness() -> None:
     final = pd.DataFrame(
         [
@@ -16006,6 +16027,21 @@ def test_zero_quantity_contract_risk_reports_unit_theta_not_position_theta() -> 
 
     assert "theta $4.25/contract/day" in summary
     assert "theta $4.25/day" not in summary
+
+
+def test_contract_risk_summary_discloses_macro_events_before_expiry() -> None:
+    summary = core._ticket_contract_risk_summary(
+        {
+            "macro_event_count_before_expiry": 3,
+            "macro_events_before_expiry": (
+                "FOMC decision 2026-07-29; GDP and PCE 2026-07-30; "
+                "Employment Situation 2026-08-07"
+            ),
+        }
+    )
+
+    assert "3 macro event(s) before expiry" in summary
+    assert "Employment Situation 2026-08-07" in summary
 
 
 def test_report_sanitizes_market_session_blocker_in_execution_quality() -> None:

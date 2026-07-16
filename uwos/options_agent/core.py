@@ -26362,6 +26362,20 @@ def render_report(
     live_quality_summary = manifest.get("live_spread_quality_summary", {}) or {}
     fill_quality_summary = manifest.get("execution_fill_quality_summary", {}) or {}
     warnings = manifest.get("warnings", []) or []
+    source_inventory = manifest.get("source_inventory", {}) or {}
+    chain_oi_source = _as_text(
+        ((source_inventory.get("sources", {}) or {}).get("chain_oi", {}) or {}).get("path")
+    )
+    chain_oi_date_match = re.search(
+        r"chain-oi-changes(?:-latest)?-(\d{4}-\d{2}-\d{2})",
+        Path(chain_oi_source).name if chain_oi_source else "",
+    )
+    chain_oi_date = chain_oi_date_match.group(1) if chain_oi_date_match else ""
+    data_basis_line = (
+        f"- Data basis: {day} EOD + {chain_oi_date} chain-OI overlay"
+        if chain_oi_date and chain_oi_date != day
+        else ""
+    )
     lesson_pack_version = _as_text(manifest.get("lesson_pack_version") or manifest.get("lessonengine", {}).get("lesson_pack_version"))
     lesson_pack_digest = _as_text(manifest.get("lesson_pack_digest") or manifest.get("lessonengine", {}).get("lesson_pack_digest"))
     pipeline_version = str(manifest.get("pipeline_version") or PIPELINE_VERSION)
@@ -26669,6 +26683,7 @@ def render_report(
         f"- Order-entry confidence: {order_entry_rating}/10",
         f"- Order mechanics confidence: {order_mechanics_rating}/10",
         f"- Current-day profitability confidence: {profitability_rating}/10",
+        *([data_basis_line] if data_basis_line else []),
         *([selector_replay_line] if selector_replay_line else []),
         *([capacity_line] if capacity_line else []),
         f"- Why no green order: {no_green_reason}"
@@ -27197,6 +27212,11 @@ def _ticket_contract_risk_summary(row: Mapping[str, Any]) -> str:
     event_note = _as_text(row.get("contract_event_risk_note"))
     if event_note:
         parts.append(event_note)
+    macro_event_count = int(_as_float(row.get("macro_event_count_before_expiry")) or 0)
+    macro_events = _as_text(row.get("macro_events_before_expiry"))
+    if macro_event_count > 0:
+        macro_detail = f": {macro_events}" if macro_events else ""
+        parts.append(f"{macro_event_count} macro event(s) before expiry{macro_detail}")
     contract_review = _as_text(row.get("contract_review_status")).upper()
     if contract_review == "BLOCK" and _as_text(row.get("contract_review_missing_agents")):
         parts.append("exact review pending")
