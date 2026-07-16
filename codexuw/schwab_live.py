@@ -12,6 +12,10 @@ from .data import safe_float
 from .provenance import file_fingerprint
 
 
+MIN_ACTIONABLE_CREDIT_WIDTH_RATIO = 0.16
+MAX_ACTIONABLE_CREDIT_WIDTH_RATIO = 0.30
+
+
 def _iter_contracts(exp_map: dict[str, Any], right: str):
     for exp_key, strike_map in (exp_map or {}).items():
         expiry_text = str(exp_key).split(":")[0]
@@ -338,19 +342,41 @@ def find_credit_spread_alternatives(
     df["_width_pref_distance"] = (df["spread_width"] - preferred).abs() if math.isfinite(preferred) else 0.0
 
     actionable = df[
-        df["credit_pct_width"].between(0.16, 0.30, inclusive="both")
+        df["credit_pct_width"].between(
+            MIN_ACTIONABLE_CREDIT_WIDTH_RATIO,
+            MAX_ACTIONABLE_CREDIT_WIDTH_RATIO,
+            inclusive="both",
+        )
         & (df["_expected_move_ratio"] >= 0.75)
         & (df["quote_width_pct"] <= 0.25)
         & (df["liq_score"] >= 100)
         & (((df["spread_width"] - df["credit"]) * 100.0) <= 750.0)
     ]
-    add(
-        "actionable_quality",
-        "risk-sized spread with expected-move buffer, credit, liquidity, and quote quality",
-        actionable,
+    actionable_ranked = actionable.sort_values(
         ["_expected_move_ratio", "credit_pct_width", "liq_score", "quote_width_pct", "_rank"],
-        [False, False, False, True, False],
+        ascending=[False, False, False, True, False],
+        kind="mergesort",
     )
+    # Keep more than one qualifying structure. A single high-distance, low-credit
+    # representative can otherwise hide a better send-now contract from the global
+    # expiry scorer.
+    for _, actionable_row in actionable_ranked.head(max_alternatives).iterrows():
+        key = (
+            safe_float(actionable_row.get("short_strike")),
+            safe_float(actionable_row.get("long_strike")),
+        )
+        if any(
+            (safe_float(item.get("short_strike")), safe_float(item.get("long_strike"))) == key
+            for _, _, item in selected
+        ):
+            continue
+        selected.append(
+            (
+                "actionable_quality",
+                "risk-sized spread with expected-move buffer, credit, liquidity, and quote quality",
+                actionable_row,
+            )
+        )
 
     add(
         "flow_anchored",
@@ -397,7 +423,11 @@ def find_credit_spread_alternatives(
     for label, reason, row in selected[:max_alternatives]:
         out = row.drop(labels=[c for c in row.index if str(c).startswith("_")], errors="ignore").to_dict()
         width = safe_float(out.get("spread_width"))
-        target_entry = round(width * 0.18, 2) if math.isfinite(width) and width > 0 else math.nan
+        target_entry = (
+            round(width * MIN_ACTIONABLE_CREDIT_WIDTH_RATIO, 2)
+            if math.isfinite(width) and width > 0
+            else math.nan
+        )
         expected = safe_float(row.get("_expected_move_pct"))
         ratio = _expected_move_ratio(safe_float(out.get("breakeven_distance_pct")), expected)
         out.update(

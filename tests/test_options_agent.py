@@ -57,8 +57,15 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.18-directional-oi-local-review-20260715-095055"
+    assert core.PIPELINE_VERSION == "options-agent-v1.25-review-credit-parity-20260715-205742"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.24-pilot-evidence-handoff-20260715-204303",
+        "options-agent-v1.23-partitioned-stock-execution-20260715-200011",
+        "options-agent-v1.22-coherent-stock-execution-20260715-193714",
+        "options-agent-v1.21-stock-domain-selector-20260715-185500",
+        "options-agent-v1.20-risk-scaled-capacity-20260715-193000",
+        "options-agent-v1.19-nondestructive-action-state-20260715-170500",
+        "options-agent-v1.18-directional-oi-local-review-20260715-095055",
         "options-agent-v1.17-probationary-route-confidence-20260714-055506",
         "options-agent-v1.16-economic-capacity-20260713-211035",
         "options-agent-v1.15-regime-debit-parity-20260712-130352",
@@ -81,7 +88,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-07-15T09:50:55-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-07-15T20:57:42-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -1764,6 +1771,49 @@ def test_market_price_regime_downgrades_bullish_index_when_mega_breadth_bearish(
     assert market_regime["regime"] == "mixed"
 
 
+def test_market_price_regime_keeps_tape_readings_for_non_core_stocks() -> None:
+    raw = pd.DataFrame(
+        [
+            {"ticker": ticker, "close": close, "prev_close": 100.0}
+            for ticker, close in (
+                ("SPY", 101.0),
+                ("QQQ", 101.0),
+                ("IWM", 101.0),
+                ("DIA", 101.0),
+                ("CRWD", 104.0),
+            )
+        ]
+    )
+
+    regime = core.build_market_price_regime(raw, "2026-07-15")
+    annotated = core.annotate_macro_tape_candidates(raw, regime).set_index("ticker")
+
+    assert regime["readings_by_ticker"]["CRWD"]["move_pct"] == pytest.approx(0.04)
+    assert annotated.at["CRWD", "price_move_pct"] == pytest.approx(0.04)
+
+
+def test_market_price_regime_uses_median_and_breadth_when_average_is_diluted() -> None:
+    raw = pd.DataFrame(
+        [
+            {"ticker": ticker, "close": close, "prev_close": 100.0}
+            for ticker, close in (
+                ("SPY", 100.76),
+                ("QQQ", 100.84),
+                ("IWM", 100.78),
+                ("DIA", 100.28),
+            )
+        ]
+    )
+
+    regime = core.build_market_price_regime(raw, "2026-07-15")
+
+    assert regime["avg_index_move_pct"] < core.MACRO_TAPE_DIRECTIONAL_MOVE_PCT
+    assert regime["median_index_move_pct"] >= core.MACRO_TAPE_DIRECTIONAL_MOVE_PCT
+    assert regime["index_positive_breadth"] == pytest.approx(0.75)
+    assert regime["tape_direction"] == "bullish"
+    assert core.build_market_regime(raw, market_price_regime=regime)["regime"] == "risk_on"
+
+
 def test_live_debit_fallback_keeps_route_reason_consistent() -> None:
     row = {
         "ticker": "AAPL",
@@ -2349,7 +2399,7 @@ def test_trade_quality_gates_reject_junk_setups() -> None:
     )
 
     assert "entry_credit_below_0.25" in rejects
-    assert "credit_width_ratio_below_18pct" in rejects
+    assert "credit_width_ratio_below_16pct" in rejects
     assert "signal_premium_below_1000000" in rejects
     assert "directional_bias_below_0.10" in rejects
     assert "one_lot_max_loss_above_750" in rejects
@@ -2889,8 +2939,7 @@ def test_material_position_profit_blocks_green_and_marks_profit_floor_target() -
     real = decision[decision["ticker"].eq("REAL")].iloc[0]
     assert bool(toy["ready_to_enter"]) is False
     assert core.POSITION_PROFIT_MATERIALITY_BLOCKER in toy["execution_blockers"]
-    assert "send_now_credit_width_below_30pct" in toy["execution_blockers"]
-    assert toy["target_order_status"] == "target_order_wait_for_price"
+    assert toy["target_order_status"] == "target_order_candidate"
     assert bool(real["ready_to_enter"]) is True
     assert ready["ticker"].tolist() == ["REAL"]
     assert target["ticker"].tolist() == ["TOY"]
@@ -2974,17 +3023,20 @@ def test_send_now_requires_strong_credit_and_trade_quality() -> None:
     decision = core.synthesize_decision_board(final, market_regime={"regime": "mixed"}, execution_context=context)
     tickets = core.build_trade_tickets(decision)
 
-    assert decision["ready_to_enter"].tolist() == [False, False, True]
-    assert decision["execution_gate_status"].tolist() == ["blocked", "blocked", "pass"]
+    assert decision["ready_to_enter"].tolist() == [True, False, True]
+    assert decision["execution_gate_status"].tolist() == ["pass", "blocked", "pass"]
     assert "send_now_credit_below_0.50" not in decision["execution_blockers"].iloc[0]
-    assert "send_now_credit_width_below_30pct" in decision["execution_blockers"].iloc[0]
+    assert "send_now_credit_width_below_16pct" not in decision["execution_blockers"].iloc[0]
     assert decision.loc[decision["ticker"].eq("LOWQUALITY"), "target_order_status"].tolist() == [
         "review_only_low_trade_quality"
     ]
     assert decision.loc[decision["ticker"].eq("NARROWWIDTHGOOD"), "target_order_status"].tolist() == [
         "target_order_candidate"
     ]
-    assert "NARROWWIDTHGOOD" in tickets[tickets["ready_to_enter"].map(bool)]["ticker"].tolist()
+    assert tickets[tickets["ready_to_enter"].map(bool)]["ticker"].tolist() == [
+        "THINCREDIT",
+        "NARROWWIDTHGOOD",
+    ]
     assert "LOWQUALITY" not in tickets[tickets["ready_to_enter"].map(bool)]["ticker"].tolist()
     assert core._coverage_next_step("REVIEW_TICKET", decision.iloc[0]) == (
         "reprice in Schwab and resolve catalyst/quality review"
@@ -3052,6 +3104,25 @@ def test_portfolio_risk_annotation_does_not_reduce_position_sizing() -> None:
     assert "sizing uses the explicit risk budget" in row["sizing_note"]
     assert "portfolio annotation only" not in row["sizing_note"]
     assert row["portfolio_risk_note"] == "concentration note only"
+
+
+def test_defined_risk_sizing_is_not_capped_by_arbitrary_cash_percentage() -> None:
+    sized = core.apply_position_sizing(
+        [
+            {
+                "ticker": "XLV",
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "live_validation_status": "PASS",
+                "max_loss": 161.0,
+            }
+        ],
+        {"status": "ok", "total_value": 740_000.0, "cash": 24_000.0},
+        {"sizing_stance": "normal"},
+    )[0]
+
+    assert sized["risk_budget"] == 3_700.0
+    assert sized["risk_sized_contracts"] == core.MAX_SUGGESTED_CONTRACTS
+    assert sized["suggested_contracts"] == core.MAX_SUGGESTED_CONTRACTS
 
 
 def test_monthly_feasibility_uses_sized_position_max_profit() -> None:
@@ -3334,15 +3405,13 @@ def test_closed_market_is_informational_and_does_not_block_target_ticket() -> No
     tickets = core.build_trade_tickets(decision)
     readiness = core.build_execution_readiness(decision, closed_context)
 
-    assert decision["ready_to_enter"].tolist() == [False]
-    assert decision["execution_status"].tolist() == ["waiting_for_price"]
+    assert decision["ready_to_enter"].tolist() == [True]
+    assert decision["execution_status"].tolist() == ["ready"]
     assert "market_session_open_required" not in decision["execution_blockers"].iloc[0]
     assert "regular_session_quote_refresh_required" not in decision["execution_blockers"].iloc[0]
-    assert "send_now_credit_width_below_30pct" in decision["execution_blockers"].iloc[0]
-    assert tickets["target_order_status"].tolist() == ["target_order_wait_for_price"]
-    assert tickets["order_readiness"].tolist() == ["target_order_wait_for_price"]
-    assert tickets["action"].tolist() == ["work_target_limit_if_price_improves"]
-    assert "leave at target limit" in core._ticket_next_step(tickets.iloc[0])
+    assert decision["execution_blockers"].tolist() == [""]
+    assert tickets["target_order_status"].tolist() == ["target_order_candidate"]
+    assert tickets["order_readiness"].tolist() == ["ready_to_enter"]
     coverage = core.build_coverage_audit(
         raw_universe=pd.DataFrame(),
         candidates=pd.DataFrame(),
@@ -3351,7 +3420,9 @@ def test_closed_market_is_informational_and_does_not_block_target_ticket() -> No
         no_trade=pd.DataFrame(),
         watchlist=["LIVE"],
     )
-    assert coverage["next_step"].tolist() == ["reprice in Schwab and resolve catalyst/quality review"]
+    assert coverage["next_step"].tolist() == [
+        "verify live quote and place manually if thesis still holds"
+    ]
     quote_freshness = readiness.loc[readiness["gate"].eq("quote_freshness")]
     assert quote_freshness["status"].tolist() == ["INFO"]
     assert "execution_blocker=false" in quote_freshness["detail"].iloc[0]
@@ -4139,7 +4210,7 @@ def test_trade_ticket_sort_prefers_confidence_before_exact_calibration() -> None
     assert sorted_tickets["ticker"].tolist() == ["ROUTEHIGH", "BUCKETMID"]
 
 
-def test_market_closed_live_recheck_stays_off_trade_surface() -> None:
+def test_market_closed_live_recheck_stays_on_yellow_target_surface() -> None:
     final = pd.DataFrame(
         [
             {
@@ -4188,9 +4259,317 @@ def test_market_closed_live_recheck_stays_off_trade_surface() -> None:
     tickets = core.build_trade_tickets(decision)
     queue = core.build_market_open_recheck_queue(tickets)
 
-    assert decision["target_order_status"].tolist() == ["review_only_live_validation"]
-    assert tickets.empty
-    assert queue.empty
+    assert decision["target_order_status"].tolist() == ["target_order_candidate"]
+    assert decision["ready_to_enter"].tolist() == [False]
+    assert "regular_session_quote_refresh_required" in decision["execution_blockers"].iloc[0]
+    assert tickets["ticker"].tolist() == ["AAPL"]
+    _, yellow = core.split_trade_ticket_surfaces(tickets)
+    assert yellow["ticker"].tolist() == ["AAPL"]
+    assert queue["ticker"].tolist() == ["AAPL"]
+
+
+def test_closed_market_transient_quote_reject_preserves_dated_target_math() -> None:
+    dated = {
+        "ticker": "XLV",
+        "recommendation_status": RecommendationStatus.ENTER.value,
+        "trade_plan": "BUY 1 XLV 2026-08-21 158 Put / SELL 1 XLV 2026-08-21 153 Put @ 1.57 DEBIT",
+        "entry_limit": 1.57,
+        "max_profit": 343.0,
+        "max_loss": 157.0,
+        "trade_quality_status": "reviewable",
+        "quality_gate_reason": "",
+        "hard_rejects": "",
+    }
+    stale_live = {
+        **dated,
+        "recommendation_status": RecommendationStatus.AVOID.value,
+        "quality_gate_reason": "live_quote_width_pct_above_30pct; live_leg_liquidity_below_100",
+        "hard_rejects": "live_quote_width_pct_above_30pct; live_leg_liquidity_below_100",
+    }
+
+    preserved = core._preserve_target_when_closed_market_quote_is_transiently_bad(
+        dated,
+        stale_live,
+    )
+
+    assert preserved is not None
+    assert preserved["live_validation_status"] == "TARGET_QUOTE_REFRESH"
+    assert preserved["recommendation_status"] == RecommendationStatus.REVIEW.value
+    assert preserved["trade_plan"] == dated["trade_plan"]
+    assert preserved["quality_gate_reason"] == ""
+    assert preserved["hard_rejects"] == ""
+
+    objective_reject = {
+        **stale_live,
+        "quality_gate_reason": "live_quote_width_pct_above_30pct; directional_bias_below_0.10",
+    }
+    assert (
+        core._preserve_target_when_closed_market_quote_is_transiently_bad(
+            dated,
+            objective_reject,
+        )
+        is None
+    )
+
+
+def test_closed_session_rerun_carries_same_day_registered_green_as_yellow(tmp_path: Path) -> None:
+    registry = tmp_path / "options_agent_forward_registry.jsonl"
+    event = {
+        "sequence": 10,
+        "event_type": "recommendation_registered",
+        "status": "GREEN",
+        "recommendation_date": "2026-07-15",
+        "live_current_date": True,
+        "logical_recommendation_id": "oa-2026-07-15-aapl",
+        "run_provenance": {
+            "source_date": "2026-07-15",
+            "live_schwab": True,
+            "ticker": "AAPL",
+            "strategy_route": "bear_put_debit",
+            "strategy_family": "vertical_spread",
+            "entry_type": "DEBIT",
+            "trade_plan": "BUY 1 AAPL 2026-08-21 210 Put / SELL 1 AAPL 2026-08-21 205 Put @ 1.61 DEBIT",
+            "entry_limit": 1.61,
+            "target_entry": 1.61,
+            "target_exit": 2.90,
+            "max_profit": 339.0,
+            "max_loss": 161.0,
+            "expiry": "2026-08-21",
+            "dte": 37,
+            "pipeline_version": core.PIPELINE_VERSION,
+            "selector_policy_id": core.PROMOTED_SELECTOR_POLICY_ID,
+            "recommendation_rank": 12,
+            "synthesis_score": 112.4,
+        },
+    }
+    registry.write_text(json.dumps(event) + "\n", encoding="utf-8")
+    empty = core.synthesize_decision_board(
+        pd.DataFrame(),
+        market_regime={"regime": "mixed"},
+    )
+
+    decision, summary = core.carry_forward_same_day_green_targets(
+        empty,
+        registry_path=registry,
+        source_date="2026-07-15",
+        market_session_open=False,
+        market_regime={"regime": "mixed"},
+    )
+    tickets = core.build_trade_tickets(decision)
+    green, yellow = core.split_trade_ticket_surfaces(tickets)
+
+    assert summary["status"] == "same_day_green_demoted_to_target_recheck"
+    assert summary["carried_tickers"] == ["AAPL"]
+    assert green.empty
+    assert yellow["ticker"].tolist() == ["AAPL"]
+    assert yellow["ready_to_enter"].tolist() == [False]
+    assert yellow["live_validation_status"].tolist() == ["TARGET_QUOTE_REFRESH"]
+    assert yellow["order_readiness"].tolist() == ["target_order_price_validation"]
+
+    other_target = decision.copy()
+    other_target.loc[:, "ticker"] = "MSFT"
+    other_target.loc[:, "trade_plan"] = (
+        "BUY 1 MSFT 2026-08-21 500 Put / SELL 1 MSFT 2026-08-21 495 Put @ 1.50 DEBIT"
+    )
+    other_target.loc[:, "full_ticket"] = other_target["trade_plan"]
+    other_target.loc[:, "buy_leg"] = "BUY 1 MSFT 2026-08-21 500 Put"
+    other_target.loc[:, "sell_leg"] = "SELL 1 MSFT 2026-08-21 495 Put"
+    merged, merged_summary = core.carry_forward_same_day_green_targets(
+        other_target,
+        registry_path=registry,
+        source_date="2026-07-15",
+        market_session_open=False,
+        market_regime={"regime": "mixed"},
+    )
+    _, merged_yellow = core.split_trade_ticket_surfaces(core.build_trade_tickets(merged))
+
+    assert merged_summary["carried_tickers"] == ["AAPL"]
+    assert set(merged_yellow["ticker"]) == {"AAPL", "MSFT"}
+
+
+def test_closed_session_carry_rejects_stale_policy_and_unproven_etf(tmp_path: Path) -> None:
+    registry = tmp_path / "options_agent_forward_registry.jsonl"
+    events = [
+        {
+            "sequence": 1,
+            "event_type": "recommendation_registered",
+            "status": "GREEN",
+            "recommendation_date": "2026-07-15",
+            "live_current_date": True,
+            "logical_recommendation_id": "oa-stale-aapl",
+            "run_provenance": {
+                "source_date": "2026-07-15",
+                "live_schwab": True,
+                "ticker": "AAPL",
+                "pipeline_version": "options-agent-stale",
+                "selector_policy_id": core.PROMOTED_SELECTOR_POLICY_ID,
+                "trade_plan": "BUY 1 AAPL 2026-08-21 210 Put / SELL 1 AAPL 2026-08-21 205 Put @ 1.61 DEBIT",
+                "entry_limit": 1.61,
+                "max_profit": 339.0,
+                "max_loss": 161.0,
+            },
+        },
+        {
+            "sequence": 2,
+            "event_type": "recommendation_registered",
+            "status": "GREEN",
+            "recommendation_date": "2026-07-15",
+            "live_current_date": True,
+            "logical_recommendation_id": "oa-unproven-xlv",
+            "run_provenance": {
+                "source_date": "2026-07-15",
+                "live_schwab": True,
+                "ticker": "XLV",
+                "pipeline_version": core.PIPELINE_VERSION,
+                "selector_policy_id": core.PROMOTED_SELECTOR_POLICY_ID,
+                "trade_plan": "BUY 1 XLV 2026-08-21 158 Put / SELL 1 XLV 2026-08-21 153 Put @ 1.61 DEBIT",
+                "entry_limit": 1.61,
+                "max_profit": 339.0,
+                "max_loss": 161.0,
+                "actual_forward_expectancy_status": "BLOCK",
+                "actual_forward_expectancy_sample_size": 0,
+            },
+        },
+    ]
+    registry.write_text(
+        "\n".join(json.dumps(event) for event in events) + "\n",
+        encoding="utf-8",
+    )
+    empty = core.synthesize_decision_board(
+        pd.DataFrame(),
+        market_regime={"regime": "mixed"},
+    )
+
+    decision, summary = core.carry_forward_same_day_green_targets(
+        empty,
+        registry_path=registry,
+        source_date="2026-07-15",
+        market_session_open=False,
+        market_regime={"regime": "mixed"},
+    )
+
+    assert decision.empty
+    assert summary["status"] == "no_compatible_same_day_registered_green"
+    assert summary["stale_policy_registry_rows"] == 1
+    assert summary["unsupported_asset_registry_rows"] == 1
+
+
+def test_carried_same_day_green_recovers_route_evidence_without_borrowing_exact_bucket(
+    tmp_path: Path,
+) -> None:
+    registry = tmp_path / "options_agent_forward_registry.jsonl"
+    registry.write_text(
+        json.dumps(
+            {
+                "sequence": 10,
+                "event_type": "recommendation_registered",
+                "status": "GREEN",
+                "recommendation_date": "2026-07-15",
+                "live_current_date": True,
+                "logical_recommendation_id": "oa-2026-07-15-aapl",
+                "run_provenance": {
+                    "source_date": "2026-07-15",
+                    "live_schwab": True,
+                    "ticker": "AAPL",
+                    "strategy_route": "bear_put_debit",
+                    "strategy_family": "vertical_spread",
+                    "entry_type": "DEBIT",
+                    "trade_plan": "BUY 1 AAPL 2026-08-21 210 Put / SELL 1 AAPL 2026-08-21 205 Put @ 1.61 DEBIT",
+                    "entry_limit": 1.61,
+                    "target_entry": 1.61,
+                    "target_exit": 2.90,
+                    "max_profit": 339.0,
+                    "max_loss": 161.0,
+                    "expiry": "2026-08-21",
+                    "dte": 37,
+                    "pipeline_version": core.PIPELINE_VERSION,
+                    "selector_policy_id": core.PROMOTED_SELECTOR_POLICY_ID,
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    schema = core.synthesize_decision_board(pd.DataFrame(), market_regime={"regime": "mixed"})
+    source = {column: "" for column in schema.columns}
+    source.update(
+        {
+            "ticker": "AAPL",
+            "strategy_route": "bear_put_debit",
+            "recommendation_rank": 1,
+            "selector_policy_status": "BLOCK",
+            "target_order_status": "review_only",
+            "ready_to_enter": False,
+            "profitability_calibration_status": "PASS",
+            "profitability_calibration_scope": "actual_route",
+            "profitability_calibration_actual_status": "WARN",
+            "profitability_calibration_actual_sample_size": 3,
+            "profitability_calibration_actual_avg_pnl": 64.67,
+            "profitability_calibration_actual_profit_factor": 3.395,
+            "actual_forward_strategy_expectancy_status": "WARN",
+            "actual_forward_strategy_expectancy_sample_size": 3,
+            "actual_forward_strategy_expectancy_avg_pnl": 64.67,
+            "actual_forward_strategy_expectancy_profit_factor": 3.395,
+            "profitability_calibration_route_replay_status": "WARN",
+            "profitability_calibration_route_replay_sample_size": 15,
+            "profitability_calibration_route_replay_avg_pnl": 12.09,
+            "profitability_calibration_route_replay_profit_factor": 1.219,
+            "profitability_calibration_model_replay_status": "WARN",
+            "profitability_calibration_model_replay_sample_size": 16,
+            "profitability_calibration_model_replay_avg_pnl": 42.7,
+            "profitability_calibration_model_replay_profit_factor": 2.327,
+            "profitability_calibration_replay_status": "PASS",
+            "profitability_calibration_replay_sample_size": 99,
+        }
+    )
+    current = pd.DataFrame([source], columns=schema.columns)
+
+    decision, summary = core.carry_forward_same_day_green_targets(
+        current,
+        registry_path=registry,
+        source_date="2026-07-15",
+        market_session_open=False,
+        market_regime={"regime": "mixed"},
+    )
+    carried = decision[decision["target_order_status"].eq("target_order_candidate")].iloc[0]
+
+    assert summary["carried_route_evidence_rows"] == 1
+    assert carried["profitability_calibration_actual_sample_size"] == 3
+    assert carried["profitability_calibration_route_replay_sample_size"] == 15
+    assert carried["profitability_calibration_model_replay_sample_size"] == 16
+    assert carried["profitability_calibration_replay_sample_size"] == ""
+    assert core._probationary_model_route_ticket_ready(carried, require_selector=True)
+
+
+def test_same_date_rerun_archives_prior_action_surface(tmp_path: Path) -> None:
+    paths = output_paths("2026-07-15", root=tmp_path)
+    paths["out_dir"].mkdir(parents=True)
+    paths["manifest"].write_text(
+        json.dumps(
+            {
+                "pipeline_version": "prior",
+                "row_counts": {
+                    "green_trade_tickets": 1,
+                    "target_order_ticket_rows": 0,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    paths["green_trade_tickets"].write_text("ticker\nXLV\n", encoding="utf-8")
+    paths["report"].write_text("prior report\n", encoding="utf-8")
+
+    summary = core.archive_existing_action_surface(
+        paths,
+        source_date="2026-07-15",
+    )
+    archive_dir = Path(summary["archive_dir"])
+
+    assert summary["status"] == "archived_prior_action_surface"
+    assert summary["prior_green_count"] == 1
+    assert (archive_dir / paths["manifest"].name).is_file()
+    assert (archive_dir / paths["green_trade_tickets"].name).read_text() == "ticker\nXLV\n"
+    assert (archive_dir / "archive_metadata.json").is_file()
 
 
 def test_market_open_recheck_proof_blocks_incomplete_rows() -> None:
@@ -7890,6 +8269,49 @@ def test_promoted_selector_fills_second_slot_with_distinct_same_sleeve_ticker() 
     assert annotated.at["TOO_FAR", "selector_policy_status"] == "NOT_SELECTED_DAILY_CAP"
 
 
+def test_promoted_selector_keeps_a_stock_slot_when_multiple_etfs_are_eligible() -> None:
+    rows = []
+    for ticker, issue_type, flow in (
+        ("XLV", "ETF", -0.30),
+        ("GLD", "ETF", -0.29),
+        ("UBER", "Common Stock", -0.28),
+    ):
+        row = {
+            "ticker": ticker,
+            "issue_type": issue_type,
+            "strategy_route": "bear_put_debit",
+            "entry_type": "DEBIT",
+            "underlying_quality_tier": "core",
+            "regime": "mixed",
+            "iv_rank": 40.0,
+            "dte": 30,
+            "debit_width_ratio": 0.30,
+            "combined_flow_bias": flow,
+            "live_breakeven_expected_move_ratio": 0.50,
+            "live_quote_width_pct": 0.10,
+            "live_probability_proxy": 0.55,
+            "max_profit": 700.0,
+            "max_loss": 300.0,
+            "synthesis_score": 150.0,
+        }
+        if issue_type == "ETF":
+            row.update(
+                {
+                    "actual_forward_expectancy_status": "PASS",
+                    "actual_forward_expectancy_sample_size": core.MIN_TICKER_EXPECTANCY_SAMPLE_SIZE,
+                    "actual_forward_expectancy_avg_pnl": 20.0,
+                    "actual_forward_expectancy_profit_factor": 1.40,
+                }
+            )
+        rows.append(row)
+
+    annotated = core.annotate_selector_policy(pd.DataFrame(rows)).set_index("ticker")
+
+    assert annotated.at["XLV", "selector_policy_status"] == "PASS"
+    assert annotated.at["GLD", "selector_policy_status"] == "NOT_SELECTED_DAILY_CAP"
+    assert annotated.at["UBER", "selector_policy_status"] == "PASS"
+
+
 @pytest.mark.parametrize(
     ("route", "regime", "dte", "flow_bias", "eligible", "reason"),
     [
@@ -7899,7 +8321,14 @@ def test_promoted_selector_fills_second_slot_with_distinct_same_sleeve_ticker() 
         ("bear_put_debit", "risk_off", 30, -0.25, True, ""),
         ("bear_put_debit", "risk_on", 30, -0.25, False, "debit_regime_not_aligned:risk_on"),
         ("bear_put_debit", "risk_off", 30, -0.18, True, ""),
-        ("bear_put_debit", "risk_off", 30, -0.17, False, "debit_flow_alignment_below_0.175"),
+        (
+            "bear_put_debit",
+            "risk_off",
+            30,
+            -0.17,
+            False,
+            "debit_flow_alignment_below_0.175",
+        ),
     ],
 )
 def test_selector_debit_policy_matches_validated_regime_dte_and_flow_contract(
@@ -7936,6 +8365,73 @@ def test_selector_debit_policy_matches_validated_regime_dte_and_flow_contract(
     assert sleeve == "DEBIT"
     if reason:
         assert reason in reasons
+
+
+def test_selector_blocks_bear_put_when_iv_and_flow_are_outside_validated_policy() -> None:
+    row = {
+        "ticker": "UBER",
+        "issue_type": "Common Stock",
+        "strategy_route": "bear_put_debit",
+        "entry_type": "DEBIT",
+        "underlying_quality_tier": "core",
+        "regime": "mixed",
+        "iv_rank": 79.0,
+        "dte": 16,
+        "debit_width_ratio": 0.36,
+        "combined_flow_bias": -0.10,
+        "live_breakeven_expected_move_ratio": 0.22,
+        "live_quote_width_pct": 0.19,
+        "live_probability_proxy": 0.50,
+        "max_profit": 322.0,
+        "max_loss": 178.0,
+        "synthesis_score": 110.0,
+    }
+
+    eligible, _, reasons, _ = core._selector_policy_row_assessment(row)
+    annotated = core.annotate_selector_policy(pd.DataFrame([row])).iloc[0]
+
+    assert eligible is False
+    assert "debit_iv_rank_above_45" in reasons
+    assert "debit_flow_alignment_below_0.175" in reasons
+    assert annotated["selector_policy_status"] == "BLOCK"
+
+
+def test_stock_trained_selector_requires_direct_ticker_evidence_for_etfs() -> None:
+    row = {
+        "ticker": "XLV",
+        "issue_type": "ETF",
+        "strategy_route": "bear_put_debit",
+        "entry_type": "DEBIT",
+        "underlying_quality_tier": "core",
+        "regime": "mixed",
+        "iv_rank": 35.0,
+        "dte": 30,
+        "debit_width_ratio": 0.30,
+        "combined_flow_bias": -0.30,
+        "live_breakeven_expected_move_ratio": 0.50,
+        "live_quote_width_pct": 0.10,
+        "live_probability_proxy": 0.55,
+        "max_profit": 700.0,
+        "max_loss": 300.0,
+        "synthesis_score": 150.0,
+        "actual_forward_expectancy_status": "BLOCK",
+        "actual_forward_expectancy_sample_size": 0,
+    }
+
+    eligible, _, reasons, _ = core._selector_policy_row_assessment(row)
+    assert eligible is False
+    assert "etf_direct_ticker_expectancy_not_proven" in reasons
+
+    supported = {
+        **row,
+        "actual_forward_expectancy_status": "PASS",
+        "actual_forward_expectancy_sample_size": core.MIN_TICKER_EXPECTANCY_SAMPLE_SIZE,
+        "actual_forward_expectancy_avg_pnl": 20.0,
+        "actual_forward_expectancy_profit_factor": 1.40,
+    }
+    eligible, _, reasons, _ = core._selector_policy_row_assessment(supported)
+    assert eligible is True
+    assert "etf_direct_ticker_expectancy_not_proven" not in reasons
 
 
 def test_selector_blocks_short_dte_trade_crossing_verified_macro_events() -> None:
@@ -11529,6 +12025,113 @@ def test_profitability_calibration_allows_one_lot_probation_from_three_agreeing_
     assert blocked_status != "PASS"
 
 
+def test_profitability_calibration_allows_partitioned_model_only_route_cold_start() -> None:
+    broad_negative_actual = {
+        "status": "BLOCK",
+        "sample_size": 6,
+        "win_rate": 0.3333,
+        "avg_pnl": -18.0,
+        "profit_factor": 0.70,
+    }
+    sparse_exact = {
+        "status": "BLOCK",
+        "sample_size": 0,
+        "win_rate": "",
+        "avg_pnl": "",
+        "profit_factor": "",
+    }
+    model_route = {
+        "status": "WARN",
+        "sample_size": 13,
+        "win_rate": 0.9231,
+        "avg_pnl": 35.33,
+        "profit_factor": 2.443,
+    }
+    pre_split = {
+        "sample_size": 7,
+        "avg_pnl": 12.79,
+        "profit_factor": 1.281,
+    }
+    heldout = {
+        "sample_size": 6,
+        "avg_pnl": 61.63,
+        "profit_factor": float("inf"),
+    }
+
+    status, action, note = core._current_calibration_verdict(
+        ticker="GLW",
+        key={"strategy_route": "bear_call_credit"},
+        actual_scope="actual_route",
+        actual_metrics=broad_negative_actual,
+        replay_metrics=sparse_exact,
+        route_replay_metrics={"status": "BLOCK", "sample_size": 0},
+        model_replay_metrics=model_route,
+        model_pre_split_metrics=pre_split,
+        model_heldout_metrics=heldout,
+        replay_path=Path("replay.csv"),
+        replay_error="",
+    )
+
+    assert status == "PASS"
+    assert action == "eligible_for_one_lot_cold_start_with_partitioned_selector_route_support"
+    assert "both frozen partitions" in note
+    assert "one-contract evidence pilot" in note
+    assert "scaling is disabled" in note
+
+    weak_heldout = {**heldout, "sample_size": 4}
+    weak_status, _, _ = core._current_calibration_verdict(
+        ticker="GLW",
+        key={"strategy_route": "bear_call_credit"},
+        actual_scope="actual_route",
+        actual_metrics=broad_negative_actual,
+        replay_metrics=sparse_exact,
+        route_replay_metrics={"status": "BLOCK", "sample_size": 0},
+        model_replay_metrics=model_route,
+        model_pre_split_metrics=pre_split,
+        model_heldout_metrics=weak_heldout,
+        replay_path=Path("replay.csv"),
+        replay_error="",
+    )
+    assert weak_status != "PASS"
+
+    ticker_negative_status, _, _ = core._current_calibration_verdict(
+        ticker="GLW",
+        key={"strategy_route": "bear_call_credit"},
+        actual_scope="actual_ticker_route",
+        actual_metrics=broad_negative_actual,
+        replay_metrics=sparse_exact,
+        route_replay_metrics={"status": "BLOCK", "sample_size": 0},
+        model_replay_metrics=model_route,
+        model_pre_split_metrics=pre_split,
+        model_heldout_metrics=heldout,
+        replay_path=Path("replay.csv"),
+        replay_error="",
+    )
+    assert ticker_negative_status != "PASS"
+
+    mature_negative_exact = {
+        "status": "BLOCK",
+        "sample_size": 3,
+        "win_rate": 0.0,
+        "avg_pnl": -25.0,
+        "profit_factor": 0.0,
+    }
+    exact_negative_status, _, _ = core._current_calibration_verdict(
+        ticker="GLW",
+        key={"strategy_route": "bear_call_credit"},
+        actual_scope="actual_route",
+        actual_metrics=broad_negative_actual,
+        replay_metrics=mature_negative_exact,
+        route_replay_metrics={"status": "BLOCK", "sample_size": 0},
+        model_replay_metrics=model_route,
+        model_pre_split_metrics=pre_split,
+        model_heldout_metrics=heldout,
+        replay_path=Path("replay.csv"),
+        replay_error="",
+    )
+    assert exact_negative_status != "PASS"
+
+
 def test_build_calibration_wires_active_selector_route_outcomes_not_raw_candidate_pool(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -11629,6 +12232,82 @@ def test_build_calibration_wires_active_selector_route_outcomes_not_raw_candidat
     assert row["route_replay_profit_factor"] < 1.0
     assert row["model_replay_sample_size"] == core.MIN_HIERARCHICAL_ROUTE_REPLAY_SAMPLE_SIZE
     assert row["model_replay_profit_factor"] >= core.MIN_EXPECTANCY_PROFIT_FACTOR
+
+
+def test_build_calibration_preserves_frozen_selector_partitions_for_cold_start(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    final = pd.DataFrame(
+        [
+            {
+                "ticker": "GLW",
+                "structure": "Bear Call Credit Spread",
+                "strategy_route": "bear_call_credit",
+                "trade_plan": "SELL 1 GLW 2026-07-24 195 Call / BUY 1 GLW 2026-07-24 200 Call @ 0.84 CREDIT",
+                "entry_limit": 0.84,
+                "max_profit": 84.0,
+                "max_loss": 416.0,
+                "dte": 9,
+                "regime": "risk_on",
+                "live_leg_min_liquidity": 617,
+            }
+        ]
+    )
+    actual = pd.DataFrame(
+        [
+            {
+                "ticker": f"LEGACY{idx}",
+                "canonical_ticker": f"LEGACY{idx}",
+                "strategy_route": "bear_call_credit",
+                "strategy_family": "vertical_spread",
+                "realized_pnl": 50.0 if idx < 2 else -60.0,
+            }
+            for idx in range(6)
+        ]
+    )
+    selected_replay = pd.DataFrame(
+        [
+            {
+                "ticker": f"PRE{idx}",
+                "strategy_route": "bear_call_credit",
+                "selector_partition": "pre_split",
+                "pnl_1x": 50.0 if idx < 6 else -40.0,
+            }
+            for idx in range(7)
+        ]
+        + [
+            {
+                "ticker": f"HELD{idx}",
+                "strategy_route": "bear_call_credit",
+                "selector_partition": "heldout_test",
+                "pnl_1x": 60.0,
+            }
+            for idx in range(6)
+        ]
+    )
+    monkeypatch.setattr(
+        core,
+        "_active_selector_replay_support_frame",
+        lambda _out_root, as_of=None: (selected_replay, ""),
+    )
+
+    calibration = core.build_profitability_calibration(
+        tmp_path,
+        final,
+        actual_frame=actual,
+        replay_bundle=(pd.DataFrame(), "raw_replay.csv", ""),
+    )
+
+    row = calibration[calibration["scope"].eq("current_trade_calibration")].iloc[0]
+    assert row["status"] == "PASS"
+    assert row["suggested_action"] == (
+        "eligible_for_one_lot_cold_start_with_partitioned_selector_route_support"
+    )
+    assert row["model_replay_pre_split_sample_size"] == 7
+    assert row["model_replay_pre_split_profit_factor"] == pytest.approx(7.5)
+    assert row["model_replay_heldout_sample_size"] == 6
+    assert math.isinf(core._as_float(row["model_replay_heldout_profit_factor"]))
 
 
 def test_profitability_calibration_summary_names_bucket_shortfalls() -> None:
@@ -15297,6 +15976,12 @@ def test_report_labels_probationary_green_without_overstating_trade_readiness() 
         {
             "row_counts": {"trade_tickets": 1, "green_trade_tickets": 1},
             "warnings": [],
+            "monthly_feasibility_summary": {
+                "expected_monthly_pnl": 10_196.0,
+                "monthly_profit_target": 10_000.0,
+                "risk_budget_pct": 0.01,
+                "approved_contract_scale": 29.1,
+            },
             "confidence_audit_summary": {
                 "profitability_confidence_rating": 7.0,
                 "order_entry_confidence_rating": 8.0,
@@ -15307,6 +15992,8 @@ def test_report_labels_probationary_green_without_overstating_trade_readiness() 
 
     assert "- Executable status: ONE-LOT PROBATION READY" in report
     assert "- Green order note: one-lot probation only" in report
+    assert "live orders start at no more than 1 contract" in report
+    assert "live orders start at no more than 5 contracts" not in report
 
 
 def test_zero_quantity_contract_risk_reports_unit_theta_not_position_theta() -> None:
@@ -16754,7 +17441,7 @@ def test_dated_credit_spread_preserves_width_and_route_fields() -> None:
     assert row["long_strike"] == 95.0
     assert row["spread_width"] == 5.0
     assert row["credit_width_ratio"] == 0.18
-    assert row["target_entry"] == 0.9
+    assert row["target_entry"] == 0.8
     assert "CREDIT" in row["trade_plan"]
 
 
@@ -17142,6 +17829,41 @@ def test_portfolio_management_process_note_does_not_count_as_quality_caution() -
     summary = core._review_summary_by_ticker(reviews)
 
     assert summary["AAPL"]["caution"] == 1
+
+
+def test_review_summary_counts_duplicate_review_aliases_once_per_lane() -> None:
+    reviews = pd.DataFrame(
+        [
+            {"ticker": "GLW", "agent": "market_regime", "verdict": "caution", "note": "risk-on tape", "objective_blocker": False, "portfolio_risk_only": False},
+            {"ticker": "GLW", "agent": "macro_regime", "verdict": "caution", "note": "risk-on tape", "objective_blocker": False, "portfolio_risk_only": False},
+            {"ticker": "GLW", "agent": "catalyst", "verdict": "caution", "note": "earnings in 13 days", "objective_blocker": False, "portfolio_risk_only": False},
+            {"ticker": "GLW", "agent": "catalyst_news", "verdict": "caution", "note": "earnings in 13 days", "objective_blocker": False, "portfolio_risk_only": False},
+            {"ticker": "GLW", "agent": "structure", "verdict": "supportive", "note": "clean spread", "objective_blocker": False, "portfolio_risk_only": False},
+            {"ticker": "GLW", "agent": "structure_builder", "verdict": "supportive", "note": "clean spread", "objective_blocker": False, "portfolio_risk_only": False},
+            {"ticker": "GLW", "agent": "skeptic", "verdict": "supportive", "note": "no defect", "objective_blocker": False, "portfolio_risk_only": False},
+            {"ticker": "GLW", "agent": "skeptic", "verdict": "supportive", "note": "no defect", "objective_blocker": False, "portfolio_risk_only": False},
+        ]
+    )
+
+    summary = core._review_summary_by_ticker(reviews)["GLW"]
+    resolved = core._resolved_generic_post_expiry_catalyst_caution(
+        {
+            "agent": "catalyst_news",
+            "verdict": "caution",
+            "note": "earnings in 13 days",
+            "objective_blocker": False,
+            "contract_specific": False,
+        },
+        {
+            "earnings_before_expiry": False,
+            "earnings_source_status": "provisional_after_expiry",
+        },
+    )
+
+    assert summary["supportive"] == 2
+    assert summary["caution"] == 2
+    assert summary["objective_blockers"] == 0
+    assert resolved
 
 
 def test_subagent_review_metadata_is_preserved_into_agent_review_board(tmp_path: Path) -> None:
@@ -19383,6 +20105,22 @@ def test_profitability_confidence_allows_probationary_bridge_without_calling_cap
     assert "monthly_target_capacity_shortfall" in blockers
     assert "$10k monthly target" in next_action
 
+    stale_target = ticket.copy()
+    stale_target["live_validation_status"] = "TARGET_QUOTE_REFRESH"
+    stale_target["execution_blockers"] = "regular_session_quote_refresh_required"
+    stale_target["final_action"] = RecommendationStatus.REVIEW.value
+    stale_target["max_profit"] = 160.0
+    stale_rating, _, stale_evidence, _, _ = core._profitability_confidence_rating(
+        pd.DataFrame(),
+        stale_target,
+        expectancy,
+        monthly,
+        profitability_calibration=calibration,
+    )
+
+    assert stale_rating == 7.0
+    assert "probationary_model_route_one_lot_bridge=PASS" in stale_evidence
+
     green_ticket = ticket.copy()
     green_ticket["ready_to_enter"] = True
     green_ticket["execution_blockers"] = ""
@@ -20446,6 +21184,79 @@ def test_live_credit_selection_prefers_selector_compatible_expiry() -> None:
     assert selected["selected_expiry"] == "2026-08-14"
 
 
+def test_live_credit_selection_recomputes_events_for_each_alternative_expiry() -> None:
+    row = {
+        "ticker": "GLW",
+        "bias": "bearish",
+        "strategy_route": "bear_call_credit",
+        "underlying_quality_tier": "core",
+        "issue_type": "Common Stock",
+        "signal_premium": 25_000_000.0,
+        "combined_flow_bias": -0.12,
+        "days_to_earnings": 13,
+        "regime": "risk_on",
+        # These fields describe the longer dated structure that live pricing is
+        # replacing. They must not leak into a July 24 alternative.
+        "dte": 37,
+        "macro_calendar_status": "verified",
+        "macro_event_count_before_expiry": 5,
+        "macro_events_before_expiry": (
+            "FOMC decision 2026-07-29; GDP and PCE 2026-07-30; "
+            "Employment Situation 2026-08-07; CPI 2026-08-12; PPI 2026-08-13"
+        ),
+    }
+    rich_but_unsafe = {
+        "live_status": "PASS",
+        "selected_expiry": "2026-07-24",
+        "dte": 9,
+        "short_strike": 187.5,
+        "long_strike": 190.0,
+        "spread_width": 2.5,
+        "credit": 0.68,
+        "target_entry": 0.40,
+        "breakeven_expected_move_ratio": 0.53,
+        "expected_move_pct": 0.10,
+        "distance_pct": 0.053,
+        "quote_width_pct": 0.176,
+        "liq_score": 617,
+    }
+    selector_compatible = {
+        **rich_but_unsafe,
+        "short_strike": 195.0,
+        "long_strike": 200.0,
+        "spread_width": 5.0,
+        "credit": 0.84,
+        "target_entry": 0.80,
+        "breakeven_expected_move_ratio": 0.83,
+        "distance_pct": 0.083,
+        "quote_width_pct": 0.207,
+    }
+    calendar = core.load_options_event_calendar(core.project_root())
+
+    assert not core._selector_alternative_is_compatible(
+        row,
+        selector_compatible,
+        entry_type="CREDIT",
+    )
+    assert core._selector_alternative_is_compatible(
+        row,
+        selector_compatible,
+        entry_type="CREDIT",
+        event_calendar=calendar,
+        as_of="2026-07-15",
+    )
+    selected = core._select_live_alternative(
+        row,
+        [rich_but_unsafe, selector_compatible],
+        entry_type="CREDIT",
+        event_calendar=calendar,
+        as_of="2026-07-15",
+    )
+
+    assert selected["short_strike"] == 195.0
+    assert selected["long_strike"] == 200.0
+
+
 def test_strategy_route_propagates_earnings_date_to_live_pricing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -20633,6 +21444,72 @@ def test_live_credit_builder_searches_risk_sized_width_when_anchor_is_too_wide()
     )
     actionable = next(item for item in alternatives if item["construction_source"] == "actionable_quality")
     assert actionable["spread_width"] == 5.0
+
+
+def test_live_credit_builder_returns_all_actionable_candidates_for_global_scoring() -> None:
+    from codexuw.schwab_live import find_credit_spread_alternatives
+
+    expiry = dt.date(2026, 8, 21)
+    contracts = pd.DataFrame(
+        [
+            {
+                "expiry": expiry,
+                "right": "P",
+                "strike": strike,
+                "symbol": f"CRWD 260821P{int(strike * 1000):08d}",
+                "bid": bid,
+                "ask": ask,
+                "mark": (bid + ask) / 2,
+                "delta": delta,
+                "iv": 0.61,
+                "open_interest": 1_500,
+                "volume": 200,
+            }
+            for strike, bid, ask, delta in (
+                (175.0, 2.00, 2.10, -0.18),
+                (172.5, 1.52, 1.60, -0.15),
+                (170.0, 1.10, 1.20, -0.13),
+            )
+        ]
+    )
+
+    alternatives = find_credit_spread_alternatives(
+        contracts,
+        direction="Bull Put",
+        expiry=expiry,
+        spot=206.77,
+        preferred_width=2.5,
+        expected_move_pct=0.195,
+        as_of_date=dt.date(2026, 7, 15),
+        max_alternatives=8,
+    )
+    actionable = [
+        item for item in alternatives if item["construction_source"] == "actionable_quality"
+    ]
+
+    assert {(item["short_strike"], item["long_strike"]) for item in actionable} == {
+        (175.0, 172.5),
+        (175.0, 170.0),
+    }
+    for item in alternatives:
+        item["selected_expiry"] = expiry.isoformat()
+        item["dte"] = 37
+    selected = core._select_live_alternative(
+        {
+            "ticker": "CRWD",
+            "bias": "bullish",
+            "strategy_route": "bull_put_credit",
+            "underlying_quality_tier": "core",
+            "signal_premium": 10_000_000.0,
+            "combined_flow_bias": 0.21,
+        },
+        alternatives,
+        entry_type="CREDIT",
+    )
+
+    assert selected["short_strike"] == 175.0
+    assert selected["long_strike"] == 170.0
+    assert core.MIN_SEND_NOW_CREDIT_WIDTH_RATIO == core.MIN_CREDIT_WIDTH_RATIO
 
 
 def test_ups_like_route_support_stays_yellow_and_is_capped_at_one_contract() -> None:
@@ -21527,6 +22404,56 @@ def test_route_supported_sizing_allows_two_lots_without_blanket_macro_cap() -> N
     assert sized.at["SHORT", "evidence_size_cap"] == 1
 
 
+def test_promoted_selector_uses_risk_sized_position_with_staged_live_entry() -> None:
+    row = pd.DataFrame(
+        [
+            {
+                "ticker": "XLV",
+                "suggested_contracts": 1,
+                "risk_sized_contracts": 18,
+                "max_loss": 200.0,
+                "portfolio_total_value": 740_000.0,
+                "selector_policy_id": core.PROMOTED_SELECTOR_POLICY_ID,
+                "selector_policy_status": "PASS",
+                "actual_forward_strategy_expectancy_status": "PASS",
+                "actual_forward_strategy_expectancy_sample_size": 30,
+                "actual_forward_strategy_expectancy_avg_pnl": 25.0,
+                "actual_forward_strategy_expectancy_profit_factor": 1.5,
+                "profitability_calibration_route_replay_status": "PASS",
+                "profitability_calibration_route_replay_sample_size": 60,
+                "profitability_calibration_route_replay_avg_pnl": 20.0,
+                "profitability_calibration_route_replay_profit_factor": 1.4,
+                "profitability_calibration_model_replay_status": "PASS",
+                "profitability_calibration_model_replay_sample_size": 67,
+                "profitability_calibration_model_replay_avg_pnl": 35.0,
+                "profitability_calibration_model_replay_profit_factor": 1.98,
+                "profitability_calibration_status": "PASS",
+                "profitability_calibration_replay_status": "PASS",
+                "profitability_calibration_replay_sample_size": 67,
+                "earnings_before_expiry": False,
+                "macro_event_count_before_expiry": 0,
+                "dte": 37,
+                "live_validation_status": "PASS",
+                "live_probability_proxy": 0.55,
+                "live_quote_width_pct": 0.05,
+                "live_theta_burn_pct": 0.01,
+                "live_short_oi": 500,
+                "live_short_volume": 100,
+                "live_long_oi": 450,
+                "live_long_volume": 50,
+            }
+        ]
+    )
+
+    sized = core.apply_evidence_aware_size_caps(row).iloc[0]
+
+    assert sized["suggested_contracts"] == core.PROMOTED_SELECTOR_INITIAL_ORDER_CONTRACTS
+    assert sized["risk_sized_contracts"] == core.PROMOTED_SELECTOR_MAX_POSITION_CONTRACTS
+    assert sized["position_contract_cap"] == core.PROMOTED_SELECTOR_MAX_POSITION_CONTRACTS
+    assert sized["position_risk_budget_pct"] == core.PROMOTED_SELECTOR_RISK_BUDGET_PCT
+    assert sized["staged_entry_required"]
+
+
 def test_probationary_model_route_support_is_always_capped_at_one_lot() -> None:
     row = pd.DataFrame(
         [
@@ -21534,6 +22461,7 @@ def test_probationary_model_route_support_is_always_capped_at_one_lot() -> None:
                 "ticker": "SLV",
                 "suggested_contracts": 2,
                 "risk_sized_contracts": 6,
+                "max_profit": 100.0,
                 "max_loss": 90.0,
                 "portfolio_total_value": 700_000.0,
                 "selector_policy_status": "PASS",
@@ -21564,6 +22492,188 @@ def test_probationary_model_route_support_is_always_capped_at_one_lot() -> None:
     assert core._positive_strategy_expectancy_ready_for_green(sized)
     assert sized["suggested_contracts"] == 1
     assert sized["evidence_size_cap"] == 1
+    assert sized["position_contract_cap"] == 1
+    assert not bool(sized["staged_entry_required"])
+    assert bool(sized["model_evidence_pilot"])
+    assert "risk-sized capacity of 6 contract(s) is diagnostic only" in sized["sizing_note"]
+    assert not core._is_position_profit_below_green_floor(
+        sized,
+        suggested_contracts=1,
+        execution_context={"portfolio_total_value": 700_000.0},
+    )
+
+
+def test_partitioned_model_only_route_ignores_broad_negative_actuals_but_caps_one_lot() -> None:
+    row = pd.DataFrame(
+        [
+            {
+                "ticker": "GLW",
+                "suggested_contracts": 3,
+                "risk_sized_contracts": 8,
+                "max_profit": 84.0,
+                "max_loss": 416.0,
+                "portfolio_total_value": 700_000.0,
+                "selector_policy_status": "PASS",
+                "actual_forward_strategy_expectancy_status": "BLOCK",
+                "actual_forward_strategy_expectancy_sample_size": 6,
+                "actual_forward_strategy_expectancy_avg_pnl": -18.0,
+                "actual_forward_strategy_expectancy_profit_factor": 0.70,
+                "profitability_calibration_status": "PASS",
+                "profitability_calibration_scope": "actual_route",
+                "profitability_calibration_actual_status": "BLOCK",
+                "profitability_calibration_actual_sample_size": 6,
+                "profitability_calibration_actual_avg_pnl": -18.0,
+                "profitability_calibration_actual_profit_factor": 0.70,
+                "profitability_calibration_replay_status": "BLOCK",
+                "profitability_calibration_replay_sample_size": 0,
+                "profitability_calibration_route_replay_status": "BLOCK",
+                "profitability_calibration_route_replay_sample_size": 0,
+                "profitability_calibration_model_replay_status": "WARN",
+                "profitability_calibration_model_replay_sample_size": 13,
+                "profitability_calibration_model_replay_avg_pnl": 35.33,
+                "profitability_calibration_model_replay_profit_factor": 2.443,
+                "profitability_calibration_model_replay_pre_split_sample_size": 7,
+                "profitability_calibration_model_replay_pre_split_avg_pnl": 12.79,
+                "profitability_calibration_model_replay_pre_split_profit_factor": 1.281,
+                "profitability_calibration_model_replay_heldout_sample_size": 6,
+                "profitability_calibration_model_replay_heldout_avg_pnl": 61.63,
+                "profitability_calibration_model_replay_heldout_profit_factor": float("inf"),
+            }
+        ]
+    )
+
+    sized = core.apply_evidence_aware_size_caps(row).iloc[0]
+
+    assert core._partitioned_selector_model_route_ticket_ready(
+        sized,
+        require_selector=True,
+    )
+    assert not core._negative_strategy_expectancy_blocks_green(sized)
+    assert not core._profitability_calibration_actual_support_negative(sized)
+    assert core._positive_strategy_expectancy_ready_for_green(sized)
+    assert sized["suggested_contracts"] == 1
+    assert sized["evidence_size_cap"] == 1
+    assert sized["position_contract_cap"] == 1
+    assert not bool(sized["staged_entry_required"])
+    assert bool(sized["model_evidence_pilot"])
+    assert "risk-sized capacity of 8 contract(s) is diagnostic only" in sized["sizing_note"]
+    assert not core._is_position_profit_below_green_floor(
+        sized,
+        suggested_contracts=1,
+        execution_context={"portfolio_total_value": 700_000.0},
+    )
+    pilot = {**sized.to_dict(), "ready_to_enter": True}
+    assert core._decision_badge(pilot).endswith("GREEN pilot")
+    assert core._decision_status_label(pilot) == "GREEN pilot"
+    assert core._ticket_recheck_summary(pilot) == (
+        "green one-contract pilot; verify live quote; do not scale"
+    )
+    risk_summary = core._ticket_contract_risk_summary(pilot)
+    assert "selector route PF 2.44 / n=13" in risk_summary
+    assert "pre PF 1.28 (n=7)" in risk_summary
+    assert "held-out PF inf (n=6)" in risk_summary
+    assert "broad off-policy actual PF 0.70 / n=6" in risk_summary
+    assert "(diagnostic)" in risk_summary
+
+
+def test_partitioned_pilot_evidence_survives_decision_and_ticket_projections() -> None:
+    final = pd.DataFrame(
+        [
+            {
+                "ticker": "GLW",
+                "strategy_route": "bear_call_credit",
+                "strategy_family": "vertical_spread",
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "quality_status": "qualified",
+                "full_ticket": "SELL 1 GLW 2026-07-24 195 Call / BUY 1 GLW 2026-07-24 200 Call @ 0.84 CREDIT",
+                "trade_plan": "SELL 1 GLW 2026-07-24 195 Call / BUY 1 GLW 2026-07-24 200 Call @ 0.84 CREDIT",
+                "expiry": "2026-07-24",
+                "dte": 9,
+                "entry_limit": 0.84,
+                "suggested_contracts": 1,
+                "risk_sized_contracts": 8,
+                "position_contract_cap": 1,
+                "staged_entry_required": False,
+                "model_evidence_pilot": True,
+                "max_profit": 84.0,
+                "max_loss": 416.0,
+                "credit_width_ratio": 0.168,
+                "live_probability_proxy": 0.764,
+                "live_quote_width_pct": 0.207,
+                "trade_quality_status": "reviewable",
+                "live_validation_status": "PASS",
+                "agent_support_count": 2,
+                "agent_caution_count": 2,
+                "agent_objective_blocker_count": 0,
+                "external_agent_review_count": 5,
+                "external_agent_distinct_review_count": 5,
+                "contract_review_status": "PASS",
+                "underlying_quality_tier": "core",
+                "selector_policy_status": "PASS",
+                "actual_forward_expectancy_status": "BLOCK",
+                "actual_forward_expectancy_sample_size": 0,
+                "actual_forward_strategy_expectancy_status": "BLOCK",
+                "actual_forward_strategy_expectancy_sample_size": 6,
+                "actual_forward_strategy_expectancy_avg_pnl": -18.0,
+                "actual_forward_strategy_expectancy_profit_factor": 0.70,
+                "profitability_calibration_status": "PASS",
+                "profitability_calibration_scope": "actual_route",
+                "profitability_calibration_actual_status": "BLOCK",
+                "profitability_calibration_actual_sample_size": 6,
+                "profitability_calibration_actual_avg_pnl": -18.0,
+                "profitability_calibration_actual_profit_factor": 0.70,
+                "profitability_calibration_replay_status": "BLOCK",
+                "profitability_calibration_replay_sample_size": 0,
+                "profitability_calibration_model_replay_status": "WARN",
+                "profitability_calibration_model_replay_sample_size": 13,
+                "profitability_calibration_model_replay_avg_pnl": 35.33,
+                "profitability_calibration_model_replay_profit_factor": 2.443,
+                "profitability_calibration_model_replay_pre_split_sample_size": 7,
+                "profitability_calibration_model_replay_pre_split_avg_pnl": 12.79,
+                "profitability_calibration_model_replay_pre_split_profit_factor": 1.281,
+                "profitability_calibration_model_replay_heldout_sample_size": 6,
+                "profitability_calibration_model_replay_heldout_avg_pnl": 61.63,
+                "profitability_calibration_model_replay_heldout_profit_factor": float("inf"),
+                "earnings_source_status": "verified",
+                "earnings_before_expiry": False,
+                "macro_calendar_status": "verified",
+                "macro_event_count_before_expiry": 0,
+            }
+        ]
+    )
+    context = core.build_execution_context(
+        live_schwab=True,
+        chain_snapshot_dir=None,
+        portfolio_context={"status": "ok", "total_value": 700_000},
+        research_task_count=10,
+        external_review_count=5,
+        external_review_agent_count=5,
+        agent_dispatch_task_count=5,
+        agent_reviews_json=Path("/tmp/reviews.json"),
+        market_session_open=True,
+    )
+
+    decision = core.synthesize_decision_board(
+        final,
+        market_regime={"regime": "risk_on"},
+        execution_context=context,
+    )
+    tickets = core.build_trade_tickets(decision)
+
+    assert decision["ready_to_enter"].tolist() == [True]
+    assert decision["position_contract_cap"].tolist() == [1]
+    assert decision["staged_entry_required"].tolist() == [False]
+    assert decision["model_evidence_pilot"].map(core._truthy).tolist() == [True]
+    assert decision["profitability_calibration_model_replay_pre_split_sample_size"].tolist() == [7]
+    assert decision["profitability_calibration_model_replay_heldout_sample_size"].tolist() == [6]
+    assert tickets["ticker"].tolist() == ["GLW"]
+    assert tickets["ready_to_enter"].tolist() == [True]
+    assert tickets["position_contract_cap"].tolist() == [1]
+    assert tickets["model_evidence_pilot"].map(core._truthy).tolist() == [True]
+    assert core._probationary_model_route_ticket_ready(
+        tickets.iloc[0],
+        require_selector=True,
+    )
 
 
 def test_economic_expectancy_uses_conservative_sample_shrunk_support() -> None:
@@ -21681,3 +22791,69 @@ def test_monthly_capacity_uses_replay_and_excludes_non_surface_target_rows() -> 
     assert statuses["monthly_profit_capacity"] == "BLOCK"
     summary = core.summarize_monthly_feasibility(monthly)
     assert summary["target_attainment_ratio"] == 0.015
+
+
+def test_monthly_capacity_uses_per_trade_risk_scaled_replay_not_todays_order_size() -> None:
+    rows = []
+    monthly_shapes = [
+        ("2026-01", 7, 3),
+        ("2026-02", 6, 4),
+        ("2026-03", 6, 4),
+        ("2026-04", 6, 4),
+        ("2026-05", 12, 6),
+        ("2026-06", 7, 2),
+    ]
+    for month, wins, losses in monthly_shapes:
+        month_days = pd.date_range(f"{month}-02", periods=wins + losses, freq="D")
+        for idx, signal_day in enumerate(month_days):
+            rows.append(
+                {
+                    "signal_date": signal_day,
+                    "ticker": f"T{len(rows):02d}",
+                    "entry_type": "DEBIT",
+                    "entry_debit": 1.0,
+                    "pnl_1x": 100.0 if idx < wins else -100.0,
+                    "selector_partition": "pre_split",
+                }
+            )
+    replay = pd.DataFrame(rows)
+    may_indexes = replay.index[replay["signal_date"].dt.month.eq(5)].tolist()
+    for offset, row_idx in enumerate(may_indexes[8:12]):
+        replay.at[row_idx, "signal_date"] = pd.Timestamp("2026-05-20") + pd.Timedelta(days=offset)
+        replay.at[row_idx, "selector_partition"] = "heldout_test"
+    replay.loc[replay["signal_date"].dt.month.eq(6), "selector_partition"] = "heldout_test"
+
+    tickets = pd.DataFrame(
+        [
+            {
+                "ticker": "XLV",
+                "ready_to_enter": False,
+                "target_order_status": "target_order_candidate",
+                "live_validation_status": "PASS",
+                "profitability_calibration_status": "PASS",
+                "order_readiness": "target_order_wait_for_price",
+                "suggested_contracts": 1,
+                "max_profit": 339.0,
+                "max_loss": 161.0,
+                "portfolio_total_value": 740_000.0,
+            }
+        ]
+    )
+    monthly = core.build_monthly_feasibility(
+        decision_board=pd.DataFrame(),
+        trade_tickets=tickets,
+        execution_context={"monthly_profit_target": 10_000.0, "portfolio_total_value": 740_000.0},
+        expectancy_evidence=pd.DataFrame(),
+        selector_replay=replay,
+    )
+    values = monthly.set_index("metric")["value"]
+    statuses = monthly.set_index("metric")["status"]
+    summary = core.summarize_monthly_feasibility(monthly)
+
+    assert values["current_action_initial_contracts"] == 1
+    assert values["selector_risk_scaled_average_contracts"] == 35.0
+    assert values["expected_monthly_pnl"] >= 10_000.0
+    assert statuses["selector_risk_scaled_pre_split_profit_factor"] == "PASS"
+    assert statuses["selector_risk_scaled_heldout_profit_factor"] == "PASS"
+    assert statuses["monthly_profit_capacity"] == "PASS"
+    assert summary["capacity_status"] == "pass"
