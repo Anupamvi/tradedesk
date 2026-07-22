@@ -1,6 +1,7 @@
 import datetime as dt
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 import pandas as pd
@@ -16,6 +17,38 @@ SPEC.loader.exec_module(mod)
 
 
 class TestExactSpreadBacktester(unittest.TestCase):
+    def test_quote_store_uses_asof_csv_instead_of_future_latest_export(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            day = dt.date(2026, 5, 1)
+            day_dir = root / day.isoformat()
+            day_dir.mkdir()
+            columns = [
+                "option_symbol",
+                "curr_date",
+                "last_bid",
+                "last_ask",
+                "volume",
+                "curr_oi",
+            ]
+            pd.DataFrame(
+                [["AAA260529C00100000", day.isoformat(), 1.0, 1.2, 10, 100]],
+                columns=columns,
+            ).to_csv(day_dir / "chain-oi-changes-2026-05-01.csv", index=False)
+            pd.DataFrame(
+                [["AAA260529C00100000", "2026-05-04", 9.0, 9.2, 10, 100]],
+                columns=columns,
+            ).to_csv(day_dir / "chain-oi-changes-latest-2026-05-04.csv", index=False)
+
+            store = mod.HistoricalOptionQuoteStore(root, use_hot=False, use_oi=True)
+            quote = store.get_leg_quote(day, "AAA260529C00100000")
+
+            self.assertIsNotNone(quote)
+            assert quote is not None
+            self.assertEqual(quote.bid, 1.0)
+            self.assertEqual(quote.ask, 1.2)
+            self.assertEqual(quote.source_kind, "oi")
+
     def test_occ_roundtrip(self) -> None:
         expiry = dt.date(2026, 3, 20)
         sym = mod.build_occ_symbol("AAPL", expiry, "C", 295.0)

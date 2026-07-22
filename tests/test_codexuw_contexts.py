@@ -511,11 +511,11 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 16,
+                "dte": 21,
                 "hard_rejects": "",
                 "penalties": "",
-                "credit_pct_width": 0.20,
-                "credit": 1.0,
+                "credit_pct_width": 0.25,
+                "credit": 1.25,
                 "spread_width": 5.0,
                 "max_loss": 400.0,
                 "max_profit": 100.0,
@@ -534,11 +534,11 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 16,
+                "dte": 21,
                 "hard_rejects": "",
                 "penalties": "",
-                "credit_pct_width": 0.20,
-                "credit": 1.0,
+                "credit_pct_width": 0.25,
+                "credit": 1.25,
                 "spread_width": 5.0,
                 "max_loss": 400.0,
                 "max_profit": 100.0,
@@ -557,11 +557,11 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 16,
+                "dte": 21,
                 "hard_rejects": "",
                 "penalties": "wide_bid_ask",
-                "credit_pct_width": 0.20,
-                "credit": 1.0,
+                "credit_pct_width": 0.25,
+                "credit": 1.25,
                 "spread_width": 5.0,
                 "max_loss": 400.0,
                 "max_profit": 100.0,
@@ -590,7 +590,7 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
     assert marked.loc[marked["ticker"].eq("CCC"), "decision_reason"].iloc[0] == "decision_marginal_live_liquidity"
 
 
-def test_live_selection_uses_secondary_income_sleeve_when_no_primary() -> None:
+def test_live_selection_rejects_secondary_income_below_standing_credit_floor() -> None:
     import pandas as pd
 
     scored = pd.DataFrame(
@@ -630,9 +630,8 @@ def test_live_selection_uses_secondary_income_sleeve_when_no_primary() -> None:
         max_final_trades=1,
     )
 
-    assert marked["decision_reason"].iloc[0] == "decision_secondary_income_eligible"
-    assert marked["decision_tier"].iloc[0] == "secondary_income"
-    assert final["ticker"].tolist() == ["SEC"]
+    assert marked["decision_reason"].iloc[0] == "decision_credit_below_25pct_width"
+    assert final.empty
 
 
 def test_live_selection_can_return_multiple_high_conviction_trades() -> None:
@@ -650,8 +649,8 @@ def test_live_selection_can_return_multiple_high_conviction_trades() -> None:
                 "dte": 21,
                 "hard_rejects": "",
                 "penalties": "",
-                "credit_pct_width": 0.22,
-                "credit": 1.1,
+                "credit_pct_width": 0.25,
+                "credit": 1.25,
                 "spread_width": 5.0,
                 "max_loss": 390.0,
                 "max_profit": 110.0,
@@ -703,8 +702,8 @@ def test_medium_confidence_selection_stays_one_lot_even_when_budget_allows_more(
                 "dte": 21,
                 "hard_rejects": "",
                 "penalties": "",
-                "credit_pct_width": 0.22,
-                "credit": 1.1,
+                "credit_pct_width": 0.25,
+                "credit": 1.25,
                 "spread_width": 5.0,
                 "max_loss": 100.0,
                 "max_profit": 110.0,
@@ -781,5 +780,5 @@ def test_entry_watchlist_surfaces_low_credit_without_promoting_trade() -> None:
 
     assert watch["ticker"].tolist() == ["WAIT"]
     assert watch["watch_kind"].iloc[0] == "price_improvement_credit"
-    assert watch["required_credit"].iloc[0] == 0.9
-    assert "at least $0.90" in watch["trigger"].iloc[0]
+    assert watch["required_credit"].iloc[0] == 1.25
+    assert "at least $1.25" in watch["trigger"].iloc[0]

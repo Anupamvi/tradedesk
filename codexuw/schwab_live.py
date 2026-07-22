@@ -5,6 +5,7 @@ import json
 import math
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -14,6 +15,30 @@ from .provenance import file_fingerprint
 
 MIN_ACTIONABLE_CREDIT_WIDTH_RATIO = 0.16
 MAX_ACTIONABLE_CREDIT_WIDTH_RATIO = 0.30
+MIN_WATCH_CREDIT_WIDTH_RATIO = 0.14
+MARKET_TIMEZONE = ZoneInfo("America/New_York")
+
+
+def _quote_session_date(value: Any) -> dt.date | None:
+    quote_millis = safe_float(value, math.nan)
+    if not math.isfinite(quote_millis) or quote_millis <= 0:
+        return None
+    try:
+        quoted_at = dt.datetime.fromtimestamp(
+            quote_millis / 1000.0,
+            tz=dt.timezone.utc,
+        )
+    except (OverflowError, OSError, ValueError):
+        return None
+    return quoted_at.astimezone(MARKET_TIMEZONE).date()
+
+
+def _contract_quote_session_date(contract: dict[str, Any]) -> dt.date | None:
+    for field in ("quoteTimeInLong", "quoteTime"):
+        quote_date = _quote_session_date(contract.get(field))
+        if quote_date is not None:
+            return quote_date
+    return None
 
 
 def _iter_contracts(exp_map: dict[str, Any], right: str):
@@ -41,6 +66,7 @@ def _iter_contracts(exp_map: dict[str, Any], right: str):
                     "iv": safe_float(contract.get("volatility")),
                     "open_interest": safe_float(contract.get("openInterest"), 0.0),
                     "volume": safe_float(contract.get("totalVolume"), 0.0),
+                    "quote_date": _contract_quote_session_date(contract),
                 }
 
 
@@ -48,6 +74,20 @@ def chain_to_contracts(chain: dict[str, Any]) -> pd.DataFrame:
     rows = list(_iter_contracts(chain.get("callExpDateMap", {}), "C"))
     rows.extend(_iter_contracts(chain.get("putExpDateMap", {}), "P"))
     return pd.DataFrame(rows)
+
+
+def chain_quote_dates(chain: dict[str, Any]) -> set[dt.date]:
+    """Return the New York session dates represented by option quote timestamps."""
+
+    dates: set[dt.date] = set()
+    for exp_map in (chain.get("callExpDateMap", {}), chain.get("putExpDateMap", {})):
+        for strike_map in (exp_map or {}).values():
+            for contracts in (strike_map or {}).values():
+                for contract in contracts or []:
+                    quote_date = _contract_quote_session_date(contract)
+                    if quote_date is not None:
+                        dates.add(quote_date)
+    return dates
 
 
 def chain_spot(chain: dict[str, Any]) -> float:
@@ -287,6 +327,8 @@ def find_credit_spread_alternatives(
     expected_move_pct: float | None = None,
     as_of_date: dt.date | None = None,
     max_alternatives: int = 5,
+    min_actionable_credit_width_ratio: float = MIN_ACTIONABLE_CREDIT_WIDTH_RATIO,
+    min_watch_credit_width_ratio: float = MIN_WATCH_CREDIT_WIDTH_RATIO,
 ) -> list[dict[str, Any]]:
     right = "P" if direction == "Bull Put" else "C"
     df = _credit_spread_candidates(
@@ -343,7 +385,7 @@ def find_credit_spread_alternatives(
 
     actionable = df[
         df["credit_pct_width"].between(
-            MIN_ACTIONABLE_CREDIT_WIDTH_RATIO,
+            min_actionable_credit_width_ratio,
             MAX_ACTIONABLE_CREDIT_WIDTH_RATIO,
             inclusive="both",
         )
@@ -411,7 +453,10 @@ def find_credit_spread_alternatives(
     add(
         "near_trigger_watch",
         "sub-trigger credit candidate to keep as a work-limit Watch order",
-        df[(df["credit_pct_width"] >= 0.14) & (df["credit_pct_width"] < 0.18)],
+        df[
+            (df["credit_pct_width"] >= min_watch_credit_width_ratio)
+            & (df["credit_pct_width"] < min_actionable_credit_width_ratio)
+        ],
         ["credit_pct_width", "_rank"],
         [False, False],
     )
@@ -424,7 +469,7 @@ def find_credit_spread_alternatives(
         out = row.drop(labels=[c for c in row.index if str(c).startswith("_")], errors="ignore").to_dict()
         width = safe_float(out.get("spread_width"))
         target_entry = (
-            round(width * MIN_ACTIONABLE_CREDIT_WIDTH_RATIO, 2)
+            round(width * min_actionable_credit_width_ratio, 2)
             if math.isfinite(width) and width > 0
             else math.nan
         )

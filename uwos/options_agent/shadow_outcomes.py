@@ -19,6 +19,7 @@ from uwos.schwab_auth import compact_occ_to_schwab_symbol
 
 SCHEMA_VERSION = "options_agent.shadow_outcome.v1"
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
+MIN_OUTCOME_OBSERVATION_TIME = dt.time(15, 45)
 OUTCOME_COLUMNS = [
     "schema_version",
     "outcome_id",
@@ -101,11 +102,15 @@ def collect_due_shadow_outcomes(
     observation_session_date: dt.date,
     live_schwab: bool,
     quote_fetcher: Optional[Callable[[Sequence[str]], Mapping[str, Any]]] = None,
+    historical_quote_fetcher: Optional[
+        Callable[[dt.date, Sequence[str]], Mapping[str, Any]]
+    ] = None,
     observed_at: Optional[dt.datetime] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     """Score only the fixed fifth-session cohort using conservative exact-leg quotes."""
 
     observed_at = _aware_utc(observed_at or dt.datetime.now(dt.timezone.utc))
+    observed_market_time = observed_at.astimezone(MARKET_TIMEZONE)
     existing = read_shadow_outcomes(outcome_registry_path)
     existing_ids = set(existing.get("logical_recommendation_id", pd.Series(dtype=str)).astype(str))
     attempts: list[dict[str, Any]] = []
@@ -137,19 +142,58 @@ def collect_due_shadow_outcomes(
         elif observation_session_date < due_date:
             attempt.update(status="NOT_DUE", blocker="fixed_evaluation_session_not_reached")
         elif observation_session_date > due_date:
-            attempt.update(status="MISSED", blocker="fixed_evaluation_session_missed")
+            if not symbols:
+                attempt.update(status="BLOCKED", blocker="directed_legs_missing")
+            elif historical_quote_fetcher is None:
+                attempt.update(status="MISSED", blocker="fixed_evaluation_session_missed")
+            else:
+                attempt.update(
+                    status="DUE_HISTORICAL",
+                    blocker="",
+                    observation_session_date=due_date.isoformat(),
+                )
+                due.append(
+                    {
+                        "row": row.to_dict(),
+                        "attempt": attempt,
+                        "symbols": symbols,
+                        "quote_mode": "historical",
+                        "quote_date": due_date,
+                    }
+                )
+        elif (
+            observed_market_time.date() == observation_session_date
+            and observed_market_time.time() < MIN_OUTCOME_OBSERVATION_TIME
+        ):
+            attempt.update(
+                status="NOT_DUE",
+                blocker="wait_until_near_close_for_same_session_quotes",
+            )
         elif not live_schwab:
             attempt.update(status="BLOCKED", blocker="live_schwab_required_for_exact_outcome")
         elif not symbols:
             attempt.update(status="BLOCKED", blocker="directed_legs_missing")
         else:
             attempt["status"] = "DUE"
-            due.append({"row": row.to_dict(), "attempt": attempt, "symbols": symbols})
+            due.append(
+                {
+                    "row": row.to_dict(),
+                    "attempt": attempt,
+                    "symbols": symbols,
+                    "quote_mode": "live",
+                    "quote_date": observation_session_date,
+                }
+            )
         attempts.append(attempt)
 
-    quote_payload: Mapping[str, Any] = {}
-    fetch_error = ""
-    if due:
+    quote_payloads: dict[tuple[str, dt.date], Mapping[str, Any]] = {}
+    fetch_errors: dict[tuple[str, dt.date], str] = {}
+    live_groups = {
+        (str(item["quote_mode"]), item["quote_date"])
+        for item in due
+        if item["quote_mode"] == "live"
+    }
+    for group_key in live_groups:
         try:
             if quote_fetcher is None:
                 from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
@@ -160,27 +204,61 @@ def collect_due_shadow_outcomes(
                 )
                 quote_fetcher = service.get_quotes
             requested = sorted(
-                {compact_occ_to_schwab_symbol(symbol) for item in due for symbol in item["symbols"]}
+                {
+                    compact_occ_to_schwab_symbol(symbol)
+                    for item in due
+                    if item["quote_mode"] == "live"
+                    for symbol in item["symbols"]
+                }
             )
             fetched: dict[str, Any] = {}
             for start in range(0, len(requested), 100):
                 fetched.update(quote_fetcher(requested[start : start + 100]))
-            quote_payload = fetched
+            quote_payloads[group_key] = fetched
         except Exception as exc:
-            fetch_error = str(exc)
+            fetch_errors[group_key] = str(exc)
+
+    historical_dates = sorted(
+        {
+            item["quote_date"]
+            for item in due
+            if item["quote_mode"] == "historical"
+        }
+    )
+    for quote_date in historical_dates:
+        group_key = ("historical", quote_date)
+        try:
+            requested = sorted(
+                {
+                    symbol
+                    for item in due
+                    if item["quote_mode"] == "historical" and item["quote_date"] == quote_date
+                    for symbol in item["symbols"]
+                }
+            )
+            quote_payloads[group_key] = historical_quote_fetcher(quote_date, requested)  # type: ignore[misc]
+        except Exception as exc:
+            fetch_errors[group_key] = str(exc)
 
     new_rows: list[dict[str, Any]] = []
     for item in due:
         attempt = item["attempt"]
         row = item["row"]
+        group_key = (str(item["quote_mode"]), item["quote_date"])
+        fetch_error = fetch_errors.get(group_key, "")
         if fetch_error:
             attempt.update(status="BLOCKED", blocker=f"quote_fetch_failed:{fetch_error}")
             continue
         scored, blocker = _score_row(
             row,
-            quote_payload,
+            quote_payloads.get(group_key, {}),
             observed_at=observed_at,
-            observation_session_date=observation_session_date,
+            observation_session_date=item["quote_date"],
+            quote_source=(
+                "dated_uw_exact_option_quotes"
+                if item["quote_mode"] == "historical"
+                else "schwab_exact_option_quotes"
+            ),
         )
         if scored is None:
             attempt.update(status="BLOCKED", blocker=blocker)
@@ -194,7 +272,9 @@ def collect_due_shadow_outcomes(
         "registry_path": str(outcome_registry_path),
         "outcome_rows": int(len(outcomes)),
         "new_outcome_rows": int(appended),
-        "due_rows": int(sum(item.get("status") in {"DUE", "SCORED", "BLOCKED"} for item in attempts)),
+        "due_rows": int(
+            sum(item.get("status") in {"DUE", "DUE_HISTORICAL", "SCORED", "BLOCKED"} for item in attempts)
+        ),
         "scored_rows": int(sum(item.get("status") == "SCORED" for item in attempts)),
         "missed_rows": int(sum(item.get("status") == "MISSED" for item in attempts)),
         "blocked_rows": int(sum(item.get("status") == "BLOCKED" for item in attempts)),
@@ -203,7 +283,7 @@ def collect_due_shadow_outcomes(
             .map(_truthy)
             .sum()
         ),
-        "policy": "exact_conservative_liquidation_on_fifth_regular_session_v1",
+        "policy": "exact_conservative_liquidation_on_fifth_regular_session_v2",
     }
     return outcomes, pd.DataFrame(attempts, columns=ATTEMPT_COLUMNS), summary
 
@@ -214,6 +294,7 @@ def _score_row(
     *,
     observed_at: dt.datetime,
     observation_session_date: dt.date,
+    quote_source: str = "schwab_exact_option_quotes",
 ) -> tuple[Optional[dict[str, Any]], str]:
     entry_type = _text(row.get("entry_type")).upper()
     entry_limit = _float(row.get("entry_limit"))
@@ -299,7 +380,7 @@ def _score_row(
         "exact_evaluated": True,
         "contributes_to_expectancy": selected_for_expectancy,
         "source": "options_agent_shadow_outcomes",
-        "quote_source": "schwab_exact_option_quotes",
+        "quote_source": quote_source,
         "quote_snapshot_json": json.dumps(snapshots, sort_keys=True, separators=(",", ":")),
         "legs_json": _text(row.get("legs_json")),
         "recommendation_pipeline_version": _text(row.get("pipeline_version")),
@@ -355,7 +436,13 @@ def _quote_fields(payload: Mapping[str, Any]) -> tuple[Optional[float], Optional
     raw_time = next(
         (
             body.get(key)
-            for key in ("quoteTimeInLong", "tradeTimeInLong", "regularMarketTradeTimeInLong")
+            for key in (
+                "quoteTimeInLong",
+                "quoteTime",
+                "tradeTimeInLong",
+                "tradeTime",
+                "regularMarketTradeTimeInLong",
+            )
             if body.get(key) not in (None, "")
         ),
         None,

@@ -111,11 +111,13 @@ def latest_usable_uw_folder(root: Path) -> Path:
 def find_export(base_dir: Path, prefix: str) -> Path:
     direct = sorted(base_dir.glob(f"{prefix}*.csv")) + sorted(base_dir.glob(f"{prefix}*.zip"))
     if direct:
-        return direct[0]
+        dated = [path for path in direct if base_dir.name[:10] in path.name]
+        return dated[0] if dated else direct[-1]
     unzipped = base_dir / "_unzipped_mode_a"
     nested = sorted(unzipped.glob(f"{prefix}*.csv")) + sorted(unzipped.glob(f"{prefix}*.zip"))
     if nested:
-        return nested[0]
+        dated = [path for path in nested if base_dir.name[:10] in path.name]
+        return dated[0] if dated else nested[-1]
     raise FileNotFoundError(f"No {prefix}*.csv or {prefix}*.zip found under {base_dir}")
 
 
@@ -269,6 +271,7 @@ class WheelConfig:
     max_pmcc_debit_pct: float = 0.15
     cash_buffer_pct: float = 0.10
     risk_free_rate: float = 0.04
+    include_symbols: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -493,11 +496,13 @@ def build_universe(
     base_dir: Path,
     config: WheelConfig,
     position_symbols: Iterable[str] = (),
+    include_symbols: Iterable[str] = (),
 ) -> list[UniverseRow]:
     screener = load_screener(base_dir)
     hot = load_hot_chain_summary(base_dir)
     hot_by_ticker = {normalize_symbol(str(row["ticker"])): row for _, row in hot.iterrows()} if not hot.empty else {}
     managed_symbols = {normalize_symbol(symbol) for symbol in position_symbols if normalize_symbol(symbol)}
+    requested_symbols = {normalize_symbol(symbol) for symbol in include_symbols if normalize_symbol(symbol)}
     rows: list[UniverseRow] = []
     for _, row in screener.iterrows():
         ticker = normalize_symbol(str(row.get("ticker", "")))
@@ -505,7 +510,8 @@ def build_universe(
             continue
         item = score_universe_row(row, hot_by_ticker.get(ticker, {}), config)
         is_managed_position = item.ticker in managed_symbols and item.issue_type.upper() in {"COMMON STOCK", "ADR", "ETF"}
-        if not is_managed_position:
+        is_explicit = is_managed_position or item.ticker in requested_symbols
+        if not is_explicit:
             if item.close < 20.0:
                 continue
             if item.marketcap < config.min_market_cap:
@@ -570,12 +576,42 @@ def build_universe(
     add_items(ranked, "ranked")
 
     for item in rows:
+        if item.ticker not in requested_symbols or item.ticker in seen:
+            continue
+        item.selection_lane = "requested"
+        item.reasons.append("user-requested symbol appended outside candidate limit")
+        selected.append(item)
+        seen.add(item.ticker)
+
+    for item in rows:
         if item.ticker not in managed_symbols or item.ticker in seen:
             continue
         item.selection_lane = "position"
         item.reasons.append("held round-lot position appended outside candidate limit")
         selected.append(item)
         seen.add(item.ticker)
+
+    for ticker in sorted(requested_symbols - seen):
+        selected.append(
+            UniverseRow(
+                ticker=ticker,
+                full_name=ticker,
+                sector="",
+                issue_type="Common Stock",
+                close=0.0,
+                marketcap=0.0,
+                avg30_volume=0.0,
+                total_open_interest=0.0,
+                next_earnings=None,
+                quality_score=0.0,
+                flow_score=0.0,
+                thesis=f"{ticker} user-requested symbol missing from dated UW screener",
+                tier=4,
+                selection_lane="requested",
+                reasons=["user-requested symbol missing from dated UW screener; contract evaluation withheld"],
+            )
+        )
+        seen.add(ticker)
 
     for ticker in sorted(managed_symbols - seen):
         selected.append(
@@ -1939,7 +1975,7 @@ def write_outputs(
         f"- UW source folder: `{base_dir}`",
         "- Live quote and option-chain source: `Schwab API`",
         "- Yahoo/yfinance: `not used`",
-        "- Universe selection: objective quality, tactical-flow, and total-premium lanes; no hard-coded ticker roster; held round-lot positions appended",
+        "- Universe selection: objective quality, tactical-flow, and total-premium lanes; user-requested symbols and held round-lot positions appended; no hard-coded ticker roster",
         f"- Schwab position fetch: `{position_status}`",
         f"- Account-size assumption: `${config.account_size:,.0f}`",
         f"- Monthly income target: `${config.target_monthly_income_low:,.0f}` to `${config.target_monthly_income_high:,.0f}`",
@@ -2063,12 +2099,13 @@ def write_outputs(
             "live_source": "Schwab API",
             "yahoo_yfinance_used": False,
             "position_status": position_status,
-            "universe_policy": "objective quality/tactical/premium lanes plus held round-lot positions; no hard-coded ticker roster",
+            "universe_policy": "objective quality/tactical/premium lanes plus user-requested symbols and held round-lot positions; no hard-coded ticker roster",
         },
         "counts": {
             "universe": len(universe),
             "candidate_rows": len([row for row in universe if row.selection_lane != "position"]),
             "position_rows": len([row for row in universe if row.selection_lane == "position"]),
+            "requested_rows": len([row for row in universe if row.selection_lane == "requested"]),
             "quality_lane_rows": len([row for row in universe if row.selection_lane == "quality"]),
             "tactical_lane_rows": len([row for row in universe if row.selection_lane == "tactical"]),
             "premium_lane_rows": len([row for row in universe if row.selection_lane == "premium"]),
@@ -2119,7 +2156,12 @@ def run_fresh_wheel(
         for symbol, position in positions.items()
         if symbol and position.shares >= 100 and position.avg_cost > 0.0
     }
-    universe = build_universe(base_dir, config, position_symbols=managed_position_symbols)
+    universe = build_universe(
+        base_dir,
+        config,
+        position_symbols=managed_position_symbols,
+        include_symbols=config.include_symbols,
+    )
     quote_symbols = [schwab_symbol(row.ticker) for row in universe]
     quotes = service.get_quotes(quote_symbols) if quote_symbols else {}
     chain_dir = out_dir / "schwab_chains"
@@ -2127,7 +2169,8 @@ def run_fresh_wheel(
     actions: list[WheelAction] = []
     chain_errors: dict[str, str] = {}
     for row in universe:
-        if row.selection_lane == "position" and row.close <= 0.0:
+        if row.selection_lane in {"position", "requested"} and row.close <= 0.0:
+            source = "held round-lot position" if row.selection_lane == "position" else "user-requested symbol"
             actions.append(
                 WheelAction(
                     ticker=row.ticker,
@@ -2137,7 +2180,7 @@ def run_fresh_wheel(
                     quality_score=0.0,
                     flow_score=0.0,
                     thesis=row.thesis,
-                    blockers=["held round-lot position missing from dated UW screener; no option contract evaluated"],
+                    blockers=[f"{source} missing from dated UW screener; no option contract evaluated"],
                 )
             )
             continue
@@ -2196,6 +2239,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-high", type=float, default=20_000.0)
     parser.add_argument("--max-symbols", type=int, default=20)
     parser.add_argument("--strike-count", type=int, default=80)
+    parser.add_argument("--include-symbols", default="", help="Comma-separated user-requested symbols appended outside --max-symbols.")
     parser.add_argument("--skip-positions", action="store_true", help="Do not fetch Schwab account equity positions for covered-call tickets.")
     return parser.parse_args()
 
@@ -2211,6 +2255,7 @@ def main() -> None:
         target_monthly_income_high=args.target_high,
         max_symbols=args.max_symbols,
         strike_count=args.strike_count,
+        include_symbols=[symbol.strip() for symbol in args.include_symbols.split(",") if symbol.strip()],
     )
     outputs = run_fresh_wheel(base_dir=base_dir, out_dir=out_dir, config=config, skip_positions=args.skip_positions)
     print(f"Report:   {outputs['report']}")

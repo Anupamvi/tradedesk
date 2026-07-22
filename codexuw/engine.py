@@ -11,6 +11,7 @@ from typing import Any
 import pandas as pd
 
 from .catalysts import earnings_crosses_expiry, earnings_event_date
+from .credit_policy import MAX_CREDIT_PCT_WIDTH, MIN_CREDIT_PCT_WIDTH, MIN_WATCH_CREDIT_PCT_WIDTH
 from .data import safe_float
 from .edge_model import EDGE_COLUMNS, apply_replay_edge_model
 from .occ import build_occ_symbol, parse_occ_symbol
@@ -116,16 +117,16 @@ def replay_quality_pattern(
     ratio = distance_pct / expected_move if math.isfinite(distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
     if (
         math.isfinite(credit_pct)
-        and 0.18 <= credit_pct <= 0.30
+        and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
         and math.isfinite(ratio)
         and ratio >= 0.65
     ):
-        return True, "validated_credit18_30_expected_buffer"
+        return True, "validated_credit25_30_expected_buffer"
     if not math.isfinite(expected_move) or expected_move <= 0:
         return False, "replay_guard_missing_expected_move"
-    if math.isfinite(credit_pct) and credit_pct < 0.18:
+    if math.isfinite(credit_pct) and credit_pct < MIN_CREDIT_PCT_WIDTH:
         return False, "replay_guard_credit_below_validated_band"
-    if math.isfinite(credit_pct) and credit_pct > 0.30:
+    if math.isfinite(credit_pct) and credit_pct > MAX_CREDIT_PCT_WIDTH:
         return False, "replay_guard_credit_above_validated_band"
     if math.isfinite(ratio) and ratio < 0.65:
         return False, "replay_guard_insufficient_expected_move_buffer"
@@ -461,7 +462,7 @@ def generate_candidates(
                 expected_move = iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
                 if direction in CREDIT_DIRECTIONS:
                     expected_ratio = distance_pct / expected_move if math.isfinite(distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
-                    target_entry = round(width * 0.18, 2)
+                    target_entry = round(width * MIN_CREDIT_PCT_WIDTH, 2)
                 else:
                     expected_ratio = expected_move / max(breakeven_distance_pct, 0.001) if math.isfinite(breakeven_distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
                     target_entry = round(width * 0.45, 2)
@@ -647,14 +648,16 @@ def _score_trade(row: pd.Series, regime: dict[str, Any], asof: dt.date) -> tuple
     elif math.isfinite(distance):
         score += min(2.0, distance / 0.04)
 
-    if _is_credit_strategy(row) and math.isfinite(credit_pct) and credit_pct >= 0.20:
+    if _is_credit_strategy(row) and math.isfinite(credit_pct) and credit_pct >= MIN_CREDIT_PCT_WIDTH:
         score += 1.0
-    elif _is_credit_strategy(row) and math.isfinite(credit_pct) and credit_pct >= 0.16:
-        score += 0.5
     elif _is_debit_strategy(row) and math.isfinite(debit_pct) and debit_pct <= 0.45 and math.isfinite(reward_risk) and reward_risk >= 1.0:
         score += 0.75
     else:
-        penalties.append("debit_bad_reward_risk_or_credit_below_min" if _is_debit_strategy(row) else "credit_below_min_16pct_width")
+        penalties.append(
+            "debit_bad_reward_risk_or_credit_below_min"
+            if _is_debit_strategy(row)
+            else "credit_below_min_25pct_width"
+        )
         score -= 0.5
 
     if _is_credit_strategy(row):
@@ -796,6 +799,8 @@ def live_validate_and_score(
                         anchor_strike=anchor,
                         expected_move_pct=expected_move,
                         as_of_date=asof,
+                        min_actionable_credit_width_ratio=MIN_CREDIT_PCT_WIDTH,
+                        min_watch_credit_width_ratio=MIN_WATCH_CREDIT_PCT_WIDTH,
                     )
                 for live in live_alternatives:
                     live["stock_price_live"] = spot
@@ -1113,7 +1118,7 @@ def _decision_sort_score(row: pd.Series) -> float:
     if math.isfinite(align):
         score += min(2.0, max(0.0, align) * 6.0)
     if math.isfinite(credit_pct):
-        score += min(1.0, max(0.0, credit_pct - 0.16) * 8.0)
+        score += min(1.0, max(0.0, credit_pct - MIN_CREDIT_PCT_WIDTH) * 8.0)
     if math.isfinite(quote_width):
         score -= max(0.0, quote_width - 0.35)
     return round(score, 4)
@@ -1129,7 +1134,7 @@ def _secondary_income_eligible(
 ) -> bool:
     return (
         math.isfinite(credit_pct)
-        and 0.16 <= credit_pct <= 0.30
+        and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
         and math.isfinite(ratio)
         and ratio >= 0.20
         and math.isfinite(align)
@@ -1143,7 +1148,11 @@ def _secondary_income_eligible(
 
 def validated_addon_income_lane(direction: object, credit_pct: float) -> bool:
     """Replay-validated lane for adding trades beyond the strongest daily setup."""
-    return str(direction or "") == "Bear Call" and math.isfinite(credit_pct) and 0.20 <= credit_pct <= 0.24
+    return (
+        str(direction or "") == "Bear Call"
+        and math.isfinite(credit_pct)
+        and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
+    )
 
 
 def _credit_secondary_income_replay_lane(row: pd.Series) -> bool:
@@ -1190,8 +1199,8 @@ def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date 
             out.at[idx, "decision_reason"] = f"decision_earnings_crosses_expiry:{earnings_event_date(row)}"
         elif math.isfinite(earnings_days) and 0 <= earnings_days <= 10 and pd.isna(row.get("expiry")):
             out.at[idx, "decision_reason"] = f"decision_earnings_within_10d:{int(earnings_days)}"
-        elif not math.isfinite(credit_pct) or credit_pct < 0.16:
-            out.at[idx, "decision_reason"] = "decision_credit_below_16pct_width"
+        elif not math.isfinite(credit_pct) or credit_pct < MIN_CREDIT_PCT_WIDTH:
+            out.at[idx, "decision_reason"] = "decision_credit_below_25pct_width"
         elif _secondary_income_eligible(credit_pct=credit_pct, ratio=ratio, align=align, score=score, dte=dte) and ratio < 0.65:
             out.at[idx, "decision_eligible"] = True
             out.at[idx, "decision_reason"] = "decision_secondary_income_eligible"
@@ -1200,7 +1209,7 @@ def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date 
             out.at[idx, "decision_reason"] = "decision_insufficient_expected_move_buffer"
         elif not math.isfinite(align) or align < 0.10:
             out.at[idx, "decision_reason"] = "decision_weak_flow_alignment"
-        elif credit_pct > 0.30:
+        elif credit_pct > MAX_CREDIT_PCT_WIDTH:
             out.at[idx, "decision_reason"] = "decision_credit_above_30pct_width"
         else:
             out.at[idx, "decision_eligible"] = True
@@ -1269,10 +1278,10 @@ def apply_final_quality_guards(scored: pd.DataFrame) -> pd.DataFrame:
         if catalyst_status == "caution" and math.isfinite(dte) and dte <= 10:
             penalties = _append_token(penalties, "final_guard_near_term_news_caution")
             score -= 0.75
-        if math.isfinite(credit_pct) and credit_pct < 0.18 and catalyst_status in {"caution", "unknown"}:
+        if math.isfinite(credit_pct) and credit_pct < MIN_CREDIT_PCT_WIDTH and catalyst_status in {"caution", "unknown"}:
             penalties = _append_token(penalties, "final_guard_low_credit_without_news_support")
             score -= 0.5
-        if math.isfinite(credit_pct) and credit_pct < 0.18 and score < 6.0:
+        if math.isfinite(credit_pct) and credit_pct < MIN_CREDIT_PCT_WIDTH and score < 6.0:
             penalties = _append_token(penalties, "final_guard_low_credit_medium_score")
             score -= 0.25
         out.at[idx, "penalties"] = penalties
@@ -1291,14 +1300,15 @@ def _expected_move_pct(row: pd.Series) -> float:
 
 
 def _credit_required_entry(row: pd.Series) -> float:
-    if str(row.get("construction_source") or "") == "fallback_income":
-        target = safe_float(row.get("fallback_target_credit"), safe_float(row.get("target_entry")))
-        if math.isfinite(target) and target > 0:
-            return round(target, 2)
     width = safe_float(row.get("spread_width"))
     if not math.isfinite(width) or width <= 0:
         return math.nan
-    return round(width * 0.18, 2)
+    policy_floor = round(width * MIN_CREDIT_PCT_WIDTH, 2)
+    if str(row.get("construction_source") or "") == "fallback_income":
+        target = safe_float(row.get("fallback_target_credit"), safe_float(row.get("target_entry")))
+        if math.isfinite(target) and target > 0:
+            return max(policy_floor, round(target, 2))
+    return policy_floor
 
 
 def _debit_required_entry(row: pd.Series) -> float:
@@ -1515,9 +1525,9 @@ def _manual_confirmation_scout_ok(row: pd.Series, core_blockers: list[str], *, e
         return (
             math.isfinite(credit)
             and math.isfinite(required)
-            and credit >= required
+            and credit >= required * 0.80
             and math.isfinite(credit_pct)
-            and 0.18 <= credit_pct <= 0.30
+            and MIN_WATCH_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
         ), soft, hard
     debit = safe_float(row.get("debit"))
     required = _debit_required_entry(row)
@@ -1592,7 +1602,7 @@ def apply_confirmation_framework(
                 and (not math.isfinite(iv_rank) or iv_rank <= 75)
             )
         else:
-            checks["iv_premium_quality"] = safe_float(row.get("credit_pct_width")) >= 0.18
+            checks["iv_premium_quality"] = safe_float(row.get("credit_pct_width")) >= MIN_CREDIT_PCT_WIDTH
         earnings_days = _earnings_days(row, asof)
         checks["earnings_news_risk"] = (
             not earnings_crosses_expiry(row, asof=asof)
@@ -1758,7 +1768,7 @@ def assign_trade_statuses(
                 not core_blockers
                 and
                 math.isfinite(credit_pct)
-                and credit_pct >= 0.25
+                and credit_pct >= MIN_CREDIT_PCT_WIDTH
                 and confirmation_score >= 7.0
                 and replay_verdict in {"acceptable", "positive"}
                 and (math.isfinite(expected_ratio) and expected_ratio >= 0.65)
@@ -1768,23 +1778,11 @@ def assign_trade_statuses(
                 reason = "A-tier credit/width with supportive confirmations"
             elif (
                 not core_blockers
-                and
-                math.isfinite(credit_pct)
-                and 0.18 <= credit_pct < 0.25
-                and confirmation_score >= 7.0
-                and str(row.get("oi_carryover_status")) == "supportive"
-                and replay_verdict in {"acceptable", "positive"}
-            ):
-                status = "Execute"
-                tier = "Execute B"
-                reason = "B-tier credit with OI, price action, and replay support"
-            elif (
-                not core_blockers
                 and replay_verdict == "acceptable_secondary_income"
                 and str(row.get("decision_eligible")).lower() == "true"
                 and str(row.get("decision_tier") or "") == "secondary_income"
                 and math.isfinite(credit_pct)
-                and 0.16 <= credit_pct <= 0.30
+                and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
                 and confirmation_score >= 6.0
             ):
                 status = "Execute"
@@ -1980,6 +1978,8 @@ def select_final_trades(
     risk_config = risk_config or {}
     if risk_config.get("allow_new_trades") is False:
         return scored.iloc[0:0].copy()
+    allow_size_up = bool(risk_config.get("allow_size_up", True))
+    size_up_evidence = str(risk_config.get("size_up_evidence") or "")
     required = {"hard_rejects", "score", "penalties"}
     if not required.issubset(scored.columns):
         return scored.iloc[0:0].copy()
@@ -2026,7 +2026,9 @@ def select_final_trades(
             approved["_rank"] = approved["score"].fillna(0)
     else:
         approved = scored[scored["hard_rejects"].fillna("").eq("")].copy()
-        approved = approved[pd.to_numeric(approved["credit_pct_width"], errors="coerce").fillna(0) >= 0.16].copy()
+        approved = approved[
+            pd.to_numeric(approved["credit_pct_width"], errors="coerce").fillna(0) >= MIN_CREDIT_PCT_WIDTH
+        ].copy()
         approved = approved[~approved["penalties"].fillna("").astype(str).str.contains("replay_guard_", regex=False)].copy()
         approved = approved[~approved["penalties"].fillna("").astype(str).str.contains("final_guard_", regex=False)].copy()
         approved = approved[approved["score"] >= min_score].copy()
@@ -2034,7 +2036,7 @@ def select_final_trades(
             relaxed = scored[
                 scored["hard_rejects"].fillna("").eq("")
                 & (scored["score"] >= relaxed_min_score)
-                & (pd.to_numeric(scored["credit_pct_width"], errors="coerce").fillna(0) >= 0.16)
+                & (pd.to_numeric(scored["credit_pct_width"], errors="coerce").fillna(0) >= MIN_CREDIT_PCT_WIDTH)
                 & (~scored["penalties"].fillna("").astype(str).str.contains("replay_guard_", regex=False))
                 & (~scored["penalties"].fillna("").astype(str).str.contains("final_guard_", regex=False))
             ].copy()
@@ -2134,6 +2136,8 @@ def select_final_trades(
         if ticker in AI_TECH:
             remaining_contract_risk = min(remaining_contract_risk, risk_budget * default_factor_fraction - ai_risk)
         contracts = min(contracts, int(remaining_contract_risk // max_loss))
+        if not allow_size_up:
+            contracts = min(contracts, 1)
         if contracts < 1:
             continue
         risk = contracts * max_loss
@@ -2153,6 +2157,7 @@ def select_final_trades(
         out["ev_per_dollar_risk"] = round(ev_per_dollar_risk, 4) if math.isfinite(ev_per_dollar_risk) else math.nan
         out["liquidity_capacity_contracts"] = liquidity_cap
         out["position_max_loss"] = round(risk, 2)
+        out["size_up_evidence"] = size_up_evidence or ("passed" if allow_size_up else "not demonstrated")
         monthly_target = safe_float(risk_config.get("monthly_profit_target"), 0.0)
         out["target_contribution_pct"] = (
             round((target_profit_per_contract * contracts) / monthly_target, 4)
@@ -2167,7 +2172,11 @@ def select_final_trades(
             )
         else:
             out["sizing_label"] = "1-lot base"
-            if str(row.get("alpha_tier") or "").strip() == "Tier 2":
+            if not allow_size_up:
+                out["sizing_rationale"] = (
+                    "Kept to 1-lot because the minimum closed-live-outcome evidence for size-up has not passed."
+                )
+            elif str(row.get("alpha_tier") or "").strip() == "Tier 2":
                 out["sizing_rationale"] = (
                     "Kept to 1-lot because Tier 2 liquidity-shift setups require live outcome proof before size-up."
                 )
@@ -2491,15 +2500,20 @@ def _write_recommendation_outcome_ledger(out_dir: Path, asof: dt.date, final: pd
 
 
 def _entry_credit_target(row: pd.Series) -> float:
+    width = safe_float(row.get("spread_width"))
+    policy_floor = (
+        round(width * MIN_CREDIT_PCT_WIDTH, 2)
+        if math.isfinite(width) and width > 0
+        else math.nan
+    )
     explicit = safe_float(
         row.get("target_credit"),
         safe_float(row.get("min_credit"), safe_float(row.get("entry_limit_credit"), math.nan)),
     )
     if math.isfinite(explicit) and explicit > 0:
-        return explicit
-    width = safe_float(row.get("spread_width"))
-    if math.isfinite(width) and width > 0:
-        return round(width * 0.18, 2)
+        return max(explicit, policy_floor) if math.isfinite(policy_floor) else explicit
+    if math.isfinite(policy_floor):
+        return policy_floor
     return math.nan
 
 
@@ -2892,10 +2906,10 @@ def build_data_quality_status(
             "critical": browser_count == 0,
         },
         {
-            "check": "Replay data freshness",
+            "check": "Recent-performance report freshness",
             "status": "ok" if (recent_performance or {}).get("status") == "ok" else "unavailable",
             "detail": (
-                f"latest={(recent_performance or {}).get('latest_asof', '')}; window={(recent_performance or {}).get('window', '')}"
+                f"latest={(recent_performance or {}).get('latest_asof', '')}; window={(recent_performance or {}).get('window', '')}; replay-edge cutoff is tracked on each candidate"
                 if (recent_performance or {}).get("status") == "ok"
                 else str((recent_performance or {}).get("reason") or (recent_performance or {}).get("status") or "not_checked")
             ),
@@ -2987,7 +3001,7 @@ def _confidence_component_scores(row: pd.Series, live_outcomes: dict[str, Any] |
 
     if _is_credit_strategy(row):
         rr_value = safe_float(row.get("credit_pct_width"))
-        rr_score = 9.0 if math.isfinite(rr_value) and rr_value >= 0.25 else 7.0 if math.isfinite(rr_value) and rr_value >= 0.18 else 3.0
+        rr_score = 9.0 if math.isfinite(rr_value) and rr_value >= MIN_CREDIT_PCT_WIDTH else 3.0
         rr_label = f"credit/width {rr_value:.1%}" if math.isfinite(rr_value) else "credit unavailable"
     else:
         reward = safe_float(row.get("reward_risk"))

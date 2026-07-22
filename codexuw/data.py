@@ -298,14 +298,16 @@ def aggregate_bot_flow(
     chunksize: int = 750_000,
     max_rows: int | None = None,
     allow_missing: bool = False,
+    point_in_time: bool = False,
 ) -> pd.DataFrame:
+    ceiling = infer_asof_date(base_dir) if point_in_time else None
     try:
-        paths = find_export_bundle(base_dir, "bot-eod-report-")
+        paths = find_export_bundle(base_dir, "bot-eod-report-", asof_ceiling=ceiling)
     except FileNotFoundError:
         if not allow_missing:
             raise
         try:
-            dp_path = find_export(base_dir, "dp-eod-report-")
+            dp_path = find_export(base_dir, "dp-eod-report-", asof_ceiling=ceiling)
         except FileNotFoundError:
             dp_path = None
         # DP is equity dark-pool data and cannot be substituted for side-aware

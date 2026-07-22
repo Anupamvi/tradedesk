@@ -8,7 +8,7 @@ from uwos.options_agent.shadow_outcomes import collect_due_shadow_outcomes
 
 
 SESSION = dt.date(2026, 7, 17)
-QUOTE_TIME = dt.datetime(2026, 7, 17, 19, 0, tzinfo=dt.timezone.utc)
+QUOTE_TIME = dt.datetime(2026, 7, 17, 20, 0, tzinfo=dt.timezone.utc)
 
 
 def _shadow(*, logical_id="oa-shadow-1", entry_type="DEBIT", entry_limit=2.0, due="2026-07-17"):
@@ -144,6 +144,44 @@ def test_stale_quote_blocks_scoring_and_does_not_append(tmp_path):
     assert not registry.exists()
 
 
+def test_shadow_outcome_accepts_schwab_quote_time_field(tmp_path):
+    quotes = _quotes()
+    for payload in quotes.values():
+        quote = payload["quote"]
+        quote["quoteTime"] = quote.pop("quoteTimeInLong")
+
+    outcomes, attempts, summary = collect_due_shadow_outcomes(
+        _shadow(),
+        outcome_registry_path=tmp_path / "shadow_outcomes.jsonl",
+        observation_session_date=SESSION,
+        live_schwab=True,
+        quote_fetcher=lambda symbols: quotes,
+        observed_at=QUOTE_TIME,
+    )
+
+    assert attempts.iloc[0]["status"] == "SCORED"
+    assert len(outcomes) == 1
+    assert summary["new_outcome_rows"] == 1
+
+
+def test_due_shadow_waits_until_near_close_before_fetching(tmp_path):
+    early = dt.datetime(2026, 7, 17, 14, 0, tzinfo=dt.timezone.utc)
+
+    outcomes, attempts, summary = collect_due_shadow_outcomes(
+        _shadow(),
+        outcome_registry_path=tmp_path / "shadow_outcomes.jsonl",
+        observation_session_date=SESSION,
+        live_schwab=True,
+        quote_fetcher=lambda symbols: (_ for _ in ()).throw(AssertionError("must not fetch early")),
+        observed_at=early,
+    )
+
+    assert outcomes.empty
+    assert attempts.iloc[0]["status"] == "NOT_DUE"
+    assert attempts.iloc[0]["blocker"] == "wait_until_near_close_for_same_session_quotes"
+    assert summary["due_rows"] == 0
+
+
 def test_missed_fixed_session_is_audited_but_never_scored(tmp_path):
     outcomes, attempts, summary = collect_due_shadow_outcomes(
         _shadow(due="2026-07-16"),
@@ -158,6 +196,38 @@ def test_missed_fixed_session_is_audited_but_never_scored(tmp_path):
     assert attempts.iloc[0]["status"] == "MISSED"
     assert attempts.iloc[0]["blocker"] == "fixed_evaluation_session_missed"
     assert summary["missed_rows"] == 1
+
+
+def test_missed_fixed_session_is_recovered_from_dated_exact_quotes(tmp_path):
+    due_day = dt.date(2026, 7, 16)
+    due_quote_time = dt.datetime(2026, 7, 16, 20, 0, tzinfo=dt.timezone.utc)
+    fetches = []
+
+    def historical_fetch(day, symbols):
+        fetches.append((day, tuple(symbols)))
+        return _quotes(quote_time=due_quote_time)
+
+    outcomes, attempts, summary = collect_due_shadow_outcomes(
+        _shadow(due=due_day.isoformat()),
+        outcome_registry_path=tmp_path / "shadow_outcomes.jsonl",
+        observation_session_date=SESSION,
+        live_schwab=False,
+        historical_quote_fetcher=historical_fetch,
+        observed_at=QUOTE_TIME,
+    )
+
+    assert fetches == [
+        (
+            due_day,
+            ("SPY260724C00630000", "SPY260724C00635000"),
+        )
+    ]
+    assert attempts.iloc[0]["status"] == "SCORED"
+    assert attempts.iloc[0]["observation_session_date"] == due_day.isoformat()
+    assert outcomes.iloc[0]["observation_session_date"] == due_day.isoformat()
+    assert outcomes.iloc[0]["quote_source"] == "dated_uw_exact_option_quotes"
+    assert summary["missed_rows"] == 0
+    assert summary["new_outcome_rows"] == 1
 
 
 def test_nonselected_exact_shadow_is_diagnostic_and_not_expectancy(tmp_path):

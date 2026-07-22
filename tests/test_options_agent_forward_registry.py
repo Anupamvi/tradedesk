@@ -254,9 +254,9 @@ def test_live_market_session_override_rejects_arbitrary_backdating(tmp_path, mon
         )
 
 
-def test_shadow_recommendation_is_pending_and_cannot_authorize_execution(tmp_path):
+def test_shadow_recommendation_excludes_review_rows(tmp_path):
     registry = _registry(tmp_path)
-    event = _register(
+    _register(
         registry,
         status="REVIEW",
         code_provenance={"git_commit": "abc123"},
@@ -274,18 +274,10 @@ def test_shadow_recommendation_is_pending_and_cannot_authorize_execution(tmp_pat
 
     shadow = core.build_prospective_shadow_recommendations(registry.path)
 
-    assert len(shadow) == 1
-    row = shadow.iloc[0]
-    assert row["logical_recommendation_id"] == event.logical_recommendation_id
-    assert row["registration_status"] == "VALID_PROSPECTIVE"
-    assert row["outcome_status"] == "OPEN_SHADOW_PENDING"
-    assert row["evaluation_due_date"] == "2026-07-17"
-    assert not bool(row["execution_permission"])
-    assert not bool(row["contributes_to_expectancy"])
-    assert row["code_git_sha"] == "abc123"
+    assert shadow.empty
 
 
-def test_shadow_recommendation_excludes_non_market_registration(tmp_path, monkeypatch):
+def test_shadow_recommendation_excludes_non_green_registration(tmp_path, monkeypatch):
     saturday = dt.datetime(2026, 7, 11, 16, 0, tzinfo=dt.timezone.utc)
     monkeypatch.setattr(forward_registry, "_utc_now", lambda: saturday)
     registry = _registry(tmp_path)
@@ -297,15 +289,10 @@ def test_shadow_recommendation_excludes_non_market_registration(tmp_path, monkey
 
     shadow = core.build_prospective_shadow_recommendations(registry.path)
 
-    assert len(shadow) == 1
-    row = shadow.iloc[0]
-    assert row["registration_status"] == "INVALID_NON_MARKET_DATE"
-    assert row["outcome_status"] == "INVALID_REGISTRATION"
-    assert not bool(row["execution_permission"])
-    assert not bool(row["contributes_to_expectancy"])
+    assert shadow.empty
 
 
-def test_shadow_expectancy_selection_caps_each_session_at_two_unique_tickers(tmp_path):
+def test_shadow_expectancy_selection_honors_promoted_daily_cap(tmp_path):
     registry = _registry(tmp_path)
     for logical_id, ticker in (
         ("first-spy", "SPY"),
@@ -316,8 +303,11 @@ def test_shadow_expectancy_selection_caps_each_session_at_two_unique_tickers(tmp
         _register(
             registry,
             logical_id=logical_id,
-            status="TARGET",
-            run_provenance={"ticker": ticker, "strategy_route": "bull_call_debit"},
+            status="GREEN",
+            run_provenance={
+                "ticker": ticker,
+                "strategy_route": "bull_call_debit",
+            },
         )
 
     shadow = core.build_prospective_shadow_recommendations(registry.path)
@@ -325,15 +315,16 @@ def test_shadow_expectancy_selection_caps_each_session_at_two_unique_tickers(tmp
         "evidence_selection_rank"
     )
 
-    assert selected["ticker"].tolist() == ["SPY", "QQQ"]
-    assert selected["evidence_selection_rank"].tolist() == [1, 2]
+    assert selected["ticker"].tolist() == ["SPY", "QQQ", "IWM"]
+    assert len(selected) == core._promoted_selector_daily_cap()
+    assert selected["evidence_selection_rank"].tolist() == [1, 2, 3]
     assert set(shadow["evidence_selection_policy"]) == {
-        "top_2_actionable_unique_tickers_by_frozen_rank_then_sequence_v2"
+        "top_3_entry_proven_unique_tickers_by_frozen_rank_then_sequence_v3"
     }
     assert not shadow["execution_permission"].map(bool).any()
 
 
-def test_shadow_expectancy_selection_excludes_gray_review_rows(tmp_path):
+def test_shadow_expectancy_selection_excludes_non_green_rows(tmp_path):
     registry = _registry(tmp_path)
     _register(
         registry,
@@ -344,16 +335,18 @@ def test_shadow_expectancy_selection_excludes_gray_review_rows(tmp_path):
     _register(
         registry,
         logical_id="yellow-target",
-        status="TARGET",
-        run_provenance={"ticker": "QQQ", "strategy_route": "bull_call_debit"},
+        status="GREEN",
+        run_provenance={
+            "ticker": "QQQ",
+            "strategy_route": "bull_call_debit",
+        },
     )
 
     shadow = core.build_prospective_shadow_recommendations(registry.path)
 
     selected = shadow[shadow["selected_for_expectancy"].map(bool)]
     assert selected["ticker"].tolist() == ["QQQ"]
-    review = shadow[shadow["ticker"].eq("SPY")].iloc[0]
-    assert review["evidence_selection_status"] == "DIAGNOSTIC_NOT_SELECTED"
+    assert shadow["ticker"].tolist() == ["QQQ"]
 
 
 def test_exact_later_fill_matches_one_active_recommendation_and_normalizes_ratio(tmp_path):
@@ -442,3 +435,45 @@ def test_core_registers_only_final_live_directed_tickets(tmp_path):
         ("BUY", BUY_LEG),
         ("SELL", SELL_LEG),
     ]
+
+
+def test_core_does_not_register_non_green_ticket_surfaces(tmp_path):
+    tickets = pd.DataFrame(
+        [
+            {
+                "ticker": "SPY",
+                "trade_plan": "BUY 1 SPY 2026-07-17 630 Call / SELL 1 SPY 2026-07-17 635 Call @ 2.00 DEBIT",
+                "entry_limit": 2.0,
+                "live_validation_status": "PASS",
+                "ready_to_enter": True,
+                "target_order_status": "target_order_candidate",
+            },
+            {
+                "ticker": "QQQ",
+                "trade_plan": "BUY 1 QQQ 2026-07-17 560 Call / SELL 1 QQQ 2026-07-17 565 Call @ 1.00 DEBIT",
+                "entry_limit": 1.0,
+                "live_validation_status": "PASS",
+                "ready_to_enter": False,
+                "target_order_status": "target_order_candidate",
+            },
+        ]
+    )
+    path = tmp_path / "registry.jsonl"
+
+    summary = core.register_prospective_options_agent_recommendations(
+        tickets,
+        root=tmp_path,
+        out_dir=tmp_path / "live",
+        source_date="2026-07-09",
+        live_schwab=True,
+        live_portfolio=True,
+        chain_snapshot_dir=None,
+        agent_reviews_json=tmp_path / "reviews.json",
+        registry_path=path,
+        recommendation_date=NOW.date(),
+    )
+
+    registry = ForwardRecommendationRegistry(path)
+    assert summary["registered_events"] == 1
+    assert len(registry.events()) == 1
+    assert len(registry.current_active_state(account_id="acct_3326")) == 1

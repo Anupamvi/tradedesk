@@ -6,6 +6,7 @@ import pytest
 
 from uwos.options_pattern_pipeline_v1.macro_geo import (
     SCENARIO_BUCKETS,
+    THEME_MAP,
     build_macro_geo_bundle,
     build_observability_matrix_rows,
     build_promotion_decision_rows,
@@ -21,14 +22,27 @@ from uwos.options_pattern_pipeline_v1.core import (
     PIPELINE_VERSION,
     PREVIOUS_PIPELINE_VERSIONS,
     assign_family_tiers,
+    assign_directional_pattern_tiers,
+    assign_regime_family_tiers,
+    append_compact_action_board,
+    append_compact_candidate_shortlist,
+    append_current_pattern_members,
+    append_contract_profile_edge_summary,
+    append_directional_pattern_summary,
+    auto_approved_goal_gate_failures,
     balanced_non_ready_trend_rows,
     blocker_text,
     build_artifact_manifest,
     build_signal,
     build_catalyst_flow_leaders,
+    build_calibration_metrics,
     build_daily_snapshot,
     build_decision_board_rows,
     build_directional_edge_diagnostic_rows,
+    build_directional_outcome_rows,
+    build_quote_selection_cache,
+    build_current_directional_pattern_candidates,
+    build_contract_profile_edge_rows,
     build_directional_scenario_goal_row,
     build_goal_evidence_rows,
     build_pattern_recommendations,
@@ -36,41 +50,61 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_shadow_ledger_rows,
     build_scout_call_candidates,
     build_target_ready_candidates,
+    build_theme_flow_leaders,
+    build_theme_flow_signal_contexts,
     build_trade_review_candidates,
     build_ticker_trend_edge_rows,
+    build_ticker_trend_stats,
     build_validation_splits,
+    build_walk_forward_performance_rows,
     classify_daily_signals,
+    contract_profile_fields,
     daily_trade_decision,
     decision_board_fieldnames,
     dedupe_rows_by_ticket,
     empty_validation_bundle,
     final_verdict,
+    full_backtest_group_row,
     generate_signals_for_snapshot,
     goal_evidence_overall_status,
     missed_mover_bucket,
     normalize_header,
+    payoff_breakeven_probability,
+    parse_args,
     prepare_decision_rows,
     parse_option_symbol,
+    pattern_recommendation_fieldnames,
     resolve_run_verdict,
+    probability_edge_over_breakeven_pct,
+    proven_payoff_aware_promotion_eligible,
     run_historical_validation,
+    score_signals,
     score_signal_horizon,
+    scout_call_fieldnames,
+    select_active_tier_info,
+    select_baseline_gate_outcomes,
+    select_qualified_ticker_trend,
     select_signal_set,
     source_coverage_quote,
     source_coverage_setup_fields,
     source_complete_dates,
     source_completeness_for_date,
     sources_for_date,
+    summarize_outcomes,
     trade_fieldnames,
     trade_output_row,
     tradeable_gap_quote_eligible,
     trend_edge_strategy_fields,
     ticker_trend_no_edge_reason,
+    ticker_trend_passes,
     target_ready_output_row,
     scout_call_output_row,
     pattern_recommendation_output_row,
     catalyst_flow_leader_output_row,
+    theme_flow_leader_output_row,
     trade_review_output_row,
     validate_decision_board_rows,
+    validate_artifact_consistency,
     validation_detail_fieldnames,
 )
 
@@ -102,13 +136,89 @@ def test_default_goal_major_required_tickers_match_user_coverage_scope():
 
 
 def test_options_pattern_pipeline_version_retains_previous_live_version():
-    assert PIPELINE_VERSION == "options_pattern_pipeline_v1.5-promotion-bridge-20260707-000000"
+    assert PIPELINE_VERSION == "options_pattern_pipeline_v1.16-profile-aware-daily-selection-20260722-000000"
     assert PREVIOUS_PIPELINE_VERSIONS == (
         "options_pattern_pipeline_v1.2",
         "options_pattern_pipeline_v1.3",
         "options_pattern_pipeline_v1.4",
+        "options_pattern_pipeline_v1.5-promotion-bridge-20260707-000000",
+        "options_pattern_pipeline_v1.6-theme-flow-observability-20260716-000000",
+        "options_pattern_pipeline_v1.7-validation-correctness-20260716-000000",
+        "options_pattern_pipeline_v1.8-compact-action-report-20260717-000000",
+        "options_pattern_pipeline_v1.9-payoff-aware-approval-20260717-000000",
+        "options_pattern_pipeline_v1.10-scoped-recent-trend-20260719-000000",
+        "options_pattern_pipeline_v1.11-family-member-validation-20260719-120000",
+        "options_pattern_pipeline_v1.12-full-chain-oi-20260719-140000",
+        "options_pattern_pipeline_v1.13-two-stage-contract-aware-20260720-090000",
+        "options_pattern_pipeline_v1.14-full-history-two-stage-20260720-185300",
+        "options_pattern_pipeline_v1.15-final-holdout-audit-20260720-220000",
     )
-    assert PIPELINE_RELEASED_AT == "2026-07-07T00:00:00-07:00"
+    assert PIPELINE_RELEASED_AT == "2026-07-22T00:00:00-07:00"
+
+
+def test_compact_action_board_surfaces_one_trade_without_wide_markdown_table():
+    trade = {
+        "classification": "TRADE",
+        "status": "AUTO_APPROVED",
+        "candidate_id": "crwd-call",
+        "ticker": "CRWD",
+        "direction": "bullish",
+        "strategy_type": "Long Call Debit",
+        "strategy_kind": "long_option",
+        "option_type": "CALL",
+        "strike": 210,
+        "expiry": "2026-08-21",
+        "lead_option_symbol": "CRWD260821C00210000",
+        "suggested_entry_debit_credit_range": "debit 13.20-13.80",
+        "max_risk_per_contract": 1410.65,
+        "trade_success_probability_pct": 63.64,
+        "trade_failure_probability_pct": 36.36,
+        "trade_probability_score": 53.0,
+        "expected_R": 0.665979,
+        "expected_R_per_day": 0.133196,
+        "discovered_pattern_family": "BULLISH_FLOW_EXPANSION",
+        "block_reasons": "",
+    }
+    lines = []
+
+    primary = append_compact_action_board(lines, "2026-07-16", [trade], [trade], [], [])
+    report = "\n".join(lines)
+
+    assert primary == trade
+    assert "1 actionable ticket for 2026-07-16, from 1 proven pattern family" in report
+    assert "### TRADE: CRWD BULLISH" in report
+    assert "- Strike(s): 210" in report
+    assert "- Entry: debit 13.20-13.80" in report
+    assert "|" not in report
+
+
+def test_compact_action_board_labels_best_watch_when_nothing_is_actionable():
+    watch = {
+        "classification": "WATCH",
+        "status": "TRADE_REVIEW",
+        "candidate_id": "meta-call",
+        "ticker": "META",
+        "direction": "bullish",
+        "strategy": "Long Call Debit",
+        "buy_or_sell": "BUY",
+        "call_or_put": "CALL",
+        "strike_rates": "800",
+        "expiration_date": "2026-08-21",
+        "suggested_entry_debit_credit_range": "debit 9.60-9.85",
+        "expected_R": 0.412242,
+        "trade_probability_score": 39.82,
+        "block_reasons": "CALIBRATION_SCORE_MISSING_OR_WEAK;CONFIDENCE_BAND_TOO_WEAK",
+    }
+    lines = []
+
+    primary = append_compact_action_board(lines, "2026-07-16", [], [watch], [watch], [watch])
+    report = "\n".join(lines)
+
+    assert primary == watch
+    assert "No actionable pattern trades for 2026-07-16" in report
+    assert "### Best WATCH candidate: META BULLISH" in report
+    assert "Why not actionable" in report
+    assert "|" not in report
 
 
 def test_final_verdict_requires_today_actionable_for_production_ready():
@@ -124,13 +234,22 @@ def test_final_verdict_requires_today_actionable_for_production_ready():
     assert final_verdict(validation_bundle, [], actionable_rows=[{"ticker": "AAPL"}]) == "PRODUCTION_READY"
 
 
-def test_final_verdict_is_not_yet_proven_without_proven_family_or_actionable():
+def test_final_verdict_reports_promising_family_as_usable_needs_more_validation():
     validation_bundle = {
         "family_tiers": {
             "PROMISING_FAMILY": {"confidence_tier": "PROMISING"},
             "RESEARCH_FAMILY": {"confidence_tier": "RESEARCH_ONLY"},
         },
         "validation_scorecard": [{"pattern_family": "PROMISING_FAMILY"}],
+    }
+
+    assert final_verdict(validation_bundle, [], actionable_rows=[]) == "USABLE_NEEDS_MORE_VALIDATION"
+
+
+def test_final_verdict_is_not_yet_proven_with_research_only_families():
+    validation_bundle = {
+        "family_tiers": {"RESEARCH_FAMILY": {"confidence_tier": "RESEARCH_ONLY"}},
+        "validation_scorecard": [{"pattern_family": "RESEARCH_FAMILY"}],
     }
 
     assert final_verdict(validation_bundle, [], actionable_rows=[]) == "NOT_YET_PROVEN"
@@ -551,6 +670,101 @@ def test_select_signal_set_zero_max_is_uncapped_for_acceptance_runs():
     selected = select_signal_set(signals, max_signals=0, source_rescue_max_extra=0, tradeable_gap_max_extra=0)
 
     assert [row["ticker"] for row in selected] == ["T0", "T1", "T2", "T3", "T4"]
+
+
+def test_uncapped_validation_keeps_distinct_contract_profiles_but_daily_board_prefers_qualified_profile():
+    signals = [
+        {
+            "date": "2026-05-28",
+            "ticker": "XYZ",
+            "direction": "bullish",
+            "pattern_family": "BULLISH_FLOW_EXPANSION",
+            "base_pattern_family": "BULLISH_FLOW_EXPANSION",
+            "strategy_kind": "long_option",
+            "pattern_score": 10.0,
+            "contract_selection_score": 9.0,
+            "contract_profile": "LONG_OPTION__DTE_7_13__DEEP_ITM",
+        },
+        {
+            "date": "2026-05-28",
+            "ticker": "XYZ",
+            "direction": "bullish",
+            "pattern_family": "BULLISH_FLOW_EXPANSION",
+            "base_pattern_family": "BULLISH_FLOW_EXPANSION",
+            "strategy_kind": "long_option",
+            "pattern_score": 10.0,
+            "contract_selection_score": 8.0,
+            "contract_profile": "LONG_OPTION__DTE_14_30__ATM",
+            "contract_profile_goal_qualified": "yes",
+        },
+    ]
+
+    validation_rows = select_signal_set(
+        signals,
+        max_signals=0,
+        source_rescue_max_extra=0,
+        tradeable_gap_max_extra=0,
+    )
+    daily_rows = select_signal_set(
+        signals,
+        max_signals=40,
+        source_rescue_max_extra=0,
+        tradeable_gap_max_extra=0,
+    )
+
+    assert {row["contract_profile"] for row in validation_rows} == {
+        "LONG_OPTION__DTE_7_13__DEEP_ITM",
+        "LONG_OPTION__DTE_14_30__ATM",
+    }
+    assert len(daily_rows) == 1
+    assert daily_rows[0]["contract_profile"] == "LONG_OPTION__DTE_14_30__ATM"
+
+
+def test_quote_cache_keeps_one_liquid_long_option_per_standard_dte_and_moneyness_profile():
+    def quote(symbol, dte, strike):
+        return {
+            "option_symbol": symbol,
+            "ticker": "XYZ",
+            "direction": "bullish",
+            "strategy_kind": "long_option",
+            "option_type": "call",
+            "expiry": "2026-08-21",
+            "dte": dte,
+            "strike": strike,
+            "ask": 2.0,
+            "bid": 1.9,
+            "spread_pct": 0.05,
+            "volume": 500,
+            "open_interest": 1000,
+            "premium": 100_000.0,
+        }
+
+    snapshot = SnapshotStub(
+        {"XYZ": {"ticker": "XYZ", "close": 100.0}},
+        option_quotes={
+            "near": quote("near", 10, 100),
+            "near_otm": quote("near_otm", 10, 110),
+            "near_atm_worse": quote("near_atm_worse", 10, 100),
+            "standard": quote("standard", 21, 102),
+            "medium": quote("medium", 35, 103),
+            "long": quote("long", 55, 105),
+        },
+    )
+
+    cache = build_quote_selection_cache(snapshot, {"max_spread_pct": 0.35}, DEFAULT_RISK_CONFIG)
+    frontier = cache["long_option_dte_frontier"][("XYZ", "bullish")]
+
+    assert [quote["option_symbol"] for quote in frontier] == [
+        "near",
+        "near_otm",
+        "standard",
+        "medium",
+        "long",
+    ]
+
+
+def test_goal_evidence_overall_status_reports_pass_when_every_requirement_passes():
+    assert goal_evidence_overall_status([{"status": "PASS"}, {"status": "PASS"}]) == "GOAL_REQUIREMENTS_PASSED"
 
 
 def test_select_signal_set_rescues_opposite_direction_for_same_ticker():
@@ -1155,6 +1369,8 @@ def test_goal_evidence_uses_ticker_trend_gates_for_ticker_trend_auto_approval():
         {
             "status": "AUTO_APPROVED",
             "ticker": "ASTS",
+            "pattern_family": "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__TECHNOLOGY",
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
             "full_ticket": "BUY CALL ASTS 40 exp 2026-06-18",
             "buy_sell": "BUY",
             "call_put": "CALL",
@@ -1171,12 +1387,21 @@ def test_goal_evidence_uses_ticker_trend_gates_for_ticker_trend_auto_approval():
             "beats_baselines_count": 6,
             "baselines_beaten_names": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY",
             "baselines_beaten_details": "BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.05,edge_R=0.73,scored=20;BASELINE_NAIVE_UW_FLOW_ONLY:baseline_avg_R=0.01,edge_R=0.67,scored=20",
-            "ticker_trend_scope": "ticker_direction_strategy",
+            "ticker_trend_scope": "ticker_direction_strategy_pattern",
+            "ticker_trend_base_pattern_family": "CATALYST_FLOW_LEADER",
             "ticker_trend_scored_count": 23,
+            "ticker_trend_unique_signal_date_count": 23,
             "ticker_trend_win_rate_pct": 56.52,
             "ticker_trend_probability_score_pct": 46.13,
             "ticker_trend_avg_R": 0.681731,
             "ticker_trend_profit_factor": 5.051584,
+            "ticker_trend_validation_split_count": 3,
+            "ticker_trend_positive_validation_splits": 3,
+            "ticker_trend_latest_validation_split_average_net_R": 0.25,
+            "ticker_trend_recent_scored_count": 6,
+            "ticker_trend_recent_win_rate_pct": 66.67,
+            "ticker_trend_recent_avg_R": 0.40,
+            "ticker_trend_recent_profit_factor": 2.5,
             "blockers": "",
         }
     ]
@@ -1206,6 +1431,19 @@ def test_goal_evidence_uses_ticker_trend_gates_for_ticker_trend_auto_approval():
 
     expectancy_row = next(row for row in rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
     assert expectancy_row["status"] == "PASS"
+
+    decayed = dict(decision_board[0])
+    decayed.update(
+        {
+            "ticker_trend_recent_win_rate_pct": 0.0,
+            "ticker_trend_recent_avg_R": -0.49,
+            "ticker_trend_recent_profit_factor": 0.0,
+        }
+    )
+    failures = auto_approved_goal_gate_failures(decayed, DEFAULT_RISK_CONFIG)
+    assert "ticker_trend_recent_win_rate" in failures
+    assert "ticker_trend_recent_expected_R" in failures
+    assert "ticker_trend_recent_profit_factor" in failures
 
 
 def test_goal_evidence_fails_auto_approval_when_pattern_is_not_proven():
@@ -1871,9 +2109,33 @@ def test_historical_validation_marks_sparse_history_without_splits():
     bundle = run_historical_validation({}, dates, min_month_dates=5, top_candidates_per_day=40, seed=7)
 
     assert bundle["splits"] == []
+    assert bundle["signal_rows"] == []
     assert bundle["validation_history_status"] == "INSUFFICIENT_SOURCE_COMPLETE_HISTORY"
     assert bundle["source_date_count"] == len(dates)
     assert bundle["source_month_date_counts"] == {"2025-12": 5, "2026-01": 1}
+
+
+def test_validation_candidate_limit_is_independent_from_daily_board_limit():
+    args = parse_args(["--top-candidates-per-day", "40"])
+
+    assert args.top_candidates_per_day == 40
+    assert args.validation_top_candidates_per_day == 0
+    assert args.missed_mover_audit_days == 20
+
+
+def test_full_backtest_group_tracks_unsorted_date_bounds():
+    row = full_backtest_group_row(
+        "pattern_family",
+        "TEST",
+        [
+            {"signal_date": "2026-07-20", "status": "SCORED", "net_r": 0.2},
+            {"signal_date": "2026-01-05", "status": "SCORED", "net_r": -0.1},
+            {"signal_date": "2026-03-10", "status": "PARTIAL", "net_r": None},
+        ],
+    )
+
+    assert row["first_signal_date"] == "2026-01-05"
+    assert row["last_signal_date"] == "2026-07-20"
 
 
 def test_unscorable_option_outcome_is_not_a_win():
@@ -1910,6 +2172,40 @@ def test_unscorable_option_outcome_is_not_a_win():
     assert row["cost_model"] == "long_option_entry_ask_exit_bid_after_configured_fees"
     assert "round_trip_fees" in validation_detail_fieldnames()
     assert "slippage_dollars" in validation_detail_fieldnames()
+
+
+def test_score_signals_can_limit_horizons_for_baseline_memory_control():
+    signal = {
+        "date": "2026-01-02",
+        "ticker": "XYZ",
+        "direction": "bullish",
+        "pattern_family": "BULLISH_FLOW_EXPANSION",
+        "market_regime": "MIXED",
+        "sector": "Tech",
+        "lead_option_symbol": "XYZ260116C00100000",
+        "strategy_kind": "long_option",
+        "entry_ask": 1.0,
+        "entry_bid": 0.9,
+        "bid_ask_spread_pct": 0.1,
+        "block_reasons": [],
+        "close": 100.0,
+    }
+    snapshots = {
+        "2026-01-02": type("S", (), {"option_quotes": {}, "features": {"XYZ": {"close": 100.0}}})(),
+        "2026-01-05": type("S", (), {"option_quotes": {}, "features": {}})(),
+    }
+
+    rows = score_signals(
+        [signal],
+        snapshots,
+        ["2026-01-02", "2026-01-05"],
+        "unit",
+        "BASELINE",
+        horizons=(1,),
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["horizon"] == "1d"
 
 
 def test_long_option_scoring_uses_configured_fees():
@@ -2133,6 +2429,30 @@ def test_bot_eod_is_separate_primary_source_when_present(tmp_path):
     assert not sources["option_trades"]
 
 
+def test_dated_whale_fallback_is_discovered_without_crossing_dates(tmp_path):
+    date_dir = tmp_path / "2026-01-08"
+    date_dir.mkdir()
+    dated = date_dir / "whale_trades_filtered-2026-01-08.csv"
+    dated.write_text("executed_at,underlying_symbol\n", encoding="utf-8")
+    mismatched = date_dir / "whale_trades_filtered-2026-01-09.csv"
+    mismatched.write_text("executed_at,underlying_symbol\n", encoding="utf-8")
+
+    sources = sources_for_date(date_dir, "2026-01-08")
+
+    assert [ref.path for ref in sources["whale_filtered"]] == [dated]
+
+
+def test_legacy_whale_fallback_name_is_discovered_in_its_date_folder(tmp_path):
+    date_dir = tmp_path / "2026-01-02"
+    date_dir.mkdir()
+    legacy = date_dir / "whale_trades_filtered 01-02.csv"
+    legacy.write_text("executed_at,underlying_symbol\n", encoding="utf-8")
+
+    sources = sources_for_date(date_dir, "2026-01-02")
+
+    assert [ref.path for ref in sources["whale_filtered"]] == [legacy]
+
+
 def test_build_snapshot_uses_bot_eod_over_whale_fallback(tmp_path):
     date_dir = tmp_path / "2026-05-08"
     date_dir.mkdir()
@@ -2170,6 +2490,35 @@ def test_build_snapshot_uses_bot_eod_over_whale_fallback(tmp_path):
     assert xyz["flow_put_ask_premium"] == 0
     assert any(s["reason"] == "bot_eod_present_primary_flow_source" for s in snap.skipped_sources)
     assert snap.counts["bot_eod_rows"] == 1
+
+
+def test_zero_chain_oi_limit_streams_full_export(tmp_path):
+    date_dir = tmp_path / "2026-05-08"
+    date_dir.mkdir()
+    header = "option_symbol,curr_date,oi_diff_plain,volume,stock_price,sector\n"
+    rows = "".join(
+        [
+            "XYZ260515C00100000,2026-05-08,10,100,101,Technology\n",
+            "XYZ260515C00105000,2026-05-08,20,200,101,Technology\n",
+            "XYZ260515C00110000,2026-05-08,30,300,101,Technology\n",
+        ]
+    )
+    with zipfile.ZipFile(date_dir / "chain-oi-changes-2026-05-08.zip", "w") as zf:
+        zf.writestr("chain-oi-changes-2026-05-08.csv", header + rows)
+
+    snap = build_daily_snapshot(
+        tmp_path,
+        "2026-05-08",
+        {
+            "max_chain_rows_per_day": 0,
+            "max_flow_file_mb": 100.0,
+            "bot_eod_cache_dir": str(tmp_path / "cache"),
+        },
+    )
+
+    assert snap.counts["chain_oi_rows"] == 3
+    assert snap.features["XYZ"]["oi_call_diff"] == 60
+    assert not any(item["reason"] == "max_chain_rows_per_day" for item in snap.skipped_sources)
 
 
 def test_trade_output_uses_human_readable_long_option_setup():
@@ -2286,6 +2635,395 @@ def test_family_tiers_include_validation_probability_score():
     assert "BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.05" in edge["baselines_beaten_details"]
 
 
+def test_summarize_outcomes_accepts_empty_spread_cells_from_saved_csv():
+    rows = summarize_outcomes(
+        [
+            {
+                "split": "cumulative_to_2026-05_holdout",
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "pattern_family": "EDGE",
+                "status": "SCORED",
+                "net_r": "0.25",
+                "bid_ask_spread_pct": "",
+            }
+        ],
+        sample="VALIDATION",
+    )
+
+    assert rows[0]["average_net_r"] == 0.25
+    assert rows[0]["average_bid_ask_spread"] is None
+
+
+def test_family_tier_uses_pooled_profit_factor_and_not_arbitrary_losing_streak():
+    tiers = assign_family_tiers(
+        [
+            {
+                "pattern_family": "EDGE",
+                "signal_count": 100,
+                "scored_count": 100,
+                "win_count_scored": 60,
+                "average_net_r": 0.20,
+                "gross_profit_r": 30.0,
+                "gross_loss_r": 10.0,
+                "profit_factor": 3.0,
+                "worst_losing_streak": 40,
+            },
+            {
+                "pattern_family": "EDGE",
+                "signal_count": 10,
+                "scored_count": 10,
+                "win_count_scored": 6,
+                "average_net_r": 0.10,
+                "gross_profit_r": 2.0,
+                "gross_loss_r": 2.0,
+                "profit_factor": 1.0,
+                "worst_losing_streak": 2,
+            },
+        ],
+        [
+            {"baseline": "BASELINE_A", "average_net_r": -0.10, "scored_count": 50},
+            {"baseline": "BASELINE_B", "average_net_r": 0.00, "scored_count": 50},
+        ],
+    )
+
+    edge = tiers["EDGE"]
+    assert edge["validation_profit_factor"] == pytest.approx(32.0 / 12.0)
+    assert edge["confidence_tier"] == "PROVEN"
+    assert edge["max_worst_losing_streak"] == 40
+
+
+def test_family_tier_marks_historical_edge_decayed_when_latest_holdout_is_negative():
+    scorecard = []
+    for month, avg_r in [("04", 0.40), ("05", 0.30), ("06", 0.20), ("07", -0.10)]:
+        scorecard.append(
+            {
+                "split": f"cumulative_to_2026-{month}_holdout",
+                "pattern_family": "EDGE",
+                "signal_count": 25,
+                "scored_count": 25,
+                "win_count_scored": 14,
+                "average_net_r": avg_r,
+                "gross_profit_r": 20.0 if avg_r > 0 else 5.0,
+                "gross_loss_r": 10.0 if avg_r > 0 else 7.0,
+                "profit_factor": 2.0 if avg_r > 0 else 5.0 / 7.0,
+                "worst_losing_streak": 4,
+            }
+        )
+
+    tier = assign_family_tiers(
+        scorecard,
+        [
+            {"baseline": "BASELINE_A", "average_net_r": -0.10, "scored_count": 50},
+            {"baseline": "BASELINE_B", "average_net_r": 0.00, "scored_count": 50},
+        ],
+    )["EDGE"]
+
+    assert tier["confidence_tier"] == "DECAYED"
+    assert tier["positive_validation_splits"] == 3
+    assert tier["latest_validation_split"] == "cumulative_to_2026-07_holdout"
+    assert tier["latest_validation_split_average_net_r"] == -0.10
+
+
+def test_regime_family_tier_can_prove_active_edge_hidden_by_broad_family():
+    family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__COMMUNICATION_SERVICES"
+    outcomes = []
+    for month_index, month in enumerate(("04", "05", "06", "07")):
+        positive_split = month_index != 2
+        for idx in range(20):
+            win = idx < (10 if positive_split else 5)
+            outcomes.append(
+                {
+                    "split": f"cumulative_to_2026-{month}_holdout",
+                    "sample": "VALIDATION",
+                    "horizon": "5d",
+                    "signal_date": f"2026-{month}-{idx + 1:02d}",
+                    "ticker": "META",
+                    "direction": "bullish",
+                    "strategy_kind": "long_option",
+                    "pattern_family": family,
+                    "market_regime": "RISK_OFF",
+                    "status": "SCORED",
+                    "net_r": (1.0 if win else -0.5) if positive_split else (0.5 if win else -0.3),
+                    "win": int(win),
+                }
+            )
+    baselines = [
+        {"baseline": "BASELINE_A", "average_net_r": -0.10, "scored_count": 50},
+        {"baseline": "BASELINE_B", "average_net_r": 0.00, "scored_count": 50},
+    ]
+
+    tiers = assign_regime_family_tiers(outcomes, baselines)
+    tier = tiers[(family, "RISK_OFF")]
+    selected = select_active_tier_info(
+        family,
+        "RISK_OFF",
+        {family: {"confidence_tier": "RESEARCH_ONLY"}},
+        tiers,
+    )
+
+    assert tier["confidence_tier"] == "PROVEN"
+    assert tier["pattern_scope"] == "FAMILY_REGIME"
+    assert tier["validation_scored_count"] == 80
+    assert tier["positive_validation_splits"] == 3
+    assert tier["latest_validation_split_average_net_r"] > 0
+    assert selected["active_pattern_id"].endswith("MARKET_REGIME_RISK_OFF")
+
+
+def test_ticker_trend_rejects_pooled_edge_that_breaks_in_recent_splits():
+    family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__TECHNOLOGY"
+    outcomes = []
+    split_shapes = [
+        ("cumulative_to_2026-05_holdout", 14, {5, 12}),
+        ("cumulative_to_2026-06_holdout", 4, {0, 2, 3}),
+        ("cumulative_to_2026-07_holdout", 4, {0, 2, 3}),
+    ]
+    for split, count, loss_indexes in split_shapes:
+        month = split[19:26]
+        for idx in range(count):
+            win = idx not in loss_indexes
+            outcomes.append(
+                {
+                    "split": split,
+                    "sample": "VALIDATION",
+                    "horizon": "5d",
+                    "signal_date": f"{month}-{idx + 1:02d}",
+                    "ticker": "CRWD",
+                    "direction": "bullish",
+                    "strategy_kind": "long_option",
+                    "pattern_family": family,
+                    "market_regime": "RISK_OFF",
+                    "status": "SCORED",
+                    "net_r": (1.5 if count == 14 else 0.2) if win else -0.5,
+                    "win": int(win),
+                }
+            )
+
+    stats = build_ticker_trend_stats(outcomes)[
+        ("CRWD", "bullish", "long_option", "CATALYST_FLOW_LEADER")
+    ]
+
+    assert stats["win_rate"] > 0.60
+    assert stats["avg_r"] > 0.15
+    assert stats["profit_factor"] > 1.50
+    assert stats["positive_validation_splits"] == 1
+    assert stats["latest_validation_split_average_net_r"] < 0
+    assert ticker_trend_passes(stats, DEFAULT_RISK_CONFIG) is False
+
+
+def test_ticker_trend_is_scoped_to_the_current_base_pattern_family():
+    catalyst_family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__TECHNOLOGY"
+    source_family = "SOURCE_PREMIUM_COVERAGE_RESCUE__BULLISH__LONG_OPTION__TECHNOLOGY"
+    outcomes = []
+    for idx in range(24):
+        win = idx % 4 != 0
+        outcomes.append(
+            {
+                "split": f"cumulative_to_2026-{4 + idx // 8:02d}_holdout",
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "signal_date": f"2026-{4 + idx // 8:02d}-{idx % 8 + 1:02d}",
+                "ticker": "TQQQ",
+                "direction": "bullish",
+                "strategy_kind": "long_option",
+                "pattern_family": catalyst_family,
+                "status": "SCORED",
+                "net_r": 1.5 if win else -0.5,
+                "win": int(win),
+            }
+        )
+    for idx, net_r in enumerate((1.0, -0.5, 1.0, -0.5), 1):
+        outcomes.append(
+            {
+                "split": "cumulative_to_2026-06_holdout",
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "signal_date": f"2026-06-{idx + 10:02d}",
+                "ticker": "TQQQ",
+                "direction": "bullish",
+                "strategy_kind": "long_option",
+                "pattern_family": source_family,
+                "status": "SCORED",
+                "net_r": net_r,
+                "win": int(net_r > 0),
+            }
+        )
+
+    stats = build_ticker_trend_stats(outcomes, DEFAULT_RISK_CONFIG)
+    catalyst_key = ("TQQQ", "bullish", "long_option", "CATALYST_FLOW_LEADER")
+    source_key = ("TQQQ", "bullish", "long_option", "SOURCE_PREMIUM_COVERAGE_RESCUE")
+
+    assert stats[catalyst_key]["scored_count"] == 24
+    assert stats[source_key]["scored_count"] == 4
+    assert select_qualified_ticker_trend(
+        {
+            "ticker": "TQQQ",
+            "direction": "bullish",
+            "strategy_kind": "long_option",
+            "pattern_family": source_family,
+            "base_pattern_family": "SOURCE_PREMIUM_COVERAGE_RESCUE",
+        },
+        stats,
+        DEFAULT_RISK_CONFIG,
+    ) is None
+    qualified = select_qualified_ticker_trend(
+        {
+            "ticker": "TQQQ",
+            "direction": "bullish",
+            "strategy_kind": "long_option",
+            "pattern_family": catalyst_family,
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
+        },
+        stats,
+        DEFAULT_RISK_CONFIG,
+    )
+    assert qualified is not None
+    assert qualified["trend_scope"] == "ticker_direction_strategy_pattern"
+
+
+def test_ticker_trend_rejects_recent_decay_hidden_by_positive_monthly_split():
+    family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__TECHNOLOGY"
+    outcomes = []
+    for month in (4, 5):
+        for idx in range(10):
+            win = idx < 7
+            outcomes.append(
+                {
+                    "split": f"cumulative_to_2026-{month:02d}_holdout",
+                    "sample": "VALIDATION",
+                    "horizon": "5d",
+                    "signal_date": f"2026-{month:02d}-{idx + 1:02d}",
+                    "ticker": "TQQQ",
+                    "direction": "bullish",
+                    "strategy_kind": "long_option",
+                    "pattern_family": family,
+                    "status": "SCORED",
+                    "net_r": 1.5 if win else -0.5,
+                    "win": int(win),
+                }
+            )
+    for idx in range(10):
+        win = idx < 4
+        outcomes.append(
+            {
+                "split": "cumulative_to_2026-06_holdout",
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "signal_date": f"2026-06-{idx + 1:02d}",
+                "ticker": "TQQQ",
+                "direction": "bullish",
+                "strategy_kind": "long_option",
+                "pattern_family": family,
+                "status": "SCORED",
+                "net_r": 2.0 if win else -0.5,
+                "win": int(win),
+            }
+        )
+
+    stats = build_ticker_trend_stats(outcomes, DEFAULT_RISK_CONFIG)[
+        ("TQQQ", "bullish", "long_option", "CATALYST_FLOW_LEADER")
+    ]
+
+    assert stats["win_rate"] >= DEFAULT_RISK_CONFIG["min_ticker_trend_win_rate"]
+    assert stats["profit_factor"] >= DEFAULT_RISK_CONFIG["min_ticker_trend_profit_factor"]
+    assert stats["positive_validation_splits"] == 3
+    assert stats["latest_validation_split_average_net_r"] > 0
+    assert stats["recent_scored_count"] == 6
+    assert stats["recent_win_count"] == 0
+    assert stats["recent_avg_r"] < 0
+    assert ticker_trend_passes(stats, DEFAULT_RISK_CONFIG) is False
+
+
+def test_baseline_gate_outcomes_use_non_overlapping_cumulative_splits():
+    rows = [
+        {"sample": "BASELINE", "horizon": "5d", "split": "discover_2026-01_validate_2026-03", "id": 1},
+        {"sample": "BASELINE", "horizon": "5d", "split": "cumulative_to_2026-03_holdout", "id": 2},
+        {"sample": "BASELINE", "horizon": "3d", "split": "cumulative_to_2026-03_holdout", "id": 3},
+    ]
+
+    assert [row["id"] for row in select_baseline_gate_outcomes(rows)] == [2]
+
+
+def test_calibration_is_prequential_instead_of_fitted_on_evaluated_outcomes():
+    bundle = {
+        "family_tiers": {
+            "EDGE": {
+                # Deliberately impossible post-hoc value; calibration must not use it.
+                "validation_probability_score": 0.99,
+            }
+        },
+        "outcomes": [
+            {
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "split": "cumulative_to_2026-05_holdout",
+                "signal_date": "2026-05-01",
+                "ticker": "A",
+                "pattern_family": "EDGE",
+                "status": "SCORED",
+                "win": 1,
+            },
+            {
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "split": "cumulative_to_2026-05_holdout",
+                "signal_date": "2026-05-02",
+                "ticker": "B",
+                "pattern_family": "EDGE",
+                "status": "SCORED",
+                "win": 0,
+            },
+        ],
+    }
+
+    metrics = build_calibration_metrics(bundle)
+
+    assert metrics["calibration_method"] == "PREQUENTIAL_BETA_1_1_CANONICAL_WALK_FORWARD"
+    assert metrics["brier_score"] == pytest.approx(((0.5 - 1.0) ** 2 + ((2.0 / 3.0) - 0.0) ** 2) / 2.0)
+
+
+def test_walk_forward_and_shadow_artifacts_do_not_duplicate_overlapping_splits():
+    gate_row = {
+        "split": "cumulative_to_2026-05_holdout",
+        "sample": "VALIDATION",
+        "pattern_family": "EDGE",
+        "scored_count": 1,
+    }
+    exploratory_row = {
+        **gate_row,
+        "split": "discover_2026-03_validate_2026-05",
+    }
+    bundle = {
+        "family_tiers": {"EDGE": {"confidence_tier": "PROMISING"}},
+        "validation_scorecard": [gate_row, exploratory_row],
+        "validation_gate_scorecard": [gate_row],
+        "outcomes": [
+            {
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "split": "cumulative_to_2026-05_holdout",
+                "signal_date": "2026-05-01",
+                "pattern_family": "EDGE",
+                "status": "SCORED",
+                "net_r": 0.2,
+            },
+            {
+                "sample": "VALIDATION",
+                "horizon": "5d",
+                "split": "discover_2026-03_validate_2026-05",
+                "signal_date": "2026-05-01",
+                "pattern_family": "EDGE",
+                "status": "SCORED",
+                "net_r": 0.2,
+            },
+        ],
+    }
+
+    assert len(build_walk_forward_performance_rows(bundle)) == 1
+    historical = [row for row in build_shadow_ledger_rows("2026-05-10", [], bundle) if row["status"] == "HISTORICAL_SHADOW"]
+    assert len(historical) == 1
+
+
 def test_classified_trade_carries_probability_fields():
     signal = {
         "date": "2026-05-08",
@@ -2322,11 +3060,12 @@ def test_classified_trade_carries_probability_fields():
     assert rows[0]["classification"] == "TRADE"
     assert rows[0]["pattern_success_probability_pct"] == 65.0
     assert rows[0]["pattern_probability_score"] == 59.0
-    assert rows[0]["trade_success_probability_pct"] > rows[0]["pattern_success_probability_pct"]
-    assert rows[0]["trade_probability_score"] > rows[0]["pattern_probability_score"]
+    assert rows[0]["trade_success_probability_pct"] == rows[0]["pattern_success_probability_pct"]
+    assert rows[0]["trade_probability_score"] == rows[0]["pattern_probability_score"]
+    assert "contract_profile_calibration=pending" in rows[0]["probability_components"]
 
 
-def test_candidate_probability_adjustment_differentiates_same_family_trades():
+def test_candidate_probability_does_not_use_unfitted_same_day_execution_heuristics():
     signals = [
         {
             "date": "2026-05-08",
@@ -2370,9 +3109,463 @@ def test_candidate_probability_adjustment_differentiates_same_family_trades():
     rows = classify_daily_signals(signals, {"EDGE": tier}, snapshot)
     by_ticker = {r["ticker"]: r for r in rows}
 
-    assert by_ticker["GOOD"]["trade_success_probability_pct"] > by_ticker["BAD"]["trade_success_probability_pct"]
-    assert by_ticker["GOOD"]["trade_probability_score"] > by_ticker["BAD"]["trade_probability_score"]
+    assert by_ticker["GOOD"]["trade_success_probability_pct"] == by_ticker["BAD"]["trade_success_probability_pct"]
+    assert by_ticker["GOOD"]["trade_probability_score"] == by_ticker["BAD"]["trade_probability_score"]
     assert by_ticker["GOOD"]["pattern_success_probability_pct"] == by_ticker["BAD"]["pattern_success_probability_pct"]
+
+
+def test_watch_classification_does_not_create_circular_probability_penalty():
+    signal = {
+        "date": "2026-05-08",
+        "ticker": "WATCH",
+        "direction": "bullish",
+        "pattern_family": "EDGE",
+        "pattern_score": 1.0,
+        "classification": "WATCH",
+        "block_reasons": [],
+        "bid_ask_spread_pct": 0.10,
+        "liquidity_volume": 100,
+        "liquidity_open_interest": 100,
+        "earnings_dte": 30,
+    }
+    snapshot = type("S", (), {"market_regime": {"regime": "RISK_ON"}})()
+    tier = {
+        "confidence_tier": "PROMISING",
+        "validation_scored_count": 80,
+        "beats_baselines_count": 2,
+        "validation_success_probability": 0.55,
+        "validation_failure_probability": 0.45,
+        "validation_probability_score": 0.50,
+        "validation_note": "unit",
+    }
+
+    row = classify_daily_signals([signal], {"EDGE": tier}, snapshot)[0]
+
+    assert row["classification"] == "WATCH"
+    assert row["probability_components"] == "family_proxy_only=55.00%; contract_profile_calibration=pending"
+
+
+def test_contract_profile_fields_bucket_dte_and_directional_moneyness():
+    fields = contract_profile_fields(
+        "bullish",
+        "long_option",
+        100.0,
+        {"option_type": "call", "strike": 105.0, "dte": 21},
+    )
+
+    assert fields["contract_directional_moneyness"] == pytest.approx(0.05)
+    assert fields["contract_dte_bucket"] == "DTE_14_30"
+    assert fields["contract_moneyness_bucket"] == "NEAR_OTM"
+    assert fields["contract_profile"] == "LONG_OPTION__DTE_14_30__NEAR_OTM"
+
+
+def test_directional_outcomes_dedupe_contract_alternatives_and_cluster_dates():
+    family = "EDGE__BULLISH__LONG_OPTION__TECHNOLOGY"
+    rows = []
+    for split_index, month in enumerate(("04", "05", "06")):
+        for date_index in range(5):
+            move = 0.01 if date_index < 4 else -0.005
+            for ticker_index in range(2):
+                for contract_index in range(2):
+                    rows.append(
+                        {
+                            "split": f"cumulative_to_2026-{month}_holdout",
+                            "sample": "VALIDATION",
+                            "horizon": "5d",
+                            "signal_date": f"2026-{month}-{date_index + 1:02d}",
+                            "ticker": f"T{ticker_index}",
+                            "direction": "bullish",
+                            "pattern_family": family,
+                            "base_pattern_family": "EDGE",
+                            "sector": "Technology",
+                            "lead_option_symbol": f"OPT{split_index}{date_index}{ticker_index}{contract_index}",
+                            "status": "SCORED",
+                            "net_r": 0.5,
+                            "stock_proxy_move": move,
+                        }
+                    )
+
+    directional = build_directional_outcome_rows(rows)
+    tiers = assign_directional_pattern_tiers(
+        directional,
+        [
+            {"baseline": "B0", "average_net_r": -0.001, "scored_count": 30},
+            {"baseline": "B1", "average_net_r": 0.0, "scored_count": 30},
+        ],
+    )
+    tier = tiers["EDGE__BULLISH__TECHNOLOGY"]
+
+    assert len(directional) == 30
+    assert tier["scored_count"] == 30
+    assert tier["date_cluster_count"] == 15
+    assert tier["date_cluster_win_count"] == 12
+    assert tier["confidence_tier"] == "PROVEN_DIRECTIONAL"
+    assert tier["probability_score"] < tier["win_rate"]
+
+
+def test_comparable_contract_profile_can_still_produce_an_approved_ticket():
+    family = "EDGE__BULLISH__LONG_OPTION__TECHNOLOGY"
+    profile = "LONG_OPTION__DTE_14_30__ATM"
+    daily_rows = [
+        {
+            "date": "2026-07-17",
+            "ticker": "XYZ",
+            "direction": "bullish",
+            "pattern_family": family,
+            "base_pattern_family": "EDGE",
+            "sector": "Technology",
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "option_type": "call",
+            "strike": 101,
+            "expiry": "2026-08-07",
+            "dte": 21,
+            "underlying_price": 100,
+            "contract_reference_strike": 101,
+            "contract_directional_moneyness": 0.01,
+            "contract_dte_bucket": "DTE_14_30",
+            "contract_moneyness_bucket": "ATM",
+            "contract_profile": profile,
+            "lead_option_symbol": "XYZ260807C00101000",
+            "entry_bid": 4.90,
+            "entry_ask": 5.00,
+            "entry_range": "4.90-5.00",
+            "bid_ask_spread_pct": 0.02,
+            "max_risk_per_contract": 500.65,
+            "liquidity_volume": 2000,
+            "liquidity_open_interest": 3000,
+            "quote_source": "bot_eod",
+            "current_market_alignment": "RISK_ON",
+            "market_regime": "RISK_ON",
+            "block_reasons": [],
+        }
+    ]
+    outcomes = []
+    for month in ("04", "05", "06", "07"):
+        for index in range(10):
+            win = index < 8
+            outcomes.append(
+                {
+                    "split": f"cumulative_to_2026-{month}_holdout",
+                    "sample": "VALIDATION",
+                    "horizon": "5d",
+                    "signal_date": f"2026-{month}-{index + 1:02d}",
+                    "ticker": f"T{index % 3}",
+                    "direction": "bullish",
+                    "pattern_family": family,
+                    "base_pattern_family": "EDGE",
+                    "sector": "Technology",
+                    "market_regime": "RISK_ON",
+                    "strategy_kind": "long_option",
+                    "contract_profile": profile,
+                    "status": "SCORED",
+                    "net_r": 0.60 if win else -0.20,
+                    "win": int(win),
+                }
+            )
+    validation_bundle = empty_validation_bundle()
+    validation_bundle["outcomes"] = outcomes
+    validation_bundle["baseline_comparison"] = [
+        {"baseline": "B0", "average_net_r": -0.10, "scored_count": 40},
+        {"baseline": "B1", "average_net_r": 0.0, "scored_count": 40},
+    ]
+    validation_bundle["family_tiers"] = {
+        family: {
+            "confidence_tier": "PROVEN",
+            "pattern_scope": "FAMILY",
+            "validation_scored_count": 40,
+            "validation_win_count": 32,
+            "validation_success_probability": 0.80,
+            "validation_probability_score": 0.70,
+            "validation_average_net_r": 0.44,
+            "validation_profit_factor": 12.0,
+            "beats_baselines_count": 2,
+            "baselines_beaten_names": "B0;B1",
+            "baselines_beaten_details": "two frozen controls beaten",
+        }
+    }
+
+    rows, _ = prepare_decision_rows(daily_rows, validation_bundle, {"source_complete": True}, {})
+    candidate = rows[0]
+
+    assert candidate["status"] == "AUTO_APPROVED"
+    assert candidate["contract_profile_validated"] == "yes"
+    assert candidate["contract_profile_scored_count"] == 40
+    assert candidate["contract_profile_unique_signal_date_count"] == 40
+    assert candidate["confidence_lower_bound"] > 0.70
+    assert candidate["expected_R"] == pytest.approx(0.44)
+    assert candidate["block_reasons"] == []
+
+
+def test_contract_profile_goal_edge_requires_every_robustness_gate():
+    key = ("EDGE__BULLISH__LONG_OPTION__TECHNOLOGY", "ALL", "LONG_OPTION__DTE_14_30__ATM")
+    stats = {
+        "scored_count": 40,
+        "date_cluster_count": 40,
+        "unique_ticker_count": 5,
+        "historical_tickers": "A;B;C;D;E",
+        "win_rate": 0.80,
+        "date_cluster_win_rate": 0.80,
+        "date_cluster_probability_score": 0.7298,
+        "avg_win_r": 0.60,
+        "avg_loss_r": -0.20,
+        "avg_r": 0.44,
+        "avg_r_without_largest_win": 0.435,
+        "profit_factor": 12.0,
+        "validation_split_count": 4,
+        "positive_validation_splits": 4,
+        "latest_validation_split": "cumulative_to_2026-07_holdout",
+        "latest_validation_split_average_net_r": 0.40,
+        "latest_validation_split_average_net_r_without_largest_win": 0.35,
+    }
+    baselines = [
+        {"baseline": "B0", "average_net_r": -0.10, "scored_count": 40},
+        {"baseline": "B1", "average_net_r": 0.0, "scored_count": 40},
+    ]
+
+    qualified = build_contract_profile_edge_rows({key: stats}, baselines)[0]
+    broken = dict(stats)
+    broken["latest_validation_split_average_net_r_without_largest_win"] = -0.01
+    rejected = build_contract_profile_edge_rows({key: broken}, baselines)[0]
+
+    assert qualified["qualified_goal_edge"] == "yes"
+    assert qualified["confidence_lower_pct"] > qualified["payoff_breakeven_pct"]
+    assert qualified["beats_baselines_count"] == 2
+    assert rejected["qualified_goal_edge"] == "no"
+    assert "LATEST_SPLIT_WITHOUT_BEST_WIN_NOT_POSITIVE" in rejected["qualification_failures"]
+
+
+def test_contract_profile_goal_edge_requires_the_global_final_holdout():
+    june_key = ("JUNE_EDGE", "ALL", "LONG_OPTION__DTE_14_30__ATM")
+    july_key = ("JULY_REFERENCE", "ALL", "LONG_OPTION__DTE_14_30__ATM")
+    base = {
+        "scored_count": 40,
+        "date_cluster_count": 40,
+        "unique_ticker_count": 5,
+        "historical_tickers": "A;B;C;D;E",
+        "win_rate": 0.80,
+        "date_cluster_win_rate": 0.80,
+        "date_cluster_probability_score": 0.7298,
+        "avg_win_r": 0.60,
+        "avg_loss_r": -0.20,
+        "avg_r": 0.44,
+        "avg_r_without_largest_win": 0.435,
+        "profit_factor": 12.0,
+        "validation_split_count": 4,
+        "positive_validation_splits": 4,
+        "latest_validation_split_average_net_r": 0.40,
+        "latest_validation_split_average_net_r_without_largest_win": 0.35,
+    }
+    june = dict(base, latest_validation_split="cumulative_to_2026-06_holdout")
+    july = dict(base, latest_validation_split="cumulative_to_2026-07_holdout")
+    baselines = [
+        {"baseline": "B0", "average_net_r": -0.10, "scored_count": 40},
+        {"baseline": "B1", "average_net_r": 0.0, "scored_count": 40},
+    ]
+
+    rows = build_contract_profile_edge_rows(
+        {june_key: june, july_key: july},
+        baselines,
+    )
+    by_family = {row["pattern_family"]: row for row in rows}
+
+    assert by_family["JULY_REFERENCE"]["qualified_goal_edge"] == "yes"
+    assert by_family["JUNE_EDGE"]["qualified_goal_edge"] == "no"
+    assert by_family["JUNE_EDGE"]["required_latest_validation_split"] == "cumulative_to_2026-07_holdout"
+    assert "LATEST_SPLIT_NOT_CURRENT_HOLDOUT" in by_family["JUNE_EDGE"]["qualification_failures"]
+
+    only_june = build_contract_profile_edge_rows(
+        {june_key: june},
+        baselines,
+        required_latest_split="cumulative_to_2026-07_holdout",
+    )[0]
+    assert only_june["qualified_goal_edge"] == "no"
+    assert only_june["latest_holdout_present"] == "no"
+    assert "LATEST_SPLIT_NOT_CURRENT_HOLDOUT" in only_june["qualification_failures"]
+
+
+def test_compact_pattern_and_contract_report_sections_render_independently():
+    directional = {
+        "directional_pattern_family": "EDGE__BULLISH__TECHNOLOGY",
+        "confidence_tier": "PROVEN_DIRECTIONAL",
+        "scored_count": 40,
+        "unique_signal_date_count": 20,
+        "average_directional_move": 0.01,
+        "average_directional_move_without_largest_win": 0.009,
+        "latest_validation_split_average_directional_move": 0.008,
+        "profit_factor": 2.0,
+        "positive_validation_splits": 4,
+        "validation_split_count": 4,
+        "probability_score": 0.55,
+        "beats_baselines_count": 2,
+    }
+    profile = {
+        "qualified_goal_edge": "yes",
+        "pattern_family": "EDGE__BULLISH__LONG_OPTION__TECHNOLOGY",
+        "contract_profile": "LONG_OPTION__DTE_14_30__ATM",
+        "scored_count": 40,
+        "unique_signal_date_count": 20,
+        "average_net_R": 0.20,
+        "average_net_R_without_largest_win": 0.18,
+        "latest_split_average_net_R": 0.15,
+        "profit_factor": 1.8,
+        "confidence_lower_pct": 55.0,
+        "payoff_breakeven_pct": 45.0,
+    }
+    lines = []
+
+    append_directional_pattern_summary(lines, [directional], [])
+    append_contract_profile_edge_summary(lines, [profile], 3)
+    report = "\n".join(lines)
+
+    assert "## Directional Patterns Found" in report
+    assert "Historical result: 1 proven" in report
+    assert "## Contract Implementation Proof" in report
+    assert "Qualified profiles: 1 across 1/3 required distinct families" in report
+
+
+def test_current_pattern_report_does_not_mix_contract_and_family_scopes():
+    primary = {
+        "active_pattern_id": "EDGE__BULLISH__CREDIT_SPREAD__TECHNOLOGY",
+        "ticker": "XYZ",
+        "direction": "bullish",
+        "status": "TRADE_REVIEW",
+        "classification": "WATCH",
+        "contract_profile": "CREDIT_SPREAD__DTE_7_13__NEAR_OTM",
+        "contract_profile_scored_count": 13,
+        "contract_profile_unique_signal_date_count": 10,
+        "contract_profile_validation_split_count": 4,
+        "contract_profile_avg_R": 0.1683,
+        "contract_profile_avg_R_without_largest_win": 0.0949,
+        "contract_profile_latest_validation_split": "cumulative_to_2026-07_holdout",
+        "contract_profile_latest_validation_split_average_net_R": -0.1627,
+        "contract_profile_latest_validation_split_average_net_R_without_largest_win": -0.1627,
+        "family_validation_scored_count": 196,
+        "family_unique_ticker_count": 7,
+        "family_unique_signal_date_count": 52,
+        "family_expected_R": -0.1565,
+        "family_avg_R_without_largest_win": -0.1649,
+        "family_latest_validation_split_average_net_R": -0.1403,
+        "family_latest_validation_split_average_net_R_without_largest_win": -0.1403,
+        "family_member_scored_count": 20,
+        "family_member_avg_R": -0.1,
+        "family_member_profit_factor": 0.5,
+        "family_member_avg_R_without_largest_win": -0.12,
+        "block_reasons": ["FAMILY_MEMBER_HISTORY_NEGATIVE"],
+    }
+    lines = []
+
+    append_current_pattern_members(lines, primary, ([primary],))
+    report = "\n".join(lines)
+
+    assert "13 observations across 10 signal dates and 4 holdouts" in report
+    assert "Broad family: 196 observations across 7 tickers and 52 signal dates" in report
+    assert "13 observations across 7 tickers and 52 signal dates" not in report
+
+
+def test_current_pattern_report_counts_pattern_only_members():
+    primary = {
+        "active_pattern_id": "EDGE__BEARISH__LONG_OPTION__TECHNOLOGY",
+        "ticker": "META",
+        "direction": "bearish",
+        "status": "AVOID",
+        "classification": "AVOID",
+        "directional_confidence_tier": "PROVEN_DIRECTIONAL",
+        "contract_profile": "LONG_OPTION__DTE_31_45__FAR_OTM",
+        "block_reasons": ["CONTRACT_PROFILE_NOT_VALIDATED"],
+    }
+    lines = []
+
+    append_current_pattern_members(lines, primary, ([primary],))
+    report = "\n".join(lines)
+
+    assert "0 TRADE, 0 WATCH, 0 AVOID, 1 PATTERN ONLY" in report
+
+
+def test_directional_pattern_ranking_and_report_primary_are_consistent():
+    pattern_only = {
+        "status": "AVOID",
+        "classification": "AVOID",
+        "ticker": "HIGH",
+        "direction": "bullish",
+        "directional_confidence_tier": "PROVEN_DIRECTIONAL",
+        "directional_probability_score_pct": 64.0,
+        "directional_win_rate_pct": 70.0,
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Call Debit",
+        "lead_option_symbol": "HIGH260821C00100000",
+        "expiry": "2026-08-21",
+        "option_type": "call",
+        "strike": 100,
+        "entry_range": "4.90-5.00",
+        "contract_profile_validated": "no",
+        "expected_R": None,
+        "block_reasons": ["CONTRACT_PROFILE_NOT_VALIDATED"],
+    }
+    review = {
+        "status": "TRADE_REVIEW",
+        "classification": "WATCH",
+        "ticker": "LOW",
+        "direction": "bullish",
+        "probability_score": 40.0,
+        "success_probability_pct": 55.0,
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Call Debit",
+        "lead_option_symbol": "LOW260821C00100000",
+        "expiry": "2026-08-21",
+        "option_type": "call",
+        "strike": 100,
+        "entry_range": "4.90-5.00",
+        "contract_profile_validated": "yes",
+        "expected_R": 0.10,
+        "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+    }
+
+    recommendations = build_pattern_recommendations([], [review], [pattern_only, review])
+    lines = []
+    primary = append_compact_action_board(lines, "2026-07-17", [], recommendations, [review], [])
+
+    assert recommendations[0]["ticker"] == "HIGH"
+    assert primary is recommendations[0]
+    assert "Best current proven directional pattern: HIGH BULLISH" in "\n".join(lines)
+    assert validate_artifact_consistency(
+        [pattern_only, review], [], [review], recommendations, "TRADE_REVIEW"
+    ) == []
+
+
+def test_candidate_shortlist_prioritizes_review_tickets_over_pattern_only_rows():
+    pattern_only = {
+        "status": "AVOID",
+        "classification": "AVOID",
+        "ticker": "NEE",
+        "direction": "bearish",
+        "directional_confidence_tier": "PROVEN_DIRECTIONAL",
+        "strategy_type": "Bear Call Credit Spread",
+        "strike_rates": "SELL 90 / BUY 95",
+        "expiration_date": "2026-08-21",
+        "suggested_entry_debit_credit_range": "credit 1.49",
+        "block_reasons": ["CONTRACT_PROFILE_NOT_VALIDATED"],
+    }
+    review = {
+        "status": "TRADE_REVIEW",
+        "classification": "WATCH",
+        "ticker": "HOOD",
+        "direction": "bullish",
+        "strategy_type": "Long Call Debit",
+        "strike_rates": "100",
+        "expiration_date": "2026-08-21",
+        "suggested_entry_debit_credit_range": "debit 4.90-5.00",
+        "expected_R": 0.07,
+        "probability_score": 43.9,
+        "block_reasons": ["CALIBRATION_SCORE_MISSING_OR_WEAK"],
+    }
+
+    lines = []
+    append_compact_candidate_shortlist(lines, None, [[pattern_only, review]], 5)
+    rendered = "\n".join(lines)
+
+    assert "WATCH: HOOD BULLISH" in rendered
+    assert "PATTERN ONLY: NEE" not in rendered
 
 
 def test_catalyst_flow_leader_rescue_surfaces_top_premium_name_despite_low_ratio():
@@ -2437,6 +3630,175 @@ def test_catalyst_flow_leader_rescue_surfaces_top_premium_name_despite_low_ratio
     assert signals[0]["base_pattern_family"] == "CATALYST_FLOW_LEADER"
     assert signals[0]["direction"] == "bullish"
     assert signals[0]["entry_range"] == "39.85-40.40"
+
+
+def test_cross_ticker_crude_oil_flow_becomes_a_validated_theme_signal():
+    pattern_config = {
+        "min_call_volume_ratio": 1.35,
+        "min_put_volume_ratio": 1.35,
+        "min_hot_premium": 250_000,
+        "min_oi_diff": 5_000,
+        "max_spread_pct": 0.35,
+        "high_iv": 0.75,
+        "min_liquidity_score": 8.0,
+        "min_ask_side_ratio": 0.52,
+        "max_event_dte_without_event_strategy": 2,
+    }
+    features = {
+        "USO": {
+            "ticker": "USO",
+            "close": 121.4,
+            "flow_total_premium": 95_705_217.0,
+            "flow_call_premium_share": 0.79,
+            "flow_put_premium_share": 0.21,
+            "flow_call_ask_premium_share": 0.78,
+            "flow_put_ask_premium_share": 0.22,
+            "flow_premium_bias": 0.58,
+            "call_volume_ratio_30d": 0.97,
+            "put_volume_ratio_30d": 0.71,
+            "liquidity_score": 20.0,
+        },
+        "BNO": {
+            "ticker": "BNO",
+            "close": 47.6,
+            "flow_total_premium": 6_467_776.0,
+            "flow_call_premium_share": 0.92,
+            "flow_put_premium_share": 0.08,
+        },
+        "UCO": {
+            "ticker": "UCO",
+            "close": 39.94,
+            "flow_total_premium": 1_577_599.0,
+            "flow_call_premium_share": 0.87,
+            "flow_put_premium_share": 0.13,
+        },
+        "DBO": {
+            "ticker": "DBO",
+            "close": 20.17,
+            "flow_total_premium": 66_081.0,
+            "flow_call_premium_share": 0.93,
+            "flow_put_premium_share": 0.07,
+        },
+    }
+    snapshot = SnapshotStub(
+        features,
+        {
+            ("USO", "bullish"): {
+                "ticker": "USO",
+                "direction": "bullish",
+                "option_symbol": "USO260821C00125000",
+                "option_type": "call",
+                "expiry": "2026-08-21",
+                "strike": 125.0,
+                "dte": 37,
+                "bid": 6.9,
+                "ask": 7.55,
+                "mid": 7.225,
+                "spread_pct": 0.09,
+                "volume": 3048,
+                "open_interest": 4321,
+                "quote_source": "bot_eod",
+            }
+        },
+        {"regime": "MIXED"},
+        signal_date="2026-07-15",
+    )
+
+    contexts = build_theme_flow_signal_contexts(snapshot)
+    assert len(contexts) == 1
+    assert contexts[0]["theme_key"] == "CRUDE_OIL"
+    assert contexts[0]["theme_representative_ticker"] == "USO"
+    assert contexts[0]["theme_component_count"] == 3
+    assert contexts[0]["theme_aggregate_premium"] > 100_000_000
+    assert contexts[0]["theme_call_premium_share"] == pytest.approx(0.7995, abs=0.001)
+
+    signals = generate_signals_for_snapshot(snapshot, pattern_config, max_signals=1)
+    theme_signal = next(row for row in signals if row["base_pattern_family"] == "THEME_FLOW_LEADER")
+    assert theme_signal["ticker"] == "USO"
+    assert theme_signal["direction"] == "bullish"
+    assert theme_signal["theme_name"] == "Crude Oil"
+    assert theme_signal["theme_component_tickers"] == "USO;BNO;UCO;DBO"
+    assert theme_signal["entry_range"] == "6.90-7.55"
+
+
+def test_cross_ticker_theme_signal_requires_multiple_material_components():
+    snapshot = SnapshotStub(
+        {
+            "USO": {
+                "ticker": "USO",
+                "close": 121.4,
+                "flow_total_premium": 105_000_000.0,
+                "flow_call_premium_share": 0.80,
+            }
+        },
+        signal_date="2026-07-15",
+    )
+
+    assert build_theme_flow_signal_contexts(snapshot) == []
+
+
+def test_theme_flow_board_keeps_representative_ticket_and_blockers_visible():
+    row = {
+        "ticker": "USO",
+        "direction": "bullish",
+        "base_pattern_family": "THEME_FLOW_LEADER",
+        "theme_key": "CRUDE_OIL",
+        "theme_name": "Crude Oil",
+        "theme_macro_label": "oil/Middle East",
+        "theme_aggregate_premium": 103_816_673.0,
+        "theme_call_premium_share": 0.7995,
+        "theme_put_premium_share": 0.2005,
+        "theme_component_count": 3,
+        "theme_component_tickers": "USO;BNO;UCO;DBO",
+        "theme_component_evidence": "USO $95.7M; BNO $6.5M; UCO $1.6M",
+        "classification": "WATCH",
+        "status": "TRADE_REVIEW",
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Call Debit",
+        "lead_option_symbol": "USO260821C00125000",
+        "option_type": "call",
+        "strike": 125.0,
+        "expiry": "2026-08-21",
+        "entry_bid": 6.9,
+        "entry_ask": 7.55,
+        "entry_range": "6.90-7.55",
+        "max_risk_per_contract": 788.15,
+        "success_probability_pct": 38.65,
+        "probability_score": 31.88,
+        "expected_R": 0.010815,
+        "expected_R_per_day": 0.002163,
+        "validation_scored_count": 49,
+        "validation_profit_factor": 1.63,
+        "block_reasons": ["CONFIDENCE_BAND_TOO_WEAK", "PATTERN_VALIDATION_NOT_PROVEN"],
+    }
+
+    leaders = build_theme_flow_leaders([row])
+    assert leaders == [row]
+    output = theme_flow_leader_output_row(leaders[0], 1)
+    assert output["representative_ticker"] == "USO"
+    assert output["trade_legs"] == "Buy 1 USO 2026-08-21 125C @ debit 6.90-7.55 limit"
+    assert "confidence lower bound below auto floor" in output["why_not_auto_approved"]
+    assert "auto requires PROVEN family" in output["why_not_auto_approved"]
+
+
+def test_macro_geo_oil_theme_maps_direct_crude_and_energy_proxies():
+    assert {
+        "USO",
+        "BNO",
+        "DBO",
+        "UCO",
+        "SCO",
+        "XLE",
+        "XOP",
+        "XOM",
+        "CVX",
+        "COP",
+        "OXY",
+        "MPC",
+        "VLO",
+        "SLB",
+        "HAL",
+    } <= set(THEME_MAP["oil/Middle East"]["tickers"])
 
 
 def test_catalyst_flow_leader_board_keeps_premium_leaders_visible():
@@ -2513,7 +3875,7 @@ def test_catalyst_flow_leader_board_keeps_premium_leaders_visible():
     assert "Catalyst/flow leader rescue" in output["why_recommended"]
 
 
-def test_ticker_trend_overlay_can_promote_executable_trade():
+def test_ticker_trend_overlay_cannot_promote_without_comparable_contract_history():
     family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__TECHNOLOGY"
     daily_rows = [
         {
@@ -2554,7 +3916,7 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
         win = idx % 3 != 0
         outcomes.append(
             {
-                "split": "cumulative_to_2026-05_holdout",
+                "split": "cumulative_to_2026-05_holdout" if idx < 17 else "cumulative_to_2026-06_holdout",
                 "sample": "VALIDATION",
                 "horizon": "5d",
                 "signal_date": f"2026-05-{idx % 20 + 1:02d}",
@@ -2598,36 +3960,19 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
         {},
     )
 
-    assert rows[0]["status"] == "AUTO_APPROVED"
-    assert rows[0]["classification"] == "TRADE"
-    assert rows[0]["ticker_trend_scope"] == "ticker_direction_strategy"
-    assert rows[0]["success_probability_pct"] > 55
-    assert rows[0]["expected_R"] > 0
-    assert "PATTERN_VALIDATION_NOT_PROVEN" not in rows[0]["block_reasons"]
-    assert "PROFIT_FACTOR_BELOW_AUTO_APPROVAL" not in rows[0]["block_reasons"]
-    assert "VALIDATION_EXPECTANCY_NEGATIVE" not in rows[0]["block_reasons"]
-    assert "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS" not in rows[0]["block_reasons"]
-    assert "EXPECTED_R_PER_DAY_NOT_POSITIVE" not in rows[0]["block_reasons"]
-    assert "DOES_NOT_BEAT_TWO_BASELINES" not in rows[0]["block_reasons"]
-    assert "Not actionable" not in rows[0]["why_actionable_now"]
-    assert "all auto-approval gates passed" in rows[0]["why_actionable_now"]
-    assert "pattern not proven out-of-sample" not in rows[0]["major_risks"]
-    assert "ticker-specific trend validation" in rows[0]["major_risks"]
+    assert rows[0]["status"] == "AVOID"
+    assert rows[0]["classification"] == "AVOID"
+    assert rows[0]["ticker_trend_scope"] == "ticker_direction_strategy_pattern"
+    assert rows[0]["success_probability_pct"] is None
+    assert rows[0]["expected_R"] is None
+    assert "CONTRACT_PROFILE_NOT_VALIDATED" in rows[0]["block_reasons"]
     trade_row = trade_output_row(rows[0])
-    assert "ticker-specific trend validation" in trade_row["historical_evidence_summary"]
+    assert trade_row["contract_profile_validated"] == "no"
     assert "Not actionable" not in trade_row["why_actionable_now"]
     assert trade_row["validation_scored_count"] == rows[0]["validation_scored_count"]
     assert trade_row["beats_baselines_count"] == rows[0]["beats_baselines_count"]
-    assert trade_row["beats_baselines_count"] == 2
-    assert trade_row["baselines_beaten_names"] == "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY"
-    assert "BASELINE_TOO_STRONG" not in trade_row["baselines_beaten_names"]
-    assert "BASELINE_FAMILY_ONLY" not in trade_row["baselines_beaten_names"]
-    assert "baseline_avg_R=-0.05" in trade_row["baselines_beaten_details"]
-    assert "edge_R=1.18" in trade_row["baselines_beaten_details"]
-    assert "baselines_beaten=2" in trade_row["auto_approval_gate_evidence"]
-    assert "baseline_names=BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_NAIVE_UW_FLOW_ONLY" in trade_row["auto_approval_gate_evidence"]
-    assert "baseline_edges=BASELINE_RANDOM_SAME_DATE_LIQUIDITY:baseline_avg_R=-0.05" in trade_row["auto_approval_gate_evidence"]
-    assert "ticker_trend_scope=ticker_direction_strategy" in trade_row["auto_approval_gate_evidence"]
+    assert trade_row["beats_baselines_count"] == 0
+    assert trade_row["auto_approval_gate_evidence"] == ""
     edge_rows = build_ticker_trend_edge_rows(
         controls["ticker_trend_stats"],
         controls["risk_config"],
@@ -2643,7 +3988,7 @@ def test_ticker_trend_overlay_can_promote_executable_trade():
     assert controls["run_kill_switches"] == []
 
 
-def test_proven_soft_calibration_bridge_promotes_complete_positive_ev_ticket():
+def test_same_day_probability_adjustment_cannot_promote_weak_validated_probability():
     family = "SOURCE_PREMIUM_COVERAGE_RESCUE__BULLISH__LONG_OPTION__TECHNOLOGY"
     daily_rows = [
         {
@@ -2706,35 +4051,278 @@ def test_proven_soft_calibration_bridge_promotes_complete_positive_ev_ticket():
         {},
     )
 
-    assert rows[0]["status"] == "AUTO_APPROVED"
-    assert rows[0]["classification"] == "TRADE"
-    assert rows[0]["approval_bridge"] == "PROVEN_SOFT_CALIBRATION"
-    assert rows[0]["block_reasons"] == []
+    assert rows[0]["status"] == "AVOID"
+    assert rows[0]["classification"] == "AVOID"
+    assert rows[0]["approval_bridge"] == ""
+    assert "CONTRACT_PROFILE_NOT_VALIDATED" in rows[0]["block_reasons"]
+    assert "CALIBRATION_SCORE_MISSING_OR_WEAK" in rows[0]["block_reasons"]
+    assert "CONFIDENCE_BAND_TOO_WEAK" in rows[0]["block_reasons"]
+    assert rows[0]["calibrated_probability"] is None
+    assert rows[0]["family_calibrated_probability"] == pytest.approx(45 / 99, abs=1e-6)
     trade_row = trade_output_row(rows[0])
     assert "approval_bridge" in trade_fieldnames()
-    assert trade_row["approval_bridge"] == "PROVEN_SOFT_CALIBRATION"
-    assert "approval_bridge=PROVEN_SOFT_CALIBRATION" in trade_row["auto_approval_gate_evidence"]
+    assert trade_row["approval_bridge"] == ""
+    assert trade_row["auto_approval_gate_evidence"] == ""
 
-    decision_board = build_decision_board_rows(rows, "2026-07-06", True, "AUTO_APPROVED", {})
-    goal_rows = build_goal_evidence_rows(
-        "2026-07-06",
-        SnapshotStub({"IBM": {"ticker": "IBM", "flow_total_premium": 250_000_000.0}}),
-        decision_board,
-        [
-            {
-                "ticker": "IBM",
-                "decision_surface_status": "AUTO_APPROVED",
-                "source_gap_reason": "surfaced in decision board",
-                "decision_artifact": "actionable_trades.csv",
-            }
-        ],
-        [],
-        validation_bundle,
-        controls,
-        {"source_complete": True, "missing_sources": []},
+
+def test_payoff_aware_probability_math_uses_strategy_breakeven():
+    breakeven = payoff_breakeven_probability(1.675895, -0.623328)
+
+    assert breakeven == pytest.approx(0.2711, abs=0.0001)
+    assert probability_edge_over_breakeven_pct(0.4504, breakeven) == pytest.approx(17.93, abs=0.01)
+    assert probability_edge_over_breakeven_pct(0.3982, breakeven) == pytest.approx(12.71, abs=0.01)
+    assert probability_edge_over_breakeven_pct(0.2985009, breakeven) == pytest.approx(2.74, abs=0.01)
+    assert payoff_breakeven_probability(None, -0.5) is None
+    assert payoff_breakeven_probability(1.0, 0.1) is None
+
+
+def test_payoff_aware_bridge_requires_strong_edges_and_positive_latest_split():
+    row = {"confidence_tier": "PROVEN", "validation_scope": "FAMILY_REGIME"}
+    args = {
+        "row": row,
+        "blockers": {"CALIBRATION_SCORE_MISSING_OR_WEAK", "CONFIDENCE_BAND_TOO_WEAK"},
+        "expected_r": 0.182893,
+        "expected_r_per_day": 0.036579,
+        "validated_success_probability": 27 / 77,
+        "confidence_lower": 0.2985009,
+        "avg_win_r": 1.675895,
+        "avg_loss_r": -0.623328,
+        "validation_profit_factor": 1.451858,
+        "validation_scored": 77,
+        "baselines_beaten": 6,
+        "latest_split_average_net_r": 0.7056,
+        "family_member_stats": {
+            "scored_count": 13,
+            "validation_split_count": 4,
+            "avg_r_without_largest_win": 0.1416,
+            "latest_validation_split_average_net_r_without_largest_win": 1.327,
+        },
+        "risk_config": DEFAULT_RISK_CONFIG,
+    }
+
+    assert proven_payoff_aware_promotion_eligible(**args)
+    assert not proven_payoff_aware_promotion_eligible(
+        **{**args, "validated_success_probability": 0.32}
     )
-    auto_gate = next(row for row in goal_rows if row["requirement"] == "auto_approved_positive_expectancy_after_costs")
-    assert auto_gate["status"] == "PASS"
+    assert not proven_payoff_aware_promotion_eligible(**{**args, "latest_split_average_net_r": -0.01})
+    assert not proven_payoff_aware_promotion_eligible(
+        **{
+            **args,
+            "family_member_stats": {
+                **args["family_member_stats"],
+                "avg_r_without_largest_win": -0.01,
+            },
+        }
+    )
+    assert not proven_payoff_aware_promotion_eligible(
+        **{**args, "row": {"confidence_tier": "PROVEN", "validation_scope": "FAMILY"}}
+    )
+
+
+def test_proven_payoff_aware_bridge_promotes_meta_like_asymmetric_edge():
+    family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__COMMUNICATION_SERVICES"
+    daily_rows = [
+        {
+            "date": "2026-07-16",
+            "ticker": "META",
+            "direction": "bullish",
+            "pattern_family": family,
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
+            "classification": "WATCH",
+            "block_reasons": [],
+            "confidence_tier": "RESEARCH_ONLY",
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "option_type": "call",
+            "strike": 800,
+            "expiry": "2026-08-21",
+            "lead_option_symbol": "META260821C00800000",
+            "entry_bid": 9.60,
+            "entry_ask": 9.85,
+            "entry_range": "9.60-9.85",
+            "bid_ask_spread_pct": 0.0254,
+            "max_risk_per_contract": 998.15,
+            "liquidity_volume": 2500,
+            "liquidity_open_interest": 5000,
+            "quote_source": "bot_eod",
+            "current_market_alignment": "RISK_OFF",
+            "market_regime": "RISK_OFF",
+            "success_probability_pct": 45.04,
+            "failure_probability_pct": 54.96,
+            "probability_score": 39.82,
+            "trade_success_probability_pct": 45.04,
+            "trade_failure_probability_pct": 54.96,
+            "trade_probability_score": 39.82,
+        }
+    ]
+    outcomes = []
+    split_shapes = [
+        ("cumulative_to_2026-04_holdout", 19, 6),
+        ("cumulative_to_2026-05_holdout", 19, 6),
+        ("cumulative_to_2026-06_holdout", 20, 7),
+        ("cumulative_to_2026-07_holdout", 19, 8),
+    ]
+    for split, count, win_count in split_shapes:
+        win_indexes = {round(i * (count - 1) / (win_count - 1)) for i in range(win_count)}
+        month = split[19:26]
+        for idx in range(count):
+            win = idx in win_indexes
+            outcomes.append(
+                {
+                    "split": split,
+                    "sample": "VALIDATION",
+                    "horizon": "5d",
+                    "signal_date": f"{month}-{idx + 1:02d}",
+                    "ticker": "META",
+                    "direction": "bullish",
+                    "strategy_kind": "long_option",
+                    "pattern_family": family,
+                    "market_regime": "RISK_OFF",
+                    "status": "SCORED",
+                    "net_r": 1.675895 if win else -0.623328,
+                    "win": int(win),
+                }
+            )
+
+    baseline_names = (
+        "BASELINE_RANDOM_SAME_DATE_LIQUIDITY;BASELINE_SPY_QQQ_DIRECTIONAL;"
+        "BASELINE_UNUSUAL_VOLUME_ONLY;BASELINE_NAIVE_UW_FLOW_ONLY;"
+        "BASELINE_NAIVE_CATALYST_ONLY;BASELINE_FAMILY_PRIOR"
+    )
+    validation_bundle = empty_validation_bundle()
+    validation_bundle["outcomes"] = outcomes
+    validation_bundle["family_tiers"] = {family: {"confidence_tier": "RESEARCH_ONLY"}}
+    validation_bundle["regime_family_tiers"] = {
+        (family, "RISK_OFF"): {
+            "confidence_tier": "PROVEN",
+            "pattern_scope": "FAMILY_REGIME",
+            "market_regime": "RISK_OFF",
+            "regime_pattern_id": f"{family}__MARKET_REGIME_RISK_OFF",
+            "validation_scored_count": 77,
+            "validation_win_count": 27,
+            "validation_success_probability": 27 / 77,
+            "validation_probability_score": 0.2985009,
+            "validation_average_net_r": 0.182893,
+            "validation_profit_factor": 1.451858,
+            "beats_baselines_count": 6,
+            "baselines_beaten_names": baseline_names,
+            "baselines_beaten_details": "six historical controls beaten after costs/slippage",
+            "latest_validation_split": "cumulative_to_2026-07_holdout",
+            "latest_validation_split_average_net_r": 0.344766,
+        }
+    }
+
+    rows, controls = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        {"source_complete": True},
+        {"risk_config": {"kill_switches": {}}},
+    )
+
+    candidate = rows[0]
+    assert candidate["status"] == "AVOID"
+    assert candidate["classification"] == "AVOID"
+    assert candidate["approval_bridge"] == ""
+    assert "CONTRACT_PROFILE_NOT_VALIDATED" in candidate["block_reasons"]
+    assert candidate["expected_R"] is None
+    assert candidate["family_expected_R"] == pytest.approx(0.182893, abs=0.0001)
+    assert candidate["family_member_scored_count"] == 77
+    assert candidate["family_member_payoff_support_passed"] == "yes"
+
+    trade_row = trade_output_row(candidate)
+    assert trade_row["approval_bridge"] == ""
+    assert trade_row["contract_profile_validated"] == "no"
+    assert trade_row["auto_approval_gate_evidence"] == ""
+
+    board = build_decision_board_rows(rows, "2026-07-16", True, "NO_TRADE", {})
+    assert auto_approved_goal_gate_failures(board[0], controls["risk_config"])
+
+
+def test_negative_exact_member_history_vetoes_pooled_proven_family():
+    family = "CATALYST_FLOW_LEADER__BULLISH__LONG_OPTION__COMMUNICATION_SERVICES"
+    outcomes = []
+    for month in ("06", "07"):
+        for index in range(4):
+            outcomes.append(
+                {
+                    "split": f"cumulative_to_2026-{month}_holdout",
+                    "sample": "VALIDATION",
+                    "horizon": "5d",
+                    "signal_date": f"2026-{month}-{index + 1:02d}",
+                    "ticker": "GOOGL",
+                    "direction": "bullish",
+                    "strategy_kind": "long_option",
+                    "pattern_family": family,
+                    "market_regime": "RISK_ON",
+                    "status": "SCORED",
+                    "net_r": -0.40,
+                    "win": 0,
+                }
+            )
+    validation_bundle = empty_validation_bundle()
+    validation_bundle["outcomes"] = outcomes
+    validation_bundle["family_tiers"] = {
+        family: {
+            "confidence_tier": "PROVEN",
+            "pattern_scope": "FAMILY",
+            "validation_scored_count": 80,
+            "validation_win_count": 48,
+            "validation_success_probability": 0.60,
+            "validation_probability_score": 0.55,
+            "validation_average_net_r": 0.20,
+            "validation_profit_factor": 2.0,
+            "beats_baselines_count": 4,
+            "baselines_beaten_names": "A;B;C;D",
+            "baselines_beaten_details": "four frozen controls beaten",
+        }
+    }
+    daily_rows = [
+        {
+            "ticker": "GOOGL",
+            "direction": "bullish",
+            "pattern_family": family,
+            "base_pattern_family": "CATALYST_FLOW_LEADER",
+            "strategy_kind": "long_option",
+            "strategy_type": "Long Call Debit",
+            "option_type": "call",
+            "strike": 400,
+            "expiry": "2026-08-21",
+            "lead_option_symbol": "GOOGL260821C00400000",
+            "entry_bid": 4.30,
+            "entry_ask": 4.45,
+            "bid_ask_spread_pct": 0.034,
+            "max_risk_per_contract": 450.65,
+            "liquidity_volume": 1000,
+            "liquidity_open_interest": 2000,
+            "quote_source": "bot_eod",
+            "current_market_alignment": "RISK_ON",
+            "market_regime": "RISK_ON",
+            "success_probability_pct": 65.0,
+            "probability_score": 60.0,
+        }
+    ]
+
+    rows, _ = prepare_decision_rows(
+        daily_rows,
+        validation_bundle,
+        {"source_complete": True},
+        {},
+    )
+
+    candidate = rows[0]
+    assert candidate["status"] == "AVOID"
+    assert candidate["classification"] == "AVOID"
+    assert "FAMILY_MEMBER_HISTORY_NEGATIVE" in candidate["block_reasons"]
+    assert "CONTRACT_PROFILE_NOT_VALIDATED" in candidate["block_reasons"]
+    assert candidate["family_member_scored_count"] == 8
+    assert candidate["family_member_avg_R"] == pytest.approx(-0.40)
+    assert candidate["family_member_latest_validation_split_average_net_R"] == pytest.approx(-0.40)
+
+
+def test_payoff_aware_fields_are_exported_once_in_specialized_csv_schemas():
+    for fields in (trade_fieldnames(), scout_call_fieldnames(), pattern_recommendation_fieldnames()):
+        assert fields.count("breakeven_success_probability_pct") == 1
+        assert len(fields) == len(set(fields))
 
 
 def test_trend_edge_strategy_fields_labels_bearish_structures():
@@ -2838,7 +4426,7 @@ def test_ticker_trend_overlay_demotes_when_trend_does_not_beat_baselines():
         win = idx % 3 != 0
         outcomes.append(
             {
-                "split": "cumulative_to_2026-05_holdout",
+                "split": "cumulative_to_2026-05_holdout" if idx < 17 else "cumulative_to_2026-06_holdout",
                 "sample": "VALIDATION",
                 "horizon": "5d",
                 "signal_date": f"2026-05-{idx % 20 + 1:02d}",
@@ -2880,7 +4468,7 @@ def test_ticker_trend_overlay_demotes_when_trend_does_not_beat_baselines():
         {},
     )
 
-    assert rows[0]["ticker_trend_scope"] == "ticker_direction_strategy"
+    assert rows[0]["ticker_trend_scope"] == "ticker_direction_strategy_pattern"
     assert rows[0]["beats_baselines_count"] == 0
     assert rows[0]["baselines_beaten_names"] == ""
     assert "DOES_NOT_BEAT_TWO_BASELINES" in rows[0]["block_reasons"]
@@ -2931,7 +4519,7 @@ def test_ticker_trend_overlay_demotes_auto_when_sample_is_below_auto_minimum():
         win = idx < 14
         outcomes.append(
             {
-                "split": "cumulative_to_2026-05_holdout",
+                "split": "cumulative_to_2026-05_holdout" if idx < 9 else "cumulative_to_2026-06_holdout",
                 "sample": "VALIDATION",
                 "horizon": "5d",
                 "signal_date": f"2026-05-{idx % 20 + 1:02d}",
@@ -2973,10 +4561,12 @@ def test_ticker_trend_overlay_demotes_auto_when_sample_is_below_auto_minimum():
         {},
     )
 
-    assert rows[0]["ticker_trend_scope"] == "ticker_direction_strategy"
-    assert rows[0]["validation_scored_count"] == 18
+    assert rows[0]["ticker_trend_scope"] == ""
+    assert rows[0]["validation_scored_count"] == 0
+    assert rows[0]["family_validation_scored_count"] == 18
+    assert "CONTRACT_PROFILE_NOT_VALIDATED" in rows[0]["block_reasons"]
     assert "LIMITED_OUT_OF_SAMPLE_SAMPLE" in rows[0]["block_reasons"]
-    assert rows[0]["status"] == "TRADE_REVIEW"
+    assert rows[0]["status"] != "AUTO_APPROVED"
     goal_rows = build_goal_evidence_rows(
         "2026-05-28",
         SnapshotStub({"TSLA": {"ticker": "TSLA", "flow_total_premium": 1_500_000_000.0}}),
@@ -3213,7 +4803,7 @@ def test_source_incomplete_handling_lists_missing_files(tmp_path):
     assert any("bot-eod-report-2026-05-14" in item for item in completeness["missing_sources"])
 
 
-def test_source_complete_dates_requires_options_flow_source(tmp_path):
+def test_source_complete_dates_requires_a_recognized_market_flow_source(tmp_path):
     complete = tmp_path / "2026-05-14"
     complete.mkdir()
     for prefix in ["stock-screener-", "hot-chains-", "chain-oi-changes-", "bot-eod-report-"]:
@@ -3230,6 +4820,125 @@ def test_source_complete_dates_requires_options_flow_source(tmp_path):
         (overlay_like / f"{prefix}2026-05-14.csv").write_text("ticker\nCCC\n", encoding="utf-8")
 
     assert source_complete_dates(tmp_path) == ["2026-05-14"]
+
+
+def test_source_complete_dates_accepts_dark_pool_flow_with_core_option_sources(tmp_path):
+    date_dir = tmp_path / "2026-02-02"
+    date_dir.mkdir()
+    for prefix in ["stock-screener-", "hot-chains-", "chain-oi-changes-", "dp-eod-report-"]:
+        (date_dir / f"{prefix}2026-02-02.csv").write_text("ticker\nAAA\n", encoding="utf-8")
+
+    completeness = source_completeness_for_date(tmp_path, "2026-02-02")
+
+    assert completeness["source_complete"] is True
+    assert completeness["present_sources"]["dp_eod"]
+    assert source_complete_dates(tmp_path) == ["2026-02-02"]
+
+
+def test_build_snapshot_aggregates_dark_pool_flow_without_treating_it_as_option_flow(tmp_path):
+    date_dir = tmp_path / "2026-02-02"
+    date_dir.mkdir()
+    header = "ticker,price,nbbo_ask,nbbo_bid,size,premium,date,canceled\n"
+    rows = (
+        "XYZ,101.0,100.5,100.0,1000,1000000,2026-02-02,f\n"
+        "XYZ,99.5,100.5,100.0,500,500000,2026-02-02,f\n"
+    )
+    with zipfile.ZipFile(date_dir / "dp-eod-report-2026-02-02.zip", "w") as zf:
+        zf.writestr("dp-eod-report-2026-02-02.csv", header + rows)
+
+    snapshot = build_daily_snapshot(
+        tmp_path,
+        "2026-02-02",
+        {
+            "max_chain_rows_per_day": 0,
+            "max_flow_file_mb": 100.0,
+            "bot_eod_cache_dir": str(tmp_path / "cache"),
+        },
+    )
+    xyz = snapshot.features["XYZ"]
+
+    assert "dp_eod" in xyz["source_flags"]
+    assert "option_trades" not in xyz["source_flags"]
+    assert xyz["dp_total_premium"] == 1_500_000
+    assert xyz["dp_above_ask_premium_share"] == pytest.approx(2 / 3)
+    assert xyz["dp_below_bid_premium_share"] == pytest.approx(1 / 3)
+    assert snapshot.counts["dp_eod_rows"] == 2
+
+
+def test_dark_pool_pattern_is_generated_even_when_direction_conflicts_with_market_regime():
+    quote = {
+        "ticker": "XYZ",
+        "direction": "bullish",
+        "option_symbol": "XYZ260320C00105000",
+        "option_type": "call",
+        "expiry": "2026-03-20",
+        "strike": 105.0,
+        "dte": 18,
+        "bid": 3.9,
+        "ask": 4.0,
+        "mid": 3.95,
+        "volume": 2000,
+        "open_interest": 3000,
+        "premium": 800_000.0,
+        "spread_pct": 0.025,
+        "quote_source": "hot_chains",
+    }
+    snapshot = SnapshotStub(
+        {
+            "XYZ": {
+                "date": "2026-03-02",
+                "ticker": "XYZ",
+                "close": 100.0,
+                "sector": "Technology",
+                "source_flags": {"stock_screener", "hot_chains", "chain_oi", "dp_eod"},
+                "dp_total_premium": 25_000_000.0,
+                "dp_directional_premium_coverage": 0.80,
+                "dp_above_ask_premium_share": 0.75,
+                "dp_below_bid_premium_share": 0.25,
+                "call_volume_ratio_30d": 0.8,
+                "put_volume_ratio_30d": 0.8,
+                "liquidity_score": 20.0,
+            }
+        },
+        {("XYZ", "bullish"): quote},
+        {"regime": "RISK_OFF"},
+        signal_date="2026-03-02",
+        option_quotes={quote["option_symbol"]: quote},
+    )
+    pattern_config = {
+        "min_call_volume_ratio": 1.35,
+        "min_put_volume_ratio": 1.35,
+        "min_hot_premium": 250_000.0,
+        "min_oi_diff": 5_000.0,
+        "max_spread_pct": 0.35,
+        "high_iv": 0.75,
+        "min_liquidity_score": 8.0,
+        "min_ask_side_ratio": 0.52,
+        "max_event_dte_without_event_strategy": 2,
+        "min_dark_pool_premium": 5_000_000.0,
+        "min_dark_pool_directional_share": 0.60,
+        "min_dark_pool_directional_coverage": 0.25,
+    }
+
+    signals = generate_signals_for_snapshot(snapshot, pattern_config, max_signals=10)
+    signal = next(row for row in signals if row["base_pattern_family"] == "DARK_POOL_PRESSURE")
+
+    assert signal["direction"] == "bullish"
+    assert signal["dp_total_premium"] == 25_000_000.0
+    assert "MARKET_REGIME_CONFLICT" in signal["block_reasons"]
+
+
+def test_source_complete_dates_accepts_dated_whale_fallback(tmp_path):
+    date_dir = tmp_path / "2026-01-08"
+    date_dir.mkdir()
+    for prefix in ["stock-screener-", "hot-chains-", "chain-oi-changes-"]:
+        (date_dir / f"{prefix}2026-01-08.csv").write_text("ticker\nAAA\n", encoding="utf-8")
+    (date_dir / "whale_trades_filtered-2026-01-08.csv").write_text(
+        "executed_at,underlying_symbol\n",
+        encoding="utf-8",
+    )
+
+    assert source_complete_dates(tmp_path) == ["2026-01-08"]
 
 
 def test_observability_matrix_has_every_required_scenario():
@@ -3295,11 +5004,14 @@ def test_trade_review_board_keeps_reviewable_setups_visible():
     assert [row["ticker"] for row in output] == ["TSLA", "MSFT"]
     assert output[0]["review_status"] == "TACTICAL_REVIEW"
     assert output[0]["trade_setup"] == "BUY PUT TSLA 410 exp 2026-06-18"
+    assert "establish positive out-of-sample expectancy" in output[0]["promotion_needed"]
+    assert "upgrade pattern family to PROVEN" in output[0]["promotion_needed"]
+    assert "upgraded to proven" not in output[0]["promotion_needed"]
     assert output[1]["review_status"] == "MACRO_CONFLICT_REVIEW"
-    assert "regime alignment" in output[1]["promotion_needed"]
+    assert "gain regime alignment" in output[1]["promotion_needed"]
 
 
-def test_target_ready_keeps_risk_labeled_complete_edge_visible():
+def test_target_ready_excludes_avoid_even_when_ticket_is_complete():
     row = {
         "status": "AVOID",
         "classification": "AVOID",
@@ -3327,10 +5039,10 @@ def test_target_ready_keeps_risk_labeled_complete_edge_visible():
 
     candidates = build_target_ready_candidates([row], DEFAULT_RISK_CONFIG)
 
-    assert candidates == [row]
-    assert daily_trade_decision([], [], [row], candidates) == "TARGET_READY"
-    output = target_ready_output_row(candidates[0])
-    assert output["target_ready_status"] == "TARGET_READY"
+    assert candidates == []
+    assert daily_trade_decision([], [], [row], candidates) == "NO_TRADE"
+    output = target_ready_output_row(row)
+    assert output["target_ready_status"] == "BLOCKED_NOT_READY"
     assert output["send_now"] == "no"
     assert output["live_recheck_required"] == "yes"
     assert output["target_debit_credit"] == "debit 7.50-7.70"
@@ -3338,6 +5050,15 @@ def test_target_ready_keeps_risk_labeled_complete_edge_visible():
     assert output["order_entry_missing_fields"] == ""
     assert "risk_limit_labeled_not_hidden" in output["risk_label"]
     assert "max risk $770.65 exceeds configured trade limit" in output["why_not_send_now"]
+    consistency_errors = validate_artifact_consistency(
+        [row],
+        [],
+        [],
+        [],
+        "NO_TRADE",
+        target_ready=[row],
+    )
+    assert "AAPL: AVOID candidate cannot be labeled target ready" in consistency_errors
 
 
 def test_target_ready_excludes_incomplete_or_negative_edge_tickets():
@@ -3699,7 +5420,7 @@ def test_catalyst_flow_leader_without_probability_or_ev_is_avoid_not_review():
     assert rows[0].get("probability_score") is None
 
 
-def test_validated_regime_edge_surfaces_trade_review_instead_of_blanket_avoid():
+def test_validated_regime_edge_does_not_bypass_missing_contract_profile():
     daily_rows = [
         {
             "date": "2026-05-19",
@@ -3752,15 +5473,15 @@ def test_validated_regime_edge_surfaces_trade_review_instead_of_blanket_avoid():
     }
     validation_bundle["outcomes"] = [
         {
-            "split": "cumulative_to_2026-05_holdout",
+            "split": "cumulative_to_2026-05_holdout" if idx < 18 else "cumulative_to_2026-06_holdout",
             "sample": "VALIDATION",
             "horizon": "5d",
             "signal_date": "2026-05-01",
             "pattern_family": family,
             "market_regime": "RISK_OFF",
             "status": "SCORED",
-            "net_r": 0.45 if idx < 22 else -0.18,
-            "win": int(idx < 22),
+            "net_r": 0.45 if (idx % 8) < 5 else -0.18,
+            "win": int((idx % 8) < 5),
         }
         for idx in range(35)
     ]
@@ -3772,24 +5493,16 @@ def test_validated_regime_edge_surfaces_trade_review_instead_of_blanket_avoid():
         {},
     )
 
-    assert rows[0]["status"] == "TRADE_REVIEW"
-    assert rows[0]["classification"] == "WATCH"
-    assert rows[0]["edge_review_reason"] == "VALIDATED_FAMILY_AND_REGIME_EDGE_REVIEW"
+    assert rows[0]["status"] == "AVOID"
+    assert rows[0]["classification"] == "AVOID"
+    assert rows[0]["edge_review_reason"] == ""
     assert "MARKET_REGIME_CONFLICT" in rows[0]["block_reasons"]
-    assert trade_review_output_row(rows[0])["review_status"] == "VALIDATED_EDGE_REVIEW"
+    assert "CONTRACT_PROFILE_NOT_VALIDATED" in rows[0]["block_reasons"]
     recommendations = build_pattern_recommendations([], rows)
-    assert len(recommendations) == 1
-    recommendation = pattern_recommendation_output_row(recommendations[0], 1)
-    assert recommendation["recommendation"] == "PATTERN_RECOMMENDATION"
-    assert recommendation["entry_limit"] == "debit 10.60-10.75"
-    assert recommendation["breakeven_success_probability_pct"] == 28.57
-    assert recommendation["edge_vs_breakeven_pct"] > 0
-    assert "Validated historical edge" in recommendation["why_recommended"]
-    assert "regime OOS edge passed review" in recommendation["why_not_auto_approved"]
-    assert "manual catalyst confirmation" in recommendation["why_not_auto_approved"]
+    assert recommendations == []
 
 
-def test_validated_regime_edge_bridge_promotes_market_conflict_only_ticker_trend():
+def test_validated_regime_edge_bridge_requires_comparable_contract_profile():
     family = "SOURCE_PREMIUM_COVERAGE_RESCUE__BULLISH__LONG_OPTION__TECHNOLOGY"
     daily_rows = [
         {
@@ -3828,10 +5541,12 @@ def test_validated_regime_edge_bridge_promotes_market_conflict_only_ticker_trend
         win = idx % 2 == 0 or idx == 1
         hood_outcomes.append(
             {
-                "split": "cumulative_to_2026-06_holdout",
+                "split": "cumulative_to_2026-05_holdout" if idx < 13 else "cumulative_to_2026-06_holdout",
                 "sample": "VALIDATION",
                 "horizon": "5d",
-                "signal_date": "2026-06-01",
+                    "signal_date": (
+                        f"2026-05-{idx + 1:02d}" if idx < 13 else f"2026-06-{idx - 12:02d}"
+                    ),
                 "pattern_family": family,
                 "ticker": "HOOD",
                 "direction": "bullish",
@@ -3890,17 +5605,16 @@ def test_validated_regime_edge_bridge_promotes_market_conflict_only_ticker_trend
         {},
     )
 
-    assert rows[0]["status"] == "AUTO_APPROVED"
-    assert rows[0]["classification"] == "TRADE"
-    assert rows[0]["approval_bridge"] == "VALIDATED_REGIME_EDGE"
-    assert rows[0]["regime_edge_review_passed"] == "yes"
-    assert "MARKET_REGIME_CONFLICT" not in rows[0]["block_reasons"]
-    assert rows[0]["auto_min_scored_outcomes"] == controls["risk_config"]["min_ticker_trend_scored_outcomes"]
-    assert "same-regime OOS evidence bridged" in rows[0]["why_actionable_now"]
+    assert rows[0]["status"] == "AVOID"
+    assert rows[0]["classification"] == "AVOID"
+    assert rows[0]["approval_bridge"] == ""
+    assert rows[0]["regime_edge_review_passed"] == "no"
+    assert "MARKET_REGIME_CONFLICT" in rows[0]["block_reasons"]
+    assert "CONTRACT_PROFILE_NOT_VALIDATED" in rows[0]["block_reasons"]
+    assert rows[0]["auto_min_scored_outcomes"] == controls["risk_config"]["min_oos_scored_outcomes"]
     trade_row = trade_output_row(rows[0])
-    assert trade_row["approval_bridge"] == "VALIDATED_REGIME_EDGE"
-    assert "approval_bridge=VALIDATED_REGIME_EDGE" in trade_row["auto_approval_gate_evidence"]
-    assert "ticker_trend_scope=ticker_direction_strategy" in trade_row["auto_approval_gate_evidence"]
+    assert trade_row["approval_bridge"] == ""
+    assert trade_row["contract_profile_validated"] == "no"
 
 
 def test_blocker_text_explains_probability_thresholds_instead_of_raw_codes():

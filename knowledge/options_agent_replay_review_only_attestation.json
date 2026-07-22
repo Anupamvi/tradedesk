@@ -1,0 +1,15 @@
+{
+  "current_cache_fingerprint": "b44b055015f5ca05effd06eb5a28b6ceb8f3f2377e9b0dcf7f1a342f3abed3e0",
+  "manifest_sha256": "3850d0814d4b3ef3bf4b7bbebfb8788307028ddff5b6ec043c481979d3ece11e",
+  "pipeline_version": "options-agent-v1.50-mixed-credit-live-width-parity-20260722-094108",
+  "producer": "uwos.options_agent.replay",
+  "reason": "Post-selection replay-parity correction: live Schwab repricing no longer shifts the dated UW signal holding horizon; selector, candidate construction, pricing, and frozen replay selection recompute identically.",
+  "recomputed_selected_count": 858,
+  "recomputed_selected_ids_sha256": "ed5afe08c54fb78116e59309c51b1798685f0311e055488a065f6e12a33ef4c9",
+  "replay_detail_sha256": "f8cf94b5c4e83ec6071430734546126feb45dbf3c494796bb0410ab0a86e1548",
+  "schema_version": "options_agent.replay_review_only_attestation.v1",
+  "selector_policy_id": "core_credit_rank_only_queue9_v17",
+  "source_cache_fingerprint": "4d4f756964e4b27d831c62c28d3068eb3ca16ba4624baba6f5054b515fc782bc",
+  "stored_selected_count": 858,
+  "stored_selected_ids_sha256": "ed5afe08c54fb78116e59309c51b1798685f0311e055488a065f6e12a33ef4c9"
+}

@@ -154,12 +154,12 @@ def test_replay_quality_pattern_accepts_validated_credit_and_buffer() -> None:
     passed, reason = replay_quality_pattern(
         direction="Bear Call",
         trend="uptrend",
-        credit_pct=0.20,
+        credit_pct=0.25,
         distance_pct=0.027,
         expected_move=0.04,
     )
     assert passed is True
-    assert reason == "validated_credit18_30_expected_buffer"
+    assert reason == "validated_credit25_30_expected_buffer"
 
 
 def test_replay_quality_pattern_rejects_unvalidated_low_credit_range_trade() -> None:
@@ -178,7 +178,7 @@ def test_replay_quality_pattern_rejects_credit_without_expected_move_buffer() ->
     passed, reason = replay_quality_pattern(
         direction="Bear Call",
         trend="uptrend",
-        credit_pct=0.24,
+        credit_pct=0.25,
         distance_pct=0.02,
         expected_move=0.04,
     )
@@ -211,7 +211,7 @@ def test_write_replay_asof_report_emits_explicit_trade_ticket(tmp_path) -> None:
                 "edge_type": "flow+volatility",
                 "exact_evaluated": True,
                 "replay_guard_pass": True,
-                "replay_guard_reason": "validated_credit18_30_expected_buffer",
+                "replay_guard_reason": "validated_credit25_30_expected_buffer",
                 "exit_reason": "profit_target",
                 "exit_day": "2026-04-30",
                 "pnl_1x": 90.95,
@@ -236,11 +236,12 @@ def test_decision_selection_keeps_only_strongest_flow_aligned_trade_per_day() ->
         [
             {
                 "asof": "2026-04-29",
-                "ticker": "AAA",
-                "direction": "Bear Call",
+                    "ticker": "AAA",
+                    "direction": "Bear Call",
+                    "regime": "downtrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
-                "entry_credit_pct_width": 0.20,
+                "entry_credit_pct_width": 0.27,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.20,
                 "dte": 22,
@@ -249,11 +250,12 @@ def test_decision_selection_keeps_only_strongest_flow_aligned_trade_per_day() ->
             },
             {
                 "asof": "2026-04-29",
-                "ticker": "BBB",
-                "direction": "Bear Call",
+                    "ticker": "BBB",
+                    "direction": "Bear Call",
+                    "regime": "downtrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
-                "entry_credit_pct_width": 0.20,
+                "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.20,
                 "dte": 22,
@@ -279,7 +281,7 @@ def test_decision_selection_blocks_near_earnings() -> None:
                 "direction": "Bear Call",
                 "stock_price_eod": 670.0,
                 "short_strike_eod": 720.0,
-                "entry_credit_pct_width": 0.20,
+                "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.40,
                 "dte": 11,
@@ -428,8 +430,9 @@ def test_decision_selection_requires_distance_even_with_volatility_edge() -> Non
         [
             {
                 "asof": "2026-04-22",
-                "ticker": "SEC",
-                "direction": "Bear Call",
+                    "ticker": "SEC",
+                    "direction": "Bear Call",
+                    "regime": "downtrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 104.0,
                 "entry_credit_pct_width": 0.24,
@@ -443,11 +446,12 @@ def test_decision_selection_requires_distance_even_with_volatility_edge() -> Non
             },
             {
                 "asof": "2026-04-23",
-                "ticker": "PRI",
-                "direction": "Bear Call",
+                    "ticker": "PRI",
+                    "direction": "Bear Call",
+                    "regime": "downtrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
-                "entry_credit_pct_width": 0.20,
+                "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.20,
                 "dte": 21,
@@ -457,8 +461,9 @@ def test_decision_selection_requires_distance_even_with_volatility_edge() -> Non
             },
             {
                 "asof": "2026-04-23",
-                "ticker": "SEC2",
-                "direction": "Bear Call",
+                    "ticker": "SEC2",
+                    "direction": "Bear Call",
+                    "regime": "downtrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 104.0,
                 "entry_credit_pct_width": 0.24,
@@ -491,11 +496,12 @@ def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
         [
             {
                 "asof": "2026-04-29",
-                "ticker": "TOP",
-                "direction": "Bear Call",
+                    "ticker": "TOP",
+                    "direction": "Bear Call",
+                    "regime": "downtrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
-                "entry_credit_pct_width": 0.20,
+                "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.20,
                 "dte": 21,
@@ -504,11 +510,12 @@ def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
             },
             {
                 "asof": "2026-04-29",
-                "ticker": "ADD",
-                "direction": "Bear Call",
+                    "ticker": "ADD",
+                    "direction": "Bear Call",
+                    "regime": "downtrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
-                "entry_credit_pct_width": 0.22,
+                "entry_credit_pct_width": 0.26,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.45,
                 "dte": 21,
@@ -517,11 +524,12 @@ def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
             },
             {
                 "asof": "2026-04-29",
-                "ticker": "SKIP",
-                "direction": "Bull Put",
+                    "ticker": "SKIP",
+                    "direction": "Bull Put",
+                    "regime": "downtrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 94.0,
-                "entry_credit_pct_width": 0.22,
+                "entry_credit_pct_width": 0.26,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.45,
                 "dte": 21,

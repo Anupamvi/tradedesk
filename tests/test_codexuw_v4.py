@@ -69,6 +69,9 @@ def _candidate(**overrides) -> dict:
         "edge_profit_factor": 1.30,
         "edge_win_rate": 0.62,
         "edge_avg_pnl": 24.0,
+        "edge_match_level": "exact",
+        "regime": "uptrend",
+        "regime_trend": "uptrend",
         "confirmation_score": 7.2,
         "score": 6.5,
         "catalyst_status": "mixed",
@@ -76,7 +79,90 @@ def _candidate(**overrides) -> dict:
         "catalyst_earnings_days": 73,
         "target_entry": 0.90,
         "price_annotation": "current credit $0.75 is below target $0.90; show as work-limit",
+        "payoff_calibration_status": "PASS",
+        "payoff_route_level": "base",
+        "payoff_route_key": "base::Credit|Bull Put|uptrend",
+        "payoff_minimum_sample_required": 20,
+        "payoff_sample_size": 27,
+        "payoff_stress_10_win_rate": 0.78,
+        "payoff_stress_10_win_rate_lower_bound": 0.60,
+        "payoff_stress_10_average_pnl": 24.0,
+        "payoff_stress_10_average_win_risk_fraction": 0.25,
+        "payoff_stress_10_average_loss_risk_fraction": 0.50,
+        "payoff_stress_10_profit_factor": 1.61,
+        "payoff_walk_forward_oos_sample": 14,
+        "payoff_walk_forward_oos_profit_factor": 1.72,
+        "payoff_post_activation_oos_sample": 2,
+        "payoff_post_activation_oos_average_pnl": 48.0,
+        "payoff_post_activation_oos_profit_factor": 2.0,
+        "payoff_entry_pct_width_p25": 0.18,
+        "payoff_entry_pct_width_p75": 0.30,
     }
+    row.update(overrides)
+    return row
+
+
+def _medium_debit_candidate(**overrides) -> dict:
+    row = _candidate(
+        ticker="DEBIT",
+        direction="Bull Call",
+        strategy="Bull Call Debit Spread",
+        expiry="2026-06-17",
+        dte=28,
+        trade_status="Watch",
+        trade_tier="Scout",
+        trade_status_reason="",
+        penalties="",
+        hard_rejects="",
+        credit=None,
+        mid_credit=None,
+        natural_credit=None,
+        credit_pct_width=None,
+        debit=1.00,
+        mid_debit=1.00,
+        natural_debit=0.95,
+        debit_pct_width=0.20,
+        required_entry=1.10,
+        target_entry=1.10,
+        spread_width=5.0,
+        max_profit=400.0,
+        max_loss=100.0,
+        reward_risk=4.0,
+        breakeven_distance_pct=0.02,
+        long_strike=100.0,
+        short_strike=105.0,
+        long_leg="DEBIT260617C00100000",
+        short_leg="DEBIT260617C00105000",
+        expected_move_ratio=1.50,
+        combined_flow_bias=0.25,
+        flow_quality="directional",
+        bot_flow_source_status="bot_eod_loaded",
+        regime="uptrend",
+        regime_trend="uptrend",
+        quote_width_pct=0.10,
+        entry_quote_width_pct=0.10,
+        iv_rank=40,
+        oi_carryover_status="supportive",
+        edge_verdict="positive",
+        replay_ev_verdict="positive",
+        edge_match_level="debit_policy_sleeve",
+        edge_sample_size=18,
+        edge_profit_factor=1.40,
+        edge_win_rate=0.65,
+        edge_avg_pnl=20.0,
+        catalyst_status="clear",
+        catalyst_earnings_date="2026-08-01",
+        catalyst_earnings_days=73,
+        price_annotation="",
+        confidence_calibration_status="PASS",
+        confidence_model_tier="strategy_family_validated",
+        confidence_calibration_sample_size=185,
+        confidence_probability_lower_bound=0.61,
+        confidence_calibration_brier=0.23,
+        confidence_calibration_baseline_brier=0.25,
+        payoff_route_level="base",
+        payoff_route_key="base::Debit|Bull Call|uptrend",
+    )
     row.update(overrides)
     return row
 
@@ -88,6 +174,7 @@ def test_v4_cli_and_default_output_folders_say_v4(tmp_path: Path) -> None:
     assert args.report_mode == "post-close"
     assert args.index_income_mode == "primary"
     assert args.risk_budget == 0
+    assert args.validation_account_value == 0
     assert _default_out_dir(tmp_path, ASOF, "run") == tmp_path / "out" / "codexdaily_v4_2026-05-20"
     assert _default_out_dir(tmp_path, ASOF, "validation") == tmp_path / "out" / "codexdaily_v4_validation_2026-05-20"
     assert _default_out_dir(tmp_path, ASOF, "overlay", dt.date(2026, 5, 21)) == tmp_path / "out" / "codexdaily_v4_overlay_2026-05-20_overlay_2026-05-21"
@@ -221,7 +308,8 @@ def test_v4_target_model_uses_swing_tickets_not_only_execute() -> None:
 
     assert model["execute_profit_potential"] == 0
     assert model["swing_target_profit_potential_if_filled"] == 800
-    assert model["realistic_fill_adjusted_target_potential"] > 0
+    assert model["theoretical_target_inventory_fill_adjusted_potential"] > 0
+    assert model["realistic_fill_adjusted_target_potential"] == 0
     assert model["required_number_of_target_tickets"] is not None
 
 
@@ -331,12 +419,125 @@ def test_v4_debit_execute_requires_full_policy_evidence() -> None:
         edge_sample_size=25,
         edge_profit_factor=0.90,
         edge_avg_pnl=5.0,
+        confidence_calibration_status="PASS",
+        confidence_model_tier="strategy_family_validated",
+        confidence_calibration_sample_size=185,
+        confidence_probability_lower_bound=0.61,
+        confidence_calibration_brier=0.23,
+        confidence_calibration_baseline_brier=0.25,
+        payoff_route_level="base",
+        payoff_route_key="base::Debit|Bull Call|uptrend",
     )
 
     adjusted = apply_v4_professional_dispositions(pd.DataFrame([weak]), asof=ASOF)
 
     assert adjusted["trade_status"].iloc[0] != "Execute"
-    assert "debit_edge_pf_below_1.15" in adjusted["v4_direct_disposition_reason"].iloc[0]
+    assert "debit_edge_pf_below_1.25" in adjusted["v4_direct_disposition_reason"].iloc[0]
+
+
+def test_v4_validated_medium_debit_sleeve_executes_at_one_contract() -> None:
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([_medium_debit_candidate()]), asof=ASOF)
+
+    assert adjusted["trade_status"].iloc[0] == "Execute"
+    assert adjusted["debit_policy_tier"].iloc[0] == "medium"
+    assert "Medium Debit" in adjusted["trade_tier"].iloc[0]
+
+    tickets = build_v4_swing_target_tickets(
+        scored=adjusted,
+        board=pd.DataFrame(),
+        regime={"trend": "uptrend", "volatility": "low", "flow": "directional"},
+        top_flow=pd.DataFrame([{"rank": 1, "ticker": "DEBIT", "net_premium": 2_000_000, "flow_direction": "bullish"}]),
+    )
+
+    assert tickets.iloc[0]["final disposition"] == "Execute"
+    assert tickets.iloc[0]["suggested size"] == "1 contract only; Medium debit sleeve"
+
+
+def test_v4_validated_structural_credit_route_replaces_sparse_exact_edge_only() -> None:
+    row = _candidate(
+        ticker="RANGE_CALL",
+        direction="Bear Call",
+        strategy="Bear Call Credit Spread",
+        regime="range",
+        regime_trend="range",
+        expiry="2026-08-21",
+        dte=32,
+        short_strike=110.0,
+        long_strike=115.0,
+        short_leg="RANGE_CALL260821C00110000",
+        long_leg="RANGE_CALL260821C00115000",
+        credit=1.30,
+        mid_credit=1.32,
+        natural_credit=1.25,
+        credit_pct_width=0.26,
+        required_entry=1.25,
+        target_entry=1.25,
+        penalties="thin_replay_sample",
+        edge_match_level="unavailable",
+        edge_sample_size=0,
+        edge_profit_factor=float("nan"),
+        edge_avg_pnl=float("nan"),
+        combined_flow_bias=0.0,
+        flow_quality="directional",
+        oi_carryover_status="supportive",
+        catalyst_status="clear",
+        catalyst_earnings_date="2026-09-30",
+        catalyst_earnings_days=100,
+        distance_pct=0.08,
+        expected_move_ratio=1.50,
+        payoff_route_level="flow_cost",
+        payoff_route_key="flow_cost::Credit|Bear Call|range|flow=directional|cost=18to30",
+        payoff_minimum_sample_required=12,
+        payoff_sample_size=17,
+        payoff_stress_10_win_rate=0.882,
+        payoff_stress_10_average_pnl=35.85,
+        payoff_stress_10_average_win_risk_fraction=0.20,
+        payoff_stress_10_average_loss_risk_fraction=0.40,
+        payoff_stress_10_profit_factor=2.36,
+        payoff_walk_forward_oos_sample=8,
+        payoff_walk_forward_oos_profit_factor=float("inf"),
+        payoff_post_activation_oos_sample=3,
+        payoff_post_activation_oos_average_pnl=53.15,
+        payoff_post_activation_oos_profit_factor=float("inf"),
+        confidence_calibration_status="PASS",
+        confidence_model_tier="strategy_family_validated",
+        confidence_calibration_sample_size=185,
+        confidence_probability_lower_bound=0.61,
+        confidence_calibration_brier=0.23,
+        confidence_calibration_baseline_brier=0.25,
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Execute"
+
+
+def test_v4_medium_debit_sleeve_does_not_generalize_to_range_or_bear_put() -> None:
+    rows = pd.DataFrame(
+        [
+            _medium_debit_candidate(
+                ticker="RANGE",
+                regime="range",
+                regime_trend="range",
+                payoff_route_key="base::Debit|Bull Call|range",
+            ),
+            _medium_debit_candidate(
+                ticker="BEAR",
+                direction="Bear Put",
+                strategy="Bear Put Debit Spread",
+                regime="downtrend",
+                regime_trend="downtrend",
+                combined_flow_bias=-0.25,
+            ),
+        ]
+    )
+
+    adjusted = apply_v4_professional_dispositions(rows, asof=ASOF)
+
+    assert not adjusted["trade_status"].eq("Execute").any()
+    reasons = adjusted.set_index("ticker")["v4_direct_disposition_reason"]
+    assert "debit quality policy" in reasons["RANGE"]
+    assert "realized payoff lane" in reasons["BEAR"]
 
 
 def test_v4_hard_risk_cap_truncates_or_downgrades_target_signals() -> None:
@@ -454,20 +655,22 @@ def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_
         "codexdaily_v4_construction_attempts_2026-05-20.csv",
         "codexdaily_v4_no_miss_audit_2026-05-20.csv",
         "codexdaily_v4_safety_calibration_2026-05-20.csv",
+        "codexdaily_v4_confidence_calibration_predictions_2026-05-20.csv",
+        "codexdaily_v4_confidence_calibration_summary_2026-05-20.json",
         "codexdaily_v4_risk_cap_audit_2026-05-20.csv",
         "codexdaily_v4_secondary_liquidity_sweep_2026-05-20.csv",
     ]:
         assert (out_dir / name).exists()
 
 
-def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path) -> None:
+def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path, monkeypatch) -> None:
     base_dir = tmp_path / "2026-05-20"
     out_dir = tmp_path / "out"
     base_dir.mkdir()
     scored = pd.DataFrame(
         [
-                _candidate(ticker="AAA", trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, natural_credit=1.0, required_entry=0.9, target_entry=0.9, credit_pct_width=0.20, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded"),
-                _candidate(ticker="BBB", sector="Healthcare", trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, natural_credit=1.1, required_entry=0.9, target_entry=0.9, credit_pct_width=0.22, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded"),
+                _candidate(ticker="AAA", expiry="2026-06-10", dte=21, trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, natural_credit=1.0, required_entry=0.9, target_entry=0.9, credit_pct_width=0.25, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
+                _candidate(ticker="BBB", sector="Healthcare", expiry="2026-06-10", dte=21, trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, natural_credit=1.1, required_entry=0.9, target_entry=0.9, credit_pct_width=0.26, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
         ]
     )
     top_flow = pd.DataFrame(
@@ -477,6 +680,11 @@ def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path) -> None:
         ]
     )
     args = parse_args(["run", "--date", "2026-05-20", "--out-dir", str(out_dir), "--max-final-trades", "1"])
+    monkeypatch.setattr(
+        "codexuw.daily_v4.build_default_payoff_calibration",
+        lambda **_: ({"status": "TEST_BYPASS"}, pd.DataFrame(), pd.DataFrame()),
+    )
+    monkeypatch.setattr("codexuw.daily_v4.apply_payoff_calibration", lambda frame, groups: frame.copy())
 
     manifest = write_v4_outputs(
         out_dir=out_dir,

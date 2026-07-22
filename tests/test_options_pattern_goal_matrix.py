@@ -373,11 +373,15 @@ def test_portfolio_acceptance_summary_aggregates_auto_trades(tmp_path):
                 "success_probability_pct,expected_R,expected_R_per_day,validation_profit_factor,"
                 "validation_scored_count,beats_baselines_count,baselines_beaten_names,baselines_beaten_details,"
                 "ticker_trend_scope,ticker_trend_scored_count,ticker_trend_avg_R,ticker_trend_profit_factor,"
-                "ticker_trend_probability_score_pct,ticker_trend_win_rate_pct,calibrated_probability",
+                "ticker_trend_probability_score_pct,ticker_trend_win_rate_pct,calibrated_probability,"
+                "base_pattern_family,ticker_trend_base_pattern_family,ticker_trend_unique_signal_date_count,"
+                "ticker_trend_recent_scored_count,ticker_trend_recent_win_rate_pct,ticker_trend_recent_avg_R,"
+                "ticker_trend_recent_profit_factor,ticker_trend_validation_split_count,"
+                "ticker_trend_positive_validation_splits,ticker_trend_latest_validation_split_average_net_R",
                 "AMD,bullish,Long Call Debit,BUY,CALL,550,2026-06-05,debit 9.05-9.25,"
                 "Buy 1 AMD 2026-06-05 550C @ debit 9.05-9.25 limit,925.65,55.83,66.67,"
                 "1.97,0.39,9.73,21,6,BASELINE_A;BASELINE_B,details,ticker_direction_strategy,"
-                "21,1.97,9.73,55.83,66.67,0.6667",
+                "21,1.97,9.73,55.83,66.67,0.6667,LONG_CALL,LONG_CALL,21,8,62.5,1.2,2.0,4,4,0.8",
             ]
         ),
         encoding="utf-8",

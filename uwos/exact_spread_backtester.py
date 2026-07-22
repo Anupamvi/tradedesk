@@ -19,6 +19,7 @@ import yfinance as yf
 OCC_RE = re.compile(r"^([A-Z\.]{1,10})(\d{6})([CP])(\d{8})$")
 ENTRY_GATE_RE = re.compile(r"^\s*(>=|<=)\s*([0-9]*\.?[0-9]+)\s*(cr|db)\s*$", re.IGNORECASE)
 DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+EXPORT_DATE_RE = re.compile(r"20\d{2}-\d{2}-\d{2}")
 
 ZIP_PREFIX_CHAIN_OI = "chain-oi-changes-"
 ZIP_PREFIX_HOT = "hot-chains-"
@@ -124,6 +125,46 @@ def parse_date(x: object) -> Optional[dt.date]:
         return None
 
 
+def export_date(path: Path) -> Optional[dt.date]:
+    parsed = [parse_date(value) for value in EXPORT_DATE_RE.findall(path.name)]
+    dates = [value for value in parsed if value is not None]
+    return max(dates) if dates else None
+
+
+def pick_point_in_time_export(
+    day_dir: Path,
+    prefix: str,
+    *,
+    asof: Optional[dt.date] = None,
+) -> Optional[Path]:
+    """Choose a CSV/ZIP export whose filename date does not exceed the session."""
+
+    ceiling = asof or parse_date(day_dir.name)
+    matches = sorted(
+        path
+        for suffix in ("csv", "zip")
+        for path in day_dir.glob(f"{prefix}*.{suffix}")
+    )
+    if ceiling is not None:
+        matches = [
+            path
+            for path in matches
+            if export_date(path) is None or export_date(path) <= ceiling
+        ]
+    if not matches:
+        return None
+    exact = [path for path in matches if ceiling is not None and export_date(path) == ceiling]
+    eligible = exact or matches
+    return max(
+        eligible,
+        key=lambda path: (
+            export_date(path) or dt.date.min,
+            path.stat().st_mtime,
+            path.name,
+        ),
+    )
+
+
 def parse_occ_symbol(symbol: object) -> Optional[Tuple[str, dt.date, str, float]]:
     m = OCC_RE.match(str(symbol or "").strip().upper())
     if not m:
@@ -218,28 +259,44 @@ class HistoricalOptionQuoteStore:
         return sorted(self._date_dirs.keys())
 
     @staticmethod
-    def _pick_zip(day_dir: Path, prefix: str) -> Optional[Path]:
-        matches = sorted([p for p in day_dir.glob("*.zip") if p.name.startswith(prefix)])
-        return matches[-1] if matches else None
+    def _pick_export(
+        day_dir: Path,
+        prefix: str,
+        *,
+        asof: Optional[dt.date] = None,
+    ) -> Optional[Path]:
+        return pick_point_in_time_export(day_dir, prefix, asof=asof)
 
     @staticmethod
-    def _iter_csv_chunks_from_zip(
-        zip_path: Path,
+    def _iter_csv_chunks_from_export(
+        export_path: Path,
         usecols: Sequence[str],
         chunksize: int = 200_000,
     ) -> Iterable[pd.DataFrame]:
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            csvs = sorted([n for n in zf.namelist() if n.lower().endswith(".csv")])
-            if not csvs:
-                return
-            with zf.open(csvs[0], "r") as fh:
-                for chunk in pd.read_csv(fh, usecols=usecols, low_memory=False, chunksize=chunksize):
-                    yield chunk
+        if export_path.suffix.lower() == ".zip":
+            with zipfile.ZipFile(export_path, "r") as zf:
+                csvs = sorted([n for n in zf.namelist() if n.lower().endswith(".csv")])
+                if not csvs:
+                    return
+                with zf.open(csvs[0], "r") as fh:
+                    yield from pd.read_csv(
+                        fh,
+                        usecols=usecols,
+                        low_memory=False,
+                        chunksize=chunksize,
+                    )
+            return
+        yield from pd.read_csv(
+            export_path,
+            usecols=usecols,
+            low_memory=False,
+            chunksize=chunksize,
+        )
 
-    def _read_hot_quotes(self, zip_path: Path, wanted_symbols: Optional[Set[str]]) -> pd.DataFrame:
+    def _read_hot_quotes(self, export_path: Path, wanted_symbols: Optional[Set[str]]) -> pd.DataFrame:
         cols = ["option_symbol", "date", "bid", "ask", "volume", "open_interest"]
         parts: List[pd.DataFrame] = []
-        for chunk in self._iter_csv_chunks_from_zip(zip_path, cols):
+        for chunk in self._iter_csv_chunks_from_export(export_path, cols):
             c = chunk.copy()
             c["option_symbol"] = c["option_symbol"].astype(str).str.upper().str.strip()
             if wanted_symbols:
@@ -255,10 +312,10 @@ class HistoricalOptionQuoteStore:
             )
         return pd.concat(parts, ignore_index=True)
 
-    def _read_oi_quotes(self, zip_path: Path, wanted_symbols: Optional[Set[str]]) -> pd.DataFrame:
+    def _read_oi_quotes(self, export_path: Path, wanted_symbols: Optional[Set[str]]) -> pd.DataFrame:
         cols = ["option_symbol", "curr_date", "last_bid", "last_ask", "volume", "curr_oi"]
         parts: List[pd.DataFrame] = []
-        for chunk in self._iter_csv_chunks_from_zip(zip_path, cols):
+        for chunk in self._iter_csv_chunks_from_export(export_path, cols):
             c = chunk.copy()
             c["option_symbol"] = c["option_symbol"].astype(str).str.upper().str.strip()
             if wanted_symbols:
@@ -284,13 +341,13 @@ class HistoricalOptionQuoteStore:
 
         parts: List[pd.DataFrame] = []
         if self.use_hot:
-            hot_zip = self._pick_zip(day_dir, ZIP_PREFIX_HOT)
-            if hot_zip:
-                parts.append(self._read_hot_quotes(hot_zip, wanted_symbols))
+            hot_export = self._pick_export(day_dir, ZIP_PREFIX_HOT, asof=asof)
+            if hot_export:
+                parts.append(self._read_hot_quotes(hot_export, wanted_symbols))
         if self.use_oi:
-            oi_zip = self._pick_zip(day_dir, ZIP_PREFIX_CHAIN_OI)
-            if oi_zip:
-                parts.append(self._read_oi_quotes(oi_zip, wanted_symbols))
+            oi_export = self._pick_export(day_dir, ZIP_PREFIX_CHAIN_OI, asof=asof)
+            if oi_export:
+                parts.append(self._read_oi_quotes(oi_export, wanted_symbols))
         if not parts:
             return pd.DataFrame(columns=["option_symbol", "bid", "ask", "mid", "volume", "open_interest", "source_kind"])
 
@@ -365,30 +422,36 @@ class UnderlyingCloseStore:
                     self._date_dirs[d] = p
 
     @staticmethod
-    def _pick_zip(day_dir: Path, prefix: str) -> Optional[Path]:
-        matches = sorted([p for p in day_dir.glob("*.zip") if p.name.startswith(prefix)])
-        return matches[-1] if matches else None
+    def _pick_export(
+        day_dir: Path,
+        prefix: str,
+        *,
+        asof: Optional[dt.date] = None,
+    ) -> Optional[Path]:
+        return pick_point_in_time_export(day_dir, prefix, asof=asof)
 
     @staticmethod
-    def _read_screener_rows(zip_path: Path) -> pd.DataFrame:
+    def _read_screener_rows(export_path: Path) -> pd.DataFrame:
         cols = ["date", "ticker", "close"]
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            csvs = sorted([n for n in zf.namelist() if n.lower().endswith(".csv")])
-            if not csvs:
-                return pd.DataFrame(columns=cols)
-            with zf.open(csvs[0], "r") as fh:
-                return pd.read_csv(fh, usecols=cols, low_memory=False)
+        if export_path.suffix.lower() == ".zip":
+            with zipfile.ZipFile(export_path, "r") as zf:
+                csvs = sorted([n for n in zf.namelist() if n.lower().endswith(".csv")])
+                if not csvs:
+                    return pd.DataFrame(columns=cols)
+                with zf.open(csvs[0], "r") as fh:
+                    return pd.read_csv(fh, usecols=cols, low_memory=False)
+        return pd.read_csv(export_path, usecols=cols, low_memory=False)
 
     def _load_local(self) -> None:
         if self._local_loaded:
             return
         rows: List[pd.DataFrame] = []
-        for _, day_dir in sorted(self._date_dirs.items()):
-            z = self._pick_zip(day_dir, ZIP_PREFIX_SCREENER)
-            if not z:
+        for session_day, day_dir in sorted(self._date_dirs.items()):
+            export_path = self._pick_export(day_dir, ZIP_PREFIX_SCREENER, asof=session_day)
+            if not export_path:
                 continue
             try:
-                rows.append(self._read_screener_rows(z))
+                rows.append(self._read_screener_rows(export_path))
             except Exception:
                 continue
         if rows:

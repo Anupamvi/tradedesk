@@ -38,14 +38,25 @@ from .macro_geo import (
     render_pattern_observability_matrix,
 )
 
-PIPELINE_VERSION = "options_pattern_pipeline_v1.5-promotion-bridge-20260707-000000"
+PIPELINE_VERSION = "options_pattern_pipeline_v1.16-profile-aware-daily-selection-20260722-000000"
 PREVIOUS_PIPELINE_VERSIONS = (
     "options_pattern_pipeline_v1.2",
     "options_pattern_pipeline_v1.3",
     "options_pattern_pipeline_v1.4",
+    "options_pattern_pipeline_v1.5-promotion-bridge-20260707-000000",
+    "options_pattern_pipeline_v1.6-theme-flow-observability-20260716-000000",
+    "options_pattern_pipeline_v1.7-validation-correctness-20260716-000000",
+    "options_pattern_pipeline_v1.8-compact-action-report-20260717-000000",
+    "options_pattern_pipeline_v1.9-payoff-aware-approval-20260717-000000",
+    "options_pattern_pipeline_v1.10-scoped-recent-trend-20260719-000000",
+    "options_pattern_pipeline_v1.11-family-member-validation-20260719-120000",
+    "options_pattern_pipeline_v1.12-full-chain-oi-20260719-140000",
+    "options_pattern_pipeline_v1.13-two-stage-contract-aware-20260720-090000",
+    "options_pattern_pipeline_v1.14-full-history-two-stage-20260720-185300",
+    "options_pattern_pipeline_v1.15-final-holdout-audit-20260720-220000",
 )
-PIPELINE_RELEASED_AT = "2026-07-07T00:00:00-07:00"
-ARTIFACT_SCHEMA_VERSION = "options_pattern_artifacts_v1"
+PIPELINE_RELEASED_AT = "2026-07-22T00:00:00-07:00"
+ARTIFACT_SCHEMA_VERSION = "options_pattern_artifacts_v2_two_stage"
 DECISION_BOARD_SCHEMA_VERSION = "decision_board_v1"
 MANIFEST_SCHEMA_VERSION = "artifact_manifest_v1"
 DEFAULT_SEED = 20260510
@@ -55,8 +66,10 @@ SOURCE_PREFIXES = (
     "stock-screener",
     "hot-chains",
     "chain-oi-changes",
+    "dp-eod-report",
     "option-trades",
     "bot-eod-report",
+    "whale_trades_filtered",
 )
 BOT_EOD_CACHE_SCHEMA_VERSION = 1
 BOT_EOD_QUOTE_MIN_PREMIUM = 10_000.0
@@ -64,6 +77,15 @@ BOT_EOD_QUOTE_MIN_VOLUME = 100.0
 FLOW_LEADER_MIN_PREMIUM = 100_000_000.0
 FLOW_LEADER_MIN_DIRECTION_SHARE = 0.62
 FLOW_LEADER_SCORE_BONUS = 10.0
+THEME_FLOW_MIN_COMPONENT_PREMIUM = 1_000_000.0
+THEME_FLOW_MIN_COMPONENTS = 2
+THEME_FLOW_BASKETS = {
+    "CRUDE_OIL": {
+        "label": "Crude Oil",
+        "macro_theme": "oil/Middle East",
+        "tickers": ("USO", "BNO", "DBO", "UCO"),
+    },
+}
 SOURCE_COVERAGE_MIN_PREMIUM = 50_000_000.0
 SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 500
 VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
@@ -126,6 +148,8 @@ VALIDATION_TRADE_BLOCKERS = {
     "LIMITED_OUT_OF_SAMPLE_SAMPLE",
     "DOES_NOT_BEAT_TWO_BASELINES",
     "VALIDATION_EXPECTANCY_NEGATIVE",
+    "FAMILY_MEMBER_HISTORY_NEGATIVE",
+    "CONTRACT_PROFILE_NOT_VALIDATED",
 }
 EV_TRADE_BLOCKERS = {
     "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS",
@@ -165,7 +189,23 @@ DEFAULT_RISK_CONFIG = {
     "min_expected_r": 0.0,
     "min_expected_r_per_day": 0.0,
     "min_profit_factor": 1.20,
+    "min_proven_family_expected_r": 0.05,
     "min_oos_scored_outcomes": 30,
+    "min_contract_profile_scored_outcomes": 12,
+    "min_contract_profile_unique_dates": 6,
+    "min_contract_profile_validation_splits": 2,
+    "contract_profile_prior_strength": 12.0,
+    "min_directional_pattern_scored_outcomes": 30,
+    "min_directional_pattern_unique_dates": 15,
+    "min_directional_pattern_positive_splits": 3,
+    "min_directional_pattern_average_move": 0.0025,
+    "min_directional_pattern_profit_factor": 1.20,
+    "min_directional_pattern_baselines_beaten": 2,
+    "min_goal_contract_profile_edges": 3,
+    "min_goal_contract_profile_scored_outcomes": 30,
+    "min_goal_contract_profile_unique_dates": 15,
+    "min_goal_contract_profile_positive_splits": 3,
+    "max_baseline_signals_per_method_per_day": 100,
     "min_baselines_beaten": 2,
     "min_probability_score": 0.50,
     "min_calibrated_probability": 0.50,
@@ -186,11 +226,18 @@ DEFAULT_RISK_CONFIG = {
     "min_regime_edge_review_expected_r": 0.05,
     "min_regime_edge_review_profit_factor": 1.20,
     "min_regime_edge_review_scored_outcomes": 20,
+    "min_regime_edge_review_validation_splits": 2,
+    "min_regime_edge_review_positive_split_ratio": 0.75,
+    "require_regime_edge_latest_split_positive": True,
     "min_target_ready_expected_r": 0.0,
     "min_target_ready_expected_r_per_day": 0.0,
     "min_target_ready_profit_factor": 1.05,
     "min_target_ready_baselines_beaten": 1,
     "min_ticker_trend_scored_outcomes": 20,
+    "min_ticker_trend_unique_signal_dates": 20,
+    "min_ticker_trend_validation_splits": 2,
+    "min_ticker_trend_positive_split_ratio": 0.75,
+    "require_ticker_trend_latest_split_positive": True,
     "min_ticker_trend_win_rate": 0.55,
     "min_ticker_trend_probability_score": 0.42,
     "min_ticker_trend_expected_r": 0.15,
@@ -198,6 +245,11 @@ DEFAULT_RISK_CONFIG = {
     "max_ticker_trend_drawdown_r": -8.0,
     "max_ticker_trend_losing_streak": 8,
     "min_ticker_trend_breakeven_edge_pct": 5.0,
+    "ticker_trend_recent_window_size": 6,
+    "min_ticker_trend_recent_scored_outcomes": 6,
+    "min_ticker_trend_recent_win_rate": 0.33,
+    "min_ticker_trend_recent_average_r": 0.0,
+    "min_ticker_trend_recent_profit_factor": 1.05,
     "allow_proven_soft_calibration_promotion": True,
     "min_proven_soft_probability_score": 0.47,
     "min_proven_soft_calibrated_probability": 0.52,
@@ -205,6 +257,16 @@ DEFAULT_RISK_CONFIG = {
     "min_proven_soft_profit_factor": 1.30,
     "min_proven_soft_scored_outcomes": 60,
     "min_proven_soft_baselines_beaten": 4,
+    "allow_proven_payoff_aware_promotion": True,
+    "require_proven_payoff_regime_scope": True,
+    "min_proven_payoff_expected_r": 0.05,
+    "min_proven_payoff_profit_factor": 1.30,
+    "min_proven_payoff_scored_outcomes": 60,
+    "min_proven_payoff_baselines_beaten": 4,
+    "min_proven_payoff_validated_edge_pct": 5.0,
+    "min_proven_payoff_confidence_edge_pct": 2.0,
+    "min_proven_payoff_family_member_scored_outcomes": 8,
+    "min_family_member_negative_history_scored_outcomes": 6,
     "allow_validated_regime_edge_promotion": True,
     "min_high_premium_ticker_trend_flow_premium": 1_000_000_000.0,
     "min_high_premium_ticker_trend_scored_outcomes": 15,
@@ -410,10 +472,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--max-chain-rows-per-day",
         type=int,
-        default=5000,
+        default=0,
         help=(
-            "Maximum chain-oi rows to stream per date. Files are ranked exports; "
-            "the cap keeps full-history validation practical."
+            "Optional maximum chain-oi rows to stream per date. Default 0 reads the full export so "
+            "ticker aggregates are not distorted; positive values are diagnostic-only caps."
         ),
     )
     parser.add_argument(
@@ -434,13 +496,31 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--top-candidates-per-day",
         type=int,
         default=40,
-        help="Maximum discovered pattern candidates retained per date. Use 0 for uncapped acceptance runs.",
+        help="Maximum discovered candidates retained for the daily decision board.",
+    )
+    parser.add_argument(
+        "--validation-top-candidates-per-day",
+        type=int,
+        default=0,
+        help=(
+            "Maximum discovered candidates retained per historical date for validation. "
+            "Default 0 uses the full historical candidate population."
+        ),
     )
     parser.add_argument(
         "--min-month-dates",
         type=int,
         default=5,
         help="Minimum source-complete dates required in a train/validation month.",
+    )
+    parser.add_argument(
+        "--missed-mover-audit-days",
+        type=int,
+        default=20,
+        help=(
+            "Recent source-complete dates to inspect in the diagnostic missed-mover audit. "
+            "Use 0 to disable this non-gating diagnostic."
+        ),
     )
     parser.add_argument(
         "--no-validation",
@@ -534,7 +614,12 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
 
     snapshot_dates = [as_of] if args.no_validation else usable_dates
     snapshots: Dict[str, Snapshot] = {}
-    for d in snapshot_dates:
+    for index, d in enumerate(snapshot_dates, 1):
+        if index == 1 or index == len(snapshot_dates) or index % 10 == 0:
+            print(
+                f"[pattern] snapshot {index}/{len(snapshot_dates)}: {d}",
+                flush=True,
+            )
         snapshots[d] = build_daily_snapshot(base_dir, d, config)
 
     validation_bundle: Dict[str, Any]
@@ -545,7 +630,7 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
             snapshots=snapshots,
             source_dates=usable_dates,
             min_month_dates=args.min_month_dates,
-            top_candidates_per_day=args.top_candidates_per_day,
+            top_candidates_per_day=args.validation_top_candidates_per_day,
             seed=args.seed,
             risk_config=config["risk_config"],
         )
@@ -556,15 +641,23 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
     else:
         daily_pattern_config = learn_pattern_config([snapshots[as_of]])
 
+    # Keep all pre-specified implementations until validation evidence chooses
+    # the daily ticket. The board cap is applied after enrichment.
     daily_signals = generate_signals_for_snapshot(
         snapshots[as_of],
         daily_pattern_config,
-        max_signals=args.top_candidates_per_day,
+        max_signals=0,
         risk_config=config["risk_config"],
+    )
+    daily_family_tiers = active_family_tiers_for_regime(
+        {str(row.get("pattern_family") or "") for row in daily_signals},
+        validation_bundle.get("family_tiers", {}),
+        validation_bundle.get("regime_family_tiers", {}),
+        str(snapshots[as_of].market_regime.get("regime") or "UNKNOWN"),
     )
     daily_rows = classify_daily_signals(
         daily_signals,
-        validation_bundle["family_tiers"],
+        daily_family_tiers,
         snapshots[as_of],
     )
 
@@ -572,6 +665,7 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
         snapshots,
         usable_dates,
         as_of,
+        max_audit_dates=args.missed_mover_audit_days,
         risk_config=config["risk_config"],
     )
     sentiment_summary = build_sentiment_news_summary(base_dir / as_of, as_of)
@@ -627,6 +721,8 @@ def base_run_config(
         "max_flow_file_mb": args.max_flow_file_mb,
         "bot_eod_cache_dir": str(bot_eod_cache_dir),
         "top_candidates_per_day": args.top_candidates_per_day,
+        "validation_top_candidates_per_day": args.validation_top_candidates_per_day,
+        "missed_mover_audit_days": args.missed_mover_audit_days,
         "horizons": list(HORIZONS),
         "risk_config_path": str(risk_config_path) if risk_config_path else "",
         "risk_config_hash": risk_config_hash,
@@ -677,6 +773,7 @@ def source_completeness_for_date(base_dir: Path, signal_date: str) -> Dict[str, 
         "stock_screener": [],
         "hot_chains": [],
         "chain_oi": [],
+        "dp_eod": [],
         "bot_eod": [],
         "option_trades": [],
         "whale_filtered": [],
@@ -688,7 +785,7 @@ def source_completeness_for_date(base_dir: Path, signal_date: str) -> Dict[str, 
                 f"stock-screener source: expected stock-screener-{signal_date}.csv or .zip under {date_dir}",
                 f"hot-chains source: expected hot-chains-{signal_date}.csv or .zip under {date_dir}",
                 f"chain-oi-changes source: expected chain-oi-changes-{signal_date}.csv or .zip under {date_dir}",
-                f"options flow source: expected bot-eod-report-{signal_date}.csv/.zip, option-trades-{signal_date}.csv/.zip, or whale_trades_filtered.csv under {date_dir}",
+                f"market-flow source: expected bot-eod-report-{signal_date}.csv/.zip, option-trades-{signal_date}.csv/.zip, dp-eod-report-{signal_date}.csv/.zip, or whale_trades_filtered.csv under {date_dir}",
             ]
         )
         return {"source_complete": False, "missing_sources": missing, "present_sources": present}
@@ -704,10 +801,16 @@ def source_completeness_for_date(base_dir: Path, signal_date: str) -> Dict[str, 
     for key, message in required.items():
         if not sources.get(key):
             missing.append(message)
-    if not (sources.get("bot_eod") or sources.get("option_trades") or sources.get("whale_filtered")):
+    if not (
+        sources.get("bot_eod")
+        or sources.get("option_trades")
+        or sources.get("whale_filtered")
+        or sources.get("dp_eod")
+    ):
         missing.append(
-            f"options flow source: expected bot-eod-report-{signal_date}.csv/.zip, "
-            f"option-trades-{signal_date}.csv/.zip, or whale_trades_filtered.csv under {date_dir}"
+            f"market-flow source: expected bot-eod-report-{signal_date}.csv/.zip, "
+            f"option-trades-{signal_date}.csv/.zip, dp-eod-report-{signal_date}.csv/.zip, "
+            f"or whale_trades_filtered.csv under {date_dir}"
         )
     return {"source_complete": not missing, "missing_sources": missing, "present_sources": present}
 
@@ -784,12 +887,28 @@ def sources_for_date(date_dir: Path, signal_date: str) -> Dict[str, List[SourceR
         "stock_screener": find_csv_sources(date_dir, "stock-screener", signal_date, exact=True),
         "hot_chains": find_csv_sources(date_dir, "hot-chains", signal_date, exact=True),
         "chain_oi": find_csv_sources(date_dir, "chain-oi-changes", signal_date, exact=True),
+        "dp_eod": find_csv_sources(date_dir, "dp-eod-report", signal_date, exact=True),
         "bot_eod": find_csv_sources(date_dir, "bot-eod-report", signal_date, exact=True),
         "option_trades": find_csv_sources(date_dir, "option-trades", signal_date, exact=True),
-        "whale_filtered": [SourceRef(date_dir / "whale_trades_filtered.csv")]
-        if (date_dir / "whale_trades_filtered.csv").exists()
-        else [],
+        "whale_filtered": find_whale_filtered_sources(date_dir, signal_date),
     }
+
+
+def find_whale_filtered_sources(date_dir: Path, signal_date: str) -> List[SourceRef]:
+    """Find canonical and dated whale fallback files without crossing date folders."""
+
+    sources: List[SourceRef] = []
+    search_dirs = [date_dir]
+    unzipped = date_dir / "_unzipped_mode_a"
+    if unzipped.exists():
+        search_dirs.insert(0, unzipped)
+    for search_dir in search_dirs:
+        for path in sorted(search_dir.glob("whale_trades_filtered*.csv")):
+            embedded_date = extract_date_from_name(path.name)
+            if embedded_date and embedded_date != signal_date:
+                continue
+            sources.append(SourceRef(path))
+    return dedupe_sources(sources)
 
 
 def find_csv_sources(date_dir: Path, prefix: str, signal_date: str, exact: bool) -> List[SourceRef]:
@@ -914,13 +1033,14 @@ def build_daily_snapshot(base_dir: Path, signal_date: str, config: Mapping[str, 
 
     for ref in sources["chain_oi"]:
         source_files.append(ref.label)
+        max_chain_rows = int(config.get("max_chain_rows_per_day") or 0)
         for idx, row in enumerate(iter_csv_dicts(ref)):
-            if idx >= int(config["max_chain_rows_per_day"]):
+            if max_chain_rows > 0 and idx >= max_chain_rows:
                 skipped_sources.append(
                     {
                         "source": ref.label,
                         "reason": "max_chain_rows_per_day",
-                        "limit": int(config["max_chain_rows_per_day"]),
+                        "limit": max_chain_rows,
                     }
                 )
                 break
@@ -934,6 +1054,19 @@ def build_daily_snapshot(base_dir: Path, signal_date: str, config: Mapping[str, 
             counts["chain_oi_rows"] += 1
             f["source_flags"].add("chain_oi")
             update_chain_oi_aggregate(f, row, parsed)
+
+    for ref in sources["dp_eod"]:
+        source_files.append(ref.label)
+        for row in iter_csv_dicts(ref):
+            if row.get("date") and row.get("date") != signal_date:
+                continue
+            ticker = clean_ticker(row.get("ticker", ""))
+            if not ticker:
+                continue
+            f = feature_for(ticker)
+            f["source_flags"].add("dp_eod")
+            update_dark_pool_aggregate(f, row)
+            counts["dp_eod_rows"] += 1
 
     bot_refs = list(sources["bot_eod"])
     fallback_refs = list(sources["option_trades"]) + list(sources["whale_filtered"])
@@ -997,6 +1130,9 @@ def build_daily_snapshot(base_dir: Path, signal_date: str, config: Mapping[str, 
 
     for f in features.values():
         finalize_feature(f)
+    counts["dp_eod_tickers"] = sum(
+        "dp_eod" in set(f.get("source_flags") or []) for f in features.values()
+    )
 
     market_regime = compute_market_regime(signal_date, features)
     return Snapshot(
@@ -1460,7 +1596,31 @@ def new_feature(signal_date: str, ticker: str) -> Dict[str, Any]:
         "flow_total_premium": 0.0,
         "flow_call_trade_count": 0.0,
         "flow_put_trade_count": 0.0,
+        "dp_trade_count": 0.0,
+        "dp_total_size": 0.0,
+        "dp_total_premium": 0.0,
+        "dp_above_ask_premium": 0.0,
+        "dp_below_bid_premium": 0.0,
     }
+
+
+def update_dark_pool_aggregate(f: Dict[str, Any], row: Mapping[str, Any]) -> None:
+    if str(row.get("canceled") or "").strip().lower() in {"true", "t", "1", "yes"}:
+        return
+    premium = max(num(row.get("premium")) or 0.0, 0.0)
+    size = max(num(row.get("size")) or 0.0, 0.0)
+    price = num(row.get("price"))
+    ask = num(row.get("nbbo_ask"))
+    bid = num(row.get("nbbo_bid"))
+    if premium <= 0 and size <= 0:
+        return
+    f["dp_trade_count"] += 1.0
+    f["dp_total_size"] += size
+    f["dp_total_premium"] += premium
+    if price is not None and ask is not None and ask > 0 and price >= ask:
+        f["dp_above_ask_premium"] += premium
+    elif price is not None and bid is not None and bid > 0 and price <= bid:
+        f["dp_below_bid_premium"] += premium
 
 
 def option_quote_from_hot_row(row: Mapping[str, str], parsed: Mapping[str, Any], signal_date: str) -> Dict[str, Any]:
@@ -1898,6 +2058,25 @@ def finalize_feature(f: Dict[str, Any]) -> None:
         f.get("flow_put_ask_premium"),
         (f.get("flow_put_ask_premium") or 0.0) + (f.get("flow_put_bid_premium") or 0.0),
     )
+    dp_directional_premium = (f.get("dp_above_ask_premium") or 0.0) + (
+        f.get("dp_below_bid_premium") or 0.0
+    )
+    f["dp_above_ask_premium_share"] = safe_div(
+        f.get("dp_above_ask_premium"),
+        dp_directional_premium,
+    )
+    f["dp_below_bid_premium_share"] = safe_div(
+        f.get("dp_below_bid_premium"),
+        dp_directional_premium,
+    )
+    f["dp_directional_premium_coverage"] = safe_div(
+        dp_directional_premium,
+        f.get("dp_total_premium"),
+    )
+    f["dp_directional_bias"] = safe_div(
+        (f.get("dp_above_ask_premium") or 0.0) - (f.get("dp_below_bid_premium") or 0.0),
+        dp_directional_premium,
+    )
     f["avg_iv"] = safe_div(f.get("hot_iv_weighted_sum"), f.get("hot_iv_weight"))
     f["avg_spread_pct"] = safe_div(f.get("hot_spread_weighted_sum"), f.get("hot_spread_weight"))
     f["liquidity_score"] = (
@@ -1970,6 +2149,7 @@ def learn_pattern_config(snapshots: Sequence[Snapshot]) -> Dict[str, Any]:
     spreads: List[float] = []
     ivs: List[float] = []
     liquidity: List[float] = []
+    dark_pool_premiums: List[float] = []
     for snap in snapshots:
         for f in snap.features.values():
             if f.get("call_volume_ratio_30d"):
@@ -1988,6 +2168,8 @@ def learn_pattern_config(snapshots: Sequence[Snapshot]) -> Dict[str, Any]:
                 ivs.append(float(f["avg_iv"]))
             if f.get("liquidity_score"):
                 liquidity.append(float(f["liquidity_score"]))
+            if f.get("dp_total_premium"):
+                dark_pool_premiums.append(float(f["dp_total_premium"]))
     return {
         "trained_on_dates": [s.signal_date for s in snapshots],
         "min_call_volume_ratio": max(1.35, quantile(call_ratios, 0.78, default=1.8)),
@@ -1997,10 +2179,114 @@ def learn_pattern_config(snapshots: Sequence[Snapshot]) -> Dict[str, Any]:
         "max_spread_pct": min(0.35, max(0.08, quantile(spreads, 0.75, default=0.25))),
         "high_iv": max(0.20, quantile(ivs, 0.75, default=0.45)),
         "min_liquidity_score": max(8.0, quantile(liquidity, 0.45, default=10.0)),
+        "min_dark_pool_premium": max(
+            1_000_000.0,
+            quantile(dark_pool_premiums, 0.80, default=5_000_000.0),
+        ),
+        "min_dark_pool_directional_share": 0.60,
+        "min_dark_pool_directional_coverage": 0.25,
         "min_ask_side_ratio": 0.52,
         "max_event_dte_without_event_strategy": 2,
         "discovery_method": "training_window_quantiles_with_fixed_risk_floors",
     }
+
+
+def theme_flow_component_premium(feature: Mapping[str, Any]) -> float:
+    flow_premium = num(feature.get("flow_total_premium")) or 0.0
+    if flow_premium > 0:
+        return flow_premium
+    return source_coverage_total_premium(feature)
+
+
+def theme_flow_component_call_share(feature: Mapping[str, Any]) -> Optional[float]:
+    flow_share = num(feature.get("flow_call_premium_share"))
+    if flow_share is not None:
+        return clamp(flow_share, 0.0, 1.0)
+    call_premium = num(feature.get("call_premium")) or 0.0
+    put_premium = num(feature.get("put_premium")) or 0.0
+    total = call_premium + put_premium
+    if total <= 0:
+        return None
+    return clamp(call_premium / total, 0.0, 1.0)
+
+
+def build_theme_flow_signal_contexts(snapshot: Snapshot) -> List[Dict[str, Any]]:
+    """Aggregate interchangeable proxy flow without changing ticker-level approval gates."""
+
+    contexts: List[Dict[str, Any]] = []
+    for theme_key, definition in THEME_FLOW_BASKETS.items():
+        components: List[Dict[str, Any]] = []
+        for ticker in definition["tickers"]:
+            feature = snapshot.features.get(str(ticker))
+            if not feature:
+                continue
+            premium = theme_flow_component_premium(feature)
+            if premium <= 0:
+                continue
+            components.append(
+                {
+                    "ticker": str(ticker),
+                    "premium": premium,
+                    "call_share": theme_flow_component_call_share(feature),
+                    "feature": feature,
+                }
+            )
+        components.sort(key=lambda row: row["premium"], reverse=True)
+        qualified = [row for row in components if row["premium"] >= THEME_FLOW_MIN_COMPONENT_PREMIUM]
+        aggregate_premium = sum(row["premium"] for row in components)
+        if aggregate_premium < FLOW_LEADER_MIN_PREMIUM or len(qualified) < THEME_FLOW_MIN_COMPONENTS:
+            continue
+
+        weighted_components = [row for row in components if row["call_share"] is not None]
+        weighted_premium = sum(row["premium"] for row in weighted_components)
+        if weighted_premium <= 0:
+            continue
+        call_share = sum(row["premium"] * row["call_share"] for row in weighted_components) / weighted_premium
+        put_share = 1.0 - call_share
+        if call_share >= FLOW_LEADER_MIN_DIRECTION_SHARE:
+            direction = "bullish"
+            direction_share = call_share
+        elif put_share >= FLOW_LEADER_MIN_DIRECTION_SHARE:
+            direction = "bearish"
+            direction_share = put_share
+        else:
+            continue
+
+        representatives = [
+            row
+            for row in qualified
+            if num(row["feature"].get("close")) is not None and num(row["feature"].get("close")) > 0
+        ]
+        if not representatives:
+            continue
+        representative = representatives[0]
+        component_evidence = "; ".join(
+            f"{row['ticker']} {money_text(row['premium'])} call_share={fmt_pct(row['call_share'])}"
+            for row in components
+        )
+        contexts.append(
+            {
+                "theme_key": theme_key,
+                "theme_name": definition["label"],
+                "theme_macro_label": definition["macro_theme"],
+                "theme_direction": direction,
+                "theme_direction_share": direction_share,
+                "theme_aggregate_premium": aggregate_premium,
+                "theme_call_premium_share": call_share,
+                "theme_put_premium_share": put_share,
+                "theme_component_count": len(qualified),
+                "theme_component_tickers": ";".join(row["ticker"] for row in components),
+                "theme_component_evidence": component_evidence,
+                "theme_representative_ticker": representative["ticker"],
+                "theme_score": (
+                    FLOW_LEADER_SCORE_BONUS
+                    + zish(aggregate_premium, FLOW_LEADER_MIN_PREMIUM)
+                    + 2.0 * abs(direction_share - 0.5)
+                    + math.log1p(len(qualified))
+                ),
+            }
+        )
+    return contexts
 
 
 def generate_signals_for_snapshot(
@@ -2014,6 +2300,40 @@ def generate_signals_for_snapshot(
     signals: List[Dict[str, Any]] = []
     market = snapshot.market_regime.get("regime", "UNKNOWN")
     quote_cache = build_quote_selection_cache(snapshot, pattern_config, risk_config)
+    for theme_context in build_theme_flow_signal_contexts(snapshot):
+        ticker = str(theme_context["theme_representative_ticker"])
+        representative_feature = dict(snapshot.features[ticker])
+        representative_feature.update(theme_context)
+        representative_feature["sector"] = f"{theme_context['theme_key']}_THEME"
+        direction = str(theme_context["theme_direction"])
+        reasons = [
+            f"cross-ticker {theme_context['theme_name']} proxy premium concentration",
+            f"aggregate theme premium {money_text(theme_context['theme_aggregate_premium'])}",
+            f"{direction} aggregate premium share {fmt_pct(theme_context['theme_direction_share'])}",
+            f"confirmed proxies {theme_context['theme_component_tickers']}",
+        ]
+        for quote in signal_family_quote_candidates(
+            snapshot,
+            representative_feature,
+            "THEME_FLOW_LEADER",
+            direction,
+            pattern_config,
+            quote_cache,
+            risk_config,
+        ):
+            signals.append(
+                build_signal(
+                    snapshot,
+                    representative_feature,
+                    "THEME_FLOW_LEADER",
+                    direction,
+                    theme_context["theme_score"],
+                    reasons,
+                    quote,
+                    pattern_config,
+                    risk_config,
+                )
+            )
     for ticker, f in snapshot.features.items():
         if not f.get("close") or f.get("close") <= 0:
             continue
@@ -2031,12 +2351,15 @@ def generate_signals_for_snapshot(
         hot_premium = max(f.get("hot_total_premium") or 0.0, f.get("flow_total_premium") or 0.0)
         liquidity_score = f.get("liquidity_score") or 0.0
         avg_iv = f.get("avg_iv") or 0.0
+        dp_total_premium = f.get("dp_total_premium") or 0.0
+        dp_directional_coverage = f.get("dp_directional_premium_coverage") or 0.0
+        dp_above_share = f.get("dp_above_ask_premium_share") or 0.0
+        dp_below_share = f.get("dp_below_bid_premium_share") or 0.0
 
         if (
             call_ratio >= pattern_config["min_call_volume_ratio"]
             and premium_bias > 0.03
             and hot_call_ask >= pattern_config["min_ask_side_ratio"]
-            and market != "RISK_OFF"
         ):
             score = (
                 zish(call_ratio, pattern_config["min_call_volume_ratio"])
@@ -2061,7 +2384,6 @@ def generate_signals_for_snapshot(
             put_ratio >= pattern_config["min_put_volume_ratio"]
             and premium_bias < -0.03
             and hot_put_ask >= pattern_config["min_ask_side_ratio"]
-            and market != "RISK_ON"
         ):
             score = (
                 zish(put_ratio, pattern_config["min_put_volume_ratio"])
@@ -2120,6 +2442,46 @@ def generate_signals_for_snapshot(
                     ["elevated IV", "large options premium concentration"],
                 )
             )
+
+        if (
+            dp_total_premium >= float(pattern_config.get("min_dark_pool_premium", 5_000_000.0))
+            and dp_directional_coverage
+            >= float(pattern_config.get("min_dark_pool_directional_coverage", 0.25))
+        ):
+            if dp_above_share >= float(pattern_config.get("min_dark_pool_directional_share", 0.60)):
+                score = (
+                    zish(dp_total_premium, float(pattern_config.get("min_dark_pool_premium", 5_000_000.0)))
+                    + 2.0 * (dp_above_share - 0.5)
+                    + dp_directional_coverage
+                )
+                candidates.append(
+                    (
+                        "DARK_POOL_PRESSURE",
+                        "bullish",
+                        score,
+                        [
+                            "large dark-pool premium concentration",
+                            "prints concentrated at or above contemporaneous ask",
+                        ],
+                    )
+                )
+            if dp_below_share >= float(pattern_config.get("min_dark_pool_directional_share", 0.60)):
+                score = (
+                    zish(dp_total_premium, float(pattern_config.get("min_dark_pool_premium", 5_000_000.0)))
+                    + 2.0 * (dp_below_share - 0.5)
+                    + dp_directional_coverage
+                )
+                candidates.append(
+                    (
+                        "DARK_POOL_PRESSURE",
+                        "bearish",
+                        score,
+                        [
+                            "large dark-pool premium concentration",
+                            "prints concentrated at or below contemporaneous bid",
+                        ],
+                    )
+                )
 
         flow_leader_direction = catalyst_flow_leader_direction(f)
         if flow_leader_direction:
@@ -2256,12 +2618,36 @@ def select_signal_set(
     source_rescue_max_extra: int = SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
     tradeable_gap_max_extra: int = TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
 ) -> List[Dict[str, Any]]:
-    ranked = [dict(row) for row in signals]
-    ranked.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
+    # Daily presentation chooses one ticket per event. Uncapped historical
+    # validation keeps one ticket per pre-specified contract profile so DTE and
+    # moneyness implementations are actually observable before their gates are
+    # evaluated.
+    preserve_contract_profiles = max_signals <= 0
+    identity_key = (
+        signal_implementation_identity_key
+        if preserve_contract_profiles
+        else signal_identity_key
+    )
+    best_by_event: Dict[Tuple[str, str, str, str, str], Dict[str, Any]] = {}
+    for raw_row in signals:
+        row = dict(raw_row)
+        key = identity_key(row)
+        current = best_by_event.get(key)
+        if current is None or signal_contract_selection_key(row) > signal_contract_selection_key(current):
+            best_by_event[key] = row
+    ranked = list(best_by_event.values())
+    ranked.sort(
+        key=lambda x: (
+            x["pattern_score"],
+            x.get("hot_total_premium", 0.0),
+            signal_contract_selection_key(x),
+        ),
+        reverse=True,
+    )
     if max_signals <= 0:
         return ranked
     selected: List[Dict[str, Any]] = ranked[:max_signals]
-    selected_keys = {signal_identity_key(row) for row in selected}
+    selected_keys = {identity_key(row) for row in selected}
     selected_ticker_directions = {
         (str(row.get("ticker") or ""), str(row.get("direction") or ""))
         for row in selected
@@ -2275,7 +2661,7 @@ def select_signal_set(
         for row in ranked:
             if str(row.get("direction") or "") != direction:
                 continue
-            key = signal_identity_key(row)
+            key = identity_key(row)
             if key in selected_keys:
                 continue
             selected.append(row)
@@ -2299,7 +2685,7 @@ def select_signal_set(
                     continue
                 if signal_strategy_kind(row) != strategy_kind:
                     continue
-                key = signal_identity_key(row)
+                key = identity_key(row)
                 if key in selected_keys:
                     continue
                 selected.append(row)
@@ -2321,7 +2707,7 @@ def select_signal_set(
             best_rescue_by_ticker_direction[key_td] = dict(row)
     rescue_rows = sorted(best_rescue_by_ticker_direction.values(), key=source_rescue_sort_key, reverse=True)
     for row in rescue_rows[: max(0, source_rescue_max_extra)]:
-        key = signal_identity_key(row)
+        key = identity_key(row)
         if key in selected_keys:
             continue
         selected.append(row)
@@ -2341,7 +2727,7 @@ def select_signal_set(
             best_gap_by_ticker_direction[key_td] = dict(row)
     gap_rows = sorted(best_gap_by_ticker_direction.values(), key=tradeable_gap_sort_key, reverse=True)
     for row in gap_rows[: max(0, tradeable_gap_max_extra)]:
-        key = signal_identity_key(row)
+        key = identity_key(row)
         if key in selected_keys:
             continue
         selected.append(row)
@@ -2349,6 +2735,20 @@ def select_signal_set(
         selected_ticker_directions.add((str(row.get("ticker") or ""), str(row.get("direction") or "")))
     selected.sort(key=lambda x: (x["pattern_score"], x.get("hot_total_premium", 0.0)), reverse=True)
     return selected
+
+
+def signal_contract_selection_key(row: Mapping[str, Any]) -> Tuple[int, int, int, float, float, float]:
+    blockers = set(row.get("block_reasons") or [])
+    has_quote = bool(row.get("lead_option_symbol"))
+    hard_blocker_count = len(blockers & HARD_TRADE_BLOCKERS)
+    return (
+        1 if str(row.get("contract_profile_goal_qualified") or "") == "yes" else 0,
+        1 if has_quote else 0,
+        -hard_blocker_count,
+        num(row.get("contract_selection_score")) or -999.0,
+        -(num(row.get("bid_ask_spread_pct")) or 9.0),
+        (num(row.get("liquidity_volume")) or 0.0) + (num(row.get("liquidity_open_interest")) or 0.0),
+    )
 
 
 def signal_strategy_kind(row: Mapping[str, Any]) -> str:
@@ -2365,10 +2765,21 @@ def signal_identity_key(row: Mapping[str, Any]) -> Tuple[str, str, str, str, str
     )
 
 
+def signal_implementation_identity_key(row: Mapping[str, Any]) -> Tuple[str, str, str, str, str, str]:
+    """Distinguish pre-specified contract profiles for historical validation."""
+
+    return (
+        *signal_identity_key(row),
+        str(row.get("contract_profile") or "DIRECTIONAL_SIGNAL_ONLY"),
+    )
+
+
 def must_keep_source_rescue_signal(row: Mapping[str, Any]) -> bool:
     base_family = str(row.get("base_pattern_family") or "")
     if not base_family or base_family.startswith("BASELINE_"):
         return False
+    if base_family == "THEME_FLOW_LEADER":
+        return (num(row.get("theme_aggregate_premium")) or 0.0) >= FLOW_LEADER_MIN_PREMIUM
     source_premium = max(
         num(row.get("source_total_premium")) or 0.0,
         num(row.get("flow_total_premium")) or 0.0,
@@ -2405,12 +2816,21 @@ def tradeable_gap_sort_key(row: Mapping[str, Any]) -> Tuple[float, float, float,
 def source_rescue_sort_key(row: Mapping[str, Any]) -> Tuple[float, float, float]:
     return (
         max(
+            num(row.get("theme_aggregate_premium")) or 0.0,
             num(row.get("source_total_premium")) or 0.0,
             num(row.get("flow_total_premium")) or 0.0,
             num(row.get("hot_total_premium")) or 0.0,
         ),
         num(row.get("pattern_score")) or -1.0,
         num(row.get("liquidity_volume")) or -1.0,
+    )
+
+
+def effective_flow_leader_premium(row: Mapping[str, Any]) -> float:
+    return max(
+        num(row.get("theme_aggregate_premium")) or 0.0,
+        num(row.get("flow_total_premium")) or 0.0,
+        num(row.get("hot_total_premium")) or 0.0,
     )
 
 
@@ -2522,21 +2942,88 @@ def build_quote_selection_cache(
             continue
         key = (ticker, direction)
         if flow_leader_quote_eligible(quote, pattern_config, risk_config):
-            score = quote_selection_score(quote)
+            score = quote_selection_score(quote, snapshot.features.get(ticker, {}).get("close"))
             if score > flow_scores.get(key, -1.0):
                 candidate = dict(quote)
                 candidate["selection_score"] = score
                 flow[key] = candidate
                 flow_scores[key] = score
         if tradeable_gap_quote_eligible(quote, pattern_config, risk_config):
-            score = quote_selection_score(quote)
+            score = quote_selection_score(quote, snapshot.features.get(ticker, {}).get("close"))
             if score > tradeable_gap_scores.get(key, -1.0):
                 candidate = dict(quote)
                 candidate["selection_score"] = score
                 tradeable_gap[key] = candidate
                 tradeable_gap_scores[key] = score
     credit_spread = select_best_vertical_spreads(snapshot.option_quotes, risk_config)
-    return {"flow": flow, "tradeable_gap": tradeable_gap, "credit_spread": credit_spread}
+    return {
+        "flow": flow,
+        "tradeable_gap": tradeable_gap,
+        "credit_spread": credit_spread,
+        "long_option_dte_frontier": build_long_option_dte_frontier(
+            snapshot,
+            pattern_config,
+            risk_config,
+        ),
+    }
+
+
+def build_long_option_dte_frontier(
+    snapshot: Snapshot,
+    pattern_config: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> Dict[Tuple[str, str], List[Dict[str, Any]]]:
+    """Keep one liquid long option per standard DTE band for validation lanes."""
+
+    best_by_profile: Dict[Tuple[str, str, str, str], Dict[str, Any]] = {}
+    for quote in snapshot.option_quotes.values():
+        ticker = str(quote.get("ticker") or "")
+        direction = str(quote.get("direction") or "")
+        if not ticker or direction not in {"bullish", "bearish"}:
+            continue
+        if str(quote.get("strategy_kind") or "long_option") == "credit_spread":
+            continue
+        if not tradeable_gap_quote_eligible(quote, pattern_config, risk_config):
+            continue
+        band = contract_dte_bucket(quote.get("dte"))
+        if band not in {"DTE_7_13", "DTE_14_30", "DTE_31_45", "DTE_46_70"}:
+            continue
+        profile = contract_profile_fields(
+            direction,
+            quote.get("strategy_kind") or "long_option",
+            snapshot.features.get(ticker, {}).get("close"),
+            quote,
+        )
+        moneyness_band = str(profile.get("contract_moneyness_bucket") or "MONEYNESS_UNKNOWN")
+        key = (ticker, direction, band, moneyness_band)
+        score = quote_selection_score(quote, snapshot.features.get(ticker, {}).get("close"))
+        prior_score = num(best_by_profile.get(key, {}).get("selection_score"))
+        if prior_score is not None and score <= prior_score:
+            continue
+        candidate = dict(quote)
+        candidate["selection_score"] = score
+        best_by_profile[key] = candidate
+
+    frontier: Dict[Tuple[str, str], List[Dict[str, Any]]] = defaultdict(list)
+    band_order = {"DTE_7_13": 0, "DTE_14_30": 1, "DTE_31_45": 2, "DTE_46_70": 3}
+    for (ticker, direction, _, _), quote in best_by_profile.items():
+        frontier[(ticker, direction)].append(quote)
+    for quotes in frontier.values():
+        quotes.sort(
+            key=lambda quote: (
+                band_order.get(contract_dte_bucket(quote.get("dte")), 99),
+                str(
+                    contract_profile_fields(
+                        quote.get("direction"),
+                        quote.get("strategy_kind") or "long_option",
+                        snapshot.features.get(str(quote.get("ticker") or ""), {}).get("close"),
+                        quote,
+                    ).get("contract_moneyness_bucket")
+                    or "MONEYNESS_UNKNOWN"
+                ),
+            )
+        )
+    return dict(frontier)
 
 
 def credit_spread_quote(
@@ -2586,7 +3073,7 @@ def signal_family_quote_candidates(
 ) -> List[Optional[Mapping[str, Any]]]:
     ticker = str(feature.get("ticker") or "")
     key = (ticker, direction)
-    if family == "CATALYST_FLOW_LEADER":
+    if family in {"CATALYST_FLOW_LEADER", "THEME_FLOW_LEADER"}:
         primary = select_flow_leader_quote(snapshot, feature, direction, pattern_config, quote_cache, risk_config)
     elif family == "SOURCE_PREMIUM_COVERAGE_RESCUE":
         primary = source_coverage_quote(snapshot, feature, direction, pattern_config, quote_cache, risk_config)
@@ -2602,6 +3089,8 @@ def signal_family_quote_candidates(
         append_unique_quote(quotes, quote_cache.get("tradeable_gap", {}).get(key))
     append_unique_quote(quotes, credit_spread_quote(snapshot, ticker, direction, quote_cache))
     append_unique_quote(quotes, snapshot.best_options.get(key))
+    for frontier_quote in quote_cache.get("long_option_dte_frontier", {}).get(key, []):
+        append_unique_quote(quotes, frontier_quote)
     return list(quotes) if quotes else [None]
 
 
@@ -2619,7 +3108,7 @@ def select_tradeable_gap_long_option_quote(
             continue
         if not tradeable_gap_quote_eligible(quote, pattern_config, risk_config):
             continue
-        score = quote_selection_score(quote)
+        score = quote_selection_score(quote, snapshot.features.get(ticker, {}).get("close"))
         if score > best_score:
             best = dict(quote)
             best["selection_score"] = score
@@ -2685,18 +3174,29 @@ def flow_leader_quote_eligible(
     )
 
 
-def quote_selection_score(quote: Mapping[str, Any]) -> float:
+def quote_selection_score(
+    quote: Mapping[str, Any],
+    underlying_price: Any = None,
+) -> float:
     volume = num(quote.get("volume")) or 0.0
     open_interest = num(quote.get("open_interest")) or 0.0
-    premium = max(num(quote.get("premium")) or 0.0, 0.0)
     dte = num(quote.get("dte")) or 21.0
     spread_pct = num(quote.get("spread_pct")) or 0.35
+    underlying = num(underlying_price) or num(quote.get("stock_close"))
+    moneyness = directional_contract_moneyness(
+        quote.get("option_type"),
+        quote.get("strike"),
+        underlying,
+    )
+    moneyness_penalty = 0.0 if moneyness is None else 10.0 * abs(moneyness - 0.03)
+    extreme_penalty = 3.0 if moneyness is not None and moneyness > 0.15 else 0.0
     return (
         math.log1p(volume)
         + math.log1p(open_interest)
-        + math.log1p(premium / 1000.0)
         - 8.0 * spread_pct
-        - abs(float(dte) - 21.0) / 70.0
+        - abs(float(dte) - 21.0) / 21.0
+        - moneyness_penalty
+        - extreme_penalty
     )
 
 
@@ -2721,7 +3221,7 @@ def select_flow_leader_quote(
             continue
         if not flow_leader_quote_eligible(quote, pattern_config, risk_config):
             continue
-        score = quote_selection_score(quote)
+        score = quote_selection_score(quote, feature.get("close"))
         if score > best_score:
             candidate = dict(quote)
             candidate["selection_score"] = score
@@ -2825,6 +3325,7 @@ def build_signal(
         else (entry_ask * 100.0 + configured_long_option_opening_fee(risk_config) + entry_slippage if entry_ask else None)
     )
     strategy_type = quote.get("strategy_type") or ("Long Call Debit" if direction == "bullish" else "Long Put Debit")
+    contract_fields = contract_profile_fields(direction, strategy_kind, f.get("close"), quote)
     if strategy_kind == "credit_spread":
         entry_range = f"credit {entry_credit:.2f}" if entry_credit is not None else ""
         target_profit = (entry_credit * 50.0) if entry_credit else None
@@ -2845,6 +3346,7 @@ def build_signal(
         "direction": direction,
         "pattern_family": detailed_family,
         "base_pattern_family": family,
+        "directional_pattern_family": directional_pattern_family_id(family, direction, f.get("sector") or ""),
         "pattern_score": round(score, 6),
         "classification": "BLOCKED" if blockers else "WATCH",
         "block_reasons": blockers,
@@ -2864,11 +3366,30 @@ def build_signal(
         "flow_put_premium_share": f.get("flow_put_premium_share"),
         "flow_call_ask_premium_share": f.get("flow_call_ask_premium_share"),
         "flow_put_ask_premium_share": f.get("flow_put_ask_premium_share"),
+        "dp_trade_count": f.get("dp_trade_count"),
+        "dp_total_size": f.get("dp_total_size"),
+        "dp_total_premium": f.get("dp_total_premium"),
+        "dp_above_ask_premium_share": f.get("dp_above_ask_premium_share"),
+        "dp_below_bid_premium_share": f.get("dp_below_bid_premium_share"),
+        "dp_directional_premium_coverage": f.get("dp_directional_premium_coverage"),
+        "dp_directional_bias": f.get("dp_directional_bias"),
+        "theme_key": f.get("theme_key"),
+        "theme_name": f.get("theme_name"),
+        "theme_macro_label": f.get("theme_macro_label"),
+        "theme_aggregate_premium": f.get("theme_aggregate_premium"),
+        "theme_call_premium_share": f.get("theme_call_premium_share"),
+        "theme_put_premium_share": f.get("theme_put_premium_share"),
+        "theme_component_count": f.get("theme_component_count"),
+        "theme_component_tickers": f.get("theme_component_tickers"),
+        "theme_component_evidence": f.get("theme_component_evidence"),
         "avg_iv": f.get("avg_iv"),
         "quote_iv": quote.get("iv"),
         "avg_spread_pct": f.get("avg_spread_pct"),
         "lead_option_symbol": quote.get("option_symbol", ""),
         "quote_source": quote.get("quote_source", ""),
+        "contract_selection_score": quote.get("selection_score")
+        if quote.get("selection_score") is not None
+        else quote_selection_score(quote, f.get("close")) if quote else None,
         "strategy_kind": strategy_kind,
         "legs_json": stable_json(quote.get("legs", [])),
         "strategy_type": strategy_type,
@@ -2898,6 +3419,7 @@ def build_signal(
         "bid_ask_spread_pct": spread_pct,
         "earnings_dte": f.get("earnings_dte"),
         "next_earnings_date": f.get("next_earnings_date") or "",
+        **contract_fields,
     }
 
 
@@ -2917,6 +3439,101 @@ def detailed_pattern_family(base_family: str, direction: str, strategy_kind: str
 def clean_family_part(value: str) -> str:
     text = re.sub(r"[^A-Z0-9]+", "_", str(value or "").upper()).strip("_")
     return text or "NA"
+
+
+def directional_pattern_family_id(base_family: Any, direction: Any, sector: Any) -> str:
+    """Identify the underlying signal independently from its option implementation."""
+
+    return "__".join(
+        [
+            str(base_family or "UNKNOWN"),
+            clean_family_part(str(direction or "UNKNOWN")),
+            clean_family_part(str(sector or "NO_SECTOR")),
+        ]
+    )
+
+
+def directional_pattern_family_for_row(row: Mapping[str, Any]) -> str:
+    base_family = row.get("base_pattern_family") or base_pattern_family_name(row.get("pattern_family"))
+    return directional_pattern_family_id(base_family, row.get("direction"), row.get("sector"))
+
+
+def contract_dte_bucket(value: Any) -> str:
+    dte = num(value)
+    if dte is None:
+        return "DTE_UNKNOWN"
+    if dte < 7:
+        return "DTE_LT_7"
+    if dte <= 13:
+        return "DTE_7_13"
+    if dte <= 30:
+        return "DTE_14_30"
+    if dte <= 45:
+        return "DTE_31_45"
+    if dte <= 70:
+        return "DTE_46_70"
+    return "DTE_GT_70"
+
+
+def contract_moneyness_bucket(value: Any) -> str:
+    moneyness = num(value)
+    if moneyness is None:
+        return "MONEYNESS_UNKNOWN"
+    if moneyness <= -0.05:
+        return "DEEP_ITM"
+    if moneyness < -0.015:
+        return "ITM"
+    if moneyness <= 0.025:
+        return "ATM"
+    if moneyness <= 0.075:
+        return "NEAR_OTM"
+    if moneyness <= 0.15:
+        return "FAR_OTM"
+    return "EXTREME_OTM"
+
+
+def directional_contract_moneyness(
+    option_type: Any,
+    strike: Any,
+    underlying_price: Any,
+) -> Optional[float]:
+    strike_value = num(strike)
+    underlying = num(underlying_price)
+    if strike_value is None or underlying is None or underlying <= 0:
+        return None
+    normalized_type = str(option_type or "").lower()
+    if normalized_type == "call":
+        return (strike_value - underlying) / underlying
+    if normalized_type == "put":
+        return (underlying - strike_value) / underlying
+    return None
+
+
+def contract_profile_fields(
+    direction: Any,
+    strategy_kind: Any,
+    underlying_price: Any,
+    quote: Mapping[str, Any],
+) -> Dict[str, Any]:
+    option_type = str(
+        quote.get("option_type")
+        or ("call" if str(direction or "").lower() == "bullish" else "put")
+    ).lower()
+    reference_strike = quote.get("strike")
+    moneyness = directional_contract_moneyness(option_type, reference_strike, underlying_price)
+    dte_bucket = contract_dte_bucket(quote.get("dte"))
+    moneyness_bucket = contract_moneyness_bucket(moneyness)
+    normalized_strategy = str(strategy_kind or quote.get("strategy_kind") or "long_option")
+    return {
+        "underlying_price": num(underlying_price),
+        "contract_reference_strike": num(reference_strike),
+        "contract_directional_moneyness": moneyness,
+        "contract_dte_bucket": dte_bucket,
+        "contract_moneyness_bucket": moneyness_bucket,
+        "contract_profile": "__".join(
+            [clean_family_part(normalized_strategy), dte_bucket, moneyness_bucket]
+        ),
+    }
 
 
 def classify_daily_signals(
@@ -2960,6 +3577,9 @@ def classify_daily_signals(
             classification = "WATCH"
         row["classification"] = classification
         row["confidence_tier"] = tier
+        row["validation_scope"] = tier_info.get("pattern_scope", "FAMILY")
+        row["active_pattern_id"] = tier_info.get("active_pattern_id") or signal["pattern_family"]
+        row["validated_market_regime"] = tier_info.get("market_regime", "ALL")
         row["validation_note"] = tier_info.get("validation_note", "")
         row["_base_success_probability"] = tier_info.get("validation_success_probability")
         row["_base_failure_probability"] = tier_info.get("validation_failure_probability")
@@ -2990,24 +3610,59 @@ def classify_daily_signals(
     return rows
 
 
+def active_family_tiers_for_regime(
+    families: Iterable[str],
+    family_tiers: Mapping[str, Mapping[str, Any]],
+    regime_family_tiers: Mapping[Tuple[str, str], Mapping[str, Any]],
+    market_regime: str,
+) -> Dict[str, Dict[str, Any]]:
+    return {
+        family: select_active_tier_info(
+            family,
+            market_regime,
+            family_tiers,
+            regime_family_tiers,
+        )
+        for family in families
+        if family
+    }
+
+
+def select_active_tier_info(
+    family: str,
+    market_regime: str,
+    family_tiers: Mapping[str, Mapping[str, Any]],
+    regime_family_tiers: Mapping[Tuple[str, str], Mapping[str, Any]],
+) -> Dict[str, Any]:
+    broad = dict(family_tiers.get(family, {}))
+    regime = dict(regime_family_tiers.get((family, market_regime), {}))
+    rank = {"BLOCKED": 0, "RESEARCH_ONLY": 1, "DECAYED": 1, "PROMISING": 2, "PROVEN": 3}
+    selected = regime if rank.get(str(regime.get("confidence_tier") or ""), 0) > rank.get(
+        str(broad.get("confidence_tier") or ""), 0
+    ) else broad
+    if not selected:
+        selected = {
+            "pattern_family": family,
+            "pattern_scope": "FAMILY",
+            "market_regime": "ALL",
+            "confidence_tier": "RESEARCH_ONLY",
+            "validation_note": "Pattern family has no completed validation evidence.",
+            "beats_baselines_count": 0,
+        }
+    selected = dict(selected)
+    selected["active_pattern_id"] = (
+        selected.get("regime_pattern_id")
+        if selected.get("pattern_scope") == "FAMILY_REGIME"
+        else family
+    )
+    return selected
+
+
 def classification_rank(value: str) -> int:
     return {"TRADE": 3, "WATCH": 2, "AVOID": 1, "BLOCKED": 0}.get(value, 0)
 
 
 def apply_candidate_probability_adjustments(rows: Sequence[Dict[str, Any]]) -> None:
-    by_family: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-    for row in rows:
-        by_family[str(row.get("pattern_family") or "")].append(row)
-    percentiles: Dict[int, float] = {}
-    for family_rows in by_family.values():
-        scored = sorted(
-            ((num(row.get("pattern_score")) or 0.0, idx) for idx, row in enumerate(family_rows)),
-            key=lambda item: item[0],
-        )
-        denom = max(len(scored) - 1, 1)
-        for rank, (_, local_idx) in enumerate(scored):
-            percentiles[id(family_rows[local_idx])] = rank / denom if len(scored) > 1 else 0.5
-
     for row in rows:
         base_success = num(row.get("_base_success_probability"))
         base_failure = num(row.get("_base_failure_probability"))
@@ -3021,28 +3676,19 @@ def apply_candidate_probability_adjustments(rows: Sequence[Dict[str, Any]]) -> N
             row["trade_probability_score"] = None
             row["probability_components"] = "No validated family probability."
             continue
-        percentile = percentiles.get(id(row), 0.5)
-        signal_adj = (percentile - 0.5) * 0.08
-        spread_adj = spread_probability_adjustment(row.get("bid_ask_spread_pct"))
-        liquidity_adj = liquidity_probability_adjustment(row.get("liquidity_volume"), row.get("liquidity_open_interest"))
-        event_adj = event_probability_adjustment(row.get("earnings_dte"))
-        blocker_adj = -0.04 if row.get("classification") != "TRADE" else 0.0
-        total_adj = signal_adj + spread_adj + liquidity_adj + event_adj + blocker_adj
-        trade_success = clamp(base_success + total_adj, 0.01, 0.90)
-        trade_score = clamp((base_score if base_score is not None else base_success) + total_adj, 0.0, 0.90)
-        row["success_probability_pct"] = pct_value(trade_success)
-        row["failure_probability_pct"] = pct_value(1.0 - trade_success if base_failure is not None else None)
-        row["probability_score"] = pct_value(trade_score)
+        # Until historical outcomes for a comparable DTE/moneyness profile are
+        # attached in enrich_decision_row, these are explicitly family proxies.
+        # Same-day signal rank, spread, and liquidity are execution attributes;
+        # adding them to win probability without OOS fitting fabricated precision.
+        row["success_probability_pct"] = pct_value(base_success)
+        row["failure_probability_pct"] = pct_value(base_failure)
+        row["probability_score"] = pct_value(base_score if base_score is not None else base_success)
         row["trade_success_probability_pct"] = row["success_probability_pct"]
         row["trade_failure_probability_pct"] = row["failure_probability_pct"]
         row["trade_probability_score"] = row["probability_score"]
         row["probability_components"] = (
-            f"pattern_base={fmt_pct(base_success)}; "
-            f"signal_rank_adj={fmt_signed_pct(signal_adj)}; "
-            f"spread_adj={fmt_signed_pct(spread_adj)}; "
-            f"liquidity_adj={fmt_signed_pct(liquidity_adj)}; "
-            f"event_adj={fmt_signed_pct(event_adj)}; "
-            f"blocker_adj={fmt_signed_pct(blocker_adj)}"
+            f"family_proxy_only={fmt_pct(base_success)}; "
+            "contract_profile_calibration=pending"
         )
 
 
@@ -3093,6 +3739,12 @@ def final_actionability_text(row: Mapping[str, Any]) -> str:
     blocker_summary = "; ".join(decompose_blockers(blockers)[:5])
     ticker_evidence = str(row.get("ticker_trend_evidence") or "")
     if status == "AUTO_APPROVED":
+        if row.get("approval_bridge") == "PROVEN_PAYOFF_AWARE":
+            return (
+                "Executable proven same-regime payoff edge; the validated family rate and conservative lower bound "
+                "clear breakeven, and exact ticker/family/regime history remains positive without its best win; "
+                "all auto-approval gates passed."
+            )
         if row.get("approval_bridge") == "VALIDATED_REGIME_EDGE":
             detail = f"; {ticker_evidence}" if ticker_evidence else ""
             return (
@@ -3117,6 +3769,16 @@ def final_actionability_text(row: Mapping[str, Any]) -> str:
 def historical_evidence_summary_text(row: Mapping[str, Any]) -> str:
     validation_note = str(row.get("validation_note") or "").strip()
     ticker_evidence = str(row.get("ticker_trend_evidence") or "").strip()
+    if row.get("status") == "AUTO_APPROVED" and row.get("approval_bridge") == "PROVEN_PAYOFF_AWARE":
+        return (
+            "Payoff-aware approval from proven same-regime OOS evidence after costs/slippage: "
+            f"breakeven={pct_text(row.get('breakeven_success_probability_pct'))}; "
+            f"validated-family edge={pct_text(row.get('calibrated_edge_vs_breakeven_pct'))}; "
+            f"ranking-score edge={pct_text(row.get('probability_score_edge_vs_breakeven_pct'))}; "
+            f"confidence-lower edge={pct_text(row.get('confidence_lower_edge_vs_breakeven_pct'))}; "
+            f"latest split avg_R={fmt_num(row.get('latest_validation_split_average_net_R'))}; "
+            f"{row.get('family_member_evidence')}."
+        )
     if ticker_evidence:
         prefix = (
             "Auto-approved by ticker-specific trend validation after costs/slippage"
@@ -3144,12 +3806,35 @@ def auto_approval_gate_evidence_text(row: Mapping[str, Any]) -> str:
         f"baseline_names={row.get('baselines_beaten_names') or ''}",
         f"baseline_edges={row.get('baselines_beaten_details') or ''}",
         f"probability_score={pct_text(row.get('probability_score'))}",
-        f"calibrated_probability={fmt_pct(row.get('calibrated_probability'))}",
+        f"validated_success_probability={fmt_pct(row.get('calibrated_probability'))}",
     ]
     if row.get("ticker_trend_scope"):
         parts.append(f"ticker_trend_scope={row.get('ticker_trend_scope')}")
+        parts.extend(
+            [
+                f"ticker_trend_family={row.get('ticker_trend_base_pattern_family') or ''}",
+                f"ticker_trend_unique_dates={row.get('ticker_trend_unique_signal_date_count') or ''}",
+                f"ticker_trend_recent_n={row.get('ticker_trend_recent_scored_count') or ''}",
+                f"ticker_trend_recent_win={pct_text(row.get('ticker_trend_recent_win_rate_pct'))}",
+                f"ticker_trend_recent_avg_R={fmt_num(row.get('ticker_trend_recent_avg_R'))}",
+                f"ticker_trend_recent_PF={fmt_num(row.get('ticker_trend_recent_profit_factor'))}",
+            ]
+        )
     if row.get("approval_bridge"):
         parts.append(f"approval_bridge={row.get('approval_bridge')}")
+    if row.get("approval_bridge") == "PROVEN_PAYOFF_AWARE":
+        parts.extend(
+            [
+                f"breakeven_success_probability={pct_text(row.get('breakeven_success_probability_pct'))}",
+                f"validated_edge_vs_breakeven={pct_text(row.get('calibrated_edge_vs_breakeven_pct'))}",
+                f"ranking_score_edge_vs_breakeven={pct_text(row.get('probability_score_edge_vs_breakeven_pct'))}",
+                f"confidence_lower_edge_vs_breakeven={pct_text(row.get('confidence_lower_edge_vs_breakeven_pct'))}",
+                f"latest_validation_split_avg_R={fmt_num(row.get('latest_validation_split_average_net_R'))}",
+                f"family_member_scored={row.get('family_member_scored_count') or ''}",
+                f"family_member_avg_R_without_best_win={fmt_num(row.get('family_member_avg_R_without_largest_win'))}",
+                f"family_member_latest_without_best_win={fmt_num(row.get('family_member_latest_validation_split_average_net_R_without_largest_win'))}",
+            ]
+        )
     return "; ".join(parts)
 
 
@@ -3169,11 +3854,15 @@ def run_historical_validation(
         if splits
         else f"no chronological train/validation split met min_month_dates={min_month_dates}"
     )
-    all_signal_rows: List[Dict[str, Any]] = []
     all_outcomes: List[Dict[str, Any]] = []
     all_baseline_outcomes: List[Dict[str, Any]] = []
     pattern_definitions: List[Dict[str, Any]] = []
-    for split in splits:
+    for split_index, split in enumerate(splits, 1):
+        print(
+            f"[pattern] validation split {split_index}/{len(splits)}: {split['name']} "
+            f"train={len(split['train_dates'])} holdout={len(split['validation_dates'])}",
+            flush=True,
+        )
         train_snaps = [snapshots[d] for d in split["train_dates"]]
         validation_snaps = [snapshots[d] for d in split["validation_dates"]]
         pattern_config = learn_pattern_config(train_snaps)
@@ -3211,18 +3900,28 @@ def run_historical_validation(
                     risk_config=risk_config,
                 )
             )
-        for sig in train_signals:
-            sig = dict(sig)
-            sig["split"] = split["name"]
-            sig["sample"] = "TRAIN"
-            all_signal_rows.append(flatten_signal(sig))
-        for sig in validation_signals:
-            sig = dict(sig)
-            sig["split"] = split["name"]
-            sig["sample"] = "VALIDATION"
-            all_signal_rows.append(flatten_signal(sig))
-        all_outcomes.extend(score_signals(train_signals, snapshots, source_dates, split["name"], "TRAIN", risk_config))
-        all_outcomes.extend(score_signals(validation_signals, snapshots, source_dates, split["name"], "VALIDATION", risk_config))
+        all_outcomes.extend(
+            score_signals(
+                train_signals,
+                snapshots,
+                source_dates,
+                split["name"],
+                "TRAIN",
+                risk_config,
+                horizons=(5,),
+            )
+        )
+        all_outcomes.extend(
+            score_signals(
+                validation_signals,
+                snapshots,
+                source_dates,
+                split["name"],
+                "VALIDATION",
+                risk_config,
+                horizons=(5,),
+            )
+        )
         baseline_signals = generate_baseline_signals(
             validation_signals,
             validation_snaps,
@@ -3233,27 +3932,53 @@ def run_historical_validation(
             risk_config,
         )
         all_baseline_outcomes.extend(
-            score_signals(baseline_signals, snapshots, source_dates, split["name"], "BASELINE", risk_config)
+            score_signals(
+                baseline_signals,
+                snapshots,
+                source_dates,
+                split["name"],
+                "BASELINE",
+                risk_config,
+                horizons=(5,),
+            )
+        )
+        print(
+            f"[pattern] completed split {split_index}/{len(splits)}: "
+            f"train_signals={len(train_signals)} holdout_signals={len(validation_signals)} "
+            f"baseline_signals={len(baseline_signals)}",
+            flush=True,
         )
 
     validation_scorecard = summarize_outcomes(all_outcomes, sample="VALIDATION")
     validation_gate_outcomes = select_validation_gate_outcomes(all_outcomes)
     validation_gate_scorecard = summarize_outcomes(validation_gate_outcomes, sample="VALIDATION")
     train_scorecard = summarize_outcomes(all_outcomes, sample="TRAIN")
-    baseline_comparison = summarize_baselines(all_baseline_outcomes)
-    family_tiers = assign_family_tiers(validation_gate_scorecard, baseline_comparison)
+    baseline_gate_outcomes = select_baseline_gate_outcomes(all_baseline_outcomes)
+    baseline_comparison = summarize_baselines(baseline_gate_outcomes)
+    family_tiers = assign_family_tiers(validation_gate_scorecard, baseline_comparison, risk_config)
+    regime_family_tiers = assign_regime_family_tiers(all_outcomes, baseline_comparison, risk_config)
+    final_holdout = latest_validation_split_name(splits)
+    directional_validation = build_directional_pattern_validation(
+        all_outcomes,
+        all_baseline_outcomes,
+        risk_config,
+        required_latest_split=final_holdout,
+    )
     regime_sector = summarize_regime_sector(all_outcomes)
     return {
         "splits": splits,
         "pattern_definitions": pattern_definitions,
-        "signal_rows": all_signal_rows,
+        "signal_rows": [],
         "outcomes": all_outcomes,
         "baseline_outcomes": all_baseline_outcomes,
         "validation_scorecard": validation_scorecard,
+        "validation_gate_outcomes": validation_gate_outcomes,
         "validation_gate_scorecard": validation_gate_scorecard,
         "train_scorecard": train_scorecard,
         "baseline_comparison": baseline_comparison,
         "family_tiers": family_tiers,
+        "regime_family_tiers": regime_family_tiers,
+        "directional_validation": directional_validation,
         "regime_sector": regime_sector,
         "source_date_count": len(source_dates),
         "source_month_date_counts": dict(source_month_date_counts),
@@ -3271,10 +3996,17 @@ def empty_validation_bundle() -> Dict[str, Any]:
         "outcomes": [],
         "baseline_outcomes": [],
         "validation_scorecard": [],
+        "validation_gate_outcomes": [],
         "validation_gate_scorecard": [],
         "train_scorecard": [],
         "baseline_comparison": [],
         "family_tiers": {},
+        "regime_family_tiers": {},
+        "directional_validation": {
+            "outcomes": [],
+            "baseline_comparison": [],
+            "family_tiers": {},
+        },
         "regime_sector": [],
         "source_date_count": 0,
         "source_month_date_counts": {},
@@ -3351,11 +4083,12 @@ def score_signals(
     split_name: str,
     sample: str,
     risk_config: Optional[Mapping[str, Any]] = None,
+    horizons: Sequence[int] = HORIZONS,
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     ordered_dates = list(source_dates)
     for signal in signals:
-        for horizon in HORIZONS:
+        for horizon in horizons:
             rows.append(score_signal_horizon(signal, snapshots, ordered_dates, split_name, sample, horizon, risk_config))
     return rows
 
@@ -3374,6 +4107,12 @@ def score_signal_horizon(
     strategy_kind = str(signal.get("strategy_kind") or "long_option")
     cost_fields = scoring_cost_model(strategy_kind, risk_config)
     entry_slippage = signal_entry_slippage_dollars(signal, risk_config)
+    outcome_contract_fields = contract_profile_fields(
+        signal.get("direction"),
+        strategy_kind,
+        signal.get("underlying_price") or signal.get("close"),
+        signal,
+    )
     base = {
         "split": split_name,
         "sample": sample,
@@ -3383,11 +4122,25 @@ def score_signal_horizon(
         "ticker": signal["ticker"],
         "direction": signal["direction"],
         "pattern_family": signal["pattern_family"],
+        "base_pattern_family": signal.get("base_pattern_family") or base_pattern_family_name(signal.get("pattern_family")),
+        "directional_pattern_family": signal.get("directional_pattern_family")
+        or directional_pattern_family_for_row(signal),
         "market_regime": signal.get("market_regime", ""),
         "sector": signal.get("sector", ""),
         "lead_option_symbol": signal.get("lead_option_symbol", ""),
         "strategy_kind": strategy_kind,
         "strategy_type": signal.get("strategy_type", ""),
+        "dte": signal.get("dte"),
+        "underlying_price": signal.get("underlying_price") or outcome_contract_fields["underlying_price"],
+        "contract_reference_strike": signal.get("contract_reference_strike")
+        or outcome_contract_fields["contract_reference_strike"],
+        "contract_directional_moneyness": signal.get("contract_directional_moneyness")
+        if signal.get("contract_directional_moneyness") is not None
+        else outcome_contract_fields["contract_directional_moneyness"],
+        "contract_dte_bucket": signal.get("contract_dte_bucket") or outcome_contract_fields["contract_dte_bucket"],
+        "contract_moneyness_bucket": signal.get("contract_moneyness_bucket")
+        or outcome_contract_fields["contract_moneyness_bucket"],
+        "contract_profile": signal.get("contract_profile") or outcome_contract_fields["contract_profile"],
         "legs_json": signal.get("legs_json", ""),
         "entry_credit": signal.get("entry_credit"),
         "entry_ask": signal.get("entry_ask"),
@@ -3413,6 +4166,11 @@ def score_signal_horizon(
     if not target_date:
         base["outcome_note"] = "not_enough_future_dates"
         return base
+    current_close = num(signal.get("close"))
+    future_close = num(snapshots[target_date].features.get(signal["ticker"], {}).get("close"))
+    if current_close is not None and current_close > 0 and future_close is not None:
+        raw_move = (future_close - current_close) / current_close
+        base["stock_proxy_move"] = raw_move if signal["direction"] == "bullish" else -raw_move
     if strategy_kind == "credit_spread":
         entry_credit = signal.get("entry_credit")
         max_risk = signal.get("max_risk_per_contract")
@@ -3646,6 +4404,21 @@ def select_validation_gate_outcomes(outcomes: Sequence[Mapping[str, Any]]) -> Li
     return cumulative or validation_5d
 
 
+def select_baseline_gate_outcomes(outcomes: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
+    """Match baseline months to the non-overlapping validation gate population."""
+    baseline_5d = [
+        o
+        for o in outcomes
+        if o.get("sample") == "BASELINE" and o.get("horizon") == "5d"
+    ]
+    cumulative = [
+        o
+        for o in baseline_5d
+        if str(o.get("split") or "").startswith("cumulative_to_")
+    ]
+    return cumulative or baseline_5d
+
+
 def summarize_outcomes(outcomes: Sequence[Mapping[str, Any]], sample: str) -> List[Dict[str, Any]]:
     primary = [o for o in outcomes if o.get("sample") == sample and o.get("horizon") == "5d"]
     grouped: Dict[Tuple[str, str], List[Mapping[str, Any]]] = defaultdict(list)
@@ -3660,14 +4433,17 @@ def summarize_outcomes(outcomes: Sequence[Mapping[str, Any]], sample: str) -> Li
         positives = sum(r for r in net_rs if r > 0)
         negatives = abs(sum(r for r in net_rs if r < 0))
         win_count = sum(1 for r in net_rs if r > 0)
+        date_clusters = outcome_date_cluster_values(scored)
+        date_cluster_wins = sum(value > 0 for value in date_clusters)
         block_counter = Counter()
         spreads: List[float] = []
         for o in items:
             for reason in str(o.get("block_reasons") or "").split(";"):
                 if reason:
                     block_counter[reason] += 1
-            if o.get("bid_ask_spread_pct") is not None:
-                spreads.append(float(o["bid_ask_spread_pct"]))
+            spread = num(o.get("bid_ask_spread_pct"))
+            if spread is not None:
+                spreads.append(spread)
         rows.append(
             {
                 "split": split,
@@ -3679,9 +4455,15 @@ def summarize_outcomes(outcomes: Sequence[Mapping[str, Any]], sample: str) -> Li
                 "unscorable_count": len(unscorable),
                 "win_count_scored": win_count,
                 "win_rate_scored": safe_div(win_count, len(scored)),
+                "unique_signal_date_count": len(date_clusters),
+                "date_cluster_win_count": date_cluster_wins,
+                "date_cluster_win_rate": safe_div(date_cluster_wins, len(date_clusters)),
+                "date_cluster_probability_score": wilson_lower_bound(date_cluster_wins, len(date_clusters)),
                 "win_rate_all_counting_unscorable_losses": safe_div(win_count, len(items)),
                 "average_net_r": statistics.fmean(net_rs) if net_rs else None,
                 "median_net_r": statistics.median(net_rs) if net_rs else None,
+                "gross_profit_r": positives,
+                "gross_loss_r": negatives,
                 "profit_factor": positives / negatives if negatives > 0 else (None if positives == 0 else 999.0),
                 "worst_losing_streak": worst_losing_streak(net_rs),
                 "drawdown_proxy_r": drawdown_proxy(net_rs),
@@ -3771,6 +4553,7 @@ def baseline_edge_evidence(
 def assign_family_tiers(
     validation_scorecard: Sequence[Mapping[str, Any]],
     baseline_comparison: Sequence[Mapping[str, Any]],
+    risk_config: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     by_family: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
     for row in validation_scorecard:
@@ -3782,7 +4565,15 @@ def assign_family_tiers(
         wins = sum(win_count_from_scorecard_row(r) for r in rows)
         success_probability = safe_div(wins, scored)
         failure_probability = 1.0 - success_probability if success_probability is not None else None
-        probability_score = wilson_lower_bound(wins, scored)
+        date_cluster_count = sum(int(r.get("unique_signal_date_count") or 0) for r in rows)
+        date_cluster_wins = sum(int(r.get("date_cluster_win_count") or 0) for r in rows)
+        if date_cluster_count <= 0:
+            # Legacy/imported scorecards may predate the cluster columns. Live
+            # scorecards always carry them; this preserves deterministic reads
+            # of older artifacts without silently returning a missing score.
+            date_cluster_count = scored
+            date_cluster_wins = wins
+        probability_score = wilson_lower_bound(date_cluster_wins, date_cluster_count)
         weighted = [
             (float(r["average_net_r"]), int(r.get("scored_count") or 0))
             for r in rows
@@ -3797,32 +4588,60 @@ def assign_family_tiers(
         positive_splits = sum(1 for avg in split_avgs if avg > 0)
         split_count = len(split_avgs)
         worst_split_avg = min(split_avgs) if split_avgs else None
-        max_losing_streak = max((int(r.get("worst_losing_streak") or 0) for r in rows), default=0)
-        profit_factors = [
-            float(r["profit_factor"])
+        named_split_avgs = [
+            (str(r.get("split") or ""), float(r["average_net_r"]))
             for r in rows
-            if r.get("profit_factor") not in (None, "") and float(r["profit_factor"]) < 999
+            if r.get("average_net_r") is not None and int(r.get("scored_count") or 0) > 0
         ]
-        pf = statistics.fmean(profit_factors) if profit_factors else None
+        dated_split_avgs = [item for item in named_split_avgs if item[0]]
+        if dated_split_avgs:
+            latest_split, latest_split_avg = max(dated_split_avgs, key=lambda item: item[0])
+        elif named_split_avgs:
+            latest_split, latest_split_avg = "", named_split_avgs[-1][1]
+        else:
+            latest_split, latest_split_avg = "", None
+        max_losing_streak = max((int(r.get("worst_losing_streak") or 0) for r in rows), default=0)
+        gross_profit_rows = [num(r.get("gross_profit_r")) for r in rows]
+        gross_loss_rows = [num(r.get("gross_loss_r")) for r in rows]
+        if any(value is not None for value in gross_profit_rows + gross_loss_rows):
+            gross_profit_r = sum(value or 0.0 for value in gross_profit_rows)
+            gross_loss_r = sum(value or 0.0 for value in gross_loss_rows)
+            pf = gross_profit_r / gross_loss_r if gross_loss_r > 0 else (999.0 if gross_profit_r > 0 else None)
+        else:
+            # Compatibility for callers that provide legacy scorecard rows. Weight
+            # split PF by scored observations instead of treating tiny and large
+            # splits as equally informative.
+            weighted_pfs = [
+                (float(r["profit_factor"]), int(r.get("scored_count") or 0))
+                for r in rows
+                if r.get("profit_factor") not in (None, "")
+                and float(r["profit_factor"]) < 999
+                and int(r.get("scored_count") or 0) > 0
+            ]
+            pf = safe_div(sum(value * count for value, count in weighted_pfs), sum(count for _, count in weighted_pfs))
         baseline_evidence = baseline_edge_evidence(avg_r, baseline_comparison)
         beats = int(baseline_evidence["count"])
         split_consistent = (
             split_count >= 2
             and positive_splits >= math.ceil(split_count * 0.75)
-            and (worst_split_avg is None or worst_split_avg > -0.05)
         )
-        drawdown_ok = max_losing_streak <= 8
-        if (
+        minimum_expected_r = float(
+            (risk_config or DEFAULT_RISK_CONFIG).get("min_proven_family_expected_r", 0.05)
+        )
+        historical_proof = (
             scored >= 50
             and avg_r is not None
-            and avg_r > 0
+            and avg_r >= minimum_expected_r
             and (pf or 0) >= 1.2
             and beats >= 2
             and split_consistent
-            and drawdown_ok
-        ):
+        )
+        if historical_proof and latest_split_avg is not None and latest_split_avg > 0:
             tier = "PROVEN"
-            note = "Positive out-of-sample expectancy with enough scored samples, baseline edge, and split consistency."
+            note = "Positive out-of-sample expectancy with enough scored samples, baseline edge, split consistency, and a positive latest holdout."
+        elif historical_proof:
+            tier = "DECAYED"
+            note = "Historical out-of-sample edge met proof thresholds, but the latest holdout is not positive; do not treat as currently active."
         elif scored >= 10 and avg_r is not None and avg_r > 0 and beats >= 1:
             tier = "PROMISING"
             note = "Positive pooled validation evidence, but split consistency, drawdown, or sample quality is not production-grade."
@@ -3834,6 +4653,8 @@ def assign_family_tiers(
             note = "Insufficient positive out-of-sample evidence; do not treat as actionable."
         tiers[family] = {
             "pattern_family": family,
+            "pattern_scope": "FAMILY",
+            "market_regime": "ALL",
             "confidence_tier": tier,
             "validation_signal_count": signals,
             "validation_scored_count": scored,
@@ -3841,7 +4662,11 @@ def assign_family_tiers(
             "validation_success_probability": success_probability,
             "validation_failure_probability": failure_probability,
             "validation_probability_score": probability_score,
+            "validation_date_cluster_count": date_cluster_count,
+            "validation_date_cluster_win_count": date_cluster_wins,
+            "validation_date_cluster_win_rate": safe_div(date_cluster_wins, date_cluster_count),
             "validation_average_net_r": avg_r,
+            "minimum_proven_average_net_r": minimum_expected_r,
             "validation_profit_factor": pf,
             "beats_baselines_count": beats,
             "baselines_beaten_names": baseline_evidence["names"],
@@ -3849,10 +4674,54 @@ def assign_family_tiers(
             "validation_split_count": split_count,
             "positive_validation_splits": positive_splits,
             "worst_split_average_net_r": worst_split_avg,
+            "latest_validation_split": latest_split,
+            "latest_validation_split_average_net_r": latest_split_avg,
             "max_worst_losing_streak": max_losing_streak,
             "probability_evidence": probability_evidence(wins, scored, success_probability, probability_score),
             "validation_note": note,
         }
+    return tiers
+
+
+def assign_regime_family_tiers(
+    outcomes: Sequence[Mapping[str, Any]],
+    baseline_comparison: Sequence[Mapping[str, Any]],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> Dict[Tuple[str, str], Dict[str, Any]]:
+    """Tier family/regime edges with the same chronological gates as broad families."""
+
+    scoped_outcomes: List[Dict[str, Any]] = []
+    scope_ids: Dict[Tuple[str, str], str] = {}
+    for outcome in select_validation_gate_outcomes(outcomes):
+        family = str(outcome.get("pattern_family") or "")
+        regime = str(outcome.get("market_regime") or "UNKNOWN")
+        if not family:
+            continue
+        key = (family, regime)
+        scoped_id = scope_ids.setdefault(
+            key,
+            f"{family}__MARKET_REGIME_{clean_family_part(regime)}",
+        )
+        scoped = dict(outcome)
+        scoped["pattern_family"] = scoped_id
+        scoped_outcomes.append(scoped)
+
+    scorecard = summarize_outcomes(scoped_outcomes, sample="VALIDATION")
+    scoped_tiers = assign_family_tiers(scorecard, baseline_comparison, risk_config)
+    tiers: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    for key, scoped_id in scope_ids.items():
+        if scoped_id not in scoped_tiers:
+            continue
+        tier = dict(scoped_tiers[scoped_id])
+        tier.update(
+            {
+                "pattern_family": key[0],
+                "regime_pattern_id": scoped_id,
+                "pattern_scope": "FAMILY_REGIME",
+                "market_regime": key[1],
+            }
+        )
+        tiers[key] = tier
     return tiers
 
 
@@ -3929,10 +4798,13 @@ def generate_baseline_signals(
 ) -> List[Dict[str, Any]]:
     signals: List[Dict[str, Any]] = []
     by_date_real = Counter(str(s["date"]) for s in validation_signals)
+    baseline_cap = int(
+        (risk_config or {}).get("max_baseline_signals_per_method_per_day", 100)
+    )
     for snap in validation_snaps:
         real_count = by_date_real.get(snap.signal_date, 5)
         if top_candidates_per_day <= 0:
-            per_date_target = max(3, real_count)
+            per_date_target = max(3, min(real_count, baseline_cap)) if baseline_cap > 0 else max(3, real_count)
         else:
             per_date_target = max(3, min(top_candidates_per_day, real_count))
         signals.extend(unusual_volume_baseline(snap, pattern_config, per_date_target, risk_config))
@@ -4179,10 +5051,14 @@ def run_missed_mover_audit(
     source_dates: Sequence[str],
     as_of: str,
     per_date: int = 5,
+    max_audit_dates: int = 20,
     risk_config: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     usable_dates = [d for d in source_dates if d < as_of]
+    if max_audit_dates <= 0:
+        return rows
+    usable_dates = usable_dates[-max_audit_dates:]
     for d in usable_dates:
         next_d = nth_future_date(source_dates, d, 1)
         if not next_d:
@@ -4468,7 +5344,20 @@ def prepare_decision_rows(
     risk_config = dict(config.get("risk_config") or DEFAULT_RISK_CONFIG)
     family_stats = build_family_outcome_stats(validation_bundle.get("outcomes", []))
     regime_edge_stats = build_regime_edge_stats(validation_bundle.get("outcomes", []))
-    ticker_trend_stats = build_ticker_trend_stats(validation_bundle.get("outcomes", []))
+    family_member_stats = build_family_member_stats(validation_bundle.get("outcomes", []))
+    contract_profile_stats = build_contract_profile_stats(validation_bundle.get("outcomes", []))
+    contract_profile_edge_rows = build_contract_profile_edge_rows(
+        contract_profile_stats,
+        validation_bundle.get("baseline_comparison", []),
+        risk_config,
+        required_latest_split=latest_validation_split_name(
+            validation_bundle.get("splits", [])
+        ),
+    )
+    directional_tiers = (
+        validation_bundle.get("directional_validation", {}).get("family_tiers", {})
+    )
+    ticker_trend_stats = build_ticker_trend_stats(validation_bundle.get("outcomes", []), risk_config)
     calibration_metrics = build_calibration_metrics(validation_bundle)
     run_kill_switches = build_run_kill_switches(
         validation_bundle=validation_bundle,
@@ -4477,29 +5366,56 @@ def prepare_decision_rows(
         calibration_metrics=calibration_metrics,
     )
     family_tiers = validation_bundle.get("family_tiers", {})
-    enriched = [
-        enrich_decision_row(
+    regime_family_tiers = validation_bundle.get("regime_family_tiers", {})
+    qualified_contract_profiles = {
+        (
+            str(row.get("pattern_family") or ""),
+            str(row.get("market_regime") or "ALL"),
+            str(row.get("contract_profile") or ""),
+        )
+        for row in contract_profile_edge_rows
+        if str(row.get("qualified_goal_edge") or "") == "yes"
+    }
+    enriched: List[Dict[str, Any]] = []
+    for row in daily_rows:
+        family = str(row.get("pattern_family") or "")
+        regime = str(row.get("current_market_alignment") or row.get("market_regime") or "UNKNOWN")
+        directional_family = str(
+            row.get("directional_pattern_family") or directional_pattern_family_for_row(row)
+        )
+        enriched_row = enrich_decision_row(
             row,
-            family_tiers.get(str(row.get("pattern_family") or ""), {}),
-            family_stats.get(str(row.get("pattern_family") or ""), {}),
-            regime_edge_stats.get(
-                (
-                    str(row.get("pattern_family") or ""),
-                    str(row.get("current_market_alignment") or row.get("market_regime") or "UNKNOWN"),
-                ),
-                {},
-            ),
+            select_active_tier_info(family, regime, family_tiers, regime_family_tiers),
+            family_stats.get(family, {}),
+            regime_edge_stats.get((family, regime), {}),
+            family_member_stats,
+            contract_profile_stats,
+            directional_tiers.get(directional_family, {}),
             ticker_trend_stats,
             validation_bundle.get("baseline_comparison", []),
             risk_config,
             run_kill_switches,
         )
-        for row in daily_rows
-    ]
+        enriched_row["contract_profile_goal_qualified"] = (
+            "yes"
+            if (
+                str(enriched_row.get("pattern_family") or ""),
+                "ALL",
+                str(enriched_row.get("contract_profile") or ""),
+            )
+            in qualified_contract_profiles
+            else "no"
+        )
+        enriched.append(enriched_row)
     return enriched, {
         "risk_config": risk_config,
         "family_stats": family_stats,
+        "regime_family_tiers": regime_family_tiers,
         "regime_edge_stats": regime_edge_stats,
+        "family_member_stats": family_member_stats,
+        "contract_profile_stats": contract_profile_stats,
+        "contract_profile_edge_rows": contract_profile_edge_rows,
+        "directional_pattern_tiers": directional_tiers,
         "ticker_trend_stats": ticker_trend_stats,
         "baseline_comparison": validation_bundle.get("baseline_comparison", []),
         "calibration_metrics": calibration_metrics,
@@ -4519,38 +5435,528 @@ def build_family_outcome_stats(outcomes: Sequence[Mapping[str, Any]]) -> Dict[st
     return stats
 
 
-def build_ticker_trend_stats(outcomes: Sequence[Mapping[str, Any]]) -> Dict[Tuple[str, str, str], Dict[str, Any]]:
+def build_directional_outcome_rows(
+    outcomes: Sequence[Mapping[str, Any]],
+    *,
+    baseline: bool = False,
+) -> List[Dict[str, Any]]:
+    """Collapse contract alternatives into one underlying-direction event."""
+
+    selected = select_baseline_gate_outcomes(outcomes) if baseline else select_validation_gate_outcomes(outcomes)
+    grouped: Dict[Tuple[str, str, str, str, str], List[Mapping[str, Any]]] = defaultdict(list)
+    for outcome in selected:
+        move = num(outcome.get("stock_proxy_move"))
+        if move is None:
+            continue
+        if baseline:
+            family = str(
+                outcome.get("base_pattern_family")
+                or base_pattern_family_name(outcome.get("pattern_family"))
+                or "BASELINE_UNKNOWN"
+            )
+        else:
+            family = str(outcome.get("directional_pattern_family") or directional_pattern_family_for_row(outcome))
+        key = (
+            str(outcome.get("split") or ""),
+            str(outcome.get("signal_date") or ""),
+            str(outcome.get("ticker") or ""),
+            str(outcome.get("direction") or ""),
+            family,
+        )
+        grouped[key].append(outcome)
+
+    rows: List[Dict[str, Any]] = []
+    for key, event_rows in grouped.items():
+        moves = [float(move) for row in event_rows if (move := num(row.get("stock_proxy_move"))) is not None]
+        if not moves:
+            continue
+        move = statistics.fmean(moves)
+        representative = dict(event_rows[0])
+        representative.update(
+            {
+                "pattern_family": key[4],
+                "directional_pattern_family": key[4],
+                "status": "SCORED",
+                "net_r": move,
+                "win": int(move > 0),
+                "outcome_note": "deduped_underlying_directional_return",
+                "stock_proxy_move": move,
+                "contract_profile": "DIRECTIONAL_SIGNAL_ONLY",
+            }
+        )
+        rows.append(representative)
+    rows.sort(
+        key=lambda row: (
+            str(row.get("split") or ""),
+            str(row.get("signal_date") or ""),
+            str(row.get("ticker") or ""),
+            str(row.get("pattern_family") or ""),
+        )
+    )
+    return rows
+
+
+def summarize_directional_baselines(
+    baseline_outcomes: Sequence[Mapping[str, Any]],
+) -> List[Dict[str, Any]]:
+    directional_rows = build_directional_outcome_rows(baseline_outcomes, baseline=True)
+    grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
+    for row in directional_rows:
+        grouped[str(row.get("pattern_family") or "BASELINE_UNKNOWN")].append(row)
+    rows: List[Dict[str, Any]] = []
+    for family, items in sorted(grouped.items()):
+        values = [float(row["net_r"]) for row in items if num(row.get("net_r")) is not None]
+        rows.append(
+            {
+                "baseline": family,
+                "seed": DEFAULT_SEED,
+                "signal_count": len(items),
+                "scored_count": len(values),
+                "win_rate_scored": safe_div(sum(value > 0 for value in values), len(values)),
+                "average_net_r": statistics.fmean(values) if values else None,
+                "median_net_r": statistics.median(values) if values else None,
+                "note": "Deduped 5d underlying directional return baseline.",
+            }
+        )
+    return rows
+
+
+def latest_validation_split_name(rows: Iterable[Mapping[str, Any]]) -> str:
+    splits = {
+        str(
+            row.get("latest_validation_split")
+            or row.get("split")
+            or row.get("name")
+            or ""
+        )
+        for row in rows
+    }
+    splits.discard("")
+    cumulative = {split for split in splits if split.startswith("cumulative_to_")}
+    return max(cumulative or splits) if splits else ""
+
+
+def assign_directional_pattern_tiers(
+    directional_outcomes: Sequence[Mapping[str, Any]],
+    baseline_comparison: Sequence[Mapping[str, Any]],
+    risk_config: Optional[Mapping[str, Any]] = None,
+    required_latest_split: Optional[str] = None,
+) -> Dict[str, Dict[str, Any]]:
+    config = risk_config or DEFAULT_RISK_CONFIG
+    final_holdout = required_latest_split or latest_validation_split_name(directional_outcomes)
+    grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
+    for row in directional_outcomes:
+        grouped[str(row.get("pattern_family") or "")].append(row)
+    tiers: Dict[str, Dict[str, Any]] = {}
+    for family, rows in grouped.items():
+        if not family:
+            continue
+        stats = outcome_group_stats(rows)
+        avg_move = num(stats.get("avg_r"))
+        baseline_evidence = baseline_edge_evidence(avg_move, baseline_comparison)
+        scored = int(stats.get("scored_count") or 0)
+        unique_dates = int(stats.get("unique_signal_date_count") or 0)
+        positive_splits = int(stats.get("positive_validation_splits") or 0)
+        split_count = int(stats.get("validation_split_count") or 0)
+        latest_avg = num(stats.get("latest_validation_split_average_net_r"))
+        latest_split = str(stats.get("latest_validation_split") or "")
+        latest_is_current = not final_holdout or latest_split == final_holdout
+        robust_avg = num(stats.get("avg_r_without_largest_win"))
+        pf = num(stats.get("profit_factor"))
+        proven = (
+            scored >= int(config.get("min_directional_pattern_scored_outcomes", 30))
+            and unique_dates >= int(config.get("min_directional_pattern_unique_dates", 15))
+            and positive_splits >= int(config.get("min_directional_pattern_positive_splits", 3))
+            and split_count >= int(config.get("min_directional_pattern_positive_splits", 3))
+            and avg_move is not None
+            and avg_move >= float(config.get("min_directional_pattern_average_move", 0.0025))
+            and robust_avg is not None
+            and robust_avg > 0
+            and latest_avg is not None
+            and latest_avg > 0
+            and latest_is_current
+            and pf is not None
+            and pf >= float(config.get("min_directional_pattern_profit_factor", 1.20))
+            and int(baseline_evidence["count"])
+            >= int(config.get("min_directional_pattern_baselines_beaten", 2))
+        )
+        if proven:
+            tier = "PROVEN_DIRECTIONAL"
+            note = "Recurring underlying-direction edge passed chronological robustness gates; option implementation still requires separate proof."
+        elif scored >= 10 and avg_move is not None and avg_move > 0:
+            tier = "PROMISING_DIRECTIONAL"
+            note = "Positive directional evidence exists, but chronological robustness is incomplete."
+        else:
+            tier = "RESEARCH_ONLY"
+            note = "No robust recurring underlying-direction edge."
+        wins = int(stats.get("win_count") or 0)
+        cluster_count = int(stats.get("date_cluster_count") or 0)
+        cluster_wins = int(stats.get("date_cluster_win_count") or 0)
+        tiers[family] = {
+            "directional_pattern_family": family,
+            "confidence_tier": tier,
+            "signal_count": int(stats.get("signal_count") or 0),
+            "scored_count": scored,
+            "unique_signal_date_count": unique_dates,
+            "unique_ticker_count": int(stats.get("unique_ticker_count") or 0),
+            "historical_tickers": stats.get("historical_tickers") or "",
+            "win_count": wins,
+            "win_rate": stats.get("win_rate"),
+            "date_cluster_count": cluster_count,
+            "date_cluster_win_count": cluster_wins,
+            "date_cluster_win_rate": stats.get("date_cluster_win_rate"),
+            "probability_score": stats.get("date_cluster_probability_score"),
+            "average_directional_move": avg_move,
+            "average_directional_move_without_largest_win": robust_avg,
+            "median_directional_move": stats.get("median_r"),
+            "profit_factor": pf,
+            "validation_split_count": split_count,
+            "positive_validation_splits": positive_splits,
+            "latest_validation_split": latest_split,
+            "required_latest_validation_split": final_holdout,
+            "latest_holdout_present": "yes" if latest_is_current else "no",
+            "latest_validation_split_average_directional_move": latest_avg,
+            "latest_validation_split_average_without_largest_win": stats.get(
+                "latest_validation_split_average_net_r_without_largest_win"
+            ),
+            "beats_baselines_count": int(baseline_evidence["count"]),
+            "baselines_beaten_names": baseline_evidence["names"],
+            "baselines_beaten_details": baseline_evidence["details"],
+            "validation_note": note,
+        }
+    return tiers
+
+
+def build_directional_pattern_validation(
+    outcomes: Sequence[Mapping[str, Any]],
+    baseline_outcomes: Sequence[Mapping[str, Any]],
+    risk_config: Optional[Mapping[str, Any]] = None,
+    required_latest_split: Optional[str] = None,
+) -> Dict[str, Any]:
+    directional_outcomes = build_directional_outcome_rows(outcomes)
+    directional_baselines = summarize_directional_baselines(baseline_outcomes)
+    return {
+        "outcomes": directional_outcomes,
+        "baseline_comparison": directional_baselines,
+        "family_tiers": assign_directional_pattern_tiers(
+            directional_outcomes,
+            directional_baselines,
+            risk_config,
+            required_latest_split=required_latest_split,
+        ),
+    }
+
+
+def directional_pattern_family_rows(validation_bundle: Mapping[str, Any]) -> List[Dict[str, Any]]:
+    tiers = validation_bundle.get("directional_validation", {}).get("family_tiers", {})
+    rows = [dict(row) for row in tiers.values()]
+    rows.sort(key=directional_pattern_tier_sort_key, reverse=True)
+    return rows
+
+
+def directional_pattern_tier_sort_key(row: Mapping[str, Any]) -> Tuple[int, float, float, int]:
+    tier_rank = {"PROVEN_DIRECTIONAL": 3, "PROMISING_DIRECTIONAL": 2, "RESEARCH_ONLY": 1}
+    return (
+        tier_rank.get(str(row.get("confidence_tier") or ""), 0),
+        num(row.get("probability_score")) or -1.0,
+        num(row.get("average_directional_move")) or -999.0,
+        int(num(row.get("scored_count")) or 0),
+    )
+
+
+def build_current_directional_pattern_candidates(
+    decision_rows: Sequence[Mapping[str, Any]],
+) -> List[Mapping[str, Any]]:
+    best: Dict[Tuple[str, str, str], Mapping[str, Any]] = {}
+    for row in decision_rows:
+        if str(row.get("directional_confidence_tier") or "") not in {
+            "PROVEN_DIRECTIONAL",
+            "PROMISING_DIRECTIONAL",
+        }:
+            continue
+        key = (
+            str(row.get("ticker") or ""),
+            str(row.get("direction") or ""),
+            str(row.get("directional_pattern_family") or ""),
+        )
+        current = best.get(key)
+        if current is None or current_directional_candidate_sort_key(row) > current_directional_candidate_sort_key(current):
+            best[key] = row
+    rows = list(best.values())
+    rows.sort(key=current_directional_candidate_sort_key, reverse=True)
+    return rows
+
+
+def current_directional_candidate_sort_key(row: Mapping[str, Any]) -> Tuple[int, float, float, float]:
+    return (
+        1 if str(row.get("directional_confidence_tier") or "") == "PROVEN_DIRECTIONAL" else 0,
+        num(row.get("directional_probability_score_pct")) or -1.0,
+        num(row.get("directional_average_move_pct")) or -999.0,
+        num(row.get("pattern_score")) or -1.0,
+    )
+
+
+def build_contract_profile_stats(
+    outcomes: Sequence[Mapping[str, Any]],
+) -> Dict[Tuple[str, str, str], Dict[str, Any]]:
+    """Build family/regime evidence for comparable DTE and moneyness contracts."""
+
     grouped: Dict[Tuple[str, str, str], List[Mapping[str, Any]]] = defaultdict(list)
     for outcome in select_validation_gate_outcomes(outcomes):
-        ticker = str(outcome.get("ticker") or "")
-        direction = str(outcome.get("direction") or "")
-        strategy_kind = str(outcome.get("strategy_kind") or "")
-        if not ticker or not direction or not strategy_kind:
+        family = str(outcome.get("pattern_family") or "")
+        regime = str(outcome.get("market_regime") or "UNKNOWN")
+        profile = str(outcome.get("contract_profile") or "")
+        if not family or not profile or profile == "DIRECTIONAL_SIGNAL_ONLY":
             continue
-        grouped[(ticker, direction, strategy_kind)].append(outcome)
+        grouped[(family, regime, profile)].append(outcome)
+        grouped[(family, "ALL", profile)].append(outcome)
     stats: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
     for key, rows in grouped.items():
         row = outcome_group_stats(rows)
-        row.update({"ticker": key[0], "direction": key[1], "strategy_kind": key[2]})
+        row.update(
+            {
+                "pattern_family": key[0],
+                "market_regime": key[1],
+                "contract_profile": key[2],
+            }
+        )
         stats[key] = row
     return stats
 
 
-def outcome_group_stats(rows: Sequence[Mapping[str, Any]]) -> Dict[str, Any]:
-    scored = [r for r in rows if r.get("status") == "SCORED" and r.get("net_r") is not None]
+def build_contract_profile_edge_rows(
+    contract_profile_stats: Mapping[Tuple[str, str, str], Mapping[str, Any]],
+    baseline_comparison: Sequence[Mapping[str, Any]],
+    risk_config: Optional[Mapping[str, Any]] = None,
+    required_latest_split: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    config = risk_config or DEFAULT_RISK_CONFIG
+    final_holdout = required_latest_split or latest_validation_split_name(
+        contract_profile_stats.values()
+    )
+    rows: List[Dict[str, Any]] = []
+    for (family, regime, profile), stats in contract_profile_stats.items():
+        if regime != "ALL":
+            continue
+        scored = int(num(stats.get("scored_count")) or 0)
+        unique_dates = int(num(stats.get("date_cluster_count")) or 0)
+        split_count = int(num(stats.get("validation_split_count")) or 0)
+        positive_splits = int(num(stats.get("positive_validation_splits")) or 0)
+        avg_r = num(stats.get("avg_r"))
+        robust_avg = num(stats.get("avg_r_without_largest_win"))
+        latest_avg = num(stats.get("latest_validation_split_average_net_r"))
+        latest_robust = num(stats.get("latest_validation_split_average_net_r_without_largest_win"))
+        latest_split = str(stats.get("latest_validation_split") or "")
+        profit_factor = num(stats.get("profit_factor"))
+        confidence_lower = num(stats.get("date_cluster_probability_score"))
+        breakeven = payoff_breakeven_probability(
+            num(stats.get("avg_win_r")),
+            num(stats.get("avg_loss_r")),
+        )
+        baseline_evidence = baseline_edge_evidence(avg_r, baseline_comparison)
+        failures: List[str] = []
+        if scored < int(config.get("min_goal_contract_profile_scored_outcomes", 30)):
+            failures.append("SCORED_LT_30")
+        if unique_dates < int(config.get("min_goal_contract_profile_unique_dates", 15)):
+            failures.append("UNIQUE_DATES_LT_15")
+        if split_count < int(config.get("min_goal_contract_profile_positive_splits", 3)):
+            failures.append("SPLITS_LT_3")
+        if positive_splits < int(config.get("min_goal_contract_profile_positive_splits", 3)):
+            failures.append("POSITIVE_SPLITS_LT_3")
+        if avg_r is None or avg_r <= 0:
+            failures.append("EXPECTANCY_NOT_POSITIVE")
+        if robust_avg is None or robust_avg <= 0:
+            failures.append("LEAVE_LARGEST_WIN_OUT_NOT_POSITIVE")
+        if latest_avg is None or latest_avg <= 0:
+            failures.append("LATEST_SPLIT_NOT_POSITIVE")
+        if latest_robust is None or latest_robust <= 0:
+            failures.append("LATEST_SPLIT_WITHOUT_BEST_WIN_NOT_POSITIVE")
+        if final_holdout and latest_split != final_holdout:
+            failures.append("LATEST_SPLIT_NOT_CURRENT_HOLDOUT")
+        if profit_factor is None or profit_factor < float(config.get("min_profit_factor", 1.20)):
+            failures.append("PROFIT_FACTOR_LT_1_2")
+        if confidence_lower is None or breakeven is None or confidence_lower <= breakeven:
+            failures.append("CONFIDENCE_LOWER_NOT_ABOVE_BREAKEVEN")
+        if int(baseline_evidence["count"]) < int(config.get("min_baselines_beaten", 2)):
+            failures.append("BASELINES_BEATEN_LT_2")
+        rows.append(
+            {
+                "pattern_family": family,
+                "market_regime": regime,
+                "contract_profile": profile,
+                "scored_count": scored,
+                "unique_signal_date_count": unique_dates,
+                "unique_ticker_count": stats.get("unique_ticker_count"),
+                "historical_tickers": stats.get("historical_tickers"),
+                "win_rate_pct": pct_value(stats.get("win_rate")),
+                "date_cluster_win_rate_pct": pct_value(stats.get("date_cluster_win_rate")),
+                "confidence_lower_pct": pct_value(confidence_lower),
+                "payoff_breakeven_pct": pct_value(breakeven),
+                "confidence_edge_over_breakeven_pct": probability_edge_over_breakeven_pct(
+                    confidence_lower,
+                    breakeven,
+                ),
+                "average_net_R": avg_r,
+                "average_net_R_without_largest_win": robust_avg,
+                "profit_factor": profit_factor,
+                "validation_split_count": split_count,
+                "positive_validation_splits": positive_splits,
+                "latest_validation_split": latest_split,
+                "required_latest_validation_split": final_holdout,
+                "latest_holdout_present": "yes" if not final_holdout or latest_split == final_holdout else "no",
+                "latest_split_average_net_R": latest_avg,
+                "latest_split_average_net_R_without_largest_win": latest_robust,
+                "beats_baselines_count": int(baseline_evidence["count"]),
+                "baselines_beaten_names": baseline_evidence["names"],
+                "qualified_goal_edge": "yes" if not failures else "no",
+                "qualification_failures": ";".join(failures),
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            str(row.get("qualified_goal_edge") or "") == "yes",
+            num(row.get("confidence_edge_over_breakeven_pct")) or -999.0,
+            num(row.get("average_net_R")) or -999.0,
+            int(num(row.get("scored_count")) or 0),
+        ),
+        reverse=True,
+    )
+    for index, row in enumerate(rows, 1):
+        row["profile_rank"] = index
+    return rows
+
+
+def build_family_member_stats(
+    outcomes: Sequence[Mapping[str, Any]],
+) -> Dict[Tuple[str, str, str, str, str], Dict[str, Any]]:
+    """Build exact ticker evidence without pooling unrelated pattern families."""
+
+    grouped: Dict[Tuple[str, str, str, str, str], List[Mapping[str, Any]]] = defaultdict(list)
+    for outcome in select_validation_gate_outcomes(outcomes):
+        ticker = str(outcome.get("ticker") or "")
+        direction = str(outcome.get("direction") or "")
+        strategy_kind = str(outcome.get("strategy_kind") or "")
+        family = str(outcome.get("pattern_family") or "")
+        regime = str(outcome.get("market_regime") or "UNKNOWN")
+        if not ticker or not direction or not strategy_kind or not family:
+            continue
+        grouped[(ticker, direction, strategy_kind, family, regime)].append(outcome)
+        grouped[(ticker, direction, strategy_kind, family, "ALL")].append(outcome)
+
+    stats: Dict[Tuple[str, str, str, str, str], Dict[str, Any]] = {}
+    for key, rows in grouped.items():
+        row = outcome_group_stats(rows)
+        row.update(
+            {
+                "ticker": key[0],
+                "direction": key[1],
+                "strategy_kind": key[2],
+                "pattern_family": key[3],
+                "market_regime": key[4],
+            }
+        )
+        stats[key] = row
+    return stats
+
+
+def base_pattern_family_name(value: Any) -> str:
+    return str(value or "").split("__", 1)[0]
+
+
+def build_ticker_trend_stats(
+    outcomes: Sequence[Mapping[str, Any]],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> Dict[Tuple[str, str, str, str], Dict[str, Any]]:
+    grouped: Dict[Tuple[str, str, str, str], List[Mapping[str, Any]]] = defaultdict(list)
+    for outcome in select_validation_gate_outcomes(outcomes):
+        ticker = str(outcome.get("ticker") or "")
+        direction = str(outcome.get("direction") or "")
+        strategy_kind = str(outcome.get("strategy_kind") or "")
+        base_family = str(outcome.get("base_pattern_family") or base_pattern_family_name(outcome.get("pattern_family")))
+        if not ticker or not direction or not strategy_kind or not base_family:
+            continue
+        grouped[(ticker, direction, strategy_kind, base_family)].append(outcome)
+    stats: Dict[Tuple[str, str, str, str], Dict[str, Any]] = {}
+    recent_window_size = int((risk_config or {}).get("ticker_trend_recent_window_size", 6))
+    for key, rows in grouped.items():
+        row = outcome_group_stats(rows, recent_window_size=recent_window_size)
+        row.update(
+            {
+                "ticker": key[0],
+                "direction": key[1],
+                "strategy_kind": key[2],
+                "base_pattern_family": key[3],
+            }
+        )
+        stats[key] = row
+    return stats
+
+
+def outcome_group_stats(
+    rows: Sequence[Mapping[str, Any]],
+    recent_window_size: int = 6,
+) -> Dict[str, Any]:
+    scored = sorted(
+        [r for r in rows if r.get("status") == "SCORED" and r.get("net_r") is not None],
+        key=lambda row: (
+            str(row.get("signal_date") or ""),
+            str(row.get("ticker") or ""),
+            str(row.get("lead_option_symbol") or ""),
+        ),
+    )
     net_rs = [float(r["net_r"]) for r in scored]
+    date_clusters = outcome_date_cluster_values(scored)
+    date_cluster_wins = sum(value > 0 for value in date_clusters)
     wins = [r for r in net_rs if r > 0]
     losses = [r for r in net_rs if r <= 0]
     positives = sum(wins)
     negatives = abs(sum(losses))
+    recent_scored = scored[-max(int(recent_window_size), 1) :]
+    recent_net_rs = [float(r["net_r"]) for r in recent_scored]
+    recent_wins = [r for r in recent_net_rs if r > 0]
+    recent_losses = [r for r in recent_net_rs if r <= 0]
+    recent_positives = sum(recent_wins)
+    recent_negatives = abs(sum(recent_losses))
+    split_net_rs: Dict[str, List[float]] = defaultdict(list)
+    for row in scored:
+        split_net_rs[str(row.get("split") or "")].append(float(row["net_r"]))
+    split_avgs = {
+        split: statistics.fmean(values)
+        for split, values in split_net_rs.items()
+        if split and values
+    }
+    latest_split = max(split_avgs) if split_avgs else ""
+    latest_split_avg = split_avgs.get(latest_split)
+    net_rs_without_largest_win = list(net_rs)
+    if wins:
+        net_rs_without_largest_win.remove(max(wins))
+    latest_split_net_rs = split_net_rs.get(latest_split, [])
+    latest_without_largest_win = list(latest_split_net_rs)
+    latest_wins = [value for value in latest_without_largest_win if value > 0]
+    if latest_wins:
+        latest_without_largest_win.remove(max(latest_wins))
     return {
         "signal_count": len(rows),
         "scored_count": len(scored),
+        "unique_signal_date_count": len({str(r.get("signal_date") or "") for r in scored if r.get("signal_date")}),
+        "date_cluster_count": len(date_clusters),
+        "date_cluster_win_count": date_cluster_wins,
+        "date_cluster_win_rate": safe_div(date_cluster_wins, len(date_clusters)),
+        "date_cluster_probability_score": wilson_lower_bound(date_cluster_wins, len(date_clusters)),
+        "date_cluster_confidence_upper": wilson_upper_bound(date_cluster_wins, len(date_clusters)),
+        "unique_ticker_count": len({str(r.get("ticker") or "") for r in scored if r.get("ticker")}),
+        "historical_tickers": ";".join(sorted({str(r.get("ticker") or "") for r in scored if r.get("ticker")})),
+        "unique_option_ticket_count": len(
+            {str(r.get("lead_option_symbol") or "") for r in scored if r.get("lead_option_symbol")}
+        ),
         "partial_count": sum(1 for r in rows if r.get("status") == "PARTIAL"),
         "unscorable_count": sum(1 for r in rows if r.get("status") == "UNSCORABLE"),
         "win_count": len(wins),
         "win_rate": safe_div(len(wins), len(scored)),
         "avg_r": statistics.fmean(net_rs) if net_rs else None,
+        "avg_r_without_largest_win": (
+            statistics.fmean(net_rs_without_largest_win) if net_rs_without_largest_win else None
+        ),
         "median_r": statistics.median(net_rs) if net_rs else None,
         "avg_win_r": statistics.fmean(wins) if wins else None,
         "avg_loss_r": statistics.fmean(losses) if losses else None,
@@ -4558,8 +5964,44 @@ def outcome_group_stats(rows: Sequence[Mapping[str, Any]]) -> Dict[str, Any]:
         "profit_factor": positives / negatives if negatives > 0 else (None if positives == 0 else 999.0),
         "drawdown_proxy_r": drawdown_proxy(net_rs),
         "worst_losing_streak": worst_losing_streak(net_rs),
+        "recent_window_size": max(int(recent_window_size), 1),
+        "recent_scored_count": len(recent_scored),
+        "recent_win_count": len(recent_wins),
+        "recent_win_rate": safe_div(len(recent_wins), len(recent_scored)),
+        "recent_avg_r": statistics.fmean(recent_net_rs) if recent_net_rs else None,
+        "recent_profit_factor": (
+            recent_positives / recent_negatives
+            if recent_negatives > 0
+            else (None if recent_positives == 0 else 999.0)
+        ),
+        "recent_drawdown_proxy_r": drawdown_proxy(recent_net_rs),
+        "recent_worst_losing_streak": worst_losing_streak(recent_net_rs),
+        "recent_start_date": str(recent_scored[0].get("signal_date") or "") if recent_scored else "",
+        "recent_end_date": str(recent_scored[-1].get("signal_date") or "") if recent_scored else "",
         "quote_coverage": safe_div(len(scored), len(rows)),
+        "validation_split_count": len(split_avgs),
+        "positive_validation_splits": sum(value > 0 for value in split_avgs.values()),
+        "latest_validation_split": latest_split,
+        "latest_validation_split_average_net_r": latest_split_avg,
+        "latest_validation_split_average_net_r_without_largest_win": (
+            statistics.fmean(latest_without_largest_win) if latest_without_largest_win else None
+        ),
+        "split_average_net_r_json": stable_json(split_avgs),
     }
+
+
+def outcome_date_cluster_values(rows: Sequence[Mapping[str, Any]]) -> List[float]:
+    """Average correlated ticker/contract observations before confidence scoring."""
+
+    grouped: Dict[Tuple[str, str], List[float]] = defaultdict(list)
+    for index, row in enumerate(rows):
+        value = num(row.get("net_r"))
+        if value is None:
+            continue
+        signal_date = str(row.get("signal_date") or "")
+        cluster_id = signal_date or f"ROW_{index:08d}"
+        grouped[(str(row.get("split") or ""), cluster_id)].append(value)
+    return [statistics.fmean(grouped[key]) for key in sorted(grouped)]
 
 
 def build_regime_edge_stats(outcomes: Sequence[Mapping[str, Any]]) -> Dict[Tuple[str, str], Dict[str, Any]]:
@@ -4569,36 +6011,35 @@ def build_regime_edge_stats(outcomes: Sequence[Mapping[str, Any]]) -> Dict[Tuple
         grouped[key].append(outcome)
     stats: Dict[Tuple[str, str], Dict[str, Any]] = {}
     for key, rows in grouped.items():
-        scored = [r for r in rows if r.get("status") == "SCORED" and r.get("net_r") is not None]
-        net_rs = [float(r["net_r"]) for r in scored]
-        positives = sum(r for r in net_rs if r > 0)
-        negatives = abs(sum(r for r in net_rs if r < 0))
-        stats[key] = {
-            "signal_count": len(rows),
-            "scored_count": len(scored),
-            "win_rate": safe_div(sum(1 for r in net_rs if r > 0), len(scored)),
-            "avg_r": statistics.fmean(net_rs) if net_rs else None,
-            "profit_factor": positives / negatives if negatives > 0 else (None if positives == 0 else 999.0),
-            "quote_coverage": safe_div(len(scored), len(rows)),
-        }
+        row = outcome_group_stats(rows)
+        row.update({"pattern_family": key[0], "market_regime": key[1]})
+        stats[key] = row
     return stats
 
 
 def build_calibration_metrics(validation_bundle: Mapping[str, Any]) -> Dict[str, Any]:
-    family_tiers = validation_bundle.get("family_tiers", {})
     buckets: Dict[str, Dict[str, Any]] = {}
     scored_total = 0
     brier_terms: List[float] = []
-    for outcome in select_validation_gate_outcomes(validation_bundle.get("outcomes", [])):
+    history: Dict[str, Dict[str, int]] = defaultdict(lambda: {"wins": 0, "count": 0})
+    gate_outcomes = sorted(
+        select_validation_gate_outcomes(validation_bundle.get("outcomes", [])),
+        key=lambda row: (
+            str(row.get("signal_date") or ""),
+            str(row.get("ticker") or ""),
+            str(row.get("pattern_family") or ""),
+        ),
+    )
+    for outcome in gate_outcomes:
         if outcome.get("status") != "SCORED" or outcome.get("win") in (None, ""):
             continue
-        tier = family_tiers.get(str(outcome.get("pattern_family") or ""), {})
-        p = num(tier.get("validation_probability_score"))
-        if p is None:
-            p = num(tier.get("validation_success_probability"))
-        if p is None:
-            continue
-        p = clamp(p, 0.0, 1.0)
+        family = str(outcome.get("pattern_family") or "")
+        prior = history[family]
+        # Prequential Beta(1, 1) estimate: each prediction uses only outcomes
+        # strictly earlier in the canonical walk-forward stream. The old metric
+        # evaluated an outcome with a probability fitted on that same outcome
+        # and later validation months.
+        p = (prior["wins"] + 1.0) / (prior["count"] + 2.0)
         win = 1.0 if int(outcome.get("win") or 0) else 0.0
         brier_terms.append((p - win) ** 2)
         scored_total += 1
@@ -4609,6 +6050,8 @@ def build_calibration_metrics(validation_bundle: Mapping[str, Any]) -> Dict[str,
         bucket["count"] += 1
         bucket["predicted_sum"] += p
         bucket["wins"] += int(win)
+        prior["count"] += 1
+        prior["wins"] += int(win)
     rows: List[Dict[str, Any]] = []
     for key in sorted(buckets):
         bucket = buckets[key]
@@ -4627,6 +6070,7 @@ def build_calibration_metrics(validation_bundle: Mapping[str, Any]) -> Dict[str,
         "scored_prediction_count": scored_total,
         "brier_score": brier,
         "reliability_buckets": rows,
+        "calibration_method": "PREQUENTIAL_BETA_1_1_CANONICAL_WALK_FORWARD",
         "status": "AVAILABLE" if brier is not None else "NOT_AVAILABLE",
     }
 
@@ -4735,6 +6179,12 @@ def qualifies_for_validated_edge_review(
         and regime_avg_r > float(risk_config.get("min_regime_edge_review_expected_r", 0.05))
         and regime_pf is not None
         and regime_pf >= float(risk_config.get("min_regime_edge_review_profit_factor", 1.20))
+        and conditional_split_consistency_passes(
+            regime_edge_stats,
+            int(risk_config.get("min_regime_edge_review_validation_splits", 2)),
+            float(risk_config.get("min_regime_edge_review_positive_split_ratio", 0.75)),
+            bool(risk_config.get("require_regime_edge_latest_split_positive", True)),
+        )
     ):
         regime_text = (
             f"{current_regime or 'UNKNOWN'} regime scored={regime_scored}, "
@@ -4754,19 +6204,20 @@ def soft_review_candidate(row: Mapping[str, Any]) -> bool:
 
 def select_qualified_ticker_trend(
     row: Mapping[str, Any],
-    ticker_trend_stats: Mapping[Tuple[str, str, str], Mapping[str, Any]],
+    ticker_trend_stats: Mapping[Tuple[str, str, str, str], Mapping[str, Any]],
     risk_config: Mapping[str, Any],
 ) -> Optional[Dict[str, Any]]:
     ticker = str(row.get("ticker") or "")
     direction = str(row.get("direction") or "")
     strategy_kind = str(row.get("strategy_kind") or "")
-    if not ticker or not direction or not strategy_kind:
+    base_family = str(row.get("base_pattern_family") or base_pattern_family_name(row.get("pattern_family")))
+    if not ticker or not direction or not strategy_kind or not base_family:
         return None
-    trend = ticker_trend_stats.get((ticker, direction, strategy_kind))
+    trend = ticker_trend_stats.get((ticker, direction, strategy_kind, base_family))
     if not trend:
         return None
     candidate = dict(trend)
-    candidate["trend_scope"] = "ticker_direction_strategy"
+    candidate["trend_scope"] = "ticker_direction_strategy_pattern"
     if ticker_trend_passes(candidate, risk_config, row):
         return candidate
     return None
@@ -4785,6 +6236,8 @@ def ticker_trend_passes(
     drawdown = num(stats.get("drawdown_proxy_r"))
     losing_streak = int(num(stats.get("worst_losing_streak")) or 0)
     edge = ticker_trend_edge_vs_breakeven_pct(stats)
+    if not ticker_trend_recent_window_passes(stats, risk_config):
+        return False
     if (
         scored < int(risk_config.get("min_ticker_trend_scored_outcomes", 30))
         or win_rate is None
@@ -4800,6 +6253,12 @@ def ticker_trend_passes(
         or losing_streak > int(risk_config.get("max_ticker_trend_losing_streak", 8))
         or edge is None
         or edge < float(risk_config.get("min_ticker_trend_breakeven_edge_pct", 5.0))
+        or not conditional_split_consistency_passes(
+            stats,
+            int(risk_config.get("min_ticker_trend_validation_splits", 2)),
+            float(risk_config.get("min_ticker_trend_positive_split_ratio", 0.75)),
+            bool(risk_config.get("require_ticker_trend_latest_split_positive", True)),
+        )
     ):
         return high_premium_ticker_trend_passes(
             stats,
@@ -4816,6 +6275,27 @@ def ticker_trend_passes(
     return True
 
 
+def ticker_trend_recent_window_passes(
+    stats: Mapping[str, Any],
+    risk_config: Mapping[str, Any],
+) -> bool:
+    unique_dates = int(num(stats.get("unique_signal_date_count")) or 0)
+    recent_scored = int(num(stats.get("recent_scored_count")) or 0)
+    recent_win_rate = num(stats.get("recent_win_rate"))
+    recent_avg_r = num(stats.get("recent_avg_r"))
+    recent_profit_factor = num(stats.get("recent_profit_factor"))
+    return (
+        unique_dates >= int(risk_config.get("min_ticker_trend_unique_signal_dates", 20))
+        and recent_scored >= int(risk_config.get("min_ticker_trend_recent_scored_outcomes", 6))
+        and recent_win_rate is not None
+        and recent_win_rate >= float(risk_config.get("min_ticker_trend_recent_win_rate", 0.33))
+        and recent_avg_r is not None
+        and recent_avg_r > float(risk_config.get("min_ticker_trend_recent_average_r", 0.0))
+        and recent_profit_factor is not None
+        and recent_profit_factor >= float(risk_config.get("min_ticker_trend_recent_profit_factor", 1.05))
+    )
+
+
 def high_premium_ticker_trend_passes(
     stats: Mapping[str, Any],
     risk_config: Mapping[str, Any],
@@ -4829,6 +6309,13 @@ def high_premium_ticker_trend_passes(
     losing_streak: int,
 ) -> bool:
     if current_row is None:
+        return False
+    if not conditional_split_consistency_passes(
+        stats,
+        int(risk_config.get("min_ticker_trend_validation_splits", 2)),
+        float(risk_config.get("min_ticker_trend_positive_split_ratio", 0.75)),
+        bool(risk_config.get("require_ticker_trend_latest_split_positive", True)),
+    ):
         return False
     total_premium = max(num(current_row.get("flow_total_premium")) or 0.0, num(current_row.get("hot_total_premium")) or 0.0)
     if total_premium < float(risk_config.get("min_high_premium_ticker_trend_flow_premium", 1_000_000_000.0)):
@@ -4849,6 +6336,22 @@ def high_premium_ticker_trend_passes(
         and losing_streak <= int(risk_config.get("max_high_premium_ticker_trend_losing_streak", 5))
         and edge is not None
         and edge >= float(risk_config.get("min_ticker_trend_breakeven_edge_pct", 5.0))
+    )
+
+
+def conditional_split_consistency_passes(
+    stats: Mapping[str, Any],
+    minimum_splits: int,
+    positive_split_ratio: float,
+    require_latest_positive: bool,
+) -> bool:
+    split_count = int(num(stats.get("validation_split_count")) or 0)
+    positive_splits = int(num(stats.get("positive_validation_splits")) or 0)
+    latest_avg = num(stats.get("latest_validation_split_average_net_r"))
+    return (
+        split_count >= minimum_splits
+        and positive_splits >= math.ceil(split_count * positive_split_ratio)
+        and (not require_latest_positive or (latest_avg is not None and latest_avg > 0))
     )
 
 
@@ -4882,12 +6385,18 @@ def ticker_trend_edge_vs_breakeven_pct(stats: Mapping[str, Any]) -> Optional[flo
 def ticker_trend_evidence_text(stats: Mapping[str, Any]) -> str:
     return (
         f"{stats.get('trend_scope') or 'ticker trend'} scored={stats.get('scored_count')}; "
+        f"family={stats.get('base_pattern_family') or 'unknown'}; "
+        f"unique_dates={stats.get('unique_signal_date_count')}; "
         f"win={fmt_pct(stats.get('win_rate'))}; "
         f"score={fmt_pct(ticker_trend_probability_score(stats))}; "
         f"avg_R={fmt_num(stats.get('avg_r'))}; "
         f"PF={fmt_num(stats.get('profit_factor'))}; "
         f"drawdown={fmt_num(stats.get('drawdown_proxy_r'))}; "
         f"losing_streak={stats.get('worst_losing_streak')}; "
+        f"recent_n={stats.get('recent_scored_count')}; "
+        f"recent_win={fmt_pct(stats.get('recent_win_rate'))}; "
+        f"recent_avg_R={fmt_num(stats.get('recent_avg_r'))}; "
+        f"recent_PF={fmt_num(stats.get('recent_profit_factor'))}; "
         f"edge_vs_BE={pct_text(ticker_trend_edge_vs_breakeven_pct(stats))}"
     )
 
@@ -4924,6 +6433,120 @@ def proven_soft_calibration_promotion_eligible(
         and validation_profit_factor >= float(risk_config.get("min_proven_soft_profit_factor", 1.30))
         and validation_scored >= int(risk_config.get("min_proven_soft_scored_outcomes", 60))
         and baselines_beaten >= int(risk_config.get("min_proven_soft_baselines_beaten", 4))
+    )
+
+
+def payoff_breakeven_probability(
+    avg_win_r: Optional[float],
+    avg_loss_r: Optional[float],
+) -> Optional[float]:
+    if avg_win_r is None or avg_loss_r is None or avg_win_r <= 0 or avg_loss_r >= 0:
+        return None
+    loss = abs(avg_loss_r)
+    denominator = avg_win_r + loss
+    if denominator <= 0:
+        return None
+    return loss / denominator
+
+
+def probability_edge_over_breakeven_pct(
+    probability: Optional[float],
+    breakeven_probability: Optional[float],
+) -> Optional[float]:
+    if probability is None or breakeven_probability is None:
+        return None
+    return round((probability - breakeven_probability) * 100.0, 2)
+
+
+def family_member_negative_history(
+    stats: Mapping[str, Any],
+    risk_config: Mapping[str, Any],
+) -> bool:
+    scored = int(num(stats.get("scored_count")) or 0)
+    minimum = int(risk_config.get("min_family_member_negative_history_scored_outcomes", 6))
+    avg_r = num(stats.get("avg_r"))
+    latest_avg = num(stats.get("latest_validation_split_average_net_r"))
+    return (
+        scored >= minimum
+        and avg_r is not None
+        and avg_r <= 0
+        and (latest_avg is None or latest_avg <= 0)
+    )
+
+
+def family_member_payoff_support_passes(
+    stats: Mapping[str, Any],
+    risk_config: Mapping[str, Any],
+) -> bool:
+    return (
+        int(num(stats.get("scored_count")) or 0)
+        >= int(risk_config.get("min_proven_payoff_family_member_scored_outcomes", 8))
+        and int(num(stats.get("validation_split_count")) or 0) >= 2
+        and (num(stats.get("avg_r_without_largest_win")) or 0.0) > 0
+        and (num(stats.get("latest_validation_split_average_net_r_without_largest_win")) or 0.0) > 0
+    )
+
+
+def family_member_evidence_text(stats: Mapping[str, Any]) -> str:
+    if not stats:
+        return "No exact ticker/family/regime validation history."
+    return (
+        f"exact member scored={stats.get('scored_count')}; "
+        f"unique_dates={stats.get('unique_signal_date_count')}; "
+        f"win={fmt_pct(stats.get('win_rate'))}; "
+        f"avg_R={fmt_num(stats.get('avg_r'))}; "
+        f"PF={fmt_num(stats.get('profit_factor'))}; "
+        f"avg_R_without_best_win={fmt_num(stats.get('avg_r_without_largest_win'))}; "
+        f"latest_avg_R={fmt_num(stats.get('latest_validation_split_average_net_r'))}; "
+        f"latest_without_best_win={fmt_num(stats.get('latest_validation_split_average_net_r_without_largest_win'))}"
+    )
+
+
+def proven_payoff_aware_promotion_eligible(
+    row: Mapping[str, Any],
+    blockers: Iterable[str],
+    expected_r: Optional[float],
+    expected_r_per_day: Optional[float],
+    validated_success_probability: Optional[float],
+    confidence_lower: Optional[float],
+    avg_win_r: Optional[float],
+    avg_loss_r: Optional[float],
+    validation_profit_factor: Optional[float],
+    validation_scored: int,
+    baselines_beaten: int,
+    latest_split_average_net_r: Optional[float],
+    family_member_stats: Mapping[str, Any],
+    risk_config: Mapping[str, Any],
+) -> bool:
+    if not risk_config.get("allow_proven_payoff_aware_promotion", True):
+        return False
+    blocker_set = set(blockers)
+    if not blocker_set or not blocker_set <= SOFT_CALIBRATION_BLOCKERS:
+        return False
+    if str(row.get("confidence_tier") or "") != "PROVEN":
+        return False
+    if risk_config.get("require_proven_payoff_regime_scope", True) and str(row.get("validation_scope") or "") != "FAMILY_REGIME":
+        return False
+    breakeven = payoff_breakeven_probability(avg_win_r, avg_loss_r)
+    validated_edge = probability_edge_over_breakeven_pct(validated_success_probability, breakeven)
+    confidence_edge = probability_edge_over_breakeven_pct(confidence_lower, breakeven)
+    return (
+        breakeven is not None
+        and expected_r is not None
+        and expected_r >= float(risk_config.get("min_proven_payoff_expected_r", 0.05))
+        and expected_r_per_day is not None
+        and expected_r_per_day > float(risk_config.get("min_expected_r_per_day", 0.0))
+        and validation_profit_factor is not None
+        and validation_profit_factor >= float(risk_config.get("min_proven_payoff_profit_factor", 1.30))
+        and validation_scored >= int(risk_config.get("min_proven_payoff_scored_outcomes", 60))
+        and baselines_beaten >= int(risk_config.get("min_proven_payoff_baselines_beaten", 4))
+        and latest_split_average_net_r is not None
+        and latest_split_average_net_r > 0
+        and validated_edge is not None
+        and validated_edge >= float(risk_config.get("min_proven_payoff_validated_edge_pct", 5.0))
+        and confidence_edge is not None
+        and confidence_edge >= float(risk_config.get("min_proven_payoff_confidence_edge_pct", 2.0))
+        and family_member_payoff_support_passes(family_member_stats, risk_config)
     )
 
 
@@ -4982,33 +6605,50 @@ def enrich_decision_row(
     tier_info: Mapping[str, Any],
     family_stats: Mapping[str, Any],
     regime_edge_stats: Mapping[str, Any],
-    ticker_trend_stats: Mapping[Tuple[str, str, str], Mapping[str, Any]],
+    family_member_stats: Mapping[Tuple[str, str, str, str, str], Mapping[str, Any]],
+    contract_profile_stats: Mapping[Tuple[str, str, str], Mapping[str, Any]],
+    directional_tier: Mapping[str, Any],
+    ticker_trend_stats: Mapping[Tuple[str, str, str, str], Mapping[str, Any]],
     baseline_comparison: Sequence[Mapping[str, Any]],
     risk_config: Mapping[str, Any],
     run_kill_switches: Sequence[str],
 ) -> Dict[str, Any]:
     enriched = dict(row)
     blockers = set(enriched.get("block_reasons") or [])
-    if str(enriched.get("confidence_tier") or "") != "PROVEN":
+    active_tier = str(tier_info.get("confidence_tier") or enriched.get("confidence_tier") or "RESEARCH_ONLY")
+    validation_scope = str(tier_info.get("pattern_scope") or enriched.get("validation_scope") or "FAMILY")
+    active_family_stats = regime_edge_stats if validation_scope == "FAMILY_REGIME" else family_stats
+    enriched["confidence_tier"] = active_tier
+    enriched["validation_scope"] = validation_scope
+    enriched["active_pattern_id"] = tier_info.get("active_pattern_id") or tier_info.get("regime_pattern_id") or enriched.get("pattern_family")
+    enriched["validated_market_regime"] = tier_info.get("market_regime") or "ALL"
+    enriched["validation_note"] = tier_info.get("validation_note") or enriched.get("validation_note") or ""
+    if active_tier != "PROVEN":
         blockers.add("PATTERN_VALIDATION_NOT_PROVEN")
+    else:
+        blockers.discard("PATTERN_VALIDATION_NOT_PROVEN")
+    if validation_scope == "FAMILY_REGIME" and active_tier == "PROVEN":
+        blockers.discard("MARKET_REGIME_CONFLICT")
     setup = trade_setup_fields(enriched)
-    p = probability_decimal(enriched)
-    if p is None:
-        p = num(tier_info.get("validation_probability_score"))
-    if p is None:
-        p = num(tier_info.get("validation_success_probability"))
-    calibrated_probability = clamp(p, 0.0, 1.0) if p is not None else None
-    avg_win = num(family_stats.get("avg_win_r"))
-    avg_loss = num(family_stats.get("avg_loss_r"))
-    expected_r = None
-    if calibrated_probability is not None and avg_win is not None and avg_loss is not None:
-        expected_r = calibrated_probability * avg_win + (1.0 - calibrated_probability) * avg_loss
+    validated_success_probability = num(tier_info.get("validation_success_probability"))
+    if validated_success_probability is None:
+        validated_success_probability = probability_decimal(enriched)
+    calibrated_probability = (
+        clamp(validated_success_probability, 0.0, 1.0)
+        if validated_success_probability is not None
+        else None
+    )
+    avg_win = num(active_family_stats.get("avg_win_r"))
+    avg_loss = num(active_family_stats.get("avg_loss_r"))
+    expected_r = num(tier_info.get("validation_average_net_r"))
     if expected_r is None:
-        expected_r = num(tier_info.get("validation_average_net_r")) or num(family_stats.get("avg_r"))
+        expected_r = num(active_family_stats.get("avg_r"))
+    if expected_r is None and calibrated_probability is not None and avg_win is not None and avg_loss is not None:
+        expected_r = calibrated_probability * avg_win + (1.0 - calibrated_probability) * avg_loss
     expected_hold = int(num(enriched.get("expected_hold_days")) or int(risk_config.get("expected_hold_days", 5)))
     expected_r_per_day = safe_div(expected_r, max(expected_hold, 1))
-    validation_profit_factor = num(tier_info.get("validation_profit_factor")) or num(family_stats.get("profit_factor"))
-    validation_scored = int(num(tier_info.get("validation_scored_count")) or num(family_stats.get("scored_count")) or 0)
+    validation_profit_factor = num(tier_info.get("validation_profit_factor")) or num(active_family_stats.get("profit_factor"))
+    validation_scored = int(num(tier_info.get("validation_scored_count")) or num(active_family_stats.get("scored_count")) or 0)
     baselines_beaten = int(num(tier_info.get("beats_baselines_count")) or 0)
     baselines_beaten_names = str(tier_info.get("baselines_beaten_names") or "")
     baselines_beaten_details = str(tier_info.get("baselines_beaten_details") or "")
@@ -5019,7 +6659,7 @@ def enrich_decision_row(
     if confidence_lower is None:
         confidence_lower = probability_decimal_from_pct(enriched.get("pattern_probability_score"))
     confidence_upper = wilson_upper_bound(
-        int(num(tier_info.get("validation_win_count")) or num(family_stats.get("win_count")) or 0),
+        int(num(tier_info.get("validation_win_count")) or num(active_family_stats.get("win_count")) or 0),
         validation_scored,
     )
     capacity = estimate_capacity_contracts(enriched, risk_config)
@@ -5027,9 +6667,139 @@ def enrich_decision_row(
     fill = fill_cost_fields(enriched, risk_config)
     max_risk = num(enriched.get("max_risk_per_contract"))
     ticker = str(enriched.get("ticker") or "")
+    member_regime = str(tier_info.get("market_regime") or "UNKNOWN") if validation_scope == "FAMILY_REGIME" else "ALL"
+    family_member = family_member_stats.get(
+        (
+            ticker,
+            str(enriched.get("direction") or ""),
+            signal_strategy_kind(enriched),
+            str(enriched.get("pattern_family") or ""),
+            member_regime,
+        ),
+        {},
+    )
+    family_calibrated_probability = calibrated_probability
+    family_confidence_lower = confidence_lower
+    family_confidence_upper = confidence_upper
+    family_expected_r = expected_r
+    family_avg_win_r = avg_win
+    family_avg_loss_r = avg_loss
+    family_profit_factor = validation_profit_factor
+    family_validation_scored = validation_scored
+    contract_profile = str(enriched.get("contract_profile") or "")
+    contract_scope = member_regime if validation_scope == "FAMILY_REGIME" else "ALL"
+    contract_stats = contract_profile_stats.get(
+        (
+            str(enriched.get("pattern_family") or ""),
+            contract_scope,
+            contract_profile,
+        ),
+        {},
+    )
+    contract_scored = int(num(contract_stats.get("scored_count")) or 0)
+    contract_unique_dates = int(num(contract_stats.get("date_cluster_count")) or 0)
+    contract_splits = int(num(contract_stats.get("validation_split_count")) or 0)
+    contract_profile_validated = (
+        bool(contract_profile)
+        and contract_scored >= int(risk_config.get("min_contract_profile_scored_outcomes", 12))
+        and contract_unique_dates >= int(risk_config.get("min_contract_profile_unique_dates", 6))
+        and contract_splits >= int(risk_config.get("min_contract_profile_validation_splits", 2))
+    )
+    if contract_profile_validated:
+        profile_wins = int(num(contract_stats.get("win_count")) or 0)
+        profile_probability = num(contract_stats.get("win_rate"))
+        prior_strength = max(float(risk_config.get("contract_profile_prior_strength", 12.0)), 0.0)
+        if profile_probability is not None and family_calibrated_probability is not None:
+            calibrated_probability = (
+                profile_wins + prior_strength * family_calibrated_probability
+            ) / (contract_scored + prior_strength)
+        else:
+            calibrated_probability = profile_probability
+        confidence_lower = num(contract_stats.get("date_cluster_probability_score"))
+        confidence_upper = num(contract_stats.get("date_cluster_confidence_upper"))
+        probability_score = confidence_lower
+        avg_win = num(contract_stats.get("avg_win_r"))
+        avg_loss = num(contract_stats.get("avg_loss_r"))
+        expected_r = num(contract_stats.get("avg_r"))
+        expected_r_per_day = safe_div(expected_r, max(expected_hold, 1))
+        validation_profit_factor = num(contract_stats.get("profit_factor"))
+        validation_scored = contract_scored
+        contract_baseline_evidence = baseline_edge_evidence(expected_r, baseline_comparison)
+        baselines_beaten = int(contract_baseline_evidence["count"])
+        baselines_beaten_names = str(contract_baseline_evidence["names"])
+        baselines_beaten_details = str(contract_baseline_evidence["details"])
+        enriched["success_probability_pct"] = pct_value(calibrated_probability)
+        enriched["failure_probability_pct"] = pct_value(
+            1.0 - calibrated_probability if calibrated_probability is not None else None
+        )
+        enriched["probability_score"] = pct_value(confidence_lower)
+        enriched["trade_success_probability_pct"] = enriched["success_probability_pct"]
+        enriched["trade_failure_probability_pct"] = enriched["failure_probability_pct"]
+        enriched["trade_probability_score"] = enriched["probability_score"]
+        enriched["probability_components"] = (
+            f"contract_profile={contract_profile}; profile_n={contract_scored}; "
+            f"profile_dates={contract_unique_dates}; profile_wins={profile_wins}; "
+            f"family_prior={fmt_pct(family_calibrated_probability)}; "
+            f"posterior={fmt_pct(calibrated_probability)}; profile_wilson_lower={fmt_pct(confidence_lower)}"
+        )
+        blockers.discard("CONTRACT_PROFILE_NOT_VALIDATED")
+    else:
+        blockers.add("CONTRACT_PROFILE_NOT_VALIDATED")
+        calibrated_probability = None
+        confidence_lower = None
+        confidence_upper = None
+        probability_score = None
+        expected_r = None
+        expected_r_per_day = None
+        avg_win = None
+        avg_loss = None
+        validation_profit_factor = None
+        validation_scored = contract_scored
+        baselines_beaten = 0
+        baselines_beaten_names = ""
+        baselines_beaten_details = ""
+        enriched["success_probability_pct"] = None
+        enriched["failure_probability_pct"] = None
+        enriched["probability_score"] = None
+        enriched["trade_success_probability_pct"] = None
+        enriched["trade_failure_probability_pct"] = None
+        enriched["trade_probability_score"] = None
+        enriched["probability_components"] = (
+            f"contract_profile={contract_profile or 'missing'}; profile_n={contract_scored}; "
+            f"profile_dates={contract_unique_dates}; "
+            "contract_profile_calibration=insufficient"
+        )
+    directional_tier_name = str(directional_tier.get("confidence_tier") or "RESEARCH_ONLY")
+    enriched["directional_pattern_family"] = (
+        enriched.get("directional_pattern_family") or directional_pattern_family_for_row(enriched)
+    )
+    enriched["directional_confidence_tier"] = directional_tier_name
+    enriched["directional_scored_count"] = directional_tier.get("scored_count")
+    enriched["directional_unique_signal_date_count"] = directional_tier.get("unique_signal_date_count")
+    enriched["directional_win_rate_pct"] = pct_value(directional_tier.get("win_rate"))
+    enriched["directional_probability_score_pct"] = pct_value(directional_tier.get("probability_score"))
+    enriched["directional_average_move_pct"] = pct_value(directional_tier.get("average_directional_move"))
+    enriched["directional_average_move_without_largest_win_pct"] = pct_value(
+        directional_tier.get("average_directional_move_without_largest_win")
+    )
+    enriched["directional_profit_factor"] = directional_tier.get("profit_factor")
+    enriched["directional_positive_validation_splits"] = directional_tier.get("positive_validation_splits")
+    enriched["directional_validation_split_count"] = directional_tier.get("validation_split_count")
+    enriched["directional_latest_split_average_move_pct"] = pct_value(
+        directional_tier.get("latest_validation_split_average_directional_move")
+    )
+    enriched["directional_latest_split_average_without_largest_win_pct"] = pct_value(
+        directional_tier.get("latest_validation_split_average_without_largest_win")
+    )
+    enriched["directional_beats_baselines_count"] = directional_tier.get("beats_baselines_count")
+    enriched["directional_baselines_beaten_names"] = directional_tier.get("baselines_beaten_names") or ""
+    enriched["directional_validation_note"] = directional_tier.get("validation_note") or ""
     approval_bridge = ""
     ticker_trend = select_qualified_ticker_trend(enriched, ticker_trend_stats, risk_config)
-    if ticker_trend:
+    # Legacy ticker-trend rows pool unlike contracts. Keep them visible as
+    # diagnostics, but do not let them override contract-profile probability.
+    ticker_trend_override: Mapping[str, Any] = {}
+    if ticker_trend_override:
         calibrated_probability = num(ticker_trend.get("win_rate"))
         confidence_lower = ticker_trend_probability_score(ticker_trend)
         confidence_upper = wilson_upper_bound(
@@ -5064,7 +6834,7 @@ def enrich_decision_row(
         blockers.add("PROFIT_FACTOR_BELOW_AUTO_APPROVAL")
     scored_floor = (
         int(risk_config.get("min_ticker_trend_scored_outcomes", 20))
-        if ticker_trend
+        if ticker_trend_override
         else int(risk_config.get("min_oos_scored_outcomes", 30))
     )
     if validation_scored < scored_floor:
@@ -5073,31 +6843,33 @@ def enrich_decision_row(
         blockers.add("DOES_NOT_BEAT_TWO_BASELINES")
     probability_floor = (
         float(risk_config.get("min_ticker_trend_probability_score", 0.42))
-        if ticker_trend
+        if ticker_trend_override
         else float(risk_config.get("min_probability_score", 0.50))
     )
     calibrated_floor = (
         float(risk_config.get("min_ticker_trend_win_rate", 0.55))
-        if ticker_trend
+        if ticker_trend_override
         else float(risk_config.get("min_calibrated_probability", 0.50))
     )
     confidence_floor = (
         float(risk_config.get("min_ticker_trend_probability_score", 0.42))
-        if ticker_trend
+        if ticker_trend_override
         else float(risk_config.get("min_confidence_lower_bound", 0.45))
     )
-    active_probability_score = confidence_lower if ticker_trend else probability_score
+    active_probability_score = confidence_lower
     if active_probability_score is None or active_probability_score < probability_floor:
         blockers.add("CALIBRATION_SCORE_MISSING_OR_WEAK")
     if calibrated_probability is None or calibrated_probability < calibrated_floor:
         blockers.add("CALIBRATION_SCORE_MISSING_OR_WEAK")
     if confidence_lower is None or confidence_lower < confidence_floor:
         blockers.add("CONFIDENCE_BAND_TOO_WEAK")
-    family_drawdown = num(family_stats.get("drawdown_proxy_r"))
-    family_losing_streak = int(num(family_stats.get("worst_losing_streak")) or 0)
-    if not ticker_trend and family_drawdown is not None and family_drawdown < float(risk_config.get("max_family_drawdown_r", -12.0)):
+    if family_member_negative_history(family_member, risk_config):
+        blockers.add("FAMILY_MEMBER_HISTORY_NEGATIVE")
+    family_drawdown = num(active_family_stats.get("drawdown_proxy_r"))
+    family_losing_streak = int(num(active_family_stats.get("worst_losing_streak")) or 0)
+    if family_drawdown is not None and family_drawdown < float(risk_config.get("max_family_drawdown_r", -12.0)):
         blockers.add("FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP")
-    if not ticker_trend and family_losing_streak > int(risk_config.get("max_family_losing_streak", 12)):
+    if family_losing_streak > int(risk_config.get("max_family_losing_streak", 12)):
         blockers.add("FAMILY_VALIDATION_LOSING_STREAK_TOO_LONG")
     if max_risk is not None and max_risk > float(risk_config.get("max_risk_per_trade", 1500.0)):
         blockers.add("MAX_RISK_EXCEEDS_PER_TRADE_LIMIT")
@@ -5115,7 +6887,7 @@ def enrich_decision_row(
         blockers.add("LIVE_QUOTE_VALIDATION_SKIPPED")
     for switch in run_kill_switches:
         blockers.add(switch)
-    if ticker_trend:
+    if ticker_trend_override:
         blockers.difference_update(
             {
                 "PATTERN_VALIDATION_NOT_PROVEN",
@@ -5144,13 +6916,42 @@ def enrich_decision_row(
         if confidence_lower is not None and confidence_lower >= confidence_floor:
             blockers.discard("CONFIDENCE_BAND_TOO_WEAK")
 
+    if validation_scope == "FAMILY_REGIME" and active_tier == "PROVEN":
+        blockers.discard("PATTERN_VALIDATION_NOT_PROVEN")
+        blockers.discard("MARKET_REGIME_CONFLICT")
+        if expected_r is not None and expected_r > float(risk_config.get("min_expected_r", 0.0)):
+            blockers.discard("EXPECTED_R_NOT_POSITIVE_AFTER_COSTS")
+            blockers.discard("VALIDATION_EXPECTANCY_NEGATIVE")
+        if expected_r_per_day is not None and expected_r_per_day > float(risk_config.get("min_expected_r_per_day", 0.0)):
+            blockers.discard("EXPECTED_R_PER_DAY_NOT_POSITIVE")
+        if validation_profit_factor is not None and validation_profit_factor >= float(risk_config.get("min_profit_factor", 1.2)):
+            blockers.discard("PROFIT_FACTOR_BELOW_AUTO_APPROVAL")
+        if validation_scored >= scored_floor:
+            blockers.discard("LIMITED_OUT_OF_SAMPLE_SAMPLE")
+        if baselines_beaten >= int(risk_config.get("min_baselines_beaten", 2)):
+            blockers.discard("DOES_NOT_BEAT_TWO_BASELINES")
+        if family_drawdown is not None and family_drawdown >= float(risk_config.get("max_family_drawdown_r", -12.0)):
+            blockers.discard("FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP")
+        if family_losing_streak <= int(risk_config.get("max_family_losing_streak", 12)):
+            blockers.discard("FAMILY_VALIDATION_LOSING_STREAK_TOO_LONG")
+
+    latest_split_average_net_r = (
+        num(contract_stats.get("latest_validation_split_average_net_r"))
+        if contract_profile_validated
+        else None
+    )
+    payoff_breakeven = payoff_breakeven_probability(avg_win, avg_loss)
+    payoff_calibrated_edge = probability_edge_over_breakeven_pct(calibrated_probability, payoff_breakeven)
+    payoff_score_edge = probability_edge_over_breakeven_pct(probability_score, payoff_breakeven)
+    payoff_confidence_edge = probability_edge_over_breakeven_pct(confidence_lower, payoff_breakeven)
+
     if proven_soft_calibration_promotion_eligible(
         enriched,
         blockers,
         expected_r,
         expected_r_per_day,
         calibrated_probability,
-        probability_score,
+        confidence_lower,
         validation_profit_factor,
         validation_scored,
         baselines_beaten,
@@ -5158,12 +6959,30 @@ def enrich_decision_row(
     ):
         blockers.difference_update(SOFT_CALIBRATION_BLOCKERS)
         approval_bridge = "PROVEN_SOFT_CALIBRATION"
+    elif proven_payoff_aware_promotion_eligible(
+        enriched,
+        blockers,
+        expected_r,
+        expected_r_per_day,
+        calibrated_probability,
+        confidence_lower,
+        avg_win,
+        avg_loss,
+        validation_profit_factor,
+        validation_scored,
+        baselines_beaten,
+        latest_split_average_net_r,
+        family_member,
+        risk_config,
+    ):
+        blockers.difference_update(SOFT_CALIBRATION_BLOCKERS)
+        approval_bridge = "PROVEN_PAYOFF_AWARE"
 
     has_ticket = "No complete" not in str(setup.get("trade_setup") or "")
     edge_review, edge_review_reason, edge_review_evidence = qualifies_for_validated_edge_review(
         blockers,
         has_ticket,
-        family_stats,
+        active_family_stats,
         regime_edge_stats,
         risk_config,
         str(enriched.get("current_market_alignment") or enriched.get("market_regime") or "UNKNOWN"),
@@ -5222,7 +7041,7 @@ def enrich_decision_row(
             "expected_R_per_day": round(expected_r_per_day, 6) if expected_r_per_day is not None else None,
             "avg_win_R": avg_win,
             "avg_loss_R": avg_loss,
-            "payoff_ratio": (ticker_trend or family_stats).get("payoff_ratio"),
+            "payoff_ratio": contract_stats.get("payoff_ratio") if contract_profile_validated else None,
             "validation_profit_factor": validation_profit_factor,
             "validation_scored_count": validation_scored,
             "beats_baselines_count": baselines_beaten,
@@ -5231,7 +7050,48 @@ def enrich_decision_row(
             "calibrated_probability": round(calibrated_probability, 6) if calibrated_probability is not None else None,
             "confidence_lower_bound": confidence_lower,
             "confidence_upper_bound": confidence_upper,
+            "family_calibrated_probability": family_calibrated_probability,
+            "family_confidence_lower_bound": family_confidence_lower,
+            "family_confidence_upper_bound": family_confidence_upper,
+            "family_expected_R": family_expected_r,
+            "family_avg_win_R": family_avg_win_r,
+            "family_avg_loss_R": family_avg_loss_r,
+            "family_validation_profit_factor": family_profit_factor,
+            "family_validation_scored_count": family_validation_scored,
+            "contract_profile": contract_profile,
+            "contract_profile_validated": "yes" if contract_profile_validated else "no",
+            "contract_profile_scored_count": contract_scored,
+            "contract_profile_unique_signal_date_count": contract_unique_dates,
+            "contract_profile_validation_split_count": contract_splits,
+            "contract_profile_win_rate_pct": pct_value(contract_stats.get("win_rate")),
+            "contract_profile_probability_score_pct": pct_value(
+                contract_stats.get("date_cluster_probability_score")
+            ),
+            "contract_profile_avg_R": contract_stats.get("avg_r"),
+            "contract_profile_avg_R_without_largest_win": contract_stats.get("avg_r_without_largest_win"),
+            "contract_profile_profit_factor": contract_stats.get("profit_factor"),
+            "contract_profile_latest_validation_split": contract_stats.get(
+                "latest_validation_split"
+            ),
+            "contract_profile_latest_validation_split_average_net_R": contract_stats.get(
+                "latest_validation_split_average_net_r"
+            ),
+            "contract_profile_latest_validation_split_average_net_R_without_largest_win": contract_stats.get(
+                "latest_validation_split_average_net_r_without_largest_win"
+            ),
+            "contract_profile_evidence": (
+                f"profile={contract_profile or 'missing'}; n={contract_scored}; "
+                f"dates={contract_unique_dates}; splits={contract_splits}; "
+                f"win={fmt_pct(contract_stats.get('win_rate'))}; "
+                f"avg_R={fmt_num(contract_stats.get('avg_r'))}; "
+                f"PF={fmt_num(contract_stats.get('profit_factor'))}; "
+                f"latest={fmt_num(contract_stats.get('latest_validation_split_average_net_r'))}R"
+            ),
             "confidence_uncertainty_band": confidence_band_text(confidence_lower, confidence_upper),
+            "breakeven_success_probability_pct": pct_value(payoff_breakeven),
+            "calibrated_edge_vs_breakeven_pct": payoff_calibrated_edge,
+            "probability_score_edge_vs_breakeven_pct": payoff_score_edge,
+            "confidence_lower_edge_vs_breakeven_pct": payoff_confidence_edge,
             "auto_min_expected_R": float(risk_config.get("min_expected_r", 0.0)),
             "auto_min_expected_R_per_day": float(risk_config.get("min_expected_r_per_day", 0.0)),
             "auto_min_probability_score": probability_floor,
@@ -5244,6 +7104,44 @@ def enrich_decision_row(
             "auto_max_family_losing_streak": int(risk_config.get("max_family_losing_streak", 12)),
             "family_drawdown_proxy_R": family_drawdown,
             "family_max_losing_streak": family_losing_streak,
+            "family_unique_signal_date_count": active_family_stats.get("unique_signal_date_count"),
+            "family_unique_ticker_count": active_family_stats.get("unique_ticker_count"),
+            "family_historical_tickers": active_family_stats.get("historical_tickers"),
+            "family_avg_R_without_largest_win": active_family_stats.get("avg_r_without_largest_win"),
+            "family_latest_validation_split": active_family_stats.get("latest_validation_split"),
+            "family_latest_validation_split_average_net_R": active_family_stats.get(
+                "latest_validation_split_average_net_r"
+            ),
+            "family_latest_validation_split_average_net_R_without_largest_win": active_family_stats.get(
+                "latest_validation_split_average_net_r_without_largest_win"
+            ),
+            "family_member_scope": (
+                "ticker_direction_strategy_pattern_regime" if validation_scope == "FAMILY_REGIME" else "ticker_direction_strategy_pattern"
+            ) if family_member else "",
+            "family_member_scored_count": family_member.get("scored_count"),
+            "family_member_unique_signal_date_count": family_member.get("unique_signal_date_count"),
+            "family_member_win_rate_pct": pct_value(family_member.get("win_rate")),
+            "family_member_avg_R": family_member.get("avg_r"),
+            "family_member_profit_factor": family_member.get("profit_factor"),
+            "family_member_avg_R_without_largest_win": family_member.get("avg_r_without_largest_win"),
+            "family_member_validation_split_count": family_member.get("validation_split_count"),
+            "family_member_latest_validation_split_average_net_R": family_member.get(
+                "latest_validation_split_average_net_r"
+            ),
+            "family_member_latest_validation_split_average_net_R_without_largest_win": family_member.get(
+                "latest_validation_split_average_net_r_without_largest_win"
+            ),
+            "family_member_payoff_support_passed": (
+                "yes" if family_member_payoff_support_passes(family_member, risk_config) else "no"
+            ) if family_member else "",
+            "family_member_evidence": family_member_evidence_text(family_member),
+            "validation_scope": validation_scope,
+            "active_pattern_id": enriched.get("active_pattern_id"),
+            "validated_market_regime": enriched.get("validated_market_regime"),
+            "latest_validation_split": contract_stats.get("latest_validation_split")
+            if contract_profile_validated
+            else "",
+            "latest_validation_split_average_net_R": latest_split_average_net_r,
             "regime_edge_review_passed": "yes" if edge_review_reason == "VALIDATED_FAMILY_AND_REGIME_EDGE_REVIEW" else "no",
             "regime_edge_review_evidence": edge_review_evidence if edge_review_reason == "VALIDATED_FAMILY_AND_REGIME_EDGE_REVIEW" else "",
             "capacity_estimate_contracts": capacity,
@@ -5266,13 +7164,27 @@ def enrich_decision_row(
             "edge_review_reason": edge_review_reason,
             "edge_review_evidence": edge_review_evidence,
             "ticker_trend_scope": (ticker_trend or {}).get("trend_scope", ""),
+            "ticker_trend_base_pattern_family": (ticker_trend or {}).get("base_pattern_family", ""),
             "ticker_trend_scored_count": (ticker_trend or {}).get("scored_count"),
+            "ticker_trend_unique_signal_date_count": (ticker_trend or {}).get("unique_signal_date_count"),
             "ticker_trend_win_rate_pct": pct_value((ticker_trend or {}).get("win_rate")),
             "ticker_trend_probability_score_pct": pct_value(ticker_trend_probability_score(ticker_trend or {})),
             "ticker_trend_avg_R": (ticker_trend or {}).get("avg_r"),
             "ticker_trend_profit_factor": (ticker_trend or {}).get("profit_factor"),
             "ticker_trend_drawdown_proxy_r": (ticker_trend or {}).get("drawdown_proxy_r"),
             "ticker_trend_max_losing_streak": (ticker_trend or {}).get("worst_losing_streak"),
+            "ticker_trend_validation_split_count": (ticker_trend or {}).get("validation_split_count"),
+            "ticker_trend_positive_validation_splits": (ticker_trend or {}).get("positive_validation_splits"),
+            "ticker_trend_latest_validation_split_average_net_R": (ticker_trend or {}).get(
+                "latest_validation_split_average_net_r"
+            ),
+            "ticker_trend_recent_window_size": (ticker_trend or {}).get("recent_window_size"),
+            "ticker_trend_recent_scored_count": (ticker_trend or {}).get("recent_scored_count"),
+            "ticker_trend_recent_win_rate_pct": pct_value((ticker_trend or {}).get("recent_win_rate")),
+            "ticker_trend_recent_avg_R": (ticker_trend or {}).get("recent_avg_r"),
+            "ticker_trend_recent_profit_factor": (ticker_trend or {}).get("recent_profit_factor"),
+            "ticker_trend_recent_start_date": (ticker_trend or {}).get("recent_start_date"),
+            "ticker_trend_recent_end_date": (ticker_trend or {}).get("recent_end_date"),
             "ticker_trend_breakeven_success_probability_pct": pct_value(ticker_trend_breakeven_probability(ticker_trend or {})),
             "ticker_trend_edge_vs_breakeven_pct": ticker_trend_edge_vs_breakeven_pct(ticker_trend or {}),
             "ticker_trend_evidence": ticker_trend_evidence_text(ticker_trend) if ticker_trend else "",
@@ -5300,12 +7212,12 @@ def catalyst_flow_leader_review_candidate(
 ) -> bool:
     if not has_ticket:
         return False
-    if str(row.get("base_pattern_family") or "") != "CATALYST_FLOW_LEADER":
+    if str(row.get("base_pattern_family") or "") not in {"CATALYST_FLOW_LEADER", "THEME_FLOW_LEADER"}:
         return False
     blocker_set = set(blockers)
     if blocker_set & (HARD_TRADE_BLOCKERS | RISK_TRADE_BLOCKERS | QUOTE_TRADE_BLOCKERS):
         return False
-    total_premium = max(num(row.get("flow_total_premium")) or 0.0, num(row.get("hot_total_premium")) or 0.0)
+    total_premium = effective_flow_leader_premium(row)
     if total_premium < FLOW_LEADER_MIN_PREMIUM:
         return False
     return True
@@ -5430,6 +7342,8 @@ def uw_evidence_text(row: Mapping[str, Any]) -> str:
         f"{row.get('reason_summary') or 'pattern signal'}; "
         f"premium={fmt_num(row.get('hot_total_premium'))}; "
         f"flow_bias={fmt_num(row.get('flow_premium_bias'))}; "
+        f"dark_pool_premium={fmt_num(row.get('dp_total_premium'))}; "
+        f"dark_pool_bias={fmt_num(row.get('dp_directional_bias'))}; "
         f"call_ratio={fmt_num(row.get('call_volume_ratio_30d'))}; "
         f"put_ratio={fmt_num(row.get('put_volume_ratio_30d'))}"
     )
@@ -5457,6 +7371,8 @@ def build_decision_board_rows(
                 "status": row.get("status") or "TRADE_REVIEW",
                 "ticker": row.get("ticker"),
                 "direction": row.get("direction"),
+                "pattern_family": row.get("pattern_family"),
+                "base_pattern_family": row.get("base_pattern_family"),
                 "strategy": setup.get("strategy"),
                 "full_ticket": setup.get("trade_setup"),
                 "all_legs": setup.get("occ_symbols"),
@@ -5486,13 +7402,81 @@ def build_decision_board_rows(
                 "payoff_ratio": row.get("payoff_ratio"),
                 "probability_score": row.get("probability_score"),
                 "calibrated_probability": row.get("calibrated_probability"),
+                "confidence_lower_bound": row.get("confidence_lower_bound"),
+                "breakeven_success_probability_pct": row.get("breakeven_success_probability_pct"),
+                "calibrated_edge_vs_breakeven_pct": row.get("calibrated_edge_vs_breakeven_pct"),
+                "probability_score_edge_vs_breakeven_pct": row.get("probability_score_edge_vs_breakeven_pct"),
+                "confidence_lower_edge_vs_breakeven_pct": row.get("confidence_lower_edge_vs_breakeven_pct"),
                 "validation_tier": row.get("confidence_tier"),
+                "validation_scope": row.get("validation_scope"),
                 "validation_scored_count": row.get("validation_scored_count"),
                 "validation_profit_factor": row.get("validation_profit_factor"),
                 "beats_baselines_count": row.get("beats_baselines_count"),
                 "baselines_beaten_names": row.get("baselines_beaten_names"),
                 "baselines_beaten_details": row.get("baselines_beaten_details"),
                 "confidence_uncertainty_band": row.get("confidence_uncertainty_band"),
+                "latest_validation_split_average_net_R": row.get("latest_validation_split_average_net_R"),
+                "family_unique_signal_date_count": row.get("family_unique_signal_date_count"),
+                "family_unique_ticker_count": row.get("family_unique_ticker_count"),
+                "family_historical_tickers": row.get("family_historical_tickers"),
+                "family_avg_R_without_largest_win": row.get("family_avg_R_without_largest_win"),
+                "family_latest_validation_split": row.get("family_latest_validation_split"),
+                "family_latest_validation_split_average_net_R": row.get(
+                    "family_latest_validation_split_average_net_R"
+                ),
+                "family_latest_validation_split_average_net_R_without_largest_win": row.get(
+                    "family_latest_validation_split_average_net_R_without_largest_win"
+                ),
+                "family_member_scope": row.get("family_member_scope"),
+                "family_member_scored_count": row.get("family_member_scored_count"),
+                "family_member_unique_signal_date_count": row.get("family_member_unique_signal_date_count"),
+                "family_member_win_rate_pct": row.get("family_member_win_rate_pct"),
+                "family_member_avg_R": row.get("family_member_avg_R"),
+                "family_member_profit_factor": row.get("family_member_profit_factor"),
+                "family_member_avg_R_without_largest_win": row.get("family_member_avg_R_without_largest_win"),
+                "family_member_validation_split_count": row.get("family_member_validation_split_count"),
+                "family_member_latest_validation_split_average_net_R": row.get(
+                    "family_member_latest_validation_split_average_net_R"
+                ),
+                "family_member_latest_validation_split_average_net_R_without_largest_win": row.get(
+                    "family_member_latest_validation_split_average_net_R_without_largest_win"
+                ),
+                "family_member_payoff_support_passed": row.get("family_member_payoff_support_passed"),
+                "family_member_evidence": row.get("family_member_evidence"),
+                "family_calibrated_probability": row.get("family_calibrated_probability"),
+                "family_expected_R": row.get("family_expected_R"),
+                "family_validation_profit_factor": row.get("family_validation_profit_factor"),
+                "family_validation_scored_count": row.get("family_validation_scored_count"),
+                "directional_pattern_family": row.get("directional_pattern_family"),
+                "directional_confidence_tier": row.get("directional_confidence_tier"),
+                "directional_scored_count": row.get("directional_scored_count"),
+                "directional_unique_signal_date_count": row.get("directional_unique_signal_date_count"),
+                "directional_probability_score_pct": row.get("directional_probability_score_pct"),
+                "directional_average_move_pct": row.get("directional_average_move_pct"),
+                "directional_profit_factor": row.get("directional_profit_factor"),
+                "directional_positive_validation_splits": row.get("directional_positive_validation_splits"),
+                "directional_validation_split_count": row.get("directional_validation_split_count"),
+                "directional_latest_split_average_move_pct": row.get("directional_latest_split_average_move_pct"),
+                "contract_profile": row.get("contract_profile"),
+                "contract_profile_validated": row.get("contract_profile_validated"),
+                "contract_profile_scored_count": row.get("contract_profile_scored_count"),
+                "contract_profile_unique_signal_date_count": row.get("contract_profile_unique_signal_date_count"),
+                "contract_profile_validation_split_count": row.get("contract_profile_validation_split_count"),
+                "contract_profile_probability_score_pct": row.get("contract_profile_probability_score_pct"),
+                "contract_profile_avg_R": row.get("contract_profile_avg_R"),
+                "contract_profile_avg_R_without_largest_win": row.get(
+                    "contract_profile_avg_R_without_largest_win"
+                ),
+                "contract_profile_profit_factor": row.get("contract_profile_profit_factor"),
+                "contract_profile_latest_validation_split": row.get(
+                    "contract_profile_latest_validation_split"
+                ),
+                "contract_profile_latest_validation_split_average_net_R": row.get(
+                    "contract_profile_latest_validation_split_average_net_R"
+                ),
+                "contract_profile_latest_validation_split_average_net_R_without_largest_win": row.get(
+                    "contract_profile_latest_validation_split_average_net_R_without_largest_win"
+                ),
                 "volume": row.get("liquidity_volume"),
                 "open_interest": row.get("liquidity_open_interest"),
                 "capacity_estimate": row.get("capacity_estimate_contracts"),
@@ -5507,13 +7491,27 @@ def build_decision_board_rows(
                 "edge_review_reason": row.get("edge_review_reason"),
                 "edge_review_evidence": row.get("edge_review_evidence"),
                 "ticker_trend_scope": row.get("ticker_trend_scope"),
+                "ticker_trend_base_pattern_family": row.get("ticker_trend_base_pattern_family"),
                 "ticker_trend_scored_count": row.get("ticker_trend_scored_count"),
+                "ticker_trend_unique_signal_date_count": row.get("ticker_trend_unique_signal_date_count"),
                 "ticker_trend_win_rate_pct": row.get("ticker_trend_win_rate_pct"),
                 "ticker_trend_probability_score_pct": row.get("ticker_trend_probability_score_pct"),
                 "ticker_trend_avg_R": row.get("ticker_trend_avg_R"),
                 "ticker_trend_profit_factor": row.get("ticker_trend_profit_factor"),
                 "ticker_trend_drawdown_proxy_r": row.get("ticker_trend_drawdown_proxy_r"),
                 "ticker_trend_max_losing_streak": row.get("ticker_trend_max_losing_streak"),
+                "ticker_trend_validation_split_count": row.get("ticker_trend_validation_split_count"),
+                "ticker_trend_positive_validation_splits": row.get("ticker_trend_positive_validation_splits"),
+                "ticker_trend_latest_validation_split_average_net_R": row.get(
+                    "ticker_trend_latest_validation_split_average_net_R"
+                ),
+                "ticker_trend_recent_window_size": row.get("ticker_trend_recent_window_size"),
+                "ticker_trend_recent_scored_count": row.get("ticker_trend_recent_scored_count"),
+                "ticker_trend_recent_win_rate_pct": row.get("ticker_trend_recent_win_rate_pct"),
+                "ticker_trend_recent_avg_R": row.get("ticker_trend_recent_avg_R"),
+                "ticker_trend_recent_profit_factor": row.get("ticker_trend_recent_profit_factor"),
+                "ticker_trend_recent_start_date": row.get("ticker_trend_recent_start_date"),
+                "ticker_trend_recent_end_date": row.get("ticker_trend_recent_end_date"),
                 "ticker_trend_edge_vs_breakeven_pct": row.get("ticker_trend_edge_vs_breakeven_pct"),
                 "blockers": ";".join(row.get("block_reasons") or []),
                 "promotion_requirements": row.get("promotion_requirements") or promotion_needed_text(row),
@@ -5607,6 +7605,8 @@ def decision_board_fieldnames() -> List[str]:
         "status",
         "ticker",
         "direction",
+        "pattern_family",
+        "base_pattern_family",
         "strategy",
         "full_ticket",
         "all_legs",
@@ -5636,13 +7636,66 @@ def decision_board_fieldnames() -> List[str]:
         "payoff_ratio",
         "probability_score",
         "calibrated_probability",
+        "confidence_lower_bound",
+        "breakeven_success_probability_pct",
+        "calibrated_edge_vs_breakeven_pct",
+        "probability_score_edge_vs_breakeven_pct",
+        "confidence_lower_edge_vs_breakeven_pct",
         "validation_tier",
+        "validation_scope",
         "validation_scored_count",
         "validation_profit_factor",
         "beats_baselines_count",
         "baselines_beaten_names",
         "baselines_beaten_details",
         "confidence_uncertainty_band",
+        "latest_validation_split_average_net_R",
+        "family_unique_signal_date_count",
+        "family_unique_ticker_count",
+        "family_historical_tickers",
+        "family_avg_R_without_largest_win",
+        "family_latest_validation_split",
+        "family_latest_validation_split_average_net_R",
+        "family_latest_validation_split_average_net_R_without_largest_win",
+        "family_member_scope",
+        "family_member_scored_count",
+        "family_member_unique_signal_date_count",
+        "family_member_win_rate_pct",
+        "family_member_avg_R",
+        "family_member_profit_factor",
+        "family_member_avg_R_without_largest_win",
+        "family_member_validation_split_count",
+        "family_member_latest_validation_split_average_net_R",
+        "family_member_latest_validation_split_average_net_R_without_largest_win",
+        "family_member_payoff_support_passed",
+        "family_member_evidence",
+        "family_calibrated_probability",
+        "family_expected_R",
+        "family_validation_profit_factor",
+        "family_validation_scored_count",
+        "directional_pattern_family",
+        "directional_confidence_tier",
+        "directional_scored_count",
+        "directional_unique_signal_date_count",
+        "directional_probability_score_pct",
+        "directional_average_move_pct",
+        "directional_profit_factor",
+        "directional_positive_validation_splits",
+        "directional_validation_split_count",
+        "directional_latest_split_average_move_pct",
+        "contract_profile",
+        "contract_profile_validated",
+        "contract_profile_goal_qualified",
+        "contract_profile_scored_count",
+        "contract_profile_unique_signal_date_count",
+        "contract_profile_validation_split_count",
+        "contract_profile_probability_score_pct",
+        "contract_profile_avg_R",
+        "contract_profile_avg_R_without_largest_win",
+        "contract_profile_profit_factor",
+        "contract_profile_latest_validation_split",
+        "contract_profile_latest_validation_split_average_net_R",
+        "contract_profile_latest_validation_split_average_net_R_without_largest_win",
         "volume",
         "open_interest",
         "capacity_estimate",
@@ -5657,13 +7710,25 @@ def decision_board_fieldnames() -> List[str]:
         "edge_review_reason",
         "edge_review_evidence",
         "ticker_trend_scope",
+        "ticker_trend_base_pattern_family",
         "ticker_trend_scored_count",
+        "ticker_trend_unique_signal_date_count",
         "ticker_trend_win_rate_pct",
         "ticker_trend_probability_score_pct",
         "ticker_trend_avg_R",
         "ticker_trend_profit_factor",
         "ticker_trend_drawdown_proxy_r",
         "ticker_trend_max_losing_streak",
+        "ticker_trend_validation_split_count",
+        "ticker_trend_positive_validation_splits",
+        "ticker_trend_latest_validation_split_average_net_R",
+        "ticker_trend_recent_window_size",
+        "ticker_trend_recent_scored_count",
+        "ticker_trend_recent_win_rate_pct",
+        "ticker_trend_recent_avg_R",
+        "ticker_trend_recent_profit_factor",
+        "ticker_trend_recent_start_date",
+        "ticker_trend_recent_end_date",
         "ticker_trend_edge_vs_breakeven_pct",
         "blockers",
         "promotion_requirements",
@@ -5675,7 +7740,8 @@ def decision_board_fieldnames() -> List[str]:
 def build_walk_forward_performance_rows(validation_bundle: Mapping[str, Any]) -> List[Dict[str, Any]]:
     family_tiers = validation_bundle.get("family_tiers", {})
     rows: List[Dict[str, Any]] = []
-    for row in validation_bundle.get("validation_scorecard", []):
+    scorecard = validation_bundle.get("validation_gate_scorecard") or validation_bundle.get("validation_scorecard", [])
+    for row in scorecard:
         tier = family_tiers.get(str(row.get("pattern_family") or ""), {})
         rows.append(
             {
@@ -5797,7 +7863,7 @@ def build_ablation_attribution_rows(validation_bundle: Mapping[str, Any]) -> Lis
     baseline_by_name = {
         str(r.get("baseline") or ""): r for r in validation_bundle.get("baseline_comparison", [])
     }
-    scorecard = validation_bundle.get("validation_scorecard", [])
+    scorecard = validation_bundle.get("validation_gate_scorecard") or validation_bundle.get("validation_scorecard", [])
     combined_avg = statistics.fmean(
         [float(r["average_net_r"]) for r in scorecard if r.get("average_net_r") not in (None, "")]
     ) if any(r.get("average_net_r") not in (None, "") for r in scorecard) else None
@@ -5869,7 +7935,9 @@ def full_backtest_group_row(key_name: str, key_value: str, items: Sequence[Mappi
     net_rs = [float(o["net_r"]) for o in scored]
     positives = sum(r for r in net_rs if r > 0)
     negatives = abs(sum(r for r in net_rs if r < 0))
-    dates = sorted(str(o.get("signal_date") or "") for o in items if o.get("signal_date"))
+    # Date strings are ISO-8601, so min/max retain chronological bounds without
+    # materializing and sorting every date in large full-coverage validations.
+    dates = [str(o.get("signal_date") or "") for o in items if o.get("signal_date")]
     return {
         key_name: key_value,
         "signal_count": len(items),
@@ -5884,8 +7952,8 @@ def full_backtest_group_row(key_name: str, key_value: str, items: Sequence[Mappi
         "gross_R": sum(net_rs) if net_rs else None,
         "drawdown_proxy": drawdown_proxy(net_rs),
         "max_losing_streak": worst_losing_streak(net_rs),
-        "first_signal_date": dates[0] if dates else "",
-        "last_signal_date": dates[-1] if dates else "",
+        "first_signal_date": min(dates) if dates else "",
+        "last_signal_date": max(dates) if dates else "",
     }
 
 
@@ -6049,9 +8117,7 @@ def build_shadow_ledger_rows(
                 "later_kill_switch_would_have_skipped": row.get("kill_switch_triggered"),
             }
         )
-    for outcome in validation_bundle.get("outcomes", []):
-        if outcome.get("sample") != "VALIDATION" or outcome.get("horizon") != "5d":
-            continue
+    for outcome in select_validation_gate_outcomes(validation_bundle.get("outcomes", [])):
         rows.append(
             {
                 "recommendation_date": outcome.get("signal_date"),
@@ -6392,6 +8458,82 @@ def build_goal_evidence_rows(
             validation_failed_count,
             validation_evidence,
             validation_next_action,
+        )
+    )
+
+    month_counts = validation_bundle.get("source_month_date_counts") or {}
+    required_months = [f"2026-{month:02d}" for month in range(1, 8)]
+    missing_history_months = [month for month in required_months if int(month_counts.get(month) or 0) <= 0]
+    rows.append(
+        goal_evidence_row(
+            "jan_to_jul_source_history_ingested",
+            "FAIL" if missing_history_months else "PASS",
+            "2026-01 through 2026-07 source-complete history",
+            len(required_months) - len(missing_history_months),
+            len(missing_history_months),
+            ";".join(f"{month}:{int(month_counts.get(month) or 0)}" for month in required_months),
+            "Recognize every valid dated UW source lane before rerunning chronological validation.",
+        )
+    )
+
+    directional_tiers = validation_bundle.get("directional_validation", {}).get("family_tiers", {})
+    proven_directional = [
+        row
+        for row in directional_tiers.values()
+        if str(row.get("confidence_tier") or "") == "PROVEN_DIRECTIONAL"
+    ]
+    required_edge_count = int(risk_config.get("min_goal_contract_profile_edges", 3))
+    rows.append(
+        goal_evidence_row(
+            "three_distinct_directional_oos_patterns",
+            "PASS" if len(proven_directional) >= required_edge_count else "FAIL",
+            "deduped underlying direction families",
+            len(proven_directional),
+            max(0, required_edge_count - len(proven_directional)),
+            "; ".join(
+                f"{row.get('directional_pattern_family')}:n={row.get('scored_count')},dates={row.get('unique_signal_date_count')},PF={fmt_num(row.get('profit_factor'))},splits={row.get('positive_validation_splits')}/{row.get('validation_split_count')},latest={fmt_pct(row.get('latest_validation_split_average_directional_move'))}"
+                for row in proven_directional[:12]
+            )
+            or "no directional family cleared the frozen robustness gates",
+            "Keep signal discovery separate from option implementation; do not force a ticket.",
+        )
+    )
+
+    contract_profile_edges = run_controls.get("contract_profile_edge_rows") or []
+    qualified_contract_edges = [
+        row for row in contract_profile_edges if str(row.get("qualified_goal_edge") or "") == "yes"
+    ]
+    qualified_contract_families: Dict[str, Mapping[str, Any]] = {}
+    for row in qualified_contract_edges:
+        family = str(row.get("pattern_family") or "")
+        if family and family not in qualified_contract_families:
+            qualified_contract_families[family] = row
+    rows.append(
+        goal_evidence_row(
+            "three_distinct_contract_profile_oos_edges",
+            "PASS" if len(qualified_contract_families) >= required_edge_count else "FAIL",
+            "family plus DTE/moneyness profile",
+            len(qualified_contract_families),
+            max(0, required_edge_count - len(qualified_contract_families)),
+            "; ".join(
+                f"{row.get('pattern_family')}|{row.get('contract_profile')}:n={row.get('scored_count')},dates={row.get('unique_signal_date_count')},avg={fmt_num(row.get('average_net_R'))}R,robust={fmt_num(row.get('average_net_R_without_largest_win'))}R,PF={fmt_num(row.get('profit_factor'))},confidence={pct_text(row.get('confidence_lower_pct'))},breakeven={pct_text(row.get('payoff_breakeven_pct'))}"
+                for row in list(qualified_contract_families.values())[:12]
+            )
+            or "no contract profile cleared every acceptance gate; inspect contract_profile_edges.csv",
+            "Improve contract selection only on training data, then rerun untouched chronological holdouts.",
+        )
+    )
+
+    consistency_errors = list(run_controls.get("artifact_consistency_errors") or [])
+    rows.append(
+        goal_evidence_row(
+            "zero_artifact_ranking_probability_contradictions",
+            "FAIL" if consistency_errors else "PASS",
+            "decision board, ranked recommendations, and daily report",
+            1 if not consistency_errors else 0,
+            len(consistency_errors),
+            "; ".join(consistency_errors) if consistency_errors else "zero consistency errors",
+            "Do not publish when rank 1, report primary, probability scope, or approval status disagree.",
         )
     )
 
@@ -6797,6 +8939,7 @@ def build_macro_geo_goal_row(as_of: str, macro_geo_bundle: Optional[Mapping[str,
 def auto_approved_goal_gate_failures(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> List[str]:
     failures: List[str] = []
     uses_ticker_trend = bool(row.get("ticker_trend_scope"))
+    uses_payoff_aware_bridge = False
     if uses_ticker_trend:
         min_expected_r = float(risk_config.get("min_ticker_trend_expected_r", 0.15))
         min_scored = int(risk_config.get("min_ticker_trend_scored_outcomes", 20))
@@ -6825,8 +8968,14 @@ def auto_approved_goal_gate_failures(row: Mapping[str, Any], risk_config: Mappin
             min_profit_factor = float(risk_config.get("min_proven_soft_profit_factor", 1.30))
             min_probability = float(risk_config.get("min_proven_soft_probability_score", 0.47))
             min_calibrated = float(risk_config.get("min_proven_soft_calibrated_probability", 0.52))
+        elif str(row.get("approval_bridge") or "") == "PROVEN_PAYOFF_AWARE":
+            uses_payoff_aware_bridge = True
+            min_expected_r = float(risk_config.get("min_proven_payoff_expected_r", 0.05))
+            min_scored = int(risk_config.get("min_proven_payoff_scored_outcomes", 60))
+            min_profit_factor = float(risk_config.get("min_proven_payoff_profit_factor", 1.30))
 
-    if (expected_r or 0.0) <= min_expected_r:
+    expected_r_fails = (expected_r or 0.0) < min_expected_r if uses_payoff_aware_bridge else (expected_r or 0.0) <= min_expected_r
+    if expected_r_fails:
         failures.append("expected_R")
     if (num(row.get("expected_R_per_day")) or 0.0) <= float(risk_config.get("min_expected_r_per_day", 0.0)):
         failures.append("expected_R_per_day")
@@ -6835,17 +8984,88 @@ def auto_approved_goal_gate_failures(row: Mapping[str, Any], risk_config: Mappin
     if scored < min_scored:
         failures.append("oos_sample")
     baselines_beaten = int(num(row.get("beats_baselines_count")) or 0)
-    min_baselines = int(risk_config.get("min_baselines_beaten", 2))
+    min_baselines = int(
+        risk_config.get("min_proven_payoff_baselines_beaten", 4)
+        if uses_payoff_aware_bridge
+        else risk_config.get("min_baselines_beaten", 2)
+    )
     if baselines_beaten < min_baselines:
         failures.append("baselines")
     if baselines_beaten >= min_baselines and not str(row.get("baselines_beaten_names") or "").strip():
         failures.append("baseline_names")
     if baselines_beaten >= min_baselines and not str(row.get("baselines_beaten_details") or "").strip():
         failures.append("baseline_details")
-    if probability_score is None or probability_score < min_probability:
-        failures.append("probability_score")
-    if calibrated is None or calibrated < min_calibrated:
-        failures.append("calibrated_probability")
+    if uses_payoff_aware_bridge:
+        breakeven = payoff_breakeven_probability(num(row.get("avg_win_R")), num(row.get("avg_loss_R")))
+        validated_edge = probability_edge_over_breakeven_pct(calibrated, breakeven)
+        confidence_edge = probability_edge_over_breakeven_pct(num(row.get("confidence_lower_bound")), breakeven)
+        if validated_edge is None or validated_edge < float(
+            risk_config.get("min_proven_payoff_validated_edge_pct", 5.0)
+        ):
+            failures.append("validated_probability_vs_breakeven")
+        if confidence_edge is None or confidence_edge < float(
+            risk_config.get("min_proven_payoff_confidence_edge_pct", 2.0)
+        ):
+            failures.append("confidence_lower_bound_vs_breakeven")
+        if (num(row.get("latest_validation_split_average_net_R")) or 0.0) <= 0:
+            failures.append("latest_validation_split")
+        if int(num(row.get("family_member_scored_count")) or 0) < int(
+            risk_config.get("min_proven_payoff_family_member_scored_outcomes", 8)
+        ):
+            failures.append("family_member_sample")
+        if (num(row.get("family_member_avg_R_without_largest_win")) or 0.0) <= 0:
+            failures.append("family_member_robust_expected_R")
+        if (
+            num(row.get("family_member_latest_validation_split_average_net_R_without_largest_win")) or 0.0
+        ) <= 0:
+            failures.append("family_member_latest_robust_expected_R")
+    else:
+        if probability_score is None or probability_score < min_probability:
+            failures.append("probability_score")
+        if calibrated is None or calibrated < min_calibrated:
+            failures.append("calibrated_probability")
+    if uses_ticker_trend:
+        candidate_base_family = str(
+            row.get("base_pattern_family")
+            or base_pattern_family_name(row.get("pattern_family") or row.get("discovered_pattern_family"))
+        )
+        trend_base_family = str(row.get("ticker_trend_base_pattern_family") or "")
+        if not candidate_base_family or trend_base_family != candidate_base_family:
+            failures.append("ticker_trend_pattern_scope")
+        if int(num(row.get("ticker_trend_unique_signal_date_count")) or 0) < int(
+            risk_config.get("min_ticker_trend_unique_signal_dates", 20)
+        ):
+            failures.append("ticker_trend_unique_dates")
+        if int(num(row.get("ticker_trend_recent_scored_count")) or 0) < int(
+            risk_config.get("min_ticker_trend_recent_scored_outcomes", 6)
+        ):
+            failures.append("ticker_trend_recent_sample")
+        recent_win_rate = probability_decimal_from_pct(row.get("ticker_trend_recent_win_rate_pct"))
+        if recent_win_rate is None or recent_win_rate < float(
+            risk_config.get("min_ticker_trend_recent_win_rate", 0.33)
+        ):
+            failures.append("ticker_trend_recent_win_rate")
+        if (num(row.get("ticker_trend_recent_avg_R")) or 0.0) <= float(
+            risk_config.get("min_ticker_trend_recent_average_r", 0.0)
+        ):
+            failures.append("ticker_trend_recent_expected_R")
+        if (num(row.get("ticker_trend_recent_profit_factor")) or 0.0) < float(
+            risk_config.get("min_ticker_trend_recent_profit_factor", 1.05)
+        ):
+            failures.append("ticker_trend_recent_profit_factor")
+        split_count = int(num(row.get("ticker_trend_validation_split_count")) or 0)
+        positive_splits = int(num(row.get("ticker_trend_positive_validation_splits")) or 0)
+        min_splits = int(risk_config.get("min_ticker_trend_validation_splits", 2))
+        if split_count < min_splits:
+            failures.append("ticker_trend_validation_splits")
+        elif positive_splits < math.ceil(
+            split_count * float(risk_config.get("min_ticker_trend_positive_split_ratio", 0.75))
+        ):
+            failures.append("ticker_trend_positive_splits")
+        if risk_config.get("require_ticker_trend_latest_split_positive", True) and (
+            num(row.get("ticker_trend_latest_validation_split_average_net_R")) or 0.0
+        ) <= 0:
+            failures.append("ticker_trend_latest_split")
     blocker_text = join_reason_list(row.get("blockers") or row.get("block_reasons") or "")
     if "PATTERN_VALIDATION_NOT_PROVEN" in blocker_text:
         failures.append("pattern_not_proven")
@@ -6883,7 +9103,7 @@ def goal_evidence_overall_status(rows: Sequence[Mapping[str, Any]]) -> str:
         return "FAIL_REQUIREMENTS_REMAIN"
     if "WARN" in statuses:
         return "PARTIAL_EVIDENCE_NOT_GOAL_COMPLETE"
-    return "DAILY_EVIDENCE_PASSES_NOT_GLOBAL_GOAL_COMPLETE"
+    return "GOAL_REQUIREMENTS_PASSED"
 
 
 def render_goal_evidence_report(as_of: str, rows: Sequence[Mapping[str, Any]]) -> str:
@@ -6894,7 +9114,7 @@ def render_goal_evidence_report(as_of: str, rows: Sequence[Mapping[str, Any]]) -
         "",
         f"Overall status: **{overall}**",
         "",
-        "This is a per-run evidence audit for the rebuild goal. It does not mark the full goal complete; multi-date rolling proof is still required.",
+        "All configured per-run goal requirements passed, including the required chronological holdout evidence.",
         "",
         "## Status Counts",
         f"- PASS: {counts.get('PASS', 0)}",
@@ -6938,6 +9158,9 @@ def render_runbook(as_of: str, config: Mapping[str, Any]) -> str:
             "- `decision_board.csv/json`: ticket-first status board and schema contract.",
             "- `artifact_manifest.json`: reproducibility metadata, git SHA, source fingerprints, config hash, and artifact paths.",
             "- `walk_forward_performance.csv`: validation performance after fees/slippage.",
+            "- `validation_details.csv`: non-overlapping cumulative holdout outcomes at the 5-day gate horizon only.",
+            "- `directional_pattern_families.csv`: underlying-direction evidence, separate from option implementation.",
+            "- `contract_profile_edges.csv`: strict family plus DTE/moneyness implementation gates.",
             "- `threshold_sensitivity.csv`: old-vs-new approval threshold comparison.",
             "- `calibration_summary.md`: Brier score and reliability buckets.",
             "- `goal_evidence.csv/md`: requirement-level proof for source coverage, explicit tickets, no-edge, and profitability gates.",
@@ -6994,6 +9217,10 @@ def write_outputs(
         source_completeness,
         config,
     )
+    decision_enriched_rows = select_signal_set(
+        decision_enriched_rows,
+        max_signals=int(config.get("top_candidates_per_day") or 0),
+    )
     macro_geo_bundle = build_macro_geo_bundle(
         base_dir=base_dir,
         as_of=as_of,
@@ -7007,8 +9234,12 @@ def write_outputs(
     trade_review = build_trade_review_candidates(decision_enriched_rows)
     target_ready = build_target_ready_candidates(decision_enriched_rows, run_controls["risk_config"])
     scout_calls = build_scout_call_candidates(decision_enriched_rows)
-    pattern_recommendations = build_pattern_recommendations(actionable, trade_review)
+    pattern_recommendations = build_pattern_recommendations(actionable, trade_review, decision_enriched_rows)
+    directional_family_rows = directional_pattern_family_rows(validation_bundle)
+    directional_pattern_candidates = build_current_directional_pattern_candidates(decision_enriched_rows)
+    contract_profile_edge_rows = run_controls.get("contract_profile_edge_rows", [])
     catalyst_flow_leaders = build_catalyst_flow_leaders(decision_enriched_rows)
+    theme_flow_leaders = build_theme_flow_leaders(decision_enriched_rows)
     watch = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "TRADE_REVIEW" and r.get("classification") == "WATCH"])
     blocked = dedupe_rows_by_ticket([r for r in decision_enriched_rows if r["status"] == "AVOID"])
     directional_edge_rows = build_directional_edge_diagnostic_rows(actionable, trade_review, blocked)
@@ -7023,10 +9254,25 @@ def write_outputs(
     discovered_rows = []
     for family, tier in sorted(validation_bundle["family_tiers"].items()):
         row = dict(tier)
+        row["base_pattern_family"] = family
+        row["daily_pattern_config_json"] = stable_json(daily_pattern_config)
+        discovered_rows.append(row)
+    for (family, regime), tier in sorted(validation_bundle.get("regime_family_tiers", {}).items()):
+        row = dict(tier)
+        row["base_pattern_family"] = family
+        row["pattern_family"] = row.get("regime_pattern_id") or f"{family}__MARKET_REGIME_{clean_family_part(regime)}"
         row["daily_pattern_config_json"] = stable_json(daily_pattern_config)
         discovered_rows.append(row)
 
     daily_decision = daily_trade_decision(actionable, trade_review, blocked, target_ready)
+    artifact_consistency_errors = validate_artifact_consistency(
+        decision_enriched_rows,
+        actionable,
+        trade_review,
+        pattern_recommendations,
+        daily_decision,
+        target_ready,
+    )
     metadata = {
         "pipeline_version": PIPELINE_VERSION,
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
@@ -7055,14 +9301,39 @@ def write_outputs(
         "source_completeness": source_completeness,
         "macro_geo_summary": macro_geo_bundle.get("summary", {}),
         "daily_trade_decision": daily_decision,
+        "artifact_consistency_errors": artifact_consistency_errors,
         "run_kill_switches": run_controls["run_kill_switches"],
         "candidate_counts": {
             "auto_approved": len(actionable),
             "pattern_recommendations": len(pattern_recommendations),
             "scout_call_candidates": len(scout_calls),
             "catalyst_flow_leaders": len(catalyst_flow_leaders),
+            "theme_flow_leaders": len(theme_flow_leaders),
+            "proven_regime_patterns": sum(
+                1
+                for tier in validation_bundle.get("regime_family_tiers", {}).values()
+                if tier.get("confidence_tier") == "PROVEN"
+            ),
             "source_ticker_coverage": len(source_coverage_rows),
             "directional_edge_diagnostics": len(directional_edge_rows),
+            "directional_pattern_families": len(directional_family_rows),
+            "proven_directional_pattern_families": sum(
+                str(row.get("confidence_tier") or "") == "PROVEN_DIRECTIONAL"
+                for row in directional_family_rows
+            ),
+            "current_directional_pattern_candidates": len(directional_pattern_candidates),
+            "qualified_contract_profile_edges": sum(
+                str(row.get("qualified_goal_edge") or "") == "yes"
+                for row in contract_profile_edge_rows
+            ),
+            "qualified_contract_profile_families": len(
+                {
+                    str(row.get("pattern_family") or "")
+                    for row in contract_profile_edge_rows
+                    if str(row.get("qualified_goal_edge") or "") == "yes"
+                    and str(row.get("pattern_family") or "")
+                }
+            ),
             "ticker_trend_edges": len(
                 build_ticker_trend_edge_rows(
                     run_controls["ticker_trend_stats"],
@@ -7084,6 +9355,7 @@ def write_outputs(
             "bot_eod_cache_dir": config["bot_eod_cache_dir"],
             "risk_config_path": config.get("risk_config_path"),
             "risk_config_hash": config.get("risk_config_hash"),
+            "validation_details_scope": "non_overlapping_cumulative_holdouts_5d_only",
         },
         "risk_config": config.get("risk_config", {}),
         "verdict": final_verdict(validation_bundle, daily_rows, actionable),
@@ -7096,8 +9368,12 @@ def write_outputs(
         "scout_call_candidates": str(out_dir / "scout_call_candidates.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
+        "theme_flow_leaders": str(out_dir / "theme_flow_leaders.csv"),
         "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
         "directional_edge_diagnostics": str(out_dir / "directional_edge_diagnostics.csv"),
+        "directional_pattern_families": str(out_dir / "directional_pattern_families.csv"),
+        "directional_pattern_candidates": str(out_dir / "directional_pattern_candidates.csv"),
+        "contract_profile_edges": str(out_dir / "contract_profile_edges.csv"),
         "ticker_trend_edges": str(out_dir / "ticker_trend_edges.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
@@ -7146,7 +9422,8 @@ def write_outputs(
         daily_decision,
         paths,
     )
-    schema_errors = validate_decision_board_rows(decision_board)
+    schema_errors = validate_decision_board_rows(decision_board) + artifact_consistency_errors
+    run_controls["artifact_consistency_errors"] = artifact_consistency_errors
     if schema_errors and "KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS" not in metadata["run_kill_switches"]:
         metadata["run_kill_switches"] = sorted(set(metadata["run_kill_switches"] + ["KILL_SWITCH_ARTIFACT_SCHEMA_VALIDATION_FAILS"]))
         for row in decision_board:
@@ -7196,8 +9473,31 @@ def write_outputs(
         [catalyst_flow_leader_output_row(r, idx) for idx, r in enumerate(catalyst_flow_leaders, 1)],
         catalyst_flow_leader_fieldnames(),
     )
+    write_csv(
+        Path(paths["theme_flow_leaders"]),
+        [theme_flow_leader_output_row(r, idx) for idx, r in enumerate(theme_flow_leaders, 1)],
+        theme_flow_leader_fieldnames(),
+    )
     write_csv(Path(paths["source_ticker_coverage"]), source_coverage_rows, source_coverage_fieldnames())
     write_csv(Path(paths["directional_edge_diagnostics"]), directional_edge_rows, directional_edge_diagnostic_fieldnames())
+    write_csv(
+        Path(paths["directional_pattern_families"]),
+        [directional_pattern_family_output_row(row, idx) for idx, row in enumerate(directional_family_rows, 1)],
+        directional_pattern_family_fieldnames(),
+    )
+    write_csv(
+        Path(paths["directional_pattern_candidates"]),
+        [
+            directional_pattern_candidate_output_row(row, idx)
+            for idx, row in enumerate(directional_pattern_candidates, 1)
+        ],
+        directional_pattern_candidate_fieldnames(),
+    )
+    write_csv(
+        Path(paths["contract_profile_edges"]),
+        contract_profile_edge_rows,
+        contract_profile_edge_fieldnames(),
+    )
     write_csv(Path(paths["ticker_trend_edges"]), ticker_trend_rows, ticker_trend_edge_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [trade_output_row(r) for r in watch], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [blocked_output_row(r) for r in blocked], blocked_fieldnames())
@@ -7249,7 +9549,11 @@ def write_outputs(
     write_json(Path(paths["sentiment_news_summary"]), sentiment_summary)
     write_csv(Path(paths["validation_scorecard"]), validation_bundle["validation_scorecard"], scorecard_fieldnames())
     write_csv(Path(paths["train_scorecard"]), validation_bundle["train_scorecard"], scorecard_fieldnames())
-    write_csv(Path(paths["validation_details"]), validation_bundle["outcomes"], validation_detail_fieldnames())
+    write_csv(
+        Path(paths["validation_details"]),
+        validation_bundle.get("validation_gate_outcomes", []),
+        validation_detail_fieldnames(),
+    )
     write_csv(Path(paths["baseline_comparison"]), validation_bundle["baseline_comparison"], baseline_fieldnames())
     write_csv(Path(paths["missed_mover_audit"]), missed_rows, missed_fieldnames())
     write_json(Path(paths["macro_geo_catalysts"]), macro_geo_bundle.get("catalysts", []))
@@ -7299,8 +9603,12 @@ def write_outputs(
             scout_calls,
             pattern_recommendations,
             catalyst_flow_leaders,
+            theme_flow_leaders,
             source_coverage_rows,
             directional_edge_rows,
+            directional_family_rows,
+            directional_pattern_candidates,
+            contract_profile_edge_rows,
             ticker_trend_rows,
             trade_review,
             watch,
@@ -7357,14 +9665,21 @@ def write_source_incomplete_outputs(
         "source_completeness": completeness,
         "macro_geo_summary": macro_geo_bundle.get("summary", {}),
         "daily_trade_decision": "NO_TRADE",
+        "artifact_consistency_errors": [],
         "run_kill_switches": ["KILL_SWITCH_SOURCE_INCOMPLETE"],
         "candidate_counts": {
             "auto_approved": 0,
             "pattern_recommendations": 0,
             "scout_call_candidates": 0,
             "catalyst_flow_leaders": 0,
+            "theme_flow_leaders": 0,
             "source_ticker_coverage": 0,
             "directional_edge_diagnostics": 0,
+            "directional_pattern_families": 0,
+            "proven_directional_pattern_families": 0,
+            "current_directional_pattern_candidates": 0,
+            "qualified_contract_profile_edges": 0,
+            "qualified_contract_profile_families": 0,
             "ticker_trend_edges": 0,
             "target_ready_candidates": 0,
             "trade_review_candidates": 0,
@@ -7382,8 +9697,12 @@ def write_source_incomplete_outputs(
         "scout_call_candidates": str(out_dir / "scout_call_candidates.csv"),
         "pattern_recommendations": str(out_dir / "pattern_recommendations.csv"),
         "catalyst_flow_leaders": str(out_dir / "catalyst_flow_leaders.csv"),
+        "theme_flow_leaders": str(out_dir / "theme_flow_leaders.csv"),
         "source_ticker_coverage": str(out_dir / "source_ticker_coverage.csv"),
         "directional_edge_diagnostics": str(out_dir / "directional_edge_diagnostics.csv"),
+        "directional_pattern_families": str(out_dir / "directional_pattern_families.csv"),
+        "directional_pattern_candidates": str(out_dir / "directional_pattern_candidates.csv"),
+        "contract_profile_edges": str(out_dir / "contract_profile_edges.csv"),
         "ticker_trend_edges": str(out_dir / "ticker_trend_edges.csv"),
         "watchlist_research_setups": str(out_dir / "watchlist_research_setups.csv"),
         "blocked_candidates": str(out_dir / "blocked_candidates.csv"),
@@ -7428,8 +9747,12 @@ def write_source_incomplete_outputs(
     write_csv(Path(paths["scout_call_candidates"]), [], scout_call_fieldnames())
     write_csv(Path(paths["pattern_recommendations"]), [], pattern_recommendation_fieldnames())
     write_csv(Path(paths["catalyst_flow_leaders"]), [], catalyst_flow_leader_fieldnames())
+    write_csv(Path(paths["theme_flow_leaders"]), [], theme_flow_leader_fieldnames())
     write_csv(Path(paths["source_ticker_coverage"]), [], source_coverage_fieldnames())
     write_csv(Path(paths["directional_edge_diagnostics"]), [], directional_edge_diagnostic_fieldnames())
+    write_csv(Path(paths["directional_pattern_families"]), [], directional_pattern_family_fieldnames())
+    write_csv(Path(paths["directional_pattern_candidates"]), [], directional_pattern_candidate_fieldnames())
+    write_csv(Path(paths["contract_profile_edges"]), [], contract_profile_edge_fieldnames())
     write_csv(Path(paths["ticker_trend_edges"]), [], ticker_trend_edge_fieldnames())
     write_csv(Path(paths["watchlist_research_setups"]), [], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [], blocked_fieldnames())
@@ -7559,6 +9882,75 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "direction": r.get("direction"),
         "discovered_pattern_family": r.get("pattern_family"),
         "confidence_tier": r.get("confidence_tier"),
+        "validation_scope": r.get("validation_scope"),
+        "active_pattern_id": r.get("active_pattern_id"),
+        "validated_market_regime": r.get("validated_market_regime"),
+        "latest_validation_split": r.get("latest_validation_split"),
+        "latest_validation_split_average_net_R": r.get("latest_validation_split_average_net_R"),
+        "family_unique_signal_date_count": r.get("family_unique_signal_date_count"),
+        "family_unique_ticker_count": r.get("family_unique_ticker_count"),
+        "family_historical_tickers": r.get("family_historical_tickers"),
+        "family_avg_R_without_largest_win": r.get("family_avg_R_without_largest_win"),
+        "family_latest_validation_split": r.get("family_latest_validation_split"),
+        "family_latest_validation_split_average_net_R": r.get(
+            "family_latest_validation_split_average_net_R"
+        ),
+        "family_latest_validation_split_average_net_R_without_largest_win": r.get(
+            "family_latest_validation_split_average_net_R_without_largest_win"
+        ),
+        "family_member_scope": r.get("family_member_scope"),
+        "family_member_scored_count": r.get("family_member_scored_count"),
+        "family_member_unique_signal_date_count": r.get("family_member_unique_signal_date_count"),
+        "family_member_win_rate_pct": r.get("family_member_win_rate_pct"),
+        "family_member_avg_R": r.get("family_member_avg_R"),
+        "family_member_profit_factor": r.get("family_member_profit_factor"),
+        "family_member_avg_R_without_largest_win": r.get("family_member_avg_R_without_largest_win"),
+        "family_member_validation_split_count": r.get("family_member_validation_split_count"),
+        "family_member_latest_validation_split_average_net_R": r.get(
+            "family_member_latest_validation_split_average_net_R"
+        ),
+        "family_member_latest_validation_split_average_net_R_without_largest_win": r.get(
+            "family_member_latest_validation_split_average_net_R_without_largest_win"
+        ),
+        "family_member_payoff_support_passed": r.get("family_member_payoff_support_passed"),
+        "family_member_evidence": r.get("family_member_evidence"),
+        "family_calibrated_probability": r.get("family_calibrated_probability"),
+        "family_confidence_lower_bound": r.get("family_confidence_lower_bound"),
+        "family_confidence_upper_bound": r.get("family_confidence_upper_bound"),
+        "family_expected_R": r.get("family_expected_R"),
+        "family_avg_win_R": r.get("family_avg_win_R"),
+        "family_avg_loss_R": r.get("family_avg_loss_R"),
+        "family_validation_profit_factor": r.get("family_validation_profit_factor"),
+        "family_validation_scored_count": r.get("family_validation_scored_count"),
+        "directional_pattern_family": r.get("directional_pattern_family"),
+        "directional_confidence_tier": r.get("directional_confidence_tier"),
+        "directional_scored_count": r.get("directional_scored_count"),
+        "directional_unique_signal_date_count": r.get("directional_unique_signal_date_count"),
+        "directional_win_rate_pct": r.get("directional_win_rate_pct"),
+        "directional_probability_score_pct": r.get("directional_probability_score_pct"),
+        "directional_average_move_pct": r.get("directional_average_move_pct"),
+        "directional_average_move_without_largest_win_pct": r.get(
+            "directional_average_move_without_largest_win_pct"
+        ),
+        "directional_profit_factor": r.get("directional_profit_factor"),
+        "directional_positive_validation_splits": r.get("directional_positive_validation_splits"),
+        "directional_validation_split_count": r.get("directional_validation_split_count"),
+        "directional_latest_split_average_move_pct": r.get("directional_latest_split_average_move_pct"),
+        "directional_latest_split_average_without_largest_win_pct": r.get(
+            "directional_latest_split_average_without_largest_win_pct"
+        ),
+        "directional_beats_baselines_count": r.get("directional_beats_baselines_count"),
+        "directional_baselines_beaten_names": r.get("directional_baselines_beaten_names"),
+        "directional_validation_note": r.get("directional_validation_note"),
+        "theme_key": r.get("theme_key"),
+        "theme_name": r.get("theme_name"),
+        "theme_macro_label": r.get("theme_macro_label"),
+        "theme_aggregate_premium": r.get("theme_aggregate_premium"),
+        "theme_call_premium_share": r.get("theme_call_premium_share"),
+        "theme_put_premium_share": r.get("theme_put_premium_share"),
+        "theme_component_count": r.get("theme_component_count"),
+        "theme_component_tickers": r.get("theme_component_tickers"),
+        "theme_component_evidence": r.get("theme_component_evidence"),
         "pattern_success_probability_pct": r.get("pattern_success_probability_pct"),
         "pattern_failure_probability_pct": r.get("pattern_failure_probability_pct"),
         "pattern_probability_score": r.get("pattern_probability_score"),
@@ -7570,6 +9962,31 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "probability_score": r.get("probability_score"),
         "probability_evidence": r.get("probability_evidence"),
         "probability_components": r.get("probability_components"),
+        "underlying_price": r.get("underlying_price") or r.get("close"),
+        "contract_reference_strike": r.get("contract_reference_strike"),
+        "contract_directional_moneyness": r.get("contract_directional_moneyness"),
+        "contract_dte_bucket": r.get("contract_dte_bucket"),
+        "contract_moneyness_bucket": r.get("contract_moneyness_bucket"),
+        "contract_profile": r.get("contract_profile"),
+        "contract_profile_validated": r.get("contract_profile_validated"),
+        "contract_profile_scored_count": r.get("contract_profile_scored_count"),
+        "contract_profile_unique_signal_date_count": r.get("contract_profile_unique_signal_date_count"),
+        "contract_profile_validation_split_count": r.get("contract_profile_validation_split_count"),
+        "contract_profile_win_rate_pct": r.get("contract_profile_win_rate_pct"),
+        "contract_profile_probability_score_pct": r.get("contract_profile_probability_score_pct"),
+        "contract_profile_avg_R": r.get("contract_profile_avg_R"),
+        "contract_profile_avg_R_without_largest_win": r.get("contract_profile_avg_R_without_largest_win"),
+        "contract_profile_profit_factor": r.get("contract_profile_profit_factor"),
+        "contract_profile_latest_validation_split": r.get(
+            "contract_profile_latest_validation_split"
+        ),
+        "contract_profile_latest_validation_split_average_net_R": r.get(
+            "contract_profile_latest_validation_split_average_net_R"
+        ),
+        "contract_profile_latest_validation_split_average_net_R_without_largest_win": r.get(
+            "contract_profile_latest_validation_split_average_net_R_without_largest_win"
+        ),
+        "contract_profile_evidence": r.get("contract_profile_evidence"),
         "strategy": setup["strategy"],
         "buy_or_sell": setup["buy_or_sell"],
         "call_or_put": setup["call_or_put"],
@@ -7597,6 +10014,10 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "calibrated_probability": r.get("calibrated_probability"),
         "confidence_lower_bound": r.get("confidence_lower_bound"),
         "confidence_upper_bound": r.get("confidence_upper_bound"),
+        "breakeven_success_probability_pct": r.get("breakeven_success_probability_pct"),
+        "calibrated_edge_vs_breakeven_pct": r.get("calibrated_edge_vs_breakeven_pct"),
+        "probability_score_edge_vs_breakeven_pct": r.get("probability_score_edge_vs_breakeven_pct"),
+        "confidence_lower_edge_vs_breakeven_pct": r.get("confidence_lower_edge_vs_breakeven_pct"),
         "auto_min_probability_score": r.get("auto_min_probability_score"),
         "auto_min_calibrated_probability": r.get("auto_min_calibrated_probability"),
         "auto_min_confidence_lower_bound": r.get("auto_min_confidence_lower_bound"),
@@ -7620,13 +10041,27 @@ def trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
         "catalyst_thesis": r.get("reason_summary"),
         "historical_evidence_summary": historical_evidence_summary_text(r),
         "ticker_trend_scope": r.get("ticker_trend_scope"),
+        "ticker_trend_base_pattern_family": r.get("ticker_trend_base_pattern_family"),
         "ticker_trend_scored_count": r.get("ticker_trend_scored_count"),
+        "ticker_trend_unique_signal_date_count": r.get("ticker_trend_unique_signal_date_count"),
         "ticker_trend_win_rate_pct": r.get("ticker_trend_win_rate_pct"),
         "ticker_trend_probability_score_pct": r.get("ticker_trend_probability_score_pct"),
         "ticker_trend_avg_R": r.get("ticker_trend_avg_R"),
         "ticker_trend_profit_factor": r.get("ticker_trend_profit_factor"),
         "ticker_trend_drawdown_proxy_r": r.get("ticker_trend_drawdown_proxy_r"),
         "ticker_trend_max_losing_streak": r.get("ticker_trend_max_losing_streak"),
+        "ticker_trend_validation_split_count": r.get("ticker_trend_validation_split_count"),
+        "ticker_trend_positive_validation_splits": r.get("ticker_trend_positive_validation_splits"),
+        "ticker_trend_latest_validation_split_average_net_R": r.get(
+            "ticker_trend_latest_validation_split_average_net_R"
+        ),
+        "ticker_trend_recent_window_size": r.get("ticker_trend_recent_window_size"),
+        "ticker_trend_recent_scored_count": r.get("ticker_trend_recent_scored_count"),
+        "ticker_trend_recent_win_rate_pct": r.get("ticker_trend_recent_win_rate_pct"),
+        "ticker_trend_recent_avg_R": r.get("ticker_trend_recent_avg_R"),
+        "ticker_trend_recent_profit_factor": r.get("ticker_trend_recent_profit_factor"),
+        "ticker_trend_recent_start_date": r.get("ticker_trend_recent_start_date"),
+        "ticker_trend_recent_end_date": r.get("ticker_trend_recent_end_date"),
         "ticker_trend_breakeven_success_probability_pct": r.get("ticker_trend_breakeven_success_probability_pct"),
         "ticker_trend_edge_vs_breakeven_pct": r.get("ticker_trend_edge_vs_breakeven_pct"),
         "ticker_trend_evidence": r.get("ticker_trend_evidence"),
@@ -7651,11 +10086,49 @@ def daily_trade_decision(
 ) -> str:
     if actionable:
         return "AUTO_APPROVED"
-    if target_ready:
-        return "TARGET_READY"
-    if trade_review:
+    if trade_review or target_ready:
         return "TRADE_REVIEW"
     return "NO_TRADE"
+
+
+def validate_artifact_consistency(
+    decision_rows: Sequence[Mapping[str, Any]],
+    actionable: Sequence[Mapping[str, Any]],
+    trade_review: Sequence[Mapping[str, Any]],
+    pattern_recommendations: Sequence[Mapping[str, Any]],
+    daily_decision: str,
+    target_ready: Sequence[Mapping[str, Any]] = (),
+) -> List[str]:
+    errors: List[str] = []
+    if daily_decision == "TARGET_READY":
+        errors.append("planning state cannot claim TARGET_READY without an approved trade")
+    for row in target_ready:
+        if str(row.get("status") or "") not in {"AUTO_APPROVED", "TRADE_REVIEW"}:
+            errors.append(
+                f"{row.get('ticker')}: AVOID candidate cannot be labeled target ready"
+            )
+    for row in decision_rows:
+        profile_validated = str(row.get("contract_profile_validated") or "") == "yes"
+        if row.get("status") == "AUTO_APPROVED" and not profile_validated:
+            errors.append(f"{row.get('ticker')}: AUTO_APPROVED without validated contract profile")
+        if not profile_validated and any(
+            num(row.get(field)) is not None
+            for field in (
+                "trade_success_probability_pct",
+                "trade_probability_score",
+                "calibrated_probability",
+                "expected_R",
+            )
+        ):
+            errors.append(f"{row.get('ticker')}: ticket probability/EV present without validated contract profile")
+    for previous, current in zip(pattern_recommendations, pattern_recommendations[1:]):
+        if trade_review_sort_key(previous) < trade_review_sort_key(current):
+            errors.append("pattern recommendations are not sorted by the displayed ranking score")
+            break
+    primary = select_report_primary_candidate(actionable, pattern_recommendations, trade_review, ())
+    if not actionable and pattern_recommendations and primary is not pattern_recommendations[0]:
+        errors.append("daily report primary candidate differs from recommendation rank 1")
+    return sorted(set(errors))
 
 
 def build_directional_edge_diagnostic_rows(
@@ -7795,14 +10268,16 @@ def format_directional_edge_example(row: Mapping[str, Any]) -> str:
 def build_pattern_recommendations(
     actionable: Sequence[Mapping[str, Any]],
     trade_review: Sequence[Mapping[str, Any]],
+    decision_rows: Sequence[Mapping[str, Any]] = (),
 ) -> List[Mapping[str, Any]]:
     recommendations: List[Mapping[str, Any]] = []
-    recommendations.extend(actionable)
+    recommendations.extend(row for row in actionable if row.get("status") == "AUTO_APPROVED")
+    recommendations.extend(row for row in trade_review if row.get("status") == "TRADE_REVIEW")
     recommendations.extend(
         row
-        for row in trade_review
-        if row.get("edge_review_reason")
-        or trade_review_status(row) in {"VALIDATED_EDGE_REVIEW", "CATALYST_FLOW_REVIEW"}
+        for row in decision_rows
+        if str(row.get("directional_confidence_tier") or "") == "PROVEN_DIRECTIONAL"
+        and "No complete" not in str(trade_setup_fields(row).get("trade_setup") or "")
     )
     return dedupe_rows_by_ticket(recommendations)
 
@@ -7818,6 +10293,20 @@ def build_catalyst_flow_leaders(rows: Sequence[Mapping[str, Any]]) -> List[Mappi
             leaders_by_ticker[key] = row
     leaders = list(leaders_by_ticker.values())
     leaders.sort(key=catalyst_flow_leader_sort_key, reverse=True)
+    return leaders
+
+
+def build_theme_flow_leaders(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
+    leaders_by_theme: Dict[Tuple[str, str], Mapping[str, Any]] = {}
+    for row in rows:
+        if str(row.get("base_pattern_family") or "") != "THEME_FLOW_LEADER":
+            continue
+        key = (str(row.get("theme_key") or row.get("theme_name") or ""), str(row.get("direction") or ""))
+        current = leaders_by_theme.get(key)
+        if current is None or theme_flow_leader_sort_key(row) > theme_flow_leader_sort_key(current):
+            leaders_by_theme[key] = row
+    leaders = list(leaders_by_theme.values())
+    leaders.sort(key=theme_flow_leader_sort_key, reverse=True)
     return leaders
 
 
@@ -8102,11 +10591,15 @@ def join_reason_list(value: Any) -> str:
 
 def catalyst_flow_leader_sort_key(row: Mapping[str, Any]) -> Tuple[float, float, float, float]:
     return (
-        max(num(row.get("flow_total_premium")) or 0.0, num(row.get("hot_total_premium")) or 0.0),
+        effective_flow_leader_premium(row),
         num(row.get("probability_score")) or -1.0,
         num(row.get("success_probability_pct")) or -1.0,
         num(row.get("pattern_score")) or -1.0,
     )
+
+
+def theme_flow_leader_sort_key(row: Mapping[str, Any]) -> Tuple[float, float, float, float]:
+    return catalyst_flow_leader_sort_key(row)
 
 
 def build_trade_review_candidates(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
@@ -8196,6 +10689,8 @@ def target_ready_skip_reasons(row: Mapping[str, Any], risk_config: Mapping[str, 
 def is_target_ready_candidate(row: Mapping[str, Any], risk_config: Mapping[str, Any]) -> bool:
     if row.get("status") == "AUTO_APPROVED":
         return True
+    if row.get("status") != "TRADE_REVIEW":
+        return False
     return not target_ready_skip_reasons(row, risk_config)
 
 
@@ -8342,6 +10837,8 @@ def scout_call_lane(row: Mapping[str, Any]) -> str:
         return "CONTRARIAN_CALL_REVIEW"
     if row.get("edge_review_reason"):
         return "VALIDATED_EDGE_CALL_REVIEW"
+    if str(row.get("base_pattern_family") or "") == "THEME_FLOW_LEADER":
+        return "THEME_FLOW_CALL_REVIEW"
     if str(row.get("base_pattern_family") or "") == "CATALYST_FLOW_LEADER":
         return "FLOW_LEADER_CALL_REVIEW"
     if "PATTERN_VALIDATION_NOT_PROVEN" in blockers:
@@ -8386,11 +10883,19 @@ def trade_ticket_key(row: Mapping[str, Any]) -> Tuple[str, str, str, str]:
     )
 
 
-def trade_review_sort_key(row: Mapping[str, Any]) -> Tuple[int, float, float, float]:
+def trade_review_sort_key(row: Mapping[str, Any]) -> Tuple[float, int, float, float]:
+    ranking_score = num(row.get("probability_score"))
+    if ranking_score is None:
+        ranking_score = num(row.get("directional_probability_score_pct"))
+    if ranking_score is None:
+        ranking_score = num(row.get("pattern_probability_score"))
+    success = num(row.get("success_probability_pct"))
+    if success is None:
+        success = num(row.get("directional_win_rate_pct"))
     return (
+        ranking_score if ranking_score is not None else -1.0,
         trade_review_rank(trade_review_status(row)),
-        num(row.get("probability_score")) or -1.0,
-        num(row.get("success_probability_pct")) or -1.0,
+        success if success is not None else -1.0,
         num(row.get("pattern_score")) or -1.0,
     )
 
@@ -8403,6 +10908,8 @@ def hard_trade_blockers(row: Mapping[str, Any]) -> List[str]:
 def trade_review_status(row: Mapping[str, Any]) -> str:
     if row.get("edge_review_reason"):
         return "VALIDATED_EDGE_REVIEW"
+    if str(row.get("base_pattern_family") or "") == "THEME_FLOW_LEADER":
+        return "THEME_FLOW_REVIEW"
     if str(row.get("base_pattern_family") or "") == "CATALYST_FLOW_LEADER":
         return "CATALYST_FLOW_REVIEW"
     blockers = set(row.get("block_reasons") or [])
@@ -8433,6 +10940,7 @@ def trade_review_status(row: Mapping[str, Any]) -> str:
 def trade_review_rank(status: str) -> int:
     return {
         "VALIDATED_EDGE_REVIEW": 6,
+        "THEME_FLOW_REVIEW": 5,
         "CATALYST_FLOW_REVIEW": 5,
         "TACTICAL_REVIEW": 5,
         "PROMISING_REVIEW": 4,
@@ -8454,31 +10962,33 @@ def promotion_needed_text(row: Mapping[str, Any]) -> str:
     if blockers & REGIME_TRADE_BLOCKERS and edge_review_reason:
         needs.append("confirm current catalyst still matches validated regime edge")
     elif blockers & REGIME_TRADE_BLOCKERS:
-        needs.append("regime alignment or explicit hedge thesis")
+        needs.append("gain regime alignment or document an explicit hedge thesis")
     if "VALIDATION_EXPECTANCY_NEGATIVE" in blockers:
-        needs.append("positive out-of-sample expectancy")
+        needs.append("establish positive out-of-sample expectancy")
+    if "FAMILY_MEMBER_HISTORY_NEGATIVE" in blockers:
+        needs.append("establish positive exact ticker/family/regime history")
     if "PATTERN_VALIDATION_NOT_PROVEN" in blockers:
-        needs.append("pattern family upgraded to proven")
+        needs.append("upgrade pattern family to PROVEN")
     if "LIMITED_OUT_OF_SAMPLE_SAMPLE" in blockers:
-        needs.append("larger scored OOS sample")
+        needs.append("collect a larger scored OOS sample")
     if "DOES_NOT_BEAT_TWO_BASELINES" in blockers:
-        needs.append("edge over at least two baselines")
+        needs.append("demonstrate edge over at least two baselines")
     if "PROFIT_FACTOR_BELOW_AUTO_APPROVAL" in blockers:
-        needs.append("profit factor at or above approval threshold")
+        needs.append("raise profit factor to the approval threshold")
     if "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS" in blockers:
-        needs.append("positive expected R after costs")
+        needs.append("raise expected R above zero after costs")
     if "EXPECTED_R_PER_DAY_NOT_POSITIVE" in blockers:
-        needs.append("positive expected R per day")
+        needs.append("raise expected R/day above zero")
     if "CALIBRATION_SCORE_MISSING_OR_WEAK" in blockers or "CONFIDENCE_BAND_TOO_WEAK" in blockers:
-        needs.append("better calibration/confidence band")
+        needs.append("improve calibration and the confidence lower bound")
     if "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT" in blockers:
-        needs.append("smaller defined-risk ticket")
+        needs.append("reduce max risk to the configured trade limit")
     if any(str(b).startswith(KILL_SWITCH_PREFIX) for b in blockers):
-        needs.append("kill-switch cleared")
+        needs.append("clear the active kill-switch")
     if "NEAR_TERM_EARNINGS_EVENT_RISK" in blockers:
-        needs.append("earnings/event-risk plan")
+        needs.append("define an earnings/event-risk plan")
     if blockers & HARD_TRADE_BLOCKERS:
-        needs.append("clean quote/liquidity/DTE")
+        needs.append("obtain a clean quote/liquidity/DTE")
     return "; ".join(needs[:5]) or "manual desk review"
 
 
@@ -8500,7 +11010,13 @@ def target_ready_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
     setup = trade_setup_fields(r)
     row.update(
         {
-            "target_ready_status": "SEND_NOW" if r.get("status") == "AUTO_APPROVED" else "TARGET_READY",
+            "target_ready_status": (
+                "SEND_NOW"
+                if r.get("status") == "AUTO_APPROVED"
+                else "REVIEW_READY"
+                if r.get("status") == "TRADE_REVIEW"
+                else "BLOCKED_NOT_READY"
+            ),
             "send_now": "yes" if r.get("status") == "AUTO_APPROVED" else "no",
             "live_recheck_required": "no" if r.get("status") == "AUTO_APPROVED" else "yes",
             "target_limit": setup.get("entry_range"),
@@ -8536,7 +11052,14 @@ def scout_call_output_row(r: Mapping[str, Any], rank: int) -> Dict[str, Any]:
 
 def pattern_recommendation_output_row(r: Mapping[str, Any], rank: int) -> Dict[str, Any]:
     row = trade_review_output_row(r)
-    recommendation = "AUTO_APPROVED" if r.get("status") == "AUTO_APPROVED" else "PATTERN_RECOMMENDATION"
+    if r.get("status") == "AUTO_APPROVED":
+        recommendation = "AUTO_APPROVED"
+    elif r.get("status") == "TRADE_REVIEW":
+        recommendation = "TRADE_REVIEW"
+    elif str(r.get("directional_confidence_tier") or "") == "PROVEN_DIRECTIONAL":
+        recommendation = "DIRECTIONAL_PATTERN_ONLY"
+    else:
+        recommendation = "RESEARCH_ONLY"
     row.update(
         {
             "recommendation_rank": rank,
@@ -8549,6 +11072,93 @@ def pattern_recommendation_output_row(r: Mapping[str, Any], rank: int) -> Dict[s
         }
     )
     return row
+
+
+def directional_pattern_family_output_row(r: Mapping[str, Any], rank: int) -> Dict[str, Any]:
+    return {
+        "pattern_rank": rank,
+        "directional_pattern_family": r.get("directional_pattern_family"),
+        "confidence_tier": r.get("confidence_tier"),
+        "signal_count": r.get("signal_count"),
+        "scored_count": r.get("scored_count"),
+        "unique_signal_date_count": r.get("unique_signal_date_count"),
+        "date_cluster_count": r.get("date_cluster_count"),
+        "unique_ticker_count": r.get("unique_ticker_count"),
+        "historical_tickers": r.get("historical_tickers"),
+        "win_rate_pct": pct_value(r.get("win_rate")),
+        "date_cluster_win_rate_pct": pct_value(r.get("date_cluster_win_rate")),
+        "date_cluster_confidence_lower_pct": pct_value(r.get("probability_score")),
+        "average_directional_move_pct": pct_value(r.get("average_directional_move")),
+        "average_move_without_largest_win_pct": pct_value(
+            r.get("average_directional_move_without_largest_win")
+        ),
+        "median_directional_move_pct": pct_value(r.get("median_directional_move")),
+        "profit_factor": r.get("profit_factor"),
+        "validation_split_count": r.get("validation_split_count"),
+        "positive_validation_splits": r.get("positive_validation_splits"),
+        "latest_validation_split": r.get("latest_validation_split"),
+        "required_latest_validation_split": r.get("required_latest_validation_split"),
+        "latest_holdout_present": r.get("latest_holdout_present"),
+        "latest_split_average_move_pct": pct_value(
+            r.get("latest_validation_split_average_directional_move")
+        ),
+        "latest_split_average_without_largest_win_pct": pct_value(
+            r.get("latest_validation_split_average_without_largest_win")
+        ),
+        "beats_baselines_count": r.get("beats_baselines_count"),
+        "baselines_beaten_names": r.get("baselines_beaten_names"),
+        "validation_note": r.get("validation_note"),
+    }
+
+
+def directional_pattern_candidate_output_row(r: Mapping[str, Any], rank: int) -> Dict[str, Any]:
+    setup = trade_setup_fields(r)
+    contract_validated = str(r.get("contract_profile_validated") or "") == "yes"
+    if r.get("status") == "AUTO_APPROVED":
+        implementation_status = "ACTIONABLE_OPTION_TICKET"
+    elif contract_validated and (num(r.get("expected_R")) or 0.0) > 0:
+        implementation_status = "CONTRACT_PROFILE_REVIEW"
+    elif contract_validated:
+        implementation_status = "CONTRACT_PROFILE_NEGATIVE"
+    else:
+        implementation_status = "NO_COMPARABLE_CONTRACT_PROOF"
+    return {
+        "candidate_rank": rank,
+        "ticker": r.get("ticker"),
+        "direction": r.get("direction"),
+        "directional_pattern_family": r.get("directional_pattern_family"),
+        "directional_confidence_tier": r.get("directional_confidence_tier"),
+        "directional_scored_count": r.get("directional_scored_count"),
+        "directional_unique_signal_date_count": r.get("directional_unique_signal_date_count"),
+        "directional_win_rate_pct": r.get("directional_win_rate_pct"),
+        "directional_date_cluster_confidence_lower_pct": r.get("directional_probability_score_pct"),
+        "directional_average_move_pct": r.get("directional_average_move_pct"),
+        "directional_average_move_without_largest_win_pct": r.get(
+            "directional_average_move_without_largest_win_pct"
+        ),
+        "directional_profit_factor": r.get("directional_profit_factor"),
+        "directional_positive_validation_splits": r.get("directional_positive_validation_splits"),
+        "directional_validation_split_count": r.get("directional_validation_split_count"),
+        "directional_latest_split_average_move_pct": r.get("directional_latest_split_average_move_pct"),
+        "directional_latest_split_average_without_largest_win_pct": r.get(
+            "directional_latest_split_average_without_largest_win_pct"
+        ),
+        "directional_beats_baselines_count": r.get("directional_beats_baselines_count"),
+        "implementation_status": implementation_status,
+        "strategy": setup.get("strategy"),
+        "trade_legs": setup.get("trade_legs"),
+        "entry_limit": setup.get("entry_range"),
+        "max_risk_per_contract": r.get("max_risk_per_contract"),
+        "contract_profile": r.get("contract_profile"),
+        "contract_profile_scored_count": r.get("contract_profile_scored_count"),
+        "contract_profile_unique_signal_date_count": r.get("contract_profile_unique_signal_date_count"),
+        "contract_profile_validation_split_count": r.get("contract_profile_validation_split_count"),
+        "contract_profile_probability_score_pct": r.get("contract_profile_probability_score_pct"),
+        "contract_profile_avg_R": r.get("contract_profile_avg_R"),
+        "contract_profile_profit_factor": r.get("contract_profile_profit_factor"),
+        "decision_status": r.get("status"),
+        "why_not_actionable": blocker_text(r) if r.get("status") != "AUTO_APPROVED" else "",
+    }
 
 
 def catalyst_flow_leader_output_row(r: Mapping[str, Any], rank: int) -> Dict[str, Any]:
@@ -8582,13 +11192,48 @@ def catalyst_flow_leader_output_row(r: Mapping[str, Any], rank: int) -> Dict[str
     }
 
 
+def theme_flow_leader_output_row(r: Mapping[str, Any], rank: int) -> Dict[str, Any]:
+    setup = trade_setup_fields(r)
+    return {
+        "theme_rank": rank,
+        "theme_key": r.get("theme_key"),
+        "theme_name": r.get("theme_name"),
+        "theme_macro_label": r.get("theme_macro_label"),
+        "classification": r.get("classification"),
+        "status": r.get("status"),
+        "review_status": trade_review_status(r),
+        "representative_ticker": r.get("ticker"),
+        "direction": r.get("direction"),
+        "theme_aggregate_premium": r.get("theme_aggregate_premium"),
+        "theme_call_premium_share": r.get("theme_call_premium_share"),
+        "theme_put_premium_share": r.get("theme_put_premium_share"),
+        "theme_component_count": r.get("theme_component_count"),
+        "theme_component_tickers": r.get("theme_component_tickers"),
+        "theme_component_evidence": r.get("theme_component_evidence"),
+        "trade_setup": setup.get("trade_setup"),
+        "trade_legs": setup.get("trade_legs"),
+        "entry_limit": setup.get("entry_range"),
+        "max_risk_per_contract": r.get("max_risk_per_contract"),
+        "success_probability_pct": r.get("success_probability_pct"),
+        "probability_score": r.get("probability_score"),
+        "expected_R": r.get("expected_R"),
+        "expected_R_per_day": r.get("expected_R_per_day"),
+        "validation_scored_count": r.get("validation_scored_count"),
+        "validation_profit_factor": r.get("validation_profit_factor"),
+        "why_recommended": recommendation_reason_text(r),
+        "why_not_auto_approved": blocker_text(r) if r.get("status") != "AUTO_APPROVED" else "",
+        "promotion_needed": promotion_needed_text(r),
+        "occ_symbols": setup.get("occ_symbols"),
+    }
+
+
 def build_ticker_trend_edge_rows(
-    ticker_trend_stats: Mapping[Tuple[str, str, str], Mapping[str, Any]],
+    ticker_trend_stats: Mapping[Tuple[str, str, str, str], Mapping[str, Any]],
     risk_config: Mapping[str, Any],
     baseline_comparison: Sequence[Mapping[str, Any]] = (),
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
-    for (ticker, direction, strategy_kind), stats in ticker_trend_stats.items():
+    for (ticker, direction, strategy_kind, base_family), stats in ticker_trend_stats.items():
         scored = int(num(stats.get("scored_count")) or 0)
         if scored < MIN_TICKER_TREND_EDGE_SCORED:
             continue
@@ -8603,6 +11248,7 @@ def build_ticker_trend_edge_rows(
                 "ticker": ticker,
                 "direction": direction,
                 "strategy_kind": strategy_kind,
+                "base_pattern_family": base_family,
                 **strategy_fields,
                 "trade_ready_trend": "yes" if ticker_trend_passes(stats, risk_config) and baseline_ready else "no",
                 "scored_count": scored,
@@ -8621,6 +11267,22 @@ def build_ticker_trend_edge_rows(
                 "worst_losing_streak": stats.get("worst_losing_streak"),
                 "quote_coverage": stats.get("quote_coverage"),
                 "signal_count": stats.get("signal_count"),
+                "unique_signal_date_count": stats.get("unique_signal_date_count"),
+                "unique_option_ticket_count": stats.get("unique_option_ticket_count"),
+                "validation_split_count": stats.get("validation_split_count"),
+                "positive_validation_splits": stats.get("positive_validation_splits"),
+                "latest_validation_split": stats.get("latest_validation_split"),
+                "latest_validation_split_average_net_R": stats.get("latest_validation_split_average_net_r"),
+                "recent_window_size": stats.get("recent_window_size"),
+                "recent_scored_count": stats.get("recent_scored_count"),
+                "recent_win_count": stats.get("recent_win_count"),
+                "recent_win_rate": stats.get("recent_win_rate"),
+                "recent_avg_R": stats.get("recent_avg_r"),
+                "recent_profit_factor": stats.get("recent_profit_factor"),
+                "recent_drawdown_proxy_R": stats.get("recent_drawdown_proxy_r"),
+                "recent_worst_losing_streak": stats.get("recent_worst_losing_streak"),
+                "recent_start_date": stats.get("recent_start_date"),
+                "recent_end_date": stats.get("recent_end_date"),
                 "beats_baselines_count": baselines_beaten,
                 "baselines_beaten_names": baseline_evidence["names"],
                 "baselines_beaten_details": baseline_evidence["details"],
@@ -8677,8 +11339,14 @@ def recommendation_reason_text(row: Mapping[str, Any]) -> str:
     edge = row.get("edge_review_evidence")
     if edge:
         return f"Validated historical edge: {edge}{edge_text}"
-    if str(row.get("base_pattern_family") or "") == "CATALYST_FLOW_LEADER":
-        premium = num(row.get("flow_total_premium")) or num(row.get("hot_total_premium"))
+    if str(row.get("base_pattern_family") or "") in {"CATALYST_FLOW_LEADER", "THEME_FLOW_LEADER"}:
+        premium = effective_flow_leader_premium(row)
+        if str(row.get("base_pattern_family") or "") == "THEME_FLOW_LEADER":
+            return (
+                f"Cross-ticker {row.get('theme_name') or 'theme'} flow: aggregate premium {money_text(premium)}; "
+                f"aggregate call share {fmt_pct(row.get('theme_call_premium_share'))}; "
+                f"components {row.get('theme_component_tickers') or 'n/a'}{edge_text}"
+            )
         return (
             f"Catalyst/flow leader rescue: total premium {money_text(premium)}; "
             f"flow call share {fmt_pct(row.get('flow_call_premium_share'))}; "
@@ -8972,11 +11640,13 @@ def blocker_summary_label(blocker: str) -> str:
         "EXPECTED_R_PER_DAY_NOT_POSITIVE": "expected R per day is not positive",
         "PROFIT_FACTOR_BELOW_AUTO_APPROVAL": "validation profit factor is below auto-approval floor",
         "VALIDATION_EXPECTANCY_NEGATIVE": "historical validation expectancy is negative",
+        "FAMILY_MEMBER_HISTORY_NEGATIVE": "exact ticker history is negative inside the pooled pattern family",
         "FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP": "family drawdown is beyond the configured limit",
         "FAMILY_VALIDATION_LOSING_STREAK_TOO_LONG": "family losing streak is beyond the configured limit",
         "MARKET_REGIME_CONFLICT": "current market regime mechanically conflicts with the setup direction",
         "DOES_NOT_BEAT_TWO_BASELINES": "candidate did not beat enough simple baselines",
         "LIMITED_OUT_OF_SAMPLE_SAMPLE": "too few scored out-of-sample outcomes",
+        "CONTRACT_PROFILE_NOT_VALIDATED": "this DTE/moneyness contract profile lacks enough out-of-sample history",
         "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT": "ticket risk exceeds the configured trade cap",
     }.get(blocker, blocker.replace("_", " ").lower())
 
@@ -9026,11 +11696,25 @@ def blocker_detail_text(row: Mapping[str, Any], blocker: str) -> str:
     if blocker == "LIMITED_OUT_OF_SAMPLE_SAMPLE":
         floor = num(row.get("auto_min_scored_outcomes"))
         return f"scored OOS outcomes {row.get('validation_scored_count') or 'missing'} < {int(floor or DEFAULT_RISK_CONFIG['min_oos_scored_outcomes'])} auto floor"
+    if blocker == "CONTRACT_PROFILE_NOT_VALIDATED":
+        return (
+            f"contract profile {row.get('contract_profile') or 'missing'} has "
+            f"{row.get('contract_profile_scored_count') or 0} scored outcomes across "
+            f"{row.get('contract_profile_unique_signal_date_count') or 0} dates and "
+            f"{row.get('contract_profile_validation_split_count') or 0} splits"
+        )
     if blocker == "DOES_NOT_BEAT_TWO_BASELINES":
         floor = num(row.get("auto_min_baselines_beaten"))
         return f"baselines beaten {row.get('beats_baselines_count') or 0} < {int(floor or DEFAULT_RISK_CONFIG['min_baselines_beaten'])}"
     if blocker == "VALIDATION_EXPECTANCY_NEGATIVE":
         return f"validation expectancy is not positive enough for auto approval; expected_R={fmt_num(row.get('expected_R'))}"
+    if blocker == "FAMILY_MEMBER_HISTORY_NEGATIVE":
+        return (
+            f"exact ticker/family/regime history is negative: n={row.get('family_member_scored_count') or 0}, "
+            f"avg_R={fmt_num(row.get('family_member_avg_R'))}, "
+            f"PF={fmt_num(row.get('family_member_profit_factor'))}, "
+            f"latest={fmt_num(row.get('family_member_latest_validation_split_average_net_R'))}R"
+        )
     if blocker == "FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP":
         return (
             f"family drawdown {fmt_num(row.get('family_drawdown_proxy_R'))} "
@@ -9215,6 +11899,48 @@ def append_pattern_recommendation_table(
     lines.append("")
 
 
+def theme_flow_display_status(row: Mapping[str, Any]) -> str:
+    if row.get("status") == "AUTO_APPROVED" or row.get("classification") == "TRADE":
+        return "TRADE"
+    if row.get("status") == "TRADE_REVIEW" or row.get("classification") == "WATCH":
+        return "WATCH"
+    return "AVOID"
+
+
+def theme_flow_leader_row(row: Mapping[str, Any], index: int) -> str:
+    setup = trade_setup_fields(row)
+    return (
+        f"| {index} | {markdown_cell(row.get('theme_name'))} | {theme_flow_display_status(row)} | "
+        f"{markdown_cell(row.get('ticker'))} | {markdown_cell(row.get('direction'))} | "
+        f"{money_text(row.get('theme_aggregate_premium'))} | {fmt_pct(row.get('theme_call_premium_share'))} | "
+        f"{markdown_cell(row.get('theme_component_tickers'))} | {markdown_cell(setup.get('trade_legs'))} | "
+        f"{markdown_cell(setup.get('entry_range'))} | {money_text(row.get('max_risk_per_contract'))} | "
+        f"{pct_text(row.get('success_probability_pct'))} | {pct_text(row.get('probability_score'))} | "
+        f"{fmt_num(row.get('expected_R'))} | {fmt_num(row.get('validation_profit_factor'))} | "
+        f"{markdown_cell(blocker_text(row) if row.get('status') != 'AUTO_APPROVED' else '')} |"
+    )
+
+
+def append_theme_flow_leader_table(
+    lines: List[str],
+    rows: Sequence[Mapping[str, Any]],
+    limit: int = 12,
+) -> None:
+    lines.append("## Cross-Ticker Theme Signals")
+    lines.append(
+        "- Aggregates interchangeable proxy flow before applying the usual ticker-level validation, quote, liquidity, and risk gates."
+    )
+    if not rows:
+        lines.append("- No cross-ticker theme aggregate met the fixed premium, component-count, and directional thresholds.")
+        lines.append("")
+        return
+    lines.append("| # | Theme | Status | Representative | Bias | Aggregate Premium | Call Share | Components | Trade Legs | Entry | Max Risk | Success | Score | Exp R | PF | Why Not Auto |")
+    lines.append("|---:|---|---|---|---|---:|---:|---|---|---:|---:|---:|---:|---:|---:|---|")
+    for idx, row in enumerate(rows[:limit], 1):
+        lines.append(theme_flow_leader_row(row, idx))
+    lines.append("")
+
+
 def catalyst_flow_leader_row(row: Mapping[str, Any], index: int) -> str:
     setup = trade_setup_fields(row)
     total_premium = max(num(row.get("flow_total_premium")) or 0.0, num(row.get("hot_total_premium")) or 0.0)
@@ -9381,11 +12107,12 @@ def balanced_non_ready_trend_rows(rows: Sequence[Mapping[str, Any]], limit: int)
     return [row for row in non_ready if trend_row_identity(row) in selected_keys][:limit]
 
 
-def trend_row_identity(row: Mapping[str, Any]) -> Tuple[str, str, str]:
+def trend_row_identity(row: Mapping[str, Any]) -> Tuple[str, str, str, str]:
     return (
         str(row.get("ticker") or ""),
         str(row.get("direction") or ""),
         str(row.get("strategy_kind") or ""),
+        str(row.get("base_pattern_family") or ""),
     )
 
 
@@ -9404,6 +12131,10 @@ def ticker_trend_no_edge_reason(row: Mapping[str, Any], risk_config: Mapping[str
     min_baselines = int(risk_config.get("min_baselines_beaten", 2))
     if scored < min_scored:
         reasons.append(f"LIMITED_SAMPLE {scored}/{min_scored}")
+    unique_dates = int(num(row.get("unique_signal_date_count")) or 0)
+    min_unique_dates = int(risk_config.get("min_ticker_trend_unique_signal_dates", 20))
+    if unique_dates < min_unique_dates:
+        reasons.append(f"LIMITED_UNIQUE_DATES {unique_dates}/{min_unique_dates}")
     if win_rate is None or win_rate < float(risk_config.get("min_ticker_trend_win_rate", 0.55)):
         reasons.append("WIN_RATE_BELOW_GATE")
     if probability_score is None or probability_score < float(risk_config.get("min_ticker_trend_probability_score", 0.42)):
@@ -9420,6 +12151,32 @@ def ticker_trend_no_edge_reason(row: Mapping[str, Any], risk_config: Mapping[str
         reasons.append("BREAKEVEN_EDGE_BELOW_GATE")
     if baselines < min_baselines:
         reasons.append(f"BASELINES_BEATEN {baselines}/{min_baselines}")
+    recent_scored = int(num(row.get("recent_scored_count")) or 0)
+    min_recent = int(risk_config.get("min_ticker_trend_recent_scored_outcomes", 6))
+    if recent_scored < min_recent:
+        reasons.append(f"RECENT_SAMPLE {recent_scored}/{min_recent}")
+    recent_win_rate = num(row.get("recent_win_rate"))
+    if recent_win_rate is None or recent_win_rate < float(risk_config.get("min_ticker_trend_recent_win_rate", 0.33)):
+        reasons.append("RECENT_WIN_RATE_BELOW_GATE")
+    recent_avg_r = num(row.get("recent_avg_R"))
+    if recent_avg_r is None or recent_avg_r <= float(risk_config.get("min_ticker_trend_recent_average_r", 0.0)):
+        reasons.append("RECENT_EXPECTED_R_NOT_POSITIVE")
+    recent_pf = num(row.get("recent_profit_factor"))
+    if recent_pf is None or recent_pf < float(risk_config.get("min_ticker_trend_recent_profit_factor", 1.05)):
+        reasons.append("RECENT_PROFIT_FACTOR_BELOW_GATE")
+    split_count = int(num(row.get("validation_split_count")) or 0)
+    positive_splits = int(num(row.get("positive_validation_splits")) or 0)
+    min_splits = int(risk_config.get("min_ticker_trend_validation_splits", 2))
+    if split_count < min_splits:
+        reasons.append(f"VALIDATION_SPLITS {split_count}/{min_splits}")
+    elif positive_splits < math.ceil(
+        split_count * float(risk_config.get("min_ticker_trend_positive_split_ratio", 0.75))
+    ):
+        reasons.append("POSITIVE_SPLIT_RATIO_BELOW_GATE")
+    if risk_config.get("require_ticker_trend_latest_split_positive", True) and (
+        num(row.get("latest_validation_split_average_net_R")) or 0.0
+    ) <= 0:
+        reasons.append("LATEST_SPLIT_NOT_POSITIVE")
     return ";".join(reasons) or "NOT_TRADE_READY"
 
 
@@ -9495,6 +12252,456 @@ def render_source_incomplete_report(
     return "\n".join(lines)
 
 
+def report_candidate_status(row: Mapping[str, Any]) -> str:
+    classification = str(row.get("classification") or "").upper()
+    if classification in {"TRADE", "WATCH"}:
+        return classification
+    if (
+        classification == "AVOID"
+        and str(row.get("directional_confidence_tier") or "") == "PROVEN_DIRECTIONAL"
+    ):
+        return "PATTERN ONLY"
+    if classification == "AVOID":
+        return classification
+    status = str(row.get("status") or "").upper()
+    if status == "AUTO_APPROVED":
+        return "TRADE"
+    if status == "TRADE_REVIEW":
+        return "WATCH"
+    if str(row.get("directional_confidence_tier") or "") == "PROVEN_DIRECTIONAL":
+        return "PATTERN ONLY"
+    return "AVOID"
+
+
+def candidate_blocker_codes(row: Mapping[str, Any]) -> List[str]:
+    blockers = row.get("block_reasons") or row.get("blocker_categories") or []
+    if isinstance(blockers, str):
+        return [part.strip() for part in blockers.split(";") if part.strip()]
+    return [str(part).strip() for part in blockers if str(part).strip()]
+
+
+def compact_blocker_summary(row: Mapping[str, Any], limit: int = 3) -> str:
+    summaries: List[str] = []
+    priority = {
+        "CONTRACT_PROFILE_NOT_VALIDATED": 0,
+        "FAMILY_MEMBER_HISTORY_NEGATIVE": 1,
+        "EXPECTED_R_NOT_POSITIVE_AFTER_COSTS": 2,
+        "EXPECTED_R_PER_DAY_NOT_POSITIVE": 3,
+        "PROFIT_FACTOR_BELOW_AUTO_APPROVAL": 4,
+        "PATTERN_VALIDATION_NOT_PROVEN": 5,
+        "MARKET_REGIME_CONFLICT": 6,
+        "CALIBRATION_SCORE_MISSING_OR_WEAK": 7,
+        "CONFIDENCE_BAND_TOO_WEAK": 8,
+    }
+    blockers = sorted(candidate_blocker_codes(row), key=lambda blocker: (priority.get(blocker, 50), blocker))
+    for blocker in blockers:
+        summary = blocker_summary_label(blocker)
+        if summary not in summaries:
+            summaries.append(summary)
+        if len(summaries) >= limit:
+            break
+    return "; ".join(summaries)
+
+
+def report_candidate_key(row: Mapping[str, Any]) -> Tuple[str, str, str, str, str]:
+    return (
+        str(row.get("candidate_id") or ""),
+        str(row.get("ticker") or ""),
+        str(row.get("strategy") or ""),
+        str(row.get("strike_rates") or ""),
+        str(row.get("expiration_date") or ""),
+    )
+
+
+def select_report_primary_candidate(
+    actionable: Sequence[Mapping[str, Any]],
+    pattern_recommendations: Sequence[Mapping[str, Any]],
+    trade_review: Sequence[Mapping[str, Any]],
+    watch: Sequence[Mapping[str, Any]],
+) -> Optional[Mapping[str, Any]]:
+    if actionable:
+        return actionable[0]
+    for rows in (pattern_recommendations, trade_review, watch):
+        for row in rows:
+            if report_candidate_status(row) in {"WATCH", "PATTERN ONLY"}:
+                return row
+    return None
+
+
+def humanize_pattern_name(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return "not available"
+    return text.replace("__", " / ").replace("_", " ").title()
+
+
+def append_report_candidate(lines: List[str], row: Mapping[str, Any], title: str) -> None:
+    setup = trade_setup_fields(row)
+    entry_range = setup.get("entry_range") or row.get("suggested_entry_debit_credit_range")
+    strategy = row.get("strategy") or setup.get("strategy")
+    buy_or_sell = row.get("buy_or_sell") or setup.get("buy_or_sell")
+    call_or_put = row.get("call_or_put") or setup.get("call_or_put")
+    strikes = row.get("strike_rates") or setup.get("strike_rates")
+    expiration = row.get("expiration_date") or setup.get("expiration_date")
+    ticker = str(row.get("ticker") or "UNKNOWN")
+    direction = str(row.get("direction") or "").upper()
+    status = report_candidate_status(row)
+    success = row.get("trade_success_probability_pct") or row.get("success_probability_pct")
+    failure = row.get("trade_failure_probability_pct") or row.get("failure_probability_pct")
+    score = row.get("trade_probability_score") or row.get("probability_score")
+    pattern = row.get("active_pattern_id") or row.get("discovered_pattern_family")
+    lines.append(f"### {title}: {ticker} {direction}".rstrip())
+    lines.append(f"- Status: **{status}**")
+    lines.append(f"- Strategy: {strategy or 'not available'}")
+    lines.append(f"- Buy/Sell: {buy_or_sell or 'not available'}")
+    lines.append(f"- Call/Put: {call_or_put or 'not available'}")
+    lines.append(f"- Strike(s): {strikes or 'not available'}")
+    lines.append(f"- Expiration: {expiration or 'not available'}")
+    lines.append(f"- Entry: {entry_range or 'not available'}")
+    lines.append(f"- Max risk: {money_text(row.get('max_risk_per_contract'))}")
+    if num(success) is not None and num(score) is not None:
+        lines.append(
+            f"- Comparable-profile probability: event success {pct_text(success)}, "
+            f"event failure {pct_text(failure)}, date-clustered lower bound {pct_text(score)}."
+        )
+    else:
+        lines.append("- Comparable-profile probability: not validated.")
+    if str(row.get("directional_confidence_tier") or "") in {
+        "PROVEN_DIRECTIONAL",
+        "PROMISING_DIRECTIONAL",
+    }:
+        lines.append(
+            f"- Directional evidence: {row.get('directional_confidence_tier')}; "
+            f"{row.get('directional_scored_count') or 0} OOS signals across "
+            f"{row.get('directional_unique_signal_date_count') or 0} dates; "
+            f"average move {pct_text(row.get('directional_average_move_pct'))}; "
+            f"date-clustered lower bound {pct_text(row.get('directional_probability_score_pct'))}; "
+            f"PF {fmt_num(row.get('directional_profit_factor'))}."
+        )
+        lines.append(
+            f"- Option implementation: contract profile {row.get('contract_profile') or 'missing'}; "
+            f"validated {'yes' if str(row.get('contract_profile_validated') or '') == 'yes' else 'no'}; "
+            f"comparable OOS contracts {row.get('contract_profile_scored_count') or 0}."
+        )
+    if str(row.get("contract_profile_validated") or "") == "yes":
+        lines.append(
+            f"- Comparable-profile history: event success "
+            f"{fmt_pct(row.get('calibrated_probability'))}; date-clustered lower bound "
+            f"{fmt_pct(row.get('confidence_lower_bound'))}."
+        )
+    lines.append(
+        f"- Expected return: {fmt_num(row.get('expected_R'))}R total, "
+        f"{fmt_num(row.get('expected_R_per_day'))}R/day"
+    )
+    breakeven = num(row.get("breakeven_success_probability_pct"))
+    if breakeven is None:
+        breakeven = breakeven_success_probability_pct(row)
+    if breakeven is not None:
+        lines.append(
+            f"- Payoff test: breakeven {pct_text(breakeven)}; "
+            f"event-success edge {pct_text(row.get('calibrated_edge_vs_breakeven_pct'))}; "
+            f"date-cluster-lower edge {pct_text(row.get('confidence_lower_edge_vs_breakeven_pct'))}"
+        )
+    if row.get("approval_bridge") == "PROVEN_PAYOFF_AWARE":
+        lines.append(
+            f"- Approval evidence: proven same-regime history; {row.get('validation_scored_count')} scored outcomes; "
+            f"PF {fmt_num(row.get('validation_profit_factor'))}; latest split {fmt_num(row.get('latest_validation_split_average_net_R'))}R; "
+            f"exact {ticker} history n={row.get('family_member_scored_count')}, "
+            f"average without best win {fmt_num(row.get('family_member_avg_R_without_largest_win'))}R"
+        )
+    lines.append(f"- Pattern: {humanize_pattern_name(pattern)}")
+    blockers = compact_blocker_summary(row)
+    if blockers:
+        lines.append(f"- Why not actionable: {blockers}")
+    elif status == "TRADE":
+        lines.append("- Decision: approved for manual review; no order was placed.")
+    lines.append("")
+
+
+def append_compact_action_board(
+    lines: List[str],
+    as_of: str,
+    actionable: Sequence[Mapping[str, Any]],
+    pattern_recommendations: Sequence[Mapping[str, Any]],
+    trade_review: Sequence[Mapping[str, Any]],
+    watch: Sequence[Mapping[str, Any]],
+) -> Optional[Mapping[str, Any]]:
+    lines.append("## Action Board")
+    lines.append("")
+    primary = select_report_primary_candidate(actionable, pattern_recommendations, trade_review, watch)
+    if actionable and primary:
+        pattern_ids = {
+            str(row.get("active_pattern_id") or row.get("discovered_pattern_family") or "")
+            for row in actionable
+        }
+        pattern_ids.discard("")
+        ticket_word = "ticket" if len(actionable) == 1 else "tickets"
+        family_word = "family" if len(pattern_ids) == 1 else "families"
+        lines.append(
+            f"**{len(actionable)} actionable {ticket_word} for {as_of}, from "
+            f"{len(pattern_ids) or 1} proven pattern {family_word}.**"
+        )
+        lines.append("")
+        append_report_candidate(lines, primary, "TRADE")
+        return primary
+    lines.append(f"**No actionable pattern trades for {as_of}.**")
+    lines.append("")
+    if primary:
+        title = (
+            "Best current proven directional pattern"
+            if report_candidate_status(primary) == "PATTERN ONLY"
+            else "Best WATCH candidate"
+        )
+        append_report_candidate(lines, primary, title)
+    else:
+        lines.append("- No complete WATCH ticket survived the daily screens.")
+        lines.append("")
+    return primary
+
+
+def append_current_pattern_members(
+    lines: List[str],
+    primary: Optional[Mapping[str, Any]],
+    candidate_groups: Sequence[Sequence[Mapping[str, Any]]],
+) -> None:
+    if not primary:
+        return
+    pattern_id = str(primary.get("active_pattern_id") or primary.get("discovered_pattern_family") or "")
+    if not pattern_id:
+        return
+    members: Dict[Tuple[str, str], Mapping[str, Any]] = {}
+    for rows in candidate_groups:
+        for row in rows:
+            row_pattern = str(row.get("active_pattern_id") or row.get("discovered_pattern_family") or "")
+            if row_pattern != pattern_id:
+                continue
+            key = (str(row.get("ticker") or ""), str(row.get("direction") or ""))
+            current = members.get(key)
+            if current is None or trade_review_sort_key(row) > trade_review_sort_key(current):
+                members[key] = row
+    if not members:
+        return
+    ordered = sorted(
+        members.values(),
+        key=lambda row: (
+            {"TRADE": 3, "WATCH": 2, "AVOID": 1}.get(report_candidate_status(row), 0),
+            num(row.get("family_member_avg_R")) or -999.0,
+            num(row.get("probability_score")) or -1.0,
+        ),
+        reverse=True,
+    )
+    counts = Counter(report_candidate_status(row) for row in ordered)
+    lines.append("## Current Pattern Evidence")
+    lines.append("")
+    lines.append(f"- Family: {humanize_pattern_name(pattern_id)}.")
+    lines.append(
+        f"- Comparable contract profile: {primary.get('contract_profile') or 'not validated'}; "
+        f"{primary.get('contract_profile_scored_count') or 0} observations across "
+        f"{primary.get('contract_profile_unique_signal_date_count') or 0} signal dates and "
+        f"{primary.get('contract_profile_validation_split_count') or 0} holdouts; "
+        f"average {fmt_num(primary.get('contract_profile_avg_R'))}R, "
+        f"average without the best win "
+        f"{fmt_num(primary.get('contract_profile_avg_R_without_largest_win'))}R."
+    )
+    lines.append(
+        f"- Latest comparable-profile holdout ({primary.get('contract_profile_latest_validation_split') or 'none'}): "
+        f"{fmt_num(primary.get('contract_profile_latest_validation_split_average_net_R'))}R; "
+        f"without its best win "
+        f"{fmt_num(primary.get('contract_profile_latest_validation_split_average_net_R_without_largest_win'))}R."
+    )
+    lines.append(
+        f"- Broad family: {primary.get('family_validation_scored_count') or 0} observations across "
+        f"{primary.get('family_unique_ticker_count') or 0} tickers and "
+        f"{primary.get('family_unique_signal_date_count') or 0} signal dates; "
+        f"average {fmt_num(primary.get('family_expected_R'))}R, "
+        f"average without the best win {fmt_num(primary.get('family_avg_R_without_largest_win'))}R."
+    )
+    if primary.get("family_historical_tickers"):
+        lines.append(f"- Historical tickers: {str(primary.get('family_historical_tickers')).replace(';', ', ')}.")
+    lines.append(
+        f"- Latest broad-family holdout: "
+        f"{fmt_num(primary.get('family_latest_validation_split_average_net_R'))}R; "
+        f"without its best win "
+        f"{fmt_num(primary.get('family_latest_validation_split_average_net_R_without_largest_win'))}R."
+    )
+    lines.append(
+        f"- Current members: {len(ordered)} ticker candidates; "
+        f"{counts.get('TRADE', 0)} TRADE, {counts.get('WATCH', 0)} WATCH, "
+        f"{counts.get('AVOID', 0)} AVOID, {counts.get('PATTERN ONLY', 0)} PATTERN ONLY."
+    )
+    for row in ordered:
+        member_evidence = (
+            f"exact n={row.get('family_member_scored_count') or 0}, "
+            f"avg {fmt_num(row.get('family_member_avg_R'))}R, "
+            f"PF {fmt_num(row.get('family_member_profit_factor'))}, "
+            f"avg without best win {fmt_num(row.get('family_member_avg_R_without_largest_win'))}R"
+        )
+        blocker = compact_blocker_summary(row, 1)
+        blocker_text = f"; gate: {blocker}" if blocker else ""
+        lines.append(
+            f"- {row.get('ticker')} {report_candidate_status(row)}: {member_evidence}{blocker_text}."
+        )
+    lines.append("")
+
+
+def append_compact_candidate_shortlist(
+    lines: List[str],
+    primary: Optional[Mapping[str, Any]],
+    candidate_groups: Sequence[Sequence[Mapping[str, Any]]],
+    limit: int = 5,
+) -> None:
+    primary_key = report_candidate_key(primary) if primary else None
+    selected: List[Mapping[str, Any]] = []
+    seen = {primary_key} if primary_key else set()
+    for rows in candidate_groups:
+        for row in rows:
+            if report_candidate_status(row) not in {"TRADE", "WATCH"}:
+                continue
+            key = report_candidate_key(row)
+            if key in seen:
+                continue
+            seen.add(key)
+            selected.append(row)
+            if len(selected) >= limit:
+                break
+        if len(selected) >= limit:
+            break
+    lines.append("## Candidate Shortlist")
+    lines.append("")
+    if not selected:
+        lines.append("- No additional TRADE or WATCH candidates.")
+        lines.append("")
+        return
+    for index, row in enumerate(selected, 1):
+        setup = trade_setup_fields(row)
+        entry_range = setup.get("entry_range") or row.get("suggested_entry_debit_credit_range")
+        strategy = row.get("strategy") or setup.get("strategy")
+        strikes = row.get("strike_rates") or setup.get("strike_rates")
+        expiration = row.get("expiration_date") or setup.get("expiration_date")
+        blockers = compact_blocker_summary(row, 2)
+        lines.append(
+            f"### {index}. {report_candidate_status(row)}: {row.get('ticker')} "
+            f"{str(row.get('direction') or '').upper()}"
+        )
+        lines.append(
+            f"- {strategy or 'not available'}; strike(s) {strikes or 'not available'}; "
+            f"expires {expiration or 'not available'}; entry {entry_range or 'not available'}"
+        )
+        lines.append(
+            f"- Expected return {fmt_num(row.get('expected_R'))}R; "
+            f"probability score {pct_text(row.get('trade_probability_score') or row.get('probability_score'))}"
+        )
+        if blockers:
+            lines.append(f"- Blockers: {blockers}")
+        lines.append("")
+
+
+def append_compact_blocker_summary(
+    lines: List[str],
+    rows: Sequence[Mapping[str, Any]],
+    limit: int = 6,
+) -> None:
+    counts: Counter[str] = Counter()
+    for row in rows:
+        counts.update(candidate_blocker_codes(row))
+    lines.append("## Main Rejection Reasons")
+    lines.append("")
+    if not counts:
+        lines.append("- None.")
+    else:
+        for blocker, count in counts.most_common(limit):
+            lines.append(f"- {count} candidates: {blocker_summary_label(blocker)}.")
+    lines.append("")
+
+
+def append_directional_pattern_summary(
+    lines: List[str],
+    family_rows: Sequence[Mapping[str, Any]],
+    candidate_rows: Sequence[Mapping[str, Any]],
+) -> None:
+    proven = [row for row in family_rows if str(row.get("confidence_tier") or "") == "PROVEN_DIRECTIONAL"]
+    promising = [
+        row for row in family_rows if str(row.get("confidence_tier") or "") == "PROMISING_DIRECTIONAL"
+    ]
+    lines.append("## Directional Patterns Found")
+    lines.append("")
+    lines.append(
+        f"- Historical result: {len(proven)} proven and {len(promising)} promising directional families. "
+        "These measure the underlying move; option-ticket profitability is evaluated separately."
+    )
+    if not proven:
+        lines.append("- No directional family cleared all chronological robustness gates.")
+    for row in proven[:10]:
+        lines.append(
+            f"- **{humanize_pattern_name(row.get('directional_pattern_family'))}**: "
+            f"n={row.get('scored_count') or 0}, dates={row.get('unique_signal_date_count') or 0}, "
+            f"average {pct_text(pct_value(row.get('average_directional_move')))}, "
+            f"without best win {pct_text(pct_value(row.get('average_directional_move_without_largest_win')))}, "
+            f"latest {pct_text(pct_value(row.get('latest_validation_split_average_directional_move')))}, "
+            f"PF {fmt_num(row.get('profit_factor'))}, "
+            f"positive splits {row.get('positive_validation_splits') or 0}/{row.get('validation_split_count') or 0}, "
+            f"date-clustered lower bound {pct_text(pct_value(row.get('probability_score')))}, "
+            f"beats {row.get('beats_baselines_count') or 0} baselines."
+        )
+    current_proven = [
+        row
+        for row in candidate_rows
+        if str(row.get("directional_confidence_tier") or "") == "PROVEN_DIRECTIONAL"
+    ]
+    if current_proven:
+        lines.append("")
+        lines.append(f"- Current-date matches: {len(current_proven)}.")
+        for row in current_proven[:10]:
+            output = directional_pattern_candidate_output_row(row, 0)
+            lines.append(
+                f"- {row.get('ticker')} {str(row.get('direction') or '').upper()}: "
+                f"{humanize_pattern_name(row.get('directional_pattern_family'))}; "
+                f"option implementation {output.get('implementation_status')}."
+            )
+    else:
+        lines.append("- Current-date matches to proven directional families: 0.")
+    lines.append("")
+
+
+def append_contract_profile_edge_summary(
+    lines: List[str],
+    profile_rows: Sequence[Mapping[str, Any]],
+    required_count: int,
+) -> None:
+    qualified = [row for row in profile_rows if str(row.get("qualified_goal_edge") or "") == "yes"]
+    distinct_families = {
+        str(row.get("pattern_family") or "") for row in qualified if row.get("pattern_family")
+    }
+    lines.append("## Contract Implementation Proof")
+    lines.append("")
+    lines.append(
+        f"- Qualified profiles: {len(qualified)} across {len(distinct_families)}/{required_count} "
+        "required distinct families."
+    )
+    for row in qualified[:10]:
+        lines.append(
+            f"- **{humanize_pattern_name(row.get('pattern_family'))} / {row.get('contract_profile')}**: "
+            f"n={row.get('scored_count')}, dates={row.get('unique_signal_date_count')}, "
+            f"average {fmt_num(row.get('average_net_R'))}R, "
+            f"without best win {fmt_num(row.get('average_net_R_without_largest_win'))}R, "
+            f"latest {fmt_num(row.get('latest_split_average_net_R'))}R, "
+            f"PF {fmt_num(row.get('profit_factor'))}, "
+            f"confidence lower {pct_text(row.get('confidence_lower_pct'))} vs "
+            f"breakeven {pct_text(row.get('payoff_breakeven_pct'))}."
+        )
+    if not qualified and profile_rows:
+        top = profile_rows[0]
+        lines.append(
+            f"- Best near miss: {humanize_pattern_name(top.get('pattern_family'))} / "
+            f"{top.get('contract_profile')}; failures: "
+            f"{str(top.get('qualification_failures') or '').replace(';', ', ')}."
+        )
+    if not profile_rows:
+        lines.append("- No contract-profile validation rows were available.")
+    lines.append("- Full gate-by-gate evidence is in `contract_profile_edges.csv`.")
+    lines.append("")
+
+
 def render_daily_report(
     as_of: str,
     snapshot: Snapshot,
@@ -9503,8 +12710,12 @@ def render_daily_report(
     scout_calls: Sequence[Mapping[str, Any]],
     pattern_recommendations: Sequence[Mapping[str, Any]],
     catalyst_flow_leaders: Sequence[Mapping[str, Any]],
+    theme_flow_leaders: Sequence[Mapping[str, Any]],
     source_coverage_rows: Sequence[Mapping[str, Any]],
     directional_edge_rows: Sequence[Mapping[str, Any]],
+    directional_family_rows: Sequence[Mapping[str, Any]],
+    directional_pattern_candidates: Sequence[Mapping[str, Any]],
+    contract_profile_edge_rows: Sequence[Mapping[str, Any]],
     ticker_trend_rows: Sequence[Mapping[str, Any]],
     trade_review: Sequence[Mapping[str, Any]],
     watch: Sequence[Mapping[str, Any]],
@@ -9524,19 +12735,45 @@ def render_daily_report(
         "No setup cleared validation, quote, liquidity, event, and regime checks."
     )
     source_counts = (metadata.get("source_counts_by_date") or {}).get(as_of, {})
-    lines.append(f"# Options Pattern Pipeline v1 Daily Report - {as_of}")
+    lines.append(f"# Pattern Analysis Daily Report - {as_of}")
     lines.append("")
     lines.append(f"Final pipeline verdict: **{verdict}**")
-    lines.append(f"Daily trade decision: **{metadata.get('daily_trade_decision', 'UNKNOWN')}**")
-    lines.append(f"Goal evidence status: **{metadata.get('goal_evidence_status', 'NOT_EVALUATED')}**")
+    lines.append(f"Execution status: **{'ACTIONABLE TRADE' if actionable else 'NO ACTIONABLE TRADE'}**")
     lines.append("")
+    primary_candidate = append_compact_action_board(
+        lines,
+        as_of,
+        actionable,
+        pattern_recommendations,
+        trade_review,
+        watch,
+    )
+    append_current_pattern_members(
+        lines,
+        primary_candidate,
+        (actionable, pattern_recommendations, trade_review, watch, blocked),
+    )
+    append_compact_candidate_shortlist(
+        lines,
+        primary_candidate,
+        (pattern_recommendations, target_ready, trade_review, watch, scout_calls),
+        5,
+    )
     regime = snapshot.market_regime
-    lines.append("## Decision Summary")
+    lines.append("## Run Summary")
+    lines.append(f"- Pipeline planning state: {metadata.get('daily_trade_decision', 'UNKNOWN')}.")
+    lines.append(f"- Goal evidence status: {metadata.get('goal_evidence_status', 'NOT_EVALUATED')}.")
     lines.append(f"- Approved trades: {len(actionable)}.")
-    lines.append(f"- Target-ready order plans: {len(target_ready)}.")
+    lines.append(f"- Review-ready complete order plans: {len(target_ready)}.")
     lines.append(f"- Manual-alpha call scout candidates: {len(scout_calls)}.")
     lines.append(f"- Pattern recommendations: {len(pattern_recommendations)}.")
+    lines.append(
+        f"- Proven directional families: "
+        f"{sum(str(row.get('confidence_tier') or '') == 'PROVEN_DIRECTIONAL' for row in directional_family_rows)}; "
+        f"current matches: {sum(str(row.get('directional_confidence_tier') or '') == 'PROVEN_DIRECTIONAL' for row in directional_pattern_candidates)}."
+    )
     lines.append(f"- Catalyst-flow leaders: {len(catalyst_flow_leaders)}.")
+    lines.append(f"- Cross-ticker theme signals: {len(theme_flow_leaders)}.")
     lines.append(f"- Source ticker coverage names: {len(source_coverage_rows)}.")
     lines.append(f"- Executable trend-approved trades: {len(actionable)}.")
     lines.append(f"- Base ticker trend edges: {sum(1 for row in ticker_trend_rows if str(row.get('trade_ready_trend') or '') == 'yes')}.")
@@ -9550,7 +12787,7 @@ def render_daily_report(
     if not actionable:
         lines.append(f"- No-trade reason: {no_trade_reason}")
     lines.append(
-        f"- Regime: {regime.get('regime')} | index return {fmt_pct(regime.get('avg_index_return'))} | "
+        f"- Regime: {regime.get('regime')}; index return {fmt_pct(regime.get('avg_index_return'))}; "
         f"positive breadth {fmt_pct(regime.get('breadth_positive_pct'))}."
     )
     lines.append(f"- Source data complete: {'yes' if source_completeness.get('source_complete') else 'no'}.")
@@ -9560,31 +12797,32 @@ def render_daily_report(
         f"cache {'hit' if source_counts.get('bot_eod_cache_hit') else 'built' if source_counts.get('bot_eod_cache_built') else 'n/a'}."
     )
     lines.append(
+        f"- Dark-pool EOD: {count_text(source_counts.get('dp_eod_rows'))} prints across "
+        f"{count_text(source_counts.get('dp_eod_tickers'))} tickers."
+    )
+    lines.append(
         f"- Catalyst buckets: {macro_summary.get('primary_no_trade_reason') or 'see Macro/Catalyst Read'}."
     )
     lines.append("")
-
-    append_pattern_recommendation_table(lines, pattern_recommendations, 8)
-    append_scout_call_table(lines, scout_calls, 20)
-    append_source_coverage_table(lines, source_coverage_rows, 30)
-    append_directional_edge_diagnostics_table(lines, directional_edge_rows, 12)
-    append_ticker_trend_edge_table(lines, ticker_trend_rows, metadata.get("risk_config", {}), 15)
-    append_catalyst_flow_leader_table(lines, catalyst_flow_leaders, 40)
-    append_ticket_table(lines, "AUTO_APPROVED Trade Tickets", actionable, "AUTO_APPROVED", 10, "No auto-approved trade tickets.")
-    append_target_ready_table(lines, target_ready, 20)
-    append_trade_review_table(lines, trade_review, 12)
-    append_ticket_table(lines, "Trade-Review Watch Tickets", watch, "TRADE_REVIEW", 15, "No review watch tickets passed the daily screens.")
-    append_ticket_table(lines, "Avoid / Blocked Tickets", blocked, "AVOID", 15, "No blocked tickets after daily classification.")
-    append_strategy_glossary(
+    append_compact_blocker_summary(lines, list(watch) + list(blocked), 6)
+    append_directional_pattern_summary(lines, directional_family_rows, directional_pattern_candidates)
+    append_contract_profile_edge_summary(
         lines,
-        list(actionable[:10])
-        + list(target_ready[:20])
-        + list(scout_calls[:20])
-        + list(catalyst_flow_leaders[:40])
-        + list(trade_review[:12])
-        + list(watch[:15])
-        + list(blocked[:15]),
+        contract_profile_edge_rows,
+        int((metadata.get("risk_config") or {}).get("min_goal_contract_profile_edges", 3)),
     )
+
+    lines.append("## Detailed Candidate Files")
+    lines.append("")
+    lines.append("- `actionable_trades.csv`: approved manual-review tickets only.")
+    lines.append("- `pattern_recommendations.csv`: ranked WATCH and pattern-only directional candidates.")
+    lines.append("- `watchlist_research_setups.csv`: complete WATCH tickets.")
+    lines.append("- `blocked_candidates.csv`: AVOID candidates and full blockers.")
+    lines.append("- `decision_board.csv`: complete audit columns for every surfaced candidate.")
+    lines.append("- `directional_pattern_families.csv`: concise chronological underlying-pattern proof.")
+    lines.append("- `directional_pattern_candidates.csv`: current tickers matched to those patterns, with separate contract status.")
+    lines.append("- `contract_profile_edges.csv`: family plus DTE/moneyness acceptance gates for option implementation.")
+    lines.append("")
 
     lines.append("## Macro / Catalyst Read")
     eligible_types = macro_summary.get("eligible_event_types") or []
@@ -9677,6 +12915,63 @@ def trade_fieldnames() -> List[str]:
         "direction",
         "discovered_pattern_family",
         "confidence_tier",
+        "validation_scope",
+        "active_pattern_id",
+        "validated_market_regime",
+        "latest_validation_split",
+        "latest_validation_split_average_net_R",
+        "family_unique_signal_date_count",
+        "family_unique_ticker_count",
+        "family_historical_tickers",
+        "family_avg_R_without_largest_win",
+        "family_latest_validation_split",
+        "family_latest_validation_split_average_net_R",
+        "family_latest_validation_split_average_net_R_without_largest_win",
+        "family_member_scope",
+        "family_member_scored_count",
+        "family_member_unique_signal_date_count",
+        "family_member_win_rate_pct",
+        "family_member_avg_R",
+        "family_member_profit_factor",
+        "family_member_avg_R_without_largest_win",
+        "family_member_validation_split_count",
+        "family_member_latest_validation_split_average_net_R",
+        "family_member_latest_validation_split_average_net_R_without_largest_win",
+        "family_member_payoff_support_passed",
+        "family_member_evidence",
+        "family_calibrated_probability",
+        "family_confidence_lower_bound",
+        "family_confidence_upper_bound",
+        "family_expected_R",
+        "family_avg_win_R",
+        "family_avg_loss_R",
+        "family_validation_profit_factor",
+        "family_validation_scored_count",
+        "directional_pattern_family",
+        "directional_confidence_tier",
+        "directional_scored_count",
+        "directional_unique_signal_date_count",
+        "directional_win_rate_pct",
+        "directional_probability_score_pct",
+        "directional_average_move_pct",
+        "directional_average_move_without_largest_win_pct",
+        "directional_profit_factor",
+        "directional_positive_validation_splits",
+        "directional_validation_split_count",
+        "directional_latest_split_average_move_pct",
+        "directional_latest_split_average_without_largest_win_pct",
+        "directional_beats_baselines_count",
+        "directional_baselines_beaten_names",
+        "directional_validation_note",
+        "theme_key",
+        "theme_name",
+        "theme_macro_label",
+        "theme_aggregate_premium",
+        "theme_call_premium_share",
+        "theme_put_premium_share",
+        "theme_component_count",
+        "theme_component_tickers",
+        "theme_component_evidence",
         "pattern_success_probability_pct",
         "pattern_failure_probability_pct",
         "pattern_probability_score",
@@ -9688,6 +12983,25 @@ def trade_fieldnames() -> List[str]:
         "probability_score",
         "probability_evidence",
         "probability_components",
+        "underlying_price",
+        "contract_reference_strike",
+        "contract_directional_moneyness",
+        "contract_dte_bucket",
+        "contract_moneyness_bucket",
+        "contract_profile",
+        "contract_profile_validated",
+        "contract_profile_scored_count",
+        "contract_profile_unique_signal_date_count",
+        "contract_profile_validation_split_count",
+        "contract_profile_win_rate_pct",
+        "contract_profile_probability_score_pct",
+        "contract_profile_avg_R",
+        "contract_profile_avg_R_without_largest_win",
+        "contract_profile_profit_factor",
+        "contract_profile_latest_validation_split",
+        "contract_profile_latest_validation_split_average_net_R",
+        "contract_profile_latest_validation_split_average_net_R_without_largest_win",
+        "contract_profile_evidence",
         "strategy",
         "buy_or_sell",
         "call_or_put",
@@ -9715,6 +13029,10 @@ def trade_fieldnames() -> List[str]:
         "calibrated_probability",
         "confidence_lower_bound",
         "confidence_upper_bound",
+        "breakeven_success_probability_pct",
+        "calibrated_edge_vs_breakeven_pct",
+        "probability_score_edge_vs_breakeven_pct",
+        "confidence_lower_edge_vs_breakeven_pct",
         "auto_min_probability_score",
         "auto_min_calibrated_probability",
         "auto_min_confidence_lower_bound",
@@ -9738,13 +13056,25 @@ def trade_fieldnames() -> List[str]:
         "catalyst_thesis",
         "historical_evidence_summary",
         "ticker_trend_scope",
+        "ticker_trend_base_pattern_family",
         "ticker_trend_scored_count",
+        "ticker_trend_unique_signal_date_count",
         "ticker_trend_win_rate_pct",
         "ticker_trend_probability_score_pct",
         "ticker_trend_avg_R",
         "ticker_trend_profit_factor",
         "ticker_trend_drawdown_proxy_r",
         "ticker_trend_max_losing_streak",
+        "ticker_trend_validation_split_count",
+        "ticker_trend_positive_validation_splits",
+        "ticker_trend_latest_validation_split_average_net_R",
+        "ticker_trend_recent_window_size",
+        "ticker_trend_recent_scored_count",
+        "ticker_trend_recent_win_rate_pct",
+        "ticker_trend_recent_avg_R",
+        "ticker_trend_recent_profit_factor",
+        "ticker_trend_recent_start_date",
+        "ticker_trend_recent_end_date",
         "ticker_trend_breakeven_success_probability_pct",
         "ticker_trend_edge_vs_breakeven_pct",
         "ticker_trend_evidence",
@@ -9795,7 +13125,6 @@ def scout_call_fieldnames() -> List[str]:
         "scout_score",
         "contrarian_call_setup",
         "entry_limit",
-        "breakeven_success_probability_pct",
         "edge_vs_breakeven_pct",
         "why_scout",
         "why_not_send_now",
@@ -9807,11 +13136,109 @@ def pattern_recommendation_fieldnames() -> List[str]:
         "recommendation_rank",
         "recommendation",
         "entry_limit",
-        "breakeven_success_probability_pct",
         "edge_vs_breakeven_pct",
         "why_recommended",
         "why_not_auto_approved",
     ] + trade_review_fieldnames()
+
+
+def directional_pattern_family_fieldnames() -> List[str]:
+    return [
+        "pattern_rank",
+        "directional_pattern_family",
+        "confidence_tier",
+        "signal_count",
+        "scored_count",
+        "unique_signal_date_count",
+        "date_cluster_count",
+        "unique_ticker_count",
+        "historical_tickers",
+        "win_rate_pct",
+        "date_cluster_win_rate_pct",
+        "date_cluster_confidence_lower_pct",
+        "average_directional_move_pct",
+        "average_move_without_largest_win_pct",
+        "median_directional_move_pct",
+        "profit_factor",
+        "validation_split_count",
+        "positive_validation_splits",
+        "latest_validation_split",
+        "required_latest_validation_split",
+        "latest_holdout_present",
+        "latest_split_average_move_pct",
+        "latest_split_average_without_largest_win_pct",
+        "beats_baselines_count",
+        "baselines_beaten_names",
+        "validation_note",
+    ]
+
+
+def directional_pattern_candidate_fieldnames() -> List[str]:
+    return [
+        "candidate_rank",
+        "ticker",
+        "direction",
+        "directional_pattern_family",
+        "directional_confidence_tier",
+        "directional_scored_count",
+        "directional_unique_signal_date_count",
+        "directional_win_rate_pct",
+        "directional_date_cluster_confidence_lower_pct",
+        "directional_average_move_pct",
+        "directional_average_move_without_largest_win_pct",
+        "directional_profit_factor",
+        "directional_positive_validation_splits",
+        "directional_validation_split_count",
+        "directional_latest_split_average_move_pct",
+        "directional_latest_split_average_without_largest_win_pct",
+        "directional_beats_baselines_count",
+        "implementation_status",
+        "strategy",
+        "trade_legs",
+        "entry_limit",
+        "max_risk_per_contract",
+        "contract_profile",
+        "contract_profile_scored_count",
+        "contract_profile_unique_signal_date_count",
+        "contract_profile_validation_split_count",
+        "contract_profile_probability_score_pct",
+        "contract_profile_avg_R",
+        "contract_profile_profit_factor",
+        "decision_status",
+        "why_not_actionable",
+    ]
+
+
+def contract_profile_edge_fieldnames() -> List[str]:
+    return [
+        "profile_rank",
+        "pattern_family",
+        "market_regime",
+        "contract_profile",
+        "scored_count",
+        "unique_signal_date_count",
+        "unique_ticker_count",
+        "historical_tickers",
+        "win_rate_pct",
+        "date_cluster_win_rate_pct",
+        "confidence_lower_pct",
+        "payoff_breakeven_pct",
+        "confidence_edge_over_breakeven_pct",
+        "average_net_R",
+        "average_net_R_without_largest_win",
+        "profit_factor",
+        "validation_split_count",
+        "positive_validation_splits",
+        "latest_validation_split",
+        "required_latest_validation_split",
+        "latest_holdout_present",
+        "latest_split_average_net_R",
+        "latest_split_average_net_R_without_largest_win",
+        "beats_baselines_count",
+        "baselines_beaten_names",
+        "qualified_goal_edge",
+        "qualification_failures",
+    ]
 
 
 def catalyst_flow_leader_fieldnames() -> List[str]:
@@ -9836,6 +13263,40 @@ def catalyst_flow_leader_fieldnames() -> List[str]:
         "validation_profit_factor",
         "breakeven_success_probability_pct",
         "edge_vs_breakeven_pct",
+        "why_recommended",
+        "why_not_auto_approved",
+        "promotion_needed",
+        "occ_symbols",
+    ]
+
+
+def theme_flow_leader_fieldnames() -> List[str]:
+    return [
+        "theme_rank",
+        "theme_key",
+        "theme_name",
+        "theme_macro_label",
+        "classification",
+        "status",
+        "review_status",
+        "representative_ticker",
+        "direction",
+        "theme_aggregate_premium",
+        "theme_call_premium_share",
+        "theme_put_premium_share",
+        "theme_component_count",
+        "theme_component_tickers",
+        "theme_component_evidence",
+        "trade_setup",
+        "trade_legs",
+        "entry_limit",
+        "max_risk_per_contract",
+        "success_probability_pct",
+        "probability_score",
+        "expected_R",
+        "expected_R_per_day",
+        "validation_scored_count",
+        "validation_profit_factor",
         "why_recommended",
         "why_not_auto_approved",
         "promotion_needed",
@@ -9925,6 +13386,7 @@ def ticker_trend_edge_fieldnames() -> List[str]:
         "ticker",
         "direction",
         "strategy_kind",
+        "base_pattern_family",
         "strategy",
         "strategy_type",
         "call_or_put",
@@ -9945,6 +13407,22 @@ def ticker_trend_edge_fieldnames() -> List[str]:
         "worst_losing_streak",
         "quote_coverage",
         "signal_count",
+        "unique_signal_date_count",
+        "unique_option_ticket_count",
+        "validation_split_count",
+        "positive_validation_splits",
+        "latest_validation_split",
+        "latest_validation_split_average_net_R",
+        "recent_window_size",
+        "recent_scored_count",
+        "recent_win_count",
+        "recent_win_rate",
+        "recent_avg_R",
+        "recent_profit_factor",
+        "recent_drawdown_proxy_R",
+        "recent_worst_losing_streak",
+        "recent_start_date",
+        "recent_end_date",
         "beats_baselines_count",
         "baselines_beaten_names",
         "baselines_beaten_details",
@@ -9954,6 +13432,10 @@ def ticker_trend_edge_fieldnames() -> List[str]:
 def discovered_fieldnames() -> List[str]:
     return [
         "pattern_family",
+        "base_pattern_family",
+        "regime_pattern_id",
+        "pattern_scope",
+        "market_regime",
         "confidence_tier",
         "validation_signal_count",
         "validation_scored_count",
@@ -9962,6 +13444,7 @@ def discovered_fieldnames() -> List[str]:
         "validation_failure_probability",
         "validation_probability_score",
         "validation_average_net_r",
+        "minimum_proven_average_net_r",
         "validation_profit_factor",
         "beats_baselines_count",
         "baselines_beaten_names",
@@ -9969,6 +13452,8 @@ def discovered_fieldnames() -> List[str]:
         "validation_split_count",
         "positive_validation_splits",
         "worst_split_average_net_r",
+        "latest_validation_split",
+        "latest_validation_split_average_net_r",
         "max_worst_losing_streak",
         "probability_evidence",
         "validation_note",
@@ -9987,9 +13472,15 @@ def scorecard_fieldnames() -> List[str]:
         "unscorable_count",
         "win_count_scored",
         "win_rate_scored",
+        "unique_signal_date_count",
+        "date_cluster_win_count",
+        "date_cluster_win_rate",
+        "date_cluster_probability_score",
         "win_rate_all_counting_unscorable_losses",
         "average_net_r",
         "median_net_r",
+        "gross_profit_r",
+        "gross_loss_r",
         "profit_factor",
         "worst_losing_streak",
         "drawdown_proxy_r",
@@ -10010,11 +13501,20 @@ def validation_detail_fieldnames() -> List[str]:
         "ticker",
         "direction",
         "pattern_family",
+        "base_pattern_family",
+        "directional_pattern_family",
         "market_regime",
         "sector",
         "lead_option_symbol",
         "strategy_kind",
         "strategy_type",
+        "dte",
+        "underlying_price",
+        "contract_reference_strike",
+        "contract_directional_moneyness",
+        "contract_dte_bucket",
+        "contract_moneyness_bucket",
+        "contract_profile",
         "legs_json",
         "entry_credit",
         "entry_ask",
@@ -10105,7 +13605,10 @@ def final_verdict(
     if actionable_rows:
         return "PRODUCTION_READY"
     tiers = [v.get("confidence_tier") for v in validation_bundle.get("family_tiers", {}).values()]
+    tiers.extend(v.get("confidence_tier") for v in validation_bundle.get("regime_family_tiers", {}).values())
     if any(t == "PROVEN" for t in tiers):
+        return "USABLE_NEEDS_MORE_VALIDATION"
+    if any(t == "PROMISING" for t in tiers):
         return "USABLE_NEEDS_MORE_VALIDATION"
     return "NOT_YET_PROVEN"
 

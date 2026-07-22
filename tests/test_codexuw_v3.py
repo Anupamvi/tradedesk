@@ -87,8 +87,9 @@ def test_v3_data_error_report_manifest_and_report_say_v3(tmp_path) -> None:
     report = Path(manifest["report_path"]).read_text(encoding="utf-8")
     data = json.loads((out_dir / "codexdaily_v3_manifest_2026-05-19.json").read_text(encoding="utf-8"))
     assert data["pipeline_name"] == "Codex Daily V3"
-    assert data["pipeline_version"] == "v3.1-exec-confidence-20260612-143405"
+    assert data["pipeline_version"] == "v3.2-profit-integrity-20260719"
     assert "| Pipeline | Codex Daily V3 |" in report
+    assert "| Version lock | locked 2026-07-19; supersedes v3.0, v3.1-exec-confidence-20260612-143405 |" in report
     assert "Codex Daily V2" not in report
 
 
@@ -469,6 +470,42 @@ def test_wheel_cash_lane_uses_priced_cash_secured_put_when_available() -> None:
     assert wheel["Max loss"] == "$9,880.00"
 
 
+def test_wheel_cash_lane_deduplicates_the_same_csp_thesis() -> None:
+    scored = pd.DataFrame(
+        [
+            _candidate(
+                trade_status="Research",
+                sell_leg_bid=1.1,
+                sell_leg_ask=1.3,
+                sell_leg_mid=1.2,
+                quote_width_pct=0.08,
+                short_oi=900,
+                short_volume=120,
+            ),
+            _candidate(
+                trade_status="Research",
+                sell_leg_bid=1.1,
+                sell_leg_ask=1.3,
+                sell_leg_mid=1.2,
+                quote_width_pct=0.10,
+                short_oi=850,
+                short_volume=110,
+            ),
+        ]
+    )
+
+    board = build_opportunity_board(
+        scored=scored,
+        final=pd.DataFrame(),
+        watchlist=pd.DataFrame(),
+        portfolio={"status": "ok", "cash": 25_000},
+    )
+    wheel = board[board["Lane"].eq("Wheel/Cash")]
+
+    assert len(wheel) == 1
+    assert wheel.iloc[0]["Trade"] == "Cash-secured put (assignment-risk): sell AAA 2026-05-29 100P"
+
+
 def test_momentum_debit_lane_surfaces_actual_debit_spread_not_placeholder() -> None:
     scored = pd.DataFrame(
         [
@@ -673,14 +710,20 @@ def test_lifecycle_monitor_text_generated_for_execute_and_scout() -> None:
     assert out["short_leg_delta_threshold"].astype(str).str.contains("delta").all()
 
 
-def test_target_feasibility_is_numeric_not_narrative() -> None:
+def test_target_feasibility_uses_expected_value_and_position_risk() -> None:
     board = pd.DataFrame(
         [
             {
                 "Lane": "Execute",
                 "Status": "🟢 Execute",
+                "Ticker": "AAA",
+                "direction": "Bull Put",
                 "Target profit": "$500.00",
                 "Max loss": "$1,000.00",
+                "contracts": 2,
+                "position_max_loss": 2_000.0,
+                "target_profit_total": 1_000.0,
+                "expected_value_total": 150.0,
             }
         ]
     )
@@ -692,12 +735,41 @@ def test_target_feasibility_is_numeric_not_narrative() -> None:
         month_to_date_realized_pnl=1_000,
         risk_budget=5_000,
         available_cash=10_000,
+        live_outcome_status="ok",
+        live_outcome_count=50,
+        live_outcome_profit_factor=1.40,
     )
 
     assert model["remaining_monthly_target"] == 9000
     assert model["required_daily_pl"] > 0
     assert model["target_gap"]["risk_required"] is not None
-    assert model["target_feasibility"] in {"feasible", "stretched", "infeasible", "mathematically impossible under current risk caps"}
+    assert model["current_qualified_opportunity_expected_pl"] == 150.0
+    assert model["current_qualified_opportunity_target_profit"] == 1000.0
+    assert model["current_qualified_opportunity_max_loss"] == 2000.0
+    assert model["target_feasibility"] == "infeasible"
+
+
+def test_target_feasibility_is_not_demonstrated_without_closed_live_evidence() -> None:
+    board = pd.DataFrame(
+        [
+            {
+                "Lane": "Execute",
+                "Status": "🟢 Execute",
+                "Ticker": "AAA",
+                "direction": "Bull Put",
+                "Target profit": "$500.00",
+                "Max loss": "$1,000.00",
+                "position_max_loss": 1_000.0,
+                "target_profit_total": 500.0,
+                "expected_value_total": 100.0,
+            }
+        ]
+    )
+
+    model = build_v3_target_model(asof=ASOF, board=board, risk_budget=5_000)
+
+    assert model["target_feasibility"] == "not demonstrated"
+    assert model["risk_inputs"]["live_target_evidence_ok"] is False
 
 
 def test_loss_review_downgrades_similar_recent_losing_setup() -> None:
@@ -798,6 +870,55 @@ def test_all_lanes_write_to_v3_recommendation_ledger(tmp_path) -> None:
     ledger = pd.read_csv(run_path)
 
     assert set(ledger["lane"]) >= {"Execute", "Scout", "Momentum Debit", "Index/ETF", "Portfolio Repair", "Wheel/Cash"}
+
+
+def test_v3_recommendation_ledger_preserves_outcomes_and_distinct_structures(tmp_path) -> None:
+    out_dir = tmp_path / "codexdaily_v3_2026-05-19"
+    first = pd.DataFrame(
+        [
+            {
+                "Lane": "Execute",
+                "Status": "🟢 Execute",
+                "Ticker": "AAA",
+                "Trade": "Sell 95P / Buy 90P",
+                "Expiry": "2026-05-29",
+                "recommended_limit": 1.25,
+            }
+        ]
+    )
+    _, global_path = write_recommendation_ledger(out_dir, ASOF, first)
+    ledger = pd.read_csv(global_path)
+    ledger.loc[0, "actual_fill"] = 1.30
+    ledger.loc[0, "close_fill"] = 0.50
+    ledger.loc[0, "realized_pnl"] = 80.0
+    ledger.loc[0, "outcome_status"] = "CLOSED"
+    ledger.to_csv(global_path, index=False)
+
+    rerun = pd.concat(
+        [
+            first,
+            pd.DataFrame(
+                [
+                    {
+                        "Lane": "Execute",
+                        "Status": "🟢 Execute",
+                        "Ticker": "AAA",
+                        "Trade": "Sell 94P / Buy 89P",
+                        "Expiry": "2026-05-29",
+                        "recommended_limit": 1.25,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    write_recommendation_ledger(out_dir, ASOF, rerun)
+    updated = pd.read_csv(global_path)
+
+    assert updated["trade_key"].nunique() == 2
+    closed = updated[updated["trade"].eq("Sell 95P / Buy 90P")].iloc[0]
+    assert closed["realized_pnl"] == 80.0
+    assert closed["outcome_status"] == "CLOSED"
 
 
 def test_missed_opportunity_audit_classifies_later_worked_research() -> None:

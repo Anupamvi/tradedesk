@@ -82,6 +82,7 @@ def test_complete_split_bot_bundle_counts_as_full_flow():
             oi_carryover_status="supportive",
             edge_sample_size=24,
             edge_profit_factor=1.50,
+            edge_match_level="strategy_regime",
         ),
         live=True,
     )
@@ -101,6 +102,7 @@ def test_medium_and_high_live_tiers_are_explicit():
             oi_carryover_status="supportive",
             edge_sample_size=24,
             edge_profit_factor=1.50,
+            edge_match_level="strategy_regime",
         ),
         live=True,
     )

@@ -15,6 +15,7 @@ from uwos.fresh_wheel_schwab import (
     allocate_contracts,
     analyze_symbol,
     build_universe,
+    find_export,
     iter_option_contracts,
     latest_usable_uw_folder,
     sanitize_error,
@@ -117,6 +118,17 @@ def _universe_row(**overrides) -> UniverseRow:
 
 
 class FreshWheelSchwabTests(unittest.TestCase):
+    def test_find_export_prefers_file_matching_folder_date(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "2026-07-15"
+            base.mkdir()
+            older = base / "stock-screener-2026-07-14.zip"
+            current = base / "stock-screener-2026-07-15.zip"
+            older.touch()
+            current.touch()
+
+            self.assertEqual(find_export(base, "stock-screener-"), current)
+
     def test_latest_usable_uw_folder_skips_empty_newer_folder(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -390,6 +402,30 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertEqual([row.ticker for row in universe], ["TOP", "HELD"])
         self.assertEqual(universe[-1].selection_lane, "position")
         self.assertIn("outside candidate limit", "; ".join(universe[-1].reasons))
+
+    def test_build_universe_appends_user_requested_symbol_outside_candidate_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "2026-07-16"
+            base.mkdir()
+            screener_csv = (
+                "date,ticker,full_name,sector,issue_type,is_index,close,marketcap,avg30_volume,total_open_interest,"
+                "bullish_premium,bearish_premium,next_earnings_date,iv30d\n"
+                "2026-07-16,TOP,Top Inc,Technology,Common Stock,f,300,1500000000000,25000000,3000000,60000000,40000000,2026-09-01,0.35\n"
+                "2026-07-16,IBM,International Business Machines,Technology,Common Stock,f,215,272000000000,8000000,565000,1000000,1000000,2026-07-22,0.59\n"
+            )
+            with zipfile.ZipFile(base / "stock-screener-2026-07-16.zip", "w") as zf:
+                zf.writestr("stock-screener-2026-07-16.csv", screener_csv)
+            with zipfile.ZipFile(base / "hot-chains-2026-07-16.zip", "w") as zf:
+                zf.writestr(
+                    "hot-chains-2026-07-16.csv",
+                    "option_symbol,volume,open_interest,premium,ask_side_volume,bid_side_volume\n",
+                )
+
+            universe = build_universe(base, WheelConfig(max_symbols=1), include_symbols={"IBM"})
+
+        self.assertEqual([row.ticker for row in universe], ["TOP", "IBM"])
+        self.assertEqual(universe[-1].selection_lane, "requested")
+        self.assertIn("user-requested", "; ".join(universe[-1].reasons))
 
     def test_write_outputs_manifest_records_schwab_only_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -200,6 +200,17 @@ def _schwab_status(data_quality: dict[str, Any]) -> str:
     return f"quotes={quote.get('status', 'unknown')} ({quote.get('detail', '')}); portfolio={portfolio.get('status', 'unknown')} ({portfolio.get('detail', '')})"
 
 
+def _version_lock_summary() -> str:
+    record = pipeline_version_record("v3")
+    text = f"locked {record.get('locked_on', 'unknown')}"
+    supersedes = record.get("supersedes") or []
+    if isinstance(supersedes, str):
+        supersedes = [supersedes]
+    if supersedes:
+        text += "; supersedes " + ", ".join(str(item) for item in supersedes)
+    return text
+
+
 def _markdown_table(df: pd.DataFrame, columns: list[str]) -> str:
     if df.empty:
         return "_No rows._"
@@ -282,7 +293,7 @@ def write_v3_data_error_report(out_dir: Path, asof: dt.date, base_dir: Path, err
         "|:--|:--|",
         f"| Pipeline | {PIPELINE_NAME_V3} |",
         f"| Version | {PIPELINE_VERSION_V3} |",
-        "| Version lock | locked 2026-06-12; supersedes v3.0 |",
+        f"| Version lock | {_version_lock_summary()} |",
         "| Run mode | Data error |",
         "| Data quality | critical |",
         "| Schwab status | not checked because local UW data failed |",
@@ -412,9 +423,17 @@ def write_v3_outputs(
         max_daily_loss=args.daily_loss_limit,
         max_weekly_loss=args.weekly_loss_limit,
         max_monthly_loss=args.monthly_loss_limit,
-        historical_win_rate=safe_float((recent_performance or {}).get("win_rate")),
-        average_realized_win=safe_float((live_outcomes or {}).get("avg_pnl")),
-        average_realized_loss=safe_float((live_outcomes or {}).get("avg_pnl")),
+        historical_win_rate=(
+            safe_float((recent_performance or {}).get("win_rate"))
+            if (recent_performance or {}).get("status") == "ok"
+            else math.nan
+        ),
+        average_realized_win=safe_float((live_outcomes or {}).get("avg_win")),
+        average_realized_loss=safe_float((live_outcomes or {}).get("avg_loss")),
+        live_outcome_status=str((live_outcomes or {}).get("status") or "unavailable"),
+        live_outcome_count=int(safe_float((live_outcomes or {}).get("realized_outcome_count"), 0.0)),
+        live_outcome_profit_factor=(live_outcomes or {}).get("profit_factor", math.nan),
+        minimum_live_outcomes=int(safe_float((live_outcomes or {}).get("minimum_outcomes_for_size_up"), 50.0)),
     )
     ledger_path, global_ledger_path = write_recommendation_ledger(out_dir, asof, board)
     try:
@@ -554,7 +573,7 @@ def write_v3_outputs(
         "|:--|:--|",
         f"| Pipeline | {PIPELINE_NAME_V3} |",
         f"| Version | {PIPELINE_VERSION_V3} |",
-        "| Version lock | locked 2026-06-12; supersedes v3.0 |",
+        f"| Version lock | {_version_lock_summary()} |",
         f"| Run mode | {run_mode} |",
         f"| Data quality | {data_quality.get('status', 'unknown')} |",
         f"| Schwab status | {_schwab_status(data_quality)} |",
@@ -759,7 +778,8 @@ def run_v3_daily(
     args: argparse.Namespace,
     run_mode_override: str | None = None,
 ) -> dict[str, Any]:
-    repo_root = DEFAULT_ROOT
+    repo_root = Path(getattr(args, "root", DEFAULT_ROOT)).expanduser().resolve()
+    evidence_root = repo_root / "out"
     asof = infer_asof_date(base_dir)
     input_provenance = build_input_provenance(base_dir)
     run_mode = run_mode_override or infer_report_mode(args.report_mode, historical_replay=False)
@@ -847,7 +867,7 @@ def run_v3_daily(
         schwab_snapshot_dir=Path(args.schwab_snapshot_dir).expanduser().resolve() if args.schwab_snapshot_dir else None,
     )
     scored = apply_oi_carryover(scored, chain_oi)
-    scored = apply_replay_edge_model(scored, base_dir.parent / "out")
+    scored = apply_replay_edge_model(scored, evidence_root)
     if args.skip_portfolio or args.offline:
         portfolio = unavailable_portfolio_context("skipped" if args.skip_portfolio else "offline")
     else:
@@ -878,12 +898,12 @@ def run_v3_daily(
     recent_performance = (
         {"status": "unavailable", "reason": "skipped"}
         if args.skip_recent_performance
-        else load_recent_performance(base_dir.parent / "out")
+        else load_recent_performance(evidence_root, asof=asof)
     )
-    live_outcomes = load_live_outcome_performance(base_dir.parent / "out")
+    live_outcomes = load_live_outcome_performance(evidence_root, asof=asof)
     scored = apply_confirmation_framework(scored, asof=asof, regime=regime, recent_performance=recent_performance)
     scored = apply_confidence_components(scored, live_outcomes=live_outcomes)
-    loss_review = load_recent_loss_review(base_dir.parent / "out", asof=asof, lookback_days=args.loss_lookback_days)
+    loss_review = load_recent_loss_review(evidence_root, asof=asof, lookback_days=args.loss_lookback_days)
     scored = apply_loss_review(scored, loss_review)
     scored = apply_liquidity_shift_context(scored, liquidity_shift, require_intraday_vwap=args.command == "intraday")
     confirmation_evidence = build_confirmation_evidence(scored=scored, asof=asof, input_provenance=input_provenance)
@@ -902,6 +922,12 @@ def run_v3_daily(
     scored = apply_data_quality_gate(scored, data_quality)
     watchlist = build_entry_watchlist(scored)
     risk_config = _risk_config(args)
+    risk_config["allow_size_up"] = bool((live_outcomes or {}).get("size_up_allowed", False))
+    risk_config["size_up_evidence"] = (
+        "closed live outcome threshold passed"
+        if risk_config["allow_size_up"]
+        else str((live_outcomes or {}).get("reason") or "closed live outcome threshold not met")
+    )
     if args.daily_loss_limit > 0 and portfolio and portfolio.get("status") == "ok":
         if float(portfolio.get("day_pnl") or 0.0) <= -abs(args.daily_loss_limit):
             risk_config["allow_new_trades"] = False

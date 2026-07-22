@@ -12,6 +12,12 @@ import pandas as pd
 
 from .catalysts import earnings_crosses_expiry, earnings_event_date, load_catalyst_context
 from .confirmations import apply_confirmation_evidence, build_confirmation_evidence
+from .confidence_calibration import (
+    DEFAULT_EDGE_HISTORY_PATH,
+    apply_confidence_calibration,
+    build_default_walk_forward_calibration,
+    confidence_high_ready,
+)
 from .data import (
     aggregate_bot_flow,
     dte_from_expiry,
@@ -60,8 +66,15 @@ from .macro_gates import build_macro_event_gates
 from .missed_opportunity import build_missed_opportunity_audit
 from .occ import parse_occ_symbol
 from .performance import load_live_outcome_performance, load_recent_performance
+from .payoff_calibration import (
+    apply_payoff_calibration,
+    build_default_payoff_calibration,
+    build_snapshot_replay_summary,
+    write_payoff_calibration_outputs,
+)
 from .pipeline_versions import PIPELINE_NAME_V4, PIPELINE_VERSION_V4, pipeline_version_record
 from .portfolio import fetch_portfolio_context, unavailable_portfolio_context
+from .portfolio_capacity import write_portfolio_capacity_outputs
 from .provenance import build_input_provenance
 from .target_model import business_days_remaining
 from .validation import select_systematic_date_folders
@@ -149,8 +162,12 @@ V4_TARGET_TICKET_COLUMNS = [
     "setup family key",
     "safety calibration flags",
     "expected win rate",
+    "confidence evidence",
+    "payoff evidence",
     "expected average win",
     "expected average loss",
+    "expected value",
+    "implied profit factor",
 ]
 
 
@@ -219,6 +236,10 @@ def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--weekly-loss-limit", type=float, default=0.0)
     parser.add_argument("--monthly-loss-limit", type=float, default=0.0)
     parser.add_argument("--monthly-profit-target", type=float, default=10_000.0)
+    parser.add_argument("--validation-account-value", type=float, default=0.0)
+    parser.add_argument("--validation-risk-per-trade-pct", type=float, default=0.02)
+    parser.add_argument("--validation-max-active-ticker-share", type=float, default=0.20)
+    parser.add_argument("--validation-max-active-sector-share", type=float, default=0.40)
     parser.add_argument("--month-to-date-realized-pnl", type=float, default=0.0)
     parser.add_argument("--open-unrealized-pnl", type=float, default=0.0)
     parser.add_argument("--max-monthly-drawdown", type=float, default=0.0)
@@ -881,8 +902,18 @@ def _max_loss_value(row: pd.Series | dict[str, Any]) -> float:
 
 def _hard_blocker_reason(row: pd.Series | dict[str, Any]) -> str:
     hard = _clean(row.get("hard_rejects"))
+    family_evidence = _validated_family_evidence(row)
+    edge_sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size")))
     if hard:
-        return hard
+        hard_parts = [part.strip() for part in re.split(r"[;,]", hard) if part.strip()]
+        if family_evidence and math.isfinite(edge_sample) and edge_sample < V4_MIN_REPLAY_SAMPLE:
+            hard_parts = [
+                part
+                for part in hard_parts
+                if "negative_replay_edge" not in part.lower() and "thin_replay_sample" not in part.lower()
+            ]
+        if hard_parts:
+            return ";".join(hard_parts)
     penalties = _clean(row.get("penalties")).lower()
     asof = _parse_date(_clean(row.get("v4_asof") or row.get("asof")))
     event_date = earnings_event_date(row)
@@ -910,14 +941,21 @@ def _hard_blocker_reason(row: pd.Series | dict[str, Any]) -> str:
     if math.isfinite(quote_width) and quote_width > 0.65:
         return "extreme bid/ask width"
     avg = safe_float(row.get("edge_avg_pnl"))
-    if _is_credit(row) and math.isfinite(avg) and avg <= 0:
+    if _is_credit(row) and math.isfinite(avg) and avg <= 0 and not family_evidence:
         return "negative_edge_avg_pnl"
     replay = _clean(row.get("replay_ev_verdict")).lower()
     edge = _clean(row.get("edge_verdict")).lower()
-    if replay.startswith("negative") and edge not in {"acceptable", "positive", "thin_sample"}:
+    if replay.startswith("negative") and edge not in {"acceptable", "positive", "thin_sample"} and not family_evidence:
         return "negative edge with no offsetting thesis"
     for token in HARD_BLOCKER_TOKENS:
         if token in penalties:
+            if (
+                token == "negative_replay_edge"
+                and family_evidence
+                and math.isfinite(edge_sample)
+                and edge_sample < V4_MIN_REPLAY_SAMPLE
+            ):
+                continue
             return token
     return ""
 
@@ -936,8 +974,23 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
             _clean(row.get("data_quality_blockers")),
         ]
     ).lower()
+    family_evidence = _validated_family_evidence(row)
+    calibration_status = _clean(row.get("confidence_calibration_status")).upper()
+    if _is_debit(row) and calibration_status != "PASS":
+        return "debit family walk-forward calibration is not validated"
+    if not _payoff_model_ready(row):
+        return "realized payoff lane did not pass cost-stressed walk-forward validation"
+    primary_blocker = _clean(row.get("primary_blocker")).lower()
     for token, reason in EXECUTE_QUALITY_BLOCKER_TOKENS.items():
         if token in text:
+            if family_evidence and token == "thin_replay_sample":
+                continue
+            if (
+                family_evidence
+                and token in {"final_quality_guard", "decision_final_quality_guard"}
+                and primary_blocker.startswith("thin_replay_sample")
+            ):
+                continue
             return reason
     if not is_etf_row(row) and earnings_event_date(row) is None and _clean(row.get("catalyst_status")).lower() in {"", "unknown"}:
         return "earnings date unresolved; web or structured confirmation required"
@@ -951,20 +1004,477 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
             return "debit quality policy: " + "; ".join(debit_reasons)
     if _is_credit(row):
         credit_ok, credit_reasons = assess_credit_spread(row, live=True)
+        if not credit_ok and family_evidence:
+            route_key = _clean(row.get("payoff_route_key") or row.get("payoff_group_key")).lower()
+            route_level = _clean(row.get("payoff_route_level")).lower()
+            flow_quality = _clean(row.get("flow_quality")).lower()
+            evidence_backed_prefixes = {
+                "credit_regime_not_aligned",
+                "credit_edge_sample_below_12",
+                "credit_edge_pf_below_1.25",
+                "credit_edge_avg_pnl_not_positive",
+            }
+            remaining_reasons: list[str] = []
+            for reason in credit_reasons:
+                prefix = _clean(reason).split(":", 1)[0]
+                if prefix in evidence_backed_prefixes:
+                    continue
+                if (
+                    prefix == "flow_alignment_below_0.10"
+                    and flow_quality == "directional"
+                    and "flow=directional" in route_key
+                ):
+                    continue
+                if (
+                    prefix == "credit_pct_width_outside_0.25_0.30"
+                    and route_level == "flow_cost"
+                    and "cost=18to30" in route_key
+                ):
+                    continue
+                remaining_reasons.append(reason)
+            credit_reasons = remaining_reasons
+            credit_ok = not credit_reasons
         if not credit_ok:
             return "credit quality policy: " + "; ".join(credit_reasons)
     bot_source = _clean(row.get("bot_flow_source_status")).lower()
     if bot_source.startswith("missing_bot_eod") and _clean(row.get("flow_quality")).lower() != "directional":
         return "aggregate bot option flow unavailable and contract flow is not independently directional"
     sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size")))
-    if math.isfinite(sample) and sample < 8:
+    if math.isfinite(sample) and sample < V4_MIN_REPLAY_SAMPLE and not family_evidence:
         return f"historical edge sample too thin for Execute (n={int(sample)})"
+    match_level = _clean(row.get("edge_match_level")).lower()
+    medium_debit_sleeve = _medium_debit_sleeve_eligible(row)
+    if match_level not in V4_EXECUTE_EDGE_MATCH_LEVELS and not medium_debit_sleeve and not family_evidence:
+        return f"pooled historical edge ({match_level or 'unavailable'}) cannot authorize Execute"
+    edge_pf = safe_float(row.get("edge_profit_factor"))
+    if not family_evidence and (not math.isfinite(edge_pf) or edge_pf < V4_EXECUTE_MIN_PROFIT_FACTOR):
+        return (
+            f"historical edge PF is {edge_pf:.2f}; must be at least {V4_EXECUTE_MIN_PROFIT_FACTOR:.2f}"
+            if math.isfinite(edge_pf)
+            else "historical edge PF is unavailable"
+        )
+    trend = _clean(row.get("regime_trend") or row.get("regime") or row.get("trend")).lower()
+    if trend == "range" and not family_evidence and (
+        sample < V4_RANGE_EXECUTE_MIN_SAMPLE
+        or edge_pf < V4_RANGE_EXECUTE_MIN_PROFIT_FACTOR
+        or match_level not in {"exact", "ticker_direction", "strategy_regime"}
+    ):
+        return (
+            "range regime is not validated for Execute: requires specific historical evidence, "
+            f"n>={V4_RANGE_EXECUTE_MIN_SAMPLE}, PF>={V4_RANGE_EXECUTE_MIN_PROFIT_FACTOR:.2f}"
+        )
+    expectancy_blocker = _post_pricing_expectancy_blocker(row)
+    if expectancy_blocker:
+        return expectancy_blocker
+    safe_price_blocker = _expectancy_safe_price_blocker(row)
+    if safe_price_blocker:
+        return safe_price_blocker
+    return ""
+
+
+V4_EXPECTANCY_POLICY_VERSION = "v4.9-structure-aware-payoff-20260720"
+V4_EXECUTE_MIN_PROFIT_FACTOR = 1.25
+V4_MIN_REPLAY_SAMPLE = 12
+V4_RANGE_EXECUTE_MIN_SAMPLE = 20
+V4_RANGE_EXECUTE_MIN_PROFIT_FACTOR = 1.50
+V4_EXECUTE_EDGE_MATCH_LEVELS = {"exact", "ticker_direction", "strategy_regime"}
+V4_MEDIUM_DEBIT_EDGE_MATCH_LEVEL = "debit_policy_sleeve"
+V4_FAMILY_EVIDENCE_MIN_SAMPLE = 100
+V4_FAMILY_EVIDENCE_MIN_LOWER_BOUND = 0.60
+
+
+def _validated_family_evidence(row: pd.Series | dict[str, Any]) -> bool:
+    """Use family evidence only when walk-forward calibration is statistically usable.
+
+    This is the hierarchical fallback for sparse exact/ticker matches. It does not
+    bypass pricing, flow/OI, earnings, liquidity, regime, portfolio, or expectancy
+    checks. Failed debit calibration therefore remains non-executable.
+    """
+    status = _clean(row.get("confidence_calibration_status")).upper()
+    tier = _clean(row.get("confidence_model_tier")).lower()
+    sample = safe_float(row.get("confidence_calibration_sample_size"))
+    lower_bound = safe_float(row.get("confidence_probability_lower_bound"))
+    brier = safe_float(row.get("confidence_calibration_brier"))
+    baseline = safe_float(row.get("confidence_calibration_baseline_brier"), 0.25)
+    return bool(
+        status == "PASS"
+        and tier.endswith("_validated")
+        and math.isfinite(sample)
+        and sample >= V4_FAMILY_EVIDENCE_MIN_SAMPLE
+        and math.isfinite(lower_bound)
+        and lower_bound >= V4_FAMILY_EVIDENCE_MIN_LOWER_BOUND
+        and math.isfinite(brier)
+        and math.isfinite(baseline)
+        and brier < baseline
+        and _payoff_model_ready(row)
+    )
+
+
+def _payoff_model_ready(row: pd.Series | dict[str, Any]) -> bool:
+    def profit_factor_ready(field: str) -> bool:
+        try:
+            value = float(row.get(field))
+        except (TypeError, ValueError):
+            return False
+        return not math.isnan(value) and value >= V4_EXECUTE_MIN_PROFIT_FACTOR
+
+    minimum_sample = safe_float(row.get("payoff_minimum_sample_required"), 20.0)
+    family = "Credit" if _is_credit(row) else ("Debit" if _is_debit(row) else "Unknown")
+    direction = _clean(row.get("direction"))
+    trend = _clean(row.get("regime_trend") or row.get("regime") or row.get("trend")).lower()
+    route_key = _clean(row.get("payoff_route_key") or row.get("payoff_group_key"))
+    route_aligned = f"{family}|{direction}|{trend}".lower() in route_key.lower()
+    return bool(
+        route_aligned
+        and family in {"Credit", "Debit"}
+        and _clean(row.get("payoff_calibration_status")).upper() == "PASS"
+        and safe_float(row.get("payoff_sample_size"), 0.0) >= minimum_sample
+        and profit_factor_ready("payoff_stress_10_profit_factor")
+        and safe_float(row.get("payoff_walk_forward_oos_sample"), 0.0) >= 5
+        and profit_factor_ready("payoff_walk_forward_oos_profit_factor")
+        and safe_float(row.get("payoff_post_activation_oos_sample"), 0.0) >= 2
+        and safe_float(row.get("payoff_post_activation_oos_average_pnl"), 0.0) > 0
+        and profit_factor_ready("payoff_post_activation_oos_profit_factor")
+    )
+
+
+def _medium_debit_sleeve_eligible(row: pd.Series | dict[str, Any]) -> bool:
+    """Allow only the walk-forward validated, reduced-size bullish debit sleeve."""
+    if not _is_debit(row) or _clean(row.get("direction")).lower() != "bull call":
+        return False
+    trend = _clean(row.get("regime_trend") or row.get("regime") or row.get("trend")).lower()
+    if trend != "uptrend":
+        return False
+    if _clean(row.get("edge_match_level")).lower() != V4_MEDIUM_DEBIT_EDGE_MATCH_LEVEL:
+        return False
+    sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size")))
+    profit_factor = safe_float(row.get("edge_profit_factor"))
+    average_pnl = safe_float(row.get("edge_avg_pnl"))
+    return (
+        math.isfinite(sample)
+        and sample >= V4_MIN_REPLAY_SAMPLE
+        and math.isfinite(profit_factor)
+        and profit_factor >= V4_EXECUTE_MIN_PROFIT_FACTOR
+        and math.isfinite(average_pnl)
+        and average_pnl > 0
+    )
+
+
+def _effective_win_rate(row: pd.Series | dict[str, Any]) -> float:
+    payoff_win_rate = safe_float(row.get("payoff_stress_10_win_rate"))
+    if _payoff_model_ready(row) and math.isfinite(payoff_win_rate) and 0 <= payoff_win_rate <= 1:
+        return payoff_win_rate
+    calibrated = safe_float(row.get("confidence_probability"))
+    calibrated_lower = safe_float(row.get("confidence_probability_lower_bound"))
+    calibration_status = _clean(row.get("confidence_calibration_status")).upper()
+    calibration_tier = _clean(row.get("confidence_model_tier")).lower()
+    if math.isfinite(calibrated) and 0 <= calibrated <= 1:
+        if calibration_status == "PASS" and calibration_tier.endswith("_validated"):
+            if math.isfinite(calibrated_lower) and 0 <= calibrated_lower <= 1:
+                return calibrated_lower
+        return calibrated
+    effective = safe_float(row.get("edge_effective_win_rate"))
+    sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size")))
+    if math.isfinite(sample) and sample < V4_MIN_REPLAY_SAMPLE:
+        return math.nan
+    if math.isfinite(effective):
+        return effective
+    raw = safe_float(row.get("edge_win_rate"))
+    if not math.isfinite(raw) or raw < 0 or raw > 1:
+        return math.nan
+    if math.isfinite(sample) and sample > 0:
+        wins = max(0.0, min(sample, raw * sample))
+        return (wins + 0.5) / (sample + 1.0)
+    return raw
+
+
+def _reported_win_rate(row: pd.Series | dict[str, Any]) -> float:
+    payoff_win_rate = safe_float(row.get("payoff_stress_10_win_rate"))
+    if _payoff_model_ready(row) and math.isfinite(payoff_win_rate) and 0 <= payoff_win_rate <= 1:
+        return payoff_win_rate
+    calibrated = safe_float(row.get("confidence_probability"))
+    if math.isfinite(calibrated) and 0 <= calibrated <= 1:
+        return calibrated
+    return _effective_win_rate(row)
+
+
+def _confidence_evidence_text(row: pd.Series | dict[str, Any]) -> str:
+    probability = safe_float(row.get("confidence_probability"))
+    lower_bound = safe_float(row.get("confidence_probability_lower_bound"))
+    sample = safe_float(row.get("confidence_calibration_sample_size"))
+    status = _clean(row.get("confidence_calibration_status")).upper() or "UNAVAILABLE"
+    source = _clean(row.get("confidence_probability_source")) or "unavailable"
+    if not math.isfinite(probability):
+        return "unavailable"
+    lower_text = f", 90% lower bound {lower_bound:.0%}" if math.isfinite(lower_bound) else ""
+    sample_text = f", n={int(sample)}" if math.isfinite(sample) else ""
+    return f"{source} {probability:.0%}{lower_text}{sample_text}, {status}"
+
+
+def _payoff_evidence_text(row: pd.Series | dict[str, Any]) -> str:
+    status = _clean(row.get("payoff_calibration_status")).upper() or "FAIL"
+    sample = safe_float(row.get("payoff_sample_size"))
+    profit_factor = safe_float(row.get("payoff_stress_10_profit_factor"))
+    average_pnl = safe_float(row.get("payoff_stress_10_average_pnl"))
+    oos_sample = safe_float(row.get("payoff_walk_forward_oos_sample"))
+    oos_pf = safe_float(row.get("payoff_walk_forward_oos_profit_factor"))
+    pieces = [status]
+    if math.isfinite(sample):
+        pieces.append(f"n={int(sample)}")
+    if math.isfinite(profit_factor):
+        pieces.append(f"10% fill-stress PF={profit_factor:.2f}")
+    if math.isfinite(average_pnl):
+        pieces.append(f"avg={_money(average_pnl)}")
+    if math.isfinite(oos_sample):
+        pieces.append(f"OOS n={int(oos_sample)}")
+    if math.isfinite(oos_pf):
+        pieces.append(f"OOS PF={oos_pf:.2f}")
+    return ", ".join(pieces)
+
+
+def build_execution_evidence_integrity(scored: pd.DataFrame | None) -> dict[str, Any]:
+    if scored is None or scored.empty:
+        return {
+            "status": "FAIL",
+            "reason": "candidate book is empty",
+            "minimum_specific_sample": V4_MIN_REPLAY_SAMPLE,
+            "maximum_specific_sample": 0,
+            "validated_family_rows": 0,
+            "evidence_reachable_rows": 0,
+        }
+    samples = pd.to_numeric(scored.get("edge_sample_size", pd.Series(index=scored.index, dtype=float)), errors="coerce")
+    family_mask = scored.apply(_validated_family_evidence, axis=1)
+    payoff_mask = scored.get("payoff_calibration_status", pd.Series("FAIL", index=scored.index)).astype(str).str.upper().eq("PASS")
+    specific_mask = samples.ge(V4_MIN_REPLAY_SAMPLE)
+    reachable = specific_mask | family_mask
+    maximum = int(samples.max()) if samples.notna().any() else 0
+    reachable_count = int(reachable.sum())
+    return {
+        "status": "PASS" if reachable_count else "FAIL",
+        "reason": (
+            "specific or validated family evidence can authorize execution"
+            if reachable_count
+            else "no validated realized-payoff lane matches the current strategy, direction, and regime"
+            if not payoff_mask.any()
+            else "configured specific-history minimum exceeds all available samples and no confidence-calibrated family fallback exists"
+        ),
+        "minimum_specific_sample": V4_MIN_REPLAY_SAMPLE,
+        "maximum_specific_sample": maximum,
+        "specific_evidence_rows": int(specific_mask.sum()),
+        "validated_payoff_lane_rows": int(payoff_mask.sum()),
+        "validated_family_rows": int(family_mask.sum()),
+        "evidence_reachable_rows": reachable_count,
+    }
+
+
+def _post_pricing_expectancy(
+    row: pd.Series | dict[str, Any],
+) -> tuple[float, float, float, float]:
+    """Return coherent EV, PF, win payoff, and loss payoff for the final structure."""
+    if _payoff_model_ready(row):
+        win_rate = safe_float(row.get("payoff_stress_10_win_rate"))
+        win_fraction = safe_float(row.get("payoff_stress_10_average_win_risk_fraction"))
+        loss_fraction = safe_float(row.get("payoff_stress_10_average_loss_risk_fraction"))
+        risk = _max_loss_value(row)
+        if (
+            math.isfinite(win_rate)
+            and 0 < win_rate < 1
+            and math.isfinite(win_fraction)
+            and win_fraction > 0
+            and math.isfinite(loss_fraction)
+            and loss_fraction > 0
+            and math.isfinite(risk)
+            and risk > 0
+        ):
+            win_payoff = win_fraction * risk
+            loss_payoff = loss_fraction * risk
+            gross_wins = win_rate * win_payoff
+            gross_losses = (1.0 - win_rate) * loss_payoff
+            return (
+                gross_wins - gross_losses,
+                gross_wins / gross_losses if gross_losses > 0 else math.inf,
+                win_payoff,
+                loss_payoff,
+            )
+    win_rate = _effective_win_rate(row)
+    win_payoff = _target_profit_value(row)
+    loss_payoff = _max_loss_value(row)
+    if (
+        not math.isfinite(win_rate)
+        or win_rate <= 0
+        or win_rate > 1
+        or not math.isfinite(win_payoff)
+        or win_payoff <= 0
+        or not math.isfinite(loss_payoff)
+        or loss_payoff <= 0
+    ):
+        return math.nan, math.nan, win_payoff, loss_payoff
+    gross_wins = win_rate * win_payoff
+    gross_losses = (1.0 - win_rate) * loss_payoff
+    expected_value = gross_wins - gross_losses
+    profit_factor = gross_wins / gross_losses if gross_losses > 0 else math.inf
+    return expected_value, profit_factor, win_payoff, loss_payoff
+
+
+def _post_pricing_expectancy_blocker(row: pd.Series | dict[str, Any]) -> str:
+    expected_value, profit_factor, _, _ = _post_pricing_expectancy(row)
+    if not math.isfinite(expected_value) or math.isnan(profit_factor):
+        return "post-pricing expectancy unavailable for the final quoted structure"
+    if expected_value <= 0:
+        return f"post-pricing expected value is ${expected_value:.2f}; must be above $0"
+    if profit_factor < V4_EXECUTE_MIN_PROFIT_FACTOR:
+        return (
+            f"post-pricing profit factor is {profit_factor:.2f}; "
+            f"must be at least {V4_EXECUTE_MIN_PROFIT_FACTOR:.2f}"
+        )
+    return ""
+
+
+def _expectancy_safe_entry_price(row: pd.Series | dict[str, Any]) -> float:
+    # A non-validated payoff lane may be useful for research, but it must not
+    # manufacture an "expectancy-safe" executable price from proxy math.
+    if not _payoff_model_ready(row):
+        return math.nan
+    win_rate = _effective_win_rate(row)
+    width = safe_float(row.get("spread_width"))
+    max_profit = safe_float(row.get("max_profit"))
+    win_payoff = _target_profit_value(row)
+    configured_target = safe_float(
+        row.get("required_entry"),
+        safe_float(row.get("target_entry"), safe_float(row.get("entry_target"))),
+    )
+    if (
+        not math.isfinite(win_rate)
+        or win_rate <= 0
+        or win_rate >= 1
+        or not math.isfinite(width)
+        or width <= 0
+        or not math.isfinite(max_profit)
+        or max_profit <= 0
+        or not math.isfinite(win_payoff)
+        or win_payoff <= 0
+    ):
+        return math.nan
+    if _payoff_model_ready(row):
+        if _is_credit(row):
+            empirical_fraction = safe_float(row.get("payoff_entry_pct_width_p25"))
+            empirical_price = width * empirical_fraction if math.isfinite(empirical_fraction) else math.nan
+            floor = configured_target if math.isfinite(configured_target) and configured_target > 0 else 0.0
+            if math.isfinite(empirical_price):
+                floor = max(floor, empirical_price)
+            return math.ceil(floor * 100.0 - 1e-9) / 100.0 if floor > 0 else math.nan
+        empirical_fraction = safe_float(row.get("payoff_entry_pct_width_p75"))
+        empirical_price = width * empirical_fraction if math.isfinite(empirical_fraction) else math.nan
+        ceiling = configured_target if math.isfinite(configured_target) and configured_target > 0 else width
+        if math.isfinite(empirical_price):
+            ceiling = min(ceiling, empirical_price)
+        return math.floor(ceiling * 100.0 + 1e-9) / 100.0 if ceiling > 0 else math.nan
+    payoff_fraction = max(0.01, min(1.0, win_payoff / max_profit))
+    loss_rate = 1.0 - win_rate
+    if _is_credit(row):
+        denominator = win_rate * payoff_fraction + V4_EXECUTE_MIN_PROFIT_FACTOR * loss_rate
+        if denominator <= 0:
+            return math.nan
+        expectancy_floor = V4_EXECUTE_MIN_PROFIT_FACTOR * loss_rate * width / denominator
+        policy_floor = width * 0.18
+        if math.isfinite(configured_target):
+            policy_floor = max(policy_floor, configured_target)
+        return math.ceil(max(policy_floor, expectancy_floor) * 100.0 - 1e-9) / 100.0
+    if _is_debit(row):
+        denominator = win_rate * payoff_fraction + V4_EXECUTE_MIN_PROFIT_FACTOR * loss_rate
+        if denominator <= 0:
+            return math.nan
+        expectancy_ceiling = win_rate * payoff_fraction * width / denominator
+        policy_ceiling = configured_target if math.isfinite(configured_target) and configured_target > 0 else width
+        return math.floor(min(policy_ceiling, expectancy_ceiling) * 100.0 + 1e-9) / 100.0
+    return math.nan
+
+
+def _expectancy_safe_entry_target(row: pd.Series | dict[str, Any]) -> str:
+    if not _payoff_model_ready(row):
+        return "UNVALIDATED - no execution limit"
+    safe_price = _expectancy_safe_entry_price(row)
+    if not math.isfinite(safe_price):
+        return _entry_target(row)
+    return f">= ${safe_price:.2f} credit" if _is_credit(row) else f"<= ${safe_price:.2f} debit"
+
+
+def _entry_limit_expectancy(
+    row: pd.Series | dict[str, Any],
+) -> tuple[float, float, float, float]:
+    safe_price = _expectancy_safe_entry_price(row)
+    width = safe_float(row.get("spread_width"))
+    current_max_profit = safe_float(row.get("max_profit"))
+    current_target_profit = _target_profit_value(row)
+    win_rate = _effective_win_rate(row)
+    if (
+        not math.isfinite(safe_price)
+        or not math.isfinite(width)
+        or safe_price <= 0
+        or safe_price >= width
+        or not math.isfinite(current_max_profit)
+        or current_max_profit <= 0
+        or not math.isfinite(current_target_profit)
+        or current_target_profit <= 0
+        or not math.isfinite(win_rate)
+    ):
+        expected_value, profit_factor, win_payoff, loss_payoff = _post_pricing_expectancy(row)
+        return win_payoff, loss_payoff, expected_value, profit_factor
+    target_fraction = max(0.01, min(1.0, current_target_profit / current_max_profit))
+    if _is_credit(row):
+        max_profit = safe_price * 100.0
+        max_loss = (width - safe_price) * 100.0
+    else:
+        max_profit = (width - safe_price) * 100.0
+        max_loss = safe_price * 100.0
+    target_profit = max_profit * target_fraction
+    if _payoff_model_ready(row):
+        win_rate = safe_float(row.get("payoff_stress_10_win_rate"))
+        win_fraction = safe_float(row.get("payoff_stress_10_average_win_risk_fraction"))
+        loss_fraction = safe_float(row.get("payoff_stress_10_average_loss_risk_fraction"))
+        if (
+            math.isfinite(win_rate)
+            and 0 < win_rate < 1
+            and math.isfinite(win_fraction)
+            and win_fraction > 0
+            and math.isfinite(loss_fraction)
+            and loss_fraction > 0
+        ):
+            gross_wins = win_rate * win_fraction * max_loss
+            gross_losses = (1.0 - win_rate) * loss_fraction * max_loss
+            return (
+                target_profit,
+                max_loss,
+                gross_wins - gross_losses,
+                gross_wins / gross_losses if gross_losses > 0 else math.inf,
+            )
+    gross_wins = win_rate * target_profit
+    gross_losses = (1.0 - win_rate) * max_loss
+    expected_value = gross_wins - gross_losses
+    profit_factor = gross_wins / gross_losses if gross_losses > 0 else math.inf
+    return target_profit, max_loss, expected_value, profit_factor
+
+
+def _expectancy_safe_price_blocker(row: pd.Series | dict[str, Any]) -> str:
+    safe_price = _expectancy_safe_entry_price(row)
+    if not math.isfinite(safe_price):
+        return "expectancy-safe entry limit is unavailable"
+    current = _v4_current_entry_price(row)
+    if not math.isfinite(current):
+        return "current executable spread price is unavailable"
+    if _is_credit(row) and current + 1e-9 < safe_price:
+        return f"natural credit ${current:.2f} is below expectancy-safe minimum ${safe_price:.2f}; work the limit, do not accept less"
+    if _is_debit(row) and current - 1e-9 > safe_price:
+        return f"natural debit ${current:.2f} is above expectancy-safe maximum ${safe_price:.2f}; work the limit, do not chase"
     return ""
 
 
 def _blocker_text(row: pd.Series | dict[str, Any]) -> str:
     if _clean(row.get("trade_status")) == "Execute" and not _is_hard_blocked(row) and not _execute_quality_blocker(row):
         return "No hard blocker; enter only at/inside target with attached OCO after same-session quote refresh."
+    safe_price_blocker = _expectancy_safe_price_blocker(row)
+    if "expectancy-safe" in safe_price_blocker and ("below" in safe_price_blocker or "above" in safe_price_blocker):
+        return safe_price_blocker
     for key in ["what_must_improve", "primary_blocker", "trade_status_reason", "hard_rejects", "penalties"]:
         text = _clean(row.get(key))
         if text:
@@ -980,6 +1490,8 @@ def _disposition(row: pd.Series | dict[str, Any], *, targetable: bool | None = N
     strategy = f"{row.get('strategy', '')} {row.get('Trade', '')}".lower()
     if "cash-secured" in strategy or "wheel" in strategy:
         return "Wheel/Cash"
+    if not _payoff_model_ready(row):
+        return "Research"
     status = _clean(row.get("trade_status"))
     if not status:
         status = "Execute" if "Execute" in _clean(row.get("Status")) else "Watch" if "Scout" in _clean(row.get("Status")) else ""
@@ -1107,7 +1619,7 @@ def _target_methodology(row: pd.Series | dict[str, Any]) -> str:
         parts.append(f"target credit is {credit_pct:.1%} of ${width:g} width")
     elif _is_debit(row) and math.isfinite(debit_pct):
         parts.append(f"target debit is {debit_pct:.1%} of ${width:g} width")
-    target = _entry_target(row)
+    target = _expectancy_safe_entry_target(row)
     if target:
         parts.append(f"entry target {target}")
     if math.isfinite(expected):
@@ -1228,7 +1740,14 @@ def _why_review(row: pd.Series | dict[str, Any], top_flow: pd.DataFrame) -> str:
         pieces.append(flow)
     edge = _clean(row.get("edge_verdict") or row.get("replay_ev_verdict"))
     if edge:
-        pieces.append(f"edge={edge}")
+        pieces.append(f"historical edge={edge}")
+    if _payoff_model_ready(row):
+        expected_value, profit_factor, _, _ = _post_pricing_expectancy(row)
+        if math.isfinite(expected_value) and not math.isnan(profit_factor):
+            pf_text = f"{profit_factor:.2f}" if math.isfinite(profit_factor) else "inf"
+            pieces.append(f"validated final-structure EV={_money(expected_value)}, PF={pf_text}")
+    else:
+        pieces.append("realized payoff lane is unvalidated; displayed only for research")
     reason = _clean(row.get("trade_status_reason") or row.get("Why Execute, Scout, Research, or Avoid"))
     if reason:
         pieces.append(reason)
@@ -1243,13 +1762,19 @@ def _ticket_row_from_scored(
     top_flow: pd.DataFrame,
 ) -> dict[str, Any]:
     disposition = _disposition(row, targetable=True)
-    target_profit = _target_profit_value(row)
-    max_loss = _max_loss_value(row)
+    payoff_validated = _payoff_model_ready(row)
+    if payoff_validated:
+        target_profit, max_loss, expected_value, profit_factor = _entry_limit_expectancy(row)
+    else:
+        target_profit = _target_profit_value(row)
+        max_loss = _max_loss_value(row)
+        expected_value = math.nan
+        profit_factor = math.nan
     reward_risk = target_profit / max_loss if math.isfinite(target_profit) and math.isfinite(max_loss) and max_loss > 0 else math.nan
-    expected_win = safe_float(row.get("edge_win_rate"))
+    expected_win = _reported_win_rate(row)
     expected_win_text = f"{expected_win:.0%}" if math.isfinite(expected_win) else ""
-    avg_win = safe_float(row.get("edge_avg_pnl"))
-    avg_loss = -abs(max_loss * 0.50) if math.isfinite(max_loss) else math.nan
+    avg_win = target_profit if payoff_validated else math.nan
+    avg_loss = -max_loss if payoff_validated and math.isfinite(max_loss) else math.nan
     return {
         "rank": rank,
         "display status": _status_label(disposition),
@@ -1257,7 +1782,7 @@ def _ticket_row_from_scored(
         "ticker": _clean(row.get("ticker")).upper(),
         "trade legs": _trade_legs(row),
         "expiry": _clean(row.get("expiry")),
-        "next-session swing entry target": _entry_target(row),
+        "next-session swing entry target": _expectancy_safe_entry_target(row),
         "current Schwab mid/natural reference": _mid_natural(row),
         "profit target": _money(target_profit),
         "max loss": _money(max_loss),
@@ -1280,8 +1805,16 @@ def _ticket_row_from_scored(
         "setup family key": _setup_family_key(row),
         "safety calibration flags": _safety_flags_text(row),
         "expected win rate": expected_win_text,
-        "expected average win": _money(avg_win),
-        "expected average loss": _money(avg_loss),
+        "confidence evidence": _confidence_evidence_text(row),
+        "payoff evidence": _payoff_evidence_text(row),
+        "expected average win": _money(avg_win) if payoff_validated else "UNVALIDATED",
+        "expected average loss": _money(avg_loss) if payoff_validated else "UNVALIDATED",
+        "expected value": _money(expected_value) if payoff_validated else "UNVALIDATED",
+        "implied profit factor": (
+            f"{profit_factor:.2f}" if payoff_validated and math.isfinite(profit_factor)
+            else "inf" if payoff_validated and profit_factor == math.inf
+            else "UNVALIDATED"
+        ),
         "_rank_score": _ticket_rank(row, disposition),
     }
 
@@ -1326,6 +1859,8 @@ def _ticket_row_from_board(
         "setup family key": _setup_family_key(row),
         "safety calibration flags": _safety_flags_text(row),
         "expected win rate": "",
+        "confidence evidence": "",
+        "payoff evidence": "",
         "expected average win": "",
         "expected average loss": "",
         "_rank_score": 40.0 if disposition == "Wheel/Cash" else 30.0,
@@ -1372,6 +1907,15 @@ def _ticket_rank(row: pd.Series | dict[str, Any], disposition: str) -> float:
         rank += min(10.0, target / 50.0)
     if math.isfinite(target) and math.isfinite(risk) and risk > 0:
         rank += min(5.0, (target / risk) * 10.0)
+    sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size")))
+    expected_value, profit_factor, _, _ = _post_pricing_expectancy(row)
+    if math.isfinite(sample) and sample >= V4_MIN_REPLAY_SAMPLE:
+        if math.isfinite(expected_value) and math.isfinite(risk) and risk > 0:
+            rank += max(-10.0, min(10.0, (expected_value / risk) * 20.0))
+        if math.isfinite(profit_factor):
+            rank += max(-5.0, min(5.0, (profit_factor - 1.0) * 5.0))
+    else:
+        rank -= 15.0
     return rank
 
 
@@ -1883,6 +2427,7 @@ def build_generation_audit(
     secondary_triggered = False
     if secondary_sweep is not None and not secondary_sweep.empty and "triggered" in secondary_sweep.columns:
         secondary_triggered = bool(secondary_sweep["triggered"].astype(bool).any())
+    evidence_integrity = build_execution_evidence_integrity(scored)
     issue_rows = [
         ("expiry window too narrow", "warn" if scored is not None and not scored.empty and scored["expiry"].nunique() < 2 else "ok", "candidate expiries should span more than one usable date"),
         ("strike window too narrow", "warn" if scored is not None and not scored.empty and scored.get("short_strike", pd.Series()).nunique() < 4 else "ok", "construction attempts should include alternate strikes"),
@@ -1896,6 +2441,12 @@ def build_generation_audit(
         ("missing index/ETF proxies", "warn" if tickets is None or tickets.empty or not tickets["lane"].eq("Index/ETF").any() else "ok", "Index/ETF lane visible"),
         ("missing wheel/cash alternatives", "warn" if board is None or board.empty or not board["Lane"].astype(str).eq("Wheel/Cash").any() else "ok", "Wheel/Cash lane visible"),
         ("overly strict confirmation gates", "warn" if tickets is not None and not tickets.empty and not tickets["final disposition"].eq("Execute").any() else "ok", "zero Execute requires target tickets and no-miss audit"),
+        (
+            "execution evidence reachability",
+            "ok" if evidence_integrity["status"] == "PASS" else "fail",
+            f"specific max n={evidence_integrity['maximum_specific_sample']} vs required n={evidence_integrity['minimum_specific_sample']}; "
+            f"validated family rows={evidence_integrity['validated_family_rows']}; reachable rows={evidence_integrity['evidence_reachable_rows']}",
+        ),
         ("targetable trades hidden by price miss", "fail" if target_hidden_by_price else "ok", "price target miss must remain visible as Work Limit"),
     ]
     return pd.DataFrame([{"audit_item": item, "audit_status": status, "evidence": evidence} for item, status, evidence in issue_rows])
@@ -2180,6 +2731,12 @@ def build_v4_target_model(
     sizing_can_close = feasibility in {"feasible", "stretched"} and (not aggregate_cap_applied or risk_all <= risk_available)
     if aggregate_cap_applied and risk_all > risk_available and risk_bounded_fill_adjusted >= required_daily:
         sizing_can_close = True
+    if execute_profit < required_daily:
+        sizing_can_close = False
+        blocker = (
+            "approved Execute profit is below the required daily pace; "
+            "theoretical Work Limit inventory is not a forecast"
+        )
     return {
         "monthly_profit_target": round(target, 2),
         "month_to_date_realized_pnl": round(realized, 2),
@@ -2190,7 +2747,8 @@ def build_v4_target_model(
         "required_weekly_pl": round(required_weekly, 2),
         "execute_profit_potential": round(execute_profit, 2),
         "swing_target_profit_potential_if_filled": round(swing_profit, 2),
-        "realistic_fill_adjusted_target_potential": round(fill_adjusted, 2),
+        "theoretical_target_inventory_fill_adjusted_potential": round(fill_adjusted, 2),
+        "realistic_fill_adjusted_target_potential": round(execute_profit, 2),
         "risk_bounded_target_ticket_count": int(risk_bounded_count),
         "risk_bounded_max_loss": round(risk_bounded_risk, 2),
         "risk_bounded_fill_adjusted_target_potential": round(risk_bounded_fill_adjusted, 2),
@@ -2206,9 +2764,10 @@ def build_v4_target_model(
         "required_average_profit_per_trade": round(required_average_profit, 2),
         "required_number_of_target_tickets": int(required_ticket_count) if required_ticket_count is not None else None,
         "expected_by_setup_family": family_stats,
-        "expected_monthly_run_rate": round(expected_run_rate, 2),
+        "theoretical_target_inventory_monthly_run_rate": round(expected_run_rate, 2),
+        "expected_monthly_run_rate": round(execute_profit * days, 2),
         "sizing_can_close_gap": bool(sizing_can_close),
-        "target_feasibility": feasibility,
+        "target_feasibility": feasibility if execute_profit >= required_daily else "not demonstrated",
         "exact_blocker_to_10k_month": blocker,
         "average_target_profit_per_ticket": round(avg_profit, 2) if math.isfinite(avg_profit) else None,
     }
@@ -2279,8 +2838,9 @@ def _compact_ticket_table(tickets: pd.DataFrame) -> pd.DataFrame:
         "rank",
         "display status",
         "ticker",
-        "setup family",
-        "next-session swing entry target",
+            "trade legs",
+            "expiry",
+            "next-session swing entry target",
         "current Schwab mid/natural reference",
         "profit target",
         "max loss",
@@ -2360,7 +2920,15 @@ def _target_status_panel(target_model: dict[str, Any], counts: dict[str, int]) -
         plain = "Current run-rate can work inside the configured risk budget."
     return pd.DataFrame(
         [
-            {"Question": "Can V4 find trades?", "Answer": f"Yes: {counts.get('execute', 0)} Execute, {counts.get('scout', 0)} Scout, {counts.get('swing_target_work_limit', 0)} Work Limit."},
+            {
+                "Question": "Can V4 find trades?",
+                "Answer": (
+                    f"Yes: {counts.get('execute', 0)} Execute, {counts.get('scout', 0)} Scout, "
+                    f"{counts.get('swing_target_work_limit', 0)} Work Limit."
+                    if sum(counts.get(key, 0) for key in ["execute", "scout", "swing_target_work_limit"]) > 0
+                    else "No: zero Execute, Scout, or Work Limit rows passed the current evidence and live-entry gates."
+                ),
+            },
             {"Question": "What blocks $10k/month?", "Answer": bottleneck},
             {"Question": "Plain English", "Answer": plain},
             {"Question": "Visible expected potential", "Answer": _money(risk_bounded)},
@@ -2537,10 +3105,23 @@ def _v4_target_met(row: pd.Series | dict[str, Any]) -> bool:
     target = _v4_entry_target_value(row)
     if not math.isfinite(current) or not math.isfinite(target) or target <= 0:
         return False
+    safe_target = _expectancy_safe_entry_price(row)
+    if math.isfinite(safe_target):
+        # Calibration may tighten the configured order limit, never weaken it.
+        # For debits, lower is safer; for credits, higher is safer.
+        target = min(target, safe_target) if _is_debit(row) else max(target, safe_target)
     return current <= target if _is_debit(row) else current >= target
 
 
 def _v4_nonnegative_ev(row: pd.Series | dict[str, Any]) -> bool:
+    if _validated_family_evidence(row):
+        expected_value, profit_factor, _, _ = _post_pricing_expectancy(row)
+        return bool(
+            math.isfinite(expected_value)
+            and expected_value > 0
+            and not math.isnan(profit_factor)
+            and profit_factor >= V4_EXECUTE_MIN_PROFIT_FACTOR
+        )
     replay = _clean(row.get("replay_ev_verdict")).lower()
     edge = _clean(row.get("edge_verdict")).lower()
     if replay.startswith("negative") or edge == "negative":
@@ -2550,7 +3131,8 @@ def _v4_nonnegative_ev(row: pd.Series | dict[str, Any]) -> bool:
         return avg > 0
     if _is_credit(row) and (replay == "acceptable_secondary_income" or edge == "acceptable_secondary_income"):
         sample = safe_float(row.get("edge_sample_size"))
-        win = safe_float(row.get("edge_win_rate"))
+        raw_win = safe_float(row.get("edge_win_rate"))
+        win = safe_float(row.get("edge_effective_win_rate"), raw_win)
         if math.isfinite(sample) and sample < 30:
             return False
         if math.isfinite(win) and win < 0.58:
@@ -2573,7 +3155,25 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
         out["debit_policy_tier"] = ""
     if "credit_policy_tier" not in out.columns:
         out["credit_policy_tier"] = ""
+    for col in [
+        "v4_post_pricing_expected_value",
+        "v4_post_pricing_profit_factor",
+        "v4_live_win_payoff",
+        "v4_live_loss_payoff",
+        "v4_effective_win_rate",
+        "v4_expectancy_safe_entry_price",
+    ]:
+        if col not in out.columns:
+            out[col] = math.nan
+    out["v4_expectancy_policy_version"] = V4_EXPECTANCY_POLICY_VERSION
     for idx, row in out.iterrows():
+        expected_value, profit_factor, win_payoff, loss_payoff = _post_pricing_expectancy(row)
+        out.at[idx, "v4_post_pricing_expected_value"] = expected_value
+        out.at[idx, "v4_post_pricing_profit_factor"] = profit_factor
+        out.at[idx, "v4_live_win_payoff"] = win_payoff
+        out.at[idx, "v4_live_loss_payoff"] = loss_payoff
+        out.at[idx, "v4_effective_win_rate"] = _effective_win_rate(row)
+        out.at[idx, "v4_expectancy_safe_entry_price"] = _expectancy_safe_entry_price(row)
         hard = _hard_blocker_reason(row)
         if hard:
             out.at[idx, "trade_status"] = "Avoid"
@@ -2598,9 +3198,17 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
         credit_tier = ""
         if _is_debit(row):
             debit_tier, _ = debit_spread_confidence(row, live=True)
+            if _medium_debit_sleeve_eligible(row):
+                debit_tier = "medium"
+            if debit_tier == "high" and not confidence_high_ready(row):
+                debit_tier = "medium"
             out.at[idx, "debit_policy_tier"] = debit_tier
         elif _is_credit(row):
             credit_tier, _ = credit_spread_confidence(row, live=True)
+            if credit_tier == "high" and not confidence_high_ready(row):
+                credit_tier = "medium"
+            if credit_tier == "reject" and _validated_family_evidence(row):
+                credit_tier = "validated"
             out.at[idx, "credit_policy_tier"] = credit_tier
         if target_met and ev_ok and has_risk and quote_width <= 0.20 and not execute_quality_blocker:
             out.at[idx, "trade_status"] = "Execute"
@@ -2609,8 +3217,10 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
             )
             if credit_tier:
                 out.at[idx, "trade_tier"] = f"Execute V4 Direct - {credit_tier.title()} Credit"
+            pf_text = f"{profit_factor:.2f}" if math.isfinite(profit_factor) else "inf"
             out.at[idx, "v4_direct_disposition_reason"] = (
-                "V4 direct Execute: Schwab reference meets target, no hard blocker, non-negative setup EV, "
+                f"V4 direct Execute: Schwab reference meets target, no hard blocker, "
+                f"final-structure EV ${expected_value:.2f} and PF {pf_text}, "
                 + (f"{debit_tier} debit-policy tier, " if debit_tier else "")
                 + (f"{credit_tier} credit-policy tier, " if credit_tier else "")
                 + "defined OCO required before order entry."
@@ -2625,7 +3235,11 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
         elif _targetable(row) or (ev_ok and has_risk and _entry_target(row) != "fresh Schwab recheck"):
             out.at[idx, "trade_status"] = "Watch"
             out.at[idx, "trade_tier"] = "work-limit-price-target"
-            out.at[idx, "v4_direct_disposition_reason"] = "V4 Work Limit: setup is reviewable, but current Schwab reference does not meet target."
+            blocker_note = f" Execute blocker: {execute_quality_blocker}." if execute_quality_blocker else ""
+            out.at[idx, "v4_direct_disposition_reason"] = (
+                "V4 Work Limit: setup is reviewable, but current Schwab reference does not meet target."
+                + blocker_note
+            )
         else:
             out.at[idx, "trade_status"] = "Research"
             out.at[idx, "trade_tier"] = "Research"
@@ -2662,31 +3276,103 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
     return out
 
 
-def apply_v4_credit_sleeve_cap(scored: pd.DataFrame, *, max_execute: int = 1) -> pd.DataFrame:
-    """Keep only the highest-ranked immediate credit Execute; preserve alternatives as Work Limit."""
+V4_CREDIT_BOOK_MAX_EXECUTES = 2
+V4_BROAD_INDEX_TICKERS = frozenset({"SPY", "QQQ", "IWM", "DIA", "RSP", "TQQQ", "SQQQ", "UPRO", "SPX", "NDX"})
+V4_SECTOR_ALIASES = {
+    "information technology": "technology",
+    "technology": "technology",
+    "financial services": "financials",
+    "financials": "financials",
+    "communication services": "communications",
+    "consumer discretionary": "consumer-discretionary",
+    "consumer staples": "consumer-staples",
+    "health care": "healthcare",
+    "healthcare": "healthcare",
+    "real estate": "real-estate",
+}
+
+
+def _v4_credit_risk_bucket(row: pd.Series | dict[str, Any]) -> str:
+    """Return the concentration bucket used for independently executable credits."""
+    ticker = _clean(row.get("ticker") or row.get("Ticker")).upper()
+    if ticker in V4_BROAD_INDEX_TICKERS or ticker in INDEX_FLOW_TICKERS:
+        return "broad-index"
+
+    sector = _clean(row.get("sector") or row.get("Sector")).lower()
+    sector = V4_SECTOR_ALIASES.get(sector, sector.replace(" ", "-"))
+    if sector and sector not in {"unknown", "nan", "none", "n/a"}:
+        return f"sector:{sector}"
+
+    if bool(row.get("index_fallback", False)):
+        return f"etf:{ticker or 'unknown'}"
+    return f"ticker:{ticker or 'unknown'}"
+
+
+def apply_v4_credit_sleeve_cap(
+    scored: pd.DataFrame,
+    *,
+    max_execute: int = V4_CREDIT_BOOK_MAX_EXECUTES,
+) -> pd.DataFrame:
+    """Allocate a small independent credit book without hiding valid stock setups.
+
+    The previous global one-credit cap made an ETF the sole Execute whenever it
+    ranked ahead of every other credit.  This keeps the book deliberately small,
+    limits every broad-index or sector/factor bucket to one position, and permits
+    a second credit only when it has validated family-level payoff evidence.
+    """
     if scored is None or scored.empty:
         return scored.copy() if scored is not None else pd.DataFrame()
     out = scored.copy()
+    if "v4_credit_risk_bucket" not in out.columns:
+        out["v4_credit_risk_bucket"] = ""
+    if "v4_credit_book_allocation" not in out.columns:
+        out["v4_credit_book_allocation"] = ""
+
     execute = out[out["trade_status"].astype(str).eq("Execute")]
     credit_rows = execute[execute.apply(_is_credit, axis=1)]
-    if len(credit_rows) <= max_execute:
+    if len(credit_rows) <= 1:
         return out
     ranked = sorted(
         credit_rows.iterrows(),
         key=lambda item: (
+            1 if _validated_family_evidence(item[1]) else 0,
             _ticket_rank(item[1], "Execute"),
             safe_float(item[1].get("edge_sample_size"), 0.0),
             -safe_float(item[1].get("quote_width_pct"), 9.0),
         ),
         reverse=True,
     )
-    keep = {idx for idx, _ in ranked[: max(0, max_execute)]}
-    for idx, _ in ranked:
-        if idx in keep:
+
+    keep: set[Any] = set()
+    occupied_buckets: set[str] = set()
+    for idx, row in ranked:
+        bucket = _v4_credit_risk_bucket(row)
+        out.at[idx, "v4_credit_risk_bucket"] = bucket
+        validated = _validated_family_evidence(row)
+        if bucket in occupied_buckets:
+            reason = (
+                f"Credit-book correlation guard: {bucket} already has a higher-ranked Execute; "
+                "do not stack the same broad-index or sector/factor risk."
+            )
+        elif len(keep) >= max(1, max_execute):
+            reason = (
+                f"Credit-book capacity is {max(1, max_execute)} independent Execute positions; "
+                "keep this lower-ranked credit as Work Limit."
+            )
+        elif keep and not validated:
+            reason = (
+                "Additional credit requires validated family payoff evidence; "
+                "keep this unvalidated credit as Work Limit."
+            )
+        else:
+            keep.add(idx)
+            occupied_buckets.add(bucket)
+            out.at[idx, "v4_credit_book_allocation"] = f"Execute allocation: {bucket}"
             continue
-        reason = "Independent credit sleeve is capped at one immediate Execute; keep lower-ranked credits as Work Limit."
+
         out.at[idx, "trade_status"] = "Watch"
-        out.at[idx, "trade_tier"] = "work-limit-credit-sleeve-cap"
+        out.at[idx, "trade_tier"] = "work-limit-credit-book-allocation"
+        out.at[idx, "v4_credit_book_allocation"] = f"Work Limit: {bucket}"
         out.at[idx, "v4_direct_disposition_reason"] = f"V4 Work Limit: {reason}"
         out.at[idx, "trade_status_reason"] = _append_note(out.at[idx, "trade_status_reason"], reason)
     return out
@@ -2766,7 +3452,9 @@ def build_v4_opportunity_board(scored: pd.DataFrame, *, top_flow: pd.DataFrame) 
         targetable = _targetable(row)
         disposition = _disposition(row, targetable=targetable)
         sample = safe_float(row.get("edge_sample_size"))
-        win = safe_float(row.get("edge_win_rate"))
+        raw_win = safe_float(row.get("edge_win_rate"))
+        win = safe_float(row.get("edge_effective_win_rate"), raw_win)
+        match_level = _clean(row.get("edge_match_level")) or "unavailable"
         avg = safe_float(row.get("edge_avg_pnl"))
         rows.append(
             {
@@ -2775,14 +3463,19 @@ def build_v4_opportunity_board(scored: pd.DataFrame, *, top_flow: pd.DataFrame) 
                 "Ticker": _clean(row.get("ticker")).upper(),
                 "Trade": _trade_legs(row),
                 "Expiry": _clean(row.get("expiry")),
-                "Entry limit": _entry_target(row),
+                "Entry limit": _expectancy_safe_entry_target(row),
                 "Live mid/natural": _mid_natural(row),
                 "Max profit": _money(row.get("max_profit")),
                 "Max loss": _money(_max_loss_value(row)),
                 "Target profit": _money(_target_profit_value(row)),
-                "Expected value source": f"Schwab {_clean(row.get('live_status'))}; edge {_clean(row.get('edge_verdict') or row.get('replay_ev_verdict'))}",
+                "Expected value source": (
+                    f"Schwab {_clean(row.get('live_status'))}; "
+                    f"edge {_clean(row.get('edge_verdict') or row.get('replay_ev_verdict'))}; "
+                    f"match {match_level}"
+                ),
                 "Edge sample size / win rate / avg P/L": (
-                    f"n={int(sample) if math.isfinite(sample) else ''} / win={win:.0%} / avg=${avg:.2f}"
+                    f"n={int(sample) if math.isfinite(sample) else ''} / smoothed historical win={win:.0%} / "
+                    f"avg=${avg:.2f} / calibration={_clean(row.get('confidence_calibration_status')) or 'unavailable'}"
                     if math.isfinite(win) or math.isfinite(avg) or math.isfinite(sample)
                     else ""
                 ),
@@ -2853,6 +3546,18 @@ def write_v4_outputs(
         lookback_days=14,
     )
     scored = apply_v4_safety_calibration(scored, safety_calibration)
+    confidence_predictions, confidence_calibration = build_default_walk_forward_calibration(asof=asof)
+    scored = apply_confidence_calibration(scored, confidence_calibration)
+    payoff_summary, payoff_groups, payoff_walk_forward = build_default_payoff_calibration(asof=asof)
+    scored = apply_payoff_calibration(scored, payoff_groups)
+    payoff_paths = write_payoff_calibration_outputs(
+        out_dir=out_dir,
+        asof=asof,
+        summary=payoff_summary,
+        groups=payoff_groups,
+        walk_forward=payoff_walk_forward,
+    )
+    execution_evidence_integrity = build_execution_evidence_integrity(scored)
     scored = apply_v4_professional_dispositions(scored, asof=asof)
     scored = apply_v4_credit_sleeve_cap(scored)
     scored = apply_v4_prospective_book_concentration(scored)
@@ -2900,6 +3605,8 @@ def write_v4_outputs(
         "no_miss_audit": _artifact_path(out_dir, "no_miss_audit", asof),
         "generation_audit": _artifact_path(out_dir, "candidate_generation_audit", asof),
         "safety_calibration": _artifact_path(out_dir, "safety_calibration", asof),
+        "confidence_calibration_predictions": _artifact_path(out_dir, "confidence_calibration_predictions", asof),
+        "confidence_calibration_summary": out_dir / f"codexdaily_v4_confidence_calibration_summary_{asof}.json",
         "risk_cap_audit": _artifact_path(out_dir, "risk_cap_audit", asof),
         "secondary_liquidity_sweep": _artifact_path(out_dir, "secondary_liquidity_sweep", asof),
         "portfolio_repair": _artifact_path(out_dir, "portfolio_repair", asof),
@@ -2916,6 +3623,11 @@ def write_v4_outputs(
     no_miss.to_csv(paths["no_miss_audit"], index=False)
     generation_audit.to_csv(paths["generation_audit"], index=False)
     safety_calibration.to_csv(paths["safety_calibration"], index=False)
+    confidence_predictions.to_csv(paths["confidence_calibration_predictions"], index=False)
+    paths["confidence_calibration_summary"].write_text(
+        json.dumps(confidence_calibration, indent=2, sort_keys=True, default=str),
+        encoding="utf-8",
+    )
     risk_cap_audit.to_csv(paths["risk_cap_audit"], index=False)
     secondary_sweep.to_csv(paths["secondary_liquidity_sweep"], index=False)
     portfolio_repair.to_csv(paths["portfolio_repair"], index=False)
@@ -3026,6 +3738,7 @@ def write_v4_outputs(
     }
     lane_coverage = tickets["lane"].value_counts().to_dict() if not tickets.empty else {}
     artifacts = {name: str(path) for name, path in paths.items()}
+    artifacts.update(payoff_paths)
     artifacts.update(
         {
             "report": str(out_dir / f"codexdaily_v4_report_{asof}.md"),
@@ -3066,6 +3779,8 @@ def write_v4_outputs(
         "schwab_status": schwab_status,
         "portfolio_status": (portfolio or {}).get("status", "not_checked"),
         "market_regime": regime,
+        "payoff_calibration": payoff_summary,
+        "execution_evidence_integrity": execution_evidence_integrity,
         "swing_target_ticket_count": int(len(tickets)),
         "opportunity_counts": counts,
         "lane_coverage": lane_coverage,
@@ -3097,6 +3812,7 @@ def write_v4_outputs(
             "risk_cap_pct_account_value": 0.02,
             "secondary_liquidity_sweep_triggered": secondary_triggered,
         },
+        "confidence_calibration": confidence_calibration,
         "outcome_learning": outcome_learning,
         "artifacts": artifacts,
         "scoring_source": "direct_v4_eod_pipeline",
@@ -3132,6 +3848,9 @@ def write_v4_outputs(
         f"| Visible expected potential | ${target_model['risk_bounded_fill_adjusted_target_potential']:,.2f} |",
         f"| Immediate Execute profit potential | ${target_model['execute_profit_potential']:,.2f} |",
         f"| Safety calibration | muted families {muted_families}; negative shadow-EV families {negative_shadow_ev}; risk-capped tickets {risk_capped_count} |",
+        f"| Confidence calibration | {confidence_calibration.get('status', 'UNAVAILABLE')}; "
+        f"walk-forward n={confidence_calibration.get('prediction_count', 0)}; "
+        f"High available={'yes' if confidence_calibration.get('high_confidence_available') else 'no'} |",
         f"| Secondary Liquidity Sweep | {'triggered' if secondary_triggered else 'not triggered'} |",
         "",
         "## Market Insight For Tomorrow",
@@ -3527,19 +4246,34 @@ def run_validation_harness_v4(
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     selected = select_systematic_date_folders(root, as_of=asof, latest_n=latest_n)
+    selected_dates = [str(infer_asof_date(path)) for path in selected]
+    snapshot_replay = build_snapshot_replay_summary(asof=asof, selected_dates=selected_dates)
+    snapshot_replay_path = out_dir / f"codexdaily_v4_snapshot_replay_summary_{asof}.csv"
+    snapshot_replay.to_csv(snapshot_replay_path, index=False)
     rows: list[dict[str, Any]] = []
     for folder in selected:
         day = infer_asof_date(folder)
         run_out = out_dir / f"codexdaily_v4_{day}"
+        has_comparable_v4_manifest = False
         if getattr(args, "run_live", False):
             result = run_v4_daily(base_dir=folder, out_dir=run_out, args=args)
+            has_comparable_v4_manifest = True
         else:
             source = root / "out" / f"codexdaily_v4_{day}"
             existing_manifest = _read_json(source / f"codexdaily_v4_manifest_{day}.json")
             if existing_manifest:
                 result = existing_manifest
+                has_comparable_v4_manifest = True
             else:
-                result = run_v4_daily(base_dir=folder, out_dir=run_out, args=args)
+                # Do not rebuild a historical folder with today's Schwab quotes.
+                # The stored exact-outcome replay below is the deterministic
+                # validation source when a dated live-planning manifest is absent.
+                result = {
+                    "out_dir": str(run_out),
+                    "opportunity_counts": {},
+                    "swing_target_ticket_count": 0,
+                    "historical_replay_status": "NO_STORED_V4_MANIFEST_NO_LIVE_REPRICE",
+                }
         v4_counts = result.get("opportunity_counts") or {}
         target_model = result.get("target_model") or {}
         no_miss = result.get("no_miss_audit") or {}
@@ -3552,16 +4286,21 @@ def run_validation_harness_v4(
             {
                 "date": str(day),
                 "v4_out_dir": result.get("out_dir", str(run_out)),
-                "v4_swing_target_count": result.get("swing_target_ticket_count", 0),
-                "v4_execute_count": v4_counts.get("execute", 0),
-                "v4_scout_count": v4_counts.get("scout", 0),
-                "v4_visible_missed_opportunities": no_miss.get("suppressed_rows", 0),
-                "v4_over_filtering_signal": "yes" if v4_counts.get("execute", 0) == 0 and result.get("swing_target_ticket_count", 0) else "no",
-                "v4_lane_coverage": ",".join(sorted((result.get("lane_coverage") or {}).keys())),
-                "v4_target_feasibility": target_model.get("target_feasibility", ""),
-                "v4_target_math_blocker": target_model.get("exact_blocker_to_10k_month", ""),
-                "v4_no_miss_audit_completeness": "complete" if no_miss.get("top_flow_tickers_audited", 0) >= 50 else "partial",
+                "v4_swing_target_count": result.get("swing_target_ticket_count", 0) if has_comparable_v4_manifest else math.nan,
+                "v4_execute_count": v4_counts.get("execute", 0) if has_comparable_v4_manifest else math.nan,
+                "v4_scout_count": v4_counts.get("scout", 0) if has_comparable_v4_manifest else math.nan,
+                "v4_visible_missed_opportunities": no_miss.get("suppressed_rows", 0) if has_comparable_v4_manifest else math.nan,
+                "v4_over_filtering_signal": (
+                    "yes" if v4_counts.get("execute", 0) == 0 and result.get("swing_target_ticket_count", 0) else "no"
+                ) if has_comparable_v4_manifest else "not available - no stored V4 manifest",
+                "v4_lane_coverage": ",".join(sorted((result.get("lane_coverage") or {}).keys())) if has_comparable_v4_manifest else "",
+                "v4_target_feasibility": target_model.get("target_feasibility", "") if has_comparable_v4_manifest else "",
+                "v4_target_math_blocker": target_model.get("exact_blocker_to_10k_month", "") if has_comparable_v4_manifest else "",
+                "v4_no_miss_audit_completeness": (
+                    "complete" if no_miss.get("top_flow_tickers_audited", 0) >= 50 else "partial"
+                ) if has_comparable_v4_manifest else "not available - no stored V4 manifest",
                 "v4_report_usefulness": "target sheet plus no-miss audit",
+                "v4_historical_replay_status": result.get("historical_replay_status", "STORED_V4_MANIFEST"),
                 "v3_swing_target_count": v3.get("swing_target_ticket_count", 0),
                 "v3_execute_count": v3_counts.get("execute", 0),
                 "v3_scout_count": v3_counts.get("scout", 0),
@@ -3572,6 +4311,19 @@ def run_validation_harness_v4(
     summary = pd.DataFrame(rows)
     summary_path = out_dir / f"codexdaily_v4_validation_summary_{asof}.csv"
     summary.to_csv(summary_path, index=False)
+    capacity_out = out_dir / "portfolio_capacity"
+    capacity = write_portfolio_capacity_outputs(
+        replay_detail=DEFAULT_EDGE_HISTORY_PATH,
+        out_dir=capacity_out,
+        monthly_target=float(args.monthly_profit_target),
+        account_value=float(getattr(args, "validation_account_value", 0.0) or 0.0),
+        aggregate_risk_budget=float(getattr(args, "risk_budget", 0.0) or 0.0),
+        risk_per_trade_pct=float(getattr(args, "validation_risk_per_trade_pct", 0.02) or 0.02),
+        max_contracts=max(1, int(getattr(args, "max_contracts_per_trade", 20) or 20)),
+        max_ticker_share=float(getattr(args, "validation_max_active_ticker_share", 0.20) or 0.20),
+        max_sector_share=float(getattr(args, "validation_max_active_sector_share", 0.40) or 0.40),
+        asof=asof,
+    )
     manifest = {
         "pipeline_name": PIPELINE_NAME_V4,
         "pipeline_version": PIPELINE_VERSION_V4,
@@ -3580,9 +4332,12 @@ def run_validation_harness_v4(
         "asof": str(asof),
         "latest_n": latest_n,
         "selection_method": "latest source-complete dated folders at or before asof",
-        "selected_dates": [str(infer_asof_date(path)) for path in selected],
+        "selected_dates": selected_dates,
         "summary_csv": str(summary_path),
+        "snapshot_replay_summary_csv": str(snapshot_replay_path),
+        "historical_replay_method": "stored exact outcomes only; no current Schwab quotes or portfolio state",
         "comparisons": rows,
+        "portfolio_capacity": capacity,
     }
     manifest_path = out_dir / f"codexdaily_v4_validation_manifest_{asof}.json"
     report_path = out_dir / f"codexdaily_v4_validation_report_{asof}.md"
@@ -3600,13 +4355,27 @@ def run_validation_harness_v4(
                 "|:--|:--|",
                 f"| Pipeline | {PIPELINE_NAME_V4} |",
                 f"| Version | {PIPELINE_VERSION_V4} |",
-                "| Version lock | locked 2026-06-12; supersedes v4.0 |",
+                f"| Version lock | locked {manifest['version_lock']['locked_on']}; rollback chain retained through v4.0 |",
                 "| Run mode | Systematic recent-date validation |",
                 f"| Selected dates | {', '.join(manifest['selected_dates'])} |",
                 "",
                 "## V4 vs V3/V2/V1",
                 "",
                 _markdown_table(summary),
+                "",
+                "## Deterministic Historical Snapshot Replay",
+                "",
+                "Uses stored dated-snapshot exact outcomes only. It does not call Schwab or rebuild old dates with current quotes.",
+                "",
+                _markdown_table(snapshot_replay),
+                "",
+                "## Overlapping-Book Capacity And Cost Stress",
+                "",
+                f"- Accepted exact replay trades: {capacity.get('accepted_trades', 0)}",
+                f"- Risk-sized trades: {capacity.get('risk_sized_trades', 0)}",
+                f"- Capacity status: {(capacity.get('feasibility') or {}).get('status', 'unknown')}",
+                f"- Monthly target supported: {'YES' if (capacity.get('feasibility') or {}).get('target_supported') else 'NO'}",
+                f"- Detailed report: {(capacity.get('artifacts') or {}).get('report', '')}",
                 "",
             ]
         ),
@@ -3699,6 +4468,18 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
     after = apply_loss_review(after, loss_review)
     after = assign_trade_statuses(after, index_income_mode="primary")
     after = apply_fallback_income_status(after)
+    _, overlay_confidence_calibration = build_default_walk_forward_calibration(asof=overlay_date)
+    after = apply_confidence_calibration(after, overlay_confidence_calibration)
+    payoff_summary, payoff_groups, payoff_walk_forward = build_default_payoff_calibration(asof=overlay_date)
+    after = apply_payoff_calibration(after, payoff_groups)
+    payoff_paths = write_payoff_calibration_outputs(
+        out_dir=out_dir,
+        asof=f"{asof}_{overlay_date}",
+        summary=payoff_summary,
+        groups=payoff_groups,
+        walk_forward=payoff_walk_forward,
+    )
+    execution_evidence_integrity = build_execution_evidence_integrity(after)
     after = apply_v4_professional_dispositions(after, asof=overlay_date)
     after = after.copy()
     after["_overlay_exact_key"] = after.apply(_overlay_candidate_key, axis=1)
@@ -3741,6 +4522,8 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
         "live_pricing_refreshed": True,
         "portfolio_status": portfolio.get("status", "unknown"),
         "edge_history_namespace": EDGE_HISTORY_NAMESPACE,
+        "execution_evidence_integrity": execution_evidence_integrity,
+        "payoff_calibration": payoff_summary,
         "recent_performance": recent_performance,
         "repriced_candidate_rows_before_exact_dedupe": repriced_row_count,
         "candidate_rows_after_exact_dedupe": int(len(after)),
@@ -3751,6 +4534,7 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
             "overlay_scored_reference": str(scored_path),
             "overlay_opportunity_board": str(board_path),
             "overlay_changes": str(changes_path),
+            **payoff_paths,
         },
         "scoring_source": "direct_v4_overlay",
     }

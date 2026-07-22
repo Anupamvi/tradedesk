@@ -24,6 +24,7 @@ BEARISH_DIRECTIONS = {"Bear Call", "Bear Put"}
 EDGE_COLUMNS = [
     "edge_sample_size",
     "edge_win_rate",
+    "edge_effective_win_rate",
     "edge_avg_pnl",
     "edge_profit_factor",
     "edge_max_drawdown",
@@ -273,16 +274,22 @@ def _metrics(part: pd.DataFrame) -> dict[str, Any]:
         return {
             "edge_sample_size": 0,
             "edge_win_rate": math.nan,
+            "edge_effective_win_rate": math.nan,
             "edge_avg_pnl": math.nan,
             "edge_profit_factor": math.nan,
             "edge_max_drawdown": math.nan,
         }
     pnl = pd.to_numeric(part["pnl_1x"], errors="coerce").fillna(0.0)
+    exact_wins = part["exact_win"].astype(str).str.lower().eq("true")
+    sample_size = int(len(part))
+    raw_win_rate = float(exact_wins.mean())
+    effective_win_rate = float((exact_wins.sum() + 0.5) / (sample_size + 1.0))
     wins = pnl[pnl > 0].sum()
     losses = abs(pnl[pnl < 0].sum())
     return {
-        "edge_sample_size": int(len(part)),
-        "edge_win_rate": float(part["exact_win"].astype(str).str.lower().eq("true").mean()),
+        "edge_sample_size": sample_size,
+        "edge_win_rate": raw_win_rate,
+        "edge_effective_win_rate": effective_win_rate,
         "edge_avg_pnl": float(pnl.mean()),
         "edge_profit_factor": float(wins / losses) if losses > 0 else (math.inf if wins > 0 else math.nan),
         "edge_max_drawdown": float(_max_drawdown(pnl)),
@@ -303,7 +310,7 @@ def _verdict(metrics: dict[str, Any]) -> str:
     if math.isfinite(profit_factor) and profit_factor < 0.80 and math.isfinite(win_rate) and win_rate < 0.50:
         return "negative"
     if math.isfinite(avg_pnl) and avg_pnl > 0 and math.isfinite(win_rate) and win_rate >= 0.60 and (
-        not math.isfinite(profit_factor) or profit_factor >= 1.20
+        not math.isfinite(profit_factor) or profit_factor >= 1.25
     ):
         return "positive"
     if math.isfinite(avg_pnl) and avg_pnl >= 0 and (not math.isfinite(win_rate) or win_rate >= 0.50):
@@ -315,6 +322,7 @@ def _empty_edge(reason: str = "no replay detail matched candidate pattern") -> d
     return {
         "edge_sample_size": 0,
         "edge_win_rate": math.nan,
+        "edge_effective_win_rate": math.nan,
         "edge_avg_pnl": math.nan,
         "edge_profit_factor": math.nan,
         "edge_max_drawdown": math.nan,
@@ -357,6 +365,8 @@ def load_replay_edge_history(
         if df.empty or "exact_evaluated" not in df.columns or "pnl_1x" not in df.columns:
             continue
         df = df[df["exact_evaluated"].map(_truthy)].copy()
+        if "replay_guard_pass" in df.columns:
+            df = df[df["replay_guard_pass"].map(_truthy)].copy()
         df = df[pd.to_numeric(df["pnl_1x"], errors="coerce").notna()].copy()
         if asof is not None:
             cutoff = pd.to_datetime(asof, errors="coerce")
@@ -393,6 +403,10 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
         return _empty_edge("no replay detail files with exact P/L were found")
     feat = _feature_record(row)
     df = history.copy()
+    if "replay_guard_pass" in df.columns:
+        df = df[df["replay_guard_pass"].map(_truthy)].copy()
+        if df.empty:
+            return _empty_edge("no replay-guarded exact P/L history matched candidate")
     if feat["strategy_kind"] == "Credit":
         candidate_policy_ok, _ = assess_credit_spread(row, live=False)
         if not candidate_policy_ok:
@@ -444,7 +458,8 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
         (
             "credit_policy_sleeve",
             (df["direction"].eq(feat["direction"]))
-            & (df["strategy_kind"].eq("Credit")),
+            & (df["strategy_kind"].eq("Credit"))
+            & (df["regime_trend"].eq(feat["regime_trend"])),
         ),
         (
             "broad_pattern",
@@ -462,7 +477,7 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
     ]
     best_level = "unavailable"
     best = pd.DataFrame()
-    minimum_sample = 8
+    minimum_sample = 12
     for level, mask in match_specs:
         if feat["strategy_kind"] == "Debit" and level == "broad_pattern":
             continue
@@ -483,12 +498,13 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
     sample = metrics["edge_sample_size"]
     win_rate = safe_float(metrics["edge_win_rate"])
     avg_pnl = safe_float(metrics["edge_avg_pnl"])
+    profit_factor = safe_float(metrics["edge_profit_factor"])
     reason = (
         f"{best_level} replay match: {feat['direction']} {feat['strategy_kind']} "
         f"{feat['dte_bucket']} DTE, {feat['premium_bucket']} premium, "
         f"{feat['expected_move_bucket']} expected-move bucket, "
         f"{feat['iv_hv_bucket']} IV/HV bucket; sample {sample}, "
-        f"win {win_rate:.1%}, avg P/L ${avg_pnl:.2f}"
+        f"win {win_rate:.1%}, avg P/L ${avg_pnl:.2f}, PF {profit_factor:.2f}"
         if math.isfinite(win_rate) and math.isfinite(avg_pnl)
         else f"{best_level} replay match with sample {sample}"
     )

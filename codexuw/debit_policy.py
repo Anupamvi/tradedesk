@@ -6,7 +6,7 @@ from typing import Any
 from .data import safe_float
 
 
-DEBIT_POLICY_VERSION = "debit-v2.2-flow-quality"
+DEBIT_POLICY_VERSION = "debit-v2.3-confidence-calibrated"
 
 
 DEBIT_POLICY = {
@@ -21,7 +21,7 @@ DEBIT_POLICY = {
         "max_iv_rank": 55.0,
     },
     "Bear Put": {
-        "allowed_regimes": {"downtrend", "range"},
+        "allowed_regimes": {"downtrend"},
         "allowed_dte_ranges": ((14, 45),),
         "max_debit_pct_width": 0.40,
         "min_reward_risk": 1.25,
@@ -123,10 +123,10 @@ def assess_debit_spread(
         sample = safe_float(row.get("edge_sample_size"))
         profit_factor = safe_float(row.get("edge_profit_factor"))
         avg_pnl = safe_float(row.get("edge_avg_pnl"))
-        if not math.isfinite(sample) or sample < 8:
-            reasons.append("debit_edge_sample_below_8")
-        if not math.isfinite(profit_factor) or profit_factor < 1.15:
-            reasons.append("debit_edge_pf_below_1.15")
+        if not math.isfinite(sample) or sample < 12:
+            reasons.append("debit_edge_sample_below_12")
+        if not math.isfinite(profit_factor) or profit_factor < 1.25:
+            reasons.append("debit_edge_pf_below_1.25")
         if not math.isfinite(avg_pnl) or avg_pnl <= 0:
             reasons.append("debit_edge_avg_pnl_not_positive")
 
@@ -165,6 +165,8 @@ def debit_spread_confidence(
         high_reasons.append("high_requires_edge_sample_20")
     if not math.isfinite(profit_factor) or profit_factor < 1.35:
         high_reasons.append("high_requires_edge_pf_1.35")
+    if _clean(row.get("edge_match_level")).lower() not in {"exact", "ticker_direction", "strategy_regime"}:
+        high_reasons.append("high_requires_specific_edge_match")
     quote_width = safe_float(row.get("entry_quote_width_pct"), safe_float(row.get("quote_width_pct")))
     if not math.isfinite(quote_width) or quote_width > 0.20:
         high_reasons.append("high_requires_quote_width_0.20")

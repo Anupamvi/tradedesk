@@ -344,6 +344,11 @@ def _candidate_row(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
         "short_delta": row.get("short_delta"),
         "max_profit": row.get("max_profit"),
         "max_loss": row.get("max_loss"),
+        "contracts": row.get("contracts", 1),
+        "position_max_loss": row.get("position_max_loss"),
+        "target_profit_total": row.get("target_profit_total"),
+        "expected_value_per_contract": row.get("expected_value_per_contract"),
+        "expected_value_total": row.get("expected_value_total"),
         "recommended_limit": safe_float(row.get("required_entry")),
         "edge_sample_size": row.get("edge_sample_size"),
         "edge_win_rate": row.get("edge_win_rate"),
@@ -560,8 +565,13 @@ def _wheel_cash_candidate_rows(scored: pd.DataFrame, portfolio: dict[str, Any] |
         + df["_liq"].clip(upper=5000) / 5000.0
         - df["_quote"].clip(upper=1.0)
     )
+    ranked = df.sort_values(["_wheel_rank", "_quote"], ascending=[False, True])
+    thesis_columns = [column for column in ["ticker", "expiry", "short_strike"] if column in ranked.columns]
+    if thesis_columns:
+        ranked = ranked.drop_duplicates(subset=thesis_columns, keep="first")
+
     rows: list[dict[str, Any]] = []
-    for _, row in df.sort_values("_wheel_rank", ascending=False).head(n).iterrows():
+    for _, row in ranked.head(n).iterrows():
         ticker = _ticker(row)
         short_leg = _clean(row.get("short_leg"))
         strike = safe_float(row.get("short_strike"))
@@ -856,9 +866,21 @@ def write_recommendation_ledger(out_dir: Path, asof: dt.date, board: pd.DataFram
     for _, row in board.iterrows():
         strategy = _clean(row.get("strategy")) or _clean(row.get("Trade"))
         direction = _clean(row.get("direction"))
+        trade = _clean(row.get("Trade")) or strategy
+        ticker = _clean(row.get("Ticker"))
+        expiry = _clean(row.get("Expiry"))
+        trade_key = "|".join([run_id, str(asof), ticker, trade, expiry])
         recommended_limit = safe_float(row.get("recommended_limit"))
+        status = _clean(row.get("Status"))
+        if "Execute" in status:
+            outcome_status = "OPEN_REVIEW_REQUIRED"
+        elif "Scout" in status or "Work Limit" in status:
+            outcome_status = "CONDITIONAL_NOT_FILLED"
+        else:
+            outcome_status = "NOT_EXECUTED"
         ledger_rows.append(
             {
+                "trade_key": trade_key,
                 "run_id": run_id,
                 "generated_at_utc": now,
                 "asof": str(asof),
@@ -866,11 +888,18 @@ def write_recommendation_ledger(out_dir: Path, asof: dt.date, board: pd.DataFram
                 "lane": row.get("Lane"),
                 "status": row.get("Status"),
                 "ticker": row.get("Ticker"),
+                "trade": trade,
                 "strategy": strategy,
                 "setup_family": setup_family(strategy, direction),
                 "direction": direction,
                 "expiry": row.get("Expiry"),
                 "recommended_limit": recommended_limit if math.isfinite(recommended_limit) else "",
+                "contracts": row.get("contracts", 1),
+                "max_profit": row.get("max_profit", ""),
+                "max_loss": row.get("max_loss", ""),
+                "position_max_loss": row.get("position_max_loss", ""),
+                "target_profit_total": row.get("target_profit_total", ""),
+                "expected_value_total": row.get("expected_value_total", ""),
                 "actual_fill": row.get("actual_fill", ""),
                 "close_fill": row.get("close_fill", ""),
                 "realized_pnl": row.get("realized_pnl", ""),
@@ -881,6 +910,7 @@ def write_recommendation_ledger(out_dir: Path, asof: dt.date, board: pd.DataFram
                 "slippage_vs_recommendation": row.get("slippage_vs_recommendation", ""),
                 "monitor_triggered": row.get("monitor_triggered", ""),
                 "monitor_trigger": row.get("Monitor trigger", ""),
+                "outcome_status": _clean(row.get("outcome_status")) or outcome_status,
                 "source_report": str(out_dir / f"codexdaily_v3_report_{asof}.md"),
             }
         )
@@ -891,9 +921,52 @@ def write_recommendation_ledger(out_dir: Path, asof: dt.date, board: pd.DataFram
     if global_path.exists():
         try:
             existing = pd.read_csv(global_path)
+            if "trade_key" not in existing.columns:
+                existing["trade_key"] = ""
+            missing_key = existing["trade_key"].isna() | existing["trade_key"].astype(str).str.strip().eq("")
+            if missing_key.any():
+                existing.loc[missing_key, "trade_key"] = existing.loc[missing_key].apply(
+                    lambda row: "|".join(
+                        [
+                            _clean(row.get("run_id")),
+                            _clean(row.get("asof")) or _clean(row.get("report_date")),
+                            _clean(row.get("ticker")),
+                            _clean(row.get("trade")) or _clean(row.get("strategy")),
+                            _clean(row.get("expiry")),
+                        ]
+                    ),
+                    axis=1,
+                )
             merged = pd.concat([existing, run_ledger], ignore_index=True)
-            dedupe = ["run_id", "asof", "lane", "status", "ticker", "strategy", "expiry"]
-            merged = merged.drop_duplicates(subset=[c for c in dedupe if c in merged.columns], keep="last")
+            outcome_columns = [
+                "actual_fill",
+                "close_fill",
+                "realized_pnl",
+                "mfe",
+                "mae",
+                "thesis_worked",
+                "reason_for_win_loss",
+                "slippage_vs_recommendation",
+                "monitor_triggered",
+            ]
+            generated_statuses = {"OPEN_REVIEW_REQUIRED", "CONDITIONAL_NOT_FILLED", "NOT_EXECUTED"}
+            preserved: list[pd.Series] = []
+            for _, group in merged.groupby("trade_key", sort=False, dropna=False):
+                latest = group.iloc[-1].copy()
+                for column in outcome_columns:
+                    if column not in group.columns:
+                        continue
+                    values = group[column]
+                    populated = values[values.notna() & values.astype(str).str.strip().ne("")]
+                    if not populated.empty:
+                        latest[column] = populated.iloc[-1]
+                if "outcome_status" in group.columns:
+                    statuses = group["outcome_status"].dropna().astype(str).str.strip()
+                    terminal = statuses[statuses.ne("") & ~statuses.isin(generated_statuses)]
+                    if not terminal.empty:
+                        latest["outcome_status"] = terminal.iloc[-1]
+                preserved.append(latest)
+            merged = pd.DataFrame(preserved)
         except Exception:
             merged = run_ledger
     else:

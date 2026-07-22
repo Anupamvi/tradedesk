@@ -6,16 +6,21 @@ from typing import Any
 from .data import safe_float
 
 
-CREDIT_POLICY_VERSION = "credit-v1.1-distance-required"
+CREDIT_POLICY_VERSION = "credit-v1.4-regime-contract"
 
 MIN_DTE = 7
 MAX_DTE = 45
-MIN_CREDIT_PCT_WIDTH = 0.16
+MIN_CREDIT_PCT_WIDTH = 0.25
+MIN_WATCH_CREDIT_PCT_WIDTH = 0.20
 MAX_CREDIT_PCT_WIDTH = 0.30
 MIN_FLOW_ALIGNMENT = 0.10
 MAX_QUOTE_WIDTH_PCT = 0.35
 MIN_IV_HV_RATIO = 0.90
 MIN_DISTANCE_EXPECTED_MOVE_RATIO = 0.75
+ALLOWED_REGIMES = {
+    "Bull Put": {"uptrend"},
+    "Bear Call": {"downtrend"},
+}
 
 
 def _clean(value: object) -> str:
@@ -34,6 +39,10 @@ def _flow_alignment(row: dict[str, Any] | Any) -> float:
     bias = safe_float(row.get("combined_flow_bias"), safe_float(row.get("flow_bias"), math.nan))
     sign = _direction_sign(_clean(row.get("direction")))
     return bias * sign if math.isfinite(bias) and sign else math.nan
+
+
+def _regime(row: dict[str, Any] | Any) -> str:
+    return _clean(row.get("regime_trend") or row.get("regime")).lower()
 
 
 def _iv_hv_ratio(row: dict[str, Any] | Any) -> float:
@@ -72,6 +81,9 @@ def assess_credit_spread(
         return False, ["unsupported_credit_direction"]
 
     reasons: list[str] = []
+    regime = _regime(row)
+    if regime not in ALLOWED_REGIMES[direction]:
+        reasons.append(f"credit_regime_not_aligned:{direction}:{regime or 'unknown'}")
     dte = safe_float(row.get("dte"))
     if not math.isfinite(dte) or not MIN_DTE <= dte <= MAX_DTE:
         reasons.append(f"dte_outside_{MIN_DTE}_{MAX_DTE}")
@@ -102,10 +114,10 @@ def assess_credit_spread(
         sample = safe_float(row.get("edge_sample_size"))
         profit_factor = safe_float(row.get("edge_profit_factor"))
         avg_pnl = safe_float(row.get("edge_avg_pnl"))
-        if not math.isfinite(sample) or sample < 8:
-            reasons.append("credit_edge_sample_below_8")
-        if not math.isfinite(profit_factor) or profit_factor < 1.15:
-            reasons.append("credit_edge_pf_below_1.15")
+        if not math.isfinite(sample) or sample < 12:
+            reasons.append("credit_edge_sample_below_12")
+        if not math.isfinite(profit_factor) or profit_factor < 1.25:
+            reasons.append("credit_edge_pf_below_1.25")
         if not math.isfinite(avg_pnl) or avg_pnl <= 0:
             reasons.append("credit_edge_avg_pnl_not_positive")
 
@@ -147,6 +159,8 @@ def credit_spread_confidence(
         high_reasons.append("high_requires_edge_sample_20")
     if not math.isfinite(profit_factor) or profit_factor < 1.35:
         high_reasons.append("high_requires_edge_pf_1.35")
+    if _clean(row.get("edge_match_level")).lower() not in {"exact", "ticker_direction", "strategy_regime"}:
+        high_reasons.append("high_requires_specific_edge_match")
     quote_width = safe_float(row.get("entry_quote_width_pct"), safe_float(row.get("quote_width_pct")))
     if not math.isfinite(quote_width) or quote_width > 0.20:
         high_reasons.append("high_requires_quote_width_0.20")

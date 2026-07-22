@@ -1,9 +1,17 @@
 {
-  "manifest_path": "codexuw_replay_options_agent_ytd_widthfix_v4/codexuw_replay_manifest.json",
-  "manifest_sha256": "59b2d73619d3c991c719e3739092fdebab3dbc8c814b309a10566a2e06d2c26a",
-  "replay_detail_path": "codexuw_replay_options_agent_ytd_widthfix_v4/codexuw_replay_detail.csv",
-  "replay_detail_sha256": "a025692a7074961c92381a70e6468c429c75a54e06369ee2e4b9db3194b362fa",
-  "schema_version": "options_agent.replay_pin.v1",
-  "expected_history_days": 141,
-  "split_day": "2026-05-19"
+  "cache_fingerprint": "bb8ccc9f52a7d6b703821531febe2f4880bdb2078a8872241717aba2691ed9f5",
+  "candidate_limit": 0,
+  "day_audit_path": "options_agent_independent_replay/v1_56_live_selector_dte_parity_ytd_full/options_agent_replay_day_audit.csv",
+  "day_audit_sha256": "88e281bc015ce9ebc5f600b7ef20e61e3e10414b9cdb82e33258d76e6a1ec435",
+  "expected_history_days": 130,
+  "manifest_path": "options_agent_independent_replay/v1_56_live_selector_dte_parity_ytd_full/options_agent_replay_manifest.json",
+  "manifest_sha256": "f3a9050d140541280bd69ba31d72496f241a72204282e849d2ef22ebbe56b995",
+  "pipeline_version": "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
+  "producer": "uwos.options_agent.replay",
+  "production_discovery_parity": true,
+  "production_validation": false,
+  "replay_detail_path": "options_agent_independent_replay/v1_56_live_selector_dte_parity_ytd_full/options_agent_replay_detail.csv",
+  "replay_detail_sha256": "424cad6928bafe16a41f50b9d6841271efc8cc2178a06b441053f0c1fda3a5bf",
+  "schema_version": "options_agent.replay_pin.v2",
+  "split_day": "2026-05-01"
 }

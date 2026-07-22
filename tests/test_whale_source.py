@@ -154,7 +154,7 @@ def test_load_yes_prime_whale_flow_streams_bot_zip_and_aggregates_symbols(tmp_pa
     assert list(tables) == ["Top Symbols by Total Premium (Yes-Prime)"]
 
 
-def test_split_bot_eod_parts_are_not_accepted(tmp_path):
+def test_incomplete_split_bot_eod_bundle_is_discovered_then_rejected(tmp_path):
     _write_bot_zip(
         tmp_path / "bot-eod-report-2026-04-23.part-01-of-03.zip",
         [_valid_bot_row("AAA")],
@@ -164,14 +164,30 @@ def test_split_bot_eod_parts_are_not_accepted(tmp_path):
         [_valid_bot_row("CCC")],
     )
 
-    with pytest.raises(FileNotFoundError, match="Split bot EOD files are not accepted"):
-        find_bot_eod_source(tmp_path, "2026-04-23")
+    source = find_bot_eod_source(tmp_path, "2026-04-23")
+    assert source.name == "bot-eod-report-2026-04-23.part-01-of-03.zip"
 
-    with pytest.raises(FileNotFoundError, match="Split bot EOD files are not accepted"):
+    with pytest.raises(FileNotFoundError, match="Incomplete split bot EOD source"):
         load_yes_prime_whale_flow(
             tmp_path / "bot-eod-report-2026-04-23.part-01-of-03.zip",
             _config(),
         )
+
+
+def test_complete_split_bot_eod_bundle_is_accepted(tmp_path):
+    _write_bot_zip(
+        tmp_path / "bot-eod-report-2026-04-23.part-01-of-02.zip",
+        [_valid_bot_row("AAA")],
+    )
+    _write_bot_zip(
+        tmp_path / "bot-eod-report-2026-04-23.part-02-of-02.zip",
+        [_valid_bot_row("BBB")],
+    )
+
+    flow = load_yes_prime_whale_flow(find_bot_eod_source(tmp_path, "2026-04-23"), _config())
+
+    assert flow.total_rows == 2
+    assert set(flow.symbol_summary["underlying_symbol"]) == {"AAA", "BBB"}
 
 
 def test_bot_eod_split_directory_is_not_discovered(tmp_path):

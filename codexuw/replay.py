@@ -11,7 +11,13 @@ from typing import Any
 import pandas as pd
 
 from .catalysts import earnings_crosses_expiry, earnings_event_date
-from .credit_policy import CREDIT_POLICY_VERSION, assess_credit_spread, credit_spread_edge_lane
+from .credit_policy import (
+    CREDIT_POLICY_VERSION,
+    MAX_CREDIT_PCT_WIDTH,
+    MIN_CREDIT_PCT_WIDTH,
+    assess_credit_spread,
+    credit_spread_edge_lane,
+)
 from .data import aggregate_bot_flow, infer_asof_date, load_hot_chains, load_stock_screener, safe_float
 from .debit_policy import DEBIT_POLICY_VERSION, assess_debit_spread
 from .engine import detect_regime, generate_candidates, replay_quality_pattern, select_ticker_pool, validated_addon_income_lane
@@ -689,10 +695,8 @@ def _replay_trade_score(row: pd.Series) -> float:
         if math.isfinite(reward_risk):
             score += min(0.75, max(0.0, reward_risk - 0.6))
     elif math.isfinite(credit_pct):
-        if 0.18 <= credit_pct <= 0.30:
+        if MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH:
             score += 1.25
-        elif credit_pct >= 0.16:
-            score += 0.5
         else:
             score -= 1.0
     if math.isfinite(ratio):
@@ -730,7 +734,7 @@ def _decision_sort_score(row: pd.Series) -> float:
         if math.isfinite(reward_risk):
             score += min(1.0, max(0.0, reward_risk - 0.6))
     elif math.isfinite(credit_pct):
-        score += min(1.0, max(0.0, credit_pct - 0.16) * 8.0)
+        score += min(1.0, max(0.0, credit_pct - MIN_CREDIT_PCT_WIDTH) * 8.0)
     if math.isfinite(quote_width):
         score -= max(0.0, quote_width - 0.35)
     return score
@@ -746,7 +750,7 @@ def _secondary_income_eligible(
 ) -> bool:
     return (
         math.isfinite(credit_pct)
-        and 0.16 <= credit_pct <= 0.30
+        and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
         and math.isfinite(ratio)
         and ratio >= 0.20
         and math.isfinite(align)
@@ -785,6 +789,11 @@ def apply_replay_decision_selection(
     for idx, row in out.iterrows():
         if not _entry_fillable(row):
             out.at[idx, "decision_reason"] = str(row.get("fill_reason") or row.get("exact_reason") or "not_entry_fillable")
+            continue
+        if "replay_guard_pass" in out.columns and not _truthy(row.get("replay_guard_pass")):
+            out.at[idx, "decision_reason"] = "decision_replay_guard:" + str(
+                row.get("replay_guard_reason") or "replay_guard_failed"
+            )
             continue
         credit_pct = safe_float(row.get("entry_credit_pct_width"))
         debit_pct = safe_float(row.get("entry_debit_pct_width"))
@@ -1230,8 +1239,8 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
             return False, "entry_debit_above_target"
         return True, "validated_debit_replay_edge"
     credit_pct = safe_float(rec.get("entry_credit_pct_width"))
-    if not math.isfinite(credit_pct) or credit_pct < 0.16:
-        return False, "entry_credit_below_16pct_width"
+    if not math.isfinite(credit_pct) or credit_pct < MIN_CREDIT_PCT_WIDTH:
+        return False, "entry_credit_below_25pct_width"
     direction = str(rec.get("direction", ""))
     stock = safe_float(rec.get("stock_price_eod"))
     short = safe_float(rec.get("short_strike_eod"))

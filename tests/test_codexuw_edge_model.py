@@ -3,7 +3,7 @@ import pandas as pd
 from codexuw.edge_model import load_replay_edge_history, match_replay_edge
 
 
-def _history_row(day: str, ticker: str, *, selected: bool, distance: float, pnl: float) -> dict:
+def _history_row(day: str, ticker: str, *, selected: bool, distance: float, pnl: float, guard: bool = True) -> dict:
     return {
         "asof": day,
         "exit_day": "2026-01-20",
@@ -11,13 +11,13 @@ def _history_row(day: str, ticker: str, *, selected: bool, distance: float, pnl:
         "sector": "Technology",
         "direction": "Bear Call",
         "strategy": "Bear Call Credit Spread",
-        "regime": "range",
+        "regime": "downtrend",
         "expiry": "2026-02-06",
         "dte": 21,
         "stock_price_eod": 100.0,
         "short_strike_eod": 110.0,
         "long_strike_eod": 115.0,
-        "entry_credit_pct_width": 0.20,
+        "entry_credit_pct_width": 0.25,
         "entry_quote_width_pct": 0.10,
         "expected_move_ratio": distance,
         "combined_flow_bias": -0.20,
@@ -26,6 +26,7 @@ def _history_row(day: str, ticker: str, *, selected: bool, distance: float, pnl:
         "realized_volatility_30d": 0.35,
         "exact_evaluated": True,
         "decision_pass": selected,
+        "replay_guard_pass": guard,
         "pnl_1x": pnl,
         "exact_win": pnl > 0,
     }
@@ -69,3 +70,17 @@ def test_credit_edge_rejects_volatility_only_candidate(tmp_path) -> None:
 
     assert edge["edge_match_level"] == "unavailable"
     assert "does not meet" in edge["edge_reason"]
+
+
+def test_edge_history_excludes_replay_guard_failures(tmp_path) -> None:
+    namespace = tmp_path / "accepted_credit_history"
+    namespace.mkdir()
+    rows = [
+        _history_row("2026-01-05", "KEPT", selected=True, distance=0.80, pnl=70.0),
+        _history_row("2026-01-06", "GUARD_FAIL", selected=True, distance=0.80, pnl=5_000.0, guard=False),
+    ]
+    pd.DataFrame(rows).to_csv(namespace / "codexuw_replay_detail.csv", index=False)
+
+    history = load_replay_edge_history(tmp_path, asof="2026-02-01", history_namespace="accepted_credit_history")
+
+    assert history["ticker"].tolist() == ["KEPT"]

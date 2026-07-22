@@ -63,6 +63,17 @@ def test_split_bot_bundle_rejects_missing_part(tmp_path: Path) -> None:
         find_export_bundle(tmp_path, "bot-eod-report-")
 
 
+def test_bot_flow_point_in_time_excludes_future_latest_export(tmp_path: Path) -> None:
+    day_dir = tmp_path / "2026-05-01"
+    day_dir.mkdir()
+    _write_bot_part(day_dir / "bot-eod-report-2026-05-01.zip", 100.0)
+    _write_bot_part(day_dir / "bot-eod-report-latest-2026-05-04.zip", 900.0)
+
+    flow = aggregate_bot_flow(day_dir, ["TEST"], point_in_time=True)
+
+    assert flow.loc[0, "bot_total_premium"] == pytest.approx(100.0)
+
+
 def test_recent_performance_uses_requested_namespace_and_cutoff(tmp_path: Path) -> None:
     namespace = "accepted_v4_history"
     history_dir = tmp_path / f"{namespace}_run"

@@ -34,6 +34,8 @@ def _credit_row(**overrides) -> dict:
         "sector": "Technology",
         "direction": "Bull Put",
         "strategy": "Bull Put Credit Spread",
+        "regime": "uptrend",
+        "regime_trend": "uptrend",
         "strategy_kind": "Credit",
         "expiry": EXPIRY,
         "dte": 10,
@@ -71,6 +73,24 @@ def _credit_row(**overrides) -> dict:
         "edge_avg_pnl": 45.0,
         "confirmation_score": 8.0,
         "catalyst_status": "supportive",
+        "payoff_calibration_status": "PASS",
+        "payoff_route_level": "base",
+        "payoff_route_key": "base::Credit|Bull Put|uptrend",
+        "payoff_minimum_sample_required": 20,
+        "payoff_sample_size": 27,
+        "payoff_stress_10_win_rate": 0.78,
+        "payoff_stress_10_win_rate_lower_bound": 0.60,
+        "payoff_stress_10_average_pnl": 24.0,
+        "payoff_stress_10_average_win_risk_fraction": 0.25,
+        "payoff_stress_10_average_loss_risk_fraction": 0.50,
+        "payoff_stress_10_profit_factor": 1.61,
+        "payoff_walk_forward_oos_sample": 14,
+        "payoff_walk_forward_oos_profit_factor": 1.72,
+        "payoff_post_activation_oos_sample": 2,
+        "payoff_post_activation_oos_average_pnl": 48.0,
+        "payoff_post_activation_oos_profit_factor": 2.0,
+        "payoff_entry_pct_width_p25": 0.18,
+        "payoff_entry_pct_width_p75": 0.30,
     }
     row.update(overrides)
     return row
@@ -165,14 +185,19 @@ def test_v4_known_earnings_after_expiry_can_execute() -> None:
     scored = pd.DataFrame(
         [
             _credit_row(
-                expiry=ASOF + dt.timedelta(days=10),
+                expiry=ASOF + dt.timedelta(days=21),
+                dte=21,
                 catalyst_status="mixed",
-                catalyst_earnings_date=ASOF + dt.timedelta(days=20),
-                catalyst_earnings_days=20,
-                required_entry=1.20,
+                catalyst_earnings_date=ASOF + dt.timedelta(days=40),
+                catalyst_earnings_days=40,
+                required_entry=1.25,
                 mid_credit=1.30,
                 natural_credit=1.25,
                 edge_verdict="acceptable",
+                edge_sample_size=12,
+                edge_profit_factor=1.30,
+                edge_win_rate=0.90,
+                edge_match_level="exact",
             )
         ]
     )
@@ -227,6 +252,10 @@ def test_v4_mid_target_without_natural_fill_becomes_work_limit() -> None:
                 mid_credit=1.30,
                 natural_credit=1.00,
                 edge_verdict="acceptable",
+                edge_match_level="exact",
+                edge_sample_size=12,
+                edge_profit_factor=1.30,
+                edge_avg_pnl=45.0,
             )
         ]
     )
@@ -261,22 +290,34 @@ def test_v4_only_one_same_ticker_structure_can_execute() -> None:
         [
             _credit_row(
                 ticker="MRVL",
+                expiry=ASOF + dt.timedelta(days=21),
+                dte=21,
                 short_strike=230.0,
                 long_strike=225.0,
-                required_entry=0.90,
+                required_entry=1.25,
                 mid_credit=1.30,
-                natural_credit=1.10,
+                natural_credit=1.25,
                 edge_verdict="acceptable",
+                edge_sample_size=12,
+                edge_profit_factor=1.30,
+                edge_win_rate=0.90,
+                edge_match_level="exact",
                 oi_carryover_status="supportive",
             ),
             _credit_row(
                 ticker="MRVL",
+                expiry=ASOF + dt.timedelta(days=21),
+                dte=21,
                 short_strike=232.5,
                 long_strike=227.5,
-                required_entry=0.90,
+                required_entry=1.25,
                 mid_credit=1.35,
-                natural_credit=1.05,
+                natural_credit=1.25,
                 edge_verdict="acceptable",
+                edge_sample_size=12,
+                edge_profit_factor=1.30,
+                edge_win_rate=0.90,
+                edge_match_level="exact",
                 oi_carryover_status="matched_unconfirmed",
             ),
         ]
@@ -415,6 +456,26 @@ def test_target_aware_selection_outputs_target_contribution_columns() -> None:
     assert final["target_profit_total"].iloc[0] == 180.0
     assert final["position_max_loss"].iloc[0] == 300.0
     assert final["target_contribution_pct"].iloc[0] == 0.018
+
+
+def test_selection_stays_one_lot_until_closed_live_outcome_gate_passes() -> None:
+    scored = pd.DataFrame([_credit_row(max_loss=100.0, credit=1.25, max_profit=125.0)])
+
+    final = select_final_trades(
+        assign_trade_statuses(scored),
+        regime={"sizing_stance": "normal"},
+        risk_budget=5_000,
+        recent_performance={"status": "unavailable"},
+        risk_config={
+            "monthly_profit_target": 10_000,
+            "max_contracts_per_trade": 10,
+            "allow_size_up": False,
+            "size_up_evidence": "no closed V3 outcomes",
+        },
+    )
+
+    assert final["contracts"].tolist() == [1]
+    assert final["size_up_evidence"].tolist() == ["no closed V3 outcomes"]
 
 
 def test_zero_max_final_trades_means_uncapped_visibility() -> None:
@@ -574,15 +635,15 @@ def test_oi_carryover_exact_leg_matching_populates_support_fields() -> None:
 
 
 def test_near_trigger_trade_appears_as_watch_with_exact_limit_order() -> None:
-    scored = pd.DataFrame([_credit_row(credit=0.82, credit_pct_width=0.164, replay_ev_verdict="acceptable")])
+    scored = pd.DataFrame([_credit_row(credit=1.10, credit_pct_width=0.22, replay_ev_verdict="acceptable")])
 
     status = assign_trade_statuses(scored)
     watch = build_entry_watchlist(status)
 
     assert status["trade_status"].iloc[0] == "Watch"
     assert watch["ticker"].tolist() == ["AAA"]
-    assert watch["required_credit"].iloc[0] == 0.9
-    assert "No chase below $0.90" in watch["trigger"].iloc[0]
+    assert watch["required_credit"].iloc[0] == 1.25
+    assert "No chase below $1.25" in watch["trigger"].iloc[0]
 
 
 def test_compact_action_board_keeps_one_watch_row_per_ticker() -> None:
@@ -611,7 +672,7 @@ def test_price_already_better_than_trigger_is_not_watch_when_thesis_fails() -> N
 def test_execute_watch_avoid_research_statuses_are_produced() -> None:
     rows = [
         _credit_row(ticker="EXEC"),
-        _credit_row(ticker="WATCH", credit=0.82, credit_pct_width=0.164, replay_ev_verdict="acceptable"),
+        _credit_row(ticker="WATCH", credit=1.10, credit_pct_width=0.22, replay_ev_verdict="acceptable"),
         _credit_row(ticker="AVOID", hard_rejects="earnings_within_7d:4"),
         _credit_row(ticker="RESEARCH", flow_quality="unclear", confirmation_score=6.0),
     ]
@@ -629,17 +690,18 @@ def test_earnings_within_seven_days_income_trade_cannot_execute() -> None:
     assert out["trade_status"].iloc[0] == "Avoid"
 
 
-def test_credit_tier_logic_execute_a_execute_b_and_watch() -> None:
+def test_credit_tier_logic_has_no_sub_twenty_five_percent_execute_lane() -> None:
     rows = [
         _credit_row(ticker="APLUS", credit=1.25, credit_pct_width=0.25, oi_carryover_status="matched_unconfirmed"),
         _credit_row(ticker="BTIER", credit=1.00, credit_pct_width=0.20, oi_carryover_status="supportive"),
-        _credit_row(ticker="WATCH", credit=0.82, credit_pct_width=0.164, replay_ev_verdict="acceptable"),
+        _credit_row(ticker="WATCH", credit=1.10, credit_pct_width=0.22, replay_ev_verdict="acceptable"),
     ]
 
     out = assign_trade_statuses(pd.DataFrame(rows))
 
     assert out.set_index("ticker").loc["APLUS", "trade_tier"] == "Execute A"
-    assert out.set_index("ticker").loc["BTIER", "trade_tier"] == "Execute B"
+    assert out.set_index("ticker").loc["BTIER", "trade_tier"] == "near-trigger"
+    assert out.set_index("ticker").loc["BTIER", "trade_status"] == "Watch"
     assert out.set_index("ticker").loc["WATCH", "trade_status"] == "Watch"
 
 
@@ -686,8 +748,8 @@ def test_replay_validated_secondary_income_credit_can_execute() -> None:
             _credit_row(
                 ticker="SEC",
                 flow_quality="spread_leg",
-                credit=1.1,
-                credit_pct_width=0.22,
+                credit=1.3,
+                credit_pct_width=0.26,
                 expected_move_ratio=0.35,
                 replay_ev_verdict="acceptable_secondary_income",
                 decision_eligible=True,
@@ -896,7 +958,7 @@ def test_missing_ticker_news_can_surface_manual_scout_without_execute() -> None:
     assert "news_unconfirmed" in status["trade_status_reason"].iloc[0]
     assert watch["watch_kind"].iloc[0] == "manual_confirmation_scout"
     assert "SCOUT ONLY" in watch["trigger"].iloc[0]
-    assert watch["target_entry"].iloc[0] == ">= $1.20 credit"
+    assert watch["target_entry"].iloc[0] == ">= $1.25 credit"
     action = _compact_action_rows(pd.DataFrame(), watch, pd.DataFrame())
     assert "manual check must clear" in action["Why"].iloc[0]
 
@@ -977,11 +1039,11 @@ def test_replay_edge_model_positive_match_promotes_live_credit_candidate(tmp_pat
     replay_dir = tmp_path / "codexuw_replay_edge"
     replay_dir.mkdir()
     history_rows = []
-    for i in range(8):
-        won = i < 6
+    for i in range(12):
+        won = i < 9
         history_rows.append(
             {
-                "asof": f"2026-04-{20 + i:02d}",
+                "asof": f"2026-04-{i + 1:02d}",
                 "ticker": f"H{i}",
                 "sector": "Technology",
                 "direction": "Bull Put",
@@ -991,14 +1053,14 @@ def test_replay_edge_model_positive_match_promotes_live_credit_candidate(tmp_pat
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 95.0,
                 "long_strike_eod": 90.0,
-                "entry_credit_pct_width": 0.22,
+                "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.12,
                 "expected_move_ratio": 0.85,
                 "iv_rank": 45,
                 "iv30d": 0.25,
                 "combined_flow_bias": 0.12,
                 "flow_quality": "directional",
-                "regime": "range",
+                "regime": "uptrend",
                 "exact_evaluated": True,
                 "decision_pass": True,
                 "exact_win": won,
@@ -1007,12 +1069,12 @@ def test_replay_edge_model_positive_match_promotes_live_credit_candidate(tmp_pat
         )
     pd.DataFrame(history_rows).to_csv(replay_dir / "codexuw_replay_detail.csv", index=False)
 
-    scored = pd.DataFrame([_credit_row(replay_ev_verdict="structure_proxy", regime_trend="range")])
+    scored = pd.DataFrame([_credit_row(replay_ev_verdict="structure_proxy", regime_trend="uptrend")])
     edged = apply_replay_edge_model(scored, tmp_path)
 
     assert edged["edge_verdict"].iloc[0] == "positive"
     assert edged["replay_ev_verdict"].iloc[0] == "positive"
-    assert edged["edge_sample_size"].iloc[0] == 8
+    assert edged["edge_sample_size"].iloc[0] == 12
 
 
 def test_replay_edge_model_negative_match_hard_rejects_execute(tmp_path) -> None:
@@ -1021,7 +1083,7 @@ def test_replay_edge_model_negative_match_hard_rejects_execute(tmp_path) -> None
     pd.DataFrame(
         [
             {
-                "asof": f"2026-04-2{i}",
+                "asof": f"2026-04-{i + 1:02d}",
                 "ticker": "AAA",
                 "direction": "Bull Put",
                 "strategy": "Bull Put Credit Spread",
@@ -1030,23 +1092,23 @@ def test_replay_edge_model_negative_match_hard_rejects_execute(tmp_path) -> None
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 95.0,
                 "long_strike_eod": 90.0,
-                "entry_credit_pct_width": 0.22,
+                "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.12,
                 "expected_move_ratio": 0.85,
                 "iv30d": 0.25,
                 "combined_flow_bias": 0.12,
                 "flow_quality": "directional",
-                "regime": "range",
+                    "regime": "uptrend",
                 "exact_evaluated": True,
                 "decision_pass": True,
                 "exact_win": False,
                 "pnl_1x": -80.0,
             }
-            for i in range(8)
+            for i in range(12)
         ]
     ).to_csv(replay_dir / "codexuw_replay_detail.csv", index=False)
 
-    edged = apply_replay_edge_model(pd.DataFrame([_credit_row(regime_trend="range")]), tmp_path)
+    edged = apply_replay_edge_model(pd.DataFrame([_credit_row(regime_trend="uptrend")]), tmp_path)
     out = assign_trade_statuses(edged)
 
     assert edged["edge_verdict"].iloc[0] == "negative"
@@ -1075,7 +1137,7 @@ def test_v4_edge_history_is_namespaced_and_asof_safe(tmp_path) -> None:
             "expected_move_ratio": 0.85,
             "combined_flow_bias": 0.12,
             "flow_quality": "directional",
-            "regime": "range",
+                "regime": "uptrend",
             "iv30d": 0.24,
             "entry_quote_width_pct": 0.15,
             "next_earnings_dt": "2026-08-01",
@@ -1098,7 +1160,7 @@ def test_v4_edge_history_is_namespaced_and_asof_safe(tmp_path) -> None:
     )
 
     edged = apply_replay_edge_model(
-        pd.DataFrame([_credit_row(regime_trend="range")]),
+        pd.DataFrame([_credit_row(regime_trend="uptrend")]),
         tmp_path,
         asof=dt.date(2026, 5, 5),
         history_namespace="codexdaily_v4_edge_history",
@@ -1114,8 +1176,8 @@ def test_thin_replay_sample_can_watch_but_not_execute() -> None:
         [
             _credit_row(
                 ticker="THIN",
-                credit=0.82,
-                credit_pct_width=0.164,
+                credit=1.10,
+                credit_pct_width=0.22,
                 replay_ev_verdict="thin_sample",
                 edge_verdict="thin_sample",
                 edge_sample_size=2,
@@ -1135,8 +1197,8 @@ def test_unclear_spread_leg_flow_can_watch_with_promising_edge() -> None:
         [
             _credit_row(
                 flow_quality="spread_leg",
-                credit=0.82,
-                credit_pct_width=0.164,
+                credit=1.10,
+                credit_pct_width=0.22,
                 replay_ev_verdict="acceptable",
                 edge_verdict="acceptable",
                 confirmation_score=7.0,
