@@ -54,6 +54,7 @@ from .engine import (
 from .edge_model import EDGE_HISTORY_NAMESPACE
 from .integrity_v42 import apply_schwab_price_context
 from .fallback_income import apply_fallback_income_status, build_fallback_income_candidates
+from .goal_shadow import write_goal_shadow_outputs
 from .liquidity_shift import (
     FIXED_LIQUID_UNIVERSE,
     INDEX_FLOW_TICKERS,
@@ -3570,6 +3571,12 @@ def write_v4_outputs(
     scored = apply_v4_professional_dispositions(scored, asof=asof)
     scored = apply_v4_credit_sleeve_cap(scored)
     scored = apply_v4_prospective_book_concentration(scored)
+    goal_shadow, goal_shadow_paths, goal_shadow_summary = write_goal_shadow_outputs(
+        scored,
+        out_dir=out_dir,
+        asof=asof,
+        source_scored_file=str(_artifact_path(out_dir, "scored_reference", asof)),
+    )
     board = build_v4_opportunity_board(scored, top_flow=top_flow)
     tickets = build_v4_swing_target_tickets(scored=scored, board=board, regime=regime, top_flow=top_flow)
     tickets, risk_cap_audit = apply_v4_risk_cap(tickets, portfolio)
@@ -3748,6 +3755,7 @@ def write_v4_outputs(
     lane_coverage = tickets["lane"].value_counts().to_dict() if not tickets.empty else {}
     artifacts = {name: str(path) for name, path in paths.items()}
     artifacts.update(payoff_paths)
+    artifacts.update(goal_shadow_paths)
     artifacts.update(
         {
             "report": str(out_dir / f"codexdaily_v4_report_{asof}.md"),
@@ -3790,6 +3798,7 @@ def write_v4_outputs(
         "portfolio_status": (portfolio or {}).get("status", "not_checked"),
         "market_regime": regime,
         "payoff_calibration": payoff_summary,
+        "goal_shadow": goal_shadow_summary,
         "execution_evidence_integrity": execution_evidence_integrity,
         "swing_target_ticket_count": int(len(tickets)),
         "opportunity_counts": counts,
@@ -3862,6 +3871,7 @@ def write_v4_outputs(
         f"walk-forward n={confidence_calibration.get('prediction_count', 0)}; "
         f"High available={'yes' if confidence_calibration.get('high_confidence_available') else 'no'} |",
         f"| Secondary Liquidity Sweep | {'triggered' if secondary_triggered else 'not triggered'} |",
+        f"| Goal shadow | {len(goal_shadow)} candidate(s); shadow-only; no order placement |",
         "",
         "## Market Insight For Tomorrow",
         "",
