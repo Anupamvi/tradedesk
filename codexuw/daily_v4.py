@@ -20,6 +20,7 @@ from .confidence_calibration import (
 )
 from .data import (
     aggregate_bot_flow,
+    aggregate_dark_pool_flow,
     dte_from_expiry,
     infer_asof_date,
     load_chain_oi,
@@ -220,6 +221,12 @@ def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument("--bot-max-rows", type=int, default=0)
+    parser.add_argument(
+        "--dark-pool-weight",
+        type=float,
+        default=0.0,
+        help="Bounded equity dark-pool contribution (0..0.25) to combined directional flow; default 0 until replay-validated.",
+    )
     parser.add_argument("--offline", action="store_true", help="Test-only: skip Schwab live chain validation.")
     parser.add_argument("--skip-portfolio", action="store_true", help="Skip Schwab portfolio pull; blocks live-quality Execute in V4.")
     parser.add_argument("--skip-catalysts", action="store_true", help="Skip local browser/news catalyst checks.")
@@ -3514,6 +3521,7 @@ def write_v4_outputs(
     live_outcomes: dict[str, Any],
     loss_review: dict[str, Any],
     liquidity_summary: dict[str, Any],
+    uw_source_status: dict[str, Any] | None = None,
     run_mode: str = RUN_MODE_V4,
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -3533,6 +3541,7 @@ def write_v4_outputs(
     live_outcomes = _v4_text(live_outcomes)
     loss_review = _v4_text(loss_review)
     liquidity_summary = _v4_text(liquidity_summary)
+    uw_source_status = _v4_text(uw_source_status or {})
     latest_asof = latest_dated_folder(base_dir.parent)
     note = live_planning_validation_note(asof, latest_asof)
     if note:
@@ -3776,6 +3785,7 @@ def write_v4_outputs(
         "base_dir": str(base_dir),
         "out_dir": str(out_dir),
         "data_quality": data_quality,
+        "uw_source_status": uw_source_status,
         "schwab_status": schwab_status,
         "portfolio_status": (portfolio or {}).get("status", "not_checked"),
         "market_regime": regime,
@@ -4020,12 +4030,12 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
     input_provenance = build_input_provenance(base_dir)
     run_mode = RUN_MODE_V4
     try:
-        stock_screener = load_stock_screener(base_dir)
-        hot_chains = load_hot_chains(base_dir, asof)
+        stock_screener = load_stock_screener(base_dir, point_in_time=True)
+        hot_chains = load_hot_chains(base_dir, asof, point_in_time=True)
     except Exception as exc:
         raise SystemExit(f"{PIPELINE_NAME_V4} input load failed: {exc}") from exc
     try:
-        chain_oi = load_chain_oi(base_dir, asof)
+        chain_oi = load_chain_oi(base_dir, asof, point_in_time=True)
     except Exception:
         chain_oi = None
 
@@ -4044,6 +4054,7 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         chain_oi=chain_oi,
         regime=regime,
         max_rows=args.bot_max_rows if args.bot_max_rows > 0 else None,
+        point_in_time=True,
     )
     top_flow = liquidity_shift.get("top_flow_universe") if isinstance(liquidity_shift.get("top_flow_universe"), pd.DataFrame) else pd.DataFrame()
     flow_velocity = liquidity_shift.get("flow_velocity") if isinstance(liquidity_shift.get("flow_velocity"), pd.DataFrame) else pd.DataFrame()
@@ -4067,10 +4078,27 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         bot_tickers,
         max_rows=args.bot_max_rows if args.bot_max_rows > 0 else None,
         allow_missing=True,
+        point_in_time=True,
     )
     bot_flow_source_status = str(bot_flow.attrs.get("source_status") or "unknown")
+    dark_pool_flow = aggregate_dark_pool_flow(
+        base_dir,
+        bot_tickers,
+        max_rows=args.bot_max_rows if args.bot_max_rows > 0 else None,
+        allow_missing=True,
+        point_in_time=True,
+    )
+    dark_pool_source_status = str(dark_pool_flow.attrs.get("source_status") or "unknown")
 
-    candidates = generate_candidates(pool, hot_chains, bot_flow, asof=asof, max_candidates=args.max_candidates)
+    candidates = generate_candidates(
+        pool,
+        hot_chains,
+        bot_flow,
+        asof=asof,
+        max_candidates=args.max_candidates,
+        dark_pool_flow=dark_pool_flow,
+        dark_pool_weight=args.dark_pool_weight,
+    )
     if not index_pool.empty:
         index_candidates = generate_candidates(
             index_pool,
@@ -4079,6 +4107,8 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
             asof=asof,
             max_candidates=12,
             index_fallback=True,
+            dark_pool_flow=dark_pool_flow,
+            dark_pool_weight=args.dark_pool_weight,
         )
         if not index_candidates.empty:
             candidates = pd.concat([candidates, index_candidates], ignore_index=True) if not candidates.empty else index_candidates
@@ -4100,6 +4130,7 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         )
 
     candidates["bot_flow_source_status"] = bot_flow_source_status
+    candidates["dark_pool_source_status"] = dark_pool_source_status
     scored = live_validate_and_score(
         candidates,
         asof=asof,
@@ -4223,6 +4254,14 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         live_outcomes=live_outcomes,
         loss_review=loss_review,
         liquidity_summary=liquidity_shift.get("summary", {}),
+        uw_source_status={
+            "stock_screener": "loaded",
+            "hot_chains": "loaded",
+            "chain_oi_changes": "loaded" if chain_oi is not None and not chain_oi.empty else "missing_or_empty",
+            "bot_eod_report": bot_flow_source_status,
+            "dp_eod_report": dark_pool_source_status,
+            "dark_pool_weight": float(args.dark_pool_weight),
+        },
         run_mode=run_mode,
     )
 

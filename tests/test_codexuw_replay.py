@@ -5,7 +5,14 @@ import datetime as dt
 import pandas as pd
 
 from codexuw.engine import replay_quality_pattern
-from codexuw.replay import _guard_result, apply_replay_decision_selection, simulate_spread_exit, write_replay_asof_report
+from codexuw.replay import (
+    _guard_result,
+    apply_replay_decision_selection,
+    build_daily_opportunity_coverage,
+    dated_folders,
+    simulate_spread_exit,
+    write_replay_asof_report,
+)
 
 
 def _row() -> pd.Series:
@@ -45,6 +52,20 @@ def _debit_row() -> pd.Series:
 
 def _quote(bid: float, ask: float) -> dict[str, float | str]:
     return {"bid": bid, "ask": ask, "mid": (bid + ask) / 2.0, "volume": 1000.0, "open_interest": 1000.0}
+
+
+def test_dated_folders_prefers_one_canonical_directory_per_market_day(tmp_path) -> None:
+    canonical = tmp_path / "2026-05-19"
+    overlay = tmp_path / "2026-05-19-v3-overlay-2026-05-20-live"
+    other = tmp_path / "2026-05-20"
+    weekend = tmp_path / "2026-05-23"
+    juneteenth = tmp_path / "2026-06-19"
+    for path in (overlay, canonical, other, weekend, juneteenth):
+        path.mkdir()
+
+    folders = dated_folders(tmp_path, None, None)
+
+    assert folders == [canonical, other]
 
 
 def test_simulate_spread_exit_hits_profit_target() -> None:
@@ -362,6 +383,63 @@ def test_decision_selection_never_reads_future_debit_outcome() -> None:
 
     assert bool(selected["decision_pass"].iloc[0]) is True
     assert selected["decision_reason"].iloc[0] == "decision_selected_independent_debit_sleeve"
+
+
+def test_daily_opportunity_coverage_distinguishes_ranking_and_guard_misses() -> None:
+    detail = pd.DataFrame(
+        [
+            {
+                "asof": "2026-04-20",
+                "ticker": "SELECTED",
+                "strategy": "Bull Call Debit Spread",
+                "direction": "Bull Call",
+                "exact_evaluated": True,
+                "replay_guard_pass": True,
+                "decision_pass": True,
+                "pnl_1x": 50.0,
+            },
+            {
+                "asof": "2026-04-21",
+                "ticker": "RANKMISS",
+                "strategy": "Bear Call Credit Spread",
+                "direction": "Bear Call",
+                "exact_evaluated": True,
+                "replay_guard_pass": True,
+                "decision_pass": False,
+                "decision_reason": "lower_rank",
+                "pnl_1x": 75.0,
+            },
+            {
+                "asof": "2026-04-22",
+                "ticker": "GUARDMISS",
+                "strategy": "Bull Put Credit Spread",
+                "direction": "Bull Put",
+                "exact_evaluated": True,
+                "replay_guard_pass": False,
+                "replay_guard_reason": "guarded_out",
+                "decision_pass": False,
+                "pnl_1x": 80.0,
+            },
+            {
+                "asof": "2026-04-23",
+                "ticker": "LOSS",
+                "strategy": "Bull Call Debit Spread",
+                "direction": "Bull Call",
+                "exact_evaluated": True,
+                "replay_guard_pass": True,
+                "decision_pass": True,
+                "pnl_1x": -25.0,
+            },
+        ]
+    )
+
+    coverage = build_daily_opportunity_coverage(detail).set_index("asof")
+
+    assert coverage.loc["2026-04-20", "coverage_classification"] == "selected_profitable"
+    assert coverage.loc["2026-04-21", "coverage_classification"] == "ranking_miss"
+    assert coverage.loc["2026-04-22", "coverage_classification"] == "guard_miss"
+    assert coverage.loc["2026-04-23", "coverage_classification"] == "no_profitable_exact_candidate"
+    assert coverage.loc["2026-04-22", "best_profitable_ticker"] == "GUARDMISS"
 
 
 def test_replay_guard_never_uses_future_debit_pnl() -> None:

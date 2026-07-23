@@ -352,16 +352,34 @@ def generate_candidates(
     asof: dt.date,
     max_candidates: int,
     index_fallback: bool = False,
+    dark_pool_flow: pd.DataFrame | None = None,
+    dark_pool_weight: float = 0.0,
 ) -> pd.DataFrame:
     bot = bot_flow.set_index("ticker", drop=False) if not bot_flow.empty else pd.DataFrame()
+    dp_frame = dark_pool_flow if dark_pool_flow is not None else pd.DataFrame()
+    dark_pool = dp_frame.set_index("ticker", drop=False) if not dp_frame.empty else pd.DataFrame()
+    dp_weight = min(0.25, max(0.0, safe_float(dark_pool_weight, 0.0)))
     rows: list[dict[str, Any]] = []
     for _, row in sc_pool.iterrows():
         ticker = str(row.get("ticker", "")).upper()
         if not ticker:
             continue
-        combined_bias = safe_float(row.get("flow_bias"), 0.0)
+        option_flow_bias = safe_float(row.get("flow_bias"), 0.0)
         if not bot.empty and ticker in bot.index:
-            combined_bias = combined_bias * 0.65 + safe_float(bot.loc[ticker].get("bot_flow_bias"), 0.0) * 0.35
+            option_flow_bias = option_flow_bias * 0.65 + safe_float(bot.loc[ticker].get("bot_flow_bias"), 0.0) * 0.35
+        dp_metrics = dark_pool.loc[ticker].to_dict() if not dark_pool.empty and ticker in dark_pool.index else {}
+        dp_bias = safe_float(dp_metrics.get("dp_flow_bias"))
+        dp_directional_ratio = safe_float(dp_metrics.get("dp_directional_ratio"))
+        usable_dp_weight = (
+            dp_weight
+            if math.isfinite(dp_bias)
+            and math.isfinite(dp_directional_ratio)
+            and dp_directional_ratio >= 0.25
+            else 0.0
+        )
+        combined_bias = option_flow_bias * (1.0 - usable_dp_weight)
+        if usable_dp_weight > 0:
+            combined_bias += dp_bias * usable_dp_weight
         ticker_hot = hot[(hot["ticker"] == ticker) & (hot["dte"].between(7, 45, inclusive="both"))].copy()
         if ticker_hot.empty:
             continue
@@ -492,6 +510,12 @@ def generate_candidates(
                     "breakeven_distance_pct": breakeven_distance_pct,
                     "flow_bias": safe_float(row.get("flow_bias"), 0.0),
                     "bot_flow_bias": safe_float(bot_metrics.get("bot_flow_bias"), math.nan),
+                    "option_flow_bias": option_flow_bias,
+                    "dp_flow_bias": dp_bias,
+                    "dp_directional_ratio": dp_directional_ratio,
+                    "dp_total_premium": safe_float(dp_metrics.get("dp_total_premium"), math.nan),
+                    "dp_prints": safe_float(dp_metrics.get("dp_prints"), math.nan),
+                    "dark_pool_weight_applied": usable_dp_weight,
                     "combined_flow_bias": combined_bias,
                     "flow_total_premium": safe_float(row.get("flow_total_premium"), 0.0),
                     "iv_rank": safe_float(row.get("iv_rank")),
