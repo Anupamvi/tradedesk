@@ -4,6 +4,7 @@ import datetime as dt
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from codexuw import goal_shadow
 
@@ -120,7 +121,7 @@ def test_resolve_goal_shadow_ledger_updates_future_outcome(tmp_path: Path, monke
     monkeypatch.setattr(goal_shadow, "load_hot_history", lambda *args, **kwargs: {})
     monkeypatch.setattr(
         goal_shadow,
-        "simulate_spread_exit",
+        "_simulate_locked_spread_exit",
         lambda *args, **kwargs: {
             "exact_evaluated": True,
             "exit_day": dt.date(2026, 7, 24),
@@ -140,3 +141,39 @@ def test_resolve_goal_shadow_ledger_updates_future_outcome(tmp_path: Path, monke
     assert resolved.iloc[0]["outcome_status"] == "RESOLVED_WIN"
     assert resolved.iloc[0]["exit_reason"] == "profit_target"
     assert resolved.iloc[0]["pnl_1x"] == 60.0
+
+
+def test_locked_entry_resolves_without_entry_day_hot_chain_quote() -> None:
+    row = pd.Series(
+        {
+            **_candidate("AAA", dp_bias=0.60),
+            "asof": dt.date(2026, 7, 22),
+            "expiry": dt.date(2026, 8, 21),
+            "entry_price": 1.0,
+            "entry_width": 5.0,
+            "target_exit_value": 0.40,
+            "stop_exit_value": 2.0,
+        }
+    )
+    quote_history = {
+        dt.date(2026, 7, 23): {
+            "AAA260821P00090000": {"mid": 0.50},
+            "AAA260821P00085000": {"mid": 0.20},
+        }
+    }
+
+    result = goal_shadow._simulate_locked_spread_exit(
+        row,
+        close_history={},
+        quote_history=quote_history,
+        through_date=dt.date(2026, 7, 23),
+        slippage_pct=0.10,
+        profit_take_pct=0.60,
+        stop_loss_mult=2.0,
+    )
+
+    assert result["exact_evaluated"] is True
+    assert result["exit_reason"] == "profit_target"
+    assert result["pnl_1x"] == pytest.approx(67.0)
+
+

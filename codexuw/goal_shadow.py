@@ -12,11 +12,14 @@ import pandas as pd
 from .data import safe_float
 from .replay import (
     _decision_sort_score,
+    _expiry_spread_value,
     _quote_lookup,
+    _spread_mid_debit,
+    _spread_mid_value,
     dated_folders,
+    future_close,
     load_close_history,
     load_hot_history,
-    simulate_spread_exit,
 )
 
 
@@ -353,10 +356,96 @@ def write_goal_shadow_outputs(
         "selected_rows": int(len(shadow)),
         "pending_ledger_rows": int(ledger["outcome_status"].astype(str).eq("PENDING").sum()) if not ledger.empty else 0,
         "resolved_ledger_rows": int(ledger["outcome_status"].astype(str).isin(RESOLVED_OUTCOME_STATES).sum()) if not ledger.empty else 0,
+        "pending_count": int(ledger["outcome_status"].astype(str).eq("PENDING").sum()) if not ledger.empty else 0,
+        "resolved_count": int(ledger["outcome_status"].astype(str).isin(RESOLVED_OUTCOME_STATES).sum()) if not ledger.empty else 0,
         "run_artifact": str(run_path),
         "central_ledger": str(ledger_path),
     }
     return shadow, {"goal_shadow": str(run_path), "goal_shadow_ledger": str(ledger_path)}, summary
+
+
+def _simulate_locked_spread_exit(
+    row: pd.Series,
+    close_history: dict[dt.date, pd.DataFrame],
+    quote_history: dict[dt.date, dict[str, dict[str, float | str]]],
+    *,
+    through_date: dt.date,
+    slippage_pct: float,
+    profit_take_pct: float,
+    stop_loss_mult: float,
+) -> dict[str, Any]:
+    asof = row.get("asof")
+    expiry = row.get("expiry")
+    if not isinstance(asof, dt.date) or not isinstance(expiry, dt.date):
+        return {"exact_evaluated": False, "exact_reason": "missing_asof_or_expiry"}
+    entry_price = safe_float(row.get("entry_price"))
+    width = safe_float(row.get("entry_width"))
+    if not math.isfinite(entry_price) or entry_price <= 0 or not math.isfinite(width) or width <= 0:
+        return {"exact_evaluated": False, "exact_reason": "invalid_locked_entry_economics"}
+
+    kind = _strategy_kind(row)
+    if kind == "Credit":
+        target_value = safe_float(row.get("target_exit_value"), entry_price * (1.0 - profit_take_pct))
+        stop_value = safe_float(row.get("stop_exit_value"), entry_price * stop_loss_mult)
+        risk = max(width - entry_price, 0.01)
+    else:
+        target_value = safe_float(row.get("target_exit_value"), min(width, entry_price * (1.0 + profit_take_pct)))
+        stop_value = safe_float(row.get("stop_exit_value"), entry_price / max(stop_loss_mult, 1.0))
+        risk = max(entry_price, 0.01)
+
+    quote_days_seen = 0
+    for day in sorted(day for day in quote_history if asof < day <= min(expiry, through_date)):
+        if kind == "Credit":
+            mark = _spread_mid_debit(row, quote_history[day])
+            exit_value = min(width, mark * (1.0 + slippage_pct)) if math.isfinite(mark) else math.nan
+            target_hit = math.isfinite(exit_value) and exit_value <= target_value
+            stop_hit = math.isfinite(exit_value) and exit_value >= stop_value
+        else:
+            mark = _spread_mid_value(row, quote_history[day])
+            exit_value = max(0.0, mark * (1.0 - slippage_pct)) if math.isfinite(mark) else math.nan
+            target_hit = math.isfinite(exit_value) and exit_value >= target_value
+            stop_hit = math.isfinite(exit_value) and exit_value <= stop_value
+        if not math.isfinite(exit_value):
+            continue
+        quote_days_seen += 1
+        if not target_hit and not stop_hit:
+            continue
+        pnl_per_share = entry_price - exit_value if kind == "Credit" else exit_value - entry_price
+        return {
+            "exact_evaluated": True,
+            "exit_day": day,
+            "exit_reason": "profit_target" if target_hit else "stop_loss",
+            "exit_value": exit_value,
+            "target_exit_value": target_value,
+            "stop_exit_value": stop_value,
+            "pnl_1x": pnl_per_share * 100.0,
+            "return_on_risk": pnl_per_share / risk,
+            "exact_win": pnl_per_share > 0,
+            "quote_days_seen": quote_days_seen,
+        }
+
+    if through_date >= expiry:
+        eval_day, close = future_close(close_history, _clean(row.get("ticker")).upper(), expiry)
+        if eval_day is not None and eval_day <= through_date and math.isfinite(close):
+            exit_value = _expiry_spread_value(row, close)
+            pnl_per_share = entry_price - exit_value if kind == "Credit" else exit_value - entry_price
+            return {
+                "exact_evaluated": True,
+                "exit_day": eval_day,
+                "exit_reason": "expiry_settlement",
+                "exit_value": exit_value,
+                "target_exit_value": target_value,
+                "stop_exit_value": stop_value,
+                "pnl_1x": pnl_per_share * 100.0,
+                "return_on_risk": pnl_per_share / risk,
+                "exact_win": pnl_per_share > 0,
+                "quote_days_seen": quote_days_seen,
+            }
+    return {
+        "exact_evaluated": False,
+        "exact_reason": "awaiting_future_quote_or_expiry_close",
+        "quote_days_seen": quote_days_seen,
+    }
 
 
 def resolve_goal_shadow_ledger(
@@ -395,10 +484,11 @@ def resolve_goal_shadow_ledger(
             continue
         row["asof"] = row["asof"].date()
         row["expiry"] = row["expiry"].date()
-        result = simulate_spread_exit(
+        result = _simulate_locked_spread_exit(
             row,
             close_history,
             quote_history,
+            through_date=through_date,
             slippage_pct=slippage_pct,
             profit_take_pct=profit_take_pct,
             stop_loss_mult=stop_loss_mult,
@@ -415,7 +505,7 @@ def resolve_goal_shadow_ledger(
         ledger.at[index, "pnl_1x"] = pnl
         ledger.at[index, "return_on_risk"] = safe_float(result.get("return_on_risk"))
         ledger.at[index, "exact_win"] = pnl > 0
-        ledger.at[index, "outcome_note"] = "resolved from point-in-time UW hot-chain history"
+        ledger.at[index, "outcome_note"] = "resolved from point-in-time UW hot-chain/stock-close history"
     ledger = ledger.reindex(columns=SHADOW_COLUMNS)
     ledger.to_csv(ledger_path, index=False)
     return ledger
