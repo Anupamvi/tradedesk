@@ -305,23 +305,40 @@ def _ledger_key(frame: pd.DataFrame) -> pd.Series:
 
 
 def update_goal_shadow_ledger(ledger_path: Path, new_rows: pd.DataFrame) -> pd.DataFrame:
-    existing = pd.read_csv(ledger_path, low_memory=False) if ledger_path.exists() else pd.DataFrame(columns=SHADOW_COLUMNS)
-    if new_rows is None or new_rows.empty:
-        combined = existing.reindex(columns=SHADOW_COLUMNS)
-    elif existing.empty:
-        combined = new_rows.reindex(columns=SHADOW_COLUMNS).copy()
+    existing = (
+        pd.read_csv(ledger_path, low_memory=False).reindex(columns=SHADOW_COLUMNS)
+        if ledger_path.exists()
+        else pd.DataFrame(columns=SHADOW_COLUMNS)
+    )
+    incoming = (
+        new_rows.reindex(columns=SHADOW_COLUMNS).copy()
+        if new_rows is not None and not new_rows.empty
+        else pd.DataFrame(columns=SHADOW_COLUMNS)
+    )
+    if not existing.empty:
+        existing["_key"] = _ledger_key(existing)
+        existing["_resolved"] = existing["outcome_status"].astype(str).isin(RESOLVED_OUTCOME_STATES).astype(int)
+        existing = (
+            existing.sort_values(
+                ["_key", "_resolved", "generated_at_utc"],
+                ascending=[True, False, True],
+            )
+            .drop_duplicates("_key", keep="first")
+            .drop(columns=["_resolved"])
+        )
+    if not incoming.empty:
+        incoming["_key"] = _ledger_key(incoming)
+        incoming = incoming.drop_duplicates("_key", keep="first")
+        if not existing.empty:
+            incoming = incoming.loc[~incoming["_key"].isin(set(existing["_key"]))]
+    if existing.empty:
+        combined = incoming.copy()
+    elif incoming.empty:
+        combined = existing.copy()
     else:
-        combined = pd.concat(
-            [existing.reindex(columns=SHADOW_COLUMNS), new_rows.reindex(columns=SHADOW_COLUMNS)],
-            ignore_index=True,
-        )
-        combined["_key"] = _ledger_key(combined)
-        combined["_resolved"] = combined["outcome_status"].astype(str).isin(RESOLVED_OUTCOME_STATES).astype(int)
-        combined = (
-            combined.sort_values(["_key", "_resolved", "generated_at_utc"])
-            .drop_duplicates("_key", keep="last")
-            .drop(columns=["_key", "_resolved"])
-        )
+        combined = pd.concat([existing, incoming], ignore_index=True)
+    combined = combined.drop(columns=["_key"], errors="ignore")
+    combined = combined.reindex(columns=SHADOW_COLUMNS)
     combined = combined.reset_index(drop=True)
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     combined.to_csv(ledger_path, index=False)

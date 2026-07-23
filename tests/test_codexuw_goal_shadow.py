@@ -98,13 +98,18 @@ def test_goal_shadow_ledger_is_idempotent_and_preserves_resolved_outcome(tmp_pat
 
     first = goal_shadow.update_goal_shadow_ledger(ledger_path, shadow)
     second = goal_shadow.update_goal_shadow_ledger(ledger_path, shadow)
+    rerun = shadow.copy()
+    rerun.loc[0, "generated_at_utc"] = "2026-07-23T23:59:59+00:00"
+    rerun.loc[0, "entry_price"] = 2.0
+    locked = goal_shadow.update_goal_shadow_ledger(ledger_path, rerun)
     resolved = second.copy()
     resolved.loc[0, "outcome_status"] = "RESOLVED_WIN"
     resolved.loc[0, "pnl_1x"] = 50.0
     resolved.to_csv(ledger_path, index=False)
     final = goal_shadow.update_goal_shadow_ledger(ledger_path, shadow)
 
-    assert len(first) == len(second) == len(final) == 1
+    assert len(first) == len(second) == len(locked) == len(final) == 1
+    assert locked.iloc[0]["entry_price"] == first.iloc[0]["entry_price"]
     assert final.iloc[0]["outcome_status"] == "RESOLVED_WIN"
     assert final.iloc[0]["pnl_1x"] == 50.0
 
