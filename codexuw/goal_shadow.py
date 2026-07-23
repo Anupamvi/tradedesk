@@ -331,6 +331,8 @@ def write_goal_shadow_outputs(
     out_dir: Path,
     asof: dt.date,
     source_scored_file: str = "",
+    root: Path | None = None,
+    resolve_through_date: dt.date | None = None,
 ) -> tuple[pd.DataFrame, dict[str, str], dict[str, Any]]:
     out_dir.mkdir(parents=True, exist_ok=True)
     shadow = build_goal_shadow_candidates(scored, asof=asof, source_scored_file=source_scored_file)
@@ -338,6 +340,12 @@ def write_goal_shadow_outputs(
     ledger_path = out_dir.parent / GOAL_SHADOW_LEDGER_NAME
     shadow.to_csv(run_path, index=False)
     ledger = update_goal_shadow_ledger(ledger_path, shadow)
+    if root is not None and resolve_through_date is not None:
+        ledger = resolve_goal_shadow_ledger(
+            root=root,
+            ledger_path=ledger_path,
+            through_date=resolve_through_date,
+        )
     summary = {
         "policy_id": GOAL_SHADOW_POLICY_ID,
         "shadow_only": True,
@@ -365,7 +373,12 @@ def resolve_goal_shadow_ledger(
         return ledger
     for column in ["outcome_status", "outcome_last_checked", "exit_day", "exit_reason", "exact_win", "outcome_note"]:
         ledger[column] = ledger[column].astype(object)
-    folders = dated_folders(root, None, through_date)
+    pending_asof = pd.to_datetime(
+        ledger.loc[~ledger["outcome_status"].astype(str).isin(RESOLVED_OUTCOME_STATES), "asof"],
+        errors="coerce",
+    ).dropna()
+    history_start = pending_asof.min().date() if not pending_asof.empty else through_date
+    folders = dated_folders(root, history_start, through_date)
     close_history = load_close_history(folders)
     hot_history = load_hot_history(folders)
     quote_history = {day: _quote_lookup(hot) for day, hot in hot_history.items()}
@@ -419,6 +432,7 @@ def main(argv: list[str] | None = None) -> None:
     emit.add_argument("--scored", required=True)
     emit.add_argument("--out-dir", required=True)
     emit.add_argument("--as-of", required=True)
+    emit.add_argument("--root", default="/Users/anuppamvi/uw_root/tradedesk")
     resolve = sub.add_parser("resolve")
     resolve.add_argument("--root", default="/Users/anuppamvi/uw_root/tradedesk")
     resolve.add_argument("--ledger", required=True)
@@ -431,6 +445,8 @@ def main(argv: list[str] | None = None) -> None:
             out_dir=Path(args.out_dir),
             asof=_parse_date(args.as_of),
             source_scored_file=str(scored_path),
+            root=Path(args.root),
+            resolve_through_date=_parse_date(args.as_of),
         )
         print(json.dumps({"summary": summary, "selected": shadow.to_dict(orient="records"), "artifacts": paths}, indent=2, default=str))
         return

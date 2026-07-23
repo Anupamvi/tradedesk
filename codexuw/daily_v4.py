@@ -3576,6 +3576,8 @@ def write_v4_outputs(
         out_dir=out_dir,
         asof=asof,
         source_scored_file=str(_artifact_path(out_dir, "scored_reference", asof)),
+        root=base_dir.parent,
+        resolve_through_date=asof,
     )
     board = build_v4_opportunity_board(scored, top_flow=top_flow)
     tickets = build_v4_swing_target_tickets(scored=scored, board=board, regime=regime, top_flow=top_flow)
