@@ -96,6 +96,53 @@ MIN_REALIZED_VOL = 0.15
 # case -- an event landing after the position is opened but before it expires --
 # is already a hard reject via `earnings_crosses_expiry`.
 
+# ---------------------------------------------------------------------------
+# The 11-27 DTE dead zone.
+#
+# `MIN_DTE`/`MAX_DTE` above band the primary lane at 28-45. The high-conviction
+# decision lanes in engine.py deliberately do NOT call `assess_credit_spread`,
+# so they were unbanded on the short end and were writing trades straight into
+# the worst duration bucket in the book. Duration splits the credit population
+# into three clearly separated regions, and the split replicates on three
+# independent slices:
+#
+#   slice                          0-10 DTE      11-27 DTE       28-45 DTE
+#   full credit book (n=2,483)     PF 1.34       PF 0.71-0.80    PF 1.24
+#                                                (-$19,327)
+#   secondary sleeve (n=127)       PF 2.90       PF 0.72         PF 2.08
+#                                  (+$1,572)     (-$1,728)       (+$1,591)
+#   primary, map-blocked (n=141)   PF 2.42       PF 0.63         PF 1.54
+#                                  (+$1,178)     (-$2,487)       (+$1,581)
+#
+# The two ends are profitable for different and non-competing reasons: 0-10 DTE
+# is fast theta on a position that is closed or expires before a trend can
+# develop, and 28-45 DTE is the validated premium-selling core. The middle band
+# gets the worst of both -- enough time for the underlying to travel through the
+# short strike, not enough theta per day to be paid for the exposure.
+#
+# Excluding 11-27 from the sleeve, resampling whole sessions:
+#
+#   sleeve as-is             n=127  win 79.5%  PF 1.17
+#   sleeve minus dead zone   n= 64  win 87.5%  PF 2.38
+#   delta +38.1 per trade, 90% CI [+10.2, +68.8], p(no gain) 0.012
+#
+# This is the only change tested this cycle that clears p < 0.05, and it is a
+# pure tightening -- it removes trades, never adds them. Note it is a BAND, not
+# a floor: raising the floor to `MIN_DTE` would also delete the 0-10 bucket,
+# which is the single best-performing region of the book.
+DEAD_ZONE_DTE_MIN = 11
+DEAD_ZONE_DTE_MAX = 27
+
+
+def in_dte_dead_zone(dte: Any) -> bool:
+    """True when `dte` falls in the validated 11-27 day loss band."""
+
+    value = safe_float(dte)
+    if not math.isfinite(value):
+        return False
+    return DEAD_ZONE_DTE_MIN <= value <= DEAD_ZONE_DTE_MAX
+
+
 # Credit verticals earn in the regime OPPOSITE to the one they lean on. Selling
 # premium *into* a trend leaves you short the tail that is actively moving
 # against you; selling it *after* the move collects elevated IV on mean

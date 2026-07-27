@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from .credit_policy import MIN_IV_HV_RATIO, MIN_REALIZED_VOL
+from .credit_policy import MIN_IV_HV_RATIO, MIN_REALIZED_VOL, in_dte_dead_zone
 from .data import safe_float
 from .occ import build_occ_symbol
 from .schwab_live import price_width_bucket
@@ -264,6 +264,13 @@ def _secondary_income_evidence_blocker(row: pd.Series) -> tuple[str, str] | None
         return f"iv_hv_ratio_below_{MIN_IV_HV_RATIO:.2f}", "Research"
     if not math.isfinite(realized_vol) or realized_vol < MIN_REALIZED_VOL:
         return f"realized_vol_below_{MIN_REALIZED_VOL:.2f}", "Research"
+
+    # Seeds are built at 35-70 DTE so this should never bind, but the 11-27 day
+    # band loses money on every slice measured and this is the third and last
+    # place that can set decision_eligible. Keep the rule uniform across all of
+    # them so no path can emit a dead-zone credit trade.
+    if in_dte_dead_zone(row.get("dte")):
+        return "dte_dead_zone_11_27", "Research"
     return None
 
 

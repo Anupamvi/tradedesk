@@ -774,28 +774,6 @@ def _decision_sort_score(row: pd.Series) -> float:
     return score
 
 
-def _secondary_income_eligible(
-    *,
-    credit_pct: float,
-    ratio: float,
-    align: float,
-    score: float,
-    dte: float,
-) -> bool:
-    return (
-        math.isfinite(credit_pct)
-        and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
-        and math.isfinite(ratio)
-        and ratio >= 0.20
-        and math.isfinite(align)
-        and align >= 0.12
-        and math.isfinite(score)
-        and score >= 1.60
-        and math.isfinite(dte)
-        and dte <= 35
-    )
-
-
 def _entry_fillable(row: pd.Series | dict[str, Any]) -> bool:
     value = row.get("exact_fillable")
     if value is not None and not pd.isna(value):

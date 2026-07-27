@@ -21,6 +21,7 @@ from .credit_policy import (
     MIN_IV_RANK,
     MIN_REALIZED_VOL,
     MIN_WATCH_CREDIT_PCT_WIDTH,
+    in_dte_dead_zone,
 )
 from .data import safe_float
 from .edge_model import EDGE_COLUMNS, apply_replay_edge_model
@@ -127,10 +128,23 @@ def replay_quality_pattern(
 ) -> tuple[bool, str]:
     """Return whether a spread matches the replay-validated high-quality slice.
 
-    The thresholds here MUST mirror the live credit policy constants. If they
-    drift apart, the replay evidence base describes a population of trades the
-    live pipeline can never take, and every downstream calibration becomes
-    unrepresentative.
+    The credit band and DTE band here MUST mirror the live credit policy
+    constants. If they drift apart, the replay evidence base describes a
+    population of trades the live pipeline can never take, and every downstream
+    calibration becomes unrepresentative.
+
+    `iv_rank` is the one deliberate exception and is NOT mirrored live. The live
+    richness gate is IV/HV (`MIN_IV_HV_RATIO`); `MIN_IV_RANK` is only a lane
+    label in `credit_spread_edge_lane`. It is retained here, asymmetrically, on
+    purpose: measured on the map-allowed replay pool it does not pay for itself
+    (n=600 PF 1.20 -> n=381 PF 1.21, delta +1.3, 90% CI [-27.3, +30.6],
+    p(no gain) 0.469) and the sweep is non-monotone (>=20 PF 1.33, >=30 PF 1.21,
+    >=40 PF 1.20, >=50 PF 1.36). Inside the shipped credit band it looks strong
+    (n=69 PF 1.49 -> n=44 PF 2.15) but that is 44 trades on 28 sessions, which is
+    the same small-conditioned-slice shape that made the IV/HV 1.30 proposal look
+    good before it failed its own significance test. Dropping it would LOOSEN the
+    evidence gate on a p=0.469 result, and promoting it to a live gate would ship
+    an unvalidated threshold, so it stays where it is until something separates.
 
     `distance_pct` and `expected_move` are retained for reporting only. The
     distance buffer is deliberately no longer a gate: it is collinear with the
@@ -1204,6 +1218,13 @@ def _secondary_income_eligible(
         return False
     if not math.isfinite(realized_vol) or realized_vol < MIN_REALIZED_VOL:
         return False
+    # The sleeve is capped at 35 DTE but had no lower band, so it was writing into
+    # the 11-27 day region where duration is long enough for the underlying to reach
+    # the short strike but too short to be paid for the exposure. Excluding that band
+    # takes the sleeve from n=127 / PF 1.17 to n=64 / PF 2.38 (delta +38.1 per trade,
+    # 90% CI [+10.2, +68.8], p 0.012). See credit_policy.in_dte_dead_zone.
+    if in_dte_dead_zone(dte):
+        return False
     return (
         math.isfinite(credit_pct)
         and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
@@ -1283,6 +1304,11 @@ def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date 
             out.at[idx, "decision_reason"] = f"decision_earnings_within_10d:{int(earnings_days)}"
         elif not math.isfinite(credit_pct) or credit_pct < MIN_CREDIT_PCT_WIDTH:
             out.at[idx, "decision_reason"] = "decision_credit_below_25pct_width"
+        elif _is_credit_strategy(row) and in_dte_dead_zone(dte):
+            # Applies to BOTH lanes below. The 11-27 day band loses on every slice
+            # measured (sleeve PF 0.72, primary map-blocked PF 0.63, whole credit
+            # book PF 0.71-0.80). See credit_policy.in_dte_dead_zone.
+            out.at[idx, "decision_reason"] = f"decision_dte_dead_zone_11_27:{int(dte)}"
         elif _secondary_income_eligible(
             credit_pct=credit_pct,
             ratio=ratio,
@@ -2071,6 +2097,7 @@ def select_final_trades(
     risk_budget: float,
     recent_performance: dict[str, Any] | None = None,
     max_final_trades: int = 8,
+    max_positions_per_ticker: int = 1,
     risk_config: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
     if scored.empty:
@@ -2148,6 +2175,7 @@ def select_final_trades(
     selected = []
     total_risk = 0.0
     ticker_risk = Counter()
+    ticker_positions = Counter()
     sector_risk = Counter()
     ai_risk = 0.0
     perf_mult = performance_risk_multiplier(recent_performance)
@@ -2228,6 +2256,13 @@ def select_final_trades(
             contracts = min(contracts, 1)
         ticker = str(row.get("ticker"))
         sector = str(row.get("sector") or "Unknown")
+        # One position per underlying. The risk caps below are dollar-based, so a
+        # cheap name could otherwise fill several slots with what is economically
+        # the same bet at adjacent strikes and expiries: the 2026-07-24 run marked
+        # eight eligible rows that were only three underlyings (TQQQ x4, TSM x3,
+        # TXN x1). Rows are already sorted by rank, so this keeps the best one.
+        if ticker_positions[ticker] >= max_positions_per_ticker:
+            continue
         remaining_contract_risk = min(
             max_daily_risk - total_risk,
             max_ticker_risk - ticker_risk[ticker],
@@ -2359,6 +2394,7 @@ def select_final_trades(
         selected.append(out)
         total_risk += risk
         ticker_risk[ticker] += risk
+        ticker_positions[ticker] += 1
         sector_risk[sector] += risk
         if ticker in AI_TECH:
             ai_risk += risk

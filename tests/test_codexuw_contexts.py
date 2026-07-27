@@ -511,7 +511,7 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "",
                 "credit_pct_width": 0.25,
@@ -534,7 +534,7 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "",
                 "credit_pct_width": 0.25,
@@ -557,7 +557,7 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "wide_bid_ask",
                 "credit_pct_width": 0.25,
@@ -703,7 +703,7 @@ def test_live_selection_can_return_multiple_high_conviction_trades() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-22",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "",
                 "credit_pct_width": 0.25,
@@ -756,7 +756,7 @@ def test_medium_confidence_selection_stays_one_lot_even_when_budget_allows_more(
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-22",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "",
                 "credit_pct_width": 0.25,
@@ -839,3 +839,59 @@ def test_entry_watchlist_surfaces_low_credit_without_promoting_trade() -> None:
     assert watch["watch_kind"].iloc[0] == "price_improvement_credit"
     assert watch["required_credit"].iloc[0] == 1.25
     assert "at least $1.25" in watch["trigger"].iloc[0]
+
+
+def test_final_selection_keeps_one_position_per_underlying() -> None:
+    import pandas as pd
+
+    rows = []
+    for ticker, dte, credit_pct in [
+        ("TQQQ", 30, 0.29),
+        ("TQQQ", 7, 0.28),
+        ("TQQQ", 34, 0.27),
+        ("TSM", 30, 0.26),
+    ]:
+        rows.append(
+            {
+                "ticker": ticker,
+                "sector": "Technology",
+                "direction": "Bear Call",
+                "strategy": "Bear Call Credit Spread",
+                "expiry": "2026-05-22",
+                "dte": dte,
+                "hard_rejects": "",
+                "penalties": "",
+                "credit_pct_width": credit_pct,
+                "credit": credit_pct * 5.0,
+                "spread_width": 5.0,
+                "max_loss": 500.0 - credit_pct * 500.0,
+                "max_profit": credit_pct * 500.0,
+                "breakeven": 101.1,
+                "distance_pct": 0.08,
+                "iv30d": 0.42,
+                "realized_volatility_30d": 0.30,
+                "iv_hv_ratio": 1.40,
+                "combined_flow_bias": -0.20,
+                "score": 7.2,
+                "confidence": "High",
+                "short_oi": 1000,
+                "short_volume": 500,
+                "long_oi": 1000,
+                "long_volume": 500,
+                "short_leg": f"{ticker}260522C00100000",
+                "long_leg": f"{ticker}260522C00105000",
+            }
+        )
+    marked = apply_high_conviction_decision_marks(pd.DataFrame(rows))
+    assert int(marked["decision_eligible"].sum()) == 4
+
+    final = select_final_trades(
+        marked,
+        regime={"sizing_stance": "normal"},
+        risk_budget=15000,
+        recent_performance={"status": "unavailable"},
+        max_final_trades=8,
+    )
+
+    assert final["ticker"].tolist() == ["TQQQ", "TSM"]
+    assert final["ticker"].duplicated().sum() == 0

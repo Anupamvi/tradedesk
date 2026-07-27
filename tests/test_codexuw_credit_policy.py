@@ -225,3 +225,58 @@ def test_credit_book_allows_two_validated_independent_buckets_without_stacking_i
     assert by_ticker.at["QQQ", "v4_credit_risk_bucket"] == "broad-index"
     assert "broad-index" in by_ticker.at["SPY", "v4_direct_disposition_reason"]
     assert "sector:technology" in by_ticker.at["AMD", "v4_direct_disposition_reason"]
+
+
+def test_dte_dead_zone_band_is_11_to_27_inclusive() -> None:
+    from codexuw.credit_policy import in_dte_dead_zone
+
+    assert not in_dte_dead_zone(10)
+    assert in_dte_dead_zone(11)
+    assert in_dte_dead_zone(21)
+    assert in_dte_dead_zone(27)
+    assert not in_dte_dead_zone(28)
+    # A floor would delete 0-10 DTE, the best-performing bucket in the book.
+    assert not in_dte_dead_zone(0)
+    assert not in_dte_dead_zone(7)
+    assert not in_dte_dead_zone(float("nan"))
+    assert not in_dte_dead_zone(None)
+
+
+def test_decision_lanes_reject_credit_trades_inside_the_dte_dead_zone() -> None:
+    from codexuw.engine import apply_high_conviction_decision_marks
+
+    def _row(dte: int) -> dict:
+        return {
+            "ticker": f"T{dte}",
+            "direction": "Bear Call",
+            "strategy": "Bear Call Credit Spread",
+            "expiry": "2026-05-22",
+            "dte": dte,
+            "hard_rejects": "",
+            "penalties": "",
+            "credit_pct_width": 0.25,
+            "credit": 1.25,
+            "spread_width": 5.0,
+            "max_loss": 375.0,
+            "max_profit": 125.0,
+            "breakeven": 101.25,
+            "distance_pct": 0.08,
+            "iv30d": 0.42,
+            "realized_volatility_30d": 0.30,
+            "iv_hv_ratio": 1.40,
+            "combined_flow_bias": -0.20,
+            "score": 7.2,
+            "confidence": "High",
+            "short_leg": "TTT260522C00100000",
+            "long_leg": "TTT260522C00105000",
+        }
+
+    marked = apply_high_conviction_decision_marks(pd.DataFrame([_row(d) for d in (7, 14, 21, 27, 30)]))
+    by_dte = marked.set_index("dte")
+
+    for dead in (14, 21, 27):
+        assert not bool(by_dte.at[dead, "decision_eligible"])
+        assert by_dte.at[dead, "decision_reason"] == f"decision_dte_dead_zone_11_27:{dead}"
+
+    for live in (7, 30):
+        assert by_dte.at[live, "decision_reason"] != f"decision_dte_dead_zone_11_27:{live}"
