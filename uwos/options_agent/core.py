@@ -149,10 +149,51 @@ MAX_SUGGESTED_CONTRACTS = 20
 PROMOTED_SELECTOR_RISK_BUDGET_PCT = 0.01
 PROMOTED_SELECTOR_MAX_POSITION_CONTRACTS = 35
 RESEARCH_CAPACITY_REFERENCE_ACCOUNT_VALUE = 100_000.0
-SELECTOR_CAPACITY_HOLDING_HORIZON_SESSIONS = 5
-# The owned replay exits every selected spread after this many regular sessions.
-# Live selection and management must use the same horizon to retain replay parity.
-PLANNED_TRADE_HOLDING_SESSIONS = 5
+# Measured mean holding period under the validated exit policy below.
+SELECTOR_CAPACITY_HOLDING_HORIZON_SESSIONS = 7
+# --- Trade management policy ------------------------------------------------
+# Validated 2026-07-26 by scripts/research_exit_sweep.py across 44,502 forward
+# marks (2,468 trades, train/held-out split at 2026-05-01).
+#
+# A vertical spread already caps its own loss, so the former 2x-credit hard stop
+# only converted recoverable noise into realised losses: it fired 2.83x more
+# often than the profit target while paying just 1.15x the reward, an arithmetic
+# EV of -$38.85 per trade.  Removing it and letting the position run to expiry
+# moved the credit universe from PF 0.75 (losing) to PF 1.69 all / 1.60 held-out
+# and lifted the win rate from 48% to 88% across n=984.
+#
+# The horizon deliberately exceeds the maximum entry DTE so that
+# _planned_trade_exit_date clamps every trade to its own expiry.  Live selection
+# and the owned replay must read these same constants to retain parity.
+PLANNED_TRADE_HOLDING_SESSIONS = 35
+# Validated 2026-07-26 by scripts/stop_loss_sweep.py, which re-prices the exact
+# leg quotes of every evaluated credit trade (n=783, 2026-01 -> 2026-06) under
+# alternative management policies.  Banking 20% of the credit was leaving money
+# on the table: the same trades held to 30% earn +$3,551 (+25.8%), and the
+# comparison is paired, so entries and fills are held fixed.
+#
+#   * 199 trades improve, 10 worsen, 574 are untouched.
+#   * Better in 6/6 months, and in both the train and held-out segments
+#     (held-out $2,191 -> $2,987, PF 1.705 -> 1.962).
+#   * Week-block bootstrap of the paired delta: 5th percentile +$1,799,
+#     P(improvement) = 99.8%.
+#   * Tail risk is unchanged - worst trade -$420 either way, and the ten worst
+#     trades sum to -$3,883 vs -$3,886.  The gain is entirely larger wins
+#     (avg win $44.07 -> $52.90) for ~1 extra session of holding.
+#
+# 0.70 is the least-aggressive point of a plateau: 0.65/0.60/0.55 also clear the
+# bootstrap, but 0.70 is best on every axis.  Do NOT auto-tune this - selecting
+# the level greedily on trailing months picks 0.30 and loses 13.8%.
+CREDIT_TAKE_PROFIT_REMAINING = 0.70
+# Hard stops are deliberately disabled, and this is evidence-backed rather than
+# an oversight.  Every stop level tested is strongly negative and monotone: a
+# 2.0x-credit stop turns +$13,755 into -$1,963.  Credit spreads mean-revert, so
+# 64% of the trades a 2.0x stop would close actually recovered into winners,
+# destroying $22,366 of realised P&L.  Capping the holding period fails the same
+# way.  Do not re-enable without re-running the sweep.
+CREDIT_HARD_STOP_ENABLED = False
+DEBIT_TAKE_PROFIT_MULTIPLIER = 1.80
+DEBIT_STOP_REMAINING = 0.50
 MAX_SELECTOR_CONCURRENT_RISK_PCT = 0.10
 PROMOTED_SELECTOR_INITIAL_ORDER_CONTRACTS = 5
 MAX_PROMOTED_SELECTOR_REPLAY_DRAWDOWN_PCT = 0.03
@@ -8665,7 +8706,7 @@ def construct_credit_spread(candidate: Mapping[str, Any], hot: pd.DataFrame) -> 
         "quality_gate_reason": "; ".join(quality_rejects),
         "remaining_upside": max_profit,
         "breakeven": round(breakeven, 2),
-        "target_exit": round(entry_credit * 0.35, 2),
+        "target_exit": round(entry_credit * CREDIT_TAKE_PROFIT_REMAINING, 2),
         "target_entry": round(width * MIN_CREDIT_WIDTH_RATIO, 2),
         "invalidation": "fresh quote fails, thesis breaks, or underlying violates breakeven/flow support",
         "score": round(float(candidate.get("score") or 0), 2),
@@ -9130,7 +9171,7 @@ def construct_short_put(candidate: Mapping[str, Any], hot: pd.DataFrame) -> dict
         "quality_gate_reason": "; ".join(quality_rejects),
         "remaining_upside": max_profit,
         "breakeven": round(breakeven, 2),
-        "target_exit": round(entry_credit * 0.35, 2),
+        "target_exit": round(entry_credit * CREDIT_TAKE_PROFIT_REMAINING, 2),
         "target_entry": max(MIN_SEND_NOW_CREDIT, round(entry_credit, 2)),
         "invalidation": "fresh quote fails, thesis breaks, or underlying violates breakeven/flow support",
         "score": round(float(candidate.get("score") or 0), 2),
@@ -10798,19 +10839,21 @@ def build_sizing_audit(final: pd.DataFrame) -> pd.DataFrame:
 def _planned_stop_exit(row: Mapping[str, Any]) -> Optional[float]:
     """Return the explicit spread-value stop used by planning and replay."""
 
+    entry_type = _as_text(row.get("entry_type")).upper()
+    if not entry_type:
+        entry_type = _entry_type_from_ticket(
+            _as_text(row.get("trade_plan")) or _as_text(row.get("full_ticket"))
+        )
+    if entry_type == "CREDIT" and not CREDIT_HARD_STOP_ENABLED:
+        return None
     configured = _as_float(row.get("stop_exit"))
     if configured is not None and configured > 0:
         return configured
     entry = _as_float(row.get("entry_limit")) or _as_float(row.get("entry_price"))
     if entry is None or entry <= 0:
         return None
-    entry_type = _as_text(row.get("entry_type")).upper()
-    if not entry_type:
-        entry_type = _entry_type_from_ticket(
-            _as_text(row.get("trade_plan")) or _as_text(row.get("full_ticket"))
-        )
     if entry_type == "DEBIT":
-        return round(max(entry * 0.50, 0.01), 2)
+        return round(max(entry * DEBIT_STOP_REMAINING, 0.01), 2)
     if entry_type == "CREDIT":
         width = _as_float(row.get("spread_width"))
         if width is None or width <= 0:
@@ -10892,8 +10935,13 @@ def build_management_plan(final: pd.DataFrame, decision_board: pd.DataFrame) -> 
         if ready:
             action = "ENTRY_READY"
             entry_condition = f"Enter only if the live quote is {price_condition} and Schwab validation remains PASS."
+            risk_note = (
+                f"stop at {stop_exit}"
+                if stop_exit is not None
+                else "no hard stop - the spread width is the defined risk, so let it work"
+            )
             note = (
-                f"Take profit at {target_exit}; stop at {stop_exit}. "
+                f"Take profit at {target_exit}; {risk_note}. "
                 "Re-check the quote immediately before sending the suggested-size order."
                 + time_exit_note
             )
@@ -32163,7 +32211,7 @@ def _apply_live_short_put(
             "quality_gate_reason": "; ".join(quality_rejects),
             "remaining_upside": max_profit,
             "breakeven": round(breakeven, 2),
-            "target_exit": round(credit * 0.35, 2),
+            "target_exit": round(credit * CREDIT_TAKE_PROFIT_REMAINING, 2),
             "target_entry": target_entry,
             "invalidation": f"underlying violates breakeven {breakeven:.2f}, thesis breaks, or live quote degrades",
             "recommendation_status": status,
@@ -32295,7 +32343,7 @@ def _apply_live_credit_spread(
             "quality_gate_reason": "; ".join(quality_rejects),
             "remaining_upside": max_profit,
             "breakeven": round(breakeven, 2),
-            "target_exit": round(credit * 0.35, 2),
+            "target_exit": round(credit * CREDIT_TAKE_PROFIT_REMAINING, 2),
             "target_entry": target_entry,
             "invalidation": f"underlying violates breakeven {breakeven:.2f}, thesis breaks, or live quote degrades",
             "recommendation_status": status,

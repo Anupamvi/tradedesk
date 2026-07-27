@@ -10290,7 +10290,8 @@ def test_management_plan_separates_review_from_entry_ready_rows() -> None:
     assert "Do not enter" in plan.loc[plan["ticker"].eq("REVIEW"), "entry_condition"].iloc[0]
     assert "live quote" in plan.loc[plan["ticker"].eq("LIVE"), "entry_condition"].iloc[0]
     assert plan.loc[plan["ticker"].eq("LIVE"), "target_exit"].tolist() == [0.35]
-    assert plan.loc[plan["ticker"].eq("LIVE"), "stop_exit"].tolist() == [3.0]
+    # Credit spreads carry no hard stop: the width is the defined risk.
+    assert plan.loc[plan["ticker"].eq("LIVE"), "stop_exit"].tolist() == [""]
 
 
 def test_management_plan_uses_debit_entry_language_and_numeric_stop() -> None:
@@ -16966,7 +16967,7 @@ def test_provisional_earnings_after_mandatory_exit_does_not_block_exact_contract
                     "entry_limit": 0.83,
                     "live_validation_status": "PASS",
                     "underlying_quality_tier": "core",
-                    "days_to_earnings": 13,
+                    "days_to_earnings": 21,
                 }
             ]
         ),
@@ -16996,9 +16997,10 @@ def test_provisional_earnings_after_mandatory_exit_does_not_block_exact_contract
 
     applied = core.apply_agent_reviews(priced, reviews).iloc[0]
 
-    assert applied["earnings_source_status"] == "provisional_after_holding_horizon"
-    assert applied["earnings_event_date"] == "2026-08-04"
-    assert applied["planned_holding_exit_date"] == "2026-07-29"
+    # Trades are held to expiry, so the mandatory exit is the expiry itself.
+    assert applied["earnings_source_status"] == "provisional_after_expiry"
+    assert applied["earnings_event_date"] == "2026-08-12"
+    assert applied["planned_holding_exit_date"] == "2026-08-07"
     assert "order entry is blocked" not in applied["contract_event_risk_note"]
     assert "catalyst_news" in core._required_contract_review_agents(applied)
     assert core._contract_event_verification_passed(applied)
@@ -22443,15 +22445,20 @@ def test_verified_event_overrides_fix_ups_earnings_and_hd_macro_crossing() -> No
 
     assert annotated.loc["UPS", "earnings_event_date"] == "2026-07-28"
     assert bool(annotated.loc["UPS", "earnings_before_expiry"])
-    assert not bool(annotated.loc["UPS", "earnings_within_holding_horizon"])
-    assert annotated.loc["UPS", "planned_holding_exit_date"] == "2026-07-16"
-    assert annotated.loc["UPS", "event_exit_deadline"] == "2026-07-16"
+    # Holding to expiry pulls the 2026-07-28 print inside the horizon, so the
+    # exit deadline is now driven back to the session before earnings.
+    assert bool(annotated.loc["UPS", "earnings_within_holding_horizon"])
+    assert annotated.loc["UPS", "planned_holding_exit_date"] == "2026-08-21"
+    assert annotated.loc["UPS", "event_exit_deadline"] == "2026-07-27"
     assert "investors.ups.com" in annotated.loc["UPS", "earnings_event_source"]
     assert not bool(annotated.loc["HD", "earnings_before_expiry"])
     assert annotated.loc["HD", "macro_event_count_before_expiry"] == 2
     assert "CPI 2026-07-14" in annotated.loc["HD", "macro_events_before_expiry"]
     assert "PPI 2026-07-15" in annotated.loc["HD", "macro_events_before_expiry"]
-    assert "short-DTE contract crosses" in annotated.loc["HD", "contract_event_risk_note"]
+    assert (
+        "planned holding horizon crosses high-impact macro event"
+        in annotated.loc["HD", "contract_event_risk_note"]
+    )
     assert calendar["status"] == "verified"
     assert any(event["event"] == "FOMC decision" and event["date"] == "2026-07-29" for event in calendar["macro_events"])
     corporate = {event["ticker"]: event for event in calendar["corporate_events"]}
@@ -22483,10 +22490,10 @@ def test_event_gates_use_the_replay_aligned_holding_horizon() -> None:
         "coverage_start": "2026-01-01",
         "coverage_end": "2026-12-31",
         "macro_events": [
-            {"date": "2026-08-14", "event": "post-exit CPI", "impact": "high"},
+            {"date": "2026-08-25", "event": "post-expiry CPI", "impact": "high"},
         ],
         "corporate_events": [
-            {"ticker": "LATE", "event": "earnings", "date": "2026-08-20", "source": "https://late.example/ir"},
+            {"ticker": "LATE", "event": "earnings", "date": "2026-08-26", "source": "https://late.example/ir"},
             {"ticker": "NEAR", "event": "earnings", "date": "2026-07-24", "source": "https://near.example/ir"},
         ],
     }
@@ -22503,14 +22510,16 @@ def test_event_gates_use_the_replay_aligned_holding_horizon() -> None:
 
     late = annotated.loc["LATE"]
     near = annotated.loc["NEAR"]
-    assert bool(late["earnings_before_expiry"])
+    # The horizon now runs to expiry, so only events past expiry stay outside it.
+    assert not bool(late["earnings_before_expiry"])
     assert not bool(late["earnings_within_holding_horizon"])
-    assert late["planned_holding_exit_date"] == "2026-07-28"
-    assert late["event_exit_deadline"] == "2026-07-28"
-    assert late["macro_event_count_before_expiry"] == 1
+    assert late["planned_holding_exit_date"] == "2026-08-21"
+    assert late["event_exit_deadline"] == "2026-08-21"
+    assert late["macro_event_count_before_expiry"] == 0
     assert late["macro_event_count_within_holding_horizon"] == 0
-    assert "after the planned time exit" in late["contract_event_risk_note"]
+    assert not late["contract_event_risk_note"]
     assert bool(near["earnings_within_holding_horizon"])
+    assert near["event_exit_deadline"] == "2026-07-23"
 
     policy = next(
         policy
@@ -22585,10 +22594,15 @@ def test_live_reprice_does_not_shift_source_signal_holding_horizon() -> None:
         event_calendar=calendar,
     ).iloc[0]
 
-    assert source_anchored["planned_holding_exit_date"] == "2026-07-28"
-    assert source_anchored["macro_event_count_within_holding_horizon"] == 0
-    assert incorrectly_refresh_anchored["planned_holding_exit_date"] == "2026-07-29"
-    assert incorrectly_refresh_anchored["macro_event_count_within_holding_horizon"] == 1
+    # The horizon is clamped to expiry, so re-anchoring on a later reprice date
+    # can no longer shift the planned exit or pull a new macro event into scope.
+    assert source_anchored["planned_holding_exit_date"] == "2026-08-21"
+    assert incorrectly_refresh_anchored["planned_holding_exit_date"] == "2026-08-21"
+    assert (
+        source_anchored["macro_event_count_within_holding_horizon"]
+        == incorrectly_refresh_anchored["macro_event_count_within_holding_horizon"]
+        == 1
+    )
 
 
 def test_etf_contracts_mark_earnings_not_applicable() -> None:
@@ -23570,7 +23584,8 @@ def test_ups_like_route_support_stays_yellow_and_is_capped_at_one_contract() -> 
     assert decision["target_order_status"].tolist() == ["target_order_candidate"]
     assert decision["trade_quality_confidence_rating"].tolist() == ["LOW"]
     blockers = decision["execution_blockers"].iloc[0]
-    assert "send_now_earnings_within_holding_horizon" not in blockers
+    # Holding to expiry puts UPS earnings (2026-07-28) inside the trade window.
+    assert "send_now_earnings_within_holding_horizon" in blockers
     assert "send_now_probability_proxy_below_40pct" in blockers
     assert core.PROFITABILITY_CALIBRATION_BLOCKER in blockers
 

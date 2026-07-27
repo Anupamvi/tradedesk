@@ -18,14 +18,16 @@ from uwos.exact_spread_backtester import HistoricalOptionQuoteStore, LegQuote
 from uwos.options_agent import core
 
 
-SCHEMA_VERSION = "options_agent.independent_replay.v4"
+SCHEMA_VERSION = "options_agent.independent_replay.v5"
 ROUND_TRIP_COMMISSION = 2.60
-# Keep the outcome horizon coupled to the live selector and management plan.
+# Keep the outcome horizon and every management level coupled to the live
+# selector, so replay evidence describes the population live may actually trade.
 FIXED_HORIZON_SESSIONS = core.PLANNED_TRADE_HOLDING_SESSIONS
-CREDIT_TAKE_PROFIT_REMAINING = 0.35
+CREDIT_TAKE_PROFIT_REMAINING = core.CREDIT_TAKE_PROFIT_REMAINING
+CREDIT_HARD_STOP_ENABLED = core.CREDIT_HARD_STOP_ENABLED
 CREDIT_STOP_MULTIPLIER = 2.0
-DEBIT_TAKE_PROFIT_MULTIPLIER = 1.80
-DEBIT_STOP_REMAINING = 0.50
+DEBIT_TAKE_PROFIT_MULTIPLIER = core.DEBIT_TAKE_PROFIT_MULTIPLIER
+DEBIT_STOP_REMAINING = core.DEBIT_STOP_REMAINING
 SUPPORTED_ROUTES = {
     "bull_call_debit",
     "bear_put_debit",
@@ -449,12 +451,16 @@ def _bounded_exit_market(bid: float, ask: float, width: float) -> Optional[tuple
     return min(max(bid, 0.0), width), min(max(ask, 0.0), width)
 
 
-def _management_levels(entry_type: str, entry: float, width: float) -> tuple[float, float]:
+def _management_levels(
+    entry_type: str, entry: float, width: float
+) -> tuple[float, Optional[float]]:
     if entry_type == "CREDIT":
-        return (
-            round(entry * CREDIT_TAKE_PROFIT_REMAINING, 6),
-            round(min(width, entry * CREDIT_STOP_MULTIPLIER), 6),
+        stop = (
+            round(min(width, entry * CREDIT_STOP_MULTIPLIER), 6)
+            if CREDIT_HARD_STOP_ENABLED
+            else None
         )
+        return round(entry * CREDIT_TAKE_PROFIT_REMAINING, 6), stop
     return (
         round(min(width * 0.80, entry * DEBIT_TAKE_PROFIT_MULTIPLIER), 6),
         round(max(entry * DEBIT_STOP_REMAINING, 0.01), 6),
@@ -465,19 +471,19 @@ def _management_trigger(
     entry_type: str,
     value: float,
     target_exit: float,
-    stop_exit: float,
+    stop_exit: Optional[float],
     *,
     final_session: bool,
 ) -> str:
     if entry_type == "CREDIT":
         if value <= target_exit:
             return "take_profit"
-        if value >= stop_exit:
+        if stop_exit is not None and value >= stop_exit:
             return "stop_loss"
     else:
         if value >= target_exit:
             return "take_profit"
-        if value <= stop_exit:
+        if stop_exit is not None and value <= stop_exit:
             return "stop_loss"
     return "time_exit" if final_session else ""
 
@@ -719,7 +725,7 @@ def _replay_row(
     result["breakeven"] = breakeven
     target_exit, stop_exit = _management_levels(entry_type, entry, width)
     result["target_exit"] = target_exit
-    result["stop_exit"] = stop_exit
+    result["stop_exit"] = stop_exit if stop_exit is not None else ""
     result["expected_move_ratio"] = _expected_move_ratio(row, entry_type, entry)
     if entry_day >= planned_exit:
         result["fill_reason"] = "no_post_entry_exit_session"
@@ -774,7 +780,9 @@ def _replay_row(
         )
         result["executed_entry_price"] = round(executed_entry, 6)
         result["executed_target_exit"] = round(executed_target_exit, 6)
-        result["executed_stop_exit"] = round(executed_stop_exit, 6)
+        result["executed_stop_exit"] = (
+            round(executed_stop_exit, 6) if executed_stop_exit is not None else ""
+        )
         if entry_type == "CREDIT":
             result["executed_entry_credit"] = round(executed_entry, 6)
         else:
@@ -1139,7 +1147,7 @@ def run_independent_replay(
             entry = _number(row.get("executed_entry_price")) or 0.0
             target_exit = _number(row.get("executed_target_exit"))
             stop_exit = _number(row.get("executed_stop_exit"))
-            if target_exit is None or stop_exit is None:
+            if target_exit is None:
                 target_exit, stop_exit = _management_levels(entry_type, entry, width)
             last_failure = "missing_exact_exit_leg_quote"
             for session_number, due in enumerate(exit_dates, start=1):
@@ -1250,11 +1258,19 @@ def run_independent_replay(
             "both must pass the available quote and liquidity checks"
         ),
         "exit_policy": (
-            "conservative exact-leg daily target/stop checks after the next-session entry, with a "
-            "mandatory exit on the fifth signal-to-exit regular session"
+            "conservative exact-leg daily target checks after the next-session entry; credit "
+            f"targets buy-back at {CREDIT_TAKE_PROFIT_REMAINING:g}x the entry credit and carries "
+            + (
+                f"a hard stop at {CREDIT_STOP_MULTIPLIER:g}x the entry credit"
+                if CREDIT_HARD_STOP_ENABLED
+                else "no hard stop (the spread width is the defined risk)"
+            )
+            + f"; mandatory exit on signal-to-exit regular session {FIXED_HORIZON_SESSIONS}, "
+            "which exceeds the maximum entry DTE so every trade is clamped to its own expiry"
         ),
         "credit_take_profit_remaining": CREDIT_TAKE_PROFIT_REMAINING,
-        "credit_stop_multiplier": CREDIT_STOP_MULTIPLIER,
+        "credit_hard_stop_enabled": CREDIT_HARD_STOP_ENABLED,
+        "credit_stop_multiplier": CREDIT_STOP_MULTIPLIER if CREDIT_HARD_STOP_ENABLED else None,
         "debit_take_profit_multiplier": DEBIT_TAKE_PROFIT_MULTIPLIER,
         "debit_stop_remaining": DEBIT_STOP_REMAINING,
         "round_trip_commission": ROUND_TRIP_COMMISSION,

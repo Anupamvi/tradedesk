@@ -48,9 +48,22 @@ def test_replay_exit_market_applies_vertical_no_arbitrage_bounds() -> None:
 
 
 def test_replay_management_levels_and_triggers_match_order_policy() -> None:
-    assert replay._management_levels("CREDIT", 1.0, 5.0) == (0.35, 2.0)
-    assert replay._management_trigger("CREDIT", 0.30, 0.35, 2.0, final_session=False) == "take_profit"
-    assert replay._management_trigger("CREDIT", 2.10, 0.35, 2.0, final_session=False) == "stop_loss"
+    # A vertical already caps its own loss, so credit carries no hard stop.
+    # The take-profit level is derived from the live constant so replay parity
+    # is asserted rather than a literal that silently drifts out of date.
+    credit_target = round(1.0 * core.CREDIT_TAKE_PROFIT_REMAINING, 6)
+    assert replay._management_levels("CREDIT", 1.0, 5.0) == (credit_target, None)
+    assert (
+        replay._management_trigger(
+            "CREDIT", credit_target - 0.10, credit_target, None, final_session=False
+        )
+        == "take_profit"
+    )
+    assert replay._management_trigger("CREDIT", 4.90, credit_target, None, final_session=False) == ""
+    assert (
+        replay._management_trigger("CREDIT", 4.90, credit_target, None, final_session=True)
+        == "time_exit"
+    )
     assert replay._management_levels("DEBIT", 1.0, 5.0) == (1.8, 0.5)
     assert replay._management_trigger("DEBIT", 0.40, 1.8, 0.5, final_session=False) == "stop_loss"
     assert replay._management_trigger("DEBIT", 1.00, 1.8, 0.5, final_session=True) == "time_exit"
@@ -260,7 +273,7 @@ def test_replay_selector_uses_holding_horizon_for_earnings() -> None:
         "underlying_quality_tier": "core",
         "regime": "risk_on",
         "expiry": "2026-08-21",
-        "next_earnings_dt": "2026-08-20",
+        "next_earnings_dt": "2026-08-25",
         "dte": 30,
         "entry_quote_width_pct": 0.10,
         "combined_flow_bias": -0.30,
@@ -588,7 +601,7 @@ def test_independent_replay_manifest_is_not_claimed_as_production_proof(tmp_path
 
     assert metrics["selected"] == 0
     assert metrics["outcome_coverage"] == 0.0
-    assert replay.SCHEMA_VERSION == "options_agent.independent_replay.v4"
+    assert replay.SCHEMA_VERSION == "options_agent.independent_replay.v5"
 
 
 def test_replay_pin_rejects_capped_or_stale_manifest(tmp_path, monkeypatch) -> None:
@@ -650,7 +663,7 @@ def test_replay_calendar_excludes_weekends_and_market_holidays() -> None:
             dt.date(2026, 1, 20),
         ],
         start=dt.date(2026, 1, 16),
-        end=dt.date(2026, 1, 27),
+        end=dt.date(2026, 3, 31),
     )
 
     assert days == [dt.date(2026, 1, 16), dt.date(2026, 1, 20)]
