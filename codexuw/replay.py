@@ -38,6 +38,7 @@ from .engine import (
     validated_addon_income_lane,
 )
 from .market_calendar import is_regular_market_day
+from .realized_vol import attach_realized_vol
 from .occ import build_occ_symbol, parse_occ_symbol
 
 
@@ -1412,6 +1413,15 @@ def run_replay(
         except Exception as exc:
             day_summaries.append({"date": asof, "status": "load_error", "error": str(exc)})
             continue
+        # Realized vol is computed from sessions strictly at or before `asof`, so
+        # this is point-in-time safe. The live path attaches it in daily_v4; the
+        # replay path did not, which left `iv_hv_ratio` and
+        # `realized_volatility_30d` at 0% coverage in the replay-built edge
+        # history. That is why the replay guard still bands on `iv_rank` rather
+        # than mirroring the live IV/HV gate -- the field to band on did not
+        # exist here. Populating it is a prerequisite for measuring whether an
+        # IV/HV guard pays for itself on the replay base; it changes no gate.
+        sc = attach_realized_vol(sc, root, asof)
         pool = select_ticker_pool(sc, max_tickers=max_tickers)
         bot_flow = aggregate_bot_flow(
             folder,
