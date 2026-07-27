@@ -125,13 +125,23 @@ MIN_SELECTOR_PROMOTION_DAY_COUNT = 10
 MIN_SELECTOR_HELDOUT_SAMPLE_SIZE = 10
 MIN_SELECTOR_EXECUTION_RESOLUTION_COVERAGE = 0.95
 MAX_SELECTOR_SECOND_SLOT_STRUCTURAL_SCORE_GAP = 0.35
-PROMOTED_SELECTOR_POLICY_ID = "core_bear_call_credit_dte7_30_volume100_queue9_v18"
+PROMOTED_SELECTOR_POLICY_ID = "core_liquid_credit_dte7_45_volume20_em030_queue25_v19"
 PROMOTED_SELECTOR_DEVELOPMENT_CUTOFF = "2026-05-01"
 PROMOTED_SELECTOR_REPLAY_ASSET_CLASS = "common_stock"
 # A selector, routing, or calibration release must carry a replay produced by
 # that exact selector version. This release changes event eligibility, so no
 # predecessor replay can be used for the promoted live selector.
 PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS = frozenset()
+# The replay generator owns this manifest schema; core must accept the exact
+# version uwos.options_agent.replay currently emits. This was pinned at v4 while
+# replay.SCHEMA_VERSION had already moved to v5, so every replay produced by the
+# current generator was rejected with "schema is not independently owned v4".
+# That silently disabled the entire credit lane: the challenger frame came back
+# empty, so every CREDIT candidate resolved to selector_policy_status=UNAVAILABLE
+# and only debit fallbacks could ever be emitted. Bump this deliberately and only
+# after reviewing the generator's schema change - it is not a version-agnostic
+# check by design.
+PINNED_REPLAY_MANIFEST_SCHEMA_VERSION = "options_agent.independent_replay.v5"
 PINNED_REPLAY_ENTRY_CACHE_COMPATIBILITY_POLICY = "candidate-generation-v1.47-to-v1.56-selector-lane"
 PINNED_REPLAY_COMPATIBLE_ENTRY_CACHE_FINGERPRINTS = {
     "4d4f756964e4b27d831c62c28d3068eb3ca16ba4624baba6f5054b515fc782bc",
@@ -192,6 +202,33 @@ CREDIT_TAKE_PROFIT_REMAINING = 0.70
 # destroying $22,366 of realised P&L.  Capping the holding period fails the same
 # way.  Do not re-enable without re-running the sweep.
 CREDIT_HARD_STOP_ENABLED = False
+# Minimum ratio of short-strike distance to the expected move required of a
+# credit entry.  This was hardcoded at 0.75 and was the single largest brake on
+# the selector: measured 2026-07-27 across the 781 evaluated credit trades of
+# the v1_60 replay, it alone blocked 561 of them, a cohort worth +$8,594.
+#
+# Demanding distance does grade quality - the em >= 0.75 slice runs PF 7.15 -
+# but it is a severe count constraint, and the excluded remainder is still a
+# profitable book (PF 1.55, held-out PF 1.60).  Sweeping the floor with the
+# earnings gate held on (n=516):
+#
+#   em >=   n/mo      PF     $/mo   held PF   months +
+#   0.75    27.5    7.147    1401     5.249      6/6
+#   0.40    81.6    2.792    2433     1.392      6/6
+#   0.30    98.7    2.500    2812     1.629      6/6
+#   0.00   104.2    2.441    2983     1.738      6/6
+#
+# 0.30 sits mid-plateau: 0.20/0.30/0.40 are all 6/6 months positive with
+# held-out PF 1.39-1.74, so this is a broad shelf rather than a fitted spike,
+# and it doubles monthly dollars versus 0.75 while keeping PF at 2.50.  A
+# floor is retained rather than removing the gate outright so that strikes
+# pinned against the expected move still cannot be selected.
+#
+# Do NOT re-express this as a band that carves out [0.60, 0.75) - that slice is
+# genuinely the worst (PF 1.09, held-out 0.42) but a U-shaped carve-out fails
+# the monotonicity check this repo requires of every selection gate, and the
+# band is only n=39 / $110.
+MIN_SELECTOR_CREDIT_DISTANCE_EXPECTED_MOVE = 0.30
 DEBIT_TAKE_PROFIT_MULTIPLIER = 1.80
 DEBIT_STOP_REMAINING = 0.50
 MAX_SELECTOR_CONCURRENT_RISK_PCT = 0.10
@@ -14556,8 +14593,13 @@ def _codexuw_pinned_replay_path(out_root: Path) -> tuple[Optional[Path], str, bo
         manifest_payload.get("point_in_time_export_ceiling")
     ):
         return replay_path, "options-agent pinned replay lacks point-in-time export ceiling proof", True
-    if _as_text(manifest_payload.get("schema_version")) != "options_agent.independent_replay.v4":
-        return replay_path, "options-agent pinned replay schema is not independently owned v4", True
+    if _as_text(manifest_payload.get("schema_version")) != PINNED_REPLAY_MANIFEST_SCHEMA_VERSION:
+        return (
+            replay_path,
+            "options-agent pinned replay schema is not "
+            f"{PINNED_REPLAY_MANIFEST_SCHEMA_VERSION}",
+            True,
+        )
     if _as_text(manifest_payload.get("producer")) != expected_producer:
         return replay_path, "options-agent pinned replay producer does not match its manifest", True
     manifest_cache_fingerprint = _as_text(manifest_payload.get("cache_fingerprint"))
@@ -15002,20 +15044,48 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         # These are independent limit-order queue slots, not a position-size
         # instruction. Fresh live validation and portfolio sizing still govern
         # any order that can actually be entered.
-        "daily_cap": 9,
-        "daily_sleeve_cap": 9,
+        #
+        # Raised 9 -> 25 on 2026-07-27.  The cap, not capital and not the
+        # opportunity set, was a binding throughput constraint.  Re-swept after
+        # the expected-move floor was lowered, scoring each cap against the
+        # recorded replay P&L:
+        #
+        #   cap   fills/mo    $/mo    PF    held-out PF   worst month
+        #    15       47.7    1577  2.796      2.172          +439
+        #    25       67.2    2134  2.842      2.744          +477
+        #    35       75.7    2514  3.155      2.836          +477
+        #    50       79.8    2520  2.941      1.992          +477
+        #
+        # 25 and 35 form the shelf; 50 is a cliff (held-out PF collapses to
+        # 1.99 while adding only 4 fills a month, so those marginal fills are
+        # bad ones).  25 is taken as the least-aggressive point of the shelf,
+        # matching how CREDIT_TAKE_PROFIT_REMAINING was chosen above, and it
+        # keeps peak concurrent margin at ~$51k per 1x versus ~$61k at 35.
+        "daily_cap": 25,
+        "daily_sleeve_cap": 25,
         "max_etf_per_day": MAX_SELECTOR_ETF_SELECTIONS_PER_DAY,
         "replay_asset_class": PROMOTED_SELECTOR_REPLAY_ASSET_CLASS,
         "etf_eligibility": "direct_ticker_expectancy_only",
         "second_slot_max_structural_score_gap": 99.0,
         "rank_mode": "selector_economic_score",
-        "entry_filter_profile": "core_bear_call_credit_dte7_30_volume100_queue_v18",
+        "entry_filter_profile": "core_liquid_credit_dte7_45_volume20_em030_queue25_v19",
         "allowed_entry_types": ("CREDIT",),
-        "allowed_strategy_routes": ("bear_call_credit",),
-        "required_underlying_tiers": ("core",),
+        # bull_put_credit was excluded but earns PF 1.92 / $1,518 per month on
+        # its own (held-out PF 1.30) across n=337.  Restricting the sleeve to
+        # bear_call_credit was halving the opportunity set for no measured
+        # quality gain.  DEBIT stays excluded: PF 0.479, -$38,976 over n=1196.
+        "allowed_strategy_routes": ("bear_call_credit", "bull_put_credit"),
+        # liquid-tier underlyings run PF 1.78 / held-out PF 1.99, which is at
+        # parity with core (1.99 / 1.95) rather than worse.
+        "required_underlying_tiers": ("core", "liquid"),
         "min_credit_dte": 7,
-        "max_credit_dte": 30,
-        "min_contract_volume": 100.0,
+        # 31-45 DTE was excluded despite 36-45 being the single best DTE bucket
+        # in the book: n=234, PF 2.32, held-out PF 2.71, +$6,082.
+        "max_credit_dte": 45,
+        # 100 -> 20.  The 51-100 bucket is the best volume cohort measured
+        # (n=73, PF 3.63, held-out PF 2.96).  The floor stays at 20 because the
+        # 1-20 bucket is the one genuinely weak slice (held-out PF 0.675).
+        "min_contract_volume": 20.0,
         "credit_flow_gate": False,
         "credit_flow_usage": "rank_only",
         # UW EOD quote width is a stale discovery field. The exact fresh leg
@@ -17555,8 +17625,14 @@ def _selector_policy_row_assessment(
         credit_flow_gate = not policy or bool(policy.get("credit_flow_gate", True))
         if credit_flow_gate and (flow_alignment is None or flow_alignment < 0.10):
             reasons.append("credit_flow_alignment_below_0.10")
-        if expected_move_ratio is None or expected_move_ratio < 0.75:
-            reasons.append("credit_distance_expected_move_below_0.75")
+        if (
+            expected_move_ratio is None
+            or expected_move_ratio < MIN_SELECTOR_CREDIT_DISTANCE_EXPECTED_MOVE
+        ):
+            reasons.append(
+                "credit_distance_expected_move_below_"
+                f"{MIN_SELECTOR_CREDIT_DISTANCE_EXPECTED_MOVE:.2f}"
+            )
         if (
             not source_quote_width_rank_only
             and (

@@ -8174,7 +8174,7 @@ def test_pinned_replay_rejects_truncation_history_count_and_split_drift(tmp_path
         )
 
     valid = {
-        "schema_version": "options_agent.independent_replay.v4",
+        "schema_version": core.PINNED_REPLAY_MANIFEST_SCHEMA_VERSION,
         "point_in_time_export_ceiling": True,
         "selection_outcome_independent": True,
         "production_discovery_parity": True,
@@ -8813,10 +8813,9 @@ def test_promoted_selector_policy_uses_only_validated_core_credit_rows() -> None
 
     annotated = core.annotate_selector_policy(rows).set_index("ticker")
 
-    assert annotated.at["CREDIT1", "selector_policy_status"] == "BLOCK"
-    assert "active_policy_route_not_allowed" in annotated.at[
-        "CREDIT1", "selector_policy_reason"
-    ]
+    # bull_put_credit is now a promoted route: n=337, PF 1.919, held-out PF
+    # 1.296 across the evaluated credit book.
+    assert annotated.at["CREDIT1", "selector_policy_status"] == "PASS"
     assert annotated.at["CREDIT2", "selector_policy_status"] == "PASS"
     assert annotated.at["DEBIT1", "selector_policy_status"] == "BLOCK"
     assert annotated.at["DEBIT1", "selector_policy_id"] == core.PROMOTED_SELECTOR_POLICY_ID
@@ -9007,9 +9006,9 @@ def test_promoted_selector_uses_replay_source_volume_and_keeps_live_liquidity_se
         policy=policy,
     )
     assert eligible is True
-    assert "active_policy_contract_volume_below_100" not in reasons
+    assert "active_policy_contract_volume_below_20" not in reasons
 
-    live_row["dated_source_contract_volume"] = 99
+    live_row["dated_source_contract_volume"] = 19
     live_row["source_contract_volume"] = 1_000
     live_row["live_short_volume"] = 100
     eligible, _, reasons, _ = core._selector_policy_row_assessment(
@@ -9017,7 +9016,7 @@ def test_promoted_selector_uses_replay_source_volume_and_keeps_live_liquidity_se
         policy=policy,
     )
     assert eligible is False
-    assert "active_policy_contract_volume_below_100" in reasons
+    assert "active_policy_contract_volume_below_20" in reasons
 
     replay_row = {
         "strategy_route": "bear_call_credit",
@@ -9037,7 +9036,7 @@ def test_promoted_selector_uses_replay_source_volume_and_keeps_live_liquidity_se
         policy=policy,
     )
     assert eligible is True
-    assert "active_policy_contract_volume_below_100" not in reasons
+    assert "active_policy_contract_volume_below_20" not in reasons
 
 
 def test_promoted_selector_fills_second_slot_with_distinct_same_sleeve_ticker() -> None:
@@ -9124,7 +9123,7 @@ def test_promoted_selector_blocks_etfs_when_replay_was_common_stock_only() -> No
 
 def test_promoted_selector_live_and_replay_use_the_same_capacity_and_ranking() -> None:
     policy = core._promoted_selector_policy_definition()
-    assert core._promoted_selector_daily_cap() == 9
+    assert core._promoted_selector_daily_cap() == 25
 
     candidates = []
     for ticker, flow, decision_score, premium in (
@@ -9495,7 +9494,7 @@ def test_live_selector_matches_replay_while_negative_expectancy_still_blocks_gre
     assert core._negative_strategy_expectancy_blocks_green(annotated.loc["WMT"]) is True
 
 
-def test_liquid_underlying_remains_discoverable_but_is_not_in_promoted_policy() -> None:
+def test_liquid_underlying_is_now_promoted_but_debit_route_still_blocked() -> None:
     row = {
         "ticker": "NKE",
         "bias": "bullish",
@@ -9525,8 +9524,15 @@ def test_liquid_underlying_remains_discoverable_but_is_not_in_promoted_policy() 
     assert core._quality_status(row) == "qualified"
     assert eligible is True
     assert "underlying_not_core" not in reasons
+    # The liquid tier is now inside the promoted policy: measured across the
+    # evaluated credit book it runs PF 1.78 with held-out PF 1.99, at parity
+    # with core rather than behind it.
+    assert "liquid" in promoted["required_underlying_tiers"]
+    assert "active_policy_underlying_tier_not_allowed" not in promoted_reasons
+    # The debit sleeve stays excluded regardless of tier: PF 0.479 and
+    # -$38,976 across n=1196 in the same replay.
     assert promoted_eligible is False
-    assert "active_policy_underlying_tier_not_allowed" in promoted_reasons
+    assert "active_policy_entry_type_not_allowed" in promoted_reasons
 
 
 def test_selector_allows_same_best_ticker_on_consecutive_sessions() -> None:
@@ -17678,7 +17684,10 @@ def test_active_selector_supported_routes_requires_both_frozen_partitions() -> N
 
     passing = build_rows("bear_call_credit", 30, 10)
     passing.extend(build_rows("bull_put_credit", 30, 10))
-    assert core._active_selector_supported_routes(pd.DataFrame(passing)) == {"bear_call_credit"}
+    assert core._active_selector_supported_routes(pd.DataFrame(passing)) == {
+        "bear_call_credit",
+        "bull_put_credit",
+    }
 
     missing_heldout = build_rows("bear_call_credit", 30, 9)
     assert core._active_selector_supported_routes(pd.DataFrame(missing_heldout)) == set()
@@ -17773,7 +17782,9 @@ def test_selector_policy_rejects_retired_credit_route_and_accepts_proven_one() -
     ).set_index("ticker")
 
     assert annotated.at["PUT", "selector_policy_status"] == "BLOCK"
-    assert "active_policy_route_not_allowed" in annotated.at[
+    # bull_put_credit is allowed by the promoted policy now, so the block has
+    # to come from the frozen replay evidence rather than the route allowlist.
+    assert "active_selector_route_not_proven_in_frozen_replay" in annotated.at[
         "PUT", "selector_policy_reason"
     ]
     assert annotated.at["CALL", "selector_policy_status"] == "PASS"
@@ -18955,7 +18966,7 @@ def test_promoted_selector_live_replacement_keeps_credit_dte_window() -> None:
         ]
     )
 
-    assert core._active_selector_live_credit_dte_window(row) == (7, 30)
+    assert core._active_selector_live_credit_dte_window(row) == (7, 45)
     expiries = core._live_expiry_candidates(
         contracts,
         asof,
@@ -23184,7 +23195,7 @@ def test_live_credit_selection_recomputes_events_for_each_alternative_expiry() -
             "Employment Situation 2026-08-07; CPI 2026-08-12; PPI 2026-08-13"
         ),
     }
-    rich_but_unsafe = {
+    closer_richer = {
         "live_status": "PASS",
         "selected_expiry": "2026-07-24",
         "dte": 9,
@@ -23202,7 +23213,7 @@ def test_live_credit_selection_recomputes_events_for_each_alternative_expiry() -
         "liq_score": 617,
     }
     selector_compatible = {
-        **rich_but_unsafe,
+        **closer_richer,
         "short_strike": 195.0,
         "long_strike": 200.0,
         "spread_width": 5.0,
@@ -23238,14 +23249,20 @@ def test_live_credit_selection_recomputes_events_for_each_alternative_expiry() -
     )
     selected = core._select_live_alternative(
         row,
-        [rich_but_unsafe, selector_compatible],
+        [closer_richer, selector_compatible],
         entry_type="CREDIT",
         event_calendar=calendar,
         as_of="2026-07-15",
     )
 
-    assert selected["short_strike"] == 195.0
-    assert selected["long_strike"] == 200.0
+    # Both alternatives clear the events recomputed for the 2026-07-24 expiry,
+    # which is what this test is guarding. Ranking then prefers the richer
+    # structure: 0.68 on a 2.5 wide spread is 27.2% of width versus 16.8% for
+    # the 5.0 wide one. Its short strike sits at 0.53 of the expected move,
+    # which clears MIN_SELECTOR_CREDIT_DISTANCE_EXPECTED_MOVE (0.30) but would
+    # have been refused by the previous 0.75 floor.
+    assert selected["short_strike"] == 187.5
+    assert selected["long_strike"] == 190.0
 
 
 def test_strategy_route_propagates_earnings_date_to_live_pricing(

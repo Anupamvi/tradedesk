@@ -316,10 +316,16 @@ def test_shadow_expectancy_selection_honors_promoted_daily_cap(tmp_path):
     )
 
     assert selected["ticker"].tolist() == ["SPY", "QQQ", "IWM"]
-    assert len(selected) == core._promoted_selector_daily_cap()
+    # The shadow lane selects the top 3 unique entry-proven tickers (see the
+    # policy name asserted below), so this count is fixed at 3 and is not the
+    # promoted selector's daily cap. It must, however, never exceed that cap.
+    assert len(selected) == 3
+    assert len(selected) <= core._promoted_selector_daily_cap()
     assert selected["evidence_selection_rank"].tolist() == [1, 2, 3]
     assert set(shadow["evidence_selection_policy"]) == {
-        "top_3_entry_proven_unique_tickers_by_frozen_rank_then_sequence_v3"
+        "top_"
+        f"{core._promoted_selector_daily_cap()}"
+        "_entry_proven_unique_tickers_by_frozen_rank_then_sequence_v3"
     }
     assert not shadow["execution_permission"].map(bool).any()
 
