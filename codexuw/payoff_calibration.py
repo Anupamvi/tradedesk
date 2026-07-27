@@ -553,11 +553,16 @@ def build_default_payoff_calibration(
             "stress_10": _metrics(frame, 0.10),
         }
     passed = groups[groups["payoff_calibration_status"].eq("PASS")] if not groups.empty else groups
+    eligible_days = pd.to_datetime(eligible.get("asof"), errors="coerce").dropna() if not eligible.empty else pd.Series(dtype="datetime64[ns]")
+    last_evidence_day = eligible_days.max() if not eligible_days.empty else None
     summary = {
         "version": PAYOFF_CALIBRATION_VERSION,
         "asof": str(cutoff.date()),
         "history_path": str(path),
         "eligible_rows": int(len(eligible)),
+        "evidence_first_asof": str(eligible_days.min().date()) if not eligible_days.empty else None,
+        "evidence_last_asof": str(last_evidence_day.date()) if last_evidence_day is not None else None,
+        "evidence_staleness_days": int((cutoff - last_evidence_day).days) if last_evidence_day is not None else None,
         "thresholds": {
             "route_policies": ROUTE_POLICIES,
             "minimum_10pct_stress_profit_factor": MIN_STRESS_PROFIT_FACTOR,

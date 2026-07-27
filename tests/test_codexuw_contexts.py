@@ -634,6 +634,63 @@ def test_live_selection_rejects_secondary_income_below_standing_credit_floor() -
     assert final.empty
 
 
+def _secondary_income_candidate(**overrides) -> dict:
+    row = {
+        "ticker": "SEC",
+        "sector": "Technology",
+        "direction": "Bear Call",
+        "strategy": "Bear Call Credit Spread",
+        "expiry": "2026-08-21",
+        "dte": 28,
+        "hard_rejects": "",
+        "penalties": "",
+        "credit_pct_width": 0.27,
+        "credit": 1.35,
+        "spread_width": 5.0,
+        "max_loss": 365.0,
+        "max_profit": 135.0,
+        "distance_pct": 0.10,
+        "iv30d": 0.75,
+        "iv_rank": 72.0,
+        "combined_flow_bias": -0.20,
+        "score": 7.0,
+        "confidence": "High",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_secondary_income_sleeve_requires_volatility_richness() -> None:
+    """The secondary income sleeve is still short premium, so it must clear the same
+    IV/HV bound as the primary credit lane. It previously bypassed that gate entirely,
+    which is how a live run emitted eight trades at IV/HV 0.906-0.933 -- selling
+    premium that was cheaper than the realised vol of the underlying."""
+    import pandas as pd
+
+    cheap = apply_high_conviction_decision_marks(
+        pd.DataFrame([_secondary_income_candidate(realized_volatility_30d=1.00, iv_hv_ratio=0.75)])
+    )
+    assert bool(cheap["decision_eligible"].iloc[0]) is False
+    assert cheap["decision_tier"].iloc[0] != "secondary_income"
+
+    rich = apply_high_conviction_decision_marks(
+        pd.DataFrame([_secondary_income_candidate(realized_volatility_30d=0.50, iv_hv_ratio=1.50)])
+    )
+    assert bool(rich["decision_eligible"].iloc[0]) is True
+    assert rich["decision_tier"].iloc[0] == "secondary_income"
+
+
+def test_secondary_income_sleeve_rejects_near_cash_denominator_artifact() -> None:
+    """A tiny realized-vol denominator produces a huge IV/HV ratio on names whose
+    absolute premium is negligible (cash/short-duration bond ETFs)."""
+    import pandas as pd
+
+    marked = apply_high_conviction_decision_marks(
+        pd.DataFrame([_secondary_income_candidate(realized_volatility_30d=0.012, iv_hv_ratio=11.9)])
+    )
+    assert bool(marked["decision_eligible"].iloc[0]) is False
+
+
 def test_live_selection_can_return_multiple_high_conviction_trades() -> None:
     import pandas as pd
 

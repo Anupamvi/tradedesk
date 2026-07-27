@@ -29,7 +29,7 @@ from .data import (
     read_csv_export,
     safe_float,
 )
-from .credit_policy import assess_credit_spread, credit_spread_confidence
+from .credit_policy import PROFIT_TAKE_PCT, assess_credit_spread, credit_spread_confidence
 from .debit_policy import assess_debit_spread, debit_spread_confidence
 from .daily import infer_report_mode, latest_dated_folder, live_planning_validation_note
 from .engine import (
@@ -53,6 +53,7 @@ from .engine import (
 )
 from .edge_model import EDGE_HISTORY_NAMESPACE
 from .integrity_v42 import apply_schwab_price_context
+from .realized_vol import attach_realized_vol
 from .fallback_income import apply_fallback_income_status, build_fallback_income_candidates
 from .goal_shadow import write_goal_shadow_outputs
 from .liquidity_shift import (
@@ -164,7 +165,9 @@ V4_TARGET_TICKET_COLUMNS = [
     "setup family key",
     "safety calibration flags",
     "expected win rate",
+    "win-rate basis",
     "confidence evidence",
+    "per-ticket replay edge",
     "payoff evidence",
     "expected average win",
     "expected average loss",
@@ -1028,12 +1031,6 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
                 if prefix in evidence_backed_prefixes:
                     continue
                 if (
-                    prefix == "flow_alignment_below_0.10"
-                    and flow_quality == "directional"
-                    and "flow=directional" in route_key
-                ):
-                    continue
-                if (
                     prefix == "credit_pct_width_outside_0.25_0.30"
                     and route_level == "flow_cost"
                     and "cost=18to30" in route_key
@@ -1206,6 +1203,14 @@ def _reported_win_rate(row: pd.Series | dict[str, Any]) -> float:
     return _effective_win_rate(row)
 
 
+def _reported_win_rate_basis(row: pd.Series | dict[str, Any]) -> str:
+    if _payoff_model_ready(row):
+        return "validated payoff route; 10% fill stress"
+    if math.isfinite(safe_float(row.get("confidence_probability"))):
+        return "calibrated strategy-family prior"
+    return "historical effective win rate"
+
+
 def _confidence_evidence_text(row: pd.Series | dict[str, Any]) -> str:
     probability = safe_float(row.get("confidence_probability"))
     lower_bound = safe_float(row.get("confidence_probability_lower_bound"))
@@ -1217,6 +1222,27 @@ def _confidence_evidence_text(row: pd.Series | dict[str, Any]) -> str:
     lower_text = f", 90% lower bound {lower_bound:.0%}" if math.isfinite(lower_bound) else ""
     sample_text = f", n={int(sample)}" if math.isfinite(sample) else ""
     return f"{source} {probability:.0%}{lower_text}{sample_text}, {status}"
+
+
+def _edge_evidence_text(row: pd.Series | dict[str, Any]) -> str:
+    verdict = _clean(row.get("edge_verdict")).lower() or "unavailable"
+    sample = safe_float(row.get("edge_sample_size"))
+    win = safe_float(row.get("edge_win_rate"))
+    profit_factor = safe_float(row.get("edge_profit_factor"))
+    average = safe_float(row.get("edge_avg_pnl"))
+    match = _clean(row.get("edge_match_level")) or "unavailable"
+    if not math.isfinite(sample) or sample <= 0:
+        if _payoff_model_ready(row):
+            return f"{verdict} exact-match edge; route evidence shown separately"
+        return f"{verdict} (no per-ticket replay sample; family-prior only)"
+    pieces = [f"{verdict}", f"n={int(sample)}", f"match={match}"]
+    if math.isfinite(win):
+        pieces.append(f"win {win:.0%}")
+    if math.isfinite(profit_factor):
+        pieces.append(f"PF {profit_factor:.2f}")
+    if math.isfinite(average):
+        pieces.append(f"avg ${average:.0f}")
+    return ", ".join(pieces)
 
 
 def _payoff_evidence_text(row: pd.Series | dict[str, Any]) -> str:
@@ -1364,18 +1390,27 @@ def _expectancy_safe_entry_price(row: pd.Series | dict[str, Any]) -> float:
     ):
         return math.nan
     if _payoff_model_ready(row):
+        route_level = _clean(row.get("payoff_route_level")).lower()
+        route_key = _clean(row.get("payoff_route_key") or row.get("payoff_group_key")).lower()
+        cost_calibrated_route = route_level == "flow_cost" and "cost=" in route_key
         if _is_credit(row):
             empirical_fraction = safe_float(row.get("payoff_entry_pct_width_p25"))
             empirical_price = width * empirical_fraction if math.isfinite(empirical_fraction) else math.nan
-            floor = configured_target if math.isfinite(configured_target) and configured_target > 0 else 0.0
-            if math.isfinite(empirical_price):
-                floor = max(floor, empirical_price)
+            if _payoff_model_ready(row) and cost_calibrated_route:
+                floor = empirical_price if math.isfinite(empirical_price) else configured_target
+            else:
+                floor = configured_target if math.isfinite(configured_target) and configured_target > 0 else 0.0
+                if math.isfinite(empirical_price):
+                    floor = max(floor, empirical_price)
             return math.ceil(floor * 100.0 - 1e-9) / 100.0 if floor > 0 else math.nan
         empirical_fraction = safe_float(row.get("payoff_entry_pct_width_p75"))
         empirical_price = width * empirical_fraction if math.isfinite(empirical_fraction) else math.nan
-        ceiling = configured_target if math.isfinite(configured_target) and configured_target > 0 else width
-        if math.isfinite(empirical_price):
-            ceiling = min(ceiling, empirical_price)
+        if _payoff_model_ready(row) and cost_calibrated_route:
+            ceiling = empirical_price if math.isfinite(empirical_price) else configured_target
+        else:
+            ceiling = configured_target if math.isfinite(configured_target) and configured_target > 0 else width
+            if math.isfinite(empirical_price):
+                ceiling = min(ceiling, empirical_price)
         return math.floor(ceiling * 100.0 + 1e-9) / 100.0 if ceiling > 0 else math.nan
     payoff_fraction = max(0.01, min(1.0, win_payoff / max_profit))
     loss_rate = 1.0 - win_rate
@@ -1713,11 +1748,12 @@ def _oco_bracket_logic(row: pd.Series | dict[str, Any], disposition: str) -> str
             f"{prefix}: entry {trade} at {target}; OCO take-profit SELL TO CLOSE near ${take_profit:.2f} credit, "
             f"stop SELL TO CLOSE if spread value falls near ${stop_value:.2f} or thesis breaks."
         )
-    take_profit_debit = entry * 0.40
-    stop_debit = entry * 2.00
+    take_profit_debit = entry * (1.0 - PROFIT_TAKE_PCT)
     return (
-        f"{prefix}: entry {trade} at {target}; OCO take-profit BUY TO CLOSE near ${take_profit_debit:.2f} debit, "
-        f"stop BUY TO CLOSE near ${stop_debit:.2f} debit or if short strike is threatened."
+        f"{prefix}: entry {trade} at {target}; OCO take-profit BUY TO CLOSE near ${take_profit_debit:.2f} debit "
+        f"({PROFIT_TAKE_PCT:.0%} of credit captured). No hard stop leg: maximum loss is already defined by the "
+        "spread width, and replay showed every stop-carrying exit rule underperforming its stopless twin. "
+        "Manage by thesis or roll if the short strike is breached."
     )
 
 
@@ -1813,7 +1849,9 @@ def _ticket_row_from_scored(
         "setup family key": _setup_family_key(row),
         "safety calibration flags": _safety_flags_text(row),
         "expected win rate": expected_win_text,
+        "win-rate basis": _reported_win_rate_basis(row),
         "confidence evidence": _confidence_evidence_text(row),
+        "per-ticket replay edge": _edge_evidence_text(row),
         "payoff evidence": _payoff_evidence_text(row),
         "expected average win": _money(avg_win) if payoff_validated else "UNVALIDATED",
         "expected average loss": _money(avg_loss) if payoff_validated else "UNVALIDATED",
@@ -1867,7 +1905,9 @@ def _ticket_row_from_board(
         "setup family key": _setup_family_key(row),
         "safety calibration flags": _safety_flags_text(row),
         "expected win rate": "",
+        "win-rate basis": "",
         "confidence evidence": "",
+        "per-ticket replay edge": _edge_evidence_text(row),
         "payoff evidence": "",
         "expected average win": "",
         "expected average loss": "",
@@ -2852,6 +2892,9 @@ def _compact_ticket_table(tickets: pd.DataFrame) -> pd.DataFrame:
         "current Schwab mid/natural reference",
         "profit target",
         "max loss",
+        "expected win rate",
+        "win-rate basis",
+        "per-ticket replay edge",
         "entry status",
     ]
     if tickets is None or tickets.empty:
@@ -2968,6 +3011,12 @@ def _public_opportunity_board(board: pd.DataFrame) -> pd.DataFrame:
         "Max profit",
         "Max loss",
         "Target profit",
+        "Modeled win rate",
+        "Win-rate basis",
+        "Confidence evidence",
+        "Payoff evidence",
+        "Per-ticket replay edge",
+        "Post-pricing EV / PF",
         "Expected value source",
         "Edge sample size / win rate / avg P/L",
         "Required confirmation",
@@ -3115,9 +3164,7 @@ def _v4_target_met(row: pd.Series | dict[str, Any]) -> bool:
         return False
     safe_target = _expectancy_safe_entry_price(row)
     if math.isfinite(safe_target):
-        # Calibration may tighten the configured order limit, never weaken it.
-        # For debits, lower is safer; for credits, higher is safer.
-        target = min(target, safe_target) if _is_debit(row) else max(target, safe_target)
+        target = safe_target
     return current <= target if _is_debit(row) else current >= target
 
 
@@ -3281,6 +3328,7 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
             out.at[keep_idx, "trade_status_reason"],
             f"Selected as the highest-ranked {ticker} structure; alternative same-ticker variants are Work Limit only.",
         )
+
     return out
 
 
@@ -3448,6 +3496,12 @@ def build_v4_opportunity_board(scored: pd.DataFrame, *, top_flow: pd.DataFrame) 
         "Max profit",
         "Max loss",
         "Target profit",
+        "Modeled win rate",
+        "Win-rate basis",
+        "Confidence evidence",
+        "Payoff evidence",
+        "Per-ticket replay edge",
+        "Post-pricing EV / PF",
         "Expected value source",
         "Edge sample size / win rate / avg P/L",
         "Required confirmation",
@@ -3464,6 +3518,17 @@ def build_v4_opportunity_board(scored: pd.DataFrame, *, top_flow: pd.DataFrame) 
         win = safe_float(row.get("edge_effective_win_rate"), raw_win)
         match_level = _clean(row.get("edge_match_level")) or "unavailable"
         avg = safe_float(row.get("edge_avg_pnl"))
+        modeled_win = _reported_win_rate(row)
+        post_ev, post_pf, _, _ = _post_pricing_expectancy(row)
+        post_pf_text = f"{post_pf:.2f}" if math.isfinite(post_pf) else "inf" if post_pf == math.inf else "unavailable"
+        edge_summary = (
+            f"n={int(sample)} / smoothed historical win={win:.0%} / avg=${avg:.2f} / "
+            f"calibration={_clean(row.get('confidence_calibration_status')) or 'unavailable'}"
+            if math.isfinite(sample) and sample > 0 and math.isfinite(win) and math.isfinite(avg)
+            else "exact/ticker match unavailable; validated route evidence reported separately"
+            if _payoff_model_ready(row)
+            else "exact/ticker match unavailable"
+        )
         rows.append(
             {
                 "Lane": _lane(row, disposition),
@@ -3476,17 +3541,22 @@ def build_v4_opportunity_board(scored: pd.DataFrame, *, top_flow: pd.DataFrame) 
                 "Max profit": _money(row.get("max_profit")),
                 "Max loss": _money(_max_loss_value(row)),
                 "Target profit": _money(_target_profit_value(row)),
+                "Modeled win rate": f"{modeled_win:.0%}" if math.isfinite(modeled_win) else "unavailable",
+                "Win-rate basis": _reported_win_rate_basis(row),
+                "Confidence evidence": _confidence_evidence_text(row),
+                "Payoff evidence": _payoff_evidence_text(row),
+                "Per-ticket replay edge": _edge_evidence_text(row),
+                "Post-pricing EV / PF": (
+                    f"EV={_money(post_ev)}; PF={post_pf_text}"
+                    if math.isfinite(post_ev) and not math.isnan(post_pf)
+                    else "unavailable"
+                ),
                 "Expected value source": (
                     f"Schwab {_clean(row.get('live_status'))}; "
                     f"edge {_clean(row.get('edge_verdict') or row.get('replay_ev_verdict'))}; "
                     f"match {match_level}"
                 ),
-                "Edge sample size / win rate / avg P/L": (
-                    f"n={int(sample) if math.isfinite(sample) else ''} / smoothed historical win={win:.0%} / "
-                    f"avg=${avg:.2f} / calibration={_clean(row.get('confidence_calibration_status')) or 'unavailable'}"
-                    if math.isfinite(win) or math.isfinite(avg) or math.isfinite(sample)
-                    else ""
-                ),
+                "Edge sample size / win rate / avg P/L": edge_summary,
                 "Required confirmation": _blocker_text(row),
                 "Why Execute, Scout, Research, or Avoid": _clean(row.get("v4_direct_disposition_reason")) or _why_review(row, top_flow),
             }
@@ -3854,7 +3924,7 @@ def write_v4_outputs(
         "|:--|:--|",
         f"| Pipeline | {PIPELINE_NAME_V4} |",
         f"| Version | {PIPELINE_VERSION_V4} |",
-        "| Version lock | locked 2026-06-12; supersedes v4.0 |",
+        f"| Version lock | locked {pipeline_version_record('v4')['locked_on']}; rollback chain retained through v4.0 |",
         f"| Run mode | {RUN_MODE_V4} |",
         f"| Data quality | {data_quality.get('status', 'unknown')} |",
         f"| Schwab status | {schwab_status} |",
@@ -4046,6 +4116,12 @@ def run_v4_daily(*, base_dir: Path, out_dir: Path, args: argparse.Namespace) -> 
         hot_chains = load_hot_chains(base_dir, asof, point_in_time=True)
     except Exception as exc:
         raise SystemExit(f"{PIPELINE_NAME_V4} input load failed: {exc}") from exc
+
+    # Realised vol drives the credit policy's IV/HV richness gate, which is the
+    # strongest premium-selling signal on the 2026 panel. It has to be computed
+    # from the dated-folder close history; the UW `volatility` field is
+    # outlier-contaminated and destroys the signal. See codexuw/realized_vol.py.
+    stock_screener = attach_realized_vol(stock_screener, base_dir.parent, asof)
     try:
         chain_oi = load_chain_oi(base_dir, asof, point_in_time=True)
     except Exception:
@@ -4605,7 +4681,7 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
                 "|:--|:--|",
                 f"| Pipeline | {PIPELINE_NAME_V4} |",
                 f"| Version | {PIPELINE_VERSION_V4} |",
-                "| Version lock | locked 2026-06-12; supersedes v4.0 |",
+                f"| Version lock | locked {pipeline_version_record('v4')['locked_on']}; rollback chain retained through v4.0 |",
                 "| Run mode | Overlay |",
                 f"| Changed candidates | {len(changes)} |",
                 "",

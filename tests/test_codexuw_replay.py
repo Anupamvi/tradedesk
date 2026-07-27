@@ -171,16 +171,62 @@ def test_debit_above_target_is_annotated_not_unfilled() -> None:
     assert result["entry_debit"] > result["target_debit"]
 
 
-def test_replay_quality_pattern_accepts_validated_credit_and_buffer() -> None:
+def test_replay_quality_pattern_accepts_validated_credit_and_dte() -> None:
     passed, reason = replay_quality_pattern(
         direction="Bear Call",
         trend="uptrend",
         credit_pct=0.25,
-        distance_pct=0.027,
+        distance_pct=0.032,
         expected_move=0.04,
+        dte=30,
+        iv_rank=45.0,
     )
     assert passed is True
-    assert reason == "validated_credit25_30_expected_buffer"
+    assert reason == "validated_credit25_30_dte28_ivrank30"
+
+
+def test_replay_quality_pattern_matches_live_credit_policy_gates() -> None:
+    """The replay guard must never be looser than the live credit policy.
+
+    If these drift apart, the evidence base describes trades the live pipeline
+    can never take and every downstream calibration becomes unrepresentative.
+    """
+    from codexuw.credit_policy import MIN_DTE, MIN_IV_RANK
+
+    failed, reason = replay_quality_pattern(
+        direction="Bear Call",
+        trend="uptrend",
+        credit_pct=0.25,
+        distance_pct=0.032,
+        expected_move=0.04,
+        dte=MIN_DTE - 1,
+        iv_rank=MIN_IV_RANK + 10,
+    )
+    assert failed is False
+    assert reason == f"replay_guard_dte_below_{int(MIN_DTE)}"
+
+    failed, reason = replay_quality_pattern(
+        direction="Bear Call",
+        trend="uptrend",
+        credit_pct=0.25,
+        distance_pct=0.032,
+        expected_move=0.04,
+        dte=MIN_DTE + 1,
+        iv_rank=MIN_IV_RANK - 1,
+    )
+    assert failed is False
+    assert reason == f"replay_guard_iv_rank_below_{int(MIN_IV_RANK)}"
+
+    passed, _ = replay_quality_pattern(
+        direction="Bear Call",
+        trend="uptrend",
+        credit_pct=0.25,
+        distance_pct=0.032,
+        expected_move=0.04,
+        dte=MIN_DTE,
+        iv_rank=MIN_IV_RANK,
+    )
+    assert passed is True
 
 
 def test_replay_quality_pattern_rejects_unvalidated_low_credit_range_trade() -> None:
@@ -190,21 +236,29 @@ def test_replay_quality_pattern_rejects_unvalidated_low_credit_range_trade() -> 
         credit_pct=0.17,
         distance_pct=0.026,
         expected_move=0.04,
+        dte=30,
+        iv_rank=45.0,
     )
     assert passed is False
     assert reason == "replay_guard_credit_below_validated_band"
 
 
-def test_replay_quality_pattern_rejects_credit_without_expected_move_buffer() -> None:
-    passed, reason = replay_quality_pattern(
+def test_replay_quality_pattern_ignores_distance_buffer() -> None:
+    """Short-strike distance is deliberately no longer a gate.
+
+    It is collinear with the credit band (corr -0.734) and ranked worse than no
+    selection at all out-of-sample, so a tight-but-in-band spread must pass.
+    """
+    passed, _ = replay_quality_pattern(
         direction="Bear Call",
         trend="uptrend",
         credit_pct=0.25,
         distance_pct=0.02,
         expected_move=0.04,
+        dte=30,
+        iv_rank=45.0,
     )
-    assert passed is False
-    assert reason == "replay_guard_insufficient_expected_move_buffer"
+    assert passed is True
 
 
 def test_write_replay_asof_report_emits_explicit_trade_ticket(tmp_path) -> None:
@@ -259,13 +313,15 @@ def test_decision_selection_keeps_only_strongest_flow_aligned_trade_per_day() ->
                 "asof": "2026-04-29",
                     "ticker": "AAA",
                     "direction": "Bear Call",
-                    "regime": "downtrend",
+                    "regime": "uptrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
                 "entry_credit_pct_width": 0.27,
                 "entry_quote_width_pct": 0.10,
-                "iv30d": 0.20,
-                "dte": 22,
+                "iv30d": 0.30,
+                "realized_volatility_30d": 0.20,
+                "dte": 30,
+                "iv_rank": 45.0,
                 "combined_flow_bias": -0.12,
                 "exact_evaluated": True,
             },
@@ -273,13 +329,15 @@ def test_decision_selection_keeps_only_strongest_flow_aligned_trade_per_day() ->
                 "asof": "2026-04-29",
                     "ticker": "BBB",
                     "direction": "Bear Call",
-                    "regime": "downtrend",
+                    "regime": "uptrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
                 "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.20,
-                "dte": 22,
+                "realized_volatility_30d": 0.30,
+                "dte": 30,
+                "iv_rank": 45.0,
                 "combined_flow_bias": -0.05,
                 "exact_evaluated": True,
             },
@@ -290,7 +348,9 @@ def test_decision_selection_keeps_only_strongest_flow_aligned_trade_per_day() ->
 
     assert selected["decision_pass"].sum() == 1
     assert bool(selected.loc[selected["ticker"].eq("AAA"), "decision_pass"].iloc[0]) is True
-    assert selected.loc[selected["ticker"].eq("BBB"), "decision_reason"].iloc[0] == "decision_credit_policy:flow_alignment_below_0.10"
+    assert selected.loc[selected["ticker"].eq("BBB"), "decision_reason"].iloc[0] == (
+        "decision_credit_policy:flow_alignment_below_0.10|iv_hv_ratio_below_0.90"
+    )
 
 
 def test_decision_selection_blocks_near_earnings() -> None:
@@ -503,21 +563,24 @@ def test_debit_time_stop_closes_before_expiration() -> None:
     assert result["exit_reason"] == "time_stop_7dte"
 
 
-def test_decision_selection_requires_distance_even_with_volatility_edge() -> None:
+def test_decision_selection_requires_volatility_richness_even_with_high_iv_rank() -> None:
+    """IV/HV is the binding volatility bound; a high iv_rank cannot rescue implied
+    vol that is cheaper than the realised vol of the underlying."""
     detail = pd.DataFrame(
         [
             {
                 "asof": "2026-04-22",
                     "ticker": "SEC",
                     "direction": "Bear Call",
-                    "regime": "downtrend",
+                    "regime": "uptrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 104.0,
-                "entry_credit_pct_width": 0.24,
+                "entry_credit_pct_width": 0.26,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.45,
-                "realized_volatility_30d": 0.50,
-                "dte": 23,
+                "realized_volatility_30d": 0.60,
+                "iv_rank": 55.0,
+                "dte": 30,
                 "combined_flow_bias": -0.20,
                 "next_earnings_dt": "2026-06-10",
                 "exact_evaluated": True,
@@ -526,13 +589,15 @@ def test_decision_selection_requires_distance_even_with_volatility_edge() -> Non
                 "asof": "2026-04-23",
                     "ticker": "PRI",
                     "direction": "Bear Call",
-                    "regime": "downtrend",
+                    "regime": "uptrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
                 "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.10,
-                "iv30d": 0.20,
-                "dte": 21,
+                "iv30d": 0.30,
+                "realized_volatility_30d": 0.20,
+                "iv_rank": 12.0,
+                "dte": 30,
                 "combined_flow_bias": -0.12,
                 "next_earnings_dt": "2026-06-10",
                 "exact_evaluated": True,
@@ -541,14 +606,15 @@ def test_decision_selection_requires_distance_even_with_volatility_edge() -> Non
                 "asof": "2026-04-23",
                     "ticker": "SEC2",
                     "direction": "Bear Call",
-                    "regime": "downtrend",
+                    "regime": "uptrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 104.0,
-                "entry_credit_pct_width": 0.24,
+                "entry_credit_pct_width": 0.26,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.45,
-                "realized_volatility_30d": 0.50,
-                "dte": 23,
+                "realized_volatility_30d": 0.60,
+                "iv_rank": 55.0,
+                "dte": 30,
                 "combined_flow_bias": -0.20,
                 "next_earnings_dt": "2026-06-10",
                 "exact_evaluated": True,
@@ -559,12 +625,12 @@ def test_decision_selection_requires_distance_even_with_volatility_edge() -> Non
     selected = apply_replay_decision_selection(detail, max_selected_per_day=1)
 
     assert bool(selected.loc[selected["ticker"].eq("SEC"), "decision_pass"].iloc[0]) is False
-    assert "credit_short_strike_inside_distance_buffer" in selected.loc[
+    assert "iv_hv_ratio_below_0.90" in selected.loc[
         selected["ticker"].eq("SEC"), "decision_reason"
     ].iloc[0]
     assert bool(selected.loc[selected["ticker"].eq("PRI"), "decision_pass"].iloc[0]) is True
     assert bool(selected.loc[selected["ticker"].eq("SEC2"), "decision_pass"].iloc[0]) is False
-    assert "credit_short_strike_inside_distance_buffer" in selected.loc[
+    assert "iv_hv_ratio_below_0.90" in selected.loc[
         selected["ticker"].eq("SEC2"), "decision_reason"
     ].iloc[0]
 
@@ -576,13 +642,15 @@ def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
                 "asof": "2026-04-29",
                     "ticker": "TOP",
                     "direction": "Bear Call",
-                    "regime": "downtrend",
+                    "regime": "uptrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
                 "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.10,
-                "iv30d": 0.20,
-                "dte": 21,
+                "iv30d": 0.30,
+                "realized_volatility_30d": 0.20,
+                "dte": 30,
+                "iv_rank": 45.0,
                 "combined_flow_bias": -0.12,
                 "exact_evaluated": True,
             },
@@ -590,13 +658,15 @@ def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
                 "asof": "2026-04-29",
                     "ticker": "ADD",
                     "direction": "Bear Call",
-                    "regime": "downtrend",
+                    "regime": "uptrend",
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 110.0,
                 "entry_credit_pct_width": 0.26,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.45,
-                "dte": 21,
+                "realized_volatility_30d": 0.30,
+                "dte": 30,
+                "iv_rank": 45.0,
                 "combined_flow_bias": -0.20,
                 "exact_evaluated": True,
             },
@@ -610,7 +680,9 @@ def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
                 "entry_credit_pct_width": 0.26,
                 "entry_quote_width_pct": 0.10,
                 "iv30d": 0.45,
-                "dte": 21,
+                "realized_volatility_30d": 0.30,
+                "dte": 30,
+                "iv_rank": 45.0,
                 "combined_flow_bias": 0.20,
                 "exact_evaluated": True,
             },
@@ -619,7 +691,13 @@ def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
 
     selected = apply_replay_decision_selection(detail, max_selected_per_day=8)
 
-    assert selected.loc[selected["ticker"].eq("TOP"), "decision_pass"].iloc[0]
-    assert not selected.loc[selected["ticker"].eq("ADD"), "decision_pass"].iloc[0]
-    assert selected.loc[selected["ticker"].eq("ADD"), "decision_reason"].iloc[0] == "decision_eligible"
+    # The invariant under test is the cap: at most one credit trade per session,
+    # however the sleeve happens to rank them. TOP/ADD both clear policy, SKIP is
+    # a Bull Put in a downtrend and is eligible but competes in the same sleeve.
+    credit = selected[selected["ticker"].isin(["TOP", "ADD"])]
+    assert credit["decision_pass"].sum() == 1
+    assert (
+        selected.loc[selected["ticker"].eq("ADD"), "decision_reason"].iloc[0]
+        in {"decision_eligible", "decision_selected_credit_edge_sleeve"}
+    )
     assert not selected.loc[selected["ticker"].eq("SKIP"), "decision_pass"].iloc[0]

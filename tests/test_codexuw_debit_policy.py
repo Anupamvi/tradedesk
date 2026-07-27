@@ -49,29 +49,24 @@ def test_bull_call_intermediate_maturity_gap_is_rejected():
     assert "dte_outside_7_10_or_22_45" in reasons
 
 
-def test_bear_put_requires_validated_directional_flow_floor():
-    ok, reasons = assess_debit_spread(
-        _bull_row(
-            direction="Bear Put",
-            regime="downtrend",
-            dte=28,
-            combined_flow_bias=-0.19,
-        ),
-        live=False,
-    )
-    assert not ok
-    assert "flow_alignment_below_0.20" in reasons
+def test_bear_put_family_is_retired():
+    """Bear Put lost in every out-of-sample fold (PF 0.855, 0/4) and was removed.
 
-    ok, reasons = assess_debit_spread(
-        _bull_row(
-            direction="Bear Put",
-            regime="downtrend",
-            dte=28,
-            combined_flow_bias=-0.20,
-        ),
-        live=False,
-    )
-    assert ok, reasons
+    No conditioning rescued it, including the best macro slice tried
+    (low market IV: PF 1.002, +$29 over 165 trades).
+    """
+    for flow_bias in (-0.19, -0.20, -0.50):
+        ok, reasons = assess_debit_spread(
+            _bull_row(
+                direction="Bear Put",
+                regime="downtrend",
+                dte=28,
+                combined_flow_bias=flow_bias,
+            ),
+            live=False,
+        )
+        assert not ok
+        assert "unsupported_debit_direction" in reasons
 
 
 def test_complete_split_bot_bundle_counts_as_full_flow():

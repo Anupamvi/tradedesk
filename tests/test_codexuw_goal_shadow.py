@@ -182,3 +182,33 @@ def test_locked_entry_resolves_without_entry_day_hot_chain_quote() -> None:
     assert result["pnl_1x"] == pytest.approx(67.0)
 
 
+def test_write_goal_shadow_outputs_resolves_ledger_through_run_date(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    calls: list[tuple[Path, Path, dt.date]] = []
+
+    def _resolve(*, root: Path, ledger_path: Path, through_date: dt.date) -> pd.DataFrame:
+        calls.append((root, ledger_path, through_date))
+        return pd.read_csv(ledger_path, low_memory=False)
+
+    monkeypatch.setattr(goal_shadow, "resolve_goal_shadow_ledger", _resolve)
+    out_dir = tmp_path / "out" / "run"
+    shadow, paths, summary = goal_shadow.write_goal_shadow_outputs(
+        pd.DataFrame([_candidate("AAA", dp_bias=0.60)]),
+        out_dir=out_dir,
+        asof=dt.date(2026, 7, 23),
+        root=tmp_path,
+        resolve_through_date=dt.date(2026, 7, 23),
+    )
+
+    assert len(shadow) == 1
+    assert calls == [
+        (
+            tmp_path,
+            tmp_path / "out" / goal_shadow.GOAL_SHADOW_LEDGER_NAME,
+            dt.date(2026, 7, 23),
+        )
+    ]
+    assert paths["goal_shadow_ledger"].endswith(goal_shadow.GOAL_SHADOW_LEDGER_NAME)
+    assert summary["pending_count"] == 1

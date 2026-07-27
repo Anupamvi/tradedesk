@@ -30,7 +30,7 @@ from codexuw.daily_v4 import (
 
 
 ASOF = dt.date(2026, 5, 20)
-EXPIRY = "2026-05-29"
+EXPIRY = "2026-06-19"
 
 
 def _candidate(**overrides) -> dict:
@@ -40,7 +40,10 @@ def _candidate(**overrides) -> dict:
         "direction": "Bull Put",
         "strategy": "Bull Put Credit Spread",
         "expiry": EXPIRY,
-        "dte": 9,
+        "dte": 30,
+        "iv30d": 0.42,
+        "realized_volatility_30d": 0.30,
+        "iv_rank": 45.0,
         "trade_status": "Research",
         "trade_tier": "",
         "trade_status_reason": "credit target miss but thesis remains reviewable",
@@ -70,8 +73,8 @@ def _candidate(**overrides) -> dict:
         "edge_win_rate": 0.62,
         "edge_avg_pnl": 24.0,
         "edge_match_level": "exact",
-        "regime": "uptrend",
-        "regime_trend": "uptrend",
+        "regime": "downtrend",
+        "regime_trend": "downtrend",
         "confirmation_score": 7.2,
         "score": 6.5,
         "catalyst_status": "mixed",
@@ -81,7 +84,7 @@ def _candidate(**overrides) -> dict:
         "price_annotation": "current credit $0.75 is below target $0.90; show as work-limit",
         "payoff_calibration_status": "PASS",
         "payoff_route_level": "base",
-        "payoff_route_key": "base::Credit|Bull Put|uptrend",
+        "payoff_route_key": "base::Credit|Bull Put|downtrend",
         "payoff_minimum_sample_required": 20,
         "payoff_sample_size": 27,
         "payoff_stress_10_win_rate": 0.78,
@@ -477,7 +480,8 @@ def test_v4_validated_structural_credit_route_replaces_sparse_exact_edge_only() 
         edge_sample_size=0,
         edge_profit_factor=float("nan"),
         edge_avg_pnl=float("nan"),
-        combined_flow_bias=0.0,
+        # bearish bias on a Bear Call is aligned flow (align = bias * -1 = +0.20)
+        combined_flow_bias=-0.20,
         flow_quality="directional",
         oi_carryover_status="supportive",
         catalyst_status="clear",
@@ -510,6 +514,77 @@ def test_v4_validated_structural_credit_route_replaces_sparse_exact_edge_only() 
     adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
 
     assert adjusted.iloc[0]["trade_status"] == "Execute"
+
+
+def test_v4_validated_flow_cost_route_uses_empirical_entry_floor() -> None:
+    row = _candidate(
+        ticker="RANGE_CALL",
+        direction="Bear Call",
+        strategy="Bear Call Credit Spread",
+        regime="range",
+        regime_trend="range",
+        expiry="2026-08-21",
+        dte=32,
+        short_strike=110.0,
+        long_strike=115.0,
+        credit=1.10,
+        mid_credit=1.12,
+        natural_credit=1.10,
+        credit_pct_width=0.22,
+        max_profit=110.0,
+        max_loss=390.0,
+        required_entry=1.25,
+        target_entry=1.25,
+        penalties="thin_replay_sample",
+        edge_match_level="unavailable",
+        edge_sample_size=0,
+        edge_profit_factor=float("nan"),
+        edge_avg_pnl=float("nan"),
+        # bearish bias on a Bear Call is aligned flow (align = bias * -1 = +0.20)
+        combined_flow_bias=-0.20,
+        flow_quality="directional",
+        oi_carryover_status="supportive",
+        catalyst_status="clear",
+        catalyst_earnings_date="2026-09-30",
+        catalyst_earnings_days=133,
+        distance_pct=0.08,
+        expected_move_ratio=1.50,
+        payoff_route_level="flow_cost",
+        payoff_route_key="flow_cost::Credit|Bear Call|range|flow=directional|cost=18to30",
+        payoff_minimum_sample_required=12,
+        payoff_sample_size=17,
+        payoff_stress_10_win_rate=0.882,
+        payoff_stress_10_average_pnl=35.85,
+        payoff_stress_10_average_win_risk_fraction=0.20,
+        payoff_stress_10_average_loss_risk_fraction=0.40,
+        payoff_stress_10_profit_factor=2.36,
+        payoff_walk_forward_oos_sample=8,
+        payoff_walk_forward_oos_profit_factor=float("inf"),
+        payoff_post_activation_oos_sample=3,
+        payoff_post_activation_oos_average_pnl=53.15,
+        payoff_post_activation_oos_profit_factor=float("inf"),
+        payoff_entry_pct_width_p25=0.18,
+        payoff_entry_pct_width_p75=0.22,
+        confidence_calibration_status="PASS",
+        confidence_model_tier="strategy_family_validated",
+        confidence_calibration_sample_size=185,
+        confidence_probability_lower_bound=0.61,
+        confidence_calibration_brier=0.23,
+        confidence_calibration_baseline_brier=0.25,
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["v4_expectancy_safe_entry_price"] == 0.90
+    assert adjusted.iloc[0]["trade_status"] == "Execute"
+
+    board = build_v4_opportunity_board(adjusted, top_flow=pd.DataFrame())
+    assert board.iloc[0]["Modeled win rate"] == "88%"
+    assert board.iloc[0]["Win-rate basis"] == "validated payoff route; 10% fill stress"
+    assert "10% fill-stress PF=2.36" in board.iloc[0]["Payoff evidence"]
+    assert "route evidence shown separately" in board.iloc[0]["Per-ticket replay edge"]
+    assert "PF=" in board.iloc[0]["Post-pricing EV / PF"]
+    assert board.iloc[0]["Edge sample size / win rate / avg P/L"] == "exact/ticker match unavailable; validated route evidence reported separately"
 
 
 def test_v4_medium_debit_sleeve_does_not_generalize_to_range_or_bear_put() -> None:
@@ -669,8 +744,8 @@ def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path, monkeypatch
     base_dir.mkdir()
     scored = pd.DataFrame(
         [
-                _candidate(ticker="AAA", expiry="2026-06-10", dte=21, trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, natural_credit=1.0, required_entry=0.9, target_entry=0.9, credit_pct_width=0.25, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
-                _candidate(ticker="BBB", sector="Healthcare", expiry="2026-06-10", dte=21, trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, natural_credit=1.1, required_entry=0.9, target_entry=0.9, credit_pct_width=0.26, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
+                _candidate(ticker="AAA", expiry="2026-06-19", dte=30, trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, natural_credit=1.0, required_entry=0.9, target_entry=0.9, credit_pct_width=0.25, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.20, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
+                _candidate(ticker="BBB", sector="Healthcare", expiry="2026-06-19", dte=30, trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, natural_credit=1.1, required_entry=0.9, target_entry=0.9, credit_pct_width=0.26, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.20, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
         ]
     )
     top_flow = pd.DataFrame(

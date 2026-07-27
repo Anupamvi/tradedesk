@@ -14,6 +14,7 @@ from .catalysts import earnings_crosses_expiry, earnings_event_date
 from .credit_policy import (
     CREDIT_POLICY_VERSION,
     MAX_CREDIT_PCT_WIDTH,
+    MAX_QUOTE_WIDTH_PCT,
     MIN_CREDIT_PCT_WIDTH,
     assess_credit_spread,
     credit_spread_edge_lane,
@@ -381,9 +382,17 @@ def simulate_spread_exit(
     *,
     slippage_pct: float,
     profit_take_pct: float,
-    stop_loss_mult: float,
+    stop_loss_mult: float | None,
     debit_time_stop_dte: int = -1,
 ) -> dict[str, Any]:
+    """Simulate a defined-risk spread to its exit.
+
+    ``stop_loss_mult=None`` means no hard stop: the position is carried to the
+    profit target or to expiry. Maximum loss is still bounded by the spread
+    width, so this removes a discretionary overlay, not a risk control. A
+    13-point exit grid over 3,395 replayed trades showed every stop-carrying
+    configuration underperforming its stopless twin, in-sample and out.
+    """
     expiry = row.get("expiry")
     asof = row.get("asof")
     if not isinstance(expiry, dt.date) or not isinstance(asof, dt.date):
@@ -395,7 +404,7 @@ def simulate_spread_exit(
         entry_debit = safe_float(entry.get("entry_debit"))
         width = safe_float(entry.get("entry_width"))
         target_value = min(width, entry_debit * (1.0 + profit_take_pct)) if math.isfinite(width) else entry_debit * (1.0 + profit_take_pct)
-        stop_value = entry_debit / max(stop_loss_mult, 1.0)
+        stop_value = entry_debit / max(stop_loss_mult, 1.0) if stop_loss_mult is not None else math.nan
         quote_days_seen = 0
         for day in sorted(d for d in quote_history if asof < d <= expiry):
             value_mid = _spread_mid_value(row, quote_history[day])
@@ -418,7 +427,7 @@ def simulate_spread_exit(
                     "exact_win": pnl > 0,
                     "quote_days_seen": quote_days_seen,
                 }
-            if exit_value <= stop_value:
+            if math.isfinite(stop_value) and exit_value <= stop_value:
                 pnl = exit_value - entry_debit
                 return {
                     **entry,
@@ -469,7 +478,7 @@ def simulate_spread_exit(
     entry_credit = safe_float(entry.get("entry_credit"))
     width = safe_float(entry.get("entry_width"))
     target_debit = entry_credit * (1.0 - profit_take_pct)
-    stop_debit = entry_credit * stop_loss_mult
+    stop_debit = entry_credit * stop_loss_mult if stop_loss_mult is not None else math.nan
     quote_days_seen = 0
     for day in sorted(d for d in quote_history if asof < d <= expiry):
         debit_mid = _spread_mid_debit(row, quote_history[day])
@@ -490,7 +499,7 @@ def simulate_spread_exit(
                 "exact_win": pnl > 0,
                 "quote_days_seen": quote_days_seen,
             }
-        if exit_debit >= stop_debit:
+        if math.isfinite(stop_debit) and exit_debit >= stop_debit:
             pnl = entry_credit - exit_debit
             return {
                 **entry,
@@ -1333,7 +1342,7 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
             return False, "debit_policy:" + "|".join(debit_reasons)
         if not math.isfinite(debit) or not math.isfinite(width) or debit <= 0 or debit >= width:
             return False, "debit_entry_impossible"
-        if math.isfinite(quote_width) and quote_width > 0.80:
+        if math.isfinite(quote_width) and quote_width > MAX_QUOTE_WIDTH_PCT:
             return False, "debit_quote_too_wide"
         if not math.isfinite(align) or align <= 0:
             return False, "no_flow_edge_alignment"
@@ -1349,6 +1358,9 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
     credit_pct = safe_float(rec.get("entry_credit_pct_width"))
     if not math.isfinite(credit_pct) or credit_pct < MIN_CREDIT_PCT_WIDTH:
         return False, "entry_credit_below_25pct_width"
+    credit_quote_width = safe_float(rec.get("entry_quote_width_pct"))
+    if math.isfinite(credit_quote_width) and credit_quote_width > MAX_QUOTE_WIDTH_PCT:
+        return False, "credit_quote_too_wide"
     direction = str(rec.get("direction", ""))
     stock = safe_float(rec.get("stock_price_eod"))
     short = safe_float(rec.get("short_strike_eod"))
@@ -1359,8 +1371,8 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
     else:
         distance = math.nan
     expected = iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
-    if direction == "Bull Put" and math.isfinite(distance) and math.isfinite(expected) and distance < expected * 0.55:
-        return False, "replay_guard_bull_put_expected_move"
+    # No distance-vs-expected-move gate here: it is collinear with the credit
+    # band and scored worse than no selection at all out-of-sample.
     align = safe_float(rec.get("combined_flow_bias"), 0.0)
     if (direction == "Bull Put" and align <= 0) or (direction == "Bear Call" and align >= 0):
         return False, "no_flow_edge_alignment"
@@ -1370,6 +1382,8 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
         credit_pct=credit_pct,
         distance_pct=distance,
         expected_move=expected,
+        dte=dte,
+        iv_rank=safe_float(rec.get("iv_rank")),
     )
     return pattern_pass, pattern
 
@@ -1389,8 +1403,8 @@ def run_replay(
     max_eval_candidates: int = 50,
     bot_max_rows: int = 0,
     slippage_pct: float = 0.10,
-    profit_take_pct: float = 0.60,
-    stop_loss_mult: float = 2.0,
+    profit_take_pct: float = 0.50,
+    stop_loss_mult: float | None = None,
     debit_time_stop_dte: int = -1,
     max_selected_per_day: int = 8,
     max_credit_selected_per_day: int = 1,
@@ -1650,7 +1664,9 @@ def run_replay(
         "- Selection integrity: entry-time fields only; outcomes are attached after selection and never used to qualify a trade.",
         f"- Monthly P/L target: ${monthly_profit_target:,.0f}",
         f"- Train/test split day: {payload['split_day'] or 'n/a'}",
-        f"- Fill model: entry at mid less {slippage_pct:.0%}; exits at mid plus {slippage_pct:.0%}; {profit_take_pct:.0%} profit target; {stop_loss_mult:.1f}x credit stop; expiry settlement fallback.",
+        f"- Fill model: entry at mid less {slippage_pct:.0%}; exits at mid plus {slippage_pct:.0%}; {profit_take_pct:.0%} profit target; "
+        + (f"{stop_loss_mult:.1f}x credit stop; " if stop_loss_mult is not None else "no hard stop (risk defined by spread width); ")
+        + "expiry settlement fallback.",
         "",
         "## Train/Test",
         "",
@@ -1788,8 +1804,13 @@ def main() -> None:
         help="Optional bounded (0..0.25) equity dark-pool contribution to combined flow bias",
     )
     parser.add_argument("--slippage-pct", type=float, default=0.10)
-    parser.add_argument("--profit-take-pct", type=float, default=0.60)
-    parser.add_argument("--stop-loss-mult", type=float, default=2.0)
+    parser.add_argument("--profit-take-pct", type=float, default=0.50)
+    parser.add_argument(
+        "--stop-loss-mult",
+        type=float,
+        default=None,
+        help="Hard stop as a multiple of entry credit. Omit for no stop (validated default).",
+    )
     parser.add_argument(
         "--debit-time-stop-dte",
         type=int,

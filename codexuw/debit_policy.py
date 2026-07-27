@@ -6,9 +6,17 @@ from typing import Any
 from .data import safe_float
 
 
-DEBIT_POLICY_VERSION = "debit-v2.3-confidence-calibrated"
+DEBIT_POLICY_VERSION = "debit-v3.0-bull-call-only"
 
 
+# Bear Put was removed after the regenerated replay base showed it losing in
+# every out-of-sample fold and under every macro conditioning tried:
+#
+#   Bear Put, any condition ... n=303  PF 0.855  -$3,500  OOS 0/4 folds
+#   Bear Put + low market IV ... n=165  PF 1.002    +$29  OOS 1/4 folds
+#
+# There is no slice of it that pays. An unknown direction falls through to
+# "unsupported_debit_direction" below, so removing the key disables the family.
 DEBIT_POLICY = {
     "Bull Call": {
         "allowed_regimes": {"uptrend"},
@@ -19,16 +27,6 @@ DEBIT_POLICY = {
         "min_flow_alignment": 0.20,
         "max_quote_width_pct": 0.35,
         "max_iv_rank": 55.0,
-    },
-    "Bear Put": {
-        "allowed_regimes": {"downtrend"},
-        "allowed_dte_ranges": ((14, 45),),
-        "max_debit_pct_width": 0.40,
-        "min_reward_risk": 1.25,
-        "min_expected_move_ratio": 1.25,
-        "min_flow_alignment": 0.20,
-        "max_quote_width_pct": 0.35,
-        "max_iv_rank": 45.0,
     },
 }
 

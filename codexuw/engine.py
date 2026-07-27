@@ -11,7 +11,17 @@ from typing import Any
 import pandas as pd
 
 from .catalysts import earnings_crosses_expiry, earnings_event_date
-from .credit_policy import MAX_CREDIT_PCT_WIDTH, MIN_CREDIT_PCT_WIDTH, MIN_WATCH_CREDIT_PCT_WIDTH
+from .credit_policy import (
+    ALLOWED_REGIMES as CREDIT_ALLOWED_REGIMES,
+    MAX_CREDIT_PCT_WIDTH,
+    MAX_DTE,
+    MIN_CREDIT_PCT_WIDTH,
+    MIN_DTE,
+    MIN_IV_HV_RATIO,
+    MIN_IV_RANK,
+    MIN_REALIZED_VOL,
+    MIN_WATCH_CREDIT_PCT_WIDTH,
+)
 from .data import safe_float
 from .edge_model import EDGE_COLUMNS, apply_replay_edge_model
 from .occ import build_occ_symbol, parse_occ_symbol
@@ -112,24 +122,44 @@ def replay_quality_pattern(
     credit_pct: float,
     distance_pct: float,
     expected_move: float,
+    dte: float = math.nan,
+    iv_rank: float = math.nan,
 ) -> tuple[bool, str]:
-    """Return whether a spread matches the replay-validated high-quality slice."""
+    """Return whether a spread matches the replay-validated high-quality slice.
+
+    The thresholds here MUST mirror the live credit policy constants. If they
+    drift apart, the replay evidence base describes a population of trades the
+    live pipeline can never take, and every downstream calibration becomes
+    unrepresentative.
+
+    `distance_pct` and `expected_move` are retained for reporting only. The
+    distance buffer is deliberately no longer a gate: it is collinear with the
+    credit band (corr -0.734) and scored worse than no selection at all.
+    """
     ratio = distance_pct / expected_move if math.isfinite(distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
+    band_tag = (
+        f"validated_credit{int(round(MIN_CREDIT_PCT_WIDTH * 100))}"
+        f"_{int(round(MAX_CREDIT_PCT_WIDTH * 100))}_dte{int(MIN_DTE)}_ivrank{int(MIN_IV_RANK)}"
+    )
     if (
         math.isfinite(credit_pct)
         and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
-        and math.isfinite(ratio)
-        and ratio >= 0.65
+        and math.isfinite(dte)
+        and MIN_DTE <= dte <= MAX_DTE
+        and math.isfinite(iv_rank)
+        and iv_rank >= MIN_IV_RANK
     ):
-        return True, "validated_credit25_30_expected_buffer"
-    if not math.isfinite(expected_move) or expected_move <= 0:
-        return False, "replay_guard_missing_expected_move"
+        return True, band_tag
     if math.isfinite(credit_pct) and credit_pct < MIN_CREDIT_PCT_WIDTH:
         return False, "replay_guard_credit_below_validated_band"
     if math.isfinite(credit_pct) and credit_pct > MAX_CREDIT_PCT_WIDTH:
         return False, "replay_guard_credit_above_validated_band"
-    if math.isfinite(ratio) and ratio < 0.65:
-        return False, "replay_guard_insufficient_expected_move_buffer"
+    if not math.isfinite(dte) or dte < MIN_DTE:
+        return False, f"replay_guard_dte_below_{int(MIN_DTE)}"
+    if dte > MAX_DTE:
+        return False, f"replay_guard_dte_above_{int(MAX_DTE)}"
+    if not math.isfinite(iv_rank) or iv_rank < MIN_IV_RANK:
+        return False, f"replay_guard_iv_rank_below_{int(MIN_IV_RANK)}"
     return False, "replay_guard_no_validated_pattern"
 
 
@@ -472,11 +502,15 @@ def generate_candidates(
                 dte = int((expiry - asof).days) if isinstance(expiry, dt.date) else math.nan
                 iv30d = safe_float(row.get("iv30d"))
                 # The UW export's generic ``volatility`` field has no stable,
-                # documented unit contract. V4.2 calculates annualized HV from
-                # Schwab daily returns instead of silently relabeling this value.
+                # documented unit contract, so it is never used as realised vol.
+                # ``realized_volatility_30d`` is computed point-in-time from the
+                # dated-folder close history by codexuw.realized_vol and attached
+                # to the screener frame before candidates are generated.
                 raw_uw_volatility = safe_float(row.get("volatility"))
-                realized_volatility_30d = math.nan
-                iv_hv_ratio = math.nan
+                realized_volatility_30d = safe_float(row.get("realized_volatility_30d"))
+                iv_hv_ratio = safe_float(row.get("iv_hv_ratio"))
+                if not math.isfinite(iv_hv_ratio) and math.isfinite(iv30d) and math.isfinite(realized_volatility_30d) and realized_volatility_30d > 0:
+                    iv_hv_ratio = iv30d / realized_volatility_30d
                 expected_move = iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
                 if direction in CREDIT_DIRECTIONS:
                     expected_ratio = distance_pct / expected_move if math.isfinite(distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
@@ -522,9 +556,9 @@ def generate_candidates(
                     "iv30d": safe_float(row.get("iv30d")),
                     "raw_uw_volatility": raw_uw_volatility,
                     "realized_volatility_30d": realized_volatility_30d,
-                    "realized_volatility_source": "unvalidated_uw_field_not_used",
+                    "realized_volatility_source": row.get("realized_volatility_source", "unavailable"),
                     "iv_hv_ratio": iv_hv_ratio,
-                    "iv_hv_spread": math.nan,
+                    "iv_hv_spread": iv30d - realized_volatility_30d if math.isfinite(iv30d) and math.isfinite(realized_volatility_30d) else math.nan,
                     "implied_move_perc": safe_float(row.get("implied_move_perc")),
                     "next_earnings_dt": row.get("next_earnings_dt"),
                     "edge_type": _edge_text(direction, row, exp_contracts),
@@ -691,6 +725,8 @@ def _score_trade(row: pd.Series, regime: dict[str, Any], asof: dt.date) -> tuple
             credit_pct=credit_pct,
             distance_pct=distance,
             expected_move=expected_move,
+            dte=safe_float(row.get("dte")),
+            iv_rank=safe_float(row.get("iv_rank")),
         )
         if pattern_pass:
             score += 0.25
@@ -884,6 +920,8 @@ def live_validate_and_score(
                     credit_pct=safe_float(row.get("credit_pct_width")),
                     distance_pct=safe_float(row.get("distance_pct")),
                     expected_move=expected_move,
+                    dte=safe_float(row.get("dte")),
+                    iv_rank=safe_float(row.get("iv_rank")),
                 )
                 if pattern_pass:
                     row["replay_pattern"] = pattern
@@ -1155,7 +1193,17 @@ def _secondary_income_eligible(
     align: float,
     score: float,
     dte: float,
+    iv_hv_ratio: float = math.nan,
+    realized_vol: float = math.nan,
 ) -> bool:
+    # The secondary income sleeve is still a short-premium trade, so it must clear the
+    # same volatility-richness bar as the primary credit lane. Without this the sleeve
+    # bypassed the richness gate entirely and sold premium at IV/HV < 1.0 (i.e. implied
+    # cheaper than realized), which is the wrong side of the variance risk premium.
+    if not math.isfinite(iv_hv_ratio) or iv_hv_ratio < MIN_IV_HV_RATIO:
+        return False
+    if not math.isfinite(realized_vol) or realized_vol < MIN_REALIZED_VOL:
+        return False
     return (
         math.isfinite(credit_pct)
         and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
@@ -1188,10 +1236,20 @@ def _credit_secondary_income_replay_lane(row: pd.Series) -> bool:
         align=_flow_alignment(row),
         score=_decision_sort_score(row),
         dte=safe_float(row.get("dte")),
+        iv_hv_ratio=safe_float(row.get("iv_hv_ratio")),
+        realized_vol=safe_float(row.get("realized_volatility_30d")),
     )
 
 
 def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date | None = None) -> pd.DataFrame:
+    # NOTE: this deliberately does NOT call assess_credit_spread, so the credit
+    # regime map and the 28-45 DTE band are not applied to either lane below.
+    # That looks like a bypass bug and it is not -- do not "fix" it without
+    # rerunning scripts/research_secondary_sleeve_regime.py. Conditioned on the
+    # sleeve's own filters, the regimes the map blocks are still profitable
+    # (n=91, PF 1.14), and `range` + Bear Call -- the worst cell in the book at
+    # PF 0.81 / -$8,542 unconditionally -- runs n=23, win 95.7%, PF 5.58 inside
+    # the sleeve. Forcing the map on here deletes the best slice in the sleeve.
     if scored.empty:
         return scored
     out = scored.copy()
@@ -1225,7 +1283,15 @@ def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date 
             out.at[idx, "decision_reason"] = f"decision_earnings_within_10d:{int(earnings_days)}"
         elif not math.isfinite(credit_pct) or credit_pct < MIN_CREDIT_PCT_WIDTH:
             out.at[idx, "decision_reason"] = "decision_credit_below_25pct_width"
-        elif _secondary_income_eligible(credit_pct=credit_pct, ratio=ratio, align=align, score=score, dte=dte) and ratio < 0.65:
+        elif _secondary_income_eligible(
+            credit_pct=credit_pct,
+            ratio=ratio,
+            align=align,
+            score=score,
+            dte=dte,
+            iv_hv_ratio=safe_float(row.get("iv_hv_ratio")),
+            realized_vol=safe_float(row.get("realized_volatility_30d")),
+        ) and ratio < 0.65:
             out.at[idx, "decision_eligible"] = True
             out.at[idx, "decision_reason"] = "decision_secondary_income_eligible"
             out.at[idx, "decision_tier"] = "secondary_income"
@@ -1603,11 +1669,21 @@ def apply_confirmation_framework(
         trend = str(regime.get("trend") or "")
         direction = str(row.get("direction") or "")
         catalyst_status = str(row.get("catalyst_status") or "").lower()
-        checks["price_action_trend"] = (
-            trend == "range"
-            or (trend == "uptrend" and direction in BULLISH_DIRECTIONS)
-            or (trend == "downtrend" and direction in BEARISH_DIRECTIONS)
-        )
+        if _is_debit_strategy(row):
+            # Debit spreads pay when the move continues, so trend alignment is
+            # the right test. Bull Call|uptrend is the only validated debit lane.
+            checks["price_action_trend"] = (
+                trend == "range"
+                or (trend == "uptrend" and direction in BULLISH_DIRECTIONS)
+                or (trend == "downtrend" and direction in BEARISH_DIRECTIONS)
+            )
+        else:
+            # Credit spreads are contrarian: they sell premium after the move,
+            # not into it. ALLOWED_REGIMES is the single source of truth.
+            # Re-deriving alignment here with the trend-following sign made
+            # every credit candidate jointly unsatisfiable with credit policy.
+            allowed = CREDIT_ALLOWED_REGIMES.get(direction)
+            checks["price_action_trend"] = True if allowed is None else trend in allowed
         edge_sample_size = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size"), math.nan))
         if _is_debit_strategy(row) and direction in BULLISH_DIRECTIONS and str(regime.get("flow") or "") == "weak":
             checks["market_regime_alignment"] = (
@@ -2896,7 +2972,7 @@ def build_data_quality_status(
 ) -> dict[str, Any]:
     provenance = input_provenance or {}
     exports = provenance.get("exports") or {}
-    required_exports = ["stock_screener", "hot_chains", "bot_eod_report"]
+    required_exports = ["stock_screener", "hot_chains", "chain_oi_changes", "bot_eod_report", "dp_eod_report"]
     missing_exports = [name for name in required_exports if name not in exports]
     live_counts = scored["live_status"].fillna("unknown").value_counts().to_dict() if not scored.empty and "live_status" in scored.columns else {}
     pass_count = int(live_counts.get("PASS", 0))
@@ -2926,8 +3002,8 @@ def build_data_quality_status(
         {
             "check": "Browser/news notes present",
             "status": "ok" if browser_count > 0 else "missing",
-            "detail": f"{browser_count} local browser/news captures; catalyst counts={catalyst_counts}" if browser_count > 0 else "no local browser/news captures",
-            "critical": browser_count == 0,
+            "detail": f"{browser_count} local browser/news captures; catalyst counts={catalyst_counts}" if browser_count > 0 else "no local browser/news captures; single names remain candidate-gated",
+            "critical": False,
         },
         {
             "check": "Recent-performance report freshness",
@@ -2951,14 +3027,18 @@ def build_data_quality_status(
         },
     ]
     critical_blockers = []
+    warnings = []
     for item in items:
         if item["critical"]:
             key = str(item["check"]).lower().replace("/", "_").replace(" ", "_")
             critical_blockers.append(key)
+        elif item["status"] != "ok":
+            warnings.append(str(item["check"]).lower().replace("/", "_").replace(" ", "_"))
     return {
         "run_mode": run_mode,
-        "status": "critical" if critical_blockers else "ok",
+        "status": "critical" if critical_blockers else "warning" if warnings else "ok",
         "critical_blockers": critical_blockers,
+        "warnings": warnings,
         "items": items,
     }
 
@@ -3106,7 +3186,7 @@ def apply_data_quality_gate(scored: pd.DataFrame, data_quality: dict[str, Any] |
             row_blockers.append("data_gate_missing_portfolio_state")
         penalties = _token_set(row.get("penalties"))
         catalyst_status = str(row.get("catalyst_status") or "").strip().lower()
-        if "news_unconfirmed" in penalties or catalyst_status == "unknown":
+        if not is_etf_row(row) and ("news_unconfirmed" in penalties or catalyst_status == "unknown"):
             row_blockers.append("data_gate_news_unconfirmed")
         if row_blockers:
             out.at[idx, "data_quality_blockers"] = ";".join(row_blockers)

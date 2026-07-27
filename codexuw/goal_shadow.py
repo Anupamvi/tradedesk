@@ -389,7 +389,7 @@ def _simulate_locked_spread_exit(
     through_date: dt.date,
     slippage_pct: float,
     profit_take_pct: float,
-    stop_loss_mult: float,
+    stop_loss_mult: float | None,
 ) -> dict[str, Any]:
     asof = row.get("asof")
     expiry = row.get("expiry")
@@ -403,11 +403,19 @@ def _simulate_locked_spread_exit(
     kind = _strategy_kind(row)
     if kind == "Credit":
         target_value = safe_float(row.get("target_exit_value"), entry_price * (1.0 - profit_take_pct))
-        stop_value = safe_float(row.get("stop_exit_value"), entry_price * stop_loss_mult)
+        stop_value = (
+            safe_float(row.get("stop_exit_value"), entry_price * stop_loss_mult)
+            if stop_loss_mult is not None
+            else math.nan
+        )
         risk = max(width - entry_price, 0.01)
     else:
         target_value = safe_float(row.get("target_exit_value"), min(width, entry_price * (1.0 + profit_take_pct)))
-        stop_value = safe_float(row.get("stop_exit_value"), entry_price / max(stop_loss_mult, 1.0))
+        stop_value = (
+            safe_float(row.get("stop_exit_value"), entry_price / max(stop_loss_mult, 1.0))
+            if stop_loss_mult is not None
+            else math.nan
+        )
         risk = max(entry_price, 0.01)
 
     quote_days_seen = 0
@@ -416,12 +424,12 @@ def _simulate_locked_spread_exit(
             mark = _spread_mid_debit(row, quote_history[day])
             exit_value = min(width, mark * (1.0 + slippage_pct)) if math.isfinite(mark) else math.nan
             target_hit = math.isfinite(exit_value) and exit_value <= target_value
-            stop_hit = math.isfinite(exit_value) and exit_value >= stop_value
+            stop_hit = math.isfinite(exit_value) and math.isfinite(stop_value) and exit_value >= stop_value
         else:
             mark = _spread_mid_value(row, quote_history[day])
             exit_value = max(0.0, mark * (1.0 - slippage_pct)) if math.isfinite(mark) else math.nan
             target_hit = math.isfinite(exit_value) and exit_value >= target_value
-            stop_hit = math.isfinite(exit_value) and exit_value <= stop_value
+            stop_hit = math.isfinite(exit_value) and math.isfinite(stop_value) and exit_value <= stop_value
         if not math.isfinite(exit_value):
             continue
         quote_days_seen += 1
@@ -471,8 +479,8 @@ def resolve_goal_shadow_ledger(
     ledger_path: Path,
     through_date: dt.date,
     slippage_pct: float = 0.10,
-    profit_take_pct: float = 0.60,
-    stop_loss_mult: float = 2.0,
+    profit_take_pct: float = 0.50,
+    stop_loss_mult: float | None = None,
 ) -> pd.DataFrame:
     ledger = pd.read_csv(ledger_path, low_memory=False) if ledger_path.exists() else pd.DataFrame(columns=SHADOW_COLUMNS)
     if ledger.empty:

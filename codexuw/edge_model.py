@@ -12,7 +12,7 @@ from .credit_policy import assess_credit_spread
 from .debit_policy import assess_debit_spread
 
 
-EDGE_HISTORY_NAMESPACE = "codexdaily_v4_edge_history_v2_2026-07-10"
+EDGE_HISTORY_NAMESPACE = "codexdaily_v4_edge_history_v4_2026-07-26"
 PACKAGED_HISTORY_DIR = Path(__file__).resolve().parent / "history"
 
 
@@ -353,7 +353,11 @@ def load_replay_edge_history(
             reverse=True,
         )
         if packaged.exists():
-            paths = [packaged]
+            # Append-only growth: the packaged snapshot is the trusted base and
+            # takes precedence on duplicate keys, but freshly replayed days are
+            # merged in rather than silently discarded. Point-in-time safety is
+            # still enforced by the `asof`/`exit_day` cutoff below.
+            paths = [packaged] + [path for path in paths if path != packaged]
     else:
         paths = sorted(out_root.rglob("codexuw_replay_detail.csv"), key=lambda path: path.stat().st_mtime, reverse=True)
     frames: list[pd.DataFrame] = []
@@ -398,6 +402,26 @@ def load_replay_edge_history(
     return history
 
 
+def edge_history_coverage(history: pd.DataFrame, asof: object | None = None) -> dict[str, Any]:
+    """Summarise how current the evidence base is, so staleness is visible."""
+    if history is None or history.empty or "asof" not in history.columns:
+        return {"rows": 0, "first_asof": None, "last_asof": None, "staleness_days": None}
+    days = pd.to_datetime(history["asof"], errors="coerce").dropna()
+    if days.empty:
+        return {"rows": int(len(history)), "first_asof": None, "last_asof": None, "staleness_days": None}
+    last = days.max()
+    staleness = None
+    cutoff = pd.to_datetime(asof, errors="coerce") if asof is not None else None
+    if cutoff is not None and not pd.isna(cutoff):
+        staleness = int((cutoff - last).days)
+    return {
+        "rows": int(len(history)),
+        "first_asof": days.min().date().isoformat(),
+        "last_asof": last.date().isoformat(),
+        "staleness_days": staleness,
+    }
+
+
 def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) -> dict[str, Any]:
     if history.empty:
         return _empty_edge("no replay detail files with exact P/L were found")
@@ -410,12 +434,16 @@ def match_replay_edge(row: pd.Series | dict[str, Any], history: pd.DataFrame) ->
     if feat["strategy_kind"] == "Credit":
         candidate_policy_ok, _ = assess_credit_spread(row, live=False)
         if not candidate_policy_ok:
-            return _empty_edge("candidate does not meet the accepted distance-qualified credit policy")
-        selected = df.get("decision_pass", pd.Series(False, index=df.index)).map(_truthy)
+            return _empty_edge("candidate does not meet the accepted credit policy")
+        # decision_pass is the per-session selection cap (a capacity limit), not a
+        # quality bar. Requiring it here starved the edge model down to a handful of
+        # rows and produced thin_replay_sample on every candidate. Mirror
+        # confidence_calibration._eligible_history: learn from every guard-passing,
+        # policy-qualified outcome. The execution book stays independently strict.
         policy_ok = df.apply(lambda item: assess_credit_spread(item, live=False)[0], axis=1)
-        df = df[selected & policy_ok].copy()
+        df = df[policy_ok].copy()
         if df.empty:
-            return _empty_edge("no decision-selected distance-qualified credit replay history matched candidate")
+            return _empty_edge("no policy-qualified credit replay history matched candidate")
     if feat["strategy_kind"] == "Debit" and "bot_flow_source_status" in df.columns:
         full_bot = df["bot_flow_source_status"].astype(str).eq("bot_eod_loaded")
         directional_contract = df.get("flow_quality", pd.Series("", index=df.index)).astype(str).eq("directional")

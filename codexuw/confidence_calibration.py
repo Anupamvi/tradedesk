@@ -6,13 +6,13 @@ from typing import Any
 
 import pandas as pd
 
+from .edge_model import EDGE_HISTORY_NAMESPACE, PACKAGED_HISTORY_DIR
+
 
 CONFIDENCE_CALIBRATION_VERSION = "confidence-walk-forward-v2.0-policy-base"
-DEFAULT_EDGE_HISTORY_PATH = (
-    Path(__file__).resolve().parent
-    / "history"
-    / "codexdaily_v4_edge_history_v2_2026-07-10.csv.gz"
-)
+# Single source of truth: derived from the edge-history namespace so a refresh
+# never has to be applied in more than one place.
+DEFAULT_EDGE_HISTORY_PATH = PACKAGED_HISTORY_DIR / f"{EDGE_HISTORY_NAMESPACE}.csv.gz"
 MIN_PRIOR_SAMPLE = 12
 MIN_CALIBRATION_PREDICTIONS = 30
 MAX_CALIBRATION_GAP = 0.10
