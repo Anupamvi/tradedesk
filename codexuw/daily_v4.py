@@ -2913,6 +2913,50 @@ def _compact_ticket_table(tickets: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _compact_decision_candidate_table(scored: pd.DataFrame) -> pd.DataFrame:
+    columns = [
+        "status",
+        "ticker",
+        "trade",
+        "dte",
+        "decision tier",
+        "confirmation",
+        "payoff status",
+        "per-ticket replay edge",
+        "why not promoted",
+    ]
+    if scored is None or scored.empty or "decision_eligible" not in scored.columns:
+        return pd.DataFrame(columns=columns)
+    eligible = scored["decision_eligible"].map(
+        lambda value: value is True or str(value).strip().lower() in {"true", "1", "yes"}
+    )
+    rows = []
+    for _, row in scored.loc[eligible].iterrows():
+        disposition = _disposition(row, targetable=_targetable(row))
+        payoff_status = _clean(row.get("payoff_calibration_status")) or "unavailable"
+        blocker = (
+            _clean(row.get("payoff_calibration_reason"))
+            if payoff_status in {"VETO", "FAIL", "INSUFFICIENT"}
+            else _clean(row.get("v4_direct_disposition_reason"))
+            or _clean(row.get("trade_status_reason"))
+            or _clean(row.get("decision_reason"))
+        )
+        rows.append(
+            {
+                "status": _status_label(disposition),
+                "ticker": _clean(row.get("ticker")).upper(),
+                "trade": _trade_legs(row),
+                "dte": _clean(row.get("dte")),
+                "decision tier": _clean(row.get("decision_tier")) or "unclassified",
+                "confirmation": _clean(row.get("v4_confirmation_status")) or "unavailable",
+                "payoff status": payoff_status,
+                "per-ticket replay edge": _edge_evidence_text(row),
+                "why not promoted": blocker[:180] if blocker else "No downstream blocker recorded",
+            }
+        )
+    return pd.DataFrame(rows, columns=columns)
+
+
 def _compact_portfolio_repair_table(portfolio_repair: pd.DataFrame) -> pd.DataFrame:
     columns = ["ticker", "action", "reason", "instruction"]
     if portfolio_repair is None or portfolio_repair.empty:
@@ -3843,6 +3887,7 @@ def write_v4_outputs(
     fill_adjusted = target_model["realistic_fill_adjusted_target_potential"]
     target_status = _target_status_panel(target_model, counts)
     compact_tickets = _compact_ticket_table(tickets)
+    compact_decision_candidates = _compact_decision_candidate_table(scored)
     compact_portfolio_repair = _compact_portfolio_repair_table(portfolio_repair)
     compact_no_miss = _compact_no_miss_table(no_miss)
     compact_board = _compact_opportunity_board(public_board)
@@ -3873,6 +3918,7 @@ def write_v4_outputs(
         "goal_shadow": goal_shadow_summary,
         "execution_evidence_integrity": execution_evidence_integrity,
         "swing_target_ticket_count": int(len(tickets)),
+        "decision_lane_candidate_count": int(len(compact_decision_candidates)),
         "opportunity_counts": counts,
         "lane_coverage": lane_coverage,
         "target_model": target_model,
@@ -3931,6 +3977,7 @@ def write_v4_outputs(
         f"| Portfolio status | {(portfolio or {}).get('status', 'not_checked')} |",
         f"| Market regime | {regime_label} |",
         f"| Swing target ticket count | {len(tickets)} |",
+        f"| Decision-lane candidate count | {len(compact_decision_candidates)} |",
         f"| Execute count | {counts['execute']} |",
         f"| Scout count | {counts['scout']} |",
         "| Visible signal cap | none; --max-final-trades is ignored by V4 no-miss policy |",
@@ -3959,6 +4006,12 @@ def write_v4_outputs(
         report_lines.extend(["", f"_Showing top 24 of {len(tickets)} target tickets. Full CSV: {paths['swing_target_tickets']}_"])
     report_lines.extend(
         [
+            "",
+            "## Decision-Lane Audit",
+            "",
+            "Every `decision_eligible=True` row is shown here. A row is not an order unless its status is Execute; downstream payoff evidence and confirmation remain binding.",
+            "",
+            _markdown_table(compact_decision_candidates),
             "",
             "## Portfolio Repair / Open Risk",
             "",

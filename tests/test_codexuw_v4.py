@@ -7,6 +7,7 @@ import pandas as pd
 
 from codexuw.daily_v4 import (
     PIPELINE_NAME_V4,
+    _compact_decision_candidate_table,
     _default_out_dir,
     _disposition,
     _hard_blocker_reason,
@@ -676,6 +677,30 @@ def test_v4_secondary_liquidity_sweep_triggers_below_three_candidates() -> None:
     assert bool(first["beta_noise_ignored"]) is True
 
 
+def test_decision_lane_audit_surfaces_eligible_candidate_and_veto_reason() -> None:
+    scored = pd.DataFrame(
+        [
+            _candidate(
+                decision_eligible=True,
+                decision_tier="secondary_income",
+                payoff_calibration_status="VETO",
+                payoff_calibration_reason="10% fill-stress PF 0.87 < 1.25",
+                v4_confirmation_status="manual",
+                edge_verdict="unavailable",
+                edge_sample_size=0,
+            )
+        ]
+    )
+
+    audit = _compact_decision_candidate_table(scored)
+
+    assert len(audit) == 1
+    assert audit.iloc[0]["ticker"] == "AAA"
+    assert audit.iloc[0]["payoff status"] == "VETO"
+    assert audit.iloc[0]["confirmation"] == "manual"
+    assert "PF 0.87 < 1.25" in audit.iloc[0]["why not promoted"]
+
+
 def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_v3_core(tmp_path: Path) -> None:
     base_dir = tmp_path / "2026-05-20"
     out_dir = tmp_path / "out"
@@ -714,6 +739,7 @@ def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_
         "## First Screen",
         "## Market Insight For Tomorrow",
         "## Swing Target Tickets For Tomorrow",
+        "## Decision-Lane Audit",
         "## Portfolio Repair / Open Risk",
         "## $10k/month Target Math",
         "## No-Miss Audit",
