@@ -18,7 +18,9 @@ from uwos.exact_spread_backtester import HistoricalOptionQuoteStore, LegQuote
 from uwos.options_agent import core
 
 
-SCHEMA_VERSION = "options_agent.independent_replay.v5"
+# Bound to core so the accepted-pin schema and the emitted schema can never
+# drift apart again. A v4/v5 desync silently disabled the entire credit lane.
+SCHEMA_VERSION = core.PINNED_REPLAY_MANIFEST_SCHEMA_VERSION
 ROUND_TRIP_COMMISSION = 2.60
 # Keep the outcome horizon and every management level coupled to the live
 # selector, so replay evidence describes the population live may actually trade.
@@ -272,7 +274,17 @@ def _eligible_replay_days(
     start: dt.date,
     end: dt.date,
 ) -> list[dt.date]:
-    """Return regular-session signals with a fully observable exit horizon."""
+    """Return regular-session signals with at least one observable exit session.
+
+    Credit spreads are managed to a take-profit level and typically resolve far
+    inside ``FIXED_HORIZON_SESSIONS``.  Requiring the full worst-case horizon to
+    fit inside the data window discarded every signal in the most recent ~7
+    weeks even when its outcome was fully determined, which left live runs
+    trading on evidence that stopped almost two months earlier.  Admit any day
+    that can be entered next session and observed at least once; outcomes that
+    are still open at the data edge are censored during resolution rather than
+    being counted as time exits.
+    """
 
     return sorted(
         day
@@ -280,7 +292,7 @@ def _eligible_replay_days(
         if (
             start <= day <= end
             and core.is_regular_market_day(day)
-            and core._add_regular_market_days(day, FIXED_HORIZON_SESSIONS) <= end
+            and core._add_regular_market_days(day, 2) <= end
         )
     )
 
@@ -1135,12 +1147,14 @@ def run_independent_replay(
             if horizon_day is None:
                 detail.at[idx, "exact_reason"] = "planned_exit_date_missing"
                 continue
-            if horizon_day > end:
-                detail.at[idx, "exact_reason"] = "fixed_horizon_not_yet_observable"
-                continue
-            exit_dates = _exit_observation_dates(entry_day, horizon_day)
+            horizon_fully_observable = horizon_day <= end
+            exit_dates = _exit_observation_dates(entry_day, min(horizon_day, end))
             if not exit_dates:
-                detail.at[idx, "exact_reason"] = "no_post_entry_exit_session"
+                detail.at[idx, "exact_reason"] = (
+                    "no_post_entry_exit_session"
+                    if horizon_fully_observable
+                    else "outcome_open_beyond_available_data"
+                )
                 continue
             entry_type = str(row.get("entry_side") or "").upper()
             width = _number(row.get("entry_width")) or 0.0
@@ -1169,7 +1183,9 @@ def run_independent_replay(
                     value,
                     target_exit,
                     stop_exit,
-                    final_session=due == exit_dates[-1],
+                    final_session=(
+                        horizon_fully_observable and due == exit_dates[-1]
+                    ),
                 )
                 if not trigger:
                     continue
@@ -1186,7 +1202,11 @@ def run_independent_replay(
                 detail.at[idx, "exact_reason"] = f"conservative_{trigger}_liquidation{bounded_suffix}"
                 break
             if not core._truthy(detail.at[idx, "exact_evaluated"]):
-                detail.at[idx, "exact_reason"] = last_failure
+                detail.at[idx, "exact_reason"] = (
+                    last_failure
+                    if horizon_fully_observable
+                    else "outcome_open_beyond_available_data"
+                )
 
         policy = next(
             item

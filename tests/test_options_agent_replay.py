@@ -565,7 +565,7 @@ def test_replay_day_fails_when_a_required_source_is_missing(monkeypatch, tmp_pat
         )
 
 
-def test_selector_partition_blocks_incomplete_selected_outcomes() -> None:
+def test_selector_partition_counts_approved_open_outcomes_as_execution_resolved() -> None:
     selected = pd.DataFrame(
         {
             "signal_date": pd.bdate_range("2026-01-02", periods=20),
@@ -587,8 +587,36 @@ def test_selector_partition_blocks_incomplete_selected_outcomes() -> None:
 
     assert row["selected_count"] == 20
     assert row["sample_size"] == 18
+    assert row["outcome_coverage"] == 1.0
+    assert row["execution_resolution_count"] == 20
+    assert row["partition_status"] == "PASS"
+    assert "selected_execution_resolution_coverage_below_95pct" not in row["blocking_reasons"]
+
+
+def test_selector_partition_blocks_missing_reprice_observations() -> None:
+    selected = pd.DataFrame(
+        {
+            "signal_date": pd.bdate_range("2026-01-02", periods=20),
+            "ticker": [f"T{index:02d}" for index in range(20)],
+            "strategy_route": ["bull_call_debit"] * 20,
+            "realized_pnl": [100.0] * 18 + [math.nan, math.nan],
+            "exact_evaluated": [True] * 18 + [False, False],
+            "next_session_reprice_observed": [True] * 18 + [False, False],
+            "next_session_reprice_approved": [True] * 18 + [False, False],
+        }
+    )
+
+    row = core._selector_partition_metrics(
+        selected,
+        policy={"policy_id": "missing-reprice-coverage"},
+        partition="heldout_test",
+        source_path="synthetic.csv",
+    )
+
     assert row["outcome_coverage"] == 0.9
+    assert row["execution_resolution_count"] == 18
     assert row["partition_status"] == "BLOCK"
+    assert "next_session_reprice_observation_coverage_below_95pct" in row["blocking_reasons"]
     assert "selected_execution_resolution_coverage_below_95pct" in row["blocking_reasons"]
 
 
@@ -601,7 +629,7 @@ def test_independent_replay_manifest_is_not_claimed_as_production_proof(tmp_path
 
     assert metrics["selected"] == 0
     assert metrics["outcome_coverage"] == 0.0
-    assert replay.SCHEMA_VERSION == "options_agent.independent_replay.v5"
+    assert replay.SCHEMA_VERSION == core.PINNED_REPLAY_MANIFEST_SCHEMA_VERSION
 
 
 def test_replay_pin_rejects_capped_or_stale_manifest(tmp_path, monkeypatch) -> None:

@@ -570,12 +570,12 @@ def test_goal_confidence_gate_demotes_ready_rows_before_action_surfaces() -> Non
     assert green.empty
     assert target["ticker"].tolist() == ["READY"]
     rendered = "\n".join(core._render_ticket_rows(target))
-    assert "| Status | Ticker | Strategy | Expiry | Qty | Limit | Take Profit | Max P/L | Order Score |" in rendered
+    assert "| Status | Ticker | Strategy | Expiry | Qty | Limit | Take Profit | Max P/L | Mechanics Score |" in rendered
     assert "Trade Edge / Entry / Order" not in rendered
     assert "Contract Risk" not in rendered
     assert "NOT_EXECUTION_READY" not in rendered
     assert f"{decision['execution_confidence_score'].iloc[0]:.0f}/100" in rendered
-    assert "**Order details**" in rendered
+    assert "**Planning details**" in rendered
     assert "**READY:**" in rendered
 
 
@@ -679,6 +679,100 @@ def test_goal_confidence_gate_preserves_qualified_one_lot_evidence_pilot() -> No
 
     assert gated["ready_to_enter"].tolist() == [True]
     assert core.GOAL_CONFIDENCE_GATE_BLOCKER not in gated["execution_blockers"].iloc[0]
+
+
+def test_goal_confidence_gate_clips_risk_budget_size_to_qualified_evidence_pilot() -> None:
+    decision = pd.DataFrame(
+        [
+            {
+                "ticker": "PILOT",
+                "ready_to_enter": True,
+                "execution_status": "ready",
+                "execution_gate_status": "pass",
+                "target_order_status": "target_order_candidate",
+                "execution_blockers": "",
+                "suggested_contracts": 9,
+                "risk_sized_contracts": 9,
+                "position_contract_cap": 9,
+                "evidence_size_cap": 1,
+                "operator_sized": True,
+                "sizing_authority": "risk-budget",
+                "model_evidence_pilot": True,
+                "selector_policy_status": "PASS",
+                "profitability_calibration_status": "PASS",
+                "max_loss": 400.0,
+                "max_position_loss": 3600.0,
+                "buying_power_effect": 3600.0,
+                "account_risk_pct": 0.0054,
+                "expected_pnl_one_contract": 13.56,
+                "expected_position_pnl": 122.04,
+                "sizing_note": "risk budget supports 9 contracts",
+            }
+        ]
+    )
+    confidence_audit = pd.DataFrame(
+        [
+            {"metric": "profitability_confidence_rating", "rating": 6.0, "status": "BLOCK"},
+            {"metric": "order_entry_confidence_rating", "rating": 8.0, "status": "PASS"},
+            {"metric": "goal_confidence_gate", "rating": 6.0, "status": "BLOCK"},
+        ],
+        columns=core.CONFIDENCE_AUDIT_COLUMNS,
+    )
+
+    gated = core.apply_goal_confidence_gate_to_decision_board(decision, confidence_audit)
+
+    assert gated["ready_to_enter"].tolist() == [True]
+    assert gated["suggested_contracts"].tolist() == [1]
+    assert gated["risk_sized_contracts"].tolist() == [9]
+    assert gated["position_contract_cap"].tolist() == [1]
+    assert gated["operator_sized"].tolist() == [False]
+    assert gated["max_position_loss"].tolist() == [400.0]
+    assert gated["buying_power_effect"].tolist() == [400.0]
+    assert gated["account_risk_pct"].tolist() == [0.0006]
+    assert gated["expected_position_pnl"].tolist() == [13.56]
+    assert "limited to 1 evidence-backed contract" in gated["sizing_note"].iloc[0]
+    assert core.GOAL_CONFIDENCE_GATE_BLOCKER not in gated["execution_blockers"].iloc[0]
+
+
+def test_goal_confidence_gate_clips_qualified_pilot_even_when_goal_passes() -> None:
+    decision = pd.DataFrame(
+        [
+            {
+                "ticker": "PILOT",
+                "ready_to_enter": True,
+                "execution_status": "ready",
+                "execution_gate_status": "pass",
+                "execution_blockers": "",
+                "suggested_contracts": 8,
+                "risk_sized_contracts": 8,
+                "position_contract_cap": 8,
+                "evidence_size_cap": 1,
+                "operator_sized": True,
+                "model_evidence_pilot": True,
+                "selector_policy_status": "PASS",
+                "profitability_calibration_status": "PASS",
+                "max_position_loss": 3200.0,
+                "expected_position_pnl": 80.0,
+            }
+        ]
+    )
+    confidence_audit = pd.DataFrame(
+        [
+            {"metric": "profitability_confidence_rating", "rating": 7.0, "status": "PASS"},
+            {"metric": "order_entry_confidence_rating", "rating": 8.0, "status": "PASS"},
+            {"metric": "goal_confidence_gate", "rating": 7.0, "status": "PASS"},
+        ],
+        columns=core.CONFIDENCE_AUDIT_COLUMNS,
+    )
+
+    gated = core.apply_goal_confidence_gate_to_decision_board(decision, confidence_audit)
+
+    assert gated["ready_to_enter"].tolist() == [True]
+    assert gated["suggested_contracts"].tolist() == [1]
+    assert gated["risk_sized_contracts"].tolist() == [8]
+    assert gated["position_contract_cap"].tolist() == [1]
+    assert gated["max_position_loss"].tolist() == [400.0]
+    assert gated["expected_position_pnl"].tolist() == [10.0]
 
 
 def test_goal_confidence_gate_replaces_stale_rating_annotation() -> None:
@@ -1100,6 +1194,23 @@ def test_yellow_exact_review_block_is_labeled_watch_only() -> None:
     assert core._ticket_recheck_summary(earnings_row) == (
         "conditional pre-earnings target; exit by 2026-08-17; do not carry through earnings"
     )
+
+
+def test_long_dte_macro_context_does_not_hide_actual_credit_blocker() -> None:
+    row = {
+        "ready_to_enter": False,
+        "target_order_status": "target_order_wait_for_price",
+        "execution_blockers": "send_now_credit_below_0.50",
+        "contract_review_status": "PASS",
+        "macro_event_count_within_holding_horizon": 5,
+        "macro_events_within_holding_horizon": "FOMC; CPI; PPI",
+        "dte": 25,
+        "entry_type": "CREDIT",
+        "entry_limit": 0.38,
+        "target_entry": 0.38,
+    }
+
+    assert core._ticket_recheck_summary(row) == "credit too small for send-now"
 
 
 def test_promotion_readiness_audit_proves_blocked_promotion_without_counting_verdict_as_gate() -> None:
@@ -7431,7 +7542,7 @@ def test_recompute_live_capture_enforces_profitability_calibration(tmp_path: Pat
     assert "Captured-live recompute" in report
     assert "Monthly Readiness Gate" not in report
     assert "Green send-now rows are order-entry candidates only" not in report
-    assert "## Target Orders" in report
+    assert "## Yellow Planning Tickets - Do Not Submit" in report
     assert "| AMAT |" in report
 
 
@@ -9404,7 +9515,7 @@ def test_selector_blocks_short_dte_trade_crossing_verified_macro_events() -> Non
     assert "short_dte_macro_event_within_holding_horizon" in reasons
 
 
-def test_send_now_blocks_any_dte_crossing_high_impact_macro_inside_hold() -> None:
+def test_send_now_allows_long_dte_trade_crossing_high_impact_macro_inside_hold() -> None:
     row = {
         "ticker": "AMZN",
         "strategy_route": "bear_call_credit",
@@ -9424,7 +9535,90 @@ def test_send_now_blocks_any_dte_crossing_high_impact_macro_inside_hold() -> Non
         entry_limit=0.90,
     )
 
+    assert "send_now_high_impact_macro_event_within_holding_horizon" not in blockers
+
+
+def test_send_now_blocks_short_dte_trade_crossing_high_impact_macro_inside_hold() -> None:
+    row = {
+        "ticker": "AMZN",
+        "strategy_route": "bear_call_credit",
+        "selector_policy_status": "PASS",
+        "recommendation_status": RecommendationStatus.ENTER.value,
+        "dte": 7,
+        "earnings_source_status": "verified",
+        "macro_calendar_status": "verified",
+        "macro_event_count_within_holding_horizon": 1,
+        "macro_events_within_holding_horizon": "FOMC decision 2026-07-29",
+        "credit_width_ratio": 0.20,
+    }
+
+    blockers = core._send_now_economics_blockers(
+        row,
+        ticket="SELL 1 AMZN 2026-08-03 265 Call / BUY 1 AMZN 2026-08-03 270 Call @ 0.90 CREDIT",
+        entry_limit=0.90,
+    )
+
     assert "send_now_high_impact_macro_event_within_holding_horizon" in blockers
+
+
+def test_long_dte_macro_event_does_not_block_green_ticket_surface() -> None:
+    final = pd.DataFrame(
+        [
+            {
+                "ticker": "WFC",
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "selector_policy_status": "PASS",
+                "quality_status": "qualified",
+                "full_ticket": "SELL 1 WFC 2026-08-21 90 Call / BUY 1 WFC 2026-08-21 95 Call @ 1.50 CREDIT",
+                "trade_plan": "SELL 1 WFC 2026-08-21 90 Call / BUY 1 WFC 2026-08-21 95 Call @ 1.50 CREDIT",
+                "entry_limit": 1.50,
+                "target_entry": 1.50,
+                "suggested_contracts": 1,
+                "max_profit": 150.0,
+                "max_loss": 350.0,
+                "credit_width_ratio": 0.30,
+                "trade_quality_status": "reviewable",
+                "live_validation_status": "PASS",
+                "agent_support_count": 4,
+                "external_agent_review_count": 4,
+                "external_agent_distinct_review_count": 4,
+                "underlying_quality_tier": "core",
+                "earnings_source_status": "verified",
+                "earnings_within_holding_horizon": False,
+                "macro_calendar_status": "verified",
+                "macro_event_count_within_holding_horizon": 1,
+                "macro_events_within_holding_horizon": "FOMC decision 2026-07-29",
+                "dte": 25,
+            }
+        ]
+    )
+    final = _mark_strategy_expectancy_pass(final, sample=14)
+    final["macro_event_count_within_holding_horizon"] = 1
+    context = core.build_execution_context(
+        live_schwab=True,
+        chain_snapshot_dir=None,
+        portfolio_context={"status": "ok", "total_value": 100_000},
+        research_task_count=4,
+        external_review_count=4,
+        external_review_agent_count=4,
+        agent_dispatch_task_count=4,
+        agent_reviews_json=Path("/tmp/reviews.json"),
+        market_session_open=True,
+    )
+
+    decision = core.synthesize_decision_board(
+        final,
+        market_regime={"regime": "mixed"},
+        execution_context=context,
+    )
+    green, target = core.split_trade_ticket_surfaces(core.build_trade_tickets(decision))
+
+    assert decision["ready_to_enter"].tolist() == [True]
+    assert "send_now_high_impact_macro_event_within_holding_horizon" not in decision[
+        "execution_blockers"
+    ].iloc[0]
+    assert green["ticker"].tolist() == ["WFC"]
+    assert target.empty
 
 
 def test_live_selector_matches_replay_while_negative_expectancy_still_blocks_green() -> None:
@@ -9602,6 +9796,37 @@ def test_selected_setup_results_show_all_distinct_selector_passes() -> None:
     assert "these distinct setups" in rendered
     assert "| CRWD |" in rendered
     assert "| WMT |" in rendered
+
+
+def test_selected_setup_result_shows_only_binding_negative_evidence_reason() -> None:
+    final = pd.DataFrame(
+        [
+            {
+                "ticker": "WFC",
+                "selector_policy_status": "PASS",
+                "target_order_status": "review_only_expectancy_evidence",
+                "ready_to_enter": False,
+                "execution_blockers": "; ".join(
+                    [
+                        core.NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER,
+                        core.PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER,
+                        core.NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER,
+                        core.PROFITABILITY_CALIBRATION_BLOCKER,
+                        core.POSITIVE_STRATEGY_EXPECTANCY_BLOCKER,
+                    ]
+                ),
+                "trade_plan": "SELL 1 WFC 2026-08-21 84 Put / BUY 1 WFC 2026-08-21 81 Put @ 0.62 CREDIT",
+                "structure": "bull put spread",
+            }
+        ]
+    )
+
+    rendered = "\n".join(core._render_selected_setup_result(final))
+
+    assert "negative realized strategy history" in rendered
+    assert "realized route/bucket evidence is negative" not in rendered
+    assert "route family evidence negative" not in rendered
+    assert "route/economics profitability calibration required" not in rendered
 
 
 def test_nonselected_selector_row_is_an_order_entry_blocker() -> None:
@@ -16749,6 +16974,166 @@ def test_report_labels_no_trade_section_as_preview_of_full_csv() -> None:
     assert "Full decision diagnostics" in report
 
 
+def test_color_trade_board_explains_contract_review_caution() -> None:
+    tickets = pd.DataFrame(
+        [
+            {
+                "ticker": "GOOG",
+                "structure": "bull put spread",
+                "expiry": "2026-08-28",
+                "dte": 32,
+                "entry_limit": 1.0,
+                "suggested_contracts": 1,
+                "position_max_profit": 100.0,
+                "position_max_loss": 400.0,
+                "account_risk_pct": 0.001,
+                "ready_to_enter": False,
+                "target_order_status": "target_order_candidate",
+                "execution_blockers": "contract_specific_agent_review_caution",
+                "contract_review_status": "WARN",
+                "earnings_source_status": "provisional_after_expiry",
+                "trade_plan": "SELL 1 GOOG 2026-08-28 310 Put / BUY 1 GOOG 2026-08-28 305 Put @ 1.00 CREDIT",
+            }
+        ]
+    )
+
+    board = core.build_color_trade_board_markdown(tickets, as_of="2026-07-27")
+
+    assert "Action / binding reason" in board
+    assert (
+        "verify the earnings date in company IR; rerun, and submit only if expiry still precedes earnings "
+        "and the ticket turns green"
+    ) in board
+    assert "contract_specific_agent_review_caution" not in board
+    assert "## Yellow Planning Tickets - Do Not Submit" in board
+    assert "## Orders" not in board
+
+
+def test_color_trade_board_shows_binding_selector_reason_without_downstream_noise() -> None:
+    tickets = pd.DataFrame(
+        [
+            {
+                "ticker": "GOOG",
+                "structure": "bull call debit spread",
+                "expiry": "2026-08-28",
+                "dte": 32,
+                "entry_limit": 1.90,
+                "suggested_contracts": 1,
+                "position_max_profit": 310.0,
+                "position_max_loss": 190.0,
+                "account_risk_pct": 0.002,
+                "ready_to_enter": False,
+                "target_order_status": "review_only_selector_not_selected",
+                "entry_type": "DEBIT",
+                "strategy_route": "bull_call_debit",
+                "selector_policy_reason": (
+                    "active_policy_entry_type_not_allowed; active_policy_route_not_allowed; "
+                    "debit_regime_not_aligned:mixed"
+                ),
+                "execution_blockers": (
+                    "contract_specific_agent_review_caution; "
+                    "execution_confidence_below_threshold; selector_policy_not_selected"
+                ),
+                "contract_review_status": "WARN",
+                "earnings_source_status": "provisional_after_expiry",
+                "trade_plan": "BUY 1 GOOG 2026-08-28 310 Call / SELL 1 GOOG 2026-08-28 315 Call @ 1.90 DEBIT",
+            }
+        ]
+    )
+
+    board = core.build_color_trade_board_markdown(tickets, as_of="2026-07-27")
+    row = next(line for line in board.splitlines() if "**GOOG**" in line)
+
+    assert "debit route is outside the promoted credit-only policy" in row
+    assert "execution confidence below send-now threshold" not in row
+    assert "verify the earnings date in company IR" not in row
+    assert "not actionable" in row
+
+
+def test_color_trade_board_names_exact_credit_floor() -> None:
+    tickets = pd.DataFrame(
+        [
+            {
+                "ticker": "BAC",
+                "structure": "bear call spread",
+                "expiry": "2026-08-21",
+                "dte": 24,
+                "entry_limit": 0.47,
+                "suggested_contracts": 1,
+                "position_max_profit": 47.0,
+                "position_max_loss": 153.0,
+                "account_risk_pct": 0.0002,
+                "ready_to_enter": False,
+                "target_order_status": "target_order_wait_for_price",
+                "execution_blockers": "send_now_credit_below_0.50",
+                "trade_plan": "SELL 1 BAC 2026-08-21 64 Call / BUY 1 BAC 2026-08-21 66 Call @ 0.47 CREDIT",
+            }
+        ]
+    )
+
+    board = core.build_color_trade_board_markdown(tickets, as_of="2026-07-27")
+
+    assert "credit $0.47 is below the $0.50 send-now minimum" in board
+
+
+def test_color_trade_board_distinguishes_risk_budget_sizing_from_evidence_cap() -> None:
+    tickets = pd.DataFrame(
+        [
+            {
+                "ticker": "NOW",
+                "structure": "bull put spread",
+                "expiry": "2026-08-21",
+                "dte": 25,
+                "entry_limit": 1.38,
+                "suggested_contracts": 9,
+                "evidence_size_cap": 1,
+                "model_evidence_pilot": True,
+                "position_max_profit": 1242.0,
+                "position_max_loss": 3258.0,
+                "expected_pnl_one_contract": 13.56,
+                "expected_position_pnl": 122.05,
+                "expected_return_on_risk": 0.0375,
+                "account_risk_pct": 0.0048,
+                "ready_to_enter": False,
+                "target_order_status": "target_order_candidate",
+                "execution_blockers": "goal_confidence_gate_blocked",
+                "trade_plan": "SELL 1 NOW 2026-08-21 100 Put / BUY 1 NOW 2026-08-21 95 Put @ 1.38 CREDIT",
+            }
+        ]
+    )
+
+    board = core.build_color_trade_board_markdown(tickets, as_of="2026-07-27")
+
+    assert "9 risk-budget / 1 evidence" in board
+    assert "$+122 / 3.8%" in board
+    assert "expected P/L $122 (3.75% of max risk)" in board
+    assert "Evidence-backed layer: 1 total contracts with about $14 expected P/L" in board
+    assert "Scaling above those caps is operator-directed, not validated" in board
+
+
+def test_report_file_section_uses_relative_clickable_links() -> None:
+    report = core.render_report(
+        "2026-07-27",
+        pd.DataFrame(),
+        pd.DataFrame(),
+        {
+            "row_counts": {},
+            "warnings": [],
+            "artifacts": {
+                "trade_tickets": "/tmp/run/trade_tickets.csv",
+                "green_trade_tickets": "/tmp/run/green_trade_tickets.csv",
+                "target_order_candidates": "/tmp/run/target_order_candidates.csv",
+                "decision_board": "/tmp/run/decision_board.csv",
+                "manifest": "/tmp/run/options_agent_manifest_2026-07-27.json",
+            },
+        },
+    )
+
+    assert "[trade_tickets.csv](trade_tickets.csv)" in report
+    assert "[options_agent_manifest_2026-07-27.json](options_agent_manifest_2026-07-27.json)" in report
+    assert "/tmp/run" not in report
+
+
 def test_report_uses_position_scaled_profit_loss_for_target_order_tables() -> None:
     final = pd.DataFrame(
         [
@@ -16786,7 +17171,7 @@ def test_report_uses_position_scaled_profit_loss_for_target_order_tables() -> No
     )
 
     assert "Max P/L" in report
-    assert "Target Orders - Target Credits/Debits" in report
+    assert "Yellow Planning Tickets - Do Not Submit" in report
     assert (
         "| 🟡 YELLOW target | GOOGL | Call credit spread | 2026-06-05 | "
         "4 | 0.65 CREDIT | 0.23 | +$260 / -$740 | 88/100 |"
@@ -16829,7 +17214,7 @@ def test_report_keeps_uncalibrated_watch_plans_out_of_target_order_table() -> No
     )
 
     report = core.render_report("2026-07-10", final, pd.DataFrame(), {"row_counts": {}, "warnings": []})
-    target_section = report.split("## Target Orders - Target Credits/Debits", 1)[1].split(
+    target_section = report.split("## Yellow Planning Tickets - Do Not Submit", 1)[1].split(
         "## Watch Plans - Not Orders", 1
     )[0]
 
@@ -17107,10 +17492,10 @@ def test_report_snapshot_counts_review_only_visible_tickets() -> None:
 
     assert "- Executable status: NOT TRADE READY" in report
     assert "- Green send-now orders: 0" in report
-    assert "- Yellow target orders: 0" in report
+    assert "- Yellow planning tickets: 0" in report
     assert "Review-only candidates" not in report
     assert "- Historical/replay profitability confidence: 0.0/10" in report
-    assert "No yellow target orders." in report
+    assert "No yellow planning tickets." in report
     assert "Why no green order: no setup passed the promoted selector" in report
     assert (
         "Next action: NO QUALIFIED SETUP on current contracts; "
@@ -17947,8 +18332,8 @@ def test_run_pipeline_writes_independent_recommendation_artifacts(tmp_path: Path
     assert "Live spread quality audit" not in report
     assert "Execution fill quality" not in report
     assert "Send Now Orders" in report
-    assert "Target Orders - Target Credits/Debits" in report
-    assert "No yellow target orders." in report
+    assert "Yellow Planning Tickets - Do Not Submit" in report
+    assert "No yellow planning tickets." in report
     assert "Structural status counts, not order readiness" not in report
     assert "## Top Line" in report
     assert "Historical/replay profitability confidence" in report
@@ -19911,6 +20296,21 @@ def test_confidence_audit_blocks_goal_when_current_strategy_cohort_is_negative_a
                 "matched_current_count": 0,
             },
             {
+                # Pipeline attribution exists, so the losing cohort above is the
+                # agent's own record rather than unattributed discretionary history
+                # and must still cap profitability confidence.
+                "source": "broker_matched_options_agent_outcomes",
+                "evidence_type": "broker_matched_options_agent_outcomes",
+                "status": "WARN",
+                "sample_size": 4,
+                "win_rate": 0.75,
+                "avg_pnl": 40.0,
+                "total_pnl": 160.0,
+                "profit_factor": 2.0,
+                "matched_current_tickers": "MSFT",
+                "matched_current_count": 1,
+            },
+            {
                 "source": "expectancy_summary",
                 "evidence_type": "summary",
                 "status": "BLOCK",
@@ -19940,13 +20340,13 @@ def test_confidence_audit_blocks_goal_when_current_strategy_cohort_is_negative_a
     profitability = audit[audit["metric"].eq("profitability_confidence_rating")].iloc[0]
     order_entry = audit[audit["metric"].eq("order_entry_confidence_rating")].iloc[0]
 
-    assert profitability["rating"] == 3.0
+    assert profitability["rating"] == 1.5
     assert profitability["status"] == "BLOCK"
     assert "current_strategy_cohort_negative" in profitability["blockers"]
     assert order_entry["rating"] == 0.0
     assert "no_green_ready_orders" in order_entry["blockers"]
     assert summary["status"] == "block"
-    assert summary["profitability_confidence_rating"] == 3.0
+    assert summary["profitability_confidence_rating"] == 1.5
     assert summary["order_entry_confidence_rating"] == 0.0
 
 
@@ -21486,6 +21886,19 @@ def test_profitability_confidence_caps_adverse_near_threshold_strategy_cohort() 
                 "profit_factor": 0.645,
             },
             {
+                # Pipeline attribution exists, so the adverse cohort above is the
+                # agent's own record rather than unattributed discretionary history
+                # and must still cap profitability confidence.
+                "source": "broker_matched_options_agent_outcomes",
+                "evidence_type": "broker_matched_options_agent_outcomes",
+                "status": "WARN",
+                "sample_size": 4,
+                "win_rate": 0.75,
+                "avg_pnl": 40.0,
+                "total_pnl": 160.0,
+                "profit_factor": 2.0,
+            },
+            {
                 "source": "options_agent_selector_challenger_model",
                 "evidence_type": "options_agent_selector_challenger_model",
                 "status": "PASS",
@@ -21515,6 +21928,56 @@ def test_profitability_confidence_caps_adverse_near_threshold_strategy_cohort() 
     assert "current_strategy_cohort_adverse_near_threshold" in blockers
     assert "current_strategy_cohort=adverse_near_threshold" in evidence
     assert "adverse just below the full sample threshold" in next_action
+
+
+def test_profitability_confidence_ignores_unattributed_discretionary_losses() -> None:
+    # The operator's discretionary Schwab history was entered for unrelated reasons,
+    # sometimes in error, and the agent never proposed any of it. With zero attributed
+    # fills it shares only a strategy_route label with current tickets, so it must not
+    # lower this pipeline's profitability confidence.
+    expectancy = pd.DataFrame(
+        [
+            {
+                "source": "schwab_closed_trades_strategy_cohort",
+                "evidence_type": "actual_closed_trades_strategy_cohort",
+                "status": "BLOCK",
+                "sample_size": 37,
+                "win_rate": 0.3784,
+                "avg_pnl": -65.43,
+                "total_pnl": -2420.91,
+                "profit_factor": 0.528,
+            },
+            {
+                "source": "options_agent_selector_challenger_model",
+                "evidence_type": "options_agent_selector_challenger_model",
+                "status": "PASS",
+                "sample_size": 414,
+                "win_rate": 0.9106,
+                "avg_pnl": 30.43,
+                "total_pnl": 12598.02,
+                "profit_factor": 2.633,
+            },
+            {
+                "source": "expectancy_summary",
+                "evidence_type": "summary",
+                "status": "PASS",
+                "sample_size": 414,
+            },
+        ]
+    )
+
+    rating, _, evidence, blockers, _ = core._profitability_confidence_rating(
+        pd.DataFrame(),
+        pd.DataFrame(),
+        expectancy,
+        pd.DataFrame(),
+    )
+
+    assert rating > 3.0
+    assert "current_strategy_cohort_negative" not in blockers
+    assert "current_strategy_cohort_adverse_near_threshold" not in blockers
+    assert "current_strategy_cohort_unattributed_discretionary_history" in blockers
+    assert "unattributed_discretionary_history_not_agent_evidence" in evidence
 
 
 def test_profitability_confidence_names_sampled_negative_walkforward_replay() -> None:
@@ -21649,7 +22112,9 @@ def test_promoted_selector_challenger_replaces_failed_legacy_walkforward_gate() 
     assert "selector_challenger=PROMOTED" in evidence
     assert "options_agent_walkforward_replay_negative" not in blockers
     assert "selector_challenger_not_promoted" not in blockers
-    assert "no_positive_pipeline_attributed_outcomes" in blockers
+    assert "broker_matched_options_agent_outcomes_missing" in blockers
+    assert "no_positive_pipeline_attributed_outcomes" not in blockers
+    assert "pipeline_attribution_cold_start=CERTIFIED_ON_HELD_OUT_REPLAY" in evidence
 
 
 def test_profitability_confidence_allows_one_lot_route_cold_start_without_pipeline_outcomes() -> None:
@@ -21770,8 +22235,11 @@ def test_profitability_confidence_allows_one_lot_route_cold_start_without_pipeli
         profitability_calibration=calibration,
     )
 
-    assert two_lot_rating <= 6.0
+    assert two_lot_rating <= 7.0
     assert "route_calibrated_one_lot_bridge=PASS" not in two_lot_evidence
+    # Above one lot the route bridge no longer applies, so certification falls back
+    # to the promoted held-out selector partition and must be labelled as such.
+    assert "backtest-certified, not live-proven" in two_lot_evidence
 
 
 def test_profitability_confidence_caps_probationary_bridge_without_pipeline_outcomes() -> None:
@@ -21887,10 +22355,11 @@ def test_profitability_confidence_caps_probationary_bridge_without_pipeline_outc
         profitability_calibration=calibration,
     )
 
-    assert rating == 6.0
+    assert rating == 7.0
     assert "probationary_model_route_one_lot_bridge=PASS" in evidence
+    assert "backtest-certified, not live-proven" in evidence
     assert "monthly_target_capacity_shortfall" in blockers
-    assert "monthly dollar capacity" in next_action
+    assert "approved sizing does not support the $10k monthly target" in next_action
 
     partitioned_ticket = ticket.copy()
     partitioned_ticket["profitability_calibration_scope"] = "actual_route"
@@ -21930,8 +22399,9 @@ def test_profitability_confidence_caps_probationary_bridge_without_pipeline_outc
         profitability_calibration=calibration,
     )
 
-    assert stale_rating == 6.0
+    assert stale_rating == 7.0
     assert "probationary_model_route_one_lot_bridge=PASS" in stale_evidence
+    assert "backtest-certified, not live-proven" in stale_evidence
 
     green_ticket = ticket.copy()
     green_ticket["ready_to_enter"] = True
@@ -21944,8 +22414,9 @@ def test_profitability_confidence_caps_probationary_bridge_without_pipeline_outc
         profitability_calibration=calibration,
     )
 
-    assert green_rating == 6.0
+    assert green_rating == 7.0
     assert "green_ticket_probationary_model_route_support=PASS" in green_evidence
+    assert "backtest-certified, not live-proven" in green_evidence
 
     execution_context = {
         "quote_mode": "live_schwab",

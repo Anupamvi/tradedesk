@@ -141,7 +141,7 @@ PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS = frozenset()
 # and only debit fallbacks could ever be emitted. Bump this deliberately and only
 # after reviewing the generator's schema change - it is not a version-agnostic
 # check by design.
-PINNED_REPLAY_MANIFEST_SCHEMA_VERSION = "options_agent.independent_replay.v5"
+PINNED_REPLAY_MANIFEST_SCHEMA_VERSION = "options_agent.independent_replay.v6"
 PINNED_REPLAY_ENTRY_CACHE_COMPATIBILITY_POLICY = "candidate-generation-v1.47-to-v1.56-selector-lane"
 PINNED_REPLAY_COMPATIBLE_ENTRY_CACHE_FINGERPRINTS = {
     "4d4f756964e4b27d831c62c28d3068eb3ca16ba4624baba6f5054b515fc782bc",
@@ -158,6 +158,27 @@ DEFAULT_RISK_BUDGET_PCT = 0.005
 MAX_SUGGESTED_CONTRACTS = 20
 PROMOTED_SELECTOR_RISK_BUDGET_PCT = 0.01
 PROMOTED_SELECTOR_MAX_POSITION_CONTRACTS = 35
+# Macro releases (FOMC/CPI/PPI/GDP/payrolls) recur every month, so any credit
+# spread held for more than a couple of weeks always straddles at least one.
+# Treating that as a scaling veto pinned every multi-week credit trade to a
+# single contract permanently.  Macro exposure only suppresses scaling inside
+# the short-DTE gamma window, where there is no time left to manage an event
+# gap.  Earnings remain an unconditional scaling veto at any DTE.
+MIN_MACRO_SCALE_DTE = 14
+# Operator sizing authority.  "evidence" keeps the built-in evidence ladder as
+# the binding contract cap.  "risk-budget" hands the decision to the operator:
+# size follows the configured risk budget and the evidence ladder is recorded
+# as advice on the ticket instead of a hard cap.
+SIZING_AUTHORITY_EVIDENCE = "evidence"
+SIZING_AUTHORITY_RISK_BUDGET = "risk-budget"
+SIZING_AUTHORITY_CHOICES = (SIZING_AUTHORITY_EVIDENCE, SIZING_AUTHORITY_RISK_BUDGET)
+SIZING_AUTHORITY = SIZING_AUTHORITY_EVIDENCE
+# Per-position risk budget as a fraction of account value. Operator-settable via
+# --position-risk-pct; None means use DEFAULT_RISK_BUDGET_PCT.
+POSITION_RISK_BUDGET_PCT_OVERRIDE: Optional[float] = None
+# Absolute contract ceiling per position. Operator-settable via
+# --max-contracts-per-trade; None means use MAX_SUGGESTED_CONTRACTS.
+MAX_CONTRACTS_PER_TRADE_OVERRIDE: Optional[int] = None
 RESEARCH_CAPACITY_REFERENCE_ACCOUNT_VALUE = 100_000.0
 # Measured mean holding period under the validated exit policy below.
 SELECTOR_CAPACITY_HOLDING_HORIZON_SESSIONS = 7
@@ -296,6 +317,31 @@ ACTION_SURFACE_ARCHIVE_KEYS = (
 
 def _v0_late_evidence_gates_diagnostic_only() -> bool:
     return bool(OPTIONS_AGENT_V0_RECONSTRUCTION or V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY)
+
+
+def _sizing_authority() -> str:
+    """Return who decides position size: the evidence ladder or the operator."""
+
+    value = _as_text(SIZING_AUTHORITY).strip().lower()
+    return value if value in SIZING_AUTHORITY_CHOICES else SIZING_AUTHORITY_EVIDENCE
+
+
+def _operator_sizes_positions() -> bool:
+    return _sizing_authority() == SIZING_AUTHORITY_RISK_BUDGET
+
+
+def _position_risk_budget_pct() -> float:
+    override = POSITION_RISK_BUDGET_PCT_OVERRIDE
+    if override is not None and override > 0:
+        return float(override)
+    return DEFAULT_RISK_BUDGET_PCT
+
+
+def _max_contracts_per_trade() -> int:
+    override = MAX_CONTRACTS_PER_TRADE_OVERRIDE
+    if override is not None and override > 0:
+        return int(override)
+    return MAX_SUGGESTED_CONTRACTS
 
 
 def _v0_require_per_ticker_agent_review() -> bool:
@@ -1932,6 +1978,7 @@ def output_paths(
         "decision_board": resolved_out / "decision_board.csv",
         "trade_tickets": resolved_out / "trade_tickets.csv",
         "green_trade_tickets": resolved_out / "green_trade_tickets.csv",
+        "color_trade_board": resolved_out / "TRADE_BOARD.md",
         "target_order_candidates": resolved_out / "target_order_candidates.csv",
         "market_open_recheck_queue": resolved_out / "market_open_recheck_queue.csv",
         "coverage_audit": resolved_out / "ticker_coverage_audit.csv",
@@ -3826,6 +3873,10 @@ def run_pipeline(
     _write_frame(decision_board, paths["decision_board"])
     _write_frame(trade_tickets, paths["trade_tickets"])
     _write_frame(green_trade_tickets, paths["green_trade_tickets"])
+    paths["color_trade_board"].write_text(
+        build_color_trade_board_markdown(trade_tickets, as_of=str(as_of)),
+        encoding="utf-8",
+    )
     _write_frame(target_order_tickets, paths["target_order_candidates"])
     _write_frame(market_open_recheck_queue, paths["market_open_recheck_queue"])
     _write_frame(coverage_audit, paths["coverage_audit"])
@@ -10538,9 +10589,10 @@ def apply_position_sizing(
     total_value = _as_float(portfolio.get("total_value")) or _as_float(portfolio.get("net_liquidation")) or 0.0
     cash = _as_float(portfolio.get("cash")) or _as_float(portfolio.get("available_funds")) or 0.0
     sizing_stance = str(regime.get("sizing_stance") or "normal").strip().lower()
-    base_budget = total_value * DEFAULT_RISK_BUDGET_PCT if total_value > 0 else 0.0
+    risk_budget_pct = _position_risk_budget_pct()
+    base_budget = total_value * risk_budget_pct if total_value > 0 else 0.0
     if base_budget <= 0 and cash > 0:
-        base_budget = cash * DEFAULT_RISK_BUDGET_PCT
+        base_budget = cash * risk_budget_pct
     if sizing_stance == "reduced" and base_budget > 0:
         base_budget *= 0.5
 
@@ -10572,7 +10624,7 @@ def apply_position_sizing(
         else:
             budget_contracts = int(risk_budget // max_loss)
             if budget_contracts >= 1:
-                suggested_contracts = max(1, min(MAX_SUGGESTED_CONTRACTS, budget_contracts))
+                suggested_contracts = max(1, min(_max_contracts_per_trade(), budget_contracts))
                 sizing_note = f"risk budget supports {suggested_contracts} contract(s)"
                 if portfolio_flag:
                     sizing_note = _append_reason(
@@ -10634,9 +10686,10 @@ def apply_evidence_aware_size_caps(frame: pd.DataFrame) -> pd.DataFrame:
         replay_sample = int(_as_float(row.get("profitability_calibration_replay_sample_size")) or 0)
         exact_scope = calibration_scope in _actual_bucket_support_scopes()
         dte = int(_as_float(row.get("dte")) or 0)
-        event_risk = (
-            _earnings_within_planned_holding_horizon(row)
-            or _macro_events_within_planned_holding_horizon(row) > 0
+        earnings_risk = _earnings_within_planned_holding_horizon(row)
+        macro_event_count = _macro_events_within_planned_holding_horizon(row)
+        event_risk = bool(
+            earnings_risk or (macro_event_count > 0 and dte < MIN_MACRO_SCALE_DTE)
         )
         probability_proxy = _as_float(row.get("live_probability_proxy"))
         quote_width = _as_float(row.get("live_quote_width_pct"))
@@ -10779,8 +10832,13 @@ def apply_evidence_aware_size_caps(frame: pd.DataFrame) -> pd.DataFrame:
             cap = PROMOTED_SELECTOR_INITIAL_ORDER_CONTRACTS
 
         adjusted_size = min(risk_sized_contracts, cap) if risk_sized_contracts > 0 else 0
+        operator_sized = bool(_operator_sizes_positions() and risk_sized_contracts > cap)
+        if operator_sized:
+            adjusted_size = risk_sized_contracts
         row["suggested_contracts"] = adjusted_size
         row["evidence_size_cap"] = cap
+        row["operator_sized"] = operator_sized
+        row["sizing_authority"] = _sizing_authority()
         row["max_position_loss"] = round(max_loss * adjusted_size, 2)
         row["buying_power_effect"] = row["max_position_loss"]
         row["account_risk_pct"] = (
@@ -10788,10 +10846,21 @@ def apply_evidence_aware_size_caps(frame: pd.DataFrame) -> pd.DataFrame:
         )
         row["risk_sized_contracts"] = risk_sized_contracts
         row.setdefault("position_contract_cap", adjusted_size)
-        row.setdefault("position_risk_budget_pct", DEFAULT_RISK_BUDGET_PCT)
+        row.setdefault("position_risk_budget_pct", _position_risk_budget_pct())
         row.setdefault("staged_entry_required", False)
         row["model_evidence_pilot"] = bool(probationary_model_route)
-        if probationary_model_route:
+        if operator_sized:
+            row["position_contract_cap"] = adjusted_size
+            row["staged_entry_required"] = False
+            row["sizing_note"] = _append_reason(
+                row.get("sizing_note"),
+                (
+                    f"operator sizing authority: position set to the risk budget capacity of "
+                    f"{risk_sized_contracts} contract(s); the evidence ladder advised {cap} "
+                    "contract(s) and is advisory only under --size-authority risk-budget"
+                ),
+            )
+        elif probationary_model_route:
             row["position_contract_cap"] = adjusted_size
             row["staged_entry_required"] = False
             row["sizing_note"] = _append_reason(
@@ -15611,7 +15680,10 @@ def _selector_partition_metrics(
     ).map(_truthy)
     executed = reprice_approved & exact_evaluated & realized_pnl.notna()
     known_no_entry = reprice_observed & ~reprice_approved
-    execution_resolved = known_no_entry | executed
+    # Reprice approval resolves the execution decision immediately; final P/L may
+    # remain censored until the position exits. Do not let open approved trades
+    # masquerade as missing execution observations and invalidate a fresh replay.
+    execution_resolved = known_no_entry | reprice_approved
     executed_rows = selected.loc[executed].copy()
     pnl = realized_pnl.loc[executed].dropna()
     metrics = _selector_training_metrics(
@@ -19041,11 +19113,10 @@ def apply_goal_confidence_gate_to_decision_board(
     if decision_board is None or decision_board.empty:
         return decision_board.copy() if decision_board is not None else pd.DataFrame()
     summary = summarize_confidence_audit(confidence_audit)
-    if _as_text(summary.get("status")).lower() == "pass":
-        return decision_board.copy()
     out = decision_board.copy()
     if "ready_to_enter" not in out.columns:
         return out
+    goal_confidence_passes = _as_text(summary.get("status")).lower() == "pass"
     ready_mask = out["ready_to_enter"].map(_truthy)
     existing_blockers = out.get(
         "execution_blockers",
@@ -19059,12 +19130,9 @@ def apply_goal_confidence_gate_to_decision_board(
         .astype(str)
         .str.lower()
     )
-    pilot_mask = (
+    pilot_eligible_mask = (
         ready_mask
         & out.get("model_evidence_pilot", pd.Series(False, index=out.index)).map(_truthy)
-        & out.get("suggested_contracts", pd.Series(0, index=out.index)).map(
-            lambda value: 0 < (_as_float(value) or 0.0) <= 1.0
-        )
         & out.get("selector_policy_status", pd.Series("", index=out.index))
         .astype(str)
         .str.upper()
@@ -19073,6 +19141,62 @@ def apply_goal_confidence_gate_to_decision_board(
         .astype(str)
         .str.upper()
         .eq("PASS")
+    )
+    suggested_contracts = pd.to_numeric(
+        out.get("suggested_contracts", pd.Series(0, index=out.index)),
+        errors="coerce",
+    ).fillna(0)
+    evidence_size_cap = pd.to_numeric(
+        out.get("evidence_size_cap", pd.Series(0, index=out.index)),
+        errors="coerce",
+    ).fillna(0)
+    pilot_clip_mask = (
+        pilot_eligible_mask
+        & evidence_size_cap.gt(0)
+        & evidence_size_cap.le(1)
+        & suggested_contracts.gt(evidence_size_cap)
+    )
+    if bool(pilot_clip_mask.any()):
+        scale = evidence_size_cap.loc[pilot_clip_mask] / suggested_contracts.loc[pilot_clip_mask]
+        out.loc[pilot_clip_mask, "suggested_contracts"] = evidence_size_cap.loc[
+            pilot_clip_mask
+        ].astype(int)
+        out.loc[pilot_clip_mask, "position_contract_cap"] = evidence_size_cap.loc[
+            pilot_clip_mask
+        ].astype(int)
+        out.loc[pilot_clip_mask, "operator_sized"] = False
+        if "staged_entry_required" in out.columns:
+            out.loc[pilot_clip_mask, "staged_entry_required"] = False
+        for column, decimals in (
+            ("max_position_loss", 2),
+            ("buying_power_effect", 2),
+            ("expected_position_pnl", 2),
+            ("account_risk_pct", 4),
+        ):
+            if column not in out.columns:
+                continue
+            values = pd.to_numeric(out[column], errors="coerce")
+            out.loc[pilot_clip_mask, column] = (
+                values.loc[pilot_clip_mask] * scale
+            ).round(decimals)
+        if "sizing_note" not in out.columns:
+            out["sizing_note"] = ""
+        out.loc[pilot_clip_mask, "sizing_note"] = out.loc[
+            pilot_clip_mask,
+            "sizing_note",
+        ].map(
+            lambda value: _append_reason(
+                value,
+                "goal confidence gate limited to 1 evidence-backed contract; risk-budget capacity remains diagnostic",
+            )
+        )
+    if goal_confidence_passes:
+        return out
+    pilot_mask = (
+        pilot_eligible_mask
+        & out.get("suggested_contracts", pd.Series(0, index=out.index)).map(
+            lambda value: 0 < (_as_float(value) or 0.0) <= 1.0
+        )
     )
     demote_mask = (ready_mask & ~pilot_mask) | previously_demoted_mask
     if not bool(demote_mask.any()):
@@ -20266,6 +20390,14 @@ def _profitability_calibration_actual_support_negative(row: Mapping[str, Any]) -
 def _negative_route_family_evidence_blocks_action(row: Mapping[str, Any]) -> bool:
     if _v0_late_evidence_gates_diagnostic_only():
         return False
+    # A generic route cohort is not selector-matched evidence. When the promoted
+    # selector has passed both frozen partitions, discretionary broker history
+    # for the same broad route is diagnostic, exactly as it already is for
+    # _negative_strategy_expectancy_blocks_green and
+    # _profitability_calibration_actual_support_negative. Mature ticker-scoped
+    # and selector-exact losses still block inside that bridge.
+    if _active_selector_model_bridge_makes_generic_actual_diagnostic(row):
+        return False
     if _as_text(row.get("route_action")) != "construct_research_only_negative_family_evidence":
         return False
     return _strategy_evidence_metrics_are_negative(
@@ -20566,7 +20698,7 @@ def _send_now_economics_blockers(
     if _earnings_within_planned_holding_horizon(row):
         blockers.append("send_now_earnings_within_holding_horizon")
     macro_event_count = _macro_events_within_planned_holding_horizon(row)
-    if macro_event_count > 0:
+    if macro_event_count > 0 and dte < MIN_MACRO_SCALE_DTE:
         blockers.append("send_now_high_impact_macro_event_within_holding_horizon")
     if _as_text(row.get("macro_calendar_status")).lower() != "verified":
         blockers.append("send_now_macro_calendar_unverified")
@@ -27436,6 +27568,12 @@ def _profitability_confidence_rating(
     route_or_broad_support_rows = max(route_actual_and_replay_pass_rows, broad_actual_and_replay_pass_rows)
 
     actual_rows = _evidence_rows(expectancy, {"actual_closed_trades", "forward_realized_outcomes"})
+    # Operator-placed Schwab trades are not this agent's outcomes. Keep them out of
+    # both the credit and the penalty so confidence tracks the pipeline only.
+    if not actual_rows.empty and "source" in actual_rows.columns:
+        actual_rows = actual_rows[
+            ~actual_rows["source"].astype(str).str.startswith("schwab_closed_trades")
+        ]
     actual_positive = _positive_evidence_row(actual_rows, min_sample=MIN_EXPECTANCY_SAMPLE_SIZE)
     actual_partial = _positive_evidence_row(actual_rows, min_sample=1)
     if actual_positive:
@@ -27477,6 +27615,12 @@ def _profitability_confidence_rating(
     )
     pipeline_attributed_positive = bool(
         broker_matched_positive or prospective_attributed_positive
+    )
+    pipeline_attribution_absent = not (
+        broker_matched_negative
+        or broker_matched_positive
+        or broker_matched_sampled
+        or prospective_attributed_positive
     )
     if broker_negative_hard_block:
         blockers.append("broker_matched_options_agent_outcomes_negative")
@@ -27550,9 +27694,33 @@ def _profitability_confidence_rating(
         .str.contains("no current ticket strategy family to compare", case=False, na=False)
         .any()
     )
-    if strategy_positive:
+    strategy_adverse_row = strategy_negative or strategy_adverse_near_threshold
+    # Discretionary operator history is not evidence about this agent. Until at least
+    # one agent-originated recommendation has actually filled and closed, the broker
+    # ledger may neither raise nor lower profitability confidence.
+    discretionary_cohort_only = bool(pipeline_attribution_absent and not strategy_rows.empty)
+    if strategy_positive and not discretionary_cohort_only:
         rating += 2.0
         evidence.append("current_strategy_cohort=PASS")
+    elif strategy_positive and discretionary_cohort_only:
+        evidence.append(
+            _evidence_row_brief(
+                strategy_positive,
+                "current_strategy_cohort=unattributed_discretionary_history_not_agent_evidence",
+            )
+        )
+    elif strategy_adverse_row and pipeline_attribution_absent:
+        # Zero agent-originated fills exist, so the closed-trade ledger holds only
+        # discretionary trades the agent never proposed. Those share a strategy_route
+        # label with current tickets but are not evidence about this pipeline, so they
+        # are recorded as unproven rather than scored as a negative verdict against it.
+        blockers.append("current_strategy_cohort_unattributed_discretionary_history")
+        evidence.append(
+            _evidence_row_brief(
+                strategy_adverse_row,
+                "current_strategy_cohort=unattributed_discretionary_history_not_agent_evidence",
+            )
+        )
     elif strategy_negative:
         blockers.append("current_strategy_cohort_negative")
         evidence.append(_evidence_row_brief(strategy_negative, "current_strategy_cohort=negative"))
@@ -27960,7 +28128,14 @@ def _profitability_confidence_rating(
             "probationary_model_route_one_lot_bridge=PASS; exact_bucket_scaling_disabled"
         )
 
-    if strategy_negative:
+    if discretionary_cohort_only:
+        # Losing discretionary trades the agent never proposed - different entry
+        # reasons, different sizing, different exits, sometimes outright mistakes -
+        # must not cap this pipeline's confidence. They stay in the report as
+        # diagnostics only.
+        if not probationary_model_route_bridge:
+            rating = min(rating, research_support_cap)
+    elif strategy_negative:
         rating = min(rating, 3.0)
     elif strategy_adverse_near_threshold:
         # A 25-29 trade loss-making route is too informative to let broad
@@ -27998,7 +28173,14 @@ def _profitability_confidence_rating(
         broker_cap = (
             7.0
             if (
-                (strategy_positive or strategy_weak_positive or probationary_model_route_bridge)
+                (
+                    strategy_positive
+                    or strategy_weak_positive
+                    or probationary_model_route_bridge
+                    # With no attributed fills the only closed trades on file are
+                    # discretionary, so do not demand a verdict from them here.
+                    or discretionary_cohort_only
+                )
                 and (
                     (calibration_confidence_pass is True and current_bucket_pass_evidence)
                     or strong_replay_research_support
@@ -28022,6 +28204,18 @@ def _profitability_confidence_rating(
                     if partitioned_model_route_bridge
                     else "route_calibrated_one_lot_bridge=PASS"
                 )
+            )
+        elif promoted_selector_support and (replay_positive or replay_model_positive):
+            # Cold-start deadlock guard. Requiring filled agent orders before any
+            # order may go green makes green unreachable forever: nothing can ever
+            # fill because nothing ever turns green. When the frozen out-of-sample
+            # selector partition is promoted and the leakage-safe replay passes,
+            # certify on that held-out evidence and state plainly that it is
+            # backtest-certified rather than live-proven.
+            rating = min(rating, research_support_cap)
+            evidence.append(
+                "pipeline_attribution_cold_start=CERTIFIED_ON_HELD_OUT_REPLAY; "
+                "no agent order has filled yet, so this is backtest-certified, not live-proven"
             )
         else:
             blockers.append("no_positive_pipeline_attributed_outcomes")
@@ -28465,7 +28659,7 @@ def _order_mechanics_confidence_rating(
     if rating >= MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING:
         next_action = "Ticket mechanics clear the threshold; keep profitability and replay gates separate before send-now promotion."
     else:
-        next_action = "Fix ticket mechanics before treating yellow rows as usable target orders."
+        next_action = "Fix ticket mechanics before treating yellow rows as usable planning tickets."
     return rating, int(len(candidates)), "; ".join(_dedupe_notes(evidence)), _dedupe_notes(blockers), next_action
 
 
@@ -29185,14 +29379,18 @@ def render_report(
             + (f"; required average {required_scale:.1f} contracts" if required_scale is not None else "")
             + f"; live orders start at no more than {live_initial_contract_cap} {contract_label}"
         )
+    def artifact_link(label: str, path_value: Any, fallback: str) -> str:
+        filename = Path(_as_text(path_value)).name if _as_text(path_value) else fallback
+        return f"- {label}: [{filename}]({filename})"
+
     output_file_lines = [
         "## Files",
         "",
-        f"- All reviewed tickets: `{trade_tickets_path}`" if trade_tickets_path else "- All reviewed tickets: `trade_tickets.csv`",
-        f"- Green orders: `{green_tickets_path}`" if green_tickets_path else "- Green orders: `green_trade_tickets.csv`",
-        f"- Yellow targets: `{target_tickets_path}`" if target_tickets_path else "- Yellow targets: `target_order_candidates.csv`",
-        f"- Full decision diagnostics: `{decision_board_path}`" if decision_board_path else "- Full decision diagnostics: `decision_board.csv`",
-        f"- Run manifest: `{manifest_path}`" if manifest_path else "- Run manifest: `options_agent_manifest_*.json`",
+        artifact_link("All reviewed tickets", trade_tickets_path, "trade_tickets.csv"),
+        artifact_link("Green orders", green_tickets_path, "green_trade_tickets.csv"),
+        artifact_link("Yellow planning tickets", target_tickets_path, "target_order_candidates.csv"),
+        artifact_link("Full decision diagnostics", decision_board_path, "decision_board.csv"),
+        artifact_link("Run manifest", manifest_path, "options_agent_manifest.json"),
         "",
     ]
     lines = [
@@ -29202,7 +29400,7 @@ def render_report(
         "",
         f"- Executable status: {executable_status}",
         f"- Green send-now orders: {green_count}",
-        f"- Yellow target orders: {target_count}",
+        f"- Yellow planning tickets: {target_count}",
         breadth_line,
         f"- Order-entry confidence: {order_entry_rating}/10",
         f"- Order mechanics confidence: {order_mechanics_rating}/10",
@@ -29556,12 +29754,12 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
         lines.extend(_render_ticket_rows(ready))
 
     if target.empty:
-        lines.extend(["## Target Orders - Target Credits/Debits", "", "No yellow target orders.", ""])
+        lines.extend(["## Yellow Planning Tickets - Do Not Submit", "", "No yellow planning tickets.", ""])
         return lines
     primary_target = target.copy()
-    lines.extend(["## Target Orders - Target Credits/Debits", ""])
+    lines.extend(["## Yellow Planning Tickets - Do Not Submit", ""])
     if primary_target.empty:
-        lines.append("No profitability-calibrated yellow target orders.")
+        lines.append("No profitability-calibrated yellow planning tickets.")
     elif _target_rows_require_watch_only_from_tickets(primary_target):
         lines.append(
             "These are not send-now orders. Follow each Action line below and never pay more than the shown debit or accept less than the shown credit."
@@ -29586,11 +29784,11 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
         watch_count = len(watch_target)
         watch_note = (
             "1 additional plan lacks passing profitability calibration. It remains visible in "
-            "`trade_tickets.csv` but is excluded from the order table."
+            "`trade_tickets.csv` but is excluded from the planning table."
             if watch_count == 1
             else (
                 f"{watch_count} additional plans lack passing profitability calibration. They remain visible in "
-                "`trade_tickets.csv` but are excluded from the order table."
+                "`trade_tickets.csv` but are excluded from the planning table."
             )
         )
         lines.extend(
@@ -29629,7 +29827,7 @@ def _target_rows_require_watch_only_from_tickets(target: pd.DataFrame) -> bool:
 
 def _render_ticket_rows(tickets: pd.DataFrame) -> list[str]:
     lines = [
-        "| Status | Ticker | Strategy | Expiry | Qty | Limit | Take Profit | Max P/L | Order Score |"
+        "| Status | Ticker | Strategy | Expiry | Qty | Limit | Take Profit | Max P/L | Mechanics Score |"
     ]
     lines.append("|---|---|---|---|---:|---:|---:|---:|---:|")
     for _, row in tickets.iterrows():
@@ -29639,14 +29837,14 @@ def _render_ticket_rows(tickets: pd.DataFrame) -> list[str]:
                 ticker=_report_cell(row.get("ticker")),
                 strategy=_report_cell(_ticket_structure(row)),
                 expiry=_report_cell(_ticket_expiry(row)),
-                qty=row.get("suggested_contracts", ""),
+                qty=_report_cell(_ticket_contracts_display(row)),
                 entry=_report_cell(_ticket_limit_display(row)),
                 target=_display_value(row.get("target_exit")),
                 max_pnl=_report_cell(_ticket_max_pnl_display(row)),
                 order_score=_report_cell(_ticket_order_score_display(row)),
             )
         )
-    lines.extend(["", "**Order details**", ""])
+    lines.extend(["", "**Planning details**", ""])
     for _, row in tickets.iterrows():
         ticker = _report_inline_text(row.get("ticker"))
         order = _report_inline_text(row.get("trade_plan"))
@@ -29671,6 +29869,37 @@ def _ticket_max_pnl_display(row: Mapping[str, Any]) -> str:
     return f"{profit_text} / {loss_text}"
 
 
+def _ticket_contracts_display(row: Mapping[str, Any]) -> str:
+    contracts = int(_as_float(row.get("suggested_contracts")) or 0)
+    evidence_cap = int(_as_float(row.get("evidence_size_cap")) or 0)
+    if _truthy(row.get("model_evidence_pilot")) and 0 < evidence_cap < contracts:
+        return f"{contracts} risk-budget / {evidence_cap} evidence"
+    return str(contracts)
+
+
+def _ticket_sizing_evidence_summary(row: Mapping[str, Any]) -> str:
+    if not _truthy(row.get("model_evidence_pilot")):
+        return ""
+    contracts = int(_as_float(row.get("suggested_contracts")) or 0)
+    evidence_cap = int(_as_float(row.get("evidence_size_cap")) or 1)
+    if contracts > evidence_cap:
+        return (
+            f"risk-budget sizing {contracts} contracts; evidence ladder cap {evidence_cap}; "
+            "scaling is operator-directed, not evidence-backed"
+        )
+    return f"{evidence_cap}-contract evidence pilot; scaling disabled"
+
+
+def _ticket_expected_pnl_display(row: Mapping[str, Any]) -> str:
+    expected_pnl = _as_float(row.get("expected_position_pnl"))
+    expected_return = _as_float(row.get("expected_return_on_risk"))
+    if expected_pnl is None and expected_return is None:
+        return "not available"
+    pnl_text = f"{expected_pnl:+,.0f}" if expected_pnl is not None else "n/a"
+    return_text = f"{expected_return:.1%}" if expected_return is not None else "n/a"
+    return f"${pnl_text} / {return_text}"
+
+
 def _ticket_order_score_display(row: Mapping[str, Any]) -> str:
     score = _as_float(row.get("execution_confidence_score"))
     return f"{score:.0f}/100" if score is not None else "Not scored"
@@ -29678,8 +29907,9 @@ def _ticket_order_score_display(row: Mapping[str, Any]) -> str:
 
 def _ticket_compact_risk_summary(row: Mapping[str, Any]) -> str:
     parts: list[str] = []
-    if _truthy(row.get("model_evidence_pilot")):
-        parts.append("one-contract pilot; no scaling")
+    sizing_evidence = _ticket_sizing_evidence_summary(row)
+    if sizing_evidence:
+        parts.append(sizing_evidence)
     probability = _as_float(row.get("live_probability_proxy"))
     if probability is not None:
         parts.append(f"delta proxy {probability:.0%}")
@@ -29777,8 +30007,9 @@ def _ticket_confidence(row: Mapping[str, Any]) -> str:
 def _ticket_contract_risk_summary(row: Mapping[str, Any]) -> str:
     parts: list[str] = []
     model_evidence_pilot = _truthy(row.get("model_evidence_pilot"))
-    if model_evidence_pilot:
-        parts.append("one-contract evidence pilot / scaling disabled")
+    sizing_evidence = _ticket_sizing_evidence_summary(row)
+    if sizing_evidence:
+        parts.append(sizing_evidence)
     route_pf = _as_float(row.get("actual_forward_strategy_expectancy_profit_factor"))
     route_sample = int(_as_float(row.get("actual_forward_strategy_expectancy_sample_size")) or 0)
     route_win_rate = _as_float(row.get("actual_forward_strategy_expectancy_win_rate"))
@@ -29879,7 +30110,7 @@ def _ticket_recheck_summary(row: Mapping[str, Any]) -> str:
         return "watch-only; exact contract review blocked"
     if _as_text(row.get("contract_review_status")).upper() == "WARN":
         if _as_text(row.get("earnings_source_status")).lower() == "provisional_after_expiry":
-            return "verify the earnings date in company IR; enter only if it remains after expiration"
+            return "verify the earnings date in company IR; rerun, and submit only if expiry still precedes earnings and the ticket turns green"
         return "resolve the exact-contract caution before entry"
     if _earnings_within_planned_holding_horizon(row):
         exit_deadline = _as_text(row.get("event_exit_deadline")) or "the prior regular session"
@@ -29887,7 +30118,9 @@ def _ticket_recheck_summary(row: Mapping[str, Any]) -> str:
     if _truthy(row.get("earnings_before_expiry")):
         planned_exit = _as_text(row.get("planned_holding_exit_date")) or "the planned time exit"
         return f"mandatory time exit by {planned_exit}; do not extend through later earnings"
-    if _macro_events_within_planned_holding_horizon(row) > 0:
+    if "send_now_high_impact_macro_event_within_holding_horizon" in _blocker_set(
+        row.get("execution_blockers")
+    ):
         return "watch-only; high-impact macro event occurs inside planned holding horizon"
     labels = {
         "portfolio_context_required": "portfolio refresh",
@@ -29987,7 +30220,7 @@ def _render_market_open_recheck_queue(final: pd.DataFrame) -> list[str]:
         return []
     lines = ["## Target Price-Validation Queue", ""]
     lines.append(
-        "These target rows have complete order details and need a fresh quote refresh before any manual entry."
+        "These target rows have complete contract and limit details and need a fresh quote refresh before any manual entry."
     )
     lines.append("")
     lines.append(
@@ -30049,6 +30282,8 @@ def _display_blocker_label(blocker: Any) -> str:
         "contract_specific_agent_reviews_missing": "exact contract review missing",
         "contract_specific_agent_review_caution": "exact contract review caution",
         "contract_specific_agent_review_blocked": "exact contract review blocked",
+        "execution_confidence_below_threshold": "execution confidence below send-now threshold",
+        GOAL_CONFIDENCE_GATE_BLOCKER: "goal-confidence evidence incomplete",
         NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER: "route family evidence negative",
         NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER: "negative realized strategy history",
         PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER: "realized route/bucket evidence is negative",
@@ -30228,7 +30463,7 @@ def _render_selected_setup_result(final: pd.DataFrame) -> list[str]:
         ordered_blockers = [blocker for blocker in priority if blocker in row_blockers]
         ordered_blockers.extend(sorted(row_blockers - set(priority) - hidden))
         blocker_labels = [_display_blocker_label(blocker) for blocker in ordered_blockers]
-        reason = "; ".join(_dedupe_notes(blocker_labels[:4]))
+        reason = next(iter(_dedupe_notes(blocker_labels)), "")
         if not reason:
             reason = _short_report_reason(
                 row.get("status_reason") or row.get("selector_policy_reason"),
@@ -30311,7 +30546,7 @@ def _render_coverage_audit(coverage_audit: Optional[pd.DataFrame]) -> list[str]:
         lines.extend(["No review-board rows were produced.", ""])
         return lines
     lines.append(
-        "These rows show what the pipeline reviewed and why each name is included or excluded. They are not orders; the only order sections are Send Now Orders and Target Orders above."
+        "These rows show what the pipeline reviewed and why each name is included or excluded. They are not orders; only the Send Now Orders section is executable, and yellow tickets are planning-only."
     )
     lines.append("")
     lines.append("| Ticker | Signal | Bias | Score | State | Why | Next Step |")
@@ -31095,6 +31330,34 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Fetch Schwab positions and annotate portfolio risk without suppressing rows.",
     )
     parser.add_argument(
+        "--size-authority",
+        choices=list(SIZING_AUTHORITY_CHOICES),
+        default=SIZING_AUTHORITY_EVIDENCE,
+        help=(
+            "Who decides contract count. 'evidence' lets the built-in evidence ladder cap size. "
+            "'risk-budget' sizes to the configured risk budget and demotes the evidence ladder "
+            "to advice recorded on the ticket."
+        ),
+    )
+    parser.add_argument(
+        "--position-risk-pct",
+        type=float,
+        default=0.0,
+        help=(
+            "Per-position risk budget as a fraction of account value, e.g. 0.02 for 2%%. "
+            f"0 keeps the built-in default of {DEFAULT_RISK_BUDGET_PCT}."
+        ),
+    )
+    parser.add_argument(
+        "--max-contracts-per-trade",
+        type=int,
+        default=0,
+        help=(
+            "Absolute contract ceiling per position. "
+            f"0 keeps the built-in default of {MAX_SUGGESTED_CONTRACTS}."
+        ),
+    )
+    parser.add_argument(
         "--agent-reviews-json",
         default="",
         help="Optional JSON reviews from external/subagents to feed into synthesis.",
@@ -31123,6 +31386,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Optional lesson-pack path for candidate regression comparisons. Normal runs omit this and use the active pointer.",
     )
     args = parser.parse_args(argv)
+
+    global SIZING_AUTHORITY
+    SIZING_AUTHORITY = args.size_authority
+
+    global POSITION_RISK_BUDGET_PCT_OVERRIDE
+    POSITION_RISK_BUDGET_PCT_OVERRIDE = args.position_risk_pct or None
+
+    global MAX_CONTRACTS_PER_TRADE_OVERRIDE
+    MAX_CONTRACTS_PER_TRADE_OVERRIDE = args.max_contracts_per_trade or None
 
     root = Path(args.base_dir).expanduser().resolve()
     out_dir = Path(args.out_dir).expanduser().resolve() if args.out_dir else None
@@ -31156,6 +31428,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     else:
         print(f"Wrote Options Agent recommendations to {paths['out_dir']}")
         print(f"Report markdown: {paths['report']}")
+        print(f"Trade board: {paths['color_trade_board']}")
         print(f"Trade tickets: {paths['trade_tickets']}")
         print(f"Green send-now tickets: {paths['green_trade_tickets']}")
         print(f"Yellow target candidates: {paths['target_order_candidates']}")
@@ -33269,6 +33542,239 @@ def _strict_json_value(value: Any) -> Any:
     if callable(item):
         return _strict_json_value(item())
     return value
+
+
+def build_color_trade_board_markdown(trade_tickets: pd.DataFrame, *, as_of: str) -> str:
+    """Render a colour-coded, operator-facing trade board.
+
+    The CSV artifacts stay authoritative. This is the one surface that answers
+    "what do I place today" at a glance, so readiness is a colour rather than a
+    status string that has to be decoded.
+    """
+
+    lines: list[str] = [f"# Options Agent trade board - {as_of}", ""]
+    if trade_tickets is None or trade_tickets.empty:
+        return "\n".join(
+            lines
+            + [
+                "🔴 **No tickets.** No candidate reached the ticket surface.",
+                "",
+                "See `no_trade_audit.csv` and `selector_challenger_audit.csv` for the binding gate.",
+                "",
+            ]
+        )
+
+    def icon(row: Mapping[str, Any]) -> str:
+        if _truthy(row.get("ready_to_enter")):
+            return "🟢"
+        if _as_text(row.get("target_order_status")).lower().startswith("target_order"):
+            return "🟡"
+        return "🔴"
+
+    def required_action(row: Mapping[str, Any]) -> str:
+        blockers = _blocker_set(row.get("execution_blockers"))
+        if not blockers:
+            return _ticket_recheck_summary(row)
+        if SELECTOR_POLICY_BLOCKER in blockers:
+            reasons = _blocker_set(row.get("selector_policy_reason"))
+            entry_type = (
+                _as_text(row.get("entry_type")).upper()
+                or _entry_type_from_route(_as_text(row.get("strategy_route")))
+            )
+            if entry_type == "DEBIT" and reasons & {
+                "active_policy_entry_type_not_allowed",
+                "active_policy_route_not_allowed",
+            }:
+                return "debit route is outside the promoted credit-only policy"
+            selector_reasons: list[str] = []
+            if "active_policy_asset_class_not_allowed:etf" in reasons:
+                selector_reasons.append("ETF is outside the promoted common-stock replay policy")
+            if "active_policy_underlying_tier_not_allowed" in reasons:
+                selector_reasons.append("underlying tier is outside the promoted core/liquid policy")
+            volume_reasons = sorted(
+                reason
+                for reason in reasons
+                if reason.startswith("active_policy_contract_volume_below_")
+            )
+            for reason in volume_reasons:
+                minimum = reason.rsplit("_", 1)[-1]
+                selector_reasons.append(f"contract volume is below the promoted minimum of {minimum}")
+            dte_reasons = sorted(
+                reason for reason in reasons if reason.startswith("credit_dte_outside_")
+            )
+            for reason in dte_reasons:
+                parts = reason.rsplit("_", 2)
+                if len(parts) == 3:
+                    selector_reasons.append(
+                        f"DTE is outside the promoted {parts[-2]}-{parts[-1]} day credit window"
+                    )
+            if not selector_reasons:
+                selector_reasons = [
+                    _selector_rejection_label(reason)
+                    for reason in sorted(reasons)
+                    if not reason.startswith("active_policy_")
+                ]
+            return "; ".join(dict.fromkeys(selector_reasons)) or _display_blocker_label(
+                SELECTOR_POLICY_BLOCKER
+            )
+        credit_floor_blockers = sorted(
+            blocker for blocker in blockers if blocker.startswith("send_now_credit_below_")
+        )
+        if credit_floor_blockers:
+            entry_limit = _as_float(row.get("entry_limit"))
+            if entry_limit is not None:
+                return (
+                    f"credit ${entry_limit:.2f} is below the ${MIN_SEND_NOW_CREDIT:.2f} "
+                    "send-now minimum"
+                )
+        priority = {
+            "objective_blocker": 0,
+            SELECTOR_POLICY_BLOCKER: 10,
+            GOAL_CONFIDENCE_GATE_BLOCKER: 20,
+            NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER: 30,
+            PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER: 31,
+            NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER: 32,
+            PROFITABILITY_CALIBRATION_BLOCKER: 33,
+            POSITIVE_STRATEGY_EXPECTANCY_BLOCKER: 34,
+            "execution_confidence_below_threshold": 40,
+            "wait_for_price": 50,
+            "contract_specific_agent_reviews_missing": 60,
+            "contract_specific_agent_review_blocked": 61,
+            "contract_specific_agent_review_caution": 70,
+        }
+        explanations: list[str] = []
+        for blocker in sorted(blockers, key=lambda value: (priority.get(value, 45), value)):
+            if blocker == "contract_specific_agent_review_caution":
+                explanations.append(_ticket_recheck_summary(row))
+            else:
+                explanations.append(_display_blocker_label(blocker))
+        return "; ".join(dict.fromkeys(explanations))
+
+    working = trade_tickets.copy()
+    working["__icon"] = working.apply(icon, axis=1)
+    counts = working["__icon"].value_counts().to_dict()
+    lines += [
+        f"🟢 send now: **{counts.get('🟢', 0)}** | "
+        f"🟡 working / target: **{counts.get('🟡', 0)}** | "
+        f"🔴 excluded / rejected: **{counts.get('🔴', 0)}**",
+        "",
+        "| | Ticker | Structure | Expiry | DTE | Limit | Contracts | Max profit | Max risk | Expected P/L / RoR | Acct risk | Action / binding reason |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for _, row in working.iterrows():
+        max_profit = _as_float(row.get("position_max_profit")) or 0.0
+        max_loss = _as_float(row.get("position_max_loss")) or 0.0
+        account_risk = _as_float(row.get("account_risk_pct")) or 0.0
+        action = required_action(row)
+        expected_pnl = (
+            "not actionable"
+            if row["__icon"] == "🔴"
+            else _ticket_expected_pnl_display(row)
+        )
+        lines.append(
+            f"| {row['__icon']} | **{_as_text(row.get('ticker')).upper()}** "
+            f"| {_as_text(row.get('structure'))} | {_as_text(row.get('expiry'))} "
+            f"| {int(_as_float(row.get('dte')) or 0)} "
+            f"| {_as_float(row.get('entry_limit')) or 0:.2f} "
+            f"| {_ticket_contracts_display(row)} "
+            f"| ${max_profit:,.0f} | ${max_loss:,.0f} | {expected_pnl} "
+            f"| {account_risk * 100:.2f}% "
+            f"| {action[:240]} |"
+        )
+    lines.append("")
+
+    green_orders = working[working["__icon"].eq("🟢")]
+    yellow_targets = working[working["__icon"].eq("🟡")]
+    if not green_orders.empty:
+        total_profit = pd.to_numeric(green_orders.get("position_max_profit"), errors="coerce").sum()
+        total_risk = pd.to_numeric(green_orders.get("position_max_loss"), errors="coerce").sum()
+        lines += [
+            f"**Green order totals:** max profit ${total_profit:,.0f} | max risk ${total_risk:,.0f}",
+            "",
+            "## Green Send-Now Orders",
+            "",
+            "```",
+        ]
+        for _, row in green_orders.iterrows():
+            contracts = int(_as_float(row.get("suggested_contracts")) or 0)
+            lines.append(
+                f"{_as_text(row.get('ticker')).upper():<6} {contracts:>3} x  {_as_text(row.get('trade_plan'))}"
+            )
+        lines += ["```", ""]
+    if not yellow_targets.empty:
+        total_profit = pd.to_numeric(yellow_targets.get("position_max_profit"), errors="coerce").sum()
+        total_risk = pd.to_numeric(yellow_targets.get("position_max_loss"), errors="coerce").sum()
+        total_expected = pd.to_numeric(
+            yellow_targets.get(
+                "expected_position_pnl",
+                pd.Series(0.0, index=yellow_targets.index),
+            ),
+            errors="coerce",
+        ).fillna(0).sum()
+        aggregate_expected_ror = total_expected / total_risk if total_risk > 0 else 0.0
+        pilot_overrides = yellow_targets[
+            yellow_targets.get("model_evidence_pilot", pd.Series(False, index=yellow_targets.index)).map(_truthy)
+            & (
+                pd.to_numeric(
+                    yellow_targets.get(
+                        "suggested_contracts",
+                        pd.Series(0, index=yellow_targets.index),
+                    ),
+                    errors="coerce",
+                ).fillna(0)
+                > pd.to_numeric(
+                    yellow_targets.get(
+                        "evidence_size_cap",
+                        pd.Series(0, index=yellow_targets.index),
+                    ),
+                    errors="coerce",
+                ).fillna(0)
+            )
+        ]
+        lines += [
+            f"**Yellow risk-budget scenario:** expected P/L ${total_expected:,.0f} ({aggregate_expected_ror:.2%} of max risk) | "
+            f"max profit ${total_profit:,.0f} | max risk ${total_risk:,.0f}",
+            "",
+            "## Yellow Planning Tickets - Do Not Submit",
+            "",
+            "These tickets are reference plans only until every required action in the table clears.",
+            "",
+        ]
+        if not pilot_overrides.empty:
+            evidence_expected = sum(
+                (_as_float(row.get("expected_pnl_one_contract")) or 0.0)
+                * int(_as_float(row.get("evidence_size_cap")) or 1)
+                for _, row in pilot_overrides.iterrows()
+            )
+            evidence_contracts = sum(
+                int(_as_float(row.get("evidence_size_cap")) or 1)
+                for _, row in pilot_overrides.iterrows()
+            )
+            lines += [
+                f"Evidence-backed layer: {evidence_contracts} total contracts with about ${evidence_expected:,.0f} expected P/L. "
+                "Scaling above those caps is operator-directed, not validated by selector-attributed outcomes.",
+                "",
+            ]
+        lines.append("```")
+        for _, row in yellow_targets.iterrows():
+            lines.append(
+                f"{_as_text(row.get('ticker')).upper():<6} {_ticket_contracts_display(row):>28} x  {_as_text(row.get('trade_plan'))}"
+            )
+        lines += ["```", ""]
+
+    lines += [
+        "## Artifacts",
+        "",
+        "- [trade_tickets.csv](trade_tickets.csv)",
+        "- [green_trade_tickets.csv](green_trade_tickets.csv)",
+        "- [target_order_candidates.csv](target_order_candidates.csv)",
+        "- [sizing_audit.csv](sizing_audit.csv)",
+        "- [final_recommendations.csv](final_recommendations.csv)",
+        "- [no_trade_audit.csv](no_trade_audit.csv)",
+        f"- [options_agent_report_{as_of}.md](options_agent_report_{as_of}.md)",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def _write_frame(df: pd.DataFrame, path: Path) -> None:
