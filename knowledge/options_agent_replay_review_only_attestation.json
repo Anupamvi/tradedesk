@@ -1,15 +1,15 @@
 {
-  "current_cache_fingerprint": "b44b055015f5ca05effd06eb5a28b6ceb8f3f2377e9b0dcf7f1a342f3abed3e0",
-  "manifest_sha256": "3850d0814d4b3ef3bf4b7bbebfb8788307028ddff5b6ec043c481979d3ece11e",
-  "pipeline_version": "options-agent-v1.50-mixed-credit-live-width-parity-20260722-094108",
+  "current_cache_fingerprint": "14d15bb01034b059ae6f9bf347ec217258dd87c1919098d21776fc6929fdf4a5",
+  "manifest_sha256": "4cee47651f6d155642e4c693d6e4b2057c51041625cf65b998b473743ba08756",
+  "pipeline_version": "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
   "producer": "uwos.options_agent.replay",
-  "reason": "Post-selection replay-parity correction: live Schwab repricing no longer shifts the dated UW signal holding horizon; selector, candidate construction, pricing, and frozen replay selection recompute identically.",
-  "recomputed_selected_count": 858,
-  "recomputed_selected_ids_sha256": "ed5afe08c54fb78116e59309c51b1798685f0311e055488a065f6e12a33ef4c9",
-  "replay_detail_sha256": "f8cf94b5c4e83ec6071430734546126feb45dbf3c494796bb0410ab0a86e1548",
+  "reason": "Post-selection only: evidence-pilot clipping and operator report truth corrections; red rows are labeled selector-excluded/rejected, one binding reason is displayed per setup, and rejected economics are non-actionable. Candidate generation, pricing, contract construction, and promoted selector policy are unchanged.",
+  "recomputed_selected_count": 2021,
+  "recomputed_selected_ids_sha256": "8aabd1dac4720e6494d4481e4da5bde717517b1c0f58c08abf8c31bb7e7d5f83",
+  "replay_detail_sha256": "2e5a0a16f2c67be85125bd0b08ccdc2be8ead5bcbfbe664003d55b000f5f0582",
   "schema_version": "options_agent.replay_review_only_attestation.v1",
-  "selector_policy_id": "core_credit_rank_only_queue9_v17",
-  "source_cache_fingerprint": "4d4f756964e4b27d831c62c28d3068eb3ca16ba4624baba6f5054b515fc782bc",
-  "stored_selected_count": 858,
-  "stored_selected_ids_sha256": "ed5afe08c54fb78116e59309c51b1798685f0311e055488a065f6e12a33ef4c9"
+  "selector_policy_id": "core_liquid_credit_dte7_45_volume20_em030_queue25_v19",
+  "source_cache_fingerprint": "5226e0c52d81ef0f8631f488572c5597b0b3a6262d8360ef36fc789aa468c920",
+  "stored_selected_count": 2021,
+  "stored_selected_ids_sha256": "8aabd1dac4720e6494d4481e4da5bde717517b1c0f58c08abf8c31bb7e7d5f83"
 }
