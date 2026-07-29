@@ -44,7 +44,7 @@ from uwos.options_agent.shadow_outcomes import (
     collect_due_shadow_outcomes,
     read_shadow_outcomes,
 )
-from uwos.paths import project_root
+from ._vendor.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
 PIPELINE_VERSION = "options-agent-v1.56-live-selector-dte-parity-20260722-161615"
@@ -2373,7 +2373,7 @@ def _historical_shadow_quote_fetcher(
     """Create a dated UW exact-option quote adapter for missed shadow sessions."""
 
     from uwos.exact_spread_backtester import HistoricalOptionQuoteStore
-    from uwos.schwab_auth import compact_occ_to_schwab_symbol
+    from ._vendor.schwab_auth import compact_occ_to_schwab_symbol
 
     store = HistoricalOptionQuoteStore(Path(root).expanduser().resolve(), use_hot=True, use_oi=True)
 
@@ -4070,7 +4070,7 @@ def _write_dispatch_only_artifacts(
 def build_source_inventory(date_dir: Path, as_of: str | dt.date) -> dict[str, Any]:
     """Inventory dated UW inputs without relying on any prior pipeline output."""
 
-    from codexuw import data as uw_data
+    from ._vendor import data as uw_data
 
     as_of_day = parse_as_of(as_of)
     day = as_of_day.isoformat()
@@ -4108,7 +4108,7 @@ def build_raw_universe(
 ) -> tuple[pd.DataFrame, list[str]]:
     """Build a ticker-level raw universe directly from dated UW source files."""
 
-    from codexuw import data as uw_data
+    from ._vendor import data as uw_data
 
     day = parse_as_of(as_of)
     notes: list[str] = []
@@ -4225,7 +4225,7 @@ def collect_market_price_spots(
     if not live_schwab and chain_snapshot_dir is None:
         return {}, {"source_mode": "uw_eod_only", "source": "UW stock screener close/prev_close"}, []
     try:
-        from codexuw.schwab_live import SchwabChainValidator, chain_spot
+        from ._vendor.schwab_live import SchwabChainValidator, chain_spot
     except Exception as exc:
         return {}, {"source_mode": "uw_eod_only", "source": "UW stock screener close/prev_close"}, [
             f"early market-price Schwab import unavailable: {exc}"
@@ -6544,7 +6544,7 @@ def _dated_option_chain_for_construction(
 ) -> pd.DataFrame:
     """Build the broad dated construction chain from hot and chain-OI exports."""
 
-    from codexuw import data as uw_data
+    from ._vendor import data as uw_data
 
     day = parse_as_of(as_of)
     frames: list[pd.DataFrame] = []
@@ -7266,7 +7266,7 @@ def _fresh_reprice_reviewed_contract(
 ) -> tuple[Optional[dict[str, Any]], str]:
     """Reprice the exact reviewed legs without allowing pass 2 to choose replacements."""
 
-    from codexuw.schwab_live import find_credit_spread_alternatives, find_debit_spread_alternatives
+    from ._vendor.schwab_live import find_credit_spread_alternatives, find_debit_spread_alternatives
 
     reviewed_key = contract_review_key(row)
     expiry = _row_date(row.get("expiry"))
@@ -7435,7 +7435,7 @@ def validate_priced_candidates_live(
     if priced.empty:
         return priced.copy(), empty_live_validation_frame(), []
 
-    from codexuw.schwab_live import (
+    from ._vendor.schwab_live import (
         SchwabChainValidator,
         chain_quote_dates,
         chain_spot,
@@ -8400,8 +8400,8 @@ def resolve_portfolio_context(
         return unavailable_portfolio_context("portfolio context not requested"), []
 
     try:
-        from codexuw.portfolio import summarize_positions
-        from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+        from ._vendor.portfolio import summarize_positions
+        from ._vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
         service = SchwabLiveDataService(SchwabAuthConfig.from_env(load_dotenv_file=True), interactive_login=False)
         payload = service.get_account_positions()
@@ -8473,7 +8473,7 @@ def _dated_spread_pair(
 ) -> Optional[tuple[pd.Series, pd.Series, dict[str, Any]]]:
     """Enumerate dated spread pairs and choose one using entry-time quality only."""
 
-    from codexuw.schwab_live import (
+    from ._vendor.schwab_live import (
         find_credit_spread_alternatives,
         find_debit_spread_alternatives,
     )
@@ -9943,7 +9943,7 @@ def _options_agent_credit_spread_alternatives(
     contracts: pd.DataFrame,
     **kwargs: Any,
 ) -> list[dict[str, Any]]:
-    from codexuw.schwab_live import find_credit_spread_alternatives
+    from ._vendor.schwab_live import find_credit_spread_alternatives
 
     alternatives = find_credit_spread_alternatives(contracts, **kwargs)
     return _natural_price_spread_alternatives(
@@ -9958,7 +9958,7 @@ def _options_agent_debit_spread_alternatives(
     contracts: pd.DataFrame,
     **kwargs: Any,
 ) -> list[dict[str, Any]]:
-    from codexuw.schwab_live import find_debit_spread_alternatives
+    from ._vendor.schwab_live import find_debit_spread_alternatives
 
     alternatives = find_debit_spread_alternatives(contracts, **kwargs)
     return _natural_price_spread_alternatives(
@@ -16565,7 +16565,7 @@ def _market_regime_from_uw_source_day(base_root: Path, day: str) -> str:
     if not date_dir.exists():
         return "regime_unknown"
     try:
-        from codexuw import data as uw_data
+        from ._vendor import data as uw_data
 
         screener = uw_data.load_stock_screener(date_dir, point_in_time=True)
     except Exception:
@@ -16721,7 +16721,7 @@ def _read_same_day_option_liquidity_export(
     symbols: set[str],
 ) -> pd.DataFrame:
     try:
-        from codexuw import data as uw_data
+        from ._vendor import data as uw_data
 
         as_of_day = parse_as_of(date_dir.name[:10])
         path = uw_data.find_export(date_dir, prefix, asof_ceiling=as_of_day)

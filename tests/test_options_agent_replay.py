@@ -415,7 +415,7 @@ def test_next_session_replay_reuses_only_explicit_selector_only_candidate_cache(
 
 
 def test_dated_construction_chain_unions_hot_and_chain_oi(monkeypatch, tmp_path) -> None:
-    from codexuw import data as uw_data
+    from uwos.options_agent._vendor import data as uw_data
 
     point_in_time_calls = []
     hot = pd.DataFrame(
@@ -485,7 +485,7 @@ def test_dated_construction_chain_unions_hot_and_chain_oi(monkeypatch, tmp_path)
 
 
 def test_raw_universe_reads_every_discovery_source_point_in_time(monkeypatch, tmp_path) -> None:
-    from codexuw import data as uw_data
+    from uwos.options_agent._vendor import data as uw_data
 
     day_dir = tmp_path / "2026-05-01"
     day_dir.mkdir()

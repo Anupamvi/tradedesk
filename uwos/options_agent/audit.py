@@ -52,7 +52,7 @@ from uwos.options_agent.core import (
     synthesize_decision_board,
     tickers_match,
 )
-from uwos.paths import project_root
+from ._vendor.paths import project_root
 
 
 SUMMARY_COLUMNS = [

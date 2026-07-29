@@ -860,7 +860,7 @@ class SchwabChainValidator:
 
     def _service(self):
         if self.service is None:
-            from ._vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+            from .schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
             self.service = SchwabLiveDataService(SchwabAuthConfig.from_env(load_dotenv_file=True), interactive_login=False)
         return self.service

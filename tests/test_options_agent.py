@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from codexuw.schwab_live import chain_quote_dates, chain_to_contracts
+from uwos.options_agent._vendor.schwab_live import chain_quote_dates, chain_to_contracts
 from uwos.options_agent import audit, core, market_open_runner
 from uwos.options_agent.core import RecommendationStatus, apply_portfolio_risk_annotations, output_paths, run_pipeline
 
@@ -18636,7 +18636,7 @@ def test_live_credit_validation_searches_every_eligible_expiry(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from codexuw import schwab_live
+    from uwos.options_agent._vendor import schwab_live
 
     snapshot_dir = tmp_path / "snapshots"
     snapshot_dir.mkdir()
@@ -18740,7 +18740,7 @@ def test_live_debit_validation_uses_run_regime_when_selecting_contracts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from codexuw import schwab_live
+    from uwos.options_agent._vendor import schwab_live
 
     snapshot_dir = tmp_path / "snapshots"
     snapshot_dir.mkdir()
@@ -19083,7 +19083,7 @@ def test_live_spread_quality_proof_allows_blocked_audit_visible_rows_without_nan
 
 
 def test_snapshot_only_validation_does_not_fall_back_to_live_for_missing_chain(tmp_path: Path, monkeypatch) -> None:
-    from codexuw.schwab_live import SchwabChainValidator
+    from uwos.options_agent._vendor.schwab_live import SchwabChainValidator
 
     def fail_if_live_service_is_requested(self):
         raise AssertionError("snapshot-only validation attempted live Schwab fallback")
@@ -19122,7 +19122,7 @@ def test_live_validation_cap_defers_lower_priority_tickers_without_schwab_fetch(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from codexuw.schwab_live import SchwabChainValidator
+    from uwos.options_agent._vendor.schwab_live import SchwabChainValidator
 
     class TimeoutService:
         def __init__(self):
@@ -19258,7 +19258,7 @@ def test_live_chain_default_uses_bounded_ticker_cap(monkeypatch: pytest.MonkeyPa
 
 
 def test_schwab_chain_validator_maps_berkshire_alias_for_api(tmp_path: Path) -> None:
-    from codexuw.schwab_live import SchwabChainValidator
+    from uwos.options_agent._vendor.schwab_live import SchwabChainValidator
 
     calls = []
 
@@ -19278,7 +19278,7 @@ def test_schwab_chain_validator_maps_berkshire_alias_for_api(tmp_path: Path) -> 
 
 
 def test_class_share_aliases_match_evidence_and_schwab_api(tmp_path: Path) -> None:
-    from codexuw.schwab_live import SchwabChainValidator
+    from uwos.options_agent._vendor.schwab_live import SchwabChainValidator
 
     calls = []
 
@@ -23334,7 +23334,7 @@ def test_hd_like_short_dte_debit_is_rejected_for_quote_width_and_theta() -> None
 
 
 def test_live_debit_expected_move_falls_back_to_chain_iv_with_correct_ratio_direction() -> None:
-    from codexuw.schwab_live import find_debit_spread_alternatives
+    from uwos.options_agent._vendor.schwab_live import find_debit_spread_alternatives
 
     expiry = dt.date(2026, 7, 17)
     contracts = pd.DataFrame(
@@ -23395,7 +23395,7 @@ def test_live_debit_expected_move_falls_back_to_chain_iv_with_correct_ratio_dire
 
 
 def test_live_debit_builder_widens_token_seed_to_material_quality_spread() -> None:
-    from codexuw.schwab_live import find_debit_spread_alternatives
+    from uwos.options_agent._vendor.schwab_live import find_debit_spread_alternatives
 
     expiry = dt.date(2026, 8, 7)
     contracts = pd.DataFrame(
@@ -23795,7 +23795,7 @@ def test_live_long_option_selection_prefers_probability_and_theta_over_lowest_de
 
 
 def test_live_credit_expected_move_uses_breakeven_not_short_strike() -> None:
-    from codexuw.schwab_live import find_credit_spread_alternatives
+    from uwos.options_agent._vendor.schwab_live import find_credit_spread_alternatives
 
     expiry = dt.date(2026, 8, 21)
     contracts = pd.DataFrame(
@@ -23852,7 +23852,7 @@ def test_live_credit_expected_move_uses_breakeven_not_short_strike() -> None:
 
 
 def test_live_credit_builder_searches_risk_sized_width_when_anchor_is_too_wide() -> None:
-    from codexuw.schwab_live import _credit_spread_candidates, find_credit_spread_alternatives
+    from uwos.options_agent._vendor.schwab_live import _credit_spread_candidates, find_credit_spread_alternatives
 
     expiry = dt.date(2026, 8, 21)
     contracts = pd.DataFrame(
@@ -23926,7 +23926,7 @@ def test_live_credit_builder_searches_risk_sized_width_when_anchor_is_too_wide()
 
 
 def test_live_credit_builder_returns_all_actionable_candidates_for_global_scoring() -> None:
-    from codexuw.schwab_live import find_credit_spread_alternatives
+    from uwos.options_agent._vendor.schwab_live import find_credit_spread_alternatives
 
     expiry = dt.date(2026, 8, 21)
     contracts = pd.DataFrame(

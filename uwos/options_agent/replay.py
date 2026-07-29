@@ -12,7 +12,7 @@ from typing import Any, Mapping, Optional, Sequence
 
 import pandas as pd
 
-from codexuw import data as uw_data
+from ._vendor import data as uw_data
 from uwos import exact_spread_backtester
 from uwos.exact_spread_backtester import HistoricalOptionQuoteStore, LegQuote
 from uwos.options_agent import core

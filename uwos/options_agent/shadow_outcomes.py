@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from uwos.schwab_auth import compact_occ_to_schwab_symbol
+from ._vendor.schwab_auth import compact_occ_to_schwab_symbol
 
 
 SCHEMA_VERSION = "options_agent.shadow_outcome.v1"
@@ -196,7 +196,7 @@ def collect_due_shadow_outcomes(
     for group_key in live_groups:
         try:
             if quote_fetcher is None:
-                from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+                from ._vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
                 service = SchwabLiveDataService(
                     SchwabAuthConfig.from_env(load_dotenv_file=True),
