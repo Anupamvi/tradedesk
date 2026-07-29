@@ -406,3 +406,100 @@ def aggregate_bot_flow(
     out.attrs["source_path"] = ";".join(str(path) for path in paths)
     out.attrs["dp_equity_present"] = False
     return out
+
+
+DARK_POOL_COLUMNS = [
+    "ticker",
+    "dp_total_premium",
+    "dp_buy_premium",
+    "dp_sell_premium",
+    "dp_trades",
+    "dp_flow_bias",
+    "dp_status",
+]
+
+# Soft-corroboration thresholds. Kept conservative so dark-pool evidence can help
+# a candidate clear the flow-confirmation gate but never fabricates a signal.
+DARK_POOL_MIN_TRADES = 5
+DARK_POOL_BIAS_THRESHOLD = 0.15
+
+
+def _empty_dark_pool(*, source_status: str, source_path: str = "") -> pd.DataFrame:
+    out = pd.DataFrame(columns=DARK_POOL_COLUMNS)
+    out.attrs["source_status"] = source_status
+    out.attrs["source_path"] = source_path
+    return out
+
+
+def load_dark_pool(
+    base_dir: Path,
+    tickers: Iterable[str],
+    *,
+    chunksize: int = 750_000,
+    point_in_time: bool = False,
+) -> pd.DataFrame:
+    """Aggregate equity dark-pool prints (dp-eod-report) into per-ticker
+    accumulation/distribution evidence.
+
+    Buyer- vs seller-initiated is inferred from each print's price relative to the
+    NBBO midpoint (price >= mid -> accumulation, price < mid -> distribution).
+    Prints with an unusable NBBO or that are canceled are ignored for the lean but
+    still counted toward total premium. This is a corroborating signal only.
+    """
+    ceiling = infer_asof_date(base_dir) if point_in_time else None
+    try:
+        path = find_export(base_dir, "dp-eod-report-", asof_ceiling=ceiling)
+    except FileNotFoundError:
+        return _empty_dark_pool(source_status="missing_dp_eod")
+    wanted = {str(t).upper().strip() for t in tickers if str(t).strip()}
+    usecols = ["ticker", "nbbo_bid", "nbbo_ask", "premium", "price", "canceled"]
+    parts: list[pd.DataFrame] = []
+    for chunk in iter_csv_export(path, usecols=usecols, chunksize=chunksize):
+        chunk["ticker"] = chunk["ticker"].astype(str).str.upper().str.strip()
+        if wanted:
+            chunk = chunk[chunk["ticker"].isin(wanted)]
+        if "canceled" in chunk.columns:
+            chunk = chunk[chunk["canceled"].astype(str).str.lower().ne("t")]
+        if chunk.empty:
+            continue
+        premium = pd.to_numeric(chunk["premium"], errors="coerce").fillna(0.0)
+        price = pd.to_numeric(chunk["price"], errors="coerce")
+        bid = pd.to_numeric(chunk["nbbo_bid"], errors="coerce")
+        ask = pd.to_numeric(chunk["nbbo_ask"], errors="coerce")
+        mid = (bid + ask) / 2.0
+        valid_mid = mid.where((bid > 0) & (ask > 0))
+        buy_mask = price.notna() & valid_mid.notna() & (price >= valid_mid)
+        sell_mask = price.notna() & valid_mid.notna() & (price < valid_mid)
+        chunk = chunk.assign(
+            dp_total_premium=premium,
+            dp_buy_premium=premium.where(buy_mask, 0.0),
+            dp_sell_premium=premium.where(sell_mask, 0.0),
+            dp_trades=1,
+        )
+        agg = chunk.groupby("ticker", as_index=False).agg(
+            dp_total_premium=("dp_total_premium", "sum"),
+            dp_buy_premium=("dp_buy_premium", "sum"),
+            dp_sell_premium=("dp_sell_premium", "sum"),
+            dp_trades=("dp_trades", "sum"),
+        )
+        parts.append(agg)
+    if not parts:
+        return _empty_dark_pool(source_status="dp_eod_no_matching_rows", source_path=str(path))
+    out = pd.concat(parts, ignore_index=True).groupby("ticker", as_index=False).sum()
+    classified = out["dp_buy_premium"] + out["dp_sell_premium"]
+    denom = classified.where(classified.abs() > 0)
+    out["dp_flow_bias"] = (out["dp_buy_premium"] - out["dp_sell_premium"]) / denom
+
+    def _status(row: pd.Series) -> str:
+        if row["dp_trades"] < DARK_POOL_MIN_TRADES or not math.isfinite(row["dp_flow_bias"]):
+            return "neutral"
+        if row["dp_flow_bias"] >= DARK_POOL_BIAS_THRESHOLD:
+            return "accumulation"
+        if row["dp_flow_bias"] <= -DARK_POOL_BIAS_THRESHOLD:
+            return "distribution"
+        return "neutral"
+
+    out["dp_status"] = out.apply(_status, axis=1)
+    out.attrs["source_status"] = "dp_eod_loaded"
+    out.attrs["source_path"] = str(path)
+    return out

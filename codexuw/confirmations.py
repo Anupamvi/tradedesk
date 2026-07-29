@@ -51,7 +51,17 @@ def _vwap_confirms(row: pd.Series | dict[str, Any]) -> bool:
     return False
 
 
+def _is_etf_candidate(row: pd.Series | dict[str, Any]) -> bool:
+    # Lazy import avoids coupling the module import graph while keeping ETF
+    # classification identical across candidate generation and confirmation.
+    from .engine import is_etf_row
+
+    return is_etf_row(row if isinstance(row, pd.Series) else pd.Series(row))
+
+
 def _news_confirmation(row: pd.Series | dict[str, Any], *, asof: dt.date, browser_news_present: bool) -> tuple[str, str]:
+    if _is_etf_candidate(row):
+        return "cleared", "ETF/index candidate has no single-company earnings gate"
     catalyst = str(row.get("catalyst_status") or "").strip().lower()
     if earnings_crosses_expiry(row, asof=asof):
         return "blocked", f"earnings/event {earnings_event_date(row)} occurs on or before expiry"
@@ -71,6 +81,18 @@ def _news_confirmation(row: pd.Series | dict[str, Any], *, asof: dt.date, browse
     return "unconfirmed", "no local news/catalyst evidence"
 
 
+def _dark_pool_aligns(row: pd.Series | dict[str, Any]) -> bool:
+    """Soft corroboration: institutional dark-pool accumulation supports bullish
+    structures, distribution supports bearish structures. Never used to block."""
+    status = str(row.get("dp_status") or "").strip().lower()
+    expected = _direction_from_candidate(row)
+    if expected == "bullish":
+        return status == "accumulation"
+    if expected == "bearish":
+        return status == "distribution"
+    return False
+
+
 def _flow_confirmation(row: pd.Series | dict[str, Any]) -> tuple[str, str]:
     flow_quality = str(row.get("flow_quality") or "")
     oi = str(row.get("oi_carryover_status") or "")
@@ -84,6 +106,8 @@ def _flow_confirmation(row: pd.Series | dict[str, Any]) -> tuple[str, str]:
         return "cleared", "flow velocity plus tape-VWAP confirmation clears ambiguous flow"
     if bool(row.get("child_order_accumulation")) and _vwap_confirms(row):
         return "cleared", "child-order accumulation plus tape-VWAP confirmation clears ambiguous flow"
+    if _dark_pool_aligns(row) and oi in {"supportive", "matched_unconfirmed", "", "unavailable", "no_exact_match"}:
+        return "cleared", f"dark-pool {str(row.get('dp_status'))} corroborates candidate direction"
     return "manual", f"flow_quality={flow_quality or 'unknown'}; vwap={row.get('vwap_confirmation', '')}; oi={oi or 'unknown'}"
 
 

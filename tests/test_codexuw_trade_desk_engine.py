@@ -1249,6 +1249,27 @@ def test_data_quality_gate_demotes_execute_when_portfolio_is_missing() -> None:
     assert "data_gate_missing_portfolio_state" in gated["data_quality_blockers"].iloc[0]
 
 
+def test_data_quality_gate_does_not_apply_company_news_blocker_to_etf() -> None:
+    scored = assign_trade_statuses(
+        pd.DataFrame(
+            [
+                _credit_row(
+                    ticker="QQQ",
+                    catalyst_status="unknown",
+                    penalties="news_unconfirmed",
+                )
+            ]
+        )
+    )
+
+    gated = apply_data_quality_gate(
+        scored,
+        {"status": "critical", "critical_blockers": ["browser_news_notes_present"], "items": []},
+    )
+
+    assert "data_gate_news_unconfirmed" not in str(gated.iloc[0].get("data_quality_blockers") or "")
+
+
 def test_data_quality_status_reports_required_live_inputs() -> None:
     status = build_data_quality_status(
         input_provenance={"exports": {"stock_screener": {}, "hot_chains": {}, "bot_eod_report": {}}, "browser_text_count": 0},
@@ -1262,7 +1283,34 @@ def test_data_quality_status_reports_required_live_inputs() -> None:
 
     assert status["status"] == "critical"
     assert "schwab_portfolio_available" in status["critical_blockers"]
-    assert "browser_news_notes_present" in status["critical_blockers"]
+    assert "browser_news_notes_present" in status["warnings"]
+
+
+def test_data_quality_status_audits_all_five_uw_exports_without_making_soft_sources_critical() -> None:
+    status = build_data_quality_status(
+        input_provenance={
+            "exports": {
+                "stock_screener": {},
+                "hot_chains": {},
+                "chain_oi_changes": {},
+                "bot_eod_report": {},
+                "dp_eod_report": {},
+            },
+            "browser_text_count": 0,
+            "browser_support_file_count": 1,
+        },
+        scored=pd.DataFrame([_credit_row(live_status="PASS")]),
+        portfolio={"status": "ok", "position_count": 3},
+        catalysts=pd.DataFrame([{"ticker": "AAA", "catalyst_status": "mixed"}]),
+        recent_performance={"status": "ok", "latest_asof": "2026-07-21", "window": 30},
+        live_outcomes={"status": "ok", "latest_report_date": "2026-07-21", "window": 30},
+        run_mode="EOD swing target plan",
+    )
+
+    assert status["status"] == "warning"
+    assert status["critical_blockers"] == []
+    assert "browser_news_notes_present" in status["warnings"]
+    assert not any("dark-pool" in warning for warning in status["warnings"])
 
 
 def test_negative_live_outcome_family_blocks_execute_confidence() -> None:

@@ -512,6 +512,80 @@ def test_v4_validated_structural_credit_route_replaces_sparse_exact_edge_only() 
     assert adjusted.iloc[0]["trade_status"] == "Execute"
 
 
+def test_v4_validated_payoff_route_uses_empirical_entry_floor_not_global_credit_floor() -> None:
+    row = _candidate(
+        ticker="RANGE_CALL",
+        direction="Bear Call",
+        strategy="Bear Call Credit Spread",
+        regime="range",
+        regime_trend="range",
+        expiry="2026-08-21",
+        dte=32,
+        short_strike=110.0,
+        long_strike=115.0,
+        short_leg="RANGE_CALL260821C00110000",
+        long_leg="RANGE_CALL260821C00115000",
+        credit=1.10,
+        mid_credit=1.12,
+        natural_credit=1.10,
+        credit_pct_width=0.22,
+        max_profit=110.0,
+        max_loss=390.0,
+        required_entry=1.25,
+        target_entry=1.25,
+        penalties="thin_replay_sample",
+        edge_match_level="unavailable",
+        edge_sample_size=0,
+        edge_profit_factor=float("nan"),
+        edge_avg_pnl=float("nan"),
+        combined_flow_bias=0.0,
+        flow_quality="directional",
+        oi_carryover_status="supportive",
+        catalyst_status="clear",
+        catalyst_earnings_date="2026-09-30",
+        catalyst_earnings_days=100,
+        distance_pct=0.08,
+        expected_move_ratio=1.50,
+        payoff_route_level="flow_cost",
+        payoff_route_key="flow_cost::Credit|Bear Call|range|flow=directional|cost=18to30",
+        payoff_minimum_sample_required=12,
+        payoff_sample_size=17,
+        payoff_stress_10_win_rate=0.882,
+        payoff_stress_10_average_pnl=35.85,
+        payoff_stress_10_average_win_risk_fraction=0.20,
+        payoff_stress_10_average_loss_risk_fraction=0.40,
+        payoff_stress_10_profit_factor=2.36,
+        payoff_walk_forward_oos_sample=8,
+        payoff_walk_forward_oos_profit_factor=float("inf"),
+        payoff_post_activation_oos_sample=3,
+        payoff_post_activation_oos_average_pnl=53.15,
+        payoff_post_activation_oos_profit_factor=float("inf"),
+        payoff_entry_pct_width_p25=0.18,
+        payoff_entry_pct_width_p75=0.22,
+        confidence_calibration_status="PASS",
+        confidence_model_tier="strategy_family_validated",
+        confidence_calibration_sample_size=185,
+        confidence_probability_lower_bound=0.61,
+        confidence_calibration_brier=0.23,
+        confidence_calibration_baseline_brier=0.25,
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["v4_expectancy_safe_entry_price"] == 0.90
+    assert adjusted.iloc[0]["trade_status"] == "Execute"
+
+    tickets = build_v4_swing_target_tickets(
+        scored=adjusted,
+        board=pd.DataFrame(),
+        regime={"trend": "range", "volatility": "medium", "flow": "directional"},
+        top_flow=pd.DataFrame(),
+    )
+
+    assert tickets.iloc[0]["win-rate basis"] == "validated payoff route; 10% fill stress"
+    assert "validated route evidence shown separately" in tickets.iloc[0]["per-ticket replay edge"]
+
+
 def test_v4_medium_debit_sleeve_does_not_generalize_to_range_or_bear_put() -> None:
     rows = pd.DataFrame(
         [

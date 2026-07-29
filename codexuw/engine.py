@@ -2872,12 +2872,14 @@ def build_data_quality_status(
 ) -> dict[str, Any]:
     provenance = input_provenance or {}
     exports = provenance.get("exports") or {}
-    required_exports = ["stock_screener", "hot_chains", "bot_eod_report"]
+    required_exports = ["stock_screener", "hot_chains", "chain_oi_changes", "bot_eod_report"]
     missing_exports = [name for name in required_exports if name not in exports]
+    dark_pool_present = "dp_eod_report" in exports
     live_counts = scored["live_status"].fillna("unknown").value_counts().to_dict() if not scored.empty and "live_status" in scored.columns else {}
     pass_count = int(live_counts.get("PASS", 0))
     portfolio_status = (portfolio or {}).get("status", "not_checked")
     browser_count = int(provenance.get("browser_text_count", 0) or 0)
+    browser_support_count = int(provenance.get("browser_support_file_count", browser_count) or 0)
     catalyst_counts = catalysts["catalyst_status"].fillna("unknown").value_counts().to_dict() if catalysts is not None and not catalysts.empty and "catalyst_status" in catalysts.columns else {}
 
     items = [
@@ -2902,8 +2904,18 @@ def build_data_quality_status(
         {
             "check": "Browser/news notes present",
             "status": "ok" if browser_count > 0 else "missing",
-            "detail": f"{browser_count} local browser/news captures; catalyst counts={catalyst_counts}" if browser_count > 0 else "no local browser/news captures",
-            "critical": browser_count == 0,
+            "detail": (
+                f"{browser_count} local browser/news captures; catalyst counts={catalyst_counts}"
+                if browser_count > 0
+                else f"no local browser/news captures; structured browser support files={browser_support_count}; single names remain candidate-gated"
+            ),
+            "critical": False,
+        },
+        {
+            "check": "Dark-pool corroboration available",
+            "status": "ok" if dark_pool_present else "missing",
+            "detail": "dp-eod-report loaded as soft corroboration" if dark_pool_present else "dp-eod-report missing; no dark-pool corroboration",
+            "critical": False,
         },
         {
             "check": "Recent-performance report freshness",
@@ -2927,14 +2939,18 @@ def build_data_quality_status(
         },
     ]
     critical_blockers = []
+    warnings = []
     for item in items:
         if item["critical"]:
             key = str(item["check"]).lower().replace("/", "_").replace(" ", "_")
             critical_blockers.append(key)
+        elif item["status"] != "ok":
+            warnings.append(str(item["check"]).lower().replace("/", "_").replace(" ", "_"))
     return {
         "run_mode": run_mode,
-        "status": "critical" if critical_blockers else "ok",
+        "status": "critical" if critical_blockers else "warning" if warnings else "ok",
         "critical_blockers": critical_blockers,
+        "warnings": warnings,
         "items": items,
     }
 
@@ -3082,7 +3098,7 @@ def apply_data_quality_gate(scored: pd.DataFrame, data_quality: dict[str, Any] |
             row_blockers.append("data_gate_missing_portfolio_state")
         penalties = _token_set(row.get("penalties"))
         catalyst_status = str(row.get("catalyst_status") or "").strip().lower()
-        if "news_unconfirmed" in penalties or catalyst_status == "unknown":
+        if not is_etf_row(row) and ("news_unconfirmed" in penalties or catalyst_status == "unknown"):
             row_blockers.append("data_gate_news_unconfirmed")
         if row_blockers:
             out.at[idx, "data_quality_blockers"] = ";".join(row_blockers)

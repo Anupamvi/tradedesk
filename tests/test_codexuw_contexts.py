@@ -179,6 +179,20 @@ def test_input_provenance_records_export_hashes(tmp_path) -> None:
     assert stock["size_bytes"] > 0
 
 
+def test_input_provenance_distinguishes_structured_browser_support_from_news_capture(tmp_path) -> None:
+    base = tmp_path / "2026-07-22"
+    browser_dir = base / "browser_text"
+    browser_dir.mkdir(parents=True)
+    earnings = browser_dir / "earnings-calendar-web-2026-07-22.json"
+    earnings.write_text('{"events": []}', encoding="utf-8")
+
+    provenance = build_input_provenance(base)
+
+    assert provenance["browser_text_count"] == 0
+    assert provenance["browser_support_file_count"] == 1
+    assert provenance["browser_support_files"][0]["path"] == str(earnings)
+
+
 def test_file_fingerprint_uses_cache_when_signature_matches(tmp_path) -> None:
     path = tmp_path / "large-ish.csv"
     path.write_text("ticker,close\nNVDA,210\n", encoding="utf-8")
