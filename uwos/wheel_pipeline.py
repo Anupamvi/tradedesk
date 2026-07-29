@@ -1428,7 +1428,7 @@ def run_select(
     schwab_svc = None
     if not no_schwab:
         try:
-            from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+            from uwos.wheel_vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
             auth_cfg = SchwabAuthConfig.from_env()
             schwab_svc = SchwabLiveDataService(auth_cfg)
             _err("[wheel] Schwab live data enabled")
@@ -1645,7 +1645,7 @@ def run_daily(
     live_quotes: Dict[str, dict] = {}
     if not no_schwab:
         try:
-            from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+            from uwos.wheel_vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
             auth_cfg = SchwabAuthConfig.from_env()
             schwab_svc = SchwabLiveDataService(auth_cfg)
             tickers = list({p.ticker for p in tracker.positions})

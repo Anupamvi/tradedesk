@@ -13,7 +13,7 @@ from typing import Any, Iterable, Sequence
 
 import pandas as pd
 
-from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+from uwos.wheel_vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
 REPLAY_BLOCKED_CSP: dict[str, str] = {
     "ORCL": "2026 YTD replay tail loss: 5 scored CSPs, 40% hit rate, -$4,224.50 total PnL",

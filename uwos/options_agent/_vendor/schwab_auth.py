@@ -1,0 +1,956 @@
+from __future__ import annotations
+
+import datetime as dt
+import inspect
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+import threading
+from contextlib import contextmanager
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from urllib.parse import urlparse
+
+from authlib.oauth2.rfc6749.errors import MismatchingStateException
+from dotenv import load_dotenv
+from schwab.auth import RedirectTimeoutError, client_from_manual_flow, client_from_token_file, easy_client
+
+try:
+    from schwab.auth import RedirectServerExitedError
+except ImportError:
+    RedirectServerExitedError = RedirectTimeoutError
+
+DEFAULT_CALLBACK_URL = "https://127.0.0.1"
+DEFAULT_TOKEN_PATH = "./tokens/schwab_token.json"
+DEFAULT_SYMBOLS = ["AAPL", "SPY"]
+DEFAULT_OPTION_CHAIN_TIMEOUT_SECONDS = 12.0
+COMPACT_OCC_RE = re.compile(r"^([A-Z\.]{1,6})(\d{6})([CP])(\d{8})$")
+SCHWAB_OCC_RE = re.compile(r"^([A-Z\. ]{6})(\d{6})([CP])(\d{8})$")
+
+
+def _safe_float(value: Any) -> Optional[float]:
+    try:
+        if value is None or value == "":
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _is_refresh_token_error(exc: Exception) -> bool:
+    text = str(exc)
+    return ("refresh_token_authentication_error" in text) or ("unsupported_token_type" in text)
+
+
+def _is_timeout_error(exc: Exception) -> bool:
+    if isinstance(exc, TimeoutError):
+        return True
+    name = type(exc).__name__.lower()
+    text = str(exc).lower()
+    return "timeout" in name or "timed out" in text
+
+
+def _redact_schwab_error_text(value: Any) -> str:
+    text = str(value or "")
+    text = re.sub(r"apikey=[^&\s'\"<>]+", "apikey=REDACTED", text)
+    api_key = os.environ.get("SCHWAB_API_KEY", "").strip()
+    if api_key:
+        text = text.replace(api_key, "REDACTED")
+    return text
+
+
+def _option_chain_timeout_seconds() -> float:
+    raw = os.environ.get("UWOS_SCHWAB_OPTION_CHAIN_TIMEOUT_SECONDS", "").strip()
+    if not raw:
+        return DEFAULT_OPTION_CHAIN_TIMEOUT_SECONDS
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_OPTION_CHAIN_TIMEOUT_SECONDS
+    if value <= 0:
+        return DEFAULT_OPTION_CHAIN_TIMEOUT_SECONDS
+    return value
+
+
+def _option_chain_subprocess_enabled(*, manual_auth: bool, interactive_login: bool) -> bool:
+    if os.environ.get("UWOS_SCHWAB_OPTION_CHAIN_CHILD", "").strip() == "1":
+        return False
+    raw = os.environ.get("UWOS_SCHWAB_OPTION_CHAIN_SUBPROCESS", "auto").strip().lower()
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    return not manual_auth and not interactive_login
+
+
+@contextmanager
+def _main_thread_timeout(seconds: float, message: str):
+    if (
+        seconds <= 0
+        or threading.current_thread() is not threading.main_thread()
+        or not hasattr(signal, "setitimer")
+        or not hasattr(signal, "SIGALRM")
+    ):
+        yield
+        return
+
+    def _raise_timeout(signum: int, frame: Any) -> None:
+        raise TimeoutError(message)
+
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    signal.signal(signal.SIGALRM, _raise_timeout)
+    previous_timer = signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer[0] > 0:
+            signal.setitimer(signal.ITIMER_REAL, previous_timer[0], previous_timer[1])
+
+
+def _to_date(value: Any) -> Optional[dt.date]:
+    if value is None or value == "":
+        return None
+    if isinstance(value, dt.datetime):
+        return value.date()
+    if isinstance(value, dt.date):
+        return value
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return dt.datetime.strptime(text[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def require_env(name: str) -> str:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(
+            f"Missing required environment variable: {name}. "
+            "Set it in your shell or in a .env file."
+        )
+    return value
+
+
+def normalize_symbols(raw_symbols: Iterable[str]) -> List[str]:
+    cleaned: List[str] = []
+    seen = set()
+    for item in raw_symbols:
+        for token in str(item).split(","):
+            symbol = token.strip().upper()
+            if symbol and symbol not in seen:
+                seen.add(symbol)
+                cleaned.append(symbol)
+    return cleaned
+
+
+def parse_symbols(
+    symbols_csv: str,
+    symbols: Iterable[str],
+    fallback: Sequence[str],
+    env_name: str = "SCHWAB_SYMBOLS",
+) -> List[str]:
+    if symbols_csv:
+        raw = [symbols_csv]
+    elif symbols:
+        raw = list(symbols)
+    else:
+        raw = [os.environ.get(env_name, "")] if os.environ.get(env_name, "") else list(fallback)
+
+    cleaned = normalize_symbols(raw)
+    if not cleaned:
+        raise RuntimeError("No symbols provided.")
+    return cleaned
+
+
+def compact_occ_to_schwab_symbol(symbol: str) -> str:
+    text = str(symbol or "").strip()
+    if not text:
+        raise ValueError("Empty option symbol")
+
+    candidate = text.upper()
+    if SCHWAB_OCC_RE.match(candidate):
+        return candidate
+
+    compact = candidate.replace(" ", "")
+    match = COMPACT_OCC_RE.match(compact)
+    if not match:
+        raise ValueError(f"Unsupported OCC symbol format: {symbol}")
+    root, yymmdd, right, strike8 = match.groups()
+    return f"{root:<6}{yymmdd}{right}{strike8}"
+
+
+def schwab_occ_to_compact_symbol(symbol: str) -> str:
+    text = str(symbol or "").upper()
+    match = SCHWAB_OCC_RE.match(text)
+    if not match:
+        return text.replace(" ", "")
+    root, yymmdd, right, strike8 = match.groups()
+    return f"{root.strip()}{yymmdd}{right}{strike8}"
+
+
+def occ_underlying_symbol(symbol: str) -> Optional[str]:
+    text = str(symbol or "").upper()
+    match = SCHWAB_OCC_RE.match(text)
+    if match:
+        return match.group(1).strip() or None
+    match = COMPACT_OCC_RE.match(text.replace(" ", ""))
+    if match:
+        return match.group(1).strip() or None
+    return None
+
+
+def _iter_contracts(exp_map: Dict[str, Dict[str, List[Dict[str, Any]]]]):
+    for exp_key, strike_map in exp_map.items():
+        expiry = exp_key.split(":")[0]
+        for strike_key, contracts in strike_map.items():
+            strike = _safe_float(strike_key)
+            for contract in contracts:
+                yield expiry, strike, contract
+
+
+def _contract_brief(
+    contract: Dict[str, Any], expiry: Optional[str] = None, strike: Optional[float] = None
+) -> Dict[str, Any]:
+    return {
+        "symbol": contract.get("symbol"),
+        "expiry": expiry or str(contract.get("expirationDate", ""))[:10],
+        "strike": _safe_float(contract.get("strikePrice")) or strike,
+        "bid": _safe_float(contract.get("bid")),
+        "ask": _safe_float(contract.get("ask")),
+        "last": _safe_float(contract.get("last")),
+        "mark": _safe_float(contract.get("mark")),
+        "delta": _safe_float(contract.get("delta")),
+        "gamma": _safe_float(contract.get("gamma")),
+        "theta": _safe_float(contract.get("theta")),
+        "vega": _safe_float(contract.get("vega")),
+        "open_interest": _safe_float(contract.get("openInterest")),
+        "volume": _safe_float(contract.get("totalVolume")),
+        "in_the_money": contract.get("inTheMoney"),
+    }
+
+
+def extract_quote_fields(quote_payload: Dict[str, Any]) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+    body = quote_payload.get("quote", quote_payload)
+    last_price = _safe_float(body.get("lastPrice", body.get("mark")))
+    bid_price = _safe_float(body.get("bidPrice"))
+    ask_price = _safe_float(body.get("askPrice"))
+    return last_price, bid_price, ask_price
+
+
+def normalize_schwab_news_items(payload: Any, symbols: Sequence[str]) -> List[Dict[str, Any]]:
+    """Normalize Schwab/broker news payloads with unknown exact schema."""
+    wanted = {str(s or "").strip().upper() for s in symbols if str(s or "").strip()}
+    raw_items: List[Any] = []
+
+    def visit(node: Any) -> None:
+        if isinstance(node, list):
+            for item in node:
+                visit(item)
+            return
+        if not isinstance(node, dict):
+            return
+        keys = {str(k).lower() for k in node.keys()}
+        if keys & {"headline", "title", "summary", "description", "story", "article"}:
+            raw_items.append(node)
+            return
+        for value in node.values():
+            if isinstance(value, (list, dict)):
+                visit(value)
+
+    visit(payload)
+    out: List[Dict[str, Any]] = []
+    seen = set()
+    for item in raw_items:
+        headline = (
+            item.get("headline")
+            or item.get("title")
+            or item.get("storyHeadline")
+            or item.get("name")
+            or ""
+        )
+        summary = (
+            item.get("summary")
+            or item.get("description")
+            or item.get("teaser")
+            or item.get("story")
+            or item.get("article")
+            or ""
+        )
+        url = item.get("url") or item.get("link") or item.get("articleUrl") or item.get("storyUrl") or ""
+        published = (
+            item.get("publishedDate")
+            or item.get("datetime")
+            or item.get("date")
+            or item.get("time")
+            or item.get("storyDate")
+            or ""
+        )
+        provider = item.get("source") or item.get("provider") or item.get("vendor") or item.get("publisher") or "Schwab"
+        symbols_raw = item.get("symbols") or item.get("tickers") or item.get("symbol") or item.get("relatedSymbols") or []
+        if isinstance(symbols_raw, str):
+            related = normalize_symbols([symbols_raw])
+        elif isinstance(symbols_raw, list):
+            related = normalize_symbols(str(x.get("symbol", x)) if isinstance(x, dict) else str(x) for x in symbols_raw)
+        else:
+            related = []
+        if not related:
+            text = f"{headline} {summary}".upper()
+            related = sorted(s for s in wanted if re.search(rf"(?<![A-Z0-9]){re.escape(s)}(?![A-Z0-9])", text))
+        key = (str(headline), str(url), str(published))
+        if key in seen or (not str(headline).strip() and not str(summary).strip()):
+            continue
+        seen.add(key)
+        out.append(
+            {
+                "headline": str(headline).strip(),
+                "summary": str(summary).strip(),
+                "url": str(url).strip(),
+                "published_at": str(published).strip(),
+                "source": str(provider).strip(),
+                "symbols": related,
+                "raw": item,
+            }
+        )
+    return out
+
+
+@dataclass(frozen=True)
+class SchwabAuthConfig:
+    api_key: str
+    app_secret: str
+    callback_url: str = DEFAULT_CALLBACK_URL
+    token_path: str = DEFAULT_TOKEN_PATH
+
+    @classmethod
+    def from_env(cls, load_dotenv_file: bool = True) -> "SchwabAuthConfig":
+        if load_dotenv_file:
+            from .paths import project_root
+
+            load_dotenv(project_root() / ".env")
+        return cls(
+            api_key=require_env("SCHWAB_API_KEY"),
+            app_secret=require_env("SCHWAB_APP_SECRET"),
+            callback_url=os.environ.get("SCHWAB_CALLBACK_URL", DEFAULT_CALLBACK_URL),
+            token_path=os.environ.get("SCHWAB_TOKEN_PATH", DEFAULT_TOKEN_PATH),
+        )
+
+
+class SchwabLiveDataService:
+    def __init__(
+        self,
+        config: SchwabAuthConfig,
+        manual_auth: bool = False,
+        interactive_login: bool = True,
+    ) -> None:
+        self.config = config
+        self.manual_auth = manual_auth
+        self.interactive_login = interactive_login
+        self._client = None
+        self.auth_mode = "unknown"
+
+    def _get_option_chain_via_subprocess(
+        self,
+        *,
+        symbol: str,
+        strike_count: Optional[int],
+        include_underlying_quote: bool,
+        from_date: Optional[dt.date],
+        to_date: Optional[dt.date],
+        timeout_seconds: float,
+    ) -> Dict[str, Any]:
+        cmd = [
+            sys.executable,
+            "-m",
+            "uwos.schwab_chain_fetch",
+            "--symbol",
+            symbol,
+            "--timeout-seconds",
+            str(timeout_seconds),
+        ]
+        if strike_count is not None:
+            cmd.extend(["--strike-count", str(int(strike_count))])
+        if not include_underlying_quote:
+            cmd.append("--no-include-underlying-quote")
+        if from_date is not None:
+            cmd.extend(["--from-date", from_date.isoformat()])
+        if to_date is not None:
+            cmd.extend(["--to-date", to_date.isoformat()])
+
+        env = os.environ.copy()
+        env["UWOS_SCHWAB_OPTION_CHAIN_CHILD"] = "1"
+        env["UWOS_SCHWAB_OPTION_CHAIN_SUBPROCESS"] = "0"
+        env["SCHWAB_API_KEY"] = self.config.api_key
+        env["SCHWAB_APP_SECRET"] = self.config.app_secret
+        env["SCHWAB_CALLBACK_URL"] = self.config.callback_url
+        env["SCHWAB_TOKEN_PATH"] = self.config.token_path
+        env["UWOS_SCHWAB_OPTION_CHAIN_TIMEOUT_SECONDS"] = str(timeout_seconds)
+        process_timeout = max(timeout_seconds + 3.0, timeout_seconds * 1.5)
+        try:
+            completed = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=process_timeout,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(
+                f"Schwab option-chain request timed out for {symbol} after {timeout_seconds:.1f}s"
+            ) from exc
+        if completed.returncode != 0:
+            detail = _redact_schwab_error_text((completed.stderr or completed.stdout or "").strip())
+            if not detail:
+                detail = f"child process exited {completed.returncode}"
+            if "timed out" in detail.lower() or "timeout" in detail.lower():
+                raise RuntimeError(
+                    f"Schwab option-chain request timed out for {symbol} after {timeout_seconds:.1f}s: {detail[:500]}"
+                )
+            raise RuntimeError(f"Schwab option-chain subprocess failed for {symbol}: {detail[:500]}")
+        try:
+            return json.loads(completed.stdout)
+        except Exception as exc:
+            raise RuntimeError(f"Schwab option-chain subprocess returned invalid JSON for {symbol}") from exc
+
+    @property
+    def token_path(self) -> Path:
+        token_path = Path(self.config.token_path).expanduser()
+        if not token_path.is_absolute():
+            from .paths import project_root
+
+            token_path = project_root() / token_path
+        token_path = token_path.resolve()
+        token_path.parent.mkdir(parents=True, exist_ok=True)
+        return token_path
+
+    def _load_client_from_token(self):
+        return client_from_token_file(
+            str(self.token_path),
+            self.config.api_key,
+            self.config.app_secret,
+        )
+
+    def _manual_client_from_login(self):
+        try:
+            return client_from_manual_flow(
+                self.config.api_key,
+                self.config.app_secret,
+                self.config.callback_url,
+                str(self.token_path),
+            )
+        except MismatchingStateException as exc:
+            raise RuntimeError(
+                "Manual OAuth failed due to mismatched state. "
+                "Re-run and paste the callback URL from that same login attempt."
+            ) from exc
+
+    def connect(self):
+        if self._client is not None:
+            return self._client
+
+        parsed = urlparse(self.config.callback_url)
+
+        if self.manual_auth:
+            self._client = self._manual_client_from_login()
+            self.auth_mode = "manual_login"
+            return self._client
+
+        has_token_file = self.token_path.is_file()
+
+        if has_token_file:
+            try:
+                self._client = self._load_client_from_token()
+                self.auth_mode = "token_file"
+                return self._client
+            except Exception:
+                self._client = None
+
+        if parsed.port in (None, 443):
+            self._client = self._manual_client_from_login()
+            self.auth_mode = "manual_login"
+            return self._client
+
+        try:
+            easy_client_kwargs = {
+                "api_key": self.config.api_key,
+                "app_secret": self.config.app_secret,
+                "callback_url": self.config.callback_url,
+                "token_path": str(self.token_path),
+            }
+            if "interactive" in inspect.signature(easy_client).parameters:
+                easy_client_kwargs["interactive"] = self.interactive_login
+            self._client = easy_client(**easy_client_kwargs)
+            self.auth_mode = "browser_login"
+            return self._client
+        except (RedirectServerExitedError, RedirectTimeoutError, ValueError):
+            self._client = self._manual_client_from_login()
+            self.auth_mode = "manual_login"
+            return self._client
+
+    def get_account_hash(self, account_index: int = 0) -> str:
+        """Return the account hash for the given account index (default: first account)."""
+        client = self.connect()
+        response = client.get_account_numbers()
+        response.raise_for_status()
+        accounts = response.json()
+        if not accounts:
+            raise RuntimeError("No accounts found for this Schwab token.")
+        if account_index >= len(accounts):
+            raise RuntimeError(
+                f"Account index {account_index} out of range "
+                f"(found {len(accounts)} account(s))."
+            )
+        return accounts[account_index]["hashValue"]
+
+    def get_account_positions(self, account_index: int = 0) -> Dict[str, Any]:
+        """Fetch current account positions and balances from Schwab."""
+        from schwab.client import Client
+
+        account_hash = self.get_account_hash(account_index)
+        client = self.connect()
+        try:
+            response = client.get_account(
+                account_hash, fields=[Client.Account.Fields.POSITIONS]
+            )
+        except Exception as exc:
+            if _is_refresh_token_error(exc):
+                raise RuntimeError(
+                    "Schwab token refresh failed (stale/revoked refresh token). "
+                    "Re-auth once with: python -m uwos.schwab_quotes --manual-auth "
+                    "--symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                ) from exc
+            raise
+        response.raise_for_status()
+        data = response.json()
+
+        acct = data.get("securitiesAccount", data)
+        balances = acct.get("currentBalances", {})
+        raw_positions = acct.get("positions", [])
+
+        positions = []
+        for pos in raw_positions:
+            instrument = pos.get("instrument", {})
+            positions.append({
+                "symbol": instrument.get("symbol", ""),
+                "asset_type": instrument.get("assetType", ""),
+                "underlying": instrument.get("underlyingSymbol", ""),
+                "put_call": instrument.get("putCall", ""),
+                "qty": pos.get("longQuantity", 0) - pos.get("shortQuantity", 0),
+                "short_qty": pos.get("shortQuantity", 0),
+                "long_qty": pos.get("longQuantity", 0),
+                "avg_cost": pos.get("averagePrice"),
+                "market_value": pos.get("marketValue"),
+                "day_pnl": pos.get("currentDayProfitLoss"),
+                "day_pnl_pct": pos.get("currentDayProfitLossPercentage"),
+            })
+
+        return {
+            "balances": {
+                "total_value": _safe_float(balances.get("liquidationValue")),
+                "cash": _safe_float(balances.get("cashBalance")),
+            },
+            "positions": positions,
+        }
+
+    def get_transactions(
+        self,
+        account_hash: str,
+        start_date: Optional[dt.date] = None,
+        end_date: Optional[dt.date] = None,
+        transaction_types: Optional[Any] = None,
+        symbol: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Fetch transactions for a single date window (max 60 days per Schwab API)."""
+        client = self.connect()
+        kwargs: Dict[str, Any] = {}
+        if start_date is not None:
+            kwargs["start_date"] = start_date
+        if end_date is not None:
+            kwargs["end_date"] = end_date
+        if transaction_types is not None:
+            kwargs["transaction_types"] = transaction_types
+        if symbol is not None:
+            kwargs["symbol"] = symbol
+        try:
+            response = client.get_transactions(account_hash, **kwargs)
+        except Exception as exc:
+            if _is_refresh_token_error(exc):
+                raise RuntimeError(
+                    "Schwab token refresh failed (stale/revoked refresh token). "
+                    "Re-auth once with: python -m uwos.schwab_quotes --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                ) from exc
+            raise
+        response.raise_for_status()
+        return response.json()
+
+    def get_trade_history(
+        self,
+        days: int = 90,
+        account_index: int = 0,
+        symbol: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Fetch TRADE transactions for the last *days* days, chunking into 60-day windows."""
+        from schwab.client import Client
+
+        account_hash = self.get_account_hash(account_index)
+        today = dt.date.today()
+        start = today - dt.timedelta(days=days)
+        trade_type = Client.Transactions.TransactionType.TRADE
+
+        all_txns: List[Dict[str, Any]] = []
+        chunk_start = start
+        while chunk_start < today:
+            chunk_end = min(chunk_start + dt.timedelta(days=59), today)
+            txns = self.get_transactions(
+                account_hash=account_hash,
+                start_date=chunk_start,
+                end_date=chunk_end,
+                transaction_types=[trade_type],
+                symbol=symbol,
+            )
+            all_txns.extend(txns)
+            chunk_start = chunk_end + dt.timedelta(days=1)
+
+        all_txns.sort(
+            key=lambda t: t.get("transactionDate") or t.get("tradeDate") or t.get("time") or "",
+            reverse=True,
+        )
+        return all_txns
+
+    def get_quotes(self, symbols: Sequence[str]) -> Dict[str, Any]:
+        sym_list = normalize_symbols(symbols)
+        if not sym_list:
+            raise RuntimeError("No quote symbols provided.")
+
+        client = self.connect()
+        try:
+            response = client.get_quotes(sym_list)
+        except Exception as exc:
+            if _is_refresh_token_error(exc):
+                raise RuntimeError(
+                    "Schwab token refresh failed (stale/revoked refresh token). "
+                    "Re-auth once with: python -m uwos.schwab_quotes --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                ) from exc
+            raise
+        response.raise_for_status()
+        return response.json()
+
+    def get_news(self, symbols: Sequence[str], *, limit: int = 20) -> Dict[str, Any]:
+        """Best-effort Schwab news fetch.
+
+        schwab-py does not currently expose a news wrapper. Some Schwab API
+        products/accounts may expose broker news through market-data routes,
+        so try likely route shapes through the authenticated client and return
+        a structured unsupported/error payload when unavailable.
+        """
+        sym_list = normalize_symbols(symbols)
+        if not sym_list:
+            return {"status": "empty_symbols", "symbols": [], "items": []}
+        client = self.connect()
+        max_items = max(1, int(limit))
+        candidate_requests: List[Tuple[str, Dict[str, Any]]] = [
+            ("/marketdata/v1/news", {"symbols": ",".join(sym_list), "limit": max_items}),
+            ("/marketdata/v1/news", {"symbol": ",".join(sym_list), "limit": max_items}),
+        ]
+        if len(sym_list) == 1:
+            symbol = sym_list[0]
+            candidate_requests.extend(
+                [
+                    (f"/marketdata/v1/{symbol}/news", {"limit": max_items}),
+                    (f"/marketdata/v1/news/{symbol}", {"limit": max_items}),
+                ]
+            )
+
+        errors: List[Dict[str, Any]] = []
+        for path, params in candidate_requests:
+            try:
+                if hasattr(client, "_get_request"):
+                    response = client._get_request(path, params)
+                    endpoint = path
+                elif hasattr(client, "get_news"):
+                    response = client.get_news(sym_list, limit=max_items)
+                    endpoint = "client.get_news"
+                else:
+                    return {
+                        "status": "unsupported_client",
+                        "symbols": sym_list,
+                        "items": [],
+                        "errors": [{"reason": "client exposes no get_news or _get_request"}],
+                    }
+            except Exception as exc:
+                if _is_refresh_token_error(exc):
+                    raise RuntimeError(
+                        "Schwab token refresh failed (stale/revoked refresh token). "
+                        "Re-auth once with: python -m uwos.schwab_quotes --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                    ) from exc
+                errors.append({"endpoint": path, "error": str(exc)})
+                continue
+
+            status_code = getattr(response, "status_code", None)
+            if status_code is not None and int(status_code) >= 400:
+                errors.append(
+                    {
+                        "endpoint": endpoint,
+                        "status_code": int(status_code),
+                        "body": str(getattr(response, "text", ""))[:500],
+                    }
+                )
+                continue
+            try:
+                data = response.json()
+            except Exception as exc:
+                errors.append({"endpoint": endpoint, "error": f"invalid JSON: {exc}"})
+                continue
+            return {
+                "status": "ok",
+                "symbols": sym_list,
+                "endpoint": endpoint,
+                "raw": data,
+                "items": normalize_schwab_news_items(data, sym_list),
+            }
+        return {"status": "unsupported_or_unavailable", "symbols": sym_list, "items": [], "errors": errors}
+
+    def get_option_chain(
+        self,
+        symbol: str,
+        strike_count: Optional[int] = 8,
+        include_underlying_quote: bool = True,
+        from_date: Any = None,
+        to_date: Any = None,
+    ) -> Dict[str, Any]:
+        kwargs: Dict[str, Any] = {
+            "include_underlying_quote": include_underlying_quote,
+        }
+        if strike_count is not None:
+            kwargs["strike_count"] = int(strike_count)
+        parsed_from = _to_date(from_date)
+        parsed_to = _to_date(to_date)
+        if parsed_from is not None:
+            kwargs["from_date"] = parsed_from
+        if parsed_to is not None:
+            kwargs["to_date"] = parsed_to
+
+        timeout_seconds = _option_chain_timeout_seconds()
+        if _option_chain_subprocess_enabled(
+            manual_auth=self.manual_auth,
+            interactive_login=self.interactive_login,
+        ):
+            return self._get_option_chain_via_subprocess(
+                symbol=symbol,
+                strike_count=strike_count,
+                include_underlying_quote=include_underlying_quote,
+                from_date=parsed_from,
+                to_date=parsed_to,
+                timeout_seconds=timeout_seconds,
+            )
+
+        client = self.connect()
+        params: Dict[str, Any] = {
+            "apikey": getattr(client, "api_key", self.config.api_key),
+            "symbol": symbol,
+            "includeUnderlyingQuote": include_underlying_quote,
+        }
+        if strike_count is not None:
+            params["strikeCount"] = int(strike_count)
+        if parsed_from is not None:
+            params["fromDate"] = parsed_from.isoformat()
+        if parsed_to is not None:
+            params["toDate"] = parsed_to.isoformat()
+        session = getattr(client, "session", None)
+        has_previous_timeout = session is not None and hasattr(session, "timeout")
+        previous_timeout = getattr(session, "timeout", None) if has_previous_timeout else None
+        if hasattr(client, "set_timeout"):
+            client.set_timeout(timeout_seconds)
+        elif session is not None and hasattr(session, "timeout"):
+            session.timeout = timeout_seconds
+        try:
+            with _main_thread_timeout(
+                timeout_seconds,
+                f"Schwab option-chain request timed out for {symbol} after {timeout_seconds:.1f}s",
+            ):
+                if session is not None and hasattr(session, "get"):
+                    response = session.get(
+                        "https://api.schwabapi.com/marketdata/v1/chains",
+                        params=params,
+                        timeout=timeout_seconds,
+                    )
+                else:
+                    response = client.get_option_chain(symbol, **kwargs)
+        except Exception as exc:
+            if _is_refresh_token_error(exc):
+                raise RuntimeError(
+                    "Schwab token refresh failed (stale/revoked refresh token). "
+                    "Re-auth once with: python -m uwos.schwab_quotes --manual-auth --symbols-csv AAPL --chain-symbols-csv AAPL --strike-count 2"
+                ) from exc
+            if _is_timeout_error(exc):
+                raise RuntimeError(
+                    f"Schwab option-chain request timed out for {symbol} after {timeout_seconds:.1f}s"
+                ) from exc
+            raise
+        finally:
+            if has_previous_timeout:
+                if hasattr(client, "set_timeout"):
+                    client.set_timeout(previous_timeout)
+                else:
+                    session.timeout = previous_timeout
+        response.raise_for_status()
+        return response.json()
+
+    def get_option_chains(
+        self,
+        symbols: Sequence[str],
+        strike_count: Optional[int] = 8,
+        include_underlying_quote: bool = True,
+    ) -> Dict[str, Dict[str, Any]]:
+        out: Dict[str, Dict[str, Any]] = {}
+        for symbol in normalize_symbols(symbols):
+            out[symbol] = self.get_option_chain(
+                symbol=symbol,
+                strike_count=strike_count,
+                include_underlying_quote=include_underlying_quote,
+            )
+        return out
+
+    def summarize_option_chain(self, symbol: str, chain_payload: Dict[str, Any]) -> Dict[str, Any]:
+        call_contracts = list(_iter_contracts(chain_payload.get("callExpDateMap", {})))
+        put_contracts = list(_iter_contracts(chain_payload.get("putExpDateMap", {})))
+        underlying = chain_payload.get("underlying", {})
+        underlying_price = (
+            _safe_float(chain_payload.get("underlyingPrice"))
+            or _safe_float(underlying.get("mark"))
+            or _safe_float(underlying.get("last"))
+        )
+
+        sample_call = (
+            _contract_brief(call_contracts[0][2], call_contracts[0][0], call_contracts[0][1])
+            if call_contracts
+            else None
+        )
+        sample_put = (
+            _contract_brief(put_contracts[0][2], put_contracts[0][0], put_contracts[0][1])
+            if put_contracts
+            else None
+        )
+
+        atm_call = None
+        atm_put = None
+        if underlying_price is not None:
+            if call_contracts:
+                nearest_call = min(
+                    call_contracts,
+                    key=lambda x: abs((x[1] if x[1] is not None else underlying_price) - underlying_price),
+                )
+                atm_call = _contract_brief(nearest_call[2], nearest_call[0], nearest_call[1])
+            if put_contracts:
+                nearest_put = min(
+                    put_contracts,
+                    key=lambda x: abs((x[1] if x[1] is not None else underlying_price) - underlying_price),
+                )
+                atm_put = _contract_brief(nearest_put[2], nearest_put[0], nearest_put[1])
+
+        expiries = sorted(
+            set(expiry for expiry, _, _ in call_contracts) | set(expiry for expiry, _, _ in put_contracts)
+        )
+
+        return {
+            "symbol": symbol,
+            "status": chain_payload.get("status", "UNKNOWN"),
+            "underlying_price": underlying_price,
+            "calls": len(call_contracts),
+            "puts": len(put_contracts),
+            "expiries": expiries,
+            "sample_call": sample_call,
+            "sample_put": sample_put,
+            "atm_call": atm_call,
+            "atm_put": atm_put,
+        }
+
+    def build_trading_query_context(
+        self,
+        quotes_payload: Dict[str, Any],
+        chains_payload: Dict[str, Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        quote_context: Dict[str, Any] = {}
+        for symbol, payload in quotes_payload.items():
+            body = payload.get("quote", payload)
+            quote_context[symbol] = {
+                "last": _safe_float(body.get("lastPrice", body.get("mark"))),
+                "bid": _safe_float(body.get("bidPrice")),
+                "ask": _safe_float(body.get("askPrice")),
+                "mark": _safe_float(body.get("mark")),
+                "change": _safe_float(body.get("netChange")),
+                "percent_change": _safe_float(body.get("netPercentChangeInDouble")),
+                "volume": _safe_float(body.get("totalVolume")),
+                "quote_time": body.get("quoteTime"),
+                "trade_time": body.get("tradeTime"),
+            }
+
+        chain_context = {
+            symbol: self.summarize_option_chain(symbol, payload)
+            for symbol, payload in chains_payload.items()
+        }
+
+        return {
+            "asof_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "quotes": quote_context,
+            "option_chains": chain_context,
+        }
+
+    def snapshot(
+        self,
+        symbols: Sequence[str],
+        chain_symbols: Optional[Sequence[str]] = None,
+        strike_count: int = 8,
+    ) -> Dict[str, Any]:
+        quote_symbols = normalize_symbols(symbols)
+        option_symbols = normalize_symbols(chain_symbols or quote_symbols)
+
+        quotes_payload = self.get_quotes(quote_symbols)
+        chain_payloads = self.get_option_chains(
+            symbols=option_symbols,
+            strike_count=strike_count,
+            include_underlying_quote=True,
+        )
+        chain_summary = {
+            symbol: self.summarize_option_chain(symbol, payload)
+            for symbol, payload in chain_payloads.items()
+        }
+        query_context = self.build_trading_query_context(quotes_payload, chain_payloads)
+
+        return {
+            "asof_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "auth_mode": self.auth_mode,
+            "quote_symbols": quote_symbols,
+            "chain_symbols": option_symbols,
+            "quotes": quotes_payload,
+            "option_chains": chain_payloads,
+            "option_chain_summary": chain_summary,
+            "trading_query_context": query_context,
+        }
+
+    def save_snapshot(self, snapshot: Dict[str, Any], out_dir: Path) -> None:
+        out_dir = out_dir.expanduser().resolve()
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        (out_dir / "quotes.json").write_text(
+            json.dumps(snapshot.get("quotes", {}), indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+        (out_dir / "trading_query_context.json").write_text(
+            json.dumps(snapshot.get("trading_query_context", {}), indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+
+        chains = snapshot.get("option_chains", {})
+        for symbol, payload in chains.items():
+            (out_dir / f"option_chain_{symbol}.json").write_text(
+                json.dumps(payload, indent=2, sort_keys=True),
+                encoding="utf-8",
+            )

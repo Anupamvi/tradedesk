@@ -11,7 +11,7 @@ from typing import Any, Iterable
 
 import pandas as pd
 
-from codexuw.occ import parse_occ_symbol
+from uwos.wheel_vendor.occ import parse_occ_symbol
 from uwos.fresh_wheel_schwab import (
     OptionContract,
     REPLAY_BLOCKED_CSP,

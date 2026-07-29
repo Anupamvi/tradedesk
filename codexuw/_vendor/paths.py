@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+
+
+def project_root() -> Path:
+    """Return the UW trade desk root across Windows and macOS."""
+    env_root = os.environ.get("UW_ROOT", "").strip()
+    if env_root:
+        return Path(env_root).expanduser().resolve()
+
+    if sys.platform.startswith("win"):
+        windows_root = Path("c:/uw_root")
+        if windows_root.exists():
+            return windows_root.resolve()
+
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "uwos").is_dir() or (parent / ".git").is_dir():
+            return parent
+    return here.parents[1]

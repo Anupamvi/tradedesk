@@ -268,7 +268,7 @@ def fetch_portfolio_context(
     portfolio_income_mode: str = "existing-core-review",
     covered_income_allowed_tickers: list[str] | set[str] | None = None,
 ) -> dict[str, Any]:
-    from ._vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+    from .schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
     out_dir.mkdir(parents=True, exist_ok=True)
     service = SchwabLiveDataService(SchwabAuthConfig.from_env(load_dotenv_file=True), interactive_login=False)

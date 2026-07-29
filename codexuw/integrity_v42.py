@@ -8,7 +8,7 @@ from typing import Any
 
 import pandas as pd
 
-from uwos.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+from ._vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
 from .data import safe_float
 from .schwab_live import chain_spot, chain_to_contracts
