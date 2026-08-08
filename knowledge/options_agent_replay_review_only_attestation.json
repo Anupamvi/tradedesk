@@ -1,15 +1,15 @@
 {
-  "current_cache_fingerprint": "b44b055015f5ca05effd06eb5a28b6ceb8f3f2377e9b0dcf7f1a342f3abed3e0",
-  "manifest_sha256": "3850d0814d4b3ef3bf4b7bbebfb8788307028ddff5b6ec043c481979d3ece11e",
-  "pipeline_version": "options-agent-v1.50-mixed-credit-live-width-parity-20260722-094108",
+  "current_cache_fingerprint": "44a97c6fd63c32b5df9a067150cfc62fe1ed15199fade2d42932626087064ce8",
+  "manifest_sha256": "9508afdce1a823db859f20bf3f2c15e68b3c6fde77ac6ffb5408c26982ed7934",
+  "pipeline_version": "options-agent-v1.68-five-source-market-context-20260806-081546",
   "producer": "uwos.options_agent.replay",
-  "reason": "Post-selection replay-parity correction: live Schwab repricing no longer shifts the dated UW signal holding horizon; selector, candidate construction, pricing, and frozen replay selection recompute identically.",
-  "recomputed_selected_count": 858,
-  "recomputed_selected_ids_sha256": "ed5afe08c54fb78116e59309c51b1798685f0311e055488a065f6e12a33ef4c9",
-  "replay_detail_sha256": "f8cf94b5c4e83ec6071430734546126feb45dbf3c494796bb0410ab0a86e1548",
+  "reason": "Live-only Schwab displayed-size enforcement for vertical and short-put routes plus audit-field propagation; no historical candidate, pricing, selector, or outcome semantics changed.",
+  "recomputed_selected_count": 1954,
+  "recomputed_selected_ids_sha256": "3c8d7fc290800a3c972fc8d467b6d35aac523e2e73c42809947962f04293ed0d",
+  "replay_detail_sha256": "989a0e9d0749b94b92466c24a9936e67b6562e3754cf18c91d61fb1fcf05f713",
   "schema_version": "options_agent.replay_review_only_attestation.v1",
-  "selector_policy_id": "core_credit_rank_only_queue9_v17",
-  "source_cache_fingerprint": "4d4f756964e4b27d831c62c28d3068eb3ca16ba4624baba6f5054b515fc782bc",
-  "stored_selected_count": 858,
-  "stored_selected_ids_sha256": "ed5afe08c54fb78116e59309c51b1798685f0311e055488a065f6e12a33ef4c9"
+  "selector_policy_id": "core_liquid_credit_dte7_45_volume20_oi100_em030_queue25_v20",
+  "source_cache_fingerprint": "ff221872f78de05217f12111a4ce574a06d271032f7b481ca4a15a18ca4d2d3b",
+  "stored_selected_count": 1954,
+  "stored_selected_ids_sha256": "3c8d7fc290800a3c972fc8d467b6d35aac523e2e73c42809947962f04293ed0d"
 }

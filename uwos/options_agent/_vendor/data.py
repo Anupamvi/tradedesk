@@ -238,6 +238,9 @@ def load_chain_oi(base_dir: Path, asof: dt.date, *, point_in_time: bool = False)
     df["right"] = parsed.map(lambda x: x.right if x else "")
     df["strike"] = parsed.map(lambda x: x.strike if x else math.nan)
     df["dte"] = df["expiry_dt"].map(lambda x: dte_from_expiry(x, asof))
+    df["next_earnings_dt"] = pd.to_datetime(
+        df.get("next_earnings_date", pd.Series(index=df.index)), errors="coerce"
+    ).dt.date
     for col in [
         "oi_diff_plain",
         "oi_change",

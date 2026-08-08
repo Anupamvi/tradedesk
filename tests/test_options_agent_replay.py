@@ -22,6 +22,58 @@ def _quote(bid: float, ask: float) -> LegQuote:
     )
 
 
+def test_replay_excludes_required_source_gap_and_discloses_it(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = dt.date(2026, 1, 2)
+    missing = dt.date(2026, 1, 5)
+
+    class FakeQuoteStore:
+        def available_dates(self):
+            return [first, missing]
+
+    def candidate_rows(_root, signal_day, _store, *, discovery_limit):
+        assert discovery_limit is None
+        if signal_day == missing:
+            raise FileNotFoundError(
+                f"{replay.REQUIRED_SOURCE_GAP_PREFIX} for {signal_day}: dp_eod"
+            )
+        return [], {
+            "day": signal_day.isoformat(),
+            "error": "",
+            "rows": 0,
+            "required_source_status": "pass",
+            "required_source_paths": {
+                label: [f"/{label}.zip"] for label in replay.REQUIRED_REPLAY_SOURCES
+            },
+            "missing_optional_sources": ["bot_eod"],
+        }
+
+    monkeypatch.setattr(replay, "HistoricalOptionQuoteStore", lambda *_args, **_kwargs: FakeQuoteStore())
+    monkeypatch.setattr(replay, "_candidate_rows_for_day", candidate_rows)
+
+    paths = replay.run_independent_replay(
+        tmp_path,
+        start=first,
+        end=dt.date(2026, 1, 7),
+        split_day=dt.date(2026, 1, 5),
+        output_dir=tmp_path / "out",
+    )
+    manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
+
+    assert manifest["days"] == 1
+    assert manifest["observed_days"] == 2
+    assert manifest["successful_days"] == 1
+    assert manifest["failed_days"] == 0
+    assert manifest["excluded_required_source_gap_days"] == 1
+    assert manifest["source_coverage_status"] == "pass"
+    assert manifest["optional_source_coverage"]["bot_eod"] == {
+        "present_days": 0,
+        "missing_days": 1,
+    }
+
+
 def test_replay_uses_conservative_entry_and_exit_sides() -> None:
     short = _quote(2.00, 2.20)
     long = _quote(0.80, 1.00)
@@ -280,6 +332,7 @@ def test_replay_selector_uses_holding_horizon_for_earnings() -> None:
         "entry_credit_pct_width": 0.20,
         "expected_move_ratio": 1.0,
         "source_contract_volume": 100.0,
+        "source_contract_oi": 100.0,
         "decision_score": 80.0,
         "macro_event_count_within_holding_horizon": 0,
     }

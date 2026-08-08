@@ -40,8 +40,10 @@ REQUIRED_REPLAY_SOURCES = (
     "stock_screener",
     "hot_chains",
     "chain_oi",
+    "dp_eod",
 )
 OPTIONAL_REPLAY_SOURCES = ("bot_eod",)
+REQUIRED_SOURCE_GAP_PREFIX = "required point-in-time replay sources missing"
 # The compatible daily files retain point-in-time candidate rows before
 # selection or outcomes. v1.56 changes selector/runtime behavior, not candidate
 # discovery; it re-runs selection and outcomes from those dated rows. The
@@ -153,6 +155,10 @@ DETAIL_COLUMNS = (
 
 def _number(value: Any) -> Optional[float]:
     return core._as_float(value)
+
+
+def _is_required_source_gap(exc: Exception) -> bool:
+    return isinstance(exc, FileNotFoundError) and str(exc).startswith(REQUIRED_SOURCE_GAP_PREFIX)
 
 
 def _cache_fingerprint(candidate_limit: Optional[int]) -> str:
@@ -1104,7 +1110,17 @@ def run_independent_replay(
             )
         except Exception as exc:
             rows = []
-            audit = {"day": signal_day.isoformat(), "error": str(exc), "rows": 0}
+            if _is_required_source_gap(exc):
+                audit = {
+                    "day": signal_day.isoformat(),
+                    "error": "",
+                    "rows": 0,
+                    "required_source_status": "excluded",
+                    "source_gap_excluded": True,
+                    "source_gap_reason": str(exc),
+                }
+            else:
+                audit = {"day": signal_day.isoformat(), "error": str(exc), "rows": 0}
         audit["cache_fingerprint"] = cache_fingerprint
         pd.DataFrame(rows, columns=DETAIL_COLUMNS).to_csv(cache_path, index=False)
         audit_path.write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -1233,18 +1249,29 @@ def run_independent_replay(
     day_audit_path = output_dir / "options_agent_replay_day_audit.csv"
     pd.DataFrame(day_audit).to_csv(day_audit_path, index=False)
     selected_detail = detail[detail["selected_for_policy"].map(core._truthy)].copy() if not detail.empty else detail
-    failed_day_rows = [row for row in day_audit if str(row.get("error") or "").strip()]
-    successful_day_count = len(day_audit) - len(failed_day_rows)
+    source_gap_rows = [row for row in day_audit if core._truthy(row.get("source_gap_excluded"))]
+    failed_day_rows = [
+        row
+        for row in day_audit
+        if not core._truthy(row.get("source_gap_excluded"))
+        and str(row.get("error") or "").strip()
+    ]
+    included_day_rows = [
+        row
+        for row in day_audit
+        if not core._truthy(row.get("source_gap_excluded"))
+        and not str(row.get("error") or "").strip()
+    ]
+    successful_day_count = len(included_day_rows)
     optional_source_coverage = {
         label: {
             "present_days": sum(
                 label not in set(row.get("missing_optional_sources") or [])
-                and not str(row.get("error") or "").strip()
-                for row in day_audit
+                for row in included_day_rows
             ),
             "missing_days": sum(
                 label in set(row.get("missing_optional_sources") or [])
-                for row in day_audit
+                for row in included_day_rows
             ),
         }
         for label in OPTIONAL_REPLAY_SOURCES
@@ -1308,10 +1335,16 @@ def run_independent_replay(
             ENTRY_CACHE_COMPATIBILITY_POLICY if compatible_entry_cache_days else "none"
         ),
         "max_days": 0,
-        "days": len(days),
+        "days": successful_day_count,
+        "observed_days": len(day_audit),
         "successful_days": successful_day_count,
         "failed_days": len(failed_day_rows),
         "source_coverage_status": "pass" if not failed_day_rows else "block",
+        "excluded_required_source_gap_days": len(source_gap_rows),
+        "excluded_required_source_gap_details": [
+            {"day": row.get("day", ""), "reason": row.get("source_gap_reason", "")}
+            for row in source_gap_rows
+        ],
         "required_source_labels": list(REQUIRED_REPLAY_SOURCES),
         "optional_source_labels": list(OPTIONAL_REPLAY_SOURCES),
         "optional_source_coverage": optional_source_coverage,
@@ -1322,7 +1355,10 @@ def run_independent_replay(
         "start": start.isoformat(),
         "end": end.isoformat(),
         "observation_end": end.isoformat(),
-        "signal_end": days[-1].isoformat() if days else "",
+        "signal_end": max(
+            (str(row.get("day") or "") for row in included_day_rows),
+            default="",
+        ),
         "required_outcome_horizon_sessions": FIXED_HORIZON_SESSIONS,
         "split_day": split_day.isoformat(),
         "detail_rows": int(len(detail)),

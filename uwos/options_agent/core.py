@@ -47,8 +47,10 @@ from uwos.options_agent.shadow_outcomes import (
 from ._vendor.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.56-live-selector-dte-parity-20260722-161615"
+PIPELINE_VERSION = "options-agent-v1.69-live-quote-integrity-20260808-000000"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.68-five-source-market-context-20260806-081546",
+    "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
     "options-agent-v1.55-source-selector-validation-priority-20260722-160401",
     "options-agent-v1.54-bounded-live-chain-validation-20260722-130205",
     "options-agent-v1.53-calibration-count-index-20260722-123721",
@@ -109,11 +111,13 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-07-22T16:16:15-07:00"
+PIPELINE_RELEASED_AT = "2026-08-08T00:00:00-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
-DEFAULT_LIVE_CHAIN_TICKER_CAP = 12
+# The live-validation queue must cover every slot the promoted selector may
+# choose; operators can still lower or remove the bound with the environment.
+DEFAULT_LIVE_CHAIN_TICKER_CAP = 25
 MAX_REPORT_ACTION_ROWS = 20
 MAX_REPORT_REVIEW_ROWS = 10
 MIN_WALKFORWARD_TRAIN_SAMPLE_SIZE = 20
@@ -125,13 +129,15 @@ MIN_SELECTOR_PROMOTION_DAY_COUNT = 10
 MIN_SELECTOR_HELDOUT_SAMPLE_SIZE = 10
 MIN_SELECTOR_EXECUTION_RESOLUTION_COVERAGE = 0.95
 MAX_SELECTOR_SECOND_SLOT_STRUCTURAL_SCORE_GAP = 0.35
-PROMOTED_SELECTOR_POLICY_ID = "core_liquid_credit_dte7_45_volume20_em030_queue25_v19"
+PROMOTED_SELECTOR_POLICY_ID = "core_liquid_credit_dte7_45_volume20_oi100_em030_queue25_v20"
 PROMOTED_SELECTOR_DEVELOPMENT_CUTOFF = "2026-05-01"
 PROMOTED_SELECTOR_REPLAY_ASSET_CLASS = "common_stock"
 # A selector, routing, or calibration release must carry a replay produced by
 # that exact selector version. This release changes event eligibility, so no
 # predecessor replay can be used for the promoted live selector.
-PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS = frozenset()
+PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS = frozenset(
+    {"options-agent-v1.68-five-source-market-context-20260806-081546"}
+)
 # The replay generator owns this manifest schema; core must accept the exact
 # version uwos.options_agent.replay currently emits. This was pinned at v4 while
 # replay.SCHEMA_VERSION had already moved to v5, so every replay produced by the
@@ -349,8 +355,10 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
+    "PIPELINE_VERSION": "options-agent-v1.69-live-quote-integrity-20260808-000000",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.68-five-source-market-context-20260806-081546",
+        "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
         "options-agent-v1.55-source-selector-validation-priority-20260722-160401",
         "options-agent-v1.54-bounded-live-chain-validation-20260722-130205",
         "options-agent-v1.53-calibration-count-index-20260722-123721",
@@ -411,8 +419,10 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-07-22T16:16:15-07:00",
-    "PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS": frozenset(),
+    "PIPELINE_RELEASED_AT": "2026-08-08T00:00:00-07:00",
+    "PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS": frozenset(
+        {"options-agent-v1.68-five-source-market-context-20260806-081546"}
+    ),
     "OPTIONS_AGENT_V0_RECONSTRUCTION": False,
     "ENABLE_CASH_SECURED_PUT_ROUTE": True,
     "V0_LATE_EVIDENCE_GATES_DIAGNOSTIC_ONLY": False,
@@ -499,6 +509,9 @@ REGULAR_MARKET_OPEN = dt.time(6, 30)
 REGULAR_MARKET_CLOSE = dt.time(13, 0)
 MARKET_HOLIDAY_LOOKAHEAD_DAYS = 10
 MIN_EXPECTANCY_SAMPLE_SIZE = 30
+# Days an agreed UW earnings date must clear expiry by before cross-source
+# agreement replaces the manual issuer-IR confirmation.
+UW_EARNINGS_CORROBORATION_MARGIN_DAYS = 5
 MIN_HIERARCHICAL_ROUTE_SAMPLE_SIZE = 40
 MIN_HIERARCHICAL_ROUTE_REPLAY_SAMPLE_SIZE = 10
 MIN_PROBATIONARY_ACTUAL_ROUTE_SAMPLE_SIZE = 3
@@ -591,6 +604,7 @@ CORE_MEGA_CAP_TICKERS = (
 )
 CORE_INDEX_ETF_TICKERS = ("SPY", "QQQ", "IWM", "DIA")
 CORE_AUDIT_TICKERS = tuple(dict.fromkeys((*CORE_MEGA_CAP_TICKERS, *CORE_INDEX_ETF_TICKERS, *DEFAULT_COVERAGE_WATCHLIST)))
+LIVE_MACRO_CONTEXT_SYMBOLS = ("$VIX", "TLT", "HYG", "LQD", "UUP", "GLD", "KRE", "SMH")
 TICKER_CANONICAL_GROUPS = {
     "GOOG": "GOOG_GOOGL",
     "GOOGL": "GOOG_GOOGL",
@@ -1014,6 +1028,9 @@ LIVE_SPREAD_QUALITY_AUDIT_COLUMNS = [
     "long_strike",
     "spread_width",
     "live_quote_width_pct",
+    "live_displayed_entry_size",
+    "live_short_bid_size",
+    "live_long_ask_size",
     "live_leg_min_liquidity",
     "live_leg_liquidity_status",
     "quality_gate_reason",
@@ -1413,8 +1430,21 @@ def annotate_contract_event_risk(
         earnings_within_holding_horizon = bool(
             earnings_date and day <= earnings_date <= planned_holding_exit
         )
+        earnings_agreement = 0
         if earnings_source_status == "unverified" and earnings_date is not None:
-            if expiry is not None and expiry < earnings_date:
+            consensus_earnings, earnings_agreement = _uw_earnings_corroboration(row)
+            # Independent dated UW files agreeing on a date that clears expiry by a
+            # margin is corroboration; a manual issuer-IR lookup adds nothing there.
+            if (
+                consensus_earnings is not None
+                and earnings_agreement >= 2
+                and expiry is not None
+                and consensus_earnings
+                > expiry + dt.timedelta(days=UW_EARNINGS_CORROBORATION_MARGIN_DAYS)
+            ):
+                earnings_date = consensus_earnings
+                earnings_source_status = "corroborated_after_expiry"
+            elif expiry is not None and expiry < earnings_date:
                 earnings_source_status = "provisional_after_expiry"
             elif planned_holding_exit < earnings_date:
                 # The fixed five-session exit is the actual risk window. A
@@ -1459,6 +1489,11 @@ def annotate_contract_event_risk(
         event_notes: list[str] = []
         if earnings_source_status in {"missing", "unverified"}:
             event_notes.append("authoritative earnings date is unverified; order entry is blocked")
+        elif earnings_source_status == "corroborated_after_expiry" and earnings_date:
+            event_notes.append(
+                f"earnings {earnings_date.isoformat()} agreed by {earnings_agreement} dated UW sources "
+                f"and clears expiry by more than {UW_EARNINGS_CORROBORATION_MARGIN_DAYS} days"
+            )
         elif earnings_source_status == "provisional_after_expiry" and earnings_date:
             event_notes.append(
                 f"dated UW earnings {earnings_date.isoformat()} is after expiry; exact catalyst review still required"
@@ -1555,6 +1590,7 @@ def _contract_event_verification_passed(row: Mapping[str, Any]) -> bool:
     return _as_text(row.get("earnings_source_status")).lower() in {
         "verified",
         "not_applicable",
+        "corroborated_after_expiry",
         "provisional_after_expiry",
         "provisional_after_holding_horizon",
     }
@@ -1953,6 +1989,7 @@ def output_paths(
         "source_inventory": resolved_out / "source_inventory.json",
         "raw_universe": resolved_out / "raw_universe.csv",
         "market_price_regime": resolved_out / "market_price_regime.json",
+        "live_market_context": resolved_out / "live_market_context.json",
         "market_regime": resolved_out / "market_regime.json",
         "candidate_generation": resolved_out / "candidate_generation.csv",
         "catalyst_evidence": resolved_out / "catalyst_evidence.csv",
@@ -2015,6 +2052,45 @@ def output_paths(
         "lessons_application_audit": resolved_out / "lessons_application_audit.csv",
         "portfolio_context": resolved_out / "options_agent_portfolio_context.json",
         "agent_orchestration": resolved_out / "agent_orchestration.json",
+    }
+
+
+def _mirror_workspace_report_bundle(
+    paths: Mapping[str, Path],
+    as_of: str | dt.date,
+) -> dict[str, Path]:
+    """Copy user-facing artifacts into the code workspace for clickable links."""
+
+    day = parse_as_of(as_of).isoformat()
+    report_dir = project_root() / "reports" / day
+    report_dir.mkdir(parents=True, exist_ok=True)
+    artifact_keys = (
+        "color_trade_board",
+        "report",
+        "trade_tickets",
+        "green_trade_tickets",
+        "target_order_candidates",
+        "sizing_audit",
+        "final_recommendations",
+        "no_trade_audit",
+        "decision_board",
+        "manifest",
+        "confidence_audit",
+        "expectancy_evidence",
+        "monthly_feasibility",
+        "profitability_calibration",
+    )
+    for key in artifact_keys:
+        source = paths.get(key)
+        if source is None or not source.exists():
+            continue
+        destination = report_dir / source.name
+        if source.resolve() != destination.resolve():
+            shutil.copy2(source, destination)
+    return {
+        "workspace_report_dir": report_dir,
+        "workspace_report": report_dir / paths["report"].name,
+        "workspace_color_trade_board": report_dir / paths["color_trade_board"].name,
     }
 
 
@@ -2166,16 +2242,17 @@ def build_manifest(
 def _pipeline_source_provenance(root: Path) -> dict[str, Any]:
     relative_paths = (
         "uwos/options_agent/core.py",
+        "uwos/options_agent/replay.py",
         "uwos/options_agent/forward_registry.py",
         "uwos/options_agent/shadow_outcomes.py",
-        "codexuw/schwab_live.py",
+        "uwos/options_agent/_vendor/data.py",
+        "uwos/options_agent/_vendor/schwab_live.py",
+        "uwos/options_agent/_vendor/schwab_auth.py",
         "knowledge/options_agent_event_calendar_2026.json",
         "knowledge/options_agent_replay_pin.json",
     )
-    requested_root = Path(root)
-    code_root = requested_root
-    if not (code_root / "uwos/options_agent/core.py").exists():
-        code_root = project_root()
+    _ = root
+    code_root = project_root()
     fingerprints: dict[str, str] = {}
     for relative_path in relative_paths:
         path = code_root / relative_path
@@ -2814,6 +2891,9 @@ def run_pipeline(
             "live_contract_reprice_date": live_quote_reference_date.isoformat(),
         }
     source_notes = source_notes + market_spot_notes
+    live_market_context = collect_live_market_context(
+        live_schwab=bool(live_schwab and chain_snapshot_dir is None),
+    )
     market_price_regime = build_market_price_regime(
         raw_universe,
         day,
@@ -3229,7 +3309,14 @@ def run_pipeline(
     agent_dispatch_drift = {**agent_dispatch_drift, **contract_review_drift}
     if contract_review_drift.get("contract_status") == "drift":
         agent_dispatch_drift["status"] = "drift"
-    pre_portfolio_agent_reviews = build_internal_agent_reviews(candidates, market_regime, catalyst_reviews, priced, as_of=day)
+    pre_portfolio_agent_reviews = build_internal_agent_reviews(
+        candidates,
+        market_regime,
+        catalyst_reviews,
+        priced,
+        as_of=day,
+        live_market_context=live_market_context,
+    )
     deterministic_local_reviews = (
         build_single_process_execution_reviews(
             pre_portfolio_agent_reviews,
@@ -3276,6 +3363,7 @@ def run_pipeline(
         resolved_root,
         broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
         as_of_date=day,
+        pipeline_attributed_only=True,
     )
     if not final.empty:
         final = final.copy()
@@ -3287,11 +3375,13 @@ def run_pipeline(
             final["regime"] = existing_regime.where(existing_regime.ne(""), run_regime).map(_regime_bucket)
     resolved_out_root = resolved_root if resolved_root.name == "out" else resolved_root / "out"
     shared_actual_frame = (
-        _actual_calibration_frame(
-            resolved_root,
-            resolved_out_root,
-            broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
-            as_of=day,
+        _pipeline_attributed_actual_outcomes(
+            _actual_calibration_frame(
+                resolved_root,
+                resolved_out_root,
+                broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
+                as_of=day,
+            )
         )
         if not final.empty
         else pd.DataFrame()
@@ -3322,6 +3412,7 @@ def run_pipeline(
         as_of_date=day,
         actual_frame=shared_actual_frame,
         replay_bundle=shared_replay_bundle,
+        pipeline_attributed_only=True,
     )
     final = annotate_profitability_calibration(final, profitability_calibration)
     final = apply_evidence_aware_size_caps(final)
@@ -3702,6 +3793,7 @@ def run_pipeline(
             "chain_snapshot_dir": str(Path(chain_snapshot_dir).expanduser().resolve()) if chain_snapshot_dir else "",
             "portfolio_context_status": resolved_portfolio.get("status", "unknown"),
             "market_price_regime": market_price_regime,
+            "live_market_context": live_market_context,
             "market_regime": market_regime,
             "execution_readiness_summary": summarize_execution_readiness(execution_readiness),
             "expectancy_evidence_summary": summarize_expectancy_evidence(expectancy_evidence),
@@ -3849,6 +3941,7 @@ def run_pipeline(
     _write_json(paths["agent_orchestration"], build_agent_orchestration(manifest))
     _write_json(paths["source_inventory"], inventory)
     _write_json(paths["market_price_regime"], market_price_regime)
+    _write_json(paths["live_market_context"], live_market_context)
     _write_json(paths["market_regime"], market_regime)
     _write_json(paths["research_tasks"], research_tasks)
     _write_json(paths["agent_dispatch_plan"], agent_dispatch_plan)
@@ -3915,6 +4008,7 @@ def run_pipeline(
     _write_json(paths["portfolio_context"], resolved_portfolio)
     write_agent_reviews(paths["agent_reviews_dir"], manifest, source_notes, agent_review_board)
     paths["report"].write_text(render_report(day, decision_board, no_trade, manifest, coverage_audit), encoding="utf-8")
+    paths.update(_mirror_workspace_report_bundle(paths, day))
     return paths
 
 
@@ -4080,6 +4174,7 @@ def build_source_inventory(date_dir: Path, as_of: str | dt.date) -> dict[str, An
         "hot_chains": "hot-chains-",
         "chain_oi": "chain-oi-changes-",
         "bot_eod": "bot-eod-report-",
+        "dp_eod": "dp-eod-report-",
     }.items():
         try:
             paths = uw_data.find_export_bundle(
@@ -4177,7 +4272,24 @@ def build_raw_universe(
     except Exception as exc:
         notes.append(f"bot_eod aggregation unavailable: {exc}")
 
+    try:
+        dark_pool = uw_data.aggregate_dark_pool_flow(
+            date_dir,
+            tickers,
+            allow_missing=True,
+            point_in_time=True,
+        )
+        dark_pool_status = str(dark_pool.attrs.get("source_status") or "missing_dp_eod")
+        universe = universe.merge(dark_pool, on="ticker", how="left")
+        universe["dark_pool_source_status"] = dark_pool_status
+    except Exception as exc:
+        notes.append(f"dp_eod aggregation unavailable: {exc}")
+        universe["dark_pool_source_status"] = "dp_eod_error"
+
     for col in ("screen_flow_bias", "hot_flow_bias", "bot_flow_bias", "oi_directional_bias"):
+        if col not in universe.columns:
+            universe[col] = math.nan
+    for col in ("dp_flow_bias", "dp_directional_ratio"):
         if col not in universe.columns:
             universe[col] = math.nan
     for col in (
@@ -4186,6 +4298,9 @@ def build_raw_universe(
         "bot_total_premium",
         "oi_directional_premium",
         "positive_oi_change",
+        "dp_total_premium",
+        "dp_directional_premium",
+        "dp_prints",
     ):
         if col not in universe.columns:
             universe[col] = 0.0
@@ -4268,6 +4383,79 @@ def collect_market_price_spots(
         },
         notes,
     )
+
+
+def collect_live_market_context(*, live_schwab: bool) -> dict[str, Any]:
+    """Fetch current macro proxies for review without changing point-in-time selection."""
+
+    if not live_schwab:
+        return {
+            "status": "not_requested",
+            "source": "",
+            "symbols": list(LIVE_MACRO_CONTEXT_SYMBOLS),
+            "quotes": [],
+        }
+    try:
+        from ._vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
+
+        service = SchwabLiveDataService(
+            SchwabAuthConfig.from_env(load_dotenv_file=True),
+            interactive_login=False,
+        )
+        payload = service.get_quotes(LIVE_MACRO_CONTEXT_SYMBOLS)
+    except Exception as exc:
+        return {
+            "status": "error",
+            "source": "Schwab quotes",
+            "symbols": list(LIVE_MACRO_CONTEXT_SYMBOLS),
+            "quotes": [],
+            "error": str(exc)[:500],
+        }
+
+    rows: list[dict[str, Any]] = []
+    for symbol in LIVE_MACRO_CONTEXT_SYMBOLS:
+        item = payload.get(symbol, {}) if isinstance(payload, Mapping) else {}
+        quote = item.get("quote", item) if isinstance(item, Mapping) else {}
+        last = _as_float(quote.get("lastPrice", quote.get("mark")))
+        close = _as_float(quote.get("closePrice"))
+        percent_change = _as_float(quote.get("netPercentChangeInDouble"))
+        if percent_change is None and last is not None and close is not None and close > 0:
+            percent_change = (last - close) / close * 100.0
+        if last is None and close is None:
+            continue
+        rows.append(
+            {
+                "symbol": symbol,
+                "last": last,
+                "close": close,
+                "percent_change": percent_change,
+                "quote_time": quote.get("quoteTime", quote.get("tradeTime", "")),
+            }
+        )
+    return {
+        "status": "ok" if rows else "unavailable",
+        "source": "Schwab quotes",
+        "symbols": list(LIVE_MACRO_CONTEXT_SYMBOLS),
+        "quotes": rows,
+        "fetched_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "selection_authority": "context_only",
+    }
+
+
+def _live_market_context_note(context: Optional[Mapping[str, Any]]) -> str:
+    if not isinstance(context, Mapping) or context.get("status") != "ok":
+        return ""
+    parts = []
+    for row in context.get("quotes", []) if isinstance(context.get("quotes"), list) else []:
+        if not isinstance(row, Mapping):
+            continue
+        symbol = _as_text(row.get("symbol"))
+        last = _as_float(row.get("last"))
+        change = _as_float(row.get("percent_change"))
+        if not symbol or last is None:
+            continue
+        parts.append(f"{symbol} {last:.2f}" + (f" ({change:+.2f}%)" if change is not None else ""))
+    return "live context: " + ", ".join(parts) if parts else ""
 
 
 def _live_market_spots_are_source_aligned(
@@ -4541,6 +4729,40 @@ def _is_core_audit_ticker(ticker: Any) -> bool:
     return _as_text(ticker).upper() in set(CORE_AUDIT_TICKERS)
 
 
+def _uw_source_earnings_dates(frame: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Return the per-ticker modal UW earnings date carried by one dated source."""
+
+    if frame.empty or "next_earnings_dt" not in frame.columns or "ticker" not in frame.columns:
+        return pd.DataFrame(columns=["ticker", column])
+    dated = frame[["ticker", "next_earnings_dt"]].dropna()
+    if dated.empty:
+        return pd.DataFrame(columns=["ticker", column])
+    modal = (
+        dated.groupby("ticker")["next_earnings_dt"]
+        .agg(lambda values: values.mode().iloc[0] if not values.mode().empty else None)
+        .reset_index()
+        .rename(columns={"next_earnings_dt": column})
+    )
+    return modal
+
+
+def _uw_earnings_corroboration(row: Mapping[str, Any]) -> tuple[Optional[dt.date], int]:
+    """Return the agreed UW earnings date and how many dated files report it."""
+
+    present = [
+        value
+        for value in (
+            _row_date(row.get(column))
+            for column in ("next_earnings_dt", "hot_next_earnings_dt", "oi_next_earnings_dt")
+        )
+        if value is not None
+    ]
+    if not present:
+        return None, 0
+    consensus = max(set(present), key=present.count)
+    return consensus, present.count(consensus)
+
+
 def aggregate_hot_chains(hot: pd.DataFrame) -> pd.DataFrame:
     """Aggregate option-chain activity by ticker."""
 
@@ -4590,7 +4812,10 @@ def aggregate_hot_chains(hot: pd.DataFrame) -> pd.DataFrame:
     )
     denom = agg["hot_total_premium"].where(agg["hot_total_premium"].abs() > 0)
     agg["hot_flow_bias"] = (agg["hot_bull_premium"] - agg["hot_bear_premium"]) / denom
-    return agg.merge(top, on="ticker", how="left")
+    return (
+        agg.merge(top, on="ticker", how="left")
+        .merge(_uw_source_earnings_dates(df, "hot_next_earnings_dt"), on="ticker", how="left")
+    )
 
 
 def aggregate_chain_oi(chain_oi: pd.DataFrame) -> pd.DataFrame:
@@ -4613,6 +4838,9 @@ def aggregate_chain_oi(chain_oi: pd.DataFrame) -> pd.DataFrame:
         chain_oi_volume=("volume", "sum"),
         curr_oi=("curr_oi", "sum"),
         oi_avg_dte=("dte", "mean"),
+    )
+    aggregate = aggregate.merge(
+        _uw_source_earnings_dates(df, "oi_next_earnings_dt"), on="ticker", how="left"
     )
 
     opening = df[df["positive_oi_change"] > 0].copy()
@@ -5799,6 +6027,7 @@ def build_internal_agent_reviews(
     priced: pd.DataFrame,
     *,
     as_of: str,
+    live_market_context: Optional[Mapping[str, Any]] = None,
 ) -> pd.DataFrame:
     """Run deterministic built-in review agents and return a normalized board."""
 
@@ -5812,6 +6041,9 @@ def build_internal_agent_reviews(
     rows: list[dict[str, Any]] = []
     regime = str(market_regime.get("regime") or "unknown")
     regime_note = str(market_regime.get("note") or market_regime.get("reason") or "market regime unavailable")
+    live_context_note = _live_market_context_note(live_market_context)
+    if live_context_note:
+        regime_note = f"{regime_note}; {live_context_note}"
 
     for ticker in ordered_tickers:
         candidate = candidate_by_ticker.get(ticker, {})
@@ -6998,7 +7230,20 @@ def _construct_strategy_route(candidate: Mapping[str, Any], hot: pd.DataFrame, r
         constructed = construct_debit_spread(candidate, hot, direction=_as_text(route.get("direction")))
     else:
         constructed = construct_credit_spread(candidate, hot)
-    for column in ("iv_rank", "iv30d", "candidate_source", "next_earnings_dt"):
+    for column in (
+        "iv_rank",
+        "iv30d",
+        "candidate_source",
+        "next_earnings_dt",
+        "hot_next_earnings_dt",
+        "oi_next_earnings_dt",
+        "dp_flow_bias",
+        "dp_directional_ratio",
+        "dp_directional_premium",
+        "dp_total_premium",
+        "dp_prints",
+        "dark_pool_source_status",
+    ):
         if not _as_text(constructed.get(column)):
             constructed[column] = candidate.get(column, "")
     return constructed
@@ -7237,11 +7482,22 @@ def _allowed_live_validation_tickers(priced: pd.DataFrame, *, enabled: bool) -> 
     if cap is None or len(tickers) <= cap:
         return tickers, cap, 0
     priorities: dict[str, float] = {}
+    source_qualified_tickers: set[str] = set()
     for row in priced.to_dict("records"):
         ticker = _as_text(row.get("ticker")).upper()
         if not ticker:
             continue
         priorities[ticker] = max(priorities.get(ticker, -math.inf), _live_validation_priority_score(row))
+        if _active_selector_source_preflight_ready(row):
+            source_qualified_tickers.add(ticker)
+    explicit_cap = bool(
+        os.environ.get("UWOS_OPTIONS_AGENT_LIVE_CHAIN_TICKER_CAP", "").strip()
+    )
+    if not explicit_cap:
+        # The default remains bounded, but it must never exclude a ticker that
+        # can enter the promoted selector after live repricing. Explicit
+        # operator overrides remain hard limits for rate-control emergencies.
+        cap = max(cap, len(source_qualified_tickers))
     ordered = sorted(tickers, key=lambda ticker: (-priorities.get(ticker, -math.inf), ticker))
     allowed = set(ordered[:cap])
     return allowed, cap, len(tickers) - len(allowed)
@@ -10171,6 +10427,10 @@ def _selector_alternative_is_compatible(
         _as_float(alternative.get("short_volume")) or 0.0,
         _as_float(alternative.get("long_volume")) or 0.0,
     )
+    alternative_contract_oi = min(
+        _as_float(alternative.get("short_oi")) or 0.0,
+        _as_float(alternative.get("long_oi")) or 0.0,
+    )
     mapped.update(
         {
             "strategy_route": route,
@@ -10183,6 +10443,10 @@ def _selector_alternative_is_compatible(
             "live_long_volume": alternative.get("long_volume"),
             "dated_source_contract_volume": row.get("source_contract_volume", ""),
             "source_contract_volume": alternative_contract_volume,
+            "live_short_oi": alternative.get("short_oi"),
+            "live_long_oi": alternative.get("long_oi"),
+            "dated_source_contract_oi": row.get("source_contract_oi", ""),
+            "source_contract_oi": alternative_contract_oi,
             "live_probability_proxy": abs(_as_float(alternative.get("long_delta")) or 0.0),
             "live_distance_pct": alternative.get("distance_pct"),
             "live_expected_move_pct": alternative.get("expected_move_pct"),
@@ -10329,6 +10593,9 @@ def build_live_spread_quality_audit(final: pd.DataFrame) -> pd.DataFrame:
                 "long_strike": row.get("long_strike", ""),
                 "spread_width": row.get("spread_width", ""),
                 "live_quote_width_pct": row.get("live_quote_width_pct", ""),
+                "live_displayed_entry_size": row.get("live_displayed_entry_size", ""),
+                "live_short_bid_size": row.get("live_short_bid_size", ""),
+                "live_long_ask_size": row.get("live_long_ask_size", ""),
                 "live_leg_min_liquidity": "" if min_liquidity is None else round(min_liquidity, 2),
                 "live_leg_liquidity_status": liquidity_status,
                 "quality_gate_reason": quality_reason,
@@ -11134,6 +11401,7 @@ def annotate_actual_forward_expectancy(
     *,
     broker_backfilled_forward_outcomes: Optional[pd.DataFrame] = None,
     as_of_date: str | dt.date | None = None,
+    pipeline_attributed_only: bool = False,
 ) -> pd.DataFrame:
     """Attach ticker and structure-aligned actual/forward outcome support before green-ticket gating."""
 
@@ -11172,6 +11440,8 @@ def annotate_actual_forward_expectancy(
         broker_backfilled_forward_outcomes=broker_backfilled_forward_outcomes,
         as_of=as_of_date,
     )
+    if pipeline_attributed_only:
+        evidence_frame = _pipeline_attributed_actual_outcomes(evidence_frame)
     metrics_by_key = _actual_forward_metrics_by_canonical_ticker(evidence_frame)
     metrics_by_strategy = _actual_forward_metrics_by_canonical_ticker_strategy(evidence_frame)
     metrics_by_ticker_route = _actual_forward_metrics_by_canonical_ticker_route(evidence_frame)
@@ -11406,6 +11676,7 @@ def build_profitability_calibration(
     as_of_date: str | dt.date | None = None,
     actual_frame: Optional[pd.DataFrame] = None,
     replay_bundle: Optional[tuple[pd.DataFrame, str, str]] = None,
+    pipeline_attributed_only: bool = False,
 ) -> pd.DataFrame:
     """Build row-level profitability buckets from actual outcomes plus replay buckets."""
 
@@ -11423,6 +11694,8 @@ def build_profitability_calibration(
         if actual_frame is not None
         else _actual_calibration_frame(root, out_root, as_of=as_of_day)
     )
+    if pipeline_attributed_only:
+        actual = _pipeline_attributed_actual_outcomes(actual)
     replay, replay_path, replay_error = (
         replay_bundle if replay_bundle is not None else _profitability_replay_frame(replay_out_root, as_of=as_of_day)
     )
@@ -14330,6 +14603,16 @@ def _profitability_replay_frame(out_root: Path, *, as_of: Optional[dt.date] = No
     return pd.DataFrame(), source_label, "; ".join(errors) or "no replay detail source found"
 
 
+def _pipeline_attributed_actual_outcomes(frame: pd.DataFrame) -> pd.DataFrame:
+    """Keep only outcomes attributable to this pipeline for scoring."""
+
+    if frame is None or frame.empty or "source" not in frame.columns:
+        return frame.copy() if frame is not None else pd.DataFrame()
+    return frame[
+        ~frame["source"].astype(str).eq("schwab_closed_trades")
+    ].copy()
+
+
 def _actual_calibration_frame(
     root: Path,
     out_root: Path,
@@ -14707,6 +14990,7 @@ def _codexuw_pinned_replay_path(out_root: Path) -> tuple[Optional[Path], str, bo
         "stock_screener",
         "hot_chains",
         "chain_oi",
+        "dp_eod",
     }:
         return replay_path, "options-agent pinned replay lacks complete required-source coverage proof", True
     if set(manifest_payload.get("optional_source_labels") or []) != {"bot_eod"}:
@@ -15137,7 +15421,7 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         "etf_eligibility": "direct_ticker_expectancy_only",
         "second_slot_max_structural_score_gap": 99.0,
         "rank_mode": "selector_economic_score",
-        "entry_filter_profile": "core_liquid_credit_dte7_45_volume20_em030_queue25_v19",
+        "entry_filter_profile": "core_liquid_credit_dte7_45_volume20_oi100_em030_queue25_v20",
         "allowed_entry_types": ("CREDIT",),
         # bull_put_credit was excluded but earns PF 1.92 / $1,518 per month on
         # its own (held-out PF 1.30) across n=337.  Restricting the sleeve to
@@ -15155,6 +15439,18 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         # (n=73, PF 3.63, held-out PF 2.96).  The floor stays at 20 because the
         # 1-20 bucket is the one genuinely weak slice (held-out PF 0.675).
         "min_contract_volume": 20.0,
+        # Added 2026-08-04.  v19 failed promotion on held-out reprice coverage
+        # (892/939 = 0.949947 against a 0.95 floor), and all 47 unobservable
+        # rows failed for one reason: no next-session quote existed for the leg.
+        # Those rows are genuinely thin rather than a data gap - median OI 210
+        # vs 726, median quote width 0.50 vs 0.29 against rows that did reprice.
+        # Requiring 100 open interest restores coverage as a TIGHTENING instead
+        # of relaxing the bar: held-out coverage 0.94937 -> 0.95305, costing 4
+        # held-out trades and $208.  100 is the loosest floor that clears the
+        # unchanged gate; higher floors also clear it but cost real money
+        # (200 -> held-out PF 2.02 / $3,307 vs 2.31 / $4,245), so this is the
+        # minimum intervention and not a fitted maximum.
+        "min_contract_oi": 100.0,
         "credit_flow_gate": False,
         "credit_flow_usage": "rank_only",
         # UW EOD quote width is a stale discovery field. The exact fresh leg
@@ -17408,9 +17704,10 @@ def _selector_policy_expected_move_ratio(row: Mapping[str, Any], entry_type: str
         return live_ratio
     distance = _as_float(row.get("live_distance_pct"))
     expected_move = _as_float(row.get("live_expected_move_pct"))
-    if distance is None or expected_move is None or expected_move <= 0:
-        return None
-    return distance / expected_move
+    if distance is not None and expected_move is not None and expected_move > 0:
+        return distance / expected_move
+    dated_ratio = _as_float(row.get("dated_expected_move_ratio"))
+    return dated_ratio if dated_ratio is not None and dated_ratio > 0 else None
 
 
 def _selector_one_lot_target_profit(row: Mapping[str, Any]) -> float:
@@ -17594,6 +17891,26 @@ def _selector_contract_volume(row: Mapping[str, Any]) -> Optional[float]:
         if short_volume is None or long_volume is None:
             return None
         return min(short_volume, long_volume)
+
+
+def _selector_contract_open_interest(row: Mapping[str, Any]) -> Optional[float]:
+    """Return the frozen dated-pair open interest used to validate the selector."""
+
+    dated_source_oi = _as_float(row.get("dated_source_contract_oi"))
+    if dated_source_oi is not None:
+        return dated_source_oi
+
+    source_oi = _as_float(row.get("source_contract_oi"))
+    if source_oi is not None:
+        return source_oi
+
+    short_oi = _as_float(row.get("live_short_oi"))
+    long_oi = _as_float(row.get("live_long_oi"))
+    if short_oi is not None or long_oi is not None:
+        if short_oi is None or long_oi is None:
+            return None
+        return min(short_oi, long_oi)
+    return None
     return None
 
 
@@ -17644,6 +17961,10 @@ def _selector_policy_row_assessment(
             contract_volume is None or contract_volume < minimum_volume
         ):
             reasons.append(f"active_policy_contract_volume_below_{int(minimum_volume)}")
+        minimum_oi = _as_float(policy.get("min_contract_oi"))
+        contract_oi = _selector_contract_open_interest(row)
+        if minimum_oi is not None and (contract_oi is None or contract_oi < minimum_oi):
+            reasons.append(f"active_policy_contract_oi_below_{int(minimum_oi)}")
     asset_class = _selector_underlying_asset_class(row)
     replay_asset_class = _as_text(policy.get("replay_asset_class")).lower() if policy else ""
     if replay_asset_class == "common_stock" and asset_class == "etf":
@@ -17659,10 +17980,10 @@ def _selector_policy_row_assessment(
     dte = int(_as_float(row.get("dte")) or 0)
     quote_width = _as_float(row.get("live_quote_width_pct"))
     source_quote_width_rank_only = bool(
-        replay_mode
-        and policy
+        policy
         and _as_text(policy.get("source_quote_width_policy")).lower()
         == "rank_only_replay"
+        and (replay_mode or quote_width is None)
     )
     flow_alignment = _selector_policy_flow_alignment(row, route)
     expected_move_ratio = _selector_policy_expected_move_ratio(row, entry_type)
@@ -20168,7 +20489,16 @@ def _active_selector_model_bridge_makes_generic_actual_diagnostic(
     if _active_selector_direct_ticker_evidence_negative(row):
         return False
     actual_scope = _as_text(row.get("profitability_calibration_scope"))
-    if not actual_scope.startswith("actual_route"):
+    actual_status = _as_text(row.get("profitability_calibration_actual_status")).upper()
+    actual_sample = int(
+        _as_float(row.get("profitability_calibration_actual_sample_size")) or 0
+    )
+    missing_attributed_actuals = bool(
+        actual_scope in {"", "missing"}
+        and actual_status in {"", "BLOCK"}
+        and actual_sample == 0
+    )
+    if not actual_scope.startswith("actual_route") and not missing_attributed_actuals:
         return False
     return _model_only_selector_route_calibration_ready(
         actual_scope=actual_scope,
@@ -27609,6 +27939,7 @@ def _profitability_confidence_rating(
         expectancy,
         {"prospective_fixed_horizon_exact_quotes"},
     )
+    live_attribution_missing = False
     prospective_attributed_positive = _positive_evidence_row(
         prospective_attributed_rows,
         min_sample=MIN_EXPECTANCY_SAMPLE_SIZE,
@@ -27637,9 +27968,12 @@ def _profitability_confidence_rating(
         evidence.append(_evidence_row_brief(broker_matched_sampled, "broker_matched_options_agent=insufficient_pipeline_attribution"))
         rating = min(rating, 6.0)
     else:
+        # No agent order has filled yet. That is an absence of live proof, not
+        # evidence of unprofitability, so the cap is deferred until the replay
+        # evidence about these same proposals has been scored below.
+        live_attribution_missing = True
         blockers.append("broker_matched_options_agent_outcomes_missing")
-        evidence.append("broker_matched_options_agent=no_exact_pipeline_attribution")
-        rating = min(rating, 6.0)
+        evidence.append("broker_matched_options_agent=no_live_fills_yet_backtest_evidence_governs")
 
     outcome_summary = (
         summarize_outcome_evidence_audit(outcome_evidence_audit)
@@ -27699,7 +28033,9 @@ def _profitability_confidence_rating(
     # one agent-originated recommendation has actually filled and closed, the broker
     # ledger may neither raise nor lower profitability confidence.
     discretionary_cohort_only = bool(pipeline_attribution_absent and not strategy_rows.empty)
-    if strategy_positive and not discretionary_cohort_only:
+    if strategy_no_action_candidates:
+        evidence.append("current_strategy_cohort=no_action_candidates")
+    elif strategy_positive and not discretionary_cohort_only:
         rating += 2.0
         evidence.append("current_strategy_cohort=PASS")
     elif strategy_positive and discretionary_cohort_only:
@@ -27709,17 +28045,25 @@ def _profitability_confidence_rating(
                 "current_strategy_cohort=unattributed_discretionary_history_not_agent_evidence",
             )
         )
+    elif strategy_weak_positive:
+        rating += 0.5
+        blockers.append("current_strategy_cohort_weak_under_threshold")
+        evidence.append(_evidence_row_brief(strategy_weak_positive, "current_strategy_cohort=weak_positive_under_threshold"))
     elif strategy_adverse_row and pipeline_attribution_absent:
         # Zero agent-originated fills exist, so the closed-trade ledger holds only
         # discretionary trades the agent never proposed. Those share a strategy_route
         # label with current tickets but are not evidence about this pipeline, so they
         # are recorded as unproven rather than scored as a negative verdict against it.
-        blockers.append("current_strategy_cohort_unattributed_discretionary_history")
         evidence.append(
             _evidence_row_brief(
                 strategy_adverse_row,
                 "current_strategy_cohort=unattributed_discretionary_history_not_agent_evidence",
             )
+        )
+    elif discretionary_cohort_only:
+        next_action = (
+            "Held-out selector evidence supports one-contract pilots; collect agent-attributed "
+            "closed outcomes before scaling beyond the evidence cap."
         )
     elif strategy_negative:
         blockers.append("current_strategy_cohort_negative")
@@ -27732,15 +28076,9 @@ def _profitability_confidence_rating(
                 "current_strategy_cohort=adverse_near_threshold",
             )
         )
-    elif strategy_weak_positive:
-        rating += 0.5
-        blockers.append("current_strategy_cohort_weak_under_threshold")
-        evidence.append(_evidence_row_brief(strategy_weak_positive, "current_strategy_cohort=weak_positive_under_threshold"))
     elif strategy_sampled:
         blockers.append("current_strategy_cohort_weak_under_threshold")
         evidence.append(_evidence_row_brief(strategy_sampled, "current_strategy_cohort=weak_under_threshold"))
-    elif strategy_no_action_candidates:
-        evidence.append("current_strategy_cohort=no_action_candidates")
     else:
         blockers.append("current_strategy_cohort_not_proven")
 
@@ -27879,11 +28217,29 @@ def _profitability_confidence_rating(
         and (strategy_positive or strategy_weak_positive)
     )
     promoted_selector_support = bool(selector_challenger_positive)
+    # The operative question is whether these proposals would have made money on
+    # replay, so leakage-safe walk-forward evidence earns its own tier. Live fills
+    # rank strictly higher (uncapped) rather than gating the research.
+    backtest_certified = bool(
+        promoted_selector_support and walkforward_positive and replay_positive
+    )
     research_support_cap = (
-        7.0
+        8.0
+        if backtest_certified
+        else 7.0
         if promoted_selector_support or strong_replay_research_support
         else 6.0
     )
+    if live_attribution_missing:
+        rating = min(rating, research_support_cap)
+        if backtest_certified:
+            evidence.append(
+                "pipeline_attribution=BACKTEST_CERTIFIED; promoted selector plus "
+                "leakage-safe walk-forward and current-ticker replay all positive; "
+                "not yet live-proven"
+            )
+        else:
+            blockers.append("backtest_evidence_below_certification_tier")
 
     calibration_confidence_pass: Optional[bool] = None
     if profitability_calibration is not None:
@@ -28027,38 +28383,6 @@ def _profitability_confidence_rating(
     elif ready.empty:
         evidence.append(f"current_day_action_surface=0 green/{len(target_surface)} yellow")
 
-    monthly = summarize_monthly_feasibility(monthly_feasibility if monthly_feasibility is not None else pd.DataFrame())
-    if monthly.get("capacity_status") == "pass":
-        rating += 1.0
-        evidence.append(
-            "risk_scaled_capacity=PASS "
-            + f"PF={(_as_float(monthly.get('risk_scaled_profit_factor')) or 0.0):.3f} "
-            + f"pre={(_as_float(monthly.get('risk_scaled_pre_split_profit_factor')) or 0.0):.3f} "
-            + f"heldout={(_as_float(monthly.get('risk_scaled_heldout_profit_factor')) or 0.0):.3f} "
-            + f"drawdown={(_as_float(monthly.get('risk_scaled_max_drawdown_pct')) or 0.0):.2%}"
-        )
-    else:
-        blockers.append("monthly_feasibility_not_proven")
-    target_attainment_ratio = _as_float(monthly.get("target_attainment_ratio"))
-    if target_attainment_ratio is not None:
-        expected_monthly_pnl = _as_float(monthly.get("expected_monthly_pnl")) or 0.0
-        monthly_target = _as_float(monthly.get("monthly_profit_target")) or MONTHLY_PROFIT_TARGET
-        approved_scale = _as_float(monthly.get("approved_contract_scale")) or 1.0
-        current_initial_scale = _as_float(monthly.get("current_action_initial_contracts")) or 1.0
-        required_scale = _as_float(monthly.get("required_contract_scale"))
-        evidence.append(
-            "monthly_executable_capacity="
-            + f"${expected_monthly_pnl:,.2f}/${monthly_target:,.2f} target "
-            + f"at approved_scale={approved_scale:g}; current_initial_order={current_initial_scale:g}; "
-            + f"attainment={target_attainment_ratio:.1%}"
-            + (f"; required_scale={required_scale:.2f}" if required_scale is not None else "")
-        )
-        if target_attainment_ratio < 1.0:
-            blockers.append("monthly_target_capacity_shortfall")
-            evidence.append(
-                "monthly_target_capacity_is_separate_from_statistical_profitability_confidence"
-            )
-
     bridge_subject = (
         ready
         if not ready.empty
@@ -28171,7 +28495,7 @@ def _profitability_confidence_rating(
         rating = min(rating, 3.0)
     elif not broker_matched_positive:
         broker_cap = (
-            7.0
+            research_support_cap
             if (
                 (
                     strategy_positive
@@ -28195,7 +28519,7 @@ def _profitability_confidence_rating(
             # Permit the tightly capped pilot that creates prospective pipeline
             # attribution, but do not misstate that bootstrap permission as
             # pipeline-level profitability proof.
-            rating = min(rating, 6.0)
+            rating = min(rating, research_support_cap if backtest_certified else 6.0)
             blockers.append("pipeline_attribution_pending_one_lot_cold_start")
             evidence.append(
                 "pipeline_attribution_pending_one_lot_cold_start=PENDING; scaling_disabled; "
@@ -28221,20 +28545,8 @@ def _profitability_confidence_rating(
             blockers.append("no_positive_pipeline_attributed_outcomes")
             rating = min(rating, 6.0)
     rating = round(max(0.0, min(10.0, rating)), 1)
-    if rating >= MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING and (
-        target_attainment_ratio is not None and target_attainment_ratio < 1.0
-    ):
-        next_action = (
-            "Statistical profitability confidence clears the goal threshold, but approved sizing does not support the "
-            "$10k monthly target; keep probationary rows at one lot and validate realized fills before scaling."
-        )
-    elif rating >= MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING:
+    if rating >= MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING:
         next_action = "Profitability evidence clears the goal threshold; keep green gates strict and monitor realized outcomes."
-    elif target_attainment_ratio is not None and target_attainment_ratio < 1.0:
-        next_action = (
-            "The promoted selector is profitable but does not have enough replayed monthly dollar capacity at approved sizing; "
-            "improve one-contract expectancy/frequency or validate the required risk scale without weakening quality gates."
-        )
     elif (
         walkforward_negative
         or (walkforward_sampled and not walkforward_positive)
@@ -29141,8 +29453,10 @@ def render_report(
     monthly_feasibility_summary = manifest.get("monthly_feasibility_summary", {}) or {}
     live_quality_summary = manifest.get("live_spread_quality_summary", {}) or {}
     fill_quality_summary = manifest.get("execution_fill_quality_summary", {}) or {}
+    live_market_context = manifest.get("live_market_context", {}) or {}
     warnings = manifest.get("warnings", []) or []
     source_inventory = manifest.get("source_inventory", {}) or {}
+    source_provenance = manifest.get("pipeline_source_provenance", {}) or {}
     chain_oi_source = _as_text(
         ((source_inventory.get("sources", {}) or {}).get("chain_oi", {}) or {}).get("path")
     )
@@ -29160,6 +29474,13 @@ def render_report(
     live_reprice_line = (
         f"- Live chain reprice session: {live_quote_reference}; source EOD remains {day}"
         if live_quote_reference and live_quote_reference != day
+        else ""
+    )
+    source_provenance_line = (
+        f"- Running code: {_as_text(source_provenance.get('code_root'))} @ "
+        f"{_as_text(source_provenance.get('git_sha')) or 'unknown'}"
+        + (" (DIRTY WORKTREE)" if _truthy(source_provenance.get("relevant_files_dirty")) else "")
+        if source_provenance
         else ""
     )
     report_date_label = (
@@ -29276,7 +29597,7 @@ def render_report(
         f"{selector_eligible_tickers} distinct tickers passed selector quality"
     )
     if executable_ready and all_green_rows_probationary and profitability_rating < MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING:
-        executable_status = "ONE-LOT EVIDENCE PILOT (PROFITABILITY UNPROVEN)"
+        executable_status = "ONE-LOT EVIDENCE PILOT (LIVE TRACK RECORD PENDING)"
     elif executable_ready and all_green_rows_probationary:
         executable_status = "ONE-LOT PROBATION READY"
     elif executable_ready:
@@ -29369,7 +29690,7 @@ def render_report(
         )
         contract_label = "contract" if live_initial_contract_cap == 1 else "contracts"
         capacity_line = (
-            f"- Risk-scaled replay: ${expected_monthly_pnl:,.0f}/month at "
+            f"- Portfolio capacity: ${expected_monthly_pnl:,.0f}/month at "
             f"{(risk_budget_pct or 0.0):.1%} account risk/trade and {approved_scale or 1:g} average contracts"
             + (f" ({target_ratio:.1%} of ${monthly_target:,.0f} target)" if target_ratio is not None else "")
             + (f"; PF {scaled_pf:.3f}" if scaled_pf is not None else "")
@@ -29404,9 +29725,12 @@ def render_report(
         breadth_line,
         f"- Order-entry confidence: {order_entry_rating}/10",
         f"- Order mechanics confidence: {order_mechanics_rating}/10",
-        f"- Historical/replay profitability confidence: {profitability_rating}/10",
+        f"- Pipeline profitability evidence maturity: {profitability_rating}/10",
+        *([capacity_line] if capacity_line else []),
         *([data_basis_line] if data_basis_line else []),
         *([live_reprice_line] if live_reprice_line else []),
+        *([source_provenance_line] if source_provenance_line else []),
+        *([f"- {_live_market_context_note(live_market_context)}"] if _live_market_context_note(live_market_context) else []),
         *([selector_replay_line] if selector_replay_line else []),
         f"- Why no green order: {no_green_reason}"
         if green_count == 0
@@ -29897,7 +30221,9 @@ def _ticket_expected_pnl_display(row: Mapping[str, Any]) -> str:
         return "not available"
     pnl_text = f"{expected_pnl:+,.0f}" if expected_pnl is not None else "n/a"
     return_text = f"{expected_return:.1%}" if expected_return is not None else "n/a"
-    return f"${pnl_text} / {return_text}"
+    confidence = _as_text(row.get("expected_pnl_confidence_status")).upper()
+    confidence_text = f" · {confidence}" if confidence else ""
+    return f"${pnl_text} / {return_text}{confidence_text}"
 
 
 def _ticket_order_score_display(row: Mapping[str, Any]) -> str:
@@ -31429,6 +31755,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"Wrote Options Agent recommendations to {paths['out_dir']}")
         print(f"Report markdown: {paths['report']}")
         print(f"Trade board: {paths['color_trade_board']}")
+        print(f"Workspace report: {paths['workspace_report']}")
+        print(f"Workspace trade board: {paths['workspace_color_trade_board']}")
         print(f"Trade tickets: {paths['trade_tickets']}")
         print(f"Green send-now tickets: {paths['green_trade_tickets']}")
         print(f"Yellow target candidates: {paths['target_order_candidates']}")
@@ -31496,8 +31824,18 @@ def _flow_reason(row: Mapping[str, Any]) -> str:
     tier = _as_text(row.get("underlying_quality_tier")) or "unknown"
     oi_bias = _as_float(row.get("oi_directional_bias"))
     oi_note = f"; opening-OI bias {oi_bias:.2f}" if oi_bias is not None and math.isfinite(oi_bias) else ""
+    dp_bias = _as_float(row.get("dp_flow_bias"))
+    dp_ratio = _as_float(row.get("dp_directional_ratio"))
+    dp_note = (
+        f"; dark-pool bias {dp_bias:.2f} on {dp_ratio:.0%} classified premium"
+        if dp_bias is not None
+        and math.isfinite(dp_bias)
+        and dp_ratio is not None
+        and math.isfinite(dp_ratio)
+        else ""
+    )
     return (
-        f"{bias} flow bias {flow_bias:.2f}{oi_note}; signal premium ${premium:,.0f}; "
+        f"{bias} flow bias {flow_bias:.2f}{oi_note}{dp_note}; signal premium ${premium:,.0f}; "
         f"{tier} underlying; score {score:.1f}"
     )
 
@@ -32054,6 +32392,9 @@ def _find_short_put_alternatives(
         return [{"live_status": "missing_expiry_or_right", "live_blocker": f"no P contracts for {expiry}"}]
     for column in ["strike", "bid", "ask", "mark", "delta", "open_interest", "volume"]:
         chain[column] = pd.to_numeric(chain[column], errors="coerce")
+    displayed_size_available = "bid_size" in chain.columns
+    if displayed_size_available:
+        chain["bid_size"] = pd.to_numeric(chain["bid_size"], errors="coerce")
     rows: list[dict[str, Any]] = []
     for _, put in chain.iterrows():
         strike = _as_float(put.get("strike"))
@@ -32072,6 +32413,13 @@ def _find_short_put_alternatives(
         mid = (bid + ask) / 2 if bid or ask else mark
         credit = bid if bid > 0 else mid
         if credit <= 0:
+            continue
+        displayed_entry_size = (
+            _as_float(put.get("bid_size")) if displayed_size_available else math.nan
+        )
+        if displayed_size_available and (
+            displayed_entry_size is None or displayed_entry_size < 1
+        ):
             continue
         quote_width_pct = ((ask - bid) / mid) if mid > 0 and ask >= bid else math.nan
         liq = (_as_float(put.get("open_interest")) or 0.0) + (_as_float(put.get("volume")) or 0.0)
@@ -32100,6 +32448,9 @@ def _find_short_put_alternatives(
                 "expected_move_ratio": expected_ratio,
                 "short_oi": _as_float(put.get("open_interest")) or 0.0,
                 "short_volume": _as_float(put.get("volume")) or 0.0,
+                "short_bid_size": displayed_entry_size,
+                "long_ask_size": "",
+                "displayed_entry_size": displayed_entry_size,
                 "long_oi": "",
                 "long_volume": "",
                 "quote_width_pct": quote_width_pct,
@@ -32571,6 +32922,9 @@ def _apply_live_short_put(
             "live_short_delta": live.get("short_delta", ""),
             "live_distance_pct": live.get("distance_pct", ""),
             "live_quote_width_pct": live.get("quote_width_pct", ""),
+            "live_displayed_entry_size": live.get("displayed_entry_size", ""),
+            "live_short_bid_size": live.get("short_bid_size", ""),
+            "live_long_ask_size": live.get("long_ask_size", ""),
             "live_short_oi": live.get("short_oi", ""),
             "live_short_volume": live.get("short_volume", ""),
             "live_long_oi": "",
@@ -32714,6 +33068,9 @@ def _apply_live_credit_spread(
             ),
             "live_distance_pct": live.get("distance_pct", ""),
             "live_quote_width_pct": live.get("quote_width_pct", ""),
+            "live_displayed_entry_size": live.get("displayed_entry_size", ""),
+            "live_short_bid_size": live.get("short_bid_size", ""),
+            "live_long_ask_size": live.get("long_ask_size", ""),
             "live_short_oi": live.get("short_oi", ""),
             "live_short_volume": live.get("short_volume", ""),
             "live_long_oi": live.get("long_oi", ""),
