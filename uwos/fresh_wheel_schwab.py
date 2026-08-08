@@ -15,6 +15,8 @@ import pandas as pd
 
 from uwos.wheel_vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
+PIPELINE_VERSION = "fresh-wheel-v1.0-ticket-fallback-integrity-20260808"
+
 REPLAY_BLOCKED_CSP: dict[str, str] = {
     "ORCL": "2026 YTD replay tail loss: 5 scored CSPs, 40% hit rate, -$4,224.50 total PnL",
     "PG": "2026 YTD replay tail loss: one scored CSP, -$1,080.00 PnL",
@@ -1462,6 +1464,16 @@ def allocate_contracts(actions: list[WheelAction], config: WheelConfig) -> None:
                 action.cash_required = 0.0
                 action.estimated_credit = round((action.limit_price or 0.0) * 100.0 * share_contracts, 2)
                 action.monthly_credit_runrate = round(action.estimated_credit * 30.0 / dte, 2)
+                action.paired_option_symbol = ""
+                action.paired_expiry = None
+                action.paired_strike = None
+                action.paired_limit_price = None
+                action.reasons = [
+                    reason
+                    for reason in action.reasons
+                    if not reason.startswith(("covered strangle:", "range $"))
+                ]
+                action.reasons.append("cash-secured put leg removed; covered-call entry retained")
                 action.blockers.append("covered-strangle cash-secured put budget did not allow one extra put; fallback to covered call")
             else:
                 action.contracts = contracts
@@ -1811,6 +1823,7 @@ def write_outputs(
 ) -> dict[str, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     report_path = out_dir / f"fresh-wheel-report-{asof.isoformat()}.md"
+    tickets_path = out_dir / f"fresh-wheel-tickets-{asof.isoformat()}.md"
     actions_csv = out_dir / f"fresh-wheel-actions-{asof.isoformat()}.csv"
     orders_csv = out_dir / f"fresh-wheel-orders-{asof.isoformat()}.csv"
     alerts_csv = out_dir / f"fresh-wheel-alerts-{asof.isoformat()}.csv"
@@ -1972,6 +1985,7 @@ def write_outputs(
         "",
         "## Data Contract",
         "",
+        f"- Pipeline version: `{PIPELINE_VERSION}`",
         f"- UW source folder: `{base_dir}`",
         "- Live quote and option-chain source: `Schwab API`",
         "- Yahoo/yfinance: `not used`",
@@ -2084,11 +2098,64 @@ def write_outputs(
     )
     report_path.write_text("\n".join(lines), encoding="utf-8")
 
+    ticket_lines = [
+        f"# Wheel Execution Tickets ({asof.isoformat()})",
+        "",
+        "Generated for review only. No orders were placed.",
+        "",
+        "These are entry tickets. This wheel pipeline does not generate OCO profit-target or stop orders.",
+        "",
+        "## Immediate Entries",
+        "",
+    ]
+    if tradeable:
+        for number, action in enumerate(tradeable, start=1):
+            capital = max(action.cash_required, action.pmcc_debit)
+            ticket_lines.extend(
+                [
+                    f"### {number}. {action.ticker} — {_entry_tier(action)}",
+                    "",
+                    f"- Strategy: {_action_type(action)}",
+                    f"- Quantity: {action.contracts}",
+                    f"- Entry: {_action_ticket(action, include_trigger=False)}",
+                    f"- Limit: {_action_limit(action)}",
+                    f"- Estimated credit: ${action.estimated_credit:,.0f}",
+                    f"- Cash/debit reserved: ${capital:,.0f}",
+                    f"- Premium yield: {_premium_yield_pct(action):.2f}%",
+                    f"- Confidence: {action.confidence:.1f}",
+                    f"- Context: {_action_context(action)}",
+                    "- Exit/OCO: Not generated; management policy is not defined by this pipeline.",
+                    "",
+                ]
+            )
+    else:
+        ticket_lines.extend(["No immediate Schwab-backed entries passed all gates.", ""])
+    ticket_lines.extend(["## Price Alerts", ""])
+    if alerts:
+        for action in alerts:
+            ticket_lines.extend(
+                [
+                    f"### {action.ticker}",
+                    "",
+                    f"- Trigger: Stock at or below ${action.alert_price:.2f}",
+                    f"- Entry: {_action_ticket(action, include_trigger=False)}",
+                    f"- Limit: {_action_limit(action)}",
+                    f"- Confidence: {action.confidence:.1f}",
+                    f"- Context: {_action_context(action)}",
+                    "",
+                ]
+            )
+    else:
+        ticket_lines.append("No price alerts passed the gate.")
+    tickets_path.write_text("\n".join(ticket_lines), encoding="utf-8")
+
     manifest = {
+        "pipeline_version": PIPELINE_VERSION,
         "asof": asof.isoformat(),
         "base_dir": str(base_dir),
         "outputs": {
             "report": str(report_path),
+            "tickets": str(tickets_path),
             "actions_csv": str(actions_csv),
             "orders_csv": str(orders_csv),
             "alerts_csv": str(alerts_csv),
@@ -2123,6 +2190,7 @@ def write_outputs(
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
     return {
         "report": report_path,
+        "tickets": tickets_path,
         "actions_csv": actions_csv,
         "orders_csv": orders_csv,
         "alerts_csv": alerts_csv,
@@ -2259,8 +2327,9 @@ def main() -> None:
     )
     outputs = run_fresh_wheel(base_dir=base_dir, out_dir=out_dir, config=config, skip_positions=args.skip_positions)
     print(f"Report:   {outputs['report']}")
+    print(f"Tickets:  {outputs['tickets']}")
     print(f"Actions:  {outputs['actions_csv']}")
-    print(f"Orders:   {outputs['orders_csv']}")
+    print(f"Broker CSV: {outputs['orders_csv']}")
     print(f"Alerts:   {outputs['alerts_csv']}")
     print(f"Manifest: {outputs['manifest']}")
 
