@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from ._vendor.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.69-live-quote-integrity-20260808-000000"
+PIPELINE_VERSION = "options-agent-v1.70-closed-session-quote-recheck-20260808-091021"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.69-live-quote-integrity-20260808-000000",
     "options-agent-v1.68-five-source-market-context-20260806-081546",
     "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
     "options-agent-v1.55-source-selector-validation-priority-20260722-160401",
@@ -111,7 +112,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-08-08T00:00:00-07:00"
+PIPELINE_RELEASED_AT = "2026-08-08T09:10:21-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -355,8 +356,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.69-live-quote-integrity-20260808-000000",
+    "PIPELINE_VERSION": "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.69-live-quote-integrity-20260808-000000",
         "options-agent-v1.68-five-source-market-context-20260806-081546",
         "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
         "options-agent-v1.55-source-selector-validation-priority-20260722-160401",
@@ -419,7 +421,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-08-08T00:00:00-07:00",
+    "PIPELINE_RELEASED_AT": "2026-08-08T09:10:21-07:00",
     "PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS": frozenset(
         {"options-agent-v1.68-five-source-market-context-20260806-081546"}
     ),
@@ -19944,7 +19946,7 @@ def _ticket_order_readiness(row: Mapping[str, Any]) -> str:
         if blockers == {GOAL_CONFIDENCE_GATE_BLOCKER}:
             return "target_order_after_goal_confidence"
         if blockers in ({"market_session_open_required"}, {"regular_session_quote_refresh_required"}):
-            return "target_order_price_validation"
+            return "target_order_after_market_open_and_live_recheck"
         if _short_put_cash_or_account_risk_blocked(blockers):
             return "target_order_after_cash_risk"
         if POSITION_PROFIT_MATERIALITY_BLOCKER in blockers:
@@ -20923,6 +20925,12 @@ def _execution_blockers_for_row(
         if action_surface_candidate
         else []
     )
+    if (
+        action_surface_candidate
+        and execution_context.get("fresh_live_quotes_ready")
+        and execution_context.get("market_session_recheck_required")
+    ):
+        blockers.append("regular_session_quote_refresh_required")
     if status == RecommendationStatus.AVOID.value or _as_text(row.get("hard_rejects")):
         blockers.append("objective_blocker")
     review_resolved_for_recheck = _review_resolved_for_target_recheck(
@@ -21691,6 +21699,7 @@ def build_execution_readiness(decision_board: pd.DataFrame, execution_context: M
 
     columns = ["gate", "status", "detail", "affected_rows"]
     ready_rows = int(decision_board["ready_to_enter"].map(_truthy).sum()) if not decision_board.empty else 0
+    quote_refresh_required = bool(execution_context.get("market_session_recheck_required"))
     rows = [
         {
             "gate": "fresh_live_schwab",
@@ -21700,13 +21709,13 @@ def build_execution_readiness(decision_board: pd.DataFrame, execution_context: M
         },
         {
             "gate": "quote_freshness",
-            "status": "INFO",
+            "status": "BLOCK" if quote_refresh_required else "INFO",
             "detail": (
-                "execution_blocker=false; "
+                f"execution_blocker={str(quote_refresh_required).lower()}; "
                 "target_refresh_before_order=true; "
                 f"quote_mode={execution_context.get('quote_mode')}"
             ),
-            "affected_rows": len(decision_board),
+            "affected_rows": len(decision_board) if quote_refresh_required else 0,
         },
         {
             "gate": "portfolio_sizing",

@@ -1,9 +1,9 @@
 {
-  "current_cache_fingerprint": "dc000bc3990d1f958bf063dfc6dd41e49d65f982987c08cd5845fa63a7e6287d",
+  "current_cache_fingerprint": "5f3b1f9fda33d83c69ab46ce5a10e8c5ed879d28778d2926e9f84774f44e829c",
   "manifest_sha256": "9508afdce1a823db859f20bf3f2c15e68b3c6fde77ac6ffb5408c26982ed7934",
-  "pipeline_version": "options-agent-v1.69-live-quote-integrity-20260808-000000",
+  "pipeline_version": "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
   "producer": "uwos.options_agent.replay",
-  "reason": "Options Agent v1.69 release marker and live-only displayed-size/session integrity; historical candidate generation, selector, pricing, and outcomes are unchanged.",
+  "reason": "Options Agent v1.70 regular-session quote-refresh execution gate and market-open recheck routing; historical candidate generation, selector, pricing, and outcomes are unchanged.",
   "recomputed_selected_count": 1954,
   "recomputed_selected_ids_sha256": "3c8d7fc290800a3c972fc8d467b6d35aac523e2e73c42809947962f04293ed0d",
   "replay_detail_sha256": "989a0e9d0749b94b92466c24a9936e67b6562e3754cf18c91d61fb1fcf05f713",
