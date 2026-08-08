@@ -207,6 +207,27 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertEqual(action.paired_option_symbol, "AMZN  260618P00255000")
         self.assertEqual(action.paired_strike, 255.0)
 
+    def test_covered_strangle_cash_fallback_clears_abandoned_put_leg(self) -> None:
+        with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
+            action, _ = analyze_symbol(
+                row=_universe_row(),
+                service=FakeSchwabService(),
+                quote={},
+                position=Position(symbol="AMZN", shares=200, avg_cost=240.0),
+                asof=dt.date(2026, 4, 30),
+                config=WheelConfig(account_size=100_000, min_option_volume=1),
+                out_dir=Path(tempfile.gettempdir()),
+            )
+            allocate_contracts([action], WheelConfig(account_size=100_000))
+
+        self.assertEqual(action.action, "SELL_COVERED_CALL")
+        self.assertEqual(action.option_symbol, "AMZN  260618C00310000")
+        self.assertEqual(action.paired_option_symbol, "")
+        self.assertIsNone(action.paired_expiry)
+        self.assertIsNone(action.paired_strike)
+        self.assertIsNone(action.paired_limit_price)
+        self.assertNotIn("covered strangle:", "; ".join(action.reasons))
+
     def test_analyze_symbol_can_pair_csp_with_budgeted_upside_call(self) -> None:
         chain = _chain(call_strike=340.0)
         chain["callExpDateMap"]["2026-06-18:49"]["340.0"][0].update(
@@ -440,6 +461,7 @@ class FreshWheelSchwabTests(unittest.TestCase):
                     config=WheelConfig(account_size=250_000, min_option_volume=1),
                     out_dir=out,
                 )
+                allocate_contracts([action], WheelConfig(account_size=250_000))
             outputs = write_outputs(
                 out,
                 dt.date(2026, 4, 30),
@@ -452,9 +474,12 @@ class FreshWheelSchwabTests(unittest.TestCase):
             )
             manifest = outputs["manifest"].read_text(encoding="utf-8")
             report = outputs["report"].read_text(encoding="utf-8")
+            tickets = outputs["tickets"].read_text(encoding="utf-8")
 
         self.assertIn('"live_source": "Schwab API"', manifest)
+        self.assertIn('"pipeline_version": "fresh-wheel-v1.0-ticket-fallback-integrity-20260808"', manifest)
         self.assertIn('"yahoo_yfinance_used": false', manifest)
+        self.assertIn("fresh-wheel-v1.0-ticket-fallback-integrity-20260808", report)
         self.assertIn("## Weekly Focus", report)
         self.assertIn("## Action Board", report)
         self.assertIn("| Status | Ticker | Type | Exp | Strike | Trade / Trigger |", report)
@@ -462,6 +487,10 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertIn("$5.00+ credit", report)
         self.assertNotIn("260618P00255000", report)
         self.assertRegex(report, "🟢 STRONG|🔵 SECONDARY|🟡 ALERT|🟠 WAIT|🔴 AVOID")
+        self.assertIn("# Wheel Execution Tickets", tickets)
+        self.assertIn("Entry: Sell Jun 18, 2026 $255 put", tickets)
+        self.assertIn("Exit/OCO: Not generated", tickets)
+        self.assertNotIn("260618P00255000", tickets)
 
 
 if __name__ == "__main__":
