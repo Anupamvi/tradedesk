@@ -59,8 +59,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.69-live-quote-integrity-20260808-000000"
+    assert core.PIPELINE_VERSION == "options-agent-v1.70-closed-session-quote-recheck-20260808-091021"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.69-live-quote-integrity-20260808-000000",
         "options-agent-v1.68-five-source-market-context-20260806-081546",
         "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
         "options-agent-v1.55-source-selector-validation-priority-20260722-160401",
@@ -123,7 +124,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-08-08T00:00:00-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-08-08T09:10:21-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -3921,7 +3922,7 @@ def test_send_now_green_requires_positive_structure_aligned_actual_forward_suppo
     assert tickets.loc[tickets["ticker"].eq("GOOGL"), "ready_to_enter"].tolist() == [True]
 
 
-def test_closed_market_is_informational_and_does_not_block_target_ticket() -> None:
+def test_closed_market_requires_regular_session_quote_refresh_before_entry() -> None:
     final = pd.DataFrame(
         [
             {
@@ -3962,15 +3963,16 @@ def test_closed_market_is_informational_and_does_not_block_target_ticket() -> No
         execution_context=closed_context,
     )
     tickets = core.build_trade_tickets(decision)
+    queue = core.build_market_open_recheck_queue(tickets)
     readiness = core.build_execution_readiness(decision, closed_context)
 
-    assert decision["ready_to_enter"].tolist() == [True]
-    assert decision["execution_status"].tolist() == ["ready"]
+    assert decision["ready_to_enter"].tolist() == [False]
+    assert decision["execution_status"].tolist() == ["needs_fresh_live_quote"]
     assert "market_session_open_required" not in decision["execution_blockers"].iloc[0]
-    assert "regular_session_quote_refresh_required" not in decision["execution_blockers"].iloc[0]
-    assert decision["execution_blockers"].tolist() == [""]
+    assert decision["execution_blockers"].tolist() == ["regular_session_quote_refresh_required"]
     assert tickets["target_order_status"].tolist() == ["target_order_candidate"]
-    assert tickets["order_readiness"].tolist() == ["ready_to_enter"]
+    assert tickets["order_readiness"].tolist() == ["target_order_after_market_open_and_live_recheck"]
+    assert queue["ticker"].tolist() == ["LIVE"]
     coverage = core.build_coverage_audit(
         raw_universe=pd.DataFrame(),
         candidates=pd.DataFrame(),
@@ -3980,14 +3982,14 @@ def test_closed_market_is_informational_and_does_not_block_target_ticket() -> No
         watchlist=["LIVE"],
     )
     assert coverage["next_step"].tolist() == [
-        "verify live quote and place manually if thesis still holds"
+        "use this target as the starting limit after a fresh quote refresh"
     ]
     quote_freshness = readiness.loc[readiness["gate"].eq("quote_freshness")]
-    assert quote_freshness["status"].tolist() == ["INFO"]
-    assert "execution_blocker=false" in quote_freshness["detail"].iloc[0]
+    assert quote_freshness["status"].tolist() == ["BLOCK"]
+    assert "execution_blocker=true" in quote_freshness["detail"].iloc[0]
 
 
-def test_closed_market_clean_live_row_can_still_be_green_when_other_gates_pass() -> None:
+def test_closed_market_clean_live_row_becomes_market_open_recheck_target() -> None:
     final = pd.DataFrame(
         [
             {
@@ -4025,14 +4027,19 @@ def test_closed_market_clean_live_row_can_still_be_green_when_other_gates_pass()
 
     decision = core.synthesize_decision_board(final, market_regime={"regime": "mixed"}, execution_context=context)
     tickets = core.build_trade_tickets(decision)
+    queue = core.build_market_open_recheck_queue(tickets)
 
-    assert decision["ready_to_enter"].tolist() == [True]
-    assert decision["execution_status"].tolist() == ["ready"]
+    assert decision["ready_to_enter"].tolist() == [False]
+    assert decision["execution_status"].tolist() == ["needs_fresh_live_quote"]
     assert "market_session_open_required" not in decision["execution_blockers"].iloc[0]
-    assert decision["execution_blockers"].tolist() == [""]
-    assert tickets["ready_to_enter"].tolist() == [True]
+    assert decision["execution_blockers"].tolist() == ["regular_session_quote_refresh_required"]
+    assert tickets["ready_to_enter"].tolist() == [False]
     assert tickets["target_order_status"].tolist() == ["target_order_candidate"]
-    assert tickets["order_readiness"].tolist() == ["ready_to_enter"]
+    assert tickets["order_readiness"].tolist() == ["target_order_after_market_open_and_live_recheck"]
+    green, yellow = core.split_trade_ticket_surfaces(tickets)
+    assert green.empty
+    assert yellow["ticker"].tolist() == ["LIVE"]
+    assert queue["ticker"].tolist() == ["LIVE"]
 
 
 def test_market_open_recheck_queue_includes_only_market_session_only_targets() -> None:
@@ -4123,9 +4130,9 @@ def test_market_session_only_targets_are_review_until_live_validated() -> None:
     assert core._decision_badge(row) == "⚪ GRAY review"
     assert core._decision_icon(row) == "⚪"
     assert core._decision_status_label(row) == "GRAY review"
-    assert core._ticket_order_readiness(row) == "target_order_price_validation"
+    assert core._ticket_order_readiness(row) == "target_order_after_market_open_and_live_recheck"
     assert core._ticket_action(row) == "work_target_limit"
-    assert "shown target limit" in core._ticket_next_step(row)
+    assert "starting limit after a fresh quote refresh" in core._ticket_next_step(row)
 
 
 def test_calibration_blocked_plan_is_review_not_yellow_target() -> None:
@@ -4769,7 +4776,7 @@ def test_trade_ticket_sort_prefers_confidence_before_exact_calibration() -> None
     assert sorted_tickets["ticker"].tolist() == ["ROUTEHIGH", "BUCKETMID"]
 
 
-def test_market_closed_live_recheck_keeps_an_otherwise_valid_setup_green() -> None:
+def test_market_closed_live_recheck_keeps_an_otherwise_valid_setup_as_target() -> None:
     final = pd.DataFrame(
         [
             {
@@ -4819,13 +4826,13 @@ def test_market_closed_live_recheck_keeps_an_otherwise_valid_setup_green() -> No
     queue = core.build_market_open_recheck_queue(tickets)
 
     assert decision["target_order_status"].tolist() == ["target_order_candidate"]
-    assert decision["ready_to_enter"].tolist() == [True]
-    assert "regular_session_quote_refresh_required" not in decision["execution_blockers"].iloc[0]
+    assert decision["ready_to_enter"].tolist() == [False]
+    assert decision["execution_blockers"].tolist() == ["regular_session_quote_refresh_required"]
     assert tickets["ticker"].tolist() == ["AAPL"]
     green, yellow = core.split_trade_ticket_surfaces(tickets)
-    assert green["ticker"].tolist() == ["AAPL"]
-    assert yellow.empty
-    assert queue.empty
+    assert green.empty
+    assert yellow["ticker"].tolist() == ["AAPL"]
+    assert queue["ticker"].tolist() == ["AAPL"]
 
 
 def test_closed_market_transient_quote_reject_preserves_dated_target_math() -> None:
