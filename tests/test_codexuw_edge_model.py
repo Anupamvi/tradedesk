@@ -62,10 +62,10 @@ def test_credit_edge_learns_from_all_guard_passing_policy_compliant_history(tmp_
         _history_row("2026-01-09", "THIN_PREMIUM", selected=True, distance=0.90, pnl=-500.0, iv30d=0.15),
     ]
     pd.DataFrame(rows).to_csv(namespace / "codexuw_replay_detail.csv", index=False)
-    history = load_replay_edge_history(tmp_path, asof="2026-02-01", history_namespace="accepted_credit_history")
+    history = load_replay_edge_history(tmp_path, asof="2026-02-07", history_namespace="accepted_credit_history")
 
     edge = match_replay_edge(
-        _history_row("2026-02-02", "LIVE", selected=False, distance=0.80, pnl=0.0),
+        _history_row("2026-02-08", "LIVE", selected=False, distance=0.80, pnl=0.0),
         history,
     )
 
@@ -80,10 +80,10 @@ def test_credit_edge_rejects_thin_premium_candidate(tmp_path) -> None:
     pd.DataFrame(
         [_history_row("2026-01-05", "H1", selected=True, distance=0.80, pnl=70.0)]
     ).to_csv(namespace / "codexuw_replay_detail.csv", index=False)
-    history = load_replay_edge_history(tmp_path, asof="2026-02-01", history_namespace="accepted_credit_history")
+    history = load_replay_edge_history(tmp_path, asof="2026-02-07", history_namespace="accepted_credit_history")
 
     edge = match_replay_edge(
-        _history_row("2026-02-02", "LIVE", selected=False, distance=0.80, pnl=0.0, iv30d=0.15),
+        _history_row("2026-02-08", "LIVE", selected=False, distance=0.80, pnl=0.0, iv30d=0.15),
         history,
     )
 
@@ -100,6 +100,22 @@ def test_edge_history_excludes_replay_guard_failures(tmp_path) -> None:
     ]
     pd.DataFrame(rows).to_csv(namespace / "codexuw_replay_detail.csv", index=False)
 
-    history = load_replay_edge_history(tmp_path, asof="2026-02-01", history_namespace="accepted_credit_history")
+    history = load_replay_edge_history(tmp_path, asof="2026-02-07", history_namespace="accepted_credit_history")
 
     assert history["ticker"].tolist() == ["KEPT"]
+
+
+def test_edge_history_excludes_early_exit_before_contract_expiry(tmp_path) -> None:
+    namespace = tmp_path / "accepted_credit_history"
+    namespace.mkdir()
+    pd.DataFrame(
+        [_history_row("2026-01-05", "EARLY_WIN", selected=True, distance=0.80, pnl=70.0)]
+    ).to_csv(namespace / "codexuw_replay_detail.csv", index=False)
+
+    history = load_replay_edge_history(
+        tmp_path,
+        asof="2026-02-01",
+        history_namespace="accepted_credit_history",
+    )
+
+    assert history.empty

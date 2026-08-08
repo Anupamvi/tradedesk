@@ -33,6 +33,7 @@ def test_summarize_positions_blocks_existing_option_underlyings() -> None:
     assert summary["option_underlyings"] == ["GOOG"]
     assert summary["short_option_underlyings"] == ["GOOG"]
     assert summary["large_equity_exposure"] == {"MSFT": 6000.0}
+    assert summary["equity_shares"] == {"MSFT": 100.0}
     assert any(row["action"] == "SELL COVERED INCOME" for row in summary["portfolio_income_actions"])
     assert any(row["action"] in {"HOLD", "ROLL", "TAKE PROFIT"} for row in summary["risk_actions"])
 
@@ -416,6 +417,20 @@ def test_select_ticker_pool_zero_means_uncapped() -> None:
     assert set(pool["ticker"]) == {"AAA", "BBB"}
 
 
+def test_select_ticker_pool_reserves_dynamic_sector_coverage() -> None:
+    df = pd.DataFrame(
+        [
+            {"ticker": "TECH1", "sector": "Technology", "close": 100, "flow_total_premium": 300_000_000, "total_open_interest": 100_000, "avg30_volume": 1_000_000, "issue_type": "Common Stock"},
+            {"ticker": "TECH2", "sector": "Technology", "close": 100, "flow_total_premium": 250_000_000, "total_open_interest": 100_000, "avg30_volume": 1_000_000, "issue_type": "Common Stock"},
+            {"ticker": "HEALTH1", "sector": "Healthcare", "close": 100, "flow_total_premium": 20_000_000, "total_open_interest": 50_000, "avg30_volume": 500_000, "issue_type": "Common Stock"},
+        ]
+    )
+
+    pool = select_ticker_pool(df, max_tickers=2)
+
+    assert set(pool["ticker"]) == {"TECH1", "HEALTH1"}
+
+
 def test_is_etf_row_does_not_match_etf_inside_netflix_name() -> None:
     netflix = pd.Series({"ticker": "NFLX", "issue_type": "Common Stock", "full_name": "NETFLIX INC"})
     yieldmax = pd.Series(
@@ -522,6 +537,8 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "breakeven": 451.0,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.12,
                 "score": 6.0,
                 "confidence": "Medium",
@@ -545,6 +562,8 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "breakeven": 451.0,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.04,
                 "score": 9.0,
                 "confidence": "High",
@@ -568,6 +587,8 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "breakeven": 451.0,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.20,
                 "score": 8.0,
                 "confidence": "High",
@@ -714,6 +735,8 @@ def test_live_selection_can_return_multiple_high_conviction_trades() -> None:
                 "breakeven": 101.1,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.20,
                 "score": 7.2,
                 "confidence": "High",
@@ -767,6 +790,8 @@ def test_medium_confidence_selection_stays_one_lot_even_when_budget_allows_more(
                 "breakeven": 101.1,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.20,
                 "score": 6.2,
                 "confidence": "Medium",

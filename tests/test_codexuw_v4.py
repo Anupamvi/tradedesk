@@ -10,12 +10,15 @@ from codexuw.daily_v4 import (
     _compact_decision_candidate_table,
     _default_out_dir,
     _disposition,
+    _execution_quote_blocker,
     _hard_blocker_reason,
+    _trade_legs,
     apply_v4_prospective_book_concentration,
     apply_v4_risk_cap,
     apply_v4_professional_dispositions,
     apply_v4_safety_calibration,
     build_v4_opportunity_board,
+    build_strategy_generation_coverage,
     build_no_miss_audit,
     build_construction_attempts,
     build_candidate_disposition,
@@ -63,6 +66,8 @@ def _candidate(**overrides) -> dict:
         "short_leg": "AAA260529P00100000",
         "long_leg": "AAA260529P00095000",
         "live_status": "PASS",
+        "regular_session_quote": True,
+        "displayed_entry_size": 10,
         "quote_width_pct": 0.08,
         "flow_quality": "directional",
         "oi_carryover_status": "supportive",
@@ -457,6 +462,264 @@ def test_v4_validated_medium_debit_sleeve_executes_at_one_contract() -> None:
     assert tickets.iloc[0]["suggested size"] == "1 contract only; Medium debit sleeve"
 
 
+def test_v4_probationary_credit_route_remains_observation_only() -> None:
+    row = _candidate(
+        direction="Bear Call",
+        strategy="Bear Call Credit Spread",
+        regime="uptrend",
+        regime_trend="uptrend",
+        short_strike=110.0,
+        long_strike=115.0,
+        short_leg="AAA260619C00110000",
+        long_leg="AAA260619C00115000",
+        combined_flow_bias=-0.20,
+        credit=1.30,
+        mid_credit=1.30,
+        natural_credit=1.25,
+        required_entry=1.25,
+        target_entry=1.25,
+        credit_pct_width=0.26,
+        quote_width_pct=0.10,
+        iv_hv_ratio=0.87,
+        iv_rank=54.0,
+        realized_volatility_30d=0.26,
+        payoff_calibration_status="PROBATIONARY",
+        payoff_route_level="base",
+        payoff_route_key="base::Credit|Bear Call|uptrend",
+        payoff_sample_size=29,
+        payoff_minimum_sample_required=20,
+        payoff_stress_10_win_rate=26 / 29,
+        payoff_stress_10_average_pnl=34.0,
+        payoff_stress_10_average_win_risk_fraction=0.2146,
+        payoff_stress_10_average_loss_risk_fraction=1.0364,
+        payoff_stress_10_profit_factor=1.87,
+        payoff_walk_forward_oos_sample=10,
+        payoff_walk_forward_oos_average_pnl=22.0,
+        payoff_walk_forward_oos_profit_factor=1.57,
+        payoff_post_activation_oos_sample=0,
+        confidence_calibration_status="CONSERVATIVE",
+        confidence_model_tier="strategy_family_conservative",
+        confidence_calibration_sample_size=139,
+        confidence_probability=0.82,
+        confidence_probability_lower_bound=0.78,
+        confidence_calibration_brier=0.13,
+        confidence_calibration_baseline_brier=0.25,
+        edge_sample_size=0,
+        edge_profit_factor=None,
+        edge_avg_pnl=None,
+        edge_match_level="unavailable",
+        primary_blocker="",
+        penalties="",
+        hard_rejects="",
+        confirmation_score=9.0,
+        catalyst_status="mixed",
+        oi_carryover_status="supportive",
+        live_status="PASS",
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Watch"
+    assert adjusted.iloc[0]["trade_tier"] == "Scout"
+    assert "observation-only" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+    assert adjusted.iloc[0]["v4_post_pricing_profit_factor"] >= 1.25
+
+    tickets = build_v4_swing_target_tickets(
+        scored=adjusted,
+        board=pd.DataFrame(),
+        regime={"trend": "uptrend", "volatility": "low", "flow": "weak"},
+        top_flow=pd.DataFrame(),
+    )
+    ticket = tickets.iloc[0]
+    assert ticket["next-session swing entry target"] == ">= $1.25 credit"
+    assert ticket["profit target"] == "$62.50"
+    assert "entry Bear Call Credit Spread" in ticket["OCO bracket order logic"]
+    assert "at >= $1.25 credit" in ticket["OCO bracket order logic"]
+    assert "probationary final-structure EV=" in ticket["why this is worth reviewing tomorrow"]
+    assert ticket["expected win rate"] == "78%"
+    assert ticket["win-rate basis"] == "confidence lower bound shown; EV uses route 10%-stress outcomes"
+    assert "10% fill-stress win=90%" in ticket["payoff evidence"]
+    assert ticket["expected value"] != "UNVALIDATED"
+    assert ticket["implied profit factor"] != "UNVALIDATED"
+    assert _disposition(adjusted.iloc[0], targetable=True) == "Scout"
+
+
+def test_v4_probationary_base_credit_cannot_authorize_ambiguous_flow() -> None:
+    row = _candidate(
+        direction="Bear Call",
+        strategy="Bear Call Credit Spread",
+        regime="uptrend",
+        regime_trend="uptrend",
+        short_strike=110.0,
+        long_strike=115.0,
+        short_leg="AAA260619C00110000",
+        long_leg="AAA260619C00115000",
+        combined_flow_bias=0.01,
+        flow_quality="unclear",
+        credit=1.30,
+        mid_credit=1.30,
+        natural_credit=1.25,
+        required_entry=1.25,
+        target_entry=1.25,
+        credit_pct_width=0.26,
+        quote_width_pct=0.10,
+        payoff_calibration_status="PROBATIONARY",
+        payoff_route_level="base",
+        payoff_route_key="base::Credit|Bear Call|uptrend",
+        payoff_sample_size=29,
+        payoff_minimum_sample_required=20,
+        payoff_stress_10_win_rate=26 / 29,
+        payoff_stress_10_average_pnl=34.0,
+        payoff_stress_10_average_win_risk_fraction=0.25,
+        payoff_stress_10_average_loss_risk_fraction=0.50,
+        payoff_stress_10_profit_factor=1.87,
+        payoff_walk_forward_oos_sample=10,
+        payoff_walk_forward_oos_average_pnl=22.0,
+        payoff_walk_forward_oos_profit_factor=1.57,
+        payoff_post_activation_oos_sample=0,
+        confidence_calibration_status="CONSERVATIVE",
+        confidence_model_tier="strategy_family_conservative",
+        confidence_calibration_sample_size=139,
+        confidence_probability=0.82,
+        confidence_probability_lower_bound=0.78,
+        confidence_calibration_brier=0.13,
+        confidence_calibration_baseline_brier=0.25,
+        edge_sample_size=0,
+        edge_profit_factor=None,
+        edge_avg_pnl=None,
+        edge_match_level="unavailable",
+        primary_blocker="no_flow_edge_alignment",
+        penalties="no_flow_edge_alignment",
+        trade_status_reason="flow_not_directional:unclear;no_flow_edge_alignment;thin_replay_sample:n=0",
+        hard_rejects="",
+        confirmation_score=8.5,
+        catalyst_status="mixed",
+        oi_carryover_status="matched_unconfirmed",
+        live_status="PASS",
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Watch"
+    assert adjusted.iloc[0]["trade_tier"] == "Scout"
+    assert "observation-only" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+
+
+def test_v4_renders_arbitrary_complex_legs() -> None:
+    row = {
+        "strategy": "Iron Condor",
+        "legs_json": __import__("json").dumps(
+            [
+                {"instrument": "option", "quantity": 1, "symbol": "AAA260619P00090000"},
+                {"instrument": "option", "quantity": -1, "symbol": "AAA260619P00095000"},
+                {"instrument": "option", "quantity": -1, "symbol": "AAA260619C00105000"},
+                {"instrument": "option", "quantity": 1, "symbol": "AAA260619C00110000"},
+            ]
+        ),
+    }
+
+    rendered = _trade_legs(row)
+
+    assert "buy AAA 2026-06-19 90P" in rendered
+    assert "sell AAA 2026-06-19 95P" in rendered
+    assert "sell AAA 2026-06-19 105C" in rendered
+    assert "buy AAA 2026-06-19 110C" in rendered
+
+
+def test_strategy_generation_coverage_counts_real_rows_not_registry_flags() -> None:
+    registry = pd.DataFrame(
+        [
+            {"strategy_key": "long_call", "display_name": "Long Call", "category": "directional", "live_builder": True, "pipeline_status": "RESEARCH_ONLY", "execution_authorized": False, "status_reason": "research"},
+            {"strategy_key": "iron_condor", "display_name": "Iron Condor", "category": "range", "live_builder": True, "pipeline_status": "RESEARCH_ONLY", "execution_authorized": False, "status_reason": "research"},
+        ]
+    )
+    candidates = pd.DataFrame(
+        [{"ticker": "AAA", "sector": "Technology", "strategy_registry_key": "long_call"}, {"ticker": "BBB", "sector": "Energy", "strategy_registry_key": "iron_condor"}]
+    )
+    scored = pd.DataFrame(
+        [
+            {"ticker": "AAA", "sector": "Technology", "strategy_registry_key": "long_call", "live_status": "PASS", "trade_status": "Research"},
+            {"ticker": "BBB", "sector": "Energy", "strategy_registry_key": "iron_condor", "live_status": "no_realistic_structure", "trade_status": "Research"},
+        ]
+    )
+
+    coverage = build_strategy_generation_coverage(
+        candidates=candidates,
+        scored=scored,
+        registry=registry,
+    ).set_index("strategy_key")
+
+    assert coverage.loc["long_call", "generation_status"] == "LIVE_CONSTRUCTED"
+    assert coverage.loc["long_call", "seed_sectors"] == 1
+    assert coverage.loc["long_call", "constructed_sectors"] == 1
+    assert coverage.loc["iron_condor", "generation_status"] == "SEEDED_NO_LIVE_STRUCTURE"
+
+
+def test_v4_preopen_zero_size_option_quote_cannot_execute() -> None:
+    row = _candidate(
+        credit=1.30,
+        mid_credit=1.30,
+        natural_credit=1.25,
+        required_entry=0.90,
+        target_entry=0.90,
+        credit_pct_width=0.26,
+        penalties="",
+        regular_session_quote=False,
+        displayed_entry_size=0,
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Watch"
+    assert adjusted.iloc[0]["trade_tier"] == "Scout"
+    assert "outside the regular options session" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+
+
+def test_v4_closed_session_untraded_legs_cannot_execute() -> None:
+    row = _candidate(
+        credit=1.30,
+        mid_credit=1.30,
+        natural_credit=1.25,
+        required_entry=0.90,
+        target_entry=0.90,
+        credit_pct_width=0.26,
+        penalties="",
+        regular_session_quote=True,
+        displayed_entry_size=10,
+        market_session_open_at_validation=False,
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Watch"
+    assert "no leg traded in the quoted session" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+
+
+def test_v4_closed_session_traded_legs_clear_the_quote_gate() -> None:
+    """An EOD planning run must not be blocked purely by the wall clock."""
+    row = _candidate(
+        regular_session_quote=True,
+        displayed_entry_size=0,
+        market_session_open_at_validation=False,
+        short_volume=140,
+        long_volume=95,
+    )
+
+    assert _execution_quote_blocker(row) == ""
+
+
+def test_v4_open_session_requires_displayed_size() -> None:
+    row = _candidate(
+        regular_session_quote=True,
+        displayed_entry_size=0,
+        market_session_open_at_validation=True,
+        short_volume=140,
+        long_volume=95,
+    )
+
+    assert "no displayed entry size" in _execution_quote_blocker(row)
+
+
 def test_v4_validated_structural_credit_route_replaces_sparse_exact_edge_only() -> None:
     row = _candidate(
         ticker="RANGE_CALL",
@@ -616,7 +879,7 @@ def test_v4_medium_debit_sleeve_does_not_generalize_to_range_or_bear_put() -> No
     assert "realized payoff lane" in reasons["BEAR"]
 
 
-def test_v4_hard_risk_cap_truncates_or_downgrades_target_signals() -> None:
+def test_v4_risk_cap_is_advisory_and_never_downgrades_a_ticket() -> None:
     tickets = pd.DataFrame(
         [
             {
@@ -645,11 +908,15 @@ def test_v4_hard_risk_cap_truncates_or_downgrades_target_signals() -> None:
     )
 
     capped, audit = apply_v4_risk_cap(tickets, {"status": "ok", "total_value": 100_000})
+    indexed = capped.set_index("ticker")
 
-    assert capped.set_index("ticker").loc["AAA", "max loss"] == "$2,000.00"
-    assert "Risk Capped" in capped.set_index("ticker").loc["AAA", "safety calibration flags"]
-    assert capped.set_index("ticker").loc["BBB", "final disposition"] == "Research"
-    assert int(audit["risk_capped"].sum()) == 2
+    assert indexed.loc["AAA", "max loss"] == "$10,000.00"
+    assert indexed.loc["AAA", "suggested size"] == "5 contracts; only if checks pass"
+    assert indexed.loc["AAA", "final disposition"] == "Swing Target / Work Limit"
+    assert indexed.loc["BBB", "final disposition"] == "Execute"
+    assert "Sizing note" in indexed.loc["BBB", "safety calibration flags"]
+    assert int(audit["risk_capped"].sum()) == 0
+    assert set(audit["final disposition before"]) == set(audit["final disposition after"])
 
 
 def test_v4_secondary_liquidity_sweep_triggers_below_three_candidates() -> None:
@@ -734,6 +1001,7 @@ def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_
 
     report = Path(manifest["report_path"]).read_text(encoding="utf-8")
     assert manifest["pipeline_name"] == PIPELINE_NAME_V4
+    assert manifest["status"] == "ok"
     assert "| Pipeline | Codex Daily V4 |" in report
     ordered = [
         "## First Screen",
@@ -760,6 +1028,8 @@ def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_
         "codexdaily_v4_confidence_calibration_summary_2026-05-20.json",
         "codexdaily_v4_risk_cap_audit_2026-05-20.csv",
         "codexdaily_v4_secondary_liquidity_sweep_2026-05-20.csv",
+        "codexdaily_v4_strategy_registry_2026-05-20.csv",
+        "codexdaily_v4_sector_rotation_2026-05-20.csv",
     ]:
         assert (out_dir / name).exists()
 
@@ -826,3 +1096,18 @@ def test_run_v4_daily_is_not_a_v3_wrapper() -> None:
 
     assert "run_v3_daily" not in names
     assert "write_v4_outputs_from_core" not in names
+
+
+def test_public_disposition_preserves_internal_scout_without_authorizing_execute() -> None:
+    from codexuw.daily_v4 import _disposition
+
+    row = {
+        "trade_status": "Watch",
+        "trade_tier": "Scout",
+        "payoff_calibration_status": "INSUFFICIENT",
+        "hard_rejects": "",
+        "penalties": "",
+        "strategy": "Bull Call Debit Spread",
+    }
+
+    assert _disposition(row) == "Scout"

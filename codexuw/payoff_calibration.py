@@ -12,12 +12,13 @@ import pandas as pd
 from .confidence_calibration import DEFAULT_EDGE_HISTORY_PATH, wilson_lower_bound
 
 
-PAYOFF_CALIBRATION_VERSION = "structure-aware-hierarchical-payoff-v2.0"
+PAYOFF_CALIBRATION_VERSION = "structure-aware-hierarchical-payoff-v2.1-maturity-safe-probationary"
 COST_STRESS_LEVELS = (0.0, 0.05, 0.10)
 MIN_GROUP_SAMPLE = 20
 MIN_TRAIN_SAMPLE = 10
 MIN_OOS_SAMPLE = 5
 MIN_PROSPECTIVE_OOS_SAMPLE = 2
+PROBATIONARY_PAYOFF_STATUS = "PROBATIONARY"
 MIN_STRESS_PROFIT_FACTOR = 1.25
 MIN_TEST_WINDOW_PROFIT_FACTOR = 1.00
 MAX_DRAWDOWN_STRESS_MULTIPLE = 1.25
@@ -163,6 +164,12 @@ def _eligible_history(history: pd.DataFrame, *, asof: object | None) -> pd.DataF
             out = out[out[column].map(_truthy)]
     out["_asof_dt"] = pd.to_datetime(out.get("asof"), errors="coerce")
     out["_exit_dt"] = pd.to_datetime(out.get("exit_day"), errors="coerce")
+    expiry = (
+        pd.to_datetime(out["expiry"], errors="coerce")
+        if "expiry" in out.columns
+        else pd.Series(pd.NaT, index=out.index, dtype="datetime64[ns]")
+    )
+    out["_maturity_dt"] = expiry.where(expiry.notna(), out["_exit_dt"])
     out["_pnl"] = pd.to_numeric(out.get("pnl_1x"), errors="coerce")
     out["_entry_price"] = pd.to_numeric(out.get("entry_price"), errors="coerce")
     out["_entry_width"] = pd.to_numeric(out.get("entry_width"), errors="coerce")
@@ -178,7 +185,11 @@ def _eligible_history(history: pd.DataFrame, *, asof: object | None) -> pd.DataF
     ]
     cutoff = pd.to_datetime(asof, errors="coerce")
     if pd.notna(cutoff):
-        out = out[(out["_asof_dt"] <= cutoff) & (out["_exit_dt"] <= cutoff)]
+        out = out[
+            (out["_asof_dt"] <= cutoff)
+            & (out["_exit_dt"] <= cutoff)
+            & (out["_maturity_dt"] <= cutoff)
+        ]
     debit = out["_family"].eq("Debit")
     out["_risk"] = out["_entry_price"] * 100.0
     out.loc[~debit, "_risk"] = (out.loc[~debit, "_entry_width"] - out.loc[~debit, "_entry_price"]) * 100.0
@@ -246,7 +257,11 @@ def _month_windows(eligible: pd.DataFrame, cutoff: pd.Timestamp) -> list[dict[st
     for index in range(2, len(months)):
         train_months = set(months[:index])
         test_month = months[index]
-        train = eligible[eligible["_asof_dt"].dt.to_period("M").isin(train_months)]
+        test_start = test_month.start_time
+        train = eligible[
+            eligible["_asof_dt"].dt.to_period("M").isin(train_months)
+            & eligible["_maturity_dt"].lt(test_start)
+        ]
         test = eligible[eligible["_asof_dt"].dt.to_period("M").eq(test_month)]
         windows.append(
             {
@@ -259,6 +274,18 @@ def _month_windows(eligible: pd.DataFrame, cutoff: pd.Timestamp) -> list[dict[st
             }
         )
     return windows
+
+
+def _completed_window_frames(
+    frames: list[pd.DataFrame],
+    *,
+    before: pd.Timestamp,
+) -> list[pd.DataFrame]:
+    return [
+        frame
+        for frame in frames
+        if not frame.empty and frame["_maturity_dt"].max() < before
+    ]
 
 
 def build_default_payoff_calibration(
@@ -305,14 +332,29 @@ def build_default_payoff_calibration(
                     and test_metrics["average_pnl"] > 0
                     and _profit_factor_at_least(test_metrics["profit_factor"], MIN_TEST_WINDOW_PROFIT_FACTOR)
                 )
+                completed_oos = _completed_window_frames(
+                    oos_frames.get(key, []),
+                    before=pd.Timestamp(window["test_start"]),
+                )
                 prior_oos = (
-                    pd.concat(oos_frames.get(key, []), ignore_index=True)
-                    if oos_frames.get(key)
+                    pd.concat(completed_oos, ignore_index=True)
+                    if completed_oos
                     else pd.DataFrame()
                 )
                 prior_oos_metrics = _metrics(prior_oos, 0.10)
-                prior_tested_windows = tested_windows.get(key, 0)
-                prior_failed_windows = failed_windows.get(key, 0)
+                prior_tested_windows = len(completed_oos)
+                prior_failed_windows = sum(
+                    1
+                    for frame in completed_oos
+                    if _metrics(frame, 0.10)["sample_size"] >= 2
+                    and not (
+                        _metrics(frame, 0.10)["average_pnl"] > 0
+                        and _profit_factor_at_least(
+                            _metrics(frame, 0.10)["profit_factor"],
+                            MIN_TEST_WINDOW_PROFIT_FACTOR,
+                        )
+                    )
+                )
                 prior_allowed_failed_windows = int(
                     math.floor(prior_tested_windows * MAX_FAILED_WALK_FORWARD_WINDOW_RATE)
                 )
@@ -411,6 +453,19 @@ def build_default_payoff_calibration(
                 )
                 and prospective_failed_windows.get(key, 0) == 0
             )
+            probationary_route = bool(
+                not route_pass
+                and base["sample_size"] >= minimum_group_sample
+                and stress_10["average_pnl"] > 0
+                and _profit_factor_at_least(stress_10["profit_factor"], MIN_STRESS_PROFIT_FACTOR)
+                and drawdown_ok
+                and oos_metrics["sample_size"] >= minimum_oos_sample
+                and oos_metrics["average_pnl"] > 0
+                and _profit_factor_at_least(oos_metrics["profit_factor"], MIN_STRESS_PROFIT_FACTOR)
+                and failed_window_count <= allowed_failed_windows
+                and prospective_metrics["sample_size"] < MIN_PROSPECTIVE_OOS_SAMPLE
+                and prospective_failed_windows.get(key, 0) == 0
+            )
             substantive_negative_evidence = bool(
                 base["sample_size"] >= int(policy["minimum_train_sample"])
                 and (
@@ -442,7 +497,15 @@ def build_default_payoff_calibration(
                     )
                 )
             )
-            status = "PASS" if route_pass else ("VETO" if substantive_negative_evidence else "INSUFFICIENT")
+            status = (
+                "PASS"
+                if route_pass
+                else PROBATIONARY_PAYOFF_STATUS
+                if probationary_route
+                else "VETO"
+                if substantive_negative_evidence
+                else "INSUFFICIENT"
+            )
             reasons = []
             if base["sample_size"] < minimum_group_sample:
                 reasons.append(f"sample {base['sample_size']} < {minimum_group_sample}")
@@ -503,9 +566,14 @@ def build_default_payoff_calibration(
                         f"validated {route_level} route under realized payoff, expanding walk-forward, and fill stress"
                         if status == "PASS"
                         else (
+                            f"one-contract probationary {route_level} route; all realized-payoff, fill-stress, "
+                            "and walk-forward OOS gates pass, but post-activation outcomes are still pending"
+                            if status == PROBATIONARY_PAYOFF_STATUS
+                        else (
                             "route-specific negative evidence; " + "; ".join(reasons)
                             if status == "VETO"
                             else "insufficient route-specific validation; " + "; ".join(reasons)
+                        )
                         )
                     ),
                     "sample_size": base["sample_size"],
@@ -553,6 +621,11 @@ def build_default_payoff_calibration(
             "stress_10": _metrics(frame, 0.10),
         }
     passed = groups[groups["payoff_calibration_status"].eq("PASS")] if not groups.empty else groups
+    probationary = (
+        groups[groups["payoff_calibration_status"].eq(PROBATIONARY_PAYOFF_STATUS)]
+        if not groups.empty
+        else groups
+    )
     eligible_days = pd.to_datetime(eligible.get("asof"), errors="coerce").dropna() if not eligible.empty else pd.Series(dtype="datetime64[ns]")
     last_evidence_day = eligible_days.max() if not eligible_days.empty else None
     summary = {
@@ -574,6 +647,8 @@ def build_default_payoff_calibration(
         "family_metrics": family_metrics,
         "passed_lanes": passed["group_key"].tolist() if not passed.empty else [],
         "passed_lane_count": int(len(passed)),
+        "probationary_lanes": probationary["group_key"].tolist() if not probationary.empty else [],
+        "probationary_lane_count": int(len(probationary)),
         "status": "PASS" if not passed.empty else "NO_VALIDATED_LANES",
     }
     return summary, groups, walk_forward
@@ -620,6 +695,7 @@ def apply_payoff_calibration(scored: pd.DataFrame, groups: pd.DataFrame) -> pd.D
         out.at[index, "payoff_cost_bucket"] = _cost_bucket(row)
         selected: tuple[str, str, pd.Series] | None = None
         fallback: tuple[str, str, pd.Series] | None = None
+        probationary: tuple[str, str, pd.Series] | None = None
         if not lookup.empty:
             for level, key in candidates:
                 if key not in lookup.index:
@@ -636,7 +712,9 @@ def apply_payoff_calibration(scored: pd.DataFrame, groups: pd.DataFrame) -> pd.D
                 if evidence_status == "VETO":
                     selected = (level, key, evidence)
                     break
-        selected = selected or fallback
+                if evidence_status == PROBATIONARY_PAYOFF_STATUS and probationary is None:
+                    probationary = (level, key, evidence)
+        selected = selected or probationary or fallback
         if selected is None:
             out.at[index, "payoff_group_key"] = candidates[-1][1]
             out.at[index, "payoff_route_key"] = candidates[-1][1]

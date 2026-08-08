@@ -103,15 +103,15 @@ def _premium_bucket(row: pd.Series | dict[str, Any]) -> str:
 
 
 def _expected_move_pct(row: pd.Series | dict[str, Any]) -> float:
+    iv30d = safe_float(row.get("iv30d"))
+    dte = safe_float(row.get("dte"))
+    if math.isfinite(iv30d) and math.isfinite(dte) and iv30d > 0 and dte > 0:
+        return iv30d * math.sqrt(dte / 365.0)
     explicit = safe_float(row.get("expected_move_pct"))
     if math.isfinite(explicit) and explicit > 0:
         return explicit
     implied = safe_float(row.get("implied_move_perc"))
-    if math.isfinite(implied) and implied > 0:
-        return implied
-    iv30d = safe_float(row.get("iv30d"))
-    dte = safe_float(row.get("dte"))
-    return iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
+    return implied if math.isfinite(implied) and implied > 0 else math.nan
 
 
 def _distance_pct(row: pd.Series | dict[str, Any]) -> float:
@@ -377,7 +377,17 @@ def load_replay_edge_history(
             if not pd.isna(cutoff):
                 source_day = pd.to_datetime(df.get("asof"), errors="coerce")
                 exit_day = pd.to_datetime(df.get("exit_day"), errors="coerce")
-                df = df[source_day.lt(cutoff) & exit_day.lt(cutoff)].copy()
+                expiry = (
+                    pd.to_datetime(df["expiry"], errors="coerce")
+                    if "expiry" in df.columns
+                    else pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
+                )
+                maturity_day = expiry.where(expiry.notna(), exit_day)
+                df = df[
+                    source_day.lt(cutoff)
+                    & exit_day.lt(cutoff)
+                    & maturity_day.lt(cutoff)
+                ].copy()
         if df.empty:
             continue
         df["edge_source_file"] = str(path)
