@@ -30472,12 +30472,12 @@ def _ticket_recheck_summary(row: Mapping[str, Any]) -> str:
         NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER: "negative realized strategy history",
         PROFITABILITY_CALIBRATION_ACTUAL_NEGATIVE_BLOCKER: "realized route/bucket evidence is negative",
         POSITIVE_STRATEGY_EXPECTANCY_BLOCKER: "more profitable route history required for green",
-        f"send_now_credit_below_{MIN_SEND_NOW_CREDIT:.2f}": "credit too small for send-now",
-        "send_now_credit_below_1.00": "credit too small for send-now",
-        f"send_now_credit_width_below_{int(MIN_SEND_NOW_CREDIT_WIDTH_RATIO * 100)}pct": "credit/width too weak for send-now",
-        "send_now_credit_width_below_30pct": "credit/width too weak for send-now",
-        "send_now_debit_reward_risk_below_1.5x": "reward/risk too weak for send-now",
-        "send_now_debit_directional_edge_below_threshold": "directional edge too weak for send-now",
+        f"send_now_credit_below_{MIN_SEND_NOW_CREDIT:.2f}": "credit below actionability floor",
+        "send_now_credit_below_1.00": "credit below actionability floor",
+        f"send_now_credit_width_below_{int(MIN_SEND_NOW_CREDIT_WIDTH_RATIO * 100)}pct": "credit/width below actionability floor",
+        "send_now_credit_width_below_30pct": "credit/width below actionability floor",
+        "send_now_debit_reward_risk_below_1.5x": "reward/risk below actionability floor",
+        "send_now_debit_directional_edge_below_threshold": "directional edge below actionability floor",
         "send_now_earnings_before_expiry": "earnings occurs before expiry",
         "send_now_earnings_within_holding_horizon": "earnings occurs inside planned holding horizon",
         "send_now_high_impact_macro_event_before_expiry": "high-impact macro release occurs before expiry",
@@ -30536,7 +30536,7 @@ def _ticket_recheck_summary(row: Mapping[str, Any]) -> str:
         if blocker in labels:
             parts.append(labels[blocker])
         elif blocker.startswith("send_now_debit_breakeven_move_above_"):
-            parts.append("breakeven move too large for send-now")
+            parts.append("breakeven move exceeds actionability limit")
     if not parts:
         parts.append(_ticket_next_step(row))
     return "; ".join(dict.fromkeys(parts))
@@ -30612,7 +30612,7 @@ def _display_blocker_label(blocker: Any) -> str:
         "contract_specific_agent_reviews_missing": "exact contract review missing",
         "contract_specific_agent_review_caution": "exact contract review caution",
         "contract_specific_agent_review_blocked": "exact contract review blocked",
-        "execution_confidence_below_threshold": "execution confidence below send-now threshold",
+        "execution_confidence_below_threshold": "execution confidence below actionability threshold",
         GOAL_CONFIDENCE_GATE_BLOCKER: "goal-confidence evidence incomplete",
         NEGATIVE_ROUTE_FAMILY_EVIDENCE_BLOCKER: "route family evidence negative",
         NEGATIVE_STRATEGY_EXPECTANCY_BLOCKER: "negative realized strategy history",
@@ -30632,11 +30632,11 @@ def _display_blocker_label(blocker: Any) -> str:
     if text in labels:
         return labels[text]
     if text.startswith("send_now_credit_below_"):
-        return "credit too small for send-now"
+        return "credit below actionability floor"
     if text.startswith("send_now_credit_width_below_"):
-        return "credit/width too weak for send-now"
+        return "credit/width below actionability floor"
     if text.startswith("send_now_debit_breakeven_move_above_"):
-        return "breakeven move too large for send-now"
+        return "breakeven move exceeds actionability limit"
     if text.startswith("send_now_probability_proxy_below_"):
         return "probability proxy too weak for green"
     if text.startswith("send_now_theta_burn_above_"):
@@ -33986,7 +33986,7 @@ def build_color_trade_board_markdown(trade_tickets: pd.DataFrame, *, as_of: str)
             if entry_limit is not None:
                 return (
                     f"credit ${entry_limit:.2f} is below the ${MIN_SEND_NOW_CREDIT:.2f} "
-                    "send-now minimum"
+                    "actionability floor"
                 )
         priority = {
             "objective_blocker": 0,
