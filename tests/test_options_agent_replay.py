@@ -22,6 +22,58 @@ def _quote(bid: float, ask: float) -> LegQuote:
     )
 
 
+def test_replay_excludes_required_source_gap_and_discloses_it(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = dt.date(2026, 1, 2)
+    missing = dt.date(2026, 1, 5)
+
+    class FakeQuoteStore:
+        def available_dates(self):
+            return [first, missing]
+
+    def candidate_rows(_root, signal_day, _store, *, discovery_limit):
+        assert discovery_limit is None
+        if signal_day == missing:
+            raise FileNotFoundError(
+                f"{replay.REQUIRED_SOURCE_GAP_PREFIX} for {signal_day}: dp_eod"
+            )
+        return [], {
+            "day": signal_day.isoformat(),
+            "error": "",
+            "rows": 0,
+            "required_source_status": "pass",
+            "required_source_paths": {
+                label: [f"/{label}.zip"] for label in replay.REQUIRED_REPLAY_SOURCES
+            },
+            "missing_optional_sources": ["bot_eod"],
+        }
+
+    monkeypatch.setattr(replay, "HistoricalOptionQuoteStore", lambda *_args, **_kwargs: FakeQuoteStore())
+    monkeypatch.setattr(replay, "_candidate_rows_for_day", candidate_rows)
+
+    paths = replay.run_independent_replay(
+        tmp_path,
+        start=first,
+        end=dt.date(2026, 1, 7),
+        split_day=dt.date(2026, 1, 5),
+        output_dir=tmp_path / "out",
+    )
+    manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
+
+    assert manifest["days"] == 1
+    assert manifest["observed_days"] == 2
+    assert manifest["successful_days"] == 1
+    assert manifest["failed_days"] == 0
+    assert manifest["excluded_required_source_gap_days"] == 1
+    assert manifest["source_coverage_status"] == "pass"
+    assert manifest["optional_source_coverage"]["bot_eod"] == {
+        "present_days": 0,
+        "missing_days": 1,
+    }
+
+
 def test_replay_uses_conservative_entry_and_exit_sides() -> None:
     short = _quote(2.00, 2.20)
     long = _quote(0.80, 1.00)
@@ -48,9 +100,22 @@ def test_replay_exit_market_applies_vertical_no_arbitrage_bounds() -> None:
 
 
 def test_replay_management_levels_and_triggers_match_order_policy() -> None:
-    assert replay._management_levels("CREDIT", 1.0, 5.0) == (0.35, 2.0)
-    assert replay._management_trigger("CREDIT", 0.30, 0.35, 2.0, final_session=False) == "take_profit"
-    assert replay._management_trigger("CREDIT", 2.10, 0.35, 2.0, final_session=False) == "stop_loss"
+    # A vertical already caps its own loss, so credit carries no hard stop.
+    # The take-profit level is derived from the live constant so replay parity
+    # is asserted rather than a literal that silently drifts out of date.
+    credit_target = round(1.0 * core.CREDIT_TAKE_PROFIT_REMAINING, 6)
+    assert replay._management_levels("CREDIT", 1.0, 5.0) == (credit_target, None)
+    assert (
+        replay._management_trigger(
+            "CREDIT", credit_target - 0.10, credit_target, None, final_session=False
+        )
+        == "take_profit"
+    )
+    assert replay._management_trigger("CREDIT", 4.90, credit_target, None, final_session=False) == ""
+    assert (
+        replay._management_trigger("CREDIT", 4.90, credit_target, None, final_session=True)
+        == "time_exit"
+    )
     assert replay._management_levels("DEBIT", 1.0, 5.0) == (1.8, 0.5)
     assert replay._management_trigger("DEBIT", 0.40, 1.8, 0.5, final_session=False) == "stop_loss"
     assert replay._management_trigger("DEBIT", 1.00, 1.8, 0.5, final_session=True) == "time_exit"
@@ -260,13 +325,14 @@ def test_replay_selector_uses_holding_horizon_for_earnings() -> None:
         "underlying_quality_tier": "core",
         "regime": "risk_on",
         "expiry": "2026-08-21",
-        "next_earnings_dt": "2026-08-20",
+        "next_earnings_dt": "2026-08-25",
         "dte": 30,
         "entry_quote_width_pct": 0.10,
         "combined_flow_bias": -0.30,
         "entry_credit_pct_width": 0.20,
         "expected_move_ratio": 1.0,
         "source_contract_volume": 100.0,
+        "source_contract_oi": 100.0,
         "decision_score": 80.0,
         "macro_event_count_within_holding_horizon": 0,
     }
@@ -552,7 +618,7 @@ def test_replay_day_fails_when_a_required_source_is_missing(monkeypatch, tmp_pat
         )
 
 
-def test_selector_partition_blocks_incomplete_selected_outcomes() -> None:
+def test_selector_partition_counts_approved_open_outcomes_as_execution_resolved() -> None:
     selected = pd.DataFrame(
         {
             "signal_date": pd.bdate_range("2026-01-02", periods=20),
@@ -574,8 +640,36 @@ def test_selector_partition_blocks_incomplete_selected_outcomes() -> None:
 
     assert row["selected_count"] == 20
     assert row["sample_size"] == 18
+    assert row["outcome_coverage"] == 1.0
+    assert row["execution_resolution_count"] == 20
+    assert row["partition_status"] == "PASS"
+    assert "selected_execution_resolution_coverage_below_95pct" not in row["blocking_reasons"]
+
+
+def test_selector_partition_blocks_missing_reprice_observations() -> None:
+    selected = pd.DataFrame(
+        {
+            "signal_date": pd.bdate_range("2026-01-02", periods=20),
+            "ticker": [f"T{index:02d}" for index in range(20)],
+            "strategy_route": ["bull_call_debit"] * 20,
+            "realized_pnl": [100.0] * 18 + [math.nan, math.nan],
+            "exact_evaluated": [True] * 18 + [False, False],
+            "next_session_reprice_observed": [True] * 18 + [False, False],
+            "next_session_reprice_approved": [True] * 18 + [False, False],
+        }
+    )
+
+    row = core._selector_partition_metrics(
+        selected,
+        policy={"policy_id": "missing-reprice-coverage"},
+        partition="heldout_test",
+        source_path="synthetic.csv",
+    )
+
     assert row["outcome_coverage"] == 0.9
+    assert row["execution_resolution_count"] == 18
     assert row["partition_status"] == "BLOCK"
+    assert "next_session_reprice_observation_coverage_below_95pct" in row["blocking_reasons"]
     assert "selected_execution_resolution_coverage_below_95pct" in row["blocking_reasons"]
 
 
@@ -588,7 +682,7 @@ def test_independent_replay_manifest_is_not_claimed_as_production_proof(tmp_path
 
     assert metrics["selected"] == 0
     assert metrics["outcome_coverage"] == 0.0
-    assert replay.SCHEMA_VERSION == "options_agent.independent_replay.v4"
+    assert replay.SCHEMA_VERSION == core.PINNED_REPLAY_MANIFEST_SCHEMA_VERSION
 
 
 def test_replay_pin_rejects_capped_or_stale_manifest(tmp_path, monkeypatch) -> None:
@@ -650,7 +744,7 @@ def test_replay_calendar_excludes_weekends_and_market_holidays() -> None:
             dt.date(2026, 1, 20),
         ],
         start=dt.date(2026, 1, 16),
-        end=dt.date(2026, 1, 27),
+        end=dt.date(2026, 3, 31),
     )
 
     assert days == [dt.date(2026, 1, 16), dt.date(2026, 1, 20)]

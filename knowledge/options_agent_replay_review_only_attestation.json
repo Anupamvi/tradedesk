@@ -1,15 +1,15 @@
 {
-  "current_cache_fingerprint": "14d15bb01034b059ae6f9bf347ec217258dd87c1919098d21776fc6929fdf4a5",
-  "manifest_sha256": "4cee47651f6d155642e4c693d6e4b2057c51041625cf65b998b473743ba08756",
-  "pipeline_version": "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
+  "current_cache_fingerprint": "dc000bc3990d1f958bf063dfc6dd41e49d65f982987c08cd5845fa63a7e6287d",
+  "manifest_sha256": "9508afdce1a823db859f20bf3f2c15e68b3c6fde77ac6ffb5408c26982ed7934",
+  "pipeline_version": "options-agent-v1.69-live-quote-integrity-20260808-000000",
   "producer": "uwos.options_agent.replay",
-  "reason": "Post-selection only: evidence-pilot clipping and operator report truth corrections; red rows are labeled selector-excluded/rejected, one binding reason is displayed per setup, and rejected economics are non-actionable. Candidate generation, pricing, contract construction, and promoted selector policy are unchanged.",
-  "recomputed_selected_count": 2021,
-  "recomputed_selected_ids_sha256": "8aabd1dac4720e6494d4481e4da5bde717517b1c0f58c08abf8c31bb7e7d5f83",
-  "replay_detail_sha256": "2e5a0a16f2c67be85125bd0b08ccdc2be8ead5bcbfbe664003d55b000f5f0582",
+  "reason": "Options Agent v1.69 release marker and live-only displayed-size/session integrity; historical candidate generation, selector, pricing, and outcomes are unchanged.",
+  "recomputed_selected_count": 1954,
+  "recomputed_selected_ids_sha256": "3c8d7fc290800a3c972fc8d467b6d35aac523e2e73c42809947962f04293ed0d",
+  "replay_detail_sha256": "989a0e9d0749b94b92466c24a9936e67b6562e3754cf18c91d61fb1fcf05f713",
   "schema_version": "options_agent.replay_review_only_attestation.v1",
-  "selector_policy_id": "core_liquid_credit_dte7_45_volume20_em030_queue25_v19",
-  "source_cache_fingerprint": "5226e0c52d81ef0f8631f488572c5597b0b3a6262d8360ef36fc789aa468c920",
-  "stored_selected_count": 2021,
-  "stored_selected_ids_sha256": "8aabd1dac4720e6494d4481e4da5bde717517b1c0f58c08abf8c31bb7e7d5f83"
+  "selector_policy_id": "core_liquid_credit_dte7_45_volume20_oi100_em030_queue25_v20",
+  "source_cache_fingerprint": "ff221872f78de05217f12111a4ce574a06d271032f7b481ca4a15a18ca4d2d3b",
+  "stored_selected_count": 1954,
+  "stored_selected_ids_sha256": "3c8d7fc290800a3c972fc8d467b6d35aac523e2e73c42809947962f04293ed0d"
 }

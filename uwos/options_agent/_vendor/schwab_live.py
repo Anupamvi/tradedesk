@@ -58,6 +58,8 @@ def _iter_contracts(exp_map: dict[str, Any], right: str):
                     "symbol": contract.get("symbol", ""),
                     "bid": safe_float(contract.get("bid")),
                     "ask": safe_float(contract.get("ask")),
+                    "bid_size": safe_float(contract.get("bidSize")),
+                    "ask_size": safe_float(contract.get("askSize")),
                     "mark": safe_float(contract.get("mark")),
                     "delta": safe_float(contract.get("delta")),
                     "theta": safe_float(contract.get("theta")),
@@ -153,6 +155,9 @@ def _same_expiry_contracts(contracts: pd.DataFrame, expiry: dt.date, right: str)
         if col not in out.columns:
             out[col] = math.nan
         out[col] = pd.to_numeric(out[col], errors="coerce")
+    for col in ("bid_size", "ask_size"):
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce")
     out["mid"] = out.apply(option_mid, axis=1)
     out["quote_width"] = out["ask"] - out["bid"]
     out["quote_width_pct"] = out["quote_width"] / out["mid"].where(out["mid"].abs() > 0)
@@ -176,6 +181,7 @@ def _credit_spread_candidates(
     rows: list[dict[str, Any]] = []
     strikes = sorted(float(x) for x in chain["strike"].dropna().unique())
     by_strike = {float(r["strike"]): r for _, r in chain.iterrows()}
+    displayed_sizes_available = {"bid_size", "ask_size"}.issubset(chain.columns)
 
     for _, short in chain.iterrows():
         short_strike = safe_float(short.get("strike"))
@@ -219,6 +225,18 @@ def _credit_spread_candidates(
             short_ask = safe_float(short.get("ask"))
             long_bid = safe_float(long.get("bid"))
             long_ask = safe_float(long.get("ask"))
+            displayed_entry_size = (
+                min(
+                    safe_float(short.get("bid_size"), 0.0),
+                    safe_float(long.get("ask_size"), 0.0),
+                )
+                if displayed_sizes_available
+                else math.nan
+            )
+            if displayed_sizes_available and (
+                not math.isfinite(displayed_entry_size) or displayed_entry_size < 1
+            ):
+                continue
             short_mid = option_mid(short)
             long_mid = option_mid(long)
             natural_credit = short_bid - long_ask
@@ -279,6 +297,9 @@ def _credit_spread_candidates(
                 "short_volume": safe_float(short.get("volume"), 0.0),
                 "long_oi": safe_float(long.get("open_interest"), 0.0),
                 "long_volume": safe_float(long.get("volume"), 0.0),
+                "short_bid_size": safe_float(short.get("bid_size")),
+                "long_ask_size": safe_float(long.get("ask_size")),
+                "displayed_entry_size": displayed_entry_size,
                 "quote_width_pct": quote_penalty,
                 "liq_score": min(short_liq, long_liq),
             })
@@ -535,6 +556,7 @@ def _debit_spread_candidates(
     rows: list[dict[str, Any]] = []
     strikes = sorted(float(x) for x in chain["strike"].dropna().unique())
     by_strike = {float(r["strike"]): r for _, r in chain.iterrows()}
+    displayed_sizes_available = {"bid_size", "ask_size"}.issubset(chain.columns)
 
     for _, long in chain.iterrows():
         long_strike = safe_float(long.get("strike"))
@@ -559,6 +581,18 @@ def _debit_spread_candidates(
         long_ask = safe_float(long.get("ask"))
         short_bid = safe_float(short.get("bid"))
         short_ask = safe_float(short.get("ask"))
+        displayed_entry_size = (
+            min(
+                safe_float(long.get("ask_size"), 0.0),
+                safe_float(short.get("bid_size"), 0.0),
+            )
+            if displayed_sizes_available
+            else math.nan
+        )
+        if displayed_sizes_available and (
+            not math.isfinite(displayed_entry_size) or displayed_entry_size < 1
+        ):
+            continue
         long_mid = option_mid(long)
         short_mid = option_mid(short)
         natural_debit = long_ask - short_bid
@@ -633,6 +667,9 @@ def _debit_spread_candidates(
                 "short_volume": safe_float(short.get("volume"), 0.0),
                 "long_oi": safe_float(long.get("open_interest"), 0.0),
                 "long_volume": safe_float(long.get("volume"), 0.0),
+                "long_ask_size": safe_float(long.get("ask_size")),
+                "short_bid_size": safe_float(short.get("bid_size")),
+                "displayed_entry_size": displayed_entry_size,
                 "quote_width_pct": quote_penalty,
                 "liq_score": min(short_liq, long_liq),
             }

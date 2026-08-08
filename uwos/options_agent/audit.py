@@ -5752,8 +5752,17 @@ def recompute_live_capture(
     priced = _safe_read_csv(output_dir / "priced_candidates.csv")
     live_spread_quality = _safe_read_csv(output_dir / "live_spread_quality_audit.csv")
     market_regime = _read_json_file(output_dir / "market_regime.json") or source_manifest.get("market_regime", {}) or {}
-    final = annotate_actual_forward_expectancy(final, root)
-    profitability_calibration = build_profitability_calibration(root, final, as_of_date=day)
+    final = annotate_actual_forward_expectancy(
+        final,
+        root,
+        pipeline_attributed_only=True,
+    )
+    profitability_calibration = build_profitability_calibration(
+        root,
+        final,
+        as_of_date=day,
+        pipeline_attributed_only=True,
+    )
     final = annotate_profitability_calibration(final, profitability_calibration)
 
     execution_context = dict(source_manifest.get("execution_context", {}) or {})

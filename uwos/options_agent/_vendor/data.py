@@ -50,6 +50,9 @@ def _export_candidates(base_dir: Path, prefix: str) -> list[Path]:
     if not candidates:
         unzipped = base_dir / "_unzipped_mode_a"
         candidates = sorted(unzipped.glob(f"{prefix}*.csv")) + sorted(unzipped.glob(f"{prefix}*.zip"))
+    if not candidates and prefix == "bot-eod-report-":
+        split_dir = base_dir / "bot-eod-split"
+        candidates = sorted(split_dir.glob(f"{prefix}*.csv")) + sorted(split_dir.glob(f"{prefix}*.zip"))
     return candidates
 
 
@@ -235,6 +238,9 @@ def load_chain_oi(base_dir: Path, asof: dt.date, *, point_in_time: bool = False)
     df["right"] = parsed.map(lambda x: x.right if x else "")
     df["strike"] = parsed.map(lambda x: x.strike if x else math.nan)
     df["dte"] = df["expiry_dt"].map(lambda x: dte_from_expiry(x, asof))
+    df["next_earnings_dt"] = pd.to_datetime(
+        df.get("next_earnings_date", pd.Series(index=df.index)), errors="coerce"
+    ).dt.date
     for col in [
         "oi_diff_plain",
         "oi_change",
@@ -281,6 +287,117 @@ BOT_FLOW_COLUMNS = [
     "bot_multileg_ratio",
     "bot_volume_oi_ratio",
 ]
+
+
+DARK_POOL_FLOW_COLUMNS = [
+    "ticker",
+    "dp_bull_premium",
+    "dp_bear_premium",
+    "dp_neutral_premium",
+    "dp_directional_premium",
+    "dp_total_premium",
+    "dp_flow_bias",
+    "dp_directional_ratio",
+    "dp_prints",
+]
+
+
+def aggregate_dark_pool_flow(
+    base_dir: Path,
+    tickers: Iterable[str],
+    *,
+    chunksize: int = 750_000,
+    max_rows: int | None = None,
+    allow_missing: bool = False,
+    point_in_time: bool = False,
+) -> pd.DataFrame:
+    """Aggregate equity dark-pool prints by ticker without inventing option flow.
+
+    A print above the contemporaneous NBBO midpoint is buyer-initiated, a print
+    below it is seller-initiated, and midpoint/invalid-NBBO prints are neutral.
+    The result remains a separate equity confirmation signal; callers must not
+    substitute it for side-aware option flow.
+    """
+
+    ceiling = infer_asof_date(base_dir) if point_in_time else None
+    try:
+        paths = find_export_bundle(base_dir, "dp-eod-report-", asof_ceiling=ceiling)
+    except FileNotFoundError:
+        if not allow_missing:
+            raise
+        out = pd.DataFrame(columns=DARK_POOL_FLOW_COLUMNS)
+        out.attrs["source_status"] = "missing_dp_eod"
+        out.attrs["source_path"] = ""
+        return out
+
+    wanted = {str(t).upper().strip() for t in tickers if str(t).strip()}
+    usecols = [
+        "ticker",
+        "nbbo_ask",
+        "nbbo_bid",
+        "size",
+        "premium",
+        "price",
+        "canceled",
+    ]
+    rows_seen = 0
+    parts: list[pd.DataFrame] = []
+    for chunk in iter_csv_export_bundle(paths, usecols=usecols, chunksize=chunksize):
+        rows_seen += len(chunk)
+        chunk["ticker"] = chunk["ticker"].astype(str).str.upper().str.strip()
+        if wanted:
+            chunk = chunk[chunk["ticker"].isin(wanted)]
+        if "canceled" in chunk.columns:
+            canceled = chunk["canceled"].astype(str).str.strip().str.lower()
+            chunk = chunk[~canceled.isin({"1", "true", "t", "yes", "y"})]
+        if chunk.empty:
+            if max_rows and rows_seen >= max_rows:
+                break
+            continue
+
+        for column in ["nbbo_ask", "nbbo_bid", "size", "premium", "price"]:
+            chunk[column] = pd.to_numeric(chunk.get(column), errors="coerce")
+        fallback_premium = chunk["price"] * chunk["size"]
+        chunk["dp_premium"] = chunk["premium"].where(chunk["premium"].gt(0), fallback_premium).fillna(0.0)
+        valid_nbbo = (
+            chunk["nbbo_bid"].gt(0)
+            & chunk["nbbo_ask"].ge(chunk["nbbo_bid"])
+            & chunk["price"].gt(0)
+        )
+        midpoint = (chunk["nbbo_bid"] + chunk["nbbo_ask"]) / 2.0
+        bull = valid_nbbo & chunk["price"].gt(midpoint)
+        bear = valid_nbbo & chunk["price"].lt(midpoint)
+        chunk["dp_bull_premium"] = chunk["dp_premium"].where(bull, 0.0)
+        chunk["dp_bear_premium"] = chunk["dp_premium"].where(bear, 0.0)
+        chunk["dp_neutral_premium"] = chunk["dp_premium"].where(~(bull | bear), 0.0)
+        chunk["dp_prints"] = 1
+        parts.append(
+            chunk.groupby("ticker", as_index=False).agg(
+                dp_bull_premium=("dp_bull_premium", "sum"),
+                dp_bear_premium=("dp_bear_premium", "sum"),
+                dp_neutral_premium=("dp_neutral_premium", "sum"),
+                dp_total_premium=("dp_premium", "sum"),
+                dp_prints=("dp_prints", "sum"),
+            )
+        )
+        if max_rows and rows_seen >= max_rows:
+            break
+
+    if not parts:
+        out = pd.DataFrame(columns=DARK_POOL_FLOW_COLUMNS)
+        out.attrs["source_status"] = "dp_eod_no_matching_rows"
+        out.attrs["source_path"] = ";".join(str(path) for path in paths)
+        return out
+
+    out = pd.concat(parts, ignore_index=True).groupby("ticker", as_index=False).sum()
+    out["dp_directional_premium"] = out["dp_bull_premium"] + out["dp_bear_premium"]
+    directional = out["dp_directional_premium"].where(out["dp_directional_premium"].gt(0))
+    total = out["dp_total_premium"].where(out["dp_total_premium"].gt(0))
+    out["dp_flow_bias"] = (out["dp_bull_premium"] - out["dp_bear_premium"]) / directional
+    out["dp_directional_ratio"] = out["dp_directional_premium"] / total
+    out.attrs["source_status"] = "dp_eod_split_bundle_loaded" if len(paths) > 1 else "dp_eod_loaded"
+    out.attrs["source_path"] = ";".join(str(path) for path in paths)
+    return out[DARK_POOL_FLOW_COLUMNS]
 
 
 def _empty_bot_flow(*, source_status: str, source_path: str = "", dp_equity_present: bool = False) -> pd.DataFrame:
@@ -405,101 +522,4 @@ def aggregate_bot_flow(
     out.attrs["source_status"] = "bot_eod_split_bundle_loaded" if len(paths) > 1 else "bot_eod_loaded"
     out.attrs["source_path"] = ";".join(str(path) for path in paths)
     out.attrs["dp_equity_present"] = False
-    return out
-
-
-DARK_POOL_COLUMNS = [
-    "ticker",
-    "dp_total_premium",
-    "dp_buy_premium",
-    "dp_sell_premium",
-    "dp_trades",
-    "dp_flow_bias",
-    "dp_status",
-]
-
-# Soft-corroboration thresholds. Kept conservative so dark-pool evidence can help
-# a candidate clear the flow-confirmation gate but never fabricates a signal.
-DARK_POOL_MIN_TRADES = 5
-DARK_POOL_BIAS_THRESHOLD = 0.15
-
-
-def _empty_dark_pool(*, source_status: str, source_path: str = "") -> pd.DataFrame:
-    out = pd.DataFrame(columns=DARK_POOL_COLUMNS)
-    out.attrs["source_status"] = source_status
-    out.attrs["source_path"] = source_path
-    return out
-
-
-def load_dark_pool(
-    base_dir: Path,
-    tickers: Iterable[str],
-    *,
-    chunksize: int = 750_000,
-    point_in_time: bool = False,
-) -> pd.DataFrame:
-    """Aggregate equity dark-pool prints (dp-eod-report) into per-ticker
-    accumulation/distribution evidence.
-
-    Buyer- vs seller-initiated is inferred from each print's price relative to the
-    NBBO midpoint (price >= mid -> accumulation, price < mid -> distribution).
-    Prints with an unusable NBBO or that are canceled are ignored for the lean but
-    still counted toward total premium. This is a corroborating signal only.
-    """
-    ceiling = infer_asof_date(base_dir) if point_in_time else None
-    try:
-        path = find_export(base_dir, "dp-eod-report-", asof_ceiling=ceiling)
-    except FileNotFoundError:
-        return _empty_dark_pool(source_status="missing_dp_eod")
-    wanted = {str(t).upper().strip() for t in tickers if str(t).strip()}
-    usecols = ["ticker", "nbbo_bid", "nbbo_ask", "premium", "price", "canceled"]
-    parts: list[pd.DataFrame] = []
-    for chunk in iter_csv_export(path, usecols=usecols, chunksize=chunksize):
-        chunk["ticker"] = chunk["ticker"].astype(str).str.upper().str.strip()
-        if wanted:
-            chunk = chunk[chunk["ticker"].isin(wanted)]
-        if "canceled" in chunk.columns:
-            chunk = chunk[chunk["canceled"].astype(str).str.lower().ne("t")]
-        if chunk.empty:
-            continue
-        premium = pd.to_numeric(chunk["premium"], errors="coerce").fillna(0.0)
-        price = pd.to_numeric(chunk["price"], errors="coerce")
-        bid = pd.to_numeric(chunk["nbbo_bid"], errors="coerce")
-        ask = pd.to_numeric(chunk["nbbo_ask"], errors="coerce")
-        mid = (bid + ask) / 2.0
-        valid_mid = mid.where((bid > 0) & (ask > 0))
-        buy_mask = price.notna() & valid_mid.notna() & (price >= valid_mid)
-        sell_mask = price.notna() & valid_mid.notna() & (price < valid_mid)
-        chunk = chunk.assign(
-            dp_total_premium=premium,
-            dp_buy_premium=premium.where(buy_mask, 0.0),
-            dp_sell_premium=premium.where(sell_mask, 0.0),
-            dp_trades=1,
-        )
-        agg = chunk.groupby("ticker", as_index=False).agg(
-            dp_total_premium=("dp_total_premium", "sum"),
-            dp_buy_premium=("dp_buy_premium", "sum"),
-            dp_sell_premium=("dp_sell_premium", "sum"),
-            dp_trades=("dp_trades", "sum"),
-        )
-        parts.append(agg)
-    if not parts:
-        return _empty_dark_pool(source_status="dp_eod_no_matching_rows", source_path=str(path))
-    out = pd.concat(parts, ignore_index=True).groupby("ticker", as_index=False).sum()
-    classified = out["dp_buy_premium"] + out["dp_sell_premium"]
-    denom = classified.where(classified.abs() > 0)
-    out["dp_flow_bias"] = (out["dp_buy_premium"] - out["dp_sell_premium"]) / denom
-
-    def _status(row: pd.Series) -> str:
-        if row["dp_trades"] < DARK_POOL_MIN_TRADES or not math.isfinite(row["dp_flow_bias"]):
-            return "neutral"
-        if row["dp_flow_bias"] >= DARK_POOL_BIAS_THRESHOLD:
-            return "accumulation"
-        if row["dp_flow_bias"] <= -DARK_POOL_BIAS_THRESHOLD:
-            return "distribution"
-        return "neutral"
-
-    out["dp_status"] = out.apply(_status, axis=1)
-    out.attrs["source_status"] = "dp_eod_loaded"
-    out.attrs["source_path"] = str(path)
     return out

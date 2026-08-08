@@ -18,14 +18,18 @@ from uwos.exact_spread_backtester import HistoricalOptionQuoteStore, LegQuote
 from uwos.options_agent import core
 
 
-SCHEMA_VERSION = "options_agent.independent_replay.v4"
+# Bound to core so the accepted-pin schema and the emitted schema can never
+# drift apart again. A v4/v5 desync silently disabled the entire credit lane.
+SCHEMA_VERSION = core.PINNED_REPLAY_MANIFEST_SCHEMA_VERSION
 ROUND_TRIP_COMMISSION = 2.60
-# Keep the outcome horizon coupled to the live selector and management plan.
+# Keep the outcome horizon and every management level coupled to the live
+# selector, so replay evidence describes the population live may actually trade.
 FIXED_HORIZON_SESSIONS = core.PLANNED_TRADE_HOLDING_SESSIONS
-CREDIT_TAKE_PROFIT_REMAINING = 0.35
+CREDIT_TAKE_PROFIT_REMAINING = core.CREDIT_TAKE_PROFIT_REMAINING
+CREDIT_HARD_STOP_ENABLED = core.CREDIT_HARD_STOP_ENABLED
 CREDIT_STOP_MULTIPLIER = 2.0
-DEBIT_TAKE_PROFIT_MULTIPLIER = 1.80
-DEBIT_STOP_REMAINING = 0.50
+DEBIT_TAKE_PROFIT_MULTIPLIER = core.DEBIT_TAKE_PROFIT_MULTIPLIER
+DEBIT_STOP_REMAINING = core.DEBIT_STOP_REMAINING
 SUPPORTED_ROUTES = {
     "bull_call_debit",
     "bear_put_debit",
@@ -36,8 +40,10 @@ REQUIRED_REPLAY_SOURCES = (
     "stock_screener",
     "hot_chains",
     "chain_oi",
+    "dp_eod",
 )
 OPTIONAL_REPLAY_SOURCES = ("bot_eod",)
+REQUIRED_SOURCE_GAP_PREFIX = "required point-in-time replay sources missing"
 # The compatible daily files retain point-in-time candidate rows before
 # selection or outcomes. v1.56 changes selector/runtime behavior, not candidate
 # discovery; it re-runs selection and outcomes from those dated rows. The
@@ -149,6 +155,10 @@ DETAIL_COLUMNS = (
 
 def _number(value: Any) -> Optional[float]:
     return core._as_float(value)
+
+
+def _is_required_source_gap(exc: Exception) -> bool:
+    return isinstance(exc, FileNotFoundError) and str(exc).startswith(REQUIRED_SOURCE_GAP_PREFIX)
 
 
 def _cache_fingerprint(candidate_limit: Optional[int]) -> str:
@@ -270,7 +280,17 @@ def _eligible_replay_days(
     start: dt.date,
     end: dt.date,
 ) -> list[dt.date]:
-    """Return regular-session signals with a fully observable exit horizon."""
+    """Return regular-session signals with at least one observable exit session.
+
+    Credit spreads are managed to a take-profit level and typically resolve far
+    inside ``FIXED_HORIZON_SESSIONS``.  Requiring the full worst-case horizon to
+    fit inside the data window discarded every signal in the most recent ~7
+    weeks even when its outcome was fully determined, which left live runs
+    trading on evidence that stopped almost two months earlier.  Admit any day
+    that can be entered next session and observed at least once; outcomes that
+    are still open at the data edge are censored during resolution rather than
+    being counted as time exits.
+    """
 
     return sorted(
         day
@@ -278,7 +298,7 @@ def _eligible_replay_days(
         if (
             start <= day <= end
             and core.is_regular_market_day(day)
-            and core._add_regular_market_days(day, FIXED_HORIZON_SESSIONS) <= end
+            and core._add_regular_market_days(day, 2) <= end
         )
     )
 
@@ -449,12 +469,16 @@ def _bounded_exit_market(bid: float, ask: float, width: float) -> Optional[tuple
     return min(max(bid, 0.0), width), min(max(ask, 0.0), width)
 
 
-def _management_levels(entry_type: str, entry: float, width: float) -> tuple[float, float]:
+def _management_levels(
+    entry_type: str, entry: float, width: float
+) -> tuple[float, Optional[float]]:
     if entry_type == "CREDIT":
-        return (
-            round(entry * CREDIT_TAKE_PROFIT_REMAINING, 6),
-            round(min(width, entry * CREDIT_STOP_MULTIPLIER), 6),
+        stop = (
+            round(min(width, entry * CREDIT_STOP_MULTIPLIER), 6)
+            if CREDIT_HARD_STOP_ENABLED
+            else None
         )
+        return round(entry * CREDIT_TAKE_PROFIT_REMAINING, 6), stop
     return (
         round(min(width * 0.80, entry * DEBIT_TAKE_PROFIT_MULTIPLIER), 6),
         round(max(entry * DEBIT_STOP_REMAINING, 0.01), 6),
@@ -465,19 +489,19 @@ def _management_trigger(
     entry_type: str,
     value: float,
     target_exit: float,
-    stop_exit: float,
+    stop_exit: Optional[float],
     *,
     final_session: bool,
 ) -> str:
     if entry_type == "CREDIT":
         if value <= target_exit:
             return "take_profit"
-        if value >= stop_exit:
+        if stop_exit is not None and value >= stop_exit:
             return "stop_loss"
     else:
         if value >= target_exit:
             return "take_profit"
-        if value <= stop_exit:
+        if stop_exit is not None and value <= stop_exit:
             return "stop_loss"
     return "time_exit" if final_session else ""
 
@@ -719,7 +743,7 @@ def _replay_row(
     result["breakeven"] = breakeven
     target_exit, stop_exit = _management_levels(entry_type, entry, width)
     result["target_exit"] = target_exit
-    result["stop_exit"] = stop_exit
+    result["stop_exit"] = stop_exit if stop_exit is not None else ""
     result["expected_move_ratio"] = _expected_move_ratio(row, entry_type, entry)
     if entry_day >= planned_exit:
         result["fill_reason"] = "no_post_entry_exit_session"
@@ -774,7 +798,9 @@ def _replay_row(
         )
         result["executed_entry_price"] = round(executed_entry, 6)
         result["executed_target_exit"] = round(executed_target_exit, 6)
-        result["executed_stop_exit"] = round(executed_stop_exit, 6)
+        result["executed_stop_exit"] = (
+            round(executed_stop_exit, 6) if executed_stop_exit is not None else ""
+        )
         if entry_type == "CREDIT":
             result["executed_entry_credit"] = round(executed_entry, 6)
         else:
@@ -1084,7 +1110,17 @@ def run_independent_replay(
             )
         except Exception as exc:
             rows = []
-            audit = {"day": signal_day.isoformat(), "error": str(exc), "rows": 0}
+            if _is_required_source_gap(exc):
+                audit = {
+                    "day": signal_day.isoformat(),
+                    "error": "",
+                    "rows": 0,
+                    "required_source_status": "excluded",
+                    "source_gap_excluded": True,
+                    "source_gap_reason": str(exc),
+                }
+            else:
+                audit = {"day": signal_day.isoformat(), "error": str(exc), "rows": 0}
         audit["cache_fingerprint"] = cache_fingerprint
         pd.DataFrame(rows, columns=DETAIL_COLUMNS).to_csv(cache_path, index=False)
         audit_path.write_text(json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -1127,19 +1163,21 @@ def run_independent_replay(
             if horizon_day is None:
                 detail.at[idx, "exact_reason"] = "planned_exit_date_missing"
                 continue
-            if horizon_day > end:
-                detail.at[idx, "exact_reason"] = "fixed_horizon_not_yet_observable"
-                continue
-            exit_dates = _exit_observation_dates(entry_day, horizon_day)
+            horizon_fully_observable = horizon_day <= end
+            exit_dates = _exit_observation_dates(entry_day, min(horizon_day, end))
             if not exit_dates:
-                detail.at[idx, "exact_reason"] = "no_post_entry_exit_session"
+                detail.at[idx, "exact_reason"] = (
+                    "no_post_entry_exit_session"
+                    if horizon_fully_observable
+                    else "outcome_open_beyond_available_data"
+                )
                 continue
             entry_type = str(row.get("entry_side") or "").upper()
             width = _number(row.get("entry_width")) or 0.0
             entry = _number(row.get("executed_entry_price")) or 0.0
             target_exit = _number(row.get("executed_target_exit"))
             stop_exit = _number(row.get("executed_stop_exit"))
-            if target_exit is None or stop_exit is None:
+            if target_exit is None:
                 target_exit, stop_exit = _management_levels(entry_type, entry, width)
             last_failure = "missing_exact_exit_leg_quote"
             for session_number, due in enumerate(exit_dates, start=1):
@@ -1161,7 +1199,9 @@ def run_independent_replay(
                     value,
                     target_exit,
                     stop_exit,
-                    final_session=due == exit_dates[-1],
+                    final_session=(
+                        horizon_fully_observable and due == exit_dates[-1]
+                    ),
                 )
                 if not trigger:
                     continue
@@ -1178,7 +1218,11 @@ def run_independent_replay(
                 detail.at[idx, "exact_reason"] = f"conservative_{trigger}_liquidation{bounded_suffix}"
                 break
             if not core._truthy(detail.at[idx, "exact_evaluated"]):
-                detail.at[idx, "exact_reason"] = last_failure
+                detail.at[idx, "exact_reason"] = (
+                    last_failure
+                    if horizon_fully_observable
+                    else "outcome_open_beyond_available_data"
+                )
 
         policy = next(
             item
@@ -1205,18 +1249,29 @@ def run_independent_replay(
     day_audit_path = output_dir / "options_agent_replay_day_audit.csv"
     pd.DataFrame(day_audit).to_csv(day_audit_path, index=False)
     selected_detail = detail[detail["selected_for_policy"].map(core._truthy)].copy() if not detail.empty else detail
-    failed_day_rows = [row for row in day_audit if str(row.get("error") or "").strip()]
-    successful_day_count = len(day_audit) - len(failed_day_rows)
+    source_gap_rows = [row for row in day_audit if core._truthy(row.get("source_gap_excluded"))]
+    failed_day_rows = [
+        row
+        for row in day_audit
+        if not core._truthy(row.get("source_gap_excluded"))
+        and str(row.get("error") or "").strip()
+    ]
+    included_day_rows = [
+        row
+        for row in day_audit
+        if not core._truthy(row.get("source_gap_excluded"))
+        and not str(row.get("error") or "").strip()
+    ]
+    successful_day_count = len(included_day_rows)
     optional_source_coverage = {
         label: {
             "present_days": sum(
                 label not in set(row.get("missing_optional_sources") or [])
-                and not str(row.get("error") or "").strip()
-                for row in day_audit
+                for row in included_day_rows
             ),
             "missing_days": sum(
                 label in set(row.get("missing_optional_sources") or [])
-                for row in day_audit
+                for row in included_day_rows
             ),
         }
         for label in OPTIONAL_REPLAY_SOURCES
@@ -1250,11 +1305,19 @@ def run_independent_replay(
             "both must pass the available quote and liquidity checks"
         ),
         "exit_policy": (
-            "conservative exact-leg daily target/stop checks after the next-session entry, with a "
-            "mandatory exit on the fifth signal-to-exit regular session"
+            "conservative exact-leg daily target checks after the next-session entry; credit "
+            f"targets buy-back at {CREDIT_TAKE_PROFIT_REMAINING:g}x the entry credit and carries "
+            + (
+                f"a hard stop at {CREDIT_STOP_MULTIPLIER:g}x the entry credit"
+                if CREDIT_HARD_STOP_ENABLED
+                else "no hard stop (the spread width is the defined risk)"
+            )
+            + f"; mandatory exit on signal-to-exit regular session {FIXED_HORIZON_SESSIONS}, "
+            "which exceeds the maximum entry DTE so every trade is clamped to its own expiry"
         ),
         "credit_take_profit_remaining": CREDIT_TAKE_PROFIT_REMAINING,
-        "credit_stop_multiplier": CREDIT_STOP_MULTIPLIER,
+        "credit_hard_stop_enabled": CREDIT_HARD_STOP_ENABLED,
+        "credit_stop_multiplier": CREDIT_STOP_MULTIPLIER if CREDIT_HARD_STOP_ENABLED else None,
         "debit_take_profit_multiplier": DEBIT_TAKE_PROFIT_MULTIPLIER,
         "debit_stop_remaining": DEBIT_STOP_REMAINING,
         "round_trip_commission": ROUND_TRIP_COMMISSION,
@@ -1272,10 +1335,16 @@ def run_independent_replay(
             ENTRY_CACHE_COMPATIBILITY_POLICY if compatible_entry_cache_days else "none"
         ),
         "max_days": 0,
-        "days": len(days),
+        "days": successful_day_count,
+        "observed_days": len(day_audit),
         "successful_days": successful_day_count,
         "failed_days": len(failed_day_rows),
         "source_coverage_status": "pass" if not failed_day_rows else "block",
+        "excluded_required_source_gap_days": len(source_gap_rows),
+        "excluded_required_source_gap_details": [
+            {"day": row.get("day", ""), "reason": row.get("source_gap_reason", "")}
+            for row in source_gap_rows
+        ],
         "required_source_labels": list(REQUIRED_REPLAY_SOURCES),
         "optional_source_labels": list(OPTIONAL_REPLAY_SOURCES),
         "optional_source_coverage": optional_source_coverage,
@@ -1286,7 +1355,10 @@ def run_independent_replay(
         "start": start.isoformat(),
         "end": end.isoformat(),
         "observation_end": end.isoformat(),
-        "signal_end": days[-1].isoformat() if days else "",
+        "signal_end": max(
+            (str(row.get("day") or "") for row in included_day_rows),
+            default="",
+        ),
         "required_outcome_horizon_sessions": FIXED_HORIZON_SESSIONS,
         "split_day": split_day.isoformat(),
         "detail_rows": int(len(detail)),
