@@ -1337,7 +1337,7 @@ def test_long_dte_macro_context_does_not_hide_actual_credit_blocker() -> None:
         "target_entry": 0.38,
     }
 
-    assert core._ticket_recheck_summary(row) == "credit too small for send-now"
+    assert core._ticket_recheck_summary(row) == "credit below actionability floor"
 
 
 def test_promotion_readiness_audit_proves_blocked_promotion_without_counting_verdict_as_gate() -> None:
@@ -17276,7 +17276,7 @@ def test_color_trade_board_shows_binding_selector_reason_without_downstream_nois
     row = next(line for line in board.splitlines() if "**GOOG**" in line)
 
     assert "debit route is outside the promoted credit-only policy" in row
-    assert "execution confidence below send-now threshold" not in row
+    assert "execution confidence below actionability threshold" not in row
     assert "verify the earnings date in company IR" not in row
     assert "not actionable" in row
 
@@ -17304,7 +17304,7 @@ def test_color_trade_board_names_exact_credit_floor() -> None:
 
     board = core.build_color_trade_board_markdown(tickets, as_of="2026-07-27")
 
-    assert "credit $0.47 is below the $0.50 send-now minimum" in board
+    assert "credit $0.47 is below the $0.50 actionability floor" in board
 
 
 def test_color_trade_board_distinguishes_risk_budget_sizing_from_evidence_cap() -> None:
@@ -20183,7 +20183,7 @@ def test_short_dated_far_otm_debit_spread_is_not_send_now() -> None:
     assert decision["execution_status"].tolist() == ["waiting_for_price"]
     assert "send_now_debit_breakeven_move_above_4pct" in decision["execution_blockers"].iloc[0]
     assert tickets["status_label"].tolist() == ["YELLOW target"]
-    assert "breakeven move too large for send-now" in tickets.apply(core._ticket_recheck_summary, axis=1).iloc[0]
+    assert "breakeven move exceeds actionability limit" in tickets.apply(core._ticket_recheck_summary, axis=1).iloc[0]
 
 
 def test_weak_flow_debit_spread_without_outcome_support_is_not_send_now() -> None:
