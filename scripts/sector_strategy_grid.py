@@ -1,15 +1,14 @@
-"""Full grid: every sector x every strategy x controls, in one pass.
+"""Full grid: every sector x every historically constructible strategy x controls.
 
 Testing one lane at a time was the wrong approach. This ranks names WITHIN each
 sector, so a sector's own leaders and laggards are compared against each other
 rather than against a tech-dominated cross-section, then evaluates every
 structure on the same names and the same dates.
 
-Structures
-  long_call     top momentum decile, 1.05x strike
-  long_put      bottom momentum decile, 0.95x strike
-  straddle      highest flow escalation, ATM, direction-free
-  call_spread   top decile, long 1.02x / short 1.12x, defined risk
+The canonical structure list lives in strategy_universe.py. It covers all 32
+registered families. Stock-backed strategies include underlying P/L, calendars
+and diagonals use distinct expiries, and undefined-risk structures use exact
+observed P/L with a conservative Reg-T risk-capital proxy.
 
 Controls
   signal        the ranked selection
@@ -29,13 +28,18 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from conviction_stack import ROOT, find, open_zip, parse_occ  # noqa: E402
+from strategy_universe import (  # noqa: E402
+    HISTORICAL_STRATEGY_SPECS,
+    build_sector_state,
+    build_structure,
+    liquidate_structure,
+    selection_buckets,
+)
 
 PANEL = ROOT / "out/uw_all_feeds.csv"
-OUT = ROOT / "out/sector_strategy_grid.csv"
+OUT = ROOT / "out/sector_strategy_grid_v3.csv"
+UNIVERSE_OUT = ROOT / "out/sector_strategy_universe_v3.csv"
 SPLIT = "2026-04-14"
-HOLD = 40
-DTE_BAND = (60, 110)
-TARGET_DTE = 80
 MAX_SPREAD_PCT = 0.12
 CONTRACT_FEE = 1.30
 MIN_PER_SECTOR = 12
@@ -62,25 +66,31 @@ def chain_quotes(session: str, following: str) -> pd.DataFrame:
     return frame.drop_duplicates("option_symbol")
 
 
-def nearest(quotes: pd.DataFrame, tickers: set[str], option_type: str, moneyness: float) -> pd.DataFrame:
-    legs = quotes[
-        quotes.ticker.isin(tickers)
-        & quotes.option_type.eq(option_type)
-        & quotes.dte.between(*DTE_BAND)
-        & (quotes.curr_oi >= 50)
-        & (quotes.spread_pct <= MAX_SPREAD_PCT)
-    ].copy()
-    if legs.empty:
-        return legs
-    legs["strike_gap"] = (legs.strike - legs.stock_price * moneyness).abs()
-    legs["dte_gap"] = (legs.dte - TARGET_DTE).abs()
-    return legs.sort_values(["dte_gap", "strike_gap"]).groupby("ticker", as_index=False).first()
+def build_matched_grid(universe: pd.DataFrame, *, seed: int = 20260728) -> pd.DataFrame:
+    if universe is None or universe.empty:
+        return pd.DataFrame()
+    rng = np.random.default_rng(seed)
+    signals = universe[universe["signal_selected"].astype(bool)].copy()
+    signals["mode"] = "signal"
+    controls = []
+    group_columns = ["signal_date", "sector", "strategy"]
+    for keys, pool in universe.groupby(group_columns, sort=True, observed=True):
+        signal_count = int(pool["signal_selected"].astype(bool).sum())
+        if signal_count <= 0:
+            continue
+        sample_size = min(signal_count, len(pool))
+        chosen = rng.choice(pool.index.to_numpy(), size=sample_size, replace=False)
+        control = pool.loc[chosen].copy()
+        control["mode"] = "random"
+        controls.append(control)
+    pieces = [signals] + controls
+    return pd.concat(pieces, ignore_index=True) if pieces else pd.DataFrame()
 
 
 def main() -> None:
-    columns = ["date", "ticker", "sector", "issue_type", "marketcap", "close", "pos_52w", "hc_premium"]
+    columns = ["date", "ticker", "sector", "issue_type", "marketcap", "close", "pos_52w", "ret_1d", "hc_premium"]
     panel = pd.read_csv(PANEL, usecols=columns, low_memory=False)
-    panel["date"] = pd.to_datetime(panel["date"])
+    panel["date"] = pd.to_datetime(panel["date"]).dt.strftime("%Y-%m-%d")
     panel = panel[
         (panel.issue_type == "Common Stock")
         & (panel.marketcap.fillna(0) >= 2e9)
@@ -89,12 +99,11 @@ def main() -> None:
     grouped = panel.groupby("ticker")
     panel["flow_avg_20"] = grouped.hc_premium.transform(lambda s: s.rolling(20, min_periods=10).mean())
     panel["flow_escalation"] = panel.hc_premium / panel.flow_avg_20.replace(0, np.nan)
+    sector_state = build_sector_state(panel)
 
     days = sorted(p.name for p in ROOT.iterdir() if p.is_dir() and re.fullmatch(r"2026-\d{2}-\d{2}", p.name))
     position = {d: i for i, d in enumerate(days)}
     cache: dict[str, pd.DataFrame] = {}
-    rng = np.random.default_rng(20260728)
-
     def quotes(session: str) -> pd.DataFrame:
         if session not in cache:
             slot = position[session]
@@ -106,114 +115,105 @@ def main() -> None:
         return cache[session]
 
     records = []
+    min_hold = min(spec.hold_days for spec in HISTORICAL_STRATEGY_SPECS)
     for signal_date in days:
         slot = position[signal_date]
-        if slot + 1 + HOLD >= len(days):
+        if slot + 1 + min_hold >= len(days):
             continue
         day = panel[panel.date == signal_date].dropna(subset=["pos_52w", "flow_escalation"])
         if day.empty:
             continue
-        entry_date, exit_date = days[slot + 1], days[slot + 1 + HOLD]
-        entry_quotes, exit_quotes = quotes(entry_date), quotes(exit_date)
-        if entry_quotes.empty or exit_quotes.empty:
+        entry_date = days[slot + 1]
+        entry_quotes = quotes(entry_date)
+        if entry_quotes.empty:
             continue
-        exit_bid = exit_quotes.set_index("option_symbol").last_bid
         print(f"[grid] {signal_date}", flush=True)
 
+        selection_rows: list[dict[str, object]] = []
         for sector, block in day.groupby("sector"):
             if len(block) < MIN_PER_SECTOR:
                 continue
-            momentum = block.pos_52w.rank(pct=True)
-            escalation = block.flow_escalation.rank(pct=True)
-            selections = {
-                "long_call": set(block[momentum >= DECILE].ticker),
-                "long_put": set(block[momentum <= 1.0 - DECILE].ticker),
-                "straddle": set(block[escalation >= DECILE].ticker),
-                "call_spread": set(block[momentum >= DECILE].ticker),
-            }
-            pool = block.ticker.to_numpy()
-
-            for strategy, chosen in selections.items():
+            buckets = selection_buckets(block, percentile=DECILE)
+            for spec in HISTORICAL_STRATEGY_SPECS:
+                chosen = buckets[spec.selection_bucket]
                 if not chosen:
                     continue
-                for mode in ("signal", "random"):
-                    tickers = (
-                        chosen
-                        if mode == "signal"
-                        else set(rng.choice(pool, size=min(len(chosen), len(pool)), replace=False))
-                    )
-                    if strategy == "long_call":
-                        legs = nearest(entry_quotes, tickers, "call", 1.05)
-                        if legs.empty:
-                            continue
-                        cost = legs.last_ask
-                        proceeds = exit_bid.reindex(legs.option_symbol).to_numpy()
-                        fees = CONTRACT_FEE
-                    elif strategy == "long_put":
-                        legs = nearest(entry_quotes, tickers, "put", 0.95)
-                        if legs.empty:
-                            continue
-                        cost = legs.last_ask
-                        proceeds = exit_bid.reindex(legs.option_symbol).to_numpy()
-                        fees = CONTRACT_FEE
-                    elif strategy == "straddle":
-                        calls = nearest(entry_quotes, tickers, "call", 1.0)
-                        puts = nearest(entry_quotes, tickers, "put", 1.0)
-                        if calls.empty or puts.empty:
-                            continue
-                        legs = calls.merge(puts, on="ticker", suffixes=("_c", "_p"))
-                        if legs.empty:
-                            continue
-                        cost = legs.last_ask_c + legs.last_ask_p
-                        proceeds = np.maximum(exit_bid.reindex(legs.option_symbol_c).to_numpy(), 0) + np.maximum(
-                            exit_bid.reindex(legs.option_symbol_p).to_numpy(), 0
-                        )
-                        fees = 2 * CONTRACT_FEE
-                    else:  # call_spread
-                        longs = nearest(entry_quotes, tickers, "call", 1.02)
-                        shorts = nearest(entry_quotes, tickers, "call", 1.12)
-                        if longs.empty or shorts.empty:
-                            continue
-                        legs = longs.merge(shorts, on="ticker", suffixes=("_l", "_s"))
-                        legs = legs[legs.strike_s > legs.strike_l]
-                        if legs.empty:
-                            continue
-                        cost = legs.last_ask_l - legs.last_bid_s
-                        legs = legs[cost > 0]
-                        cost = cost[cost > 0]
-                        if legs.empty:
-                            continue
-                        long_exit = exit_bid.reindex(legs.option_symbol_l).to_numpy()
-                        short_exit = exit_quotes.set_index("option_symbol").last_ask.reindex(
-                            legs.option_symbol_s
-                        ).to_numpy()
-                        proceeds = long_exit - short_exit
-                        fees = 2 * CONTRACT_FEE
+                selection_rows.extend(
+                    {
+                        "signal_date": signal_date,
+                        "sector": sector,
+                        "strategy": spec.key,
+                        "ticker": ticker,
+                        "signal_selected": ticker in chosen,
+                    }
+                    for ticker in block["ticker"].astype(str)
+                )
 
-                    cost = np.asarray(cost, dtype=float)
-                    proceeds = np.asarray(proceeds, dtype=float)
-                    valid = np.isfinite(proceeds) & np.isfinite(cost) & (cost > 0)
-                    if valid.sum() == 0:
-                        continue
-                    pnl = (proceeds[valid] - cost[valid]) * 100.0 - fees
-                    records.append(
-                        pd.DataFrame(
-                            {
-                                "signal_date": signal_date,
-                                "sector": sector,
-                                "strategy": strategy,
-                                "mode": mode,
-                                "ticker": legs.ticker.to_numpy()[valid],
-                                "cost": cost[valid] * 100.0,
-                                "pnl": pnl,
-                                "return_on_cost": pnl / (cost[valid] * 100.0),
-                            }
-                        )
-                    )
+        if not selection_rows:
+            continue
+        selections = pd.DataFrame(selection_rows)
+        earnings_for_day = None
+        if "next_earnings_date" in day.columns:
+            dated = day.dropna(subset=["next_earnings_date"]).drop_duplicates("ticker")
+            earnings_for_day = pd.Series(
+                pd.to_datetime(dated["next_earnings_date"], errors="coerce").values,
+                index=dated["ticker"].astype(str).values,
+            )
+        for spec in HISTORICAL_STRATEGY_SPECS:
+            selected = selections[selections["strategy"].eq(spec.key)]
+            if selected.empty:
+                continue
+            # Each family is gated on its own horizon so a long-hold spec cannot
+            # truncate the usable date range of a short-hold one.
+            exit_slot = slot + 1 + spec.hold_days
+            if exit_slot >= len(days):
+                continue
+            exit_quotes = quotes(days[exit_slot])
+            if exit_quotes.empty:
+                continue
+            structures = build_structure(
+                entry_quotes,
+                selected["ticker"].unique(),
+                spec,
+                min_open_interest=50,
+                max_spread_pct=MAX_SPREAD_PCT,
+                earnings_by_ticker=earnings_for_day,
+            )
+            outcomes = liquidate_structure(
+                structures,
+                exit_quotes,
+                spec,
+                contract_fee=CONTRACT_FEE,
+            )
+            if outcomes.empty:
+                continue
+            keep = [
+                "ticker",
+                "expiry",
+                "entry_cashflow",
+                "exit_cashflow",
+                "far_expiry",
+                "historical_scope",
+                "risk_capital_model",
+                "max_risk",
+                "pnl",
+                "return_on_risk",
+            ] + [f"symbol_{index}" for index in range(len(spec.legs))]
+            result = selected.merge(outcomes[keep], on="ticker", how="inner")
+            if result.empty:
+                continue
+            state_day = sector_state[sector_state["date"].eq(signal_date)].drop(columns=["date"])
+            result = result.merge(state_day, on="sector", how="left")
+            result["cost"] = result["max_risk"]
+            result["return_on_cost"] = result["return_on_risk"]
+            records.append(result)
 
     if not records:
         raise SystemExit("no trades built")
-    trades = pd.concat(records, ignore_index=True)
+    universe = pd.concat(records, ignore_index=True)
+    universe["sample"] = np.where(universe.signal_date >= SPLIT, "TEST", "TRAIN")
+    universe.to_csv(UNIVERSE_OUT, index=False)
+    trades = build_matched_grid(universe)
     trades["sample"] = np.where(trades.signal_date >= SPLIT, "TEST", "TRAIN")
     trades.to_csv(OUT, index=False)
 
@@ -231,8 +231,11 @@ def main() -> None:
             }
         )
 
-    print(f"\nbuilt {len(trades)} trades across {trades.signal_date.nunique()} dates")
-    for strategy in ["long_call", "long_put", "straddle", "call_spread"]:
+    print(
+        f"\nbuilt {len(universe)} constructible outcomes and {len(trades)} matched-grid rows "
+        f"across {trades.signal_date.nunique()} dates"
+    )
+    for strategy in [spec.key for spec in HISTORICAL_STRATEGY_SPECS]:
         subset = trades[trades.strategy == strategy]
         if subset.empty:
             continue
@@ -250,6 +253,7 @@ def main() -> None:
     print("\ntrade counts:")
     print(counts.to_string())
     print(f"\nwrote {OUT}")
+    print(f"wrote {UNIVERSE_OUT}")
 
 
 if __name__ == "__main__":

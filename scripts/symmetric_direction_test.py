@@ -82,7 +82,7 @@ def simulate(panel, days, quote_for, direction: str, rng, randomize: bool = Fals
             held.discard(position["ticker"])
         open_positions = still_open
 
-        if index + 1 >= len(days):
+        if not base.has_full_observation_horizon(index, days):
             continue
         day = panel[panel.date == session].dropna(subset=["pos_52w"])
         if day.empty:

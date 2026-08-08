@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import managed_exit_backtest as base  # noqa: E402
 import symmetric_direction_test as sym  # noqa: E402
 
-PERMUTATIONS = int(sys.argv[1]) if len(sys.argv) > 1 else 200
+PERMUTATIONS = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 200
 OUT = base.ROOT / "out/tech_permutation_test.csv"
 
 

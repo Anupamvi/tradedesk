@@ -21,7 +21,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import managed_exit_backtest as base  # noqa: E402
 
-PERMUTATIONS = int(sys.argv[1]) if len(sys.argv) > 1 else 150
+PERMUTATIONS = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 150
 OUT = base.ROOT / "out/short_side_sector_test.csv"
 PROFIT_TARGET = 0.5
 DECILE = 0.80

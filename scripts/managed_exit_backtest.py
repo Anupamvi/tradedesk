@@ -41,6 +41,10 @@ SECTORS = ("Technology", "Financial Services")
 MAX_HOLD = 40
 
 
+def has_full_observation_horizon(index: int, sessions: list[str], max_hold: int = MAX_HOLD) -> bool:
+    return index + 1 + max_hold < len(sessions)
+
+
 def chain_quotes(session: str, following: str) -> pd.DataFrame:
     path = find(ROOT / following, "chain-oi-changes")
     if path is None:
@@ -143,7 +147,7 @@ def run(
         open_positions = still_open
 
         # 2. open new positions on this session's signal
-        if index + 1 >= len(days):
+        if not has_full_observation_horizon(index, days, max_hold):
             continue
         day = panel[panel.date == session].dropna(subset=["pos_52w", "flow_escalation"])
         if day.empty:
