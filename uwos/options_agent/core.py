@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from ._vendor.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.70-closed-session-quote-recheck-20260808-091021"
+PIPELINE_VERSION = "options-agent-v1.71-session-neutral-actionability-20260808-124037"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
     "options-agent-v1.69-live-quote-integrity-20260808-000000",
     "options-agent-v1.68-five-source-market-context-20260806-081546",
     "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
@@ -112,7 +113,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-08-08T09:10:21-07:00"
+PIPELINE_RELEASED_AT = "2026-08-08T12:40:37-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -356,8 +357,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
+    "PIPELINE_VERSION": "options-agent-v1.71-session-neutral-actionability-20260808-124037",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
         "options-agent-v1.69-live-quote-integrity-20260808-000000",
         "options-agent-v1.68-five-source-market-context-20260806-081546",
         "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
@@ -421,7 +423,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-08-08T09:10:21-07:00",
+    "PIPELINE_RELEASED_AT": "2026-08-08T12:40:37-07:00",
     "PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS": frozenset(
         {"options-agent-v1.68-five-source-market-context-20260806-081546"}
     ),
@@ -19946,7 +19948,7 @@ def _ticket_order_readiness(row: Mapping[str, Any]) -> str:
         if blockers == {GOAL_CONFIDENCE_GATE_BLOCKER}:
             return "target_order_after_goal_confidence"
         if blockers in ({"market_session_open_required"}, {"regular_session_quote_refresh_required"}):
-            return "target_order_after_market_open_and_live_recheck"
+            return "target_order_price_validation"
         if _short_put_cash_or_account_risk_blocked(blockers):
             return "target_order_after_cash_risk"
         if POSITION_PROFIT_MATERIALITY_BLOCKER in blockers:
@@ -20925,12 +20927,6 @@ def _execution_blockers_for_row(
         if action_surface_candidate
         else []
     )
-    if (
-        action_surface_candidate
-        and execution_context.get("fresh_live_quotes_ready")
-        and execution_context.get("market_session_recheck_required")
-    ):
-        blockers.append("regular_session_quote_refresh_required")
     if status == RecommendationStatus.AVOID.value or _as_text(row.get("hard_rejects")):
         blockers.append("objective_blocker")
     review_resolved_for_recheck = _review_resolved_for_target_recheck(
@@ -21699,7 +21695,6 @@ def build_execution_readiness(decision_board: pd.DataFrame, execution_context: M
 
     columns = ["gate", "status", "detail", "affected_rows"]
     ready_rows = int(decision_board["ready_to_enter"].map(_truthy).sum()) if not decision_board.empty else 0
-    quote_refresh_required = bool(execution_context.get("market_session_recheck_required"))
     rows = [
         {
             "gate": "fresh_live_schwab",
@@ -21709,13 +21704,13 @@ def build_execution_readiness(decision_board: pd.DataFrame, execution_context: M
         },
         {
             "gate": "quote_freshness",
-            "status": "BLOCK" if quote_refresh_required else "INFO",
+            "status": "INFO",
             "detail": (
-                f"execution_blocker={str(quote_refresh_required).lower()}; "
-                "target_refresh_before_order=true; "
+                "execution_blocker=false; latest_completed_session_is_decision_grade=true; "
+                "pre_entry_quote_check=true; "
                 f"quote_mode={execution_context.get('quote_mode')}"
             ),
-            "affected_rows": len(decision_board) if quote_refresh_required else 0,
+            "affected_rows": 0,
         },
         {
             "gate": "portfolio_sizing",
@@ -29542,7 +29537,7 @@ def render_report(
     route_gap_detail = _route_opportunity_gap_detail(route_gap_summary)
     target_rows_are_watch_only = _target_rows_require_watch_only(final)
     if green_count > 0:
-        next_action = "review Send Now Orders; enter manually only after final quote check"
+        next_action = "review Actionable Trade Plans; confirm the quoted limit before entry"
     elif target_count > 0 and target_rows_are_watch_only:
         exact_review_pending = bool(
             not computed_target.empty
@@ -29563,7 +29558,7 @@ def render_report(
     elif blocking_gates:
         next_action = "resolve blocking gates before treating any row as an order"
     else:
-        next_action = "no send-now or target-order surface produced"
+        next_action = "no actionable or target-order surface produced"
 
     profitability_rating = _as_float(confidence_summary.get("profitability_confidence_rating")) or 0.0
     order_entry_rating = _as_float(confidence_summary.get("order_entry_confidence_rating")) or 0.0
@@ -29717,7 +29712,7 @@ def render_report(
         "## Files",
         "",
         artifact_link("All reviewed tickets", trade_tickets_path, "trade_tickets.csv"),
-        artifact_link("Green orders", green_tickets_path, "green_trade_tickets.csv"),
+        artifact_link("Actionable plans", green_tickets_path, "green_trade_tickets.csv"),
         artifact_link("Yellow planning tickets", target_tickets_path, "target_order_candidates.csv"),
         artifact_link("Full decision diagnostics", decision_board_path, "decision_board.csv"),
         artifact_link("Run manifest", manifest_path, "options_agent_manifest.json"),
@@ -29728,8 +29723,8 @@ def render_report(
         "",
         "## Top Line",
         "",
-        f"- Executable status: {executable_status}",
-        f"- Green send-now orders: {green_count}",
+        f"- Trade-plan status: {executable_status}",
+        f"- Actionable trade plans: {green_count}",
         f"- Yellow planning tickets: {target_count}",
         breadth_line,
         f"- Order-entry confidence: {order_entry_rating}/10",
@@ -29741,15 +29736,15 @@ def render_report(
         *([source_provenance_line] if source_provenance_line else []),
         *([f"- {_live_market_context_note(live_market_context)}"] if _live_market_context_note(live_market_context) else []),
         *([selector_replay_line] if selector_replay_line else []),
-        f"- Why no green order: {no_green_reason}"
+        f"- Why no actionable plan: {no_green_reason}"
         if green_count == 0
         else (
-            "- Green order note: one-lot evidence pilot only; it is not scalable profitability proof. Verify the final Schwab quote manually before sending."
+            "- Actionable-plan note: one-lot evidence pilot only; it is not scalable profitability proof. Confirm the final Schwab quote before entry."
             if all_green_rows_probationary
             and profitability_rating < MIN_GOAL_PROFITABILITY_CONFIDENCE_RATING
-            else "- Green order note: one-lot probation only; verify the final Schwab quote manually before sending."
+            else "- Actionable-plan note: one-lot probation only; confirm the final Schwab quote before entry."
             if all_green_rows_probationary
-            else "- Green order note: verify the final Schwab quote manually before sending."
+            else "- Actionable-plan note: confirm the final Schwab quote before entry."
         ),
         f"- Next action: {next_action}",
         "",
@@ -29759,7 +29754,7 @@ def render_report(
         lines.extend(
             [
                 "**Captured-live recompute:** this report rebuilds readiness from a prior Schwab live capture under current code. "
-                "It is proof of gate behavior, not a fresh current quote pull; reprice in Schwab before sending anything.",
+                "It is proof of gate behavior, not a fresh current quote pull; confirm the current Schwab quote before entry.",
                 "",
             ]
         )
@@ -29791,7 +29786,7 @@ def _render_monthly_evidence_diagnostics(
         )
     else:
         lines.append(
-            "Monthly target evidence is insufficient. Green send-now rows are order-entry candidates only; do not size around a monthly target from this artifact."
+            "Monthly target evidence is insufficient. Green actionable rows are trade-plan candidates only; do not size around a monthly target from this artifact."
         )
     lines.append("")
     lines.append(f"- Monthly feasibility: {feasibility_status}")
@@ -29818,7 +29813,7 @@ def _plain_no_green_reason(
     confidence_summary: Mapping[str, Any],
 ) -> str:
     if green_count > 0:
-        return "green rows exist; verify the final Schwab quote manually before sending"
+        return "actionable rows exist; confirm the final Schwab quote before entry"
 
     reasons: list[str] = []
     if target_count <= 0 and review_ticket_count <= 0:
@@ -29833,7 +29828,7 @@ def _plain_no_green_reason(
     mechanics_rating = _as_float(confidence_summary.get("order_mechanics_confidence_rating")) or 0.0
     if entry_rating < MIN_GOAL_ORDER_ENTRY_CONFIDENCE_RATING:
         reasons.append(
-            "no ticket qualifies for send-now entry"
+            "no ticket qualifies for actionable entry"
             if calibration_failed
             else "order-entry confidence is below the send threshold"
         )
@@ -29855,7 +29850,7 @@ def _plain_no_green_reason(
     elif not _truthy(execution_context.get("agentic_reviews_ready")) and blockers:
         reasons.append("agent review coverage is incomplete")
 
-    return "; ".join(dict.fromkeys(reasons[:6])) or "send-now gates did not pass"
+    return "; ".join(dict.fromkeys(reasons[:6])) or "actionability gates did not pass"
 
 
 def _current_pipeline_no_action_summary(final: pd.DataFrame) -> tuple[str, str]:
@@ -29927,8 +29922,8 @@ def _current_pipeline_no_action_summary(final: pd.DataFrame) -> tuple[str, str]:
         reason = "no setup passed the promoted selector"
         if detail:
             reason += f"; leading current-policy rejections: {detail}"
-            return reason, "NO QUALIFIED SETUP on current contracts; this is a setup-quality result, not a market-hours skip"
-        return reason, "NO QUALIFIED SETUP on current contracts; this is a setup-quality result, not a market-hours skip"
+            return reason, "NO QUALIFIED SETUP on current contracts; current setup quality is insufficient"
+        return reason, "NO QUALIFIED SETUP on current contracts; current setup quality is insufficient"
 
     counts = {}
     ignored = {
@@ -30020,7 +30015,7 @@ def _target_no_green_reason(targets: pd.DataFrame) -> str:
         "send_now_macro_calendar_unverified",
     }:
         reasons.append("contract event review is not clear")
-    return "; ".join(reasons) or "the yellow target has not cleared every send-now gate"
+    return "; ".join(reasons) or "the yellow target has not cleared every actionability gate"
 
 
 def _plain_blocker_set(value: Any) -> set[str]:
@@ -30059,9 +30054,9 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
     if final.empty or "trade_plan" not in final.columns:
         lines.extend(
             [
-                "## Send Now Orders",
+                "## Actionable Trade Plans",
                 "",
-                "No green send-now orders.",
+                "No actionable trade plans.",
                 "",
             ]
         )
@@ -30080,9 +30075,9 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
         & ~tickets.apply(_target_surface_eligible, axis=1)
     ].copy()
 
-    lines.extend(["## Send Now Orders", ""])
+    lines.extend(["## Actionable Trade Plans", ""])
     if ready.empty:
-        lines.extend(["No green send-now orders. Do not send an order unless a row appears here.", ""])
+        lines.extend(["No actionable trade plans. Only rows in this section qualify as trades.", ""])
     else:
         lines.extend(_render_ticket_rows(ready))
 
@@ -30095,11 +30090,11 @@ def _render_actionable_tickets(final: pd.DataFrame) -> list[str]:
         lines.append("No profitability-calibrated yellow planning tickets.")
     elif _target_rows_require_watch_only_from_tickets(primary_target):
         lines.append(
-            "These are not send-now orders. Follow each Action line below and never pay more than the shown debit or accept less than the shown credit."
+            "These are not actionable trade plans yet. Follow each Action line below and never pay more than the shown debit or accept less than the shown credit."
         )
     else:
         lines.append(
-            "These are not send-now orders. Each Action line states the remaining check; rows with exact-review, "
+            "These are not actionable trade plans yet. Each Action line states the remaining check; rows with exact-review, "
             "event, probability, or economics blocks are watch-only until that issue clears."
         )
     if not primary_target.empty:
@@ -30597,7 +30592,7 @@ def _render_execution_quality(final: pd.DataFrame) -> list[str]:
                 blockers[label] = blockers.get(label, 0) + 1
         if blockers:
             top = dict(sorted(blockers.items(), key=lambda item: (-item[1], item[0]))[:8])
-            lines.append(f"- Top non-green send-now gates: {top}")
+            lines.append(f"- Top non-green actionability gates: {top}")
     lines.append("")
     return lines
 
@@ -30663,7 +30658,7 @@ def _render_review_queue(
     confidence_status = _as_text((confidence_summary or {}).get("status")).lower()
     if confidence_status and confidence_status != "pass":
         lines.append(
-            "Overall profitability/send-now confidence is blocked, so these rows are diagnostics only. They are not send-now order-entry candidates."
+            "Overall profitability/actionability confidence is blocked, so these rows are diagnostics only. They are not trade candidates."
         )
         lines.append("")
     watchlist = set(CORE_AUDIT_TICKERS)
@@ -30881,7 +30876,7 @@ def _render_coverage_audit(coverage_audit: Optional[pd.DataFrame]) -> list[str]:
         lines.extend(["No review-board rows were produced.", ""])
         return lines
     lines.append(
-        "These rows show what the pipeline reviewed and why each name is included or excluded. They are not orders; only the Send Now Orders section is executable, and yellow tickets are planning-only."
+        "These rows show what the pipeline reviewed and why each name is included or excluded. Only the Actionable Trade Plans section contains qualified trades; yellow tickets are planning-only."
     )
     lines.append("")
     lines.append("| Ticker | Signal | Bias | Score | State | Why | Next Step |")
@@ -31767,7 +31762,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"Workspace report: {paths['workspace_report']}")
         print(f"Workspace trade board: {paths['workspace_color_trade_board']}")
         print(f"Trade tickets: {paths['trade_tickets']}")
-        print(f"Green send-now tickets: {paths['green_trade_tickets']}")
+        print(f"Actionable trade plans: {paths['green_trade_tickets']}")
         print(f"Yellow target candidates: {paths['target_order_candidates']}")
     return 0
 
@@ -34020,7 +34015,7 @@ def build_color_trade_board_markdown(trade_tickets: pd.DataFrame, *, as_of: str)
     working["__icon"] = working.apply(icon, axis=1)
     counts = working["__icon"].value_counts().to_dict()
     lines += [
-        f"🟢 send now: **{counts.get('🟢', 0)}** | "
+        f"🟢 actionable: **{counts.get('🟢', 0)}** | "
         f"🟡 working / target: **{counts.get('🟡', 0)}** | "
         f"🔴 excluded / rejected: **{counts.get('🔴', 0)}**",
         "",
@@ -34055,9 +34050,9 @@ def build_color_trade_board_markdown(trade_tickets: pd.DataFrame, *, as_of: str)
         total_profit = pd.to_numeric(green_orders.get("position_max_profit"), errors="coerce").sum()
         total_risk = pd.to_numeric(green_orders.get("position_max_loss"), errors="coerce").sum()
         lines += [
-            f"**Green order totals:** max profit ${total_profit:,.0f} | max risk ${total_risk:,.0f}",
+            f"**Actionable plan totals:** max profit ${total_profit:,.0f} | max risk ${total_risk:,.0f}",
             "",
-            "## Green Send-Now Orders",
+            "## Green Actionable Plans",
             "",
             "```",
         ]

@@ -59,8 +59,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.70-closed-session-quote-recheck-20260808-091021"
+    assert core.PIPELINE_VERSION == "options-agent-v1.71-session-neutral-actionability-20260808-124037"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
         "options-agent-v1.69-live-quote-integrity-20260808-000000",
         "options-agent-v1.68-five-source-market-context-20260806-081546",
         "options-agent-v1.56-live-selector-dte-parity-20260722-161615",
@@ -124,7 +125,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-08-08T09:10:21-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-08-08T12:40:37-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -1291,7 +1292,7 @@ def test_no_green_reason_leads_with_profitability_calibration_cause() -> None:
 
     assert reason == (
         "point-in-time profitability calibration is not passing; "
-        "no ticket qualifies for send-now entry"
+        "no ticket qualifies for actionable entry"
     )
 
 
@@ -3922,7 +3923,7 @@ def test_send_now_green_requires_positive_structure_aligned_actual_forward_suppo
     assert tickets.loc[tickets["ticker"].eq("GOOGL"), "ready_to_enter"].tolist() == [True]
 
 
-def test_closed_market_requires_regular_session_quote_refresh_before_entry() -> None:
+def test_closed_market_is_informational_and_preserves_actionable_trade() -> None:
     final = pd.DataFrame(
         [
             {
@@ -3966,13 +3967,14 @@ def test_closed_market_requires_regular_session_quote_refresh_before_entry() -> 
     queue = core.build_market_open_recheck_queue(tickets)
     readiness = core.build_execution_readiness(decision, closed_context)
 
-    assert decision["ready_to_enter"].tolist() == [False]
-    assert decision["execution_status"].tolist() == ["needs_fresh_live_quote"]
+    assert decision["ready_to_enter"].tolist() == [True]
+    assert decision["execution_status"].tolist() == ["ready"]
     assert "market_session_open_required" not in decision["execution_blockers"].iloc[0]
-    assert decision["execution_blockers"].tolist() == ["regular_session_quote_refresh_required"]
+    assert "regular_session_quote_refresh_required" not in decision["execution_blockers"].iloc[0]
+    assert decision["execution_blockers"].tolist() == [""]
     assert tickets["target_order_status"].tolist() == ["target_order_candidate"]
-    assert tickets["order_readiness"].tolist() == ["target_order_after_market_open_and_live_recheck"]
-    assert queue["ticker"].tolist() == ["LIVE"]
+    assert tickets["order_readiness"].tolist() == ["ready_to_enter"]
+    assert queue.empty
     coverage = core.build_coverage_audit(
         raw_universe=pd.DataFrame(),
         candidates=pd.DataFrame(),
@@ -3982,14 +3984,15 @@ def test_closed_market_requires_regular_session_quote_refresh_before_entry() -> 
         watchlist=["LIVE"],
     )
     assert coverage["next_step"].tolist() == [
-        "use this target as the starting limit after a fresh quote refresh"
+        "verify live quote and place manually if thesis still holds"
     ]
     quote_freshness = readiness.loc[readiness["gate"].eq("quote_freshness")]
-    assert quote_freshness["status"].tolist() == ["BLOCK"]
-    assert "execution_blocker=true" in quote_freshness["detail"].iloc[0]
+    assert quote_freshness["status"].tolist() == ["INFO"]
+    assert "execution_blocker=false" in quote_freshness["detail"].iloc[0]
+    assert "latest_completed_session_is_decision_grade=true" in quote_freshness["detail"].iloc[0]
 
 
-def test_closed_market_clean_live_row_becomes_market_open_recheck_target() -> None:
+def test_closed_market_clean_live_row_can_still_be_green_when_other_gates_pass() -> None:
     final = pd.DataFrame(
         [
             {
@@ -4029,17 +4032,17 @@ def test_closed_market_clean_live_row_becomes_market_open_recheck_target() -> No
     tickets = core.build_trade_tickets(decision)
     queue = core.build_market_open_recheck_queue(tickets)
 
-    assert decision["ready_to_enter"].tolist() == [False]
-    assert decision["execution_status"].tolist() == ["needs_fresh_live_quote"]
+    assert decision["ready_to_enter"].tolist() == [True]
+    assert decision["execution_status"].tolist() == ["ready"]
     assert "market_session_open_required" not in decision["execution_blockers"].iloc[0]
-    assert decision["execution_blockers"].tolist() == ["regular_session_quote_refresh_required"]
-    assert tickets["ready_to_enter"].tolist() == [False]
+    assert decision["execution_blockers"].tolist() == [""]
+    assert tickets["ready_to_enter"].tolist() == [True]
     assert tickets["target_order_status"].tolist() == ["target_order_candidate"]
-    assert tickets["order_readiness"].tolist() == ["target_order_after_market_open_and_live_recheck"]
+    assert tickets["order_readiness"].tolist() == ["ready_to_enter"]
     green, yellow = core.split_trade_ticket_surfaces(tickets)
-    assert green.empty
-    assert yellow["ticker"].tolist() == ["LIVE"]
-    assert queue["ticker"].tolist() == ["LIVE"]
+    assert green["ticker"].tolist() == ["LIVE"]
+    assert yellow.empty
+    assert queue.empty
 
 
 def test_market_open_recheck_queue_includes_only_market_session_only_targets() -> None:
@@ -4130,9 +4133,9 @@ def test_market_session_only_targets_are_review_until_live_validated() -> None:
     assert core._decision_badge(row) == "⚪ GRAY review"
     assert core._decision_icon(row) == "⚪"
     assert core._decision_status_label(row) == "GRAY review"
-    assert core._ticket_order_readiness(row) == "target_order_after_market_open_and_live_recheck"
+    assert core._ticket_order_readiness(row) == "target_order_price_validation"
     assert core._ticket_action(row) == "work_target_limit"
-    assert "starting limit after a fresh quote refresh" in core._ticket_next_step(row)
+    assert "shown target limit" in core._ticket_next_step(row)
 
 
 def test_calibration_blocked_plan_is_review_not_yellow_target() -> None:
@@ -4776,7 +4779,7 @@ def test_trade_ticket_sort_prefers_confidence_before_exact_calibration() -> None
     assert sorted_tickets["ticker"].tolist() == ["ROUTEHIGH", "BUCKETMID"]
 
 
-def test_market_closed_live_recheck_keeps_an_otherwise_valid_setup_as_target() -> None:
+def test_market_closed_live_recheck_keeps_an_otherwise_valid_setup_green() -> None:
     final = pd.DataFrame(
         [
             {
@@ -4826,13 +4829,13 @@ def test_market_closed_live_recheck_keeps_an_otherwise_valid_setup_as_target() -
     queue = core.build_market_open_recheck_queue(tickets)
 
     assert decision["target_order_status"].tolist() == ["target_order_candidate"]
-    assert decision["ready_to_enter"].tolist() == [False]
-    assert decision["execution_blockers"].tolist() == ["regular_session_quote_refresh_required"]
+    assert decision["ready_to_enter"].tolist() == [True]
+    assert "regular_session_quote_refresh_required" not in decision["execution_blockers"].iloc[0]
     assert tickets["ticker"].tolist() == ["AAPL"]
     green, yellow = core.split_trade_ticket_surfaces(tickets)
-    assert green.empty
-    assert yellow["ticker"].tolist() == ["AAPL"]
-    assert queue["ticker"].tolist() == ["AAPL"]
+    assert green["ticker"].tolist() == ["AAPL"]
+    assert yellow.empty
+    assert queue.empty
 
 
 def test_closed_market_transient_quote_reject_preserves_dated_target_math() -> None:
@@ -17759,18 +17762,18 @@ def test_report_snapshot_counts_review_only_visible_tickets() -> None:
         coverage,
     )
 
-    assert "- Executable status: NOT TRADE READY" in report
-    assert "- Green send-now orders: 0" in report
+    assert "- Trade-plan status: NOT TRADE READY" in report
+    assert "- Actionable trade plans: 0" in report
     assert "- Yellow planning tickets: 0" in report
     assert "Review-only candidates" not in report
     assert "- Pipeline profitability evidence maturity: 0.0/10" in report
     assert "- Portfolio capacity: $1,800/month at 0.5% account risk/trade" in report
     assert "18.0% of $10,000 target" in report
     assert "No yellow planning tickets." in report
-    assert "Why no green order: no setup passed the promoted selector" in report
+    assert "Why no actionable plan: no setup passed the promoted selector" in report
     assert (
         "Next action: NO QUALIFIED SETUP on current contracts; "
-        "this is a setup-quality result, not a market-hours skip"
+        "current setup quality is insufficient"
     ) in report
     assert "Run Diagnostics" not in report
     assert "Focus Review Queue" not in report
@@ -17802,7 +17805,7 @@ def test_no_action_summary_reports_current_policy_rejections_not_research_routes
     assert "short strike too close versus expected move (1)" in reason
     assert "entry type" not in reason
     assert "NO QUALIFIED SETUP" in action
-    assert "not a market-hours skip" in action
+    assert "current setup quality is insufficient" in action
 
 
 def test_report_top_line_names_active_selector_replay_profit_factor() -> None:
@@ -17918,8 +17921,8 @@ def test_report_labels_probationary_green_without_overstating_trade_readiness() 
         },
     )
 
-    assert "- Executable status: ONE-LOT PROBATION READY" in report
-    assert "- Green order note: one-lot probation only" in report
+    assert "- Trade-plan status: ONE-LOT PROBATION READY" in report
+    assert "- Actionable-plan note: one-lot probation only" in report
     assert "Risk-scaled replay:" not in report
     assert "live orders start at no more than 5 contracts" not in report
 
@@ -18604,7 +18607,7 @@ def test_run_pipeline_writes_independent_recommendation_artifacts(tmp_path: Path
     assert "Structure attempt rows: 1" not in report
     assert "Live spread quality audit" not in report
     assert "Execution fill quality" not in report
-    assert "Send Now Orders" in report
+    assert "Actionable Trade Plans" in report
     assert "Yellow Planning Tickets - Do Not Submit" in report
     assert "No yellow planning tickets." in report
     assert "Structural status counts, not order readiness" not in report
@@ -18624,7 +18627,7 @@ def test_run_pipeline_writes_independent_recommendation_artifacts(tmp_path: Path
     assert "Route opportunity gaps:" not in report
     assert "Strategy outcome atlas:" not in report
     assert "SELL 1 WMT 2026-06-19 95 Put / BUY 1 WMT 2026-06-19 90 Put @ 1.00 CREDIT" not in report
-    assert "No green send-now orders" in report
+    assert "No actionable trade plans" in report
     assert "WMT260619P00095000" not in report
 
 
