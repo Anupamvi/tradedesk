@@ -72,10 +72,10 @@ def test_registry_marks_credit_probationary_route_one_lot_only() -> None:
     row = registry.loc["bear_call_credit_vertical"]
     assert row["pipeline_status"] == "PROBATIONARY"
     assert not row["execution_authorized"]
-    assert not row["probationary_execution_authorized"]
+    assert row["probationary_execution_authorized"]
 
 
-def test_registry_demotes_probationary_pilot_execute() -> None:
+def test_registry_allows_only_probationary_pilot_execute() -> None:
     registry = build_strategy_registry(
         payoff_summary={"status": "NO_VALIDATED_LANES"},
         payoff_groups=pd.DataFrame(
@@ -92,8 +92,38 @@ def test_registry_demotes_probationary_pilot_execute() -> None:
 
     gated = apply_strategy_registry_gate(rows, registry)
 
-    assert gated.loc[gated["ticker"].eq("PILOT"), "trade_status"].iloc[0] == "Research"
+    pilot = gated.loc[gated["ticker"].eq("PILOT")].iloc[0]
+    assert pilot["trade_status"] == "Execute"
+    assert pilot["contracts"] == 1
+    assert pilot["strategy_execution_authority"] == "probationary_one_lot"
     assert gated.loc[gated["ticker"].eq("DIRECT"), "trade_status"].iloc[0] == "Research"
+
+
+def test_registry_preserves_validated_medium_debit_one_lot_authority() -> None:
+    registry = build_strategy_registry(
+        payoff_summary={"status": "NO_VALIDATED_LANES"},
+        payoff_groups=pd.DataFrame(),
+        confidence_summary={"family_validation": {"Debit": {"status": "INSUFFICIENT"}}},
+    )
+    scored = pd.DataFrame(
+        [
+            {
+                "ticker": "DEBIT",
+                "direction": "Bull Call",
+                "trade_status": "Execute",
+                "trade_tier": "Execute V4 Direct - Medium Debit",
+                "contracts": 7,
+                "decision_eligible": True,
+                "v4_execution_authority": "validated_medium_debit_one_lot",
+            }
+        ]
+    )
+
+    gated = apply_strategy_registry_gate(scored, registry)
+
+    assert gated.iloc[0]["trade_status"] == "Execute"
+    assert gated.iloc[0]["contracts"] == 1
+    assert gated.iloc[0]["strategy_execution_authority"] == "validated_medium_debit_one_lot"
 
 
 def test_validated_generic_family_is_prospective_not_production() -> None:

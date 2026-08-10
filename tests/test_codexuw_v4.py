@@ -5,12 +5,14 @@ from pathlib import Path
 
 import pandas as pd
 
+from codexuw.engine import apply_data_quality_gate
 from codexuw.daily_v4 import (
     PIPELINE_NAME_V4,
     _compact_decision_candidate_table,
     _default_out_dir,
     _disposition,
     _execution_quote_blocker,
+    _expectancy_safe_entry_price,
     _hard_blocker_reason,
     _trade_legs,
     apply_v4_prospective_book_concentration,
@@ -31,6 +33,7 @@ from codexuw.daily_v4 import (
     run_v4_daily,
     write_v4_outputs,
 )
+from codexuw.strategy_registry import apply_strategy_registry_gate, build_strategy_registry
 
 
 ASOF = dt.date(2026, 5, 20)
@@ -450,6 +453,8 @@ def test_v4_validated_medium_debit_sleeve_executes_at_one_contract() -> None:
     assert adjusted["trade_status"].iloc[0] == "Execute"
     assert adjusted["debit_policy_tier"].iloc[0] == "medium"
     assert "Medium Debit" in adjusted["trade_tier"].iloc[0]
+    assert adjusted["contracts"].iloc[0] == 1
+    assert adjusted["v4_execution_authority"].iloc[0] == "validated_medium_debit_one_lot"
 
     tickets = build_v4_swing_target_tickets(
         scored=adjusted,
@@ -461,8 +466,94 @@ def test_v4_validated_medium_debit_sleeve_executes_at_one_contract() -> None:
     assert tickets.iloc[0]["final disposition"] == "Execute"
     assert tickets.iloc[0]["suggested size"] == "1 contract only; Medium debit sleeve"
 
+    capped = apply_v4_professional_dispositions(
+        pd.DataFrame([_medium_debit_candidate(), _medium_debit_candidate(ticker="DEBIT2")]),
+        asof=ASOF,
+    )
+    assert capped["trade_status"].eq("Execute").sum() == 1
+    assert capped["trade_tier"].eq("work-limit-medium-debit-cap").sum() == 1
 
-def test_v4_probationary_credit_route_remains_observation_only() -> None:
+
+def test_v4_medium_debit_route_evidence_sets_safe_limit_without_family_pass() -> None:
+    row = _medium_debit_candidate(
+        natural_debit=0.50,
+        debit=0.50,
+        mid_debit=0.49,
+        required_entry=2.25,
+        target_entry=2.25,
+        max_profit=450.0,
+        max_loss=50.0,
+        reward_risk=9.0,
+        edge_win_rate=17 / 26,
+        edge_effective_win_rate=(17 + 0.5) / 27,
+        payoff_calibration_status="PROBATIONARY",
+        confidence_calibration_status="INSUFFICIENT",
+        confidence_model_tier="strategy_family_insufficient",
+        confidence_probability=2 / 3,
+        confidence_probability_lower_bound=0.5583,
+    )
+
+    safe_limit = _expectancy_safe_entry_price(row)
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert safe_limit == 1.99
+    assert adjusted.iloc[0]["trade_status"] == "Execute"
+    assert adjusted.iloc[0]["contracts"] == 1
+    assert adjusted.iloc[0]["v4_execution_authority"] == "validated_medium_debit_one_lot"
+
+    ticket = build_v4_swing_target_tickets(
+        scored=adjusted,
+        board=pd.DataFrame(),
+        regime={"trend": "uptrend", "volatility": "low", "flow": "directional"},
+        top_flow=pd.DataFrame(),
+    ).iloc[0]
+    assert ticket["next-session swing entry target"] == "<= $0.50 debit; do not chase above $1.99"
+    assert ticket["max loss"] == "$50.00"
+    assert ticket["profit target"] == "$202.50"
+    assert ticket["expected value"] == "$113.66"
+    assert ticket["implied profit factor"] == "7.46"
+    assert "take-profit SELL TO CLOSE near $2.52 credit" in ticket["OCO bracket order logic"]
+    assert "spread value falls near $0.25" in ticket["OCO bracket order logic"]
+    assert ticket["payoff evidence"].startswith("VALIDATED MEDIUM-DEBIT ROUTE; n=18")
+
+
+def test_v4_medium_debit_execute_survives_registry_and_data_quality_gates() -> None:
+    row = _medium_debit_candidate(
+        natural_debit=0.50,
+        debit=0.50,
+        mid_debit=0.49,
+        required_entry=2.25,
+        target_entry=2.25,
+        max_profit=450.0,
+        max_loss=50.0,
+        reward_risk=9.0,
+        edge_win_rate=17 / 26,
+        edge_effective_win_rate=(17 + 0.5) / 27,
+        payoff_calibration_status="PROBATIONARY",
+        confidence_calibration_status="INSUFFICIENT",
+        confidence_model_tier="strategy_family_insufficient",
+        confidence_probability=2 / 3,
+        confidence_probability_lower_bound=0.5583,
+    )
+    registry = build_strategy_registry(
+        payoff_summary={"status": "NO_VALIDATED_LANES"},
+        payoff_groups=pd.DataFrame(),
+        confidence_summary={"family_validation": {"Debit": {"status": "INSUFFICIENT"}}},
+    )
+
+    disposed = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+    registered = apply_strategy_registry_gate(disposed, registry)
+    gated = apply_data_quality_gate(
+        registered,
+        {"status": "warning", "critical_blockers": [], "warnings": ["schwab_quotes_available"]},
+    )
+
+    assert gated.iloc[0]["trade_status"] == "Execute"
+    assert gated.iloc[0]["contracts"] == 1
+    assert gated.iloc[0]["strategy_execution_authority"] == "validated_medium_debit_one_lot"
+
+
+def test_v4_probationary_credit_route_executes_one_contract_pilot() -> None:
     row = _candidate(
         direction="Bear Call",
         strategy="Bear Call Credit Spread",
@@ -519,9 +610,10 @@ def test_v4_probationary_credit_route_remains_observation_only() -> None:
 
     adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
 
-    assert adjusted.iloc[0]["trade_status"] == "Watch"
-    assert adjusted.iloc[0]["trade_tier"] == "Scout"
-    assert "observation-only" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+    assert adjusted.iloc[0]["trade_status"] == "Execute"
+    assert adjusted.iloc[0]["trade_tier"] == "Execute V4 Pilot - 1 Contract"
+    assert adjusted.iloc[0]["contracts"] == 1
+    assert adjusted.iloc[0]["v4_execution_authority"] == "probationary_one_lot"
     assert adjusted.iloc[0]["v4_post_pricing_profit_factor"] >= 1.25
 
     tickets = build_v4_swing_target_tickets(
@@ -531,6 +623,8 @@ def test_v4_probationary_credit_route_remains_observation_only() -> None:
         top_flow=pd.DataFrame(),
     )
     ticket = tickets.iloc[0]
+    assert ticket["final disposition"] == "Execute"
+    assert ticket["suggested size"] == "1 contract only; probationary evidence cap"
     assert ticket["next-session swing entry target"] == ">= $1.25 credit"
     assert ticket["profit target"] == "$62.50"
     assert "entry Bear Call Credit Spread" in ticket["OCO bracket order logic"]
@@ -541,7 +635,14 @@ def test_v4_probationary_credit_route_remains_observation_only() -> None:
     assert "10% fill-stress win=90%" in ticket["payoff evidence"]
     assert ticket["expected value"] != "UNVALIDATED"
     assert ticket["implied profit factor"] != "UNVALIDATED"
-    assert _disposition(adjusted.iloc[0], targetable=True) == "Scout"
+    assert _disposition(adjusted.iloc[0], targetable=True) == "Execute"
+
+    capped = apply_v4_professional_dispositions(
+        pd.DataFrame([row, {**row, "ticker": "BBB"}]),
+        asof=ASOF,
+    )
+    assert capped["trade_status"].eq("Execute").sum() == 1
+    assert capped["trade_tier"].eq("work-limit-probationary-cap").sum() == 1
 
 
 def test_v4_probationary_base_credit_cannot_authorize_ambiguous_flow() -> None:
@@ -718,6 +819,18 @@ def test_v4_open_session_requires_displayed_size() -> None:
     )
 
     assert "no displayed entry size" in _execution_quote_blocker(row)
+
+
+def test_v4_open_session_accepts_displayed_size_when_contract_timestamp_is_missing() -> None:
+    row = _candidate(
+        regular_session_quote=False,
+        displayed_entry_size=8,
+        market_session_open_at_validation=True,
+        short_volume=0,
+        long_volume=0,
+    )
+
+    assert _execution_quote_blocker(row) == ""
 
 
 def test_v4_validated_structural_credit_route_replaces_sparse_exact_edge_only() -> None:

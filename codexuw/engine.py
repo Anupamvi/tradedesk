@@ -3317,6 +3317,7 @@ def build_data_quality_status(
         )
     else:
         executable_quote_count = pass_count
+    quote_status = "ok" if executable_quote_count else "warning" if pass_count else "missing"
     portfolio_status = (portfolio or {}).get("status", "not_checked")
     browser_count = int(provenance.get("browser_text_count", 0) or 0)
     catalyst_counts = catalysts["catalyst_status"].fillna("unknown").value_counts().to_dict() if catalysts is not None and not catalysts.empty and "catalyst_status" in catalysts.columns else {}
@@ -3330,13 +3331,13 @@ def build_data_quality_status(
         },
         {
             "check": "Schwab quotes available",
-            "status": "ok" if executable_quote_count else "missing",
+            "status": quote_status,
             "detail": (
-                f"{executable_quote_count} executable in-session rows; {pass_count} parsed PASS rows; counts={live_counts}"
+                f"{executable_quote_count} row-level executable quotes; {pass_count} live-priced PASS rows; counts={live_counts}"
                 if live_counts
                 else "no live quote rows"
             ),
-            "critical": executable_quote_count == 0,
+            "critical": pass_count == 0,
         },
         {
             "check": "Schwab portfolio available",

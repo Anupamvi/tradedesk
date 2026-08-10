@@ -1457,7 +1457,7 @@ def test_data_quality_status_requires_all_five_uw_exports() -> None:
     assert status["warnings"] == ["browser_news_notes_present"]
 
 
-def test_data_quality_status_rejects_preopen_zero_size_schwab_snapshot() -> None:
+def test_data_quality_status_keeps_preopen_live_prices_as_row_level_warning() -> None:
     status = build_data_quality_status(
         input_provenance={
             "exports": {
@@ -1480,9 +1480,11 @@ def test_data_quality_status_rejects_preopen_zero_size_schwab_snapshot() -> None
     )
 
     quote = next(item for item in status["items"] if item["check"] == "Schwab quotes available")
-    assert status["status"] == "critical"
-    assert quote["status"] == "missing"
-    assert "0 executable in-session rows" in quote["detail"]
+    assert status["status"] == "warning"
+    assert status["critical_blockers"] == []
+    assert quote["status"] == "warning"
+    assert "0 row-level executable quotes" in quote["detail"]
+    assert "1 live-priced PASS rows" in quote["detail"]
 
 
 def test_negative_live_outcome_family_blocks_execute_confidence() -> None:

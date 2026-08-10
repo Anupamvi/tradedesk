@@ -144,13 +144,13 @@ def build_strategy_registry(
             and confidence_family == "Credit"
             and confidence_status in {"PASS", "CONSERVATIVE"}
         )
-        probationary_authorized = False
+        probationary_authorized = probationary_candidate
         if authorized:
             pipeline_status = "PRODUCTION"
             reason = "live builder, maturity-safe payoff evidence, and calibrated confidence pass"
         elif probationary_candidate:
             pipeline_status = "PROBATIONARY"
-            reason = "observation-only; payoff route passes stress/OOS gates but awaits post-activation outcomes"
+            reason = "one-contract pilot only; payoff route passes stress/OOS gates and awaits post-activation outcomes before scaling"
         elif spec.get("specialized_execution_builder"):
             pipeline_status = "PROSPECTIVE"
             reason = f"live builder exists; payoff={payoff_status}; confidence={confidence_status}"
@@ -215,7 +215,8 @@ def apply_strategy_registry_gate(scored: pd.DataFrame, registry: pd.DataFrame) -
         production_authorized = bool(record.get("execution_authorized", False))
         probationary_authorized = bool(record.get("probationary_execution_authorized", False))
         pilot_row = "pilot" in str(row.get("trade_tier", "")).lower()
-        authorized = production_authorized or (probationary_authorized and pilot_row)
+        medium_debit_authorized = str(row.get("v4_execution_authority", "")) == "validated_medium_debit_one_lot"
+        authorized = production_authorized or (probationary_authorized and pilot_row) or medium_debit_authorized
         out.at[index, "strategy_registry_key"] = key
         out.at[index, "strategy_registry_status"] = record.get("pipeline_status", "UNREGISTERED")
         out.at[index, "strategy_historical_scope"] = record.get("historical_scope", "unavailable")
@@ -228,6 +229,8 @@ def apply_strategy_registry_gate(scored: pd.DataFrame, registry: pd.DataFrame) -
         out.at[index, "strategy_execution_authority"] = (
             "production"
             if production_authorized
+            else "validated_medium_debit_one_lot"
+            if medium_debit_authorized
             else "probationary_one_lot"
             if authorized
             else "none"
@@ -243,5 +246,10 @@ def apply_strategy_registry_gate(scored: pd.DataFrame, registry: pd.DataFrame) -
             out.at[index, "contracts"] = 1
             out.at[index, "strategy_registry_reason"] = (
                 "one-contract probationary execution; post-activation outcomes required before scaling"
+            )
+        elif str(row.get("trade_status", "")) == "Execute" and medium_debit_authorized:
+            out.at[index, "contracts"] = 1
+            out.at[index, "strategy_registry_reason"] = (
+                "one-contract validated medium-debit sleeve; route-specific replay evidence controls authority"
             )
     return out
