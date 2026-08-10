@@ -59,8 +59,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.72-stale-quote-target-preservation-20260810-093000"
+    assert core.PIPELINE_VERSION == "options-agent-v1.73-structured-strike-output-20260810-102313"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.72-stale-quote-target-preservation-20260810-093000",
         "options-agent-v1.71-session-neutral-actionability-20260808-124037",
         "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
         "options-agent-v1.69-live-quote-integrity-20260808-000000",
@@ -126,7 +127,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-08-10T09:30:00-04:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-08-10T10:23:13-04:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -698,7 +699,11 @@ def test_goal_confidence_gate_demotes_ready_rows_before_action_surfaces() -> Non
     assert green.empty
     assert target["ticker"].tolist() == ["READY"]
     rendered = "\n".join(core._render_ticket_rows(target))
-    assert "| Status | Ticker | Strategy | Expiry | Qty | Limit | Take Profit | Max P/L | Mechanics Score |" in rendered
+    assert "| Status | Ticker | Strategy | Short Leg | Long Leg | Expiry | Qty | Limit | Take Profit | Max P/L | Mechanics Score |" in rendered
+    assert target["short_strike"].tolist() == [105.0]
+    assert target["long_strike"].tolist() == [100.0]
+    assert target["option_type"].tolist() == ["Call"]
+    assert "| 105 Call | 100 Call |" in rendered
     assert "Trade Edge / Entry / Order" not in rendered
     assert "Contract Risk" not in rendered
     assert "NOT_EXECUTION_READY" not in rendered
@@ -17460,7 +17465,7 @@ def test_report_uses_position_scaled_profit_loss_for_target_order_tables() -> No
     assert "Max P/L" in report
     assert "Yellow Planning Tickets - Do Not Submit" in report
     assert (
-        "| 🟡 YELLOW target | GOOGL | Call credit spread | 2026-06-05 | "
+        "| 🟡 YELLOW target | GOOGL | Call credit spread | 392.5 Call | 395 Call | 2026-06-05 | "
         "4 | 0.65 CREDIT | 0.23 | +$260 / -$740 | 88/100 |"
     ) in report
     assert "Trade Edge / Entry / Order" not in report
@@ -18089,11 +18094,11 @@ def test_report_target_order_table_uses_trade_ticket_surface_filters() -> None:
     report = core.render_report("2026-05-15", final, pd.DataFrame(), {"row_counts": {}, "warnings": []})
 
     assert (
-        "| 🟡 YELLOW target | PEP | Call debit spread | 2026-06-18 | "
+        "| 🟡 YELLOW target | PEP | Call debit spread | 160 Call | 155 Call | 2026-06-18 | "
         "5 | 0.88 DEBIT | 1.58 | +$2,060 / -$440 | 73/100 |"
     ) in report
     assert (
-        "| 🟡 YELLOW target | UNH | Put debit spread | 2026-06-18 | "
+        "| 🟡 YELLOW target | UNH | Put debit spread | 370 Put | 380 Put | 2026-06-18 | "
         "4 | 3.38 DEBIT | 6.08 | +$2,648 / -$1,352 | 72/100 |"
     ) in report
     assert "**PEP:** `BUY 1 PEP 2026-06-18 155 Call / SELL 1 PEP 2026-06-18 160 Call @ 0.88 DEBIT`" in report

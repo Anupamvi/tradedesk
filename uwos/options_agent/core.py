@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from ._vendor.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.72-stale-quote-target-preservation-20260810-093000"
+PIPELINE_VERSION = "options-agent-v1.73-structured-strike-output-20260810-102313"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.72-stale-quote-target-preservation-20260810-093000",
     "options-agent-v1.71-session-neutral-actionability-20260808-124037",
     "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
     "options-agent-v1.69-live-quote-integrity-20260808-000000",
@@ -114,7 +115,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-08-10T09:30:00-04:00"
+PIPELINE_RELEASED_AT = "2026-08-10T10:23:13-04:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -358,8 +359,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.72-stale-quote-target-preservation-20260810-093000",
+    "PIPELINE_VERSION": "options-agent-v1.73-structured-strike-output-20260810-102313",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.72-stale-quote-target-preservation-20260810-093000",
         "options-agent-v1.71-session-neutral-actionability-20260808-124037",
         "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
         "options-agent-v1.69-live-quote-integrity-20260808-000000",
@@ -425,7 +427,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-08-10T09:30:00-04:00",
+    "PIPELINE_RELEASED_AT": "2026-08-10T10:23:13-04:00",
     "PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS": frozenset(
         {"options-agent-v1.68-five-source-market-context-20260806-081546"}
     ),
@@ -19160,6 +19162,9 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "dte",
         "sell_leg",
         "buy_leg",
+        "short_strike",
+        "long_strike",
+        "option_type",
         "entry_limit",
         "target_entry",
         "entry_type",
@@ -19404,6 +19409,15 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
     tickets["status_icon"] = tickets.apply(_decision_icon, axis=1)
     tickets["status_label"] = tickets.apply(_decision_status_label, axis=1)
     tickets["entry_type"] = tickets["trade_plan"].map(_entry_type_from_ticket)
+    tickets["short_strike"] = tickets.apply(
+        lambda row: _ticket_leg_strike(row, "SELL"),
+        axis=1,
+    )
+    tickets["long_strike"] = tickets.apply(
+        lambda row: _ticket_leg_strike(row, "BUY"),
+        axis=1,
+    )
+    tickets["option_type"] = tickets.apply(_ticket_option_type, axis=1)
     tickets["stop_exit"] = tickets.apply(_planned_stop_exit, axis=1)
     tickets["position_max_profit"] = tickets.apply(lambda row: _position_amount(row, "max_profit"), axis=1)
     tickets["position_max_loss"] = tickets.apply(lambda row: _position_amount(row, "max_loss"), axis=1)
@@ -30160,15 +30174,17 @@ def _target_rows_require_watch_only_from_tickets(target: pd.DataFrame) -> bool:
 
 def _render_ticket_rows(tickets: pd.DataFrame) -> list[str]:
     lines = [
-        "| Status | Ticker | Strategy | Expiry | Qty | Limit | Take Profit | Max P/L | Mechanics Score |"
+        "| Status | Ticker | Strategy | Short Leg | Long Leg | Expiry | Qty | Limit | Take Profit | Max P/L | Mechanics Score |"
     ]
-    lines.append("|---|---|---|---|---:|---:|---:|---:|---:|")
+    lines.append("|---|---|---|---:|---:|---|---:|---:|---:|---:|---:|")
     for _, row in tickets.iterrows():
         lines.append(
-            "| {status} | {ticker} | {strategy} | {expiry} | {qty} | {entry} | {target} | {max_pnl} | {order_score} |".format(
+            "| {status} | {ticker} | {strategy} | {short_leg} | {long_leg} | {expiry} | {qty} | {entry} | {target} | {max_pnl} | {order_score} |".format(
                 status=_report_cell(_decision_badge(row)),
                 ticker=_report_cell(row.get("ticker")),
                 strategy=_report_cell(_ticket_structure(row)),
+                short_leg=_report_cell(_ticket_leg_strike_display(row, "SELL")),
+                long_leg=_report_cell(_ticket_leg_strike_display(row, "BUY")),
                 expiry=_report_cell(_ticket_expiry(row)),
                 qty=_report_cell(_ticket_contracts_display(row)),
                 entry=_report_cell(_ticket_limit_display(row)),
@@ -30285,6 +30301,45 @@ def _ticket_leg_from_plan(row: Mapping[str, Any], side: str) -> str:
         if text.upper().startswith(side_upper):
             return text.split("@", 1)[0].strip()
     return ""
+
+
+def _ticket_leg_text(row: Mapping[str, Any], side: str) -> str:
+    field = "sell_leg" if side.upper() == "SELL" else "buy_leg"
+    return _as_text(row.get(field)) or _ticket_leg_from_plan(row, side)
+
+
+def _ticket_leg_details(row: Mapping[str, Any], side: str) -> tuple[Optional[float], str]:
+    structured_field = "short_strike" if side.upper() == "SELL" else "long_strike"
+    structured_strike = _as_float(row.get(structured_field))
+    leg = _ticket_leg_text(row, side)
+    match = re.search(r"\b(\d+(?:\.\d+)?)\s+(CALL|PUT)\b", leg.upper())
+    parsed_strike = _as_float(match.group(1)) if match else None
+    option_type = match.group(2).title() if match else ""
+    return structured_strike if structured_strike is not None else parsed_strike, option_type
+
+
+def _ticket_leg_strike(row: Mapping[str, Any], side: str) -> Any:
+    strike, _ = _ticket_leg_details(row, side)
+    return strike if strike is not None else ""
+
+
+def _ticket_option_type(row: Mapping[str, Any]) -> str:
+    explicit = _as_text(row.get("option_type")).title()
+    if explicit in {"Call", "Put"}:
+        return explicit
+    for side in ("SELL", "BUY"):
+        _, option_type = _ticket_leg_details(row, side)
+        if option_type:
+            return option_type
+    return ""
+
+
+def _ticket_leg_strike_display(row: Mapping[str, Any], side: str) -> str:
+    strike, option_type = _ticket_leg_details(row, side)
+    if strike is None:
+        return "-"
+    option_type = option_type or _ticket_option_type(row)
+    return f"{_format_strike(strike)} {option_type}".strip()
 
 
 def _ticket_structure(row: Mapping[str, Any]) -> str:
