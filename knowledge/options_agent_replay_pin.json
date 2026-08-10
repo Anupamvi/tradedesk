@@ -13,7 +13,7 @@
   "replay_detail_path": "options_agent_independent_replay/v1_68_five_source_final_20260806/options_agent_replay_detail.csv",
   "replay_detail_sha256": "989a0e9d0749b94b92466c24a9936e67b6562e3754cf18c91d61fb1fcf05f713",
   "review_only_attestation_path": "options_agent_replay_review_only_attestation.json",
-  "review_only_attestation_sha256": "759c3ab46d19e76d37c0e0558f975157d2af6f548dcb6f29a98784d3c20d7248",
+  "review_only_attestation_sha256": "ad0555b4ebbdfa16fab88df94d60c14b186632d110ed4faea7182cf83d14d28c",
   "schema_version": "options_agent.replay_pin.v2",
   "split_day": "2026-05-01"
 }

@@ -59,8 +59,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.71-session-neutral-actionability-20260808-124037"
+    assert core.PIPELINE_VERSION == "options-agent-v1.72-stale-quote-target-preservation-20260810-093000"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.71-session-neutral-actionability-20260808-124037",
         "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
         "options-agent-v1.69-live-quote-integrity-20260808-000000",
         "options-agent-v1.68-five-source-market-context-20260806-081546",
@@ -125,7 +126,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-08-08T12:40:37-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-08-10T09:30:00-04:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -4043,6 +4044,60 @@ def test_closed_market_clean_live_row_can_still_be_green_when_other_gates_pass()
     assert green["ticker"].tolist() == ["LIVE"]
     assert yellow.empty
     assert queue.empty
+
+
+def test_preopen_stale_quote_preserves_yellow_target_but_not_green() -> None:
+    final = pd.DataFrame(
+        [
+            {
+                "ticker": "STALE",
+                "recommendation_status": RecommendationStatus.ENTER.value,
+                "quality_status": "qualified",
+                "full_ticket": "SELL 1 STALE 2026-09-18 100 Put / BUY 1 STALE 2026-09-18 95 Put @ 1.50 CREDIT",
+                "trade_plan": "SELL 1 STALE 2026-09-18 100 Put / BUY 1 STALE 2026-09-18 95 Put @ 1.50 CREDIT",
+                "entry_limit": 1.50,
+                "suggested_contracts": 1,
+                "max_profit": 150.0,
+                "max_loss": 350.0,
+                "credit_width_ratio": 0.30,
+                "trade_quality_status": "reviewable",
+                "live_validation_status": "STALE_LIVE_QUOTE",
+                "selector_policy_status": "PASS",
+                "profitability_calibration_status": "PASS",
+                "underlying_quality_tier": "core",
+                "agent_support_count": 4,
+                "external_agent_review_count": 4,
+                "external_agent_distinct_review_count": 4,
+            }
+        ]
+    )
+    final = _mark_strategy_expectancy_pass(final)
+    context = core.build_execution_context(
+        live_schwab=True,
+        chain_snapshot_dir=None,
+        portfolio_context={"status": "ok", "total_value": 100_000},
+        research_task_count=4,
+        external_review_count=4,
+        external_review_agent_count=4,
+        agent_dispatch_task_count=4,
+        agent_reviews_json=Path("/tmp/reviews.json"),
+        market_session_open=False,
+    )
+
+    decision = core.synthesize_decision_board(
+        final,
+        market_regime={"regime": "mixed"},
+        execution_context=context,
+    )
+    tickets = core.build_trade_tickets(decision)
+    green, yellow = core.split_trade_ticket_surfaces(tickets)
+
+    assert decision["ready_to_enter"].tolist() == [False]
+    assert decision["execution_blockers"].tolist() == ["regular_session_quote_refresh_required"]
+    assert decision["target_order_status"].tolist() == ["target_order_candidate"]
+    assert green.empty
+    assert yellow["ticker"].tolist() == ["STALE"]
+    assert yellow["order_readiness"].tolist() == ["target_order_price_validation"]
 
 
 def test_market_open_recheck_queue_includes_only_market_session_only_targets() -> None:

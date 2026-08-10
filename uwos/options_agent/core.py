@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from ._vendor.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.71-session-neutral-actionability-20260808-124037"
+PIPELINE_VERSION = "options-agent-v1.72-stale-quote-target-preservation-20260810-093000"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.71-session-neutral-actionability-20260808-124037",
     "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
     "options-agent-v1.69-live-quote-integrity-20260808-000000",
     "options-agent-v1.68-five-source-market-context-20260806-081546",
@@ -113,7 +114,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-08-08T12:40:37-07:00"
+PIPELINE_RELEASED_AT = "2026-08-10T09:30:00-04:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -297,7 +298,7 @@ MIN_EXECUTION_CONFIDENCE_SCORE = 70.0
 MIN_AGENTIC_REVIEW_COVERAGE = 0.80
 MIN_AGENTIC_REVIEW_LANES_PER_TICKER = 4
 DEFERRED_TARGET_VALIDATION_STATUSES = frozenset(
-    {"TARGET_QUOTE_REFRESH", "MARKET_CLOSED_RECHECK"}
+    {"TARGET_QUOTE_REFRESH", "MARKET_CLOSED_RECHECK", "STALE_LIVE_QUOTE"}
 )
 CLOSED_MARKET_TRANSIENT_QUALITY_PREFIXES = (
     "live_quote_width_pct_",
@@ -357,8 +358,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.71-session-neutral-actionability-20260808-124037",
+    "PIPELINE_VERSION": "options-agent-v1.72-stale-quote-target-preservation-20260810-093000",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.71-session-neutral-actionability-20260808-124037",
         "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
         "options-agent-v1.69-live-quote-integrity-20260808-000000",
         "options-agent-v1.68-five-source-market-context-20260806-081546",
@@ -423,7 +425,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-08-08T12:40:37-07:00",
+    "PIPELINE_RELEASED_AT": "2026-08-10T09:30:00-04:00",
     "PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS": frozenset(
         {"options-agent-v1.68-five-source-market-context-20260806-081546"}
     ),
@@ -10554,6 +10556,7 @@ def build_live_spread_quality_audit(final: pd.DataFrame) -> pd.DataFrame:
             "NO_REALISTIC_SPREAD",
             "TARGET_QUOTE_REFRESH",
             "MARKET_CLOSED_RECHECK",
+            "STALE_LIVE_QUOTE",
         } and not _as_text(row.get("spot_live")):
             continue
         quality_reason = _as_text(row.get("quality_gate_reason"))
@@ -10570,7 +10573,7 @@ def build_live_spread_quality_audit(final: pd.DataFrame) -> pd.DataFrame:
             liquidity_status = "BLOCK"
         quote_width = _as_float(row.get("live_quote_width_pct"))
         quote_width_status = quote_width is not None and quote_width > MAX_LIVE_QUOTE_WIDTH_PCT
-        if live_status in {"TARGET_QUOTE_REFRESH", "MARKET_CLOSED_RECHECK"} and not live_quality_reasons and not quote_width_status:
+        if live_status in DEFERRED_TARGET_VALIDATION_STATUSES and not live_quality_reasons and not quote_width_status:
             market_quality_status = "DEFERRED_QUOTE_REFRESH"
         else:
             market_quality_status = "BLOCK" if live_quality_reasons or quote_width_status or liquidity_status in {"BLOCK", "MISSING"} else "PASS"
@@ -10772,7 +10775,7 @@ def _execution_fill_quality_verdict(
     warnings: list[str] = []
     entry_type = _as_text(entry_type).upper()
     live_status = _as_text(live_validation_status).upper()
-    if live_status in {"TARGET_QUOTE_REFRESH", "MARKET_CLOSED_RECHECK"}:
+    if live_status in DEFERRED_TARGET_VALIDATION_STATUSES:
         warnings.append("fresh_quote_refresh_required_before_order_entry")
     elif live_status != "PASS":
         blockers.append("live_validation_not_pass")
@@ -20940,7 +20943,9 @@ def _execution_blockers_for_row(
     if status == RecommendationStatus.WAIT_FOR_PRICE.value:
         blockers.append("wait_for_price")
     live_validation_deferred = _market_closed_live_validation_deferred(row, execution_context)
-    if not live_validation_deferred and live_status != "PASS":
+    if live_validation_deferred and live_status == "STALE_LIVE_QUOTE":
+        blockers.append("regular_session_quote_refresh_required")
+    elif not live_validation_deferred and live_status != "PASS":
         blockers.append("live_validation_pass_required")
     if execution_context.get("agentic_reviews_ready") and _v0_require_per_ticker_agent_review():
         configured_min_lanes = _as_float(execution_context.get("min_agentic_review_lanes_per_ticker"))
@@ -21186,7 +21191,7 @@ def _review_resolved_for_target_recheck(
 
 def _market_closed_live_validation_deferred(row: Mapping[str, Any], execution_context: Mapping[str, Any]) -> bool:
     return bool(
-        _as_text(row.get("live_validation_status")).upper() in {"TARGET_QUOTE_REFRESH", "MARKET_CLOSED_RECHECK"}
+        _as_text(row.get("live_validation_status")).upper() in DEFERRED_TARGET_VALIDATION_STATUSES
         and execution_context.get("market_session_recheck_required")
         and execution_context.get("fresh_live_quotes_ready")
     )
@@ -21298,7 +21303,7 @@ def _target_order_status(
 
 
 def _is_dated_recheck_target(row: Mapping[str, Any], *, status: str, live_status: str) -> bool:
-    if live_status and live_status not in {"TARGET_QUOTE_REFRESH", "MARKET_CLOSED_RECHECK"}:
+    if live_status and live_status not in DEFERRED_TARGET_VALIDATION_STATUSES:
         return False
     if status not in {
         RecommendationStatus.ENTER.value,
