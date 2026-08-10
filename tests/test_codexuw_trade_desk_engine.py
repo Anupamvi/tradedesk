@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 
 import pandas as pd
+import pytest
 
 from codexuw.catalysts import load_catalyst_context
 from codexuw.daily_v4 import apply_v4_professional_dispositions
@@ -20,12 +21,15 @@ from codexuw.engine import (
     classify_flow_quality,
     select_final_trades,
     _compact_action_rows,
+    _expected_move_pct,
 )
-from codexuw.schwab_live import find_credit_spread_alternatives
+from codexuw.schwab_live import chain_to_contracts, find_credit_spread_alternatives
 
 
 ASOF = dt.date(2026, 5, 5)
 EXPIRY = dt.date(2026, 5, 15)
+# Credit spreads have a 28-DTE floor, so they need their own longer expiry.
+CREDIT_EXPIRY = dt.date(2026, 6, 4)
 
 
 def _credit_row(**overrides) -> dict:
@@ -34,11 +38,12 @@ def _credit_row(**overrides) -> dict:
         "sector": "Technology",
         "direction": "Bull Put",
         "strategy": "Bull Put Credit Spread",
-        "regime": "uptrend",
-        "regime_trend": "uptrend",
+        "regime": "downtrend",
+        "regime_trend": "downtrend",
         "strategy_kind": "Credit",
-        "expiry": EXPIRY,
-        "dte": 10,
+        "expiry": CREDIT_EXPIRY,
+        "dte": 30,
+        "iv_rank": 45,
         "hard_rejects": "",
         "penalties": "",
         "credit": 1.30,
@@ -50,19 +55,21 @@ def _credit_row(**overrides) -> dict:
         "distance_pct": 0.05,
         "expected_move_ratio": 0.85,
         "iv30d": 0.24,
-        "realized_volatility_30d": 0.25,
+        "realized_volatility_30d": 0.16,
         "combined_flow_bias": 0.12,
         "bot_flow_source_status": "bot_eod_loaded",
         "score": 7.5,
         "confidence": "High",
         "live_status": "PASS",
+        "regular_session_quote": True,
+        "displayed_entry_size": 10,
         "quote_width_pct": 0.15,
         "short_oi": 1000,
         "short_volume": 500,
         "long_oi": 1000,
         "long_volume": 500,
-        "short_leg": "AAA260515P00100000",
-        "long_leg": "AAA260515P00095000",
+        "short_leg": "AAA260604P00100000",
+        "long_leg": "AAA260604P00095000",
         "flow_quality": "directional",
         "flow_quality_reason": "premium bias aligns",
         "oi_carryover_status": "supportive",
@@ -75,7 +82,7 @@ def _credit_row(**overrides) -> dict:
         "catalyst_status": "supportive",
         "payoff_calibration_status": "PASS",
         "payoff_route_level": "base",
-        "payoff_route_key": "base::Credit|Bull Put|uptrend",
+        "payoff_route_key": "base::Credit|Bull Put|downtrend",
         "payoff_minimum_sample_required": 20,
         "payoff_sample_size": 27,
         "payoff_stress_10_win_rate": 0.78,
@@ -185,8 +192,8 @@ def test_v4_known_earnings_after_expiry_can_execute() -> None:
     scored = pd.DataFrame(
         [
             _credit_row(
-                expiry=ASOF + dt.timedelta(days=21),
-                dte=21,
+                expiry=ASOF + dt.timedelta(days=30),
+                dte=30,
                 catalyst_status="mixed",
                 catalyst_earnings_date=ASOF + dt.timedelta(days=40),
                 catalyst_earnings_days=40,
@@ -290,8 +297,8 @@ def test_v4_only_one_same_ticker_structure_can_execute() -> None:
         [
             _credit_row(
                 ticker="MRVL",
-                expiry=ASOF + dt.timedelta(days=21),
-                dte=21,
+                expiry=ASOF + dt.timedelta(days=30),
+                dte=30,
                 short_strike=230.0,
                 long_strike=225.0,
                 required_entry=1.25,
@@ -306,8 +313,8 @@ def test_v4_only_one_same_ticker_structure_can_execute() -> None:
             ),
             _credit_row(
                 ticker="MRVL",
-                expiry=ASOF + dt.timedelta(days=21),
-                dte=21,
+                expiry=ASOF + dt.timedelta(days=30),
+                dte=30,
                 short_strike=232.5,
                 long_strike=227.5,
                 required_entry=1.25,
@@ -384,6 +391,37 @@ def test_large_equity_exposure_warns_without_veto_or_size_cap() -> None:
     assert final["contracts"].tolist() == [11]
 
 
+def test_generic_portfolio_requirements_are_explicit() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(ticker="NO_SHARES", requires_equity_shares=100),
+            _credit_row(ticker="NO_CASH", requires_cash=25_000),
+            _credit_row(ticker="MARGIN", requires_margin_model=True),
+            _credit_row(ticker="COVERED", requires_equity_shares=100),
+        ]
+    )
+    portfolio = {
+        "status": "ok",
+        "total_value": 100_000,
+        "cash": 10_000,
+        "option_underlyings": [],
+        "large_equity_exposure": {},
+        "equity_shares": {"COVERED": 100},
+        "portfolio_income_mode": "existing-core-review",
+        "covered_income_allowed_tickers": [],
+    }
+
+    annotated = apply_portfolio_context(scored, portfolio).set_index("ticker")
+
+    # Capital requirements are advisory, but unmet requirements must not be labeled PASS.
+    for ticker in ("NO_SHARES", "NO_CASH", "MARGIN"):
+        assert annotated.loc[ticker, "portfolio_requirements_status"] == "WARN"
+    assert annotated.loc["COVERED", "portfolio_requirements_status"] == "PASS"
+    assert "requires 100 shares" in annotated.loc["NO_SHARES", "portfolio_requirements_reason"]
+    assert "requires $25,000 cash" in annotated.loc["NO_CASH", "portfolio_requirements_reason"]
+    assert "portfolio_collateral_or_margin_blocked" not in str(annotated.loc["NO_CASH", "penalties"])
+
+
 def test_elevated_equity_exposure_does_not_block_additive_execute() -> None:
     scored = pd.DataFrame([_credit_row(ticker="AAA", max_loss=100.0)])
     portfolio = {
@@ -401,7 +439,7 @@ def test_elevated_equity_exposure_does_not_block_additive_execute() -> None:
     assert "execution gate unaffected" in out["portfolio_note"].iloc[0]
 
 
-def test_risk_cap_breach_still_blocks_selection() -> None:
+def test_risk_budget_scales_size_but_does_not_drop_the_trade() -> None:
     scored = pd.DataFrame([_credit_row(max_loss=4000.0)])
 
     final = select_final_trades(
@@ -411,7 +449,8 @@ def test_risk_cap_breach_still_blocks_selection() -> None:
         recent_performance={"status": "unavailable"},
     )
 
-    assert final.empty
+    assert len(final) == 1
+    assert int(final["contracts"].iloc[0]) == 1
 
 
 def test_target_model_marks_tiny_execute_profit_stretched() -> None:
@@ -453,9 +492,9 @@ def test_target_aware_selection_outputs_target_contribution_columns() -> None:
     )
 
     assert final["contracts"].tolist() == [3]
-    assert final["target_profit_total"].iloc[0] == 180.0
+    assert final["target_profit_total"].iloc[0] == 150.0
     assert final["position_max_loss"].iloc[0] == 300.0
-    assert final["target_contribution_pct"].iloc[0] == 0.018
+    assert final["target_contribution_pct"].iloc[0] == 0.015
 
 
 def test_selection_stays_one_lot_until_closed_live_outcome_gate_passes() -> None:
@@ -607,7 +646,7 @@ def test_oi_carryover_exact_leg_matching_populates_support_fields() -> None:
     oi = pd.DataFrame(
         [
             {
-                "option_symbol": "AAA260515P00100000",
+                "option_symbol": "AAA260604P00100000",
                 "right": "P",
                 "oi_diff_plain": 250,
                 "prev_bid_volume": 1000,
@@ -615,7 +654,7 @@ def test_oi_carryover_exact_leg_matching_populates_support_fields() -> None:
                 "prev_total_premium": 1_000_000,
             },
             {
-                "option_symbol": "AAA260515P00095000",
+                "option_symbol": "AAA260604P00095000",
                 "right": "P",
                 "oi_diff_plain": 100,
                 "prev_bid_volume": 600,
@@ -1049,7 +1088,7 @@ def test_replay_edge_model_positive_match_promotes_live_credit_candidate(tmp_pat
                 "direction": "Bull Put",
                 "strategy": "Bull Put Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 18,
+                "dte": 30,
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 95.0,
                 "long_strike_eod": 90.0,
@@ -1058,9 +1097,10 @@ def test_replay_edge_model_positive_match_promotes_live_credit_candidate(tmp_pat
                 "expected_move_ratio": 0.85,
                 "iv_rank": 45,
                 "iv30d": 0.25,
+                "realized_volatility_30d": 0.17,
                 "combined_flow_bias": 0.12,
                 "flow_quality": "directional",
-                "regime": "uptrend",
+                "regime": "downtrend",
                 "exact_evaluated": True,
                 "decision_pass": True,
                 "exact_win": won,
@@ -1069,7 +1109,7 @@ def test_replay_edge_model_positive_match_promotes_live_credit_candidate(tmp_pat
         )
     pd.DataFrame(history_rows).to_csv(replay_dir / "codexuw_replay_detail.csv", index=False)
 
-    scored = pd.DataFrame([_credit_row(replay_ev_verdict="structure_proxy", regime_trend="uptrend")])
+    scored = pd.DataFrame([_credit_row(replay_ev_verdict="structure_proxy", regime_trend="downtrend")])
     edged = apply_replay_edge_model(scored, tmp_path)
 
     assert edged["edge_verdict"].iloc[0] == "positive"
@@ -1088,17 +1128,19 @@ def test_replay_edge_model_negative_match_hard_rejects_execute(tmp_path) -> None
                 "direction": "Bull Put",
                 "strategy": "Bull Put Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 18,
+                "dte": 30,
                 "stock_price_eod": 100.0,
                 "short_strike_eod": 95.0,
                 "long_strike_eod": 90.0,
                 "entry_credit_pct_width": 0.25,
                 "entry_quote_width_pct": 0.12,
                 "expected_move_ratio": 0.85,
+                "iv_rank": 45,
                 "iv30d": 0.25,
+                "realized_volatility_30d": 0.17,
                 "combined_flow_bias": 0.12,
                 "flow_quality": "directional",
-                    "regime": "uptrend",
+                "regime": "downtrend",
                 "exact_evaluated": True,
                 "decision_pass": True,
                 "exact_win": False,
@@ -1108,7 +1150,7 @@ def test_replay_edge_model_negative_match_hard_rejects_execute(tmp_path) -> None
         ]
     ).to_csv(replay_dir / "codexuw_replay_detail.csv", index=False)
 
-    edged = apply_replay_edge_model(pd.DataFrame([_credit_row(regime_trend="uptrend")]), tmp_path)
+    edged = apply_replay_edge_model(pd.DataFrame([_credit_row(regime_trend="downtrend")]), tmp_path)
     out = assign_trade_statuses(edged)
 
     assert edged["edge_verdict"].iloc[0] == "negative"
@@ -1122,23 +1164,25 @@ def test_v4_edge_history_is_namespaced_and_asof_safe(tmp_path) -> None:
     v4_dir.mkdir()
     other_dir.mkdir()
 
-    def history_row(asof: str, exit_day: str, pnl: float) -> dict:
+    def history_row(asof: str, exit_day: str, pnl: float, *, expiry: str = "2026-04-15") -> dict:
         return {
             "asof": asof,
             "exit_day": exit_day,
             "ticker": "AAA",
             "direction": "Bull Put",
             "strategy": "Bull Put Credit Spread",
-            "dte": 10,
-            "expiry": "2026-05-15",
+            "dte": 30,
+            "expiry": expiry,
             "short_strike_eod": 100.0,
             "long_strike_eod": 95.0,
             "entry_credit_pct_width": 0.26,
             "expected_move_ratio": 0.85,
             "combined_flow_bias": 0.12,
             "flow_quality": "directional",
-                "regime": "uptrend",
+            "regime": "downtrend",
             "iv30d": 0.24,
+            "realized_volatility_30d": 0.16,
+            "iv_rank": 45,
             "entry_quote_width_pct": 0.15,
             "next_earnings_dt": "2026-08-01",
             "exact_evaluated": True,
@@ -1152,7 +1196,7 @@ def test_v4_edge_history_is_namespaced_and_asof_safe(tmp_path) -> None:
             history_row("2026-04-01", "2026-04-10", 50.0),
             history_row("2026-04-02", "2026-04-11", 40.0),
             history_row("2026-04-03", "2026-04-12", 30.0),
-            history_row("2026-05-06", "2026-05-08", -500.0),
+            history_row("2026-05-06", "2026-05-08", -500.0, expiry="2026-06-15"),
         ]
     ).to_csv(v4_dir / "codexuw_replay_detail.csv", index=False)
     pd.DataFrame([history_row("2026-04-04", "2026-04-13", -500.0) for _ in range(3)]).to_csv(
@@ -1160,7 +1204,7 @@ def test_v4_edge_history_is_namespaced_and_asof_safe(tmp_path) -> None:
     )
 
     edged = apply_replay_edge_model(
-        pd.DataFrame([_credit_row(regime_trend="uptrend")]),
+        pd.DataFrame([_credit_row(regime_trend="downtrend")]),
         tmp_path,
         asof=dt.date(2026, 5, 5),
         history_namespace="codexdaily_v4_edge_history",
@@ -1214,10 +1258,10 @@ def test_unclear_spread_leg_flow_can_watch_with_promising_edge() -> None:
 def test_credit_spread_alternatives_emit_labeled_constructions() -> None:
     contracts = pd.DataFrame(
         [
-            {"expiry": EXPIRY, "right": "P", "strike": 95.0, "symbol": "AAA260515P00095000", "bid": 1.40, "ask": 1.50, "mark": 1.45, "delta": -0.22, "open_interest": 1000, "volume": 500},
-            {"expiry": EXPIRY, "right": "P", "strike": 90.0, "symbol": "AAA260515P00090000", "bid": 0.35, "ask": 0.45, "mark": 0.40, "delta": -0.12, "open_interest": 1000, "volume": 500},
-            {"expiry": EXPIRY, "right": "P", "strike": 94.0, "symbol": "AAA260515P00094000", "bid": 1.15, "ask": 1.25, "mark": 1.20, "delta": -0.18, "open_interest": 1000, "volume": 500},
-            {"expiry": EXPIRY, "right": "P", "strike": 89.0, "symbol": "AAA260515P00089000", "bid": 0.20, "ask": 0.30, "mark": 0.25, "delta": -0.10, "open_interest": 1000, "volume": 500},
+            {"expiry": EXPIRY, "right": "P", "strike": 95.0, "symbol": "AAA260604P00095000", "bid": 1.40, "ask": 1.50, "bid_size": 10, "ask_size": 10, "regular_session_quote": True, "mark": 1.45, "delta": -0.22, "open_interest": 1000, "volume": 500},
+            {"expiry": EXPIRY, "right": "P", "strike": 90.0, "symbol": "AAA260604P00090000", "bid": 0.35, "ask": 0.45, "bid_size": 10, "ask_size": 10, "regular_session_quote": True, "mark": 0.40, "delta": -0.12, "open_interest": 1000, "volume": 500},
+            {"expiry": EXPIRY, "right": "P", "strike": 94.0, "symbol": "AAA260604P00094000", "bid": 1.15, "ask": 1.25, "bid_size": 10, "ask_size": 10, "regular_session_quote": True, "mark": 1.20, "delta": -0.18, "open_interest": 1000, "volume": 500},
+            {"expiry": EXPIRY, "right": "P", "strike": 89.0, "symbol": "AAA260604P00089000", "bid": 0.20, "ask": 0.30, "bid_size": 10, "ask_size": 10, "regular_session_quote": True, "mark": 0.25, "delta": -0.10, "open_interest": 1000, "volume": 500},
         ]
     )
 
@@ -1236,6 +1280,117 @@ def test_credit_spread_alternatives_emit_labeled_constructions() -> None:
     assert all("target_entry" in row for row in alternatives)
 
 
+def test_expected_move_uses_candidate_dte_instead_of_daily_uw_field() -> None:
+    expected = _expected_move_pct(
+        pd.Series({"iv30d": 0.2265, "dte": 21, "implied_move_perc": 0.001151})
+    )
+
+    assert expected == pytest.approx(0.2265 * (21 / 365) ** 0.5)
+
+
+def test_confirmation_framework_exempts_etf_from_company_earnings() -> None:
+    row = _credit_row(
+        ticker="QQQ",
+        next_earnings_dt=ASOF + dt.timedelta(days=2),
+        catalyst_status="mixed",
+    )
+
+    confirmed = apply_confirmation_framework(
+        pd.DataFrame([row]),
+        asof=ASOF,
+        regime={"trend": "downtrend", "flow": "weak"},
+    )
+
+    assert "earnings_news_risk" not in confirmed.iloc[0]["confirmations_failed"]
+
+
+def test_credit_confirmation_does_not_restore_deleted_distance_gate() -> None:
+    row = _credit_row(
+        expected_move_ratio=0.40,
+        distance_pct=0.02,
+        iv30d=0.30,
+    )
+
+    confirmed = apply_confirmation_framework(
+        pd.DataFrame([row]),
+        asof=ASOF,
+        regime={"trend": "downtrend", "flow": "weak"},
+    )
+
+    failed = confirmed.iloc[0]["confirmations_failed"]
+    assert "expected_move_buffer" not in failed
+    assert "level_or_gex_protection" not in failed
+
+
+def test_actionable_credit_construction_does_not_require_deleted_distance_gate() -> None:
+    contracts = pd.DataFrame(
+        [
+            {"expiry": CREDIT_EXPIRY, "right": "P", "strike": 95.0, "symbol": "AAA260604P00095000", "bid": 1.75, "ask": 1.80, "bid_size": 10, "ask_size": 10, "regular_session_quote": True, "mark": 1.775, "delta": -0.30, "open_interest": 1000, "volume": 500},
+            {"expiry": CREDIT_EXPIRY, "right": "P", "strike": 90.0, "symbol": "AAA260604P00090000", "bid": 0.40, "ask": 0.45, "bid_size": 10, "ask_size": 10, "regular_session_quote": True, "mark": 0.425, "delta": -0.12, "open_interest": 1000, "volume": 500},
+        ]
+    )
+
+    alternatives = find_credit_spread_alternatives(
+        contracts,
+        direction="Bull Put",
+        expiry=CREDIT_EXPIRY,
+        spot=100.0,
+        preferred_width=5.0,
+        expected_move_pct=0.10,
+        as_of_date=ASOF,
+    )
+
+    actionable = next(row for row in alternatives if row["construction_source"] == "actionable_quality")
+    assert actionable["credit_pct_width"] >= 0.25
+    assert actionable["breakeven_expected_move_ratio"] < 0.75
+
+
+def test_open_interest_cannot_substitute_for_displayed_option_size() -> None:
+    contracts = pd.DataFrame(
+        [
+            {"expiry": CREDIT_EXPIRY, "right": "P", "strike": 95.0, "symbol": "AAA260604P00095000", "bid": 1.75, "ask": 1.80, "bid_size": 0, "ask_size": 0, "regular_session_quote": False, "mark": 1.775, "delta": -0.30, "open_interest": 7000, "volume": 0},
+            {"expiry": CREDIT_EXPIRY, "right": "P", "strike": 90.0, "symbol": "AAA260604P00090000", "bid": 0.40, "ask": 0.45, "bid_size": 0, "ask_size": 0, "regular_session_quote": False, "mark": 0.425, "delta": -0.12, "open_interest": 1600, "volume": 0},
+        ]
+    )
+
+    alternatives = find_credit_spread_alternatives(
+        contracts,
+        direction="Bull Put",
+        expiry=CREDIT_EXPIRY,
+        spot=100.0,
+        preferred_width=5.0,
+        as_of_date=ASOF,
+    )
+
+    assert not any(row["construction_source"] == "actionable_quality" for row in alternatives)
+    assert all(row["displayed_entry_size"] == 0 for row in alternatives)
+
+
+def test_chain_parser_preserves_displayed_size_and_session_state() -> None:
+    quoted_at = dt.datetime(2026, 5, 5, 14, 0, tzinfo=dt.timezone.utc)
+    chain = {
+        "callExpDateMap": {
+            "2026-06-04:30": {
+                "100.0": [{
+                    "strikePrice": 100.0,
+                    "symbol": "AAA260604C00100000",
+                    "bid": 1.0,
+                    "ask": 1.1,
+                    "bidSize": 12,
+                    "askSize": 8,
+                    "quoteTimeInLong": int(quoted_at.timestamp() * 1000),
+                }]
+            }
+        }
+    }
+
+    contract = chain_to_contracts(chain).iloc[0]
+
+    assert contract["bid_size"] == 12
+    assert contract["ask_size"] == 8
+    assert bool(contract["regular_session_quote"])
+
+
 def test_data_quality_gate_demotes_execute_when_portfolio_is_missing() -> None:
     scored = assign_trade_statuses(pd.DataFrame([_credit_row()]))
     assert scored["trade_status"].iloc[0] == "Execute"
@@ -1251,20 +1406,11 @@ def test_data_quality_gate_demotes_execute_when_portfolio_is_missing() -> None:
 
 def test_data_quality_gate_does_not_apply_company_news_blocker_to_etf() -> None:
     scored = assign_trade_statuses(
-        pd.DataFrame(
-            [
-                _credit_row(
-                    ticker="QQQ",
-                    catalyst_status="unknown",
-                    penalties="news_unconfirmed",
-                )
-            ]
-        )
+        pd.DataFrame([_credit_row(ticker="QQQ", catalyst_status="unknown", penalties="news_unconfirmed")])
     )
-
     gated = apply_data_quality_gate(
         scored,
-        {"status": "critical", "critical_blockers": ["browser_news_notes_present"], "items": []},
+        {"status": "warning", "critical_blockers": [], "warnings": ["browser_news_notes_present"], "items": []},
     )
 
     assert "data_gate_news_unconfirmed" not in str(gated.iloc[0].get("data_quality_blockers") or "")
@@ -1286,7 +1432,7 @@ def test_data_quality_status_reports_required_live_inputs() -> None:
     assert "browser_news_notes_present" in status["warnings"]
 
 
-def test_data_quality_status_audits_all_five_uw_exports_without_making_soft_sources_critical() -> None:
+def test_data_quality_status_requires_all_five_uw_exports() -> None:
     status = build_data_quality_status(
         input_provenance={
             "exports": {
@@ -1297,7 +1443,6 @@ def test_data_quality_status_audits_all_five_uw_exports_without_making_soft_sour
                 "dp_eod_report": {},
             },
             "browser_text_count": 0,
-            "browser_support_file_count": 1,
         },
         scored=pd.DataFrame([_credit_row(live_status="PASS")]),
         portfolio={"status": "ok", "position_count": 3},
@@ -1309,8 +1454,37 @@ def test_data_quality_status_audits_all_five_uw_exports_without_making_soft_sour
 
     assert status["status"] == "warning"
     assert status["critical_blockers"] == []
-    assert "browser_news_notes_present" in status["warnings"]
-    assert not any("dark-pool" in warning for warning in status["warnings"])
+    assert status["warnings"] == ["browser_news_notes_present"]
+
+
+def test_data_quality_status_keeps_preopen_live_prices_as_row_level_warning() -> None:
+    status = build_data_quality_status(
+        input_provenance={
+            "exports": {
+                "stock_screener": {},
+                "hot_chains": {},
+                "chain_oi_changes": {},
+                "bot_eod_report": {},
+                "dp_eod_report": {},
+            },
+            "browser_text_count": 1,
+        },
+        scored=pd.DataFrame(
+            [_credit_row(live_status="PASS", regular_session_quote=False, displayed_entry_size=0)]
+        ),
+        portfolio={"status": "ok", "position_count": 3},
+        catalysts=pd.DataFrame([{"ticker": "AAA", "catalyst_status": "mixed"}]),
+        recent_performance={"status": "ok", "latest_asof": "2026-07-21", "window": 30},
+        live_outcomes={"status": "ok", "latest_report_date": "2026-07-21", "window": 30},
+        run_mode="EOD swing target plan",
+    )
+
+    quote = next(item for item in status["items"] if item["check"] == "Schwab quotes available")
+    assert status["status"] == "warning"
+    assert status["critical_blockers"] == []
+    assert quote["status"] == "warning"
+    assert "0 row-level executable quotes" in quote["detail"]
+    assert "1 live-priced PASS rows" in quote["detail"]
 
 
 def test_negative_live_outcome_family_blocks_execute_confidence() -> None:

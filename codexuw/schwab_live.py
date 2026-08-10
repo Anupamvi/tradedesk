@@ -4,7 +4,7 @@ import datetime as dt
 import json
 import math
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -19,18 +19,43 @@ MIN_WATCH_CREDIT_WIDTH_RATIO = 0.14
 MARKET_TIMEZONE = ZoneInfo("America/New_York")
 
 
-def _quote_session_date(value: Any) -> dt.date | None:
+def is_regular_option_session_open(now: dt.datetime | None = None) -> bool:
+    current = now or dt.datetime.now(tz=MARKET_TIMEZONE)
+    local = current.astimezone(MARKET_TIMEZONE) if current.tzinfo is not None else current.replace(tzinfo=MARKET_TIMEZONE)
+    return bool(local.weekday() < 5 and dt.time(9, 30) <= local.time() <= dt.time(16, 0))
+
+
+def _quote_timestamp(value: Any) -> dt.datetime | None:
     quote_millis = safe_float(value, math.nan)
     if not math.isfinite(quote_millis) or quote_millis <= 0:
         return None
     try:
-        quoted_at = dt.datetime.fromtimestamp(
+        return dt.datetime.fromtimestamp(
             quote_millis / 1000.0,
             tz=dt.timezone.utc,
         )
     except (OverflowError, OSError, ValueError):
         return None
-    return quoted_at.astimezone(MARKET_TIMEZONE).date()
+
+
+def _quote_session_date(value: Any) -> dt.date | None:
+    quoted_at = _quote_timestamp(value)
+    return quoted_at.astimezone(MARKET_TIMEZONE).date() if quoted_at is not None else None
+
+
+def _regular_option_session_quote(quoted_at: dt.datetime | None) -> bool:
+    if quoted_at is None:
+        return False
+    local = quoted_at.astimezone(MARKET_TIMEZONE)
+    return bool(local.weekday() < 5 and dt.time(9, 30) <= local.time() <= dt.time(16, 0))
+
+
+def _contract_quote_timestamp(contract: dict[str, Any]) -> dt.datetime | None:
+    for field in ("quoteTimeInLong", "quoteTime"):
+        quoted_at = _quote_timestamp(contract.get(field))
+        if quoted_at is not None:
+            return quoted_at
+    return None
 
 
 def _contract_quote_session_date(contract: dict[str, Any]) -> dt.date | None:
@@ -51,6 +76,7 @@ def _iter_contracts(exp_map: dict[str, Any], right: str):
         for strike_key, contracts in (strike_map or {}).items():
             strike = safe_float(strike_key)
             for contract in contracts or []:
+                quoted_at = _contract_quote_timestamp(contract)
                 yield {
                     "expiry": expiry,
                     "right": right,
@@ -58,6 +84,8 @@ def _iter_contracts(exp_map: dict[str, Any], right: str):
                     "symbol": contract.get("symbol", ""),
                     "bid": safe_float(contract.get("bid")),
                     "ask": safe_float(contract.get("ask")),
+                    "bid_size": safe_float(contract.get("bidSize"), 0.0),
+                    "ask_size": safe_float(contract.get("askSize"), 0.0),
                     "mark": safe_float(contract.get("mark")),
                     "delta": safe_float(contract.get("delta")),
                     "theta": safe_float(contract.get("theta")),
@@ -66,7 +94,9 @@ def _iter_contracts(exp_map: dict[str, Any], right: str):
                     "iv": safe_float(contract.get("volatility")),
                     "open_interest": safe_float(contract.get("openInterest"), 0.0),
                     "volume": safe_float(contract.get("totalVolume"), 0.0),
-                    "quote_date": _contract_quote_session_date(contract),
+                    "quote_date": quoted_at.astimezone(MARKET_TIMEZONE).date() if quoted_at is not None else None,
+                    "quote_timestamp": quoted_at,
+                    "regular_session_quote": _regular_option_session_quote(quoted_at),
                 }
 
 
@@ -128,14 +158,25 @@ def price_width_bucket(spot: float) -> float:
     return 10.0
 
 
-def _credit_width_candidates(spot: float, preferred_width: float | None) -> tuple[float, ...]:
-    """Return anchor and risk-sized widths for live credit-spread construction."""
+def _credit_width_candidates(
+    spot: float,
+    preferred_width: float | None,
+    strikes: Sequence[float] | None = None,
+) -> tuple[float, ...]:
+    """Return anchor and risk-sized widths for live credit-spread construction.
+
+    Credit-to-width rises as a vertical narrows, so the ladder multiples below are
+    what let the search reach the 25-30% band instead of only pricing wide anchors.
+    """
 
     preferred = safe_float(preferred_width)
     standard = float(price_width_bucket(spot))
     widths = [preferred, standard, min(standard, 5.0)]
     if standard >= 5.0:
         widths.append(2.5)
+    increment = _strike_increment(strikes)
+    if math.isfinite(increment) and increment > 0:
+        widths.extend(increment * step for step in (1, 2, 3, 4, 6, 8))
     return tuple(
         dict.fromkeys(
             round(float(width), 4)
@@ -145,11 +186,36 @@ def _credit_width_candidates(spot: float, preferred_width: float | None) -> tupl
     )
 
 
+def _strike_increment(strikes: Sequence[float] | None) -> float:
+    if not strikes:
+        return math.nan
+    ordered = sorted({float(strike) for strike in strikes if math.isfinite(float(strike))})
+    if len(ordered) < 2:
+        return math.nan
+    gaps = [b - a for a, b in zip(ordered, ordered[1:]) if b > a]
+    if not gaps:
+        return math.nan
+    return float(pd.Series(gaps).median())
+
+
 def _same_expiry_contracts(contracts: pd.DataFrame, expiry: dt.date, right: str) -> pd.DataFrame:
     if contracts.empty:
         return contracts
     out = contracts[(contracts["expiry"] == expiry) & (contracts["right"] == right)].copy()
-    for col in ["strike", "bid", "ask", "mark", "delta", "theta", "gamma", "vega", "open_interest", "volume"]:
+    for col in [
+        "strike",
+        "bid",
+        "ask",
+        "bid_size",
+        "ask_size",
+        "mark",
+        "delta",
+        "theta",
+        "gamma",
+        "vega",
+        "open_interest",
+        "volume",
+    ]:
         if col not in out.columns:
             out[col] = math.nan
         out[col] = pd.to_numeric(out[col], errors="coerce")
@@ -172,9 +238,9 @@ def _credit_spread_candidates(
     if chain.empty:
         return pd.DataFrame()
 
-    widths = _credit_width_candidates(spot, preferred_width)
-    rows: list[dict[str, Any]] = []
     strikes = sorted(float(x) for x in chain["strike"].dropna().unique())
+    widths = _credit_width_candidates(spot, preferred_width, strikes)
+    rows: list[dict[str, Any]] = []
     by_strike = {float(r["strike"]): r for _, r in chain.iterrows()}
 
     for _, short in chain.iterrows():
@@ -219,6 +285,14 @@ def _credit_spread_candidates(
             short_ask = safe_float(short.get("ask"))
             long_bid = safe_float(long.get("bid"))
             long_ask = safe_float(long.get("ask"))
+            short_bid_size = safe_float(short.get("bid_size"), 0.0)
+            short_ask_size = safe_float(short.get("ask_size"), 0.0)
+            long_bid_size = safe_float(long.get("bid_size"), 0.0)
+            long_ask_size = safe_float(long.get("ask_size"), 0.0)
+            displayed_entry_size = min(short_bid_size, long_ask_size)
+            regular_session_quote = bool(short.get("regular_session_quote")) and bool(
+                long.get("regular_session_quote")
+            )
             short_mid = option_mid(short)
             long_mid = option_mid(long)
             natural_credit = short_bid - long_ask
@@ -263,6 +337,14 @@ def _credit_spread_candidates(
                 "buy_leg_bid": long_bid,
                 "buy_leg_ask": long_ask,
                 "buy_leg_mid": long_mid,
+                "short_bid_size": short_bid_size,
+                "short_ask_size": short_ask_size,
+                "long_bid_size": long_bid_size,
+                "long_ask_size": long_ask_size,
+                "displayed_entry_size": displayed_entry_size,
+                "regular_session_quote": regular_session_quote,
+                "short_quote_timestamp": short.get("quote_timestamp"),
+                "long_quote_timestamp": long.get("quote_timestamp"),
                 "pop_delta_proxy": pop,
                 "short_delta": safe_float(short.get("delta")),
                 "long_delta": safe_float(long.get("delta")),
@@ -389,14 +471,15 @@ def find_credit_spread_alternatives(
             MAX_ACTIONABLE_CREDIT_WIDTH_RATIO,
             inclusive="both",
         )
-        & (df["_expected_move_ratio"] >= 0.75)
         & (df["quote_width_pct"] <= 0.25)
         & (df["liq_score"] >= 100)
+        & (df["displayed_entry_size"] >= 1)
+        & df["regular_session_quote"].astype(bool)
         & (((df["spread_width"] - df["credit"]) * 100.0) <= 750.0)
     ]
     actionable_ranked = actionable.sort_values(
-        ["_expected_move_ratio", "credit_pct_width", "liq_score", "quote_width_pct", "_rank"],
-        ascending=[False, False, False, True, False],
+        ["credit_pct_width", "liq_score", "quote_width_pct", "_rank"],
+        ascending=[False, False, True, False],
         kind="mergesort",
     )
     # Keep more than one qualifying structure. A single high-distance, low-credit
@@ -415,7 +498,7 @@ def find_credit_spread_alternatives(
         selected.append(
             (
                 "actionable_quality",
-                "risk-sized spread with expected-move buffer, credit, liquidity, and quote quality",
+                "risk-sized spread with validated credit band, liquidity, and quote quality",
                 actionable_row,
             )
         )
@@ -559,6 +642,14 @@ def _debit_spread_candidates(
         long_ask = safe_float(long.get("ask"))
         short_bid = safe_float(short.get("bid"))
         short_ask = safe_float(short.get("ask"))
+        long_bid_size = safe_float(long.get("bid_size"), 0.0)
+        long_ask_size = safe_float(long.get("ask_size"), 0.0)
+        short_bid_size = safe_float(short.get("bid_size"), 0.0)
+        short_ask_size = safe_float(short.get("ask_size"), 0.0)
+        displayed_entry_size = min(long_ask_size, short_bid_size)
+        regular_session_quote = bool(long.get("regular_session_quote")) and bool(
+            short.get("regular_session_quote")
+        )
         long_mid = option_mid(long)
         short_mid = option_mid(short)
         natural_debit = long_ask - short_bid
@@ -609,6 +700,14 @@ def _debit_spread_candidates(
                 "buy_leg_bid": long_bid,
                 "buy_leg_ask": long_ask,
                 "buy_leg_mid": long_mid,
+                "short_bid_size": short_bid_size,
+                "short_ask_size": short_ask_size,
+                "long_bid_size": long_bid_size,
+                "long_ask_size": long_ask_size,
+                "displayed_entry_size": displayed_entry_size,
+                "regular_session_quote": regular_session_quote,
+                "short_quote_timestamp": short.get("quote_timestamp"),
+                "long_quote_timestamp": long.get("quote_timestamp"),
                 "pop_delta_proxy": math.nan,
                 "short_delta": safe_float(short.get("delta")),
                 "long_delta": safe_float(long.get("delta")),
@@ -750,6 +849,8 @@ def find_debit_spread_alternatives(
         & (df["long_delta"].abs() >= 0.40)
         & (df["quote_width_pct"] <= 0.25)
         & (df["liq_score"] >= 100)
+        & (df["displayed_entry_size"] >= 1)
+        & df["regular_session_quote"].astype(bool)
         & (df["_breakeven_expected_move_ratio"] <= 0.75)
     ]
     add(

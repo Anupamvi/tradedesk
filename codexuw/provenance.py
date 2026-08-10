@@ -116,24 +116,18 @@ def build_input_provenance(base_dir: Path) -> dict[str, Any]:
             }
 
     browser_texts: list[dict[str, Any]] = []
-    browser_support_files: list[dict[str, Any]] = []
     browser_dir = base_dir / "browser_text"
     if browser_dir.is_dir():
-        for path in sorted(browser_dir.iterdir()):
+        for path in sorted(browser_dir.glob("browser-text-capture-*")):
             if path.is_file() and path.suffix.lower() in {".txt", ".csv", ".json"}:
-                fingerprint = file_fingerprint(path)
-                browser_support_files.append(fingerprint)
-                if path.name.startswith("browser-text-capture-"):
-                    browser_texts.append(fingerprint)
+                browser_texts.append(file_fingerprint(path))
 
     return {
         "base_dir": str(base_dir),
         "exports": exports,
         "browser_texts": browser_texts,
-        "browser_support_files": browser_support_files,
         "export_count": len(exports),
         "browser_text_count": len(browser_texts),
-        "browser_support_file_count": len(browser_support_files),
     }
 
 

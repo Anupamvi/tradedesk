@@ -5,16 +5,22 @@ from pathlib import Path
 
 import pandas as pd
 
+from codexuw.engine import apply_data_quality_gate
 from codexuw.daily_v4 import (
     PIPELINE_NAME_V4,
+    _compact_decision_candidate_table,
     _default_out_dir,
     _disposition,
+    _execution_quote_blocker,
+    _expectancy_safe_entry_price,
     _hard_blocker_reason,
+    _trade_legs,
     apply_v4_prospective_book_concentration,
     apply_v4_risk_cap,
     apply_v4_professional_dispositions,
     apply_v4_safety_calibration,
     build_v4_opportunity_board,
+    build_strategy_generation_coverage,
     build_no_miss_audit,
     build_construction_attempts,
     build_candidate_disposition,
@@ -27,10 +33,11 @@ from codexuw.daily_v4 import (
     run_v4_daily,
     write_v4_outputs,
 )
+from codexuw.strategy_registry import apply_strategy_registry_gate, build_strategy_registry
 
 
 ASOF = dt.date(2026, 5, 20)
-EXPIRY = "2026-05-29"
+EXPIRY = "2026-06-19"
 
 
 def _candidate(**overrides) -> dict:
@@ -40,7 +47,10 @@ def _candidate(**overrides) -> dict:
         "direction": "Bull Put",
         "strategy": "Bull Put Credit Spread",
         "expiry": EXPIRY,
-        "dte": 9,
+        "dte": 30,
+        "iv30d": 0.42,
+        "realized_volatility_30d": 0.30,
+        "iv_rank": 45.0,
         "trade_status": "Research",
         "trade_tier": "",
         "trade_status_reason": "credit target miss but thesis remains reviewable",
@@ -59,6 +69,8 @@ def _candidate(**overrides) -> dict:
         "short_leg": "AAA260529P00100000",
         "long_leg": "AAA260529P00095000",
         "live_status": "PASS",
+        "regular_session_quote": True,
+        "displayed_entry_size": 10,
         "quote_width_pct": 0.08,
         "flow_quality": "directional",
         "oi_carryover_status": "supportive",
@@ -70,8 +82,8 @@ def _candidate(**overrides) -> dict:
         "edge_win_rate": 0.62,
         "edge_avg_pnl": 24.0,
         "edge_match_level": "exact",
-        "regime": "uptrend",
-        "regime_trend": "uptrend",
+        "regime": "downtrend",
+        "regime_trend": "downtrend",
         "confirmation_score": 7.2,
         "score": 6.5,
         "catalyst_status": "mixed",
@@ -81,7 +93,7 @@ def _candidate(**overrides) -> dict:
         "price_annotation": "current credit $0.75 is below target $0.90; show as work-limit",
         "payoff_calibration_status": "PASS",
         "payoff_route_level": "base",
-        "payoff_route_key": "base::Credit|Bull Put|uptrend",
+        "payoff_route_key": "base::Credit|Bull Put|downtrend",
         "payoff_minimum_sample_required": 20,
         "payoff_sample_size": 27,
         "payoff_stress_10_win_rate": 0.78,
@@ -441,6 +453,8 @@ def test_v4_validated_medium_debit_sleeve_executes_at_one_contract() -> None:
     assert adjusted["trade_status"].iloc[0] == "Execute"
     assert adjusted["debit_policy_tier"].iloc[0] == "medium"
     assert "Medium Debit" in adjusted["trade_tier"].iloc[0]
+    assert adjusted["contracts"].iloc[0] == 1
+    assert adjusted["v4_execution_authority"].iloc[0] == "validated_medium_debit_one_lot"
 
     tickets = build_v4_swing_target_tickets(
         scored=adjusted,
@@ -451,6 +465,372 @@ def test_v4_validated_medium_debit_sleeve_executes_at_one_contract() -> None:
 
     assert tickets.iloc[0]["final disposition"] == "Execute"
     assert tickets.iloc[0]["suggested size"] == "1 contract only; Medium debit sleeve"
+
+    capped = apply_v4_professional_dispositions(
+        pd.DataFrame([_medium_debit_candidate(), _medium_debit_candidate(ticker="DEBIT2")]),
+        asof=ASOF,
+    )
+    assert capped["trade_status"].eq("Execute").sum() == 1
+    assert capped["trade_tier"].eq("work-limit-medium-debit-cap").sum() == 1
+
+
+def test_v4_medium_debit_route_evidence_sets_safe_limit_without_family_pass() -> None:
+    row = _medium_debit_candidate(
+        natural_debit=0.50,
+        debit=0.50,
+        mid_debit=0.49,
+        required_entry=2.25,
+        target_entry=2.25,
+        max_profit=450.0,
+        max_loss=50.0,
+        reward_risk=9.0,
+        edge_win_rate=17 / 26,
+        edge_effective_win_rate=(17 + 0.5) / 27,
+        payoff_calibration_status="PROBATIONARY",
+        confidence_calibration_status="INSUFFICIENT",
+        confidence_model_tier="strategy_family_insufficient",
+        confidence_probability=2 / 3,
+        confidence_probability_lower_bound=0.5583,
+    )
+
+    safe_limit = _expectancy_safe_entry_price(row)
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert safe_limit == 1.99
+    assert adjusted.iloc[0]["trade_status"] == "Execute"
+    assert adjusted.iloc[0]["contracts"] == 1
+    assert adjusted.iloc[0]["v4_execution_authority"] == "validated_medium_debit_one_lot"
+
+    ticket = build_v4_swing_target_tickets(
+        scored=adjusted,
+        board=pd.DataFrame(),
+        regime={"trend": "uptrend", "volatility": "low", "flow": "directional"},
+        top_flow=pd.DataFrame(),
+    ).iloc[0]
+    assert ticket["next-session swing entry target"] == "<= $0.50 debit; do not chase above $1.99"
+    assert ticket["max loss"] == "$50.00"
+    assert ticket["profit target"] == "$202.50"
+    assert ticket["expected value"] == "$113.66"
+    assert ticket["implied profit factor"] == "7.46"
+    assert "take-profit SELL TO CLOSE near $2.52 credit" in ticket["OCO bracket order logic"]
+    assert "spread value falls near $0.25" in ticket["OCO bracket order logic"]
+    assert ticket["payoff evidence"].startswith("VALIDATED MEDIUM-DEBIT ROUTE; n=18")
+
+
+def test_v4_medium_debit_execute_survives_registry_and_data_quality_gates() -> None:
+    row = _medium_debit_candidate(
+        natural_debit=0.50,
+        debit=0.50,
+        mid_debit=0.49,
+        required_entry=2.25,
+        target_entry=2.25,
+        max_profit=450.0,
+        max_loss=50.0,
+        reward_risk=9.0,
+        edge_win_rate=17 / 26,
+        edge_effective_win_rate=(17 + 0.5) / 27,
+        payoff_calibration_status="PROBATIONARY",
+        confidence_calibration_status="INSUFFICIENT",
+        confidence_model_tier="strategy_family_insufficient",
+        confidence_probability=2 / 3,
+        confidence_probability_lower_bound=0.5583,
+    )
+    registry = build_strategy_registry(
+        payoff_summary={"status": "NO_VALIDATED_LANES"},
+        payoff_groups=pd.DataFrame(),
+        confidence_summary={"family_validation": {"Debit": {"status": "INSUFFICIENT"}}},
+    )
+
+    disposed = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+    registered = apply_strategy_registry_gate(disposed, registry)
+    gated = apply_data_quality_gate(
+        registered,
+        {"status": "warning", "critical_blockers": [], "warnings": ["schwab_quotes_available"]},
+    )
+
+    assert gated.iloc[0]["trade_status"] == "Execute"
+    assert gated.iloc[0]["contracts"] == 1
+    assert gated.iloc[0]["strategy_execution_authority"] == "validated_medium_debit_one_lot"
+
+
+def test_v4_probationary_credit_route_executes_one_contract_pilot() -> None:
+    row = _candidate(
+        direction="Bear Call",
+        strategy="Bear Call Credit Spread",
+        regime="uptrend",
+        regime_trend="uptrend",
+        short_strike=110.0,
+        long_strike=115.0,
+        short_leg="AAA260619C00110000",
+        long_leg="AAA260619C00115000",
+        combined_flow_bias=-0.20,
+        credit=1.30,
+        mid_credit=1.30,
+        natural_credit=1.25,
+        required_entry=1.25,
+        target_entry=1.25,
+        credit_pct_width=0.26,
+        quote_width_pct=0.10,
+        iv_hv_ratio=0.87,
+        iv_rank=54.0,
+        realized_volatility_30d=0.26,
+        payoff_calibration_status="PROBATIONARY",
+        payoff_route_level="base",
+        payoff_route_key="base::Credit|Bear Call|uptrend",
+        payoff_sample_size=29,
+        payoff_minimum_sample_required=20,
+        payoff_stress_10_win_rate=26 / 29,
+        payoff_stress_10_average_pnl=34.0,
+        payoff_stress_10_average_win_risk_fraction=0.2146,
+        payoff_stress_10_average_loss_risk_fraction=1.0364,
+        payoff_stress_10_profit_factor=1.87,
+        payoff_walk_forward_oos_sample=10,
+        payoff_walk_forward_oos_average_pnl=22.0,
+        payoff_walk_forward_oos_profit_factor=1.57,
+        payoff_post_activation_oos_sample=0,
+        confidence_calibration_status="CONSERVATIVE",
+        confidence_model_tier="strategy_family_conservative",
+        confidence_calibration_sample_size=139,
+        confidence_probability=0.82,
+        confidence_probability_lower_bound=0.78,
+        confidence_calibration_brier=0.13,
+        confidence_calibration_baseline_brier=0.25,
+        edge_sample_size=0,
+        edge_profit_factor=None,
+        edge_avg_pnl=None,
+        edge_match_level="unavailable",
+        primary_blocker="",
+        penalties="",
+        hard_rejects="",
+        confirmation_score=9.0,
+        catalyst_status="mixed",
+        oi_carryover_status="supportive",
+        live_status="PASS",
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Execute"
+    assert adjusted.iloc[0]["trade_tier"] == "Execute V4 Pilot - 1 Contract"
+    assert adjusted.iloc[0]["contracts"] == 1
+    assert adjusted.iloc[0]["v4_execution_authority"] == "probationary_one_lot"
+    assert adjusted.iloc[0]["v4_post_pricing_profit_factor"] >= 1.25
+
+    tickets = build_v4_swing_target_tickets(
+        scored=adjusted,
+        board=pd.DataFrame(),
+        regime={"trend": "uptrend", "volatility": "low", "flow": "weak"},
+        top_flow=pd.DataFrame(),
+    )
+    ticket = tickets.iloc[0]
+    assert ticket["final disposition"] == "Execute"
+    assert ticket["suggested size"] == "1 contract only; probationary evidence cap"
+    assert ticket["next-session swing entry target"] == ">= $1.25 credit"
+    assert ticket["profit target"] == "$62.50"
+    assert "entry Bear Call Credit Spread" in ticket["OCO bracket order logic"]
+    assert "at >= $1.25 credit" in ticket["OCO bracket order logic"]
+    assert "probationary final-structure EV=" in ticket["why this is worth reviewing tomorrow"]
+    assert ticket["expected win rate"] == "78%"
+    assert ticket["win-rate basis"] == "confidence lower bound shown; EV uses route 10%-stress outcomes"
+    assert "10% fill-stress win=90%" in ticket["payoff evidence"]
+    assert ticket["expected value"] != "UNVALIDATED"
+    assert ticket["implied profit factor"] != "UNVALIDATED"
+    assert _disposition(adjusted.iloc[0], targetable=True) == "Execute"
+
+    capped = apply_v4_professional_dispositions(
+        pd.DataFrame([row, {**row, "ticker": "BBB"}]),
+        asof=ASOF,
+    )
+    assert capped["trade_status"].eq("Execute").sum() == 1
+    assert capped["trade_tier"].eq("work-limit-probationary-cap").sum() == 1
+
+
+def test_v4_probationary_base_credit_cannot_authorize_ambiguous_flow() -> None:
+    row = _candidate(
+        direction="Bear Call",
+        strategy="Bear Call Credit Spread",
+        regime="uptrend",
+        regime_trend="uptrend",
+        short_strike=110.0,
+        long_strike=115.0,
+        short_leg="AAA260619C00110000",
+        long_leg="AAA260619C00115000",
+        combined_flow_bias=0.01,
+        flow_quality="unclear",
+        credit=1.30,
+        mid_credit=1.30,
+        natural_credit=1.25,
+        required_entry=1.25,
+        target_entry=1.25,
+        credit_pct_width=0.26,
+        quote_width_pct=0.10,
+        payoff_calibration_status="PROBATIONARY",
+        payoff_route_level="base",
+        payoff_route_key="base::Credit|Bear Call|uptrend",
+        payoff_sample_size=29,
+        payoff_minimum_sample_required=20,
+        payoff_stress_10_win_rate=26 / 29,
+        payoff_stress_10_average_pnl=34.0,
+        payoff_stress_10_average_win_risk_fraction=0.25,
+        payoff_stress_10_average_loss_risk_fraction=0.50,
+        payoff_stress_10_profit_factor=1.87,
+        payoff_walk_forward_oos_sample=10,
+        payoff_walk_forward_oos_average_pnl=22.0,
+        payoff_walk_forward_oos_profit_factor=1.57,
+        payoff_post_activation_oos_sample=0,
+        confidence_calibration_status="CONSERVATIVE",
+        confidence_model_tier="strategy_family_conservative",
+        confidence_calibration_sample_size=139,
+        confidence_probability=0.82,
+        confidence_probability_lower_bound=0.78,
+        confidence_calibration_brier=0.13,
+        confidence_calibration_baseline_brier=0.25,
+        edge_sample_size=0,
+        edge_profit_factor=None,
+        edge_avg_pnl=None,
+        edge_match_level="unavailable",
+        primary_blocker="no_flow_edge_alignment",
+        penalties="no_flow_edge_alignment",
+        trade_status_reason="flow_not_directional:unclear;no_flow_edge_alignment;thin_replay_sample:n=0",
+        hard_rejects="",
+        confirmation_score=8.5,
+        catalyst_status="mixed",
+        oi_carryover_status="matched_unconfirmed",
+        live_status="PASS",
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Watch"
+    assert adjusted.iloc[0]["trade_tier"] == "Scout"
+    assert "observation-only" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+
+
+def test_v4_renders_arbitrary_complex_legs() -> None:
+    row = {
+        "strategy": "Iron Condor",
+        "legs_json": __import__("json").dumps(
+            [
+                {"instrument": "option", "quantity": 1, "symbol": "AAA260619P00090000"},
+                {"instrument": "option", "quantity": -1, "symbol": "AAA260619P00095000"},
+                {"instrument": "option", "quantity": -1, "symbol": "AAA260619C00105000"},
+                {"instrument": "option", "quantity": 1, "symbol": "AAA260619C00110000"},
+            ]
+        ),
+    }
+
+    rendered = _trade_legs(row)
+
+    assert "buy AAA 2026-06-19 90P" in rendered
+    assert "sell AAA 2026-06-19 95P" in rendered
+    assert "sell AAA 2026-06-19 105C" in rendered
+    assert "buy AAA 2026-06-19 110C" in rendered
+
+
+def test_strategy_generation_coverage_counts_real_rows_not_registry_flags() -> None:
+    registry = pd.DataFrame(
+        [
+            {"strategy_key": "long_call", "display_name": "Long Call", "category": "directional", "live_builder": True, "pipeline_status": "RESEARCH_ONLY", "execution_authorized": False, "status_reason": "research"},
+            {"strategy_key": "iron_condor", "display_name": "Iron Condor", "category": "range", "live_builder": True, "pipeline_status": "RESEARCH_ONLY", "execution_authorized": False, "status_reason": "research"},
+        ]
+    )
+    candidates = pd.DataFrame(
+        [{"ticker": "AAA", "sector": "Technology", "strategy_registry_key": "long_call"}, {"ticker": "BBB", "sector": "Energy", "strategy_registry_key": "iron_condor"}]
+    )
+    scored = pd.DataFrame(
+        [
+            {"ticker": "AAA", "sector": "Technology", "strategy_registry_key": "long_call", "live_status": "PASS", "trade_status": "Research"},
+            {"ticker": "BBB", "sector": "Energy", "strategy_registry_key": "iron_condor", "live_status": "no_realistic_structure", "trade_status": "Research"},
+        ]
+    )
+
+    coverage = build_strategy_generation_coverage(
+        candidates=candidates,
+        scored=scored,
+        registry=registry,
+    ).set_index("strategy_key")
+
+    assert coverage.loc["long_call", "generation_status"] == "LIVE_CONSTRUCTED"
+    assert coverage.loc["long_call", "seed_sectors"] == 1
+    assert coverage.loc["long_call", "constructed_sectors"] == 1
+    assert coverage.loc["iron_condor", "generation_status"] == "SEEDED_NO_LIVE_STRUCTURE"
+
+
+def test_v4_preopen_zero_size_option_quote_cannot_execute() -> None:
+    row = _candidate(
+        credit=1.30,
+        mid_credit=1.30,
+        natural_credit=1.25,
+        required_entry=0.90,
+        target_entry=0.90,
+        credit_pct_width=0.26,
+        penalties="",
+        regular_session_quote=False,
+        displayed_entry_size=0,
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Watch"
+    assert adjusted.iloc[0]["trade_tier"] == "Scout"
+    assert "outside the regular options session" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+
+
+def test_v4_closed_session_untraded_legs_cannot_execute() -> None:
+    row = _candidate(
+        credit=1.30,
+        mid_credit=1.30,
+        natural_credit=1.25,
+        required_entry=0.90,
+        target_entry=0.90,
+        credit_pct_width=0.26,
+        penalties="",
+        regular_session_quote=True,
+        displayed_entry_size=10,
+        market_session_open_at_validation=False,
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Watch"
+    assert "no leg traded in the quoted session" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+
+
+def test_v4_closed_session_traded_legs_clear_the_quote_gate() -> None:
+    """An EOD planning run must not be blocked purely by the wall clock."""
+    row = _candidate(
+        regular_session_quote=True,
+        displayed_entry_size=0,
+        market_session_open_at_validation=False,
+        short_volume=140,
+        long_volume=95,
+    )
+
+    assert _execution_quote_blocker(row) == ""
+
+
+def test_v4_open_session_requires_displayed_size() -> None:
+    row = _candidate(
+        regular_session_quote=True,
+        displayed_entry_size=0,
+        market_session_open_at_validation=True,
+        short_volume=140,
+        long_volume=95,
+    )
+
+    assert "no displayed entry size" in _execution_quote_blocker(row)
+
+
+def test_v4_open_session_accepts_displayed_size_when_contract_timestamp_is_missing() -> None:
+    row = _candidate(
+        regular_session_quote=False,
+        displayed_entry_size=8,
+        market_session_open_at_validation=True,
+        short_volume=0,
+        long_volume=0,
+    )
+
+    assert _execution_quote_blocker(row) == ""
 
 
 def test_v4_validated_structural_credit_route_replaces_sparse_exact_edge_only() -> None:
@@ -477,7 +857,8 @@ def test_v4_validated_structural_credit_route_replaces_sparse_exact_edge_only() 
         edge_sample_size=0,
         edge_profit_factor=float("nan"),
         edge_avg_pnl=float("nan"),
-        combined_flow_bias=0.0,
+        # bearish bias on a Bear Call is aligned flow (align = bias * -1 = +0.20)
+        combined_flow_bias=-0.20,
         flow_quality="directional",
         oi_carryover_status="supportive",
         catalyst_status="clear",
@@ -512,7 +893,7 @@ def test_v4_validated_structural_credit_route_replaces_sparse_exact_edge_only() 
     assert adjusted.iloc[0]["trade_status"] == "Execute"
 
 
-def test_v4_validated_payoff_route_uses_empirical_entry_floor_not_global_credit_floor() -> None:
+def test_v4_validated_flow_cost_route_uses_empirical_entry_floor() -> None:
     row = _candidate(
         ticker="RANGE_CALL",
         direction="Bear Call",
@@ -523,8 +904,6 @@ def test_v4_validated_payoff_route_uses_empirical_entry_floor_not_global_credit_
         dte=32,
         short_strike=110.0,
         long_strike=115.0,
-        short_leg="RANGE_CALL260821C00110000",
-        long_leg="RANGE_CALL260821C00115000",
         credit=1.10,
         mid_credit=1.12,
         natural_credit=1.10,
@@ -538,12 +917,13 @@ def test_v4_validated_payoff_route_uses_empirical_entry_floor_not_global_credit_
         edge_sample_size=0,
         edge_profit_factor=float("nan"),
         edge_avg_pnl=float("nan"),
-        combined_flow_bias=0.0,
+        # bearish bias on a Bear Call is aligned flow (align = bias * -1 = +0.20)
+        combined_flow_bias=-0.20,
         flow_quality="directional",
         oi_carryover_status="supportive",
         catalyst_status="clear",
         catalyst_earnings_date="2026-09-30",
-        catalyst_earnings_days=100,
+        catalyst_earnings_days=133,
         distance_pct=0.08,
         expected_move_ratio=1.50,
         payoff_route_level="flow_cost",
@@ -575,15 +955,13 @@ def test_v4_validated_payoff_route_uses_empirical_entry_floor_not_global_credit_
     assert adjusted.iloc[0]["v4_expectancy_safe_entry_price"] == 0.90
     assert adjusted.iloc[0]["trade_status"] == "Execute"
 
-    tickets = build_v4_swing_target_tickets(
-        scored=adjusted,
-        board=pd.DataFrame(),
-        regime={"trend": "range", "volatility": "medium", "flow": "directional"},
-        top_flow=pd.DataFrame(),
-    )
-
-    assert tickets.iloc[0]["win-rate basis"] == "validated payoff route; 10% fill stress"
-    assert "validated route evidence shown separately" in tickets.iloc[0]["per-ticket replay edge"]
+    board = build_v4_opportunity_board(adjusted, top_flow=pd.DataFrame())
+    assert board.iloc[0]["Modeled win rate"] == "88%"
+    assert board.iloc[0]["Win-rate basis"] == "validated payoff route; 10% fill stress"
+    assert "10% fill-stress PF=2.36" in board.iloc[0]["Payoff evidence"]
+    assert "route evidence shown separately" in board.iloc[0]["Per-ticket replay edge"]
+    assert "PF=" in board.iloc[0]["Post-pricing EV / PF"]
+    assert board.iloc[0]["Edge sample size / win rate / avg P/L"] == "exact/ticker match unavailable; validated route evidence reported separately"
 
 
 def test_v4_medium_debit_sleeve_does_not_generalize_to_range_or_bear_put() -> None:
@@ -614,7 +992,7 @@ def test_v4_medium_debit_sleeve_does_not_generalize_to_range_or_bear_put() -> No
     assert "realized payoff lane" in reasons["BEAR"]
 
 
-def test_v4_hard_risk_cap_truncates_or_downgrades_target_signals() -> None:
+def test_v4_risk_cap_is_advisory_and_never_downgrades_a_ticket() -> None:
     tickets = pd.DataFrame(
         [
             {
@@ -643,11 +1021,15 @@ def test_v4_hard_risk_cap_truncates_or_downgrades_target_signals() -> None:
     )
 
     capped, audit = apply_v4_risk_cap(tickets, {"status": "ok", "total_value": 100_000})
+    indexed = capped.set_index("ticker")
 
-    assert capped.set_index("ticker").loc["AAA", "max loss"] == "$2,000.00"
-    assert "Risk Capped" in capped.set_index("ticker").loc["AAA", "safety calibration flags"]
-    assert capped.set_index("ticker").loc["BBB", "final disposition"] == "Research"
-    assert int(audit["risk_capped"].sum()) == 2
+    assert indexed.loc["AAA", "max loss"] == "$10,000.00"
+    assert indexed.loc["AAA", "suggested size"] == "5 contracts; only if checks pass"
+    assert indexed.loc["AAA", "final disposition"] == "Swing Target / Work Limit"
+    assert indexed.loc["BBB", "final disposition"] == "Execute"
+    assert "Sizing note" in indexed.loc["BBB", "safety calibration flags"]
+    assert int(audit["risk_capped"].sum()) == 0
+    assert set(audit["final disposition before"]) == set(audit["final disposition after"])
 
 
 def test_v4_secondary_liquidity_sweep_triggers_below_three_candidates() -> None:
@@ -673,6 +1055,30 @@ def test_v4_secondary_liquidity_sweep_triggers_below_three_candidates() -> None:
     assert bool(first["relaxed_uw_block_size_filters"]) is True
     assert first["flow_velocity_scan"] == "pass"
     assert bool(first["beta_noise_ignored"]) is True
+
+
+def test_decision_lane_audit_surfaces_eligible_candidate_and_veto_reason() -> None:
+    scored = pd.DataFrame(
+        [
+            _candidate(
+                decision_eligible=True,
+                decision_tier="secondary_income",
+                payoff_calibration_status="VETO",
+                payoff_calibration_reason="10% fill-stress PF 0.87 < 1.25",
+                v4_confirmation_status="manual",
+                edge_verdict="unavailable",
+                edge_sample_size=0,
+            )
+        ]
+    )
+
+    audit = _compact_decision_candidate_table(scored)
+
+    assert len(audit) == 1
+    assert audit.iloc[0]["ticker"] == "AAA"
+    assert audit.iloc[0]["payoff status"] == "VETO"
+    assert audit.iloc[0]["confirmation"] == "manual"
+    assert "PF 0.87 < 1.25" in audit.iloc[0]["why not promoted"]
 
 
 def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_v3_core(tmp_path: Path) -> None:
@@ -708,11 +1114,13 @@ def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_
 
     report = Path(manifest["report_path"]).read_text(encoding="utf-8")
     assert manifest["pipeline_name"] == PIPELINE_NAME_V4
+    assert manifest["status"] == "ok"
     assert "| Pipeline | Codex Daily V4 |" in report
     ordered = [
         "## First Screen",
         "## Market Insight For Tomorrow",
         "## Swing Target Tickets For Tomorrow",
+        "## Decision-Lane Audit",
         "## Portfolio Repair / Open Risk",
         "## $10k/month Target Math",
         "## No-Miss Audit",
@@ -733,6 +1141,8 @@ def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_
         "codexdaily_v4_confidence_calibration_summary_2026-05-20.json",
         "codexdaily_v4_risk_cap_audit_2026-05-20.csv",
         "codexdaily_v4_secondary_liquidity_sweep_2026-05-20.csv",
+        "codexdaily_v4_strategy_registry_2026-05-20.csv",
+        "codexdaily_v4_sector_rotation_2026-05-20.csv",
     ]:
         assert (out_dir / name).exists()
 
@@ -743,8 +1153,8 @@ def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path, monkeypatch
     base_dir.mkdir()
     scored = pd.DataFrame(
         [
-                _candidate(ticker="AAA", expiry="2026-06-10", dte=21, trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, natural_credit=1.0, required_entry=0.9, target_entry=0.9, credit_pct_width=0.25, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
-                _candidate(ticker="BBB", sector="Healthcare", expiry="2026-06-10", dte=21, trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, natural_credit=1.1, required_entry=0.9, target_entry=0.9, credit_pct_width=0.26, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.32, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
+                _candidate(ticker="AAA", expiry="2026-06-19", dte=30, trade_status="Execute", penalties="", credit=1.0, mid_credit=1.0, natural_credit=1.0, required_entry=0.9, target_entry=0.9, credit_pct_width=0.25, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.20, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
+                _candidate(ticker="BBB", sector="Healthcare", expiry="2026-06-19", dte=30, trade_status="Execute", penalties="", credit=1.1, mid_credit=1.1, natural_credit=1.1, required_entry=0.9, target_entry=0.9, credit_pct_width=0.26, expected_move_ratio=0.80, iv30d=0.30, realized_volatility_30d=0.20, combined_flow_bias=0.20, bot_flow_source_status="bot_eod_loaded", edge_match_level="exact", edge_sample_size=20, edge_profit_factor=1.50, edge_win_rate=0.95),
         ]
     )
     top_flow = pd.DataFrame(
@@ -799,3 +1209,18 @@ def test_run_v4_daily_is_not_a_v3_wrapper() -> None:
 
     assert "run_v3_daily" not in names
     assert "write_v4_outputs_from_core" not in names
+
+
+def test_public_disposition_preserves_internal_scout_without_authorizing_execute() -> None:
+    from codexuw.daily_v4 import _disposition
+
+    row = {
+        "trade_status": "Watch",
+        "trade_tier": "Scout",
+        "payoff_calibration_status": "INSUFFICIENT",
+        "hard_rejects": "",
+        "penalties": "",
+        "strategy": "Bull Call Debit Spread",
+    }
+
+    assert _disposition(row) == "Scout"

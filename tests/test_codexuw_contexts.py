@@ -33,6 +33,7 @@ def test_summarize_positions_blocks_existing_option_underlyings() -> None:
     assert summary["option_underlyings"] == ["GOOG"]
     assert summary["short_option_underlyings"] == ["GOOG"]
     assert summary["large_equity_exposure"] == {"MSFT": 6000.0}
+    assert summary["equity_shares"] == {"MSFT": 100.0}
     assert any(row["action"] == "SELL COVERED INCOME" for row in summary["portfolio_income_actions"])
     assert any(row["action"] in {"HOLD", "ROLL", "TAKE PROFIT"} for row in summary["risk_actions"])
 
@@ -177,20 +178,6 @@ def test_input_provenance_records_export_hashes(tmp_path) -> None:
     assert stock["path"] == str(path)
     assert len(stock["sha256"]) == 64
     assert stock["size_bytes"] > 0
-
-
-def test_input_provenance_distinguishes_structured_browser_support_from_news_capture(tmp_path) -> None:
-    base = tmp_path / "2026-07-22"
-    browser_dir = base / "browser_text"
-    browser_dir.mkdir(parents=True)
-    earnings = browser_dir / "earnings-calendar-web-2026-07-22.json"
-    earnings.write_text('{"events": []}', encoding="utf-8")
-
-    provenance = build_input_provenance(base)
-
-    assert provenance["browser_text_count"] == 0
-    assert provenance["browser_support_file_count"] == 1
-    assert provenance["browser_support_files"][0]["path"] == str(earnings)
 
 
 def test_file_fingerprint_uses_cache_when_signature_matches(tmp_path) -> None:
@@ -430,6 +417,20 @@ def test_select_ticker_pool_zero_means_uncapped() -> None:
     assert set(pool["ticker"]) == {"AAA", "BBB"}
 
 
+def test_select_ticker_pool_reserves_dynamic_sector_coverage() -> None:
+    df = pd.DataFrame(
+        [
+            {"ticker": "TECH1", "sector": "Technology", "close": 100, "flow_total_premium": 300_000_000, "total_open_interest": 100_000, "avg30_volume": 1_000_000, "issue_type": "Common Stock"},
+            {"ticker": "TECH2", "sector": "Technology", "close": 100, "flow_total_premium": 250_000_000, "total_open_interest": 100_000, "avg30_volume": 1_000_000, "issue_type": "Common Stock"},
+            {"ticker": "HEALTH1", "sector": "Healthcare", "close": 100, "flow_total_premium": 20_000_000, "total_open_interest": 50_000, "avg30_volume": 500_000, "issue_type": "Common Stock"},
+        ]
+    )
+
+    pool = select_ticker_pool(df, max_tickers=2)
+
+    assert set(pool["ticker"]) == {"TECH1", "HEALTH1"}
+
+
 def test_is_etf_row_does_not_match_etf_inside_netflix_name() -> None:
     netflix = pd.Series({"ticker": "NFLX", "issue_type": "Common Stock", "full_name": "NETFLIX INC"})
     yieldmax = pd.Series(
@@ -525,7 +526,7 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "",
                 "credit_pct_width": 0.25,
@@ -536,6 +537,8 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "breakeven": 451.0,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.12,
                 "score": 6.0,
                 "confidence": "Medium",
@@ -548,7 +551,7 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "",
                 "credit_pct_width": 0.25,
@@ -559,6 +562,8 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "breakeven": 451.0,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.04,
                 "score": 9.0,
                 "confidence": "High",
@@ -571,7 +576,7 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-15",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "wide_bid_ask",
                 "credit_pct_width": 0.25,
@@ -582,6 +587,8 @@ def test_live_selection_uses_high_conviction_decision_layer() -> None:
                 "breakeven": 451.0,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.20,
                 "score": 8.0,
                 "confidence": "High",
@@ -648,6 +655,63 @@ def test_live_selection_rejects_secondary_income_below_standing_credit_floor() -
     assert final.empty
 
 
+def _secondary_income_candidate(**overrides) -> dict:
+    row = {
+        "ticker": "SEC",
+        "sector": "Technology",
+        "direction": "Bear Call",
+        "strategy": "Bear Call Credit Spread",
+        "expiry": "2026-08-21",
+        "dte": 28,
+        "hard_rejects": "",
+        "penalties": "",
+        "credit_pct_width": 0.27,
+        "credit": 1.35,
+        "spread_width": 5.0,
+        "max_loss": 365.0,
+        "max_profit": 135.0,
+        "distance_pct": 0.10,
+        "iv30d": 0.75,
+        "iv_rank": 72.0,
+        "combined_flow_bias": -0.20,
+        "score": 7.0,
+        "confidence": "High",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_secondary_income_sleeve_requires_volatility_richness() -> None:
+    """The secondary income sleeve is still short premium, so it must clear the same
+    IV/HV bound as the primary credit lane. It previously bypassed that gate entirely,
+    which is how a live run emitted eight trades at IV/HV 0.906-0.933 -- selling
+    premium that was cheaper than the realised vol of the underlying."""
+    import pandas as pd
+
+    cheap = apply_high_conviction_decision_marks(
+        pd.DataFrame([_secondary_income_candidate(realized_volatility_30d=1.00, iv_hv_ratio=0.75)])
+    )
+    assert bool(cheap["decision_eligible"].iloc[0]) is False
+    assert cheap["decision_tier"].iloc[0] != "secondary_income"
+
+    rich = apply_high_conviction_decision_marks(
+        pd.DataFrame([_secondary_income_candidate(realized_volatility_30d=0.50, iv_hv_ratio=1.50)])
+    )
+    assert bool(rich["decision_eligible"].iloc[0]) is True
+    assert rich["decision_tier"].iloc[0] == "secondary_income"
+
+
+def test_secondary_income_sleeve_rejects_near_cash_denominator_artifact() -> None:
+    """A tiny realized-vol denominator produces a huge IV/HV ratio on names whose
+    absolute premium is negligible (cash/short-duration bond ETFs)."""
+    import pandas as pd
+
+    marked = apply_high_conviction_decision_marks(
+        pd.DataFrame([_secondary_income_candidate(realized_volatility_30d=0.012, iv_hv_ratio=11.9)])
+    )
+    assert bool(marked["decision_eligible"].iloc[0]) is False
+
+
 def test_live_selection_can_return_multiple_high_conviction_trades() -> None:
     import pandas as pd
 
@@ -660,7 +724,7 @@ def test_live_selection_can_return_multiple_high_conviction_trades() -> None:
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-22",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "",
                 "credit_pct_width": 0.25,
@@ -671,6 +735,8 @@ def test_live_selection_can_return_multiple_high_conviction_trades() -> None:
                 "breakeven": 101.1,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.20,
                 "score": 7.2,
                 "confidence": "High",
@@ -713,7 +779,7 @@ def test_medium_confidence_selection_stays_one_lot_even_when_budget_allows_more(
                 "direction": "Bear Call",
                 "strategy": "Bear Call Credit Spread",
                 "expiry": "2026-05-22",
-                "dte": 21,
+                "dte": 30,
                 "hard_rejects": "",
                 "penalties": "",
                 "credit_pct_width": 0.25,
@@ -724,6 +790,8 @@ def test_medium_confidence_selection_stays_one_lot_even_when_budget_allows_more(
                 "breakeven": 101.1,
                 "distance_pct": 0.08,
                 "iv30d": 0.25,
+                    "realized_volatility_30d": 0.20,
+                    "iv_hv_ratio": 1.25,
                 "combined_flow_bias": -0.20,
                 "score": 6.2,
                 "confidence": "Medium",
@@ -796,3 +864,59 @@ def test_entry_watchlist_surfaces_low_credit_without_promoting_trade() -> None:
     assert watch["watch_kind"].iloc[0] == "price_improvement_credit"
     assert watch["required_credit"].iloc[0] == 1.25
     assert "at least $1.25" in watch["trigger"].iloc[0]
+
+
+def test_final_selection_keeps_one_position_per_underlying() -> None:
+    import pandas as pd
+
+    rows = []
+    for ticker, dte, credit_pct in [
+        ("TQQQ", 30, 0.29),
+        ("TQQQ", 7, 0.28),
+        ("TQQQ", 34, 0.27),
+        ("TSM", 30, 0.26),
+    ]:
+        rows.append(
+            {
+                "ticker": ticker,
+                "sector": "Technology",
+                "direction": "Bear Call",
+                "strategy": "Bear Call Credit Spread",
+                "expiry": "2026-05-22",
+                "dte": dte,
+                "hard_rejects": "",
+                "penalties": "",
+                "credit_pct_width": credit_pct,
+                "credit": credit_pct * 5.0,
+                "spread_width": 5.0,
+                "max_loss": 500.0 - credit_pct * 500.0,
+                "max_profit": credit_pct * 500.0,
+                "breakeven": 101.1,
+                "distance_pct": 0.08,
+                "iv30d": 0.42,
+                "realized_volatility_30d": 0.30,
+                "iv_hv_ratio": 1.40,
+                "combined_flow_bias": -0.20,
+                "score": 7.2,
+                "confidence": "High",
+                "short_oi": 1000,
+                "short_volume": 500,
+                "long_oi": 1000,
+                "long_volume": 500,
+                "short_leg": f"{ticker}260522C00100000",
+                "long_leg": f"{ticker}260522C00105000",
+            }
+        )
+    marked = apply_high_conviction_decision_marks(pd.DataFrame(rows))
+    assert int(marked["decision_eligible"].sum()) == 4
+
+    final = select_final_trades(
+        marked,
+        regime={"sizing_stance": "normal"},
+        risk_budget=15000,
+        recent_performance={"status": "unavailable"},
+        max_final_trades=8,
+    )
+
+    assert final["ticker"].tolist() == ["TQQQ", "TSM"]
+    assert final["ticker"].duplicated().sum() == 0

@@ -8,7 +8,7 @@ def test_codex_daily_pipeline_versions_are_locked() -> None:
     expected = {
         "v2": ("Codex Daily V2", "v2.1"),
         "v3": ("Codex Daily V3", "v3.2-profit-integrity-20260719"),
-        "v4": ("Codex Daily V4", "v4.12-goal-shadow-prospective-20260723"),
+        "v4": ("Codex Daily V4", "v4.15-execution-reachability-20260810"),
     }
 
     for key, (name, version) in expected.items():
@@ -16,7 +16,7 @@ def test_codex_daily_pipeline_versions_are_locked() -> None:
         assert record["pipeline_name"] == name
         assert record["pipeline_version"] == version
         assert record["lock_status"] == "locked"
-        expected_lock = {"v2": "2026-05-21", "v3": "2026-07-19", "v4": "2026-07-23"}[key]
+        expected_lock = {"v2": "2026-05-21", "v3": "2026-07-19", "v4": "2026-08-10"}[key]
         assert record["locked_on"] == expected_lock
 
 
@@ -34,6 +34,9 @@ def test_previous_codex_daily_versions_are_retained() -> None:
     assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.9-structure-aware-payoff-20260720"]["superseded_by"] == "v4.10-correlation-aware-credit-book-20260721"
     assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.10-correlation-aware-credit-book-20260721"]["superseded_by"] == "v4.11-five-source-point-in-time-integrity-20260722"
     assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.11-five-source-point-in-time-integrity-20260722"]["superseded_by"] == "v4.12-goal-shadow-prospective-20260723"
+    assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.12-goal-shadow-prospective-20260723"]["superseded_by"] == "v4.13-all-strategy-live-construction-20260803"
+    assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.13-all-strategy-live-construction-20260803"]["superseded_by"] == "v4.14-maturity-safe-advisory-risk-20260808"
+    assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.14-maturity-safe-advisory-risk-20260808"]["superseded_by"] == "v4.15-execution-reachability-20260810"
 
 
 def test_locked_versions_mark_schwab_live_portfolio_and_gex_context() -> None:
@@ -49,4 +52,4 @@ def test_pipeline_constants_match_locked_registry() -> None:
     assert opportunity.PIPELINE_NAME_V3 == "Codex Daily V3"
     assert opportunity.PIPELINE_VERSION_V3 == "v3.2-profit-integrity-20260719"
     assert daily_v4.PIPELINE_NAME_V4 == "Codex Daily V4"
-    assert daily_v4.PIPELINE_VERSION_V4 == "v4.12-goal-shadow-prospective-20260723"
+    assert daily_v4.PIPELINE_VERSION_V4 == "v4.15-execution-reachability-20260810"

@@ -14,13 +14,31 @@ from .catalysts import earnings_crosses_expiry, earnings_event_date
 from .credit_policy import (
     CREDIT_POLICY_VERSION,
     MAX_CREDIT_PCT_WIDTH,
+    MAX_QUOTE_WIDTH_PCT,
     MIN_CREDIT_PCT_WIDTH,
     assess_credit_spread,
     credit_spread_edge_lane,
 )
-from .data import aggregate_bot_flow, infer_asof_date, load_hot_chains, load_stock_screener, safe_float
+from .data import (
+    aggregate_bot_flow,
+    aggregate_dark_pool_flow,
+    infer_asof_date,
+    load_chain_oi,
+    load_hot_chains,
+    load_stock_screener,
+    safe_float,
+)
 from .debit_policy import DEBIT_POLICY_VERSION, assess_debit_spread
-from .engine import detect_regime, generate_candidates, replay_quality_pattern, select_ticker_pool, validated_addon_income_lane
+from .engine import (
+    apply_oi_carryover,
+    detect_regime,
+    generate_candidates,
+    replay_quality_pattern,
+    select_ticker_pool,
+    validated_addon_income_lane,
+)
+from .market_calendar import is_regular_market_day
+from .realized_vol import attach_realized_vol
 from .occ import build_occ_symbol, parse_occ_symbol
 
 
@@ -31,7 +49,7 @@ BEARISH_DIRECTIONS = {"Bear Call", "Bear Put"}
 
 
 def dated_folders(root: Path, start: dt.date | None, end: dt.date | None) -> list[Path]:
-    folders: list[Path] = []
+    folders_by_day: dict[dt.date, Path] = {}
     for path in root.iterdir():
         if not path.is_dir():
             continue
@@ -43,8 +61,17 @@ def dated_folders(root: Path, start: dt.date | None, end: dt.date | None) -> lis
             continue
         if end and day > end:
             continue
-        folders.append(path)
-    return sorted(folders, key=infer_asof_date)
+        if not is_regular_market_day(day):
+            continue
+        current = folders_by_day.get(day)
+        if current is None:
+            folders_by_day[day] = path
+            continue
+        current_is_canonical = current.name == day.isoformat()
+        candidate_is_canonical = path.name == day.isoformat()
+        if candidate_is_canonical and not current_is_canonical:
+            folders_by_day[day] = path
+    return [folders_by_day[day] for day in sorted(folders_by_day)]
 
 
 def parse_date(value: str) -> dt.date | None:
@@ -356,9 +383,17 @@ def simulate_spread_exit(
     *,
     slippage_pct: float,
     profit_take_pct: float,
-    stop_loss_mult: float,
+    stop_loss_mult: float | None,
     debit_time_stop_dte: int = -1,
 ) -> dict[str, Any]:
+    """Simulate a defined-risk spread to its exit.
+
+    ``stop_loss_mult=None`` means no hard stop: the position is carried to the
+    profit target or to expiry. Maximum loss is still bounded by the spread
+    width, so this removes a discretionary overlay, not a risk control. A
+    13-point exit grid over 3,395 replayed trades showed every stop-carrying
+    configuration underperforming its stopless twin, in-sample and out.
+    """
     expiry = row.get("expiry")
     asof = row.get("asof")
     if not isinstance(expiry, dt.date) or not isinstance(asof, dt.date):
@@ -370,7 +405,7 @@ def simulate_spread_exit(
         entry_debit = safe_float(entry.get("entry_debit"))
         width = safe_float(entry.get("entry_width"))
         target_value = min(width, entry_debit * (1.0 + profit_take_pct)) if math.isfinite(width) else entry_debit * (1.0 + profit_take_pct)
-        stop_value = entry_debit / max(stop_loss_mult, 1.0)
+        stop_value = entry_debit / max(stop_loss_mult, 1.0) if stop_loss_mult is not None else math.nan
         quote_days_seen = 0
         for day in sorted(d for d in quote_history if asof < d <= expiry):
             value_mid = _spread_mid_value(row, quote_history[day])
@@ -393,7 +428,7 @@ def simulate_spread_exit(
                     "exact_win": pnl > 0,
                     "quote_days_seen": quote_days_seen,
                 }
-            if exit_value <= stop_value:
+            if math.isfinite(stop_value) and exit_value <= stop_value:
                 pnl = exit_value - entry_debit
                 return {
                     **entry,
@@ -444,7 +479,7 @@ def simulate_spread_exit(
     entry_credit = safe_float(entry.get("entry_credit"))
     width = safe_float(entry.get("entry_width"))
     target_debit = entry_credit * (1.0 - profit_take_pct)
-    stop_debit = entry_credit * stop_loss_mult
+    stop_debit = entry_credit * stop_loss_mult if stop_loss_mult is not None else math.nan
     quote_days_seen = 0
     for day in sorted(d for d in quote_history if asof < d <= expiry):
         debit_mid = _spread_mid_debit(row, quote_history[day])
@@ -465,7 +500,7 @@ def simulate_spread_exit(
                 "exact_win": pnl > 0,
                 "quote_days_seen": quote_days_seen,
             }
-        if exit_debit >= stop_debit:
+        if math.isfinite(stop_debit) and exit_debit >= stop_debit:
             pnl = entry_credit - exit_debit
             return {
                 **entry,
@@ -740,28 +775,6 @@ def _decision_sort_score(row: pd.Series) -> float:
     return score
 
 
-def _secondary_income_eligible(
-    *,
-    credit_pct: float,
-    ratio: float,
-    align: float,
-    score: float,
-    dte: float,
-) -> bool:
-    return (
-        math.isfinite(credit_pct)
-        and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
-        and math.isfinite(ratio)
-        and ratio >= 0.20
-        and math.isfinite(align)
-        and align >= 0.12
-        and math.isfinite(score)
-        and score >= 1.60
-        and math.isfinite(dte)
-        and dte <= 35
-    )
-
-
 def _entry_fillable(row: pd.Series | dict[str, Any]) -> bool:
     value = row.get("exact_fillable")
     if value is not None and not pd.isna(value):
@@ -917,6 +930,89 @@ def apply_replay_decision_selection(
             if selected_for_day >= max(0, max_debit_selected_per_day):
                 break
     return out
+
+
+def build_daily_opportunity_coverage(
+    detail: pd.DataFrame,
+    day_summary: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    """Audit whether each entry day contained and selected a profitable trade.
+
+    Realized P&L is used only after replay for diagnostics. This function never
+    participates in candidate ranking or selection.
+    """
+
+    days: set[str] = set()
+    if detail is not None and not detail.empty and "asof" in detail.columns:
+        days.update(detail["asof"].map(_date_key).dropna().astype(str))
+    if day_summary is not None and not day_summary.empty and "date" in day_summary.columns:
+        days.update(day_summary["date"].map(_date_key).dropna().astype(str))
+    rows: list[dict[str, Any]] = []
+    work = detail.copy() if detail is not None else pd.DataFrame()
+    if not work.empty:
+        work["_coverage_day"] = work["asof"].map(_date_key)
+        work["_coverage_pnl"] = pd.to_numeric(work.get("pnl_1x"), errors="coerce")
+    for day in sorted(value for value in days if value):
+        part = work[work["_coverage_day"].eq(day)].copy() if not work.empty else pd.DataFrame()
+        exact = (
+            part[part.get("exact_evaluated", pd.Series(False, index=part.index)).map(_truthy)]
+            if not part.empty
+            else part
+        )
+        exact = exact[exact["_coverage_pnl"].notna()] if not exact.empty else exact
+        guarded = (
+            exact[exact.get("replay_guard_pass", pd.Series(False, index=exact.index)).map(_truthy)]
+            if not exact.empty
+            else exact
+        )
+        selected = (
+            exact[exact.get("decision_pass", pd.Series(False, index=exact.index)).map(_truthy)]
+            if not exact.empty
+            else exact
+        )
+        exact_winners = exact[exact["_coverage_pnl"].gt(0)] if not exact.empty else exact
+        guarded_winners = guarded[guarded["_coverage_pnl"].gt(0)] if not guarded.empty else guarded
+        selected_winners = selected[selected["_coverage_pnl"].gt(0)] if not selected.empty else selected
+
+        if not selected_winners.empty:
+            classification = "selected_profitable"
+        elif not guarded_winners.empty:
+            classification = "ranking_miss"
+        elif not exact_winners.empty:
+            classification = "guard_miss"
+        elif not exact.empty:
+            classification = "no_profitable_exact_candidate"
+        else:
+            classification = "no_exact_outcome"
+
+        best = (
+            exact_winners.sort_values("_coverage_pnl", ascending=False).iloc[0]
+            if not exact_winners.empty
+            else pd.Series(dtype=object)
+        )
+        rows.append(
+            {
+                "asof": day,
+                "exact_candidates": int(len(exact)),
+                "profitable_exact_candidates": int(len(exact_winners)),
+                "guarded_candidates": int(len(guarded)),
+                "profitable_guarded_candidates": int(len(guarded_winners)),
+                "selected_candidates": int(len(selected)),
+                "profitable_selected_candidates": int(len(selected_winners)),
+                "selected_day_pnl_1x": float(selected["_coverage_pnl"].sum()) if not selected.empty else 0.0,
+                "selected_profitable": bool(not selected_winners.empty),
+                "coverage_classification": classification,
+                "best_profitable_ticker": str(best.get("ticker", "")),
+                "best_profitable_strategy": str(best.get("strategy", "")),
+                "best_profitable_direction": str(best.get("direction", "")),
+                "best_profitable_pnl_1x": safe_float(best.get("_coverage_pnl")),
+                "best_profitable_guard_pass": _truthy(best.get("replay_guard_pass")),
+                "best_profitable_guard_reason": str(best.get("replay_guard_reason", "")),
+                "best_profitable_decision_reason": str(best.get("decision_reason", "")),
+                "best_profitable_decision_score": safe_float(best.get("decision_score")),
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 def _replay_confidence(score: float) -> str:
@@ -1225,7 +1321,7 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
             return False, "debit_policy:" + "|".join(debit_reasons)
         if not math.isfinite(debit) or not math.isfinite(width) or debit <= 0 or debit >= width:
             return False, "debit_entry_impossible"
-        if math.isfinite(quote_width) and quote_width > 0.80:
+        if math.isfinite(quote_width) and quote_width > MAX_QUOTE_WIDTH_PCT:
             return False, "debit_quote_too_wide"
         if not math.isfinite(align) or align <= 0:
             return False, "no_flow_edge_alignment"
@@ -1241,6 +1337,9 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
     credit_pct = safe_float(rec.get("entry_credit_pct_width"))
     if not math.isfinite(credit_pct) or credit_pct < MIN_CREDIT_PCT_WIDTH:
         return False, "entry_credit_below_25pct_width"
+    credit_quote_width = safe_float(rec.get("entry_quote_width_pct"))
+    if math.isfinite(credit_quote_width) and credit_quote_width > MAX_QUOTE_WIDTH_PCT:
+        return False, "credit_quote_too_wide"
     direction = str(rec.get("direction", ""))
     stock = safe_float(rec.get("stock_price_eod"))
     short = safe_float(rec.get("short_strike_eod"))
@@ -1251,8 +1350,8 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
     else:
         distance = math.nan
     expected = iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
-    if direction == "Bull Put" and math.isfinite(distance) and math.isfinite(expected) and distance < expected * 0.55:
-        return False, "replay_guard_bull_put_expected_move"
+    # No distance-vs-expected-move gate here: it is collinear with the credit
+    # band and scored worse than no selection at all out-of-sample.
     align = safe_float(rec.get("combined_flow_bias"), 0.0)
     if (direction == "Bull Put" and align <= 0) or (direction == "Bear Call" and align >= 0):
         return False, "no_flow_edge_alignment"
@@ -1262,6 +1361,8 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
         credit_pct=credit_pct,
         distance_pct=distance,
         expected_move=expected,
+        dte=dte,
+        iv_rank=safe_float(rec.get("iv_rank")),
     )
     return pattern_pass, pattern
 
@@ -1281,13 +1382,14 @@ def run_replay(
     max_eval_candidates: int = 50,
     bot_max_rows: int = 0,
     slippage_pct: float = 0.10,
-    profit_take_pct: float = 0.60,
-    stop_loss_mult: float = 2.0,
+    profit_take_pct: float = 0.50,
+    stop_loss_mult: float | None = None,
     debit_time_stop_dte: int = -1,
     max_selected_per_day: int = 8,
     max_credit_selected_per_day: int = 1,
     max_debit_selected_per_day: int = 1,
     monthly_profit_target: float = 10_000.0,
+    dark_pool_weight: float = 0.0,
 ) -> Path:
     folders = dated_folders(root, start, end)
     if max_days > 0:
@@ -1311,17 +1413,59 @@ def run_replay(
         except Exception as exc:
             day_summaries.append({"date": asof, "status": "load_error", "error": str(exc)})
             continue
+        # Realized vol is computed from sessions strictly at or before `asof`, so
+        # this is point-in-time safe. The live path attaches it in daily_v4; the
+        # replay path did not, which left `iv_hv_ratio` and
+        # `realized_volatility_30d` at 0% coverage in the replay-built edge
+        # history. That is why the replay guard still bands on `iv_rank` rather
+        # than mirroring the live IV/HV gate -- the field to band on did not
+        # exist here. Populating it is a prerequisite for measuring whether an
+        # IV/HV guard pays for itself on the replay base; it changes no gate.
+        sc = attach_realized_vol(sc, root, asof)
         pool = select_ticker_pool(sc, max_tickers=max_tickers)
         bot_flow = aggregate_bot_flow(
             folder,
             pool["ticker"].tolist(),
             max_rows=bot_max_rows if bot_max_rows > 0 else None,
             allow_missing=True,
+            point_in_time=True,
         )
         bot_source_status = str(bot_flow.attrs.get("source_status") or "unknown")
-        candidates = generate_candidates(pool, hot, bot_flow, asof=asof, max_candidates=max_candidates)
+        dark_pool_flow = aggregate_dark_pool_flow(
+            folder,
+            pool["ticker"].tolist(),
+            max_rows=bot_max_rows if bot_max_rows > 0 else None,
+            allow_missing=True,
+            point_in_time=True,
+        )
+        dark_pool_source_status = str(dark_pool_flow.attrs.get("source_status") or "unknown")
+        try:
+            chain_oi = load_chain_oi(folder, asof, point_in_time=True)
+            chain_oi_source_status = "chain_oi_loaded"
+        except Exception:
+            chain_oi = None
+            chain_oi_source_status = "missing_chain_oi"
+        candidates = generate_candidates(
+            pool,
+            hot,
+            bot_flow,
+            asof=asof,
+            max_candidates=max_candidates,
+            dark_pool_flow=dark_pool_flow,
+            dark_pool_weight=dark_pool_weight,
+        )
+        candidates = apply_oi_carryover(candidates, chain_oi)
         if candidates.empty:
-            day_summaries.append({"date": asof, "status": "no_candidates", "candidates": 0})
+            day_summaries.append(
+                {
+                    "date": asof,
+                    "status": "no_candidates",
+                    "candidates": 0,
+                    "bot_flow_source_status": bot_source_status,
+                    "dark_pool_source_status": dark_pool_source_status,
+                    "chain_oi_source_status": chain_oi_source_status,
+                }
+            )
             continue
         regime = detect_regime(sc)
         # Replay the broad discovery layer, then let exact fill/replay guards
@@ -1332,6 +1476,8 @@ def run_replay(
         candidates["debit_pct_proxy"] = candidates["estimated_eod_debit"] / width_base
         candidates["replay_price_annotation"] = ""
         candidates["bot_flow_source_status"] = bot_source_status
+        candidates["dark_pool_source_status"] = dark_pool_source_status
+        candidates["chain_oi_source_status"] = chain_oi_source_status
         credit_mask = (
             candidates["strategy_kind"].astype(str).eq("Credit")
             & (pd.to_numeric(candidates["credit_pct_proxy"], errors="coerce").fillna(0) >= 0.12)
@@ -1389,6 +1535,8 @@ def run_replay(
                 "exact_evaluated": int(exact_evaluated),
                 "exact_pnl_1x": exact_pnl,
                 "bot_flow_source_status": bot_source_status,
+                "dark_pool_source_status": dark_pool_source_status,
+                "chain_oi_source_status": chain_oi_source_status,
             }
         )
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1404,8 +1552,10 @@ def run_replay(
         else detail
     )
     summary = pd.DataFrame(day_summaries)
+    daily_coverage = build_daily_opportunity_coverage(detail, summary)
     detail.to_csv(out_dir / "codexuw_replay_detail.csv", index=False)
     summary.to_csv(out_dir / "codexuw_replay_by_day.csv", index=False)
+    daily_coverage.to_csv(out_dir / "codexuw_replay_daily_coverage.csv", index=False)
     evaluated = detail[detail.get("evaluated", pd.Series(dtype=bool)).eq(True)] if not detail.empty else detail
     exact = detail[detail.get("exact_evaluated", pd.Series(dtype=bool)).eq(True)] if not detail.empty else detail
     guarded_exact = exact[exact.get("replay_guard_pass", pd.Series(dtype=bool)).eq(True)] if not exact.empty else exact
@@ -1416,6 +1566,21 @@ def run_replay(
     guarded_metrics = _split_metrics(guarded_exact, split_day)
     decision_metrics = _split_metrics(decision_exact, split_day)
     target_metrics = _monthly_target_metrics(decision_exact, monthly_profit_target)
+    coverage_counts = (
+        daily_coverage["coverage_classification"].value_counts().to_dict()
+        if not daily_coverage.empty
+        else {}
+    )
+    daily_coverage_metrics = {
+        "entry_days": int(len(daily_coverage)),
+        "days_with_profitable_exact_candidate": int(daily_coverage["profitable_exact_candidates"].gt(0).sum()) if not daily_coverage.empty else 0,
+        "days_with_profitable_guarded_candidate": int(daily_coverage["profitable_guarded_candidates"].gt(0).sum()) if not daily_coverage.empty else 0,
+        "days_with_selected_trade": int(daily_coverage["selected_candidates"].gt(0).sum()) if not daily_coverage.empty else 0,
+        "days_with_profitable_selected_trade": int(daily_coverage["selected_profitable"].sum()) if not daily_coverage.empty else 0,
+        "days_with_positive_selected_net_pnl": int(daily_coverage["selected_day_pnl_1x"].gt(0).sum()) if not daily_coverage.empty else 0,
+        "selected_profitable_day_rate": float(daily_coverage["selected_profitable"].mean()) if not daily_coverage.empty else 0.0,
+        "classifications": coverage_counts,
+    }
     payload = {
         "root": str(root),
         "start": str(start) if start else "",
@@ -1432,6 +1597,7 @@ def run_replay(
         "max_credit_selected_per_day": max_credit_selected_per_day,
         "max_debit_selected_per_day": max_debit_selected_per_day,
         "bot_max_rows": bot_max_rows,
+        "dark_pool_weight": dark_pool_weight,
         "evaluated": int(len(evaluated)),
         "win_rate": float(evaluated["win"].mean()) if not evaluated.empty else None,
         "avg_credit_pct_proxy": float(evaluated["credit_pct_proxy"].mean()) if "credit_pct_proxy" in evaluated.columns and not evaluated.empty else None,
@@ -1452,6 +1618,7 @@ def run_replay(
         "decision_exact_metrics": decision_metrics,
         "monthly_profit_target": monthly_profit_target,
         "target_months": target_metrics.to_dict(orient="records") if not target_metrics.empty else [],
+        "daily_opportunity_coverage": daily_coverage_metrics,
     }
     (out_dir / "codexuw_replay_manifest.json").write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
     report = out_dir / "codexuw_replay_report.md"
@@ -1478,10 +1645,16 @@ def run_replay(
         f"- Decision-selected avg PnL/spread: ${decision_metrics.get('all', {}).get('avg_pnl_1x'):,.2f}" if decision_metrics.get("all", {}).get("avg_pnl_1x") is not None else "- Decision-selected avg PnL/spread: n/a",
         f"- Decision-selected max drawdown: ${decision_metrics.get('all', {}).get('max_drawdown_1x'):,.2f}" if decision_metrics.get("all", {}).get("max_drawdown_1x") is not None else "- Decision-selected max drawdown: n/a",
         f"- Decision-selected profit factor: {decision_metrics.get('all', {}).get('profit_factor'):.3f}" if decision_metrics.get("all", {}).get("profit_factor") is not None else "- Decision-selected profit factor: n/a",
+        f"- Days with any profitable exact candidate: {daily_coverage_metrics['days_with_profitable_exact_candidate']}/{daily_coverage_metrics['entry_days']}",
+        f"- Days with any profitable guarded candidate: {daily_coverage_metrics['days_with_profitable_guarded_candidate']}/{daily_coverage_metrics['entry_days']}",
+        f"- Days with a selected profitable trade: {daily_coverage_metrics['days_with_profitable_selected_trade']}/{daily_coverage_metrics['entry_days']} ({daily_coverage_metrics['selected_profitable_day_rate']:.1%})",
+        f"- Daily coverage classifications: {daily_coverage_metrics['classifications']}",
         "- Selection integrity: entry-time fields only; outcomes are attached after selection and never used to qualify a trade.",
         f"- Monthly P/L target: ${monthly_profit_target:,.0f}",
         f"- Train/test split day: {payload['split_day'] or 'n/a'}",
-        f"- Fill model: entry at mid less {slippage_pct:.0%}; exits at mid plus {slippage_pct:.0%}; {profit_take_pct:.0%} profit target; {stop_loss_mult:.1f}x credit stop; expiry settlement fallback.",
+        f"- Fill model: entry at mid less {slippage_pct:.0%}; exits at mid plus {slippage_pct:.0%}; {profit_take_pct:.0%} profit target; "
+        + (f"{stop_loss_mult:.1f}x credit stop; " if stop_loss_mult is not None else "no hard stop (risk defined by spread width); ")
+        + "expiry settlement fallback.",
         "",
         "## Train/Test",
         "",
@@ -1612,9 +1785,20 @@ def main() -> None:
     parser.add_argument("--max-credit-selected-per-day", type=int, default=1)
     parser.add_argument("--max-debit-selected-per-day", type=int, default=1)
     parser.add_argument("--bot-max-rows", type=int, default=0)
+    parser.add_argument(
+        "--dark-pool-weight",
+        type=float,
+        default=0.0,
+        help="Optional bounded (0..0.25) equity dark-pool contribution to combined flow bias",
+    )
     parser.add_argument("--slippage-pct", type=float, default=0.10)
-    parser.add_argument("--profit-take-pct", type=float, default=0.60)
-    parser.add_argument("--stop-loss-mult", type=float, default=2.0)
+    parser.add_argument("--profit-take-pct", type=float, default=0.50)
+    parser.add_argument(
+        "--stop-loss-mult",
+        type=float,
+        default=None,
+        help="Hard stop as a multiple of entry credit. Omit for no stop (validated default).",
+    )
     parser.add_argument(
         "--debit-time-stop-dte",
         type=int,
@@ -1648,6 +1832,7 @@ def main() -> None:
         max_credit_selected_per_day=args.max_credit_selected_per_day,
         max_debit_selected_per_day=args.max_debit_selected_per_day,
         monthly_profit_target=args.monthly_profit_target,
+        dark_pool_weight=args.dark_pool_weight,
     )
     print(f"Wrote: {report}")
     if report_date is not None:

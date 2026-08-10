@@ -3,7 +3,11 @@ from __future__ import annotations
 import pandas as pd
 
 from codexuw.daily_v4 import _payoff_model_ready
-from codexuw.payoff_calibration import apply_payoff_calibration, build_default_payoff_calibration
+from codexuw.payoff_calibration import (
+    PROBATIONARY_PAYOFF_STATUS,
+    apply_payoff_calibration,
+    build_default_payoff_calibration,
+)
 
 
 def _history_row(day: str, *, flow_quality: str, pnl_after_stress: float) -> dict[str, object]:
@@ -114,3 +118,88 @@ def test_infinite_profit_factor_means_no_losses_not_failed_evidence() -> None:
             "payoff_post_activation_oos_profit_factor": float("inf"),
         }
     )
+
+
+def test_early_exit_is_not_evidence_until_contract_expiry(tmp_path) -> None:
+    matured = _history_row("2026-06-01", flow_quality="directional", pnl_after_stress=100.0)
+    matured["expiry"] = "2026-06-20"
+    early_winner = _history_row("2026-06-02", flow_quality="directional", pnl_after_stress=100.0)
+    early_winner["exit_day"] = "2026-06-10"
+    early_winner["expiry"] = "2026-08-21"
+    history_path = tmp_path / "history.csv"
+    pd.DataFrame([matured, early_winner]).to_csv(history_path, index=False)
+
+    summary, _, _ = build_default_payoff_calibration(
+        asof="2026-07-20",
+        history_path=history_path,
+    )
+
+    assert summary["eligible_rows"] == 1
+
+
+def test_monthly_walk_forward_train_waits_for_contract_maturity(tmp_path) -> None:
+    rows = []
+    for day in pd.date_range("2026-01-02", periods=12, freq="2D"):
+        row = _history_row(str(day.date()), flow_quality="directional", pnl_after_stress=100.0)
+        row["expiry"] = "2026-04-17"
+        rows.append(row)
+    rows.append(
+        {
+            **_history_row("2026-03-03", flow_quality="directional", pnl_after_stress=100.0),
+            "expiry": "2026-03-20",
+        }
+    )
+    history_path = tmp_path / "history.csv"
+    pd.DataFrame(rows).to_csv(history_path, index=False)
+
+    _, _, walk_forward = build_default_payoff_calibration(
+        asof="2026-05-01",
+        history_path=history_path,
+    )
+
+    march = walk_forward[
+        walk_forward["test_start"].eq("2026-03-01")
+        & walk_forward["group_key"].eq(
+            "flow_cost::Credit|Bear Call|range|flow=directional|cost=18to30"
+        )
+    ]
+    assert march.empty
+
+
+def test_probationary_base_route_beats_thinner_child_without_bypassing_veto() -> None:
+    groups = pd.DataFrame(
+        [
+            {
+                "group_key": "flow_cost::Credit|Bear Call|uptrend|flow=ambiguous|cost=18to30",
+                "route_level": "flow_cost",
+                "payoff_calibration_status": "INSUFFICIENT",
+                "sample_size": 5,
+                "minimum_group_sample": 12,
+            },
+            {
+                "group_key": "flow::Credit|Bear Call|uptrend|flow=ambiguous",
+                "route_level": "flow",
+                "payoff_calibration_status": "INSUFFICIENT",
+                "sample_size": 8,
+                "minimum_group_sample": 15,
+            },
+            {
+                "group_key": "base::Credit|Bear Call|uptrend",
+                "route_level": "base",
+                "payoff_calibration_status": PROBATIONARY_PAYOFF_STATUS,
+                "sample_size": 29,
+                "minimum_group_sample": 20,
+                "stress_10_profit_factor": 1.87,
+                "walk_forward_oos_sample": 10,
+                "walk_forward_oos_profit_factor": 1.57,
+            },
+        ]
+    )
+    live = pd.DataFrame(
+        [{"strategy_kind": "Credit", "direction": "Bear Call", "regime_trend": "uptrend", "flow_quality": "ambiguous", "credit_pct_width": 0.27}]
+    )
+
+    calibrated = apply_payoff_calibration(live, groups)
+
+    assert calibrated.iloc[0]["payoff_calibration_status"] == PROBATIONARY_PAYOFF_STATUS
+    assert calibrated.iloc[0]["payoff_route_level"] == "base"

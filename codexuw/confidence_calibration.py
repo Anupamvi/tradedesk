@@ -6,13 +6,14 @@ from typing import Any
 
 import pandas as pd
 
+from .edge_model import EDGE_HISTORY_NAMESPACE, PACKAGED_HISTORY_DIR
 
-CONFIDENCE_CALIBRATION_VERSION = "confidence-walk-forward-v2.0-policy-base"
-DEFAULT_EDGE_HISTORY_PATH = (
-    Path(__file__).resolve().parent
-    / "history"
-    / "codexdaily_v4_edge_history_v2_2026-07-10.csv.gz"
-)
+
+CONFIDENCE_CALIBRATION_VERSION = "confidence-walk-forward-v2.1-maturity-safe-conservative"
+CONSERVATIVE_CONFIDENCE_STATUS = "CONSERVATIVE"
+# Single source of truth: derived from the edge-history namespace so a refresh
+# never has to be applied in more than one place.
+DEFAULT_EDGE_HISTORY_PATH = PACKAGED_HISTORY_DIR / f"{EDGE_HISTORY_NAMESPACE}.csv.gz"
 MIN_PRIOR_SAMPLE = 12
 MIN_CALIBRATION_PREDICTIONS = 30
 MAX_CALIBRATION_GAP = 0.10
@@ -106,6 +107,12 @@ def _eligible_history(
 
     out["_asof_dt"] = pd.to_datetime(out[asof_col], errors="coerce")
     out["_exit_dt"] = pd.to_datetime(out[exit_col], errors="coerce")
+    expiry = (
+        pd.to_datetime(out["expiry"], errors="coerce")
+        if "expiry" in out.columns
+        else pd.Series(pd.NaT, index=out.index, dtype="datetime64[ns]")
+    )
+    out["_maturity_dt"] = expiry.where(expiry.notna(), out["_exit_dt"])
     if outcome_col in out.columns:
         out["_actual_outcome"] = pd.to_numeric(out[outcome_col], errors="coerce")
     elif "pnl_1x" in out.columns:
@@ -123,7 +130,11 @@ def _eligible_history(
     if asof is not None:
         cutoff = pd.to_datetime(asof, errors="coerce")
         if pd.notna(cutoff):
-            out = out[(out["_asof_dt"] <= cutoff) & (out["_exit_dt"] <= cutoff)]
+            out = out[
+                (out["_asof_dt"] <= cutoff)
+                & (out["_exit_dt"] <= cutoff)
+                & (out["_maturity_dt"] <= cutoff)
+            ]
 
     out["_strategy_family"] = out.apply(_strategy_family, axis=1)
     out = out[out["_strategy_family"].isin({"Credit", "Debit"})]
@@ -201,7 +212,7 @@ def build_walk_forward_calibration(
     family_records: list[dict[str, Any]] = []
 
     for _, row in eligible.iterrows():
-        prior = eligible[eligible["_exit_dt"] < row["_asof_dt"]]
+        prior = eligible[eligible["_maturity_dt"] < row["_asof_dt"]]
         family = str(row["_strategy_family"])
         prior_family = prior[prior["_strategy_family"] == family]
         if len(prior_family) >= min_prior_sample:
@@ -282,6 +293,20 @@ def build_walk_forward_calibration(
             min_predictions=min_predictions,
             max_calibration_gap=max_calibration_gap,
         )
+        if (
+            status == "FAIL"
+            and prediction_count >= min_predictions
+            and math.isfinite(brier_score)
+            and brier_score < 0.25
+            and math.isfinite(mean_probability)
+            and math.isfinite(actual_win_rate)
+            and mean_probability < actual_win_rate
+        ):
+            status = CONSERVATIVE_CONFIDENCE_STATUS
+            reason = (
+                f"prior-only probability underpredicts realized wins by {calibration_gap:.3f}; "
+                "Brier score still beats the no-skill benchmark"
+            )
 
         group_subset = (
             detail[detail["strategy_family"] == family]
@@ -447,6 +472,7 @@ def apply_confidence_calibration(
             wins = probability * sample if math.isfinite(probability) and math.isfinite(sample) else math.nan
             lower_bound = wilson_lower_bound(wins, sample)
         validated = status == "PASS" and math.isfinite(probability)
+        conservative = status == CONSERVATIVE_CONFIDENCE_STATUS and math.isfinite(probability)
 
         probabilities.append(probability)
         lower_bounds.append(lower_bound)
@@ -455,12 +481,20 @@ def apply_confidence_calibration(
         statuses.append(status)
         if validated:
             tier = f"{source}_validated"
+        elif conservative:
+            tier = f"{source}_conservative"
         elif legacy_summary and math.isfinite(probability) and probability >= 0.50:
             tier = "medium"
         else:
             tier = "descriptive_only"
         tiers.append(tier)
-        labels.append("walk_forward_validated" if validated else "descriptive_only")
+        labels.append(
+            "walk_forward_validated"
+            if validated
+            else "walk_forward_conservative"
+            if conservative
+            else "descriptive_only"
+        )
         sources.append(source if math.isfinite(probability) else "unavailable")
         briers.append(_number(validation.get("brier_score", summary.get("brier_score"))))
         baselines.append(

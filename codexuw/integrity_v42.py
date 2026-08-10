@@ -177,14 +177,27 @@ def apply_schwab_price_context(
         out[col] = tickers.map(lambda ticker: (metrics.get(ticker) or {}).get(col, math.nan))
     spy_return = _number((metrics.get("SPY") or {}).get("return_20d"))
     out["relative_strength_20d_vs_spy"] = pd.to_numeric(out["return_20d"], errors="coerce") - spy_return
-    out["realized_volatility_30d"] = pd.to_numeric(out["historical_volatility_30d"], errors="coerce")
+
+    # Schwab daily log returns are the preferred realised-vol source, but Schwab
+    # history is missing for a large minority of the universe. Rather than
+    # overwrite those rows with NaN -- which silently disables the IV/HV richness
+    # gate for them -- fall back to the value computed from the dated-folder
+    # close history by codexuw.realized_vol.
+    prior_hv = pd.to_numeric(out.get("realized_volatility_30d"), errors="coerce")
+    schwab_hv = pd.to_numeric(out["historical_volatility_30d"], errors="coerce")
+    combined_hv = schwab_hv.where(schwab_hv.gt(0), prior_hv)
+    out["realized_volatility_30d"] = combined_hv
+
     iv = pd.to_numeric(out.get("iv30d"), errors="coerce")
     hv = pd.to_numeric(out["realized_volatility_30d"], errors="coerce")
     out["iv_hv_ratio"] = iv / hv.where(hv.gt(0))
     out["iv_hv_spread"] = iv - hv
     valid = out["iv_hv_ratio"].replace([math.inf, -math.inf], math.nan).notna()
     out.loc[valid, "iv_hv_valid"] = True
-    out.loc[valid, "realized_volatility_source"] = "schwab_daily_log_returns_30d_annualized"
+    used_schwab = valid & schwab_hv.gt(0)
+    used_local = valid & ~schwab_hv.gt(0)
+    out.loc[used_schwab, "realized_volatility_source"] = "schwab_daily_log_returns_30d_annualized"
+    out.loc[used_local, "realized_volatility_source"] = "screener_close_history_21d_annualized"
     return _score_integrity(out)
 
 

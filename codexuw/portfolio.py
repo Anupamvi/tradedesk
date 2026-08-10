@@ -215,6 +215,7 @@ def summarize_positions(
     option_underlyings: set[str] = set()
     short_option_underlyings: set[str] = set()
     equity_exposure: Counter[str] = Counter()
+    equity_shares: Counter[str] = Counter()
     option_market_value: Counter[str] = Counter()
     day_pnl_total = 0.0
     for pos in positions:
@@ -231,6 +232,7 @@ def summarize_positions(
                 short_option_underlyings.add(underlying)
         elif asset_type == "EQUITY":
             equity_exposure[underlying] += abs(market_value)
+            equity_shares[underlying] += max(0.0, safe_float(pos.get("qty"), 0.0))
     large_equity = {
         ticker: value
         for ticker, value in equity_exposure.items()
@@ -253,6 +255,7 @@ def summarize_positions(
         "option_underlyings": sorted(option_underlyings),
         "short_option_underlyings": sorted(short_option_underlyings),
         "equity_exposure": dict(sorted(equity_exposure.items())),
+        "equity_shares": dict(sorted(equity_shares.items())),
         "option_market_value": dict(sorted(option_market_value.items())),
         "large_equity_exposure": dict(sorted(large_equity.items())),
         "risk_actions": risk_actions,

@@ -178,8 +178,19 @@ def load_bot_flow_events(base_dir: Path, *, max_rows: int | None = None, chunksi
     return pd.concat(parts, ignore_index=True, sort=False)
 
 
-def scan_bot_flow_tape(base_dir: Path, *, asof: dt.date, max_rows: int | None = None, chunksize: int = 500_000) -> dict[str, Any]:
-    path = find_export(base_dir, "bot-eod-report-")
+def scan_bot_flow_tape(
+    base_dir: Path,
+    *,
+    asof: dt.date,
+    max_rows: int | None = None,
+    chunksize: int = 500_000,
+    point_in_time: bool = False,
+) -> dict[str, Any]:
+    path = find_export(
+        base_dir,
+        "bot-eod-report-",
+        asof_ceiling=asof if point_in_time else None,
+    )
     usecols = lambda col: col in BOT_USECOLS
     ticker_parts: list[pd.DataFrame] = []
     minute_parts: list[pd.DataFrame] = []
@@ -995,12 +1006,18 @@ def build_liquidity_shift_signals(
     chain_oi: pd.DataFrame | None = None,
     regime: dict[str, Any] | None = None,
     max_rows: int | None = None,
+    point_in_time: bool = False,
 ) -> dict[str, Any]:
     del hot_chains, chain_oi
     generated_at = dt.datetime.now(dt.timezone.utc).isoformat()
     thresholds = compute_volatility_thresholds(regime)
     try:
-        scan = scan_bot_flow_tape(base_dir, asof=asof, max_rows=max_rows)
+        scan = scan_bot_flow_tape(
+            base_dir,
+            asof=asof,
+            max_rows=max_rows,
+            point_in_time=point_in_time,
+        )
         status = "ok"
         error = ""
     except Exception as exc:

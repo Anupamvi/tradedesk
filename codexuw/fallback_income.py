@@ -6,6 +6,7 @@ from typing import Any
 
 import pandas as pd
 
+from .credit_policy import MIN_IV_HV_RATIO, MIN_REALIZED_VOL, in_dte_dead_zone
 from .data import safe_float
 from .occ import build_occ_symbol
 from .schwab_live import price_width_bucket
@@ -253,6 +254,23 @@ def _secondary_income_evidence_blocker(row: pd.Series) -> tuple[str, str] | None
         return f"secondary_income_thin_sample:n={int(sample)}", "Research"
     if math.isfinite(win) and win < 0.58:
         return f"secondary_income_low_win_rate:{win:.0%}", "Research"
+
+    # Fallback income is still a short-premium trade. It must clear the same
+    # volatility-richness bar as the primary credit lane, otherwise this lane
+    # sells premium at IV/HV < 1.0 (implied cheaper than realized).
+    iv_hv_ratio = safe_float(row.get("iv_hv_ratio"), math.nan)
+    realized_vol = safe_float(row.get("realized_volatility_30d"), math.nan)
+    if not math.isfinite(iv_hv_ratio) or iv_hv_ratio < MIN_IV_HV_RATIO:
+        return f"iv_hv_ratio_below_{MIN_IV_HV_RATIO:.2f}", "Research"
+    if not math.isfinite(realized_vol) or realized_vol < MIN_REALIZED_VOL:
+        return f"realized_vol_below_{MIN_REALIZED_VOL:.2f}", "Research"
+
+    # Seeds are built at 35-70 DTE so this should never bind, but the 11-27 day
+    # band loses money on every slice measured and this is the third and last
+    # place that can set decision_eligible. Keep the rule uniform across all of
+    # them so no path can emit a dead-zone credit trade.
+    if in_dte_dead_zone(row.get("dte")):
+        return "dte_dead_zone_11_27", "Research"
     return None
 
 

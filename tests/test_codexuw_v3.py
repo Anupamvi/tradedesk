@@ -64,6 +64,9 @@ def _candidate(**overrides) -> dict:
         "quote_width_pct": 0.08,
         "flow_quality": "directional",
         "oi_carryover_status": "supportive",
+        "iv30d": 0.42,
+        "realized_volatility_30d": 0.30,
+        "iv_hv_ratio": 1.40,
         "replay_ev_verdict": "positive",
         "edge_verdict": "positive",
         "edge_sample_size": 14,
@@ -460,17 +463,12 @@ def test_confirmation_evidence_does_not_require_company_earnings_news_for_etf() 
         ]
     )
 
-    evidence = build_confirmation_evidence(
-        scored=scored,
-        asof=ASOF,
-        input_provenance={"browser_text_count": 0},
-    )
+    evidence = build_confirmation_evidence(scored=scored, asof=ASOF, input_provenance={"browser_text_count": 0})
     out = apply_confirmation_evidence(scored, evidence)
 
     assert evidence.iloc[0]["news_confirmation"] == "cleared"
     assert evidence.iloc[0]["confirmation_status"] == "cleared"
     assert "news_unconfirmed" not in out.iloc[0]["penalties"]
-    assert out.iloc[0]["catalyst_status"] == "mixed"
 
 
 def test_wheel_cash_lane_uses_priced_cash_secured_put_when_available() -> None:

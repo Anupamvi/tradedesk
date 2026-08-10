@@ -11,7 +11,19 @@ from typing import Any
 import pandas as pd
 
 from .catalysts import earnings_crosses_expiry, earnings_event_date
-from .credit_policy import MAX_CREDIT_PCT_WIDTH, MIN_CREDIT_PCT_WIDTH, MIN_WATCH_CREDIT_PCT_WIDTH
+from .credit_policy import (
+    ALLOWED_REGIMES as CREDIT_ALLOWED_REGIMES,
+    MAX_CREDIT_PCT_WIDTH,
+    MAX_DTE,
+    MIN_CREDIT_PCT_WIDTH,
+    MIN_DTE,
+    MIN_IV_HV_RATIO,
+    MIN_IV_RANK,
+    MIN_REALIZED_VOL,
+    MIN_WATCH_CREDIT_PCT_WIDTH,
+    PROFIT_TAKE_PCT,
+    in_dte_dead_zone,
+)
 from .data import safe_float
 from .edge_model import EDGE_COLUMNS, apply_replay_edge_model
 from .occ import build_occ_symbol, parse_occ_symbol
@@ -23,7 +35,13 @@ from .schwab_live import (
     chain_to_contracts,
     find_credit_spread_alternatives,
     find_debit_spread_alternatives,
+    is_regular_option_session_open,
     price_width_bucket,
+)
+from .strategy_builder import (
+    GENERIC_STRATEGY_BY_KEY,
+    build_generic_strategy_candidate,
+    generic_strategy_keys,
 )
 
 
@@ -71,6 +89,12 @@ PIPELINE_NAME = PIPELINE_NAME_V2
 PIPELINE_VERSION = PIPELINE_VERSION_V2
 
 
+def _truthy(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "y"}
+
+
 def is_etf_row(row: pd.Series) -> bool:
     ticker = str(row.get("ticker") or "").upper().strip()
     issue_type = str(row.get("issue_type") or "").upper().strip()
@@ -112,24 +136,57 @@ def replay_quality_pattern(
     credit_pct: float,
     distance_pct: float,
     expected_move: float,
+    dte: float = math.nan,
+    iv_rank: float = math.nan,
 ) -> tuple[bool, str]:
-    """Return whether a spread matches the replay-validated high-quality slice."""
+    """Return whether a spread matches the replay-validated high-quality slice.
+
+    The credit band and DTE band here MUST mirror the live credit policy
+    constants. If they drift apart, the replay evidence base describes a
+    population of trades the live pipeline can never take, and every downstream
+    calibration becomes unrepresentative.
+
+    `iv_rank` is the one deliberate exception and is NOT mirrored live. The live
+    richness gate is IV/HV (`MIN_IV_HV_RATIO`); `MIN_IV_RANK` is only a lane
+    label in `credit_spread_edge_lane`. It is retained here, asymmetrically, on
+    purpose: measured on the map-allowed replay pool it does not pay for itself
+    (n=600 PF 1.20 -> n=381 PF 1.21, delta +1.3, 90% CI [-27.3, +30.6],
+    p(no gain) 0.469) and the sweep is non-monotone (>=20 PF 1.33, >=30 PF 1.21,
+    >=40 PF 1.20, >=50 PF 1.36). Inside the shipped credit band it looks strong
+    (n=69 PF 1.49 -> n=44 PF 2.15) but that is 44 trades on 28 sessions, which is
+    the same small-conditioned-slice shape that made the IV/HV 1.30 proposal look
+    good before it failed its own significance test. Dropping it would LOOSEN the
+    evidence gate on a p=0.469 result, and promoting it to a live gate would ship
+    an unvalidated threshold, so it stays where it is until something separates.
+
+    `distance_pct` and `expected_move` are retained for reporting only. The
+    distance buffer is deliberately no longer a gate: it is collinear with the
+    credit band (corr -0.734) and scored worse than no selection at all.
+    """
     ratio = distance_pct / expected_move if math.isfinite(distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
+    band_tag = (
+        f"validated_credit{int(round(MIN_CREDIT_PCT_WIDTH * 100))}"
+        f"_{int(round(MAX_CREDIT_PCT_WIDTH * 100))}_dte{int(MIN_DTE)}_ivrank{int(MIN_IV_RANK)}"
+    )
     if (
         math.isfinite(credit_pct)
         and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
-        and math.isfinite(ratio)
-        and ratio >= 0.65
+        and math.isfinite(dte)
+        and MIN_DTE <= dte <= MAX_DTE
+        and math.isfinite(iv_rank)
+        and iv_rank >= MIN_IV_RANK
     ):
-        return True, "validated_credit25_30_expected_buffer"
-    if not math.isfinite(expected_move) or expected_move <= 0:
-        return False, "replay_guard_missing_expected_move"
+        return True, band_tag
     if math.isfinite(credit_pct) and credit_pct < MIN_CREDIT_PCT_WIDTH:
         return False, "replay_guard_credit_below_validated_band"
     if math.isfinite(credit_pct) and credit_pct > MAX_CREDIT_PCT_WIDTH:
         return False, "replay_guard_credit_above_validated_band"
-    if math.isfinite(ratio) and ratio < 0.65:
-        return False, "replay_guard_insufficient_expected_move_buffer"
+    if not math.isfinite(dte) or dte < MIN_DTE:
+        return False, f"replay_guard_dte_below_{int(MIN_DTE)}"
+    if dte > MAX_DTE:
+        return False, f"replay_guard_dte_above_{int(MAX_DTE)}"
+    if not math.isfinite(iv_rank) or iv_rank < MIN_IV_RANK:
+        return False, f"replay_guard_iv_rank_below_{int(MIN_IV_RANK)}"
     return False, "replay_guard_no_validated_pattern"
 
 
@@ -201,8 +258,19 @@ def select_ticker_pool(sc: pd.DataFrame, *, max_tickers: int) -> pd.DataFrame:
     )
     ranked = df.sort_values("_liq_rank", ascending=False)
     if max_tickers and max_tickers > 0:
-        ranked = ranked.head(max_tickers)
-    return ranked.drop(columns=["_liq_rank"])
+        if "sector" in ranked.columns:
+            ranked["_sector_key"] = ranked["sector"].fillna("").astype(str).str.strip()
+            sector_leaders = (
+                ranked[ranked["_sector_key"].ne("")]
+                .groupby("_sector_key", sort=False, as_index=False)
+                .head(1)
+                .head(max_tickers)
+            )
+            remaining = ranked.drop(index=sector_leaders.index).head(max_tickers - len(sector_leaders))
+            ranked = pd.concat([sector_leaders, remaining]).sort_values("_liq_rank", ascending=False)
+        else:
+            ranked = ranked.head(max_tickers)
+    return ranked.drop(columns=["_liq_rank", "_sector_key"], errors="ignore")
 
 
 def _direction_sign(direction: object) -> int:
@@ -217,13 +285,15 @@ def _direction_sign(direction: object) -> int:
 def _is_credit_strategy(row: pd.Series | dict[str, Any]) -> bool:
     direction = str(row.get("direction", ""))
     strategy = str(row.get("strategy", ""))
-    return direction in CREDIT_DIRECTIONS or "Credit" in strategy
+    kind = str(row.get("strategy_kind") or row.get("entry_type") or "").strip().lower()
+    return direction in CREDIT_DIRECTIONS or "Credit" in strategy or kind == "credit"
 
 
 def _is_debit_strategy(row: pd.Series | dict[str, Any]) -> bool:
     direction = str(row.get("direction", ""))
     strategy = str(row.get("strategy", ""))
-    return direction in DEBIT_DIRECTIONS or "Debit" in strategy
+    kind = str(row.get("strategy_kind") or row.get("entry_type") or "").strip().lower()
+    return direction in DEBIT_DIRECTIONS or "Debit" in strategy or kind == "debit"
 
 
 def _strategy_kind(direction: object) -> str:
@@ -237,21 +307,19 @@ def _strategy_label(direction: object) -> str:
 
 def _direction_list(row: pd.Series, *, include_debit: bool = True) -> list[str]:
     bias = safe_float(row.get("combined_flow_bias"), safe_float(row.get("flow_bias"), 0.0))
-    total = safe_float(row.get("flow_total_premium"), 0.0)
-    directions: list[str] = []
+    favored: list[str] = []
     if bias >= 0.025:
-        directions.append("Bull Put")
+        favored.append("Bull Put")
         if include_debit:
-            directions.append("Bull Call")
+            favored.append("Bull Call")
     if bias <= -0.025:
-        directions.append("Bear Call")
+        favored.append("Bear Call")
         if include_debit:
-            directions.append("Bear Put")
-    if not directions and total >= 150_000_000 and abs(bias) < 0.04:
-        directions = ["Bull Put", "Bear Call"]
-        if include_debit:
-            directions.extend(["Bull Call", "Bear Put"])
-    return directions
+            favored.append("Bear Put")
+    complete = ["Bull Put", "Bear Call"]
+    if include_debit:
+        complete.extend(["Bull Call", "Bear Put"])
+    return list(dict.fromkeys([*favored, *complete]))
 
 
 def select_index_fallback_pool(sc: pd.DataFrame, *, max_tickers: int = 3) -> pd.DataFrame:
@@ -344,6 +412,137 @@ def _edge_text(direction: str, row: pd.Series, hot: pd.DataFrame) -> str:
     return "+".join(pieces)
 
 
+VERTICAL_STRATEGY_KEYS = {
+    "Bull Call": "bull_call_debit_vertical",
+    "Bear Put": "bear_put_debit_vertical",
+    "Bull Put": "bull_put_credit_vertical",
+    "Bear Call": "bear_call_credit_vertical",
+}
+
+
+def _generic_strategy_seed_rows(
+    *,
+    ticker: str,
+    stock: pd.Series,
+    ticker_hot: pd.DataFrame,
+    bot_metrics: dict[str, Any],
+    dp_metrics: dict[str, Any],
+    option_flow_bias: float,
+    combined_bias: float,
+    dp_bias: float,
+    dp_directional_ratio: float,
+    usable_dp_weight: float,
+    close: float,
+    asof: dt.date,
+    index_fallback: bool,
+) -> list[dict[str, Any]]:
+    expiry_rows = (
+        ticker_hot.groupby("expiry_dt", as_index=False)
+        .agg(dte=("dte", "median"), volume=("volume", "sum"), open_interest=("open_interest", "sum"))
+    )
+    if expiry_rows.empty:
+        return []
+    expiry_rows["_dte_distance"] = (expiry_rows["dte"] - 80).abs()
+    expiry_rows = expiry_rows.sort_values(
+        ["_dte_distance", "volume", "open_interest"],
+        ascending=[True, False, False],
+    )
+    expiry = asof + dt.timedelta(days=80)
+    dte = 80
+    source = ticker_hot.sort_values(["volume", "open_interest"], ascending=[False, False]).iloc[0]
+    iv30d = safe_float(stock.get("iv30d"))
+    realized = safe_float(stock.get("realized_volatility_30d"))
+    iv_hv_ratio = safe_float(stock.get("iv_hv_ratio"))
+    if not math.isfinite(iv_hv_ratio) and math.isfinite(iv30d) and math.isfinite(realized) and realized > 0:
+        iv_hv_ratio = iv30d / realized
+    common = {
+        "ticker": ticker,
+        "sector": stock.get("sector", ""),
+        "generic_strategy_seed": True,
+        "index_fallback": bool(index_fallback),
+        "expiry": expiry,
+        "dte": dte,
+        "stock_price_eod": close,
+        "short_strike_eod": math.nan,
+        "long_strike_eod": math.nan,
+        "preferred_width": math.nan,
+        "construction_source": "generic_strategy_seed",
+        "construction_reason": "strategy-family seed awaiting arbitrary-leg Schwab construction",
+        "target_entry": math.nan,
+        "flow_bias": safe_float(stock.get("flow_bias"), 0.0),
+        "bot_flow_bias": safe_float(bot_metrics.get("bot_flow_bias"), math.nan),
+        "option_flow_bias": option_flow_bias,
+        "dp_flow_bias": dp_bias,
+        "dp_directional_ratio": dp_directional_ratio,
+        "dp_total_premium": safe_float(dp_metrics.get("dp_total_premium"), math.nan),
+        "dp_prints": safe_float(dp_metrics.get("dp_prints"), math.nan),
+        "dark_pool_weight_applied": usable_dp_weight,
+        "combined_flow_bias": combined_bias,
+        "flow_total_premium": safe_float(stock.get("flow_total_premium"), 0.0),
+        "iv_rank": safe_float(stock.get("iv_rank")),
+        "iv30d": iv30d,
+        "raw_uw_volatility": safe_float(stock.get("volatility")),
+        "realized_volatility_30d": realized,
+        "realized_volatility_source": stock.get("realized_volatility_source", "unavailable"),
+        "iv_hv_ratio": iv_hv_ratio,
+        "iv_hv_spread": iv30d - realized if math.isfinite(iv30d) and math.isfinite(realized) else math.nan,
+        "implied_move_perc": safe_float(stock.get("implied_move_perc")),
+        "next_earnings_dt": stock.get("next_earnings_dt"),
+        "source_contract": source.get("option_symbol", ""),
+        "source_contract_role": "context",
+        "short_leg_eod": "",
+        "long_leg_eod": "",
+        "source_contract_volume": safe_float(source.get("volume"), 0.0),
+        "source_contract_oi": safe_float(source.get("open_interest"), 0.0),
+        "source_ask_side_volume": safe_float(source.get("ask_side_volume"), 0.0),
+        "source_bid_side_volume": safe_float(source.get("bid_side_volume"), 0.0),
+        "source_mid_volume": safe_float(source.get("mid_volume"), 0.0),
+        "source_sweep_volume": safe_float(source.get("sweep_volume"), 0.0),
+        "source_cross_volume": safe_float(source.get("cross_volume"), 0.0),
+        "source_multileg_volume": safe_float(source.get("multileg_volume"), 0.0),
+        "source_stock_multileg_volume": safe_float(source.get("stock_multi_leg_volume"), 0.0),
+        "source_multileg_ratio": 0.0,
+        "source_stock_multileg_ratio": 0.0,
+        "source_side_bias": "context_only",
+        "execution_authority": "research_only_pending_strategy_validation",
+        **{
+            key: bot_metrics.get(key, math.nan)
+            for key in [
+                "bot_bull_premium",
+                "bot_bear_premium",
+                "bot_total_premium",
+                "bot_call_ask_premium",
+                "bot_call_bid_premium",
+                "bot_put_ask_premium",
+                "bot_put_bid_premium",
+                "bot_multileg_premium",
+                "bot_multileg_ratio",
+                "bot_volume_oi_ratio",
+                "bot_unique_expiries",
+                "bot_unique_strikes",
+                "bot_trades",
+            ]
+        },
+    }
+    seeds = []
+    for strategy_key in generic_strategy_keys():
+        spec = GENERIC_STRATEGY_BY_KEY[strategy_key]
+        candidate = {
+            **common,
+            "direction": spec.direction,
+            "strategy": spec.display_name,
+            "strategy_key": strategy_key,
+            "strategy_registry_key": strategy_key,
+            "strategy_kind": spec.strategy_kind,
+            "edge_type": f"{spec.display_name} generic family coverage",
+        }
+        flow_quality, flow_reason = classify_flow_quality(candidate)
+        candidate["flow_quality"] = flow_quality
+        candidate["flow_quality_reason"] = flow_reason
+        seeds.append(candidate)
+    return seeds
+
+
 def generate_candidates(
     sc_pool: pd.DataFrame,
     hot: pd.DataFrame,
@@ -352,16 +551,34 @@ def generate_candidates(
     asof: dt.date,
     max_candidates: int,
     index_fallback: bool = False,
+    dark_pool_flow: pd.DataFrame | None = None,
+    dark_pool_weight: float = 0.0,
 ) -> pd.DataFrame:
     bot = bot_flow.set_index("ticker", drop=False) if not bot_flow.empty else pd.DataFrame()
+    dp_frame = dark_pool_flow if dark_pool_flow is not None else pd.DataFrame()
+    dark_pool = dp_frame.set_index("ticker", drop=False) if not dp_frame.empty else pd.DataFrame()
+    dp_weight = min(0.25, max(0.0, safe_float(dark_pool_weight, 0.0)))
     rows: list[dict[str, Any]] = []
     for _, row in sc_pool.iterrows():
         ticker = str(row.get("ticker", "")).upper()
         if not ticker:
             continue
-        combined_bias = safe_float(row.get("flow_bias"), 0.0)
+        option_flow_bias = safe_float(row.get("flow_bias"), 0.0)
         if not bot.empty and ticker in bot.index:
-            combined_bias = combined_bias * 0.65 + safe_float(bot.loc[ticker].get("bot_flow_bias"), 0.0) * 0.35
+            option_flow_bias = option_flow_bias * 0.65 + safe_float(bot.loc[ticker].get("bot_flow_bias"), 0.0) * 0.35
+        dp_metrics = dark_pool.loc[ticker].to_dict() if not dark_pool.empty and ticker in dark_pool.index else {}
+        dp_bias = safe_float(dp_metrics.get("dp_flow_bias"))
+        dp_directional_ratio = safe_float(dp_metrics.get("dp_directional_ratio"))
+        usable_dp_weight = (
+            dp_weight
+            if math.isfinite(dp_bias)
+            and math.isfinite(dp_directional_ratio)
+            and dp_directional_ratio >= 0.25
+            else 0.0
+        )
+        combined_bias = option_flow_bias * (1.0 - usable_dp_weight)
+        if usable_dp_weight > 0:
+            combined_bias += dp_bias * usable_dp_weight
         ticker_hot = hot[(hot["ticker"] == ticker) & (hot["dte"].between(7, 45, inclusive="both"))].copy()
         if ticker_hot.empty:
             continue
@@ -370,6 +587,24 @@ def generate_candidates(
             continue
         row = row.copy()
         row["combined_flow_bias"] = combined_bias
+        bot_metrics = bot.loc[ticker].to_dict() if not bot.empty and ticker in bot.index else {}
+        rows.extend(
+            _generic_strategy_seed_rows(
+                ticker=ticker,
+                stock=row,
+                ticker_hot=ticker_hot,
+                bot_metrics=bot_metrics,
+                dp_metrics=dp_metrics,
+                option_flow_bias=option_flow_bias,
+                combined_bias=combined_bias,
+                dp_bias=dp_bias,
+                dp_directional_ratio=dp_directional_ratio,
+                usable_dp_weight=usable_dp_weight,
+                close=close,
+                asof=asof,
+                index_fallback=index_fallback,
+            )
+        )
         for direction in _direction_list(row):
             right = "P" if direction in {"Bull Put", "Bear Put"} else "C"
             opt = ticker_hot[ticker_hot["right"].eq(right)].copy()
@@ -450,15 +685,18 @@ def generate_candidates(
                 stock_multileg_volume = safe_float(source.get("stock_multi_leg_volume"), 0.0)
                 source_volume = safe_float(source.get("volume"), 0.0)
                 source_side_bias = _contract_side_bias(right, ask_side_volume, bid_side_volume)
-                bot_metrics = bot.loc[ticker].to_dict() if not bot.empty and ticker in bot.index else {}
                 dte = int((expiry - asof).days) if isinstance(expiry, dt.date) else math.nan
                 iv30d = safe_float(row.get("iv30d"))
                 # The UW export's generic ``volatility`` field has no stable,
-                # documented unit contract. V4.2 calculates annualized HV from
-                # Schwab daily returns instead of silently relabeling this value.
+                # documented unit contract, so it is never used as realised vol.
+                # ``realized_volatility_30d`` is computed point-in-time from the
+                # dated-folder close history by codexuw.realized_vol and attached
+                # to the screener frame before candidates are generated.
                 raw_uw_volatility = safe_float(row.get("volatility"))
-                realized_volatility_30d = math.nan
-                iv_hv_ratio = math.nan
+                realized_volatility_30d = safe_float(row.get("realized_volatility_30d"))
+                iv_hv_ratio = safe_float(row.get("iv_hv_ratio"))
+                if not math.isfinite(iv_hv_ratio) and math.isfinite(iv30d) and math.isfinite(realized_volatility_30d) and realized_volatility_30d > 0:
+                    iv_hv_ratio = iv30d / realized_volatility_30d
                 expected_move = iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
                 if direction in CREDIT_DIRECTIONS:
                     expected_ratio = distance_pct / expected_move if math.isfinite(distance_pct) and math.isfinite(expected_move) and expected_move > 0 else math.nan
@@ -471,6 +709,8 @@ def generate_candidates(
                     "sector": row.get("sector", ""),
                     "direction": direction,
                     "strategy": _strategy_label(direction),
+                    "strategy_key": VERTICAL_STRATEGY_KEYS[direction],
+                    "strategy_registry_key": VERTICAL_STRATEGY_KEYS[direction],
                     "strategy_kind": _strategy_kind(direction),
                     "index_fallback": bool(index_fallback),
                     "expiry": expiry,
@@ -492,15 +732,21 @@ def generate_candidates(
                     "breakeven_distance_pct": breakeven_distance_pct,
                     "flow_bias": safe_float(row.get("flow_bias"), 0.0),
                     "bot_flow_bias": safe_float(bot_metrics.get("bot_flow_bias"), math.nan),
+                    "option_flow_bias": option_flow_bias,
+                    "dp_flow_bias": dp_bias,
+                    "dp_directional_ratio": dp_directional_ratio,
+                    "dp_total_premium": safe_float(dp_metrics.get("dp_total_premium"), math.nan),
+                    "dp_prints": safe_float(dp_metrics.get("dp_prints"), math.nan),
+                    "dark_pool_weight_applied": usable_dp_weight,
                     "combined_flow_bias": combined_bias,
                     "flow_total_premium": safe_float(row.get("flow_total_premium"), 0.0),
                     "iv_rank": safe_float(row.get("iv_rank")),
                     "iv30d": safe_float(row.get("iv30d")),
                     "raw_uw_volatility": raw_uw_volatility,
                     "realized_volatility_30d": realized_volatility_30d,
-                    "realized_volatility_source": "unvalidated_uw_field_not_used",
+                    "realized_volatility_source": row.get("realized_volatility_source", "unavailable"),
                     "iv_hv_ratio": iv_hv_ratio,
-                    "iv_hv_spread": math.nan,
+                    "iv_hv_spread": iv30d - realized_volatility_30d if math.isfinite(iv30d) and math.isfinite(realized_volatility_30d) else math.nan,
                     "implied_move_perc": safe_float(row.get("implied_move_perc")),
                     "next_earnings_dt": row.get("next_earnings_dt"),
                     "edge_type": _edge_text(direction, row, exp_contracts),
@@ -575,14 +821,26 @@ def generate_candidates(
     # Keep at least one constructed setup per selected ticker. Otherwise a name
     # can survive universe selection, have usable chains, and still disappear
     # before scoring just because several tickers generated many same-name variants.
-    coverage = df.sort_values("_pre_score", ascending=False).groupby("ticker", as_index=False).head(1).copy()
+    coverage = (
+        df.sort_values("_pre_score", ascending=False)
+        .groupby(["ticker", "strategy_registry_key"], as_index=False)
+        .head(1)
+        .copy()
+    )
     coverage["candidate_coverage_source"] = "per_ticker_coverage"
     if not rescue.empty:
         pieces = [base, rescue[df.columns], coverage[df.columns]]
     else:
         pieces = [base, coverage[df.columns]]
     out = pd.concat(pieces, ignore_index=True).drop_duplicates(
-        subset=["ticker", "direction", "expiry", "short_strike_eod", "long_strike_eod"],
+        subset=[
+            "ticker",
+            "strategy_registry_key",
+            "direction",
+            "expiry",
+            "short_strike_eod",
+            "long_strike_eod",
+        ],
         keep="first",
     )
     return out.sort_values("_pre_score", ascending=False).drop(columns=["_pre_score"], errors="ignore")
@@ -667,6 +925,8 @@ def _score_trade(row: pd.Series, regime: dict[str, Any], asof: dt.date) -> tuple
             credit_pct=credit_pct,
             distance_pct=distance,
             expected_move=expected_move,
+            dte=safe_float(row.get("dte")),
+            iv_rank=safe_float(row.get("iv_rank")),
         )
         if pattern_pass:
             score += 0.25
@@ -726,9 +986,14 @@ def live_validate_and_score(
     rows: list[dict[str, Any]] = []
     validator = None
     live_error = ""
+    market_session_open = is_regular_option_session_open()
     if require_live:
         try:
-            validator = SchwabChainValidator(out_dir, snapshot_dir=schwab_snapshot_dir)
+            validator = SchwabChainValidator(
+                out_dir,
+                snapshot_dir=schwab_snapshot_dir,
+                allow_live_fallback=schwab_snapshot_dir is None,
+            )
         except Exception as exc:
             live_error = str(exc)
 
@@ -736,9 +1001,9 @@ def live_validate_and_score(
     candidate_expiries = pd.to_datetime(candidates.get("expiry", pd.Series(dtype=object)), errors="coerce")
     max_expiry = candidate_expiries.max()
     if pd.notna(max_expiry):
-        to_date = max(asof + dt.timedelta(days=50), max_expiry.date() + dt.timedelta(days=1))
+        to_date = max(asof + dt.timedelta(days=160), max_expiry.date() + dt.timedelta(days=80))
     else:
-        to_date = asof + dt.timedelta(days=50)
+        to_date = asof + dt.timedelta(days=160)
     default_live_keys = [
         "credit_pct_width",
         "credit",
@@ -771,12 +1036,35 @@ def live_validate_and_score(
             else:
                 spot = chain_spot(chain)
                 contracts = chain_to_contracts(chain)
+                quote_date_values = (
+                    contracts["quote_date"]
+                    if "quote_date" in contracts.columns
+                    else pd.Series(pd.NaT, index=contracts.index, dtype="datetime64[ns]")
+                )
+                quote_dates = pd.to_datetime(quote_date_values, errors="coerce").dropna()
+                quote_observation_date = quote_dates.max().date() if not quote_dates.empty else None
+                if quote_observation_date is not None:
+                    contracts = contracts.copy()
+                    contracts["regular_session_quote"] = (
+                        contracts.get("regular_session_quote", pd.Series(False, index=contracts.index)).map(_truthy)
+                        & pd.to_datetime(quote_date_values, errors="coerce").dt.date.eq(quote_observation_date)
+                    )
                 expected_move = _expected_move_pct(pd.Series(base))
                 anchor = safe_float(base.get("anchor_strike"), safe_float(base.get("short_strike_eod")))
                 expiry_value = pd.to_datetime(cand.get("expiry"), errors="coerce")
                 if pd.isna(expiry_value):
                     live_alternatives = [
                         {"live_status": "missing_expiry_or_right", "live_blocker": "candidate expiry is missing or invalid"}
+                    ]
+                elif _truthy(cand.get("generic_strategy_seed")):
+                    live_alternatives = [
+                        build_generic_strategy_candidate(
+                            contracts,
+                            strategy_key=str(cand.get("strategy_registry_key") or cand.get("strategy_key") or ""),
+                            spot=spot,
+                            as_of_date=asof,
+                            preferred_expiry=expiry_value.date(),
+                        )
                     ]
                 elif _is_debit_strategy(cand):
                     live_alternatives = find_debit_spread_alternatives(
@@ -804,9 +1092,11 @@ def live_validate_and_score(
                     )
                 for live in live_alternatives:
                     live["stock_price_live"] = spot
+                    live["quote_observation_date"] = quote_observation_date
         for live in live_alternatives:
             row = base.copy()
             row.update(live)
+            row["market_session_open_at_validation"] = market_session_open
             if str(base.get("construction_source") or "") == "fallback_income":
                 row["live_construction_source"] = live.get("construction_source", "")
                 row["live_construction_reason"] = live.get("construction_reason", "")
@@ -818,7 +1108,7 @@ def live_validate_and_score(
             row.setdefault("construction_reason", base.get("construction_reason", "seed candidate"))
             row.setdefault("target_entry", base.get("target_entry", math.nan))
             row["regime_trend"] = regime.get("trend")
-            if row.get("live_status") == "PASS":
+            if row.get("live_status") == "PASS" and not _truthy(base.get("generic_strategy_seed")):
                 if _is_debit_strategy(row):
                     row["max_profit"] = (safe_float(row.get("spread_width")) - safe_float(row.get("debit"))) * 100.0
                     row["max_loss"] = safe_float(row.get("debit")) * 100.0
@@ -830,12 +1120,17 @@ def live_validate_and_score(
                     else:
                         row["breakeven"] = safe_float(row.get("short_strike")) + safe_float(row.get("credit"))
             score, confidence, hard, penalties = _score_trade(pd.Series(row), regime, asof)
+            if _truthy(base.get("generic_strategy_seed")):
+                penalties.append("strategy_specific_validation_required")
             row["score"] = score
             row["confidence"] = confidence
             row["hard_rejects"] = ";".join(hard)
             row["penalties"] = ";".join(penalties)
             expected_move = _expected_move_pct(pd.Series(row))
-            if _is_debit_strategy(row):
+            if bool(base.get("generic_strategy_seed")):
+                row["replay_pattern"] = "strategy_specific_validation_required"
+                row["replay_ev_verdict"] = "unavailable_generic_strategy"
+            elif _is_debit_strategy(row):
                 debit_pct = safe_float(row.get("debit_pct_width"))
                 reward_risk = safe_float(row.get("reward_risk"))
                 be_distance = safe_float(row.get("breakeven_distance_pct"))
@@ -860,6 +1155,8 @@ def live_validate_and_score(
                     credit_pct=safe_float(row.get("credit_pct_width")),
                     distance_pct=safe_float(row.get("distance_pct")),
                     expected_move=expected_move,
+                    dte=safe_float(row.get("dte")),
+                    iv_rank=safe_float(row.get("iv_rank")),
                 )
                 if pattern_pass:
                     row["replay_pattern"] = pattern
@@ -1131,7 +1428,24 @@ def _secondary_income_eligible(
     align: float,
     score: float,
     dte: float,
+    iv_hv_ratio: float = math.nan,
+    realized_vol: float = math.nan,
 ) -> bool:
+    # The secondary income sleeve is still a short-premium trade, so it must clear the
+    # same volatility-richness bar as the primary credit lane. Without this the sleeve
+    # bypassed the richness gate entirely and sold premium at IV/HV < 1.0 (i.e. implied
+    # cheaper than realized), which is the wrong side of the variance risk premium.
+    if not math.isfinite(iv_hv_ratio) or iv_hv_ratio < MIN_IV_HV_RATIO:
+        return False
+    if not math.isfinite(realized_vol) or realized_vol < MIN_REALIZED_VOL:
+        return False
+    # The sleeve is capped at 35 DTE but had no lower band, so it was writing into
+    # the 11-27 day region where duration is long enough for the underlying to reach
+    # the short strike but too short to be paid for the exposure. Excluding that band
+    # takes the sleeve from n=127 / PF 1.17 to n=64 / PF 2.38 (delta +38.1 per trade,
+    # 90% CI [+10.2, +68.8], p 0.012). See credit_policy.in_dte_dead_zone.
+    if in_dte_dead_zone(dte):
+        return False
     return (
         math.isfinite(credit_pct)
         and MIN_CREDIT_PCT_WIDTH <= credit_pct <= MAX_CREDIT_PCT_WIDTH
@@ -1164,10 +1478,20 @@ def _credit_secondary_income_replay_lane(row: pd.Series) -> bool:
         align=_flow_alignment(row),
         score=_decision_sort_score(row),
         dte=safe_float(row.get("dte")),
+        iv_hv_ratio=safe_float(row.get("iv_hv_ratio")),
+        realized_vol=safe_float(row.get("realized_volatility_30d")),
     )
 
 
 def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date | None = None) -> pd.DataFrame:
+    # NOTE: this deliberately does NOT call assess_credit_spread, so the credit
+    # regime map and the 28-45 DTE band are not applied to either lane below.
+    # That looks like a bypass bug and it is not -- do not "fix" it without
+    # rerunning scripts/research_secondary_sleeve_regime.py. Conditioned on the
+    # sleeve's own filters, the regimes the map blocks are still profitable
+    # (n=91, PF 1.14), and `range` + Bear Call -- the worst cell in the book at
+    # PF 0.81 / -$8,542 unconditionally -- runs n=23, win 95.7%, PF 5.58 inside
+    # the sleeve. Forcing the map on here deletes the best slice in the sleeve.
     if scored.empty:
         return scored
     out = scored.copy()
@@ -1201,12 +1525,33 @@ def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date 
             out.at[idx, "decision_reason"] = f"decision_earnings_within_10d:{int(earnings_days)}"
         elif not math.isfinite(credit_pct) or credit_pct < MIN_CREDIT_PCT_WIDTH:
             out.at[idx, "decision_reason"] = "decision_credit_below_25pct_width"
-        elif _secondary_income_eligible(credit_pct=credit_pct, ratio=ratio, align=align, score=score, dte=dte) and ratio < 0.65:
+        elif _is_credit_strategy(row) and in_dte_dead_zone(dte):
+            # Applies to BOTH lanes below. The 11-27 day band loses on every slice
+            # measured (sleeve PF 0.72, primary map-blocked PF 0.63, whole credit
+            # book PF 0.71-0.80). See credit_policy.in_dte_dead_zone.
+            out.at[idx, "decision_reason"] = f"decision_dte_dead_zone_11_27:{int(dte)}"
+        elif _is_credit_strategy(row) and (
+            not math.isfinite(safe_float(row.get("iv_hv_ratio")))
+            or safe_float(row.get("iv_hv_ratio")) < MIN_IV_HV_RATIO
+        ):
+            out.at[idx, "decision_reason"] = f"decision_iv_hv_ratio_below_{MIN_IV_HV_RATIO:.2f}"
+        elif _is_credit_strategy(row) and (
+            not math.isfinite(safe_float(row.get("realized_volatility_30d")))
+            or safe_float(row.get("realized_volatility_30d")) < MIN_REALIZED_VOL
+        ):
+            out.at[idx, "decision_reason"] = f"decision_realized_vol_below_{MIN_REALIZED_VOL:.2f}"
+        elif _secondary_income_eligible(
+            credit_pct=credit_pct,
+            ratio=ratio,
+            align=align,
+            score=score,
+            dte=dte,
+            iv_hv_ratio=safe_float(row.get("iv_hv_ratio")),
+            realized_vol=safe_float(row.get("realized_volatility_30d")),
+        ) and ratio < 0.65:
             out.at[idx, "decision_eligible"] = True
             out.at[idx, "decision_reason"] = "decision_secondary_income_eligible"
             out.at[idx, "decision_tier"] = "secondary_income"
-        elif not math.isfinite(ratio) or ratio < 0.65:
-            out.at[idx, "decision_reason"] = "decision_insufficient_expected_move_buffer"
         elif not math.isfinite(align) or align < 0.10:
             out.at[idx, "decision_reason"] = "decision_weak_flow_alignment"
         elif credit_pct > MAX_CREDIT_PCT_WIDTH:
@@ -1219,15 +1564,59 @@ def apply_high_conviction_decision_marks(scored: pd.DataFrame, *, asof: dt.date 
 
 
 def apply_portfolio_context(scored: pd.DataFrame, portfolio: dict[str, Any] | None) -> pd.DataFrame:
-    if scored.empty or not portfolio or portfolio.get("status") != "ok":
+    if scored.empty:
         return scored
     out = scored.copy()
+    requirement_rows = (
+        pd.to_numeric(out.get("requires_equity_shares", pd.Series(0, index=out.index)), errors="coerce").fillna(0).gt(0)
+        | pd.to_numeric(out.get("requires_cash", pd.Series(0, index=out.index)), errors="coerce").fillna(0).gt(0)
+        | out.get("requires_margin_model", pd.Series(False, index=out.index)).map(
+            lambda value: value is True or str(value).strip().lower() == "true"
+        )
+    )
+    if not portfolio or portfolio.get("status") != "ok":
+        out.loc[requirement_rows, "portfolio_requirements_status"] = "UNVERIFIED"
+        out.loc[requirement_rows, "portfolio_requirements_reason"] = "Schwab portfolio state unavailable"
+        out.loc[requirement_rows, "penalties"] = out.loc[requirement_rows, "penalties"].map(
+            lambda value: _append_token(value, "portfolio_collateral_unverified")
+        )
+        return out
     option_underlyings = {str(x).upper() for x in portfolio.get("option_underlyings", [])}
     large_equity = {str(k).upper(): safe_float(v) for k, v in (portfolio.get("large_equity_exposure", {}) or {}).items()}
+    equity_shares = {str(k).upper(): safe_float(v, 0.0) for k, v in (portfolio.get("equity_shares", {}) or {}).items()}
+    cash = safe_float(portfolio.get("cash"), 0.0)
+    income_mode = str(portfolio.get("portfolio_income_mode") or "existing-core-review").strip().lower()
+    allowed_income = {str(value).upper() for value in portfolio.get("covered_income_allowed_tickers", [])}
     total_value = safe_float(portfolio.get("total_value"), 0.0)
     for idx, row in out.iterrows():
         ticker = str(row.get("ticker") or "").upper()
         notes: list[str] = []
+        requirement_reasons: list[str] = []
+        required_shares = int(safe_float(row.get("requires_equity_shares"), 0.0))
+        required_cash = safe_float(row.get("requires_cash"), 0.0)
+        requires_margin = row.get("requires_margin_model") is True or str(row.get("requires_margin_model")).lower() == "true"
+        available_shares = equity_shares.get(ticker, 0.0)
+        if required_shares > 0 and available_shares < required_shares:
+            requirement_reasons.append(f"requires {required_shares} shares; available {available_shares:g}")
+        if (
+            required_shares > 0
+            and income_mode == "trading-sleeve-only"
+            and ticker not in allowed_income
+            and available_shares >= required_shares
+        ):
+            requirement_reasons.append("core holding is protected from options assignment")
+        if required_cash > 0 and cash < required_cash:
+            requirement_reasons.append(f"requires ${required_cash:,.0f} cash; available ${cash:,.0f}")
+        if requires_margin:
+            requirement_reasons.append("broker buying-power and undefined-tail-risk model is not implemented")
+        if required_shares > 0 or required_cash > 0 or requires_margin:
+            # Advisory: capital requirements are reported, never used to block a trade.
+            out.at[idx, "portfolio_requirements_status"] = "WARN" if requirement_reasons else "PASS"
+            out.at[idx, "portfolio_requirements_reason"] = (
+                "; ".join(requirement_reasons) if requirement_reasons else "collateral requirement satisfied"
+            )
+            if requirement_reasons:
+                notes.extend(requirement_reasons)
         if ticker in option_underlyings:
             notes.append("existing option exposure")
             out.at[idx, "portfolio_warning"] = "existing option exposure"
@@ -1291,12 +1680,12 @@ def apply_final_quality_guards(scored: pd.DataFrame) -> pd.DataFrame:
 
 
 def _expected_move_pct(row: pd.Series) -> float:
-    implied = safe_float(row.get("implied_move_perc"))
-    if math.isfinite(implied) and implied > 0:
-        return implied
     iv30d = safe_float(row.get("iv30d"))
     dte = safe_float(row.get("dte"))
-    return iv30d * math.sqrt(dte / 365.0) if math.isfinite(iv30d) and math.isfinite(dte) and dte > 0 else math.nan
+    if math.isfinite(iv30d) and math.isfinite(dte) and iv30d > 0 and dte > 0:
+        return iv30d * math.sqrt(dte / 365.0)
+    implied = safe_float(row.get("implied_move_perc"))
+    return implied if math.isfinite(implied) and implied > 0 else math.nan
 
 
 def _credit_required_entry(row: pd.Series) -> float:
@@ -1579,11 +1968,21 @@ def apply_confirmation_framework(
         trend = str(regime.get("trend") or "")
         direction = str(row.get("direction") or "")
         catalyst_status = str(row.get("catalyst_status") or "").lower()
-        checks["price_action_trend"] = (
-            trend == "range"
-            or (trend == "uptrend" and direction in BULLISH_DIRECTIONS)
-            or (trend == "downtrend" and direction in BEARISH_DIRECTIONS)
-        )
+        if _is_debit_strategy(row):
+            # Debit spreads pay when the move continues, so trend alignment is
+            # the right test. Bull Call|uptrend is the only validated debit lane.
+            checks["price_action_trend"] = (
+                trend == "range"
+                or (trend == "uptrend" and direction in BULLISH_DIRECTIONS)
+                or (trend == "downtrend" and direction in BEARISH_DIRECTIONS)
+            )
+        else:
+            # Credit spreads are contrarian: they sell premium after the move,
+            # not into it. ALLOWED_REGIMES is the single source of truth.
+            # Re-deriving alignment here with the trend-following sign made
+            # every credit candidate jointly unsatisfiable with credit policy.
+            allowed = CREDIT_ALLOWED_REGIMES.get(direction)
+            checks["price_action_trend"] = True if allowed is None else trend in allowed
         edge_sample_size = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size"), math.nan))
         if _is_debit_strategy(row) and direction in BULLISH_DIRECTIONS and str(regime.get("flow") or "") == "weak":
             checks["market_regime_alignment"] = (
@@ -1604,16 +2003,23 @@ def apply_confirmation_framework(
         else:
             checks["iv_premium_quality"] = safe_float(row.get("credit_pct_width")) >= MIN_CREDIT_PCT_WIDTH
         earnings_days = _earnings_days(row, asof)
-        checks["earnings_news_risk"] = (
-            not earnings_crosses_expiry(row, asof=asof)
-            and not (math.isfinite(earnings_days) and 0 <= earnings_days <= 7 and pd.isna(row.get("expiry")))
-            and catalyst_status not in {"caution", "unknown"}
+        checks["earnings_news_risk"] = bool(
+            is_etf_row(row)
+            or (
+                not earnings_crosses_expiry(row, asof=asof)
+                and not (math.isfinite(earnings_days) and 0 <= earnings_days <= 7 and pd.isna(row.get("expiry")))
+                and catalyst_status not in {"caution", "unknown"}
+            )
         )
         if _is_debit_strategy(row):
             checks["expected_move_buffer"] = math.isfinite(expected_ratio) and expected_ratio >= 1.0
+            checks["level_or_gex_protection"] = None if level_protection == "not_available" else "beyond" not in level_protection
         else:
-            checks["expected_move_buffer"] = math.isfinite(expected_ratio) and expected_ratio >= 0.65
-        checks["level_or_gex_protection"] = None if level_protection == "not_available" else "without known" not in level_protection and "beyond" not in level_protection
+            # Credit distance and credit/width are two readings of the same
+            # short-strike delta. The validated credit policy removed distance
+            # as anti-predictive, so confirmation must not reintroduce it.
+            checks["expected_move_buffer"] = None
+            checks["level_or_gex_protection"] = None
         replay_verdict = str(row.get("replay_ev_verdict") or "")
         edge_verdict = str(row.get("edge_verdict") or "")
         if (
@@ -1971,6 +2377,7 @@ def select_final_trades(
     risk_budget: float,
     recent_performance: dict[str, Any] | None = None,
     max_final_trades: int = 8,
+    max_positions_per_ticker: int = 1,
     risk_config: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
     if scored.empty:
@@ -2048,6 +2455,7 @@ def select_final_trades(
     selected = []
     total_risk = 0.0
     ticker_risk = Counter()
+    ticker_positions = Counter()
     sector_risk = Counter()
     ai_risk = 0.0
     perf_mult = performance_risk_multiplier(recent_performance)
@@ -2128,6 +2536,13 @@ def select_final_trades(
             contracts = min(contracts, 1)
         ticker = str(row.get("ticker"))
         sector = str(row.get("sector") or "Unknown")
+        # One position per underlying. The risk caps below are dollar-based, so a
+        # cheap name could otherwise fill several slots with what is economically
+        # the same bet at adjacent strikes and expiries: the 2026-07-24 run marked
+        # eight eligible rows that were only three underlyings (TQQQ x4, TSM x3,
+        # TXN x1). Rows are already sorted by rank, so this keeps the best one.
+        if ticker_positions[ticker] >= max_positions_per_ticker:
+            continue
         remaining_contract_risk = min(
             max_daily_risk - total_risk,
             max_ticker_risk - ticker_risk[ticker],
@@ -2135,11 +2550,11 @@ def select_final_trades(
         )
         if ticker in AI_TECH:
             remaining_contract_risk = min(remaining_contract_risk, risk_budget * default_factor_fraction - ai_risk)
+        # Dollar budgets scale a position down but never suppress an eligible trade.
         contracts = min(contracts, int(remaining_contract_risk // max_loss))
         if not allow_size_up:
             contracts = min(contracts, 1)
-        if contracts < 1:
-            continue
+        contracts = max(1, contracts)
         risk = contracts * max_loss
         out = row.copy()
         out["contracts"] = contracts
@@ -2259,6 +2674,7 @@ def select_final_trades(
         selected.append(out)
         total_risk += risk
         ticker_risk[ticker] += risk
+        ticker_positions[ticker] += 1
         sector_risk[sector] += risk
         if ticker in AI_TECH:
             ai_risk += risk
@@ -2872,14 +3288,38 @@ def build_data_quality_status(
 ) -> dict[str, Any]:
     provenance = input_provenance or {}
     exports = provenance.get("exports") or {}
-    required_exports = ["stock_screener", "hot_chains", "chain_oi_changes", "bot_eod_report"]
+    required_exports = ["stock_screener", "hot_chains", "chain_oi_changes", "bot_eod_report", "dp_eod_report"]
     missing_exports = [name for name in required_exports if name not in exports]
-    dark_pool_present = "dp_eod_report" in exports
     live_counts = scored["live_status"].fillna("unknown").value_counts().to_dict() if not scored.empty and "live_status" in scored.columns else {}
     pass_count = int(live_counts.get("PASS", 0))
+    if not scored.empty and {"regular_session_quote", "displayed_entry_size"}.issubset(scored.columns):
+        regular_session = scored["regular_session_quote"].map(
+            lambda value: value is True or str(value).strip().lower() == "true"
+        )
+        market_open = scored.get(
+            "market_session_open_at_validation",
+            pd.Series(True, index=scored.index),
+        ).map(lambda value: value is True or str(value).strip().lower() == "true")
+        displayed_size = pd.to_numeric(scored["displayed_entry_size"], errors="coerce").fillna(0.0)
+        traded_size = pd.concat(
+            [
+                pd.to_numeric(scored.get(column, pd.Series(math.nan, index=scored.index)), errors="coerce")
+                for column in ("min_leg_volume", "short_volume", "long_volume")
+            ],
+            axis=1,
+        ).min(axis=1).fillna(0.0)
+        executable_quote_count = int(
+            (
+                scored["live_status"].astype(str).eq("PASS")
+                & regular_session
+                & ((market_open & displayed_size.ge(1)) | (~market_open & traded_size.ge(1)))
+            ).sum()
+        )
+    else:
+        executable_quote_count = pass_count
+    quote_status = "ok" if executable_quote_count else "warning" if pass_count else "missing"
     portfolio_status = (portfolio or {}).get("status", "not_checked")
     browser_count = int(provenance.get("browser_text_count", 0) or 0)
-    browser_support_count = int(provenance.get("browser_support_file_count", browser_count) or 0)
     catalyst_counts = catalysts["catalyst_status"].fillna("unknown").value_counts().to_dict() if catalysts is not None and not catalysts.empty and "catalyst_status" in catalysts.columns else {}
 
     items = [
@@ -2891,8 +3331,12 @@ def build_data_quality_status(
         },
         {
             "check": "Schwab quotes available",
-            "status": "ok" if pass_count else "missing",
-            "detail": f"{pass_count} PASS rows; counts={live_counts}" if live_counts else "no live quote rows",
+            "status": quote_status,
+            "detail": (
+                f"{executable_quote_count} row-level executable quotes; {pass_count} live-priced PASS rows; counts={live_counts}"
+                if live_counts
+                else "no live quote rows"
+            ),
             "critical": pass_count == 0,
         },
         {
@@ -2904,17 +3348,7 @@ def build_data_quality_status(
         {
             "check": "Browser/news notes present",
             "status": "ok" if browser_count > 0 else "missing",
-            "detail": (
-                f"{browser_count} local browser/news captures; catalyst counts={catalyst_counts}"
-                if browser_count > 0
-                else f"no local browser/news captures; structured browser support files={browser_support_count}; single names remain candidate-gated"
-            ),
-            "critical": False,
-        },
-        {
-            "check": "Dark-pool corroboration available",
-            "status": "ok" if dark_pool_present else "missing",
-            "detail": "dp-eod-report loaded as soft corroboration" if dark_pool_present else "dp-eod-report missing; no dark-pool corroboration",
+            "detail": f"{browser_count} local browser/news captures; catalyst counts={catalyst_counts}" if browser_count > 0 else "no local browser/news captures; single names remain candidate-gated",
             "critical": False,
         },
         {
@@ -3425,7 +3859,7 @@ def _target_profit_per_contract(row: pd.Series) -> float:
     credit = safe_float(row.get("credit"))
     debit = safe_float(row.get("debit"))
     if _is_credit_strategy(row) and math.isfinite(credit) and credit > 0:
-        target = credit * 100.0 * 0.60
+        target = credit * 100.0 * PROFIT_TAKE_PCT
     elif _is_debit_strategy(row) and math.isfinite(debit) and debit > 0:
         target = debit * 100.0 * 0.60
     else:
