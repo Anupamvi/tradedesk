@@ -47,8 +47,9 @@ from uwos.options_agent.shadow_outcomes import (
 from ._vendor.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.73-structured-strike-output-20260810-102313"
+PIPELINE_VERSION = "options-agent-v1.74-explicit-chain-oi-overlay-20260811-101711"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.73-structured-strike-output-20260810-102313",
     "options-agent-v1.72-stale-quote-target-preservation-20260810-093000",
     "options-agent-v1.71-session-neutral-actionability-20260808-124037",
     "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
@@ -115,7 +116,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-08-10T10:23:13-04:00"
+PIPELINE_RELEASED_AT = "2026-08-11T10:17:11-04:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -359,8 +360,9 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.73-structured-strike-output-20260810-102313",
+    "PIPELINE_VERSION": "options-agent-v1.74-explicit-chain-oi-overlay-20260811-101711",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.73-structured-strike-output-20260810-102313",
         "options-agent-v1.72-stale-quote-target-preservation-20260810-093000",
         "options-agent-v1.71-session-neutral-actionability-20260808-124037",
         "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
@@ -427,7 +429,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-08-10T10:23:13-04:00",
+    "PIPELINE_RELEASED_AT": "2026-08-11T10:17:11-04:00",
     "PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS": frozenset(
         {"options-agent-v1.68-five-source-market-context-20260806-081546"}
     ),
@@ -2810,6 +2812,7 @@ def run_pipeline(
     dispatch_only: bool = False,
     lesson_pack_version: Optional[str] = None,
     lesson_pack_path: Optional[Path] = None,
+    chain_oi_overlay_path: Optional[Path] = None,
 ) -> dict[str, Path]:
     """Run the first independent Options Agent EOD research path."""
 
@@ -2817,6 +2820,7 @@ def run_pipeline(
     day = parse_as_of(as_of).isoformat()
     resolved_root = root or project_root()
     date_dir = resolve_date_dir(resolved_root, day)
+    chain_oi_overlay_path = _validated_chain_oi_overlay_path(chain_oi_overlay_path, day)
     paths = output_paths(day, root=resolved_root, out_dir=out_dir)
     paths["out_dir"].mkdir(parents=True, exist_ok=True)
     paths["agent_reviews_dir"].mkdir(parents=True, exist_ok=True)
@@ -2868,13 +2872,22 @@ def run_pipeline(
     lesson_metadata = lesson_manifest_metadata(lesson_pack, paths)
     event_calendar = load_options_event_calendar(resolved_root)
 
-    inventory = build_source_inventory(date_dir, day)
+    inventory = build_source_inventory(
+        date_dir,
+        day,
+        chain_oi_overlay_path=chain_oi_overlay_path,
+    )
     raw_universe, source_notes = build_raw_universe(
         date_dir,
         day,
         discovery_limit=None,
         max_bot_rows=max_bot_rows,
+        chain_oi_overlay_path=chain_oi_overlay_path,
     )
+    if chain_oi_overlay_path is not None:
+        source_notes.append(
+            f"explicit chain-OI overlay: {chain_oi_overlay_path.name} on {day} EOD sources"
+        )
     live_market_spots_aligned = _live_market_spots_are_source_aligned(
         source_as_of_date,
         observation_session_date,
@@ -2951,6 +2964,7 @@ def run_pipeline(
             candidates,
             root=resolved_root,
             preserve_failed_routes_for_live=bool(live_schwab or chain_snapshot_dir is not None),
+            chain_oi_overlay_path=chain_oi_overlay_path,
         )
         dispatch_priced = apply_catalyst_reviews(dispatch_priced, catalyst_reviews)
         # Live selection evaluates short-DTE macro-calendar eligibility. Attach the
@@ -3273,6 +3287,7 @@ def run_pipeline(
             candidates,
             root=resolved_root,
             preserve_failed_routes_for_live=bool(live_schwab or chain_snapshot_dir is not None),
+            chain_oi_overlay_path=chain_oi_overlay_path,
         )
         priced = apply_catalyst_reviews(priced, catalyst_reviews)
         # Contract scoring uses the source-session holding horizon. A live quote
@@ -4169,7 +4184,86 @@ def _write_dispatch_only_artifacts(
     paths["report"].write_text(render_report(day, empty_decision, pd.DataFrame(), manifest, coverage_audit), encoding="utf-8")
 
 
-def build_source_inventory(date_dir: Path, as_of: str | dt.date) -> dict[str, Any]:
+def _chain_oi_overlay_date(path: Path) -> Optional[dt.date]:
+    match = re.search(
+        r"chain-oi-changes(?:-latest)?-(\d{4}-\d{2}-\d{2})",
+        path.name,
+    )
+    if not match:
+        return None
+    try:
+        return dt.date.fromisoformat(match.group(1))
+    except ValueError:
+        return None
+
+
+def _validated_chain_oi_overlay_path(
+    value: Optional[Path],
+    as_of: str | dt.date,
+) -> Optional[Path]:
+    if value is None:
+        return None
+    path = Path(value).expanduser().resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"chain-OI overlay file not found: {path}")
+    if path.suffix.lower() not in {".csv", ".zip"}:
+        raise ValueError("chain-OI overlay must be a CSV or ZIP export")
+    overlay_date = _chain_oi_overlay_date(path)
+    if overlay_date is None:
+        raise ValueError(
+            "chain-OI overlay filename must contain chain-oi-changes-YYYY-MM-DD"
+        )
+    source_date = parse_as_of(as_of)
+    if overlay_date <= source_date:
+        raise ValueError(
+            f"chain-OI overlay date {overlay_date} must be later than source date {source_date}"
+        )
+    return path
+
+
+def _load_chain_oi_for_run(
+    date_dir: Path,
+    as_of: str | dt.date,
+    *,
+    chain_oi_overlay_path: Optional[Path] = None,
+) -> pd.DataFrame:
+    from ._vendor import data as uw_data
+
+    day = parse_as_of(as_of)
+    overlay_path = _validated_chain_oi_overlay_path(chain_oi_overlay_path, day)
+    if overlay_path is None:
+        return uw_data.load_chain_oi(date_dir, day, point_in_time=True)
+    frame = uw_data.load_chain_oi_export(overlay_path, day)
+    overlay_date = _chain_oi_overlay_date(overlay_path)
+    current_dates = pd.to_datetime(frame.get("curr_date"), errors="coerce").dt.date.dropna()
+    if current_dates.empty or set(current_dates.unique()) != {overlay_date}:
+        raise ValueError(
+            f"chain-OI overlay curr_date must match filename date {overlay_date}"
+        )
+    prior_dates = pd.to_datetime(frame.get("last_date"), errors="coerce").dt.date.dropna()
+    if prior_dates.empty or bool(prior_dates.map(lambda value: value > day).any()):
+        raise ValueError(
+            f"chain-OI overlay last_date must be on or before source date {day}"
+        )
+    frame.attrs["overlay_source_date"] = overlay_date.isoformat() if overlay_date else ""
+    frame.attrs["overlay_base_date"] = day.isoformat()
+    return frame
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def build_source_inventory(
+    date_dir: Path,
+    as_of: str | dt.date,
+    *,
+    chain_oi_overlay_path: Optional[Path] = None,
+) -> dict[str, Any]:
     """Inventory dated UW inputs without relying on any prior pipeline output."""
 
     from ._vendor import data as uw_data
@@ -4177,6 +4271,7 @@ def build_source_inventory(date_dir: Path, as_of: str | dt.date) -> dict[str, An
     as_of_day = parse_as_of(as_of)
     day = as_of_day.isoformat()
     sources: dict[str, dict[str, Any]] = {}
+    overlay_path = _validated_chain_oi_overlay_path(chain_oi_overlay_path, as_of_day)
     for label, prefix in {
         "stock_screener": "stock-screener-",
         "hot_chains": "hot-chains-",
@@ -4185,10 +4280,14 @@ def build_source_inventory(date_dir: Path, as_of: str | dt.date) -> dict[str, An
         "dp_eod": "dp-eod-report-",
     }.items():
         try:
-            paths = uw_data.find_export_bundle(
-                date_dir,
-                prefix,
-                asof_ceiling=as_of_day,
+            paths = (
+                [overlay_path]
+                if label == "chain_oi" and overlay_path is not None
+                else uw_data.find_export_bundle(
+                    date_dir,
+                    prefix,
+                    asof_ceiling=as_of_day,
+                )
             )
             sources[label] = {
                 "status": "present",
@@ -4197,6 +4296,16 @@ def build_source_inventory(date_dir: Path, as_of: str | dt.date) -> dict[str, An
                 "part_count": len(paths),
                 "size_bytes": sum(path.stat().st_size for path in paths),
             }
+            if label == "chain_oi" and overlay_path is not None:
+                overlay_date = _chain_oi_overlay_date(overlay_path)
+                sources[label].update(
+                    {
+                        "overlay": True,
+                        "overlay_base_date": day,
+                        "overlay_source_date": overlay_date.isoformat() if overlay_date else "",
+                        "sha256": _sha256_file(overlay_path),
+                    }
+                )
         except Exception as exc:
             sources[label] = {"status": "missing", "error": str(exc)}
     return {"as_of": day, "source_dir": str(date_dir), "sources": sources}
@@ -4208,6 +4317,7 @@ def build_raw_universe(
     *,
     discovery_limit: Optional[int] = None,
     max_bot_rows: Optional[int] = None,
+    chain_oi_overlay_path: Optional[Path] = None,
 ) -> tuple[pd.DataFrame, list[str]]:
     """Build a ticker-level raw universe directly from dated UW source files."""
 
@@ -4217,7 +4327,11 @@ def build_raw_universe(
     notes: list[str] = []
     screener = uw_data.load_stock_screener(date_dir, point_in_time=True)
     hot = uw_data.load_hot_chains(date_dir, day, point_in_time=True)
-    chain_oi = uw_data.load_chain_oi(date_dir, day, point_in_time=True)
+    chain_oi = _load_chain_oi_for_run(
+        date_dir,
+        day,
+        chain_oi_overlay_path=chain_oi_overlay_path,
+    )
 
     screen_cols = [
         col
@@ -6765,6 +6879,7 @@ def price_candidates(
     *,
     limit: Optional[int] = None,
     root: Optional[Path] = None,
+    chain_oi_overlay_path: Optional[Path] = None,
 ) -> pd.DataFrame:
     """Construct first-pass spread tickets from dated UW hot-chain quotes."""
 
@@ -6774,6 +6889,7 @@ def price_candidates(
         candidates,
         limit=limit,
         root=root,
+        chain_oi_overlay_path=chain_oi_overlay_path,
     )
     return priced
 
@@ -6781,6 +6897,8 @@ def price_candidates(
 def _dated_option_chain_for_construction(
     date_dir: Path,
     as_of: str | dt.date,
+    *,
+    chain_oi_overlay_path: Optional[Path] = None,
 ) -> pd.DataFrame:
     """Build the broad dated construction chain from hot and chain-OI exports."""
 
@@ -6798,7 +6916,11 @@ def _dated_option_chain_for_construction(
         frames.append(hot)
 
     try:
-        chain_oi = uw_data.load_chain_oi(date_dir, day, point_in_time=True).copy()
+        chain_oi = _load_chain_oi_for_run(
+            date_dir,
+            day,
+            chain_oi_overlay_path=chain_oi_overlay_path,
+        ).copy()
     except Exception:
         chain_oi = pd.DataFrame()
     if not chain_oi.empty:
@@ -6884,12 +7006,17 @@ def price_candidates_with_routing_audit(
     limit: Optional[int] = None,
     root: Optional[Path] = None,
     preserve_failed_routes_for_live: bool = False,
+    chain_oi_overlay_path: Optional[Path] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Construct first-pass tickets and the strategy-router audit."""
 
     if candidates.empty:
         return pd.DataFrame(), pd.DataFrame(columns=STRATEGY_ROUTING_AUDIT_COLUMNS)
-    hot = _dated_option_chain_for_construction(date_dir, as_of)
+    hot = _dated_option_chain_for_construction(
+        date_dir,
+        as_of,
+        chain_oi_overlay_path=chain_oi_overlay_path,
+    )
     rows = []
     audit_rows: list[dict[str, Any]] = []
     qualified = candidates[candidates["quality_status"].eq("qualified")]
@@ -31704,6 +31831,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Optional directory of Schwab chain JSON snapshots for validation without live fetches.",
     )
     parser.add_argument(
+        "--chain-oi-overlay",
+        default="",
+        help=(
+            "Optional next-session chain-OI CSV/ZIP to overlay on the dated EOD sources. "
+            "The newer date is validated and disclosed in the report."
+        ),
+    )
+    parser.add_argument(
         "--chain-strike-count",
         type=int,
         default=80,
@@ -31789,6 +31924,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     root = Path(args.base_dir).expanduser().resolve()
     out_dir = Path(args.out_dir).expanduser().resolve() if args.out_dir else None
     chain_snapshot_dir = Path(args.chain_snapshot_dir).expanduser().resolve() if args.chain_snapshot_dir else None
+    chain_oi_overlay_path = Path(args.chain_oi_overlay).expanduser().resolve() if args.chain_oi_overlay else None
     portfolio_json = Path(args.portfolio_json).expanduser().resolve() if args.portfolio_json else None
     agent_reviews_json = Path(args.agent_reviews_json).expanduser().resolve() if args.agent_reviews_json else None
     lesson_pack_path = Path(args.lesson_pack_path).expanduser().resolve() if args.lesson_pack_path else None
@@ -31812,6 +31948,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         dispatch_only=args.dispatch_only,
         lesson_pack_version=args.lesson_pack_version or None,
         lesson_pack_path=lesson_pack_path,
+        chain_oi_overlay_path=chain_oi_overlay_path,
     )
     if args.dispatch_only:
         print(f"Wrote Options Agent dispatch artifacts to {paths['out_dir']}")

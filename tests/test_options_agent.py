@@ -59,8 +59,9 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.73-structured-strike-output-20260810-102313"
+    assert core.PIPELINE_VERSION == "options-agent-v1.74-explicit-chain-oi-overlay-20260811-101711"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.73-structured-strike-output-20260810-102313",
         "options-agent-v1.72-stale-quote-target-preservation-20260810-093000",
         "options-agent-v1.71-session-neutral-actionability-20260808-124037",
         "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
@@ -127,7 +128,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-08-10T10:23:13-04:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-08-11T10:17:11-04:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -171,6 +172,75 @@ def test_source_inventory_requires_all_five_uw_exports(
         "dp_eod",
     }
     assert all(source["status"] == "present" for source in inventory["sources"].values())
+
+
+def test_explicit_chain_oi_overlay_bypasses_only_its_point_in_time_ceiling(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    overlay = tmp_path / "chain-oi-changes-2026-08-06.csv"
+    overlay.write_text(
+        "option_symbol,underlying_symbol,curr_date,last_date,curr_oi,last_oi\n"
+        "AAA260918P00100000,AAA,2026-08-06,2026-08-05,200,100\n"
+    )
+    requested: list[tuple[str, object]] = []
+
+    def fake_bundle(_base: Path, prefix: str, **kwargs: object) -> list[Path]:
+        requested.append((prefix, kwargs.get("asof_ceiling")))
+        path = tmp_path / f"{prefix}2026-08-05.zip"
+        path.write_bytes(b"source")
+        return [path]
+
+    monkeypatch.setattr(options_agent_data, "find_export_bundle", fake_bundle)
+
+    inventory = core.build_source_inventory(
+        tmp_path,
+        "2026-08-05",
+        chain_oi_overlay_path=overlay,
+    )
+
+    chain_source = inventory["sources"]["chain_oi"]
+    assert chain_source["path"] == str(overlay)
+    assert chain_source["overlay"] is True
+    assert chain_source["overlay_base_date"] == "2026-08-05"
+    assert chain_source["overlay_source_date"] == "2026-08-06"
+    assert all(prefix != "chain-oi-changes-" for prefix, _ in requested)
+    assert requested
+    assert all(ceiling == dt.date(2026, 8, 5) for _, ceiling in requested)
+
+
+def test_chain_oi_overlay_validates_observation_dates(tmp_path: Path) -> None:
+    overlay = tmp_path / "chain-oi-changes-2026-08-06.csv"
+    overlay.write_text(
+        "option_symbol,underlying_symbol,curr_date,last_date,curr_oi,last_oi\n"
+        "AAA260918P00100000,AAA,2026-08-06,2026-08-05,200,100\n"
+    )
+
+    frame = core._load_chain_oi_for_run(
+        tmp_path,
+        "2026-08-05",
+        chain_oi_overlay_path=overlay,
+    )
+
+    assert frame.attrs["source_path"] == str(overlay)
+    assert frame.attrs["overlay_base_date"] == "2026-08-05"
+    assert frame.attrs["overlay_source_date"] == "2026-08-06"
+    assert frame["curr_oi"].tolist() == [200]
+
+
+def test_chain_oi_overlay_rejects_mismatched_current_date(tmp_path: Path) -> None:
+    overlay = tmp_path / "chain-oi-changes-2026-08-06.csv"
+    overlay.write_text(
+        "option_symbol,underlying_symbol,curr_date,last_date,curr_oi,last_oi\n"
+        "AAA260918P00100000,AAA,2026-08-07,2026-08-05,200,100\n"
+    )
+
+    with pytest.raises(ValueError, match="curr_date must match filename date"):
+        core._load_chain_oi_for_run(
+            tmp_path,
+            "2026-08-05",
+            chain_oi_overlay_path=overlay,
+        )
 
 
 def test_raw_universe_uses_dark_pool_as_context_not_option_flow(

@@ -231,6 +231,13 @@ def load_hot_chains(base_dir: Path, asof: dt.date, *, point_in_time: bool = Fals
 
 def load_chain_oi(base_dir: Path, asof: dt.date, *, point_in_time: bool = False) -> pd.DataFrame:
     path = find_export(base_dir, "chain-oi-changes-", asof_ceiling=asof if point_in_time else None)
+    return load_chain_oi_export(path, asof)
+
+
+def load_chain_oi_export(path: Path, asof: dt.date) -> pd.DataFrame:
+    """Load one explicitly selected chain-OI export."""
+
+    path = Path(path).expanduser().resolve()
     df = read_csv_export(path)
     parsed = df["option_symbol"].map(parse_occ_symbol)
     df["ticker"] = parsed.map(lambda x: x.root if x else df.get("underlying_symbol", ""))
