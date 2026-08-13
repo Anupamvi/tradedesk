@@ -79,7 +79,7 @@ def assess_debit_spread(
         if regime not in policy["allowed_regimes"]:
             reasons.append(f"regime_not_aligned:{regime or 'unknown'}")
 
-    dte = safe_float(row.get("dte"))
+    dte = safe_float(row.get("entry_dte"), safe_float(row.get("dte")))
     allowed_dte_ranges = policy["allowed_dte_ranges"]
     if not math.isfinite(dte) or not any(low <= dte <= high for low, high in allowed_dte_ranges):
         allowed = "_or_".join(f"{low}_{high}" for low, high in allowed_dte_ranges)

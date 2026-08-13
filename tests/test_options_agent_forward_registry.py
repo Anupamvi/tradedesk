@@ -294,12 +294,13 @@ def test_shadow_recommendation_excludes_non_green_registration(tmp_path, monkeyp
 
 def test_shadow_expectancy_selection_honors_promoted_daily_cap(tmp_path):
     registry = _registry(tmp_path)
-    for logical_id, ticker in (
-        ("first-spy", "SPY"),
-        ("second-spy", "SPY"),
-        ("third-qqq", "QQQ"),
-        ("fourth-iwm", "IWM"),
-    ):
+    daily_cap = core._promoted_selector_daily_cap()
+    registrations = [("first-t000", "T000"), ("duplicate-t000", "T000")]
+    registrations.extend(
+        (f"unique-{idx:03d}", f"T{idx:03d}")
+        for idx in range(1, daily_cap + 2)
+    )
+    for logical_id, ticker in registrations:
         _register(
             registry,
             logical_id=logical_id,
@@ -315,11 +316,11 @@ def test_shadow_expectancy_selection_honors_promoted_daily_cap(tmp_path):
         "evidence_selection_rank"
     )
 
-    assert selected["ticker"].tolist() == ["SPY", "QQQ", "IWM"]
-    assert len(selected) == core._promoted_selector_daily_cap()
-    assert selected["evidence_selection_rank"].tolist() == [1, 2, 3]
+    assert selected["ticker"].tolist() == [f"T{idx:03d}" for idx in range(daily_cap)]
+    assert len(selected) == daily_cap
+    assert selected["evidence_selection_rank"].tolist() == list(range(1, daily_cap + 1))
     assert set(shadow["evidence_selection_policy"]) == {
-        "top_3_entry_proven_unique_tickers_by_frozen_rank_then_sequence_v3"
+        f"top_{daily_cap}_entry_proven_unique_tickers_by_frozen_rank_then_sequence_v3"
     }
     assert not shadow["execution_permission"].map(bool).any()
 

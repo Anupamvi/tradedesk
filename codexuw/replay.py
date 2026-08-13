@@ -24,6 +24,7 @@ from .data import (
     aggregate_dark_pool_flow,
     infer_asof_date,
     load_chain_oi,
+    load_bot_contract_quotes,
     load_hot_chains,
     load_stock_screener,
     safe_float,
@@ -46,6 +47,7 @@ CREDIT_DIRECTIONS = {"Bull Put", "Bear Call"}
 DEBIT_DIRECTIONS = {"Bull Call", "Bear Put"}
 BULLISH_DIRECTIONS = {"Bull Put", "Bull Call"}
 BEARISH_DIRECTIONS = {"Bear Call", "Bear Put"}
+REPLAY_EXECUTION_VERSION = "next-session-bot-nbbo-hot-fallback-v2"
 
 
 def dated_folders(root: Path, start: dt.date | None, end: dt.date | None) -> list[Path]:
@@ -250,6 +252,10 @@ def _entry_quote(row: pd.Series, quotes: dict[str, dict[str, float | str]], slip
         "buy_leg_ask": long_ask,
         "buy_leg_mid": long_mid,
         "entry_quote_width_pct": q_width,
+        "sell_leg_quote_source": str(short.get("quote_source") or "hot_chain"),
+        "buy_leg_quote_source": str(long.get("quote_source") or "hot_chain"),
+        "sell_leg_quote_timestamp": str(short.get("quote_timestamp") or ""),
+        "buy_leg_quote_timestamp": str(long.get("quote_timestamp") or ""),
     }
     if _is_credit_strategy(row):
         mid_credit = short_mid - long_mid
@@ -258,8 +264,10 @@ def _entry_quote(row: pd.Series, quotes: dict[str, dict[str, float | str]], slip
         fillable = bool(
             math.isfinite(width)
             and width > 0
+            and math.isfinite(mid_credit)
+            and mid_credit < width
             and math.isfinite(entry_credit)
-            and entry_credit > 0
+            and 0 < entry_credit < width
             and entry_credit / width >= 0.12
             and math.isfinite(q_width)
             and q_width <= 0.80
@@ -398,16 +406,64 @@ def simulate_spread_exit(
     asof = row.get("asof")
     if not isinstance(expiry, dt.date) or not isinstance(asof, dt.date):
         return {"exact_evaluated": False, "exact_reason": "missing_asof_or_expiry"}
-    entry = _entry_quote(row, quote_history.get(asof, {}), slippage_pct)
+    # The recommendation is produced only after the `asof` EOD files exist, so
+    # that session's option quote is not an executable entry.  Use the first
+    # following session as the historical entry proxy and never scan forward to
+    # a later, more favorable quote when that first session is unfillable.
+    session_days = sorted(close_history) if close_history else sorted(quote_history)
+    entry_day = next((day for day in session_days if asof < day <= expiry), None)
+    if entry_day is None:
+        return {
+            "exact_evaluated": False,
+            "exact_reason": "missing_next_session_quote_day",
+            "signal_day": asof,
+            "replay_execution_version": REPLAY_EXECUTION_VERSION,
+        }
+    entry = _entry_quote(row, quote_history.get(entry_day, {}), slippage_pct)
+    quote_sources = {
+        str(entry.get("sell_leg_quote_source") or ""),
+        str(entry.get("buy_leg_quote_source") or ""),
+    }
+    if quote_sources == {"bot_eod_first_regular_nbbo"}:
+        entry_timing = "next_session_first_regular_nbbo"
+    elif "bot_eod_first_regular_nbbo" in quote_sources:
+        entry_timing = "next_session_mixed_bot_nbbo_hot_chain"
+    else:
+        entry_timing = "next_session_hot_chain_eod_fallback"
+    entry_stock = math.nan
+    entry_stock_rows = close_history.get(entry_day)
+    if entry_stock_rows is not None and not entry_stock_rows.empty:
+        ticker = str(row.get("ticker", "")).upper()
+        match = entry_stock_rows[entry_stock_rows["ticker"].astype(str).str.upper().eq(ticker)]
+        if not match.empty:
+            entry_stock = safe_float(match.iloc[0].get("close"))
+    entry = {
+        **entry,
+        "signal_day": asof,
+        "entry_day": entry_day,
+        "entry_dte": (expiry - entry_day).days,
+        "stock_price_entry": entry_stock,
+        "entry_timing": entry_timing,
+        "replay_execution_version": REPLAY_EXECUTION_VERSION,
+    }
     if not entry.get("exact_fillable"):
         return {**entry, "exact_evaluated": False, "exact_reason": entry.get("fill_reason")}
+    if _is_debit_strategy(row) and math.isfinite(entry_stock) and entry_stock > 0:
+        breakeven = safe_float(entry.get("breakeven"))
+        direction = str(row.get("direction", ""))
+        if math.isfinite(breakeven):
+            entry["breakeven_distance_pct"] = (
+                (breakeven - entry_stock) / entry_stock
+                if direction == "Bull Call"
+                else (entry_stock - breakeven) / entry_stock
+            )
     if _is_debit_strategy(row):
         entry_debit = safe_float(entry.get("entry_debit"))
         width = safe_float(entry.get("entry_width"))
         target_value = min(width, entry_debit * (1.0 + profit_take_pct)) if math.isfinite(width) else entry_debit * (1.0 + profit_take_pct)
         stop_value = entry_debit / max(stop_loss_mult, 1.0) if stop_loss_mult is not None else math.nan
         quote_days_seen = 0
-        for day in sorted(d for d in quote_history if asof < d <= expiry):
+        for day in sorted(d for d in quote_history if entry_day < d <= expiry):
             value_mid = _spread_mid_value(row, quote_history[day])
             if not math.isfinite(value_mid):
                 continue
@@ -481,7 +537,7 @@ def simulate_spread_exit(
     target_debit = entry_credit * (1.0 - profit_take_pct)
     stop_debit = entry_credit * stop_loss_mult if stop_loss_mult is not None else math.nan
     quote_days_seen = 0
-    for day in sorted(d for d in quote_history if asof < d <= expiry):
+    for day in sorted(d for d in quote_history if entry_day < d <= expiry):
         debit_mid = _spread_mid_debit(row, quote_history[day])
         if not math.isfinite(debit_mid):
             continue
@@ -643,7 +699,7 @@ def _leg_quote_summary(row: pd.Series, prefix: str) -> str:
 
 def _earnings_days_from_record(row: pd.Series) -> int | None:
     try:
-        asof = parse_date(_date_key(row.get("asof")))
+        asof = parse_date(_date_key(row.get("entry_day") or row.get("asof")))
         earnings = parse_date(_date_key(row.get("next_earnings_dt")))
     except Exception:
         return None
@@ -654,10 +710,10 @@ def _earnings_days_from_record(row: pd.Series) -> int | None:
 
 def _distance_expected(row: pd.Series) -> tuple[float, float, float]:
     direction = str(row.get("direction", ""))
-    stock = safe_float(row.get("stock_price_eod"))
+    stock = safe_float(row.get("stock_price_entry"), safe_float(row.get("stock_price_eod")))
     short = safe_float(row.get("short_strike_eod"))
     long = safe_float(row.get("long_strike_eod"))
-    dte = safe_float(row.get("dte"))
+    dte = safe_float(row.get("entry_dte"), safe_float(row.get("dte")))
     iv30d = safe_float(row.get("iv30d"))
     if direction == "Bull Put" and math.isfinite(stock) and stock > 0 and math.isfinite(short):
         distance = (stock - short) / stock
@@ -1341,10 +1397,10 @@ def _guard_result(rec: dict[str, Any]) -> tuple[bool, str]:
     if math.isfinite(credit_quote_width) and credit_quote_width > MAX_QUOTE_WIDTH_PCT:
         return False, "credit_quote_too_wide"
     direction = str(rec.get("direction", ""))
-    stock = safe_float(rec.get("stock_price_eod"))
+    stock = safe_float(rec.get("stock_price_entry"), safe_float(rec.get("stock_price_eod")))
     short = safe_float(rec.get("short_strike_eod"))
     iv30d = safe_float(rec.get("iv30d"))
-    dte = safe_float(rec.get("dte"))
+    dte = safe_float(rec.get("entry_dte"), safe_float(rec.get("dte")))
     if math.isfinite(stock) and stock > 0 and math.isfinite(short):
         distance = (stock - short) / stock if direction == "Bull Put" else (short - stock) / stock
     else:
@@ -1403,6 +1459,7 @@ def run_replay(
     history = load_close_history(folders)
     hot_history = load_hot_history(folders)
     quote_history = {day: _quote_lookup(hot) for day, hot in hot_history.items()}
+    folder_by_day = {infer_asof_date(folder): folder for folder in folders}
     rows: list[dict[str, Any]] = []
     day_summaries: list[dict[str, Any]] = []
     for folder in entry_folders:
@@ -1495,6 +1552,26 @@ def run_replay(
         )
         candidates.loc[debit_above_target, "replay_price_annotation"] = "estimated_debit_above_target_kept_for_replay"
         candidates = candidates[credit_mask | debit_mask].head(max_eval_candidates)
+        entry_day = next((day for day in sorted(history) if asof < day), None)
+        replay_quotes = quote_history
+        bot_entry_quotes: dict[str, dict[str, object]] = {}
+        if entry_day is not None and entry_day in folder_by_day:
+            leg_symbols: set[str] = set()
+            for _, candidate in candidates.iterrows():
+                short_symbol, long_symbol, _ = _leg_symbols(candidate)
+                leg_symbols.update(symbol for symbol in (short_symbol, long_symbol) if symbol)
+            bot_entry_quotes = load_bot_contract_quotes(
+                folder_by_day[entry_day],
+                leg_symbols,
+                point_in_time=True,
+                allow_missing=True,
+            )
+            if bot_entry_quotes:
+                replay_quotes = dict(quote_history)
+                replay_quotes[entry_day] = {
+                    **quote_history.get(entry_day, {}),
+                    **bot_entry_quotes,
+                }
         wins = 0
         evaluated = 0
         exact_evaluated = 0
@@ -1506,14 +1583,27 @@ def run_replay(
             exact = simulate_spread_exit(
                 cand,
                 history,
-                quote_history,
+                replay_quotes,
                 slippage_pct=slippage_pct,
                 profit_take_pct=profit_take_pct,
                 stop_loss_mult=stop_loss_mult,
                 debit_time_stop_dte=debit_time_stop_dte,
             )
             rec = cand.to_dict()
-            rec.update({"regime": regime.get("trend"), **result, **exact})
+            rec.update(
+                {
+                    "regime": regime.get("trend"),
+                    "debit_policy_version": DEBIT_POLICY_VERSION,
+                    "credit_policy_version": CREDIT_POLICY_VERSION,
+                    "replay_policy_version": (
+                        DEBIT_POLICY_VERSION
+                        if str(rec.get("direction", "")) in {"Bull Call", "Bear Put"}
+                        else CREDIT_POLICY_VERSION
+                    ),
+                    **result,
+                    **exact,
+                }
+            )
             guard_pass, guard_reason = _guard_result(rec)
             rec["replay_guard_pass"] = guard_pass
             rec["replay_guard_reason"] = guard_reason
@@ -1537,6 +1627,7 @@ def run_replay(
                 "bot_flow_source_status": bot_source_status,
                 "dark_pool_source_status": dark_pool_source_status,
                 "chain_oi_source_status": chain_oi_source_status,
+                "bot_entry_quote_contracts": int(len(bot_entry_quotes)),
             }
         )
     out_dir.mkdir(parents=True, exist_ok=True)

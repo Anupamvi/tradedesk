@@ -31,6 +31,7 @@ from .data import (
     safe_float,
 )
 from .credit_policy import (
+    CREDIT_POLICY_VERSION,
     MIN_IV_RANK,
     MIN_REALIZED_VOL,
     PROFIT_TAKE_PCT,
@@ -89,8 +90,18 @@ from .portfolio_capacity import write_portfolio_capacity_outputs
 from .provenance import build_input_provenance
 from .sector_rotation import apply_sector_rotation_context, build_live_sector_rotation
 from .strategy_registry import apply_strategy_registry_gate, build_strategy_registry, strategy_key_for_row
+from .symbol_credit_calibration import (
+    apply_symbol_credit_calibration,
+    build_symbol_credit_calibration,
+    write_symbol_credit_calibration_outputs,
+)
 from .target_model import business_days_remaining
 from .validation import select_systematic_date_folders
+from .walk_forward_credit_book import (
+    apply_walk_forward_credit_model,
+    build_walk_forward_credit_model,
+    write_walk_forward_credit_outputs,
+)
 
 
 DEFAULT_ROOT = Path("/Users/anuppamvi/uw_root/tradedesk")
@@ -1071,7 +1082,13 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
     ).lower()
     probationary_evidence = _probationary_execution_ready(row)
     medium_debit_evidence = _medium_debit_sleeve_eligible(row)
-    family_evidence = _validated_family_evidence(row) or probationary_evidence or medium_debit_evidence
+    walk_forward_credit_evidence = _walk_forward_credit_execution_ready(row)
+    family_evidence = (
+        _validated_family_evidence(row)
+        or probationary_evidence
+        or medium_debit_evidence
+        or walk_forward_credit_evidence
+    )
     quote_blocker = _execution_quote_blocker(row)
     if quote_blocker:
         return quote_blocker
@@ -1085,6 +1102,15 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
     primary_blocker = _clean(row.get("primary_blocker")).lower()
     for token, reason in EXECUTE_QUALITY_BLOCKER_TOKENS.items():
         if token in text:
+            if (_symbol_credit_execution_ready(row) or walk_forward_credit_evidence) and token in {
+                "price_action_trend",
+                "decision_score_below_medium",
+            }:
+                # The validated credit map is intentionally contrarian. The
+                # generic confirmation layer is trend-following, so applying
+                # both makes the route logically impossible even after its
+                # own walk-forward, live-policy, OI, and pricing gates pass.
+                continue
             if family_evidence and token == "thin_replay_sample":
                 continue
             if (
@@ -1105,7 +1131,18 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
         if not debit_ok:
             return "debit quality policy: " + "; ".join(debit_reasons)
     if _is_credit(row):
-        credit_ok, credit_reasons = assess_credit_spread(row, live=True)
+        credit_row = dict(row)
+        if _symbol_credit_execution_ready(row):
+            credit_row["regime_trend"] = row.get("symbol_regime_trend")
+            credit_row["regime"] = row.get("symbol_regime_trend")
+            credit_row["edge_sample_size"] = row.get("symbol_credit_sample_size")
+            credit_row["edge_profit_factor"] = row.get("symbol_credit_stress_profit_factor_10pct")
+            credit_row["edge_avg_pnl"] = row.get("symbol_credit_stress_average_pnl_10pct")
+        elif walk_forward_credit_evidence:
+            credit_row["edge_sample_size"] = row.get("walk_forward_credit_oos_sample_size")
+            credit_row["edge_profit_factor"] = row.get("walk_forward_credit_stress_profit_factor_10pct")
+            credit_row["edge_avg_pnl"] = row.get("walk_forward_credit_stress_average_pnl_10pct")
+        credit_ok, credit_reasons = assess_credit_spread(credit_row, live=True)
         if not credit_ok and family_evidence:
             route_key = _clean(row.get("payoff_route_key") or row.get("payoff_group_key")).lower()
             route_level = _clean(row.get("payoff_route_level")).lower()
@@ -1116,6 +1153,19 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
                 "credit_edge_pf_below_1.25",
                 "credit_edge_avg_pnl_not_positive",
             }
+            if walk_forward_credit_evidence:
+                # The v4.19 family model already consumes flow magnitude,
+                # realized volatility and IV/HV, then requires aligned flow,
+                # supportive OI and positive recent direction/regime health.
+                # Reapplying the generic cutoffs here silently nullifies the
+                # frozen walk-forward route that selected this one-lot row.
+                evidence_backed_prefixes.update(
+                    {
+                        "flow_alignment_below_0.10",
+                        "realized_vol_below_0.15",
+                        "iv_hv_ratio_below_0.90",
+                    }
+                )
             if probationary_evidence:
                 iv_rank = safe_float(row.get("iv_rank"))
                 realized = safe_float(row.get("realized_volatility_30d"))
@@ -1256,7 +1306,72 @@ def _probationary_confidence_ready(row: pd.Series | dict[str, Any]) -> bool:
     )
 
 
+def _symbol_credit_execution_ready(row: pd.Series | dict[str, Any]) -> bool:
+    def profit_factor_ready(field: str) -> bool:
+        try:
+            value = float(row.get(field))
+        except (TypeError, ValueError):
+            return False
+        return not math.isnan(value) and value >= V4_EXECUTE_MIN_PROFIT_FACTOR
+
+    return bool(
+        _is_credit(row)
+        and _clean(row.get("symbol_credit_calibration_status")).upper() == "PASS"
+        and _clean(row.get("symbol_credit_policy_pass")).lower() in {"true", "1", "yes"}
+        and safe_float(row.get("symbol_credit_sample_size"), 0.0) >= 12
+        and profit_factor_ready("symbol_credit_stress_profit_factor_10pct")
+        and safe_float(row.get("symbol_credit_stress_average_pnl_10pct"), 0.0) > 0
+        and safe_float(row.get("symbol_credit_oos_sample_size"), 0.0) >= 5
+        and profit_factor_ready("symbol_credit_oos_profit_factor_10pct")
+        and safe_float(row.get("symbol_credit_oos_average_pnl_10pct"), 0.0) > 0
+        and safe_float(row.get("symbol_credit_postactivation_sample_size"), 0.0) >= 5
+        and safe_float(row.get("symbol_credit_independent_episode_count"), 0.0) >= 5
+        and safe_float(row.get("symbol_credit_wilson_lower_bound"), 0.0) >= 0.65
+        and _clean(row.get("oi_carryover_status")).lower() in {"supportive", "matched_unconfirmed"}
+    )
+
+
+def _walk_forward_credit_execution_ready(row: pd.Series | dict[str, Any]) -> bool:
+    strict_model_ready = bool(
+        _is_credit(row)
+        and _clean(row.get("walk_forward_credit_calibration_status")).upper() == "PASS"
+        and _clean(row.get("walk_forward_credit_model_tier")).lower() == "medium"
+        and _clean(row.get("walk_forward_credit_policy_pass")).lower() in {"true", "1", "yes"}
+        and safe_float(row.get("walk_forward_credit_prediction"), -math.inf) >= 0.01
+        and safe_float(row.get("walk_forward_credit_win_probability"), 0.0) >= 0.65
+        and safe_float(row.get("walk_forward_credit_oos_sample_size"), 0.0) >= 20
+        and safe_float(row.get("walk_forward_credit_wilson_lower_bound"), 0.0) >= 0.65
+        and safe_float(row.get("walk_forward_credit_stress_profit_factor_10pct"), 0.0) >= 2.00
+        and safe_float(row.get("walk_forward_credit_stress_average_pnl_10pct"), 0.0) > 0
+        and safe_float(row.get("walk_forward_credit_positive_months"), 0.0) >= 4
+        and _clean(row.get("oi_carryover_status")).lower() in {"supportive", "matched_unconfirmed"}
+    )
+    return strict_model_ready or _directional_credit_execution_ready(row)
+
+
+def _directional_credit_execution_ready(row: pd.Series | dict[str, Any]) -> bool:
+    return bool(
+        _is_credit(row)
+        and _clean(row.get("directional_credit_calibration_status")).upper() == "PASS"
+        and _clean(row.get("directional_credit_qualified")).lower() in {"true", "1", "yes"}
+        and _clean(row.get("walk_forward_credit_policy_pass")).lower() in {"true", "1", "yes"}
+        and safe_float(row.get("directional_credit_oos_sample_size"), 0.0) >= 75
+        and safe_float(row.get("directional_credit_wilson_lower_bound"), 0.0) >= 0.78
+        and safe_float(row.get("directional_credit_stress_profit_factor_10pct"), 0.0) >= 2.00
+        and safe_float(row.get("directional_credit_stress_average_pnl_10pct"), 0.0) > 0
+        and safe_float(row.get("directional_credit_positive_months"), 0.0) >= 7
+        and safe_float(row.get("directional_credit_holdout_sample_size"), 0.0) >= 20
+        and safe_float(row.get("directional_credit_holdout_win_rate"), 0.0) >= 0.75
+        and safe_float(row.get("directional_credit_holdout_stress_profit_factor_10pct"), 0.0) >= 1.50
+        and _clean(row.get("flow_quality")).lower() == "directional"
+        and _clean(row.get("oi_carryover_status")).lower()
+        in {"supportive", "matched_unconfirmed", "contrary"}
+    )
+
+
 def _probationary_execution_ready(row: pd.Series | dict[str, Any]) -> bool:
+    if _symbol_credit_execution_ready(row) or _walk_forward_credit_execution_ready(row):
+        return True
     return bool(
         _probationary_payoff_ready(row)
         and _probationary_confidence_ready(row)
@@ -1266,7 +1381,12 @@ def _probationary_execution_ready(row: pd.Series | dict[str, Any]) -> bool:
 
 
 def _payoff_evidence_ready(row: pd.Series | dict[str, Any]) -> bool:
-    return _payoff_model_ready(row) or _probationary_payoff_ready(row)
+    return (
+        _symbol_credit_execution_ready(row)
+        or _walk_forward_credit_execution_ready(row)
+        or _payoff_model_ready(row)
+        or _probationary_payoff_ready(row)
+    )
 
 
 def _payoff_model_ready(row: pd.Series | dict[str, Any]) -> bool:
@@ -1297,29 +1417,30 @@ def _payoff_model_ready(row: pd.Series | dict[str, Any]) -> bool:
     )
 
 
-def _medium_debit_sleeve_eligible(row: pd.Series | dict[str, Any]) -> bool:
-    """Allow only the walk-forward validated, reduced-size bullish debit sleeve."""
-    if not _is_debit(row) or _clean(row.get("direction")).lower() != "bull call":
-        return False
-    trend = _clean(row.get("regime_trend") or row.get("regime") or row.get("trend")).lower()
-    if trend != "uptrend":
-        return False
-    if _clean(row.get("edge_match_level")).lower() != V4_MEDIUM_DEBIT_EDGE_MATCH_LEVEL:
-        return False
-    sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size")))
-    profit_factor = safe_float(row.get("edge_profit_factor"))
-    average_pnl = safe_float(row.get("edge_avg_pnl"))
-    return (
-        math.isfinite(sample)
-        and sample >= V4_MIN_REPLAY_SAMPLE
-        and math.isfinite(profit_factor)
-        and profit_factor >= V4_EXECUTE_MIN_PROFIT_FACTOR
-        and math.isfinite(average_pnl)
-        and average_pnl > 0
-    )
+def _medium_debit_sleeve_eligible(row) -> bool:
+    """Debit authority is disabled after the corrected next-session replay.
+
+    The prior Bull Call calibration was built from a stale ledger without an
+    explicit next-session entry day.  The rebuilt executable ledger produced
+    PF 0.73 for Bull Calls and PF 0.83 for Bear Puts, so neither debit family
+    may reach the live book through this legacy exception.
+    """
+    return False
 
 
 def _effective_win_rate(row: pd.Series | dict[str, Any]) -> float:
+    if _symbol_credit_execution_ready(row):
+        probability = safe_float(row.get("symbol_credit_wilson_lower_bound"))
+        if math.isfinite(probability) and 0 <= probability <= 1:
+            return probability
+    if _directional_credit_execution_ready(row):
+        probability = safe_float(row.get("directional_credit_wilson_lower_bound"))
+        if math.isfinite(probability) and 0 <= probability <= 1:
+            return probability
+    if _walk_forward_credit_execution_ready(row):
+        probability = safe_float(row.get("walk_forward_credit_win_probability"))
+        if math.isfinite(probability) and 0 <= probability <= 1:
+            return probability
     payoff_win_rate = safe_float(row.get("payoff_stress_10_win_rate"))
     if _payoff_model_ready(row) and math.isfinite(payoff_win_rate) and 0 <= payoff_win_rate <= 1:
         return payoff_win_rate
@@ -1372,6 +1493,10 @@ def _reported_win_rate(row: pd.Series | dict[str, Any]) -> float:
 
 
 def _reported_win_rate_basis(row: pd.Series | dict[str, Any]) -> str:
+    if _symbol_credit_execution_ready(row):
+        return "exact-population symbol credit; 95% Wilson lower bound"
+    if _walk_forward_credit_execution_ready(row):
+        return "trade-specific family model; book validated with maturity-safe 10% fill stress"
     if _payoff_model_ready(row):
         return "validated payoff route; 10% fill stress"
     if _probationary_payoff_ready(row):
@@ -1417,7 +1542,43 @@ def _edge_evidence_text(row: pd.Series | dict[str, Any]) -> str:
     return ", ".join(pieces)
 
 
+def _profit_factor_text(value: object) -> str:
+    try:
+        profit_factor = float(value)
+    except (TypeError, ValueError):
+        return "n/a"
+    if math.isinf(profit_factor) and profit_factor > 0:
+        return "inf (no historical stressed losses)"
+    if math.isfinite(profit_factor):
+        return f"{profit_factor:.2f}"
+    return "n/a"
+
+
 def _payoff_evidence_text(row: pd.Series | dict[str, Any]) -> str:
+    if _symbol_credit_execution_ready(row):
+        return (
+            f"SYMBOL-TREND CREDIT VALIDATED; group={_clean(row.get('symbol_credit_group_key'))}; "
+            f"n={int(safe_float(row.get('symbol_credit_sample_size'), 0.0))}; "
+            f"conservative win={safe_float(row.get('symbol_credit_wilson_lower_bound'), 0.0):.0%}; "
+            f"Bayesian mean={safe_float(row.get('symbol_credit_bayesian_win_probability'), 0.0):.0%}; "
+            f"10% fill-stress PF={_profit_factor_text(row.get('symbol_credit_stress_profit_factor_10pct'))}; "
+            f"holdout n={int(safe_float(row.get('symbol_credit_oos_sample_size'), 0.0))}; "
+            f"episodes={int(safe_float(row.get('symbol_credit_independent_episode_count'), 0.0))}; "
+            f"post-live n={int(safe_float(row.get('symbol_credit_postactivation_sample_size'), 0.0))}"
+        )
+    if _walk_forward_credit_execution_ready(row):
+        return (
+            "WALK-FORWARD CREDIT MEDIUM; "
+            f"trade win probability={safe_float(row.get('walk_forward_credit_win_probability'), 0.0):.0%}; "
+            f"predicted 10%-stress ROR={safe_float(row.get('walk_forward_credit_prediction'), 0.0):.1%}; "
+            f"OOS n={int(safe_float(row.get('walk_forward_credit_oos_sample_size'), 0.0))}; "
+            f"wins={int(safe_float(row.get('walk_forward_credit_oos_wins'), 0.0))}; "
+            f"Bayesian win={safe_float(row.get('walk_forward_credit_bayesian_win_probability'), 0.0):.0%}; "
+            f"95% Wilson floor={safe_float(row.get('walk_forward_credit_wilson_lower_bound'), 0.0):.0%}; "
+            f"10% fill-stress PF={_profit_factor_text(row.get('walk_forward_credit_stress_profit_factor_10pct'))}; "
+            f"positive validation months={int(safe_float(row.get('walk_forward_credit_positive_months'), 0.0))}; "
+            "up to two distinct-sector names; one contract each; High confidence unavailable"
+        )
     if _medium_debit_sleeve_eligible(row):
         sample = safe_float(row.get("edge_sample_size"))
         win_rate = safe_float(row.get("edge_win_rate"))
@@ -1465,10 +1626,20 @@ def build_execution_evidence_integrity(scored: pd.DataFrame | None) -> dict[str,
         }
     samples = pd.to_numeric(scored.get("edge_sample_size", pd.Series(index=scored.index, dtype=float)), errors="coerce")
     family_mask = scored.apply(_validated_family_evidence, axis=1)
-    probationary_mask = scored.apply(_probationary_payoff_ready, axis=1)
+    probationary_mask = scored.apply(_probationary_execution_ready, axis=1)
+    symbol_credit_mask = scored.apply(_symbol_credit_execution_ready, axis=1)
+    walk_forward_credit_mask = scored.apply(_walk_forward_credit_execution_ready, axis=1)
+    medium_debit_mask = scored.apply(_medium_debit_sleeve_eligible, axis=1)
     payoff_mask = scored.get("payoff_calibration_status", pd.Series("FAIL", index=scored.index)).astype(str).str.upper().eq("PASS")
     specific_mask = samples.ge(V4_MIN_REPLAY_SAMPLE)
-    reachable = specific_mask | family_mask
+    reachable = (
+        specific_mask
+        | family_mask
+        | probationary_mask
+        | symbol_credit_mask
+        | walk_forward_credit_mask
+        | medium_debit_mask
+    )
     maximum = int(samples.max()) if samples.notna().any() else 0
     reachable_count = int(reachable.sum())
     return {
@@ -1486,14 +1657,57 @@ def build_execution_evidence_integrity(scored: pd.DataFrame | None) -> dict[str,
         "validated_payoff_lane_rows": int(payoff_mask.sum()),
         "validated_family_rows": int(family_mask.sum()),
         "probationary_evidence_rows": int(probationary_mask.sum()),
+        "symbol_credit_evidence_rows": int(symbol_credit_mask.sum()),
+        "walk_forward_credit_evidence_rows": int(walk_forward_credit_mask.sum()),
+        "medium_debit_evidence_rows": int(medium_debit_mask.sum()),
         "evidence_reachable_rows": reachable_count,
     }
+
+
+def _walk_forward_credit_expectancy(
+    row: pd.Series | dict[str, Any],
+    risk: float,
+) -> tuple[float, float, float, float]:
+    if _walk_forward_credit_execution_ready(row):
+        if _directional_credit_execution_ready(row):
+            predicted_return = safe_float(
+                row.get("directional_credit_stress_average_return_on_risk_10pct")
+            )
+            profit_factor = safe_float(row.get("directional_credit_stress_profit_factor_10pct"))
+            win_rate = safe_float(row.get("directional_credit_wilson_lower_bound"))
+        else:
+            predicted_return = safe_float(row.get("walk_forward_credit_prediction"))
+            profit_factor = safe_float(row.get("walk_forward_credit_stress_profit_factor_10pct"))
+            win_rate = safe_float(row.get("walk_forward_credit_win_probability"), _effective_win_rate(row))
+        if (
+            math.isfinite(predicted_return)
+            and predicted_return > 0
+            and math.isfinite(profit_factor)
+            and profit_factor > 1
+            and math.isfinite(win_rate)
+            and 0 < win_rate < 1
+            and math.isfinite(risk)
+            and risk > 0
+        ):
+            expected_value = predicted_return * risk
+            gross_losses = expected_value / (profit_factor - 1.0)
+            gross_wins = profit_factor * gross_losses
+            return (
+                expected_value,
+                profit_factor,
+                gross_wins / win_rate,
+                gross_losses / (1.0 - win_rate),
+            )
+    return math.nan, math.nan, math.nan, math.nan
 
 
 def _post_pricing_expectancy(
     row: pd.Series | dict[str, Any],
 ) -> tuple[float, float, float, float]:
     """Return coherent EV, PF, win payoff, and loss payoff for the final structure."""
+    walk_forward = _walk_forward_credit_expectancy(row, _max_loss_value(row))
+    if math.isfinite(walk_forward[0]):
+        return walk_forward
     if _payoff_evidence_ready(row):
         win_rate = safe_float(row.get("payoff_stress_10_win_rate"))
         win_fraction = safe_float(row.get("payoff_stress_10_average_win_risk_fraction"))
@@ -1578,7 +1792,7 @@ def _expectancy_safe_entry_price(row: pd.Series | dict[str, Any]) -> float:
         or win_payoff <= 0
     ):
         return math.nan
-    if _payoff_evidence_ready(row):
+    if _payoff_evidence_ready(row) and not _directional_credit_execution_ready(row):
         route_level = _clean(row.get("payoff_route_level")).lower()
         route_key = _clean(row.get("payoff_route_key") or row.get("payoff_group_key")).lower()
         cost_calibrated_route = route_level == "flow_cost" and "cost=" in route_key
@@ -1647,11 +1861,20 @@ def _ticket_entry_target(row: pd.Series | dict[str, Any], disposition: str) -> s
 def _entry_limit_expectancy(
     row: pd.Series | dict[str, Any],
 ) -> tuple[float, float, float, float]:
+    """Return conservative economics at the stated minimum/maximum entry limit."""
     safe_price = _expectancy_safe_entry_price(row)
     current_price = _v4_current_entry_price(row)
-    if math.isfinite(current_price) and current_price > 0 and math.isfinite(safe_price):
-        if (_is_debit(row) and current_price <= safe_price) or (_is_credit(row) and current_price >= safe_price):
-            safe_price = current_price
+    # Debit tickets explicitly quote the current favorable debit as the order
+    # target and separately show the no-chase ceiling. Credit tickets quote a
+    # minimum acceptable credit, so their risk must remain based on that floor.
+    if (
+        _is_debit(row)
+        and math.isfinite(current_price)
+        and current_price > 0
+        and math.isfinite(safe_price)
+        and current_price <= safe_price
+    ):
+        safe_price = current_price
     width = safe_float(row.get("spread_width"))
     current_max_profit = safe_float(row.get("max_profit"))
     current_target_profit = _target_profit_value(row)
@@ -1677,20 +1900,23 @@ def _entry_limit_expectancy(
         max_profit = (width - safe_price) * 100.0
         max_loss = safe_price * 100.0
     target_profit = max_profit * target_fraction
+    walk_forward = _walk_forward_credit_expectancy(row, max_loss)
+    if math.isfinite(walk_forward[0]):
+        return target_profit, max_loss, walk_forward[0], walk_forward[1]
     if _payoff_evidence_ready(row):
-        win_rate = safe_float(row.get("payoff_stress_10_win_rate"))
+        payoff_win_rate = safe_float(row.get("payoff_stress_10_win_rate"))
         win_fraction = safe_float(row.get("payoff_stress_10_average_win_risk_fraction"))
         loss_fraction = safe_float(row.get("payoff_stress_10_average_loss_risk_fraction"))
         if (
-            math.isfinite(win_rate)
-            and 0 < win_rate < 1
+            math.isfinite(payoff_win_rate)
+            and 0 < payoff_win_rate < 1
             and math.isfinite(win_fraction)
             and win_fraction > 0
             and math.isfinite(loss_fraction)
             and loss_fraction > 0
         ):
-            gross_wins = win_rate * win_fraction * max_loss
-            gross_losses = (1.0 - win_rate) * loss_fraction * max_loss
+            gross_wins = payoff_win_rate * win_fraction * max_loss
+            gross_losses = (1.0 - payoff_win_rate) * loss_fraction * max_loss
             return (
                 target_profit,
                 max_loss,
@@ -1751,7 +1977,7 @@ def _disposition(row: pd.Series | dict[str, Any], *, targetable: bool | None = N
         return "Execute"
     if status == "Watch" and tier == "scout":
         return "Scout"
-    if not _payoff_model_ready(row):
+    if not _payoff_evidence_ready(row) and not _medium_debit_sleeve_eligible(row):
         return "Research"
     if not status:
         status = "Execute" if "Execute" in _clean(row.get("Status")) else "Watch" if "Scout" in _clean(row.get("Status")) else ""
@@ -1784,6 +2010,13 @@ def _targetable(row: pd.Series | dict[str, Any]) -> bool:
         return False
     if "fresh Schwab recheck" in _entry_target(row):
         return False
+    validated_one_lot_lane = (
+        _symbol_credit_execution_ready(row)
+        or _walk_forward_credit_execution_ready(row)
+        or _medium_debit_sleeve_eligible(row)
+    )
+    if validated_one_lot_lane:
+        return safe_float(row.get("quote_width_pct"), 9.0) <= 0.50
     score = safe_float(row.get("score"), 0.0)
     confirmation = safe_float(row.get("confirmation_score"), 0.0)
     quote_width = safe_float(row.get("quote_width_pct"), 0.0)
@@ -1961,9 +2194,14 @@ def _oco_bracket_logic(row: pd.Series | dict[str, Any], disposition: str) -> str
     if _payoff_evidence_ready(row) or medium_debit:
         entry = _expectancy_safe_entry_price(row)
         current = _v4_current_entry_price(row)
-        if math.isfinite(current) and current > 0 and math.isfinite(entry):
-            if (_is_debit(row) and current <= entry) or (_is_credit(row) and current >= entry):
-                entry = current
+        if (
+            _is_debit(row)
+            and math.isfinite(current)
+            and current > 0
+            and math.isfinite(entry)
+            and current <= entry
+        ):
+            entry = current
         target = _ticket_entry_target(row, disposition)
     else:
         entry = _entry_price_from_target(row)
@@ -1982,8 +2220,9 @@ def _oco_bracket_logic(row: pd.Series | dict[str, Any], disposition: str) -> str
         )
     take_profit_debit = entry * (1.0 - PROFIT_TAKE_PCT)
     return (
-        f"{prefix}: entry {trade} at {target}; OCO take-profit BUY TO CLOSE near ${take_profit_debit:.2f} debit "
-        f"({PROFIT_TAKE_PCT:.0%} of credit captured). No hard stop leg: maximum loss is already defined by the "
+        f"{prefix}: entry {trade} at {target}; if filled at the minimum ${entry:.2f} credit, set OCO take-profit "
+        f"BUY TO CLOSE near ${take_profit_debit:.2f} debit ({PROFIT_TAKE_PCT:.0%} captured); for a better fill, "
+        f"use {1.0 - PROFIT_TAKE_PCT:.0%} of the actual opening credit. No hard stop leg: maximum loss is already defined by the "
         "spread width, and replay showed every stop-carrying exit rule underperforming its stopless twin. "
         "Manage by thesis or roll if the short strike is breached."
     )
@@ -2059,6 +2298,11 @@ def _ticket_row_from_scored(
     expected_win_text = f"{expected_win:.0%}" if math.isfinite(expected_win) else ""
     avg_win = target_profit if execution_evidence_ready else math.nan
     avg_loss = -max_loss if execution_evidence_ready and math.isfinite(max_loss) else math.nan
+    if _walk_forward_credit_execution_ready(row) and math.isfinite(max_loss):
+        walk_forward = _walk_forward_credit_expectancy(row, max_loss)
+        if math.isfinite(walk_forward[0]):
+            avg_win = walk_forward[2]
+            avg_loss = -walk_forward[3]
     return {
         "rank": rank,
         "display status": _status_label(disposition),
@@ -3472,6 +3716,10 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
         out["debit_policy_tier"] = ""
     if "credit_policy_tier" not in out.columns:
         out["credit_policy_tier"] = ""
+    if "contracts" not in out.columns:
+        out["contracts"] = 0
+    if "v4_execution_authority" not in out.columns:
+        out["v4_execution_authority"] = ""
     for col in [
         "v4_post_pricing_expected_value",
         "v4_post_pricing_profit_factor",
@@ -3484,6 +3732,15 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
             out[col] = math.nan
     out["v4_expectancy_policy_version"] = V4_EXPECTANCY_POLICY_VERSION
     for idx, row in out.iterrows():
+        if _symbol_credit_execution_ready(row):
+            out.at[idx, "contracts"] = 1
+            out.at[idx, "v4_execution_authority"] = "symbol_regime_credit_one_lot"
+        elif _walk_forward_credit_execution_ready(row):
+            out.at[idx, "contracts"] = 1
+            out.at[idx, "v4_execution_authority"] = "walk_forward_credit_one_lot"
+        elif _medium_debit_sleeve_eligible(row):
+            out.at[idx, "contracts"] = 1
+            out.at[idx, "v4_execution_authority"] = "validated_medium_debit_one_lot"
         expected_value, profit_factor, win_payoff, loss_payoff = _post_pricing_expectancy(row)
         out.at[idx, "v4_post_pricing_expected_value"] = expected_value
         out.at[idx, "v4_post_pricing_profit_factor"] = profit_factor
@@ -3511,17 +3768,32 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
         ev_ok = _v4_nonnegative_ev(row)
         has_risk = math.isfinite(_max_loss_value(row)) and _max_loss_value(row) > 0 and math.isfinite(_target_profit_value(row))
         execute_quality_blocker = _execute_quality_blocker(row)
+        if _is_debit(row) and not _medium_debit_sleeve_eligible(row):
+            execute_quality_blocker = (
+                "debit execution disabled: corrected next-session replay PF is below 1 "
+                "for both Bull Call and Bear Put families"
+            )
         debit_tier = ""
         credit_tier = ""
         if _is_debit(row):
             debit_tier, _ = debit_spread_confidence(row, live=True)
             if _medium_debit_sleeve_eligible(row):
                 debit_tier = "medium"
+            else:
+                debit_tier = "disabled"
             if debit_tier == "high" and not confidence_high_ready(row):
                 debit_tier = "medium"
             out.at[idx, "debit_policy_tier"] = debit_tier
         elif _is_credit(row):
-            credit_tier, _ = credit_spread_confidence(row, live=True)
+            credit_row = dict(row)
+            if _symbol_credit_execution_ready(row):
+                credit_row["regime_trend"] = row.get("symbol_regime_trend")
+                credit_row["regime"] = row.get("symbol_regime_trend")
+                credit_tier = "probationary"
+            elif _walk_forward_credit_execution_ready(row):
+                credit_tier = "medium"
+            else:
+                credit_tier, _ = credit_spread_confidence(credit_row, live=True)
             if credit_tier == "high" and not confidence_high_ready(row):
                 credit_tier = "medium"
             if credit_tier == "reject" and _validated_family_evidence(row):
@@ -3536,9 +3808,23 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
             if credit_tier:
                 out.at[idx, "trade_tier"] = f"Execute V4 Direct - {credit_tier.title()} Credit"
             if probationary:
-                out.at[idx, "trade_tier"] = "Execute V4 Pilot - 1 Contract"
+                symbol_credit = _symbol_credit_execution_ready(row)
+                walk_forward_credit = _walk_forward_credit_execution_ready(row)
+                out.at[idx, "trade_tier"] = (
+                    "Execute V4 Pilot - Symbol Trend Credit - 1 Contract"
+                    if symbol_credit
+                    else "Execute V4 Medium - Walk-Forward Credit - 1 Contract"
+                    if walk_forward_credit
+                    else "Execute V4 Pilot - 1 Contract"
+                )
                 out.at[idx, "contracts"] = 1
-                out.at[idx, "v4_execution_authority"] = "probationary_one_lot"
+                out.at[idx, "v4_execution_authority"] = (
+                    "symbol_regime_credit_one_lot"
+                    if symbol_credit
+                    else "walk_forward_credit_one_lot"
+                    if walk_forward_credit
+                    else "probationary_one_lot"
+                )
             elif debit_tier == "medium" and _medium_debit_sleeve_eligible(row):
                 out.at[idx, "contracts"] = 1
                 out.at[idx, "v4_execution_authority"] = "validated_medium_debit_one_lot"
@@ -4024,6 +4310,32 @@ def write_v4_outputs(
     scored = apply_confidence_calibration(scored, confidence_calibration)
     payoff_summary, payoff_groups, payoff_walk_forward = build_default_payoff_calibration(asof=asof)
     scored = apply_payoff_calibration(scored, payoff_groups)
+    symbol_credit_summary, symbol_credit_evidence = build_symbol_credit_calibration(
+        base_dir.parent,
+        asof,
+        assessor=assess_credit_spread,
+        screener_loader=load_stock_screener,
+        history_path=DEFAULT_EDGE_HISTORY_PATH,
+        credit_policy_version=CREDIT_POLICY_VERSION,
+    )
+    scored = apply_symbol_credit_calibration(scored, symbol_credit_summary, assessor=assess_credit_spread)
+    symbol_credit_paths = write_symbol_credit_calibration_outputs(
+        out_dir=out_dir,
+        asof=asof,
+        summary=symbol_credit_summary,
+        evidence=symbol_credit_evidence,
+    )
+    walk_forward_credit_summary, walk_forward_credit_evidence, walk_forward_credit_model = (
+        build_walk_forward_credit_model(asof=asof)
+    )
+    scored = apply_walk_forward_credit_model(scored, walk_forward_credit_summary, walk_forward_credit_model)
+    walk_forward_credit_paths = write_walk_forward_credit_outputs(
+        out_dir=out_dir,
+        asof=asof,
+        summary=walk_forward_credit_summary,
+        evidence=walk_forward_credit_evidence,
+        qualified=scored,
+    )
     payoff_paths = write_payoff_calibration_outputs(
         out_dir=out_dir,
         asof=asof,
@@ -4247,6 +4559,8 @@ def write_v4_outputs(
     lane_coverage = tickets["lane"].value_counts().to_dict() if not tickets.empty else {}
     artifacts = {name: str(path) for name, path in paths.items()}
     artifacts.update(payoff_paths)
+    artifacts.update(symbol_credit_paths)
+    artifacts.update(walk_forward_credit_paths)
     artifacts.update(goal_shadow_paths)
     artifacts.update(
         {
@@ -4297,6 +4611,8 @@ def write_v4_outputs(
         "portfolio_status": (portfolio or {}).get("status", "not_checked"),
         "market_regime": regime,
         "payoff_calibration": payoff_summary,
+        "symbol_credit_calibration": symbol_credit_summary,
+        "walk_forward_credit_calibration": walk_forward_credit_summary,
         "goal_shadow": goal_shadow_summary,
         "execution_evidence_integrity": execution_evidence_integrity,
         "swing_target_ticket_count": int(len(tickets)),
@@ -4378,6 +4694,8 @@ def write_v4_outputs(
         f"| Run mode | {RUN_MODE_V4} |",
         f"| Data quality | {data_quality.get('status', 'unknown')} |",
         f"| Schwab status | {schwab_status} |",
+        f"| Symbol-trend credit lane | {symbol_credit_summary.get('status', 'FAIL')}; n={symbol_credit_summary.get('sample_size', 0)}, OOS n={symbol_credit_summary.get('oos_sample_size', 0)}, 10%-stress PF={symbol_credit_summary.get('stress_profit_factor_10pct', 'n/a')} |",
+        f"| Walk-forward credit Medium lane | {walk_forward_credit_summary.get('status', 'FAIL')}; OOS n={walk_forward_credit_summary.get('sample_size', 0)}, wins={walk_forward_credit_summary.get('wins', 0)}, 10%-stress PF={walk_forward_credit_summary.get('stress_profit_factor_10pct', 'n/a')}; High unavailable |",
         f"| Portfolio status | {(portfolio or {}).get('status', 'not_checked')} |",
         f"| Market regime | {regime_label} |",
         f"| Swing target ticket count | {len(tickets)} |",
@@ -5088,6 +5406,12 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
 
     chain_oi = _load_overlay_chain_oi_file(overlay_file, asof=overlay_date)
     after = apply_oi_carryover(after, chain_oi)
+    after = apply_schwab_price_context(
+        after,
+        out_dir=out_dir,
+        asof=overlay_date,
+        offline=False,
+    )
     after = apply_replay_edge_model(
         after,
         root / "out",
@@ -5141,6 +5465,32 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
     after = apply_confidence_calibration(after, overlay_confidence_calibration)
     payoff_summary, payoff_groups, payoff_walk_forward = build_default_payoff_calibration(asof=overlay_date)
     after = apply_payoff_calibration(after, payoff_groups)
+    symbol_credit_summary, symbol_credit_evidence = build_symbol_credit_calibration(
+        root,
+        overlay_date,
+        assessor=assess_credit_spread,
+        screener_loader=load_stock_screener,
+        history_path=DEFAULT_EDGE_HISTORY_PATH,
+        credit_policy_version=CREDIT_POLICY_VERSION,
+    )
+    after = apply_symbol_credit_calibration(after, symbol_credit_summary, assessor=assess_credit_spread)
+    symbol_credit_paths = write_symbol_credit_calibration_outputs(
+        out_dir=out_dir,
+        asof=f"{asof}_{overlay_date}",
+        summary=symbol_credit_summary,
+        evidence=symbol_credit_evidence,
+    )
+    walk_forward_credit_summary, walk_forward_credit_evidence, walk_forward_credit_model = (
+        build_walk_forward_credit_model(asof=overlay_date)
+    )
+    after = apply_walk_forward_credit_model(after, walk_forward_credit_summary, walk_forward_credit_model)
+    walk_forward_credit_paths = write_walk_forward_credit_outputs(
+        out_dir=out_dir,
+        asof=f"{asof}_{overlay_date}",
+        summary=walk_forward_credit_summary,
+        evidence=walk_forward_credit_evidence,
+        qualified=after,
+    )
     payoff_paths = write_payoff_calibration_outputs(
         out_dir=out_dir,
         asof=f"{asof}_{overlay_date}",
@@ -5150,6 +5500,19 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
     )
     execution_evidence_integrity = build_execution_evidence_integrity(after)
     after = apply_v4_professional_dispositions(after, asof=overlay_date)
+    strategy_validation_path = root / "out" / "sector_strategy_validation_v3.csv"
+    strategy_validation = (
+        pd.read_csv(strategy_validation_path, low_memory=False)
+        if strategy_validation_path.exists()
+        else pd.DataFrame()
+    )
+    strategy_registry = build_strategy_registry(
+        payoff_summary=payoff_summary,
+        payoff_groups=payoff_groups,
+        confidence_summary=overlay_confidence_calibration,
+        strategy_validation=strategy_validation,
+    )
+    after = apply_strategy_registry_gate(after, strategy_registry)
     after = after.copy()
     after["_overlay_exact_key"] = after.apply(_overlay_candidate_key, axis=1)
     after["_overlay_status_rank"] = after.apply(
@@ -5193,6 +5556,8 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
         "edge_history_namespace": EDGE_HISTORY_NAMESPACE,
         "execution_evidence_integrity": execution_evidence_integrity,
         "payoff_calibration": payoff_summary,
+        "symbol_credit_calibration": symbol_credit_summary,
+        "walk_forward_credit_calibration": walk_forward_credit_summary,
         "recent_performance": recent_performance,
         "repriced_candidate_rows_before_exact_dedupe": repriced_row_count,
         "candidate_rows_after_exact_dedupe": int(len(after)),
@@ -5204,6 +5569,8 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
             "overlay_opportunity_board": str(board_path),
             "overlay_changes": str(changes_path),
             **payoff_paths,
+            **symbol_credit_paths,
+            **walk_forward_credit_paths,
         },
         "scoring_source": "direct_v4_overlay",
     }

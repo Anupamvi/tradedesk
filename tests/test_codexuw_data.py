@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from codexuw.data import aggregate_dark_pool_flow, find_export_bundle
+from codexuw.data import aggregate_dark_pool_flow, find_export_bundle, load_bot_contract_quotes
 from codexuw.liquidity_shift import scan_bot_flow_tape
 
 
@@ -50,6 +50,40 @@ def test_dark_pool_flow_is_point_in_time_and_keeps_equity_signal_separate(tmp_pa
     assert row["dp_directional_ratio"] == 150 / 175
     assert result.attrs["source_status"] == "dp_eod_loaded"
     assert "2026-01-02" in result.attrs["source_path"]
+
+
+def test_bot_contract_quotes_use_first_valid_regular_session_nbbo(tmp_path: Path) -> None:
+    day = tmp_path / "2026-07-10"
+    day.mkdir()
+    common = {
+        "option_chain_id": "XYZ260821C00105000",
+        "price": 1.15,
+        "volume": 100,
+        "open_interest": 500,
+        "canceled": "f",
+    }
+    _write_zip(
+        day / "bot-eod-report-2026-07-10.zip",
+        [
+            {**common, "executed_at": "2026-07-10T13:00:00Z", "nbbo_bid": 5.0, "nbbo_ask": 5.2},
+            {**common, "executed_at": "2026-07-10T13:30:00Z", "nbbo_bid": 9.0, "nbbo_ask": 9.2, "canceled": "t"},
+            {**common, "executed_at": "2026-07-10T13:30:01Z", "nbbo_bid": 1.0, "nbbo_ask": 1.2},
+            {**common, "executed_at": "2026-07-10T13:31:00Z", "nbbo_bid": 1.1, "nbbo_ask": 1.3},
+        ],
+    )
+
+    quotes = load_bot_contract_quotes(
+        day,
+        ["XYZ260821C00105000"],
+        point_in_time=True,
+    )
+
+    quote = quotes["XYZ260821C00105000"]
+    assert quote["bid"] == 1.0
+    assert quote["ask"] == 1.2
+    assert quote["mid"] == 1.1
+    assert quote["quote_source"] == "bot_eod_first_regular_nbbo"
+    assert quote["quote_timestamp"].startswith("2026-07-10T13:30:01")
 
 
 def test_liquidity_shift_bot_scan_excludes_future_latest_overlay(tmp_path: Path) -> None:

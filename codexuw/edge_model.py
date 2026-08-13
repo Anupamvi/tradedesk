@@ -104,7 +104,7 @@ def _premium_bucket(row: pd.Series | dict[str, Any]) -> str:
 
 def _expected_move_pct(row: pd.Series | dict[str, Any]) -> float:
     iv30d = safe_float(row.get("iv30d"))
-    dte = safe_float(row.get("dte"))
+    dte = safe_float(row.get("entry_dte"), safe_float(row.get("dte")))
     if math.isfinite(iv30d) and math.isfinite(dte) and iv30d > 0 and dte > 0:
         return iv30d * math.sqrt(dte / 365.0)
     explicit = safe_float(row.get("expected_move_pct"))
@@ -118,7 +118,10 @@ def _distance_pct(row: pd.Series | dict[str, Any]) -> float:
     value = safe_float(row.get("distance_pct"))
     if math.isfinite(value):
         return value
-    stock = safe_float(row.get("stock_price_live"), safe_float(row.get("stock_price_eod")))
+    stock = safe_float(
+        row.get("stock_price_live"),
+        safe_float(row.get("stock_price_entry"), safe_float(row.get("stock_price_eod"))),
+    )
     short = safe_float(row.get("short_strike"), safe_float(row.get("short_strike_eod")))
     direction = str(row.get("direction", ""))
     if not math.isfinite(stock) or stock <= 0 or not math.isfinite(short):
@@ -218,7 +221,7 @@ def _quote_bucket(row: pd.Series | dict[str, Any]) -> str:
 
 def _earnings_bucket(row: pd.Series | dict[str, Any]) -> str:
     value = row.get("next_earnings_dt")
-    asof = row.get("asof")
+    asof = row.get("entry_day") or row.get("asof")
     try:
         earnings = pd.to_datetime(value, errors="coerce")
         day = pd.to_datetime(asof, errors="coerce")
@@ -244,7 +247,7 @@ def _feature_record(row: pd.Series | dict[str, Any]) -> dict[str, Any]:
         "sector": str(row.get("sector", "") or ""),
         "direction": direction,
         "strategy_kind": _strategy_kind(row),
-        "dte_bucket": _dte_bucket(row.get("dte")),
+        "dte_bucket": _dte_bucket(row.get("entry_dte", row.get("dte"))),
         "premium_bucket": _premium_bucket(row),
         "expected_move_bucket": _ratio_bucket(row),
         "flow_align_bucket": _flow_align_bucket(row),
@@ -363,7 +366,7 @@ def load_replay_edge_history(
     frames: list[pd.DataFrame] = []
     for path in paths:
         try:
-            df = pd.read_csv(path)
+            df = pd.read_csv(path, low_memory=False)
         except Exception:
             continue
         if df.empty or "exact_evaluated" not in df.columns or "pnl_1x" not in df.columns:
@@ -382,7 +385,7 @@ def load_replay_edge_history(
                     if "expiry" in df.columns
                     else pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
                 )
-                maturity_day = expiry.where(expiry.notna(), exit_day)
+                maturity_day = exit_day
                 df = df[
                     source_day.lt(cutoff)
                     & exit_day.lt(cutoff)

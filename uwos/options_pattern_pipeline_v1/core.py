@@ -16,6 +16,7 @@ import math
 import os
 import random
 import re
+import sqlite3
 import statistics
 import subprocess
 import sys
@@ -23,10 +24,12 @@ import time
 import zipfile
 from collections import Counter, defaultdict
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, Tuple
+
+import numpy as np
 
 from .macro_geo import (
     build_macro_geo_bundle,
@@ -71,7 +74,7 @@ SOURCE_PREFIXES = (
     "bot-eod-report",
     "whale_trades_filtered",
 )
-BOT_EOD_CACHE_SCHEMA_VERSION = 1
+BOT_EOD_CACHE_SCHEMA_VERSION = 2
 BOT_EOD_QUOTE_MIN_PREMIUM = 10_000.0
 BOT_EOD_QUOTE_MIN_VOLUME = 100.0
 FLOW_LEADER_MIN_PREMIUM = 100_000_000.0
@@ -86,6 +89,30 @@ THEME_FLOW_BASKETS = {
         "tickers": ("USO", "BNO", "DBO", "UCO"),
     },
 }
+FAMILY_REQUIRED_SOURCE_FLAGS = {
+    "THEME_FLOW_LEADER": ("stock_screener", "hot_chains", "bot_eod"),
+    "VOL_PREMIUM_EXPANSION": ("stock_screener", "hot_chains", "bot_eod"),
+    "BULLISH_FLOW_EXPANSION": ("stock_screener", "hot_chains"),
+    "BEARISH_PUT_FLOW_EXPANSION": ("stock_screener", "hot_chains"),
+    "OI_GAMMA_CONTINUATION": ("stock_screener", "hot_chains", "chain_oi"),
+    "VOL_EXPANSION_CATALYST": ("stock_screener", "hot_chains"),
+    "DARK_POOL_PRESSURE": ("stock_screener", "hot_chains", "dp_eod"),
+    "CATALYST_FLOW_LEADER": ("stock_screener", "hot_chains", "bot_eod"),
+    "SOURCE_PREMIUM_COVERAGE_RESCUE": ("stock_screener", "hot_chains"),
+    "TRADEABLE_SOURCE_GAP_RESCUE": ("stock_screener", "hot_chains"),
+    "INDEX_HEDGE_PRESSURE": ("stock_screener", "hot_chains"),
+    "SECTOR_MOMENTUM_CONTINUATION": ("stock_screener", "hot_chains"),
+    "SECTOR_MOMENTUM_REVERSAL": ("stock_screener", "hot_chains"),
+}
+SECTOR_MOMENTUM_QUANTILE = 0.20
+SECTOR_MOMENTUM_MIN_NAMES = 12
+DP_DIRECTION_INVALID_CONDITIONS = {
+    "average_price_trade",
+    "contingent_trade",
+    "odd_lot_execution",
+    "prior_reference_price",
+}
+BOT_MULTILEG_CONDITIONS = {"mlet", "mlat"}
 SOURCE_COVERAGE_MIN_PREMIUM = 50_000_000.0
 SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 500
 VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS = 80
@@ -163,6 +190,14 @@ EV_TRADE_BLOCKERS = {
     "CALIBRATION_SCORE_MISSING_OR_WEAK",
     "CONFIDENCE_BAND_TOO_WEAK",
 }
+STATISTICAL_PROOF_BLOCKERS = (
+    VALIDATION_TRADE_BLOCKERS
+    | EV_TRADE_BLOCKERS
+    | {
+        "FAMILY_VALIDATION_DRAWDOWN_TOO_DEEP",
+        "FAMILY_VALIDATION_LOSING_STREAK_TOO_LONG",
+    }
+)
 SOFT_CALIBRATION_BLOCKERS = {
     "CALIBRATION_SCORE_MISSING_OR_WEAK",
     "CONFIDENCE_BAND_TOO_WEAK",
@@ -202,6 +237,15 @@ DEFAULT_RISK_CONFIG = {
     "min_profit_factor": 1.20,
     "min_proven_family_expected_r": 0.05,
     "min_oos_scored_outcomes": 30,
+    "min_oos_unique_signal_dates": 0,
+    "require_every_validation_split_profitable": False,
+    "require_day_clustered_pf_for_proven": False,
+    "min_day_clustered_profit_factor_p05": 1.20,
+    "day_clustered_bootstrap_iterations": 1000,
+    "require_matched_permutation_for_proven": False,
+    "max_matched_null_p_value": 0.05,
+    "matched_permutation_trials": 0,
+    "min_matched_null_coverage": 0.80,
     "min_contract_profile_scored_outcomes": 12,
     "min_contract_profile_unique_dates": 6,
     "min_contract_profile_validation_splits": 2,
@@ -294,6 +338,16 @@ DEFAULT_RISK_CONFIG = {
     "round_trip_spread_fees": 2.60,
     "slippage_pct_of_spread": 0.50,
     "expected_hold_days": 5,
+    "validation_horizon_sessions": 5,
+    "credit_spread_validation_horizon_sessions": 5,
+    "long_strangle_validation_horizon_sessions": 5,
+    "long_option_profit_target_pct": 1.0,
+    "long_option_stop_loss_pct": 0.50,
+    "use_shifted_chain_quotes": False,
+    "bot_eod_quote_policy": "all",
+    "enforce_family_source_requirements": False,
+    "enable_sector_momentum_families": False,
+    "compact_snapshot_option_quotes": False,
     "goal_required_coverage_tickers": list(GOAL_AUDIT_REQUIRED_TICKERS),
     "live_quote_required_for_auto": False,
     "allow_conservative_historical_quote_for_auto": True,
@@ -337,6 +391,37 @@ def configured_round_trip_long_option_fees(risk_config: Optional[Mapping[str, An
 def configured_round_trip_spread_fees(risk_config: Optional[Mapping[str, Any]] = None) -> float:
     cfg = risk_config or DEFAULT_RISK_CONFIG
     return float(cfg.get("round_trip_spread_fees", DEFAULT_RISK_CONFIG["round_trip_spread_fees"]))
+
+
+def configured_validation_horizon(risk_config: Optional[Mapping[str, Any]] = None) -> int:
+    cfg = risk_config or DEFAULT_RISK_CONFIG
+    return max(1, int(cfg.get("validation_horizon_sessions", 5)))
+
+
+def configured_strategy_validation_horizon(
+    strategy_kind: Any,
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> int:
+    cfg = risk_config or DEFAULT_RISK_CONFIG
+    strategy = str(strategy_kind or "long_option")
+    if strategy == "credit_spread":
+        return max(1, int(cfg.get("credit_spread_validation_horizon_sessions", 5)))
+    if strategy == "long_strangle":
+        return max(1, int(cfg.get("long_strangle_validation_horizon_sessions", 5)))
+    return configured_validation_horizon(cfg)
+
+
+def configured_long_option_profit_target(risk_config: Optional[Mapping[str, Any]] = None) -> float:
+    cfg = risk_config or DEFAULT_RISK_CONFIG
+    return max(0.0, float(cfg.get("long_option_profit_target_pct", 1.0)))
+
+
+def configured_long_option_stop_loss(risk_config: Optional[Mapping[str, Any]] = None) -> Optional[float]:
+    cfg = risk_config or DEFAULT_RISK_CONFIG
+    value = cfg.get("long_option_stop_loss_pct", 0.50)
+    if value in (None, "", False):
+        return None
+    return max(0.0, float(value))
 
 
 def configured_long_option_opening_fee(risk_config: Optional[Mapping[str, Any]] = None) -> float:
@@ -465,6 +550,7 @@ class Snapshot:
     best_options: Dict[Tuple[str, str], Dict[str, Any]]
     market_regime: Dict[str, Any]
     counts: Dict[str, int]
+    prior_option_quotes: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
@@ -670,7 +756,16 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
 
     config = base_run_config(args, base_dir, as_of, bot_eod_cache_dir)
 
-    snapshot_dates = [as_of] if args.no_validation else usable_dates
+    signal_dates = [as_of] if args.no_validation else usable_dates
+    scoring_dates = (
+        scoring_session_dates(base_dir, as_of)
+        if config["risk_config"].get("use_shifted_chain_quotes") and not args.no_validation
+        else signal_dates
+    )
+    snapshot_dates = sorted(set(signal_dates) | set(scoring_dates))
+    full_snapshot_dates = set(signal_dates)
+    config["signal_date_count"] = len(signal_dates)
+    config["scoring_session_count"] = len(snapshot_dates)
     snapshots: Dict[str, Snapshot] = {}
     for index, d in enumerate(snapshot_dates, 1):
         if index == 1 or index == len(snapshot_dates) or index % 10 == 0:
@@ -678,7 +773,16 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
                 f"[pattern] snapshot {index}/{len(snapshot_dates)}: {d}",
                 flush=True,
             )
-        snapshots[d] = build_daily_snapshot(base_dir, d, config)
+        snapshots[d] = (
+            build_daily_snapshot(base_dir, d, config)
+            if d in full_snapshot_dates
+            else build_scoring_snapshot(base_dir, d)
+        )
+        if (
+            d in full_snapshot_dates
+            and config["risk_config"].get("compact_snapshot_option_quotes", False)
+        ):
+            compact_snapshot_option_quotes(snapshots[d], config["risk_config"])
 
     validation_bundle: Dict[str, Any]
     if args.no_validation:
@@ -691,9 +795,11 @@ def run_pipeline(args: argparse.Namespace) -> Dict[str, Any]:
             top_candidates_per_day=args.validation_top_candidates_per_day,
             seed=args.seed,
             risk_config=config["risk_config"],
+            base_dir=base_dir,
+            scoring_dates=snapshot_dates,
         )
 
-    prior_dates = [d for d in snapshot_dates if d < as_of]
+    prior_dates = [d for d in signal_dates if d < as_of]
     if prior_dates:
         daily_pattern_config = learn_pattern_config([snapshots[d] for d in prior_dates])
     else:
@@ -903,6 +1009,19 @@ def list_date_dirs(base_dir: Path) -> List[str]:
         for p in base_dir.iterdir()
         if p.is_dir() and re.fullmatch(r"\d{4}-\d{2}-\d{2}", p.name)
     )
+
+
+def scoring_session_dates(base_dir: Path, as_of: str) -> List[str]:
+    """Market-data sessions usable for exits, independent of signal completeness."""
+
+    sessions = []
+    for signal_date in list_date_dirs(base_dir):
+        if signal_date > as_of:
+            continue
+        sources = sources_for_date(base_dir / signal_date, signal_date)
+        if sources.get("stock_screener") or sources.get("hot_chains"):
+            sessions.append(signal_date)
+    return sessions
 
 
 def inventory_source_data(base_dir: Path) -> List[Dict[str, Any]]:
@@ -1182,12 +1301,23 @@ def build_daily_snapshot(base_dir: Path, signal_date: str, config: Mapping[str, 
             apply_bot_flow_aggregate(f, row)
             counts["bot_eod_rows"] += int(num(row.get("row_count")) or 0)
             counts["bot_eod_ticker_rows"] += 1
+        bot_quote_policy = str(
+            config.get("risk_config", {}).get("bot_eod_quote_policy", "all")
+        ).lower()
         for quote in bot_cache["quote_rows"]:
             symbol = str(quote.get("option_symbol") or "")
             if not symbol:
                 continue
-            option_quotes[symbol] = quote
-            maybe_set_best_option(best_options, quote)
+            counts["bot_eod_quote_rows_seen"] += 1
+            existing = option_quotes.get(symbol)
+            if bot_quote_policy == "none" or (
+                bot_quote_policy == "refresh_existing" and existing is None
+            ):
+                counts["bot_eod_quote_rows_not_retained"] += 1
+                continue
+            retained = merge_bot_quote(existing, quote)
+            option_quotes[symbol] = retained
+            maybe_set_best_option(best_options, retained)
             counts["bot_eod_quote_rows"] += 1
     else:
         for ref in fallback_refs:
@@ -1234,6 +1364,383 @@ def build_daily_snapshot(base_dir: Path, signal_date: str, config: Mapping[str, 
         market_regime=market_regime,
         counts=dict(counts),
     )
+
+
+def build_scoring_snapshot(base_dir: Path, signal_date: str) -> Snapshot:
+    """Read only stock state for an exit session; never generate signals from it."""
+
+    date_dir = base_dir / signal_date
+    sources = sources_for_date(date_dir, signal_date)
+    features: Dict[str, Dict[str, Any]] = {}
+    source_files: List[str] = []
+    counts: Counter[str] = Counter()
+    for ref in sources.get("stock_screener", []):
+        source_files.append(ref.label)
+        for row in iter_csv_dicts(ref):
+            ticker = clean_ticker(row.get("ticker", ""))
+            if not ticker:
+                continue
+            feature = features.setdefault(ticker, new_feature(signal_date, ticker))
+            feature["source_flags"].add("stock_screener_scoring_only")
+            feature["sector"] = row.get("sector") or ""
+            feature["issue_type"] = row.get("issue_type") or ""
+            for source, target in (
+                ("close", "close"),
+                ("prev_close", "prev_close"),
+                ("high", "high"),
+                ("low", "low"),
+            ):
+                value = num(row.get(source))
+                if value is not None:
+                    feature[target] = value
+            counts["stock_screener_rows"] += 1
+    for feature in features.values():
+        finalize_feature(feature)
+    return Snapshot(
+        signal_date=signal_date,
+        source_files=source_files,
+        skipped_sources=[{"reason": "scoring_session_only_not_signal_eligible"}],
+        features=features,
+        option_quotes={},
+        best_options={},
+        market_regime={"date": signal_date, "regime": "SCORING_ONLY"},
+        counts=dict(counts),
+    )
+
+
+def option_quote_from_prior_chain_row(
+    row: Mapping[str, str],
+    parsed: Mapping[str, Any],
+) -> Optional[Dict[str, Any]]:
+    quote_date = str(row.get("last_date") or "")[:10]
+    bid = num(row.get("last_bid"))
+    ask = num(row.get("last_ask"))
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", quote_date):
+        return None
+    if bid is None or ask is None or bid < 0 or ask <= 0 or ask < bid:
+        return None
+    mid = (bid + ask) / 2.0
+    spread = ask - bid
+    prior_volume = num(row.get("prev_vol"))
+    if prior_volume is None:
+        prior_volume = sum(
+            max(num(row.get(key)) or 0.0, 0.0)
+            for key in ("prev_ask_volume", "prev_bid_volume", "prev_mid_volume")
+        )
+    return {
+        "date": quote_date,
+        "ticker": parsed["ticker"],
+        "option_symbol": parsed["option_symbol"],
+        "option_type": parsed["option_type"],
+        "direction": "bullish" if parsed["option_type"] == "call" else "bearish",
+        "expiry": parsed["expiry"],
+        "strike": parsed["strike"],
+        "dte": trading_day_delta(quote_date, parsed["expiry"]),
+        "bid": bid,
+        "ask": ask,
+        "mid": mid,
+        "high": None,
+        "low": None,
+        "option_close": num(row.get("last_fill")),
+        "avg_price": None,
+        "stock_close": None,
+        "volume": max(prior_volume or 0.0, 0.0),
+        "open_interest": max(num(row.get("last_oi")) or 0.0, 0.0),
+        "premium": max(num(row.get("prev_total_premium")) or 0.0, 0.0),
+        "iv": None,
+        "spread": spread,
+        "spread_pct": spread / mid if mid > 0 else None,
+        "ask_side_volume": max(num(row.get("prev_ask_volume")) or 0.0, 0.0),
+        "bid_side_volume": max(num(row.get("prev_bid_volume")) or 0.0, 0.0),
+        "sweep_volume": 0.0,
+        "multileg_volume": max(num(row.get("prev_multi_leg_volume")) or 0.0, 0.0),
+        "quote_source": "shifted_chain_oi",
+    }
+
+
+def apply_shifted_chain_quotes(
+    snapshots: Mapping[str, Snapshot],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> int:
+    """Move each chain file's prior-session quotes into the matching snapshot."""
+
+    added = 0
+    touched: set[str] = set()
+    for source in snapshots.values():
+        for symbol, raw_quote in source.prior_option_quotes.items():
+            quote_date = str(raw_quote.get("date") or "")
+            target = snapshots.get(quote_date)
+            if target is None or symbol in target.option_quotes:
+                continue
+            quote = dict(raw_quote)
+            feature = target.features.get(str(quote.get("ticker") or ""), {})
+            quote["stock_close"] = num(feature.get("close"))
+            target.option_quotes[symbol] = quote
+            target.counts["shifted_chain_quote_rows"] = int(
+                target.counts.get("shifted_chain_quote_rows") or 0
+            ) + 1
+            touched.add(quote_date)
+            added += 1
+        source.prior_option_quotes = {}
+
+    for quote_date in touched:
+        snapshot = snapshots[quote_date]
+        snapshot.best_options = {}
+        for quote in snapshot.option_quotes.values():
+            maybe_set_best_option(snapshot.best_options, quote)
+        add_best_vertical_spreads(snapshot.best_options, snapshot.option_quotes, risk_config)
+        add_best_long_strangles(snapshot.best_options, snapshot.option_quotes, risk_config)
+    return added
+
+
+def backfill_selected_signal_quote_history(
+    base_dir: Path,
+    snapshots: Mapping[str, Snapshot],
+    signal_batches: Sequence[Sequence[Mapping[str, Any]]] = (),
+    needed_symbols: Optional[Iterable[str]] = None,
+) -> int:
+    """Stream chain archives once and retain prior quotes for selected contracts."""
+
+    needed: set[str] = {
+        str(symbol).strip().upper()
+        for symbol in (needed_symbols or ())
+        if parse_option_symbol(str(symbol).strip().upper())
+    }
+    for batch in signal_batches:
+        collect_signal_contract_symbols(batch, needed)
+    if not needed or not snapshots:
+        return 0
+
+    added = 0
+    max_target_date = max(snapshots)
+    source_dates = [date for date in list_date_dirs(base_dir) if date <= max_target_date]
+    for index, source_date in enumerate(source_dates, 1):
+        refs = sources_for_date(base_dir / source_date, source_date).get("chain_oi", [])
+        for ref in refs:
+            for row in iter_csv_dicts(ref):
+                raw_symbol = str(row.get("option_symbol") or "").strip().upper()
+                if raw_symbol not in needed:
+                    continue
+                parsed = parse_option_symbol(raw_symbol)
+                if not parsed:
+                    continue
+                quote = option_quote_from_prior_chain_row(row, parsed)
+                if not quote:
+                    continue
+                target = snapshots.get(str(quote.get("date") or ""))
+                if target is None or raw_symbol in target.option_quotes:
+                    continue
+                feature = target.features.get(str(quote.get("ticker") or ""), {})
+                quote["stock_close"] = num(feature.get("close"))
+                target.option_quotes[raw_symbol] = quote
+                target.counts["shifted_chain_quote_rows"] = int(
+                    target.counts.get("shifted_chain_quote_rows") or 0
+                ) + 1
+                added += 1
+        if index % 20 == 0:
+            print(
+                f"[pattern] selective chain quote replay {index}/{len(source_dates)}: added={added}",
+                flush=True,
+            )
+    return added
+
+
+def collect_signal_contract_symbols(
+    signals: Iterable[Mapping[str, Any]],
+    target: set[str],
+) -> int:
+    before = len(target)
+    for signal in signals:
+        lead = str(signal.get("lead_option_symbol") or "").strip().upper()
+        if parse_option_symbol(lead):
+            target.add(lead)
+        for leg in parse_legs(signal.get("legs_json", "")):
+            symbol = str(leg.get("option_symbol") or "").strip().upper()
+            if parse_option_symbol(symbol):
+                target.add(symbol)
+    return len(target) - before
+
+
+def build_selected_chain_quote_store(
+    base_dir: Path,
+    selected_symbols: Iterable[str],
+    valid_quote_dates: Iterable[str],
+) -> Tuple[Path, int]:
+    symbols = {
+        str(symbol).strip().upper()
+        for symbol in selected_symbols
+        if parse_option_symbol(str(symbol).strip().upper())
+    }
+    quote_dates = set(valid_quote_dates)
+    digest = hashlib.sha256("\n".join(sorted(symbols)).encode("utf-8")).hexdigest()[:16]
+    store_dir = base_dir / "out" / "options_pattern_pipeline_v1" / "cache" / "selected_chain_quotes"
+    store_dir.mkdir(parents=True, exist_ok=True)
+    store_path = store_dir / f"selected_chain_quotes_{max(quote_dates, default='none')}_{digest}.sqlite"
+    if store_path.exists():
+        try:
+            existing = sqlite3.connect(store_path)
+            row_count = int(existing.execute("SELECT COUNT(*) FROM quotes").fetchone()[0])
+            existing.close()
+            if row_count > 0:
+                return store_path, row_count
+        except (sqlite3.DatabaseError, TypeError, ValueError):
+            store_path.unlink(missing_ok=True)
+    temp_path = store_path.with_suffix(".sqlite.tmp")
+    temp_path.unlink(missing_ok=True)
+    connection = sqlite3.connect(temp_path)
+    connection.execute("PRAGMA journal_mode=OFF")
+    connection.execute("PRAGMA synchronous=OFF")
+    connection.execute("PRAGMA temp_store=MEMORY")
+    connection.execute(
+        "CREATE TABLE quotes ("
+        "symbol TEXT NOT NULL, quote_date TEXT NOT NULL, bid REAL NOT NULL, ask REAL NOT NULL, "
+        "PRIMARY KEY (symbol, quote_date)) WITHOUT ROWID"
+    )
+    batch: List[Tuple[str, str, float, float]] = []
+    inserted = 0
+    source_dates = [date for date in list_date_dirs(base_dir) if date <= max(quote_dates, default="")]
+    for index, source_date in enumerate(source_dates, 1):
+        for ref in sources_for_date(base_dir / source_date, source_date).get("chain_oi", []):
+            for row in iter_csv_dicts(ref):
+                symbol = str(row.get("option_symbol") or "").strip().upper()
+                if symbol not in symbols:
+                    continue
+                parsed = parse_option_symbol(symbol)
+                if not parsed:
+                    continue
+                quote = option_quote_from_prior_chain_row(row, parsed)
+                quote_date = str((quote or {}).get("date") or "")
+                if not quote or quote_date not in quote_dates:
+                    continue
+                batch.append((symbol, quote_date, float(quote["bid"]), float(quote["ask"])))
+                if len(batch) >= 20_000:
+                    connection.executemany(
+                        "INSERT OR REPLACE INTO quotes(symbol, quote_date, bid, ask) VALUES (?, ?, ?, ?)",
+                        batch,
+                    )
+                    inserted += len(batch)
+                    batch.clear()
+        if index % 20 == 0:
+            print(
+                f"[pattern] selected quote store {index}/{len(source_dates)}: rows_seen={inserted + len(batch)}",
+                flush=True,
+            )
+    if batch:
+        connection.executemany(
+            "INSERT OR REPLACE INTO quotes(symbol, quote_date, bid, ask) VALUES (?, ?, ?, ?)",
+            batch,
+        )
+        inserted += len(batch)
+    row_count = int(connection.execute("SELECT COUNT(*) FROM quotes").fetchone()[0])
+    connection.commit()
+    connection.close()
+    temp_path.replace(store_path)
+    return store_path, row_count
+
+
+def load_signal_quote_history_from_store(
+    connection: sqlite3.Connection,
+    signals: Sequence[Mapping[str, Any]],
+    snapshots: Mapping[str, Snapshot],
+    ordered_dates: Sequence[str],
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> List[Tuple[str, str]]:
+    if not signals:
+        return []
+    symbols: set[str] = set()
+    collect_signal_contract_symbols(signals, symbols)
+    signal_date = str(signals[0].get("date") or "")
+    try:
+        start = ordered_dates.index(signal_date)
+    except ValueError:
+        return []
+    max_horizon = max(
+        configured_strategy_validation_horizon(signal.get("strategy_kind"), risk_config)
+        for signal in signals
+    )
+    end = min(len(ordered_dates) - 1, start + max_horizon)
+    if end <= start:
+        return []
+    start_date = ordered_dates[start]
+    end_date = ordered_dates[end]
+    added: List[Tuple[str, str]] = []
+    symbol_list = sorted(symbols)
+    for offset in range(0, len(symbol_list), 400):
+        chunk = symbol_list[offset : offset + 400]
+        placeholders = ",".join("?" for _ in chunk)
+        rows = connection.execute(
+            f"SELECT symbol, quote_date, bid, ask FROM quotes "
+            f"WHERE symbol IN ({placeholders}) AND quote_date > ? AND quote_date <= ?",
+            [*chunk, start_date, end_date],
+        )
+        for symbol, quote_date, bid, ask in rows:
+            snapshot = snapshots.get(str(quote_date))
+            if snapshot is None or symbol in snapshot.option_quotes:
+                continue
+            snapshot.option_quotes[symbol] = {
+                "date": quote_date,
+                "option_symbol": symbol,
+                "bid": float(bid),
+                "ask": float(ask),
+                "high": None,
+                "low": None,
+                "quote_source": "shifted_chain_oi_store",
+            }
+            added.append((str(quote_date), str(symbol)))
+    return added
+
+
+def unload_signal_quote_history(
+    snapshots: Mapping[str, Snapshot],
+    added: Iterable[Tuple[str, str]],
+) -> None:
+    for quote_date, symbol in added:
+        snapshot = snapshots.get(quote_date)
+        if snapshot is not None:
+            snapshot.option_quotes.pop(symbol, None)
+
+
+def score_signals_from_quote_store(
+    signals: Sequence[Mapping[str, Any]],
+    snapshots: Mapping[str, Snapshot],
+    ordered_dates: Sequence[str],
+    split_name: str,
+    sample: str,
+    risk_config: Optional[Mapping[str, Any]],
+    connection: Optional[sqlite3.Connection],
+) -> List[Dict[str, Any]]:
+    grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
+    for signal in signals:
+        grouped[str(signal.get("date") or "")].append(signal)
+    rows: List[Dict[str, Any]] = []
+    for signal_date in sorted(grouped):
+        day_signals = grouped[signal_date]
+        added = (
+            load_signal_quote_history_from_store(
+                connection,
+                day_signals,
+                snapshots,
+                ordered_dates,
+                risk_config,
+            )
+            if connection is not None
+            else []
+        )
+        try:
+            rows.extend(
+                score_signals(
+                    day_signals,
+                    snapshots,
+                    ordered_dates,
+                    split_name,
+                    sample,
+                    risk_config,
+                    horizons=None,
+                )
+            )
+        finally:
+            unload_signal_quote_history(snapshots, added)
+    return rows
 
 
 def source_size_mb(ref: SourceRef) -> float:
@@ -1347,6 +1854,8 @@ def build_bot_eod_cache_rows(
     for ref in refs:
         for row in iter_csv_dicts(ref):
             raw_row_count += 1
+            if bot_row_is_canceled(row):
+                continue
             ticker = clean_ticker(row.get("underlying_symbol", ""))
             if not ticker:
                 continue
@@ -1374,6 +1883,8 @@ def new_bot_flow_agg(signal_date: str, ticker: str) -> Dict[str, Any]:
         "flow_call_bid_premium": 0.0,
         "flow_put_bid_premium": 0.0,
         "flow_total_premium": 0.0,
+        "flow_gross_premium": 0.0,
+        "flow_multileg_premium": 0.0,
         "flow_call_trade_count": 0,
         "flow_put_trade_count": 0,
         "flow_vega_notional": 0.0,
@@ -1383,10 +1894,17 @@ def new_bot_flow_agg(signal_date: str, ticker: str) -> Dict[str, Any]:
 
 
 def update_bot_flow_cache_agg(agg: Dict[str, Any], row: Mapping[str, str]) -> None:
+    if bot_row_is_canceled(row):
+        return
     premium = option_trade_premium(row)
     option_type = str(row.get("option_type") or "").lower()
     side = str(row.get("side") or "").lower()
     agg["row_count"] += 1
+    agg["flow_gross_premium"] += premium
+    condition = str(row.get("upstream_condition_detail") or "").strip().lower()
+    if condition in BOT_MULTILEG_CONDITIONS:
+        agg["flow_multileg_premium"] += premium
+        return
     agg["flow_total_premium"] += premium
     if row.get("sector") and not agg.get("sector"):
         agg["sector"] = row.get("sector") or ""
@@ -1406,6 +1924,10 @@ def update_bot_flow_cache_agg(agg: Dict[str, Any], row: Mapping[str, str]) -> No
             agg["flow_put_ask_premium"] += premium
         elif side == "bid":
             agg["flow_put_bid_premium"] += premium
+
+
+def bot_row_is_canceled(row: Mapping[str, Any]) -> bool:
+    return str(row.get("canceled") or "").strip().lower() in {"true", "t", "1", "yes"}
 
 
 def option_trade_premium(row: Mapping[str, Any]) -> float:
@@ -1455,6 +1977,8 @@ def apply_bot_flow_aggregate(f: Dict[str, Any], row: Mapping[str, Any]) -> None:
         "flow_call_bid_premium",
         "flow_put_bid_premium",
         "flow_total_premium",
+        "flow_gross_premium",
+        "flow_multileg_premium",
         "flow_call_trade_count",
         "flow_put_trade_count",
         "flow_vega_notional",
@@ -1568,6 +2092,8 @@ def bot_flow_cache_fieldnames() -> List[str]:
         "flow_call_bid_premium",
         "flow_put_bid_premium",
         "flow_total_premium",
+        "flow_gross_premium",
+        "flow_multileg_premium",
         "flow_call_trade_count",
         "flow_put_trade_count",
         "flow_vega_notional",
@@ -1728,6 +2254,8 @@ def new_feature(signal_date: str, ticker: str) -> Dict[str, Any]:
         "oi_call_diff": 0.0,
         "oi_put_diff": 0.0,
         "oi_total_diff": 0.0,
+        "oi_call_bought_diff": 0.0,
+        "oi_put_bought_diff": 0.0,
         "oi_call_volume": 0.0,
         "oi_put_volume": 0.0,
         "oi_top_symbol": "",
@@ -1738,6 +2266,8 @@ def new_feature(signal_date: str, ticker: str) -> Dict[str, Any]:
         "flow_call_bid_premium": 0.0,
         "flow_put_bid_premium": 0.0,
         "flow_total_premium": 0.0,
+        "flow_gross_premium": 0.0,
+        "flow_multileg_premium": 0.0,
         "flow_call_trade_count": 0.0,
         "flow_put_trade_count": 0.0,
         "flow_vega_notional": 0.0,
@@ -1753,6 +2283,8 @@ def new_feature(signal_date: str, ticker: str) -> Dict[str, Any]:
 
 def update_dark_pool_aggregate(f: Dict[str, Any], row: Mapping[str, Any]) -> None:
     if str(row.get("canceled") or "").strip().lower() in {"true", "t", "1", "yes"}:
+        return
+    if str(row.get("sale_cond_codes") or "").strip().lower() in DP_DIRECTION_INVALID_CONDITIONS:
         return
     premium = max(num(row.get("premium")) or 0.0, 0.0)
     size = max(num(row.get("size")) or 0.0, 0.0)
@@ -1828,6 +2360,9 @@ def update_hot_aggregate(f: Dict[str, Any], q: Mapping[str, Any], row: Mapping[s
     f["hot_total_premium"] += q["premium"]
     f["hot_sweep_volume"] += q["sweep_volume"]
     f["hot_multileg_volume"] += q["multileg_volume"]
+    half_multileg = max(q["multileg_volume"], 0.0) / 2.0
+    directional_ask = max(q["ask_side_volume"] - half_multileg, 0.0)
+    directional_bid = max(q["bid_side_volume"] - half_multileg, 0.0)
     if q.get("iv") is not None and q["volume"] > 0:
         f["hot_iv_weighted_sum"] += q["iv"] * q["volume"]
         f["hot_iv_weight"] += q["volume"]
@@ -1839,13 +2374,13 @@ def update_hot_aggregate(f: Dict[str, Any], q: Mapping[str, Any], row: Mapping[s
     if q["option_type"] == "call":
         f["hot_call_volume"] += q["volume"]
         f["hot_call_premium"] += q["premium"]
-        f["hot_call_ask_volume"] += q["ask_side_volume"]
-        f["hot_call_bid_volume"] += q["bid_side_volume"]
+        f["hot_call_ask_volume"] += directional_ask
+        f["hot_call_bid_volume"] += directional_bid
     else:
         f["hot_put_volume"] += q["volume"]
         f["hot_put_premium"] += q["premium"]
-        f["hot_put_ask_volume"] += q["ask_side_volume"]
-        f["hot_put_bid_volume"] += q["bid_side_volume"]
+        f["hot_put_ask_volume"] += directional_ask
+        f["hot_put_bid_volume"] += directional_bid
 
 
 def maybe_set_best_option(best_options: Dict[Tuple[str, str], Dict[str, Any]], q: Dict[str, Any]) -> None:
@@ -2162,15 +2697,25 @@ def best_credit_spread(
 
 
 def update_chain_oi_aggregate(f: Dict[str, Any], row: Mapping[str, str], parsed: Mapping[str, Any]) -> None:
-    oi_diff = abs(num(row.get("oi_diff_plain")) or 0.0)
+    oi_diff = num(row.get("oi_diff_plain")) or 0.0
+    if oi_diff <= 0:
+        return
     volume = num(row.get("volume")) or 0.0
+    multileg = max(num(row.get("prev_multi_leg_volume")) or 0.0, 0.0)
+    ask_volume = max((num(row.get("prev_ask_volume")) or 0.0) - multileg / 2.0, 0.0)
+    bid_volume = max((num(row.get("prev_bid_volume")) or 0.0) - multileg / 2.0, 0.0)
+    opening_volume = ask_volume + bid_volume
+    bought_share = ask_volume / opening_volume if opening_volume > 0 else 0.0
+    directional_bought_diff = oi_diff * max(2.0 * bought_share - 1.0, 0.0)
     f["oi_total_diff"] += oi_diff
     if parsed["option_type"] == "call":
         f["oi_call_diff"] += oi_diff
+        f["oi_call_bought_diff"] += directional_bought_diff
         f["oi_call_volume"] += volume
         direction = "bullish"
     else:
         f["oi_put_diff"] += oi_diff
+        f["oi_put_bought_diff"] += directional_bought_diff
         f["oi_put_volume"] += volume
         direction = "bearish"
     if oi_diff > f["oi_top_diff"]:
@@ -2401,14 +2946,14 @@ def finalize_dealer_positioning(f: Dict[str, Any]) -> None:
     f["hot_directional_volume"] = directional_volume if total_volume > 0 else None
     f["hot_directional_share"] = safe_div(directional_volume, total_volume)
 
-    # scale the ask/bid split down to the non-spread share of the tape so a name
-    # dominated by spread legs cannot masquerade as heavy directional buying.
-    keep = safe_div(directional_volume, total_volume)
-    if keep is None:
+    # Ask/bid fields were cleaned per contract row before aggregation. Applying
+    # another ticker-level scale here would double-discount spread legs and can
+    # turn a near-zero residual into artificial full conviction.
+    if total_volume <= 0:
         f["hot_directional_bias"] = None
     else:
-        bullish = ((f.get("hot_call_ask_volume") or 0.0) + (f.get("hot_put_bid_volume") or 0.0)) * keep
-        bearish = ((f.get("hot_put_ask_volume") or 0.0) + (f.get("hot_call_bid_volume") or 0.0)) * keep
+        bullish = (f.get("hot_call_ask_volume") or 0.0) + (f.get("hot_put_bid_volume") or 0.0)
+        bearish = (f.get("hot_put_ask_volume") or 0.0) + (f.get("hot_call_bid_volume") or 0.0)
         f["hot_directional_bias"] = safe_div(bullish - bearish, bullish + bearish)
 
     greek_rows = f.get("flow_greek_rows") or 0.0
@@ -2570,7 +3115,10 @@ def learn_pattern_config(snapshots: Sequence[Snapshot]) -> Dict[str, Any]:
             total_signal_premium = max(float(f.get("hot_total_premium") or 0.0), float(f.get("flow_total_premium") or 0.0))
             if total_signal_premium:
                 premiums.append(total_signal_premium)
-            oi = max(float(f.get("oi_call_diff") or 0.0), float(f.get("oi_put_diff") or 0.0))
+            oi = max(
+                float(f.get("oi_call_bought_diff") or 0.0),
+                float(f.get("oi_put_bought_diff") or 0.0),
+            )
             if oi:
                 oi_diffs.append(oi)
             if f.get("avg_spread_pct") is not None and f["avg_spread_pct"] > 0:
@@ -2621,7 +3169,10 @@ def theme_flow_component_call_share(feature: Mapping[str, Any]) -> Optional[floa
     return clamp(call_premium / total, 0.0, 1.0)
 
 
-def build_theme_flow_signal_contexts(snapshot: Snapshot) -> List[Dict[str, Any]]:
+def build_theme_flow_signal_contexts(
+    snapshot: Snapshot,
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> List[Dict[str, Any]]:
     """Aggregate interchangeable proxy flow without changing ticker-level approval gates."""
 
     contexts: List[Dict[str, Any]] = []
@@ -2630,6 +3181,11 @@ def build_theme_flow_signal_contexts(snapshot: Snapshot) -> List[Dict[str, Any]]
         for ticker in definition["tickers"]:
             feature = snapshot.features.get(str(ticker))
             if not feature:
+                continue
+            if (
+                (risk_config or {}).get("enforce_family_source_requirements", False)
+                and not family_has_required_sources(feature, "THEME_FLOW_LEADER")
+            ):
                 continue
             premium = theme_flow_component_premium(feature)
             if premium <= 0:
@@ -2700,6 +3256,50 @@ def build_theme_flow_signal_contexts(snapshot: Snapshot) -> List[Dict[str, Any]]
     return contexts
 
 
+def family_required_source_flags(family: str) -> Tuple[str, ...]:
+    return FAMILY_REQUIRED_SOURCE_FLAGS.get(
+        str(family or ""),
+        ("stock_screener", "hot_chains"),
+    )
+
+
+def family_has_required_sources(feature: Mapping[str, Any], family: str) -> bool:
+    available = set(feature.get("source_flags") or [])
+    return set(family_required_source_flags(family)) <= available
+
+
+def sector_momentum_percentiles(snapshot: Snapshot) -> Dict[str, float]:
+    by_sector: Dict[str, List[Tuple[str, float]]] = defaultdict(list)
+    for ticker, feature in snapshot.features.items():
+        if not family_has_required_sources(feature, "SECTOR_MOMENTUM_CONTINUATION"):
+            continue
+        if str(feature.get("issue_type") or "") != "Common Stock":
+            continue
+        if (num(feature.get("marketcap")) or 0.0) < 2_000_000_000.0:
+            continue
+        sector = str(feature.get("sector") or "").strip()
+        position = num(feature.get("pos_52w"))
+        if not sector or position is None:
+            continue
+        by_sector[sector].append((str(ticker), float(position)))
+
+    ranks: Dict[str, float] = {}
+    for members in by_sector.values():
+        if len(members) < SECTOR_MOMENTUM_MIN_NAMES:
+            continue
+        ordered = sorted(members, key=lambda item: (item[1], item[0]))
+        start = 0
+        while start < len(ordered):
+            end = start + 1
+            while end < len(ordered) and ordered[end][1] == ordered[start][1]:
+                end += 1
+            percentile = ((start + 1) + end) / 2.0 / len(ordered)
+            for index in range(start, end):
+                ranks[ordered[index][0]] = percentile
+            start = end
+    return ranks
+
+
 def generate_signals_for_snapshot(
     snapshot: Snapshot,
     pattern_config: Mapping[str, Any],
@@ -2711,7 +3311,12 @@ def generate_signals_for_snapshot(
     signals: List[Dict[str, Any]] = []
     market = snapshot.market_regime.get("regime", "UNKNOWN")
     quote_cache = build_quote_selection_cache(snapshot, pattern_config, risk_config)
-    for theme_context in build_theme_flow_signal_contexts(snapshot):
+    momentum_percentiles = (
+        sector_momentum_percentiles(snapshot)
+        if (risk_config or {}).get("enable_sector_momentum_families", False)
+        else {}
+    )
+    for theme_context in build_theme_flow_signal_contexts(snapshot, risk_config):
         ticker = str(theme_context["theme_representative_ticker"])
         representative_feature = dict(snapshot.features[ticker])
         representative_feature.update(theme_context)
@@ -2766,6 +3371,56 @@ def generate_signals_for_snapshot(
         dp_directional_coverage = f.get("dp_directional_premium_coverage") or 0.0
         dp_above_share = f.get("dp_above_ask_premium_share") or 0.0
         dp_below_share = f.get("dp_below_bid_premium_share") or 0.0
+        momentum_percentile = momentum_percentiles.get(ticker)
+
+        if momentum_percentile is not None:
+            momentum_score = abs(momentum_percentile - 0.5) * 2.0
+            if momentum_percentile >= 1.0 - SECTOR_MOMENTUM_QUANTILE:
+                candidates.extend(
+                    [
+                        (
+                            "SECTOR_MOMENTUM_CONTINUATION",
+                            "bullish",
+                            momentum_score,
+                            [
+                                f"top {SECTOR_MOMENTUM_QUANTILE:.0%} 52-week position within sector",
+                                "symmetric sector-relative momentum continuation",
+                            ],
+                        ),
+                        (
+                            "SECTOR_MOMENTUM_REVERSAL",
+                            "bearish",
+                            momentum_score,
+                            [
+                                f"top {SECTOR_MOMENTUM_QUANTILE:.0%} 52-week position within sector",
+                                "symmetric sector-relative momentum reversal",
+                            ],
+                        ),
+                    ]
+                )
+            elif momentum_percentile <= SECTOR_MOMENTUM_QUANTILE:
+                candidates.extend(
+                    [
+                        (
+                            "SECTOR_MOMENTUM_CONTINUATION",
+                            "bearish",
+                            momentum_score,
+                            [
+                                f"bottom {SECTOR_MOMENTUM_QUANTILE:.0%} 52-week position within sector",
+                                "symmetric sector-relative momentum continuation",
+                            ],
+                        ),
+                        (
+                            "SECTOR_MOMENTUM_REVERSAL",
+                            "bullish",
+                            momentum_score,
+                            [
+                                f"bottom {SECTOR_MOMENTUM_QUANTILE:.0%} 52-week position within sector",
+                                "symmetric sector-relative momentum reversal",
+                            ],
+                        ),
+                    ]
+                )
 
         # Long-vol lane. Implied is rich relative to realized and sits high in
         # its own range, and a scheduled earnings print far enough out to still
@@ -2847,8 +3502,8 @@ def generate_signals_for_snapshot(
                 )
             )
 
-        if f.get("oi_call_diff", 0.0) >= pattern_config["min_oi_diff"] and hot_call_ask >= 0.50:
-            score = zish(f["oi_call_diff"], pattern_config["min_oi_diff"]) + zish(
+        if f.get("oi_call_bought_diff", 0.0) >= pattern_config["min_oi_diff"] and hot_call_ask >= 0.50:
+            score = zish(f["oi_call_bought_diff"], pattern_config["min_oi_diff"]) + zish(
                 liquidity_score, pattern_config["min_liquidity_score"]
             )
             candidates.append(
@@ -2856,11 +3511,11 @@ def generate_signals_for_snapshot(
                     "OI_GAMMA_CONTINUATION",
                     "bullish",
                     score,
-                    ["large call open-interest change", "supportive call hot-chain pressure"],
+                    ["large ask-led call open-interest build", "supportive call hot-chain pressure"],
                 )
             )
-        if f.get("oi_put_diff", 0.0) >= pattern_config["min_oi_diff"] and hot_put_ask >= 0.50:
-            score = zish(f["oi_put_diff"], pattern_config["min_oi_diff"]) + zish(
+        if f.get("oi_put_bought_diff", 0.0) >= pattern_config["min_oi_diff"] and hot_put_ask >= 0.50:
+            score = zish(f["oi_put_bought_diff"], pattern_config["min_oi_diff"]) + zish(
                 liquidity_score, pattern_config["min_liquidity_score"]
             )
             candidates.append(
@@ -2868,7 +3523,7 @@ def generate_signals_for_snapshot(
                     "OI_GAMMA_CONTINUATION",
                     "bearish",
                     score,
-                    ["large put open-interest change", "supportive put hot-chain pressure"],
+                    ["large ask-led put open-interest build", "supportive put hot-chain pressure"],
                 )
             )
 
@@ -3035,6 +3690,11 @@ def generate_signals_for_snapshot(
             )
 
         for family, direction, score, reasons in candidates:
+            if (
+                (risk_config or {}).get("enforce_family_source_requirements", False)
+                and not family_has_required_sources(f, family)
+            ):
+                continue
             for quote in signal_family_quote_candidates(
                 snapshot,
                 f,
@@ -3154,6 +3814,20 @@ def select_signal_set(
         selected_keys.add(key)
         selected_ticker_directions.add((str(row.get("ticker") or ""), str(row.get("direction") or "")))
         needed -= 1
+    selected_families = {str(row.get("pattern_family") or "") for row in selected}
+    for row in ranked:
+        family = str(row.get("pattern_family") or "")
+        if not family or family in selected_families:
+            continue
+        key = identity_key(row)
+        if key in selected_keys:
+            continue
+        selected.append(row)
+        selected_keys.add(key)
+        selected_families.add(family)
+        selected_ticker_directions.add(
+            (str(row.get("ticker") or ""), str(row.get("direction") or ""))
+        )
     best_rescue_by_ticker_direction: Dict[Tuple[str, str], Dict[str, Any]] = {}
     for row in ranked:
         if not must_keep_source_rescue_signal(row):
@@ -3425,6 +4099,49 @@ def build_quote_selection_cache(
             risk_config,
         ),
     }
+
+
+def compact_snapshot_option_quotes(
+    snapshot: Snapshot,
+    risk_config: Optional[Mapping[str, Any]] = None,
+) -> int:
+    """Retain only contracts reachable through deterministic ticket selection."""
+
+    if not snapshot.option_quotes:
+        return 0
+    permissive_config = {"max_spread_pct": 0.35}
+    cache = build_quote_selection_cache(snapshot, permissive_config, risk_config)
+    symbols: set[str] = set()
+
+    def collect_quote(quote: Optional[Mapping[str, Any]]) -> None:
+        if not quote:
+            return
+        symbol = str(quote.get("option_symbol") or "").strip().upper()
+        if parse_option_symbol(symbol):
+            symbols.add(symbol)
+        for leg in quote.get("legs") or parse_legs(quote.get("legs_json", "")):
+            leg_symbol = str(leg.get("option_symbol") or "").strip().upper()
+            if parse_option_symbol(leg_symbol):
+                symbols.add(leg_symbol)
+
+    for quote in snapshot.best_options.values():
+        collect_quote(quote)
+    for lane in ("flow", "tradeable_gap", "credit_spread"):
+        for quote in cache.get(lane, {}).values():
+            collect_quote(quote)
+    for quotes in cache.get("long_option_dte_frontier", {}).values():
+        for quote in quotes:
+            collect_quote(quote)
+
+    before = len(snapshot.option_quotes)
+    snapshot.option_quotes = {
+        symbol: quote
+        for symbol, quote in snapshot.option_quotes.items()
+        if str(symbol).upper() in symbols
+    }
+    snapshot.counts["option_quote_rows_before_compaction"] = before
+    snapshot.counts["option_quote_rows_after_compaction"] = len(snapshot.option_quotes)
+    return before - len(snapshot.option_quotes)
 
 
 def build_long_option_dte_frontier(
@@ -3755,7 +4472,8 @@ def build_signal(
         blockers.append("MISSING_ENTRY_ASK")
     if quote.get("volume", 0.0) < 50 or quote.get("open_interest", 0.0) < 25:
         blockers.append("OPTION_LIQUIDITY_TOO_LOW")
-    if quote.get("dte") is None or quote.get("dte", 0) < 7:
+    required_dte = configured_strategy_validation_horizon(strategy_kind, risk_config)
+    if quote.get("dte") is None or quote.get("dte", 0) < required_dte:
         blockers.append("DTE_TOO_SHORT_FOR_VALIDATION_HORIZONS")
     if (
         f.get("earnings_dte") is not None
@@ -3802,6 +4520,7 @@ def build_signal(
     strategy_type = quote.get("strategy_type") or ("Long Call Debit" if direction == "bullish" else "Long Put Debit")
     contract_fields = contract_profile_fields(direction, strategy_kind, f.get("close"), quote)
     if strategy_kind == "credit_spread":
+        expected_hold = configured_strategy_validation_horizon(strategy_kind, risk_config)
         entry_range = f"credit {entry_credit:.2f}" if entry_credit is not None else ""
         target_profit = (entry_credit * 50.0) if entry_credit else None
         stop_rule = "Exit if spread debit reaches 2x entry credit or short strike is breached."
@@ -3809,6 +4528,7 @@ def build_signal(
         invalidation_rule = "Short strike breach, event-risk surprise, or regime flip against spread direction."
         review_close_rule = "Review daily; close at 50% credit capture, 2x credit stop, or two sessions before expiration."
     elif strategy_kind == "long_strangle":
+        expected_hold = configured_strategy_validation_horizon(strategy_kind, risk_config)
         entry_range = format_entry_range(entry_bid, entry_ask)
         target_profit = max_risk if max_risk else None
         stop_rule = "Exit both legs if combined bid loses 50% from entry debit."
@@ -3822,11 +4542,21 @@ def build_signal(
         )
     else:
         entry_range = format_entry_range(entry_bid, entry_ask)
-        target_profit = max_risk if max_risk else None
-        stop_rule = "Exit if option bid loses 50% from entry debit or thesis invalidates."
-        time_stop = "Exit after 5 trading days unless target/stop triggers first."
+        profit_target = configured_long_option_profit_target(risk_config)
+        stop_loss = configured_long_option_stop_loss(risk_config)
+        expected_hold = configured_strategy_validation_horizon(strategy_kind, risk_config)
+        target_profit = max_risk * profit_target if max_risk else None
+        stop_rule = (
+            f"Exit if option bid loses {stop_loss:.0%} from entry debit or thesis invalidates."
+            if stop_loss is not None
+            else "No price stop; exit only on thesis invalidation, profit target, or time stop."
+        )
+        time_stop = f"Exit after {expected_hold} trading sessions unless the profit target triggers first."
         invalidation_rule = "Underlying closes through thesis invalidation level or catalyst/macro direction reverses."
-        review_close_rule = "Review daily; close at 100% option gain, 50% loss, time stop, or catalyst invalidation."
+        review_close_rule = (
+            f"Review daily; close the whole position at {profit_target:.0%} option gain, "
+            f"the {expected_hold}-session time stop, or thesis invalidation."
+        )
     return {
         "date": snapshot.signal_date,
         "ticker": f["ticker"],
@@ -3838,6 +4568,8 @@ def build_signal(
         "classification": "BLOCKED" if blockers else "WATCH",
         "block_reasons": blockers,
         "reason_summary": "; ".join(reasons),
+        "source_flags": ";".join(sorted(str(flag) for flag in f.get("source_flags", []))),
+        "required_source_flags": ";".join(family_required_source_flags(family)),
         "market_regime": snapshot.market_regime.get("regime", "UNKNOWN"),
         "sector": f.get("sector") or "",
         "close": f.get("close"),
@@ -3899,7 +4631,7 @@ def build_signal(
         "time_stop": time_stop,
         "invalidation_rule": invalidation_rule,
         "review_close_rule": review_close_rule,
-        "expected_hold_days": 5,
+        "expected_hold_days": expected_hold,
         "position_size_tier": "RISK_CAPPED_RESEARCH" if blockers else "STANDARD_REVIEW",
         "liquidity_volume": quote.get("volume"),
         "liquidity_open_interest": quote.get("open_interest"),
@@ -4341,7 +5073,10 @@ def run_historical_validation(
     top_candidates_per_day: int,
     seed: int,
     risk_config: Optional[Mapping[str, Any]] = None,
+    base_dir: Optional[Path] = None,
+    scoring_dates: Optional[Sequence[str]] = None,
 ) -> Dict[str, Any]:
+    ordered_scoring_dates = list(scoring_dates or source_dates)
     splits = build_validation_splits(source_dates, min_month_dates)
     source_month_date_counts = month_date_counts(source_dates)
     validation_history_status = "OOS_READY" if splits else "INSUFFICIENT_SOURCE_COMPLETE_HISTORY"
@@ -4352,16 +5087,25 @@ def run_historical_validation(
     )
     all_outcomes: List[Dict[str, Any]] = []
     all_baseline_outcomes: List[Dict[str, Any]] = []
+    validation_scorecard: List[Dict[str, Any]] = []
+    train_scorecard: List[Dict[str, Any]] = []
     pattern_definitions: List[Dict[str, Any]] = []
+    split_configs: List[Tuple[Mapping[str, Any], Mapping[str, Any]]] = []
+    selected_symbols: set[str] = set()
+
+    # Pass one discovers the deterministic daily contract population but keeps
+    # only OCC symbols. Retaining every full signal dictionary across all
+    # overlapping splits exhausted 16 GB machines without adding evidence.
     for split_index, split in enumerate(splits, 1):
         print(
-            f"[pattern] validation split {split_index}/{len(splits)}: {split['name']} "
+            f"[pattern] validation discovery {split_index}/{len(splits)}: {split['name']} "
             f"train={len(split['train_dates'])} holdout={len(split['validation_dates'])}",
             flush=True,
         )
         train_snaps = [snapshots[d] for d in split["train_dates"]]
         validation_snaps = [snapshots[d] for d in split["validation_dates"]]
         pattern_config = learn_pattern_config(train_snaps)
+        split_configs.append((split, pattern_config))
         pattern_definitions.append(
             {
                 "split": split["name"],
@@ -4372,18 +5116,18 @@ def run_historical_validation(
                 "pattern_config_json": stable_json(pattern_config),
             }
         )
-        train_signals = []
+        train_count = 0
         for snap in train_snaps:
-            train_signals.extend(
-                generate_signals_for_snapshot(
-                    snap,
-                    pattern_config,
-                    top_candidates_per_day,
-                    source_rescue_max_extra=VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
-                    tradeable_gap_max_extra=VALIDATION_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
-                    risk_config=risk_config,
-                )
+            signals = generate_signals_for_snapshot(
+                snap,
+                pattern_config,
+                top_candidates_per_day,
+                source_rescue_max_extra=VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
+                tradeable_gap_max_extra=VALIDATION_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+                risk_config=risk_config,
             )
+            train_count += len(signals)
+            collect_signal_contract_symbols(signals, selected_symbols)
         validation_signals = []
         for snap in validation_snaps:
             validation_signals.extend(
@@ -4396,62 +5140,146 @@ def run_historical_validation(
                     risk_config=risk_config,
                 )
             )
-        all_outcomes.extend(
-            score_signals(
-                train_signals,
-                snapshots,
-                source_dates,
-                split["name"],
-                "TRAIN",
-                risk_config,
-                horizons=(5,),
-            )
-        )
-        all_outcomes.extend(
-            score_signals(
+        collect_signal_contract_symbols(validation_signals, selected_symbols)
+        baseline_count = 0
+        if str(split["name"]).startswith("cumulative_to_"):
+            baseline_signals = generate_baseline_signals(
                 validation_signals,
-                snapshots,
-                source_dates,
+                validation_snaps,
+                pattern_config,
+                top_candidates_per_day,
+                seed,
                 split["name"],
-                "VALIDATION",
                 risk_config,
-                horizons=(5,),
             )
-        )
-        baseline_signals = generate_baseline_signals(
-            validation_signals,
-            validation_snaps,
-            pattern_config,
-            top_candidates_per_day,
-            seed,
-            split["name"],
-            risk_config,
-        )
-        all_baseline_outcomes.extend(
-            score_signals(
-                baseline_signals,
-                snapshots,
-                source_dates,
-                split["name"],
-                "BASELINE",
-                risk_config,
-                horizons=(5,),
-            )
-        )
+            baseline_count = len(baseline_signals)
+            collect_signal_contract_symbols(baseline_signals, selected_symbols)
         print(
-            f"[pattern] completed split {split_index}/{len(splits)}: "
-            f"train_signals={len(train_signals)} holdout_signals={len(validation_signals)} "
-            f"baseline_signals={len(baseline_signals)}",
+            f"[pattern] discovered split {split_index}/{len(splits)}: "
+            f"train_signals={train_count} holdout_signals={len(validation_signals)} "
+            f"baseline_signals={baseline_count} selected_symbols={len(selected_symbols)}",
             flush=True,
         )
 
-    validation_scorecard = summarize_outcomes(all_outcomes, sample="VALIDATION")
+    quote_store_path: Optional[Path] = None
+    quote_store_connection: Optional[sqlite3.Connection] = None
+    if base_dir is not None and (risk_config or {}).get("use_shifted_chain_quotes"):
+        quote_store_path, shifted_quote_count = build_selected_chain_quote_store(
+            base_dir,
+            selected_symbols,
+            snapshots.keys(),
+        )
+        quote_store_connection = sqlite3.connect(quote_store_path)
+        print(
+            f"[pattern] selected-contract quote store: {shifted_quote_count} rows at {quote_store_path}",
+            flush=True,
+        )
+
+    # Pass two regenerates and scores one split at a time. Train and
+    # non-cumulative holdout rows are summarized immediately; cumulative
+    # holdouts remain raw because every downstream proof gate uses them.
+    for split_index, (split, pattern_config) in enumerate(split_configs, 1):
+        print(
+            f"[pattern] validation scoring {split_index}/{len(split_configs)}: {split['name']}",
+            flush=True,
+        )
+        train_split_outcomes: List[Dict[str, Any]] = []
+        for signal_date in split["train_dates"]:
+            signals = generate_signals_for_snapshot(
+                snapshots[signal_date],
+                pattern_config,
+                top_candidates_per_day,
+                source_rescue_max_extra=VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
+                tradeable_gap_max_extra=VALIDATION_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+                risk_config=risk_config,
+            )
+            train_split_outcomes.extend(
+                score_signals_from_quote_store(
+                    signals,
+                    snapshots,
+                    ordered_scoring_dates,
+                    split["name"],
+                    "TRAIN",
+                    risk_config,
+                    quote_store_connection,
+                )
+            )
+        train_scorecard.extend(summarize_outcomes(train_split_outcomes, sample="TRAIN"))
+
+        validation_signals: List[Dict[str, Any]] = []
+        validation_snaps = [snapshots[d] for d in split["validation_dates"]]
+        for snapshot in validation_snaps:
+            validation_signals.extend(
+                generate_signals_for_snapshot(
+                    snapshot,
+                    pattern_config,
+                    top_candidates_per_day,
+                    source_rescue_max_extra=VALIDATION_SOURCE_RESCUE_MAX_EXTRA_SIGNALS,
+                    tradeable_gap_max_extra=VALIDATION_TRADEABLE_GAP_MAX_EXTRA_SIGNALS,
+                    risk_config=risk_config,
+                )
+            )
+        validation_split_outcomes = score_signals_from_quote_store(
+            validation_signals,
+            snapshots,
+            ordered_scoring_dates,
+            split["name"],
+            "VALIDATION",
+            risk_config,
+            quote_store_connection,
+        )
+        validation_scorecard.extend(
+            summarize_outcomes(validation_split_outcomes, sample="VALIDATION")
+        )
+        if str(split["name"]).startswith("cumulative_to_"):
+            all_outcomes.extend(validation_split_outcomes)
+            baseline_signals = generate_baseline_signals(
+                validation_signals,
+                validation_snaps,
+                pattern_config,
+                top_candidates_per_day,
+                seed,
+                split["name"],
+                risk_config,
+            )
+            all_baseline_outcomes.extend(
+                score_signals_from_quote_store(
+                    baseline_signals,
+                    snapshots,
+                    ordered_scoring_dates,
+                    split["name"],
+                    "BASELINE",
+                    risk_config,
+                    quote_store_connection,
+                )
+            )
+        print(
+            f"[pattern] scored split {split_index}/{len(split_configs)}: "
+            f"train_outcomes={len(train_split_outcomes)} "
+            f"validation_outcomes={len(validation_split_outcomes)}",
+            flush=True,
+        )
+
+    if quote_store_connection is not None:
+        quote_store_connection.close()
+
     validation_gate_outcomes = select_validation_gate_outcomes(all_outcomes)
     validation_gate_scorecard = summarize_outcomes(validation_gate_outcomes, sample="VALIDATION")
-    train_scorecard = summarize_outcomes(all_outcomes, sample="TRAIN")
+    matched_permutation_stats = matched_family_permutation_stats(
+        validation_gate_outcomes,
+        int((risk_config or {}).get("matched_permutation_trials", 0)),
+        seed,
+    )
+    for row in validation_gate_scorecard:
+        row.update(matched_permutation_stats.get(str(row.get("pattern_family") or ""), {}))
     baseline_gate_outcomes = select_baseline_gate_outcomes(all_baseline_outcomes)
     baseline_comparison = summarize_baselines(baseline_gate_outcomes)
-    family_tiers = assign_family_tiers(validation_gate_scorecard, baseline_comparison, risk_config)
+    family_tiers = assign_family_tiers(
+        validation_gate_scorecard,
+        baseline_comparison,
+        risk_config,
+        validation_gate_outcomes,
+    )
     regime_family_tiers = assign_regime_family_tiers(all_outcomes, baseline_comparison, risk_config)
     final_holdout = latest_validation_split_name(splits)
     directional_validation = build_directional_pattern_validation(
@@ -4472,6 +5300,10 @@ def run_historical_validation(
         "validation_gate_scorecard": validation_gate_scorecard,
         "train_scorecard": train_scorecard,
         "baseline_comparison": baseline_comparison,
+        "matched_permutation_stats": [
+            {"pattern_family": family, **stats}
+            for family, stats in sorted(matched_permutation_stats.items())
+        ],
         "family_tiers": family_tiers,
         "regime_family_tiers": regime_family_tiers,
         "directional_validation": directional_validation,
@@ -4579,13 +5411,28 @@ def score_signals(
     split_name: str,
     sample: str,
     risk_config: Optional[Mapping[str, Any]] = None,
-    horizons: Sequence[int] = HORIZONS,
+    horizons: Optional[Sequence[int]] = HORIZONS,
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     ordered_dates = list(source_dates)
     for signal in signals:
-        for horizon in horizons:
-            rows.append(score_signal_horizon(signal, snapshots, ordered_dates, split_name, sample, horizon, risk_config))
+        signal_horizons = (
+            tuple(horizons)
+            if horizons is not None
+            else (configured_strategy_validation_horizon(signal.get("strategy_kind"), risk_config),)
+        )
+        for horizon in signal_horizons:
+            row = score_signal_horizon(
+                signal,
+                snapshots,
+                ordered_dates,
+                split_name,
+                sample,
+                horizon,
+                risk_config,
+            )
+            row["primary_validation_horizon"] = horizons is None
+            rows.append(row)
     return rows
 
 
@@ -4618,6 +5465,8 @@ def score_signal_horizon(
         "ticker": signal["ticker"],
         "direction": signal["direction"],
         "pattern_family": signal["pattern_family"],
+        "source_flags": signal.get("source_flags", ""),
+        "required_source_flags": signal.get("required_source_flags", ""),
         "base_pattern_family": signal.get("base_pattern_family") or base_pattern_family_name(signal.get("pattern_family")),
         "directional_pattern_family": signal.get("directional_pattern_family")
         or directional_pattern_family_for_row(signal),
@@ -4660,7 +5509,8 @@ def score_signal_horizon(
         "outcome_note": "",
     }
     if not target_date:
-        base["outcome_note"] = "not_enough_future_dates"
+        base["status"] = "CENSORED_OPEN"
+        base["outcome_note"] = "primary_horizon_not_yet_mature"
         return base
     current_close = num(signal.get("close"))
     future_close = num(snapshots[target_date].features.get(signal["ticker"], {}).get("close"))
@@ -4719,6 +5569,21 @@ def score_signal_horizon(
         long_leg = next((leg for leg in legs if leg.get("action") == "BUY"), None)
         if not short_leg or not long_leg:
             base["outcome_note"] = "invalid_spread_legs"
+            return base
+        managed = score_managed_credit_spread(
+            signal,
+            snapshots,
+            ordered_dates,
+            horizon,
+            float(entry_credit),
+            float(max_risk),
+            short_leg,
+            long_leg,
+            risk_config,
+            entry_slippage,
+        )
+        if managed:
+            base.update(managed)
             return base
         future_short = snapshots[target_date].option_quotes.get(short_leg["option_symbol"])
         future_long = snapshots[target_date].option_quotes.get(long_leg["option_symbol"])
@@ -4822,6 +5687,114 @@ def score_signal_horizon(
     return base
 
 
+def score_managed_credit_spread(
+    signal: Mapping[str, Any],
+    snapshots: Mapping[str, Snapshot],
+    ordered_dates: Sequence[str],
+    horizon: int,
+    entry_credit: float,
+    max_risk: float,
+    short_leg: Mapping[str, Any],
+    long_leg: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]] = None,
+    entry_slippage: float = 0.0,
+) -> Optional[Dict[str, Any]]:
+    try:
+        start_idx = ordered_dates.index(str(signal.get("date") or ""))
+    except ValueError:
+        return None
+    target_debit = entry_credit * 0.50
+    stop_debit = entry_credit * 2.0
+    cost_fields = scoring_cost_model("credit_spread", risk_config)
+    last: Optional[Tuple[str, float, Mapping[str, Any], Mapping[str, Any]]] = None
+    for idx in range(start_idx + 1, min(len(ordered_dates), start_idx + horizon + 1)):
+        session = ordered_dates[idx]
+        short_quote = snapshots[session].option_quotes.get(str(short_leg.get("option_symbol") or ""))
+        long_quote = snapshots[session].option_quotes.get(str(long_leg.get("option_symbol") or ""))
+        if not short_quote or not long_quote:
+            continue
+        short_ask = num(short_quote.get("ask"))
+        long_bid = num(long_quote.get("bid"))
+        if short_ask is None or short_ask <= 0 or long_bid is None or long_bid < 0:
+            continue
+        exit_debit = max(0.0, short_ask - long_bid)
+        last = (session, exit_debit, short_quote, long_quote)
+        if exit_debit >= stop_debit:
+            return managed_credit_spread_result(
+                session,
+                max(exit_debit, stop_debit),
+                "stop_hit",
+                entry_credit,
+                max_risk,
+                short_quote,
+                long_quote,
+                cost_fields,
+                risk_config,
+                entry_slippage,
+            )
+        if exit_debit <= target_debit:
+            return managed_credit_spread_result(
+                session,
+                target_debit,
+                "target_hit",
+                entry_credit,
+                max_risk,
+                short_quote,
+                long_quote,
+                cost_fields,
+                risk_config,
+                entry_slippage,
+            )
+    if last is None:
+        return None
+    session, exit_debit, short_quote, long_quote = last
+    return managed_credit_spread_result(
+        session,
+        exit_debit,
+        "horizon_exit",
+        entry_credit,
+        max_risk,
+        short_quote,
+        long_quote,
+        cost_fields,
+        risk_config,
+        entry_slippage,
+    )
+
+
+def managed_credit_spread_result(
+    session: str,
+    exit_debit: float,
+    reason: str,
+    entry_credit: float,
+    max_risk: float,
+    short_quote: Mapping[str, Any],
+    long_quote: Mapping[str, Any],
+    cost_fields: Mapping[str, Any],
+    risk_config: Optional[Mapping[str, Any]],
+    entry_slippage: float,
+) -> Dict[str, Any]:
+    exit_slippage = credit_spread_exit_slippage_dollars(short_quote, long_quote, risk_config)
+    slippage_dollars = entry_slippage + exit_slippage
+    net_dollars = (
+        (entry_credit - exit_debit) * 100.0
+        - float(cost_fields["round_trip_fees"])
+        - slippage_dollars
+    )
+    net_r = net_dollars / max_risk if max_risk > 0 else None
+    return {
+        "status": "SCORED",
+        "managed_exit_date": session,
+        "managed_exit_price": exit_debit,
+        "exit_debit": exit_debit,
+        "exit_slippage": exit_slippage,
+        "slippage_dollars": slippage_dollars,
+        "net_r": net_r,
+        "win": int(net_r is not None and net_r > 0),
+        "outcome_note": f"managed_credit_spread_{reason}_after_costs_slippage",
+    }
+
+
 def score_managed_long_option(
     signal: Mapping[str, Any],
     snapshots: Mapping[str, Snapshot],
@@ -4839,8 +5812,10 @@ def score_managed_long_option(
         start_idx = ordered_dates.index(signal_date)
     except ValueError:
         return None
-    target_price = entry * 2.0
-    stop_price = entry * 0.50
+    profit_target = configured_long_option_profit_target(risk_config)
+    stop_loss = configured_long_option_stop_loss(risk_config)
+    target_price = entry * (1.0 + profit_target)
+    stop_price = entry * (1.0 - stop_loss) if stop_loss is not None else None
     cost_fields = scoring_cost_model("long_option", risk_config)
     risk_dollars = entry * 100.0 + cost_fields["opening_fee"] + entry_slippage
     saw_real_quote = False
@@ -4858,12 +5833,12 @@ def score_managed_long_option(
             saw_real_quote = True
             last_bid = bid
             last_date = d
-        if high is None and low is None:
-            continue
         saw_real_quote = True
+        trigger_high = high if high is not None else bid
+        trigger_low = low if low is not None else bid
         # Conservative same-day ordering: if target and stop are both inside the
         # daily range, assume the stop was hit first.
-        if low is not None and low <= stop_price:
+        if stop_price is not None and trigger_low is not None and trigger_low <= stop_price:
             net_dollars = (stop_price - entry) * 100.0 - cost_fields["round_trip_fees"] - entry_slippage
             return {
                 "status": "SCORED",
@@ -4875,7 +5850,7 @@ def score_managed_long_option(
                 "win": 0,
                 "outcome_note": "managed_long_option_stop_hit_conservative_after_costs_slippage",
             }
-        if high is not None and high >= target_price:
+        if trigger_high is not None and trigger_high >= target_price:
             net_dollars = (target_price - entry) * 100.0 - cost_fields["round_trip_fees"] - entry_slippage
             net_r = net_dollars / risk_dollars if risk_dollars > 0 else None
             return {
@@ -4925,36 +5900,87 @@ def nth_future_date(ordered_dates: Sequence[str], signal_date: str, horizon: int
 
 def select_validation_gate_outcomes(outcomes: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
     """Use each validation month once for daily gates and backtest summaries."""
-    validation_5d = [
+    marked = [
         o
         for o in outcomes
-        if o.get("sample") == "VALIDATION" and o.get("horizon") == "5d"
+        if o.get("sample") == "VALIDATION" and bool(o.get("primary_validation_horizon"))
+    ]
+    horizon = primary_outcome_horizon(outcomes, "VALIDATION")
+    validation_rows = marked or [
+        o
+        for o in outcomes
+        if o.get("sample") == "VALIDATION" and o.get("horizon") == horizon
     ]
     cumulative = [
         o
-        for o in validation_5d
+        for o in validation_rows
         if str(o.get("split") or "").startswith("cumulative_to_")
     ]
-    return cumulative or validation_5d
+    return cumulative or validation_rows
 
 
 def select_baseline_gate_outcomes(outcomes: Sequence[Mapping[str, Any]]) -> List[Mapping[str, Any]]:
     """Match baseline months to the non-overlapping validation gate population."""
-    baseline_5d = [
+    marked = [
         o
         for o in outcomes
-        if o.get("sample") == "BASELINE" and o.get("horizon") == "5d"
+        if o.get("sample") == "BASELINE" and bool(o.get("primary_validation_horizon"))
+    ]
+    horizon = primary_outcome_horizon(outcomes, "BASELINE")
+    baseline_rows = marked or [
+        o
+        for o in outcomes
+        if o.get("sample") == "BASELINE" and o.get("horizon") == horizon
     ]
     cumulative = [
         o
-        for o in baseline_5d
+        for o in baseline_rows
         if str(o.get("split") or "").startswith("cumulative_to_")
     ]
-    return cumulative or baseline_5d
+    return cumulative or baseline_rows
+
+
+def primary_outcome_horizon(
+    outcomes: Sequence[Mapping[str, Any]],
+    sample: Optional[str] = None,
+) -> str:
+    labels = Counter(
+        str(row.get("horizon") or "")
+        for row in outcomes
+        if (sample is None or row.get("sample") == sample) and row.get("horizon")
+    )
+    if not labels:
+        return f"{configured_validation_horizon()}d"
+    return max(
+        labels,
+        key=lambda label: (
+            labels[label],
+            int(label[:-1]) if label.endswith("d") and label[:-1].isdigit() else -1,
+        ),
+    )
+
+
+def select_primary_sample_outcomes(
+    outcomes: Sequence[Mapping[str, Any]],
+    sample: str,
+) -> List[Mapping[str, Any]]:
+    marked = [
+        row
+        for row in outcomes
+        if row.get("sample") == sample and bool(row.get("primary_validation_horizon"))
+    ]
+    if marked:
+        return marked
+    horizon = primary_outcome_horizon(outcomes, sample)
+    return [
+        row
+        for row in outcomes
+        if row.get("sample") == sample and row.get("horizon") == horizon
+    ]
 
 
 def summarize_outcomes(outcomes: Sequence[Mapping[str, Any]], sample: str) -> List[Dict[str, Any]]:
-    primary = [o for o in outcomes if o.get("sample") == sample and o.get("horizon") == "5d"]
+    primary = select_primary_sample_outcomes(outcomes, sample)
     grouped: Dict[Tuple[str, str], List[Mapping[str, Any]]] = defaultdict(list)
     for o in primary:
         grouped[(str(o.get("split")), str(o.get("pattern_family")))].append(o)
@@ -4963,6 +5989,8 @@ def summarize_outcomes(outcomes: Sequence[Mapping[str, Any]], sample: str) -> Li
         scored = [o for o in items if o.get("status") == "SCORED" and o.get("net_r") is not None]
         partial = [o for o in items if o.get("status") == "PARTIAL"]
         unscorable = [o for o in items if o.get("status") == "UNSCORABLE"]
+        censored = [o for o in items if o.get("status") == "CENSORED_OPEN"]
+        mature_count = len(items) - len(censored)
         net_rs = [float(o["net_r"]) for o in scored]
         positives = sum(r for r in net_rs if r > 0)
         negatives = abs(sum(r for r in net_rs if r < 0))
@@ -4982,18 +6010,20 @@ def summarize_outcomes(outcomes: Sequence[Mapping[str, Any]], sample: str) -> Li
             {
                 "split": split,
                 "sample": sample,
+                "horizon": str(items[0].get("horizon") or "") if items else "",
                 "pattern_family": family,
                 "signal_count": len(items),
                 "scored_count": len(scored),
                 "partial_count": len(partial),
                 "unscorable_count": len(unscorable),
+                "censored_open_count": len(censored),
                 "win_count_scored": win_count,
                 "win_rate_scored": safe_div(win_count, len(scored)),
                 "unique_signal_date_count": len(date_clusters),
                 "date_cluster_win_count": date_cluster_wins,
                 "date_cluster_win_rate": safe_div(date_cluster_wins, len(date_clusters)),
                 "date_cluster_probability_score": wilson_lower_bound(date_cluster_wins, len(date_clusters)),
-                "win_rate_all_counting_unscorable_losses": safe_div(win_count, len(items)),
+                "win_rate_all_counting_unscorable_losses": safe_div(win_count, mature_count),
                 "average_net_r": statistics.fmean(net_rs) if net_rs else None,
                 "median_net_r": statistics.median(net_rs) if net_rs else None,
                 "gross_profit_r": positives,
@@ -5001,7 +6031,7 @@ def summarize_outcomes(outcomes: Sequence[Mapping[str, Any]], sample: str) -> Li
                 "profit_factor": positives / negatives if negatives > 0 else (None if positives == 0 else 999.0),
                 "worst_losing_streak": worst_losing_streak(net_rs),
                 "drawdown_proxy_r": drawdown_proxy(net_rs),
-                "tradeable_with_real_quotes_pct": safe_div(len(scored), len(items)),
+                "tradeable_with_real_quotes_pct": safe_div(len(scored), mature_count),
                 "average_bid_ask_spread": statistics.fmean(spreads) if spreads else None,
                 "blocked_pct": safe_div(sum(1 for o in items if o.get("blocked")), len(items)),
                 "top_block_reasons": "; ".join(f"{k}:{v}" for k, v in block_counter.most_common(5)),
@@ -5011,7 +6041,7 @@ def summarize_outcomes(outcomes: Sequence[Mapping[str, Any]], sample: str) -> Li
 
 
 def summarize_baselines(baseline_outcomes: Sequence[Mapping[str, Any]]) -> List[Dict[str, Any]]:
-    primary = [o for o in baseline_outcomes if o.get("horizon") == "5d"]
+    primary = select_primary_sample_outcomes(baseline_outcomes, "BASELINE")
     grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
     for o in primary:
         grouped[str(o.get("pattern_family"))].append(o)
@@ -5088,7 +6118,9 @@ def assign_family_tiers(
     validation_scorecard: Sequence[Mapping[str, Any]],
     baseline_comparison: Sequence[Mapping[str, Any]],
     risk_config: Optional[Mapping[str, Any]] = None,
+    validation_outcomes: Optional[Sequence[Mapping[str, Any]]] = None,
 ) -> Dict[str, Dict[str, Any]]:
+    cfg = risk_config or DEFAULT_RISK_CONFIG
     by_family: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
     for row in validation_scorecard:
         by_family[str(row["pattern_family"])].append(row)
@@ -5155,20 +6187,85 @@ def assign_family_tiers(
             pf = safe_div(sum(value * count for value, count in weighted_pfs), sum(count for _, count in weighted_pfs))
         baseline_evidence = baseline_edge_evidence(avg_r, baseline_comparison)
         beats = int(baseline_evidence["count"])
+        family_outcomes = [
+            outcome
+            for outcome in (validation_outcomes or [])
+            if str(outcome.get("pattern_family") or "") == family
+        ]
+        clustered_pf_p05 = day_clustered_profit_factor_p05(
+            family_outcomes,
+            int(cfg.get("day_clustered_bootstrap_iterations", 1000)),
+            family,
+        )
+        matched_p_values = [
+            value
+            for value in (num(row.get("matched_null_p_value")) for row in rows)
+            if value is not None
+        ]
+        matched_null_p_value = max(matched_p_values) if matched_p_values else None
+        matched_coverages = [
+            value
+            for value in (num(row.get("matched_null_coverage")) for row in rows)
+            if value is not None
+        ]
+        matched_null_coverage = min(matched_coverages) if matched_coverages else None
+        matched_null_median_pfs = [
+            value
+            for value in (num(row.get("matched_null_median_profit_factor")) for row in rows)
+            if value is not None
+        ]
+        matched_null_median_pf = (
+            statistics.fmean(matched_null_median_pfs) if matched_null_median_pfs else None
+        )
         split_consistent = (
             split_count >= 2
             and positive_splits >= math.ceil(split_count * 0.75)
         )
-        minimum_expected_r = float(
-            (risk_config or DEFAULT_RISK_CONFIG).get("min_proven_family_expected_r", 0.05)
+        every_split_profitable = split_count >= 2 and positive_splits == split_count
+        fold_gate = (
+            every_split_profitable
+            if cfg.get("require_every_validation_split_profitable", False)
+            else split_consistent
         )
+        unique_date_gate = date_cluster_count >= int(cfg.get("min_oos_unique_signal_dates", 0))
+        clustered_pf_gate = (
+            not cfg.get("require_day_clustered_pf_for_proven", False)
+            or (
+                clustered_pf_p05 is not None
+                and clustered_pf_p05 >= float(cfg.get("min_day_clustered_profit_factor_p05", 1.20))
+            )
+        )
+        matched_null_gate = (
+            not cfg.get("require_matched_permutation_for_proven", False)
+            or (
+                matched_null_p_value is not None
+                and matched_null_p_value <= float(cfg.get("max_matched_null_p_value", 0.05))
+                and matched_null_coverage is not None
+                and matched_null_coverage >= float(cfg.get("min_matched_null_coverage", 0.80))
+            )
+        )
+        minimum_expected_r = float(
+            cfg.get("min_proven_family_expected_r", 0.05)
+        )
+        deployment_gate_failures = []
+        if not unique_date_gate:
+            deployment_gate_failures.append("INSUFFICIENT_UNIQUE_OOS_DATES")
+        if not fold_gate:
+            deployment_gate_failures.append("NOT_EVERY_VALIDATION_FOLD_PROFITABLE")
+        if not clustered_pf_gate:
+            deployment_gate_failures.append("DAY_CLUSTERED_PF_P05_BELOW_1_20_OR_MISSING")
+        if not matched_null_gate:
+            deployment_gate_failures.append("MATCHED_PERMUTATION_EVIDENCE_MISSING_OR_WEAK")
         historical_proof = (
             scored >= 50
             and avg_r is not None
             and avg_r >= minimum_expected_r
             and (pf or 0) >= 1.2
             and beats >= 2
-            and split_consistent
+            and fold_gate
+            and unique_date_gate
+            and clustered_pf_gate
+            and matched_null_gate
         )
         if historical_proof and latest_split_avg is not None and latest_split_avg > 0:
             tier = "PROVEN"
@@ -5199,6 +6296,13 @@ def assign_family_tiers(
             "validation_date_cluster_count": date_cluster_count,
             "validation_date_cluster_win_count": date_cluster_wins,
             "validation_date_cluster_win_rate": safe_div(date_cluster_wins, date_cluster_count),
+            "validation_day_clustered_profit_factor_p05": clustered_pf_p05,
+            "matched_null_p_value": matched_null_p_value,
+            "matched_null_coverage": matched_null_coverage,
+            "matched_null_median_profit_factor": matched_null_median_pf,
+            "minimum_unique_oos_signal_dates": int(cfg.get("min_oos_unique_signal_dates", 0)),
+            "every_validation_split_profitable": every_split_profitable,
+            "deployment_gate_failures": ";".join(deployment_gate_failures),
             "validation_average_net_r": avg_r,
             "minimum_proven_average_net_r": minimum_expected_r,
             "validation_profit_factor": pf,
@@ -5211,10 +6315,166 @@ def assign_family_tiers(
             "latest_validation_split": latest_split,
             "latest_validation_split_average_net_r": latest_split_avg,
             "max_worst_losing_streak": max_losing_streak,
-            "probability_evidence": probability_evidence(wins, scored, success_probability, probability_score),
+            "probability_evidence": probability_evidence(
+                wins,
+                scored,
+                success_probability,
+                probability_score,
+                str(rows[0].get("horizon") or "5d") if rows else "5d",
+            ),
             "validation_note": note,
         }
     return tiers
+
+
+def day_clustered_profit_factor_p05(
+    outcomes: Sequence[Mapping[str, Any]],
+    iterations: int,
+    seed_label: str,
+) -> Optional[float]:
+    scored = [
+        row
+        for row in outcomes
+        if row.get("status") == "SCORED" and num(row.get("net_r")) is not None
+    ]
+    if not scored:
+        return None
+    daily: Dict[str, Tuple[float, float]] = {}
+    grouped: Dict[str, List[float]] = defaultdict(list)
+    for row in scored:
+        grouped[str(row.get("signal_date") or "")].append(float(row["net_r"]))
+    for signal_date, values in grouped.items():
+        daily[signal_date] = (
+            sum(value for value in values if value > 0),
+            abs(sum(value for value in values if value < 0)),
+        )
+    if len(daily) < 2:
+        return None
+    profits = np.asarray([value[0] for value in daily.values()], dtype=float)
+    losses = np.asarray([value[1] for value in daily.values()], dtype=float)
+    digest = hashlib.sha256(seed_label.encode("utf-8")).digest()
+    rng = np.random.default_rng(int.from_bytes(digest[:8], "big"))
+    sample_count = max(int(iterations), 100)
+    draws = rng.integers(0, len(profits), size=(sample_count, len(profits)))
+    boot_profits = profits[draws].sum(axis=1)
+    boot_losses = losses[draws].sum(axis=1)
+    factors = np.divide(
+        boot_profits,
+        boot_losses,
+        out=np.full(sample_count, 999.0),
+        where=boot_losses > 0,
+    )
+    return float(np.percentile(factors, 5))
+
+
+def matched_family_permutation_stats(
+    outcomes: Sequence[Mapping[str, Any]],
+    trials: int,
+    seed: int,
+) -> Dict[str, Dict[str, Any]]:
+    """Compare each family with other executable candidates in the same cell."""
+
+    if trials <= 0:
+        return {}
+    scored = [
+        row
+        for row in outcomes
+        if row.get("status") == "SCORED" and num(row.get("net_r")) is not None
+    ]
+    if not scored:
+        return {}
+
+    def ticket_key(row: Mapping[str, Any]) -> Tuple[str, ...]:
+        return (
+            str(row.get("signal_date") or ""),
+            str(row.get("ticker") or ""),
+            str(row.get("direction") or ""),
+            str(row.get("strategy_kind") or ""),
+            str(row.get("lead_option_symbol") or ""),
+            str(row.get("legs_json") or ""),
+        )
+
+    def cell_key(row: Mapping[str, Any]) -> Tuple[str, ...]:
+        return (
+            str(row.get("signal_date") or ""),
+            str(row.get("sector") or "NO_SECTOR"),
+            str(row.get("direction") or ""),
+            str(row.get("strategy_kind") or ""),
+            str(row.get("contract_profile") or ""),
+        )
+
+    unique_tickets: Dict[Tuple[str, ...], Mapping[str, Any]] = {}
+    family_tickets: Dict[str, Dict[Tuple[str, ...], Mapping[str, Any]]] = defaultdict(dict)
+    for row in scored:
+        key = ticket_key(row)
+        unique_tickets.setdefault(key, row)
+        family = str(row.get("pattern_family") or "")
+        if family:
+            family_tickets[family].setdefault(key, row)
+
+    pools: Dict[Tuple[str, ...], List[Mapping[str, Any]]] = defaultdict(list)
+    for row in unique_tickets.values():
+        pools[cell_key(row)].append(row)
+
+    results: Dict[str, Dict[str, Any]] = {}
+    for family, ticket_rows in family_tickets.items():
+        actual_rows = list(ticket_rows.values())
+        matched_actual: List[float] = []
+        matched_pools: List[np.ndarray] = []
+        for row in actual_rows:
+            ticker = str(row.get("ticker") or "")
+            key = ticket_key(row)
+            candidates = [
+                float(candidate["net_r"])
+                for candidate in pools.get(cell_key(row), [])
+                if ticket_key(candidate) != key and str(candidate.get("ticker") or "") != ticker
+            ]
+            if not candidates:
+                continue
+            matched_actual.append(float(row["net_r"]))
+            matched_pools.append(np.asarray(candidates, dtype=float))
+
+        coverage = safe_div(len(matched_actual), len(actual_rows))
+        if not matched_actual:
+            results[family] = {
+                "matched_null_trials": trials,
+                "matched_null_actual_count": len(actual_rows),
+                "matched_null_matched_count": 0,
+                "matched_null_coverage": coverage,
+                "matched_null_actual_profit_factor": None,
+                "matched_null_median_profit_factor": None,
+                "matched_null_p_value": None,
+            }
+            continue
+
+        actual = np.asarray(matched_actual, dtype=float)
+        actual_profit = actual[actual > 0].sum()
+        actual_loss = -actual[actual < 0].sum()
+        actual_pf = actual_profit / actual_loss if actual_loss > 0 else 999.0
+        digest = hashlib.sha256(f"{seed}:{family}".encode("utf-8")).digest()
+        rng = np.random.default_rng(int.from_bytes(digest[:8], "big"))
+        sampled = np.column_stack(
+            [rng.choice(pool, size=trials, replace=True) for pool in matched_pools]
+        )
+        profits = np.where(sampled > 0, sampled, 0.0).sum(axis=1)
+        losses = -np.where(sampled < 0, sampled, 0.0).sum(axis=1)
+        null_pf = np.divide(
+            profits,
+            losses,
+            out=np.full(trials, 999.0),
+            where=losses > 0,
+        )
+        p_value = float((1 + np.count_nonzero(null_pf >= actual_pf)) / (trials + 1))
+        results[family] = {
+            "matched_null_trials": trials,
+            "matched_null_actual_count": len(actual_rows),
+            "matched_null_matched_count": len(matched_actual),
+            "matched_null_coverage": coverage,
+            "matched_null_actual_profit_factor": float(actual_pf),
+            "matched_null_median_profit_factor": float(np.median(null_pf)),
+            "matched_null_p_value": p_value,
+        }
+    return results
 
 
 def assign_regime_family_tiers(
@@ -5241,7 +6501,19 @@ def assign_regime_family_tiers(
         scoped_outcomes.append(scoped)
 
     scorecard = summarize_outcomes(scoped_outcomes, sample="VALIDATION")
-    scoped_tiers = assign_family_tiers(scorecard, baseline_comparison, risk_config)
+    matched_stats = matched_family_permutation_stats(
+        scoped_outcomes,
+        int((risk_config or {}).get("matched_permutation_trials", 0)),
+        DEFAULT_SEED,
+    )
+    for row in scorecard:
+        row.update(matched_stats.get(str(row.get("pattern_family") or ""), {}))
+    scoped_tiers = assign_family_tiers(
+        scorecard,
+        baseline_comparison,
+        risk_config,
+        scoped_outcomes,
+    )
     tiers: Dict[Tuple[str, str], Dict[str, Any]] = {}
     for key, scoped_id in scope_ids.items():
         if scoped_id not in scoped_tiers:
@@ -5285,21 +6557,23 @@ def probability_evidence(
     scored: int,
     success_probability: Optional[float],
     probability_score: Optional[float],
+    horizon: str = "5d",
 ) -> str:
     if scored <= 0 or success_probability is None:
         return "No scored out-of-sample option outcomes."
     return (
-        f"5d OOS scored wins {wins}/{scored}; empirical success {fmt_pct(success_probability)}; "
+        f"{horizon} OOS scored wins {wins}/{scored}; empirical success {fmt_pct(success_probability)}; "
         f"sample-adjusted probability score {fmt_pct(probability_score)}."
     )
 
 
 def summarize_regime_sector(outcomes: Sequence[Mapping[str, Any]]) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
+    primary_ids = {id(row) for row in select_primary_sample_outcomes(outcomes, "VALIDATION")}
     for dimension in ("market_regime", "sector", "ticker"):
         grouped: Dict[Tuple[str, str, str], List[Mapping[str, Any]]] = defaultdict(list)
         for o in outcomes:
-            if o.get("sample") != "VALIDATION" or o.get("horizon") != "5d":
+            if id(o) not in primary_ids:
                 continue
             grouped[(str(o.get("pattern_family")), dimension, str(o.get(dimension) or ""))].append(o)
         for (family, dim, value), items in sorted(grouped.items()):
@@ -6033,6 +7307,7 @@ def build_directional_outcome_rows(
 def summarize_directional_baselines(
     baseline_outcomes: Sequence[Mapping[str, Any]],
 ) -> List[Dict[str, Any]]:
+    horizon = primary_outcome_horizon(baseline_outcomes, "BASELINE")
     directional_rows = build_directional_outcome_rows(baseline_outcomes, baseline=True)
     grouped: Dict[str, List[Mapping[str, Any]]] = defaultdict(list)
     for row in directional_rows:
@@ -6049,7 +7324,7 @@ def summarize_directional_baselines(
                 "win_rate_scored": safe_div(sum(value > 0 for value in values), len(values)),
                 "average_net_r": statistics.fmean(values) if values else None,
                 "median_net_r": statistics.median(values) if values else None,
-                "note": "Deduped 5d underlying directional return baseline.",
+                "note": f"Deduped {horizon} underlying directional return baseline.",
             }
         )
     return rows
@@ -6485,6 +7760,7 @@ def outcome_group_stats(
         ),
         "partial_count": sum(1 for r in rows if r.get("status") == "PARTIAL"),
         "unscorable_count": sum(1 for r in rows if r.get("status") == "UNSCORABLE"),
+        "censored_open_count": sum(1 for r in rows if r.get("status") == "CENSORED_OPEN"),
         "win_count": len(wins),
         "win_rate": safe_div(len(wins), len(scored)),
         "avg_r": statistics.fmean(net_rs) if net_rs else None,
@@ -7548,12 +8824,15 @@ def enrich_decision_row(
         blockers.discard("MARKET_REGIME_CONFLICT")
         approval_bridge = "VALIDATED_REGIME_EDGE"
     hard_or_reject = hard_review_blockers(blockers)
+    statistical_proof_failure = bool(blockers & STATISTICAL_PROOF_BLOCKERS)
     flow_leader_review = catalyst_flow_leader_review_candidate(enriched, blockers, has_ticket)
     has_review_probability_and_ev = expected_r is not None and num(enriched.get("probability_score")) is not None
     if has_ticket and not has_review_probability_and_ev:
         blockers.add("INSUFFICIENT_VALIDATION_FOR_TRADE_REVIEW")
     if not blockers and has_ticket:
         status = "AUTO_APPROVED"
+    elif statistical_proof_failure:
+        status = "AVOID"
     elif edge_review and has_review_probability_and_ev:
         status = "TRADE_REVIEW"
     elif flow_leader_review and has_review_probability_and_ev:
@@ -7907,6 +9186,7 @@ def build_decision_board_rows(
                 "candidate_id": row.get("candidate_id") or stable_candidate_id(row),
                 "status": row.get("status") or "TRADE_REVIEW",
                 "ticker": row.get("ticker"),
+                "spot_price": row.get("underlying_price") or row.get("close"),
                 "direction": row.get("direction"),
                 "pattern_family": row.get("pattern_family"),
                 "base_pattern_family": row.get("base_pattern_family"),
@@ -8076,6 +9356,7 @@ def no_trade_decision_board_row(
         "candidate_id": f"NO_TRADE_{as_of}",
         "status": "NO_TRADE",
         "ticker": "",
+        "spot_price": "",
         "direction": "",
         "full_ticket": "No candidate cleared required evidence, execution, risk, and validation gates.",
         "entry": "",
@@ -8104,6 +9385,7 @@ def validate_decision_board_rows(rows: Sequence[Mapping[str, Any]]) -> List[str]
         "candidate_id",
         "status",
         "ticker",
+        "spot_price",
         "direction",
         "full_ticket",
         "entry",
@@ -8280,15 +9562,24 @@ def build_walk_forward_performance_rows(validation_bundle: Mapping[str, Any]) ->
     scorecard = validation_bundle.get("validation_gate_scorecard") or validation_bundle.get("validation_scorecard", [])
     for row in scorecard:
         tier = family_tiers.get(str(row.get("pattern_family") or ""), {})
+        horizon_label = str(row.get("horizon") or "5d")
+        horizon_sessions = (
+            int(horizon_label[:-1])
+            if horizon_label.endswith("d") and horizon_label[:-1].isdigit()
+            else 5
+        )
         rows.append(
             {
                 "split": row.get("split"),
                 "sample": row.get("sample"),
+                "horizon": horizon_label,
                 "pattern_family": row.get("pattern_family"),
                 "validation_tier": tier.get("confidence_tier", ""),
                 "net_R_after_fees_slippage": row.get("average_net_r"),
                 "expected_R": tier.get("validation_average_net_r"),
-                "expected_R_per_day": safe_div(tier.get("validation_average_net_r"), 5),
+                "expected_R_per_day": safe_div(
+                    tier.get("validation_average_net_r"), horizon_sessions
+                ),
                 "win_rate": row.get("win_rate_scored"),
                 "avg_R": row.get("average_net_r"),
                 "median_R": row.get("median_net_r"),
@@ -8298,6 +9589,7 @@ def build_walk_forward_performance_rows(validation_bundle: Mapping[str, Any]) ->
                 "brier_calibration_score": "",
                 "scored_count": row.get("scored_count"),
                 "unscorable_count": row.get("unscorable_count"),
+                "censored_open_count": row.get("censored_open_count"),
                 "quote_coverage": row.get("tradeable_with_real_quotes_pct"),
                 "blocker_distribution": row.get("top_block_reasons"),
                 "baselines_beaten": tier.get("beats_baselines_count", ""),
@@ -8310,6 +9602,7 @@ def walk_forward_fieldnames() -> List[str]:
     return [
         "split",
         "sample",
+        "horizon",
         "pattern_family",
         "validation_tier",
         "net_R_after_fees_slippage",
@@ -8324,6 +9617,7 @@ def walk_forward_fieldnames() -> List[str]:
         "brier_calibration_score",
         "scored_count",
         "unscorable_count",
+        "censored_open_count",
         "quote_coverage",
         "blocker_distribution",
         "baselines_beaten",
@@ -8469,6 +9763,8 @@ def full_backtest_group_row(key_name: str, key_value: str, items: Sequence[Mappi
     scored = [o for o in items if o.get("status") == "SCORED" and num(o.get("net_r")) is not None]
     partial = [o for o in items if o.get("status") == "PARTIAL"]
     unscorable = [o for o in items if o.get("status") == "UNSCORABLE"]
+    censored = [o for o in items if o.get("status") == "CENSORED_OPEN"]
+    mature_count = len(items) - len(censored)
     net_rs = [float(o["net_r"]) for o in scored]
     positives = sum(r for r in net_rs if r > 0)
     negatives = abs(sum(r for r in net_rs if r < 0))
@@ -8481,7 +9777,8 @@ def full_backtest_group_row(key_name: str, key_value: str, items: Sequence[Mappi
         "scored_count": len(scored),
         "partial_count": len(partial),
         "unscorable_count": len(unscorable),
-        "quote_coverage": safe_div(len(scored), len(items)),
+        "censored_open_count": len(censored),
+        "quote_coverage": safe_div(len(scored), mature_count),
         "win_rate": safe_div(sum(1 for r in net_rs if r > 0), len(scored)),
         "avg_R": statistics.fmean(net_rs) if net_rs else None,
         "median_R": statistics.median(net_rs) if net_rs else None,
@@ -8501,6 +9798,7 @@ def full_backtest_family_fieldnames() -> List[str]:
         "scored_count",
         "partial_count",
         "unscorable_count",
+        "censored_open_count",
         "quote_coverage",
         "win_rate",
         "avg_R",
@@ -8521,6 +9819,7 @@ def full_backtest_month_fieldnames() -> List[str]:
         "scored_count",
         "partial_count",
         "unscorable_count",
+        "censored_open_count",
         "quote_coverage",
         "win_rate",
         "avg_R",
@@ -8655,6 +9954,8 @@ def build_shadow_ledger_rows(
             }
         )
     for outcome in select_validation_gate_outcomes(validation_bundle.get("outcomes", [])):
+        horizon = str(outcome.get("horizon") or "")
+        horizon_days = horizon[:-1] if horizon.endswith("d") else horizon
         rows.append(
             {
                 "recommendation_date": outcome.get("signal_date"),
@@ -8664,12 +9965,12 @@ def build_shadow_ledger_rows(
                 "entry_assumption": outcome.get("entry_credit") or outcome.get("entry_ask"),
                 "target": "",
                 "stop": "",
-                "time_stop": "5d validation horizon",
+                "time_stop": f"{horizon} validation horizon",
                 "max_favorable_excursion": "",
                 "max_adverse_excursion": "",
                 "exit_status": outcome.get("status"),
                 "net_R_after_costs": outcome.get("net_r"),
-                "days_held": "5",
+                "days_held": horizon_days,
                 "catalyst_thesis_validity": "historical_outcome_only",
                 "later_kill_switch_would_have_skipped": "not_replayed",
             }
@@ -9903,7 +11204,18 @@ def write_outputs(
             "bot_eod_cache_dir": config["bot_eod_cache_dir"],
             "risk_config_path": config.get("risk_config_path"),
             "risk_config_hash": config.get("risk_config_hash"),
-            "validation_details_scope": "non_overlapping_cumulative_holdouts_5d_only",
+            "validation_details_scope": "non_overlapping_cumulative_holdouts_strategy_primary_horizons",
+            "strategy_validation_horizons": {
+                "long_option": configured_strategy_validation_horizon(
+                    "long_option", config.get("risk_config")
+                ),
+                "credit_spread": configured_strategy_validation_horizon(
+                    "credit_spread", config.get("risk_config")
+                ),
+                "long_strangle": configured_strategy_validation_horizon(
+                    "long_strangle", config.get("risk_config")
+                ),
+            },
         },
         "risk_config": config.get("risk_config", {}),
         "verdict": final_verdict(validation_bundle, daily_rows, actionable),
@@ -9933,12 +11245,14 @@ def write_outputs(
         "train_scorecard": str(out_dir / "train_scorecard.csv"),
         "validation_details": str(out_dir / "validation_details.csv"),
         "baseline_comparison": str(out_dir / "baseline_comparison.csv"),
+        "matched_permutation_stats": str(out_dir / "matched_permutation_stats.csv"),
         "missed_mover_audit": str(out_dir / "missed_mover_audit.csv"),
         "macro_geo_catalysts": str(out_dir / "macro_geo_catalysts.json"),
         "macro_geo_ticker_map": str(out_dir / "macro_geo_ticker_map.csv"),
         "macro_geo_uw_confirmation": str(out_dir / "macro_geo_uw_confirmation.csv"),
         "macro_geo_promotion_decisions": str(out_dir / "macro_geo_promotion_decisions.csv"),
         "trade_review_candidates": str(out_dir / "trade_review_candidates.csv"),
+        "conditional_trade_tickets": str(out_dir / "conditional_trade_tickets.csv"),
         "decision_board_json": str(out_dir / "decision_board.json"),
         "decision_board_csv": str(out_dir / "decision_board.csv"),
         "artifact_manifest": str(out_dir / "artifact_manifest.json"),
@@ -10050,6 +11364,11 @@ def write_outputs(
     write_csv(Path(paths["watchlist_research_setups"]), [trade_output_row(r) for r in watch], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [blocked_output_row(r) for r in blocked], blocked_fieldnames())
     write_csv(Path(paths["trade_review_candidates"]), [trade_review_output_row(r) for r in trade_review], trade_review_fieldnames())
+    write_csv(
+        Path(paths["conditional_trade_tickets"]),
+        [conditional_trade_output_row(r) for r in trade_review],
+        conditional_trade_fieldnames(),
+    )
     write_json(
         Path(paths["decision_board_json"]),
         {
@@ -10103,6 +11422,11 @@ def write_outputs(
         validation_detail_fieldnames(),
     )
     write_csv(Path(paths["baseline_comparison"]), validation_bundle["baseline_comparison"], baseline_fieldnames())
+    write_csv(
+        Path(paths["matched_permutation_stats"]),
+        validation_bundle.get("matched_permutation_stats", []),
+        matched_permutation_fieldnames(),
+    )
     write_csv(Path(paths["missed_mover_audit"]), missed_rows, missed_fieldnames())
     write_json(Path(paths["macro_geo_catalysts"]), macro_geo_bundle.get("catalysts", []))
     write_csv(Path(paths["macro_geo_ticker_map"]), macro_geo_bundle.get("ticker_map", []), macro_geo_ticker_map_fieldnames())
@@ -10262,12 +11586,14 @@ def write_source_incomplete_outputs(
         "train_scorecard": str(out_dir / "train_scorecard.csv"),
         "validation_details": str(out_dir / "validation_details.csv"),
         "baseline_comparison": str(out_dir / "baseline_comparison.csv"),
+        "matched_permutation_stats": str(out_dir / "matched_permutation_stats.csv"),
         "missed_mover_audit": str(out_dir / "missed_mover_audit.csv"),
         "macro_geo_catalysts": str(out_dir / "macro_geo_catalysts.json"),
         "macro_geo_ticker_map": str(out_dir / "macro_geo_ticker_map.csv"),
         "macro_geo_uw_confirmation": str(out_dir / "macro_geo_uw_confirmation.csv"),
         "macro_geo_promotion_decisions": str(out_dir / "macro_geo_promotion_decisions.csv"),
         "trade_review_candidates": str(out_dir / "trade_review_candidates.csv"),
+        "conditional_trade_tickets": str(out_dir / "conditional_trade_tickets.csv"),
         "decision_board_json": str(out_dir / "decision_board.json"),
         "decision_board_csv": str(out_dir / "decision_board.csv"),
         "artifact_manifest": str(out_dir / "artifact_manifest.json"),
@@ -10305,6 +11631,7 @@ def write_source_incomplete_outputs(
     write_csv(Path(paths["watchlist_research_setups"]), [], trade_fieldnames())
     write_csv(Path(paths["blocked_candidates"]), [], blocked_fieldnames())
     write_csv(Path(paths["trade_review_candidates"]), [], trade_review_fieldnames())
+    write_csv(Path(paths["conditional_trade_tickets"]), [], conditional_trade_fieldnames())
     write_csv(Path(paths["discovered_pattern_families"]), [], discovered_fieldnames())
     write_json(Path(paths["market_regime_summary"]), {"date": as_of, "regime": "UNKNOWN", "source": "source_incomplete"})
     write_json(
@@ -10316,6 +11643,7 @@ def write_source_incomplete_outputs(
     write_csv(Path(paths["train_scorecard"]), [], scorecard_fieldnames())
     write_csv(Path(paths["validation_details"]), [], validation_detail_fieldnames())
     write_csv(Path(paths["baseline_comparison"]), [], baseline_fieldnames())
+    write_csv(Path(paths["matched_permutation_stats"]), [], matched_permutation_fieldnames())
     write_csv(Path(paths["missed_mover_audit"]), [], missed_fieldnames())
     decision_board = build_decision_board_rows([], as_of, False, "NO_TRADE", paths)
     if decision_board:
@@ -11644,6 +12972,35 @@ def trade_review_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
             "review_priority": trade_review_rank(trade_review_status(r)),
             "promotion_needed": promotion_needed_text(r),
             "hard_blockers": ";".join(hard_trade_blockers(r)),
+        }
+    )
+    return row
+
+
+def conditional_target_close_price(r: Mapping[str, Any]) -> str:
+    strategy = str(r.get("strategy_kind") or "long_option")
+    if strategy == "credit_spread":
+        credit = num(r.get("entry_credit"))
+        return f"BUY TO CLOSE <= {credit * 0.50:.2f} debit" if credit is not None else ""
+    entry = num(r.get("entry_ask"))
+    if entry is None:
+        return ""
+    label = "combined bid" if strategy == "long_strangle" else "bid"
+    return f"SELL TO CLOSE >= {entry * 1.50:.2f} {label}"
+
+
+def conditional_trade_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
+    row = trade_review_output_row(r)
+    row.update(
+        {
+            "conditional_status": "WAIT_FOR_ACTIVATION",
+            "color_code": "YELLOW",
+            "send_now": "no",
+            "quote_refresh_required": "yes",
+            "spot_price": r.get("underlying_price") or r.get("close"),
+            "target_close_price": conditional_target_close_price(r),
+            "activation_conditions": promotion_needed_text(r),
+            "why_not_send_now": blocker_text(r),
         }
     )
     return row
@@ -13748,6 +15105,19 @@ def trade_review_fieldnames() -> List[str]:
     ] + trade_fieldnames()
 
 
+def conditional_trade_fieldnames() -> List[str]:
+    return [
+        "conditional_status",
+        "color_code",
+        "send_now",
+        "quote_refresh_required",
+        "spot_price",
+        "target_close_price",
+        "activation_conditions",
+        "why_not_send_now",
+    ] + trade_review_fieldnames()
+
+
 def target_ready_fieldnames() -> List[str]:
     return [
         "target_ready_status",
@@ -14087,6 +15457,16 @@ def discovered_fieldnames() -> List[str]:
         "validation_success_probability",
         "validation_failure_probability",
         "validation_probability_score",
+        "validation_date_cluster_count",
+        "validation_date_cluster_win_count",
+        "validation_date_cluster_win_rate",
+        "validation_day_clustered_profit_factor_p05",
+        "matched_null_p_value",
+        "matched_null_coverage",
+        "matched_null_median_profit_factor",
+        "minimum_unique_oos_signal_dates",
+        "every_validation_split_profitable",
+        "deployment_gate_failures",
         "validation_average_net_r",
         "minimum_proven_average_net_r",
         "validation_profit_factor",
@@ -14109,17 +15489,26 @@ def scorecard_fieldnames() -> List[str]:
     return [
         "split",
         "sample",
+        "horizon",
         "pattern_family",
         "signal_count",
         "scored_count",
         "partial_count",
         "unscorable_count",
+        "censored_open_count",
         "win_count_scored",
         "win_rate_scored",
         "unique_signal_date_count",
         "date_cluster_win_count",
         "date_cluster_win_rate",
         "date_cluster_probability_score",
+        "matched_null_trials",
+        "matched_null_actual_count",
+        "matched_null_matched_count",
+        "matched_null_coverage",
+        "matched_null_actual_profit_factor",
+        "matched_null_median_profit_factor",
+        "matched_null_p_value",
         "win_rate_all_counting_unscorable_losses",
         "average_net_r",
         "median_net_r",
@@ -14140,11 +15529,14 @@ def validation_detail_fieldnames() -> List[str]:
         "split",
         "sample",
         "horizon",
+        "primary_validation_horizon",
         "signal_date",
         "target_date",
         "ticker",
         "direction",
         "pattern_family",
+        "source_flags",
+        "required_source_flags",
         "base_pattern_family",
         "directional_pattern_family",
         "market_regime",
@@ -14191,6 +15583,19 @@ def validation_detail_fieldnames() -> List[str]:
 
 def baseline_fieldnames() -> List[str]:
     return ["baseline", "seed", "signal_count", "scored_count", "win_rate_scored", "average_net_r", "median_net_r", "note"]
+
+
+def matched_permutation_fieldnames() -> List[str]:
+    return [
+        "pattern_family",
+        "matched_null_trials",
+        "matched_null_actual_count",
+        "matched_null_matched_count",
+        "matched_null_coverage",
+        "matched_null_actual_profit_factor",
+        "matched_null_median_profit_factor",
+        "matched_null_p_value",
+    ]
 
 
 def missed_fieldnames() -> List[str]:

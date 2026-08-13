@@ -120,7 +120,7 @@ def test_infinite_profit_factor_means_no_losses_not_failed_evidence() -> None:
     )
 
 
-def test_early_exit_is_not_evidence_until_contract_expiry(tmp_path) -> None:
+def test_early_exit_is_evidence_on_resolution_day(tmp_path) -> None:
     matured = _history_row("2026-06-01", flow_quality="directional", pnl_after_stress=100.0)
     matured["expiry"] = "2026-06-20"
     early_winner = _history_row("2026-06-02", flow_quality="directional", pnl_after_stress=100.0)
@@ -134,10 +134,10 @@ def test_early_exit_is_not_evidence_until_contract_expiry(tmp_path) -> None:
         history_path=history_path,
     )
 
-    assert summary["eligible_rows"] == 1
+    assert summary["eligible_rows"] == 2
 
 
-def test_monthly_walk_forward_train_waits_for_contract_maturity(tmp_path) -> None:
+def test_monthly_walk_forward_train_uses_resolved_prior_trades(tmp_path) -> None:
     rows = []
     for day in pd.date_range("2026-01-02", periods=12, freq="2D"):
         row = _history_row(str(day.date()), flow_quality="directional", pnl_after_stress=100.0)
@@ -163,7 +163,7 @@ def test_monthly_walk_forward_train_waits_for_contract_maturity(tmp_path) -> Non
             "flow_cost::Credit|Bear Call|range|flow=directional|cost=18to30"
         )
     ]
-    assert march.empty
+    assert not march.empty
 
 
 def test_probationary_base_route_beats_thinner_child_without_bypassing_veto() -> None:

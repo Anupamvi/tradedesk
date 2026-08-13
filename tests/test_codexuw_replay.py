@@ -18,7 +18,7 @@ from codexuw.replay import (
 def _row() -> pd.Series:
     return pd.Series(
         {
-            "asof": dt.date(2026, 1, 2),
+            "asof": dt.date(2026, 1, 1),
             "expiry": dt.date(2026, 1, 16),
             "ticker": "XYZ",
             "direction": "Bear Call",
@@ -33,7 +33,7 @@ def _row() -> pd.Series:
 def _debit_row() -> pd.Series:
     return pd.Series(
         {
-            "asof": dt.date(2026, 1, 2),
+            "asof": dt.date(2026, 1, 1),
             "expiry": dt.date(2026, 1, 16),
             "ticker": "XYZ",
             "direction": "Bull Call",
@@ -88,6 +88,9 @@ def test_simulate_spread_exit_hits_profit_target() -> None:
         stop_loss_mult=2.0,
     )
     assert result["exact_evaluated"] is True
+    assert result["signal_day"] == dt.date(2026, 1, 1)
+    assert result["entry_day"] == dt.date(2026, 1, 2)
+    assert result["entry_timing"] == "next_session_hot_chain_eod_fallback"
     assert result["exit_reason"] == "profit_target"
     assert result["pnl_1x"] > 0
 
@@ -114,6 +117,67 @@ def test_simulate_spread_exit_hits_stop_loss() -> None:
     assert result["exact_evaluated"] is True
     assert result["exit_reason"] == "stop_loss"
     assert result["pnl_1x"] < 0
+
+
+def test_simulate_spread_exit_never_uses_signal_day_quote_for_entry() -> None:
+    row = _row()
+    quotes = {
+        dt.date(2026, 1, 1): {
+            "XYZ260116C00105000": _quote(4.00, 4.20),
+            "XYZ260116C00110000": _quote(0.10, 0.20),
+        },
+        dt.date(2026, 1, 2): {
+            "XYZ260116C00105000": _quote(2.00, 2.20),
+            "XYZ260116C00110000": _quote(0.80, 1.00),
+        },
+        dt.date(2026, 1, 5): {
+            "XYZ260116C00105000": _quote(1.00, 1.10),
+            "XYZ260116C00110000": _quote(0.85, 0.95),
+        },
+    }
+
+    result = simulate_spread_exit(
+        row,
+        close_history={},
+        quote_history=quotes,
+        slippage_pct=0.10,
+        profit_take_pct=0.60,
+        stop_loss_mult=2.0,
+    )
+
+    assert result["entry_day"] == dt.date(2026, 1, 2)
+    assert round(result["entry_credit"], 4) == 1.08
+
+
+def test_simulate_spread_exit_does_not_skip_missing_next_session_legs() -> None:
+    row = _row()
+    close_history = {
+        dt.date(2026, 1, 2): pd.DataFrame(
+            [{"ticker": "XYZ", "close": 101.0, "sector": "Technology"}]
+        ),
+        dt.date(2026, 1, 5): pd.DataFrame(
+            [{"ticker": "XYZ", "close": 99.0, "sector": "Technology"}]
+        ),
+    }
+    quotes = {
+        dt.date(2026, 1, 5): {
+            "XYZ260116C00105000": _quote(2.00, 2.20),
+            "XYZ260116C00110000": _quote(0.80, 1.00),
+        }
+    }
+
+    result = simulate_spread_exit(
+        row,
+        close_history=close_history,
+        quote_history=quotes,
+        slippage_pct=0.10,
+        profit_take_pct=0.60,
+        stop_loss_mult=2.0,
+    )
+
+    assert result["entry_day"] == dt.date(2026, 1, 2)
+    assert result["exact_evaluated"] is False
+    assert result["exact_reason"] == "missing_entry_leg_quote"
 
 
 def test_simulate_debit_spread_exit_hits_profit_target() -> None:

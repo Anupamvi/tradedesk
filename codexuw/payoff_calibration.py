@@ -169,7 +169,9 @@ def _eligible_history(history: pd.DataFrame, *, asof: object | None) -> pd.DataF
         if "expiry" in out.columns
         else pd.Series(pd.NaT, index=out.index, dtype="datetime64[ns]")
     )
-    out["_maturity_dt"] = expiry.where(expiry.notna(), out["_exit_dt"])
+    # Exact trade outcomes are observable on exit, not on the abandoned
+    # contract's later expiry date.
+    out["_maturity_dt"] = out["_exit_dt"]
     out["_pnl"] = pd.to_numeric(out.get("pnl_1x"), errors="coerce")
     out["_entry_price"] = pd.to_numeric(out.get("entry_price"), errors="coerce")
     out["_entry_width"] = pd.to_numeric(out.get("entry_width"), errors="coerce")

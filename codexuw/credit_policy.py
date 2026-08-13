@@ -250,7 +250,7 @@ def assess_credit_spread(
     regime = _regime(row)
     if regime not in ALLOWED_REGIMES[direction]:
         reasons.append(f"credit_regime_not_aligned:{direction}:{regime or 'unknown'}")
-    dte = safe_float(row.get("dte"))
+    dte = safe_float(row.get("entry_dte"), safe_float(row.get("dte")))
     if not math.isfinite(dte) or not MIN_DTE <= dte <= MAX_DTE:
         reasons.append(f"dte_outside_{MIN_DTE}_{MAX_DTE}")
 

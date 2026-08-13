@@ -1,9 +1,9 @@
 {
-  "current_cache_fingerprint": "cddcc31452be73790427fd08898eca6fc11d11e5ac4b59a8a5229342c9b3103e",
+  "current_cache_fingerprint": "d4da96154fe154e3ceef2b36a55ba1809fe441fcdf46576a16896c3c4ed34cf9",
   "manifest_sha256": "9508afdce1a823db859f20bf3f2c15e68b3c6fde77ac6ffb5408c26982ed7934",
-  "pipeline_version": "options-agent-v1.71-session-neutral-actionability-20260808-124037",
+  "pipeline_version": "options-agent-v1.74-audit-integrity-20260811-194500",
   "producer": "uwos.options_agent.replay",
-  "reason": "Options Agent v1.71 makes recommendation actionability independent of exchange-session availability and uses actionability-floor report language; historical candidate generation, selector, pricing, risk gates, and outcomes are unchanged.",
+  "reason": "Post-selection reporting change only: preserve Schwab leg bid/ask/mid fields, label net package limits explicitly, and display trade and entry confidence; selector eligibility and ranking are unchanged.",
   "recomputed_selected_count": 1954,
   "recomputed_selected_ids_sha256": "3c8d7fc290800a3c972fc8d467b6d35aac523e2e73c42809947962f04293ed0d",
   "replay_detail_sha256": "989a0e9d0749b94b92466c24a9936e67b6562e3754cf18c91d61fb1fcf05f713",

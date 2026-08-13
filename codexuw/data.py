@@ -520,3 +520,82 @@ def aggregate_bot_flow(
     out.attrs["source_path"] = ";".join(str(path) for path in paths)
     out.attrs["dp_equity_present"] = False
     return out
+
+
+def load_bot_contract_quotes(
+    base_dir: Path,
+    option_symbols: Iterable[str],
+    *,
+    chunksize: int = 750_000,
+    point_in_time: bool = False,
+    allow_missing: bool = True,
+) -> dict[str, dict[str, object]]:
+    """Load the first executable regular-session NBBO for exact contracts.
+
+    Daily recommendations are created after the prior close.  For historical
+    replay, the first valid NBBO print on the following session is therefore a
+    more honest entry proxy than the signal-day hot-chain snapshot.  The
+    function scans only requested OCC symbols and never substitutes trade price
+    for a missing two-sided market.
+    """
+    wanted = {str(symbol).upper().strip() for symbol in option_symbols if str(symbol).strip()}
+    if not wanted:
+        return {}
+    ceiling = infer_asof_date(base_dir) if point_in_time else None
+    try:
+        paths = find_export_bundle(base_dir, "bot-eod-report-", asof_ceiling=ceiling)
+    except FileNotFoundError:
+        if allow_missing:
+            return {}
+        raise
+    usecols = [
+        "executed_at",
+        "option_chain_id",
+        "nbbo_bid",
+        "nbbo_ask",
+        "price",
+        "volume",
+        "open_interest",
+        "canceled",
+    ]
+    matches: list[pd.DataFrame] = []
+    for chunk in iter_csv_export_bundle(paths, usecols=usecols, chunksize=chunksize):
+        chunk["option_chain_id"] = chunk["option_chain_id"].astype(str).str.upper().str.strip()
+        chunk = chunk[chunk["option_chain_id"].isin(wanted)]
+        if chunk.empty:
+            continue
+        chunk = chunk[chunk["canceled"].astype(str).str.lower().ne("t")]
+        chunk["executed_at"] = pd.to_datetime(chunk["executed_at"], errors="coerce", utc=True)
+        local_time = chunk["executed_at"].dt.tz_convert("America/New_York")
+        minute = local_time.dt.hour * 60 + local_time.dt.minute
+        chunk = chunk[minute.between(9 * 60 + 30, 16 * 60)]
+        chunk["bid"] = pd.to_numeric(chunk["nbbo_bid"], errors="coerce")
+        chunk["ask"] = pd.to_numeric(chunk["nbbo_ask"], errors="coerce")
+        chunk = chunk[chunk["bid"].gt(0) & chunk["ask"].ge(chunk["bid"])]
+        if not chunk.empty:
+            matches.append(chunk)
+    if not matches:
+        return {}
+    quotes = (
+        pd.concat(matches, ignore_index=True)
+        .sort_values(["executed_at", "option_chain_id"])
+        .drop_duplicates("option_chain_id", keep="first")
+    )
+    out: dict[str, dict[str, object]] = {}
+    for _, row in quotes.iterrows():
+        bid = safe_float(row.get("bid"))
+        ask = safe_float(row.get("ask"))
+        symbol = str(row.get("option_chain_id", ""))
+        out[symbol] = {
+            "option_symbol": symbol,
+            "bid": bid,
+            "ask": ask,
+            "mid": (bid + ask) / 2.0,
+            "price": safe_float(row.get("price")),
+            "volume": safe_float(row.get("volume"), 0.0),
+            "open_interest": safe_float(row.get("open_interest"), 0.0),
+            "quote_source": "bot_eod_first_regular_nbbo",
+            "quote_timestamp": row.get("executed_at").isoformat(),
+            "source_path": ";".join(str(path) for path in paths),
+        }
+    return out

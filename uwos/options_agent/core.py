@@ -20,6 +20,7 @@ import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 from enum import Enum
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
 from zoneinfo import ZoneInfo
@@ -47,8 +48,11 @@ from uwos.options_agent.shadow_outcomes import (
 from ._vendor.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.71-session-neutral-actionability-20260808-124037"
+PIPELINE_VERSION = "options-agent-v1.74-audit-integrity-20260811-194500"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.73-selector-evidence-parity-20260811-181700",
+    "options-agent-v1.72-selector-contract-parity-20260811-175515",
+    "options-agent-v1.71-session-neutral-actionability-20260808-124037",
     "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
     "options-agent-v1.69-live-quote-integrity-20260808-000000",
     "options-agent-v1.68-five-source-market-context-20260806-081546",
@@ -113,7 +117,7 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-08-08T12:40:37-07:00"
+PIPELINE_RELEASED_AT = "2026-08-11T19:45:00-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
@@ -132,7 +136,11 @@ MIN_SELECTOR_HELDOUT_SAMPLE_SIZE = 10
 MIN_SELECTOR_EXECUTION_RESOLUTION_COVERAGE = 0.95
 MAX_SELECTOR_SECOND_SLOT_STRUCTURAL_SCORE_GAP = 0.35
 PROMOTED_SELECTOR_POLICY_ID = "core_liquid_credit_dte7_45_volume20_oi100_em030_queue25_v20"
-PROMOTED_SELECTOR_DEVELOPMENT_CUTOFF = "2026-05-01"
+# The replay's internal train/development split is 2026-05-01, but v20 was
+# selected after reviewing data through 2026-08-03. Do not describe the latter
+# partition as untouched or prospectively held out.
+PROMOTED_SELECTOR_DEVELOPMENT_CUTOFF = "2026-08-03"
+PROMOTED_SELECTOR_PROSPECTIVE_START = "2026-08-06"
 PROMOTED_SELECTOR_REPLAY_ASSET_CLASS = "common_stock"
 # A selector, routing, or calibration release must carry a replay produced by
 # that exact selector version. This release changes event eligibility, so no
@@ -172,7 +180,7 @@ PROMOTED_SELECTOR_MAX_POSITION_CONTRACTS = 35
 # single contract permanently.  Macro exposure only suppresses scaling inside
 # the short-DTE gamma window, where there is no time left to manage an event
 # gap.  Earnings remain an unconditional scaling veto at any DTE.
-MIN_MACRO_SCALE_DTE = 14
+MIN_MACRO_SCALE_DTE = 15
 # Operator sizing authority.  "evidence" keeps the built-in evidence ladder as
 # the binding contract cap.  "risk-budget" hands the decision to the operator:
 # size follows the configured risk budget and the evidence ladder is recorded
@@ -188,7 +196,8 @@ POSITION_RISK_BUDGET_PCT_OVERRIDE: Optional[float] = None
 # --max-contracts-per-trade; None means use MAX_SUGGESTED_CONTRACTS.
 MAX_CONTRACTS_PER_TRADE_OVERRIDE: Optional[int] = None
 RESEARCH_CAPACITY_REFERENCE_ACCOUNT_VALUE = 100_000.0
-# Measured mean holding period under the validated exit policy below.
+# Conservative fallback used only when a replay row has no realized exit date.
+# Capacity audits otherwise hold each position through its recorded exit.
 SELECTOR_CAPACITY_HOLDING_HORIZON_SESSIONS = 7
 # --- Trade management policy ------------------------------------------------
 # Validated 2026-07-26 by scripts/research_exit_sweep.py across 44,502 forward
@@ -357,8 +366,11 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.71-session-neutral-actionability-20260808-124037",
+    "PIPELINE_VERSION": "options-agent-v1.74-audit-integrity-20260811-194500",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.73-selector-evidence-parity-20260811-181700",
+        "options-agent-v1.72-selector-contract-parity-20260811-175515",
+        "options-agent-v1.71-session-neutral-actionability-20260808-124037",
         "options-agent-v1.70-closed-session-quote-recheck-20260808-091021",
         "options-agent-v1.69-live-quote-integrity-20260808-000000",
         "options-agent-v1.68-five-source-market-context-20260806-081546",
@@ -423,7 +435,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-08-08T12:40:37-07:00",
+    "PIPELINE_RELEASED_AT": "2026-08-11T19:45:00-07:00",
     "PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS": frozenset(
         {"options-agent-v1.68-five-source-market-context-20260806-081546"}
     ),
@@ -488,14 +500,24 @@ CONTRACT_AGENT_REVIEW_POLICY = {
     ),
     "expected_move": (
         "live_breakeven_expected_move_ratio is breakeven distance divided by expected move. For CREDIT "
-        "structures, a ratio below 75% is an objective blocker and a ratio at or above 75% passes. For DEBIT "
+        f"structures, a ratio below {MIN_SELECTOR_CREDIT_DISTANCE_EXPECTED_MOVE:.0%} is an objective blocker and "
+        f"a ratio at or above {MIN_SELECTOR_CREDIT_DISTANCE_EXPECTED_MOVE:.0%} passes. For DEBIT "
         "structures, a ratio above 75% is an objective blocker and a ratio at or below 75% passes. Never apply "
         "the debit direction to a credit structure."
     ),
     "event_risk": (
-        "Earnings or a high-impact macro release inside the replay-aligned five-session holding horizon is an "
-        "objective blocker. An event after the mandatory time exit is an annotation, not a caution; do not extend "
-        "the position past that exit. A missing or stale time exit is an objective blocker."
+        "Earnings inside the configured holding horizon is an objective blocker. A high-impact macro release "
+        f"inside that horizon is an objective blocker only when DTE is below {MIN_MACRO_SCALE_DTE}; at longer DTE "
+        "it is an annotation and sizing consideration, not a setup veto. An event after the mandatory time exit "
+        "is an annotation; do not extend the position past that exit. A missing or stale time exit is an "
+        "objective blocker."
+    ),
+    "profitability_evidence": (
+        "Do not set an exact-contract blocker from generic route or discretionary-trade evidence in "
+        "priced_candidates.csv. The selector and profitability-calibration gates own that decision and compare "
+        "the candidate with policy-matched replay evidence. You may record a concrete evidence conflict as a "
+        "non-blocking caution, but contract review must focus on the exact quote, payoff, Greeks, liquidity, and "
+        "event facts."
     ),
     "long_option_profit": (
         "For long_call and long_put tasks, max_profit and planned_target_profit are planned P/L at target_exit; "
@@ -1329,6 +1351,7 @@ def _previous_regular_market_day(day: dt.date) -> dt.date:
     return day - dt.timedelta(days=1)
 
 
+@lru_cache(maxsize=None)
 def _planned_trade_exit_date(
     as_of: dt.date,
     expiry: Optional[dt.date],
@@ -1437,8 +1460,9 @@ def annotate_contract_event_risk(
         earnings_agreement = 0
         if earnings_source_status == "unverified" and earnings_date is not None:
             consensus_earnings, earnings_agreement = _uw_earnings_corroboration(row)
-            # Independent dated UW files agreeing on a date that clears expiry by a
-            # margin is corroboration; a manual issuer-IR lookup adds nothing there.
+            # Distinct dated UW exports agreeing on a date that clears expiry by a
+            # margin provide provider-consistency evidence. Do not describe these
+            # fields as independent sources: they can share the same upstream feed.
             if (
                 consensus_earnings is not None
                 and earnings_agreement >= 2
@@ -1451,8 +1475,8 @@ def annotate_contract_event_risk(
             elif expiry is not None and expiry < earnings_date:
                 earnings_source_status = "provisional_after_expiry"
             elif planned_holding_exit < earnings_date:
-                # The fixed five-session exit is the actual risk window. A
-                # dated UW estimate after that exit still needs an exact
+                # The configured expiry-aligned exit is the actual risk window.
+                # A dated UW estimate after that exit still needs an exact
                 # catalyst review, but cannot be treated as an earnings event
                 # inside this contract's planned hold.
                 earnings_source_status = "provisional_after_holding_horizon"
@@ -1495,7 +1519,7 @@ def annotate_contract_event_risk(
             event_notes.append("authoritative earnings date is unverified; order entry is blocked")
         elif earnings_source_status == "corroborated_after_expiry" and earnings_date:
             event_notes.append(
-                f"earnings {earnings_date.isoformat()} agreed by {earnings_agreement} dated UW sources "
+                f"earnings {earnings_date.isoformat()} is consistent across {earnings_agreement} dated UW feeds "
                 f"and clears expiry by more than {UW_EARNINGS_CORROBORATION_MARGIN_DAYS} days"
             )
         elif earnings_source_status == "provisional_after_expiry" and earnings_date:
@@ -1782,11 +1806,12 @@ def _normalize_expected_move_contract_review(
     )
     if ratio is None or ratio <= 0 or entry_type not in {"CREDIT", "DEBIT"}:
         return normalized
-    expected_move_defect = (
-        ratio < MAX_BREAKEVEN_EXPECTED_MOVE_RATIO
+    threshold = (
+        MIN_SELECTOR_CREDIT_DISTANCE_EXPECTED_MOVE
         if entry_type == "CREDIT"
-        else ratio > MAX_BREAKEVEN_EXPECTED_MOVE_RATIO
+        else MAX_BREAKEVEN_EXPECTED_MOVE_RATIO
     )
+    expected_move_defect = ratio < threshold if entry_type == "CREDIT" else ratio > threshold
     if expected_move_defect and not persisted_inversion:
         return normalized
     if expected_move_defect:
@@ -1796,7 +1821,7 @@ def _normalize_expected_move_contract_review(
         normalized["note"] = (
             f"quantitative guard restored expected-move blocker: {entry_type.lower()} "
             f"breakeven distance/expected move {ratio:.1%} fails the "
-            f"{MAX_BREAKEVEN_EXPECTED_MOVE_RATIO:.0%} threshold"
+            f"{threshold:.0%} threshold"
         )
         return normalized
     dte = int(_as_float(row.get("dte")) or 0)
@@ -1817,12 +1842,54 @@ def _normalize_expected_move_contract_review(
         return normalized
     normalized["objective_blocker"] = False
     normalized["blocker_type"] = ""
+    # This review's declared objective blocker is contradicted by the priced
+    # facts. A contract-review caution is itself an order-entry veto, so leaving
+    # the verdict at caution would preserve the bad blocker under another name.
+    # Keep the original note as evidence; profitability remains owned by the
+    # deterministic selector/calibration gates below.
     normalized["verdict"] = "supportive"
     original_note = note
     normalized["note"] = (
         f"quantitative guard corrected inverted expected-move review: {entry_type.lower()} "
         f"breakeven distance/expected move {ratio:.1%} passes the "
-        f"{MAX_BREAKEVEN_EXPECTED_MOVE_RATIO:.0%} threshold"
+        f"{threshold:.0%} threshold"
+    )
+    if original_note:
+        normalized["evidence"] = _append_reason(
+            normalized.get("evidence"),
+            f"original normalized review note: {original_note}",
+        )
+    return normalized
+
+
+def _normalize_contract_review_against_priced(
+    review: Mapping[str, Any],
+    row: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Enforce deterministic contract rules when a subagent label contradicts priced facts."""
+
+    normalized = _normalize_expected_move_contract_review(review, row)
+    if not (
+        _truthy(normalized.get("contract_specific"))
+        and _truthy(normalized.get("objective_blocker"))
+        and _as_text(normalized.get("blocker_type")).lower() == "short_dte_macro_event"
+    ):
+        return normalized
+    dte = int(_as_float(row.get("dte")) or 0)
+    macro_event_count = _macro_events_within_planned_holding_horizon(row)
+    if dte < MIN_MACRO_SCALE_DTE and macro_event_count > 0:
+        return normalized
+    original_note = _as_text(normalized.get("note"))
+    normalized["objective_blocker"] = False
+    normalized["blocker_type"] = ""
+    # Long-DTE macro exposure is already carried as an explicit ticket
+    # annotation and sizing input. It is not an exact-contract defect.
+    normalized["verdict"] = "supportive"
+    normalized["note"] = (
+        "quantitative guard corrected macro-event review: "
+        f"DTE {dte} is outside the short-DTE veto window"
+        if macro_event_count > 0
+        else "quantitative guard removed macro-event review because no high-impact event is inside the hold"
     )
     if original_note:
         normalized["evidence"] = _append_reason(
@@ -1856,7 +1923,7 @@ def normalize_contract_reviews_against_priced(
                 priced_row,
                 row_contract_key=review_key,
             ):
-                review = _normalize_expected_move_contract_review(review, priced_row)
+                review = _normalize_contract_review_against_priced(review, priced_row)
                 break
         normalized_rows.append(review)
     return pd.DataFrame(normalized_rows, columns=reviews.columns)
@@ -2429,6 +2496,7 @@ PROSPECTIVE_SHADOW_RECOMMENDATION_COLUMNS = [
 ]
 
 
+@lru_cache(maxsize=None)
 def _add_regular_market_days(day: dt.date, sessions: int) -> dt.date:
     current = day
     remaining = max(int(sessions), 0)
@@ -3416,6 +3484,7 @@ def run_pipeline(
         as_of_date=day,
         actual_frame=shared_actual_frame,
         replay_bundle=shared_replay_bundle,
+        model_replay=active_selector_replay,
         pipeline_attributed_only=True,
     )
     final = annotate_profitability_calibration(final, profitability_calibration)
@@ -3479,7 +3548,6 @@ def run_pipeline(
         market_regime=market_regime,
     )
     lessons_application_audit = build_application_audit(final, decision_board, lesson_pack)
-    management_plan = build_management_plan(final, decision_board)
     trade_tickets = build_trade_tickets(decision_board)
     green_trade_tickets, target_order_tickets = split_trade_ticket_surfaces(trade_tickets)
     execution_fill_quality = build_execution_fill_quality_audit(final, trade_tickets)
@@ -3630,6 +3698,10 @@ def run_pipeline(
         execution_fill_quality = build_execution_fill_quality_audit(final, trade_tickets)
         market_open_recheck_queue = build_market_open_recheck_queue(trade_tickets)
         execution_readiness = build_execution_readiness(decision_board, execution_context)
+    # Management instructions are an action surface. Build them only from the
+    # final confidence-gated board so no earlier ready state can survive a later
+    # demotion.
+    management_plan = build_management_plan(final, decision_board)
     profitability_evidence_backfill_plan = build_profitability_evidence_backfill_plan(
         outcome_evidence_audit,
         broker_outcome_match_audit,
@@ -6529,7 +6601,7 @@ def apply_agent_reviews(priced: pd.DataFrame, reviews: pd.DataFrame) -> pd.DataF
             continue
         row_contract_key = contract_review_key(out)
         applicable_reviews = [
-            _normalize_expected_move_contract_review(review, out)
+            _normalize_contract_review_against_priced(review, out)
             for review in ticker_reviews
             if not _truthy(review.get("contract_specific"))
             or _contract_review_applies_to_row(
@@ -8509,6 +8581,12 @@ def empty_live_validation_frame() -> pd.DataFrame:
             "trade_plan",
             "sell_leg",
             "buy_leg",
+            "sell_leg_bid",
+            "sell_leg_ask",
+            "sell_leg_mid",
+            "buy_leg_bid",
+            "buy_leg_ask",
+            "buy_leg_mid",
             "short_leg",
             "long_leg",
             "strategy_route",
@@ -9038,6 +9116,12 @@ def construct_credit_spread(candidate: Mapping[str, Any], hot: pd.DataFrame) -> 
         "buy_leg": buy_leg,
         "short_leg": sell_leg,
         "long_leg": buy_leg,
+        "sell_leg_bid": round(short_bid, 2),
+        "sell_leg_ask": round(short_ask, 2),
+        "sell_leg_mid": round(short_mid, 2),
+        "buy_leg_bid": round(long_bid, 2),
+        "buy_leg_ask": round(long_ask, 2),
+        "buy_leg_mid": round(long_mid, 2),
         "anchor_expiry": str(candidate.get("hot_top_expiry") or short["expiry_dt"]),
         "anchor_strike": float(candidate.get("hot_top_strike") or short["strike"]),
         "short_strike": float(short["strike"]),
@@ -9221,6 +9305,12 @@ def construct_debit_spread(candidate: Mapping[str, Any], hot: pd.DataFrame, *, d
         "buy_leg": buy_leg,
         "short_leg": sell_leg,
         "long_leg": buy_leg,
+        "sell_leg_bid": round(short_bid, 2),
+        "sell_leg_ask": round(short_ask, 2),
+        "sell_leg_mid": round(short_mid, 2),
+        "buy_leg_bid": round(long_bid, 2),
+        "buy_leg_ask": round(long_ask, 2),
+        "buy_leg_mid": round(long_mid, 2),
         "anchor_expiry": str(candidate.get("hot_top_expiry") or long["expiry_dt"]),
         "anchor_strike": float(candidate.get("hot_top_strike") or long["strike"]),
         "short_strike": float(short["strike"]),
@@ -9375,6 +9465,12 @@ def construct_long_option(candidate: Mapping[str, Any], hot: pd.DataFrame, *, di
         "buy_leg": buy_leg,
         "short_leg": "",
         "long_leg": buy_leg,
+        "sell_leg_bid": "",
+        "sell_leg_ask": "",
+        "sell_leg_mid": "",
+        "buy_leg_bid": round(bid, 2),
+        "buy_leg_ask": round(ask, 2) if ask else "",
+        "buy_leg_mid": round(mid, 2),
         "anchor_expiry": str(candidate.get("hot_top_expiry") or option["expiry_dt"]),
         "anchor_strike": float(candidate.get("hot_top_strike") or strike),
         "short_strike": "",
@@ -9502,6 +9598,12 @@ def construct_short_put(candidate: Mapping[str, Any], hot: pd.DataFrame) -> dict
         "buy_leg": "",
         "short_leg": sell_leg,
         "long_leg": "",
+        "sell_leg_bid": round(short_bid, 2),
+        "sell_leg_ask": round(short_ask, 2) if short_ask else "",
+        "sell_leg_mid": round(short_mid, 2),
+        "buy_leg_bid": "",
+        "buy_leg_ask": "",
+        "buy_leg_mid": "",
         "anchor_expiry": str(candidate.get("hot_top_expiry") or short["expiry_dt"]),
         "anchor_strike": float(candidate.get("hot_top_strike") or short_strike),
         "short_strike": short_strike,
@@ -11251,6 +11353,10 @@ def build_management_plan(final: pd.DataFrame, decision_board: pd.DataFrame) -> 
     columns = [
         "recommendation_rank",
         "ticker",
+        "strategy_route",
+        "contract_key",
+        "trade_plan",
+        "ready_to_enter",
         "management_action",
         "entry_condition",
         "entry_limit",
@@ -11270,15 +11376,63 @@ def build_management_plan(final: pd.DataFrame, decision_board: pd.DataFrame) -> 
         "management_note",
         "visibility_action",
     ]
-    if final.empty:
+    if (final is None or final.empty) and (decision_board is None or decision_board.empty):
         return pd.DataFrame(columns=columns)
 
-    decision_by_ticker = _frame_by_ticker(decision_board)
+    final_rows = (
+        final.reset_index(drop=True)
+        if final is not None
+        else pd.DataFrame()
+    )
+    decision_rows = (
+        decision_board.reset_index(drop=True)
+        if decision_board is not None
+        else pd.DataFrame()
+    )
+    decisions = _align_decision_board_to_final_output(
+        final_rows,
+        decision_rows,
+    )
+
+    def identity_keys(row: Mapping[str, Any]) -> set[tuple[str, ...]]:
+        ticker = _as_text(row.get("ticker")).upper()
+        keys: set[tuple[str, ...]] = set()
+        contract_key = _as_text(row.get("contract_key"))
+        if ticker and contract_key:
+            keys.add(("contract", ticker, contract_key))
+        trade_plan = _as_text(row.get("trade_plan") or row.get("full_ticket"))
+        if ticker and trade_plan:
+            keys.add(("trade_plan", ticker, trade_plan))
+        rank = _as_text(row.get("recommendation_rank"))
+        if ticker and rank:
+            keys.add(("rank", ticker, rank))
+        if ticker:
+            keys.add(("ticker", ticker))
+        return keys
+
+    paired_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    represented_keys: set[tuple[str, ...]] = set()
+    for position, final_row in final_rows.iterrows():
+        row = final_row.to_dict()
+        decision = decisions.iloc[position].to_dict() if position < len(decisions) else {}
+        paired_rows.append((row, decision))
+        represented_keys.update(identity_keys(row))
+        represented_keys.update(identity_keys(decision))
+
+    # Closed-session same-day carry rows can exist only on the final decision
+    # board. They are still action rows and need complete management guidance.
+    for _, decision_row in decision_rows.iterrows():
+        decision = decision_row.to_dict()
+        keys = identity_keys(decision)
+        if keys and not represented_keys.isdisjoint(keys):
+            continue
+        paired_rows.append((decision, decision))
+        represented_keys.update(keys)
+
     rows: list[dict[str, Any]] = []
-    for _, row in final.iterrows():
+    for row, decision in paired_rows:
         ticker = str(row.get("ticker") or "").strip().upper()
-        decision = decision_by_ticker.get(ticker, {})
-        ready = bool(decision.get("ready_to_enter", False))
+        ready = _truthy(decision.get("ready_to_enter", False))
         status = str(row.get("recommendation_status") or decision.get("final_action") or "").strip().upper()
         execution = str(decision.get("execution_status") or "").strip()
         live_status = str(row.get("live_validation_status") or decision.get("live_validation_status") or "").strip().upper()
@@ -11312,13 +11466,14 @@ def build_management_plan(final: pd.DataFrame, decision_board: pd.DataFrame) -> 
         if ready:
             action = "ENTRY_READY"
             entry_condition = f"Enter only if the live quote is {price_condition} and Schwab validation remains PASS."
+            take_profit_instruction = _ticket_exit_limit_display(row) or _display_value(target_exit) or "not set"
             risk_note = (
                 f"stop at {stop_exit}"
                 if stop_exit is not None
                 else "no hard stop - the spread width is the defined risk, so let it work"
             )
             note = (
-                f"Take profit at {target_exit}; {risk_note}. "
+                f"Take-profit exit: {take_profit_instruction}; {risk_note}. "
                 "Re-check the quote immediately before sending the suggested-size order."
                 + time_exit_note
             )
@@ -11376,6 +11531,10 @@ def build_management_plan(final: pd.DataFrame, decision_board: pd.DataFrame) -> 
             {
                 "recommendation_rank": row.get("recommendation_rank", ""),
                 "ticker": ticker,
+                "strategy_route": row.get("strategy_route", ""),
+                "contract_key": row.get("contract_key", ""),
+                "trade_plan": row.get("trade_plan", row.get("full_ticket", "")),
+                "ready_to_enter": ready,
                 "management_action": action,
                 "entry_condition": entry_condition,
                 "entry_limit": entry_limit,
@@ -11680,6 +11839,7 @@ def build_profitability_calibration(
     as_of_date: str | dt.date | None = None,
     actual_frame: Optional[pd.DataFrame] = None,
     replay_bundle: Optional[tuple[pd.DataFrame, str, str]] = None,
+    model_replay: Optional[pd.DataFrame] = None,
     pipeline_attributed_only: bool = False,
 ) -> pd.DataFrame:
     """Build row-level profitability buckets from actual outcomes plus replay buckets."""
@@ -11703,9 +11863,10 @@ def build_profitability_calibration(
     replay, replay_path, replay_error = (
         replay_bundle if replay_bundle is not None else _profitability_replay_frame(replay_out_root, as_of=as_of_day)
     )
-    model_replay, _model_replay_error = _active_selector_replay_support_frame(
-        replay_out_root,
-        as_of=as_of_day,
+    model_replay = (
+        model_replay.copy()
+        if model_replay is not None
+        else _active_selector_replay_support_frame(replay_out_root, as_of=as_of_day)[0]
     )
     rows: list[dict[str, Any]] = []
     for _, row in current.iterrows():
@@ -15146,7 +15307,7 @@ def build_options_agent_walkforward_replay_audit(
     *,
     as_of: Optional[dt.date] = None,
 ) -> pd.DataFrame:
-    """Build an outcome-blind expanding-window audit for Options Agent routes."""
+    """Build an outcome-blind audit inside the active selector's entry domain."""
 
     pinned_path, pin_error, _ = _codexuw_pinned_replay_path(out_root)
     if pin_error or pinned_path is None or not pinned_path.exists():
@@ -15194,13 +15355,40 @@ def build_options_agent_walkforward_replay_audit(
     if frame.empty:
         return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
 
-    for column in ("decision_score", "flow_total_premium", "source_contract_oi", "entry_quote_width_pct"):
+    for column in (
+        "decision_score",
+        "flow_total_premium",
+        "source_contract_oi",
+        "source_contract_volume",
+        "entry_quote_width_pct",
+        "combined_flow_bias",
+        "entry_credit_pct_width",
+        "entry_debit_pct_width",
+        "reward_risk",
+        "expected_move_ratio",
+        "iv_rank",
+        "dte",
+    ):
         frame[column] = pd.to_numeric(frame.get(column, pd.Series(index=frame.index, dtype=float)), errors="coerce")
     frame["ticker"] = frame["ticker"].map(lambda value: _as_text(value).upper())
+    frame["entry_type"] = frame.apply(
+        lambda row: _as_text(row.get("entry_side") or row.get("strategy_kind")).upper(),
+        axis=1,
+    )
     frame["decision_pass"] = frame.get(
         "decision_pass",
         pd.Series(False, index=frame.index),
     ).map(_truthy)
+    active_policy = _promoted_selector_policy_definition()
+    if not active_policy:
+        return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
+    policy_assessments = frame.apply(
+        lambda row: _selector_v4_replay_assessment(row, policy=active_policy),
+        axis=1,
+    )
+    frame = frame[policy_assessments.map(lambda result: bool(result[0]))].copy()
+    if frame.empty:
+        return pd.DataFrame(columns=OPTIONS_AGENT_WALKFORWARD_REPLAY_COLUMNS)
     frame = frame.sort_values(
         [
             "signal_date",
@@ -15219,6 +15407,7 @@ def build_options_agent_walkforward_replay_audit(
 
     selected_rows: list[dict[str, Any]] = []
     policy = (
+        f"entry_domain={PROMOTED_SELECTOR_POLICY_ID};"
         f"expanding_window_train_n>={MIN_WALKFORWARD_TRAIN_SAMPLE_SIZE};"
         f"train_days>={MIN_WALKFORWARD_TRAIN_DAYS};train_pf>={MIN_EXPECTANCY_PROFIT_FACTOR:.2f};"
         f"train_avg_pnl>0;train_win_rate>={MIN_EXPECTANCY_WIN_RATE:.2f};"
@@ -15227,7 +15416,18 @@ def build_options_agent_walkforward_replay_audit(
         "rank=entry_time_fields_only"
     )
     for signal_day in sorted(frame["signal_date"].dropna().unique()):
-        history = frame[frame["outcome_available_date"] < signal_day]
+        history = frame[frame["outcome_available_date"] < signal_day].copy()
+        history = history[
+            history.get(
+                "next_session_reprice_approved",
+                pd.Series(False, index=history.index),
+            ).map(_truthy)
+            & history.get(
+                "exact_evaluated",
+                pd.Series(False, index=history.index),
+            ).map(_truthy)
+            & pd.to_numeric(history["realized_pnl"], errors="coerce").notna()
+        ].copy()
         current = frame[frame["signal_date"] == signal_day].copy()
         qualified: dict[tuple[str, str], dict[str, float]] = {}
         for key, group in history.groupby(["strategy_route", "regime"], dropna=False):
@@ -15270,7 +15470,11 @@ def build_options_agent_walkforward_replay_audit(
         ).head(daily_cap)
         for rank, (_, row) in enumerate(current.iterrows(), start=1):
             realized_pnl = _as_float(row.get("realized_pnl"))
-            if not _truthy(row.get("next_session_reprice_approved")) or realized_pnl is None:
+            if (
+                not _truthy(row.get("next_session_reprice_approved"))
+                or not _truthy(row.get("exact_evaluated"))
+                or realized_pnl is None
+            ):
                 # The source selection remains in the policy history, but the
                 # exact next-session reprice did not create an executable trade.
                 continue
@@ -15628,9 +15832,56 @@ def _selector_challenger_replay_frame(
         & frame["outcome_available_date"].notna()
     ].copy()
     if as_of is not None:
-        frame = frame[
-            frame["signal_date"].dt.date.le(as_of)
-        ].copy()
+        cutoff = pd.Timestamp(as_of)
+        frame = frame[frame["signal_date"].dt.date.le(as_of)].copy()
+
+        # The pinned replay is generated later than many historical report dates.
+        # Keep then-visible proposals in the selector opportunity set, but mask
+        # execution and outcome fields that were not knowable at the requested
+        # as-of. Otherwise a historical run can borrow a future close from the
+        # same immutable replay file.
+        planned_entry = pd.to_datetime(
+            frame.get("planned_entry_date", pd.Series(pd.NaT, index=frame.index)),
+            errors="coerce",
+        )
+        fallback_entry = frame["signal_date"].map(
+            lambda value: pd.Timestamp(_add_regular_market_days(value.date(), 1))
+        )
+        planned_entry = planned_entry.where(planned_entry.notna(), fallback_entry)
+        future_entry = planned_entry >= cutoff
+        for column in (
+            "next_session_bid",
+            "next_session_ask",
+            "next_session_mid",
+            "next_session_quote_width_pct",
+            "executed_entry_price",
+            "executed_entry_credit",
+            "executed_entry_debit",
+        ):
+            if column in frame.columns:
+                frame.loc[future_entry, column] = math.nan
+        for column in ("next_session_reprice_observed", "next_session_reprice_approved"):
+            if column in frame.columns:
+                frame.loc[future_entry, column] = False
+        if "next_session_reprice_reason" in frame.columns:
+            frame.loc[future_entry, "next_session_reprice_reason"] = "not_available_as_of"
+
+        future_outcome = frame["outcome_available_date"] >= cutoff
+        frame.loc[future_outcome, "realized_pnl"] = math.nan
+        frame.loc[future_outcome, "exact_evaluated"] = False
+        for column in (
+            "executed_target_exit",
+            "executed_stop_exit",
+            "exit_value",
+            "holding_sessions",
+            "pnl_1x",
+            "return_on_risk",
+        ):
+            if column in frame.columns:
+                frame.loc[future_outcome, column] = math.nan
+        for column in ("exact_reason", "exit_trigger"):
+            if column in frame.columns:
+                frame.loc[future_outcome, column] = "not_available_as_of"
     if frame.empty:
         return frame, split_day, str(pinned_path), "selector replay source has no fillable rows before as-of"
 
@@ -16177,6 +16428,8 @@ def summarize_selector_challenger_audit(audit: pd.DataFrame) -> dict[str, Any]:
         "validation_scope": (
             "development_backtest_policy_tuned_through_"
             + PROMOTED_SELECTOR_DEVELOPMENT_CUTOFF
+            + "_prospective_tracking_started_"
+            + PROMOTED_SELECTOR_PROSPECTIVE_START
         ),
         "policy_count": int(audit["policy_id"].astype(str).nunique()),
         "promoted_policy_ids": promoted,
@@ -17592,9 +17845,10 @@ def _current_calibration_verdict(
             "PASS",
             "eligible_for_one_lot_cold_start_with_partitioned_selector_route_support",
             (
-                f"{ticker} {key_text} has promoted-selector route support in both frozen partitions "
+                f"{ticker} {key_text} has promoted-selector route support across both development partitions "
                 f"(pre_split sample={pre_sample}, profit_factor={(model_pre_split_metrics or {}).get('profit_factor', '')}; "
-                f"heldout sample={heldout_sample}, profit_factor={(model_heldout_metrics or {}).get('profit_factor', '')}). "
+                f"post_split_development sample={heldout_sample}, "
+                f"profit_factor={(model_heldout_metrics or {}).get('profit_factor', '')}). "
                 f"Broad managed-trade support via {actual_scope} and the off-policy replay bucket are not "
                 "selector-matched, so they remain diagnostic. "
                 "This is a one-contract evidence pilot; scaling is disabled until selector-attributed actual "
@@ -18408,6 +18662,12 @@ def synthesize_decision_board(
         "dte",
         "sell_leg",
         "buy_leg",
+        "sell_leg_bid",
+        "sell_leg_ask",
+        "sell_leg_mid",
+        "buy_leg_bid",
+        "buy_leg_ask",
+        "buy_leg_mid",
         "suggested_contracts",
         "risk_sized_contracts",
         "position_contract_cap",
@@ -18707,6 +18967,12 @@ def synthesize_decision_board(
                 "dte": row.get("dte", ""),
                 "sell_leg": row.get("sell_leg", row.get("short_leg", "")),
                 "buy_leg": row.get("buy_leg", row.get("long_leg", "")),
+                "sell_leg_bid": row.get("sell_leg_bid", ""),
+                "sell_leg_ask": row.get("sell_leg_ask", ""),
+                "sell_leg_mid": row.get("sell_leg_mid", ""),
+                "buy_leg_bid": row.get("buy_leg_bid", ""),
+                "buy_leg_ask": row.get("buy_leg_ask", ""),
+                "buy_leg_mid": row.get("buy_leg_mid", ""),
                 "suggested_contracts": suggested_contracts,
                 "risk_sized_contracts": row.get("risk_sized_contracts", suggested_contracts),
                 "position_contract_cap": row.get("position_contract_cap", suggested_contracts),
@@ -19157,6 +19423,12 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "dte",
         "sell_leg",
         "buy_leg",
+        "sell_leg_bid",
+        "sell_leg_ask",
+        "sell_leg_mid",
+        "buy_leg_bid",
+        "buy_leg_ask",
+        "buy_leg_mid",
         "entry_limit",
         "target_entry",
         "entry_type",
@@ -19222,6 +19494,12 @@ def build_trade_tickets(decision_board: pd.DataFrame) -> pd.DataFrame:
         "expiry",
         "sell_leg",
         "buy_leg",
+        "sell_leg_bid",
+        "sell_leg_ask",
+        "sell_leg_mid",
+        "buy_leg_bid",
+        "buy_leg_ask",
+        "buy_leg_mid",
         "credit_width_ratio",
         "trade_quality_status",
         "quality_gate_reason",
@@ -20139,7 +20417,8 @@ def next_regular_market_session_start(now: Optional[dt.datetime] = None) -> dt.d
     raise RuntimeError("could not find the next regular market session within the configured lookahead")
 
 
-def us_equity_market_holidays(year: int) -> set[dt.date]:
+@lru_cache(maxsize=None)
+def us_equity_market_holidays(year: int) -> frozenset[dt.date]:
     """NYSE/Nasdaq full-day U.S. equity market holidays, including observed dates."""
 
     holidays: set[dt.date] = set()
@@ -20158,7 +20437,7 @@ def us_equity_market_holidays(year: int) -> set[dt.date]:
                 _observed_fixed_holiday(scoped_year, 12, 25),
             }
         )
-    return holidays
+    return frozenset(holidays)
 
 
 def _observed_fixed_holiday(year: int, month: int, day: int) -> dt.date:
@@ -21192,6 +21471,20 @@ def _market_closed_live_validation_deferred(row: Mapping[str, Any], execution_co
     )
 
 
+def _target_exit_math_is_valid(
+    entry_type: str,
+    target_entry: Optional[float],
+    target_exit: Optional[float],
+) -> bool:
+    if target_entry is None or target_exit is None:
+        return False
+    if entry_type == "CREDIT":
+        return 0 <= target_exit < target_entry
+    if entry_type == "DEBIT":
+        return target_exit > target_entry
+    return True
+
+
 def _target_order_status(
     row: Mapping[str, Any],
     *,
@@ -21225,6 +21518,14 @@ def _target_order_status(
         return "not_actionable_risk_reward"
     if strategy_family != "short_put" and entry_type != "DEBIT" and credit_width < MIN_CREDIT_WIDTH_RATIO:
         return "not_actionable_credit_width"
+    target_entry = _as_float(row.get("target_entry")) or entry_limit
+    target_exit = _as_float(row.get("target_exit"))
+    if (
+        target_entry is not None
+        and target_exit is not None
+        and not _target_exit_math_is_valid(entry_type, target_entry, target_exit)
+    ):
+        return "not_actionable_target_exit_math"
     blocker_set = set(execution_blockers or ())
     status_reason = _as_text(row.get("status_reason")).lower()
     if status == RecommendationStatus.REVIEW.value and "built-in review gate: red flags" in status_reason:
@@ -25290,6 +25591,8 @@ def _expectancy_from_options_agent_walkforward_replay(
             "No outcome-blind expanding-window selections are available.",
         )
         return [missing]
+    walkforward_summary = summarize_options_agent_walkforward_replay(audit)
+    walkforward_status = _as_text(walkforward_summary.get("status")).upper() or "BLOCK"
     current = _filter_frame_to_tickers(audit, current_tickers)
     model_row = _expectancy_metrics_row(
         "options_agent_walkforward_replay_model",
@@ -25301,8 +25604,13 @@ def _expectancy_from_options_agent_walkforward_replay(
         open_or_unrealized_count=0,
         note=(
             "Options Agent expanding-window replay selected from prior-date route/regime evidence and entry-time fields only; "
-            "ticker/day/route/regime duplicates are removed."
+            "ticker/day/route/regime duplicates are removed. "
+            f"Validation gate: {walkforward_summary.get('sample_size', 0)} selections across "
+            f"{walkforward_summary.get('day_count', 0)} days; "
+            f"requires at least {walkforward_summary.get('required_sample_size', MIN_EXPECTANCY_SAMPLE_SIZE)} "
+            f"selections and {walkforward_summary.get('required_day_count', MIN_WALKFORWARD_TEST_DAYS)} days."
         ),
+        status_override_func=lambda *_: walkforward_status,
     )
     current_row = _expectancy_metrics_row(
         "options_agent_walkforward_replay_current_tickers",
@@ -25390,8 +25698,9 @@ def _expectancy_from_selector_challenger_audit(
         "open_or_unrealized_count": 0,
         "note": (
             f"Selector challenger {policy_id} passes its development partitions, but the policy was tuned through "
-            f"{PROMOTED_SELECTOR_DEVELOPMENT_CUTOFF}; this replay is research evidence and cannot authorize "
-            "production green promotion."
+            f"{PROMOTED_SELECTOR_DEVELOPMENT_CUTOFF}; prospective tracking starts "
+            f"{PROMOTED_SELECTOR_PROSPECTIVE_START}. This replay can support one-lot evidence pilots only and "
+            "cannot prove scaled production profitability."
             if research_pass
             else f"Best post-split development selector challenger {policy_id} is rejected; it cannot authorize green promotion."
         ),
@@ -26140,6 +26449,21 @@ def _selector_replay_one_contract_max_loss(row: Mapping[str, Any] | pd.Series) -
     return None
 
 
+def _selector_replay_realization_dates(
+    replay: pd.DataFrame,
+    signal_dates: pd.Series,
+) -> pd.Series:
+    """Return the date P/L became realized, falling back only for legacy rows."""
+
+    realized = pd.Series(pd.NaT, index=replay.index, dtype="datetime64[ns]")
+    for column in ("outcome_available_date", "exit_day"):
+        if column not in replay.columns:
+            continue
+        parsed = pd.to_datetime(replay[column], errors="coerce")
+        realized = realized.where(realized.notna(), parsed)
+    return realized.where(realized.notna(), signal_dates)
+
+
 def _selector_risk_scaled_capacity_metrics(
     selector_replay: pd.DataFrame,
     *,
@@ -26171,8 +26495,16 @@ def _selector_risk_scaled_capacity_metrics(
         replay.get("pnl_1x", replay.get("realized_pnl", pd.Series(index=replay.index, dtype=float))),
         errors="coerce",
     )
+    replay["realization_date"] = _selector_replay_realization_dates(
+        replay,
+        replay["signal_date"],
+    )
     replay["max_loss_1x"] = replay.apply(_selector_replay_one_contract_max_loss, axis=1)
-    required = replay["signal_date"].notna() & replay["pnl_1x"].notna()
+    required = (
+        replay["signal_date"].notna()
+        & replay["realization_date"].notna()
+        & replay["pnl_1x"].notna()
+    )
     invalid_risk = required & (
         pd.to_numeric(replay["max_loss_1x"], errors="coerce").isna()
         | pd.to_numeric(replay["max_loss_1x"], errors="coerce").le(0)
@@ -26200,18 +26532,32 @@ def _selector_risk_scaled_capacity_metrics(
         return result
     replay["scaled_pnl"] = replay["pnl_1x"] * replay["scaled_contracts"]
     replay["scaled_max_loss"] = replay["max_loss_1x"] * replay["scaled_contracts"]
-    replay["capacity_release_date"] = replay["signal_date"].map(
+    planned_entry = pd.to_datetime(
+        replay.get("planned_entry_date", pd.Series(pd.NaT, index=replay.index)),
+        errors="coerce",
+    )
+    fallback_entry = replay["signal_date"].map(
+        lambda value: pd.Timestamp(_add_regular_market_days(value.date(), 1))
+    )
+    replay["capacity_open_date"] = planned_entry.where(planned_entry.notna(), fallback_entry)
+    valid_realized_exit = replay["realization_date"] >= replay["capacity_open_date"]
+    fallback_release = replay["capacity_open_date"].map(
         lambda value: pd.Timestamp(
-            _add_regular_market_days(
-                value.date(),
-                SELECTOR_CAPACITY_HOLDING_HORIZON_SESSIONS,
-            )
+            _add_regular_market_days(value.date(), SELECTOR_CAPACITY_HOLDING_HORIZON_SESSIONS)
         )
     )
+    realized_release = replay["realization_date"].map(
+        lambda value: pd.Timestamp(_add_regular_market_days(value.date(), 1))
+    )
+    replay["capacity_release_date"] = realized_release.where(
+        valid_realized_exit,
+        fallback_release,
+    )
+    capacity_fallback_trade_count = int((~valid_realized_exit).sum())
     concurrent_exposures: list[tuple[float, int]] = []
-    for signal_date in replay["signal_date"].drop_duplicates().sort_values():
+    for signal_date in replay["capacity_open_date"].drop_duplicates().sort_values():
         active = replay[
-            replay["signal_date"].le(signal_date)
+            replay["capacity_open_date"].le(signal_date)
             & replay["capacity_release_date"].gt(signal_date)
         ]
         concurrent_exposures.append(
@@ -26251,14 +26597,15 @@ def _selector_risk_scaled_capacity_metrics(
             ),
         }
 
-    observed_monthly = replay["scaled_pnl"].groupby(replay["signal_date"].dt.to_period("M")).sum()
+    observed_monthly = replay["scaled_pnl"].groupby(replay["realization_date"].dt.to_period("M")).sum()
     full_months = pd.period_range(observed_monthly.index.min(), observed_monthly.index.max(), freq="M")
     monthly_pnl = observed_monthly.reindex(full_months, fill_value=0.0).astype(float)
     scaled_profit_factor = _profit_factor_from_pnl(replay["scaled_pnl"])
     expected_monthly_pnl = float(monthly_pnl.mean()) if not monthly_pnl.empty else 0.0
     monthly_p25 = float(monthly_pnl.quantile(0.25)) if not monthly_pnl.empty else 0.0
     profitable_month_rate = float((monthly_pnl > 0).mean()) if not monthly_pnl.empty else 0.0
-    max_drawdown = abs(float(_series_max_drawdown(replay["scaled_pnl"])))
+    realized_daily_pnl = replay.groupby("realization_date")["scaled_pnl"].sum().sort_index()
+    max_drawdown = abs(float(_series_max_drawdown(realized_daily_pnl)))
     max_drawdown_pct = max_drawdown / account_value
     status = bool(
         len(monthly_pnl) >= MIN_MONTHLY_CAPACITY_MONTHS
@@ -26303,6 +26650,12 @@ def _selector_risk_scaled_capacity_metrics(
             "max_concurrent_positions": max_concurrent_positions,
             "max_concurrent_risk": max_concurrent_risk,
             "max_concurrent_risk_pct": max_concurrent_risk_pct,
+            "capacity_horizon_source": (
+                "realized_exit_dates"
+                if capacity_fallback_trade_count == 0
+                else "realized_exit_dates_with_fixed_horizon_fallback"
+            ),
+            "capacity_horizon_fallback_trade_count": capacity_fallback_trade_count,
         }
     )
     return result
@@ -26405,13 +26758,15 @@ def build_monthly_feasibility(
                 replay.get("signal_date", replay.get("asof", pd.Series(index=replay.index, dtype=object))),
                 errors="coerce",
             )
-            valid = replay_pnl.notna() & signal_dates.notna()
+            realization_dates = _selector_replay_realization_dates(replay, signal_dates)
+            valid = replay_pnl.notna() & signal_dates.notna() & realization_dates.notna()
             replay_pnl = replay_pnl[valid]
             signal_dates = signal_dates[valid]
+            realization_dates = realization_dates[valid]
             if replay_pnl.empty:
                 monthly_pnl = pd.Series(dtype=float)
             else:
-                observed = replay_pnl.groupby(signal_dates.dt.to_period("M")).sum()
+                observed = replay_pnl.groupby(realization_dates.dt.to_period("M")).sum()
                 full_months = pd.period_range(observed.index.min(), observed.index.max(), freq="M")
                 monthly_pnl = observed.reindex(full_months, fill_value=0.0).astype(float)
         gross_profit = float(replay_pnl[replay_pnl > 0].sum()) if not replay_pnl.empty else 0.0
@@ -26513,19 +26868,19 @@ def build_monthly_feasibility(
                     "metric": "selector_one_contract_monthly_avg_pnl",
                     "value": round(one_contract_monthly_avg, 2),
                     "status": "PASS" if one_contract_monthly_avg > 0 else "BLOCK",
-                    "note": "Average realized monthly P/L before scaling.",
+                    "note": "Average realized monthly P/L booked to each trade's exit month before scaling.",
                 },
                 {
                     "metric": "selector_monthly_median_pnl",
                     "value": round(monthly_median, 2),
                     "status": "INFO",
-                    "note": "Median one-contract calendar-month P/L.",
+                    "note": "Median one-contract exit-month P/L.",
                 },
                 {
                     "metric": "selector_monthly_p25_pnl",
                     "value": round(monthly_p25, 2),
                     "status": "PASS" if monthly_p25 > 0 else "BLOCK",
-                    "note": "Lower-quartile one-contract calendar-month P/L must remain positive.",
+                    "note": "Lower-quartile one-contract exit-month P/L must remain positive.",
                 },
                 {
                     "metric": "selector_profitable_month_rate",
@@ -26642,7 +26997,11 @@ def build_monthly_feasibility(
                     "metric": "selector_risk_scaled_max_concurrent_positions",
                     "value": int(scaled.get("max_concurrent_positions") or 0),
                     "status": "INFO",
-                    "note": f"Maximum overlapping positions using a fixed {SELECTOR_CAPACITY_HOLDING_HORIZON_SESSIONS}-session risk horizon.",
+                    "note": (
+                        "Maximum overlapping positions from planned entry through the recorded realized exit; "
+                        f"the {SELECTOR_CAPACITY_HOLDING_HORIZON_SESSIONS}-session fallback applied to "
+                        f"{int(scaled.get('capacity_horizon_fallback_trade_count') or 0)} row(s)."
+                    ),
                 },
                 {
                     "metric": "selector_risk_scaled_max_concurrent_risk_pct",
@@ -26654,7 +27013,7 @@ def build_monthly_feasibility(
                         <= MAX_SELECTOR_CONCURRENT_RISK_PCT
                         else "BLOCK"
                     ),
-                    "note": f"Fixed-horizon aggregate max-loss exposure must remain <= {MAX_SELECTOR_CONCURRENT_RISK_PCT:.0%} of the research account.",
+                    "note": f"Realized-horizon aggregate max-loss exposure must remain <= {MAX_SELECTOR_CONCURRENT_RISK_PCT:.0%} of the research account.",
                 },
                 {
                     "metric": "selector_risk_scaled_capacity_gate",
@@ -28066,7 +28425,7 @@ def _profitability_confidence_rating(
         )
     elif discretionary_cohort_only:
         next_action = (
-            "Held-out selector evidence supports one-contract pilots; collect agent-attributed "
+            "Development selector evidence supports one-contract pilots; collect agent-attributed "
             "closed outcomes before scaling beyond the evidence cap."
         )
     elif strategy_negative:
@@ -28147,6 +28506,10 @@ def _profitability_confidence_rating(
         .astype(str)
         .eq("options_agent_walkforward_replay_model")
     ]
+    walkforward_model_positive = _positive_evidence_row(
+        walkforward_model_rows,
+        min_sample=MIN_EXPECTANCY_SAMPLE_SIZE,
+    )
     selector_challenger_rows = replay_model_rows[
         replay_model_rows.get("evidence_type", pd.Series("", index=replay_model_rows.index))
         .astype(str)
@@ -28181,9 +28544,10 @@ def _profitability_confidence_rating(
                 "selector_challenger=PROMOTED",
             )
         )
-    authoritative_selector_rows = (
-        selector_challenger_rows if selector_challenger_positive else walkforward_model_rows
-    )
+    # The promoted-policy audit and the expanding-window audit answer different
+    # questions and both must pass. A positive tuned-policy replay must never
+    # hide a losing outcome-blind expanding-window result.
+    authoritative_selector_rows = walkforward_model_rows
     walkforward_negative = _losing_evidence_row(
         authoritative_selector_rows,
         min_sample=MIN_EXPECTANCY_SAMPLE_SIZE,
@@ -28221,26 +28585,39 @@ def _profitability_confidence_rating(
         and (strategy_positive or strategy_weak_positive)
     )
     promoted_selector_support = bool(selector_challenger_positive)
-    # The operative question is whether these proposals would have made money on
-    # replay, so leakage-safe walk-forward evidence earns its own tier. Live fills
-    # rank strictly higher (uncapped) rather than gating the research.
-    backtest_certified = bool(
-        promoted_selector_support and walkforward_positive and replay_positive
+    # Certification must compare like with like. The generic decision-pass
+    # replay includes routes the active credit-only selector excludes, so its
+    # negative PF is useful as a broad diagnostic but cannot veto the promoted
+    # policy. Require both the promoted selector and the independent expanding-
+    # window Options Agent model to pass. This remains development/backtest
+    # evidence and is capped at 7/10 until prospective or broker-attributed
+    # outcomes exist.
+    selector_aligned_backtest_certified = bool(
+        promoted_selector_support and walkforward_model_positive
     )
     research_support_cap = (
-        8.0
-        if backtest_certified
-        else 7.0
-        if promoted_selector_support or strong_replay_research_support
+        7.0
+        if selector_aligned_backtest_certified
+        or promoted_selector_support
+        or strong_replay_research_support
         else 6.0
     )
+    broad_replay_negative = _losing_evidence_row(
+        replay_rows,
+        min_sample=MIN_EXPECTANCY_SAMPLE_SIZE,
+    )
+    if broad_replay_negative and selector_aligned_backtest_certified:
+        evidence.append(
+            "off_policy_broad_replay=NEGATIVE_DIAGNOSTIC; active selector excludes those routes; "
+            "selector-aligned expanding-window and promoted-policy evidence govern one-lot pilots"
+        )
     if live_attribution_missing:
         rating = min(rating, research_support_cap)
-        if backtest_certified:
+        if selector_aligned_backtest_certified:
             evidence.append(
-                "pipeline_attribution=BACKTEST_CERTIFIED; promoted selector plus "
-                "leakage-safe walk-forward and current-ticker replay all positive; "
-                "not yet live-proven"
+                "pipeline_attribution=SELECTOR_ALIGNED_BACKTEST_CERTIFIED; promoted selector plus "
+                "outcome-blind expanding-window Options Agent replay are positive; development evidence only, "
+                "not yet prospectively or live proven"
             )
         else:
             blockers.append("backtest_evidence_below_certification_tier")
@@ -28523,7 +28900,10 @@ def _profitability_confidence_rating(
             # Permit the tightly capped pilot that creates prospective pipeline
             # attribution, but do not misstate that bootstrap permission as
             # pipeline-level profitability proof.
-            rating = min(rating, research_support_cap if backtest_certified else 6.0)
+            rating = min(
+                rating,
+                research_support_cap if selector_aligned_backtest_certified else 6.0,
+            )
             blockers.append("pipeline_attribution_pending_one_lot_cold_start")
             evidence.append(
                 "pipeline_attribution_pending_one_lot_cold_start=PENDING; scaling_disabled; "
@@ -28533,17 +28913,24 @@ def _profitability_confidence_rating(
                     else "route_calibrated_one_lot_bridge=PASS"
                 )
             )
-        elif promoted_selector_support and (replay_positive or replay_model_positive):
+        elif selector_aligned_backtest_certified:
             # Cold-start deadlock guard. Requiring filled agent orders before any
             # order may go green makes green unreachable forever: nothing can ever
-            # fill because nothing ever turns green. When the frozen out-of-sample
-            # selector partition is promoted and the leakage-safe replay passes,
-            # certify on that held-out evidence and state plainly that it is
-            # backtest-certified rather than live-proven.
+            # fill because nothing ever turns green. The selector and expanding-
+            # window model are both outcome-blind at selection time, but the
+            # policy was still developed on this history, so cap the claim at a
+            # one-lot, selector-aligned backtest certification.
             rating = min(rating, research_support_cap)
             evidence.append(
-                "pipeline_attribution_cold_start=CERTIFIED_ON_HELD_OUT_REPLAY; "
+                "pipeline_attribution_cold_start=SELECTOR_ALIGNED_DEVELOPMENT_REPLAY; "
                 "no agent order has filled yet, so this is backtest-certified, not live-proven"
+            )
+        elif promoted_selector_support and (replay_positive or replay_model_positive):
+            rating = min(rating, 6.0)
+            blockers.append("selector_aligned_walkforward_confirmation_missing")
+            evidence.append(
+                "pipeline_attribution_cold_start=PROMOTED_SELECTOR_ONLY; development replay is positive, "
+                "but selector-aligned expanding-window confirmation is missing"
             )
         else:
             blockers.append("no_positive_pipeline_attributed_outcomes")
@@ -29693,16 +30080,66 @@ def render_report(
             1 if all_green_rows_probationary else PROMOTED_SELECTOR_INITIAL_ORDER_CONTRACTS
         )
         contract_label = "contract" if live_initial_contract_cap == 1 else "contracts"
+        scale_status = (
+            "capacity evidence passes; the monthly result is not guaranteed"
+            if _as_text(monthly_feasibility_summary.get("capacity_status")) == "pass"
+            else "scaling remains unapproved"
+        )
         capacity_line = (
-            f"- Portfolio capacity: ${expected_monthly_pnl:,.0f}/month at "
-            f"{(risk_budget_pct or 0.0):.1%} account risk/trade and {approved_scale or 1:g} average contracts"
+            f"- Scale evidence: one-contract development expectancy ${expected_monthly_pnl:,.0f}/month "
+            f"at {approved_scale or 1:g} average contracts/trade"
             + (f" ({target_ratio:.1%} of ${monthly_target:,.0f} target)" if target_ratio is not None else "")
-            + (f"; PF {scaled_pf:.3f}" if scaled_pf is not None else "")
+            + (
+                f"; research-only {(risk_budget_pct or 0.0):.1%}-risk/trade PF {scaled_pf:.3f}"
+                if scaled_pf is not None
+                else ""
+            )
             + (f", pre {scaled_pre_pf:.3f}" if scaled_pre_pf is not None else "")
             + (f", post-split development {scaled_heldout_pf:.3f}" if scaled_heldout_pf is not None else "")
             + (f"; max replay drawdown {scaled_drawdown_pct:.2%}" if scaled_drawdown_pct is not None else "")
             + (f"; required average {required_scale:.1f} contracts" if required_scale is not None else "")
-            + f"; live orders start at no more than {live_initial_contract_cap} {contract_label}"
+            + f"; live orders start at no more than {live_initial_contract_cap} {contract_label}; {scale_status}"
+        )
+    batch_line = ""
+    if not computed_green.empty:
+        batch_target_profit = sum(
+            _ticket_planned_target_profit(row) or 0.0
+            for row in computed_green.to_dict("records")
+        )
+        batch_max_profit = _position_sum(computed_green, "max_profit", "position_max_profit")
+        batch_max_loss = _position_sum(computed_green, "max_loss", "position_max_loss")
+        portfolio_value = _as_float(execution_context.get("portfolio_total_value")) or 0.0
+        batch_risk_pct = batch_max_loss / portfolio_value if portfolio_value > 0 else None
+        routes = computed_green.get("strategy_route", pd.Series("", index=computed_green.index)).astype(str)
+        bullish_count = int(routes.str.startswith("bull_").sum())
+        bearish_count = int(routes.str.startswith("bear_").sum())
+        expiries = sorted(
+            {
+                _as_text(value)
+                for value in computed_green.get("expiry", pd.Series(dtype=object))
+                if _as_text(value)
+            }
+        )
+        expiry_note = (
+            f"; all expire {expiries[0]}"
+            if len(expiries) == 1
+            else f"; {len(expiries)} expiries"
+            if expiries
+            else ""
+        )
+        pilot_subject = (
+            "the green pilot"
+            if len(computed_green) == 1
+            else f"all {len(computed_green)} green pilots"
+        )
+        pilot_verb = "is" if len(computed_green) == 1 else "are"
+        batch_line = (
+            f"- Batch exposure if {pilot_subject} {pilot_verb} entered: "
+            f"+${batch_target_profit:,.0f} planned target / +${batch_max_profit:,.0f} theoretical max / "
+            f"-${batch_max_loss:,.0f} max loss"
+            + (f" ({batch_risk_pct:.2%} of portfolio)" if batch_risk_pct is not None else "")
+            + f"; {bullish_count} bullish / {bearish_count} bearish"
+            + expiry_note
         )
     def artifact_link(label: str, path_value: Any, fallback: str) -> str:
         filename = Path(_as_text(path_value)).name if _as_text(path_value) else fallback
@@ -29726,16 +30163,10 @@ def render_report(
         f"- Trade-plan status: {executable_status}",
         f"- Actionable trade plans: {green_count}",
         f"- Yellow planning tickets: {target_count}",
-        breadth_line,
         f"- Order-entry confidence: {order_entry_rating}/10",
         f"- Order mechanics confidence: {order_mechanics_rating}/10",
-        f"- Pipeline profitability evidence maturity: {profitability_rating}/10",
-        *([capacity_line] if capacity_line else []),
-        *([data_basis_line] if data_basis_line else []),
-        *([live_reprice_line] if live_reprice_line else []),
-        *([source_provenance_line] if source_provenance_line else []),
-        *([f"- {_live_market_context_note(live_market_context)}"] if _live_market_context_note(live_market_context) else []),
-        *([selector_replay_line] if selector_replay_line else []),
+        f"- Pipeline profitability confidence: {profitability_rating}/10",
+        *([batch_line] if batch_line else []),
         f"- Why no actionable plan: {no_green_reason}"
         if green_count == 0
         else (
@@ -29746,7 +30177,6 @@ def render_report(
             if all_green_rows_probationary
             else "- Actionable-plan note: confirm the final Schwab quote before entry."
         ),
-        f"- Next action: {next_action}",
         "",
     ]
     captured_live = manifest.get("captured_live_recompute", {}) or {}
@@ -29760,6 +30190,25 @@ def render_report(
         )
     lines.extend(_render_actionable_tickets(final))
     lines.extend(_render_selected_setup_result(final))
+    lines.extend(
+        [
+            "## Evidence And Context",
+            "",
+            breadth_line,
+            *([capacity_line] if capacity_line else []),
+            *([data_basis_line] if data_basis_line else []),
+            *([live_reprice_line] if live_reprice_line else []),
+            *([source_provenance_line] if source_provenance_line else []),
+            *(
+                [f"- {_live_market_context_note(live_market_context)}"]
+                if _live_market_context_note(live_market_context)
+                else []
+            ),
+            *([selector_replay_line] if selector_replay_line else []),
+            f"- Next action: {next_action}",
+            "",
+        ]
+    )
     lines.extend(output_file_lines)
     if warnings:
         lines.extend(["", "## Warnings", ""])
@@ -30155,34 +30604,54 @@ def _target_rows_require_watch_only_from_tickets(target: pd.DataFrame) -> bool:
 
 def _render_ticket_rows(tickets: pd.DataFrame) -> list[str]:
     lines = [
-        "| Status | Ticker | Strategy | Expiry | Qty | Limit | Take Profit | Max P/L | Mechanics Score |"
+        "| Status | Ticker | Strategy | Expiry | Qty | Net Entry | Take Profit | Trade Confidence | Entry Confidence | Target P/L / Max Loss |"
     ]
-    lines.append("|---|---|---|---|---:|---:|---:|---:|---:|")
+    lines.append("|---|---|---|---|---:|---:|---:|---:|---:|---:|")
     for _, row in tickets.iterrows():
         lines.append(
-            "| {status} | {ticker} | {strategy} | {expiry} | {qty} | {entry} | {target} | {max_pnl} | {order_score} |".format(
+            "| {status} | {ticker} | {strategy} | {expiry} | {qty} | {entry} | {target} | {trade_confidence} | {entry_confidence} | {max_pnl} |".format(
                 status=_report_cell(_decision_badge(row)),
                 ticker=_report_cell(row.get("ticker")),
                 strategy=_report_cell(_ticket_structure(row)),
                 expiry=_report_cell(_ticket_expiry(row)),
                 qty=_report_cell(_ticket_contracts_display(row)),
-                entry=_report_cell(_ticket_limit_display(row)),
-                target=_display_value(row.get("target_exit")),
-                max_pnl=_report_cell(_ticket_max_pnl_display(row)),
-                order_score=_report_cell(_ticket_order_score_display(row)),
+                entry=_report_cell(_ticket_net_order_display(row)),
+                target=_report_cell(_ticket_exit_limit_display(row)),
+                trade_confidence=_report_cell(_ticket_trade_confidence_display(row)),
+                entry_confidence=_report_cell(_ticket_entry_confidence_display(row)),
+                max_pnl=_report_cell(_ticket_target_pnl_and_max_loss_display(row)),
             )
         )
-    lines.extend(["", "**Planning details**", ""])
+    lines.extend(
+        [
+            "",
+            "**Order-entry details**",
+            "",
+            "Submit each vertical as one multi-leg net-limit order. Individual-leg bid/ask/mid values are quote references only; do not leg into the position separately.",
+            "",
+        ]
+    )
     for _, row in tickets.iterrows():
         ticker = _report_inline_text(row.get("ticker"))
-        order = _report_inline_text(row.get("trade_plan"))
-        target = _display_value(row.get("target_exit")) or "not set"
+        sell_leg = _report_inline_text(row.get("sell_leg") or _ticket_leg_from_plan(row, "SELL"))
+        buy_leg = _report_inline_text(row.get("buy_leg") or _ticket_leg_from_plan(row, "BUY"))
+        target = _ticket_exit_limit_display(row) or "not set"
         stop = _display_value(row.get("stop_exit") or _planned_stop_exit(row)) or "not set"
+        lines.append(f"**{ticker}**")
+        if sell_leg:
+            lines.append(
+                f"- **SELL TO OPEN:** `{sell_leg}`; reference {_ticket_leg_quote_display(row, 'sell')}."
+            )
+        if buy_leg:
+            lines.append(
+                f"- **BUY TO OPEN:** `{buy_leg}`; reference {_ticket_leg_quote_display(row, 'buy')}."
+            )
         lines.extend(
             [
-                f"**{ticker}:** `{order}`",
-                f"Take profit: `{target}`. Stop: `{stop}`. Risk: {_ticket_compact_risk_summary(row)}. "
-                f"Action: {_ticket_recheck_summary(row)}.",
+                f"- **Submit:** `{_ticket_net_order_display(row)}` for the complete position as one order.",
+                f"- **Confidence:** trade `{_ticket_trade_confidence_display(row)}`; entry `{_ticket_entry_confidence_display(row)}`.",
+                f"- **Exit:** close the complete position at `{target}`. Stop: `{stop}`.",
+                f"- **Risk:** {_ticket_compact_risk_summary(row)}. Action: {_ticket_recheck_summary(row)}.",
                 "",
             ]
         )
@@ -30195,6 +30664,56 @@ def _ticket_max_pnl_display(row: Mapping[str, Any]) -> str:
     profit_text = f"+${float(max_profit):,.0f}" if max_profit != "" else "n/a"
     loss_text = f"-${float(max_loss):,.0f}" if max_loss != "" else "n/a"
     return f"{profit_text} / {loss_text}"
+
+
+def _ticket_planned_target_profit(row: Mapping[str, Any]) -> Optional[float]:
+    """Return position P/L at the displayed take-profit exit."""
+
+    entry_type = _as_text(row.get("entry_type")).upper() or _entry_type_from_ticket(
+        row.get("trade_plan")
+    )
+    entry = _as_float(row.get("entry_limit"))
+    target_entry = _as_float(row.get("target_entry"))
+    target_status = _as_text(row.get("target_order_status")).lower()
+    if (
+        not _truthy(row.get("ready_to_enter"))
+        and target_status in {"target_order_candidate", "target_order_wait_for_price"}
+        and target_entry is not None
+        and target_entry > 0
+    ):
+        entry = target_entry
+    target_exit = _as_float(row.get("target_exit"))
+    contracts = max(int(_as_float(row.get("suggested_contracts")) or 0), 0)
+    if entry is None or entry <= 0 or target_exit is None or contracts <= 0:
+        return None
+    if entry_type == "CREDIT" and 0 <= target_exit < entry:
+        return round((entry - target_exit) * 100.0 * contracts, 2)
+    if entry_type == "DEBIT" and target_exit > entry:
+        return round((target_exit - entry) * 100.0 * contracts, 2)
+    return None
+
+
+def _ticket_target_pnl_and_max_loss_display(row: Mapping[str, Any]) -> str:
+    target_profit = _ticket_planned_target_profit(row)
+    max_loss = _row_position_amount(row, "max_loss", "position_max_loss")
+    profit_text = f"+${target_profit:,.0f}" if target_profit is not None else "n/a"
+    loss_text = f"-${float(max_loss):,.0f}" if max_loss != "" else "n/a"
+    return f"{profit_text} / {loss_text}"
+
+
+def _ticket_exit_limit_display(row: Mapping[str, Any]) -> str:
+    target_exit = _as_float(row.get("target_exit"))
+    if target_exit is None or target_exit < 0:
+        return ""
+    entry_type = _as_text(row.get("entry_type")).upper() or _entry_type_from_ticket(
+        row.get("trade_plan")
+    )
+    value = _display_value(target_exit)
+    if entry_type == "CREDIT":
+        return f"BUY BACK <= {value}"
+    if entry_type == "DEBIT":
+        return f"SELL >= {value}"
+    return value
 
 
 def _ticket_contracts_display(row: Mapping[str, Any]) -> str:
@@ -30233,6 +30752,64 @@ def _ticket_expected_pnl_display(row: Mapping[str, Any]) -> str:
 def _ticket_order_score_display(row: Mapping[str, Any]) -> str:
     score = _as_float(row.get("execution_confidence_score"))
     return f"{score:.0f}/100" if score is not None else "Not scored"
+
+
+def _ticket_confidence_display(row: Mapping[str, Any], *, score_key: str, rating_key: str) -> str:
+    score = _as_float(row.get(score_key))
+    rating = _as_text(row.get(rating_key)).upper()
+    if score is None:
+        return rating or "Not scored"
+    if rating:
+        return f"{rating} {score:.0f}/100"
+    return f"{score:.0f}/100"
+
+
+def _ticket_trade_confidence_display(row: Mapping[str, Any]) -> str:
+    return _ticket_confidence_display(
+        row,
+        score_key="trade_quality_confidence_score",
+        rating_key="trade_quality_confidence_rating",
+    )
+
+
+def _ticket_entry_confidence_display(row: Mapping[str, Any]) -> str:
+    return _ticket_confidence_display(
+        row,
+        score_key="execution_confidence_score",
+        rating_key="execution_confidence_rating",
+    )
+
+
+def _ticket_net_order_display(row: Mapping[str, Any]) -> str:
+    entry_type = _as_text(row.get("entry_type")).upper() or _entry_type_from_ticket(
+        row.get("trade_plan")
+    )
+    target_status = _as_text(row.get("target_order_status")).lower()
+    target_entry = _as_float(row.get("target_entry"))
+    is_target = (
+        not _truthy(row.get("ready_to_enter"))
+        and target_status in {"target_order_candidate", "target_order_wait_for_price"}
+        and target_entry is not None
+        and target_entry > 0
+    )
+    value = target_entry if is_target else _as_float(row.get("entry_limit"))
+    if value is None or value <= 0:
+        return "NET LIMIT NOT AVAILABLE"
+    if entry_type == "CREDIT":
+        return f"NET CREDIT LIMIT >= ${value:.2f}"
+    if entry_type == "DEBIT":
+        return f"NET DEBIT LIMIT <= ${value:.2f}"
+    return f"NET LIMIT ${value:.2f}"
+
+
+def _ticket_leg_quote_display(row: Mapping[str, Any], side: str) -> str:
+    prefix = "sell_leg" if side.lower() == "sell" else "buy_leg"
+    quote_parts: list[str] = []
+    for label in ("bid", "ask", "mid"):
+        value = _as_float(row.get(f"{prefix}_{label}"))
+        if value is not None and math.isfinite(value) and value >= 0:
+            quote_parts.append(f"{label} ${value:.2f}")
+    return " / ".join(quote_parts) if quote_parts else "bid/ask unavailable; refresh required"
 
 
 def _ticket_compact_risk_summary(row: Mapping[str, Any]) -> str:
@@ -30789,11 +31366,27 @@ def _render_selected_setup_result(final: pd.DataFrame) -> list[str]:
         "|---|---|---|---|",
     ]
     for _, row in selected.iterrows():
+        live_status = _as_text(row.get("live_validation_status")).upper()
         row_blockers = _blocker_set(row.get("execution_blockers"))
         ordered_blockers = [blocker for blocker in priority if blocker in row_blockers]
         ordered_blockers.extend(sorted(row_blockers - set(priority) - hidden))
         blocker_labels = [_display_blocker_label(blocker) for blocker in ordered_blockers]
-        reason = next(iter(_dedupe_notes(blocker_labels)), "")
+        if live_status == "REVIEW_SNAPSHOT_EXCLUDED":
+            reason = "not in pass-one exact-contract review snapshot; fresh construction and review required"
+        elif live_status == "LIVE_CHAIN_DEFERRED":
+            reason = "live-chain validation deferred by the run cap; fresh validation required"
+        elif live_status == "EXACT_CONTRACT_REPRICE_FAILED":
+            reason = "reviewed legs failed fresh exact-contract repricing"
+        elif live_status == "TARGET_QUOTE_REFRESH":
+            status_text = _as_text(row.get("status_reason")).lower()
+            if "natural_credit is not a valid executable spread price" in status_text:
+                reason = "current spread has no executable natural credit; reprice before entry"
+            elif "quote_width_pct_above" in status_text:
+                reason = "current spread quote exceeds the width limit; reprice before entry"
+            else:
+                reason = "current quote failed executable-price checks; reprice before entry"
+        else:
+            reason = next(iter(_dedupe_notes(blocker_labels)), "")
         if not reason:
             reason = _short_report_reason(
                 row.get("status_reason") or row.get("selector_policy_reason"),
@@ -32790,6 +33383,35 @@ def _has_complete_target_math(row: Mapping[str, Any]) -> bool:
 def _preserve_market_closed_target_recheck(row: Mapping[str, Any], live_message: str) -> dict[str, Any]:
     out = dict(row)
     note = "preserve dated target credit/debit for the next fresh Schwab quote refresh"
+    status = _as_text(row.get("recommendation_status")).upper()
+    entry_limit = _as_float(row.get("entry_limit"))
+    target_entry = _as_float(row.get("target_entry"))
+    target_exit = _as_float(row.get("target_exit"))
+    entry_type = _as_text(row.get("entry_type")).upper() or _entry_type_from_ticket(
+        row.get("trade_plan") or row.get("full_ticket")
+    )
+    dated_limit_repairs_target_math = bool(
+        entry_limit is not None
+        and entry_limit > 0
+        and entry_type in {"CREDIT", "DEBIT"}
+        and target_entry is not None
+        and target_exit is not None
+        and not _target_exit_math_is_valid(entry_type, target_entry, target_exit)
+        and _target_exit_math_is_valid(entry_type, entry_limit, target_exit)
+    )
+    if (
+        status
+        in {
+            RecommendationStatus.ENTER.value,
+            RecommendationStatus.ENTER_WITH_PORTFOLIO_RISK.value,
+        }
+        or dated_limit_repairs_target_math
+    ) and entry_limit is not None and entry_limit > 0:
+        # The dated payoff, breakeven, and take-profit fields were computed from
+        # entry_limit. Retaining a generic lower credit floor (or higher debit
+        # ceiling) can make a preserved target contradictory. Use the exact dated
+        # limit only for an original entry row or when it repairs that conflict.
+        out["target_entry"] = round(entry_limit, 2)
     if live_message:
         note = _append_reason(note, live_message)
     out["live_validation_status"] = "TARGET_QUOTE_REFRESH"
@@ -32900,6 +33522,12 @@ def _apply_live_short_put(
             "buy_leg": "",
             "short_leg": sell_leg,
             "long_leg": "",
+            "sell_leg_bid": live.get("sell_leg_bid", ""),
+            "sell_leg_ask": live.get("sell_leg_ask", ""),
+            "sell_leg_mid": live.get("sell_leg_mid", ""),
+            "buy_leg_bid": "",
+            "buy_leg_ask": "",
+            "buy_leg_mid": "",
             "short_strike": short_strike,
             "long_strike": "",
             "spread_width": "",
@@ -33036,6 +33664,12 @@ def _apply_live_credit_spread(
             "buy_leg": buy_leg,
             "short_leg": sell_leg,
             "long_leg": buy_leg,
+            "sell_leg_bid": live.get("sell_leg_bid", ""),
+            "sell_leg_ask": live.get("sell_leg_ask", ""),
+            "sell_leg_mid": live.get("sell_leg_mid", ""),
+            "buy_leg_bid": live.get("buy_leg_bid", ""),
+            "buy_leg_ask": live.get("buy_leg_ask", ""),
+            "buy_leg_mid": live.get("buy_leg_mid", ""),
             "short_strike": short_strike,
             "long_strike": long_strike,
             "spread_width": width,
@@ -33196,6 +33830,12 @@ def _apply_live_debit_spread(
             "buy_leg": buy_leg,
             "short_leg": sell_leg,
             "long_leg": buy_leg,
+            "sell_leg_bid": live.get("sell_leg_bid", ""),
+            "sell_leg_ask": live.get("sell_leg_ask", ""),
+            "sell_leg_mid": live.get("sell_leg_mid", ""),
+            "buy_leg_bid": live.get("buy_leg_bid", ""),
+            "buy_leg_ask": live.get("buy_leg_ask", ""),
+            "buy_leg_mid": live.get("buy_leg_mid", ""),
             "short_strike": short_strike,
             "long_strike": long_strike,
             "spread_width": width,
@@ -33337,6 +33977,12 @@ def _apply_live_long_option(
             "buy_leg": buy_leg,
             "short_leg": "",
             "long_leg": buy_leg,
+            "sell_leg_bid": "",
+            "sell_leg_ask": "",
+            "sell_leg_mid": "",
+            "buy_leg_bid": live.get("bid", live.get("buy_leg_bid", "")),
+            "buy_leg_ask": live.get("ask", live.get("buy_leg_ask", "")),
+            "buy_leg_mid": live.get("mid_debit", live.get("buy_leg_mid", "")),
             "short_strike": "",
             "long_strike": strike,
             "spread_width": "",
@@ -33404,6 +34050,12 @@ def _live_audit_row(row: Mapping[str, Any], status: str, note: str, source: str)
         "trade_plan": row.get("trade_plan", row.get("full_ticket", "")),
         "sell_leg": row.get("sell_leg", row.get("short_leg", "")),
         "buy_leg": row.get("buy_leg", row.get("long_leg", "")),
+        "sell_leg_bid": row.get("sell_leg_bid", ""),
+        "sell_leg_ask": row.get("sell_leg_ask", ""),
+        "sell_leg_mid": row.get("sell_leg_mid", ""),
+        "buy_leg_bid": row.get("buy_leg_bid", ""),
+        "buy_leg_ask": row.get("buy_leg_ask", ""),
+        "buy_leg_mid": row.get("buy_leg_mid", ""),
         "short_leg": row.get("short_leg", ""),
         "long_leg": row.get("long_leg", ""),
         "strategy_route": row.get("strategy_route", row.get("strategy", "")),

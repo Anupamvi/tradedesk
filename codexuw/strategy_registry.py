@@ -216,7 +216,15 @@ def apply_strategy_registry_gate(scored: pd.DataFrame, registry: pd.DataFrame) -
         probationary_authorized = bool(record.get("probationary_execution_authorized", False))
         pilot_row = "pilot" in str(row.get("trade_tier", "")).lower()
         medium_debit_authorized = str(row.get("v4_execution_authority", "")) == "validated_medium_debit_one_lot"
-        authorized = production_authorized or (probationary_authorized and pilot_row) or medium_debit_authorized
+        symbol_credit_authorized = str(row.get("v4_execution_authority", "")) == "symbol_regime_credit_one_lot"
+        walk_forward_credit_authorized = str(row.get("v4_execution_authority", "")) == "walk_forward_credit_one_lot"
+        authorized = (
+            production_authorized
+            or (probationary_authorized and pilot_row)
+            or medium_debit_authorized
+            or symbol_credit_authorized
+            or walk_forward_credit_authorized
+        )
         out.at[index, "strategy_registry_key"] = key
         out.at[index, "strategy_registry_status"] = record.get("pipeline_status", "UNREGISTERED")
         out.at[index, "strategy_historical_scope"] = record.get("historical_scope", "unavailable")
@@ -229,6 +237,10 @@ def apply_strategy_registry_gate(scored: pd.DataFrame, registry: pd.DataFrame) -
         out.at[index, "strategy_execution_authority"] = (
             "production"
             if production_authorized
+            else "symbol_regime_credit_one_lot"
+            if symbol_credit_authorized
+            else "walk_forward_credit_one_lot"
+            if walk_forward_credit_authorized
             else "validated_medium_debit_one_lot"
             if medium_debit_authorized
             else "probationary_one_lot"
@@ -251,5 +263,15 @@ def apply_strategy_registry_gate(scored: pd.DataFrame, registry: pd.DataFrame) -
             out.at[index, "contracts"] = 1
             out.at[index, "strategy_registry_reason"] = (
                 "one-contract validated medium-debit sleeve; route-specific replay evidence controls authority"
+            )
+        elif str(row.get("trade_status", "")) == "Execute" and symbol_credit_authorized:
+            out.at[index, "contracts"] = 1
+            out.at[index, "strategy_registry_reason"] = (
+                "one-contract symbol-trend credit pilot; post-activation outcomes required before scaling"
+            )
+        elif walk_forward_credit_authorized:
+            out.at[index, "contracts"] = 1
+            out.at[index, "strategy_registry_reason"] = (
+                "one-contract maturity-safe walk-forward credit authority; High confidence unavailable"
             )
     return out

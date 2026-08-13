@@ -35,10 +35,10 @@ def _history(outcomes: list[int]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def test_walk_forward_calibration_uses_only_matured_prior_rows_and_can_pass():
+def test_walk_forward_calibration_uses_only_resolved_prior_rows_and_can_pass():
     detail, summary = build_walk_forward_calibration(_history([1] * 60))
 
-    assert len(detail) == 34
+    assert len(detail) == 48
     assert detail.iloc[0]["prior_sample_size"] == 12
     assert summary["status"] == "PASS"
     assert summary["brier_score"] < summary["baseline_brier_score"]

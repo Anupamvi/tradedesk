@@ -70,20 +70,20 @@ def test_replay_guard_still_excludes_invalid_outcomes() -> None:
     assert summary["eligible_history_rows"] == 71
 
 
-def test_early_exit_is_not_confidence_evidence_until_expiry() -> None:
+def test_early_exit_is_confidence_evidence_on_resolution_day() -> None:
     history = _credit_history(rows=2)
     history["expiry"] = ["2026-03-20", "2026-05-15"]
 
     _, summary = build_walk_forward_calibration(history, asof="2026-04-01")
 
-    assert summary["eligible_history_rows"] == 1
+    assert summary["eligible_history_rows"] == 2
 
 
-def test_walk_forward_prior_waits_for_contract_maturity() -> None:
+def test_walk_forward_prior_uses_resolved_trades() -> None:
     history = _credit_history(rows=20)
     history["expiry"] = "2026-02-15"
 
     _, summary = build_walk_forward_calibration(history, asof="2026-03-01")
 
     assert summary["eligible_history_rows"] == 20
-    assert summary["family_validation"]["Credit"]["prediction_count"] == 0
+    assert summary["family_validation"]["Credit"]["prediction_count"] == 7

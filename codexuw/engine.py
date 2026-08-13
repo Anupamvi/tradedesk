@@ -235,6 +235,9 @@ def detect_regime(sc: pd.DataFrame) -> dict[str, Any]:
     return {
         "volatility": vol,
         "trend": trend,
+        "tape_direction": trend,
+        "trend_method": "SPY_QQQ_one_session_tape",
+        "trend_scope": "market_tape_not_symbol_trend",
         "flow": flow,
         "transition": transition,
         "vix_proxy": round(vix_close, 2) if math.isfinite(vix_close) else None,

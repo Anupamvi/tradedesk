@@ -112,7 +112,9 @@ def _eligible_history(
         if "expiry" in out.columns
         else pd.Series(pd.NaT, index=out.index, dtype="datetime64[ns]")
     )
-    out["_maturity_dt"] = expiry.where(expiry.notna(), out["_exit_dt"])
+    # Resolution-day eligibility is point-in-time safe once the exact exit is
+    # recorded; waiting for expiry only withholds known evidence.
+    out["_maturity_dt"] = out["_exit_dt"]
     if outcome_col in out.columns:
         out["_actual_outcome"] = pd.to_numeric(out[outcome_col], errors="coerce")
     elif "pnl_1x" in out.columns:

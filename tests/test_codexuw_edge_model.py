@@ -105,7 +105,7 @@ def test_edge_history_excludes_replay_guard_failures(tmp_path) -> None:
     assert history["ticker"].tolist() == ["KEPT"]
 
 
-def test_edge_history_excludes_early_exit_before_contract_expiry(tmp_path) -> None:
+def test_edge_history_includes_resolved_early_exit_before_contract_expiry(tmp_path) -> None:
     namespace = tmp_path / "accepted_credit_history"
     namespace.mkdir()
     pd.DataFrame(
@@ -118,4 +118,5 @@ def test_edge_history_excludes_early_exit_before_contract_expiry(tmp_path) -> No
         history_namespace="accepted_credit_history",
     )
 
-    assert history.empty
+    assert len(history) == 1
+    assert history.iloc[0]["ticker"] == "EARLY_WIN"
