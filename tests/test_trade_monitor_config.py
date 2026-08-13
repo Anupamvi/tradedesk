@@ -63,6 +63,17 @@ class TestTradeMonitorConfig(unittest.TestCase):
         self.assertEqual(_masked_secret_status("abc"), "set")
         self.assertEqual(_masked_secret_status("secret-topic"), "set (12 chars)")
 
+    def test_schwab_credential_failure_excludes_oauth_service_outage(self):
+        from uwos.trade_monitor import _is_schwab_credential_failure
+
+        self.assertFalse(
+            _is_schwab_credential_failure(
+                RuntimeError("Server error '503 Service Unavailable' for url 'https://api.schwabapi.com/v1/oauth/token'")
+            )
+        )
+        self.assertTrue(_is_schwab_credential_failure(RuntimeError("refresh_token_authentication_error")))
+        self.assertTrue(_is_schwab_credential_failure(RuntimeError("401 Unauthorized")))
+
     def test_manual_notify_uses_distinct_manual_topic_and_style(self):
         from uwos import trade_monitor
 

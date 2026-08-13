@@ -197,6 +197,23 @@ def _safe_print(msg: str) -> None:
         print(msg.encode("ascii", "replace").decode("ascii"))
 
 
+def _is_schwab_credential_failure(error: Exception) -> bool:
+    """Return True only for broker responses that require a fresh OAuth login."""
+    text = str(error or "").lower()
+    markers = (
+        "refresh_token_authentication_error",
+        "unsupported_token_type",
+        "invalid_grant",
+        "invalid token",
+        "token expired",
+        "token is expired",
+        "401 unauthorized",
+        "401 client error",
+        "403 forbidden",
+    )
+    return any(marker in text for marker in markers)
+
+
 def notify(title: str, body: str, priority: str = "default",
            tags: str = "", critical: bool = False, manual: bool = False) -> None:
     """Send notification via ntfy, plus optional phone channels for risk/manual alerts."""
@@ -1353,7 +1370,7 @@ def run_once(force: bool = False, manual: bool = False) -> int:
         err_msg = str(e)[:200]
         _safe_print(f"  [ERROR] Position scan failed: {e}")
         # Specific auth failure detection
-        if "token" in err_msg.lower() or "auth" in err_msg.lower() or "401" in err_msg:
+        if _is_schwab_credential_failure(e):
             notify("AUTH EXPIRED",
                    "Schwab token expired. In Codex, run: renew Schwab token. Refresh local auth, sync the token to the GCP VM, and retest trade-monitor auth.",
                    priority="urgent", tags="rotating_light")
