@@ -1,0 +1,4 @@
+[submodule "solcodex"]
+	path = solcodex
+	url = git@github.com:Anupamvi/solcodex.git
+	branch = main

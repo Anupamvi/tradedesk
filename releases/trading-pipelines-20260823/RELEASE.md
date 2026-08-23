@@ -2,10 +2,10 @@
 
 ## Bundle identity
 
-- Bundle version: `trading-pipelines-20260823`
+- Bundle version: `trading-pipelines-20260823.1`
 - Release date: `2026-08-23`
 - Git branch: `pipeline-profitability-fix`
-- Git tag: `trading-pipelines-20260823`
+- Git tag: `trading-pipelines-20260823.1`
 - Repository: `git@github.com:Anupamvi/tradedesk.git`
 - Release commit: the commit pointed to by the annotated tag above
 
@@ -33,34 +33,36 @@ The older `uwos.wheel_pipeline` module has no independent version constant and
 was not treated as the active Schwab wheel runtime; the active wheel version is
 the Fresh Schwab Wheel row above.
 
-## Separate SolCodex repository
+## SolCodex TradeDesk submodule
 
-SolCodex is intentionally independent of this repository. Its local source and
-tests were committed and tagged as:
+SolCodex remains an independent repository, but it is now checked out under
+TradeDesk at `solcodex/` as a tracked Git submodule. Its source and tests are
+committed and tagged as:
 
 - Commit: `9ec63158e34282a27e8b4cdd5ae335bbcaed9829`
 - Tag: `solcodex-v2.4.0-20260823`
 - Version: `2.4.0`
+- Remote: `git@github.com:Anupamvi/solcodex.git`
+- TradeDesk path: `/Users/anuppamvi/uw_root/tradedesk/solcodex`
 
-The local `/Users/anuppamvi/solcodex` repository has no configured GitHub
-remote, and no matching public `Anupamvi/solcodex` repository was found. It is
-therefore committed locally but not represented as pushed to GitHub by this
-bundle. The commit and tag are retained so a remote can be configured later
-without losing the release boundary.
+The independent repository preserves SolCodex history and release ownership;
+the submodule makes its exact version part of every TradeDesk checkout.
 
 ## Verification from another PC
 
 ```bash
-git clone git@github.com:Anupamvi/tradedesk.git
+git clone --recurse-submodules git@github.com:Anupamvi/tradedesk.git
 cd tradedesk
 git fetch origin --tags
 git checkout pipeline-profitability-fix
-git show --no-patch --decorate trading-pipelines-20260823
+git show --no-patch --decorate trading-pipelines-20260823.1
+git submodule status
 git status --short
 ```
 
-Expected result: the tag resolves to the synchronized release commit and
-`git status --short` is empty for the tracked source tree.
+Expected result: the tag resolves to the synchronized release commit, the
+SolCodex submodule resolves to `9ec63158`, and `git status --short` is empty
+for the tracked source tree.
 
 ## Excluded local material
 
