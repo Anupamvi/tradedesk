@@ -1,0 +1,123 @@
+{
+  "production_execution_changed": false,
+  "tests": {
+    "passed": 324,
+    "failed": 0,
+    "warnings": 1,
+    "warning_scope": "environment LibreSSL only"
+  },
+  "debit": {
+    "base": {
+      "trades": 11,
+      "wins": 9,
+      "losses": 2,
+      "win_rate": 0.8181818181818182,
+      "profit_factor": 6.064380459398253,
+      "pnl_1x": 1565.3999999999996
+    },
+    "stress_10": {
+      "trades": 11,
+      "wins": 9,
+      "losses": 2,
+      "win_rate": 0.8181818181818182,
+      "profit_factor": 5.121540542925206,
+      "pnl_1x": 1401.3649999999996
+    }
+  },
+  "range_gex": {
+    "policy_version": "range-gex-income-shadow-v2-point-in-time-joint-payoff-20260816",
+    "status": "RESEARCH_ONLY",
+    "execution_authorized": false,
+    "reason": "strict point-in-time and independent promotion gates remain mandatory",
+    "cutoff": "2026-05-19",
+    "all_gex_rows": 4195,
+    "point_in_time_gex_rows": 84,
+    "point_in_time_gex_dates": 3,
+    "joined_replay_rows": 48,
+    "vertical": {
+      "policy_version": "range-gex-income-shadow-v1-20260813",
+      "status": "RESEARCH_ONLY",
+      "execution_authorized": false,
+      "reasons": [
+        "total sample below production threshold",
+        "maturity-safe training sample below threshold",
+        "untouched holdout sample below threshold",
+        "positive-month ratio below threshold"
+      ],
+      "positive_month_ratio": 0.0,
+      "production_gates": {
+        "minimum_total_trades": 40,
+        "minimum_train_trades": 20,
+        "minimum_holdout_trades": 15,
+        "minimum_stress_pf": 1.5,
+        "minimum_train_stress_pf": 1.25,
+        "minimum_holdout_stress_pf": 1.25,
+        "minimum_wilson_90": 0.6,
+        "minimum_positive_month_ratio": 0.7,
+        "maximum_drawdown_1x": 603.5
+      }
+    },
+    "condor": {
+      "policy_version": "range-gex-income-shadow-v1-20260813",
+      "status": "RESEARCH_ONLY",
+      "execution_authorized": false,
+      "reasons": [
+        "total sample below production threshold",
+        "maturity-safe training sample below threshold",
+        "untouched holdout sample below threshold",
+        "positive-month ratio below threshold"
+      ],
+      "positive_month_ratio": 0.0,
+      "production_gates": {
+        "minimum_total_trades": 40,
+        "minimum_train_trades": 20,
+        "minimum_holdout_trades": 15,
+        "minimum_stress_pf": 1.5,
+        "minimum_train_stress_pf": 1.25,
+        "minimum_holdout_stress_pf": 1.25,
+        "minimum_wilson_90": 0.6,
+        "minimum_positive_month_ratio": 0.7,
+        "maximum_drawdown_1x": 603.5
+      }
+    }
+  },
+  "latest_debit_shadow": {
+    "policy_version": "debit-walkforward-shadow-v2-prospective-20260816",
+    "shadow_only": true,
+    "execution_authorized": false,
+    "no_order_placement": true,
+    "training_rows": 722,
+    "training_through": "2026-08-05",
+    "live_guard_rows": 429,
+    "minimum_prior_rows": 100,
+    "minimum_win_probability": 0.55,
+    "entry_stress_pct": 0.1,
+    "profit_take_pct": 1.0,
+    "status": "SHADOW_ACTIVE",
+    "reason": "maturity_safe_v2_model_scored; execution authority intentionally disabled",
+    "evaluated_rows": 429,
+    "qualified_rows": 70,
+    "selected_rows": 1,
+    "source_scored_file": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-13_v425_final/codexdaily_v4_scored_reference_2026-08-13.csv",
+    "candidate_artifact": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-13_shadow_cli_2026-08-16/codexdaily_v4_debit_shadow_candidates_2026-08-13.csv",
+    "selected_artifact": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-13_shadow_cli_2026-08-16/codexdaily_v4_debit_shadow_selected_2026-08-13.csv",
+    "central_ledger": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_debit_shadow_ledger.csv",
+    "pending_count": 1,
+    "resolved_count": 0
+  },
+  "latest_range_gex_shadow": {
+    "policy_version": "range-gex-income-shadow-v2-point-in-time-joint-payoff-20260816",
+    "status": "MISSING_POINT_IN_TIME_GEX",
+    "reason": "same-session UW summary and strike-wall capture was not available; reconstructed GEX is prohibited",
+    "shadow_only": true,
+    "execution_authorized": false,
+    "gex_rows": 0,
+    "collection_universe_rows": 2,
+    "collection_universe_artifact": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-13_shadow_cli_2026-08-16/codexdaily_v4_range_gex_collection_universe_2026-08-13.csv",
+    "evaluated_rows": 0,
+    "qualified_rows": 0,
+    "selected_vertical_rows": 0,
+    "selected_condor_rows": 0,
+    "ledger_rows": 0
+  }
+}

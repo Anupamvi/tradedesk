@@ -1,0 +1,3 @@
+ticker,collection_rank,candidate_count,reason
+MSTR,0.3918653045832562,5,"range credit candidate passed price, IV/HV, DTE, earnings, and liquidity prefilter"
+CRCL,0.3910969917889526,5,"range credit candidate passed price, IV/HV, DTE, earnings, and liquidity prefilter"

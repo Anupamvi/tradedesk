@@ -1,3 +1,6 @@
+import csv
+import gzip
+import json
 import subprocess
 import zipfile
 from pathlib import Path
@@ -8,6 +11,7 @@ from uwos.options_pattern_pipeline_v1.macro_geo import (
     SCENARIO_BUCKETS,
     THEME_MAP,
     build_macro_geo_bundle,
+    build_no_pattern_rows,
     build_observability_matrix_rows,
     build_promotion_decision_rows,
     classify_promotion_bucket,
@@ -57,6 +61,8 @@ from uwos.options_pattern_pipeline_v1.core import (
     build_ticker_trend_stats,
     build_validation_splits,
     build_walk_forward_performance_rows,
+    bot_flow_cache_fieldnames,
+    bot_quote_cache_fieldnames,
     classify_daily_signals,
     contract_profile_fields,
     daily_trade_decision,
@@ -64,6 +70,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     dedupe_rows_by_ticket,
     empty_validation_bundle,
     final_verdict,
+    family_has_required_sources,
     full_backtest_group_row,
     generate_signals_for_snapshot,
     goal_evidence_overall_status,
@@ -78,6 +85,7 @@ from uwos.options_pattern_pipeline_v1.core import (
     probability_edge_over_breakeven_pct,
     proven_payoff_aware_promotion_eligible,
     run_historical_validation,
+    load_or_build_bot_eod_cache,
     score_signals,
     score_signal_horizon,
     scout_call_fieldnames,
@@ -87,17 +95,22 @@ from uwos.options_pattern_pipeline_v1.core import (
     select_signal_set,
     source_coverage_quote,
     source_coverage_setup_fields,
+    source_coverage_total_premium,
     source_complete_dates,
     source_completeness_for_date,
+    source_fingerprint,
     sources_for_date,
+    SourceRef,
     summarize_outcomes,
     trade_fieldnames,
     trade_output_row,
     tradeable_gap_quote_eligible,
+    theme_flow_component_premium,
     trend_edge_strategy_fields,
     ticker_trend_no_edge_reason,
     ticker_trend_passes,
     target_ready_output_row,
+    promote_contract_profile_research_watch_rows,
     scout_call_output_row,
     pattern_recommendation_output_row,
     catalyst_flow_leader_output_row,
@@ -332,6 +345,16 @@ def test_source_coverage_surfaces_high_flow_ticker_that_misses_decision_board():
     assert rows[0]["strike_rates"] == "300"
     assert rows[0]["expiration_date"] == "2026-06-18"
     assert rows[0]["trade_legs"] == "Buy 1 IBM 2026-06-18 300C @ debit 4.10-4.30 limit"
+
+
+def test_source_coverage_total_premium_keeps_gross_bot_flow_visible():
+    assert source_coverage_total_premium(
+        {
+            "flow_total_premium": 18_000_000.0,
+            "flow_gross_premium": 125_000_000.0,
+            "hot_total_premium": 10_000_000.0,
+        }
+    ) == 125_000_000.0
 
 
 def test_source_coverage_uses_decision_ticket_when_ticker_surfaces():
@@ -2405,14 +2428,14 @@ def test_credit_spread_scores_with_future_leg_quotes():
 
     assert row["status"] == "SCORED"
     assert row["win"] == 1
-    assert row["outcome_note"] == "credit_spread_exit_debit_after_costs_slippage"
+    assert row["outcome_note"] == "managed_credit_spread_target_hit_after_costs_slippage"
     assert row["round_trip_fees"] == 10.0
     assert row["opening_fee"] == 5.0
     assert row["entry_slippage"] == pytest.approx(10.0)
     assert row["exit_slippage"] == pytest.approx(10.0)
     assert row["slippage_dollars"] == pytest.approx(20.0)
     assert row["cost_model"] == "credit_spread_entry_credit_exit_debit_after_configured_fees"
-    assert row["net_r"] == pytest.approx((70.0 - 10.0 - 20.0) / 411.30)
+    assert row["net_r"] == pytest.approx((50.0 - 10.0 - 20.0) / 411.30)
 
 
 def test_bot_eod_is_separate_primary_source_when_present(tmp_path):
@@ -3737,6 +3760,93 @@ def test_cross_ticker_theme_signal_requires_multiple_material_components():
     assert build_theme_flow_signal_contexts(snapshot) == []
 
 
+def test_theme_flow_uses_gross_or_source_total_when_bot_multileg_flow_is_excluded():
+    feature = {
+        "flow_total_premium": 18_000_000.0,
+        "flow_gross_premium": 90_000_000.0,
+        "call_premium": 72_000_000.0,
+        "put_premium": 18_000_000.0,
+        "hot_total_premium": 60_000_000.0,
+    }
+
+    assert theme_flow_component_premium(feature) == 90_000_000.0
+
+
+def test_family_source_requirements_allow_dated_flow_fallback_when_bot_eod_is_absent():
+    assert family_has_required_sources(
+        {"source_flags": {"stock_screener", "hot_chains", "whale_filtered"}},
+        "THEME_FLOW_LEADER",
+    )
+    assert not family_has_required_sources(
+        {"source_flags": {"stock_screener", "hot_chains"}},
+        "THEME_FLOW_LEADER",
+    )
+
+
+def test_positive_contract_profile_near_miss_is_visible_as_watch_not_trade():
+    row = {
+        "status": "AVOID",
+        "classification": "AVOID",
+        "ticker": "INTC",
+        "direction": "bullish",
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Call Debit",
+        "lead_option_symbol": "INTC261016C00110000",
+        "option_type": "call",
+        "strike": 110.0,
+        "expiry": "2026-10-16",
+        "entry_bid": 8.65,
+        "entry_ask": 8.75,
+        "expected_R": 0.17,
+        "block_reasons": ["PATTERN_VALIDATION_NOT_PROVEN"],
+        "contract_profile_validated": "yes",
+        "contract_profile_scored_count": 58,
+        "contract_profile_unique_signal_date_count": 39,
+        "contract_profile_validation_split_count": 5,
+        "contract_profile_avg_R": 0.17,
+        "contract_profile_profit_factor": 1.84,
+        "confidence_lower_bound": 0.67,
+        "contract_profile_latest_validation_split_average_net_R": -0.99,
+    }
+
+    promoted = promote_contract_profile_research_watch_rows([row], DEFAULT_RISK_CONFIG)
+
+    assert promoted[0]["status"] == "TRADE_REVIEW"
+    assert promoted[0]["classification"] == "WATCH"
+    assert "CONTRACT_PROFILE_LATEST_SPLIT_NOT_POSITIVE" in promoted[0]["block_reasons"]
+    assert "CONTRACT_PROFILE_RESEARCH_REVIEW" in promoted[0]["block_reasons"]
+
+
+def test_profile_near_miss_with_quote_failure_stays_blocked():
+    row = {
+        "status": "AVOID",
+        "ticker": "MSFT",
+        "direction": "bullish",
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Call Debit",
+        "lead_option_symbol": "MSFT261016C00550000",
+        "option_type": "call",
+        "strike": 550.0,
+        "expiry": "2026-10-16",
+        "entry_bid": 8.65,
+        "entry_ask": 8.75,
+        "expected_R": 0.12,
+        "block_reasons": ["LIVE_QUOTE_VALIDATION_FAILED"],
+        "contract_profile_validated": "yes",
+        "contract_profile_scored_count": 37,
+        "contract_profile_unique_signal_date_count": 25,
+        "contract_profile_validation_split_count": 4,
+        "contract_profile_avg_R": 0.12,
+        "contract_profile_profit_factor": 1.54,
+        "confidence_lower_bound": 0.62,
+        "contract_profile_latest_validation_split_average_net_R": 0.15,
+    }
+
+    promoted = promote_contract_profile_research_watch_rows([row], DEFAULT_RISK_CONFIG)
+
+    assert promoted[0]["status"] == "AVOID"
+
+
 def test_theme_flow_board_keeps_representative_ticket_and_blockers_visible():
     row = {
         "ticker": "USO",
@@ -4753,6 +4863,16 @@ def test_macro_geo_promotion_bucket_blocker_decomposition():
     ]
 
 
+def test_macro_geo_does_not_call_real_daily_patterns_no_pattern():
+    assert build_no_pattern_rows(
+        "2026-08-12",
+        [],
+        [{"scenario_bucket": "VALIDATION_BLOCKED_SETUP"}],
+        [{"ticker": "INTC", "status": "AVOID"}],
+        True,
+    ) == []
+
+
 def test_macro_geo_multi_day_continuation_without_future_leakage(tmp_path):
     for d in ("2026-05-11", "2026-05-12", "2026-05-14"):
         browser_dir = tmp_path / d / "browser_text"
@@ -4939,6 +5059,53 @@ def test_source_complete_dates_accepts_dated_whale_fallback(tmp_path):
     )
 
     assert source_complete_dates(tmp_path) == ["2026-01-08"]
+
+
+def test_source_complete_dates_skips_dangling_zip_symlink(tmp_path):
+    date_dir = tmp_path / "2026-05-27"
+    date_dir.mkdir()
+    for prefix in ["stock-screener-", "hot-chains-", "chain-oi-changes-", "bot-eod-report-"]:
+        with zipfile.ZipFile(date_dir / f"{prefix}2026-05-27.zip", "w") as archive:
+            archive.writestr(f"{prefix}2026-05-27.csv", "ticker\nAAA\n")
+    (date_dir / "chain-oi-changes-latest-2026-05-28.zip").symlink_to(tmp_path / "missing.zip")
+
+    assert source_complete_dates(tmp_path) == ["2026-05-27"]
+
+
+def test_bot_eod_cache_accepts_compressed_surviving_cache_files(tmp_path):
+    signal_date = "2026-05-27"
+    source_path = tmp_path / f"bot-eod-report-{signal_date}.zip"
+    member = f"bot-eod-report-{signal_date}.csv"
+    with zipfile.ZipFile(source_path, "w") as archive:
+        archive.writestr(member, "underlying_symbol\nAAA\n")
+    ref = SourceRef(source_path, member)
+
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+    meta = {
+        "schema_version": 2,
+        "signal_date": signal_date,
+        "source_fingerprints": [source_fingerprint(ref)],
+    }
+    (cache_dir / f"bot_eod_cache_{signal_date}.json").write_text(
+        json.dumps(meta), encoding="utf-8"
+    )
+    with gzip.open(cache_dir / f"bot_eod_flow_by_ticker_{signal_date}.csv.gz", "wt", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=bot_flow_cache_fieldnames())
+        writer.writeheader()
+        writer.writerow({"date": signal_date, "ticker": "AAA", "flow_total_premium": "100"})
+    with gzip.open(cache_dir / f"bot_eod_quotes_{signal_date}.csv.gz", "wt", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=bot_quote_cache_fieldnames())
+        writer.writeheader()
+        writer.writerow({"date": signal_date, "ticker": "AAA", "option_symbol": "AAA260620C00100000"})
+
+    result = load_or_build_bot_eod_cache(
+        [ref], signal_date, {"bot_eod_cache_dir": str(cache_dir)}
+    )
+
+    assert result["cache_hit"] is True
+    assert result["flow_rows"][0]["ticker"] == "AAA"
+    assert result["quote_rows"][0]["option_symbol"] == "AAA260620C00100000"
 
 
 def test_observability_matrix_has_every_required_scenario():
@@ -5232,6 +5399,36 @@ def test_ticket_outputs_dedupe_same_contract_family_duplicates():
     assert len(deduped) == 2
     assert deduped[0]["ticker"] == "TSLA"
     assert deduped[0]["pattern_family"] == "OI_GAMMA_CONTINUATION"
+
+
+def test_ticket_dedupe_keeps_review_surface_over_avoid_duplicate():
+    base_row = {
+        "ticker": "NVDA",
+        "direction": "bullish",
+        "strategy_kind": "long_option",
+        "strategy_type": "Long Call Debit",
+        "lead_option_symbol": "NVDA261016C00230000",
+        "expiry": "2026-10-16",
+        "option_type": "call",
+        "strike": 230,
+        "entry_bid": 12.5,
+        "entry_ask": 12.6,
+        "probability_score": 51.0,
+        "success_probability_pct": 75.0,
+        "pattern_score": 10.0,
+    }
+    avoid = dict(base_row, status="AVOID", block_reasons=["PATTERN_VALIDATION_NOT_PROVEN"])
+    review = dict(
+        base_row,
+        status="TRADE_REVIEW",
+        classification="WATCH",
+        block_reasons=["CONTRACT_PROFILE_RESEARCH_REVIEW"],
+    )
+
+    deduped = dedupe_rows_by_ticket([avoid, review])
+
+    assert len(deduped) == 1
+    assert deduped[0]["status"] == "TRADE_REVIEW"
 
 
 def test_macro_promotion_uses_direction_matched_daily_row():

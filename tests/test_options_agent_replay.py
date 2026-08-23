@@ -116,13 +116,53 @@ def test_replay_management_levels_and_triggers_match_order_policy() -> None:
         replay._management_trigger("CREDIT", 4.90, credit_target, None, final_session=True)
         == "time_exit"
     )
-    assert replay._management_levels("DEBIT", 1.0, 5.0) == (1.8, 0.5)
-    assert replay._management_trigger("DEBIT", 0.40, 1.8, 0.5, final_session=False) == "stop_loss"
-    assert replay._management_trigger("DEBIT", 1.00, 1.8, 0.5, final_session=True) == "time_exit"
+    assert replay._management_levels("DEBIT", 1.0, 5.0) == (1.5, None)
+    assert replay._management_trigger("DEBIT", 0.40, 1.5, None, final_session=False) == ""
+    assert replay._management_trigger("DEBIT", 1.50, 1.5, None, final_session=False) == "take_profit"
+    assert replay._management_trigger("DEBIT", 1.00, 1.5, None, final_session=True) == "time_exit"
+    long_target, long_stop = replay._management_levels(
+        "DEBIT",
+        2.0,
+        0.0,
+        route="long_call",
+    )
+    assert long_target == pytest.approx(3.60)
+    assert long_stop == pytest.approx(1.00)
 
 
 def test_replay_horizon_stays_bound_to_live_holding_horizon() -> None:
     assert replay.FIXED_HORIZON_SESSIONS == core.PLANNED_TRADE_HOLDING_SESSIONS
+    assert (
+        replay.DEBIT_FIXED_HORIZON_SESSIONS
+        == core.DEBIT_PLANNED_TRADE_HOLDING_SESSIONS
+    )
+
+
+def test_selector_frame_hides_immature_outcomes_from_promotion() -> None:
+    rows = []
+    for ticker, eligible in (("MATURE", True), ("OPEN", False)):
+        row = {column: "" for column in replay.DETAIL_COLUMNS}
+        row.update(
+            {
+                "ticker": ticker,
+                "asof": "2026-06-01",
+                "exit_day": "2026-06-10",
+                "promotion_outcome_available_date": "2026-06-30",
+                "promotion_outcome_eligible": eligible,
+                "exact_fillable": True,
+                "pnl_1x": 50.0,
+                "entry_side": "DEBIT",
+                "strategy_route": "bear_put_debit",
+                "regime": "risk_off",
+            }
+        )
+        rows.append(row)
+
+    selector = replay._selector_frame(pd.DataFrame(rows))
+
+    assert selector.loc[selector["ticker"].eq("MATURE"), "realized_pnl"].iloc[0] == 50.0
+    assert pd.isna(selector.loc[selector["ticker"].eq("OPEN"), "realized_pnl"].iloc[0])
+    assert set(selector["outcome_available_date"].dt.strftime("%Y-%m-%d")) == {"2026-06-30"}
 
 
 def test_replay_uses_next_session_reprice_without_changing_source_selection_fields() -> None:
@@ -201,6 +241,61 @@ def test_replay_uses_next_session_reprice_without_changing_source_selection_fiel
     assert filled["executed_entry_credit"] == pytest.approx(1.35)
 
 
+def test_replay_supports_independent_single_leg_long_call() -> None:
+    signal_day = dt.date(2026, 7, 21)
+    entry_day = dt.date(2026, 7, 22)
+    symbol = core._human_option_leg_symbol_key(
+        ticker="AAA",
+        expiry="2026-08-21",
+        strike=100.0,
+        option_type="CALL",
+    )
+    assert symbol
+    row = {
+        "ticker": "AAA",
+        "trade_plan": "BUY 1 AAA 2026-08-21 100 Call @ 2.00 DEBIT",
+        "structure": "long call",
+        "strategy_route": "long_call",
+        "strategy_family": "long_call",
+        "entry_type": "DEBIT",
+        "expiry": "2026-08-21",
+        "dte": 31,
+        "long_strike": 100.0,
+        "close": 99.0,
+        "iv30d": 0.30,
+        "quality_status": "qualified",
+        "trade_quality_status": "reviewable",
+        "recommendation_status": "REVIEW",
+        "score": 80.0,
+        "target_entry": 2.00,
+        "signal_premium": 1_000_000.0,
+        "combined_flow_bias": 0.50,
+        "underlying_quality_tier": "core",
+        "issue_type": "COMMON STOCK",
+    }
+
+    replayed = replay._replay_row(
+        row,
+        signal_day=signal_day,
+        entry_day=entry_day,
+        exit_day=dt.date(2026, 8, 21),
+        regime="risk_on",
+        target_quote_index={symbol: _quote(1.90, 2.00)},
+        next_session_quote_index={symbol: _quote(1.85, 1.95)},
+    )
+
+    assert replayed["short_leg_eod"] == ""
+    assert replayed["long_leg_eod"] == symbol
+    assert replayed["exact_fillable"] is True
+    assert replayed["next_session_reprice_observed"] is True
+    assert replayed["next_session_reprice_approved"] is True
+    assert replayed["executed_entry_debit"] == pytest.approx(1.95)
+    assert replayed["executed_target_exit"] == pytest.approx(3.51)
+    assert replayed["executed_stop_exit"] == pytest.approx(0.975)
+    assert replayed["source_contract_volume"] == pytest.approx(500.0)
+    assert replayed["source_contract_oi"] == pytest.approx(2_000.0)
+
+
 def test_replay_marks_observed_invalid_net_market_as_resolved_no_entry() -> None:
     observed, approved, entry, reason = replay._next_session_reprice_status(
         {
@@ -239,8 +334,8 @@ def test_replay_reprice_enforces_the_live_selector_quote_width_cap() -> None:
         regime="risk_on",
         entry_type="CREDIT",
         target_limit=0.80,
-        bid=1.00,
-        ask=1.40,
+        bid=1.25,
+        ask=1.65,
         width=5.0,
         quote_width_pct=core.MAX_SELECTOR_ENTRY_QUOTE_WIDTH_PCT + 0.001,
         short_quote=_quote(2.00, 2.20),
@@ -249,8 +344,54 @@ def test_replay_reprice_enforces_the_live_selector_quote_width_cap() -> None:
 
     assert observed is True
     assert approved is False
-    assert entry == pytest.approx(1.00)
+    assert entry == pytest.approx(1.25)
     assert reason == "next_session_reprice_quality_fail:selector_quote_width_above_0.25"
+
+
+def test_replay_reprice_enforces_send_now_credit_risk_floor() -> None:
+    row = {
+        "expiry": "2026-08-21",
+        "strategy_route": "bull_put_credit",
+        "signal_premium": 1_000_000.0,
+        "combined_flow_bias": 0.30,
+    }
+    observed, approved, entry, reason = replay._next_session_reprice_status(
+        row,
+        entry_day=dt.date(2026, 7, 22),
+        regime="risk_on",
+        entry_type="CREDIT",
+        target_limit=0.80,
+        bid=1.20,
+        ask=1.30,
+        width=5.0,
+        quote_width_pct=0.08,
+        short_quote=_quote(2.00, 2.20),
+        long_quote=_quote(0.80, 1.00),
+    )
+
+    assert observed is True
+    assert approved is False
+    assert entry == pytest.approx(1.20)
+    assert reason == "next_session_reprice_quality_fail:send_now_credit_width_below_25pct"
+
+    observed, approved, entry, reason = replay._next_session_reprice_status(
+        row,
+        entry_day=dt.date(2026, 7, 22),
+        regime="risk_on",
+        entry_type="CREDIT",
+        target_limit=0.80,
+        bid=1.25,
+        ask=1.35,
+        width=5.0,
+        quote_width_pct=0.08,
+        short_quote=_quote(2.05, 2.25),
+        long_quote=_quote(0.80, 0.90),
+    )
+
+    assert observed is True
+    assert approved is True
+    assert entry == pytest.approx(1.25)
+    assert reason == "next_session_reprice_approved"
 
 
 def test_replay_exit_observations_start_after_next_session_entry() -> None:
@@ -340,7 +481,7 @@ def test_replay_selector_uses_holding_horizon_for_earnings() -> None:
     eligible, _, reasons, _ = core._selector_v4_replay_assessment(row, policy=policy)
 
     assert eligible
-    assert "earnings_within_holding_horizon" not in reasons
+    assert "earnings_within_selector_risk_horizon" not in reasons
 
     eligible, _, reasons, _ = core._selector_v4_replay_assessment(
         {**row, "next_earnings_dt": "2026-07-24"},
@@ -348,7 +489,7 @@ def test_replay_selector_uses_holding_horizon_for_earnings() -> None:
     )
 
     assert not eligible
-    assert "earnings_within_holding_horizon" in reasons
+    assert "earnings_within_selector_risk_horizon" in reasons
 
 
 def test_replay_expected_move_ratio_uses_exact_fill_breakeven() -> None:
@@ -465,6 +606,51 @@ def test_next_session_replay_reuses_only_explicit_selector_only_candidate_cache(
     assert migrated.loc[0, "next_session_reprice_reason"] == (
         "next_session_reprice_quality_fail:selector_quote_width_above_0.25"
     )
+
+    v168_fingerprint = "ff221872f78de05217f12111a4ce574a06d271032f7b481ca4a15a18ca4d2d3b"
+    cached.loc[0, "entry_side"] = "CREDIT"
+    cached.loc[0, "entry_width"] = 5.0
+    cached.loc[0, "executed_entry_price"] = 1.20
+    cached.loc[0, "executed_entry_credit"] = 1.20
+    cached.loc[0, "next_session_reprice_approved"] = True
+    cached.loc[0, "next_session_quote_width_pct"] = 0.10
+    migrated, migration = replay._migrate_compatible_candidate_cache(
+        cached,
+        source_fingerprint=v168_fingerprint,
+    )
+    assert migration == "v1_68_send_now_credit_width_25pct"
+    assert bool(migrated.loc[0, "next_session_reprice_approved"]) is False
+    assert migrated.loc[0, "next_session_reprice_reason"] == (
+        "next_session_reprice_quality_fail:send_now_credit_width_below_25pct"
+    )
+    assert pd.isna(migrated.loc[0, "executed_entry_credit"])
+
+
+def test_v177_cache_migration_restores_long_option_dated_equity_tier() -> None:
+    fingerprint = "c6cf48bb33ec62970a112054b66cf96d58bc34f644151b766d740b8d682fd8f1"
+    rows = []
+    for route, tier in (("bull_call_debit", "core"), ("long_call", "speculative")):
+        row = {column: "" for column in replay.DETAIL_COLUMNS}
+        row.update(
+            {
+                "ticker": "AAA",
+                "candidate_bias": "bullish",
+                "strategy_route": route,
+                "underlying_quality_tier": tier,
+                "selected_for_policy": False,
+                "exact_evaluated": False,
+                "producer": "uwos.options_agent.replay",
+            }
+        )
+        rows.append(row)
+
+    migrated, migration = replay._migrate_compatible_candidate_cache(
+        pd.DataFrame(rows, columns=replay.DETAIL_COLUMNS),
+        source_fingerprint=fingerprint,
+    )
+
+    assert migration == "v1_77_long_option_dated_equity_tier_repair"
+    assert migrated.loc[migrated["strategy_route"].eq("long_call"), "underlying_quality_tier"].item() == "core"
 
 
 def test_dated_construction_chain_unions_hot_and_chain_oi(monkeypatch, tmp_path) -> None:
@@ -625,6 +811,7 @@ def test_selector_partition_counts_approved_open_outcomes_as_execution_resolved(
             "ticker": [f"T{index:02d}" for index in range(20)],
             "strategy_route": ["bull_call_debit"] * 20,
             "realized_pnl": [100.0] * 18 + [math.nan, math.nan],
+            "return_on_risk": [0.20] * 18 + [math.nan, math.nan],
             "exact_evaluated": [True] * 18 + [False, False],
             "next_session_reprice_observed": [True] * 20,
             "next_session_reprice_approved": [True] * 20,
@@ -683,6 +870,13 @@ def test_independent_replay_manifest_is_not_claimed_as_production_proof(tmp_path
     assert metrics["selected"] == 0
     assert metrics["outcome_coverage"] == 0.0
     assert replay.SCHEMA_VERSION == core.PINNED_REPLAY_MANIFEST_SCHEMA_VERSION
+    assert (
+        replay.ENTRY_CACHE_COMPATIBILITY_POLICY
+        == core.PINNED_REPLAY_ENTRY_CACHE_COMPATIBILITY_POLICY
+    )
+    assert set(replay.COMPATIBLE_ENTRY_CACHE_FINGERPRINTS).issubset(
+        core.PINNED_REPLAY_COMPATIBLE_ENTRY_CACHE_FINGERPRINTS
+    )
 
 
 def test_replay_pin_rejects_capped_or_stale_manifest(tmp_path, monkeypatch) -> None:

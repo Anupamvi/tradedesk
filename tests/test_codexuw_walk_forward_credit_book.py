@@ -23,11 +23,18 @@ def test_directional_credit_book_replaces_invalidated_model_lane() -> None:
     assert not summary["high_confidence_available"]
     directional = summary["directional_credit_lane"]
     assert directional["status"] == "PASS"
+    assert directional["fill_stress_source"] == "recomputed_from_pnl_1x_and_entry_credit"
+    assert directional["reference_validation_status"] == "FAIL"
+    assert directional["execution_validation_status"] == "PASS"
     assert directional["sample_size"] == 83
     assert directional["win_rate"] > 0.90
-    assert directional["stress_profit_factor_10pct"] > 3.50
+    assert 2.80 < directional["stress_profit_factor_10pct"] < 3.00
     assert directional["holdout_sample_size"] >= 20
-    assert directional["holdout_stress_profit_factor_10pct"] >= 1.50
+    assert 1.40 < directional["holdout_stress_profit_factor_10pct"] < 1.50
+    assert directional["execution_sample_size"] == 53
+    assert directional["execution_stress_profit_factor_10pct"] > 3.40
+    assert directional["execution_holdout_sample_size"] == 15
+    assert directional["execution_holdout_stress_profit_factor_10pct"] > 1.80
     assert len(evidence) == summary["sample_size"]
     assert model is None
 

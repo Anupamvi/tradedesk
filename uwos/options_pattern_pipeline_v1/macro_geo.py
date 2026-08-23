@@ -1065,6 +1065,11 @@ def build_no_pattern_rows(
         return []
     if not source_complete:
         return []
+    # A zero-trade run can still have real directional patterns and complete
+    # tickets that failed validation, quote, or regime gates. Do not label
+    # that state as "no pattern"; the pattern artifacts are the evidence.
+    if daily_rows:
+        return []
     eligible = [c for c in catalysts if c.get("as_of_eligible")]
     blockers = Counter(str(r.get("scenario_bucket")) for r in promotion_rows if r.get("scenario_bucket"))
     if eligible or daily_rows:

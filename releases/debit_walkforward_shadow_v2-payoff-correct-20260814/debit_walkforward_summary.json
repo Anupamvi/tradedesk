@@ -1,0 +1,263 @@
+{
+  "policy_version": "debit-walkforward-shadow-v2-20260814",
+  "exit_policy_version": "debit-exit-target-revalue-v1-20260814",
+  "status": "RESEARCH_ONLY",
+  "execution_authorized": false,
+  "threshold": 0.55,
+  "profit_take_pct": 1.0,
+  "entry_stress_pct": 0.1,
+  "cutoff": "2026-05-01",
+  "development": {
+    "n": 5,
+    "wins": 4,
+    "win_rate": 0.8,
+    "wilson_lower_95": 0.37552826411853885,
+    "profit_factor": 6.17556818181818,
+    "pnl": 500.9949999999999,
+    "max_drawdown": -96.8,
+    "positive_month_ratio": 1.0
+  },
+  "holdout": {
+    "n": 6,
+    "wins": 5,
+    "win_rate": 0.8333333333333334,
+    "wilson_lower_95": 0.4364905634363539,
+    "profit_factor": 4.702027054808599,
+    "pnl": 900.3699999999997,
+    "max_drawdown": -243.21000000000006,
+    "positive_month_ratio": 1.0
+  },
+  "development_breakdown": {
+    "by_month": {
+      "2026-03": {
+        "n": 1,
+        "wins": 1,
+        "win_rate": 1.0,
+        "wilson_lower_95": 0.20654329147389294,
+        "profit_factor": null,
+        "pnl": 102.40000000000009,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      },
+      "2026-04": {
+        "n": 4,
+        "wins": 3,
+        "win_rate": 0.75,
+        "wilson_lower_95": 0.30063605244263664,
+        "profit_factor": 5.117716942148759,
+        "pnl": 398.59499999999986,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      }
+    },
+    "by_strategy": {
+      "Bear Put Debit Spread": {
+        "n": 3,
+        "wins": 3,
+        "win_rate": 1.0,
+        "wilson_lower_95": 0.4384939195509822,
+        "profit_factor": null,
+        "pnl": 495.39499999999987,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      },
+      "Bull Call Debit Spread": {
+        "n": 2,
+        "wins": 1,
+        "win_rate": 0.5,
+        "wilson_lower_95": 0.09452865480086611,
+        "profit_factor": 1.0578512396694224,
+        "pnl": 5.600000000000094,
+        "max_drawdown": -96.8,
+        "positive_month_ratio": 0.5
+      }
+    },
+    "by_regime": {
+      "downtrend": {
+        "n": 1,
+        "wins": 1,
+        "win_rate": 1.0,
+        "wilson_lower_95": 0.20654329147389294,
+        "profit_factor": null,
+        "pnl": 102.40000000000009,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      },
+      "range": {
+        "n": 3,
+        "wins": 2,
+        "win_rate": 0.6666666666666666,
+        "wilson_lower_95": 0.20765495512648788,
+        "profit_factor": 2.5461776859504117,
+        "pnl": 149.66999999999985,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      },
+      "uptrend": {
+        "n": 1,
+        "wins": 1,
+        "win_rate": 1.0,
+        "wilson_lower_95": 0.20654329147389294,
+        "profit_factor": null,
+        "pnl": 248.92499999999998,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      }
+    },
+    "by_entry_timing": {
+      "next_session_first_regular_nbbo": {
+        "n": 2,
+        "wins": 2,
+        "win_rate": 1.0,
+        "wilson_lower_95": 0.3423719528896193,
+        "profit_factor": null,
+        "pnl": 246.46999999999986,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      },
+      "next_session_hot_chain_eod_fallback": {
+        "n": 3,
+        "wins": 2,
+        "win_rate": 0.6666666666666666,
+        "wilson_lower_95": 0.20765495512648788,
+        "profit_factor": 3.629390495867769,
+        "pnl": 254.5250000000001,
+        "max_drawdown": -96.8,
+        "positive_month_ratio": 1.0
+      }
+    }
+  },
+  "holdout_breakdown": {
+    "by_month": {
+      "2026-05": {
+        "n": 5,
+        "wins": 4,
+        "win_rate": 0.8,
+        "wilson_lower_95": 0.37552826411853885,
+        "profit_factor": 3.8249660786974204,
+        "pnl": 687.0599999999997,
+        "max_drawdown": -243.21000000000006,
+        "positive_month_ratio": 1.0
+      },
+      "2026-06": {
+        "n": 1,
+        "wins": 1,
+        "win_rate": 1.0,
+        "wilson_lower_95": 0.20654329147389294,
+        "profit_factor": null,
+        "pnl": 213.3099999999999,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      }
+    },
+    "by_strategy": {
+      "Bear Put Debit Spread": {
+        "n": 3,
+        "wins": 2,
+        "win_rate": 0.6666666666666666,
+        "wilson_lower_95": 0.20765495512648788,
+        "profit_factor": 1.8995107109082676,
+        "pnl": 218.7699999999998,
+        "max_drawdown": -243.21000000000006,
+        "positive_month_ratio": 1.0
+      },
+      "Bull Call Debit Spread": {
+        "n": 3,
+        "wins": 3,
+        "win_rate": 1.0,
+        "wilson_lower_95": 0.4384939195509822,
+        "profit_factor": null,
+        "pnl": 681.5999999999999,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      }
+    },
+    "by_regime": {
+      "range": {
+        "n": 3,
+        "wins": 2,
+        "win_rate": 0.6666666666666666,
+        "wilson_lower_95": 0.20765495512648788,
+        "profit_factor": 1.8995107109082676,
+        "pnl": 218.7699999999998,
+        "max_drawdown": -243.21000000000006,
+        "positive_month_ratio": 1.0
+      },
+      "uptrend": {
+        "n": 3,
+        "wins": 3,
+        "win_rate": 1.0,
+        "wilson_lower_95": 0.4384939195509822,
+        "profit_factor": null,
+        "pnl": 681.5999999999999,
+        "max_drawdown": 0.0,
+        "positive_month_ratio": 1.0
+      }
+    },
+    "by_entry_timing": {
+      "next_session_first_regular_nbbo": {
+        "n": 6,
+        "wins": 5,
+        "win_rate": 0.8333333333333334,
+        "wilson_lower_95": 0.4364905634363539,
+        "profit_factor": 4.702027054808599,
+        "pnl": 900.3699999999997,
+        "max_drawdown": -243.21000000000006,
+        "positive_month_ratio": 1.0
+      }
+    }
+  },
+  "calibration": {
+    "n": 11,
+    "brier_score": 0.1712148320254862,
+    "bins": [
+      {
+        "bucket": "[0.55, 0.6)",
+        "n": 2,
+        "mean_prediction": 0.596467303619544,
+        "observed_win_rate": 1.0
+      },
+      {
+        "bucket": "[0.6, 0.65)",
+        "n": 5,
+        "mean_prediction": 0.6313023082698968,
+        "observed_win_rate": 0.8
+      },
+      {
+        "bucket": "[0.65, 0.7)",
+        "n": 1,
+        "mean_prediction": 0.6580852548876418,
+        "observed_win_rate": 0.0
+      },
+      {
+        "bucket": "[0.7, 0.75)",
+        "n": 2,
+        "mean_prediction": 0.731484959528358,
+        "observed_win_rate": 1.0
+      },
+      {
+        "bucket": "[0.8, 1.0)",
+        "n": 1,
+        "mean_prediction": 0.8604166831681211,
+        "observed_win_rate": 1.0
+      }
+    ],
+    "monotonic_violations": 0
+  },
+  "active_overlap": {
+    "peak_active_positions": 5,
+    "peak_defined_risk": 896.3900000000001,
+    "peak_sector_share": 0.3142716897778869,
+    "peak_ticker_share": 0.2713216345563873
+  },
+  "blockers": [
+    "development_sample_below_20",
+    "holdout_sample_below_15",
+    "total_selected_sample_below_50",
+    "development_wilson_lower_below_0.55",
+    "holdout_wilson_lower_below_0.55",
+    "holdout_bear_put_debit_spread_sample_below_10",
+    "holdout_bull_call_debit_spread_sample_below_10"
+  ],
+  "note": "Shadow evidence only; production V4.24 behavior is unchanged. A separate versioned promotion decision is required even if all evidence gates pass."
+}

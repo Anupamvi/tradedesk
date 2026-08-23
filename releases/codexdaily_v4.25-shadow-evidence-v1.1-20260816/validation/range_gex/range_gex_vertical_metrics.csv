@@ -1,0 +1,10 @@
+segment,fill_stress,trades,wins,losses,win_rate,wilson_90,profit_factor,pnl_1x,max_drawdown_1x
+all,0.0,0,0,0,,,inf,0.0,
+all,0.05,0,0,0,,,inf,0.0,
+all,0.1,0,0,0,,,inf,0.0,
+train_matured,0.0,0,0,0,,,inf,0.0,
+train_matured,0.05,0,0,0,,,inf,0.0,
+train_matured,0.1,0,0,0,,,inf,0.0,
+holdout,0.0,0,0,0,,,inf,0.0,
+holdout,0.05,0,0,0,,,inf,0.0,
+holdout,0.1,0,0,0,,,inf,0.0,

@@ -86,3 +86,20 @@ def test_underprediction_with_good_brier_is_conservative_not_high_confidence() -
     assert row["confidence_model_tier"] == "strategy_family_conservative"
     assert row["confidence_probability_label"] == "walk_forward_conservative"
     assert not confidence_high_ready(row)
+
+
+def test_research_calibration_can_exclude_policy_guard_without_changing_default() -> None:
+    history = _history([1] * 60)
+    history["replay_guard_pass"] = False
+
+    default_detail, default_summary = build_walk_forward_calibration(history)
+    research_detail, research_summary = build_walk_forward_calibration(
+        history,
+        require_replay_guard=False,
+    )
+
+    assert default_detail.empty
+    assert default_summary["eligible_history_rows"] == 0
+    assert len(research_detail) == 48
+    assert research_summary["eligible_history_rows"] == 60
+    assert research_summary["require_replay_guard"] is False

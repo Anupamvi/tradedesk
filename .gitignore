@@ -24,3 +24,10 @@ schwab_positions_*.json
 !.claude/skills/
 .agents/
 skills-lock.json
+
+# Local-only staging, generated overlay caches, and a separate nested repo.
+# These are intentionally preserved on disk but are not part of the source release.
+.codexdaily_v3_stage_*/
+2026-07-13_overlay_from_2026-07-10/
+2026-07-16-overlay-2026-07-17/
+anu-trading-desk-site/

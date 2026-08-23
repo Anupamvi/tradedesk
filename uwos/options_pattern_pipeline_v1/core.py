@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import hashlib
 import json
 import math
@@ -1116,7 +1117,10 @@ def find_csv_sources(date_dir: Path, prefix: str, signal_date: str, exact: bool)
                         continue
                     if not exact or extract_date_from_name(Path(member).name) == signal_date:
                         sources.append(SourceRef(zpath, member))
-        except zipfile.BadZipFile:
+        except (zipfile.BadZipFile, OSError):
+            # A stale download can leave a dangling "latest" symlink behind.
+            # Treat that entry as unavailable so one bad archive does not abort
+            # discovery for every other dated folder.
             continue
     return dedupe_sources(sources)
 
@@ -1765,7 +1769,9 @@ def load_or_build_bot_eod_cache(
 ) -> Dict[str, Any]:
     paths = bot_eod_cache_paths(signal_date, config)
     fingerprints = [source_fingerprint(ref) for ref in refs]
-    if paths["meta"].exists() and paths["flow"].exists() and paths["quotes"].exists():
+    flow_path = existing_cache_csv_path(paths["flow"])
+    quote_path = existing_cache_csv_path(paths["quotes"])
+    if paths["meta"].exists() and flow_path and quote_path:
         try:
             meta = json.loads(paths["meta"].read_text(encoding="utf-8"))
         except Exception:
@@ -1776,9 +1782,9 @@ def load_or_build_bot_eod_cache(
             and meta.get("source_fingerprints") == fingerprints
         ):
             return {
-                "flow_rows": [coerce_bot_flow_cache_row(r) for r in read_csv_rows(paths["flow"])],
-                "quote_rows": [coerce_bot_quote_cache_row(r) for r in read_csv_rows(paths["quotes"])],
-                "cache_files": [str(paths["flow"].resolve()), str(paths["quotes"].resolve()), str(paths["meta"].resolve())],
+                "flow_rows": [coerce_bot_flow_cache_row(r) for r in read_csv_rows(flow_path)],
+                "quote_rows": [coerce_bot_quote_cache_row(r) for r in read_csv_rows(quote_path)],
+                "cache_files": [str(flow_path.resolve()), str(quote_path.resolve()), str(paths["meta"].resolve())],
                 "cache_hit": True,
                 "cache_built": False,
             }
@@ -1821,6 +1827,15 @@ def bot_eod_cache_paths(signal_date: str, config: Mapping[str, Any]) -> Dict[str
     }
 
 
+def existing_cache_csv_path(path: Path) -> Optional[Path]:
+    """Return an uncompressed or surviving compressed cache data file."""
+
+    if path.exists():
+        return path
+    compressed = Path(f"{path}.gz")
+    return compressed if compressed.exists() else None
+
+
 def source_fingerprint(ref: SourceRef) -> Dict[str, Any]:
     row: Dict[str, Any] = {
         "label": ref.label,
@@ -1840,7 +1855,11 @@ def source_fingerprint(ref: SourceRef) -> Dict[str, Any]:
 
 
 def read_csv_rows(path: Path) -> List[Dict[str, str]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as fh:
+    if path.suffix.lower() == ".gz":
+        fh = gzip.open(path, "rt", encoding="utf-8-sig", newline="")
+    else:
+        fh = path.open("r", encoding="utf-8-sig", newline="")
+    with fh:
         return list(csv.DictReader(fh))
 
 
@@ -3151,10 +3170,14 @@ def learn_pattern_config(snapshots: Sequence[Snapshot]) -> Dict[str, Any]:
 
 
 def theme_flow_component_premium(feature: Mapping[str, Any]) -> float:
-    flow_premium = num(feature.get("flow_total_premium")) or 0.0
-    if flow_premium > 0:
-        return flow_premium
-    return source_coverage_total_premium(feature)
+    # ``flow_total_premium`` intentionally excludes bot-EOD multileg prints
+    # for single-ticker directional inference. That exclusion is correct for
+    # directional tickets but makes a cross-ticker theme disappear when the
+    # theme's evidence is mostly spreads. Use the largest non-duplicated
+    # source view for magnitude; keep call/put direction based on the primary
+    # flow lane below.
+    gross_flow = num(feature.get("flow_gross_premium")) or 0.0
+    return max(gross_flow, source_coverage_total_premium(feature))
 
 
 def theme_flow_component_call_share(feature: Mapping[str, Any]) -> Optional[float]:
@@ -3265,7 +3288,15 @@ def family_required_source_flags(family: str) -> Tuple[str, ...]:
 
 def family_has_required_sources(feature: Mapping[str, Any], family: str) -> bool:
     available = set(feature.get("source_flags") or [])
-    return set(family_required_source_flags(family)) <= available
+    required = set(family_required_source_flags(family))
+    # Bot EOD is the preferred options-flow source, but the source policy
+    # permits dated option-trades/whale exports when bot EOD is absent. Treat
+    # those lanes as the same flow-source contract; otherwise every
+    # fallback-only date is silently excluded from theme and catalyst
+    # discovery even though its flow was ingested point-in-time.
+    if "bot_eod" in required and available & {"bot_eod", "option_trades", "whale_filtered"}:
+        required.discard("bot_eod")
+    return required <= available
 
 
 def sector_momentum_percentiles(snapshot: Snapshot) -> Dict[str, float]:
@@ -11059,6 +11090,10 @@ def write_outputs(
         decision_enriched_rows,
         max_signals=int(config.get("top_candidates_per_day") or 0),
     )
+    decision_enriched_rows = promote_contract_profile_research_watch_rows(
+        decision_enriched_rows,
+        run_controls["risk_config"],
+    )
     macro_geo_bundle = build_macro_geo_bundle(
         base_dir=base_dir,
         as_of=as_of,
@@ -12281,6 +12316,7 @@ def build_source_ticker_coverage_row(
         "source_flags": ";".join(sorted(str(flag) for flag in feature.get("source_flags", []))),
         "source_total_premium": total_premium,
         "flow_total_premium": feature.get("flow_total_premium"),
+        "flow_gross_premium": feature.get("flow_gross_premium"),
         "hot_total_premium": feature.get("hot_total_premium"),
         "stock_screener_total_premium": (num(feature.get("call_premium")) or 0.0)
         + (num(feature.get("put_premium")) or 0.0),
@@ -12327,6 +12363,7 @@ def source_coverage_total_premium(feature: Mapping[str, Any]) -> float:
     stock_screener_premium = (num(feature.get("call_premium")) or 0.0) + (num(feature.get("put_premium")) or 0.0)
     return max(
         num(feature.get("flow_total_premium")) or 0.0,
+        num(feature.get("flow_gross_premium")) or 0.0,
         num(feature.get("hot_total_premium")) or 0.0,
         stock_screener_premium,
     )
@@ -12838,11 +12875,22 @@ def dedupe_rows_by_ticket(rows: Sequence[Mapping[str, Any]]) -> List[Mapping[str
     for row in rows:
         key = trade_ticket_key(row)
         current = best_by_ticket.get(key)
-        if current is None or trade_review_sort_key(row) > trade_review_sort_key(current):
+        if current is None or ticket_dedupe_preference(row) > ticket_dedupe_preference(current):
             best_by_ticket[key] = row
     out = list(best_by_ticket.values())
     out.sort(key=trade_review_sort_key, reverse=True)
     return out
+
+
+def ticket_dedupe_preference(row: Mapping[str, Any]) -> Tuple[int, float, int, float, float]:
+    surface_rank = {
+        "AUTO_APPROVED": 3,
+        "TRADE_REVIEW": 2,
+        "AVOID": 1,
+        "NO_TRADE": 0,
+    }.get(str(row.get("status") or ""), 0)
+    score = trade_review_sort_key(row)
+    return (surface_rank, *score)
 
 
 def trade_ticket_key(row: Mapping[str, Any]) -> Tuple[str, str, str, str]:
@@ -12941,6 +12989,8 @@ def promotion_needed_text(row: Mapping[str, Any]) -> str:
         needs.append("establish positive exact ticker/family/regime history")
     if "PATTERN_VALIDATION_NOT_PROVEN" in blockers:
         needs.append("upgrade pattern family to PROVEN")
+    if "CONTRACT_PROFILE_LATEST_SPLIT_NOT_POSITIVE" in blockers:
+        needs.append("re-establish positive expectancy in the latest comparable-profile holdout")
     if "LIMITED_OUT_OF_SAMPLE_SAMPLE" in blockers:
         needs.append("collect a larger scored OOS sample")
     if "DOES_NOT_BEAT_TWO_BASELINES" in blockers:
@@ -12962,6 +13012,91 @@ def promotion_needed_text(row: Mapping[str, Any]) -> str:
     if blockers & HARD_TRADE_BLOCKERS:
         needs.append("obtain a clean quote/liquidity/DTE")
     return "; ".join(needs[:5]) or "manual desk review"
+
+
+def promote_contract_profile_research_watch_rows(
+    rows: Sequence[Mapping[str, Any]],
+    risk_config: Mapping[str, Any],
+) -> List[Mapping[str, Any]]:
+    """Surface strong ticket-profile near-misses without making them trades."""
+
+    min_scored = int(
+        risk_config.get(
+            "min_goal_contract_profile_scored_outcomes",
+            risk_config.get("min_oos_scored_outcomes", 30),
+        )
+    )
+    min_dates = int(
+        risk_config.get(
+            "min_goal_contract_profile_unique_dates",
+            risk_config.get("min_contract_profile_unique_dates", 15),
+        )
+    )
+    min_splits = int(
+        risk_config.get(
+            "min_goal_contract_profile_positive_splits",
+            risk_config.get("min_contract_profile_validation_splits", 3),
+        )
+    )
+    min_profit_factor = float(risk_config.get("min_profit_factor", 1.20))
+    min_confidence = float(risk_config.get("min_confidence_lower_bound", 0.45))
+    promoted: List[Mapping[str, Any]] = []
+    for row in rows:
+        if row.get("status") != "AVOID":
+            promoted.append(row)
+            continue
+        setup = trade_setup_fields(row)
+        if "No complete" in str(setup.get("trade_setup") or ""):
+            promoted.append(row)
+            continue
+        blockers = set(row.get("block_reasons") or [])
+        if blockers & (HARD_TRADE_BLOCKERS | QUOTE_TRADE_BLOCKERS | RISK_TRADE_BLOCKERS):
+            promoted.append(row)
+            continue
+        if any(str(blocker).startswith(KILL_SWITCH_PREFIX) for blocker in blockers):
+            promoted.append(row)
+            continue
+        if str(row.get("contract_profile_validated") or "").lower() != "yes":
+            promoted.append(row)
+            continue
+        profile_scored = int(num(row.get("contract_profile_scored_count")) or 0)
+        profile_dates = int(num(row.get("contract_profile_unique_signal_date_count")) or 0)
+        profile_splits = int(num(row.get("contract_profile_validation_split_count")) or 0)
+        profile_avg = num(row.get("contract_profile_avg_R"))
+        profile_pf = num(row.get("contract_profile_profit_factor"))
+        profile_confidence = num(row.get("confidence_lower_bound"))
+        expected_r = num(row.get("expected_R"))
+        latest_avg = num(row.get("contract_profile_latest_validation_split_average_net_R"))
+        if (
+            profile_scored < min_scored
+            or profile_dates < min_dates
+            or profile_splits < min_splits
+            or profile_avg is None
+            or profile_avg <= 0
+            or profile_pf is None
+            or profile_pf < min_profit_factor
+            or profile_confidence is None
+            or profile_confidence < min_confidence
+            or expected_r is None
+            or expected_r <= 0
+            or latest_avg is None
+        ):
+            promoted.append(row)
+            continue
+        watch = dict(row)
+        watch["status"] = "TRADE_REVIEW"
+        watch["classification"] = "WATCH"
+        review_blockers = list(watch.get("block_reasons") or [])
+        if latest_avg <= 0 and "CONTRACT_PROFILE_LATEST_SPLIT_NOT_POSITIVE" not in review_blockers:
+            review_blockers.append("CONTRACT_PROFILE_LATEST_SPLIT_NOT_POSITIVE")
+        if "CONTRACT_PROFILE_RESEARCH_REVIEW" not in review_blockers:
+            review_blockers.append("CONTRACT_PROFILE_RESEARCH_REVIEW")
+        watch["block_reasons"] = sorted(set(review_blockers))
+        watch["blocker_categories"] = decompose_blockers(watch["block_reasons"])
+        watch["why_actionable_now"] = final_actionability_text(watch)
+        watch["promotion_requirements"] = promotion_needed_text(watch)
+        promoted.append(watch)
+    return promoted
 
 
 def trade_review_output_row(r: Mapping[str, Any]) -> Dict[str, Any]:
@@ -13648,6 +13783,8 @@ def blocker_summary_label(blocker: str) -> str:
         "DOES_NOT_BEAT_TWO_BASELINES": "candidate did not beat enough simple baselines",
         "LIMITED_OUT_OF_SAMPLE_SAMPLE": "too few scored out-of-sample outcomes",
         "CONTRACT_PROFILE_NOT_VALIDATED": "this DTE/moneyness contract profile lacks enough out-of-sample history",
+        "CONTRACT_PROFILE_LATEST_SPLIT_NOT_POSITIVE": "the latest comparable contract-profile holdout was not positive",
+        "CONTRACT_PROFILE_RESEARCH_REVIEW": "strong contract-profile evidence is review-only until broader proof gates clear",
         "MAX_RISK_EXCEEDS_PER_TRADE_LIMIT": "ticket risk exceeds the configured trade cap",
     }.get(blocker, blocker.replace("_", " ").lower())
 
@@ -15327,6 +15464,7 @@ def source_coverage_fieldnames() -> List[str]:
         "source_flags",
         "source_total_premium",
         "flow_total_premium",
+        "flow_gross_premium",
         "hot_total_premium",
         "stock_screener_total_premium",
         "flow_call_premium_share",

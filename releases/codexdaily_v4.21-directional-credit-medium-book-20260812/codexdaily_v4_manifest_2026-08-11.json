@@ -1,0 +1,930 @@
+{
+  "artifacts": {
+    "candidate_disposition": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_candidate_disposition_2026-08-11.csv",
+    "confidence_calibration_predictions": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_confidence_calibration_predictions_2026-08-11.csv",
+    "confidence_calibration_summary": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_confidence_calibration_summary_2026-08-11.json",
+    "confirmation_evidence": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_confirmation_evidence_2026-08-11.csv",
+    "construction_attempts": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_construction_attempts_2026-08-11.csv",
+    "generation_audit": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_candidate_generation_audit_2026-08-11.csv",
+    "goal_shadow": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_goal_shadow_2026-08-11.csv",
+    "goal_shadow_ledger": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_goal_shadow_ledger.csv",
+    "macro_event_gates": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_macro_event_gates_2026-08-11.csv",
+    "manifest": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_manifest_2026-08-11.json",
+    "no_miss_audit": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_no_miss_audit_2026-08-11.csv",
+    "no_miss_audit_markdown": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_no_miss_audit_2026-08-11.md",
+    "opportunity_board": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_opportunity_board_2026-08-11.csv",
+    "payoff_calibration_groups": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_payoff_calibration_groups_2026-08-11.csv",
+    "payoff_calibration_summary": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_payoff_calibration_summary_2026-08-11.json",
+    "payoff_walk_forward": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_payoff_walk_forward_2026-08-11.csv",
+    "portfolio_repair": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_portfolio_repair_2026-08-11.csv",
+    "raw_universe": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_raw_universe_2026-08-11.csv",
+    "report": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_report_2026-08-11.md",
+    "risk_cap_audit": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_risk_cap_audit_2026-08-11.csv",
+    "safety_calibration": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_safety_calibration_2026-08-11.csv",
+    "scored_reference": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_scored_reference_2026-08-11.csv",
+    "secondary_liquidity_sweep": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_secondary_liquidity_sweep_2026-08-11.csv",
+    "sector_rotation": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_sector_rotation_2026-08-11.csv",
+    "strategy_generation_coverage": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_strategy_generation_coverage_2026-08-11.csv",
+    "strategy_registry": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_strategy_registry_2026-08-11.csv",
+    "strategy_validation": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_strategy_validation_2026-08-11.csv",
+    "suppression_audit": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_suppression_audit_2026-08-11.csv",
+    "suppression_audit_markdown": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_suppression_audit_2026-08-11.md",
+    "swing_target_tickets": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_swing_target_tickets_2026-08-11.csv",
+    "symbol_credit_calibration": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_symbol_credit_calibration_2026-08-11.json",
+    "symbol_credit_evidence": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_symbol_credit_evidence_2026-08-11.csv",
+    "walk_forward_credit_evidence": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_walk_forward_credit_evidence_2026-08-11.csv",
+    "walk_forward_credit_qualified": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_walk_forward_credit_qualified_2026-08-11.csv",
+    "walk_forward_credit_summary": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_walk_forward_credit_summary_2026-08-11.json"
+  },
+  "asof": "2026-08-11",
+  "base_dir": "/Users/anuppamvi/uw_root/tradedesk/2026-08-11",
+  "confidence_calibration": {
+    "actionable_history_rows": 39,
+    "actual_win_rate": 0.8571428571428571,
+    "asof": "2026-08-11",
+    "baseline_brier_score": 0.25,
+    "brier_score": 0.14442142238540656,
+    "calibration_gap": 0.07328114641251726,
+    "calibration_scope": "exact_replay_validated_candidates_not_final_approval",
+    "current_family_estimates": {
+      "Credit": {
+        "probability": 0.8333333333333334,
+        "probability_lower_bound": 0.795336682143178,
+        "sample_size": 148,
+        "wins": 124.0
+      },
+      "Debit": {
+        "probability": 0.6666666666666666,
+        "probability_lower_bound": 0.5583022478410227,
+        "sample_size": 28,
+        "wins": 19.0
+      }
+    },
+    "current_group_estimates": {
+      "Credit|Bear Call|downtrend": {
+        "direction": "Bear Call",
+        "probability": 0.7941176470588235,
+        "probability_lower_bound": 0.7096659166162602,
+        "regime": "downtrend",
+        "sample_size": 32,
+        "strategy_family": "Credit",
+        "wins": 26.0
+      },
+      "Credit|Bear Call|range": {
+        "direction": "Bear Call",
+        "probability": 0.8378378378378378,
+        "probability_lower_bound": 0.7653418085200273,
+        "regime": "range",
+        "sample_size": 35,
+        "strategy_family": "Credit",
+        "wins": 30.0
+      },
+      "Credit|Bear Call|uptrend": {
+        "direction": "Bear Call",
+        "probability": 0.8857142857142857,
+        "probability_lower_bound": 0.8241653240658746,
+        "regime": "uptrend",
+        "sample_size": 33,
+        "strategy_family": "Credit",
+        "wins": 30.0
+      },
+      "Credit|Bull Put|downtrend": {
+        "direction": "Bull Put",
+        "probability": 0.75,
+        "probability_lower_bound": 0.6015960115342781,
+        "regime": "downtrend",
+        "sample_size": 10,
+        "strategy_family": "Credit",
+        "wins": 8.0
+      },
+      "Credit|Bull Put|range": {
+        "direction": "Bull Put",
+        "probability": 0.6666666666666666,
+        "probability_lower_bound": 0.527549403828424,
+        "regime": "range",
+        "sample_size": 16,
+        "strategy_family": "Credit",
+        "wins": 11.0
+      },
+      "Credit|Bull Put|uptrend": {
+        "direction": "Bull Put",
+        "probability": 0.8333333333333334,
+        "probability_lower_bound": 0.74446494328578,
+        "regime": "uptrend",
+        "sample_size": 22,
+        "strategy_family": "Credit",
+        "wins": 19.0
+      },
+      "Debit|Bear Put|downtrend": {
+        "direction": "Bear Put",
+        "probability": 0.75,
+        "probability_lower_bound": 0.5490923699884755,
+        "regime": "downtrend",
+        "sample_size": 2,
+        "strategy_family": "Debit",
+        "wins": 2.0
+      },
+      "Debit|Bull Call|uptrend": {
+        "direction": "Bull Call",
+        "probability": 0.6428571428571429,
+        "probability_lower_bound": 0.5283823098319157,
+        "regime": "uptrend",
+        "sample_size": 26,
+        "strategy_family": "Debit",
+        "wins": 17.0
+      }
+    },
+    "eligible_history_rows": 176,
+    "family_validation": {
+      "Credit": {
+        "actual_win_rate": 0.8492063492063492,
+        "baseline_brier_score": 0.25,
+        "brier_score": 0.13686888104839984,
+        "calibration_gap": 0.03712934495799103,
+        "eligible_history_rows": 148,
+        "group_brier_score": 0.13574228095991112,
+        "group_family_baseline_brier_score": 0.11448884746947784,
+        "group_model_beats_family_base": false,
+        "group_prediction_count": 61,
+        "mean_predicted_probability": 0.8120770042483582,
+        "prediction_count": 126,
+        "reason": "prior-only policy probability beats the no-skill benchmark with acceptable calibration gap",
+        "status": "PASS"
+      },
+      "Debit": {
+        "actual_win_rate": 0.8181818181818182,
+        "baseline_brier_score": 0.25,
+        "brier_score": 0.18045056562535428,
+        "calibration_gap": 0.17080492176035333,
+        "eligible_history_rows": 28,
+        "group_brier_score": 0.20324671426932017,
+        "group_family_baseline_brier_score": 0.195859333295186,
+        "group_model_beats_family_base": false,
+        "group_prediction_count": 9,
+        "mean_predicted_probability": 0.6473768964214649,
+        "prediction_count": 11,
+        "reason": "walk-forward predictions 11 < 30",
+        "status": "INSUFFICIENT"
+      }
+    },
+    "high_confidence_available": true,
+    "mean_predicted_probability": 0.7838617107303398,
+    "minimum_predictions": 30,
+    "minimum_prior_sample": 12,
+    "prediction_count": 70,
+    "reason": "prior-only policy probability beats the no-skill benchmark with acceptable calibration gap",
+    "status": "PASS",
+    "version": "confidence-walk-forward-v2.1-maturity-safe-conservative"
+  },
+  "data_quality": {
+    "critical_blockers": [],
+    "items": [
+      {
+        "check": "UW files present",
+        "critical": false,
+        "detail": "required exports found",
+        "status": "ok"
+      },
+      {
+        "check": "Schwab quotes available",
+        "critical": false,
+        "detail": "7307 row-level executable quotes; 8496 live-priced PASS rows; counts={'PASS': 8496, 'no_realistic_structure': 364, 'no_realistic_spread': 53}",
+        "status": "ok"
+      },
+      {
+        "check": "Schwab portfolio available",
+        "critical": false,
+        "detail": "positions=66",
+        "status": "ok"
+      },
+      {
+        "check": "Browser/news notes present",
+        "critical": false,
+        "detail": "no local browser/news captures; single names remain candidate-gated",
+        "status": "missing"
+      },
+      {
+        "check": "Recent-performance report freshness",
+        "critical": false,
+        "detail": "replay_is_35_days_old; maximum_allowed_is_30",
+        "status": "unavailable"
+      },
+      {
+        "check": "Live outcome ledger freshness",
+        "critical": false,
+        "detail": "no_closed_filled_live_outcomes",
+        "status": "unavailable"
+      }
+    ],
+    "run_mode": "EOD swing target plan",
+    "status": "warning",
+    "warnings": [
+      "browser_news_notes_present",
+      "recent-performance_report_freshness",
+      "live_outcome_ledger_freshness"
+    ]
+  },
+  "decision_lane_candidate_count": 2,
+  "execution_evidence_integrity": {
+    "evidence_reachable_rows": 1,
+    "maximum_specific_sample": 3,
+    "medium_debit_evidence_rows": 0,
+    "minimum_specific_sample": 12,
+    "probationary_evidence_rows": 1,
+    "reason": "specific or validated family evidence can authorize execution",
+    "specific_evidence_rows": 0,
+    "status": "PASS",
+    "symbol_credit_evidence_rows": 0,
+    "validated_family_rows": 0,
+    "validated_payoff_lane_rows": 0,
+    "walk_forward_credit_evidence_rows": 1
+  },
+  "goal_shadow": {
+    "central_ledger": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_goal_shadow_ledger.csv",
+    "execution_eligible": false,
+    "pending_count": 10,
+    "pending_ledger_rows": 10,
+    "policy_id": "n1_fillable_dp0.20_oi-none_hist0.0_prior8_model0.0",
+    "resolved_count": 4,
+    "resolved_ledger_rows": 4,
+    "run_artifact": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_goal_shadow_2026-08-11.csv",
+    "selected_rows": 1,
+    "shadow_only": true
+  },
+  "lane_coverage": {
+    "Momentum Debit": 90,
+    "Swing Target / Work Limit": 1
+  },
+  "manifest_path": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_manifest_2026-08-11.json",
+  "market_regime": {
+    "flow": "weak",
+    "flow_bias": -0.0178,
+    "qqq_1d": -0.0035,
+    "sizing_stance": "normal",
+    "spy_1d": -0.0034,
+    "tape_direction": "range",
+    "transition": false,
+    "trend": "range",
+    "trend_method": "SPY_QQQ_one_session_tape",
+    "trend_scope": "market_tape_not_symbol_trend",
+    "validation_note": "latest UW planning folder; current Schwab chains are used for executable pricing.",
+    "vix_proxy": 15.29,
+    "volatility": "low"
+  },
+  "no_miss_audit": {
+    "candidate_disposition_rows": 8916,
+    "generation_checks": [
+      {
+        "audit_item": "expiry window too narrow",
+        "audit_status": "ok",
+        "evidence": "candidate expiries should span more than one usable date"
+      },
+      {
+        "audit_item": "strike window too narrow",
+        "audit_status": "ok",
+        "evidence": "construction attempts should include alternate strikes"
+      },
+      {
+        "audit_item": "too much whale dependence",
+        "audit_status": "ok",
+        "evidence": "manual confirmation remains required for flow-only theses"
+      },
+      {
+        "audit_item": "top-flow universe too small",
+        "audit_status": "ok",
+        "evidence": "top-flow rows=50"
+      },
+      {
+        "audit_item": "secondary liquidity sweep",
+        "audit_status": "ok",
+        "evidence": "not triggered; scored rows=8913"
+      },
+      {
+        "audit_item": "fixed-regime bias",
+        "audit_status": "ok",
+        "evidence": "both bullish and bearish structures should be considered when data supports them"
+      },
+      {
+        "audit_item": "too much Research classification",
+        "audit_status": "ok",
+        "evidence": "Research ratio=45%"
+      },
+      {
+        "audit_item": "missing debit alternatives",
+        "audit_status": "ok",
+        "evidence": "debit alternatives present"
+      },
+      {
+        "audit_item": "missing credit alternatives",
+        "audit_status": "ok",
+        "evidence": "credit alternatives present"
+      },
+      {
+        "audit_item": "missing index/ETF proxies",
+        "audit_status": "warn",
+        "evidence": "Index/ETF lane visible"
+      },
+      {
+        "audit_item": "missing wheel/cash alternatives",
+        "audit_status": "ok",
+        "evidence": "Wheel/Cash lane visible"
+      },
+      {
+        "audit_item": "overly strict confirmation gates",
+        "audit_status": "warn",
+        "evidence": "zero Execute requires target tickets and no-miss audit"
+      },
+      {
+        "audit_item": "execution evidence reachability",
+        "audit_status": "ok",
+        "evidence": "specific max n=3 vs required n=12; validated family rows=0; reachable rows=1"
+      },
+      {
+        "audit_item": "targetable trades hidden by price miss",
+        "audit_status": "ok",
+        "evidence": "price target miss must remain visible as Work Limit"
+      }
+    ],
+    "suppressed_rows": 8824,
+    "targetable_price_misses_hidden": 0,
+    "top_flow_tickers_audited": 50
+  },
+  "opportunity_counts": {
+    "avoid": 4658,
+    "execute": 0,
+    "research": 4040,
+    "scout": 55,
+    "swing_target_work_limit": 1,
+    "wheel_cash": 0
+  },
+  "out_dir": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full",
+  "outcome_learning": {
+    "classifications": {},
+    "rows": 0,
+    "status": "no_later_working_rejections_recorded"
+  },
+  "payoff_calibration": {
+    "asof": "2026-08-11",
+    "eligible_rows": 176,
+    "evidence_first_asof": "2026-01-05",
+    "evidence_last_asof": "2026-07-20",
+    "evidence_staleness_days": 22,
+    "family_metrics": {
+      "Credit": {
+        "base": {
+          "average_loss": 330.3249999999999,
+          "average_loss_risk_fraction": 0.8740143607295138,
+          "average_pnl": 28.911486486486538,
+          "average_win": 98.4411290322581,
+          "average_win_risk_fraction": 0.2593701557182798,
+          "entry_pct_width_p25": 0.2609999999999999,
+          "entry_pct_width_p75": 0.2837250000000004,
+          "max_drawdown": 2221.449999999997,
+          "profit_factor": 1.5397335957012044,
+          "sample_size": 148,
+          "win_rate": 0.8378378378378378,
+          "win_rate_lower_bound": 0.795336682143178,
+          "wins": 124
+        },
+        "stress_10": {
+          "average_loss": 330.48479999999984,
+          "average_loss_risk_fraction": 0.8741127920341324,
+          "average_pnl": 14.747432432432468,
+          "average_win": 84.91658536585368,
+          "average_win_risk_fraction": 0.2233375839794036,
+          "entry_pct_width_p25": 0.2609999999999999,
+          "entry_pct_width_p75": 0.2837250000000004,
+          "max_drawdown": 3135.399999999997,
+          "profit_factor": 1.2641719074523254,
+          "sample_size": 148,
+          "win_rate": 0.831081081081081,
+          "win_rate_lower_bound": 0.7880268152195866,
+          "wins": 123
+        },
+        "stress_5": {
+          "average_loss": 337.27749999999986,
+          "average_loss_risk_fraction": 0.8922408370893079,
+          "average_pnl": 21.829459459459503,
+          "average_win": 91.33403225806454,
+          "average_win_risk_fraction": 0.2404468462115261,
+          "entry_pct_width_p25": 0.2609999999999999,
+          "entry_pct_width_p75": 0.2837250000000004,
+          "max_drawdown": 2678.424999999997,
+          "profit_factor": 1.3991223843867449,
+          "sample_size": 148,
+          "win_rate": 0.8378378378378378,
+          "win_rate_lower_bound": 0.795336682143178,
+          "wins": 124
+        }
+      },
+      "Debit": {
+        "base": {
+          "average_loss": 135.51111111111112,
+          "average_loss_risk_fraction": 1.0,
+          "average_pnl": 53.07499999999997,
+          "average_win": 142.4052631578947,
+          "average_win_risk_fraction": 0.9226894665949432,
+          "entry_pct_width_p25": 0.28900000000000003,
+          "entry_pct_width_p75": 0.36443749999999997,
+          "max_drawdown": 333.0,
+          "profit_factor": 2.218514266972777,
+          "sample_size": 28,
+          "win_rate": 0.6785714285714286,
+          "win_rate_lower_bound": 0.5583022478410227,
+          "wins": 19
+        },
+        "stress_10": {
+          "average_loss": 149.06222222222223,
+          "average_loss_risk_fraction": 1.1,
+          "average_pnl": 37.91142857142854,
+          "average_win": 126.47789473684207,
+          "average_win_risk_fraction": 0.8226894665949434,
+          "entry_pct_width_p25": 0.28900000000000003,
+          "entry_pct_width_p75": 0.36443749999999997,
+          "max_drawdown": 366.30000000000007,
+          "profit_factor": 1.791257938519335,
+          "sample_size": 28,
+          "win_rate": 0.6785714285714286,
+          "win_rate_lower_bound": 0.5583022478410227,
+          "wins": 19
+        },
+        "stress_5": {
+          "average_loss": 142.2866666666667,
+          "average_loss_risk_fraction": 1.0499999999999998,
+          "average_pnl": 45.49321428571425,
+          "average_win": 134.44157894736838,
+          "average_win_risk_fraction": 0.8726894665949433,
+          "entry_pct_width_p25": 0.28900000000000003,
+          "entry_pct_width_p75": 0.36443749999999997,
+          "max_drawdown": 349.65,
+          "profit_factor": 1.994713333020974,
+          "sample_size": 28,
+          "win_rate": 0.6785714285714286,
+          "win_rate_lower_bound": 0.5583022478410227,
+          "wins": 19
+        }
+      }
+    },
+    "history_path": "/Users/anuppamvi/uw_root/tradedesk/codexuw/history/codexdaily_v4_edge_history_v4_2026-07-26.csv.gz",
+    "passed_lane_count": 0,
+    "passed_lanes": [],
+    "probationary_lane_count": 2,
+    "probationary_lanes": [
+      "base::Credit|Bear Call|uptrend",
+      "base::Debit|Bull Call|uptrend"
+    ],
+    "status": "NO_VALIDATED_LANES",
+    "thresholds": {
+      "maximum_drawdown_stress_multiple": 1.25,
+      "maximum_failed_walk_forward_window_rate": 0.3333333333333333,
+      "minimum_10pct_stress_profit_factor": 1.25,
+      "minimum_post_activation_oos_sample": 2,
+      "route_policies": {
+        "base": {
+          "key_column": "_route_key_base",
+          "minimum_group_sample": 20,
+          "minimum_oos_sample": 5,
+          "minimum_train_profit_factor": 1.25,
+          "minimum_train_sample": 10
+        },
+        "flow": {
+          "key_column": "_route_key_flow",
+          "minimum_group_sample": 15,
+          "minimum_oos_sample": 5,
+          "minimum_train_profit_factor": 1.0,
+          "minimum_train_sample": 8
+        },
+        "flow_cost": {
+          "key_column": "_route_key_flow_cost",
+          "minimum_group_sample": 12,
+          "minimum_oos_sample": 5,
+          "minimum_train_profit_factor": 1.0,
+          "minimum_train_sample": 8
+        }
+      }
+    },
+    "version": "structure-aware-hierarchical-payoff-v2.1-maturity-safe-probationary",
+    "walk_forward_scheme": "expanding_train_monthly_test_after_two-month_warmup"
+  },
+  "pipeline_name": "Codex Daily V4",
+  "pipeline_version": "v4.21-directional-credit-medium-book-20260812",
+  "portfolio_status": "ok",
+  "report_path": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-11_v421_debit_guard_full/codexdaily_v4_report_2026-08-11.md",
+  "run_mode": "EOD swing target plan",
+  "safety_calibration": {
+    "negative_shadow_ev_families": 0,
+    "risk_cap_pct_account_value": 0.02,
+    "risk_capped_tickets": 0,
+    "rolling_window_days": 14,
+    "secondary_liquidity_sweep_triggered": false,
+    "strategy_slump_muted_families": 0
+  },
+  "schwab_status": "quotes=ok (7307 row-level executable quotes; 8496 live-priced PASS rows; counts={'PASS': 8496, 'no_realistic_structure': 364, 'no_realistic_spread': 53}); portfolio=ok (positions=66)",
+  "scoring_source": "direct_v4_eod_pipeline",
+  "sector_rotation": {
+    "authority": "prospective_context_only",
+    "emerging_sectors": [
+      "Basic Materials",
+      "Energy",
+      "Healthcare"
+    ],
+    "sector_count": 11
+  },
+  "status": "ok",
+  "strategy_registry": {
+    "constructed_family_count": 32,
+    "execution_authorized_count": 0,
+    "family_count": 32,
+    "live_builder_count": 32,
+    "probationary_execution_authorized_count": 1,
+    "seeded_family_count": 32,
+    "status_counts": {
+      "PROBATIONARY": 1,
+      "PROSPECTIVE": 3,
+      "RESEARCH_ONLY": 28
+    },
+    "unconstructed_families": [],
+    "unseeded_families": []
+  },
+  "swing_target_ticket_count": 91,
+  "symbol_credit_calibration": {
+    "activation_date": "2026-08-11",
+    "asof": "2026-08-11",
+    "bayesian_win_probability": 0.8571428571428571,
+    "conservative_win_probability": 0.565508505247919,
+    "credit_policy_version": "credit-v4.0-regime-map-validated-rv",
+    "groups": {
+      "Bear Call|uptrend": {
+        "bayesian_win_probability": 0.8,
+        "conservative_win_probability": 0.4384939195509822,
+        "independent_episode_count": 1,
+        "monthly_positive": true,
+        "monthly_results": [
+          {
+            "count": 3,
+            "mean": 43.84000000000001,
+            "month": "2026-06",
+            "sum": 131.52000000000004
+          }
+        ],
+        "oos_average_pnl_10pct": 48.627500000000026,
+        "oos_profit_factor_10pct": Infinity,
+        "oos_sample_size": 2,
+        "oos_wins": 2,
+        "postactivation_sample_size": 0,
+        "raw_win_rate": 1.0,
+        "reason": "history_freshness_failed",
+        "sample_size": 3,
+        "status": "FAIL",
+        "stress_average_pnl_10pct": 43.84000000000001,
+        "stress_max_drawdown_10pct": 0.0,
+        "stress_profit_factor_10pct": Infinity,
+        "stress_total_pnl_10pct": 131.52000000000004,
+        "wilson_lower_bound": 0.4384939195509822,
+        "wins": 3
+      },
+      "Bull Put|downtrend": {
+        "bayesian_win_probability": 0.75,
+        "conservative_win_probability": 0.3423719528896193,
+        "independent_episode_count": 1,
+        "monthly_positive": true,
+        "monthly_results": [
+          {
+            "count": 1,
+            "mean": 72.22500000000001,
+            "month": "2026-03",
+            "sum": 72.22500000000001
+          },
+          {
+            "count": 1,
+            "mean": 73.80000000000003,
+            "month": "2026-04",
+            "sum": 73.80000000000003
+          }
+        ],
+        "oos_average_pnl_10pct": 73.80000000000003,
+        "oos_profit_factor_10pct": Infinity,
+        "oos_sample_size": 1,
+        "oos_wins": 1,
+        "postactivation_sample_size": 0,
+        "raw_win_rate": 1.0,
+        "reason": "history_freshness_failed",
+        "sample_size": 2,
+        "status": "FAIL",
+        "stress_average_pnl_10pct": 73.01250000000002,
+        "stress_max_drawdown_10pct": 0.0,
+        "stress_profit_factor_10pct": Infinity,
+        "stress_total_pnl_10pct": 146.02500000000003,
+        "wilson_lower_bound": 0.3423719528896193,
+        "wins": 2
+      }
+    },
+    "history_fresh": false,
+    "history_lag_business_days": 13,
+    "history_latest_exit_day": "2026-07-23",
+    "history_path": "/Users/anuppamvi/uw_root/tradedesk/codexuw/history/codexdaily_v4_edge_history_v4_2026-07-26.csv.gz",
+    "independent_episode_count": 2,
+    "maximum_history_lag_business_days": 10,
+    "minimum_independent_episodes": 5,
+    "minimum_postactivation_sample": 5,
+    "monthly_positive": true,
+    "monthly_results": [
+      {
+        "count": 1,
+        "mean": 72.22500000000001,
+        "month": "2026-03",
+        "sum": 72.22500000000001
+      },
+      {
+        "count": 1,
+        "mean": 73.80000000000003,
+        "month": "2026-04",
+        "sum": 73.80000000000003
+      },
+      {
+        "count": 3,
+        "mean": 43.84000000000001,
+        "month": "2026-06",
+        "sum": 131.52000000000004
+      }
+    ],
+    "oos_average_pnl_10pct": 48.627500000000026,
+    "oos_profit_factor_10pct": Infinity,
+    "oos_sample_size": 2,
+    "oos_wins": 2,
+    "postactivation_sample_size": 0,
+    "raw_win_rate": 1.0,
+    "reason": "history_freshness_failed",
+    "sample_size": 5,
+    "selection_rule": "exact_live_oi_population_then_one_per_signal_day_flow_quote_no_outcome_ranking",
+    "status": "FAIL",
+    "stress_average_pnl_10pct": 55.509000000000015,
+    "stress_max_drawdown_10pct": 0.0,
+    "stress_profit_factor_10pct": Infinity,
+    "stress_total_pnl_10pct": 277.5450000000001,
+    "validation_method": "retrospective_chronological_holdout_not_true_walk_forward",
+    "version": "symbol-trend-credit-v1.1-exact-live-population",
+    "wilson_lower_bound": 0.565508505247919,
+    "wins": 5
+  },
+  "target_model": {
+    "aggregate_risk_budget_applied": false,
+    "aggregate_risk_budget_input": 0.0,
+    "average_target_profit_per_ticket": 162.13,
+    "business_days_remaining": 15,
+    "exact_blocker_to_10k_month": "approved Execute profit is below the required daily pace; theoretical Work Limit inventory is not a forecast",
+    "execute_profit_potential": 0.0,
+    "expected_by_setup_family": {
+      "Credit spreads": {
+        "average_max_loss": 647.0,
+        "average_profit_target": 176.5,
+        "expected_win_rate": 0.82,
+        "ticket_count": 1
+      },
+      "Debit spreads": {
+        "average_max_loss": 240.61,
+        "average_profit_target": 161.97,
+        "expected_win_rate": 0.67,
+        "ticket_count": 90
+      }
+    },
+    "expected_monthly_run_rate": 0.0,
+    "max_risk_if_all_target_tickets_fill": 22302.0,
+    "month_to_date_realized_pnl": 0.0,
+    "monthly_profit_target": 10000.0,
+    "open_unrealized_pnl": 0.0,
+    "realistic_fill_adjusted_target_potential": 0.0,
+    "remaining_monthly_target": 10000.0,
+    "required_average_profit_per_trade": 109.89,
+    "required_daily_pl": 666.67,
+    "required_number_of_target_tickets": 17,
+    "required_weekly_pl": 3333.33,
+    "risk_available": 22302.0,
+    "risk_bounded_fill_adjusted_target_potential": 3701.3,
+    "risk_bounded_max_loss": 22302.0,
+    "risk_bounded_target_ticket_count": 91,
+    "risk_policy_summary": "No aggregate slate risk budget configured; V4 shows every valid Execute/Target. The per-ticket 2% account-loss level is advisory and remains visible in the risk audit.",
+    "sizing_can_close_gap": false,
+    "swing_target_profit_potential_if_filled": 14754.25,
+    "target_feasibility": "not demonstrated",
+    "theoretical_target_inventory_fill_adjusted_potential": 3701.3,
+    "theoretical_target_inventory_monthly_run_rate": 55519.57
+  },
+  "uw_source_status": {
+    "bot_eod_report": "bot_eod_loaded",
+    "chain_oi_changes": "loaded",
+    "dark_pool_weight": 0.0,
+    "dp_eod_report": "dp_eod_loaded",
+    "hot_chains": "loaded",
+    "stock_screener": "loaded"
+  },
+  "version_lock": {
+    "gex_context": "independent V4 EOD path carries liquidity-shift zero-DTE/index gamma context into regime and detailed artifacts",
+    "live_schwab_required_for_execute": true,
+    "lock_status": "locked",
+    "locked_on": "2026-08-12",
+    "pipeline_name": "Codex Daily V4",
+    "pipeline_version": "v4.21-directional-credit-medium-book-20260812",
+    "portfolio_state_required_for_execute": true,
+    "release_id": "directional-credit-medium-book-20260812",
+    "released_at": "2026-08-12T20:00:00-07:00",
+    "supersedes": [
+      "v4.0",
+      "v4.1-exec-confidence-20260612-143405",
+      "v4.2-integrity-20260713",
+      "v4.3-expectancy-safe-entry-20260716",
+      "v4.4-confidence-calibrated-20260719",
+      "v4.5-medium-debit-sleeve-20260719",
+      "v4.6-walk-forward-confidence-capacity-20260719",
+      "v4.7-policy-base-confidence-20260719",
+      "v4.7.1-hierarchical-evidence-20260720",
+      "v4.8-empirical-payoff-walkforward-20260720",
+      "v4.8.1-validated-payoff-display-and-snapshot-replay-20260720",
+      "v4.8.2-snapshot-validation-integrity-20260720",
+      "v4.9-structure-aware-payoff-20260720",
+      "v4.10-correlation-aware-credit-book-20260721",
+      "v4.11-five-source-point-in-time-integrity-20260722",
+      "v4.12-goal-shadow-prospective-20260723",
+      "v4.13-all-strategy-live-construction-20260803",
+      "v4.14-maturity-safe-advisory-risk-20260808",
+      "v4.15-execution-reachability-20260810",
+      "v4.16-symbol-regime-credit-resolution-20260811",
+      "v4.17-symbol-credit-exact-population-validation-20260811",
+      "v4.18-maturity-safe-credit-payoff-book-20260812",
+      "v4.19-family-confidence-regime-capacity-20260812",
+      "v4.20-next-session-debit-route-20260812"
+    ]
+  },
+  "visible_signal_policy": {
+    "active_execute_cap": null,
+    "aggregate_risk_budget_applied": false,
+    "aggregate_risk_budget_arg": 0.0,
+    "cap_reason": "--max-final-trades is ignored in Codex Daily V4; valid Execute/Swing Target rows stay visible. Default aggregate risk budget is disabled; the per-ticket 2% account-loss level is advisory. Target limits, portfolio context, and disposition still affect execution quality.",
+    "max_final_trades_arg": 0,
+    "no_miss_reporting": true
+  },
+  "walk_forward_credit_calibration": {
+    "base_profit_factor": 1.5771642394822007,
+    "bayesian_win_probability": 0.7727272727272727,
+    "directional_credit_lane": {
+      "bayesian_win_probability": 0.8941176470588236,
+      "high_confidence_available": false,
+      "history_age_days": 4,
+      "history_observation_end": "2026-08-07",
+      "history_path": "/Users/anuppamvi/uw_root/tradedesk/codexuw/history/codexdaily_v4_directional_credit_history_v1_2026-08-12.csv.gz",
+      "holdout_bayesian_win_probability": 0.8,
+      "holdout_max_drawdown_10pct": -533.6499999999999,
+      "holdout_max_drawdown_to_stressed_pnl": 0.6358274752770154,
+      "holdout_monthly_stress_pnl_10pct": {
+        "2026-05": -114.84999999999968,
+        "2026-06": 610.8000000000008,
+        "2026-07": 343.35000000000025
+      },
+      "holdout_months_observed": 3,
+      "holdout_positive_months": 2,
+      "holdout_sample_size": 23,
+      "holdout_stress_average_loss_risk_fraction_10pct": 0.9288299155609163,
+      "holdout_stress_average_pnl_10pct": 36.491304347826144,
+      "holdout_stress_average_return_on_risk_10pct": 0.10283113592056449,
+      "holdout_stress_average_win_risk_fraction_10pct": 0.3200229362324552,
+      "holdout_stress_profit_factor_10pct": 1.7204910292729005,
+      "holdout_stress_total_pnl_10pct": 839.3000000000013,
+      "holdout_wilson_lower_bound": 0.6286235235977387,
+      "holdout_win_rate": 0.8260869565217391,
+      "holdout_wins": 19,
+      "max_drawdown_10pct": -603.4999999999991,
+      "max_drawdown_to_stressed_pnl": 0.11841459825370335,
+      "model_tier": "Medium",
+      "monthly_stress_pnl_10pct": {
+        "2025-12": 155.29999999999995,
+        "2026-01": 531.5999999999988,
+        "2026-02": 1139.1,
+        "2026-03": 1787.9999999999995,
+        "2026-04": 700.45,
+        "2026-05": -172.09999999999962,
+        "2026-06": 610.8000000000008,
+        "2026-07": 343.35000000000025
+      },
+      "months_observed": 8,
+      "policy": {
+        "credit_pct_width": [
+          0.15,
+          0.45
+        ],
+        "directions": [
+          "Bull Put",
+          "Bear Call"
+        ],
+        "dte": [
+          21,
+          44
+        ],
+        "earnings_crossing": false,
+        "flow_quality": "directional",
+        "maximum_daily_targets": 1,
+        "maximum_expected_move_ratio": 0.9,
+        "maximum_quote_width_pct": 0.35,
+        "oi_status_excluded": [
+          "mixed",
+          "no_exact_match"
+        ]
+      },
+      "positive_months": 7,
+      "reason": "maturity-safe train/holdout evidence passed",
+      "sample_size": 83,
+      "status": "PASS",
+      "stress_average_loss_risk_fraction_10pct": 0.8208737222509412,
+      "stress_average_pnl_10pct": 61.403614457831324,
+      "stress_average_return_on_risk_10pct": 0.17421694983917718,
+      "stress_average_win_risk_fraction_10pct": 0.2803599548621231,
+      "stress_profit_factor_10pct": 3.578939378605403,
+      "stress_total_pnl_10pct": 5096.5,
+      "train_bayesian_win_probability": 0.9444444444444444,
+      "train_max_drawdown_10pct": -123.30000000000007,
+      "train_max_drawdown_to_stressed_pnl": 0.028578381949031766,
+      "train_monthly_stress_pnl_10pct": {
+        "2025-12": 155.29999999999995,
+        "2026-01": 531.5999999999988,
+        "2026-02": 1139.1,
+        "2026-03": 1787.9999999999995,
+        "2026-04": 700.45
+      },
+      "train_months_observed": 5,
+      "train_positive_months": 5,
+      "train_sample_size": 52,
+      "train_stress_average_loss_risk_fraction_10pct": 0.4258350578819323,
+      "train_stress_average_pnl_10pct": 82.97019230769229,
+      "train_stress_average_return_on_risk_10pct": 0.24027971714074253,
+      "train_stress_average_win_risk_fraction_10pct": 0.2669243081416495,
+      "train_stress_profit_factor_10pct": 25.231676495366276,
+      "train_stress_total_pnl_10pct": 4314.449999999999,
+      "train_wilson_lower_bound": 0.8701881084254424,
+      "train_win_rate": 0.9615384615384616,
+      "train_wins": 50,
+      "version": "v1-maturity-safe-static-20260812",
+      "wilson_lower_bound": 0.8211736349852805,
+      "win_rate": 0.9036144578313253,
+      "wins": 75
+    },
+    "high_confidence_available": false,
+    "history_age_days": 1,
+    "history_observation_end": "2026-08-10",
+    "history_path": "/Users/anuppamvi/uw_root/tradedesk/codexuw/history/codexdaily_v4_credit_payoff_history_v1_2026-08-10.csv.gz",
+    "history_rows": 6624,
+    "holdout_base_profit_factor": 0.7452973300970872,
+    "holdout_bayesian_win_probability": 0.6153846153846154,
+    "holdout_max_drawdown_10pct": -677.585,
+    "holdout_max_drawdown_to_stressed_pnl": Infinity,
+    "holdout_monthly_stress_pnl_10pct": {
+      "2026-06": -62.2350000000001,
+      "2026-07": -330.46500000000003
+    },
+    "holdout_months": [
+      "2026-06",
+      "2026-07"
+    ],
+    "holdout_positive_months": 0,
+    "holdout_sample_size": 11,
+    "holdout_stress_average_pnl_10pct": -35.70000000000001,
+    "holdout_stress_profit_factor_10pct": 0.6223747980613892,
+    "holdout_stress_profit_factor_5pct": 0.6822873536022714,
+    "holdout_stress_total_pnl_10pct": -392.7000000000001,
+    "holdout_wilson_lower_bound": 0.35380117450784887,
+    "holdout_win_rate": 0.6363636363636364,
+    "holdout_wins": 7,
+    "max_drawdown_10pct": -677.585,
+    "max_drawdown_to_stressed_pnl": 2.0449531455129857,
+    "maximum_daily_medium_targets": 2,
+    "maximum_validated_dte": 45,
+    "minimum_live_win_probability": 0.65,
+    "minimum_predicted_stress_return": 0.01,
+    "model_tier": "Medium",
+    "monthly_stress_pnl_10pct": {
+      "2026-04": 46.18499999999999,
+      "2026-05": 677.8600000000001,
+      "2026-06": -62.2350000000001,
+      "2026-07": -330.46500000000003
+    },
+    "positive_months": 2,
+    "reason": "directional Medium credit lane passed; legacy model lane unavailable: maturity-safe walk-forward acceptance metrics failed",
+    "sample_size": 20,
+    "status": "PASS",
+    "stress_average_pnl_10pct": 16.567249999999994,
+    "stress_profit_factor_10pct": 1.3186254711900915,
+    "stress_profit_factor_5pct": 1.4446375054221383,
+    "stress_total_pnl_10pct": 331.3449999999999,
+    "strict_model_reason": "maturity-safe walk-forward acceptance metrics failed",
+    "strict_model_status": "FAIL",
+    "training_rows": 6624,
+    "validation_months": [
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07"
+    ],
+    "version": "v3-directional-medium-book-20260812",
+    "wilson_lower_bound": 0.5839825677481064,
+    "win_rate": 0.8,
+    "wins": 16
+  }
+}

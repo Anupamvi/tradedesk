@@ -81,6 +81,7 @@ def _eligible_history(
     history: pd.DataFrame,
     *,
     asof: object | None = None,
+    require_replay_guard: bool = True,
 ) -> pd.DataFrame:
     """Return exact, point-in-time replay-valid outcomes for calibration.
 
@@ -96,7 +97,13 @@ def _eligible_history(
     out = history.copy()
     if "exact_evaluated" in out.columns:
         out = out[out["exact_evaluated"].map(_truthy)]
-    if "replay_guard_pass" in out.columns:
+    # ``replay_guard_pass`` currently contains both point-in-time integrity
+    # checks and the active strategy policy.  It must remain the production
+    # default, but research which is explicitly rebuilding that policy cannot
+    # require it without circularly discarding every candidate the old policy
+    # rejected.  Such research must still require exact evaluated outcomes and
+    # must never receive execution authority from this function.
+    if require_replay_guard and "replay_guard_pass" in out.columns:
         out = out[out["replay_guard_pass"].map(_truthy)]
 
     asof_col = "asof" if "asof" in out.columns else "eval_day"
@@ -208,8 +215,13 @@ def build_walk_forward_calibration(
     min_prior_sample: int = MIN_PRIOR_SAMPLE,
     min_predictions: int = MIN_CALIBRATION_PREDICTIONS,
     max_calibration_gap: float = MAX_CALIBRATION_GAP,
+    require_replay_guard: bool = True,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
-    eligible = _eligible_history(history, asof=asof)
+    eligible = _eligible_history(
+        history,
+        asof=asof,
+        require_replay_guard=require_replay_guard,
+    )
     group_records: list[dict[str, Any]] = []
     family_records: list[dict[str, Any]] = []
 
@@ -390,6 +402,7 @@ def build_walk_forward_calibration(
         "status": status,
         "reason": reason,
         "calibration_scope": "exact_replay_validated_candidates_not_final_approval",
+        "require_replay_guard": bool(require_replay_guard),
         "eligible_history_rows": int(len(eligible)),
         "actionable_history_rows": actionable_rows,
         "prediction_count": prediction_count,

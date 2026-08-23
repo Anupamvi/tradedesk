@@ -270,7 +270,7 @@ def test_v4_mid_target_without_natural_fill_becomes_work_limit() -> None:
     out = apply_v4_professional_dispositions(scored, asof=ASOF)
 
     assert out["trade_status"].iloc[0] == "Watch"
-    assert out["trade_tier"].iloc[0] == "work-limit-price-target"
+    assert out["trade_tier"].iloc[0] == "approved-work-limit-price-target"
 
 
 def test_v4_contrary_exact_leg_oi_cannot_execute() -> None:

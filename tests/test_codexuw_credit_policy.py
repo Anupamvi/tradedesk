@@ -157,7 +157,7 @@ def test_credit_direction_must_match_market_regime():
     assert assess_credit_spread(bear, live=False)[0]
 
 
-def test_live_credit_sleeve_keeps_unvalidated_additional_credit_as_watch():
+def test_live_credit_sleeve_does_not_apply_an_arbitrary_daily_signal_cap():
     rows = pd.DataFrame(
         [
             {"ticker": "AAA", "direction": "Bull Put", "strategy": "Bull Put Credit Spread", "trade_status": "Execute", "trade_tier": "Execute", "score": 8.0, "confirmation_score": 2.0, "edge_sample_size": 20, "quote_width_pct": 0.10, "trade_status_reason": ""},
@@ -167,11 +167,12 @@ def test_live_credit_sleeve_keeps_unvalidated_additional_credit_as_watch():
     )
     capped = apply_v4_credit_sleeve_cap(rows)
     assert capped.set_index("ticker").at["AAA", "trade_status"] == "Execute"
-    assert capped.set_index("ticker").at["BBB", "trade_status"] == "Watch"
+    assert capped.set_index("ticker").at["BBB", "trade_status"] == "Execute"
     assert capped.set_index("ticker").at["CCC", "trade_status"] == "Execute"
+    assert "confidence rank" in capped.set_index("ticker").at["BBB", "v4_credit_book_allocation"]
 
 
-def test_credit_book_allows_two_validated_independent_buckets_without_stacking_index_or_sector():
+def test_credit_book_keeps_all_validated_signals_and_annotates_correlation_buckets():
     def validated_credit(*, ticker, sector, index_fallback, score):
         return {
             "ticker": ticker,
@@ -220,11 +221,11 @@ def test_credit_book_allows_two_validated_independent_buckets_without_stacking_i
 
     assert by_ticker.at["QQQ", "trade_status"] == "Execute"
     assert by_ticker.at["NVDA", "trade_status"] == "Execute"
-    assert by_ticker.at["SPY", "trade_status"] == "Watch"
-    assert by_ticker.at["AMD", "trade_status"] == "Watch"
+    assert by_ticker.at["SPY", "trade_status"] == "Execute"
+    assert by_ticker.at["AMD", "trade_status"] == "Execute"
     assert by_ticker.at["QQQ", "v4_credit_risk_bucket"] == "broad-index"
-    assert "broad-index" in by_ticker.at["SPY", "v4_direct_disposition_reason"]
-    assert "sector:technology" in by_ticker.at["AMD", "v4_direct_disposition_reason"]
+    assert "correlated broad-index alternative" in by_ticker.at["SPY", "v4_credit_book_allocation"]
+    assert "correlated sector:technology alternative" in by_ticker.at["AMD", "v4_credit_book_allocation"]
 
 
 def test_dte_dead_zone_band_is_11_to_27_inclusive() -> None:

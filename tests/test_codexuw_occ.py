@@ -13,3 +13,13 @@ def test_parse_and_build_occ_symbol_roundtrip() -> None:
     assert parsed.right == "P"
     assert parsed.strike == 170.0
     assert build_occ_symbol(parsed.root, parsed.expiry, parsed.right, parsed.strike) == "NVDA260515P00170000"
+
+
+def test_parse_adjusted_occ_symbol_with_numeric_root_suffix() -> None:
+    parsed = parse_occ_symbol("GME1270115C00020000")
+
+    assert parsed is not None
+    assert parsed.root == "GME1"
+    assert parsed.expiry == dt.date(2027, 1, 15)
+    assert parsed.right == "C"
+    assert parsed.strike == 20.0

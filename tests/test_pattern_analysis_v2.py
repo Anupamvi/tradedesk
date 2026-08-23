@@ -18,7 +18,7 @@ def test_pattern_analysis_v2_defaults_to_v2_output_namespace(tmp_path):
         ]
     )
 
-    assert PIPELINE_VERSION == "pattern_analysis_v2.10-profile-aware-daily-selection-20260722"
+    assert PIPELINE_VERSION == "pattern_analysis_v2.12-family-sources-symmetric-momentum-20260803"
     assert Path(args.out_dir) == tmp_path / "out" / "pattern_analysis_v2" / "2026-05-18"
 
 

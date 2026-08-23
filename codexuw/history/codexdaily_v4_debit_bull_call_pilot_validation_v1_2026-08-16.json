@@ -1,0 +1,60 @@
+{
+  "policy_version": "codexdaily-v4-debit-bull-call-pilot-v4-20260816",
+  "status": "PASS",
+  "activation_date": "2026-08-16",
+  "execution_authorized": true,
+  "authority_scope": "one_contract_bull_call_probability_gte_0.55_positive_ev",
+  "source_predictions": "out/codexdaily_debit_research_v2_2026-08-14-final/debit_walkforward_predictions.csv",
+  "source_sha256": "8436e6022c942ee521a2c2da84fdd8398063be0f50668786cfb417d687879553",
+  "source_signal_start": "2026-03-02",
+  "source_signal_end": "2026-07-23",
+  "source_exit_end": "2026-07-31",
+  "selection_timing": "monthly walk-forward; training exits strictly precede test month",
+  "entry_policy": "next-session exact spread; 10 percent adverse entry stress",
+  "exit_policy": "100 percent debit profit target or expiry settlement",
+  "promotion_gates": {
+    "union_minimum_rows": 15,
+    "union_minimum_holdout_rows": 5,
+    "strict_positive_ev_bull_minimum_rows": 5,
+    "strict_positive_ev_bull_minimum_holdout_rows": 2,
+    "minimum_profit_factor": 1.5,
+    "minimum_15pct_stress_profit_factor": 1.25,
+    "positive_development_pnl_required": true,
+    "positive_holdout_pnl_required": true
+  },
+  "evidence": {
+    "union": {
+      "n": 18,
+      "wins": 16,
+      "losses": 2,
+      "win_rate": 0.888889,
+      "profit_factor_10pct_stress": 7.679201,
+      "total_pnl_10pct_stress": 2270.99,
+      "max_drawdown_10pct_stress": -243.21,
+      "holdout_n": 6,
+      "holdout_wins": 6,
+      "holdout_pnl": 1104.72,
+      "profit_factor_15pct_stress": 7.042487,
+      "total_pnl_15pct_stress": 2147.89
+    },
+    "strict_positive_ev_bull_call": {
+      "n": 5,
+      "wins": 4,
+      "losses": 1,
+      "profit_factor_10pct_stress": 8.099,
+      "development_n": 2,
+      "development_pnl": 5.6,
+      "holdout_n": 2,
+      "holdout_wins": 2,
+      "holdout_pnl": 365.3
+    }
+  },
+  "limitations": [
+    "probationary evidence; not High confidence",
+    "one contract maximum",
+    "bull-call debit only",
+    "bear puts remain blocked",
+    "negative conservative EV remains blocked",
+    "fresh Schwab quote, earnings, liquidity, portfolio, and OCO gates remain mandatory"
+  ]
+}

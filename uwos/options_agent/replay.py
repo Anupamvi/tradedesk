@@ -25,16 +25,24 @@ ROUND_TRIP_COMMISSION = 2.60
 # Keep the outcome horizon and every management level coupled to the live
 # selector, so replay evidence describes the population live may actually trade.
 FIXED_HORIZON_SESSIONS = core.PLANNED_TRADE_HOLDING_SESSIONS
+DEBIT_FIXED_HORIZON_SESSIONS = core.DEBIT_PLANNED_TRADE_HOLDING_SESSIONS
 CREDIT_TAKE_PROFIT_REMAINING = core.CREDIT_TAKE_PROFIT_REMAINING
 CREDIT_HARD_STOP_ENABLED = core.CREDIT_HARD_STOP_ENABLED
 CREDIT_STOP_MULTIPLIER = 2.0
 DEBIT_TAKE_PROFIT_MULTIPLIER = core.DEBIT_TAKE_PROFIT_MULTIPLIER
+DEBIT_HARD_STOP_ENABLED = core.DEBIT_VERTICAL_HARD_STOP_ENABLED
 DEBIT_STOP_REMAINING = core.DEBIT_STOP_REMAINING
+LONG_OPTION_FIXED_HORIZON_SESSIONS = core.LONG_OPTION_PLANNED_TRADE_HOLDING_SESSIONS
+LONG_OPTION_TAKE_PROFIT_MULTIPLIER = core.LONG_OPTION_TAKE_PROFIT_MULTIPLIER
+LONG_OPTION_HARD_STOP_ENABLED = core.LONG_OPTION_HARD_STOP_ENABLED
+LONG_OPTION_STOP_REMAINING = core.DEBIT_STOP_REMAINING
 SUPPORTED_ROUTES = {
     "bull_call_debit",
     "bear_put_debit",
     "bull_put_credit",
     "bear_call_credit",
+    "long_call",
+    "long_put",
 }
 REQUIRED_REPLAY_SOURCES = (
     "stock_screener",
@@ -48,14 +56,37 @@ REQUIRED_SOURCE_GAP_PREFIX = "required point-in-time replay sources missing"
 # selection or outcomes. v1.56 changes selector/runtime behavior, not candidate
 # discovery; it re-runs selection and outcomes from those dated rows. The
 # v1.47 source additionally needs its already-reviewed reprice correction.
-ENTRY_CACHE_COMPATIBILITY_POLICY = "candidate-generation-v1.47-to-v1.56-selector-lane"
+ENTRY_CACHE_COMPATIBILITY_POLICY = (
+    "candidate-generation-v1.47-to-v1.78-risk-normalized-bull-call"
+)
 COMPATIBLE_ENTRY_CACHE_FINGERPRINTS: dict[str, str] = {
+    "4e2301538ff4481a1918fb3515c474203d6ae009f165a1ff58937b843abf93b2": (
+        "options-agent-v1.78-risk-normalized-bull-call-20260822-083000-pre-calibration-handoff"
+    ),
+    "c6cf48bb33ec62970a112054b66cf96d58bc34f644151b766d740b8d682fd8f1": (
+        "options-agent-v1.77-independent-long-options-20260821-081510-pre-tier-fix"
+    ),
+    "e0ae6210a603a50778e7f404790a3c84546a2e15a3477bb35d8d6b93575eda95": (
+        "options-agent-v1.75-credit-risk-parity-20260813-072836"
+    ),
+    "ff221872f78de05217f12111a4ce574a06d271032f7b481ca4a15a18ca4d2d3b": (
+        "options-agent-v1.68-five-source-market-context-20260806-081546"
+    ),
     "4d4f756964e4b27d831c62c28d3068eb3ca16ba4624baba6f5054b515fc782bc": (
         "options-agent-v1.50-mixed-credit-live-width-parity-20260722-094108"
     ),
     "75d950a8f8cc0e6daaa90de14271dbb369f6a4b04bb4eac98f4861cd42ed12b9": (
         "options-agent-v1.47-bull-put-route-isolation-20260722-082236"
     ),
+}
+V176_MIGRATED_DETAIL_COLUMNS = {
+    "management_holding_exit_date",
+    "management_holding_sessions",
+    "selector_risk_exit_date",
+    "selector_risk_horizon_sessions",
+    "earnings_within_selector_risk_horizon",
+    "promotion_outcome_available_date",
+    "promotion_outcome_eligible",
 }
 DETAIL_COLUMNS = (
     "replay_row_id",
@@ -127,6 +158,11 @@ DETAIL_COLUMNS = (
     "earnings_within_holding_horizon",
     "planned_holding_exit_date",
     "planned_holding_sessions",
+    "management_holding_exit_date",
+    "management_holding_sessions",
+    "selector_risk_exit_date",
+    "selector_risk_horizon_sessions",
+    "earnings_within_selector_risk_horizon",
     "macro_event_count_before_expiry",
     "macro_event_count_within_holding_horizon",
     "trade_quality_status",
@@ -143,6 +179,8 @@ DETAIL_COLUMNS = (
     "holding_sessions",
     "pnl_1x",
     "return_on_risk",
+    "promotion_outcome_available_date",
+    "promotion_outcome_eligible",
     "selected_for_policy",
     "selector_partition",
     "selection_rank_for_day",
@@ -175,6 +213,8 @@ def _cache_fingerprint(candidate_limit: Optional[int]) -> str:
     digest.update(SCHEMA_VERSION.encode("utf-8"))
     digest.update(f"candidate_limit={int(candidate_limit or 0)}".encode("utf-8"))
     digest.update(f"fixed_horizon={FIXED_HORIZON_SESSIONS}".encode("utf-8"))
+    digest.update(f"debit_horizon={DEBIT_FIXED_HORIZON_SESSIONS}".encode("utf-8"))
+    digest.update(f"long_option_horizon={LONG_OPTION_FIXED_HORIZON_SESSIONS}".encode("utf-8"))
     digest.update(f"commission={ROUND_TRIP_COMMISSION}".encode("utf-8"))
     return digest.hexdigest()
 
@@ -202,7 +242,8 @@ def _compatible_entry_cache(
         not list(source_paths.get(label) or []) for label in REQUIRED_REPLAY_SOURCES
     ):
         return False
-    if not set(DETAIL_COLUMNS).issubset(cached.columns):
+    required_columns = set(DETAIL_COLUMNS) - V176_MIGRATED_DETAIL_COLUMNS
+    if not required_columns.issubset(cached.columns):
         return False
     if not cached.empty:
         if cached["selected_for_policy"].map(core._truthy).any():
@@ -217,20 +258,444 @@ def _compatible_entry_cache(
     return True
 
 
+def _migrate_v176_route_management(
+    out: pd.DataFrame,
+    *,
+    root: Path,
+    signal_day: dt.date,
+) -> pd.DataFrame:
+    """Re-annotate v1.76 management fields and erase every cached outcome."""
+
+    out = out.copy()
+    for column in V176_MIGRATED_DETAIL_COLUMNS:
+        if column not in out.columns:
+            out[column] = ""
+    out["days_to_earnings"] = out.get(
+        "next_earnings_dt",
+        pd.Series("", index=out.index, dtype=object),
+    ).map(
+        lambda value: (
+            (_date(value) - signal_day).days if _date(value) is not None else ""
+        )
+    )
+    event_calendar = dict(core.load_options_event_calendar(root))
+    event_calendar["corporate_events"] = []
+    out = core.annotate_contract_event_risk(
+        out,
+        as_of=signal_day,
+        event_calendar=event_calendar,
+    )
+    out["exit_day"] = out["management_holding_exit_date"]
+    out["promotion_outcome_available_date"] = out["management_holding_exit_date"]
+    out["promotion_outcome_eligible"] = False
+    for idx, row in out.iterrows():
+        entry_type = str(row.get("entry_side") or "").upper()
+        width = _number(row.get("entry_width")) or 0.0
+        source_entry = _number(row.get("entry_price")) or 0.0
+        if entry_type in {"CREDIT", "DEBIT"} and source_entry > 0 and width > 0:
+            target, stop = _management_levels(
+                entry_type,
+                source_entry,
+                width,
+                route=str(row.get("strategy_route") or ""),
+            )
+            out.at[idx, "target_exit"] = target
+            out.at[idx, "stop_exit"] = stop if stop is not None else math.nan
+        executed_entry = _number(row.get("executed_entry_price")) or 0.0
+        if entry_type in {"CREDIT", "DEBIT"} and executed_entry > 0 and width > 0:
+            target, stop = _management_levels(
+                entry_type,
+                executed_entry,
+                width,
+                route=str(row.get("strategy_route") or ""),
+            )
+            out.at[idx, "executed_target_exit"] = target
+            out.at[idx, "executed_stop_exit"] = (
+                stop if stop is not None else math.nan
+            )
+    for column in (
+        "exit_value",
+        "holding_sessions",
+        "pnl_1x",
+        "return_on_risk",
+    ):
+        out[column] = math.nan
+    out["exact_evaluated"] = False
+    out["exact_reason"] = out.get(
+        "next_session_reprice_approved",
+        pd.Series(False, index=out.index),
+    ).map(
+        lambda value: (
+            "fixed_horizon_exit_quote_pending"
+            if core._truthy(value)
+            else "entry_not_approved"
+        )
+    )
+    out["exit_trigger"] = ""
+    out["selected_for_policy"] = False
+    out["selector_partition"] = ""
+    out["selection_rank_for_day"] = ""
+    return out
+
+
+def _augment_v177_long_option_candidates(
+    cached: pd.DataFrame,
+    *,
+    root: Path,
+    signal_day: dt.date,
+    quote_store: Optional[HistoricalOptionQuoteStore] = None,
+) -> pd.DataFrame:
+    """Reconstruct missing long-option rows from dated pre-outcome candidates."""
+
+    if cached.empty:
+        return cached
+    seeds = cached.copy()
+    bias = seeds.get(
+        "candidate_bias",
+        pd.Series("", index=seeds.index, dtype=object),
+    ).fillna("").astype(str).str.lower()
+    tier = seeds.get(
+        "underlying_quality_tier",
+        pd.Series("", index=seeds.index, dtype=object),
+    ).fillna("").astype(str).str.lower()
+    issue_type = seeds.get(
+        "issue_type",
+        pd.Series("", index=seeds.index, dtype=object),
+    ).fillna("").astype(str).str.upper()
+    seeds = seeds[
+        bias.isin({"bullish", "bearish"})
+        & tier.isin({"core", "liquid"})
+        & issue_type.eq("COMMON STOCK")
+    ].copy()
+    if seeds.empty:
+        return cached
+    seeds["__candidate_bias"] = seeds["candidate_bias"].astype(str).str.lower()
+    seeds["__decision_score"] = pd.to_numeric(
+        seeds.get("decision_score", pd.Series(0.0, index=seeds.index)),
+        errors="coerce",
+    ).fillna(0.0)
+    seeds = seeds.sort_values(
+        ["ticker", "__candidate_bias", "__decision_score"],
+        ascending=[True, True, False],
+        kind="mergesort",
+    ).drop_duplicates(["ticker", "__candidate_bias"], keep="first")
+
+    existing = {
+        (
+            str(row.get("ticker") or "").upper(),
+            str(row.get("strategy_route") or ""),
+        )
+        for _, row in cached.iterrows()
+    }
+    dated_chain = core._dated_option_chain_for_construction(
+        root / signal_day.isoformat(),
+        signal_day,
+    )
+    if dated_chain.empty:
+        return cached
+
+    constructed_rows: list[dict[str, Any]] = []
+    for _, seed in seeds.iterrows():
+        direction = "Long Call" if seed["__candidate_bias"] == "bullish" else "Long Put"
+        route = "long_call" if direction == "Long Call" else "long_put"
+        ticker = str(seed.get("ticker") or "").upper()
+        if (ticker, route) in existing:
+            continue
+        candidate = {
+            "ticker": ticker,
+            "full_name": seed.get("full_name", ""),
+            "sector": seed.get("sector", ""),
+            "issue_type": seed.get("issue_type", ""),
+            "marketcap": seed.get("marketcap", ""),
+            "close": seed.get("stock_price_eod", ""),
+            "bias": seed["__candidate_bias"],
+            "flow_bias_label": seed.get("flow_bias_label", seed["__candidate_bias"]),
+            "candidate_source": seed.get("candidate_source", "flow_oi"),
+            "macro_tape_candidate": seed.get("macro_tape_candidate", False),
+            "macro_tape_direction": seed.get("macro_tape_direction", ""),
+            "price_move_pct": seed.get("price_move_pct", ""),
+            "price_tape_source": seed.get("price_tape_source", ""),
+            "score": seed.get("decision_score", 0.0),
+            "signal_premium": seed.get("flow_total_premium", 0.0),
+            "combined_flow_bias": seed.get("combined_flow_bias", ""),
+            "iv_rank": seed.get("iv_rank", ""),
+            "iv30d": seed.get("iv30d", ""),
+            "next_earnings_dt": seed.get("next_earnings_dt", ""),
+            "total_open_interest": seed.get("source_contract_oi", ""),
+            "total_volume": seed.get("source_contract_volume", ""),
+            "core_universe_member": seed.get("core_universe_member", False),
+            "underlying_quality_tier": seed.get("underlying_quality_tier", ""),
+            "quality_status": "qualified",
+        }
+        constructed = core.construct_long_option(
+            candidate,
+            dated_chain,
+            direction=direction,
+        )
+        if not str(constructed.get("trade_plan") or "").strip():
+            continue
+        constructed.update(
+            {
+                "close": candidate["close"],
+                "sector": candidate["sector"],
+                "core_universe_member": candidate["core_universe_member"],
+                # The source cache already carries the point-in-time equity
+                # quality tier. Do not recompute it from one option leg's
+                # volume, which is not the stock's average daily volume.
+                "underlying_quality_tier": candidate[
+                    "underlying_quality_tier"
+                ],
+                "iv_rank": candidate["iv_rank"],
+                "iv30d": candidate["iv30d"],
+                "next_earnings_dt": candidate["next_earnings_dt"],
+            }
+        )
+        route_metadata = core._strategy_route(
+            route,
+            f"v1.77 dated-cache {route} reconstruction",
+        )
+        constructed_rows.append(
+            core._attach_strategy_route_metadata(constructed, route_metadata)
+        )
+    if not constructed_rows:
+        return cached
+
+    constructed_frame = pd.DataFrame(constructed_rows)
+    constructed_frame["days_to_earnings"] = constructed_frame.get(
+        "next_earnings_dt",
+        pd.Series("", index=constructed_frame.index),
+    ).map(
+        lambda value: (
+            (_date(value) - signal_day).days if _date(value) is not None else ""
+        )
+    )
+    event_calendar = dict(core.load_options_event_calendar(root))
+    event_calendar["corporate_events"] = []
+    constructed_frame = core.annotate_contract_event_risk(
+        constructed_frame,
+        as_of=signal_day,
+        event_calendar=event_calendar,
+    )
+    symbols = {
+        str(leg.get("occ_symbol") or "").upper()
+        for _, row in constructed_frame.iterrows()
+        for leg in core._directed_registry_legs(row)
+        if str(leg.get("occ_symbol") or "").strip()
+    }
+    store = quote_store or HistoricalOptionQuoteStore(root, use_hot=True, use_oi=True)
+    entry_day = core._add_regular_market_days(signal_day, 1)
+    target_quotes = _quote_index(store, signal_day, symbols)
+    next_session_quotes = _quote_index(store, entry_day, symbols)
+    regime = str(cached.get("regime", pd.Series("unknown")).iloc[0] or "unknown")
+    replay_rows = [
+        _replay_row(
+            row,
+            signal_day=signal_day,
+            entry_day=entry_day,
+            exit_day=core._add_regular_market_days(
+                signal_day,
+                core._management_holding_sessions(row),
+            ),
+            regime=regime,
+            target_quote_index=target_quotes,
+            next_session_quote_index=next_session_quotes,
+        )
+        for _, row in constructed_frame.iterrows()
+    ]
+    additions = pd.DataFrame(replay_rows, columns=DETAIL_COLUMNS)
+    return pd.concat([cached.reindex(columns=DETAIL_COLUMNS), additions], ignore_index=True)
+
+
+def _finish_v177_cache_migration(
+    out: pd.DataFrame,
+    migration: str,
+    *,
+    root: Optional[Path],
+    signal_day: Optional[dt.date],
+    quote_store: Optional[HistoricalOptionQuoteStore],
+) -> tuple[pd.DataFrame, str]:
+    if root is None or signal_day is None:
+        return out, migration
+    augmented = _augment_v177_long_option_candidates(
+        out,
+        root=root,
+        signal_day=signal_day,
+        quote_store=quote_store,
+    )
+    suffix = "v1_77_independent_long_option_reconstruction"
+    return augmented, f"{migration}_then_{suffix}" if migration else suffix
+
+
+def _repair_v177_long_option_quality_tiers(out: pd.DataFrame) -> pd.DataFrame:
+    """Restore long rows' dated equity tier from their source candidate rows."""
+
+    if out.empty or "strategy_route" not in out.columns:
+        return out
+    repaired = out.copy()
+    routes = repaired["strategy_route"].fillna("").astype(str)
+    long_mask = routes.isin(core.LONG_OPTION_ROUTES)
+    if not long_mask.any():
+        return repaired
+
+    reference = repaired.loc[~long_mask].copy()
+    reference["__ticker"] = reference.get(
+        "ticker",
+        pd.Series("", index=reference.index, dtype=object),
+    ).fillna("").astype(str).str.upper()
+    reference["__bias"] = reference.get(
+        "candidate_bias",
+        pd.Series("", index=reference.index, dtype=object),
+    ).fillna("").astype(str).str.lower()
+    reference["__tier"] = reference.get(
+        "underlying_quality_tier",
+        pd.Series("", index=reference.index, dtype=object),
+    ).fillna("").astype(str).str.lower()
+    reference = reference[
+        reference["__ticker"].ne("")
+        & reference["__bias"].isin({"bullish", "bearish"})
+        & reference["__tier"].isin({"core", "liquid", "speculative"})
+    ]
+    if reference.empty:
+        return repaired
+    tier_rank = {"core": 0, "liquid": 1, "speculative": 2}
+    reference["__tier_rank"] = reference["__tier"].map(tier_rank)
+    tier_map = (
+        reference.sort_values("__tier_rank", kind="mergesort")
+        .drop_duplicates(["__ticker", "__bias"], keep="first")
+        .set_index(["__ticker", "__bias"])["__tier"]
+        .to_dict()
+    )
+    for idx in repaired.index[long_mask]:
+        ticker = str(repaired.at[idx, "ticker"] or "").upper()
+        bias = str(repaired.at[idx, "candidate_bias"] or "").lower()
+        source_tier = tier_map.get((ticker, bias))
+        if source_tier:
+            repaired.at[idx, "underlying_quality_tier"] = source_tier
+    return repaired
+
+
 def _migrate_compatible_candidate_cache(
     cached: pd.DataFrame,
     *,
     source_fingerprint: str,
+    root: Optional[Path] = None,
+    signal_day: Optional[dt.date] = None,
+    quote_store: Optional[HistoricalOptionQuoteStore] = None,
 ) -> tuple[pd.DataFrame, str]:
     """Reuse dated candidate rows while recording any required semantic migration."""
 
     out = cached.copy()
     if source_fingerprint not in COMPATIBLE_ENTRY_CACHE_FINGERPRINTS:
         return out, ""
+    if source_fingerprint == "4e2301538ff4481a1918fb3515c474203d6ae009f165a1ff58937b843abf93b2":
+        return out, "v1_78_selector_calibration_handoff_only"
+    if source_fingerprint == "c6cf48bb33ec62970a112054b66cf96d58bc34f644151b766d740b8d682fd8f1":
+        out = _repair_v177_long_option_quality_tiers(out)
+        if root is None or signal_day is None:
+            return out, "v1_77_long_option_dated_equity_tier_repair"
+        out = _migrate_v176_route_management(
+            out,
+            root=root,
+            signal_day=signal_day,
+        )
+        return out, "v1_77_long_option_dated_equity_tier_repair_and_outcome_reset"
+    if source_fingerprint == "e0ae6210a603a50778e7f404790a3c84546a2e15a3477bb35d8d6b93575eda95":
+        if root is None or signal_day is None:
+            return out, "v1_75_route_management_and_maturity_reset"
+        # v1.75 candidate discovery and exact entry repricing are unchanged.
+        # Re-annotate event/management fields, then discard every outcome so
+        # v1.76 can score the new route-specific exit policy from raw quotes.
+        out = _migrate_v176_route_management(
+            out,
+            root=root,
+            signal_day=signal_day,
+        )
+        return _finish_v177_cache_migration(
+            out,
+            "v1_75_route_management_and_maturity_reset",
+            root=root,
+            signal_day=signal_day,
+            quote_store=quote_store,
+        )
+    if source_fingerprint == "ff221872f78de05217f12111a4ce574a06d271032f7b481ca4a15a18ca4d2d3b":
+        # v1.68 candidate discovery and exact quotes remain valid. v1.75 only
+        # tightens fresh credit-spread approval, so migrate the entry decision
+        # from recorded point-in-time fields and recompute outcomes downstream.
+        entry_type = out.get(
+            "entry_side",
+            pd.Series("", index=out.index, dtype=object),
+        ).fillna("").astype(str).str.upper()
+        entry_credit = pd.to_numeric(
+            out.get("executed_entry_credit", pd.Series(math.nan, index=out.index)),
+            errors="coerce",
+        )
+        width = pd.to_numeric(
+            out.get("entry_width", pd.Series(math.nan, index=out.index)),
+            errors="coerce",
+        )
+        previously_approved = out.get(
+            "next_session_reprice_approved",
+            pd.Series(False, index=out.index, dtype=bool),
+        ).map(core._truthy)
+        economics_reject = (
+            previously_approved
+            & entry_type.eq("CREDIT")
+            & entry_credit.div(width).lt(core.MIN_SEND_NOW_CREDIT_WIDTH_RATIO)
+        )
+        if economics_reject.any():
+            reason = (
+                "next_session_reprice_quality_fail:send_now_credit_width_below_"
+                f"{int(core.MIN_SEND_NOW_CREDIT_WIDTH_RATIO * 100)}pct"
+            )
+            out.loc[economics_reject, "next_session_reprice_approved"] = False
+            out.loc[economics_reject, "next_session_reprice_reason"] = reason
+            out.loc[economics_reject, "exact_reason"] = reason
+            for column in (
+                "executed_entry_price",
+                "executed_entry_credit",
+                "executed_entry_debit",
+                "executed_target_exit",
+                "executed_stop_exit",
+                "exit_value",
+                "holding_sessions",
+                "pnl_1x",
+                "return_on_risk",
+            ):
+                if column in out.columns:
+                    out.loc[economics_reject, column] = math.nan
+            if "exact_evaluated" in out.columns:
+                out.loc[economics_reject, "exact_evaluated"] = False
+        if root is None or signal_day is None:
+            return out, "v1_68_send_now_credit_width_25pct"
+        out = _migrate_v176_route_management(
+            out,
+            root=root,
+            signal_day=signal_day,
+        )
+        return _finish_v177_cache_migration(
+            out,
+            "v1_68_credit_width_then_v1_76_route_management",
+            root=root,
+            signal_day=signal_day,
+            quote_store=quote_store,
+        )
     if source_fingerprint == "4d4f756964e4b27d831c62c28d3068eb3ca16ba4624baba6f5054b515fc782bc":
         # v1.50 already has the exact candidate and reprice semantics. v1.56
         # replays the current selector lane over the unselected dated rows.
-        return out, "v1_50_selector_lane_only"
+        if root is None or signal_day is None:
+            return out, "v1_50_selector_lane_only"
+        out = _migrate_v176_route_management(
+            out,
+            root=root,
+            signal_day=signal_day,
+        )
+        return _finish_v177_cache_migration(
+            out,
+            "v1_50_selector_lane_then_v1_76_route_management",
+            root=root,
+            signal_day=signal_day,
+            quote_store=quote_store,
+        )
     reason = out.get(
         "next_session_reprice_reason",
         pd.Series("", index=out.index, dtype=object),
@@ -271,7 +736,20 @@ def _migrate_compatible_candidate_cache(
         ):
             if column in out.columns:
                 out.loc[selector_width_reject, column] = ""
-    return out, "v1_47_reprice_resolution_and_selector_quote_width_25pct"
+    if root is None or signal_day is None:
+        return out, "v1_47_reprice_resolution_and_selector_quote_width_25pct"
+    out = _migrate_v176_route_management(
+        out,
+        root=root,
+        signal_day=signal_day,
+    )
+    return _finish_v177_cache_migration(
+        out,
+        "v1_47_reprice_then_v1_76_route_management",
+        root=root,
+        signal_day=signal_day,
+        quote_store=quote_store,
+    )
 
 
 def _eligible_replay_days(
@@ -309,7 +787,7 @@ def _date(value: Any) -> Optional[dt.date]:
 
 def _spread_quotes(
     entry_type: str,
-    short_quote: LegQuote,
+    short_quote: Optional[LegQuote],
     long_quote: LegQuote,
 ) -> tuple[float, float, float]:
     if entry_type == "CREDIT":
@@ -355,25 +833,31 @@ def _next_session_reprice_status(
     order would or would not have filled.
     """
 
-    if (
+    route = str(row.get("strategy_route") or "")
+    long_option_route = route in core.LONG_OPTION_ROUTES
+    invalid_market = (
         not all(
             math.isfinite(value)
-            for value in (target_limit, bid, ask, width, quote_width_pct)
+            for value in (
+                (target_limit, bid, ask, quote_width_pct)
+                if long_option_route
+                else (target_limit, bid, ask, width, quote_width_pct)
+            )
         )
-        or width <= 0
         or target_limit <= 0
-        or target_limit >= width
         or bid < 0
         or ask <= 0
         or ask < bid
-    ):
+        or (not long_option_route and (width <= 0 or target_limit >= width))
+    )
+    if invalid_market:
         # Both exact legs were found, so an invalid net market is a known
         # no-entry outcome rather than missing quote evidence.
         return True, False, None, "invalid_next_session_reprice_economics"
     # Production emits a cent-precision net limit, so replay the same order
     # price instead of booking an untradeable floating-point net quote.
     entry = round(_entry_price(entry_type, bid, ask), 2)
-    if entry <= 0 or entry >= width:
+    if entry <= 0 or (not long_option_route and entry >= width):
         return True, False, None, "invalid_next_session_reprice_economics"
     if entry_type == "CREDIT" and entry + 1e-9 < target_limit:
         return True, False, entry, "next_session_credit_below_source_target"
@@ -381,6 +865,17 @@ def _next_session_reprice_status(
         return True, False, entry, "next_session_debit_above_source_target"
     if entry_type not in {"CREDIT", "DEBIT"}:
         return False, False, None, "unsupported_entry_type"
+    if (
+        entry_type == "CREDIT"
+        and entry / width + 1e-9 < core.MIN_SEND_NOW_CREDIT_WIDTH_RATIO
+    ):
+        return (
+            True,
+            False,
+            entry,
+            "next_session_reprice_quality_fail:send_now_credit_width_below_"
+            f"{int(core.MIN_SEND_NOW_CREDIT_WIDTH_RATIO * 100)}pct",
+        )
     if quote_width_pct > core.MAX_SELECTOR_ENTRY_QUOTE_WIDTH_PCT:
         return (
             True,
@@ -391,7 +886,6 @@ def _next_session_reprice_status(
         )
     expiry = _date(row.get("expiry"))
     entry_dte = (expiry - entry_day).days if expiry is not None else -1
-    route = str(row.get("strategy_route") or "")
     regime = str(regime or row.get("regime") or "").lower()
     if entry_type == "CREDIT" and not 7 <= entry_dte <= 45:
         return True, False, entry, "next_session_credit_dte_outside_7_45"
@@ -401,17 +895,23 @@ def _next_session_reprice_status(
         and entry_dte < core.MIN_RISK_OFF_BEAR_CALL_DTE
     ):
         return True, False, entry, "next_session_risk_off_bear_call_dte_below_minimum"
-    if entry_type == "DEBIT":
+    if long_option_route:
+        if entry_type != "DEBIT":
+            return True, False, entry, "long_option_requires_debit_entry"
+        if not core.MIN_LIVE_DTE <= entry_dte <= core.MAX_LIVE_DTE:
+            return True, False, entry, "next_session_long_option_dte_outside_7_60"
+    elif entry_type == "DEBIT":
         minimum_dte = 7 if route == "bull_call_debit" else 14
         if not minimum_dte <= entry_dte <= 45:
             return True, False, entry, "next_session_debit_dte_outside_route_policy"
 
     live_proxy = {
         "quote_width_pct": quote_width_pct,
-        "short_oi": short_quote.open_interest,
-        "short_volume": short_quote.volume,
+        "short_oi": short_quote.open_interest if short_quote is not None else "",
+        "short_volume": short_quote.volume if short_quote is not None else "",
         "long_oi": long_quote.open_interest,
         "long_volume": long_quote.volume,
+        "dte": entry_dte,
     }
     if entry_type == "CREDIT":
         rejects = core._trade_quality_rejects(
@@ -422,6 +922,15 @@ def _next_session_reprice_status(
             combined_flow_bias=_number(row.get("combined_flow_bias")) or 0.0,
             macro_tape_candidate=core._truthy(row.get("macro_tape_candidate")),
         )
+    elif long_option_route:
+        rejects = core._long_option_quality_rejects(
+            entry_debit=entry,
+            max_loss=entry * 100.0,
+            signal_premium=_number(row.get("signal_premium")) or 0.0,
+            combined_flow_bias=_number(row.get("combined_flow_bias")) or 0.0,
+            macro_tape_candidate=core._truthy(row.get("macro_tape_candidate")),
+        )
+        rejects.extend(core._live_long_option_quality_rejects(live_proxy))
     else:
         rejects = core._debit_trade_quality_rejects(
             entry_debit=entry,
@@ -438,7 +947,8 @@ def _next_session_reprice_status(
                 dte=max(int(_number(row.get("dte")) or 0) - 1, 0),
             )
         )
-    rejects.extend(core._live_spread_quality_rejects(live_proxy))
+    if not long_option_route:
+        rejects.extend(core._live_spread_quality_rejects(live_proxy))
     rejects = core._dedupe_notes(rejects)
     if rejects:
         return True, False, entry, "next_session_reprice_quality_fail:" + ";".join(rejects)
@@ -470,7 +980,11 @@ def _bounded_exit_market(bid: float, ask: float, width: float) -> Optional[tuple
 
 
 def _management_levels(
-    entry_type: str, entry: float, width: float
+    entry_type: str,
+    entry: float,
+    width: float,
+    *,
+    route: str = "",
 ) -> tuple[float, Optional[float]]:
     if entry_type == "CREDIT":
         stop = (
@@ -479,9 +993,22 @@ def _management_levels(
             else None
         )
         return round(entry * CREDIT_TAKE_PROFIT_REMAINING, 6), stop
+    if route in core.LONG_OPTION_ROUTES:
+        return (
+            round(entry * LONG_OPTION_TAKE_PROFIT_MULTIPLIER, 6),
+            (
+                round(max(entry * LONG_OPTION_STOP_REMAINING, 0.01), 6)
+                if LONG_OPTION_HARD_STOP_ENABLED
+                else None
+            ),
+        )
     return (
         round(min(width * 0.80, entry * DEBIT_TAKE_PROFIT_MULTIPLIER), 6),
-        round(max(entry * DEBIT_STOP_REMAINING, 0.01), 6),
+        (
+            round(max(entry * DEBIT_STOP_REMAINING, 0.01), 6)
+            if DEBIT_HARD_STOP_ENABLED
+            else None
+        ),
     )
 
 
@@ -522,8 +1049,15 @@ def _quote_index(
     return quote_store._build_leg_quote_index(quotes)
 
 
-def _candidate_legs(row: Mapping[str, Any]) -> Optional[tuple[dict[str, Any], dict[str, Any]]]:
+def _candidate_legs(
+    row: Mapping[str, Any],
+) -> Optional[tuple[Optional[dict[str, Any]], dict[str, Any]]]:
     legs = core._directed_registry_legs(row)
+    route = str(row.get("strategy_route") or "")
+    if route in core.LONG_OPTION_ROUTES:
+        if len(legs) != 1 or str(legs[0].get("side")).upper() != "BUY":
+            return None
+        return None, legs[0]
     if len(legs) != 2:
         return None
     short = next((leg for leg in legs if str(leg.get("side")).upper() == "SELL"), None)
@@ -555,10 +1089,14 @@ def _expected_move_ratio(row: Mapping[str, Any], entry_type: str, entry: float) 
         return distance / expected_move_pct if expected_move_pct > 0 else None
     if long_strike is None:
         return None
-    breakeven = long_strike + entry if route == "bull_call_debit" else long_strike - entry
+    breakeven = (
+        long_strike + entry
+        if route in {"bull_call_debit", "long_call"}
+        else long_strike - entry
+    )
     distance = (
         breakeven - spot
-        if route == "bull_call_debit"
+        if route in {"bull_call_debit", "long_call"}
         else spot - breakeven
     ) / spot
     return expected_move_pct / max(distance, 0.001)
@@ -590,6 +1128,7 @@ def _replay_row(
 ) -> dict[str, Any]:
     ticker = str(row.get("ticker") or "").upper()
     route = str(row.get("strategy_route") or "")
+    long_option_route = route in core.LONG_OPTION_ROUTES
     entry_type = str(row.get("entry_type") or "").upper()
     expiry = _date(row.get("expiry"))
     legs = _candidate_legs(row)
@@ -597,6 +1136,7 @@ def _replay_row(
         f"{signal_day.isoformat()}|{ticker}|{row.get('trade_plan', '')}".encode("utf-8")
     ).hexdigest()[:24]
     planned_exit = min(expiry, exit_day) if expiry is not None else exit_day
+    management_sessions = core._management_holding_sessions(row)
     result: dict[str, Any] = {
         "replay_row_id": base_id,
         "asof": signal_day.isoformat(),
@@ -644,7 +1184,29 @@ def _replay_row(
         )[:10],
         "planned_holding_sessions": int(
             _number(row.get("planned_holding_sessions"))
-            or FIXED_HORIZON_SESSIONS
+            or management_sessions
+        ),
+        "management_holding_exit_date": str(
+            row.get("management_holding_exit_date") or planned_exit.isoformat()
+        )[:10],
+        "management_holding_sessions": int(
+            _number(row.get("management_holding_sessions"))
+            or management_sessions
+        ),
+        "selector_risk_exit_date": str(
+            row.get("selector_risk_exit_date")
+            or core._planned_trade_exit_date(
+                signal_day,
+                expiry,
+                core.PLANNED_TRADE_HOLDING_SESSIONS,
+            ).isoformat()
+        )[:10],
+        "selector_risk_horizon_sessions": int(
+            _number(row.get("selector_risk_horizon_sessions"))
+            or core.PLANNED_TRADE_HOLDING_SESSIONS
+        ),
+        "earnings_within_selector_risk_horizon": core._truthy(
+            row.get("earnings_within_selector_risk_horizon", False)
         ),
         "macro_event_count_before_expiry": int(
             _number(row.get("macro_event_count_before_expiry")) or 0
@@ -658,12 +1220,18 @@ def _replay_row(
         "decision_pass": _dated_decision_pass(row),
         "decision_score": _number(row.get("score")) or 0.0,
         "exact_fillable": False,
-        "fill_reason": "directed_two_leg_spread_required",
+        "fill_reason": (
+            "directed_one_leg_long_option_required"
+            if long_option_route
+            else "directed_two_leg_spread_required"
+        ),
         "next_session_reprice_observed": False,
         "next_session_reprice_approved": False,
         "next_session_reprice_reason": "source_target_not_fillable",
         "exact_evaluated": False,
         "exact_reason": "entry_not_fillable",
+        "promotion_outcome_available_date": planned_exit.isoformat(),
+        "promotion_outcome_eligible": False,
         "selected_for_policy": False,
         "selector_partition": "",
         "selection_rank_for_day": "",
@@ -675,24 +1243,35 @@ def _replay_row(
     if legs is None or entry_type not in {"CREDIT", "DEBIT"} or expiry is None:
         return result
     short_leg, long_leg = legs
-    short_symbol = str(short_leg["occ_symbol"]).upper()
+    short_symbol = (
+        str(short_leg["occ_symbol"]).upper()
+        if short_leg is not None
+        else ""
+    )
     long_symbol = str(long_leg["occ_symbol"]).upper()
     result["short_leg_eod"] = short_symbol
     result["long_leg_eod"] = long_symbol
-    short_quote = target_quote_index.get(short_symbol)
+    short_quote = target_quote_index.get(short_symbol) if short_symbol else None
     long_quote = target_quote_index.get(long_symbol)
-    if short_quote is None or long_quote is None:
+    if long_quote is None or (not long_option_route and short_quote is None):
         result["fill_reason"] = "missing_exact_entry_leg_quote"
         return result
-    bid, ask, mid = _spread_quotes(entry_type, short_quote, long_quote)
-    width = abs(
-        (_number(row.get("short_strike")) or 0.0)
-        - (_number(row.get("long_strike")) or 0.0)
-    )
+    if long_option_route:
+        bid, ask, mid = float(long_quote.bid), float(long_quote.ask), float(long_quote.mid)
+        width = 0.0
+    else:
+        assert short_quote is not None
+        bid, ask, mid = _spread_quotes(entry_type, short_quote, long_quote)
+        width = abs(
+            (_number(row.get("short_strike")) or 0.0)
+            - (_number(row.get("long_strike")) or 0.0)
+        )
     entry = _entry_price(entry_type, bid, ask)
     quote_width = (ask - bid) / max(abs(mid), 0.01)
     default_target_limit = (
-        round(width * core.MIN_CREDIT_WIDTH_RATIO, 2)
+        round(entry, 2)
+        if long_option_route
+        else round(width * core.MIN_CREDIT_WIDTH_RATIO, 2)
         if entry_type == "CREDIT"
         else round(width * 0.45, 2)
     )
@@ -706,11 +1285,25 @@ def _replay_row(
             "entry_price": round(entry, 6),
             "target_entry_limit": round(target_limit, 6),
             "entry_quote_width_pct": round(quote_width, 6),
-            "source_contract_oi": min(short_quote.open_interest, long_quote.open_interest),
-            "source_contract_volume": min(short_quote.volume, long_quote.volume),
+            "source_contract_oi": (
+                long_quote.open_interest
+                if long_option_route
+                else min(short_quote.open_interest, long_quote.open_interest)
+            ),
+            "source_contract_volume": (
+                long_quote.volume
+                if long_option_route
+                else min(short_quote.volume, long_quote.volume)
+            ),
         }
     )
-    if width <= 0 or bid < 0 or ask <= 0 or ask < bid or entry <= 0 or entry >= width:
+    if (
+        bid < 0
+        or ask <= 0
+        or ask < bid
+        or entry <= 0
+        or (not long_option_route and (width <= 0 or entry >= width))
+    ):
         result["fill_reason"] = "invalid_conservative_entry_economics"
         return result
     if entry_type == "CREDIT":
@@ -718,6 +1311,11 @@ def _replay_row(
         result["entry_credit_pct_width"] = round(entry / width, 6)
         max_profit = entry
         max_loss = width - entry
+    elif long_option_route:
+        result["entry_debit"] = round(entry, 6)
+        result["entry_debit_pct_width"] = ""
+        max_profit = entry * (LONG_OPTION_TAKE_PROFIT_MULTIPLIER - 1.0)
+        max_loss = entry
     else:
         result["entry_debit"] = round(entry, 6)
         result["entry_debit_pct_width"] = round(entry / width, 6)
@@ -735,13 +1333,18 @@ def _replay_row(
     elif entry_type == "DEBIT" and long_strike is not None:
         breakeven = (
             long_strike + entry
-            if route == "bull_call_debit"
+            if route in {"bull_call_debit", "long_call"}
             else long_strike - entry
         )
     else:
         breakeven = _number(row.get("breakeven"))
     result["breakeven"] = breakeven
-    target_exit, stop_exit = _management_levels(entry_type, entry, width)
+    target_exit, stop_exit = _management_levels(
+        entry_type,
+        entry,
+        width,
+        route=route,
+    )
     result["target_exit"] = target_exit
     result["stop_exit"] = stop_exit if stop_exit is not None else ""
     result["expected_move_ratio"] = _expected_move_ratio(row, entry_type, entry)
@@ -751,17 +1354,23 @@ def _replay_row(
         return result
     result["exact_fillable"] = True
     result["fill_reason"] = "conservative_natural_target"
-    next_short_quote = next_session_quote_index.get(short_symbol)
+    next_short_quote = next_session_quote_index.get(short_symbol) if short_symbol else None
     next_long_quote = next_session_quote_index.get(long_symbol)
-    if next_short_quote is None or next_long_quote is None:
+    if next_long_quote is None or (not long_option_route and next_short_quote is None):
         result["next_session_reprice_reason"] = "missing_next_session_entry_leg_quote"
         result["exact_reason"] = "missing_next_session_entry_leg_quote"
         return result
-    next_bid, next_ask, next_mid = _spread_quotes(
-        entry_type,
-        next_short_quote,
-        next_long_quote,
-    )
+    if long_option_route:
+        next_bid = float(next_long_quote.bid)
+        next_ask = float(next_long_quote.ask)
+        next_mid = float(next_long_quote.mid)
+    else:
+        assert next_short_quote is not None
+        next_bid, next_ask, next_mid = _spread_quotes(
+            entry_type,
+            next_short_quote,
+            next_long_quote,
+        )
     next_quote_width = (next_ask - next_bid) / max(abs(next_mid), 0.01)
     reprice_observed, reprice_approved, executed_entry, reprice_reason = _next_session_reprice_status(
         row,
@@ -795,6 +1404,7 @@ def _replay_row(
             entry_type,
             executed_entry,
             width,
+            route=route,
         )
         result["executed_entry_price"] = round(executed_entry, 6)
         result["executed_target_exit"] = round(executed_target_exit, 6)
@@ -811,8 +1421,15 @@ def _replay_row(
 def _selector_frame(detail: pd.DataFrame) -> pd.DataFrame:
     frame = detail[detail["exact_fillable"].map(core._truthy)].copy()
     frame["signal_date"] = pd.to_datetime(frame["asof"], errors="coerce")
-    frame["outcome_available_date"] = pd.to_datetime(frame["exit_day"], errors="coerce")
+    frame["outcome_available_date"] = pd.to_datetime(
+        frame["promotion_outcome_available_date"],
+        errors="coerce",
+    )
     frame["realized_pnl"] = pd.to_numeric(frame["pnl_1x"], errors="coerce")
+    frame.loc[
+        ~frame["promotion_outcome_eligible"].map(core._truthy),
+        "realized_pnl",
+    ] = math.nan
     frame["dte_bucket"] = frame["dte"].map(core._dte_bucket)
     frame["liquidity_bucket"] = frame.apply(core._liquidity_bucket, axis=1)
     frame["entry_type"] = frame["entry_side"]
@@ -828,6 +1445,11 @@ def _selected_metrics(selected: pd.DataFrame) -> dict[str, Any]:
         selected.get("pnl_1x", pd.Series(dtype=float)),
         errors="coerce",
     )
+    promotion_eligible = selected.get(
+        "promotion_outcome_eligible",
+        pd.Series(False, index=selected.index),
+    ).map(core._truthy)
+    realized_pnl = realized_pnl.where(promotion_eligible)
     executed = selected.get(
         "exact_evaluated",
         pd.Series(False, index=selected.index),
@@ -1003,19 +1625,23 @@ def _candidate_rows_for_day(
     target_quotes = _quote_index(quote_store, signal_day, symbols)
     entry_day = core._add_regular_market_days(signal_day, 1)
     next_session_quotes = _quote_index(quote_store, entry_day, symbols)
-    exit_day = core._add_regular_market_days(signal_day, FIXED_HORIZON_SESSIONS)
-    rows = [
-        _replay_row(
-            row,
-            signal_day=signal_day,
-            entry_day=entry_day,
-            exit_day=exit_day,
-            regime=regime,
-            target_quote_index=target_quotes,
-            next_session_quote_index=next_session_quotes,
+    rows = []
+    for _, row in priced.iterrows():
+        holding_sessions = core._management_holding_sessions(row)
+        rows.append(
+            _replay_row(
+                row,
+                signal_day=signal_day,
+                entry_day=entry_day,
+                exit_day=core._add_regular_market_days(
+                    signal_day,
+                    holding_sessions,
+                ),
+                regime=regime,
+                target_quote_index=target_quotes,
+                next_session_quote_index=next_session_quotes,
+            )
         )
-        for _, row in priced.iterrows()
-    ]
     return rows, {
         "day": signal_day.isoformat(),
         "raw": len(raw),
@@ -1085,6 +1711,9 @@ def run_independent_replay(
                     cached, migration = _migrate_compatible_candidate_cache(
                         cached,
                         source_fingerprint=source_fingerprint,
+                        root=root,
+                        signal_day=signal_day,
+                        quote_store=quote_store,
                     )
                     audit_record["entry_cache_reused_from_fingerprint"] = source_fingerprint
                     audit_record["entry_cache_reused_from_pipeline_version"] = (
@@ -1094,6 +1723,13 @@ def run_independent_replay(
                         ENTRY_CACHE_COMPATIBILITY_POLICY
                     )
                     audit_record["entry_cache_compatibility_migration"] = migration
+                    audit_record["rows"] = int(len(cached))
+                    audit_record["v177_long_option_rows"] = int(
+                        cached.get(
+                            "strategy_route",
+                            pd.Series("", index=cached.index),
+                        ).isin(core.LONG_OPTION_ROUTES).sum()
+                    )
                     compatible_entry_cache_days += 1
                     compatible_entry_cache_source_fingerprints.add(source_fingerprint)
                     if migration:
@@ -1129,6 +1765,11 @@ def run_independent_replay(
 
     detail = pd.DataFrame(all_rows, columns=DETAIL_COLUMNS)
     if not detail.empty:
+        promotion_dates = pd.to_datetime(
+            detail["promotion_outcome_available_date"],
+            errors="coerce",
+        )
+        detail["promotion_outcome_eligible"] = promotion_dates.le(pd.Timestamp(end))
         detail["exit_trigger"] = detail["exit_trigger"].fillna("").astype(str)
         due_symbols: dict[dt.date, set[str]] = {}
         fillable = detail["exact_fillable"].map(core._truthy) & detail[
@@ -1173,26 +1814,45 @@ def run_independent_replay(
                 )
                 continue
             entry_type = str(row.get("entry_side") or "").upper()
+            route = str(row.get("strategy_route") or "")
+            long_option_route = route in core.LONG_OPTION_ROUTES
             width = _number(row.get("entry_width")) or 0.0
             entry = _number(row.get("executed_entry_price")) or 0.0
             target_exit = _number(row.get("executed_target_exit"))
             stop_exit = _number(row.get("executed_stop_exit"))
             if target_exit is None:
-                target_exit, stop_exit = _management_levels(entry_type, entry, width)
+                target_exit, stop_exit = _management_levels(
+                    entry_type,
+                    entry,
+                    width,
+                    route=str(row.get("strategy_route") or ""),
+                )
             last_failure = "missing_exact_exit_leg_quote"
             for session_number, due in enumerate(exit_dates, start=1):
                 quotes = exit_quotes.get(due, {})
                 short_quote = quotes.get(str(row.get("short_leg_eod") or "").upper())
                 long_quote = quotes.get(str(row.get("long_leg_eod") or "").upper())
-                if short_quote is None or long_quote is None:
+                if long_quote is None or (not long_option_route and short_quote is None):
                     last_failure = "missing_exact_exit_leg_quote"
                     continue
-                raw_bid, raw_ask, _ = _spread_quotes(entry_type, short_quote, long_quote)
-                bounded_market = _bounded_exit_market(raw_bid, raw_ask, width)
-                if bounded_market is None:
-                    last_failure = "invalid_crossed_exit_economics"
-                    continue
-                bid, ask = bounded_market
+                if long_option_route:
+                    raw_bid, raw_ask = float(long_quote.bid), float(long_quote.ask)
+                    if (
+                        not all(math.isfinite(value) for value in (raw_bid, raw_ask))
+                        or raw_bid < 0
+                        or raw_ask < raw_bid
+                    ):
+                        last_failure = "invalid_crossed_exit_economics"
+                        continue
+                    bid, ask = raw_bid, raw_ask
+                else:
+                    assert short_quote is not None
+                    raw_bid, raw_ask, _ = _spread_quotes(entry_type, short_quote, long_quote)
+                    bounded_market = _bounded_exit_market(raw_bid, raw_ask, width)
+                    if bounded_market is None:
+                        last_failure = "invalid_crossed_exit_economics"
+                        continue
+                    bid, ask = bounded_market
                 value = _exit_value(entry_type, bid, ask)
                 trigger = _management_trigger(
                     entry_type,
@@ -1206,7 +1866,11 @@ def run_independent_replay(
                 if not trigger:
                     continue
                 pnl = _pnl(entry_type, entry, value)
-                max_loss = (width - entry) * 100.0 if entry_type == "CREDIT" else entry * 100.0
+                max_loss = (
+                    (width - entry) * 100.0
+                    if entry_type == "CREDIT"
+                    else entry * 100.0
+                )
                 detail.at[idx, "exit_day"] = due.isoformat()
                 detail.at[idx, "exit_value"] = round(value, 6)
                 detail.at[idx, "exit_trigger"] = trigger
@@ -1214,7 +1878,11 @@ def run_independent_replay(
                 detail.at[idx, "pnl_1x"] = pnl
                 detail.at[idx, "return_on_risk"] = round(pnl / max_loss, 6) if max_loss > 0 else ""
                 detail.at[idx, "exact_evaluated"] = True
-                bounded_suffix = "_no_arbitrage_bounded" if bid != raw_bid or ask != raw_ask else ""
+                bounded_suffix = (
+                    "_no_arbitrage_bounded"
+                    if not long_option_route and (bid != raw_bid or ask != raw_ask)
+                    else ""
+                )
                 detail.at[idx, "exact_reason"] = f"conservative_{trigger}_liquidation{bounded_suffix}"
                 break
             if not core._truthy(detail.at[idx, "exact_evaluated"]):
@@ -1312,14 +1980,41 @@ def run_independent_replay(
                 if CREDIT_HARD_STOP_ENABLED
                 else "no hard stop (the spread width is the defined risk)"
             )
-            + f"; mandatory exit on signal-to-exit regular session {FIXED_HORIZON_SESSIONS}, "
-            "which exceeds the maximum entry DTE so every trade is clamped to its own expiry"
+            + f"; credit mandatory exit is signal session {FIXED_HORIZON_SESSIONS} or expiry; "
+            f"debit verticals target {DEBIT_TAKE_PROFIT_MULTIPLIER:g}x entry debit, carry "
+            + (
+                f"a hard stop at {DEBIT_STOP_REMAINING:g}x remaining value"
+                if DEBIT_HARD_STOP_ENABLED
+                else "no hard stop (the spread debit is the defined risk)"
+            )
+            + f", and exit on signal session {DEBIT_FIXED_HORIZON_SESSIONS} or expiry; "
+            f"long options target {LONG_OPTION_TAKE_PROFIT_MULTIPLIER:g}x entry debit, "
+            + (
+                f"stop at {LONG_OPTION_STOP_REMAINING:g}x remaining value"
+                if LONG_OPTION_HARD_STOP_ENABLED
+                else "carry no hard stop"
+            )
+            + f", and exit on signal session {LONG_OPTION_FIXED_HORIZON_SESSIONS} or expiry"
         ),
+        "promotion_outcome_policy": (
+            "realized P/L becomes selector evidence only after the route's complete planned "
+            "holding window is observable; early take-profits from immature cohorts remain "
+            "excluded so open losers cannot be censored"
+        ),
+        "credit_holding_sessions": FIXED_HORIZON_SESSIONS,
+        "debit_holding_sessions": DEBIT_FIXED_HORIZON_SESSIONS,
         "credit_take_profit_remaining": CREDIT_TAKE_PROFIT_REMAINING,
         "credit_hard_stop_enabled": CREDIT_HARD_STOP_ENABLED,
         "credit_stop_multiplier": CREDIT_STOP_MULTIPLIER if CREDIT_HARD_STOP_ENABLED else None,
         "debit_take_profit_multiplier": DEBIT_TAKE_PROFIT_MULTIPLIER,
-        "debit_stop_remaining": DEBIT_STOP_REMAINING,
+        "debit_hard_stop_enabled": DEBIT_HARD_STOP_ENABLED,
+        "debit_stop_remaining": DEBIT_STOP_REMAINING if DEBIT_HARD_STOP_ENABLED else None,
+        "long_option_holding_sessions": LONG_OPTION_FIXED_HORIZON_SESSIONS,
+        "long_option_take_profit_multiplier": LONG_OPTION_TAKE_PROFIT_MULTIPLIER,
+        "long_option_hard_stop_enabled": LONG_OPTION_HARD_STOP_ENABLED,
+        "long_option_stop_remaining": (
+            LONG_OPTION_STOP_REMAINING if LONG_OPTION_HARD_STOP_ENABLED else None
+        ),
         "round_trip_commission": ROUND_TRIP_COMMISSION,
         "point_in_time_export_ceiling": True,
         "point_in_time_export_policy": "each candidate uses only its dated UW folder",

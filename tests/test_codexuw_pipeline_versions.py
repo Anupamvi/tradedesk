@@ -8,7 +8,7 @@ def test_codex_daily_pipeline_versions_are_locked() -> None:
     expected = {
         "v2": ("Codex Daily V2", "v2.1"),
         "v3": ("Codex Daily V3", "v3.2-profit-integrity-20260719"),
-        "v4": ("Codex Daily V4", "v4.21-directional-credit-medium-book-20260812"),
+        "v4": ("Codex Daily V4", "v4.27-debit-production-handoff-20260816"),
     }
 
     for key, (name, version) in expected.items():
@@ -16,7 +16,7 @@ def test_codex_daily_pipeline_versions_are_locked() -> None:
         assert record["pipeline_name"] == name
         assert record["pipeline_version"] == version
         assert record["lock_status"] == "locked"
-        expected_lock = {"v2": "2026-05-21", "v3": "2026-07-19", "v4": "2026-08-12"}[key]
+        expected_lock = {"v2": "2026-05-21", "v3": "2026-07-19", "v4": "2026-08-16"}[key]
         assert record["locked_on"] == expected_lock
 
 
@@ -43,6 +43,12 @@ def test_previous_codex_daily_versions_are_retained() -> None:
     assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.18-maturity-safe-credit-payoff-book-20260812"]["superseded_by"] == "v4.19-family-confidence-regime-capacity-20260812"
     assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.19-family-confidence-regime-capacity-20260812"]["superseded_by"] == "v4.20-next-session-debit-route-20260812"
     assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.20-next-session-debit-route-20260812"]["superseded_by"] == "v4.21-directional-credit-medium-book-20260812"
+    assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.21-directional-credit-medium-book-20260812"]["superseded_by"] == "v4.22-execution-parity-no-signal-caps-20260813"
+    assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.22-execution-parity-no-signal-caps-20260813"]["superseded_by"] == "v4.23-corrected-fill-stress-execution-population-20260813"
+    assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.23-corrected-fill-stress-execution-population-20260813"]["superseded_by"] == "v4.24-effective-payoff-evidence-precedence-20260813"
+    assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.24-effective-payoff-evidence-precedence-20260813"]["superseded_by"] == "v4.25-actionable-ticket-contract-dedupe-20260814"
+    assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.25-actionable-ticket-contract-dedupe-20260814"]["superseded_by"] == "v4.26-bull-call-debit-pilot-readable-board-20260816"
+    assert PREVIOUS_PIPELINE_VERSION_LOCKS["v4.26-bull-call-debit-pilot-readable-board-20260816"]["superseded_by"] == "v4.27-debit-production-handoff-20260816"
 
 
 def test_locked_versions_mark_schwab_live_portfolio_and_gex_context() -> None:
@@ -58,4 +64,4 @@ def test_pipeline_constants_match_locked_registry() -> None:
     assert opportunity.PIPELINE_NAME_V3 == "Codex Daily V3"
     assert opportunity.PIPELINE_VERSION_V3 == "v3.2-profit-integrity-20260719"
     assert daily_v4.PIPELINE_NAME_V4 == "Codex Daily V4"
-    assert daily_v4.PIPELINE_VERSION_V4 == "v4.21-directional-credit-medium-book-20260812"
+    assert daily_v4.PIPELINE_VERSION_V4 == "v4.27-debit-production-handoff-20260816"

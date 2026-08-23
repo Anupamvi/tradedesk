@@ -1,0 +1,15 @@
+{
+  "policy_version": "range-gex-income-shadow-v2-point-in-time-joint-payoff-20260816",
+  "status": "MISSING_POINT_IN_TIME_GEX",
+  "reason": "same-session UW summary and strike-wall capture was not available; reconstructed GEX is prohibited",
+  "shadow_only": true,
+  "execution_authorized": false,
+  "gex_rows": 0,
+  "collection_universe_rows": 2,
+  "collection_universe_artifact": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v4_2026-08-13_shadow_cli_2026-08-16/codexdaily_v4_range_gex_collection_universe_2026-08-13.csv",
+  "evaluated_rows": 0,
+  "qualified_rows": 0,
+  "selected_vertical_rows": 0,
+  "selected_condor_rows": 0,
+  "ledger_rows": 0
+}

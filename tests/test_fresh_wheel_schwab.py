@@ -12,13 +12,18 @@ from uwos.fresh_wheel_schwab import (
     Position,
     UniverseRow,
     WheelConfig,
+    WheelAction,
     allocate_contracts,
     analyze_symbol,
+    apply_calendar_seasonality,
     build_universe,
     find_export,
     iter_option_contracts,
     latest_usable_uw_folder,
+    load_chain_oi_overlay,
+    same_calendar_window_returns,
     sanitize_error,
+    summarize_calendar_seasonality,
     write_outputs,
 )
 
@@ -118,6 +123,74 @@ def _universe_row(**overrides) -> UniverseRow:
 
 
 class FreshWheelSchwabTests(unittest.TestCase):
+    @staticmethod
+    def _seasonality_candles(returns_pct: list[float]) -> list[dict]:
+        candles: list[dict] = []
+        for index, return_pct in enumerate(returns_pct):
+            year = 2025 - index
+            for day, close in (
+                (dt.date(year, 8, 20), 100.0),
+                (dt.date(year, 9, 20), 100.0 * (1.0 + return_pct / 100.0)),
+            ):
+                timestamp = dt.datetime.combine(day, dt.time(20), tzinfo=dt.timezone.utc)
+                candles.append({"datetime": int(timestamp.timestamp() * 1000), "close": close})
+        return candles
+
+    def test_calendar_seasonality_uses_same_prior_year_holding_window(self) -> None:
+        candles = self._seasonality_candles([6.0, 5.0, 4.0, 3.0, 2.0, 2.0, 1.5, 1.0, -1.0, -2.0])
+        config = WheelConfig(seasonality_min_years=5)
+
+        returns = same_calendar_window_returns(
+            candles,
+            dt.date(2026, 8, 20),
+            dt.date(2026, 9, 20),
+            lookback_years=10,
+        )
+        evidence = summarize_calendar_seasonality(
+            candles,
+            dt.date(2026, 8, 20),
+            dt.date(2026, 9, 20),
+            config,
+        )
+
+        self.assertEqual(len(returns), 10)
+        self.assertEqual(evidence.bias, "positive")
+        self.assertEqual(evidence.positive_rate_pct, 80.0)
+        self.assertGreater(evidence.directional_adjustment, 0.0)
+
+    def test_calendar_seasonality_helps_csp_but_penalizes_call_away_risk(self) -> None:
+        candles = self._seasonality_candles([6.0, 5.0, 4.0, 3.0, 2.0, 2.0, 1.5, 1.0, -1.0, -2.0])
+        config = WheelConfig(seasonality_min_years=5)
+        base = {
+            "ticker": "AMZN",
+            "confidence": 80.0,
+            "spot": 200.0,
+            "quality_score": 85.0,
+            "flow_score": 60.0,
+            "expiry": dt.date(2026, 9, 20),
+        }
+        csp = WheelAction(action="OPEN_CSP", **base)
+        covered_call = WheelAction(action="SELL_COVERED_CALL", **base)
+
+        apply_calendar_seasonality(csp, candles, dt.date(2026, 8, 20), config)
+        apply_calendar_seasonality(covered_call, candles, dt.date(2026, 8, 20), config)
+
+        self.assertGreater(csp.confidence, 80.0)
+        self.assertGreater(csp.seasonality_confidence_adjustment, 0.0)
+        self.assertLess(covered_call.confidence, 80.0)
+        self.assertLess(covered_call.seasonality_confidence_adjustment, 0.0)
+        self.assertIn("call-away risk", "; ".join(covered_call.reasons))
+
+        first_confidence = csp.confidence
+        apply_calendar_seasonality(csp, candles, dt.date(2026, 8, 20), config)
+        self.assertEqual(csp.confidence, first_confidence)
+        self.assertEqual(sum(reason.startswith("calendar seasonality ") for reason in csp.reasons), 1)
+
+        csp.action = "SELL_COVERED_CALL"
+        apply_calendar_seasonality(csp, candles, dt.date(2026, 8, 20), config)
+        self.assertLess(csp.confidence, 80.0)
+        self.assertIn("call-away risk", "; ".join(csp.reasons))
+
     def test_find_export_prefers_file_matching_folder_date(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             base = Path(tmpdir) / "2026-07-15"
@@ -373,6 +446,42 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertEqual([row.ticker for row in universe], ["AMZN"])
         self.assertGreater(universe[0].quality_score, 80.0)
 
+    def test_chain_oi_overlay_validates_date_and_influences_flow_score(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir) / "2026-08-14"
+            base.mkdir()
+            screener_csv = (
+                "date,ticker,full_name,sector,issue_type,is_index,close,marketcap,avg30_volume,total_open_interest,"
+                "bullish_premium,bearish_premium,next_earnings_date,iv30d\n"
+                "2026-08-14,IBM,International Business Machines,Technology,Common Stock,f,250,250000000000,"
+                "5000000,500000,1000000,1000000,2026-10-21,0.40\n"
+            )
+            with zipfile.ZipFile(base / "stock-screener-2026-08-14.zip", "w") as zf:
+                zf.writestr("stock-screener-2026-08-14.csv", screener_csv)
+            with zipfile.ZipFile(base / "hot-chains-2026-08-14.zip", "w") as zf:
+                zf.writestr(
+                    "hot-chains-2026-08-14.csv",
+                    "option_symbol,volume,open_interest,premium,ask_side_volume,bid_side_volume\n",
+                )
+            overlay_path = Path(tmpdir) / "chain-oi-changes-2026-08-17.csv"
+            overlay_path.write_text(
+                "option_symbol,underlying_symbol,oi_diff_plain,curr_oi,volume,last_date,curr_date,"
+                "prev_total_premium,prev_ask_volume,prev_bid_volume,avg_price\n"
+                "IBM261218C00300000,IBM,50000,60000,50000,2026-08-14,2026-08-17,1000000,50000,0,0.20\n",
+                encoding="utf-8",
+            )
+
+            overlay, metadata = load_chain_oi_overlay(overlay_path, dt.date(2026, 8, 14))
+            universe = build_universe(base, WheelConfig(max_symbols=1), chain_oi_overlay=overlay)
+
+            self.assertEqual(metadata["base_dates"], ["2026-08-14"])
+            self.assertEqual(metadata["overlay_dates"], ["2026-08-17"])
+            self.assertEqual(universe[0].overlay_positive_oi_change, 50000.0)
+            self.assertEqual(universe[0].overlay_directional_bias, 1.0)
+            self.assertGreater(universe[0].flow_score, 50.0)
+            with self.assertRaisesRegex(ValueError, "does not compare from wheel base date"):
+                load_chain_oi_overlay(overlay_path, dt.date(2026, 8, 13))
+
     def test_build_universe_uses_objective_lanes_for_high_premium_ibm(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             base = Path(tmpdir) / "2026-07-14"
@@ -477,9 +586,11 @@ class FreshWheelSchwabTests(unittest.TestCase):
             tickets = outputs["tickets"].read_text(encoding="utf-8")
 
         self.assertIn('"live_source": "Schwab API"', manifest)
-        self.assertIn('"pipeline_version": "fresh-wheel-v1.0-ticket-fallback-integrity-20260808"', manifest)
+        self.assertIn('"pipeline_version": "fresh-wheel-v1.2-calendar-seasonality-20260819"', manifest)
         self.assertIn('"yahoo_yfinance_used": false', manifest)
-        self.assertIn("fresh-wheel-v1.0-ticket-fallback-integrity-20260808", report)
+        self.assertIn('"calendar_seasonality"', manifest)
+        self.assertIn("fresh-wheel-v1.2-calendar-seasonality-20260819", report)
+        self.assertIn("## Calendar Seasonality", report)
         self.assertIn("## Weekly Focus", report)
         self.assertIn("## Action Board", report)
         self.assertIn("| Status | Ticker | Type | Exp | Strike | Trade / Trigger |", report)

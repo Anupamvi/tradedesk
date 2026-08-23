@@ -1,15 +1,15 @@
 {
-  "current_cache_fingerprint": "d4da96154fe154e3ceef2b36a55ba1809fe441fcdf46576a16896c3c4ed34cf9",
-  "manifest_sha256": "9508afdce1a823db859f20bf3f2c15e68b3c6fde77ac6ffb5408c26982ed7934",
-  "pipeline_version": "options-agent-v1.74-audit-integrity-20260811-194500",
+  "current_cache_fingerprint": "25c2117ca11b55685203e3f8aa049866777f9d2f237f37d9d344de0360144e08",
+  "manifest_sha256": "13285e7a2bc6ac0ab6db053aee08f4b40f5bfa503f6308f8b2694d319f1bc0d2",
+  "pipeline_version": "options-agent-v1.76-route-specific-debit-20260821-063647",
   "producer": "uwos.options_agent.replay",
-  "reason": "Post-selection reporting change only: preserve Schwab leg bid/ask/mid fields, label net package limits explicitly, and display trade and entry confidence; selector eligibility and ranking are unchanged.",
-  "recomputed_selected_count": 1954,
-  "recomputed_selected_ids_sha256": "3c8d7fc290800a3c972fc8d467b6d35aac523e2e73c42809947962f04293ed0d",
-  "replay_detail_sha256": "989a0e9d0749b94b92466c24a9936e67b6562e3754cf18c91d61fb1fcf05f713",
+  "reason": "Comments corrected to describe the expanded maturity-safe debit result; no candidate, pricing, selector, or management behavior changed.",
+  "recomputed_selected_count": 2151,
+  "recomputed_selected_ids_sha256": "c3f26d2cac665e3119d9719116516e453ec0fb3dc3173df6d23dc2d1e52c157c",
+  "replay_detail_sha256": "c4939c587883f4f69e7d34ddd623a63744a7aaca5747301cc72f152dcdb5c528",
   "schema_version": "options_agent.replay_review_only_attestation.v1",
   "selector_policy_id": "core_liquid_credit_dte7_45_volume20_oi100_em030_queue25_v20",
-  "source_cache_fingerprint": "ff221872f78de05217f12111a4ce574a06d271032f7b481ca4a15a18ca4d2d3b",
-  "stored_selected_count": 1954,
-  "stored_selected_ids_sha256": "3c8d7fc290800a3c972fc8d467b6d35aac523e2e73c42809947962f04293ed0d"
+  "source_cache_fingerprint": "9b13eba01fb70bf965f71a9de3b5cf06025039107bb4cc6c3d875a3bb766b005",
+  "stored_selected_count": 2151,
+  "stored_selected_ids_sha256": "c3f26d2cac665e3119d9719116516e453ec0fb3dc3173df6d23dc2d1e52c157c"
 }

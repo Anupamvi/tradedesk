@@ -3,9 +3,11 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime as dt
+import hashlib
 import json
 import math
 import re
+import statistics
 import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -15,7 +17,7 @@ import pandas as pd
 
 from uwos.wheel_vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
-PIPELINE_VERSION = "fresh-wheel-v1.0-ticket-fallback-integrity-20260808"
+PIPELINE_VERSION = "fresh-wheel-v1.2-calendar-seasonality-20260819"
 
 REPLAY_BLOCKED_CSP: dict[str, str] = {
     "ORCL": "2026 YTD replay tail loss: 5 scored CSPs, 40% hit rate, -$4,224.50 total PnL",
@@ -132,6 +134,156 @@ def read_csv_export(path: Path) -> pd.DataFrame:
             raise FileNotFoundError(f"No CSV member inside {path}")
         with zf.open(members[0]) as handle:
             return pd.read_csv(handle)
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_chain_oi_overlay(path: Path, base_date: dt.date) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Load a next-session chain-OI file and aggregate opening-flow evidence by ticker."""
+
+    source = path.expanduser().resolve()
+    if not source.exists():
+        raise FileNotFoundError(f"Missing chain-OI overlay: {source}")
+    raw = read_csv_export(source)
+    required = {"option_symbol", "oi_diff_plain", "last_date", "curr_date"}
+    missing = sorted(required - set(raw.columns))
+    if missing:
+        raise ValueError(f"Chain-OI overlay {source} is missing columns: {', '.join(missing)}")
+
+    last_dates = sorted(
+        {
+            parsed.isoformat()
+            for parsed in raw["last_date"].map(coerce_date)
+            if isinstance(parsed, dt.date)
+        }
+    )
+    curr_dates = sorted(
+        {
+            parsed.isoformat()
+            for parsed in raw["curr_date"].map(coerce_date)
+            if isinstance(parsed, dt.date)
+        }
+    )
+    if base_date.isoformat() not in last_dates:
+        raise ValueError(
+            f"Chain-OI overlay {source} does not compare from wheel base date {base_date.isoformat()}; "
+            f"last_date values: {last_dates or ['none']}"
+        )
+    if not curr_dates:
+        raise ValueError(f"Chain-OI overlay {source} has no valid curr_date values")
+    if any(dt.date.fromisoformat(value) <= base_date for value in curr_dates):
+        raise ValueError(
+            f"Chain-OI overlay curr_date must be after wheel base date {base_date.isoformat()}: {curr_dates}"
+        )
+
+    df = raw.copy()
+    if "underlying_symbol" in df.columns:
+        df["ticker"] = df["underlying_symbol"].fillna("").astype(str).map(normalize_symbol)
+    else:
+        df["ticker"] = (
+            df["option_symbol"]
+            .astype(str)
+            .str.extract(r"^([A-Z./-]+)\d{6}[CP]\d{8}", expand=False)
+            .fillna("")
+            .map(normalize_symbol)
+        )
+    df = df[df["ticker"].astype(bool)].copy()
+    for column in (
+        "oi_diff_plain",
+        "curr_oi",
+        "volume",
+        "prev_ask_volume",
+        "prev_bid_volume",
+        "prev_total_premium",
+        "avg_price",
+    ):
+        df[column] = pd.to_numeric(
+            df.get(column, pd.Series(0.0, index=df.index)), errors="coerce"
+        ).fillna(0.0)
+    df["positive_oi_change"] = df["oi_diff_plain"].clip(lower=0.0)
+    aggregate = df.groupby("ticker", as_index=False).agg(
+        overlay_rows=("option_symbol", "size"),
+        overlay_net_oi_change=("oi_diff_plain", "sum"),
+        overlay_positive_oi_change=("positive_oi_change", "sum"),
+        overlay_curr_oi=("curr_oi", "sum"),
+    )
+
+    opening = df[df["positive_oi_change"] > 0].copy()
+    if not opening.empty:
+        opening["right"] = (
+            opening["option_symbol"]
+            .astype(str)
+            .str.extract(r"^[A-Z./-]+\d{6}([CP])\d{8}", expand=False)
+            .fillna("")
+        )
+        opening["effective_premium"] = opening["prev_total_premium"]
+        missing_premium = opening["effective_premium"] <= 0
+        opening.loc[missing_premium, "effective_premium"] = (
+            opening.loc[missing_premium, "avg_price"].abs()
+            * opening.loc[missing_premium, "volume"].clip(lower=1.0)
+            * 100.0
+        )
+        side_volume = (opening["prev_ask_volume"] + opening["prev_bid_volume"]).replace(0, math.nan)
+        opening["ask_premium"] = (
+            opening["effective_premium"] * opening["prev_ask_volume"] / side_volume
+        ).replace([math.inf, -math.inf], math.nan).fillna(0.0)
+        opening["bid_premium"] = (
+            opening["effective_premium"] * opening["prev_bid_volume"] / side_volume
+        ).replace([math.inf, -math.inf], math.nan).fillna(0.0)
+        is_call = opening["right"].eq("C")
+        is_put = opening["right"].eq("P")
+        opening["bullish_premium"] = 0.0
+        opening["bearish_premium"] = 0.0
+        opening.loc[is_call, "bullish_premium"] = opening.loc[is_call, "ask_premium"]
+        opening.loc[is_put, "bullish_premium"] = opening.loc[is_put, "bid_premium"]
+        opening.loc[is_put, "bearish_premium"] = opening.loc[is_put, "ask_premium"]
+        opening.loc[is_call, "bearish_premium"] = opening.loc[is_call, "bid_premium"]
+        opening["positive_call_oi_change"] = opening["positive_oi_change"].where(is_call, 0.0)
+        opening["positive_put_oi_change"] = opening["positive_oi_change"].where(is_put, 0.0)
+        directional = opening.groupby("ticker", as_index=False).agg(
+            overlay_bullish_premium=("bullish_premium", "sum"),
+            overlay_bearish_premium=("bearish_premium", "sum"),
+            overlay_positive_call_oi_change=("positive_call_oi_change", "sum"),
+            overlay_positive_put_oi_change=("positive_put_oi_change", "sum"),
+        )
+        directional["overlay_directional_premium"] = (
+            directional["overlay_bullish_premium"] + directional["overlay_bearish_premium"]
+        )
+        directional["overlay_directional_bias"] = (
+            directional["overlay_bullish_premium"] - directional["overlay_bearish_premium"]
+        ) / directional["overlay_directional_premium"].where(
+            directional["overlay_directional_premium"] > 0
+        )
+        aggregate = aggregate.merge(directional, on="ticker", how="left")
+
+    for column in (
+        "overlay_bullish_premium",
+        "overlay_bearish_premium",
+        "overlay_directional_premium",
+        "overlay_positive_call_oi_change",
+        "overlay_positive_put_oi_change",
+        "overlay_directional_bias",
+    ):
+        if column not in aggregate.columns:
+            aggregate[column] = 0.0
+        aggregate[column] = pd.to_numeric(aggregate[column], errors="coerce").fillna(0.0)
+
+    metadata = {
+        "source_path": str(source),
+        "sha256": _file_sha256(source),
+        "row_count": int(len(raw)),
+        "ticker_count": int(aggregate["ticker"].nunique()),
+        "base_dates": last_dates,
+        "overlay_dates": curr_dates,
+        "scoring_policy": "directional opening-OI evidence contributes up to +/-10 flow-score points",
+    }
+    return aggregate, metadata
 
 
 def load_screener(base_dir: Path) -> pd.DataFrame:
@@ -273,6 +425,12 @@ class WheelConfig:
     max_pmcc_debit_pct: float = 0.15
     cash_buffer_pct: float = 0.10
     risk_free_rate: float = 0.04
+    enable_calendar_seasonality: bool = True
+    seasonality_lookback_years: int = 10
+    seasonality_min_years: int = 5
+    seasonality_consistency_threshold_pct: float = 75.0
+    seasonality_min_median_move_pct: float = 1.0
+    seasonality_max_confidence_adjustment: float = 4.0
     include_symbols: list[str] = field(default_factory=list)
 
 
@@ -295,6 +453,10 @@ class UniverseRow:
     iv30d: float = 0.0
     tactical_score: float = 0.0
     selection_lane: str = ""
+    overlay_positive_oi_change: float = 0.0
+    overlay_positive_call_oi_change: float = 0.0
+    overlay_positive_put_oi_change: float = 0.0
+    overlay_directional_bias: float = 0.0
     reasons: list[str] = field(default_factory=list)
 
 
@@ -351,8 +513,221 @@ class WheelAction:
     paired_limit_price: float | None = None
     sleeve: str = "core"
     thesis: str = ""
+    seasonality_window: str = ""
+    seasonality_observations: int = 0
+    seasonality_mean_return_pct: float = 0.0
+    seasonality_median_return_pct: float = 0.0
+    seasonality_positive_rate_pct: float = 0.0
+    seasonality_bias: str = "not_evaluated"
+    seasonality_confidence_adjustment: float = 0.0
+    seasonality_base_confidence: float | None = None
     reasons: list[str] = field(default_factory=list)
     blockers: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class SeasonalityEvidence:
+    window: str
+    observations: int
+    mean_return_pct: float
+    median_return_pct: float
+    positive_rate_pct: float
+    bias: str
+    directional_adjustment: float
+    returns_pct: tuple[float, ...] = ()
+
+
+def _replace_year_clamped(value: dt.date, year: int) -> dt.date:
+    """Move a date to another year, clamping leap-day to the month's last day."""
+
+    day = value.day
+    while day > 0:
+        try:
+            return dt.date(year, value.month, day)
+        except ValueError:
+            day -= 1
+    raise ValueError(f"Unable to map {value.isoformat()} into year {year}")
+
+
+def same_calendar_window_returns(
+    candles: Sequence[dict[str, Any]],
+    entry_date: dt.date,
+    expiry_date: dt.date,
+    lookback_years: int,
+) -> list[float]:
+    """Return prior-year stock moves over the same month/day holding window."""
+
+    if expiry_date <= entry_date or lookback_years <= 0:
+        return []
+    closes: dict[dt.date, float] = {}
+    for candle in candles:
+        timestamp = safe_float(candle.get("datetime"))
+        close = safe_float(candle.get("close"))
+        if not math.isfinite(timestamp) or not math.isfinite(close) or close <= 0:
+            continue
+        day = dt.datetime.fromtimestamp(timestamp / 1000.0, tz=dt.timezone.utc).date()
+        closes[day] = close
+    if not closes:
+        return []
+
+    ordered_days = sorted(closes)
+    crosses_year = expiry_date.year > entry_date.year
+    returns: list[float] = []
+    for years_back in range(1, lookback_years + 1):
+        historical_entry = _replace_year_clamped(entry_date, entry_date.year - years_back)
+        historical_expiry_year = historical_entry.year + (1 if crosses_year else 0)
+        historical_expiry = _replace_year_clamped(expiry_date, historical_expiry_year)
+        start_candidates = [
+            day
+            for day in ordered_days
+            if historical_entry <= day <= historical_entry + dt.timedelta(days=7)
+        ]
+        end_candidates = [
+            day
+            for day in ordered_days
+            if historical_expiry - dt.timedelta(days=7) <= day <= historical_expiry
+        ]
+        if not start_candidates or not end_candidates:
+            continue
+        start_day = start_candidates[0]
+        end_day = end_candidates[-1]
+        if end_day <= start_day:
+            continue
+        start_close = closes[start_day]
+        end_close = closes[end_day]
+        returns.append((end_close / start_close - 1.0) * 100.0)
+    return returns
+
+
+def summarize_calendar_seasonality(
+    candles: Sequence[dict[str, Any]],
+    entry_date: dt.date,
+    expiry_date: dt.date,
+    config: WheelConfig,
+) -> SeasonalityEvidence:
+    window = f"{entry_date:%m-%d}->{expiry_date:%m-%d}"
+    returns = same_calendar_window_returns(
+        candles,
+        entry_date,
+        expiry_date,
+        config.seasonality_lookback_years,
+    )
+    if not returns:
+        return SeasonalityEvidence(window, 0, 0.0, 0.0, 0.0, "unavailable", 0.0)
+
+    observations = len(returns)
+    mean_return = statistics.fmean(returns)
+    median_return = statistics.median(returns)
+    positive_rate = sum(value > 0.0 for value in returns) / observations * 100.0
+    bias = "mixed"
+    directional_adjustment = 0.0
+    threshold = config.seasonality_consistency_threshold_pct
+    min_median = config.seasonality_min_median_move_pct
+    if observations < config.seasonality_min_years:
+        bias = "insufficient_sample"
+    elif positive_rate >= threshold and median_return >= min_median:
+        bias = "positive"
+    elif positive_rate <= 100.0 - threshold and median_return <= -min_median:
+        bias = "negative"
+
+    if bias in {"positive", "negative"}:
+        consistency_excess = max(abs(positive_rate - 50.0) - (threshold - 50.0), 0.0)
+        magnitude = 1.5 + min(abs(median_return) / 4.0, 1.5) + min(consistency_excess / 12.5, 1.0)
+        directional_adjustment = min(config.seasonality_max_confidence_adjustment, magnitude)
+        if bias == "negative":
+            directional_adjustment *= -1.0
+
+    return SeasonalityEvidence(
+        window=window,
+        observations=observations,
+        mean_return_pct=round(mean_return, 2),
+        median_return_pct=round(median_return, 2),
+        positive_rate_pct=round(positive_rate, 1),
+        bias=bias,
+        directional_adjustment=round(directional_adjustment, 1),
+        returns_pct=tuple(round(value, 2) for value in returns),
+    )
+
+
+def fetch_schwab_daily_history(
+    service: SchwabLiveDataService,
+    symbol: str,
+    asof: dt.date,
+    config: WheelConfig,
+) -> list[dict[str, Any]]:
+    if not config.enable_calendar_seasonality:
+        return []
+    start = dt.datetime(asof.year - config.seasonality_lookback_years, 1, 1)
+    end = dt.datetime.combine(max(asof, _today()) + dt.timedelta(days=1), dt.time.min)
+    response = service.connect().get_price_history_every_day(
+        schwab_symbol(symbol),
+        start_datetime=start,
+        end_datetime=end,
+    )
+    response.raise_for_status()
+    candles = response.json().get("candles", [])
+    return candles if isinstance(candles, list) else []
+
+
+def apply_calendar_seasonality(
+    action: WheelAction,
+    candles: Sequence[dict[str, Any]],
+    entry_date: dt.date,
+    config: WheelConfig,
+) -> SeasonalityEvidence | None:
+    if not config.enable_calendar_seasonality or action.expiry is None:
+        return None
+    if action.seasonality_base_confidence is None:
+        action.seasonality_base_confidence = action.confidence
+    else:
+        action.confidence = action.seasonality_base_confidence
+    action.reasons = [
+        reason for reason in action.reasons if not reason.startswith("calendar seasonality ")
+    ]
+    evidence = summarize_calendar_seasonality(candles, entry_date, action.expiry, config)
+    action.seasonality_window = evidence.window
+    action.seasonality_observations = evidence.observations
+    action.seasonality_mean_return_pct = evidence.mean_return_pct
+    action.seasonality_median_return_pct = evidence.median_return_pct
+    action.seasonality_positive_rate_pct = evidence.positive_rate_pct
+    action.seasonality_bias = evidence.bias
+
+    directional = evidence.directional_adjustment
+    bullish_actions = {
+        "OPEN_CSP",
+        "OPEN_TACTICAL_CSP",
+        "OPEN_CSP_WITH_CALL_OVERLAY",
+        "SET_CSP_ALERT",
+        "TACTICAL_RANGE_ALERT",
+        "OPEN_PMCC",
+    }
+    range_actions = {"SELL_COVERED_STRANGLE", "OPEN_LEAPS_COVERED_STRANGLE"}
+    context = "no confidence change"
+    adjustment = 0.0
+    if action.action in bullish_actions:
+        adjustment = directional
+        context = "bullish wheel exposure"
+    elif action.action == "SELL_COVERED_CALL" and evidence.bias in {"positive", "negative"}:
+        adjustment = -abs(directional) if evidence.bias == "positive" else -abs(directional) * 0.5
+        context = "call-away risk" if evidence.bias == "positive" else "underlying downside risk"
+    elif action.action in range_actions and evidence.bias in {"positive", "negative"}:
+        adjustment = -abs(directional) * 0.5
+        context = "short-range breach risk"
+    adjustment = max(
+        -config.seasonality_max_confidence_adjustment,
+        min(config.seasonality_max_confidence_adjustment, adjustment),
+    )
+    action.seasonality_confidence_adjustment = round(adjustment, 1)
+    action.confidence = round(
+        max(0.0, min(100.0, action.seasonality_base_confidence + adjustment)),
+        1,
+    )
+    action.reasons.append(
+        f"calendar seasonality {evidence.window}: {evidence.observations} prior years, "
+        f"median {evidence.median_return_pct:+.1f}%, positive {evidence.positive_rate_pct:.0f}%, "
+        f"{evidence.bias}; confidence {adjustment:+.1f} ({context})"
+    )
+    return evidence
 
 
 def objective_ownership_tier(
@@ -376,7 +751,12 @@ def objective_ownership_tier(
     return 4
 
 
-def score_universe_row(row: pd.Series, hot_row: dict[str, Any], config: WheelConfig) -> UniverseRow:
+def score_universe_row(
+    row: pd.Series,
+    hot_row: dict[str, Any],
+    config: WheelConfig,
+    chain_oi_row: dict[str, Any] | None = None,
+) -> UniverseRow:
     ticker = normalize_symbol(str(row.get("ticker", "")))
     marketcap = safe_float(row.get("marketcap"), 0.0)
     close = safe_float(row.get("close"), 0.0)
@@ -437,7 +817,26 @@ def score_universe_row(row: pd.Series, hot_row: dict[str, Any], config: WheelCon
     total_premium = bullish_premium + bearish_premium
     flow_bias = (bullish_premium - bearish_premium) / total_premium if total_premium > 0 else 0.0
     hot_bias = safe_float(hot_row.get("hot_ask_bias"), 0.0)
-    flow_score = max(0.0, min(100.0, 50.0 + flow_bias * 25.0 + hot_bias * 15.0))
+    overlay = chain_oi_row if chain_oi_row is not None else {}
+    overlay_positive_oi = max(safe_float(overlay.get("overlay_positive_oi_change"), 0.0), 0.0)
+    overlay_call_oi = max(safe_float(overlay.get("overlay_positive_call_oi_change"), 0.0), 0.0)
+    overlay_put_oi = max(safe_float(overlay.get("overlay_positive_put_oi_change"), 0.0), 0.0)
+    overlay_bias = max(-1.0, min(1.0, safe_float(overlay.get("overlay_directional_bias"), 0.0)))
+    overlay_strength = (
+        min(1.0, math.log1p(overlay_positive_oi) / math.log1p(50_000.0))
+        if overlay_positive_oi > 0
+        else 0.0
+    )
+    overlay_contribution = overlay_bias * overlay_strength * 10.0
+    flow_score = max(
+        0.0,
+        min(100.0, 50.0 + flow_bias * 25.0 + hot_bias * 15.0 + overlay_contribution),
+    )
+    if overlay_positive_oi > 0:
+        reasons.append(
+            f"chain-OI overlay added {overlay_positive_oi:,.0f} opening contracts; "
+            f"inferred directional bias {overlay_bias:+.2f}"
+        )
     score += max(-6.0, min(8.0, (flow_score - 50.0) / 5.0))
     quality_score = max(0.0, min(100.0, score))
     iv_for_score = iv30d * 100.0 if 0.0 < iv30d <= 3.0 else iv30d
@@ -478,6 +877,10 @@ def score_universe_row(row: pd.Series, hot_row: dict[str, Any], config: WheelCon
         total_premium=round(total_premium, 2),
         iv30d=round(iv30d, 4),
         tactical_score=round(tactical_score, 1),
+        overlay_positive_oi_change=round(overlay_positive_oi, 2),
+        overlay_positive_call_oi_change=round(overlay_call_oi, 2),
+        overlay_positive_put_oi_change=round(overlay_put_oi, 2),
+        overlay_directional_bias=round(overlay_bias, 4),
         reasons=reasons,
     )
 
@@ -499,10 +902,16 @@ def build_universe(
     config: WheelConfig,
     position_symbols: Iterable[str] = (),
     include_symbols: Iterable[str] = (),
+    chain_oi_overlay: pd.DataFrame | None = None,
 ) -> list[UniverseRow]:
     screener = load_screener(base_dir)
     hot = load_hot_chain_summary(base_dir)
     hot_by_ticker = {normalize_symbol(str(row["ticker"])): row for _, row in hot.iterrows()} if not hot.empty else {}
+    oi_by_ticker = (
+        {normalize_symbol(str(row["ticker"])): row for _, row in chain_oi_overlay.iterrows()}
+        if chain_oi_overlay is not None and not chain_oi_overlay.empty
+        else {}
+    )
     managed_symbols = {normalize_symbol(symbol) for symbol in position_symbols if normalize_symbol(symbol)}
     requested_symbols = {normalize_symbol(symbol) for symbol in include_symbols if normalize_symbol(symbol)}
     rows: list[UniverseRow] = []
@@ -510,7 +919,12 @@ def build_universe(
         ticker = normalize_symbol(str(row.get("ticker", "")))
         if not ticker:
             continue
-        item = score_universe_row(row, hot_by_ticker.get(ticker, {}), config)
+        item = score_universe_row(
+            row,
+            hot_by_ticker.get(ticker, {}),
+            config,
+            oi_by_ticker.get(ticker, {}),
+        )
         is_managed_position = item.ticker in managed_symbols and item.issue_type.upper() in {"COMMON STOCK", "ADR", "ETF"}
         is_explicit = is_managed_position or item.ticker in requested_symbols
         if not is_explicit:
@@ -1820,6 +2234,8 @@ def write_outputs(
     position_status: str,
     chain_errors: dict[str, str],
     config: WheelConfig,
+    chain_oi_overlay_metadata: dict[str, Any] | None = None,
+    seasonality_errors: dict[str, str] | None = None,
 ) -> dict[str, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     report_path = out_dir / f"fresh-wheel-report-{asof.isoformat()}.md"
@@ -1866,6 +2282,13 @@ def write_outputs(
         "paired_limit_price",
         "sleeve",
         "thesis",
+        "seasonality_window",
+        "seasonality_observations",
+        "seasonality_mean_return_pct",
+        "seasonality_median_return_pct",
+        "seasonality_positive_rate_pct",
+        "seasonality_bias",
+        "seasonality_confidence_adjustment",
         "reasons",
         "blockers",
     ]
@@ -1980,6 +2403,10 @@ def write_outputs(
     monthly_runrate = sum(a.monthly_credit_runrate for a in tradeable)
     strong_monthly_runrate = sum(a.monthly_credit_runrate for a in strong_entries)
     tactical_monthly_runrate = sum(a.monthly_credit_runrate for a in tactical_entries)
+    overlay_metadata = chain_oi_overlay_metadata or {}
+    overlay_source = str(overlay_metadata.get("source_path") or "")
+    overlay_dates = ", ".join(overlay_metadata.get("overlay_dates") or [])
+    overlay_base_dates = ", ".join(overlay_metadata.get("base_dates") or [])
     lines = [
         f"# Fresh Schwab Wheel Report ({asof.isoformat()})",
         "",
@@ -1987,7 +2414,26 @@ def write_outputs(
         "",
         f"- Pipeline version: `{PIPELINE_VERSION}`",
         f"- UW source folder: `{base_dir}`",
+        (
+            f"- Chain-OI overlay: `{overlay_source}` ({overlay_metadata.get('row_count', 0):,} rows; "
+            f"{overlay_base_dates} -> {overlay_dates})"
+            if overlay_source
+            else "- Chain-OI overlay: `not used`"
+        ),
+        (
+            f"- Chain-OI overlay policy: {overlay_metadata.get('scoring_policy')}"
+            if overlay_source
+            else "- Chain-OI overlay policy: none"
+        ),
         "- Live quote and option-chain source: `Schwab API`",
+        (
+            "- Calendar seasonality: `enabled`; Schwab daily history, exact entry-to-expiry "
+            f"month/day window, up to {config.seasonality_lookback_years} prior years, "
+            f"minimum {config.seasonality_min_years}, confidence adjustment capped at "
+            f"+/-{config.seasonality_max_confidence_adjustment:.0f} points"
+            if config.enable_calendar_seasonality
+            else "- Calendar seasonality: `disabled`"
+        ),
         "- Yahoo/yfinance: `not used`",
         "- Universe selection: objective quality, tactical-flow, and total-premium lanes; user-requested symbols and held round-lot positions appended; no hard-coded ticker roster",
         f"- Schwab position fetch: `{position_status}`",
@@ -2041,6 +2487,30 @@ def write_outputs(
             f"{_md_cell(_action_limit(action))} | {qty} | {credit} | {cash_or_debit} | "
             f"{_premium_yield_pct(action):.2f}% | {action.confidence:.1f} | {_md_cell(_action_context(action))} |"
         )
+    seasonal_actions = [action for action in actions if action.seasonality_observations > 0]
+    lines.extend(["", "## Calendar Seasonality", ""])
+    if seasonal_actions:
+        lines.extend(
+            [
+                "| Ticker | Window | Years | Positive | Mean | Median | Bias | Confidence Adj |",
+                "| --- | --- | ---: | ---: | ---: | ---: | --- | ---: |",
+            ]
+        )
+        for action in sorted(seasonal_actions, key=lambda item: item.ticker):
+            lines.append(
+                f"| {action.ticker} | {action.seasonality_window} | {action.seasonality_observations} | "
+                f"{action.seasonality_positive_rate_pct:.0f}% | {action.seasonality_mean_return_pct:+.2f}% | "
+                f"{action.seasonality_median_return_pct:+.2f}% | {action.seasonality_bias} | "
+                f"{action.seasonality_confidence_adjustment:+.1f} |"
+            )
+        lines.extend(
+            [
+                "",
+                "Seasonality is a bounded context factor, not a claim that a month always rises or falls and not a standalone entry signal.",
+            ]
+        )
+    else:
+        lines.append("No action had enough Schwab price history to calculate an entry-to-expiry seasonal window.")
     lines.extend(
         [
             "",
@@ -2078,12 +2548,17 @@ def write_outputs(
         lines.extend(["| Ticker | Status | Confidence | Reason |", "| --- | --- | ---: | --- |"])
         for action in watch:
             reason = "; ".join(action.blockers or action.reasons or ["no action"])
-            lines.append(f"| {action.ticker} | {action.action} | {action.confidence:.1f} | {reason} |")
+            lines.append(f"| {action.ticker} | {_status_icon(action)} | {action.confidence:.1f} | {reason} |")
     else:
         lines.append("No watch-only rows.")
     if chain_errors:
         lines.extend(["", "## Schwab Chain Errors", ""])
         for ticker, error in sorted(chain_errors.items()):
+            lines.append(f"- `{ticker}`: {error}")
+    seasonality_errors = seasonality_errors or {}
+    if seasonality_errors:
+        lines.extend(["", "## Schwab Seasonality Errors", ""])
+        for ticker, error in sorted(seasonality_errors.items()):
             lines.append(f"- `{ticker}`: {error}")
     lines.extend(
         [
@@ -2166,6 +2641,18 @@ def write_outputs(
             "live_source": "Schwab API",
             "yahoo_yfinance_used": False,
             "position_status": position_status,
+            "chain_oi_overlay": overlay_metadata or None,
+            "calendar_seasonality": {
+                "enabled": config.enable_calendar_seasonality,
+                "source": "Schwab API daily price history" if config.enable_calendar_seasonality else None,
+                "method": "same entry-to-expiry month/day window across prior years",
+                "lookback_years": config.seasonality_lookback_years,
+                "minimum_years": config.seasonality_min_years,
+                "consistency_threshold_pct": config.seasonality_consistency_threshold_pct,
+                "minimum_median_move_pct": config.seasonality_min_median_move_pct,
+                "maximum_confidence_adjustment": config.seasonality_max_confidence_adjustment,
+                "errors": seasonality_errors,
+            },
             "universe_policy": "objective quality/tactical/premium lanes plus user-requested symbols and held round-lot positions; no hard-coded ticker roster",
         },
         "counts": {
@@ -2184,6 +2671,8 @@ def write_outputs(
             "alerts": len(alerts),
             "tactical_alerts": len([a for a in alerts if a.action == "TACTICAL_RANGE_ALERT"]),
             "schwab_chain_errors": len(chain_errors),
+            "seasonality_evaluated": len(seasonal_actions),
+            "schwab_seasonality_errors": len(seasonality_errors),
         },
         "config": asdict(config),
     }
@@ -2205,8 +2694,15 @@ def run_fresh_wheel(
     out_dir: Path,
     config: WheelConfig,
     skip_positions: bool = False,
+    chain_oi_overlay_path: Path | None = None,
 ) -> dict[str, Path]:
     asof = dt.datetime.strptime(base_dir.name[:10], "%Y-%m-%d").date()
+    chain_oi_overlay = None
+    chain_oi_overlay_metadata = None
+    if chain_oi_overlay_path is not None:
+        chain_oi_overlay, chain_oi_overlay_metadata = load_chain_oi_overlay(
+            chain_oi_overlay_path, asof
+        )
     service = SchwabLiveDataService(SchwabAuthConfig.from_env(load_dotenv_file=True), interactive_login=False)
     if skip_positions:
         positions, position_status, schwab_account_value = {}, "skipped", None
@@ -2229,13 +2725,22 @@ def run_fresh_wheel(
         config,
         position_symbols=managed_position_symbols,
         include_symbols=config.include_symbols,
+        chain_oi_overlay=chain_oi_overlay,
     )
+    if chain_oi_overlay_metadata is not None:
+        chain_oi_overlay_metadata["matched_universe_tickers"] = sum(
+            1 for row in universe if row.overlay_positive_oi_change > 0
+        )
     quote_symbols = [schwab_symbol(row.ticker) for row in universe]
     quotes = service.get_quotes(quote_symbols) if quote_symbols else {}
     chain_dir = out_dir / "schwab_chains"
     chain_dir.mkdir(parents=True, exist_ok=True)
+    history_dir = out_dir / "schwab_price_history"
+    history_dir.mkdir(parents=True, exist_ok=True)
     actions: list[WheelAction] = []
     chain_errors: dict[str, str] = {}
+    seasonality_errors: dict[str, str] = {}
+    seasonality_history: dict[str, list[dict[str, Any]]] = {}
     for row in universe:
         if row.selection_lane in {"position", "requested"} and row.close <= 0.0:
             source = "held round-lot position" if row.selection_lane == "position" else "user-requested symbol"
@@ -2252,6 +2757,20 @@ def run_fresh_wheel(
                 )
             )
             continue
+        candles: list[dict[str, Any]] = []
+        if config.enable_calendar_seasonality:
+            try:
+                candles = fetch_schwab_daily_history(service, row.ticker, asof, config)
+                if candles:
+                    (history_dir / f"{row.ticker.replace('/', '_')}.json").write_text(
+                        json.dumps({"symbol": row.ticker, "candles": candles}, indent=2, sort_keys=True),
+                        encoding="utf-8",
+                    )
+                else:
+                    seasonality_errors[row.ticker] = "Schwab daily price history returned no candles"
+            except Exception as exc:
+                seasonality_errors[row.ticker] = sanitize_error(f"{type(exc).__name__}: {exc}")
+        seasonality_history[row.ticker] = candles
         try:
             action, chain = analyze_symbol(
                 row=row,
@@ -2262,6 +2781,7 @@ def run_fresh_wheel(
                 config=config,
                 out_dir=out_dir,
             )
+            apply_calendar_seasonality(action, candles, max(_today(), asof), config)
             actions.append(action)
             if chain is not None:
                 (chain_dir / f"{row.ticker.replace('/', '_')}.json").write_text(
@@ -2284,6 +2804,13 @@ def run_fresh_wheel(
                 )
             )
     allocate_contracts(actions, config)
+    for action in actions:
+        apply_calendar_seasonality(
+            action,
+            seasonality_history.get(action.ticker, []),
+            max(_today(), asof),
+            config,
+        )
     entry_actions = {
         "OPEN_CSP",
         "OPEN_TACTICAL_CSP",
@@ -2294,7 +2821,18 @@ def run_fresh_wheel(
         "OPEN_PMCC",
     }
     actions.sort(key=lambda item: (item.action not in entry_actions, -item.confidence, item.ticker))
-    return write_outputs(out_dir, asof, base_dir, universe, actions, position_status, chain_errors, config)
+    return write_outputs(
+        out_dir,
+        asof,
+        base_dir,
+        universe,
+        actions,
+        position_status,
+        chain_errors,
+        config,
+        chain_oi_overlay_metadata,
+        seasonality_errors,
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -2308,6 +2846,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-symbols", type=int, default=20)
     parser.add_argument("--strike-count", type=int, default=80)
     parser.add_argument("--include-symbols", default="", help="Comma-separated user-requested symbols appended outside --max-symbols.")
+    parser.add_argument(
+        "--chain-oi-overlay",
+        default="",
+        help="Explicit next-session chain-oi-changes CSV/ZIP overlay; last_date must match the wheel base date.",
+    )
     parser.add_argument("--skip-positions", action="store_true", help="Do not fetch Schwab account equity positions for covered-call tickets.")
     return parser.parse_args()
 
@@ -2325,7 +2868,14 @@ def main() -> None:
         strike_count=args.strike_count,
         include_symbols=[symbol.strip() for symbol in args.include_symbols.split(",") if symbol.strip()],
     )
-    outputs = run_fresh_wheel(base_dir=base_dir, out_dir=out_dir, config=config, skip_positions=args.skip_positions)
+    overlay_path = Path(args.chain_oi_overlay).expanduser().resolve() if args.chain_oi_overlay else None
+    outputs = run_fresh_wheel(
+        base_dir=base_dir,
+        out_dir=out_dir,
+        config=config,
+        skip_positions=args.skip_positions,
+        chain_oi_overlay_path=overlay_path,
+    )
     print(f"Report:   {outputs['report']}")
     print(f"Tickets:  {outputs['tickets']}")
     print(f"Actions:  {outputs['actions_csv']}")

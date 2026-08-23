@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -8,18 +9,26 @@ import pandas as pd
 from codexuw.engine import apply_data_quality_gate
 from codexuw.daily_v4 import (
     PIPELINE_NAME_V4,
+    _blocker_text,
+    _catalyst_risk,
     _compact_decision_candidate_table,
+    _attach_schwab_gex_context,
     _default_out_dir,
     _disposition,
     _execution_quote_blocker,
     _expectancy_safe_entry_price,
     _hard_blocker_reason,
+    _load_overlay_chain_oi_file,
+    _readable_action_ticket_table,
+    _readable_ticket_detail_lines,
     _trade_legs,
+    _unique_semicolon_context,
     apply_v4_prospective_book_concentration,
     apply_v4_risk_cap,
     apply_v4_professional_dispositions,
     apply_v4_safety_calibration,
     build_v4_opportunity_board,
+    build_execution_reachability_audit,
     build_strategy_generation_coverage,
     build_no_miss_audit,
     build_construction_attempts,
@@ -110,6 +119,72 @@ def _candidate(**overrides) -> dict:
         "payoff_entry_pct_width_p25": 0.18,
         "payoff_entry_pct_width_p75": 0.30,
     }
+    row.update(overrides)
+    return row
+
+
+def _directional_credit_candidate(**overrides) -> dict:
+    row = _candidate(
+        trade_status="Watch",
+        trade_tier="Scout",
+        trade_status_reason="thin_replay_sample:n=0;price_action_trend;decision_score_below_medium",
+        penalties="thin_replay_sample:n=0;price_action_trend;decision_score_below_medium",
+        payoff_calibration_status="FAIL",
+        confidence_calibration_status="FAIL",
+        edge_sample_size=0,
+        edge_profit_factor=None,
+        edge_avg_pnl=None,
+        edge_match_level="unavailable",
+        credit=1.25,
+        mid_credit=1.30,
+        natural_credit=1.25,
+        required_entry=1.25,
+        target_entry=1.25,
+        credit_pct_width=0.25,
+        spread_width=5.0,
+        max_profit=125.0,
+        max_loss=375.0,
+        expected_move_ratio=0.50,
+        combined_flow_bias=0.20,
+        quote_width_pct=0.10,
+        dte=30,
+        oi_carryover_status="supportive",
+        flow_quality="directional",
+        market_session_open_at_validation=False,
+        regular_session_quote=True,
+        min_leg_volume=10,
+        walk_forward_credit_policy_pass=False,
+        directional_credit_calibration_status="PASS",
+        directional_credit_execution_validation_status="PASS",
+        directional_credit_qualified=True,
+        directional_credit_oos_sample_size=83,
+        directional_credit_wilson_lower_bound=0.821,
+        directional_credit_stress_profit_factor_10pct=3.58,
+        directional_credit_stress_average_pnl_10pct=61.40,
+        directional_credit_stress_average_return_on_risk_10pct=0.174,
+        directional_credit_positive_months=7,
+        directional_credit_holdout_sample_size=23,
+        directional_credit_holdout_win_rate=0.826,
+        directional_credit_holdout_stress_profit_factor_10pct=1.72,
+        directional_credit_execution_sample_size=53,
+        directional_credit_execution_wilson_lower_bound=0.821,
+        directional_credit_execution_stress_profit_factor_10pct=4.21,
+        directional_credit_execution_stress_average_pnl_10pct=66.49,
+        directional_credit_execution_stress_average_return_on_risk_10pct=0.20,
+        directional_credit_execution_positive_months=7,
+        directional_credit_execution_holdout_sample_size=15,
+        directional_credit_execution_holdout_win_rate=0.867,
+        directional_credit_execution_holdout_stress_profit_factor_10pct=2.24,
+        directional_credit_family_validation_status="PROBATIONARY",
+        directional_credit_family_sample_size=21,
+        directional_credit_family_wilson_lower_bound=0.773,
+        directional_credit_family_stress_profit_factor_10pct=12.33,
+        directional_credit_family_stress_average_return_on_risk_10pct=0.21,
+        directional_credit_family_stress_average_win_risk_fraction_10pct=0.24,
+        directional_credit_family_stress_average_loss_risk_fraction_10pct=0.88,
+        directional_credit_family_holdout_sample_size=3,
+        directional_credit_family_holdout_stress_profit_factor_10pct=float("inf"),
+    )
     row.update(overrides)
     return row
 
@@ -206,12 +281,61 @@ def test_price_target_miss_stays_visible_as_v4_work_limit_ticket() -> None:
     assert len(tickets) == 1
     ticket = tickets.iloc[0]
     assert ticket["final disposition"] == "Swing Target / Work Limit"
-    assert not str(ticket["display status"]).startswith("🟢")
+    assert ticket["display status"] == "🟢 WORK LIMIT"
     assert "NOT AN ORDER" in ticket["manual review instruction"]
     assert ticket["next-session swing entry target"] == ">= $0.90 credit"
+    assert ticket["DTE"] == "30"
     assert "sell AAA 2026-05-29 100P / buy AAA 2026-05-29 95P" in ticket["trade legs"]
     assert "AAA260529" not in ticket["trade legs"]
     assert "credit is 15.0% of $5 width" in ticket["target price methodology"]
+
+
+def test_v4_ticket_book_dedupes_the_same_exact_structure_across_candidate_routes() -> None:
+    scored = pd.DataFrame(
+        [
+            _candidate(required_entry=0.90, target_entry=0.90, score=8.0),
+            _candidate(required_entry=1.20, target_entry=1.20, score=6.0),
+        ]
+    )
+
+    tickets = build_v4_swing_target_tickets(
+        scored=scored,
+        board=pd.DataFrame(),
+        regime={"trend": "uptrend", "volatility": "low", "flow": "weak"},
+        top_flow=pd.DataFrame(),
+    )
+
+    assert len(tickets) == 1
+    assert tickets.iloc[0]["rank"] == 1
+    assert tickets.iloc[0]["safety calibration flags"] == "None"
+
+
+def test_v4_review_only_wheel_board_row_cannot_become_a_trade_ticket() -> None:
+    board = pd.DataFrame(
+        [
+            {
+                "Lane": "Wheel/Cash",
+                "Status": "🔵 WHEEL / Cash",
+                "Ticker": "AAA",
+                "Trade": "Cash-Secured Put: sell AAA 2026-06-19 90P",
+                "Expiry": "2026-06-19",
+                "Entry limit": "REVIEW ONLY - >= $1.00 credit; no execution authority",
+                "Live mid/natural": "1.05 / 0.95",
+                "Max profit": "$100.00",
+                "Max loss": "$9,000.00",
+                "Target profit": "$50.00",
+            }
+        ]
+    )
+
+    tickets = build_v4_swing_target_tickets(
+        scored=pd.DataFrame(),
+        board=board,
+        regime={"trend": "uptrend", "volatility": "low", "flow": "weak"},
+        top_flow=pd.DataFrame(),
+    )
+
+    assert tickets.empty
 
 
 def test_negative_edge_credit_cannot_become_v4_swing_target() -> None:
@@ -381,7 +505,7 @@ def test_v4_target_ticket_includes_gap_risk_and_oco_bracket_for_execute() -> Non
     assert "BUY TO CLOSE" in tickets.iloc[0]["OCO bracket order logic"]
 
 
-def test_v4_proposed_book_keeps_one_execute_per_sector_and_preserves_visibility() -> None:
+def test_v4_proposed_book_annotates_sector_correlation_without_suppressing_execute() -> None:
     scored = pd.DataFrame(
         [
             _candidate(ticker="BEST", sector="Technology", trade_status="Execute", score=8.5, edge_sample_size=30),
@@ -395,9 +519,9 @@ def test_v4_proposed_book_keeps_one_execute_per_sector_and_preserves_visibility(
     assert adjusted.loc[adjusted["ticker"].eq("BEST"), "trade_status"].iloc[0] == "Execute"
     assert adjusted.loc[adjusted["ticker"].eq("HEALTH"), "trade_status"].iloc[0] == "Execute"
     alt = adjusted.loc[adjusted["ticker"].eq("ALT")].iloc[0]
-    assert alt["trade_status"] == "Watch"
-    assert alt["trade_tier"] == "work-limit-sector-concentration"
-    assert "Proposed-book sector concentration" in alt["trade_status_reason"]
+    assert alt["trade_status"] == "Execute"
+    assert alt["proposed_book_concentration_action"] == "correlated Execute; portfolio review required"
+    assert "Same-sector correlation warning" in alt["trade_status_reason"]
 
 
 def test_v4_debit_execute_requires_full_policy_evidence() -> None:
@@ -490,7 +614,9 @@ def test_v4_medium_debit_route_evidence_sets_safe_limit_without_family_pass() ->
         regime={"trend": "uptrend", "volatility": "low", "flow": "directional"},
         top_flow=pd.DataFrame(),
     ).iloc[0]
-    assert ticket["next-session swing entry target"] == "UNVALIDATED - no execution limit"
+    assert ticket["next-session swing entry target"] == "REVIEW ONLY - <= $2.25 debit; no execution authority"
+    assert ticket["display status"] == "🟡 REVIEW / Scout"
+    assert "NOT AN ORDER" in ticket["manual review instruction"]
     assert ticket["max loss"] == "$50.00"
     assert ticket["profit target"] == "$202.50"
     assert "corrected next-session replay PF is below 1" in ticket["blocker before entry"]
@@ -593,6 +719,8 @@ def test_v4_symbol_trend_credit_pilot_reaches_execute_and_survives_registry() ->
     ).iloc[0]
 
     assert disposed.iloc[0]["trade_status"] == "Execute"
+    assert bool(disposed.iloc[0]["decision_eligible"])
+    assert disposed.iloc[0]["decision_tier"] == "v4-validated-execute"
     assert disposed.iloc[0]["contracts"] == 1
     assert disposed.iloc[0]["v4_execution_authority"] == "symbol_regime_credit_one_lot"
     assert integrity["symbol_credit_evidence_rows"] == 1
@@ -745,6 +873,53 @@ def test_v4_walk_forward_credit_below_limit_remains_authorized_target_ticket() -
     assert "WALK-FORWARD CREDIT MEDIUM" in tickets.iloc[0]["payoff evidence"]
     assert tickets.iloc[0]["expected value"] == "$12.24"
     assert tickets.iloc[0]["implied profit factor"] == "3.00"
+
+
+def test_directional_credit_execution_is_independent_of_priority_selection_and_generic_price_override() -> None:
+    row = _directional_credit_candidate(walk_forward_credit_policy_pass=False)
+
+    assert _expectancy_safe_entry_price(row) == 1.25
+    disposed = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+    audit = build_execution_reachability_audit(disposed)
+    tickets = build_v4_swing_target_tickets(
+        scored=disposed,
+        board=pd.DataFrame(),
+        regime={"trend": "downtrend", "volatility": "normal", "flow": "directional"},
+        top_flow=pd.DataFrame(),
+    )
+
+    assert disposed.iloc[0]["trade_status"] == "Execute"
+    assert disposed.iloc[0]["v4_execution_authority"] == "walk_forward_credit_one_lot"
+    assert audit["status"] == "PASS"
+    assert audit["evidence_authorized_rows"] == 1
+    assert audit["approved_target_rows"] == 1
+    assert audit["final_execute_rows"] == 1
+    assert audit["market_session_affects_identification"] is False
+    assert tickets.iloc[0]["confidence rating"].startswith("🟡 MEDIUM")
+    assert tickets.iloc[0]["trade legs"]
+    assert tickets.iloc[0]["expiry"]
+    assert tickets.iloc[0]["next-session swing entry target"] == ">= $1.25 credit"
+    assert tickets.iloc[0]["suggested size"].startswith("1 contract")
+    assert tickets.iloc[0]["max loss"] == "$375.00"
+
+
+def test_directional_credit_price_miss_is_approved_work_limit_but_contrary_oi_is_not() -> None:
+    price_wait = _directional_credit_candidate(natural_credit=1.10, mid_credit=1.20)
+    disposed = apply_v4_professional_dispositions(pd.DataFrame([price_wait]), asof=ASOF)
+    audit = build_execution_reachability_audit(disposed)
+
+    assert disposed.iloc[0]["trade_status"] == "Watch"
+    assert disposed.iloc[0]["trade_tier"] == "approved-work-limit-price-target"
+    assert bool(disposed.iloc[0]["decision_eligible"])
+    assert disposed.iloc[0]["decision_tier"] == "v4-validated-price-wait"
+    assert audit["approved_target_rows"] == 1
+    assert audit["price_wait_rows"] == 1
+    assert audit["final_execute_rows"] == 0
+
+    contrary = _directional_credit_candidate(oi_carryover_status="contrary")
+    blocked = apply_v4_professional_dispositions(pd.DataFrame([contrary]), asof=ASOF)
+    assert blocked.iloc[0]["trade_status"] != "Execute"
+    assert blocked.iloc[0]["v4_execution_authority"] == ""
 
 
 def test_v4_probationary_credit_route_executes_one_contract_pilot() -> None:
@@ -951,42 +1126,40 @@ def test_strategy_generation_coverage_counts_real_rows_not_registry_flags() -> N
 
 
 def test_v4_preopen_zero_size_option_quote_cannot_execute() -> None:
-    row = _candidate(
-        credit=1.30,
-        mid_credit=1.30,
-        natural_credit=1.25,
-        required_entry=0.90,
-        target_entry=0.90,
-        credit_pct_width=0.26,
-        penalties="",
+    row = _directional_credit_candidate(
         regular_session_quote=False,
         displayed_entry_size=0,
-    )
-
-    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
-
-    assert adjusted.iloc[0]["trade_status"] == "Watch"
-    assert adjusted.iloc[0]["trade_tier"] == "Scout"
-    assert "outside the regular options session" in adjusted.iloc[0]["v4_direct_disposition_reason"]
-
-
-def test_v4_closed_session_untraded_legs_cannot_execute() -> None:
-    row = _candidate(
-        credit=1.30,
-        mid_credit=1.30,
-        natural_credit=1.25,
-        required_entry=0.90,
-        target_entry=0.90,
-        credit_pct_width=0.26,
-        penalties="",
-        regular_session_quote=True,
-        displayed_entry_size=10,
         market_session_open_at_validation=False,
     )
 
     adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+    audit = build_execution_reachability_audit(adjusted)
 
     assert adjusted.iloc[0]["trade_status"] == "Watch"
+    assert adjusted.iloc[0]["trade_tier"] == "approved-work-limit-execution-readiness"
+    assert bool(adjusted.iloc[0]["decision_eligible"])
+    assert adjusted.iloc[0]["decision_tier"] == "v4-validated-execution-readiness-wait"
+    assert "outside the regular options session" in adjusted.iloc[0]["v4_direct_disposition_reason"]
+    assert audit["approved_target_rows"] == 1
+    assert audit["session_reprice_rows"] == 1
+    assert audit["entry_ready_before_same_ticker_selection"] == 0
+    assert audit["market_session_affects_identification"] is False
+
+
+def test_v4_closed_session_untraded_legs_cannot_execute() -> None:
+    row = _directional_credit_candidate(
+        regular_session_quote=True,
+        displayed_entry_size=10,
+        market_session_open_at_validation=False,
+        min_leg_volume=0,
+        short_volume=0,
+        long_volume=0,
+    )
+
+    adjusted = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert adjusted.iloc[0]["trade_status"] == "Watch"
+    assert adjusted.iloc[0]["trade_tier"] == "approved-work-limit-execution-readiness"
     assert "no leg traded in the quoted session" in adjusted.iloc[0]["v4_direct_disposition_reason"]
 
 
@@ -1310,10 +1483,13 @@ def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_
     assert manifest["pipeline_name"] == PIPELINE_NAME_V4
     assert manifest["status"] == "ok"
     assert "| Pipeline | Codex Daily V4 |" in report
+    assert "| High-confidence ticket count |" in report
+    assert "#### Enter Now ticket details" in report
+    assert "#### Work Limit ticket details" in report
     ordered = [
+        "## Action Board",
         "## First Screen",
         "## Market Insight For Tomorrow",
-        "## Swing Target Tickets For Tomorrow",
         "## Decision-Lane Audit",
         "## Portfolio Repair / Open Risk",
         "## $10k/month Target Math",
@@ -1339,6 +1515,169 @@ def test_write_v4_outputs_writes_v4_report_order_and_required_artifacts_without_
         "codexdaily_v4_sector_rotation_2026-05-20.csv",
     ]:
         assert (out_dir / name).exists()
+
+
+def test_readable_ticket_renderer_uses_five_column_board_and_vertical_details() -> None:
+    tickets = pd.DataFrame(
+        [
+            {
+                "rank": 1,
+                "ticker": "AAA",
+                "display status": "🟣 ENTER NOW",
+                "trade legs": "Bull Put Credit Spread: sell AAA 2026-06-19 100P / buy AAA 2026-06-19 95P",
+                "expiry": "2026-06-19",
+                "DTE": 30,
+                "next-session swing entry target": ">= $1.25 credit",
+                "current Schwab mid/natural reference": "1.30 / 1.25",
+                "confidence rating": "🟡 MEDIUM · 77% floor",
+                "expected win rate": "77%",
+                "confidence evidence": "family n=148",
+                "suggested size": "1 contract only",
+                "profit target": "$62.50",
+                "max loss": "$375.00",
+                "reward/risk": "0.17",
+                "expected value": "$20.00",
+                "implied profit factor": "1.30",
+                "flow/OI evidence": "exact-leg OI supportive",
+                "GEX context": "Schwab live-chain gamma×OI proxy: pinned",
+                "liquidity context": "9/10 strong; quote width 8%",
+                "portfolio context": "no concentration flag recorded",
+                "blocker before entry": "No hard blocker; requote first.",
+            }
+        ]
+    )
+
+    board = _readable_action_ticket_table(tickets)
+    details = "\n".join(_readable_ticket_detail_lines(tickets))
+
+    assert list(board.columns) == [
+        "Ticket",
+        "Strategy and explicit legs",
+        "Expiry / DTE",
+        "Entry target / Schwab reference",
+        "Confidence / risk / action",
+    ]
+    assert "sell AAA 2026-06-19 100P / buy AAA 2026-06-19 95P" in board.iloc[0][
+        "Strategy and explicit legs"
+    ]
+    assert "### #1 AAA" in details
+    assert "Strategy and explicit legs" in details
+    assert "Schwab live-chain gamma×OI proxy: pinned" in details
+    assert "9/10 strong; quote width 8%" in details
+    assert "no concentration flag recorded" in details
+
+
+def test_ticket_catalyst_handoff_uses_structured_earnings_date_and_expiry_relation() -> None:
+    row = _candidate(
+        catalyst_status="",
+        catalyst_earnings_date=None,
+        catalyst_earnings_days=None,
+        earnings_days=None,
+        next_earnings_dt="2026-10-29",
+        overlay_evaluation_date="2026-08-18",
+        expiry="2026-09-25",
+    )
+
+    context = _catalyst_risk(row)
+
+    assert "ticker-specific news unconfirmed" in context
+    assert "next earnings 2026-10-29 (72 days)" in context
+    assert "after expiry" in context
+
+
+def test_unconfirmed_single_name_news_is_work_limit_not_execute() -> None:
+    row = _directional_credit_candidate(
+        catalyst_status="mixed",
+        catalyst_news_quality="3/10 low: news unconfirmed",
+        catalyst_earnings_date="2026-11-11",
+        catalyst_earnings_days=84,
+        next_earnings_dt="2026-11-11",
+        v4_asof="2026-08-18",
+        expiry="2026-09-18",
+    )
+
+    disposed = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+    audit = build_execution_reachability_audit(disposed)
+
+    assert disposed.iloc[0]["trade_status"] == "Watch"
+    assert disposed.iloc[0]["trade_tier"] == "approved-work-limit-execution-readiness"
+    assert "same-session verification required" in disposed.iloc[0]["v4_direct_disposition_reason"]
+    assert audit["approved_target_rows"] == 1
+    assert audit["catalyst_verification_wait_rows"] == 1
+    assert audit["entry_ready_before_same_ticker_selection"] == 0
+
+
+def test_etf_execute_does_not_require_single_company_news_verification() -> None:
+    row = _directional_credit_candidate(
+        ticker="SPY",
+        sector="ETF",
+        catalyst_status="unknown",
+        catalyst_news_quality="3/10 low: news unconfirmed",
+        next_earnings_dt=None,
+    )
+
+    disposed = apply_v4_professional_dispositions(pd.DataFrame([row]), asof=ASOF)
+
+    assert disposed.iloc[0]["trade_status"] == "Execute"
+
+
+def test_overlay_loader_uses_row_ticker_for_unparseable_occ_fallback(tmp_path: Path) -> None:
+    path = tmp_path / "chain-oi-changes-2026-08-19.csv"
+    pd.DataFrame(
+        [
+            {
+                "option_symbol": "NOT_AN_OCC_SYMBOL",
+                "underlying_symbol": "XYZ",
+                "strike": 10.0,
+                "last_date": "2026-08-18",
+                "curr_date": "2026-08-19",
+            }
+        ]
+    ).to_csv(path, index=False)
+
+    loaded = _load_overlay_chain_oi_file(path, asof=dt.date(2026, 8, 19))
+
+    assert loaded.iloc[0]["ticker"] == "XYZ"
+    assert not isinstance(loaded.iloc[0]["ticker"], pd.Series)
+
+
+def test_portfolio_handoff_context_deduplicates_merged_notes() -> None:
+    context = _unique_semicolon_context(
+        "5/10 weak: existing option exposure",
+        "existing option exposure",
+        "existing option exposure; large existing equity exposure 4.0%; execution gate unaffected; existing option exposure",
+    )
+
+    assert context == (
+        "5/10 weak: existing option exposure; large existing equity exposure 4.0%; "
+        "execution gate unaffected"
+    )
+
+
+def test_ticket_handoff_attaches_schwab_chain_gex_context(tmp_path: Path) -> None:
+    chain_dir = tmp_path / "schwab_chains"
+    chain_dir.mkdir()
+    chain = {
+        "symbol": "AAA",
+        "underlyingPrice": 100.0,
+        "callExpDateMap": {
+            "2026-06-19:30": {
+                "105.0": [{"gamma": 0.02, "openInterest": 100, "strikePrice": 105.0}]
+            }
+        },
+        "putExpDateMap": {
+            "2026-06-19:30": {
+                "95.0": [{"gamma": 0.01, "openInterest": 100, "strikePrice": 95.0}]
+            }
+        },
+    }
+    (chain_dir / "AAA.json").write_text(json.dumps(chain), encoding="utf-8")
+
+    enriched = _attach_schwab_gex_context(pd.DataFrame([{"ticker": "AAA"}]), chain_dir)
+
+    assert "Schwab live-chain gamma×OI proxy: pinned" in enriched.iloc[0]["GEX context"]
+    assert "support 95" in enriched.iloc[0]["GEX context"]
+    assert "resistance 105" in enriched.iloc[0]["GEX context"]
 
 
 def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path, monkeypatch) -> None:
@@ -1387,9 +1726,9 @@ def test_v4_max_final_trades_is_not_a_visibility_cap(tmp_path: Path, monkeypatch
         liquidity_summary={"status": "ok"},
     )
 
-    assert manifest["opportunity_counts"]["execute"] == 1
-    assert manifest["opportunity_counts"]["swing_target_work_limit"] == 1
+    assert manifest["opportunity_counts"]["execute"] == 2
     assert manifest["visible_signal_policy"]["active_execute_cap"] is None
+    assert manifest["opportunity_counts"]["swing_target_work_limit"] == 0
     assert manifest["visible_signal_policy"]["max_final_trades_arg"] == 1
     assert manifest["visible_signal_policy"]["aggregate_risk_budget_applied"] is False
     assert manifest["target_model"]["aggregate_risk_budget_applied"] is False

@@ -5,7 +5,10 @@ import re
 from dataclasses import dataclass
 
 
-COMPACT_OCC_RE = re.compile(r"^([A-Z.]{1,8})(\d{6})([CP])(\d{8})$")
+# Adjusted option contracts can carry a numeric suffix in the OCC root (for
+# example GME1 or SOXS2).  Treat that suffix as part of the root instead of
+# dropping the row from exact-leg OI analysis.
+COMPACT_OCC_RE = re.compile(r"^([A-Z0-9.]{1,8})(\d{6})([CP])(\d{8})$")
 
 
 @dataclass(frozen=True)

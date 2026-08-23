@@ -1,0 +1,16 @@
+{
+  "analysis_date": "2026-08-11",
+  "overlay_date": "2026-08-12",
+  "overlay_kind": "chain_oi_only",
+  "overlay_source_original": "/Users/anuppamvi/Downloads/chain-oi-changes-2026-08-12.csv",
+  "overlay_source_staged": "2026-08-12/chain-oi-changes-latest-2026-08-12.csv",
+  "overlay_sha256": "75f4a6895dce7b903a5a776ade79bcde2567c361a149945d2eb2e1ce6c3e354f",
+  "base_source_directory": "/Users/anuppamvi/uw_root/tradedesk/2026-08-11",
+  "retained_base_feeds": [
+    "bot_eod",
+    "dp_eod",
+    "hot_chains",
+    "stock_screener",
+    "browser_text"
+  ]
+}

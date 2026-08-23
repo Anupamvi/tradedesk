@@ -98,6 +98,13 @@ from .symbol_credit_calibration import (
 from .target_model import business_days_remaining
 from .validation import select_systematic_date_folders
 from .walk_forward_credit_book import (
+    DIRECTIONAL_CREDIT_EXECUTION_OI_STATES,
+    DIRECTIONAL_CREDIT_MAX_DTE,
+    DIRECTIONAL_CREDIT_MAX_EXPECTED_MOVE_RATIO,
+    DIRECTIONAL_CREDIT_MAX_PCT_WIDTH,
+    DIRECTIONAL_CREDIT_MAX_QUOTE_WIDTH,
+    DIRECTIONAL_CREDIT_MIN_DTE,
+    DIRECTIONAL_CREDIT_MIN_PCT_WIDTH,
     apply_walk_forward_credit_model,
     build_walk_forward_credit_model,
     write_walk_forward_credit_outputs,
@@ -164,10 +171,13 @@ V4_TARGET_TICKET_COLUMNS = [
     "ticker",
     "trade legs",
     "expiry",
+    "DTE",
     "next-session swing entry target",
     "current Schwab mid/natural reference",
+    "maximum profit",
     "profit target",
     "max loss",
+    "one-contract risk",
     "reward/risk",
     "suggested size",
     "swing hold window",
@@ -175,6 +185,9 @@ V4_TARGET_TICKET_COLUMNS = [
     "gap-risk plan +/-1% open",
     "EOD trend evidence",
     "flow/OI evidence",
+    "GEX context",
+    "liquidity context",
+    "portfolio context",
     "regime fit",
     "catalyst/earnings risk",
     "target price methodology",
@@ -192,6 +205,7 @@ V4_TARGET_TICKET_COLUMNS = [
     "confidence evidence",
     "per-ticket replay edge",
     "payoff evidence",
+    "confidence rating",
     "expected average win",
     "expected average loss",
     "expected value",
@@ -343,6 +357,23 @@ def _clean(value: object) -> str:
     return "" if text.lower() in {"nan", "none", "nat"} else text
 
 
+def _unique_semicolon_context(*values: object) -> str:
+    """Join evidence clauses without repeating merged portfolio/source notes."""
+    parts: list[str] = []
+    normalized: list[str] = []
+    for value in values:
+        for raw in _clean(value).split(";"):
+            part = raw.strip()
+            key = re.sub(r"\s+", " ", part).lower()
+            if not key:
+                continue
+            if any(key == seen or (len(key) >= 12 and key in seen) for seen in normalized):
+                continue
+            parts.append(part)
+            normalized.append(key)
+    return "; ".join(parts)
+
+
 def _v4_text(value: object) -> object:
     if isinstance(value, str):
         return (
@@ -421,7 +452,13 @@ def _load_overlay_chain_oi_file(path: Path, *, asof: dt.date) -> pd.DataFrame:
     if "option_symbol" not in df.columns:
         return pd.DataFrame()
     parsed = df["option_symbol"].map(parse_occ_symbol)
-    df["ticker"] = parsed.map(lambda x: x.root if x else df.get("underlying_symbol", ""))
+    parsed_ticker = parsed.map(lambda x: x.root if x else "")
+    underlying_ticker = (
+        df["underlying_symbol"].fillna("").astype(str).str.strip().str.upper()
+        if "underlying_symbol" in df.columns
+        else pd.Series("", index=df.index, dtype=object)
+    )
+    df["ticker"] = parsed_ticker.where(parsed_ticker.astype(str).str.strip().ne(""), underlying_ticker)
     df["expiry_dt"] = parsed.map(lambda x: x.expiry if x else pd.NaT)
     df["right"] = parsed.map(lambda x: x.right if x else "")
     df["strike"] = parsed.map(lambda x: x.strike if x else math.nan)
@@ -645,7 +682,7 @@ def _safety_research_reason(row: pd.Series | dict[str, Any]) -> str:
     note = _clean(row.get("v4_safety_notes"))
     if "v4_strategy_slump_muted" in penalties:
         return note or "V4 strategy-slump mute: recent family loss rate exceeded 40%"
-    if "v4_negative_shadow_ev" in penalties:
+    if "v4_negative_shadow_ev" in penalties and not _medium_debit_sleeve_eligible(row):
         return note or "V4 shadow backtest: recent family EV is negative"
     if "recent_loss_family:" in penalties:
         return note or "recent losing setup family requires Research disposition unless materially different"
@@ -972,6 +1009,27 @@ def _max_loss_value(row: pd.Series | dict[str, Any]) -> float:
     return _money_value(row.get("Max loss") or row.get("max loss"))
 
 
+def _maximum_profit_at_entry_value(
+    row: pd.Series | dict[str, Any],
+    disposition: str,
+) -> float:
+    """Return nominal maximum profit for one spread at the displayed entry limit."""
+    target_text = (
+        _ticket_entry_target(row, disposition)
+        if _payoff_evidence_ready(row) or _medium_debit_sleeve_eligible(row)
+        else _entry_target(row)
+    )
+    match = re.search(r"\$([0-9]+(?:\.[0-9]+)?)", target_text)
+    entry = safe_float(match.group(1)) if match else math.nan
+    width = safe_float(row.get("spread_width"), safe_float(row.get("width")))
+    if math.isfinite(entry) and entry > 0 and math.isfinite(width) and width > entry:
+        return entry * 100.0 if _is_credit(row) else (width - entry) * 100.0
+    explicit = safe_float(row.get("max_profit"))
+    if math.isfinite(explicit):
+        return explicit
+    return _money_value(row.get("Max profit") or row.get("maximum profit"))
+
+
 def _hard_blocker_reason(row: pd.Series | dict[str, Any]) -> str:
     hard = _clean(row.get("hard_rejects"))
     family_evidence = _validated_family_evidence(row) or _probationary_execution_ready(row)
@@ -1070,7 +1128,30 @@ def _execution_quote_blocker(row: pd.Series | dict[str, Any]) -> str:
     return ""
 
 
-def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
+def _execution_catalyst_verification_blocker(row: pd.Series | dict[str, Any]) -> str:
+    """Keep unverified single-name news visible without suppressing setup discovery."""
+    if is_etf_row(pd.Series(row)):
+        return ""
+    status = _clean(row.get("catalyst_status")).lower()
+    news_quality = _clean(row.get("catalyst_news_quality")).lower()
+    if status not in {"", "unknown"} and "news unconfirmed" not in news_quality:
+        return ""
+    event_date = earnings_event_date(row)
+    if event_date is None:
+        return "earnings date unresolved; ticker-specific news/catalyst status is unconfirmed; same-session verification required"
+    return (
+        "ticker-specific news/catalyst status is unconfirmed; "
+        f"next structured earnings date is {event_date}; same-session verification required"
+    )
+
+
+def _execute_quality_blocker(
+    row: pd.Series | dict[str, Any],
+    *,
+    include_entry_price: bool = True,
+    include_execution_quote: bool = True,
+    include_catalyst_verification: bool = True,
+) -> str:
     text = ";".join(
         [
             _clean(row.get("trade_status_reason")),
@@ -1083,15 +1164,21 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
     probationary_evidence = _probationary_execution_ready(row)
     medium_debit_evidence = _medium_debit_sleeve_eligible(row)
     walk_forward_credit_evidence = _walk_forward_credit_execution_ready(row)
+    directional_credit_evidence = _directional_credit_execution_ready(row)
     family_evidence = (
         _validated_family_evidence(row)
         or probationary_evidence
         or medium_debit_evidence
         or walk_forward_credit_evidence
     )
-    quote_blocker = _execution_quote_blocker(row)
-    if quote_blocker:
-        return quote_blocker
+    if include_execution_quote:
+        quote_blocker = _execution_quote_blocker(row)
+        if quote_blocker:
+            return quote_blocker
+    if include_catalyst_verification:
+        catalyst_blocker = _execution_catalyst_verification_blocker(row)
+        if catalyst_blocker:
+            return catalyst_blocker
     if _probationary_payoff_ready(row) and not probationary_evidence:
         return "probationary route is observation-only until post-activation outcomes mature"
     calibration_status = _clean(row.get("confidence_calibration_status")).upper()
@@ -1102,6 +1189,23 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
     primary_blocker = _clean(row.get("primary_blocker")).lower()
     for token, reason in EXECUTE_QUALITY_BLOCKER_TOKENS.items():
         if token in text:
+            if medium_debit_evidence and token in {
+                "final_quality_guard",
+                "decision_final_quality_guard",
+                "debit_bad_reward_risk_or_credit_below_min",
+                "debit_replay_guard_bad_structure",
+                "debit_ev_not_supported",
+                "no_flow_edge_alignment",
+                "price_action_trend",
+                "decision_score_below_medium",
+                "thin_replay_sample",
+                "strategy_specific_validation_required",
+            }:
+                # The frozen debit model already consumes structure economics,
+                # regime, flow, OI, technicals, IV/HV, and liquidity. Reusing
+                # these legacy proxy blockers would make that validated route
+                # unreachable. Independent live-risk gates remain mandatory.
+                continue
             if (_symbol_credit_execution_ready(row) or walk_forward_credit_evidence) and token in {
                 "price_action_trend",
                 "decision_score_below_medium",
@@ -1120,29 +1224,55 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
             ):
                 continue
             return reason
-    if not is_etf_row(row) and earnings_event_date(row) is None and _clean(row.get("catalyst_status")).lower() in {"", "unknown"}:
-        return "earnings date unresolved; web or structured confirmation required"
     if _clean(row.get("catalyst_status")).lower() == "caution":
         return "news/catalyst caution requires review"
     if _clean(row.get("oi_carryover_status")).lower() == "contrary":
         return "exact-leg OI conflicts with the trade direction"
     if _is_debit(row):
         debit_ok, debit_reasons = assess_debit_spread(row, live=True)
+        if not debit_ok and medium_debit_evidence:
+            model_covered_prefixes = {
+                "side_aware_bot_or_directional_contract_flow_required",
+                "regime_not_aligned",
+                "dte_outside_7_10_or_22_45",
+                "debit_pct_width_above_0.45",
+                "reward_risk_below_1.25",
+                "breakeven_expected_move_ratio_below_0.50",
+                "flow_alignment_below_0.20",
+                "exact_leg_oi_not_confirmed",
+                "debit_edge_sample_below_12",
+                "debit_edge_pf_below_1.25",
+                "debit_edge_avg_pnl_not_positive",
+            }
+            debit_reasons = [
+                reason
+                for reason in debit_reasons
+                if _clean(reason).split(":", 1)[0] not in model_covered_prefixes
+                and not _clean(reason).startswith("contract_flow_")
+            ]
+            debit_ok = not debit_reasons
         if not debit_ok:
             return "debit quality policy: " + "; ".join(debit_reasons)
     if _is_credit(row):
-        credit_row = dict(row)
-        if _symbol_credit_execution_ready(row):
-            credit_row["regime_trend"] = row.get("symbol_regime_trend")
-            credit_row["regime"] = row.get("symbol_regime_trend")
-            credit_row["edge_sample_size"] = row.get("symbol_credit_sample_size")
-            credit_row["edge_profit_factor"] = row.get("symbol_credit_stress_profit_factor_10pct")
-            credit_row["edge_avg_pnl"] = row.get("symbol_credit_stress_average_pnl_10pct")
-        elif walk_forward_credit_evidence:
-            credit_row["edge_sample_size"] = row.get("walk_forward_credit_oos_sample_size")
-            credit_row["edge_profit_factor"] = row.get("walk_forward_credit_stress_profit_factor_10pct")
-            credit_row["edge_avg_pnl"] = row.get("walk_forward_credit_stress_average_pnl_10pct")
-        credit_ok, credit_reasons = assess_credit_spread(credit_row, live=True)
+        if directional_credit_evidence:
+            # The directional lane has its own frozen DTE, credit-band,
+            # expected-move, flow, OI, and quote-width contract. Reapplying
+            # the unrelated generic credit map here used narrower bands and
+            # made a validated route logically unreachable.
+            credit_ok, credit_reasons = True, []
+        else:
+            credit_row = dict(row)
+            if _symbol_credit_execution_ready(row):
+                credit_row["regime_trend"] = row.get("symbol_regime_trend")
+                credit_row["regime"] = row.get("symbol_regime_trend")
+                credit_row["edge_sample_size"] = row.get("symbol_credit_sample_size")
+                credit_row["edge_profit_factor"] = row.get("symbol_credit_stress_profit_factor_10pct")
+                credit_row["edge_avg_pnl"] = row.get("symbol_credit_stress_average_pnl_10pct")
+            elif walk_forward_credit_evidence:
+                credit_row["edge_sample_size"] = row.get("walk_forward_credit_oos_sample_size")
+                credit_row["edge_profit_factor"] = row.get("walk_forward_credit_stress_profit_factor_10pct")
+                credit_row["edge_avg_pnl"] = row.get("walk_forward_credit_stress_average_pnl_10pct")
+            credit_ok, credit_reasons = assess_credit_spread(credit_row, live=True)
         if not credit_ok and family_evidence:
             route_key = _clean(row.get("payoff_route_key") or row.get("payoff_group_key")).lower()
             route_level = _clean(row.get("payoff_route_level")).lower()
@@ -1222,9 +1352,10 @@ def _execute_quality_blocker(row: pd.Series | dict[str, Any]) -> str:
     expectancy_blocker = _post_pricing_expectancy_blocker(row)
     if expectancy_blocker:
         return expectancy_blocker
-    safe_price_blocker = _expectancy_safe_price_blocker(row)
-    if safe_price_blocker:
-        return safe_price_blocker
+    if include_entry_price:
+        safe_price_blocker = _expectancy_safe_price_blocker(row)
+        if safe_price_blocker:
+            return safe_price_blocker
     return ""
 
 
@@ -1239,6 +1370,10 @@ V4_FAMILY_EVIDENCE_MIN_SAMPLE = 100
 V4_FAMILY_EVIDENCE_MIN_LOWER_BOUND = 0.60
 V4_PROBATIONARY_MAX_EXECUTES = 1
 V4_MEDIUM_DEBIT_MAX_EXECUTES = 1
+V4_MEDIUM_DEBIT_MIN_REWARD_RISK = 1.25
+V4_MEDIUM_DEBIT_MAX_QUOTE_WIDTH = 0.25
+V4_MEDIUM_DEBIT_ENTRY_STRESS_PCT = 0.10
+V4_MEDIUM_DEBIT_PROFIT_TAKE_PCT = 1.00
 
 
 def _validated_family_evidence(row: pd.Series | dict[str, Any]) -> bool:
@@ -1350,22 +1485,63 @@ def _walk_forward_credit_execution_ready(row: pd.Series | dict[str, Any]) -> boo
 
 
 def _directional_credit_execution_ready(row: pd.Series | dict[str, Any]) -> bool:
+    direction = _clean(row.get("direction"))
+    flow = safe_float(row.get("combined_flow_bias"), 0.0)
+    flow_aligned = (direction == "Bull Put" and flow > 0) or (direction == "Bear Call" and flow < 0)
+    credit_pct = safe_float(row.get("credit_pct_width"), safe_float(row.get("entry_credit_pct_width")))
+    quote_width = safe_float(row.get("quote_width_pct"), safe_float(row.get("entry_quote_width_pct")))
+    expected_move_ratio = safe_float(row.get("expected_move_ratio"))
+    dte = safe_float(row.get("dte"), safe_float(row.get("entry_dte")))
+    width = safe_float(row.get("spread_width"), safe_float(row.get("width")))
+    natural_credit = safe_float(row.get("natural_credit"))
+    execution_validation_status = _clean(
+        row.get(
+            "directional_credit_execution_validation_status",
+            row.get("directional_credit_calibration_status"),
+        )
+    ).upper()
+    family_validation_status = _clean(
+        row.get("directional_credit_family_validation_status")
+    ).upper()
     return bool(
         _is_credit(row)
+        and direction in {"Bull Put", "Bear Call"}
+        and flow_aligned
         and _clean(row.get("directional_credit_calibration_status")).upper() == "PASS"
+        and execution_validation_status == "PASS"
+        and family_validation_status in {"PASS", "PROBATIONARY"}
         and _clean(row.get("directional_credit_qualified")).lower() in {"true", "1", "yes"}
-        and _clean(row.get("walk_forward_credit_policy_pass")).lower() in {"true", "1", "yes"}
-        and safe_float(row.get("directional_credit_oos_sample_size"), 0.0) >= 75
-        and safe_float(row.get("directional_credit_wilson_lower_bound"), 0.0) >= 0.78
-        and safe_float(row.get("directional_credit_stress_profit_factor_10pct"), 0.0) >= 2.00
-        and safe_float(row.get("directional_credit_stress_average_pnl_10pct"), 0.0) > 0
-        and safe_float(row.get("directional_credit_positive_months"), 0.0) >= 7
-        and safe_float(row.get("directional_credit_holdout_sample_size"), 0.0) >= 20
-        and safe_float(row.get("directional_credit_holdout_win_rate"), 0.0) >= 0.75
-        and safe_float(row.get("directional_credit_holdout_stress_profit_factor_10pct"), 0.0) >= 1.50
+        and safe_float(row.get("directional_credit_execution_sample_size"), 0.0) >= 50
+        and safe_float(row.get("directional_credit_execution_wilson_lower_bound"), 0.0) >= 0.78
+        and safe_float(row.get("directional_credit_execution_stress_profit_factor_10pct"), 0.0) >= 2.00
+        and safe_float(row.get("directional_credit_execution_stress_average_pnl_10pct"), 0.0) > 0
+        and safe_float(row.get("directional_credit_execution_positive_months"), 0.0) >= 7
+        and safe_float(row.get("directional_credit_family_sample_size"), 0.0) >= 15
+        and safe_float(row.get("directional_credit_family_wilson_lower_bound"), 0.0) >= 0.65
+        and safe_float(
+            row.get("directional_credit_family_stress_profit_factor_10pct"), 0.0
+        )
+        >= 1.50
+        and safe_float(row.get("directional_credit_execution_holdout_sample_size"), 0.0) >= 15
+        and safe_float(row.get("directional_credit_execution_holdout_win_rate"), 0.0) >= 0.75
+        and safe_float(
+            row.get("directional_credit_execution_holdout_stress_profit_factor_10pct"), 0.0
+        )
+        >= 1.50
         and _clean(row.get("flow_quality")).lower() == "directional"
-        and _clean(row.get("oi_carryover_status")).lower()
-        in {"supportive", "matched_unconfirmed", "contrary"}
+        and _clean(row.get("oi_carryover_status")).lower() in DIRECTIONAL_CREDIT_EXECUTION_OI_STATES
+        and math.isfinite(credit_pct)
+        and DIRECTIONAL_CREDIT_MIN_PCT_WIDTH <= credit_pct <= DIRECTIONAL_CREDIT_MAX_PCT_WIDTH
+        and math.isfinite(quote_width)
+        and quote_width <= DIRECTIONAL_CREDIT_MAX_QUOTE_WIDTH
+        and math.isfinite(expected_move_ratio)
+        and expected_move_ratio <= DIRECTIONAL_CREDIT_MAX_EXPECTED_MOVE_RATIO
+        and math.isfinite(dte)
+        and DIRECTIONAL_CREDIT_MIN_DTE <= dte <= DIRECTIONAL_CREDIT_MAX_DTE
+        and math.isfinite(width)
+        and width > 0
+        and math.isfinite(natural_credit)
+        and 0 < natural_credit < width
     )
 
 
@@ -1418,14 +1594,46 @@ def _payoff_model_ready(row: pd.Series | dict[str, Any]) -> bool:
 
 
 def _medium_debit_sleeve_eligible(row) -> bool:
-    """Debit authority is disabled after the corrected next-session replay.
-
-    The prior Bull Call calibration was built from a stale ledger without an
-    explicit next-session entry day.  The rebuilt executable ledger produced
-    PF 0.73 for Bull Calls and PF 0.83 for Bear Puts, so neither debit family
-    may reach the live book through this legacy exception.
-    """
-    return False
+    """Versioned one-contract bull-call pilot backed by frozen walk-forward evidence."""
+    strategy = _clean(row.get("strategy"))
+    authorized = _clean(row.get("debit_wf_production_authorized")).lower() in {
+        "true", "1", "yes"
+    }
+    live_guard = _clean(row.get("debit_wf_live_guard_pass")).lower() in {
+        "true", "1", "yes"
+    }
+    probability = safe_float(row.get("debit_wf_predicted_win_probability"), 0.0)
+    expected_value = safe_float(row.get("debit_wf_expected_value"), -math.inf)
+    prior = safe_float(row.get("debit_wf_prior_sample_size"), 0.0)
+    reward_risk = safe_float(row.get("reward_risk"), 0.0)
+    quote_width = safe_float(row.get("quote_width_pct"), math.inf)
+    oi_status = _clean(row.get("oi_carryover_status")).lower()
+    training_through = pd.to_datetime(
+        row.get("debit_wf_model_training_through"), errors="coerce"
+    )
+    signal_value = row.get("v4_asof")
+    if not _clean(signal_value) or _clean(signal_value).lower() in {"nan", "nat", "none"}:
+        signal_value = row.get("asof")
+    if not _clean(signal_value) or _clean(signal_value).lower() in {"nan", "nat", "none"}:
+        signal_value = row.get("signal_day")
+    signal_day = pd.to_datetime(signal_value, errors="coerce")
+    maturity_safe = bool(
+        pd.notna(training_through)
+        and pd.notna(signal_day)
+        and training_through < signal_day
+    )
+    return bool(
+        strategy == "Bull Call Debit Spread"
+        and authorized
+        and live_guard
+        and probability >= 0.55
+        and expected_value > 0
+        and prior >= 100
+        and reward_risk >= V4_MEDIUM_DEBIT_MIN_REWARD_RISK
+        and quote_width <= V4_MEDIUM_DEBIT_MAX_QUOTE_WIDTH
+        and oi_status in {"supportive", "matched_unconfirmed", "mixed"}
+        and maturity_safe
+    )
 
 
 def _effective_win_rate(row: pd.Series | dict[str, Any]) -> float:
@@ -1434,11 +1642,17 @@ def _effective_win_rate(row: pd.Series | dict[str, Any]) -> float:
         if math.isfinite(probability) and 0 <= probability <= 1:
             return probability
     if _directional_credit_execution_ready(row):
-        probability = safe_float(row.get("directional_credit_wilson_lower_bound"))
-        if math.isfinite(probability) and 0 <= probability <= 1:
-            return probability
+        pooled = safe_float(row.get("directional_credit_execution_wilson_lower_bound"))
+        family = safe_float(row.get("directional_credit_family_wilson_lower_bound"))
+        probabilities = [value for value in (pooled, family) if math.isfinite(value) and 0 <= value <= 1]
+        if probabilities:
+            return min(probabilities)
     if _walk_forward_credit_execution_ready(row):
         probability = safe_float(row.get("walk_forward_credit_win_probability"))
+        if math.isfinite(probability) and 0 <= probability <= 1:
+            return probability
+    if _medium_debit_sleeve_eligible(row):
+        probability = safe_float(row.get("debit_wf_predicted_win_probability"))
         if math.isfinite(probability) and 0 <= probability <= 1:
             return probability
     payoff_win_rate = safe_float(row.get("payoff_stress_10_win_rate"))
@@ -1447,15 +1661,6 @@ def _effective_win_rate(row: pd.Series | dict[str, Any]) -> float:
     if _probationary_payoff_ready(row) and math.isfinite(payoff_win_rate) and 0 <= payoff_win_rate <= 1:
         lower_bound = safe_float(row.get("confidence_probability_lower_bound"))
         return min(payoff_win_rate, lower_bound) if math.isfinite(lower_bound) else payoff_win_rate
-    if _medium_debit_sleeve_eligible(row):
-        effective = safe_float(row.get("edge_effective_win_rate"))
-        if math.isfinite(effective) and 0 <= effective <= 1:
-            return effective
-        raw = safe_float(row.get("edge_win_rate"))
-        sample = safe_float(row.get("edge_sample_size"))
-        if math.isfinite(raw) and 0 <= raw <= 1 and math.isfinite(sample) and sample > 0:
-            wins = max(0.0, min(sample, raw * sample))
-            return (wins + 0.5) / (sample + 1.0)
     calibrated = safe_float(row.get("confidence_probability"))
     calibrated_lower = safe_float(row.get("confidence_probability_lower_bound"))
     calibration_status = _clean(row.get("confidence_calibration_status")).upper()
@@ -1495,6 +1700,8 @@ def _reported_win_rate(row: pd.Series | dict[str, Any]) -> float:
 def _reported_win_rate_basis(row: pd.Series | dict[str, Any]) -> str:
     if _symbol_credit_execution_ready(row):
         return "exact-population symbol credit; 95% Wilson lower bound"
+    if _directional_credit_execution_ready(row):
+        return "minimum of supportive/matched-OI pooled and direction-family 95% Wilson lower bounds"
     if _walk_forward_credit_execution_ready(row):
         return "trade-specific family model; book validated with maturity-safe 10% fill stress"
     if _payoff_model_ready(row):
@@ -1519,6 +1726,22 @@ def _confidence_evidence_text(row: pd.Series | dict[str, Any]) -> str:
     lower_text = f", 90% lower bound {lower_bound:.0%}" if math.isfinite(lower_bound) else ""
     sample_text = f", n={int(sample)}" if math.isfinite(sample) else ""
     return f"{source} {probability:.0%}{lower_text}{sample_text}, {status}"
+
+
+def _confidence_rating(row: pd.Series | dict[str, Any]) -> str:
+    conservative_win = _effective_win_rate(row)
+    win_text = f" · {conservative_win:.0%} floor" if math.isfinite(conservative_win) else ""
+    if _directional_credit_execution_ready(row) or _walk_forward_credit_execution_ready(row):
+        return f"🟡 MEDIUM{win_text}"
+    if _symbol_credit_execution_ready(row):
+        return f"🟠 PILOT{win_text}"
+    if _payoff_model_ready(row) and confidence_high_ready(row):
+        return f"🟢 HIGH{win_text}"
+    if _payoff_evidence_ready(row) or _medium_debit_sleeve_eligible(row):
+        return f"🟡 MEDIUM{win_text}"
+    research_win = _reported_win_rate(row)
+    research_text = f" · {research_win:.0%} model estimate" if math.isfinite(research_win) else ""
+    return f"⚪ RESEARCH ONLY{research_text}"
 
 
 def _edge_evidence_text(row: pd.Series | dict[str, Any]) -> str:
@@ -1566,6 +1789,22 @@ def _payoff_evidence_text(row: pd.Series | dict[str, Any]) -> str:
             f"episodes={int(safe_float(row.get('symbol_credit_independent_episode_count'), 0.0))}; "
             f"post-live n={int(safe_float(row.get('symbol_credit_postactivation_sample_size'), 0.0))}"
         )
+    if _directional_credit_execution_ready(row):
+        return (
+            "DIRECTIONAL CREDIT MEDIUM; "
+            f"execution-policy n={int(safe_float(row.get('directional_credit_execution_sample_size'), 0.0))}; "
+            f"95% Wilson floor={safe_float(row.get('directional_credit_execution_wilson_lower_bound'), 0.0):.0%}; "
+            f"10% fill-stress PF={_profit_factor_text(row.get('directional_credit_execution_stress_profit_factor_10pct'))}; "
+            f"holdout n={int(safe_float(row.get('directional_credit_execution_holdout_sample_size'), 0.0))}; "
+            f"holdout win={safe_float(row.get('directional_credit_execution_holdout_win_rate'), 0.0):.0%}; "
+            f"holdout PF={_profit_factor_text(row.get('directional_credit_execution_holdout_stress_profit_factor_10pct'))}; "
+            f"family={_clean(row.get('directional_credit_family_validation_status')).upper()}, "
+            f"family n={int(safe_float(row.get('directional_credit_family_sample_size'), 0.0))}, "
+            f"family PF={_profit_factor_text(row.get('directional_credit_family_stress_profit_factor_10pct'))}, "
+            f"family holdout n={int(safe_float(row.get('directional_credit_family_holdout_sample_size'), 0.0))}, "
+            f"family holdout PF={_profit_factor_text(row.get('directional_credit_family_holdout_stress_profit_factor_10pct'))}; "
+            "one contract; High confidence unavailable"
+        )
     if _walk_forward_credit_execution_ready(row):
         return (
             "WALK-FORWARD CREDIT MEDIUM; "
@@ -1577,19 +1816,22 @@ def _payoff_evidence_text(row: pd.Series | dict[str, Any]) -> str:
             f"95% Wilson floor={safe_float(row.get('walk_forward_credit_wilson_lower_bound'), 0.0):.0%}; "
             f"10% fill-stress PF={_profit_factor_text(row.get('walk_forward_credit_stress_profit_factor_10pct'))}; "
             f"positive validation months={int(safe_float(row.get('walk_forward_credit_positive_months'), 0.0))}; "
-            "up to two distinct-sector names; one contract each; High confidence unavailable"
+            "one contract; High confidence unavailable"
         )
     if _medium_debit_sleeve_eligible(row):
-        sample = safe_float(row.get("edge_sample_size"))
-        win_rate = safe_float(row.get("edge_win_rate"))
-        profit_factor = safe_float(row.get("edge_profit_factor"))
-        average_pnl = safe_float(row.get("edge_avg_pnl"))
+        policy = _clean(row.get("debit_wf_policy_version")) or "frozen walk-forward debit policy"
+        prior_sample = safe_float(row.get("debit_wf_prior_sample_size"))
+        predicted_win = safe_float(row.get("debit_wf_predicted_win_probability"))
+        expected_value = safe_float(row.get("debit_wf_expected_value"))
+        training_through = _clean(row.get("debit_wf_model_training_through")) or "unavailable"
+        live_guard = _clean(row.get("debit_wf_live_guard_pass")).lower() in {"true", "1", "yes"}
         return (
-            "VALIDATED MEDIUM-DEBIT ROUTE"
-            + (f"; n={int(sample)}" if math.isfinite(sample) else "")
-            + (f"; win={win_rate:.0%}" if math.isfinite(win_rate) else "")
-            + (f"; PF={profit_factor:.2f}" if math.isfinite(profit_factor) else "")
-            + (f"; avg={_money(average_pnl)}" if math.isfinite(average_pnl) else "")
+            f"VALIDATED MEDIUM-DEBIT ROUTE; policy={policy}; "
+            + (f"prior n={int(prior_sample)}; " if math.isfinite(prior_sample) else "")
+            + (f"predicted win={predicted_win:.0%}; " if math.isfinite(predicted_win) else "")
+            + (f"post-pricing EV={_money(expected_value)}; " if math.isfinite(expected_value) else "")
+            + f"training through={training_through}; live guard={'PASS' if live_guard else 'FAIL'}; "
+            "one contract; High confidence unavailable"
         )
     status = _clean(row.get("payoff_calibration_status")).upper() or "FAIL"
     sample = safe_float(row.get("payoff_sample_size"))
@@ -1664,6 +1906,158 @@ def build_execution_evidence_integrity(scored: pd.DataFrame | None) -> dict[str,
     }
 
 
+def build_execution_reachability_audit(scored: pd.DataFrame | None) -> dict[str, Any]:
+    """Explain whether zero Execute is structural, quality-driven, or price-driven."""
+    if scored is None or scored.empty:
+        return {
+            "status": "FAIL",
+            "reason": "candidate book is empty",
+            "candidate_rows": 0,
+            "evidence_authorized_rows": 0,
+            "approved_target_rows": 0,
+            "entry_ready_before_same_ticker_selection": 0,
+            "final_execute_rows": 0,
+        }
+
+    counts = {
+        "candidate_rows": int(len(scored)),
+        "evidence_authorized_rows": 0,
+        "hard_risk_clear_rows": 0,
+        "safety_clear_rows": 0,
+        "positive_expectancy_rows": 0,
+        "defined_risk_rows": 0,
+        "non_price_quality_clear_rows": 0,
+        "approved_target_rows": 0,
+        "current_entry_target_met_rows": 0,
+        "immediate_quote_width_clear_rows": 0,
+        "entry_ready_before_same_ticker_selection": 0,
+        "price_wait_rows": 0,
+        "quote_wait_rows": 0,
+        "session_reprice_rows": 0,
+        "catalyst_verification_wait_rows": 0,
+        "final_execute_rows": int(
+            scored.get("trade_status", pd.Series("", index=scored.index)).astype(str).eq("Execute").sum()
+        ),
+        "market_open_rows": int(
+            scored.get("market_session_open_at_validation", pd.Series(False, index=scored.index))
+            .map(_truthy_flag)
+            .sum()
+        ),
+    }
+    route_counts = {
+        "directional_credit_medium": 0,
+        "strict_walk_forward_credit": 0,
+        "symbol_credit_pilot": 0,
+        "validated_medium_debit": 0,
+        "other_validated_payoff": 0,
+    }
+    blocker_counts: dict[str, int] = {}
+
+    for _, row in scored.iterrows():
+        directional = _directional_credit_execution_ready(row)
+        symbol_credit = _symbol_credit_execution_ready(row)
+        walk_forward = _walk_forward_credit_execution_ready(row)
+        medium_debit = _medium_debit_sleeve_eligible(row)
+        other_payoff = _payoff_model_ready(row) or _validated_family_evidence(row)
+        authorized = directional or symbol_credit or walk_forward or medium_debit or other_payoff
+        if not authorized:
+            continue
+        counts["evidence_authorized_rows"] += 1
+        if directional:
+            route_counts["directional_credit_medium"] += 1
+        elif symbol_credit:
+            route_counts["symbol_credit_pilot"] += 1
+        elif walk_forward:
+            route_counts["strict_walk_forward_credit"] += 1
+        elif medium_debit:
+            route_counts["validated_medium_debit"] += 1
+        else:
+            route_counts["other_validated_payoff"] += 1
+
+        hard_clear = not bool(_hard_blocker_reason(row))
+        safety_clear = not bool(_safety_research_reason(row))
+        ev_clear = _v4_nonnegative_ev(row)
+        risk_clear = bool(
+            math.isfinite(_max_loss_value(row))
+            and _max_loss_value(row) > 0
+            and math.isfinite(_target_profit_value(row))
+        )
+        execution_quote_blocker = _execution_quote_blocker(row)
+        execution_catalyst_blocker = _execution_catalyst_verification_blocker(row)
+        identification_blocker = _execute_quality_blocker(
+            row,
+            include_entry_price=False,
+            include_execution_quote=False,
+            include_catalyst_verification=False,
+        )
+        quality_clear = not bool(identification_blocker)
+        target_met = _v4_target_met(row)
+        quote_width = safe_float(row.get("quote_width_pct"), 9.0)
+        combination_width = _combination_quote_width_ratio(row)
+        if math.isfinite(combination_width):
+            quote_width = max(quote_width, combination_width)
+        quote_clear = quote_width <= 0.20
+        counts["hard_risk_clear_rows"] += int(hard_clear)
+        counts["safety_clear_rows"] += int(safety_clear)
+        counts["positive_expectancy_rows"] += int(ev_clear)
+        counts["defined_risk_rows"] += int(risk_clear)
+        counts["non_price_quality_clear_rows"] += int(quality_clear)
+        counts["current_entry_target_met_rows"] += int(target_met)
+        counts["immediate_quote_width_clear_rows"] += int(quote_clear)
+        approved = hard_clear and safety_clear and ev_clear and risk_clear and quality_clear
+        counts["approved_target_rows"] += int(approved)
+        counts["price_wait_rows"] += int(approved and not target_met)
+        counts["quote_wait_rows"] += int(
+            approved and target_met and (not quote_clear or bool(execution_quote_blocker))
+        )
+        counts["session_reprice_rows"] += int(approved and bool(execution_quote_blocker))
+        counts["catalyst_verification_wait_rows"] += int(
+            approved and bool(execution_catalyst_blocker)
+        )
+        counts["entry_ready_before_same_ticker_selection"] += int(
+            approved
+            and target_met
+            and quote_clear
+            and not execution_quote_blocker
+            and not execution_catalyst_blocker
+        )
+        if not quality_clear:
+            blocker_counts[identification_blocker] = blocker_counts.get(identification_blocker, 0) + 1
+
+    approved = counts["approved_target_rows"]
+    final_execute = counts["final_execute_rows"]
+    if not counts["evidence_authorized_rows"]:
+        status = "FAIL"
+        reason = "no evidence-authorized execution route matches the current universe"
+    elif not approved:
+        status = "BLOCKED"
+        reason = "evidence routes exist, but every row fails a non-price execution-quality gate"
+    elif final_execute:
+        status = "PASS"
+        reason = "execution is reachable and at least one current structure clears every gate"
+    else:
+        status = "PASS_PRICE_WAIT"
+        reason = (
+            "approved structures exist; current entry price, executable quote width, a fresh "
+            "regular-session reprice, or same-session catalyst verification is the remaining wait"
+        )
+    return {
+        "status": status,
+        "reason": reason,
+        **counts,
+        "route_authority_counts": route_counts,
+        "non_price_blocker_counts": dict(
+            sorted(blocker_counts.items(), key=lambda item: (-item[1], item[0]))
+        ),
+        "market_session_affects_identification": False,
+        "identification_policy": (
+            "market-open state never removes an approved setup; current/last regular-session option liquidity, "
+            "entry price, and a fresh pre-order quote control Enter/Execute"
+        ),
+        "arbitrary_signal_cap": None,
+    }
+
+
 def _walk_forward_credit_expectancy(
     row: pd.Series | dict[str, Any],
     risk: float,
@@ -1671,10 +2065,12 @@ def _walk_forward_credit_expectancy(
     if _walk_forward_credit_execution_ready(row):
         if _directional_credit_execution_ready(row):
             predicted_return = safe_float(
-                row.get("directional_credit_stress_average_return_on_risk_10pct")
+                row.get("directional_credit_family_stress_average_return_on_risk_10pct")
             )
-            profit_factor = safe_float(row.get("directional_credit_stress_profit_factor_10pct"))
-            win_rate = safe_float(row.get("directional_credit_wilson_lower_bound"))
+            profit_factor = safe_float(
+                row.get("directional_credit_family_stress_profit_factor_10pct")
+            )
+            win_rate = _effective_win_rate(row)
         else:
             predicted_return = safe_float(row.get("walk_forward_credit_prediction"))
             profit_factor = safe_float(row.get("walk_forward_credit_stress_profit_factor_10pct"))
@@ -1701,10 +2097,65 @@ def _walk_forward_credit_expectancy(
     return math.nan, math.nan, math.nan, math.nan
 
 
+def _medium_debit_economics_at_price(
+    row: pd.Series | dict[str, Any],
+    debit: float,
+) -> tuple[float, float, float, float, float, float]:
+    """Return target, nominal risk, EV, PF, stressed win, and stressed loss."""
+    probability = safe_float(row.get("debit_wf_predicted_win_probability"))
+    width = safe_float(row.get("spread_width"))
+    if (
+        not _medium_debit_sleeve_eligible(row)
+        or not math.isfinite(probability)
+        or not 0 < probability < 1
+        or not math.isfinite(debit)
+        or debit <= 0
+        or not math.isfinite(width)
+        or width <= debit
+    ):
+        return (math.nan,) * 6
+    target_value = min(
+        width,
+        debit * (1.0 + V4_MEDIUM_DEBIT_PROFIT_TAKE_PCT),
+    )
+    target_profit = (target_value - debit) * 100.0
+    max_loss = debit * 100.0
+    stressed_cost = debit * (1.0 + V4_MEDIUM_DEBIT_ENTRY_STRESS_PCT) * 100.0
+    win_payoff = max(0.0, target_value * 100.0 - stressed_cost)
+    loss_payoff = stressed_cost
+    gross_wins = probability * win_payoff
+    gross_losses = (1.0 - probability) * loss_payoff
+    expected_value = gross_wins - gross_losses
+    profit_factor = gross_wins / gross_losses if gross_losses > 0 else math.inf
+    return target_profit, max_loss, expected_value, profit_factor, win_payoff, loss_payoff
+
+
+def _medium_debit_ticket_economics(
+    row: pd.Series | dict[str, Any],
+) -> tuple[float, float, float, float, float, float]:
+    safe_price = _expectancy_safe_entry_price(row)
+    current_price = _v4_current_entry_price(row)
+    entry = safe_price
+    if (
+        math.isfinite(current_price)
+        and current_price > 0
+        and math.isfinite(safe_price)
+        and current_price <= safe_price
+    ):
+        entry = current_price
+    return _medium_debit_economics_at_price(row, entry)
+
+
 def _post_pricing_expectancy(
     row: pd.Series | dict[str, Any],
 ) -> tuple[float, float, float, float]:
     """Return coherent EV, PF, win payoff, and loss payoff for the final structure."""
+    if _medium_debit_sleeve_eligible(row):
+        _, _, expected_value, profit_factor, win_payoff, loss_payoff = (
+            _medium_debit_economics_at_price(row, _v4_current_entry_price(row))
+        )
+        if math.isfinite(expected_value):
+            return expected_value, profit_factor, win_payoff, loss_payoff
     walk_forward = _walk_forward_credit_expectancy(row, _max_loss_value(row))
     if math.isfinite(walk_forward[0]):
         return walk_forward
@@ -1780,6 +2231,13 @@ def _expectancy_safe_entry_price(row: pd.Series | dict[str, Any]) -> float:
         row.get("required_entry"),
         safe_float(row.get("target_entry"), safe_float(row.get("entry_target"))),
     )
+    if _medium_debit_sleeve_eligible(row):
+        # The frozen model already stress-prices the exact natural debit by
+        # 10%. Keep the configured no-chase limit instead of replacing it with
+        # an unrelated generic payoff-route ceiling.
+        if math.isfinite(configured_target) and configured_target > 0:
+            return math.floor(configured_target * 100.0 + 1e-9) / 100.0
+        return math.nan
     if (
         not math.isfinite(win_rate)
         or win_rate <= 0
@@ -1792,6 +2250,17 @@ def _expectancy_safe_entry_price(row: pd.Series | dict[str, Any]) -> float:
         or win_payoff <= 0
     ):
         return math.nan
+    if _directional_credit_execution_ready(row):
+        # This lane was replayed and holdout-tested on its own 15%-45% credit
+        # band.  Its configured target is already inside that contract.  The
+        # former generic PF algebra assumed a different payoff route and
+        # overwrote every target with an untested ~35%-of-width floor.
+        floor = width * DIRECTIONAL_CREDIT_MIN_PCT_WIDTH
+        if math.isfinite(configured_target) and configured_target > 0:
+            floor = max(floor, configured_target)
+        if floor > width * DIRECTIONAL_CREDIT_MAX_PCT_WIDTH:
+            return math.nan
+        return math.ceil(floor * 100.0 - 1e-9) / 100.0
     if _payoff_evidence_ready(row) and not _directional_credit_execution_ready(row):
         route_level = _clean(row.get("payoff_route_level")).lower()
         route_key = _clean(row.get("payoff_route_key") or row.get("payoff_group_key")).lower()
@@ -1838,7 +2307,8 @@ def _expectancy_safe_entry_price(row: pd.Series | dict[str, Any]) -> float:
 
 def _expectancy_safe_entry_target(row: pd.Series | dict[str, Any]) -> str:
     if not _payoff_evidence_ready(row) and not _medium_debit_sleeve_eligible(row):
-        return "UNVALIDATED - no execution limit"
+        review_target = _entry_target(row)
+        return f"REVIEW ONLY - {review_target}; no execution authority"
     safe_price = _expectancy_safe_entry_price(row)
     if not math.isfinite(safe_price):
         return _entry_target(row)
@@ -1847,15 +2317,19 @@ def _expectancy_safe_entry_target(row: pd.Series | dict[str, Any]) -> str:
 
 def _ticket_entry_target(row: pd.Series | dict[str, Any], disposition: str) -> str:
     safe_target = _expectancy_safe_entry_target(row)
-    if disposition != "Execute" or not _medium_debit_sleeve_eligible(row):
+    debit_evidence_ready = _payoff_evidence_ready(row) or _medium_debit_sleeve_eligible(row)
+    if not _is_debit(row) or not debit_evidence_ready:
         return safe_target
     current = _v4_current_entry_price(row)
     safe_price = _expectancy_safe_entry_price(row)
     if not math.isfinite(current) or current <= 0:
         return safe_target
-    if math.isfinite(safe_price):
-        return f"<= ${current:.2f} debit; do not chase above ${safe_price:.2f}"
-    return f"<= ${current:.2f} debit"
+    if not math.isfinite(safe_price) or current > safe_price:
+        return safe_target
+    current_target = f"<= ${current:.2f} debit; do not chase above ${safe_price:.2f}"
+    if disposition == "Scout":
+        return f"REVIEW ONLY - {current_target}; no execution authority"
+    return current_target
 
 
 def _entry_limit_expectancy(
@@ -1875,6 +2349,12 @@ def _entry_limit_expectancy(
         and current_price <= safe_price
     ):
         safe_price = current_price
+    if _medium_debit_sleeve_eligible(row):
+        target_profit, max_loss, expected_value, profit_factor, _, _ = (
+            _medium_debit_economics_at_price(row, safe_price)
+        )
+        if math.isfinite(expected_value):
+            return target_profit, max_loss, expected_value, profit_factor
     width = safe_float(row.get("spread_width"))
     current_max_profit = safe_float(row.get("max_profit"))
     current_target_profit = _target_profit_value(row)
@@ -1946,10 +2426,33 @@ def _expectancy_safe_price_blocker(row: pd.Series | dict[str, Any]) -> str:
 
 def _blocker_text(row: pd.Series | dict[str, Any]) -> str:
     if _clean(row.get("trade_status")) == "Execute" and not _is_hard_blocked(row) and not _execute_quality_blocker(row):
+        catalyst_status = _clean(row.get("catalyst_status")).lower()
+        if not is_etf_row(pd.Series(row)) and catalyst_status in {"", "unknown"}:
+            event_date = earnings_event_date(row)
+            earnings_context = (
+                f"; next structured earnings date is {event_date}"
+                if event_date is not None
+                else "; earnings date is unresolved"
+            )
+            return (
+                "Pre-order evidence condition: ticker-specific news/catalyst status is unconfirmed"
+                f"{earnings_context}; complete a same-session company-news and earnings check, then enter only "
+                "at/inside target with attached OCO after a fresh quote."
+            )
         return "No hard blocker; enter only at/inside target with attached OCO after same-session quote refresh."
     safe_price_blocker = _expectancy_safe_price_blocker(row)
     if "expectancy-safe" in safe_price_blocker and ("below" in safe_price_blocker or "above" in safe_price_blocker):
         return safe_price_blocker
+    if _payoff_evidence_ready(row) or _medium_debit_sleeve_eligible(row):
+        # Once a current evidence route is authorized, legacy discovery fields
+        # such as ``what_must_improve`` and ``primary_blocker`` are historical
+        # context, not the binding reason for the final disposition.
+        direct_reason = _clean(row.get("v4_direct_disposition_reason"))
+        if direct_reason:
+            return direct_reason
+        current_reason = _clean(row.get("trade_status_reason"))
+        if current_reason:
+            return current_reason
     for key in ["what_must_improve", "primary_blocker", "trade_status_reason", "hard_rejects", "penalties"]:
         text = _clean(row.get(key))
         if text:
@@ -2001,14 +2504,15 @@ def _targetable(row: pd.Series | dict[str, Any]) -> bool:
         return False
     if not _v4_nonnegative_ev(row):
         return False
+    entry_target = _entry_target(row).lower()
+    if "$" not in entry_target or not any(kind in entry_target for kind in ("credit", "debit")):
+        return False
     status = _clean(row.get("trade_status"))
     if status in {"Execute", "Watch"}:
         return True
     if _clean(row.get("live_status")) not in {"PASS", "pass", ""}:
         return False
     if not math.isfinite(_target_profit_value(row)) or not math.isfinite(_max_loss_value(row)):
-        return False
-    if "fresh Schwab recheck" in _entry_target(row):
         return False
     validated_one_lot_lane = (
         _symbol_credit_execution_ready(row)
@@ -2093,8 +2597,31 @@ def _catalyst_risk(row: pd.Series | dict[str, Any]) -> str:
     if not math.isfinite(days):
         days = safe_float(row.get("earnings_days"))
     note = _clean(row.get("catalyst_note"))
+    event_date = earnings_event_date(row)
+    asof = _parse_date(
+        _clean(
+            row.get("overlay_evaluation_date")
+            or row.get("v4_asof")
+            or row.get("asof")
+        )
+    )
+    expiry = _parse_date(_clean(row.get("expiry")))
+    if event_date is not None:
+        if not math.isfinite(days) and asof is not None:
+            days = float((event_date - asof).days)
+        relation = ""
+        if expiry is not None:
+            relation = "; after expiry" if event_date > expiry else "; on/before expiry"
+        status_text = status if status.lower() not in {"", "unknown"} else "ticker-specific news unconfirmed"
+        day_text = f" ({int(days)} days)" if math.isfinite(days) else ""
+        return (
+            f"{status_text}; next earnings {event_date}{day_text}{relation}"
+            + (f"; {note}" if note else "")
+        )
     if math.isfinite(days):
         return f"{status}; earnings in {int(days)} days" + (f"; {note}" if note else "")
+    if is_etf_row(pd.Series(row)):
+        return "ETF/index; no single-company earnings gate" + (f"; {note}" if note else "")
     return status + (f"; {note}" if note else "")
 
 
@@ -2137,6 +2664,17 @@ def _hold_window(row: pd.Series | dict[str, Any]) -> str:
     if math.isfinite(dte) and dte <= 30:
         return "2-10 trading days; reassess at 7 DTE and exit on thesis or price invalidation"
     return "3-15 trading days; reassess if thesis or volatility regime changes"
+
+
+def _dte_text(row: pd.Series | dict[str, Any]) -> str:
+    dte = safe_float(row.get("dte"), safe_float(row.get("DTE")))
+    if math.isfinite(dte) and dte >= 0:
+        return str(int(round(dte)))
+    expiry = _parse_date(_clean(row.get("expiry") or row.get("Expiry")))
+    asof = _parse_date(_clean(row.get("v4_asof") or row.get("asof")))
+    if expiry is not None and asof is not None and expiry >= asof:
+        return str((expiry - asof).days)
+    return ""
 
 
 def _stop_text(row: pd.Series | dict[str, Any]) -> str:
@@ -2235,14 +2773,14 @@ def _safety_flags_text(row: pd.Series | dict[str, Any]) -> str:
         flags = _append_note(flags, "Risk Capped")
     if not flags and _safety_research_reason(row):
         flags = "Safety Research"
-    return flags
+    return flags or "None"
 
 
 def _manual_instruction(row: pd.Series | dict[str, Any], disposition: str) -> str:
     if disposition == "Execute":
         return "Fresh Schwab quote, news, OI, portfolio-risk check, and OCO bracket must all pass before manual order entry."
     if disposition == "Scout":
-        return "One contract only; confirm news, OI/flow, spread width, and existing exposure before entering."
+        return "NOT AN ORDER - re-score into Work Limit or Execute after news, OI/flow, spread-width, and portfolio checks before any entry."
     if disposition == "Wheel/Cash":
         return "Confirm assignment quality, cash budget, no near-term earnings, and no duplicate exposure before selling premium."
     return "NOT AN ORDER - target only; fresh Schwab quote, news, OI/flow, and re-score required before entry."
@@ -2270,7 +2808,11 @@ def _why_review(row: pd.Series | dict[str, Any], top_flow: pd.DataFrame) -> str:
             pieces.append(f"{authority} final-structure EV={_money(expected_value)}, PF={pf_text}")
     else:
         pieces.append("realized payoff lane is unvalidated; displayed only for research")
-    reason = _clean(row.get("trade_status_reason") or row.get("Why Execute, Scout, Research, or Avoid"))
+    reason = _clean(
+        row.get("v4_direct_disposition_reason")
+        or row.get("trade_status_reason")
+        or row.get("Why Execute, Scout, Research, or Avoid")
+    )
     if reason:
         pieces.append(reason)
     return "; ".join(pieces)[:500]
@@ -2298,11 +2840,17 @@ def _ticket_row_from_scored(
     expected_win_text = f"{expected_win:.0%}" if math.isfinite(expected_win) else ""
     avg_win = target_profit if execution_evidence_ready else math.nan
     avg_loss = -max_loss if execution_evidence_ready and math.isfinite(max_loss) else math.nan
+    if _medium_debit_sleeve_eligible(row):
+        _, _, _, _, stressed_win, stressed_loss = _medium_debit_ticket_economics(row)
+        if math.isfinite(stressed_win) and math.isfinite(stressed_loss):
+            avg_win = stressed_win
+            avg_loss = -stressed_loss
     if _walk_forward_credit_execution_ready(row) and math.isfinite(max_loss):
         walk_forward = _walk_forward_credit_expectancy(row, max_loss)
         if math.isfinite(walk_forward[0]):
             avg_win = walk_forward[2]
             avg_loss = -walk_forward[3]
+    maximum_profit = _maximum_profit_at_entry_value(row, disposition)
     return {
         "rank": rank,
         "display status": _status_label(disposition),
@@ -2310,10 +2858,13 @@ def _ticket_row_from_scored(
         "ticker": _clean(row.get("ticker")).upper(),
         "trade legs": _trade_legs(row),
         "expiry": _clean(row.get("expiry")),
+        "DTE": _dte_text(row),
         "next-session swing entry target": _ticket_entry_target(row, disposition),
         "current Schwab mid/natural reference": _mid_natural(row),
+        "maximum profit": _money(maximum_profit),
         "profit target": _money(target_profit),
         "max loss": _money(max_loss),
+        "one-contract risk": _money(max_loss),
         "reward/risk": f"{reward_risk:.2f}" if math.isfinite(reward_risk) else "",
         "suggested size": _suggested_size(row, disposition),
         "swing hold window": _hold_window(row),
@@ -2321,6 +2872,19 @@ def _ticket_row_from_scored(
         "gap-risk plan +/-1% open": _gap_risk_plan(row, disposition),
         "EOD trend evidence": _trend_evidence(row),
         "flow/OI evidence": _flow_oi_evidence(row, top_flow),
+        "liquidity context": "; ".join(
+            part
+            for part in [
+                _clean(row.get("liquidity_quality")),
+                _clean(row.get("liquidity_summary")),
+            ]
+            if part
+        ),
+        "portfolio context": _unique_semicolon_context(
+            row.get("portfolio_fit"),
+            row.get("portfolio_warning"),
+            row.get("portfolio_note"),
+        ) or "no concentration flag recorded; refresh portfolio before entry",
         "regime fit": _regime_fit(row, regime),
         "catalyst/earnings risk": _catalyst_risk(row),
         "target price methodology": _target_methodology(row),
@@ -2335,6 +2899,7 @@ def _ticket_row_from_scored(
         "expected win rate": expected_win_text,
         "win-rate basis": _reported_win_rate_basis(row),
         "confidence evidence": _confidence_evidence_text(row),
+        "confidence rating": _confidence_rating(row),
         "per-ticket replay edge": _edge_evidence_text(row),
         "payoff evidence": _payoff_evidence_text(row),
         "expected average win": _money(avg_win) if execution_evidence_ready else "UNVALIDATED",
@@ -2345,6 +2910,7 @@ def _ticket_row_from_scored(
             else "inf" if execution_evidence_ready and profit_factor == math.inf
             else "UNVALIDATED"
         ),
+        "_confidence_sort": expected_win if math.isfinite(expected_win) else -1.0,
         "_rank_score": _ticket_rank(row, disposition),
     }
 
@@ -2358,6 +2924,7 @@ def _ticket_row_from_board(
     disposition = _disposition(row, targetable=True)
     target_profit = _target_profit_value(row)
     max_loss = _max_loss_value(row)
+    maximum_profit = _maximum_profit_at_entry_value(row, disposition)
     reward_risk = target_profit / max_loss if math.isfinite(target_profit) and math.isfinite(max_loss) and max_loss > 0 else math.nan
     return {
         "rank": rank,
@@ -2365,10 +2932,13 @@ def _ticket_row_from_board(
         "ticker": _clean(row.get("Ticker")).upper(),
         "trade legs": _trade_legs(row),
         "expiry": _clean(row.get("Expiry")),
+        "DTE": _dte_text(row),
         "next-session swing entry target": _entry_target(row),
         "current Schwab mid/natural reference": _mid_natural(row),
+        "maximum profit": _money(maximum_profit),
         "profit target": _money(target_profit),
         "max loss": _money(max_loss),
+        "one-contract risk": _money(max_loss),
         "reward/risk": f"{reward_risk:.2f}" if math.isfinite(reward_risk) else "",
         "suggested size": "1 contract / cash secured only after assignment-quality review",
         "swing hold window": _hold_window(row),
@@ -2376,6 +2946,8 @@ def _ticket_row_from_board(
         "gap-risk plan +/-1% open": _gap_risk_plan(row, disposition),
         "EOD trend evidence": _clean(row.get("EOD trend evidence")),
         "flow/OI evidence": _clean(row.get("Expected value source")),
+        "liquidity context": _clean(row.get("Liquidity")) or "manual liquidity recheck required",
+        "portfolio context": "manual assignment and portfolio-overlap review required",
         "regime fit": _regime_fit(row, regime),
         "catalyst/earnings risk": "manual assignment/news check required" if disposition == "Wheel/Cash" else "manual catalyst check required",
         "target price methodology": _target_methodology(row),
@@ -2391,10 +2963,12 @@ def _ticket_row_from_board(
         "expected win rate": "",
         "win-rate basis": "",
         "confidence evidence": "",
+        "confidence rating": "⚪ UNRATED",
         "per-ticket replay edge": _edge_evidence_text(row),
         "payoff evidence": "",
         "expected average win": "",
         "expected average loss": "",
+        "_confidence_sort": -1.0,
         "_rank_score": 40.0 if disposition == "Wheel/Cash" else 30.0,
     }
 
@@ -2443,6 +3017,9 @@ def _ticket_rank(row: pd.Series | dict[str, Any], disposition: str) -> float:
         rank += min(5.0, (target / risk) * 10.0)
     sample = safe_float(row.get("edge_sample_size"), safe_float(row.get("historical_sample_size")))
     expected_value, profit_factor, _, _ = _post_pricing_expectancy(row)
+    confidence = _effective_win_rate(row)
+    if math.isfinite(confidence):
+        rank += max(0.0, min(10.0, confidence * 10.0))
     if math.isfinite(sample) and sample >= V4_MIN_REPLAY_SAMPLE:
         if math.isfinite(expected_value) and math.isfinite(risk) and risk > 0:
             rank += max(-10.0, min(10.0, (expected_value / risk) * 20.0))
@@ -2465,26 +3042,33 @@ def build_v4_swing_target_tickets(
         for _, row in scored.iterrows():
             if _targetable(row):
                 rows.append(_ticket_row_from_scored(row, rank=0, regime=regime, top_flow=top_flow))
-    if board is not None and not board.empty:
-        for _, row in board.iterrows():
-            lane = _clean(row.get("Lane"))
-            status = _clean(row.get("Status"))
-            if lane == "Wheel/Cash" and "Blocked" not in status and "$" in _entry_target(row):
-                rows.append(_ticket_row_from_board(row, rank=0, regime=regime))
+    # Opportunity-board Wheel/Cash rows are contextual research until a scored
+    # structure carries complete execution evidence, exact option-leg pricing,
+    # confidence, and payoff fields.  A dollar-denominated review trigger alone
+    # must never promote a board row into the actionable ticket book.
     if not rows:
         return pd.DataFrame(columns=V4_TARGET_TICKET_COLUMNS)
     tickets = pd.DataFrame(rows)
+    tickets["_disposition_sort"] = tickets["final disposition"].map(
+        {"Execute": 3, "Swing Target / Work Limit": 2, "Scout": 1, "Wheel/Cash": 0}
+    ).fillna(-1)
     tickets["_dedupe"] = (
         tickets["ticker"].astype(str)
         + "|"
         + tickets["trade legs"].astype(str)
         + "|"
         + tickets["expiry"].astype(str)
-        + "|"
-        + tickets["next-session swing entry target"].astype(str)
     )
-    tickets = tickets.sort_values("_rank_score", ascending=False).drop_duplicates("_dedupe", keep="first")
-    tickets = tickets.drop(columns=["_dedupe"]).reset_index(drop=True)
+    tickets = (
+        tickets.sort_values(
+            ["_disposition_sort", "_confidence_sort", "_rank_score"],
+            ascending=[False, False, False],
+            kind="mergesort",
+        )
+        .drop_duplicates("_dedupe", keep="first")
+        .drop(columns=["_dedupe", "_disposition_sort"])
+        .reset_index(drop=True)
+    )
     tickets["rank"] = range(1, len(tickets) + 1)
     for col in V4_TARGET_TICKET_COLUMNS:
         if col not in tickets.columns:
@@ -2551,8 +3135,11 @@ def apply_v4_risk_cap(tickets: pd.DataFrame, portfolio: dict[str, Any]) -> tuple
             and max_loss_before > cap
         )
         if over_cap:
+            existing_flags = row.get("safety calibration flags")
+            if _clean(existing_flags).lower() == "none":
+                existing_flags = ""
             out.at[idx, "safety calibration flags"] = _append_note(
-                row.get("safety calibration flags"),
+                existing_flags,
                 f"Sizing note: max loss ${max_loss_before:,.0f} exceeds 2% of account (${cap:,.0f})",
             )
         rows.append(
@@ -3344,34 +3931,218 @@ def _markdown_table(df: pd.DataFrame, columns: list[str] | None = None, *, max_r
 
 
 def _compact_ticket_table(tickets: pd.DataFrame) -> pd.DataFrame:
-    columns = [
-        "rank",
-        "display status",
-        "ticker",
-            "trade legs",
-            "expiry",
-            "next-session swing entry target",
-        "current Schwab mid/natural reference",
-        "profit target",
-        "max loss",
-        "expected win rate",
-        "win-rate basis",
-        "per-ticket replay edge",
-        "entry status",
-    ]
+    columns = ["Decision", "Trade", "Entry", "Confidence", "Target / Risk", "Action"]
     if tickets is None or tickets.empty:
         return pd.DataFrame(columns=columns)
-    source_cols = [col for col in columns if col != "entry status" and col in tickets.columns]
-    out = tickets[source_cols].copy()
-    def entry_status(row: pd.Series) -> str:
+
+    def action_text(row: pd.Series) -> str:
         disposition = _clean(row.get("final disposition"))
         blocker = _clean(row.get("blocker before entry"))
         if disposition == "Execute":
-            return "Ready if quote still fits; OCO required"
+            return "Requote first; enter only if the limit still holds; attach OCO"
         if disposition == "Scout":
-            return "1-lot only; manual confirmation"
-        return blocker[:90] if blocker else "NOT AN ORDER - target only; do not chase"
-    out["entry status"] = tickets.apply(entry_status, axis=1)
+            return (blocker[:157] + "...") if len(blocker) > 160 else (blocker or "Review only; no order authority")
+        return (blocker[:157] + "...") if len(blocker) > 160 else (blocker or "Work the stated limit; do not chase")
+
+    rows: list[dict[str, str]] = []
+    for _, row in tickets.iterrows():
+        ticker = _clean(row.get("ticker")).upper()
+        expiry = _clean(row.get("expiry"))
+        dte = _clean(row.get("DTE"))
+        legs = _clean(row.get("trade legs"))
+        if ticker and expiry:
+            legs = legs.replace(f"{ticker} {expiry} ", "")
+        legs = legs.replace("sell ", "SELL ").replace("buy ", "BUY ")
+        trade = f"**{ticker}** - {legs}"
+        if expiry:
+            trade += f" - Exp {expiry}"
+        if dte:
+            trade += f" ({dte} DTE)"
+        entry_target = _clean(row.get("next-session swing entry target"))
+        live_reference = _clean(row.get("current Schwab mid/natural reference"))
+        entry = f"Limit {entry_target}; Schwab mid/natural {live_reference}"
+        risk = f"Take {_clean(row.get('profit target'))}; max loss {_clean(row.get('max loss'))}"
+        rows.append(
+            {
+                "Decision": _clean(row.get("display status")),
+                "Trade": trade,
+                "Entry": entry,
+                "Confidence": _clean(row.get("confidence rating")),
+                "Target / Risk": risk,
+                "Action": action_text(row),
+            }
+        )
+    return pd.DataFrame(rows, columns=columns)
+
+
+def _readable_action_ticket_table(tickets: pd.DataFrame) -> pd.DataFrame:
+    """Render a complete but scan-friendly action table without a 30+ column wall."""
+    columns = [
+        "Ticket",
+        "Strategy and explicit legs",
+        "Expiry / DTE",
+        "Entry target / Schwab reference",
+        "Confidence / risk / action",
+    ]
+    if tickets is None or tickets.empty:
+        return pd.DataFrame(columns=columns)
+    rows: list[dict[str, str]] = []
+    for _, row in tickets.iterrows():
+        expected_value = _clean(row.get("expected value"))
+        profit_factor = _clean(row.get("implied profit factor"))
+        blocker = _clean(row.get("blocker before entry"))
+        rows.append(
+            {
+                "Ticket": (
+                    f"#{_clean(row.get('rank'))} **{_clean(row.get('ticker')).upper()}**<br>"
+                    f"{_clean(row.get('display status'))}"
+                ),
+                "Strategy and explicit legs": _clean(row.get("trade legs")),
+                "Expiry / DTE": f"{_clean(row.get('expiry'))}<br>{_clean(row.get('DTE'))} DTE",
+                "Entry target / Schwab reference": (
+                    f"**Limit:** {_clean(row.get('next-session swing entry target'))}<br>"
+                    f"**Mid / natural:** {_clean(row.get('current Schwab mid/natural reference'))}"
+                ),
+                "Confidence / risk / action": (
+                    f"{_clean(row.get('confidence rating'))}<br>"
+                    f"Win {_clean(row.get('expected win rate'))}; {_clean(row.get('confidence evidence'))}<br>"
+                    f"{_clean(row.get('suggested size'))}<br>"
+                    f"Max profit {_clean(row.get('maximum profit'))}; take {_clean(row.get('profit target'))}; "
+                    f"1-contract risk {_clean(row.get('one-contract risk') or row.get('max loss'))}; "
+                    f"R/R {_clean(row.get('reward/risk'))}; EV {expected_value}; PF {profit_factor}<br>"
+                    f"{_clean(row.get('flow/OI evidence'))}<br>"
+                    f"{_clean(row.get('GEX context'))}<br>"
+                    f"{_clean(row.get('liquidity context'))}<br>"
+                    f"{_clean(row.get('portfolio context'))}<br>"
+                    f"{blocker or _clean(row.get('manual review instruction'))}"
+                ),
+            }
+        )
+    return pd.DataFrame(rows, columns=columns)
+
+
+def _readable_ticket_detail_lines(tickets: pd.DataFrame) -> list[str]:
+    """Return vertical ticket cards for actionable and target-only structures."""
+    if tickets is None or tickets.empty:
+        return []
+    lines: list[str] = []
+    for _, row in tickets.iterrows():
+        rank = _clean(row.get("rank"))
+        ticker = _clean(row.get("ticker")).upper()
+        confidence = _clean(row.get("confidence rating"))
+        safety_flags = str(row.get("safety calibration flags") or "").strip()
+        if not safety_flags or safety_flags.lower() in {"nan", "nat"}:
+            safety_flags = "None"
+        details = pd.DataFrame(
+            [
+                {"Field": "Status / confidence", "Value": f"{_clean(row.get('display status'))} — {confidence}"},
+                {"Field": "Strategy and explicit legs", "Value": _clean(row.get("trade legs"))},
+                {"Field": "Expiry / DTE", "Value": f"{_clean(row.get('expiry'))} / {_clean(row.get('DTE'))} DTE"},
+                {"Field": "Entry target", "Value": _clean(row.get("next-session swing entry target"))},
+                {"Field": "Schwab mid / executable natural", "Value": _clean(row.get("current Schwab mid/natural reference"))},
+                {"Field": "Suggested size", "Value": _clean(row.get("suggested size"))},
+                {
+                    "Field": "Maximum profit / take-profit / one-contract risk / reward-risk",
+                    "Value": (
+                        f"{_clean(row.get('maximum profit'))} / {_clean(row.get('profit target'))} / "
+                        f"{_clean(row.get('one-contract risk') or row.get('max loss'))} / "
+                        f"{_clean(row.get('reward/risk'))}"
+                    ),
+                },
+                {
+                    "Field": "Expected win rate / basis",
+                    "Value": f"{_clean(row.get('expected win rate'))} — {_clean(row.get('win-rate basis'))}",
+                },
+                {"Field": "Confidence evidence", "Value": _clean(row.get("confidence evidence"))},
+                {"Field": "Payoff evidence", "Value": _clean(row.get("payoff evidence"))},
+                {
+                    "Field": "Expected avg win / avg loss / EV / PF",
+                    "Value": (
+                        f"{_clean(row.get('expected average win'))} / {_clean(row.get('expected average loss'))} / "
+                        f"{_clean(row.get('expected value'))} / {_clean(row.get('implied profit factor'))}"
+                    ),
+                },
+                {"Field": "Flow / exact-leg OI", "Value": _clean(row.get("flow/OI evidence"))},
+                {"Field": "Schwab chain GEX", "Value": _clean(row.get("GEX context"))},
+                {"Field": "Liquidity", "Value": _clean(row.get("liquidity context"))},
+                {"Field": "Portfolio overlap", "Value": _clean(row.get("portfolio context"))},
+                {
+                    "Field": "Trend / regime",
+                    "Value": f"{_clean(row.get('EOD trend evidence'))}; {_clean(row.get('regime fit'))}",
+                },
+                {"Field": "Catalyst / earnings", "Value": _clean(row.get("catalyst/earnings risk"))},
+                {"Field": "OCO order logic", "Value": _clean(row.get("OCO bracket order logic"))},
+                {"Field": "Stop / invalidation", "Value": _clean(row.get("stop/invalidation"))},
+                {"Field": "Gap-risk plan", "Value": _clean(row.get("gap-risk plan +/-1% open"))},
+                {"Field": "Blocker before entry", "Value": _clean(row.get("blocker before entry"))},
+                {"Field": "Manual pre-order review", "Value": _clean(row.get("manual review instruction"))},
+                {"Field": "Safety flags", "Value": safety_flags},
+            ]
+        )
+        lines.extend(
+            [
+                "",
+                f"### #{rank} {ticker} — {confidence}",
+                "",
+                _markdown_table(details),
+            ]
+        )
+    return lines
+
+
+def _attach_schwab_gex_context(tickets: pd.DataFrame, chain_dir: Path) -> pd.DataFrame:
+    """Attach read-only Schwab chain gamma-times-OI context to ticket rows."""
+    out = tickets.copy()
+    if out.empty:
+        out["GEX context"] = pd.Series(dtype=str)
+        return out
+    try:
+        from uwos.run_mode_a_two_stage import compute_schwab_chain_gex
+    except Exception as exc:  # pragma: no cover - environment-specific import failure
+        out["GEX context"] = f"UNAVAILABLE - Schwab GEX calculator import failed: {exc}"
+        return out
+
+    contexts: dict[str, str] = {}
+    for ticker in out.get("ticker", pd.Series(dtype=str)).fillna("").astype(str).str.upper().unique():
+        if not ticker:
+            continue
+        path = chain_dir / f"{ticker}.json"
+        if not path.exists():
+            contexts[ticker] = (
+                "UNAVAILABLE - same-session Schwab chain GEX snapshot missing; "
+                "recheck before entry"
+            )
+            continue
+        try:
+            result = compute_schwab_chain_gex(json.loads(path.read_text(encoding="utf-8")))
+        except Exception as exc:
+            contexts[ticker] = f"UNAVAILABLE - Schwab chain GEX calculation failed: {exc}"
+            continue
+        if not result:
+            contexts[ticker] = (
+                "UNAVAILABLE - Schwab chain lacked usable gamma/open-interest rows; "
+                "recheck before entry"
+            )
+            continue
+        net_gex = safe_float(result.get("net_gex"))
+        support = safe_float(result.get("gex_support"))
+        resistance = safe_float(result.get("gex_resistance"))
+        net_text = (
+            f"{'+' if net_gex >= 0 else '-'}${abs(net_gex) / 1_000_000:.1f}M"
+            if math.isfinite(net_gex)
+            else "unavailable"
+        )
+        support_text = f"{support:g}" if math.isfinite(support) else "unavailable"
+        resistance_text = f"{resistance:g}" if math.isfinite(resistance) else "unavailable"
+        snapshot = _clean(result.get("gex_time")) or "time unavailable"
+        contexts[ticker] = (
+            f"Schwab live-chain gamma×OI proxy: {_clean(result.get('gex_regime')) or 'unknown'}; "
+            f"net {net_text}; support {support_text}; resistance {resistance_text}; "
+            f"snapshot {snapshot}"
+        )
+    out["GEX context"] = out.get("ticker", pd.Series("", index=out.index)).fillna("").astype(str).str.upper().map(contexts).fillna(
+        "UNAVAILABLE - ticker-level Schwab chain GEX context missing; recheck before entry"
+    )
     return out
 
 
@@ -3395,14 +4166,28 @@ def _compact_decision_candidate_table(scored: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for _, row in scored.loc[eligible].iterrows():
         disposition = _disposition(row, targetable=_targetable(row))
-        payoff_status = _clean(row.get("payoff_calibration_status")) or "unavailable"
-        blocker = (
-            _clean(row.get("payoff_calibration_reason"))
-            if payoff_status in {"VETO", "FAIL", "INSUFFICIENT"}
-            else _clean(row.get("v4_direct_disposition_reason"))
-            or _clean(row.get("trade_status_reason"))
-            or _clean(row.get("decision_reason"))
-        )
+        legacy_payoff_status = _clean(row.get("payoff_calibration_status")) or "unavailable"
+        if _directional_credit_execution_ready(row):
+            family_status = _clean(
+                row.get("directional_credit_family_validation_status")
+            ).upper()
+            payoff_status = f"PASS (execution policy; family {family_status})"
+            legacy_warning = (
+                f" Legacy sparse-route status {legacy_payoff_status} is retained for audit but "
+                "is non-authoritative for this exact execution-policy population."
+                if legacy_payoff_status in {"VETO", "FAIL", "INSUFFICIENT"}
+                else ""
+            )
+            blocker = "No downstream payoff blocker. " + _payoff_evidence_text(row) + legacy_warning
+        else:
+            payoff_status = legacy_payoff_status
+            blocker = (
+                _clean(row.get("payoff_calibration_reason"))
+                if payoff_status in {"VETO", "FAIL", "INSUFFICIENT"}
+                else _clean(row.get("v4_direct_disposition_reason"))
+                or _clean(row.get("trade_status_reason"))
+                or _clean(row.get("decision_reason"))
+            )
         rows.append(
             {
                 "status": _status_label(disposition),
@@ -3675,6 +4460,14 @@ def _v4_target_met(row: pd.Series | dict[str, Any]) -> bool:
 
 
 def _v4_nonnegative_ev(row: pd.Series | dict[str, Any]) -> bool:
+    if _medium_debit_sleeve_eligible(row):
+        expected_value, profit_factor, _, _ = _post_pricing_expectancy(row)
+        return bool(
+            math.isfinite(expected_value)
+            and expected_value > 0
+            and not math.isnan(profit_factor)
+            and profit_factor >= V4_EXECUTE_MIN_PROFIT_FACTOR
+        )
     if _payoff_evidence_ready(row):
         expected_value, profit_factor, _, _ = _post_pricing_expectancy(row)
         return bool(
@@ -3765,14 +4558,35 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
         combination_width = _combination_quote_width_ratio(row)
         if math.isfinite(combination_width):
             quote_width = max(quote_width, combination_width)
+        quote_width_limit = (
+            V4_MEDIUM_DEBIT_MAX_QUOTE_WIDTH
+            if _medium_debit_sleeve_eligible(row)
+            else 0.20
+        )
         ev_ok = _v4_nonnegative_ev(row)
         has_risk = math.isfinite(_max_loss_value(row)) and _max_loss_value(row) > 0 and math.isfinite(_target_profit_value(row))
-        execute_quality_blocker = _execute_quality_blocker(row)
+        execution_quote_blocker = _execution_quote_blocker(row)
+        execution_catalyst_blocker = _execution_catalyst_verification_blocker(row)
+        identification_quality_blocker = _execute_quality_blocker(
+            row,
+            include_entry_price=False,
+            include_execution_quote=False,
+            include_catalyst_verification=False,
+        )
+        preprice_quality_blocker = (
+            execution_quote_blocker
+            or execution_catalyst_blocker
+            or identification_quality_blocker
+        )
+        entry_price_blocker = _expectancy_safe_price_blocker(row)
+        execute_quality_blocker = preprice_quality_blocker or entry_price_blocker
         if _is_debit(row) and not _medium_debit_sleeve_eligible(row):
-            execute_quality_blocker = (
+            identification_quality_blocker = (
                 "debit execution disabled: corrected next-session replay PF is below 1 "
                 "for both Bull Call and Bear Put families"
             )
+            preprice_quality_blocker = identification_quality_blocker
+            execute_quality_blocker = preprice_quality_blocker
         debit_tier = ""
         credit_tier = ""
         if _is_debit(row):
@@ -3799,8 +4613,10 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
             if credit_tier == "reject" and _validated_family_evidence(row):
                 credit_tier = "validated"
             out.at[idx, "credit_policy_tier"] = credit_tier
-        if target_met and ev_ok and has_risk and quote_width <= 0.20 and not execute_quality_blocker:
+        if target_met and ev_ok and has_risk and quote_width <= quote_width_limit and not execute_quality_blocker:
             out.at[idx, "trade_status"] = "Execute"
+            out.at[idx, "decision_eligible"] = True
+            out.at[idx, "decision_tier"] = "v4-validated-execute"
             probationary = _probationary_execution_ready(row)
             out.at[idx, "trade_tier"] = (
                 f"Execute V4 Direct - {debit_tier.title()} Debit" if debit_tier else "Execute V4 Direct"
@@ -3837,19 +4653,91 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
                 + "defined OCO required before order entry."
             )
             out.at[idx, "trade_status_reason"] = _append_note(row.get("trade_status_reason"), out.at[idx, "v4_direct_disposition_reason"])
+        elif target_met and ev_ok and has_risk and not identification_quality_blocker:
+            out.at[idx, "trade_status"] = "Watch"
+            out.at[idx, "trade_tier"] = "approved-work-limit-execution-readiness"
+            out.at[idx, "decision_eligible"] = True
+            out.at[idx, "decision_tier"] = "v4-validated-execution-readiness-wait"
+            if execution_quote_blocker:
+                reason = (
+                    f"{execution_quote_blocker}; the setup remains approved because session state does not "
+                    "control identification. Reprice at the next regular options session and route nothing "
+                    "until a fresh executable quote still meets the target"
+                )
+            elif execution_catalyst_blocker:
+                reason = (
+                    f"{execution_catalyst_blocker}; the setup remains approved, but route nothing until "
+                    "the same-session company-news and earnings check clears"
+                )
+            elif quote_width > quote_width_limit:
+                reason = (
+                    f"combination quote width {quote_width:.1%} exceeds the {quote_width_limit:.0%} execution cap; "
+                    "the setup remains approved, but wait for a tighter executable market"
+                )
+            else:
+                reason = entry_price_blocker or "a fresh executable quote is still required before entry"
+            out.at[idx, "v4_direct_disposition_reason"] = f"V4 Approved Work Limit: target observed, but {reason}."
+            out.at[idx, "trade_status_reason"] = _append_note(
+                row.get("trade_status_reason"), out.at[idx, "v4_direct_disposition_reason"]
+            )
         elif target_met and ev_ok and has_risk:
             out.at[idx, "trade_status"] = "Watch"
             out.at[idx, "trade_tier"] = "Scout"
-            reason = execute_quality_blocker or "quote width or manual confirmation keeps it to 1-lot review"
+            reason = (
+                execution_catalyst_blocker
+                or execution_quote_blocker
+                or identification_quality_blocker
+                or execute_quality_blocker
+                or "manual confirmation keeps it to review"
+            )
             out.at[idx, "v4_direct_disposition_reason"] = f"V4 Scout: target met, but {reason}."
             out.at[idx, "trade_status_reason"] = _append_note(row.get("trade_status_reason"), out.at[idx, "v4_direct_disposition_reason"])
+        elif _medium_debit_sleeve_eligible(row) and has_risk:
+            out.at[idx, "trade_status"] = "Watch"
+            out.at[idx, "trade_tier"] = "debit-model-expectancy-review"
+            out.at[idx, "v4_direct_disposition_reason"] = (
+                "V4 Debit Review: the walk-forward model authorizes this family, but the exact quoted "
+                f"structure does not clear production expectancy. {_post_pricing_expectancy_blocker(row)}"
+            )
+            out.at[idx, "trade_status_reason"] = _append_note(
+                row.get("trade_status_reason"), out.at[idx, "v4_direct_disposition_reason"]
+            )
+        elif (
+            not target_met
+            and ev_ok
+            and has_risk
+            and not identification_quality_blocker
+            and (_payoff_evidence_ready(row) or _medium_debit_sleeve_eligible(row))
+        ):
+            out.at[idx, "trade_status"] = "Watch"
+            out.at[idx, "trade_tier"] = "approved-work-limit-price-target"
+            out.at[idx, "decision_eligible"] = True
+            out.at[idx, "decision_tier"] = "v4-validated-price-wait"
+            out.at[idx, "v4_direct_disposition_reason"] = (
+                "V4 Approved Work Limit: every identification gate cleared, but the current Schwab "
+                f"reference does not meet the validated entry limit. {entry_price_blocker or 'Do not chase.'}"
+                + (
+                    f" The last quote also has an execution-only blocker ({execution_quote_blocker}); "
+                    "reprice during the next regular options session."
+                    if execution_quote_blocker
+                    else ""
+                )
+                + (
+                    f" Execution also waits on {execution_catalyst_blocker}."
+                    if execution_catalyst_blocker
+                    else ""
+                )
+            )
+            out.at[idx, "trade_status_reason"] = _append_note(
+                row.get("trade_status_reason"), out.at[idx, "v4_direct_disposition_reason"]
+            )
         elif _targetable(row) or (ev_ok and has_risk and _entry_target(row) != "fresh Schwab recheck"):
             out.at[idx, "trade_status"] = "Watch"
-            out.at[idx, "trade_tier"] = "work-limit-price-target"
-            blocker_note = f" Execute blocker: {execute_quality_blocker}." if execute_quality_blocker else ""
-            out.at[idx, "v4_direct_disposition_reason"] = (
-                "V4 Work Limit: setup is reviewable, but current Schwab reference does not meet target."
-                + blocker_note
+            out.at[idx, "trade_tier"] = "Scout"
+            reason = preprice_quality_blocker or execute_quality_blocker or _blocker_text(row)
+            out.at[idx, "v4_direct_disposition_reason"] = f"V4 Scout: {reason}."
+            out.at[idx, "trade_status_reason"] = _append_note(
+                row.get("trade_status_reason"), out.at[idx, "v4_direct_disposition_reason"]
             )
         else:
             out.at[idx, "trade_status"] = "Research"
@@ -3881,9 +4769,21 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
         .eq("validated_medium_debit_one_lot")
     ]
     if len(medium_debit_rows) > V4_MEDIUM_DEBIT_MAX_EXECUTES:
+        def medium_debit_preference(item: tuple[Any, pd.Series]) -> tuple[float, float, float, float, float]:
+            _, candidate = item
+            oi_status = _clean(candidate.get("oi_carryover_status")).lower()
+            flow_quality = _clean(candidate.get("flow_quality")).lower()
+            return (
+                2.0 if oi_status == "supportive" else 1.0 if oi_status == "matched_unconfirmed" else 0.0,
+                1.0 if flow_quality == "directional" else 0.0,
+                safe_float(candidate.get("debit_wf_predicted_win_probability"), 0.0),
+                safe_float(candidate.get("debit_wf_expected_value"), -math.inf),
+                -safe_float(candidate.get("quote_width_pct"), math.inf),
+            )
+
         ranked_medium_debits = sorted(
             medium_debit_rows.iterrows(),
-            key=lambda item: _ticket_rank(item[1], "Execute"),
+            key=medium_debit_preference,
             reverse=True,
         )
         for idx, _ in ranked_medium_debits[V4_MEDIUM_DEBIT_MAX_EXECUTES:]:
@@ -3926,7 +4826,6 @@ def apply_v4_professional_dispositions(scored: pd.DataFrame, *, asof: dt.date | 
     return out
 
 
-V4_CREDIT_BOOK_MAX_EXECUTES = 2
 V4_BROAD_INDEX_TICKERS = frozenset({"SPY", "QQQ", "IWM", "DIA", "RSP", "TQQQ", "SQQQ", "UPRO", "SPX", "NDX"})
 V4_SECTOR_ALIASES = {
     "information technology": "technology",
@@ -3961,14 +4860,13 @@ def _v4_credit_risk_bucket(row: pd.Series | dict[str, Any]) -> str:
 def apply_v4_credit_sleeve_cap(
     scored: pd.DataFrame,
     *,
-    max_execute: int = V4_CREDIT_BOOK_MAX_EXECUTES,
+    max_execute: int | None = None,
 ) -> pd.DataFrame:
-    """Allocate a small independent credit book without hiding valid stock setups.
+    """Annotate credit correlation without suppressing valid trade identification.
 
-    The previous global one-credit cap made an ETF the sole Execute whenever it
-    ranked ahead of every other credit.  This keeps the book deliberately small,
-    limits every broad-index or sector/factor bucket to one position, and permits
-    a second credit only when it has validated family-level payoff evidence.
+    ``max_execute`` is retained only for API compatibility and is intentionally
+    ignored. Actual order selection belongs to portfolio/risk review, not an
+    arbitrary daily signal cap.
     """
     if scored is None or scored.empty:
         return scored.copy() if scored is not None else pd.DataFrame()
@@ -3980,7 +4878,7 @@ def apply_v4_credit_sleeve_cap(
 
     execute = out[out["trade_status"].astype(str).eq("Execute")]
     credit_rows = execute[execute.apply(_is_credit, axis=1)]
-    if len(credit_rows) <= 1:
+    if credit_rows.empty:
         return out
     ranked = sorted(
         credit_rows.iterrows(),
@@ -3993,43 +4891,26 @@ def apply_v4_credit_sleeve_cap(
         reverse=True,
     )
 
-    keep: set[Any] = set()
-    occupied_buckets: set[str] = set()
-    for idx, row in ranked:
+    primary_by_bucket: dict[str, str] = {}
+    for rank, (idx, row) in enumerate(ranked, start=1):
         bucket = _v4_credit_risk_bucket(row)
         out.at[idx, "v4_credit_risk_bucket"] = bucket
-        validated = _validated_family_evidence(row)
-        if bucket in occupied_buckets:
-            reason = (
-                f"Credit-book correlation guard: {bucket} already has a higher-ranked Execute; "
-                "do not stack the same broad-index or sector/factor risk."
-            )
-        elif len(keep) >= max(1, max_execute):
-            reason = (
-                f"Credit-book capacity is {max(1, max_execute)} independent Execute positions; "
-                "keep this lower-ranked credit as Work Limit."
-            )
-        elif keep and not validated:
-            reason = (
-                "Additional credit requires validated family payoff evidence; "
-                "keep this unvalidated credit as Work Limit."
-            )
+        ticker = _clean(row.get("ticker")).upper()
+        if bucket not in primary_by_bucket:
+            primary_by_bucket[bucket] = ticker
+            note = f"confidence rank {rank}; primary {bucket} setup"
         else:
-            keep.add(idx)
-            occupied_buckets.add(bucket)
-            out.at[idx, "v4_credit_book_allocation"] = f"Execute allocation: {bucket}"
-            continue
-
-        out.at[idx, "trade_status"] = "Watch"
-        out.at[idx, "trade_tier"] = "work-limit-credit-book-allocation"
-        out.at[idx, "v4_credit_book_allocation"] = f"Work Limit: {bucket}"
-        out.at[idx, "v4_direct_disposition_reason"] = f"V4 Work Limit: {reason}"
-        out.at[idx, "trade_status_reason"] = _append_note(out.at[idx, "trade_status_reason"], reason)
+            note = (
+                f"confidence rank {rank}; correlated {bucket} alternative to {primary_by_bucket[bucket]}; "
+                "remains identified as Execute, but do not fill both without portfolio-risk approval"
+            )
+        out.at[idx, "v4_credit_book_allocation"] = note
+        out.at[idx, "trade_status_reason"] = _append_note(out.at[idx, "trade_status_reason"], note)
     return out
 
 
 def apply_v4_prospective_book_concentration(scored: pd.DataFrame) -> pd.DataFrame:
-    """Keep one immediate Execute per sector and preserve alternatives as Work Limit."""
+    """Annotate same-sector correlation without changing trade eligibility."""
     if scored is None or scored.empty:
         return scored.copy() if scored is not None else pd.DataFrame()
     out = scored.copy()
@@ -4055,26 +4936,23 @@ def apply_v4_prospective_book_concentration(scored: pd.DataFrame) -> pd.DataFram
         out.at[keep_idx, "proposed_book_concentration_action"] = f"primary {sector} Execute"
         for idx, _ in ranked[1:]:
             reason = (
-                f"Proposed-book sector concentration: another higher-ranked {sector} setup is already Execute; "
-                "keep this valid setup as Work Limit rather than stacking correlated same-session risk."
+                f"Same-sector correlation warning: a higher-ranked {sector} setup is also Execute; "
+                "trade remains identified, but simultaneous fills require portfolio-risk approval."
             )
-            out.at[idx, "trade_status"] = "Watch"
-            out.at[idx, "trade_tier"] = "work-limit-sector-concentration"
-            out.at[idx, "v4_direct_disposition_reason"] = f"V4 Work Limit: {reason}"
             out.at[idx, "trade_status_reason"] = _append_note(out.at[idx, "trade_status_reason"], reason)
-            out.at[idx, "proposed_book_concentration_action"] = "downgraded to Work Limit"
+            out.at[idx, "proposed_book_concentration_action"] = "correlated Execute; portfolio review required"
     return out
 
 
 def _status_label(disposition: str) -> str:
     return {
-        "Execute": "🟣 ENTER / Execute",
-        "Swing Target / Work Limit": "🔵 WORK LIMIT / Target Only",
-        "Scout": "🟡 SCOUT / Review",
+        "Execute": "🟣 ENTER NOW",
+        "Swing Target / Work Limit": "🟢 WORK LIMIT",
+        "Scout": "🟡 REVIEW / Scout",
         "Portfolio Repair": "🟠 PORTFOLIO / Repair",
         "Wheel/Cash": "🔵 WHEEL / Cash",
         "Research": "🟡 RESEARCH / Review",
-        "Avoid": "🔴 AVOID",
+        "Avoid": "🔴 REJECT / Avoid",
     }.get(disposition, disposition)
 
 
@@ -4310,6 +5188,14 @@ def write_v4_outputs(
     scored = apply_confidence_calibration(scored, confidence_calibration)
     payoff_summary, payoff_groups, payoff_walk_forward = build_default_payoff_calibration(asof=asof)
     scored = apply_payoff_calibration(scored, payoff_groups)
+    from .daily_shadow_books import apply_live_debit_execution_model
+
+    scored, debit_execution_summary = apply_live_debit_execution_model(
+        scored,
+        root=base_dir.parent,
+        asof=asof,
+        allow_execution_authority=(run_mode == RUN_MODE_V4),
+    )
     symbol_credit_summary, symbol_credit_evidence = build_symbol_credit_calibration(
         base_dir.parent,
         asof,
@@ -4360,6 +5246,7 @@ def write_v4_outputs(
     scored = apply_strategy_registry_gate(scored, strategy_registry)
     scored = apply_v4_credit_sleeve_cap(scored)
     scored = apply_v4_prospective_book_concentration(scored)
+    execution_reachability = build_execution_reachability_audit(scored)
     strategy_generation_coverage = build_strategy_generation_coverage(
         candidates=candidates,
         scored=scored,
@@ -4376,6 +5263,7 @@ def write_v4_outputs(
     board = build_v4_opportunity_board(scored, top_flow=top_flow)
     tickets = build_v4_swing_target_tickets(scored=scored, board=board, regime=regime, top_flow=top_flow)
     tickets, risk_cap_audit = apply_v4_risk_cap(tickets, portfolio)
+    tickets = _attach_schwab_gex_context(tickets, out_dir / "schwab_chains")
     public_board = _public_opportunity_board(board)
     raw_universe = build_raw_universe(top_flow=top_flow, scored=scored, candidates=candidates, portfolio=portfolio)
     dispositions = build_candidate_disposition(candidates=candidates, scored=scored, top_flow=top_flow, tickets=tickets)
@@ -4419,6 +5307,7 @@ def write_v4_outputs(
         "safety_calibration": _artifact_path(out_dir, "safety_calibration", asof),
         "confidence_calibration_predictions": _artifact_path(out_dir, "confidence_calibration_predictions", asof),
         "confidence_calibration_summary": out_dir / f"codexdaily_v4_confidence_calibration_summary_{asof}.json",
+        "execution_reachability": _artifact_path(out_dir, "execution_reachability", asof, "json"),
         "risk_cap_audit": _artifact_path(out_dir, "risk_cap_audit", asof),
         "secondary_liquidity_sweep": _artifact_path(out_dir, "secondary_liquidity_sweep", asof),
         "portfolio_repair": _artifact_path(out_dir, "portfolio_repair", asof),
@@ -4442,6 +5331,10 @@ def write_v4_outputs(
     confidence_predictions.to_csv(paths["confidence_calibration_predictions"], index=False)
     paths["confidence_calibration_summary"].write_text(
         json.dumps(confidence_calibration, indent=2, sort_keys=True, default=str),
+        encoding="utf-8",
+    )
+    paths["execution_reachability"].write_text(
+        json.dumps(execution_reachability, indent=2, sort_keys=True, default=str),
         encoding="utf-8",
     )
     risk_cap_audit.to_csv(paths["risk_cap_audit"], index=False)
@@ -4576,7 +5469,17 @@ def write_v4_outputs(
     target_risk = target_model["max_risk_if_all_target_tickets_fill"]
     fill_adjusted = target_model["realistic_fill_adjusted_target_potential"]
     target_status = _target_status_panel(target_model, counts)
-    compact_tickets = _compact_ticket_table(tickets)
+    execute_tickets = tickets[tickets["final disposition"].eq("Execute")]
+    approved_tickets = tickets[
+        tickets["final disposition"].eq("Swing Target / Work Limit")
+    ]
+    scout_tickets = tickets[tickets["final disposition"].eq("Scout")]
+    compact_execute_tickets = _compact_ticket_table(execute_tickets)
+    compact_approved_tickets = _compact_ticket_table(approved_tickets)
+    compact_scout_tickets = _compact_ticket_table(scout_tickets)
+    high_confidence_ticket_count = int(
+        tickets["confidence rating"].fillna("").astype(str).str.contains("HIGH", case=False).sum()
+    )
     compact_decision_candidates = _compact_decision_candidate_table(scored)
     compact_portfolio_repair = _compact_portfolio_repair_table(portfolio_repair)
     compact_no_miss = _compact_no_miss_table(no_miss)
@@ -4615,7 +5518,9 @@ def write_v4_outputs(
         "walk_forward_credit_calibration": walk_forward_credit_summary,
         "goal_shadow": goal_shadow_summary,
         "execution_evidence_integrity": execution_evidence_integrity,
+        "execution_reachability": execution_reachability,
         "swing_target_ticket_count": int(len(tickets)),
+        "high_confidence_ticket_count": high_confidence_ticket_count,
         "decision_lane_candidate_count": int(len(compact_decision_candidates)),
         "opportunity_counts": counts,
         "lane_coverage": lane_coverage,
@@ -4648,6 +5553,7 @@ def write_v4_outputs(
             "secondary_liquidity_sweep_triggered": secondary_triggered,
         },
         "confidence_calibration": confidence_calibration,
+        "debit_execution_lane": debit_execution_summary,
         "strategy_registry": {
             "family_count": int(len(strategy_registry)),
             "live_builder_count": int(strategy_registry["live_builder"].astype(bool).sum()),
@@ -4684,6 +5590,32 @@ def write_v4_outputs(
     report_lines = [
         f"# {PIPELINE_NAME_V4} Report - {asof}",
         "",
+        "## Action Board",
+        "",
+        "This is the trading screen. **No order was placed.** Recheck the live Schwab quote, earnings, portfolio overlap, and OCO before entry. Multiple bullish put-credit rows are one correlated strategy sleeve, not independent diversification.",
+        "",
+        f"### 🟣 Enter Now / Execute — {len(compact_execute_tickets)}",
+        "",
+        _markdown_table(_readable_action_ticket_table(execute_tickets)),
+        "",
+        "#### Enter Now ticket details",
+        *_readable_ticket_detail_lines(execute_tickets),
+        "",
+        f"### 🟢 Work Limit / Approved — {len(compact_approved_tickets)}",
+        "",
+        "These rows cleared setup-identification gates. Price, quote, or same-session evidence may still block entry; follow each row's stated condition.",
+        "",
+        _markdown_table(_readable_action_ticket_table(approved_tickets)),
+        "",
+        "#### Work Limit ticket details",
+        *_readable_ticket_detail_lines(approved_tickets),
+        "",
+        f"### 🟡 Review / Scout — {len(compact_scout_tickets)}",
+        "",
+        "Review rows are not trades and have no production execution authority.",
+        "",
+        _markdown_table(_readable_action_ticket_table(scout_tickets)),
+        "",
         "## First Screen",
         "",
         "| Item | Value |",
@@ -4695,12 +5627,21 @@ def write_v4_outputs(
         f"| Data quality | {data_quality.get('status', 'unknown')} |",
         f"| Schwab status | {schwab_status} |",
         f"| Symbol-trend credit lane | {symbol_credit_summary.get('status', 'FAIL')}; n={symbol_credit_summary.get('sample_size', 0)}, OOS n={symbol_credit_summary.get('oos_sample_size', 0)}, 10%-stress PF={symbol_credit_summary.get('stress_profit_factor_10pct', 'n/a')} |",
-        f"| Walk-forward credit Medium lane | {walk_forward_credit_summary.get('status', 'FAIL')}; OOS n={walk_forward_credit_summary.get('sample_size', 0)}, wins={walk_forward_credit_summary.get('wins', 0)}, 10%-stress PF={walk_forward_credit_summary.get('stress_profit_factor_10pct', 'n/a')}; High unavailable |",
+        f"| Directional credit Medium lane | {walk_forward_credit_summary.get('directional_credit_lane', {}).get('status', 'FAIL')}; "
+        f"execution-policy n={walk_forward_credit_summary.get('directional_credit_lane', {}).get('execution_sample_size', 0)}, "
+        f"95% floor={safe_float(walk_forward_credit_summary.get('directional_credit_lane', {}).get('execution_wilson_lower_bound'), 0.0):.0%}, "
+        f"10%-stress PF={walk_forward_credit_summary.get('directional_credit_lane', {}).get('execution_stress_profit_factor_10pct', 'n/a')}; High unavailable |",
+        f"| Bull-call debit pilot | {'ACTIVE' if debit_execution_summary.get('execution_authority_enabled') else 'BLOCKED'}; "
+        f"live-guard n={debit_execution_summary.get('live_guard_rows', 0)}; "
+        f"production candidates={debit_execution_summary.get('production_candidate_rows', 0)}; one contract maximum |",
         f"| Portfolio status | {(portfolio or {}).get('status', 'not_checked')} |",
         f"| Market regime | {regime_label} |",
         f"| Swing target ticket count | {len(tickets)} |",
         f"| Decision-lane candidate count | {len(compact_decision_candidates)} |",
         f"| Execute count | {counts['execute']} |",
+        f"| Evidence-authorized rows | {execution_reachability.get('evidence_authorized_rows', 0)} |",
+        f"| Approved rows independent of current fill | {execution_reachability.get('approved_target_rows', 0)} |",
+        f"| Current entry target met before same-ticker selection | {execution_reachability.get('entry_ready_before_same_ticker_selection', 0)} |",
         f"| Scout count | {counts['scout']} |",
         "| Visible signal cap | none; --max-final-trades is ignored by V4 no-miss policy |",
         f"| Aggregate risk budget | {'applied' if target_model['aggregate_risk_budget_applied'] else 'not configured'} |",
@@ -4710,7 +5651,8 @@ def write_v4_outputs(
         f"| Safety calibration | muted families {muted_families}; negative shadow-EV families {negative_shadow_ev}; risk-capped tickets {risk_capped_count} |",
         f"| Confidence calibration | {confidence_calibration.get('status', 'UNAVAILABLE')}; "
         f"walk-forward n={confidence_calibration.get('prediction_count', 0)}; "
-        f"High available={'yes' if confidence_calibration.get('high_confidence_available') else 'no'} |",
+        f"High-label capability={'yes' if confidence_calibration.get('high_confidence_available') else 'no'} |",
+        f"| High-confidence ticket count | {high_confidence_ticket_count}; High requires both a validated payoff route and High-ready confidence evidence; current directional-credit and one-lot debit authorities are Medium-only |",
         f"| Strategy registry | {len(strategy_registry)} families; "
         f"live-builders={int(strategy_registry['live_builder'].astype(bool).sum())}; "
         f"production={strategy_status_counts.get('PRODUCTION', 0)}; "
@@ -4727,6 +5669,27 @@ def write_v4_outputs(
         "## Market Insight For Tomorrow",
         "",
         *_market_insight_lines(regime_context, target_model, tickets),
+        "",
+        "## Execution Reachability Audit",
+        "",
+        "Identification is independent of whether the market is currently open. Enter/Execute still requires a usable regular-session option quote, the validated limit, defined risk, and a fresh pre-order check.",
+        "",
+        _markdown_table(
+            pd.DataFrame(
+                [
+                    {"Gate": "Evidence authorized", "Rows": execution_reachability.get("evidence_authorized_rows", 0)},
+                    {"Gate": "Hard risk clear", "Rows": execution_reachability.get("hard_risk_clear_rows", 0)},
+                    {"Gate": "Non-price quality clear", "Rows": execution_reachability.get("non_price_quality_clear_rows", 0)},
+                    {"Gate": "Approved target", "Rows": execution_reachability.get("approved_target_rows", 0)},
+                    {"Gate": "Current target + quote ready", "Rows": execution_reachability.get("entry_ready_before_same_ticker_selection", 0)},
+                    {"Gate": "Final Execute", "Rows": execution_reachability.get("final_execute_rows", 0)},
+                    {"Gate": "Price wait", "Rows": execution_reachability.get("price_wait_rows", 0)},
+                    {"Gate": "Quote-width wait", "Rows": execution_reachability.get("quote_wait_rows", 0)},
+                ]
+            )
+        ),
+        "",
+        f"Reachability status: **{execution_reachability.get('status', 'UNKNOWN')}** — {execution_reachability.get('reason', '')}",
         "",
         "## Strategy Coverage Registry",
         "",
@@ -4801,14 +5764,10 @@ def write_v4_outputs(
             max_rows=20,
         ),
         "",
-        "## Swing Target Tickets For Tomorrow",
+        "## Strategy And Market Diagnostics",
         "",
-        "Compact view. Full per-ticket gap-risk, OCO, flow/OI, target-methodology, and audit fields are in the swing-target CSV.",
-        "",
-        _markdown_table(compact_tickets, max_rows=24),
+        "Detailed diagnostics follow the Action Board above. Full gap-risk, OCO, flow/OI, target methodology, and audit fields remain in the swing-target CSV.",
     ]
-    if len(tickets) > 24:
-        report_lines.extend(["", f"_Showing top 24 of {len(tickets)} target tickets. Full CSV: {paths['swing_target_tickets']}_"])
     report_lines.extend(
         [
             "",
@@ -5532,15 +6491,54 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
     )
     after = apply_v4_credit_sleeve_cap(after)
     after = apply_v4_prospective_book_concentration(after)
+    execution_reachability = build_execution_reachability_audit(after)
     top_flow = _read_prior_v4_top_flow(prior, asof)
     board = build_v4_opportunity_board(after, top_flow=top_flow)
+    tickets = build_v4_swing_target_tickets(
+        scored=after,
+        board=board,
+        regime=regime,
+        top_flow=top_flow,
+    )
+    tickets, risk_cap_audit = apply_v4_risk_cap(tickets, portfolio)
+    tickets = _attach_schwab_gex_context(tickets, out_dir / "schwab_chains")
     changes = _compare_v4_overlay_changes(before, after)
     scored_path = out_dir / f"codexdaily_v4_overlay_scored_reference_{asof}_{overlay_date}.csv"
     board_path = out_dir / f"codexdaily_v4_overlay_opportunity_board_{asof}_{overlay_date}.csv"
     changes_path = out_dir / f"codexdaily_v4_overlay_changes_{asof}_{overlay_date}.csv"
+    tickets_path = out_dir / f"codexdaily_v4_overlay_swing_target_tickets_{asof}_{overlay_date}.csv"
+    risk_cap_path = out_dir / f"codexdaily_v4_overlay_risk_cap_audit_{asof}_{overlay_date}.csv"
+    reachability_path = out_dir / f"codexdaily_v4_overlay_execution_reachability_{asof}_{overlay_date}.json"
     after.to_csv(scored_path, index=False)
     board.to_csv(board_path, index=False)
     changes.to_csv(changes_path, index=False)
+    tickets.to_csv(tickets_path, index=False)
+    risk_cap_audit.to_csv(risk_cap_path, index=False)
+    reachability_path.write_text(
+        json.dumps(execution_reachability, indent=2, sort_keys=True, default=str),
+        encoding="utf-8",
+    )
+    execute_tickets = tickets[tickets["final disposition"].eq("Execute")]
+    work_limit_tickets = tickets[tickets["final disposition"].eq("Swing Target / Work Limit")]
+    scout_tickets = tickets[tickets["final disposition"].eq("Scout")]
+    high_confidence_ticket_count = int(
+        tickets["confidence rating"].fillna("").astype(str).str.contains("HIGH", case=False).sum()
+    )
+    change_summary = (
+        changes["recommendation_change"].astype(str).value_counts().sort_index().to_dict()
+        if not changes.empty and "recommendation_change" in changes.columns
+        else {}
+    )
+    oi_context_changes = (
+        int(
+            changes["previous_oi_support"].fillna("").astype(str).ne(
+                changes["new_oi_support_or_conflict"].fillna("").astype(str)
+            ).sum()
+        )
+        if not changes.empty
+        and {"previous_oi_support", "new_oi_support_or_conflict"}.issubset(changes.columns)
+        else 0
+    )
     manifest = {
         "pipeline_name": PIPELINE_NAME_V4,
         "pipeline_version": PIPELINE_VERSION_V4,
@@ -5555,6 +6553,7 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
         "portfolio_status": portfolio.get("status", "unknown"),
         "edge_history_namespace": EDGE_HISTORY_NAMESPACE,
         "execution_evidence_integrity": execution_evidence_integrity,
+        "execution_reachability": execution_reachability,
         "payoff_calibration": payoff_summary,
         "symbol_credit_calibration": symbol_credit_summary,
         "walk_forward_credit_calibration": walk_forward_credit_summary,
@@ -5562,12 +6561,20 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
         "repriced_candidate_rows_before_exact_dedupe": repriced_row_count,
         "candidate_rows_after_exact_dedupe": int(len(after)),
         "changed_candidate_rows": int(len(changes)),
-        "execute_rows": int(board["Status"].astype(str).str.contains("Execute", regex=False).sum()) if not board.empty else 0,
-        "scout_rows": int(board["Status"].astype(str).str.contains("scout", case=False, regex=False).sum()) if not board.empty else 0,
+        "oi_context_changed_rows": oi_context_changes,
+        "recommendation_change_counts": change_summary,
+        "swing_target_ticket_count": int(len(tickets)),
+        "high_confidence_ticket_count": high_confidence_ticket_count,
+        "execute_rows": int(len(execute_tickets)),
+        "work_limit_rows": int(len(work_limit_tickets)),
+        "scout_rows": int(len(scout_tickets)),
         "artifacts": {
             "overlay_scored_reference": str(scored_path),
             "overlay_opportunity_board": str(board_path),
             "overlay_changes": str(changes_path),
+            "overlay_swing_target_tickets": str(tickets_path),
+            "overlay_risk_cap_audit": str(risk_cap_path),
+            "overlay_execution_reachability": str(reachability_path),
             **payoff_paths,
             **symbol_credit_paths,
             **walk_forward_credit_paths,
@@ -5578,34 +6585,83 @@ def run_v4_overlay(args: argparse.Namespace) -> dict[str, Any]:
     report_path = out_dir / f"codexdaily_v4_overlay_report_{asof}_{overlay_date}.md"
     manifest["manifest_path"] = str(manifest_path)
     manifest["report_path"] = str(report_path)
+    manifest["artifacts"]["overlay_manifest"] = str(manifest_path)
+    manifest["artifacts"]["overlay_report"] = str(report_path)
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True, default=str), encoding="utf-8")
-    report_path.write_text(
-        "\n".join(
-            [
-                f"# {PIPELINE_NAME_V4} Overlay Report - {asof} with {overlay_date}",
-                "",
-                "## First Screen",
-                "",
-                "| Item | Value |",
-                "|:--|:--|",
-                f"| Pipeline | {PIPELINE_NAME_V4} |",
-                f"| Version | {PIPELINE_VERSION_V4} |",
-                f"| Version lock | locked {pipeline_version_record('v4')['locked_on']}; rollback chain retained through v4.0 |",
-                "| Run mode | Overlay |",
-                f"| Changed candidates | {len(changes)} |",
-                "",
-                "## Opportunity Board",
-                "",
-                _markdown_table(board, max_rows=30),
-                "",
-                "## What Changed",
-                "",
-                _markdown_table(changes, max_rows=50),
-                "",
-            ]
+    report_lines = [
+        f"# {PIPELINE_NAME_V4} Overlay Report - {asof} with {overlay_date}",
+        "",
+        "## Action Board",
+        "",
+        (
+            "This is the updated trading screen after applying the newer chain-OI file and refreshing "
+            "Schwab pricing, portfolio context, and catalysts. **No order was placed.** Requote every "
+            "structure and recheck news, earnings, portfolio overlap, and OCO instructions before entry."
         ),
-        encoding="utf-8",
-    )
+        "",
+        f"### 🟣 Enter Now / Execute — {len(execute_tickets)}",
+        "",
+        _markdown_table(_readable_action_ticket_table(execute_tickets)),
+        "",
+        "#### Enter Now ticket details",
+        *_readable_ticket_detail_lines(execute_tickets),
+        "",
+        f"### 🟢 Work Limit / Approved — {len(work_limit_tickets)}",
+        "",
+        "These rows cleared setup-identification gates. Price, quote, or same-session evidence may still block entry; follow each row's stated condition.",
+        "",
+        _markdown_table(_readable_action_ticket_table(work_limit_tickets)),
+        "",
+        "#### Work Limit ticket details",
+        *_readable_ticket_detail_lines(work_limit_tickets),
+        "",
+        f"### 🟡 Review / Scout — {len(scout_tickets)}",
+        "",
+        "Review rows are not trades and have no production execution authority.",
+        "",
+        _markdown_table(_readable_action_ticket_table(scout_tickets)),
+        "",
+        "## First Screen",
+        "",
+        "| Item | Value |",
+        "|:--|:--|",
+        f"| Pipeline | {PIPELINE_NAME_V4} |",
+        f"| Version | {PIPELINE_VERSION_V4} |",
+        f"| Version lock | locked {pipeline_version_record('v4')['locked_on']}; rollback chain retained through v4.0 |",
+        "| Run mode | Next-session chain-OI overlay with refreshed live validation |",
+        f"| Original analysis date | {asof} |",
+        f"| Overlay evaluation date | {overlay_date} |",
+        f"| Final visible tickets | {len(tickets)} |",
+        f"| Enter Now / Execute | {len(execute_tickets)} |",
+        f"| Work Limit / Approved | {len(work_limit_tickets)} |",
+        f"| Review / Scout | {len(scout_tickets)} |",
+        f"| High-confidence tickets | {high_confidence_ticket_count}; High requires both validated payoff and High-ready confidence evidence |",
+        f"| Changed candidate comparisons | {len(changes)} |",
+        f"| Rows with changed OI context | {oi_context_changes} |",
+        f"| Evidence-authorized rows | {execution_reachability.get('evidence_authorized_rows', 0)} |",
+        f"| Approved rows independent of current fill | {execution_reachability.get('approved_target_rows', 0)} |",
+        f"| Final Execute rows before ticket risk-cap pass | {execution_reachability.get('final_execute_rows', 0)} |",
+        f"| Market-open state affects identification | {execution_reachability.get('market_session_affects_identification', False)} |",
+        "",
+        "## Overlay Change Summary",
+        "",
+        _markdown_table(
+            pd.DataFrame(
+                [{"Change": key, "Candidate comparisons": value} for key, value in change_summary.items()]
+            )
+        ),
+        "",
+        "The detailed opportunity board and candidate-level before/after audit remain CSV artifacts. They are not repeated here as partial trade ideas.",
+        "",
+        "## Detailed Artifacts",
+        "",
+        "| Artifact | Path |",
+        "|:--|:--|",
+    ]
+    for name, path in manifest["artifacts"].items():
+        report_lines.append(f"| {name} | {path} |")
+    report_lines.append("")
+    report_path.write_text("\n".join(report_lines), encoding="utf-8")
     return manifest
 
 

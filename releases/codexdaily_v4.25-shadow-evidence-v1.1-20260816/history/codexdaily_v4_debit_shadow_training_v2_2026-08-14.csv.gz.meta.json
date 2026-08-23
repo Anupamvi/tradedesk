@@ -1,0 +1,11 @@
+{
+  "policy_version": "debit-walkforward-shadow-v2-20260814",
+  "rows": 722,
+  "signal_start": "2026-01-07",
+  "signal_end": "2026-07-24",
+  "exit_end": "2026-08-05",
+  "target": "stress_win_10pct",
+  "source_replay": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v420_next_session_full_replay_2026-08-12/codexuw_replay_detail.csv",
+  "source_technical": "/Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v421_debit_rebuild_2026-08-13/dated_technical_features.csv",
+  "execution_authorized": false
+}

@@ -1,0 +1,57 @@
+{
+  "policy_version": "range-gex-income-shadow-v2-point-in-time-joint-payoff-20260816",
+  "status": "RESEARCH_ONLY",
+  "execution_authorized": false,
+  "reason": "strict point-in-time and independent promotion gates remain mandatory",
+  "cutoff": "2026-05-19",
+  "all_gex_rows": 4195,
+  "point_in_time_gex_rows": 84,
+  "point_in_time_gex_dates": 3,
+  "joined_replay_rows": 48,
+  "vertical": {
+    "policy_version": "range-gex-income-shadow-v1-20260813",
+    "status": "RESEARCH_ONLY",
+    "execution_authorized": false,
+    "reasons": [
+      "total sample below production threshold",
+      "maturity-safe training sample below threshold",
+      "untouched holdout sample below threshold",
+      "positive-month ratio below threshold"
+    ],
+    "positive_month_ratio": 0.0,
+    "production_gates": {
+      "minimum_total_trades": 40,
+      "minimum_train_trades": 20,
+      "minimum_holdout_trades": 15,
+      "minimum_stress_pf": 1.5,
+      "minimum_train_stress_pf": 1.25,
+      "minimum_holdout_stress_pf": 1.25,
+      "minimum_wilson_90": 0.6,
+      "minimum_positive_month_ratio": 0.7,
+      "maximum_drawdown_1x": 603.5
+    }
+  },
+  "condor": {
+    "policy_version": "range-gex-income-shadow-v1-20260813",
+    "status": "RESEARCH_ONLY",
+    "execution_authorized": false,
+    "reasons": [
+      "total sample below production threshold",
+      "maturity-safe training sample below threshold",
+      "untouched holdout sample below threshold",
+      "positive-month ratio below threshold"
+    ],
+    "positive_month_ratio": 0.0,
+    "production_gates": {
+      "minimum_total_trades": 40,
+      "minimum_train_trades": 20,
+      "minimum_holdout_trades": 15,
+      "minimum_stress_pf": 1.5,
+      "minimum_train_stress_pf": 1.25,
+      "minimum_holdout_stress_pf": 1.25,
+      "minimum_wilson_90": 0.6,
+      "minimum_positive_month_ratio": 0.7,
+      "maximum_drawdown_1x": 603.5
+    }
+  }
+}

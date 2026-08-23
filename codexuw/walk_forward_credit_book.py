@@ -18,7 +18,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from .credit_policy import MAX_QUOTE_WIDTH_PCT, MIN_CREDIT_PCT_WIDTH
 from .data import safe_float
-WALK_FORWARD_CREDIT_VERSION = "v3-directional-medium-book-20260812"
+WALK_FORWARD_CREDIT_VERSION = "v4-directional-execution-parity-20260813"
 WALK_FORWARD_CREDIT_ACTIVATION_DATE = dt.date(2026, 8, 11)
 DEFAULT_WALK_FORWARD_CREDIT_HISTORY = (
     Path(__file__).resolve().parent
@@ -46,7 +46,7 @@ MIN_RECENT_DIRECTION_SAMPLE = 30
 MIN_RECENT_DIRECTION_REGIME_SAMPLE = 20
 MIN_RECENT_STRESS_PROFIT_FACTOR = 1.10
 MAX_DAILY_MEDIUM_TARGETS = 2
-DIRECTIONAL_CREDIT_VERSION = "v1-maturity-safe-static-20260812"
+DIRECTIONAL_CREDIT_VERSION = "v2.2-family-subgroup-evidence-20260813"
 DIRECTIONAL_CREDIT_ACTIVATION_DATE = dt.date(2026, 8, 11)
 DEFAULT_DIRECTIONAL_CREDIT_HISTORY = (
     Path(__file__).resolve().parent
@@ -70,8 +70,17 @@ DIRECTIONAL_CREDIT_MIN_TRAIN_PROFIT_FACTOR = 2.00
 DIRECTIONAL_CREDIT_MIN_HOLDOUT_SAMPLE = 20
 DIRECTIONAL_CREDIT_MIN_HOLDOUT_WIN_RATE = 0.75
 DIRECTIONAL_CREDIT_MIN_HOLDOUT_PROFIT_FACTOR = 1.50
+DIRECTIONAL_CREDIT_EXECUTION_MIN_SAMPLE = 50
+DIRECTIONAL_CREDIT_EXECUTION_MIN_TRAIN_SAMPLE = 30
+DIRECTIONAL_CREDIT_FAMILY_MIN_SAMPLE = 15
+DIRECTIONAL_CREDIT_FAMILY_MIN_WILSON = 0.65
+DIRECTIONAL_CREDIT_FAMILY_MIN_PROFIT_FACTOR = 1.50
+DIRECTIONAL_CREDIT_FAMILY_MIN_POSITIVE_MONTHS = 5
+DIRECTIONAL_CREDIT_FAMILY_MIN_HOLDOUT_SAMPLE = 5
+DIRECTIONAL_CREDIT_FAMILY_MIN_HOLDOUT_PROFIT_FACTOR = 1.25
+DIRECTIONAL_CREDIT_FAMILY_MIN_PROBATIONARY_HOLDOUT = 3
 DIRECTIONAL_CREDIT_MAX_HISTORY_AGE_DAYS = 14
-DIRECTIONAL_CREDIT_MAX_DAILY_TARGETS = 1
+DIRECTIONAL_CREDIT_EXECUTION_OI_STATES = frozenset({"supportive", "matched_unconfirmed"})
 
 NUMERIC_FEATURES = (
     "entry_credit_pct_width",
@@ -601,6 +610,7 @@ def build_directional_credit_summary(
     for column in ("asof", "entry_day", "exit_day", "expiry", "next_earnings_dt", "history_observation_end"):
         history[column] = pd.to_datetime(history.get(column), errors="coerce")
     for column in (
+        "pnl_1x",
         "entry_credit",
         "entry_width",
         "entry_credit_pct_width",
@@ -611,6 +621,11 @@ def build_directional_credit_summary(
         "stress_pnl_10pct",
     ):
         history[column] = pd.to_numeric(history.get(column), errors="coerce")
+    # Never trust a packaged stress column.  The frozen V4.21 ledger copied
+    # base P/L into this field, which overstated every stress metric.  Rebuild
+    # both scenarios from the exact one-contract P/L and entry credit.
+    history["stress_pnl_5pct"] = history["pnl_1x"] - history["entry_credit"] * 5.0
+    history["stress_pnl_10pct"] = history["pnl_1x"] - history["entry_credit"] * 10.0
     no_earnings_cross = ~(
         history["next_earnings_dt"].notna()
         & (history["next_earnings_dt"] >= history["entry_day"])
@@ -620,7 +635,7 @@ def build_directional_credit_summary(
         (history.get("direction").eq("Bull Put") & history["combined_flow_bias"].gt(0))
         | (history.get("direction").eq("Bear Call") & history["combined_flow_bias"].lt(0))
     )
-    eligible = history[
+    eligible_population = history[
         _truthy(history.get("exact_evaluated", pd.Series(False, index=history.index)))
         & history.get("direction", pd.Series("", index=history.index)).isin({"Bull Put", "Bear Call"})
         & history.get("flow_quality", pd.Series("", index=history.index)).eq("directional")
@@ -640,12 +655,78 @@ def build_directional_credit_summary(
         & history["entry_dte"].between(DIRECTIONAL_CREDIT_MIN_DTE, DIRECTIONAL_CREDIT_MAX_DTE)
         & history["stress_pnl_10pct"].notna()
     ].copy()
-    eligible = eligible.sort_values(["asof", "ticker"]).drop_duplicates("asof", keep="first")
+    eligible = eligible_population.sort_values(["asof", "ticker"]).drop_duplicates("asof", keep="first")
+    execution_eligible = (
+        eligible_population[
+            eligible_population.get("oi_carryover_status", pd.Series("", index=eligible_population.index)).isin(
+                DIRECTIONAL_CREDIT_EXECUTION_OI_STATES
+            )
+        ]
+        .sort_values(["asof", "ticker"])
+        .drop_duplicates("asof", keep="first")
+    )
     train = eligible[eligible["exit_day"] < DIRECTIONAL_CREDIT_TRAIN_HOLDOUT_CUTOFF].copy()
     holdout = eligible[eligible["asof"] >= DIRECTIONAL_CREDIT_TRAIN_HOLDOUT_CUTOFF].copy()
+    execution_train = execution_eligible[
+        execution_eligible["exit_day"] < DIRECTIONAL_CREDIT_TRAIN_HOLDOUT_CUTOFF
+    ].copy()
+    execution_holdout = execution_eligible[
+        execution_eligible["asof"] >= DIRECTIONAL_CREDIT_TRAIN_HOLDOUT_CUTOFF
+    ].copy()
     overall_metrics = _directional_credit_metrics(eligible)
     train_metrics = _directional_credit_metrics(train)
     holdout_metrics = _directional_credit_metrics(holdout)
+    execution_metrics = _directional_credit_metrics(execution_eligible)
+    execution_train_metrics = _directional_credit_metrics(execution_train)
+    execution_holdout_metrics = _directional_credit_metrics(execution_holdout)
+    execution_family_metrics: dict[str, dict[str, Any]] = {}
+    for family_direction in ("Bull Put", "Bear Call"):
+        family = execution_eligible[execution_eligible["direction"].eq(family_direction)].copy()
+        family_train = family[family["exit_day"] < DIRECTIONAL_CREDIT_TRAIN_HOLDOUT_CUTOFF].copy()
+        family_holdout = family[family["asof"] >= DIRECTIONAL_CREDIT_TRAIN_HOLDOUT_CUTOFF].copy()
+        family_metrics = _directional_credit_metrics(family)
+        family_train_metrics = _directional_credit_metrics(family_train)
+        family_holdout_metrics = _directional_credit_metrics(family_holdout)
+        family_core_pass = bool(
+            family_metrics["sample_size"] >= DIRECTIONAL_CREDIT_FAMILY_MIN_SAMPLE
+            and family_metrics["wilson_lower_bound"] >= DIRECTIONAL_CREDIT_FAMILY_MIN_WILSON
+            and family_metrics["stress_profit_factor_10pct"]
+            >= DIRECTIONAL_CREDIT_FAMILY_MIN_PROFIT_FACTOR
+            and family_metrics["stress_average_pnl_10pct"] > 0
+            and family_metrics["positive_months"] >= DIRECTIONAL_CREDIT_FAMILY_MIN_POSITIVE_MONTHS
+        )
+        if family_holdout_metrics["sample_size"] >= DIRECTIONAL_CREDIT_FAMILY_MIN_HOLDOUT_SAMPLE:
+            family_holdout_pass = bool(
+                family_holdout_metrics["win_rate"] >= DIRECTIONAL_CREDIT_MIN_HOLDOUT_WIN_RATE
+                and family_holdout_metrics["stress_profit_factor_10pct"]
+                >= DIRECTIONAL_CREDIT_FAMILY_MIN_HOLDOUT_PROFIT_FACTOR
+                and family_holdout_metrics["stress_average_pnl_10pct"] > 0
+                and family_holdout_metrics["positive_months"] >= MIN_POSITIVE_HOLDOUT_MONTHS
+            )
+            family_status = "PASS" if family_core_pass and family_holdout_pass else "FAIL"
+        else:
+            probationary_holdout_pass = bool(
+                family_holdout_metrics["sample_size"]
+                >= DIRECTIONAL_CREDIT_FAMILY_MIN_PROBATIONARY_HOLDOUT
+                and family_holdout_metrics["wins"] == family_holdout_metrics["sample_size"]
+                and family_holdout_metrics["stress_average_pnl_10pct"] > 0
+                and family_holdout_metrics["positive_months"] >= MIN_POSITIVE_HOLDOUT_MONTHS
+            )
+            family_status = (
+                "PROBATIONARY"
+                if family_core_pass and probationary_holdout_pass
+                else "FAIL"
+            )
+        execution_family_metrics[family_direction] = {
+            "validation_status": family_status,
+            **family_metrics,
+            **{f"train_{key}": value for key, value in family_train_metrics.items()},
+            **{f"holdout_{key}": value for key, value in family_holdout_metrics.items()},
+        }
+    execution_family_validation_pass = all(
+        metrics.get("validation_status") in {"PASS", "PROBATIONARY"}
+        for metrics in execution_family_metrics.values()
+    )
     observation_end = eligible["history_observation_end"].max()
     if pd.isna(observation_end):
         observation_end = eligible["exit_day"].max()
@@ -664,7 +745,28 @@ def build_directional_credit_summary(
         and holdout_metrics["win_rate"] >= DIRECTIONAL_CREDIT_MIN_HOLDOUT_WIN_RATE
         and holdout_metrics["stress_profit_factor_10pct"] >= DIRECTIONAL_CREDIT_MIN_HOLDOUT_PROFIT_FACTOR
     )
-    status = "PASS" if activated and history_fresh and validation_pass else "FAIL"
+    execution_validation_pass = bool(
+        execution_metrics["sample_size"] >= DIRECTIONAL_CREDIT_EXECUTION_MIN_SAMPLE
+        and execution_metrics["wilson_lower_bound"] >= DIRECTIONAL_CREDIT_MIN_WILSON
+        and execution_metrics["stress_profit_factor_10pct"] >= DIRECTIONAL_CREDIT_MIN_PROFIT_FACTOR
+        and execution_metrics["stress_average_pnl_10pct"] > 0
+        and execution_metrics["positive_months"] >= DIRECTIONAL_CREDIT_MIN_POSITIVE_MONTHS
+        and execution_train_metrics["sample_size"] >= DIRECTIONAL_CREDIT_EXECUTION_MIN_TRAIN_SAMPLE
+        and execution_train_metrics["stress_profit_factor_10pct"] >= DIRECTIONAL_CREDIT_MIN_TRAIN_PROFIT_FACTOR
+        and execution_train_metrics["stress_average_pnl_10pct"] > 0
+        and execution_holdout_metrics["sample_size"] >= MIN_HOLDOUT_TRADES
+        and execution_holdout_metrics["win_rate"] >= DIRECTIONAL_CREDIT_MIN_HOLDOUT_WIN_RATE
+        and execution_holdout_metrics["stress_profit_factor_10pct"]
+        >= DIRECTIONAL_CREDIT_MIN_HOLDOUT_PROFIT_FACTOR
+        and execution_holdout_metrics["stress_average_pnl_10pct"] > 0
+        and execution_holdout_metrics["positive_months"] >= MIN_POSITIVE_HOLDOUT_MONTHS
+        and execution_family_validation_pass
+    )
+    status = (
+        "PASS"
+        if activated and history_fresh and execution_validation_pass
+        else "FAIL"
+    )
     reasons: list[str] = []
     if not activated:
         reasons.append(f"lane activates on {DIRECTIONAL_CREDIT_ACTIVATION_DATE}")
@@ -672,31 +774,50 @@ def build_directional_credit_summary(
         reasons.append(
             f"history age {history_age_days}d exceeds {DIRECTIONAL_CREDIT_MAX_HISTORY_AGE_DAYS}d"
         )
-    if not validation_pass:
-        reasons.append("maturity-safe directional credit acceptance metrics failed")
+    if not execution_validation_pass:
+        reasons.append(
+            "supportive/matched-OI execution subgroup or a directional family failed acceptance metrics"
+        )
+    elif not validation_pass:
+        reasons.append(
+            "supportive/matched-OI execution population passed; broader contrary-OI "
+            "calibration reference failed and remains non-executable"
+        )
     return {
         "version": DIRECTIONAL_CREDIT_VERSION,
         "status": status,
         "reason": "; ".join(reasons) if reasons else "maturity-safe train/holdout evidence passed",
         "model_tier": "Medium" if status == "PASS" else "Unavailable",
+        "reference_validation_status": "PASS" if validation_pass else "FAIL",
+        "execution_validation_status": "PASS" if execution_validation_pass else "FAIL",
+        "execution_family_validation_status": (
+            "PASS" if execution_family_validation_pass else "FAIL"
+        ),
+        "execution_family_metrics": execution_family_metrics,
         "high_confidence_available": False,
         "history_path": str(history_path),
+        "fill_stress_source": "recomputed_from_pnl_1x_and_entry_credit",
         "history_observation_end": str(observation_end.date()) if pd.notna(observation_end) else "",
         "history_age_days": history_age_days,
         "policy": {
             "directions": ["Bull Put", "Bear Call"],
             "flow_quality": "directional",
-            "oi_status_excluded": ["mixed", "no_exact_match"],
+            "calibration_oi_states": ["supportive", "matched_unconfirmed", "contrary"],
+            "execution_oi_states": sorted(DIRECTIONAL_CREDIT_EXECUTION_OI_STATES),
+            "oi_status_excluded_from_execution": ["contrary", "mixed", "no_exact_match"],
             "credit_pct_width": [DIRECTIONAL_CREDIT_MIN_PCT_WIDTH, DIRECTIONAL_CREDIT_MAX_PCT_WIDTH],
             "maximum_quote_width_pct": DIRECTIONAL_CREDIT_MAX_QUOTE_WIDTH,
             "maximum_expected_move_ratio": DIRECTIONAL_CREDIT_MAX_EXPECTED_MOVE_RATIO,
             "dte": [DIRECTIONAL_CREDIT_MIN_DTE, DIRECTIONAL_CREDIT_MAX_DTE],
             "earnings_crossing": False,
-            "maximum_daily_targets": DIRECTIONAL_CREDIT_MAX_DAILY_TARGETS,
+            "live_authorization_cap": None,
         },
         **overall_metrics,
         **{f"train_{key}": value for key, value in train_metrics.items()},
         **{f"holdout_{key}": value for key, value in holdout_metrics.items()},
+        **{f"execution_{key}": value for key, value in execution_metrics.items()},
+        **{f"execution_train_{key}": value for key, value in execution_train_metrics.items()},
+        **{f"execution_holdout_{key}": value for key, value in execution_holdout_metrics.items()},
     }
 
 
@@ -709,14 +830,18 @@ def _directional_credit_live_guard(
     direction = str(row.get("direction") or "")
     if direction not in {"Bull Put", "Bear Call"}:
         return False, "not_directional_credit_family"
+    family_evidence = summary.get("execution_family_metrics", {}).get(direction, {})
+    family_status = str(family_evidence.get("validation_status") or "FAIL").upper()
+    if family_status not in {"PASS", "PROBATIONARY"}:
+        return False, f"directional_family_evidence_{family_status.lower()}"
     if str(row.get("flow_quality") or "").strip().lower() != "directional":
         return False, "contract_flow_not_directional"
     flow = safe_float(row.get("combined_flow_bias"), 0.0)
     if (direction == "Bull Put" and flow <= 0) or (direction == "Bear Call" and flow >= 0):
         return False, "aggregate_flow_not_aligned"
     oi_status = str(row.get("oi_carryover_status") or "").strip().lower()
-    if oi_status not in {"supportive", "matched_unconfirmed", "contrary"}:
-        return False, "oi_mixed_or_unresolved"
+    if oi_status not in DIRECTIONAL_CREDIT_EXECUTION_OI_STATES:
+        return False, "oi_not_supportive_or_matched"
     credit_pct = safe_float(row.get("credit_pct_width"), safe_float(row.get("entry_credit_pct_width")))
     if not DIRECTIONAL_CREDIT_MIN_PCT_WIDTH <= credit_pct <= DIRECTIONAL_CREDIT_MAX_PCT_WIDTH:
         return False, "credit_outside_directional_book_band"
@@ -751,9 +876,11 @@ def _directional_credit_live_guard(
         if math.isfinite(mid_credit) and not 0 < mid_credit < width:
             return False, "invalid_mid_credit"
     return True, (
-        f"directional credit evidence n={summary.get('sample_size', 0)}, "
-        f"WR={safe_float(summary.get('win_rate')):.1%}, "
-        f"PF={safe_float(summary.get('stress_profit_factor_10pct')):.2f}"
+        f"execution-policy n={summary.get('execution_sample_size', 0)}, "
+        f"Wilson={safe_float(summary.get('execution_wilson_lower_bound')):.1%}, "
+        f"PF={safe_float(summary.get('execution_stress_profit_factor_10pct')):.2f}; "
+        f"{direction} family {family_status}, n={family_evidence.get('sample_size', 0)}, "
+        f"PF={safe_float(family_evidence.get('stress_profit_factor_10pct')):.2f}"
     )
 
 
@@ -887,7 +1014,8 @@ def build_walk_forward_credit_model(
         "minimum_live_win_probability": MIN_WIN_PROBABILITY,
         "minimum_predicted_stress_return": MIN_PREDICTED_STRESS_ROR,
         "maximum_validated_dte": MAX_MODEL_DTE,
-        "maximum_daily_medium_targets": MAX_DAILY_MEDIUM_TARGETS,
+        "historical_validation_selection_max_per_day": MAX_DAILY_MEDIUM_TARGETS,
+        "live_authorization_cap": None,
         **metrics,
         **{f"holdout_{key}": value for key, value in holdout_metrics.items()},
         "directional_credit_lane": directional_summary,
@@ -998,6 +1126,54 @@ def apply_walk_forward_credit_model(
         "directional_credit_holdout_stress_profit_factor_10pct": summary.get(
             "directional_credit_lane", {}
         ).get("holdout_stress_profit_factor_10pct", math.nan),
+        "directional_credit_reference_validation_status": summary.get(
+            "directional_credit_lane", {}
+        ).get("reference_validation_status", "FAIL"),
+        "directional_credit_execution_validation_status": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_validation_status", "FAIL"),
+        "directional_credit_execution_sample_size": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_sample_size", 0),
+        "directional_credit_execution_wilson_lower_bound": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_wilson_lower_bound", math.nan),
+        "directional_credit_execution_stress_profit_factor_10pct": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_stress_profit_factor_10pct", math.nan),
+        "directional_credit_execution_stress_average_pnl_10pct": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_stress_average_pnl_10pct", math.nan),
+        "directional_credit_execution_stress_average_return_on_risk_10pct": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_stress_average_return_on_risk_10pct", math.nan),
+        "directional_credit_execution_stress_average_win_risk_fraction_10pct": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_stress_average_win_risk_fraction_10pct", math.nan),
+        "directional_credit_execution_stress_average_loss_risk_fraction_10pct": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_stress_average_loss_risk_fraction_10pct", math.nan),
+        "directional_credit_execution_positive_months": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_positive_months", 0),
+        "directional_credit_execution_holdout_sample_size": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_holdout_sample_size", 0),
+        "directional_credit_execution_holdout_win_rate": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_holdout_win_rate", math.nan),
+        "directional_credit_execution_holdout_stress_profit_factor_10pct": summary.get(
+            "directional_credit_lane", {}
+        ).get("execution_holdout_stress_profit_factor_10pct", math.nan),
+        "directional_credit_family_validation_status": "FAIL",
+        "directional_credit_family_sample_size": 0,
+        "directional_credit_family_wilson_lower_bound": math.nan,
+        "directional_credit_family_stress_profit_factor_10pct": math.nan,
+        "directional_credit_family_stress_average_return_on_risk_10pct": math.nan,
+        "directional_credit_family_stress_average_win_risk_fraction_10pct": math.nan,
+        "directional_credit_family_stress_average_loss_risk_fraction_10pct": math.nan,
+        "directional_credit_family_holdout_sample_size": 0,
+        "directional_credit_family_holdout_stress_profit_factor_10pct": math.nan,
     }
     for column, value in defaults.items():
         out[column] = value
@@ -1041,61 +1217,59 @@ def apply_walk_forward_credit_model(
                 f"win probability {win_probability:.1%}; predicted 10%-stress return {prediction:.2%}; {reason}"
             )
     if directional_available:
-        conservative_confidence = safe_float(directional_summary.get("wilson_lower_bound"), 0.0) * 100.0
+        conservative_confidence = (
+            safe_float(directional_summary.get("execution_wilson_lower_bound"), 0.0) * 100.0
+        )
         for index in out.index[credit_mask]:
+            direction = str(out.at[index, "direction"] or "")
+            family_evidence = directional_summary.get("execution_family_metrics", {}).get(
+                direction, {}
+            )
+            out.at[index, "directional_credit_family_validation_status"] = (
+                family_evidence.get("validation_status", "FAIL")
+            )
+            out.at[index, "directional_credit_family_sample_size"] = family_evidence.get(
+                "sample_size", 0
+            )
+            out.at[index, "directional_credit_family_wilson_lower_bound"] = family_evidence.get(
+                "wilson_lower_bound", math.nan
+            )
+            out.at[index, "directional_credit_family_stress_profit_factor_10pct"] = (
+                family_evidence.get("stress_profit_factor_10pct", math.nan)
+            )
+            out.at[index, "directional_credit_family_stress_average_return_on_risk_10pct"] = (
+                family_evidence.get("stress_average_return_on_risk_10pct", math.nan)
+            )
+            out.at[index, "directional_credit_family_stress_average_win_risk_fraction_10pct"] = (
+                family_evidence.get("stress_average_win_risk_fraction_10pct", math.nan)
+            )
+            out.at[index, "directional_credit_family_stress_average_loss_risk_fraction_10pct"] = (
+                family_evidence.get("stress_average_loss_risk_fraction_10pct", math.nan)
+            )
+            out.at[index, "directional_credit_family_holdout_sample_size"] = (
+                family_evidence.get("holdout_sample_size", 0)
+            )
+            out.at[index, "directional_credit_family_holdout_stress_profit_factor_10pct"] = (
+                family_evidence.get("holdout_stress_profit_factor_10pct", math.nan)
+            )
             passed, reason = _directional_credit_live_guard(out.loc[index], directional_summary)
             out.at[index, "directional_credit_qualified"] = passed
             out.at[index, "directional_credit_reason"] = reason
             if passed and not bool(out.at[index, "walk_forward_credit_model_qualified"]):
                 out.at[index, "walk_forward_credit_qualified"] = True
-                out.at[index, "walk_forward_credit_confidence_score"] = conservative_confidence
+                family_floor = safe_float(family_evidence.get("wilson_lower_bound"), 0.0)
+                out.at[index, "walk_forward_credit_confidence_score"] = (
+                    min(conservative_confidence / 100.0, family_floor) * 100.0
+                )
                 out.at[index, "walk_forward_credit_reason"] = reason + "; Medium directional-credit lane"
     qualified = out[_truthy(out["walk_forward_credit_qualified"])].copy()
     if not qualified.empty:
-        qualified["_model_qualified"] = _truthy(qualified["walk_forward_credit_model_qualified"])
-        qualified["_model_rank"] = (
-            pd.to_numeric(qualified["walk_forward_credit_win_probability"], errors="coerce").fillna(0)
-            * pd.to_numeric(qualified["walk_forward_credit_prediction"], errors="coerce").clip(lower=0).fillna(0)
-        )
-        qualified["_directional_rank"] = qualified.apply(_directional_credit_rank, axis=1)
-        qualified = qualified.sort_values(
-            ["_model_qualified", "_model_rank", "_directional_rank", "quote_width_pct"],
-            ascending=[False, False, False, True],
-        ).drop_duplicates(["ticker", "direction"])
-        selected: list[int] = []
-        used_sectors: set[str] = set()
-        strict_candidates = qualified[qualified["_model_qualified"]]
-        for index, row in strict_candidates.iterrows():
-            sector = str(row.get("sector") or "Unknown")
-            if sector in used_sectors:
-                continue
-            selected.append(index)
-            used_sectors.add(sector)
-            if len(selected) >= MAX_DAILY_MEDIUM_TARGETS:
-                break
-        alternate_candidates = qualified[
-            _truthy(qualified["directional_credit_qualified"])
-            & ~qualified.index.isin(selected)
-        ].sort_values(["_directional_rank", "quote_width_pct"], ascending=[False, True])
-        directional_selected = 0
-        for index, row in alternate_candidates.iterrows():
-            if len(selected) >= MAX_DAILY_MEDIUM_TARGETS:
-                break
-            sector = str(row.get("sector") or "Unknown")
-            if sector in used_sectors:
-                continue
-            selected.append(index)
-            used_sectors.add(sector)
-            directional_selected += 1
-            if directional_selected >= DIRECTIONAL_CREDIT_MAX_DAILY_TARGETS:
-                break
-        out.loc[selected, "walk_forward_credit_policy_pass"] = True
-        out.loc[selected, "walk_forward_credit_book_selected"] = True
-        capacity_skipped = qualified.index.difference(selected)
-        out.loc[capacity_skipped, "walk_forward_credit_reason"] = (
-            out.loc[capacity_skipped, "walk_forward_credit_reason"].astype(str)
-            + "; qualified but not selected by two-name distinct-sector capacity"
-        )
+        # Evidence qualification and portfolio prioritization are different
+        # questions.  Every row that passes the frozen live policy remains
+        # execution-authorized; downstream same-ticker, risk, and portfolio
+        # checks may still constrain actual orders.
+        out.loc[qualified.index, "walk_forward_credit_policy_pass"] = True
+        out.loc[qualified.index, "walk_forward_credit_book_selected"] = True
     return out
 
 
