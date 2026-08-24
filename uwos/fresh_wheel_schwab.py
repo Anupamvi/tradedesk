@@ -12,12 +12,15 @@ import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Sequence
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 from uwos.wheel_vendor.schwab_auth import SchwabAuthConfig, SchwabLiveDataService
 
-PIPELINE_VERSION = "fresh-wheel-v1.2-calendar-seasonality-20260819"
+PIPELINE_VERSION = "fresh-wheel-v1.3.1-premarket-leaps-accounting-20260824"
+
+EASTERN_TIME = ZoneInfo("America/New_York")
 
 REPLAY_BLOCKED_CSP: dict[str, str] = {
     "ORCL": "2026 YTD replay tail loss: 5 scored CSPs, 40% hit rate, -$4,224.50 total PnL",
@@ -1141,14 +1144,40 @@ def iter_option_contracts(
                 )
 
 
-def liquid_contracts(contracts: Iterable[OptionContract], config: WheelConfig) -> list[OptionContract]:
+def _now_eastern() -> dt.datetime:
+    return dt.datetime.now(EASTERN_TIME)
+
+
+def should_use_premarket_volume_fallback(
+    contracts: Sequence[OptionContract],
+    now: dt.datetime | None = None,
+) -> bool:
+    """Detect Schwab's pre-open reset where every quoted contract has zero session volume."""
+
+    current = now or _now_eastern()
+    if current.tzinfo is not None:
+        current = current.astimezone(EASTERN_TIME)
+    if current.weekday() >= 5 or not (dt.time(4, 0) <= current.time() < dt.time(9, 30)):
+        return False
+    quoted = [contract for contract in contracts if contract.bid > 0 and contract.ask > 0 and contract.mid > 0]
+    return len(quoted) >= 10 and all(contract.volume == 0 for contract in quoted)
+
+
+def liquid_contracts(
+    contracts: Iterable[OptionContract],
+    config: WheelConfig,
+    *,
+    allow_zero_session_volume: bool = False,
+) -> list[OptionContract]:
     out = []
     for contract in contracts:
         if contract.mid < config.min_mid:
             continue
         if contract.open_interest < config.min_option_open_interest:
             continue
-        if contract.volume < config.min_option_volume:
+        if contract.volume < config.min_option_volume and not (
+            allow_zero_session_volume and contract.volume == 0
+        ):
             continue
         if contract.spread_pct > config.max_spread_pct:
             continue
@@ -1537,8 +1566,23 @@ def analyze_symbol(
             blockers=chain_warnings + ["Schwab chain returned no usable underlying price"],
         ), chain
 
-    calls = liquid_contracts(iter_option_contracts(chain, "C", live_date, config.risk_free_rate, spot), config)
-    puts = liquid_contracts(iter_option_contracts(chain, "P", live_date, config.risk_free_rate, spot), config)
+    raw_calls = list(iter_option_contracts(chain, "C", live_date, config.risk_free_rate, spot))
+    raw_puts = list(iter_option_contracts(chain, "P", live_date, config.risk_free_rate, spot))
+    premarket_volume_fallback = should_use_premarket_volume_fallback([*raw_calls, *raw_puts])
+    if premarket_volume_fallback:
+        chain_warnings.append(
+            "Schwab premarket volume reset detected; zero session volume accepted only with bid/ask, open-interest, and spread gates; reprice after the opening bell"
+        )
+    calls = liquid_contracts(
+        raw_calls,
+        config,
+        allow_zero_session_volume=premarket_volume_fallback,
+    )
+    puts = liquid_contracts(
+        raw_puts,
+        config,
+        allow_zero_session_volume=premarket_volume_fallback,
+    )
     days_to_earnings = (row.next_earnings - live_date).days if row.next_earnings else None
     if days_to_earnings is not None and 0 <= days_to_earnings <= config.avoid_earnings_days:
         return WheelAction(
@@ -1681,6 +1725,7 @@ def analyze_symbol(
                     + [
                         "LEAPS-covered strangle: short call is covered by long call; put is cash-secured",
                         f"long-call debit {long_call_debit:.2f}, short-call credit {short_call_credit:.2f}",
+                        f"package net debit {max(long_call_debit - short_call_credit - limit_for_sell(csp), 0.0):.2f} before put collateral",
                     ],
                     blockers=csp_blockers,
                 ), chain
@@ -2040,6 +2085,21 @@ def _credit_per_contract(action: WheelAction) -> float:
     return action.limit_price * 100.0
 
 
+def _capital_required(action: WheelAction) -> float:
+    if action.action == "OPEN_LEAPS_COVERED_STRANGLE":
+        return max(action.cash_required, 0.0) + max(action.pmcc_debit, 0.0)
+    return max(action.cash_required, action.pmcc_debit)
+
+
+def _leaps_package_net_debit(action: WheelAction) -> float:
+    return max(
+        (action.long_limit_price or 0.0)
+        - (action.limit_price or 0.0)
+        - (action.paired_limit_price or 0.0),
+        0.0,
+    )
+
+
 def _is_tradeable(action: WheelAction) -> bool:
     return action.action in {
         "OPEN_CSP",
@@ -2216,7 +2276,7 @@ def _action_limit(action: WheelAction) -> str:
     if action.action == "SELL_COVERED_STRANGLE":
         return f"${action.limit_price + (action.paired_limit_price or 0.0):.2f}+ net credit"
     if action.action == "OPEN_LEAPS_COVERED_STRANGLE":
-        return f"${action.limit_price + (action.paired_limit_price or 0.0):.2f}+ credit"
+        return f"${_leaps_package_net_debit(action):.2f} max net debit"
     return f"${action.limit_price:.2f}+ credit"
 
 
@@ -2326,6 +2386,8 @@ def write_outputs(
                 "paired_limit_price",
                 "limit_price",
                 "cash_required",
+                "debit_required",
+                "total_capital_required",
                 "estimated_credit",
                 "premium_yield_pct",
                 "notes",
@@ -2363,6 +2425,8 @@ def write_outputs(
                     "paired_limit_price": action.paired_limit_price if action.paired_limit_price is not None else "",
                     "limit_price": action.limit_price if action.limit_price is not None else "",
                     "cash_required": f"{action.cash_required:.2f}",
+                    "debit_required": f"{action.pmcc_debit:.2f}",
+                    "total_capital_required": f"{_capital_required(action):.2f}",
                     "estimated_credit": f"{action.estimated_credit:.2f}",
                     "premium_yield_pct": f"{_premium_yield_pct(action):.2f}",
                     "notes": "; ".join(action.reasons),
@@ -2479,7 +2543,7 @@ def write_outputs(
     for action in tradeable + alerts + watch:
         qty = str(action.contracts) if action.contracts > 0 else "-"
         credit = f"${action.estimated_credit:,.0f}" if _is_tradeable(action) and action.estimated_credit > 0 else "-"
-        capital = max(action.cash_required, action.pmcc_debit) if _is_tradeable(action) else 0.0
+        capital = _capital_required(action) if _is_tradeable(action) else 0.0
         cash_or_debit = f"${capital:,.0f}" if capital > 0 else "-"
         lines.append(
             f"| {_status_icon(action)} | {_md_cell(action.ticker)} | {_md_cell(_action_type(action))} | "
@@ -2529,7 +2593,7 @@ def write_outputs(
             lines.append(
                 f"| {_entry_tier(action)} | {action.ticker} | {_action_ticket(action, include_trigger=False)} | {_action_expiry(action)} | "
                 f"{_action_strike(action)} | {action.contracts} | {_action_limit(action)} | "
-                f"${action.estimated_credit:,.0f} | ${max(action.cash_required, action.pmcc_debit):,.0f} | {_premium_yield_pct(action):.2f}% | {action.confidence:.1f} |"
+                f"${action.estimated_credit:,.0f} | ${_capital_required(action):,.0f} | {_premium_yield_pct(action):.2f}% | {action.confidence:.1f} |"
             )
     else:
         lines.append("No immediate Schwab-backed orders passed all gates.")
@@ -2585,7 +2649,9 @@ def write_outputs(
     ]
     if tradeable:
         for number, action in enumerate(tradeable, start=1):
-            capital = max(action.cash_required, action.pmcc_debit)
+            capital = _capital_required(action)
+            credit_label = "Gross short credit" if action.action == "OPEN_LEAPS_COVERED_STRANGLE" else "Estimated credit"
+            capital_label = "Total cash plus debit reserved" if action.action == "OPEN_LEAPS_COVERED_STRANGLE" else "Cash/debit reserved"
             ticket_lines.extend(
                 [
                     f"### {number}. {action.ticker} — {_entry_tier(action)}",
@@ -2594,8 +2660,8 @@ def write_outputs(
                     f"- Quantity: {action.contracts}",
                     f"- Entry: {_action_ticket(action, include_trigger=False)}",
                     f"- Limit: {_action_limit(action)}",
-                    f"- Estimated credit: ${action.estimated_credit:,.0f}",
-                    f"- Cash/debit reserved: ${capital:,.0f}",
+                    f"- {credit_label}: ${action.estimated_credit:,.0f}",
+                    f"- {capital_label}: ${capital:,.0f}",
                     f"- Premium yield: {_premium_yield_pct(action):.2f}%",
                     f"- Confidence: {action.confidence:.1f}",
                     f"- Context: {_action_context(action)}",

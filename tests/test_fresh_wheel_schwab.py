@@ -20,9 +20,11 @@ from uwos.fresh_wheel_schwab import (
     find_export,
     iter_option_contracts,
     latest_usable_uw_folder,
+    liquid_contracts,
     load_chain_oi_overlay,
     same_calendar_window_returns,
     sanitize_error,
+    should_use_premarket_volume_fallback,
     summarize_calendar_seasonality,
     write_outputs,
 )
@@ -222,6 +224,56 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertEqual(contracts[0].expiry, dt.date(2026, 6, 18))
         self.assertAlmostEqual(contracts[0].mid, 5.2)
 
+    def test_premarket_zero_volume_fallback_keeps_strict_quote_and_oi_gates(self) -> None:
+        contract = list(iter_option_contracts(_chain(), "P", dt.date(2026, 4, 30), 0.04, 280.0))[0]
+        contract.volume = 0
+        contracts = [contract] * 10
+        config = WheelConfig(min_option_volume=5)
+
+        self.assertTrue(
+            should_use_premarket_volume_fallback(
+                contracts,
+                now=dt.datetime(2026, 8, 24, 9, 15, tzinfo=dt.timezone(dt.timedelta(hours=-4))),
+            )
+        )
+        self.assertFalse(
+            should_use_premarket_volume_fallback(
+                contracts,
+                now=dt.datetime(2026, 8, 24, 10, 0, tzinfo=dt.timezone(dt.timedelta(hours=-4))),
+            )
+        )
+        self.assertEqual(liquid_contracts(contracts, config), [])
+        self.assertEqual(
+            liquid_contracts(contracts, config, allow_zero_session_volume=True),
+            contracts,
+        )
+
+    def test_analyze_symbol_marks_premarket_zero_volume_fallback_for_reprice(self) -> None:
+        chain = _chain()
+        for side in ("putExpDateMap", "callExpDateMap"):
+            for strike_map in chain[side].values():
+                for contracts in strike_map.values():
+                    for contract in contracts:
+                        contract["totalVolume"] = 0
+
+        with (
+            patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)),
+            patch("uwos.fresh_wheel_schwab.should_use_premarket_volume_fallback", return_value=True),
+        ):
+            action, _ = analyze_symbol(
+                row=_universe_row(),
+                service=FakeSchwabService(chain),
+                quote={},
+                position=None,
+                asof=dt.date(2026, 4, 30),
+                config=WheelConfig(account_size=250_000, min_option_volume=5),
+                out_dir=Path(tempfile.gettempdir()),
+            )
+
+        self.assertIn(action.action, {"OPEN_CSP", "SET_CSP_ALERT"})
+        self.assertIn("premarket volume reset", "; ".join(action.reasons).lower())
+        self.assertIn("reprice after the opening bell", "; ".join(action.reasons).lower())
+
     def test_analyze_symbol_uses_schwab_chain_for_csp_alert_or_entry(self) -> None:
         service = FakeSchwabService()
         with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
@@ -345,6 +397,53 @@ class FreshWheelSchwabTests(unittest.TestCase):
         self.assertEqual(action.long_option_symbol, "AMZN  261120C00220000")
         self.assertEqual(action.option_symbol, "AMZN  260618C00310000")
         self.assertEqual(action.paired_option_symbol, "AMZN  260618P00255000")
+
+    def test_leaps_covered_strangle_reports_net_debit_and_combined_capital(self) -> None:
+        chain = _chain()
+        chain["callExpDateMap"]["2026-06-18:49"]["310.0"][0].update(
+            {"bid": 7.0, "ask": 7.4, "mark": 7.2, "delta": 0.20}
+        )
+        chain["callExpDateMap"]["2026-11-20:204"]["220.0"][0].update(
+            {"bid": 65.0, "ask": 65.2, "mark": 65.1, "delta": 0.78}
+        )
+        config = WheelConfig(account_size=250_000, min_option_volume=1)
+
+        with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
+            action, _ = analyze_symbol(
+                row=_universe_row(flow_score=70.0, next_earnings=dt.date(2027, 1, 30)),
+                service=FakeSchwabService(chain),
+                quote={},
+                position=None,
+                asof=dt.date(2026, 4, 30),
+                config=config,
+                out_dir=Path(tempfile.gettempdir()),
+            )
+            allocate_contracts([action], config)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            outputs = write_outputs(
+                Path(tmpdir),
+                dt.date(2026, 4, 30),
+                Path("/tmp/2026-04-30"),
+                [_universe_row()],
+                [action],
+                "skipped",
+                {},
+                config,
+            )
+            report = outputs["report"].read_text(encoding="utf-8")
+            tickets = outputs["tickets"].read_text(encoding="utf-8")
+            with outputs["orders_csv"].open(newline="", encoding="utf-8") as handle:
+                order = next(csv.DictReader(handle))
+
+        self.assertEqual(action.contracts, 1)
+        self.assertEqual(action.cash_required, 25_500.0)
+        self.assertEqual(action.pmcc_debit, 6_520.0)
+        self.assertIn("$53.20 max net debit", report)
+        self.assertIn("$32,020", report)
+        self.assertIn("Gross short credit: $1,200", tickets)
+        self.assertEqual(order["debit_required"], "6520.00")
+        self.assertEqual(order["total_capital_required"], "32020.00")
 
     def test_allocate_contracts_respects_account_size(self) -> None:
         with patch("uwos.fresh_wheel_schwab._today", return_value=dt.date(2026, 5, 3)):
@@ -586,10 +685,10 @@ class FreshWheelSchwabTests(unittest.TestCase):
             tickets = outputs["tickets"].read_text(encoding="utf-8")
 
         self.assertIn('"live_source": "Schwab API"', manifest)
-        self.assertIn('"pipeline_version": "fresh-wheel-v1.2-calendar-seasonality-20260819"', manifest)
+        self.assertIn('"pipeline_version": "fresh-wheel-v1.3.1-premarket-leaps-accounting-20260824"', manifest)
         self.assertIn('"yahoo_yfinance_used": false', manifest)
         self.assertIn('"calendar_seasonality"', manifest)
-        self.assertIn("fresh-wheel-v1.2-calendar-seasonality-20260819", report)
+        self.assertIn("fresh-wheel-v1.3.1-premarket-leaps-accounting-20260824", report)
         self.assertIn("## Calendar Seasonality", report)
         self.assertIn("## Weekly Focus", report)
         self.assertIn("## Action Board", report)
