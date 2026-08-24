@@ -359,6 +359,16 @@ def run_shadow_lane(
     run_date: str,
     top_n: int = 5,
 ) -> Dict[str, Any]:
+    if (out_dir / "current_option_setups.csv").exists():
+        return {
+            "status": "RETIRED_BY_PRICE_FIRST_REBUILD",
+            "reason": (
+                "The legacy fitted-EV lane is not compatible with the V2.20 "
+                "price-first evidence contract. Use managed_selection_audit.csv "
+                "and its matched random-control gate."
+            ),
+            "execution_eligible": False,
+        }
     board_path = out_dir / "decision_board.csv"
     if not board_path.exists():
         return {"status": "SKIPPED_NO_DECISION_BOARD"}
@@ -402,7 +412,11 @@ def run_shadow_lane(
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(prog="python3 -m uwos.pattern_analysis_v2.shadow_lane")
     parser.add_argument("--out-dir", required=True, help="Pattern Analysis V2 run output directory.")
-    parser.add_argument("--history", default=None, help="validation_details.csv. Default: <out-dir>/validation_details.csv")
+    parser.add_argument(
+        "--history",
+        default=None,
+        help="Legacy validation_details.csv; V2.20 retires this lane.",
+    )
     parser.add_argument("--ledger", default=None, help="Central shadow ledger CSV.")
     parser.add_argument("--as-of", required=True)
     parser.add_argument("--run-date", default=None)

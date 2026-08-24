@@ -5,7 +5,6 @@ import pytest
 from uwos.pattern_analysis_v2 import PIPELINE_VERSION
 from uwos.pattern_analysis_v2.core import parse_args
 from uwos.pattern_analysis_v2 import core as pattern_v2
-from uwos.options_pattern_pipeline_v1 import core as shared_engine
 
 
 def test_pattern_analysis_v2_defaults_to_v2_output_namespace(tmp_path):
@@ -18,7 +17,7 @@ def test_pattern_analysis_v2_defaults_to_v2_output_namespace(tmp_path):
         ]
     )
 
-    assert PIPELINE_VERSION == "pattern_analysis_v2.10-profile-aware-daily-selection-20260722"
+    assert PIPELINE_VERSION == "pattern_analysis_v2.20-price-first-managed-rebuild-20260823"
     assert Path(args.out_dir) == tmp_path / "out" / "pattern_analysis_v2" / "2026-05-18"
 
 
@@ -38,19 +37,34 @@ def test_pattern_analysis_v2_respects_explicit_out_dir(tmp_path):
     assert Path(args.out_dir) == explicit
 
 
-def test_pattern_analysis_v2_restores_shared_engine_version(monkeypatch):
-    original = shared_engine.PIPELINE_VERSION
+def test_pattern_analysis_v2_accepts_explicit_validated_cache_dir(tmp_path):
+    cache_dir = tmp_path / "cache"
+    args = parse_args(
+        [
+            "--base-dir",
+            str(tmp_path),
+            "--as-of",
+            "2026-05-18",
+            "--cache-dir",
+            str(cache_dir),
+        ]
+    )
+
+    assert Path(args.cache_dir) == cache_dir
+
+
+def test_pattern_analysis_v2_runs_independent_engine(monkeypatch):
     observed = []
 
     def fake_run_pipeline(args):
-        observed.append(shared_engine.PIPELINE_VERSION)
+        observed.append(args)
         return "done"
 
-    monkeypatch.setattr(shared_engine, "run_pipeline", fake_run_pipeline)
+    monkeypatch.setattr(pattern_v2.engine, "run_pipeline", fake_run_pipeline)
 
-    assert pattern_v2.run_pipeline(object()) == "done"
-    assert observed == [pattern_v2.PIPELINE_VERSION]
-    assert shared_engine.PIPELINE_VERSION == original
+    args = object()
+    assert pattern_v2.run_pipeline(args) == "done"
+    assert observed == [args]
 
 
 def test_pattern_analysis_v2_latest_fails_cleanly_without_source_complete_dates(tmp_path):

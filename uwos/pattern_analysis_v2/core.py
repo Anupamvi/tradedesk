@@ -1,14 +1,28 @@
-"""Pattern Analysis V2 wrapper around the hardened options-pattern engine."""
+"""Public CLI contract for the independent Pattern Analysis V2 engine."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Optional, Sequence
 
-from uwos.options_pattern_pipeline_v1 import core as engine
+from . import PIPELINE_VERSION
+from . import engine
 
-PIPELINE_VERSION = "pattern_analysis_v2.10-profile-aware-daily-selection-20260722"
 DEFAULT_OUTPUT_NAMESPACE = "pattern_analysis_v2"
+
+
+def source_complete_dates(base_dir: Path):
+    """Return dates with price and option sources required by the V2 engine."""
+
+    complete = []
+    for signal_date in engine.date_dirs(base_dir):
+        date_dir = base_dir / signal_date
+        if all(
+            engine.find_source(date_dir, prefix, signal_date)
+            for prefix in ("stock-screener", "hot-chains", "chain-oi-changes")
+        ):
+            complete.append(signal_date)
+    return complete
 
 
 def parse_args(argv: Optional[Sequence[str]] = None):
@@ -16,27 +30,21 @@ def parse_args(argv: Optional[Sequence[str]] = None):
     base_dir = Path(args.base_dir).expanduser().resolve()
     requested = str(args.as_of)
     if requested.lower() == "latest":
-        available_dates = engine.source_complete_dates(base_dir)
+        available_dates = source_complete_dates(base_dir)
         if not available_dates:
             raise ValueError(f"no source-complete UW dates found under {base_dir}")
         resolved_as_of = available_dates[-1]
         args.as_of = resolved_as_of
     else:
-        resolved_as_of = engine.require_date(requested)
+        engine.parse_date(requested)
+        resolved_as_of = requested
     if not args.out_dir:
         args.out_dir = str(base_dir / "out" / DEFAULT_OUTPUT_NAMESPACE / resolved_as_of)
     return args
 
 
 def run_pipeline(args):
-    previous_version = engine.PIPELINE_VERSION
-    engine.PIPELINE_VERSION = PIPELINE_VERSION
-    try:
-        return engine.run_pipeline(args)
-    finally:
-        # V2 currently shares the hardened engine module with V1. Avoid leaking
-        # the V2 artifact version into a later V1 run in the same Python process.
-        engine.PIPELINE_VERSION = previous_version
+    return engine.run_pipeline(args)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

@@ -173,3 +173,20 @@ def test_summary_never_auto_promotes(tmp_path: Path) -> None:
     summary = shadow_lane.summarize_ledger(ledger)
     assert summary["ungated"]["resolved"] == 2
     assert summary["ungated"]["promotion_ready"] is False
+
+
+def test_v220_artifacts_retire_legacy_fitted_ev_lane(tmp_path: Path) -> None:
+    out_dir = tmp_path / "run"
+    out_dir.mkdir()
+    (out_dir / "current_option_setups.csv").write_text("ticker\nAAA\n", encoding="utf-8")
+
+    result = shadow_lane.run_shadow_lane(
+        out_dir,
+        tmp_path / "unused-history.csv",
+        tmp_path / "ledger.csv",
+        as_of="2026-08-20",
+        run_date="2026-08-20",
+    )
+
+    assert result["status"] == "RETIRED_BY_PRICE_FIRST_REBUILD"
+    assert result["execution_eligible"] is False

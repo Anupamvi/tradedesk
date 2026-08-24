@@ -1,7 +1,3 @@
-"""Pattern Analysis V2 entrypoint package.
+"""Independent, price-first Pattern Analysis V2 pipeline."""
 
-This package aliases the hardened options-pattern decision engine under the
-operator-facing Pattern Analysis V2 name.
-"""
-
-PIPELINE_VERSION = "pattern_analysis_v2.10-profile-aware-daily-selection-20260722"
+PIPELINE_VERSION = "pattern_analysis_v2.20-price-first-managed-rebuild-20260823"

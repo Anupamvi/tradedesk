@@ -25,45 +25,33 @@ Its default output path is:
 
 Use `--as-of latest` to resolve the latest source-complete dated UW folder.
 
-## Artifact Order
+## Pattern Analysis V2 Artifact Order
 
-Inspect `decision_board.csv` first. It is the ticket-first acceptance contract
-and uses only `AUTO_APPROVED`, `TRADE_REVIEW`, `AVOID`, and `NO_TRADE`.
+Inspect `daily_report.md`, `directional_board.csv`,
+`current_option_setups.csv`, and `action_board.csv` first.
 
 Then inspect:
 
-- `daily_report_YYYY-MM-DD.md` for the human report.
-- `artifact_manifest.json` for git SHA, command, config hash, source files,
-  source fingerprints, cache status, artifact paths, runtime, and schema errors.
-- `walk_forward_performance.csv` for OOS net R, win rate, profit factor,
-  drawdown proxy, quote coverage, and blocker distribution.
-- `threshold_sensitivity.csv` for old-vs-new gate behavior.
-- `calibration_summary.md` for Brier score and reliability buckets.
-- `shadow_recommendation_ledger.csv` and `shadow_outcome_summary.md` for shadow
-  tracking.
+- `managed_selection_audit.csv` for pre-holdout model selection and matched
+  random-control evidence.
+- `option_pattern_validation.csv` for chronological option returns after
+  spreads and fees.
+- `managed_price_pattern_validation.csv` for stock-direction evidence.
+- `known_mover_audit.csv` for separate same-day, pre-event, and post-event
+  coverage.
+- `metadata.json` and `artifact_manifest.json` for reproducibility and
+  acceptance blockers.
 
-## Status Meanings
-
-`AUTO_APPROVED` means every configured gate passed. It is still not a profit
-guarantee and still requires live broker quote/risk review before any real
-order.
-
-`TRADE_REVIEW` means a complete ticket exists, but the board lists exact
-promotion requirements.
-
-`AVOID` means the ticket failed a reject gate such as negative EV, poor quote,
-wide spread, weak liquidity, max-risk breach, poor calibration, or failed
-validation.
-
-`NO_TRADE` means no reviewable ticket exists or a run-level kill-switch blocks
-promotion.
+`TRADE_REVIEW` is a conditional next-session setup, not an approved order.
+`RESEARCH_SETUP` failed a production evidence gate. Historical rows are always
+non-executable. The V2 pipeline never places orders.
 
 ## Source And Kill-Switch Handling
 
 When source data is incomplete, source freshness/cache validation fails, quote
 coverage is too low, unscorable rate is too high, validation drawdown breaches,
 calibration fails, or schema validation fails, the pipeline prevents
-`AUTO_APPROVED`.
+production qualification.
 
 ## Rollback
 
