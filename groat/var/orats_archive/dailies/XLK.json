@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 188.01,
-      "hiPx": 188.11,
-      "loPx": 187.29,
+      "clsPx": 185.71,
+      "hiPx": 188.67,
+      "loPx": 185.51,
       "open": 188.07,
-      "stkVolu": 413408.0,
+      "stkVolu": 6297486.0,
       "ticker": "XLK",
       "tradeDate": "2026-08-28"
     }

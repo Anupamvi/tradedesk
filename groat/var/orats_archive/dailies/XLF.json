@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 58.075,
-      "hiPx": 58.2,
-      "loPx": 57.98,
+      "clsPx": 58.07,
+      "hiPx": 58.41,
+      "loPx": 57.92,
       "open": 57.98,
-      "stkVolu": 1323542.0,
+      "stkVolu": 25116854.0,
       "ticker": "XLF",
       "tradeDate": "2026-08-28"
     }

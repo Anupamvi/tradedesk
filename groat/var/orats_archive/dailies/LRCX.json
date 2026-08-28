@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 313.715,
+      "clsPx": 305.0,
       "hiPx": 318.29,
-      "loPx": 310.78,
+      "loPx": 301.0501,
       "open": 318.03,
-      "stkVolu": 221254.0,
+      "stkVolu": 8035034.0,
       "ticker": "LRCX",
       "tradeDate": "2026-08-28"
     }

@@ -1,0 +1,8 @@
+[project]
+name = "wheelo"
+version = "0.1.0"
+requires-python = ">=3.9"
+description = "Wheelo cash-secured put / covered-call desk (ORATS delayed + Schwab)"
+
+[tool.setuptools.packages.find]
+include = ["wheelo*"]

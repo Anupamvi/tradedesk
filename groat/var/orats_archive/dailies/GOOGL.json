@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 342.6,
-      "hiPx": 343.29,
+      "clsPx": 346.26,
+      "hiPx": 349.14,
       "loPx": 340.27,
       "open": 340.705,
-      "stkVolu": 1115149.0,
+      "stkVolu": 25242863.0,
       "ticker": "GOOGL",
       "tradeDate": "2026-08-28"
     }

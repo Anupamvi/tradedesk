@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 44.68,
+      "clsPx": 44.48,
       "hiPx": 44.9,
-      "loPx": 44.58,
+      "loPx": 44.385,
       "open": 44.885,
-      "stkVolu": 293491.0,
+      "stkVolu": 3824309.0,
       "ticker": "XLRE",
       "tradeDate": "2026-08-28"
     }

@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 519.73,
-      "hiPx": 521.5,
-      "loPx": 517.46,
+      "clsPx": 509.0,
+      "hiPx": 522.65,
+      "loPx": 506.82,
       "open": 521.2,
-      "stkVolu": 446904.0,
+      "stkVolu": 8357427.0,
       "ticker": "SOXX",
       "tradeDate": "2026-08-28"
     }

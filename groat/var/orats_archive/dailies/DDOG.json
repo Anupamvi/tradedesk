@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 246.92,
-      "hiPx": 247.1099,
-      "loPx": 240.22,
+      "clsPx": 236.5,
+      "hiPx": 247.875,
+      "loPx": 235.725,
       "open": 240.22,
-      "stkVolu": 218854.0,
+      "stkVolu": 2489362.0,
       "ticker": "DDOG",
       "tradeDate": "2026-08-28"
     }

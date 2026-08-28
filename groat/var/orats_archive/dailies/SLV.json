@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 63.91,
-      "hiPx": 63.97,
-      "loPx": 63.6323,
+      "clsPx": 60.03,
+      "hiPx": 64.31,
+      "loPx": 59.73,
       "open": 63.93,
-      "stkVolu": 2507612.0,
+      "stkVolu": 36063679.0,
       "ticker": "SLV",
       "tradeDate": "2026-08-28"
     }

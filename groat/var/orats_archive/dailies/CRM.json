@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 257.08,
-      "hiPx": 257.83,
+      "clsPx": 256.66,
+      "hiPx": 263.53,
       "loPx": 249.0,
       "open": 250.47,
-      "stkVolu": 3711992.0,
+      "stkVolu": 34321829.0,
       "ticker": "CRM",
       "tradeDate": "2026-08-28"
     }

@@ -1,0 +1,109 @@
+{
+  "pipeline": {
+    "default_capital": 35000
+  },
+  "universe": {
+    "min_price": 10,
+    "max_price": 60,
+    "min_option_volume": 500,
+    "min_market_cap_mm": 5000,
+    "max_borrow": 25,
+    "max_spread_pct": 0.05
+  },
+  "orats": {
+    "max_core_tickers": 40,
+    "max_strike_tickers": 20,
+    "max_http_per_run": 15,
+    "max_per_min": 100,
+    "strike_dte": "25,40"
+  },
+  "scoring": {
+    "quality_weight": 0.7,
+    "premium_weight": 0.3,
+    "quality": {
+      "size_weight": 0.15,
+      "borrow_weight": 0.12,
+      "path_weight": 0.18,
+      "beta_weight": 0.12,
+      "earnings_weight": 0.15,
+      "div_weight": 0.08,
+      "pe_weight": 0.1,
+      "confidence_weight": 0.1,
+      "mcap_excellent": 50000,
+      "mcap_good": 20000,
+      "mcap_fair": 5000,
+      "borrow_excellent": 2,
+      "borrow_good": 8,
+      "borrow_fair": 15,
+      "path_excellent": 0,
+      "path_good": -10,
+      "path_fair": -25,
+      "beta_excellent": 0.8,
+      "beta_good": 1.1,
+      "beta_fair": 1.4,
+      "earn_excellent": 45,
+      "earn_good": 21,
+      "earn_fair": 14,
+      "div_excellent": 3,
+      "div_good": 1.5,
+      "div_fair": 0.5,
+      "pe_excellent": 15,
+      "pe_good": 25,
+      "pe_fair": 40,
+      "conf_excellent": 80,
+      "conf_good": 60,
+      "conf_fair": 40
+    },
+    "premium": {
+      "csp_yield_weight": 0.35,
+      "cc_yield_weight": 0.25,
+      "ivr_weight": 0.2,
+      "spread_weight": 0.2,
+      "csp_excellent": 40,
+      "csp_good": 30,
+      "csp_fair": 20,
+      "csp_low": 10,
+      "cc_excellent": 30,
+      "cc_good": 20,
+      "cc_fair": 10,
+      "cc_low": 5,
+      "ivr_excellent": 60,
+      "ivr_good": 40,
+      "ivr_fair": 20,
+      "spread_excellent": 2,
+      "spread_good": 4,
+      "spread_fair": 6
+    }
+  },
+  "sentiment": {
+    "iv_hv_rich": 3,
+    "iv_hv_cheap": -3,
+    "ivr_boost": 2,
+    "put_heavy": -2,
+    "earnings_14d": -5,
+    "x_bullish": 3,
+    "x_bearish": -5,
+    "max_adjustment": 10
+  },
+  "allocation": {
+    "max_deployed_pct": 0.65,
+    "max_single_name_pct": 0.25,
+    "max_positions": 5,
+    "core_split": 0.6,
+    "aggressive_split": 0.4,
+    "min_composite_core": 60,
+    "min_composite_aggressive": 45,
+    "min_composite_watchlist": 35
+  },
+  "management": {
+    "close_target_pct": 0.5,
+    "dte_target": 30,
+    "dte_roll_threshold": 14,
+    "sigma_otm": 1.0,
+    "earnings_close_days": 7,
+    "quality_assign_min": 55
+  },
+  "schwab": {
+    "max_strike_snap_pct": 0.03
+  }
+}
