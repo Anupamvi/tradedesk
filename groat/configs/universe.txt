@@ -1,0 +1,108 @@
+# Indices and macro
+SPY
+QQQ
+IWM
+DIA
+TLT
+GLD
+SLV
+UUP
+# Sector ETFs
+XLK
+XLF
+XLE
+XLV
+XLI
+XLY
+XLP
+XLU
+XLB
+XLRE
+XLC
+# Theme ETFs
+SMH
+SOXX
+XBI
+CIBR
+IGV
+BOTZ
+ITA
+GRID
+URNM
+XAR
+# Megacap / liquid growth
+AAPL
+MSFT
+GOOGL
+AMZN
+META
+NVDA
+AVGO
+TSLA
+NFLX
+AMD
+# Semiconductors / AI
+TSM
+AMAT
+LRCX
+KLAC
+ASML
+MU
+INTC
+ARM
+SNPS
+CDNS
+PLTR
+APP
+# Software / cloud / cyber
+CRM
+NOW
+ORCL
+ADBE
+SNOW
+DDOG
+NET
+SHOP
+CRWD
+PANW
+# Infra / networking / power
+ANET
+CSCO
+DELL
+SMCI
+VRT
+ETN
+PWR
+VST
+CEG
+GEV
+# Defense / space
+LMT
+RTX
+GE
+NOC
+RKLB
+# Financials / fintech
+JPM
+GS
+V
+MA
+COIN
+HOOD
+# Healthcare / biotech
+LLY
+UNH
+JNJ
+ABBV
+VRTX
+ISRG
+# Energy / industrial / consumer
+XOM
+CVX
+COST
+HD
+CAT
+DE
+BA
+UBER
+BKNG

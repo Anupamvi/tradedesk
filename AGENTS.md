@@ -25,6 +25,20 @@ python3 -m codexuw.daily \
 - V2 must still use Schwab live chains/pricing and Schwab portfolio state for execution decisions. Do not force trades when live edge, liquidity, catalyst, or risk controls do not support them.
 - Core investment holdings are protected by default. Do not recommend covered calls on long-term holdings unless the user explicitly allows the ticker or asks for `--portfolio-income-mode existing-core-review`.
 
+## Groat Default
+
+- Treat `groat`, `RUN FULL SCAN`, `RUN DELTA SCAN`, `ANALYZE [TICKER]`, and `REVIEW OPEN TRADES` as the **Groat** swing-trading research desk under `groat/`.
+- Groat is independent: `python3 -m groat` from `/Users/anuppamvi/tradedesk/groat`. Do not import other desks as the execute path.
+- Underlying thesis first, then stock vs options. Empty board is valid. No order placement.
+- Default full scan:
+
+```bash
+python3 -m groat full --date YYYY-MM-DD
+```
+
+- Output: `/Users/anuppamvi/tradedesk/groat/out/groat/YYYY-MM-DD/`
+- ORATS token lives in `groat/.env`. Schwab fills from `groat/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, prices, X posts, or news.
+
 ## Pattern Analysis V2 Default
 
 - Treat `pattern analysis`, `run pattern analysis`, `pattern-analysis`, and plain `pattern` requests as **Pattern Analysis V2** unless the user explicitly asks for V1, the frozen baseline, or `uwos.options_pattern_pipeline_v1`.

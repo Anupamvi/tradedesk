@@ -1,0 +1,24 @@
+{
+  "schema": "groat.macro_calendar.v1",
+  "events": [
+    {"date": "2026-08-26", "event": "GDP and PCE", "impact": "high"},
+    {"date": "2026-09-04", "event": "Employment Situation", "impact": "high"},
+    {"date": "2026-09-10", "event": "PPI", "impact": "high"},
+    {"date": "2026-09-11", "event": "CPI", "impact": "high"},
+    {"date": "2026-09-16", "event": "FOMC decision", "impact": "high"},
+    {"date": "2026-09-30", "event": "GDP and PCE", "impact": "high"},
+    {"date": "2026-10-02", "event": "Employment Situation", "impact": "high"},
+    {"date": "2026-10-14", "event": "CPI", "impact": "high"},
+    {"date": "2026-10-15", "event": "PPI", "impact": "high"},
+    {"date": "2026-10-28", "event": "FOMC decision", "impact": "high"},
+    {"date": "2026-10-29", "event": "GDP and PCE", "impact": "high"},
+    {"date": "2026-11-06", "event": "Employment Situation", "impact": "high"},
+    {"date": "2026-11-10", "event": "CPI", "impact": "high"},
+    {"date": "2026-11-13", "event": "PPI", "impact": "high"},
+    {"date": "2026-11-25", "event": "GDP and PCE", "impact": "high"},
+    {"date": "2026-12-04", "event": "Employment Situation", "impact": "high"},
+    {"date": "2026-12-09", "event": "FOMC decision", "impact": "high"},
+    {"date": "2026-12-10", "event": "CPI", "impact": "high"},
+    {"date": "2026-12-11", "event": "PPI", "impact": "high"}
+  ]
+}
