@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 326.81,
+      "hiPx": 330.09,
+      "loPx": 321.3764,
+      "open": 326.47,
+      "stkVolu": 2274696.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 320.3,
+      "hiPx": 327.98,
+      "loPx": 318.8,
+      "open": 326.81,
+      "stkVolu": 1824445.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 323.28,
+      "hiPx": 323.705,
+      "loPx": 319.0201,
+      "open": 322.12,
+      "stkVolu": 2022887.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 322.91,
+      "hiPx": 325.54,
+      "loPx": 320.54,
+      "open": 324.14,
+      "stkVolu": 1092525.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 322.66,
+      "hiPx": 325.26,
+      "loPx": 318.2,
+      "open": 325.26,
+      "stkVolu": 1463741.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 320.6,
+      "hiPx": 324.32,
+      "loPx": 318.16,
+      "open": 321.57,
+      "stkVolu": 1201776.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 317.49,
+      "hiPx": 320.97,
+      "loPx": 314.7,
+      "open": 320.13,
+      "stkVolu": 1863085.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 318.04,
+      "hiPx": 324.4899,
+      "loPx": 317.67,
+      "open": 319.84,
+      "stkVolu": 1447559.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 314.58,
+      "hiPx": 318.7,
+      "loPx": 311.085,
+      "open": 318.7,
+      "stkVolu": 1595846.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 320.855,
+      "hiPx": 321.23,
+      "loPx": 311.45,
+      "open": 313.08,
+      "stkVolu": 1276061.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 315.57,
+      "hiPx": 322.1482,
+      "loPx": 315.04,
+      "open": 321.37,
+      "stkVolu": 1391024.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 316.32,
+      "hiPx": 318.83,
+      "loPx": 315.04,
+      "open": 315.04,
+      "stkVolu": 1042247.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 319.6,
+      "hiPx": 321.69,
+      "loPx": 313.0001,
+      "open": 317.54,
+      "stkVolu": 1211417.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 326.46,
+      "hiPx": 326.52,
+      "loPx": 318.49,
+      "open": 320.48,
+      "stkVolu": 1524023.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 324.64,
+      "hiPx": 327.5,
+      "loPx": 324.37,
+      "open": 325.56,
+      "stkVolu": 1649843.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 332.19,
+      "hiPx": 335.16,
+      "loPx": 324.5,
+      "open": 325.0,
+      "stkVolu": 2718308.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 333.76,
+      "hiPx": 334.9999,
+      "loPx": 328.455,
+      "open": 334.475,
+      "stkVolu": 2682369.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 366.26,
+      "hiPx": 370.6065,
+      "loPx": 353.0,
+      "open": 355.0,
+      "stkVolu": 4666680.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 371.03,
+      "hiPx": 374.05,
+      "loPx": 363.75,
+      "open": 367.49,
+      "stkVolu": 3894030.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 364.57,
+      "hiPx": 376.445,
+      "loPx": 363.47,
+      "open": 371.52,
+      "stkVolu": 3012745.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 356.97,
+      "hiPx": 360.31,
+      "loPx": 353.01,
+      "open": 358.0,
+      "stkVolu": 2070357.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 364.88,
+      "hiPx": 364.89,
+      "loPx": 355.63,
+      "open": 358.78,
+      "stkVolu": 1841948.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 360.5,
+      "hiPx": 369.1399,
+      "loPx": 357.7,
+      "open": 366.2,
+      "stkVolu": 1682437.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 360.16,
+      "hiPx": 364.07,
+      "loPx": 358.7,
+      "open": 361.86,
+      "stkVolu": 1058804.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 354.33,
+      "hiPx": 365.4,
+      "loPx": 349.66,
+      "open": 363.015,
+      "stkVolu": 1526700.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 352.06,
+      "hiPx": 357.59,
+      "loPx": 351.5,
+      "open": 356.43,
+      "stkVolu": 1373176.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 349.09,
+      "hiPx": 354.1641,
+      "loPx": 346.77,
+      "open": 352.08,
+      "stkVolu": 1624559.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 353.61,
+      "hiPx": 353.66,
+      "loPx": 345.48,
+      "open": 349.09,
+      "stkVolu": 1263284.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 349.12,
+      "hiPx": 356.4,
+      "loPx": 346.09,
+      "open": 356.04,
+      "stkVolu": 1208629.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 348.92,
+      "hiPx": 350.0,
+      "loPx": 346.28,
+      "open": 348.33,
+      "stkVolu": 1220379.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 349.88,
+      "hiPx": 351.03,
+      "loPx": 344.79,
+      "open": 349.05,
+      "stkVolu": 1567784.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 356.25,
+      "hiPx": 356.9122,
+      "loPx": 348.06,
+      "open": 349.285,
+      "stkVolu": 1496194.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 346.88,
+      "hiPx": 355.5,
+      "loPx": 346.06,
+      "open": 354.0,
+      "stkVolu": 1825343.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 345.45,
+      "hiPx": 346.435,
+      "loPx": 339.62,
+      "open": 346.2,
+      "stkVolu": 1779917.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 347.57,
+      "hiPx": 348.84,
+      "loPx": 343.46,
+      "open": 343.46,
+      "stkVolu": 1038313.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 349.63,
+      "hiPx": 354.96,
+      "loPx": 346.79,
+      "open": 348.54,
+      "stkVolu": 1198435.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 345.19,
+      "hiPx": 349.05,
+      "loPx": 344.66,
+      "open": 347.0,
+      "stkVolu": 1022437.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 344.03,
+      "hiPx": 345.56,
+      "loPx": 343.14,
+      "open": 344.14,
+      "stkVolu": 1718735.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 346.88,
+      "hiPx": 347.68,
+      "loPx": 343.11,
+      "open": 345.0,
+      "stkVolu": 1069981.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 354.29,
+      "hiPx": 355.49,
+      "loPx": 347.72,
+      "open": 347.72,
+      "stkVolu": 1081597.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 350.43,
+      "hiPx": 355.23,
+      "loPx": 346.19,
+      "open": 353.6,
+      "stkVolu": 1304294.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 342.81,
+      "hiPx": 346.86,
+      "loPx": 340.67,
+      "open": 343.95,
+      "stkVolu": 1202504.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 347.32,
+      "hiPx": 347.43,
+      "loPx": 340.57,
+      "open": 340.88,
+      "stkVolu": 1141449.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 349.33,
+      "hiPx": 350.1199,
+      "loPx": 344.43,
+      "open": 346.93,
+      "stkVolu": 905658.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 351.01,
+      "hiPx": 355.305,
+      "loPx": 345.88,
+      "open": 353.025,
+      "stkVolu": 1115965.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 360.76,
+      "hiPx": 361.36,
+      "loPx": 353.0,
+      "open": 353.67,
+      "stkVolu": 1773945.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 361.77,
+      "hiPx": 362.71,
+      "loPx": 356.4,
+      "open": 362.0,
+      "stkVolu": 1271816.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 338.53,
+      "hiPx": 348.53,
+      "loPx": 326.35,
+      "open": 348.5,
+      "stkVolu": 5847753.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 354.7,
+      "hiPx": 357.76,
+      "loPx": 338.9,
+      "open": 342.36,
+      "stkVolu": 3571615.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 343.48,
+      "hiPx": 355.065,
+      "loPx": 342.0857,
+      "open": 353.465,
+      "stkVolu": 1616973.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 351.52,
+      "hiPx": 352.0,
+      "loPx": 342.26,
+      "open": 343.17,
+      "stkVolu": 1405348.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 349.01,
+      "hiPx": 352.57,
+      "loPx": 347.945,
+      "open": 350.17,
+      "stkVolu": 1459143.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 347.27,
+      "hiPx": 349.88,
+      "loPx": 341.2045,
+      "open": 349.88,
+      "stkVolu": 1671830.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 364.88,
+      "hiPx": 366.05,
+      "loPx": 356.43,
+      "open": 359.5,
+      "stkVolu": 1762833.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 373.35,
+      "hiPx": 374.3,
+      "loPx": 365.515,
+      "open": 367.26,
+      "stkVolu": 5005069.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 373.37,
+      "hiPx": 373.9,
+      "loPx": 364.695,
+      "open": 370.0,
+      "stkVolu": 1620319.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 366.3,
+      "hiPx": 371.84,
+      "loPx": 363.98,
+      "open": 370.975,
+      "stkVolu": 1528127.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 356.96,
+      "hiPx": 366.71,
+      "loPx": 355.8,
+      "open": 366.71,
+      "stkVolu": 1656035.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 351.06,
+      "hiPx": 355.03,
+      "loPx": 350.03,
+      "open": 352.52,
+      "stkVolu": 1921357.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 350.11,
+      "hiPx": 351.09,
+      "loPx": 346.99,
+      "open": 349.92,
+      "stkVolu": 1299435.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 348.52,
+      "hiPx": 352.88,
+      "loPx": 347.81,
+      "open": 352.88,
+      "stkVolu": 1207820.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 351.26,
+      "hiPx": 352.05,
+      "loPx": 346.92,
+      "open": 349.2,
+      "stkVolu": 1195417.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 351.97,
+      "hiPx": 355.1528,
+      "loPx": 347.41,
+      "open": 348.27,
+      "stkVolu": 1156795.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 347.24,
+      "hiPx": 355.135,
+      "loPx": 346.35,
+      "open": 354.55,
+      "stkVolu": 1649871.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 347.27,
+      "hiPx": 353.1499,
+      "loPx": 345.0,
+      "open": 347.24,
+      "stkVolu": 1056334.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 353.36,
+      "hiPx": 354.85,
+      "loPx": 350.0,
+      "open": 350.0,
+      "stkVolu": 1441237.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 345.48,
+      "hiPx": 353.33,
+      "loPx": 342.08,
+      "open": 352.7,
+      "stkVolu": 949557.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 350.0,
+      "hiPx": 354.255,
+      "loPx": 346.07,
+      "open": 346.07,
+      "stkVolu": 1292909.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 348.67,
+      "hiPx": 348.77,
+      "loPx": 343.58,
+      "open": 348.25,
+      "stkVolu": 1227307.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 327.0,
+      "hiPx": 350.26,
+      "loPx": 325.86,
+      "open": 348.1,
+      "stkVolu": 2156104.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 332.23,
+      "hiPx": 334.2,
+      "loPx": 324.944,
+      "open": 329.75,
+      "stkVolu": 1724191.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 325.75,
+      "hiPx": 329.85,
+      "loPx": 318.0201,
+      "open": 324.5,
+      "stkVolu": 1602928.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 324.1,
+      "hiPx": 330.65,
+      "loPx": 321.39,
+      "open": 330.65,
+      "stkVolu": 1599584.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 324.25,
+      "hiPx": 327.05,
+      "loPx": 320.08,
+      "open": 326.175,
+      "stkVolu": 1788568.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 326.12,
+      "hiPx": 328.21,
+      "loPx": 320.0,
+      "open": 322.59,
+      "stkVolu": 1481818.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 329.64,
+      "hiPx": 331.1188,
+      "loPx": 326.39,
+      "open": 327.79,
+      "stkVolu": 1458433.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 333.45,
+      "hiPx": 335.12,
+      "loPx": 327.11,
+      "open": 327.53,
+      "stkVolu": 1258822.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 330.51,
+      "hiPx": 336.495,
+      "loPx": 326.16,
+      "open": 333.44,
+      "stkVolu": 1996692.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 337.27,
+      "hiPx": 338.18,
+      "loPx": 327.62,
+      "open": 329.3,
+      "stkVolu": 1533685.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 345.1,
+      "hiPx": 351.13,
+      "loPx": 339.76,
+      "open": 341.0,
+      "stkVolu": 1856352.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 351.4,
+      "hiPx": 357.525,
+      "loPx": 346.0,
+      "open": 357.525,
+      "stkVolu": 4236538.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 341.3,
+      "hiPx": 348.08,
+      "loPx": 327.165,
+      "open": 339.01,
+      "stkVolu": 3215992.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 341.43,
+      "hiPx": 347.0,
+      "loPx": 334.0,
+      "open": 337.3,
+      "stkVolu": 2413024.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 336.09,
+      "hiPx": 342.2,
+      "loPx": 333.41,
+      "open": 340.0,
+      "stkVolu": 1559514.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 338.69,
+      "hiPx": 340.73,
+      "loPx": 336.22,
+      "open": 338.73,
+      "stkVolu": 1429974.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 335.41,
+      "hiPx": 341.705,
+      "loPx": 331.0,
+      "open": 341.705,
+      "stkVolu": 1469062.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 333.22,
+      "hiPx": 336.06,
+      "loPx": 325.59,
+      "open": 330.06,
+      "stkVolu": 3047966.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 327.63,
+      "hiPx": 332.555,
+      "loPx": 324.23,
+      "open": 331.95,
+      "stkVolu": 2229588.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 324.45,
+      "hiPx": 327.2578,
+      "loPx": 318.57,
+      "open": 324.94,
+      "stkVolu": 3178262.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 325.05,
+      "hiPx": 326.61,
+      "loPx": 319.19,
+      "open": 324.49,
+      "stkVolu": 1612764.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 328.94,
+      "hiPx": 330.84,
+      "loPx": 323.32,
+      "open": 326.56,
+      "stkVolu": 2008158.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 318.51,
+      "hiPx": 326.79,
+      "loPx": 316.22,
+      "open": 326.53,
+      "stkVolu": 1905835.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 315.54,
+      "hiPx": 321.63,
+      "loPx": 314.76,
+      "open": 320.93,
+      "stkVolu": 1650245.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 315.99,
+      "hiPx": 317.47,
+      "loPx": 312.99,
+      "open": 314.89,
+      "stkVolu": 1773613.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 314.93,
+      "hiPx": 319.65,
+      "loPx": 310.65,
+      "open": 311.85,
+      "stkVolu": 1363911.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 311.29,
+      "hiPx": 315.83,
+      "loPx": 309.64,
+      "open": 313.54,
+      "stkVolu": 1519933.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 303.21,
+      "hiPx": 310.3376,
+      "loPx": 302.14,
+      "open": 307.725,
+      "stkVolu": 2026049.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 306.76,
+      "hiPx": 310.12,
+      "loPx": 302.4301,
+      "open": 304.21,
+      "stkVolu": 1435035.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 302.14,
+      "hiPx": 316.71,
+      "loPx": 301.63,
+      "open": 312.145,
+      "stkVolu": 1570529.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 300.58,
+      "hiPx": 303.9031,
+      "loPx": 295.18,
+      "open": 301.92,
+      "stkVolu": 1748375.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 304.47,
+      "hiPx": 305.72,
+      "loPx": 299.65,
+      "open": 303.37,
+      "stkVolu": 2996956.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 303.66,
+      "hiPx": 305.75,
+      "loPx": 298.17,
+      "open": 300.745,
+      "stkVolu": 1976186.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 306.35,
+      "hiPx": 308.18,
+      "loPx": 304.029,
+      "open": 307.05,
+      "stkVolu": 1396721.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 311.84,
+      "hiPx": 311.96,
+      "loPx": 306.33,
+      "open": 309.06,
+      "stkVolu": 875049.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 309.62,
+      "hiPx": 313.05,
+      "loPx": 306.83,
+      "open": 312.64,
+      "stkVolu": 1741191.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 317.94,
+      "hiPx": 319.07,
+      "loPx": 311.225,
+      "open": 311.505,
+      "stkVolu": 1928613.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 336.11,
+      "hiPx": 338.0,
+      "loPx": 315.68,
+      "open": 315.795,
+      "stkVolu": 2677068.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 337.3,
+      "hiPx": 339.59,
+      "loPx": 334.32,
+      "open": 336.87,
+      "stkVolu": 1348804.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 337.53,
+      "hiPx": 341.04,
+      "loPx": 336.16,
+      "open": 338.43,
+      "stkVolu": 1325631.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 337.29,
+      "hiPx": 340.83,
+      "loPx": 336.52,
+      "open": 337.99,
+      "stkVolu": 1023957.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 335.07,
+      "hiPx": 338.04,
+      "loPx": 333.46,
+      "open": 336.255,
+      "stkVolu": 994336.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 338.06,
+      "hiPx": 341.31,
+      "loPx": 333.24,
+      "open": 334.44,
+      "stkVolu": 1192491.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 335.43,
+      "hiPx": 338.0,
+      "loPx": 329.35,
+      "open": 337.95,
+      "stkVolu": 1108976.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 323.22,
+      "hiPx": 335.24,
+      "loPx": 322.65,
+      "open": 334.63,
+      "stkVolu": 1443500.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 318.43,
+      "hiPx": 327.77,
+      "loPx": 317.66,
+      "open": 324.08,
+      "stkVolu": 1687940.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 319.53,
+      "hiPx": 323.0,
+      "loPx": 316.42,
+      "open": 318.545,
+      "stkVolu": 2295554.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 313.02,
+      "hiPx": 319.89,
+      "loPx": 310.94,
+      "open": 319.0,
+      "stkVolu": 1531803.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 315.1,
+      "hiPx": 322.41,
+      "loPx": 314.35,
+      "open": 318.39,
+      "stkVolu": 1817161.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 314.91,
+      "hiPx": 319.2799,
+      "loPx": 313.76,
+      "open": 315.1,
+      "stkVolu": 3950180.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 317.57,
+      "hiPx": 318.36,
+      "loPx": 314.67,
+      "open": 317.57,
+      "stkVolu": 1113927.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 316.93,
+      "hiPx": 317.39,
+      "loPx": 314.53,
+      "open": 314.73,
+      "stkVolu": 893472.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 317.76,
+      "hiPx": 318.12,
+      "loPx": 315.36,
+      "open": 315.7,
+      "stkVolu": 359857.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 318.89,
+      "hiPx": 319.295,
+      "loPx": 317.0,
+      "open": 318.0,
+      "stkVolu": 551357.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 317.71,
+      "hiPx": 321.685,
+      "loPx": 316.585,
+      "open": 317.85,
+      "stkVolu": 990990.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 315.6,
+      "hiPx": 319.0,
+      "loPx": 315.1388,
+      "open": 316.83,
+      "stkVolu": 1021497.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 312.58,
+      "hiPx": 316.0,
+      "loPx": 312.06,
+      "open": 315.78,
+      "stkVolu": 1022237.0,
+      "ticker": "CDNS",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 310.4,
+      "hiPx": 316.0,
+      "loPx": 306.41,
+      "open": 315.7,
+      "stkVolu": 1268243.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 301.22,
+      "hiPx": 314.17,
+      "loPx": 300.4,
+      "open": 311.46,
+      "stkVolu": 4024668.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 314.64,
+      "hiPx": 316.04,
+      "loPx": 300.88,
+      "open": 301.5,
+      "stkVolu": 2653291.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 320.54,
+      "hiPx": 324.71,
+      "loPx": 314.39,
+      "open": 314.39,
+      "stkVolu": 1418546.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 318.8,
+      "hiPx": 319.45,
+      "loPx": 312.95,
+      "open": 317.01,
+      "stkVolu": 1463021.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 327.31,
+      "hiPx": 328.59,
+      "loPx": 315.41,
+      "open": 319.9,
+      "stkVolu": 1661059.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 325.51,
+      "hiPx": 328.51,
+      "loPx": 321.02,
+      "open": 325.88,
+      "stkVolu": 1489952.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 323.06,
+      "hiPx": 327.67,
+      "loPx": 318.0,
+      "open": 322.625,
+      "stkVolu": 1199113.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 313.17,
+      "hiPx": 320.53,
+      "loPx": 309.915,
+      "open": 319.5,
+      "stkVolu": 2039705.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 320.6,
+      "hiPx": 328.64,
+      "loPx": 316.001,
+      "open": 317.44,
+      "stkVolu": 2395084.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 317.45,
+      "hiPx": 322.465,
+      "loPx": 314.5,
+      "open": 321.83,
+      "stkVolu": 2092012.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 307.0,
+      "hiPx": 311.45,
+      "loPx": 305.77,
+      "open": 310.56,
+      "stkVolu": 2042977.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 313.84,
+      "hiPx": 316.16,
+      "loPx": 304.95,
+      "open": 307.53,
+      "stkVolu": 1721437.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 317.09,
+      "hiPx": 317.83,
+      "loPx": 310.795,
+      "open": 317.0,
+      "stkVolu": 1383903.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 318.32,
+      "hiPx": 323.54,
+      "loPx": 312.014,
+      "open": 315.5,
+      "stkVolu": 1466990.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 322.02,
+      "hiPx": 323.63,
+      "loPx": 314.06,
+      "open": 317.86,
+      "stkVolu": 1321967.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 318.37,
+      "hiPx": 323.0,
+      "loPx": 317.21,
+      "open": 321.7,
+      "stkVolu": 1454075.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 320.49,
+      "hiPx": 325.185,
+      "loPx": 316.46,
+      "open": 321.62,
+      "stkVolu": 1409699.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 302.67,
+      "hiPx": 317.0,
+      "loPx": 293.44,
+      "open": 316.605,
+      "stkVolu": 3701646.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 296.36,
+      "hiPx": 298.875,
+      "loPx": 293.625,
+      "open": 298.46,
+      "stkVolu": 2507356.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 289.19,
+      "hiPx": 296.34,
+      "loPx": 288.46,
+      "open": 295.09,
+      "stkVolu": 2881605.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 268.5,
+      "hiPx": 285.98,
+      "loPx": 262.749,
+      "open": 283.83,
+      "stkVolu": 5168784.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 271.42,
+      "hiPx": 275.3,
+      "loPx": 265.74,
+      "open": 269.87,
+      "stkVolu": 5166642.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 270.14,
+      "hiPx": 276.41,
+      "loPx": 266.14,
+      "open": 271.68,
+      "stkVolu": 3584914.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 283.52,
+      "hiPx": 285.34,
+      "loPx": 272.92,
+      "open": 276.18,
+      "stkVolu": 2843310.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 291.0,
+      "hiPx": 291.76,
+      "loPx": 279.56,
+      "open": 283.49,
+      "stkVolu": 2723867.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 299.0,
+      "hiPx": 301.07,
+      "loPx": 293.0,
+      "open": 294.16,
+      "stkVolu": 2812621.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 299.65,
+      "hiPx": 302.25,
+      "loPx": 294.5,
+      "open": 301.19,
+      "stkVolu": 2357560.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 288.33,
+      "hiPx": 302.58,
+      "loPx": 287.53,
+      "open": 298.71,
+      "stkVolu": 4186043.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 299.46,
+      "hiPx": 300.73,
+      "loPx": 287.44,
+      "open": 287.44,
+      "stkVolu": 2855832.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 283.46,
+      "hiPx": 296.19,
+      "loPx": 282.96,
+      "open": 294.775,
+      "stkVolu": 5580238.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 305.01,
+      "hiPx": 311.7,
+      "loPx": 299.18,
+      "open": 302.96,
+      "stkVolu": 3947725.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 296.59,
+      "hiPx": 308.33,
+      "loPx": 292.16,
+      "open": 308.33,
+      "stkVolu": 2677372.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 296.28,
+      "hiPx": 303.44,
+      "loPx": 292.41,
+      "open": 294.475,
+      "stkVolu": 2534506.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 279.8,
+      "hiPx": 293.59,
+      "loPx": 279.11,
+      "open": 291.44,
+      "stkVolu": 3343961.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 290.63,
+      "hiPx": 293.85,
+      "loPx": 277.3,
+      "open": 277.82,
+      "stkVolu": 3039593.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 301.84,
+      "hiPx": 302.7842,
+      "loPx": 293.43,
+      "open": 294.5,
+      "stkVolu": 2947586.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 297.6,
+      "hiPx": 305.97,
+      "loPx": 292.89,
+      "open": 304.99,
+      "stkVolu": 3286151.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 301.4,
+      "hiPx": 301.9,
+      "loPx": 285.14,
+      "open": 288.74,
+      "stkVolu": 3534996.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 303.36,
+      "hiPx": 304.77,
+      "loPx": 296.1,
+      "open": 297.78,
+      "stkVolu": 2801523.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 300.63,
+      "hiPx": 304.47,
+      "loPx": 295.51,
+      "open": 296.36,
+      "stkVolu": 1994773.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 305.43,
+      "hiPx": 308.58,
+      "loPx": 296.12,
+      "open": 300.18,
+      "stkVolu": 2829538.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 299.84,
+      "hiPx": 311.24,
+      "loPx": 297.54,
+      "open": 303.0,
+      "stkVolu": 3707554.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 296.94,
+      "hiPx": 302.015,
+      "loPx": 294.27,
+      "open": 294.95,
+      "stkVolu": 2605935.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 298.05,
+      "hiPx": 300.27,
+      "loPx": 289.37,
+      "open": 293.76,
+      "stkVolu": 2493952.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 293.29,
+      "hiPx": 299.06,
+      "loPx": 290.4701,
+      "open": 299.06,
+      "stkVolu": 2084219.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 294.16,
+      "hiPx": 296.0,
+      "loPx": 287.0,
+      "open": 294.79,
+      "stkVolu": 2100202.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 290.32,
+      "hiPx": 296.51,
+      "loPx": 289.19,
+      "open": 290.93,
+      "stkVolu": 2493107.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 287.03,
+      "hiPx": 292.04,
+      "loPx": 283.345,
+      "open": 290.8,
+      "stkVolu": 1838432.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 292.72,
+      "hiPx": 295.4299,
+      "loPx": 288.0,
+      "open": 289.325,
+      "stkVolu": 1517062.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 293.75,
+      "hiPx": 300.94,
+      "loPx": 292.49,
+      "open": 293.89,
+      "stkVolu": 1339456.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 289.64,
+      "hiPx": 295.3,
+      "loPx": 289.5,
+      "open": 291.93,
+      "stkVolu": 1667108.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 287.4,
+      "hiPx": 292.61,
+      "loPx": 284.35,
+      "open": 288.92,
+      "stkVolu": 1574249.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 283.9,
+      "hiPx": 287.39,
+      "loPx": 281.46,
+      "open": 286.42,
+      "stkVolu": 3349528.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 292.52,
+      "hiPx": 299.29,
+      "loPx": 286.79,
+      "open": 289.2,
+      "stkVolu": 3532025.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 284.32,
+      "hiPx": 290.495,
+      "loPx": 277.0,
+      "open": 289.51,
+      "stkVolu": 2833025.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 281.39,
+      "hiPx": 290.369,
+      "loPx": 277.65,
+      "open": 288.69,
+      "stkVolu": 2617318.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 280.62,
+      "hiPx": 284.16,
+      "loPx": 278.0,
+      "open": 278.0,
+      "stkVolu": 2002384.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 271.77,
+      "hiPx": 280.43,
+      "loPx": 271.05,
+      "open": 278.26,
+      "stkVolu": 2186734.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 270.88,
+      "hiPx": 276.37,
+      "loPx": 268.8,
+      "open": 272.18,
+      "stkVolu": 2151738.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 277.87,
+      "hiPx": 278.61,
+      "loPx": 271.6,
+      "open": 273.265,
+      "stkVolu": 1884168.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 280.19,
+      "hiPx": 281.6,
+      "loPx": 274.66,
+      "open": 280.19,
+      "stkVolu": 1762626.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 278.72,
+      "hiPx": 280.255,
+      "loPx": 271.34,
+      "open": 273.69,
+      "stkVolu": 1511613.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 279.39,
+      "hiPx": 279.77,
+      "loPx": 275.48,
+      "open": 277.985,
+      "stkVolu": 1173384.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 279.48,
+      "hiPx": 280.0,
+      "loPx": 273.9,
+      "open": 278.03,
+      "stkVolu": 1275080.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 289.5,
+      "hiPx": 291.35,
+      "loPx": 285.42,
+      "open": 289.98,
+      "stkVolu": 1913601.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 281.01,
+      "hiPx": 288.18,
+      "loPx": 277.45,
+      "open": 287.62,
+      "stkVolu": 2209761.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 265.66,
+      "hiPx": 281.42,
+      "loPx": 263.38,
+      "open": 280.73,
+      "stkVolu": 3492819.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 288.2,
+      "hiPx": 288.33,
+      "loPx": 265.2201,
+      "open": 266.06,
+      "stkVolu": 2649001.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 292.37,
+      "hiPx": 297.1772,
+      "loPx": 290.28,
+      "open": 293.31,
+      "stkVolu": 2182476.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 304.1,
+      "hiPx": 307.465,
+      "loPx": 293.51,
+      "open": 295.0,
+      "stkVolu": 2514264.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 306.96,
+      "hiPx": 312.88,
+      "loPx": 303.31,
+      "open": 309.45,
+      "stkVolu": 2158520.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 311.03,
+      "hiPx": 317.9999,
+      "loPx": 308.4,
+      "open": 316.33,
+      "stkVolu": 2211895.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 318.5,
+      "hiPx": 320.98,
+      "loPx": 309.595,
+      "open": 312.6,
+      "stkVolu": 2267962.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 325.84,
+      "hiPx": 331.23,
+      "loPx": 318.9,
+      "open": 319.745,
+      "stkVolu": 3475139.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 331.61,
+      "hiPx": 334.0,
+      "loPx": 327.69,
+      "open": 332.85,
+      "stkVolu": 2205950.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 314.33,
+      "hiPx": 326.975,
+      "loPx": 311.0,
+      "open": 325.86,
+      "stkVolu": 2317985.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 332.89,
+      "hiPx": 334.81,
+      "loPx": 319.37,
+      "open": 320.08,
+      "stkVolu": 3316080.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 336.54,
+      "hiPx": 338.1895,
+      "loPx": 330.0,
+      "open": 330.82,
+      "stkVolu": 4034412.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 325.31,
+      "hiPx": 338.55,
+      "loPx": 317.07,
+      "open": 329.7,
+      "stkVolu": 4885187.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 329.95,
+      "hiPx": 331.36,
+      "loPx": 315.51,
+      "open": 323.71,
+      "stkVolu": 2949650.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 329.59,
+      "hiPx": 330.08,
+      "loPx": 319.78,
+      "open": 328.745,
+      "stkVolu": 2077774.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 340.94,
+      "hiPx": 342.37,
+      "loPx": 334.0,
+      "open": 336.5,
+      "stkVolu": 1826033.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 349.51,
+      "hiPx": 351.01,
+      "loPx": 340.61,
+      "open": 342.38,
+      "stkVolu": 3152299.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 353.63,
+      "hiPx": 354.89,
+      "loPx": 346.1301,
+      "open": 351.3,
+      "stkVolu": 1965658.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 354.9,
+      "hiPx": 355.492,
+      "loPx": 347.49,
+      "open": 353.5,
+      "stkVolu": 2420839.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 356.9,
+      "hiPx": 362.705,
+      "loPx": 354.87,
+      "open": 358.0,
+      "stkVolu": 1870810.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 362.7,
+      "hiPx": 365.01,
+      "loPx": 353.18,
+      "open": 356.075,
+      "stkVolu": 2317761.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 364.2,
+      "hiPx": 365.0,
+      "loPx": 358.03,
+      "open": 359.07,
+      "stkVolu": 2642350.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 358.04,
+      "hiPx": 361.99,
+      "loPx": 355.56,
+      "open": 361.1,
+      "stkVolu": 1995613.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 354.55,
+      "hiPx": 361.025,
+      "loPx": 350.55,
+      "open": 359.04,
+      "stkVolu": 2321467.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 352.84,
+      "hiPx": 355.205,
+      "loPx": 348.46,
+      "open": 350.03,
+      "stkVolu": 1476333.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 347.24,
+      "hiPx": 352.0,
+      "loPx": 345.68,
+      "open": 351.81,
+      "stkVolu": 1703498.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 345.99,
+      "hiPx": 350.06,
+      "loPx": 341.49,
+      "open": 346.905,
+      "stkVolu": 1903721.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 338.12,
+      "hiPx": 348.12,
+      "loPx": 337.89,
+      "open": 342.67,
+      "stkVolu": 1743197.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 350.89,
+      "hiPx": 351.365,
+      "loPx": 331.555,
+      "open": 335.39,
+      "stkVolu": 2027737.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 358.46,
+      "hiPx": 362.21,
+      "loPx": 347.56,
+      "open": 349.88,
+      "stkVolu": 1757241.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 373.59,
+      "hiPx": 381.55,
+      "loPx": 361.535,
+      "open": 361.88,
+      "stkVolu": 2206625.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 381.75,
+      "hiPx": 383.24,
+      "loPx": 369.615,
+      "open": 380.0,
+      "stkVolu": 1965341.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 374.05,
+      "hiPx": 383.8,
+      "loPx": 370.35,
+      "open": 378.945,
+      "stkVolu": 2358726.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 373.85,
+      "hiPx": 379.05,
+      "loPx": 366.99,
+      "open": 374.88,
+      "stkVolu": 1925666.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 374.93,
+      "hiPx": 378.04,
+      "loPx": 372.28,
+      "open": 375.0,
+      "stkVolu": 3184239.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 414.16,
+      "hiPx": 414.92,
+      "loPx": 383.935,
+      "open": 393.0,
+      "stkVolu": 4522730.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 416.39,
+      "hiPx": 416.69,
+      "loPx": 401.04,
+      "open": 405.98,
+      "stkVolu": 3168105.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 408.0,
+      "hiPx": 411.04,
+      "loPx": 401.03,
+      "open": 410.0,
+      "stkVolu": 2877409.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 411.68,
+      "hiPx": 415.83,
+      "loPx": 401.93,
+      "open": 407.73,
+      "stkVolu": 2998709.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 376.19,
+      "hiPx": 407.0,
+      "loPx": 373.54,
+      "open": 402.002,
+      "stkVolu": 3520057.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 394.24,
+      "hiPx": 396.71,
+      "loPx": 381.845,
+      "open": 383.0,
+      "stkVolu": 2582891.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 390.9,
+      "hiPx": 406.67,
+      "loPx": 377.1131,
+      "open": 396.655,
+      "stkVolu": 2595648.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 385.13,
+      "hiPx": 399.23,
+      "loPx": 382.0,
+      "open": 383.45,
+      "stkVolu": 1783703.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 383.74,
+      "hiPx": 389.54,
+      "loPx": 377.21,
+      "open": 382.0,
+      "stkVolu": 2128335.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 384.96,
+      "hiPx": 389.8,
+      "loPx": 375.94,
+      "open": 381.22,
+      "stkVolu": 1366238.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 394.5,
+      "hiPx": 397.82,
+      "loPx": 389.325,
+      "open": 391.0,
+      "stkVolu": 1846672.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 387.85,
+      "hiPx": 398.27,
+      "loPx": 387.19,
+      "open": 387.19,
+      "stkVolu": 1650809.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 389.6,
+      "hiPx": 403.38,
+      "loPx": 386.4621,
+      "open": 388.43,
+      "stkVolu": 2382289.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 387.39,
+      "hiPx": 401.18,
+      "loPx": 385.43,
+      "open": 391.1,
+      "stkVolu": 7092233.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 389.04,
+      "hiPx": 392.0,
+      "loPx": 378.2,
+      "open": 392.0,
+      "stkVolu": 3015567.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 379.06,
+      "hiPx": 386.55,
+      "loPx": 377.33,
+      "open": 383.17,
+      "stkVolu": 2140082.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 372.4,
+      "hiPx": 379.62,
+      "loPx": 371.59,
+      "open": 375.69,
+      "stkVolu": 1935142.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 368.23,
+      "hiPx": 378.49,
+      "loPx": 363.7294,
+      "open": 378.49,
+      "stkVolu": 2171623.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 377.27,
+      "hiPx": 381.9,
+      "loPx": 358.76,
+      "open": 362.25,
+      "stkVolu": 3904994.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 372.72,
+      "hiPx": 387.19,
+      "loPx": 371.37,
+      "open": 381.48,
+      "stkVolu": 2675783.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 375.32,
+      "hiPx": 381.56,
+      "loPx": 368.426,
+      "open": 371.5,
+      "stkVolu": 2917836.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 377.73,
+      "hiPx": 386.75,
+      "loPx": 376.58,
+      "open": 383.88,
+      "stkVolu": 1693366.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 373.14,
+      "hiPx": 381.78,
+      "loPx": 370.5,
+      "open": 375.28,
+      "stkVolu": 2072315.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 375.77,
+      "hiPx": 377.866,
+      "loPx": 367.55,
+      "open": 369.6,
+      "stkVolu": 1871934.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 371.06,
+      "hiPx": 379.99,
+      "loPx": 365.63,
+      "open": 375.84,
+      "stkVolu": 1571021.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 374.06,
+      "hiPx": 374.45,
+      "loPx": 366.12,
+      "open": 367.34,
+      "stkVolu": 1430234.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 385.95,
+      "hiPx": 386.34,
+      "loPx": 368.34,
+      "open": 370.14,
+      "stkVolu": 1586431.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 384.17,
+      "hiPx": 389.485,
+      "loPx": 380.21,
+      "open": 387.925,
+      "stkVolu": 940489.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 377.92,
+      "hiPx": 391.0,
+      "loPx": 375.1215,
+      "open": 390.64,
+      "stkVolu": 1338621.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 376.8,
+      "hiPx": 383.0,
+      "loPx": 370.88,
+      "open": 370.947,
+      "stkVolu": 1257270.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 371.5,
+      "hiPx": 385.3,
+      "loPx": 369.05,
+      "open": 383.36,
+      "stkVolu": 1622475.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 364.65,
+      "hiPx": 369.13,
+      "loPx": 358.74,
+      "open": 366.01,
+      "stkVolu": 1468855.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 330.11,
+      "hiPx": 342.29,
+      "loPx": 320.07,
+      "open": 334.56,
+      "stkVolu": 5188484.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 329.93,
+      "hiPx": 339.11,
+      "loPx": 328.75,
+      "open": 333.02,
+      "stkVolu": 2117973.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 344.64,
+      "hiPx": 347.13,
+      "loPx": 328.36,
+      "open": 328.36,
+      "stkVolu": 2681608.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 337.01,
+      "hiPx": 346.33,
+      "loPx": 334.59,
+      "open": 339.06,
+      "stkVolu": 2342301.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 330.46,
+      "hiPx": 340.29,
+      "loPx": 328.87,
+      "open": 335.2,
+      "stkVolu": 2139583.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 326.24,
+      "hiPx": 335.54,
+      "loPx": 325.96,
+      "open": 335.24,
+      "stkVolu": 2875682.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 338.61,
+      "hiPx": 342.27,
+      "loPx": 334.381,
+      "open": 336.505,
+      "stkVolu": 3669951.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 344.72,
+      "hiPx": 355.59,
+      "loPx": 335.16,
+      "open": 335.16,
+      "stkVolu": 4911976.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 332.76,
+      "hiPx": 351.0,
+      "loPx": 332.555,
+      "open": 349.0,
+      "stkVolu": 3422481.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 332.82,
+      "hiPx": 342.5,
+      "loPx": 329.59,
+      "open": 336.615,
+      "stkVolu": 2670908.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 340.02,
+      "hiPx": 344.77,
+      "loPx": 334.2494,
+      "open": 335.27,
+      "stkVolu": 2088802.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 336.15,
+      "hiPx": 344.445,
+      "loPx": 331.675,
+      "open": 343.79,
+      "stkVolu": 1818473.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 340.62,
+      "hiPx": 349.11,
+      "loPx": 339.291,
+      "open": 340.81,
+      "stkVolu": 2010946.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 337.07,
+      "hiPx": 347.96,
+      "loPx": 335.66,
+      "open": 347.96,
+      "stkVolu": 1642314.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 338.42,
+      "hiPx": 341.73,
+      "loPx": 333.0,
+      "open": 335.54,
+      "stkVolu": 1554756.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 339.24,
+      "hiPx": 348.12,
+      "loPx": 335.58,
+      "open": 343.0,
+      "stkVolu": 2092115.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 331.91,
+      "hiPx": 342.0275,
+      "loPx": 331.53,
+      "open": 337.31,
+      "stkVolu": 1808884.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 327.53,
+      "hiPx": 331.25,
+      "loPx": 323.19,
+      "open": 330.57,
+      "stkVolu": 2027324.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 323.13,
+      "hiPx": 333.43,
+      "loPx": 322.11,
+      "open": 330.005,
+      "stkVolu": 2048915.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 323.77,
+      "hiPx": 328.3,
+      "loPx": 321.11,
+      "open": 324.0,
+      "stkVolu": 2259541.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 324.82,
+      "hiPx": 326.87,
+      "loPx": 319.46,
+      "open": 324.74,
+      "stkVolu": 2568286.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 323.47,
+      "hiPx": 333.475,
+      "loPx": 323.06,
+      "open": 323.8,
+      "stkVolu": 2010561.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 316.52,
+      "hiPx": 323.63,
+      "loPx": 315.21,
+      "open": 321.5,
+      "stkVolu": 1842362.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 314.98,
+      "hiPx": 318.5,
+      "loPx": 312.0101,
+      "open": 316.09,
+      "stkVolu": 1903025.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 313.59,
+      "hiPx": 317.5,
+      "loPx": 311.47,
+      "open": 315.48,
+      "stkVolu": 1698050.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 319.02,
+      "hiPx": 319.78,
+      "loPx": 312.1525,
+      "open": 314.49,
+      "stkVolu": 2151728.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 315.92,
+      "hiPx": 317.34,
+      "loPx": 311.43,
+      "open": 314.5,
+      "stkVolu": 2032888.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 331.9,
+      "hiPx": 333.34,
+      "loPx": 317.175,
+      "open": 318.43,
+      "stkVolu": 2984860.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 334.68,
+      "hiPx": 340.31,
+      "loPx": 327.46,
+      "open": 328.5,
+      "stkVolu": 2209129.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 347.55,
+      "hiPx": 347.72,
+      "loPx": 330.5,
+      "open": 340.04,
+      "stkVolu": 2716853.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 386.51,
+      "hiPx": 387.37,
+      "loPx": 374.9601,
+      "open": 376.02,
+      "stkVolu": 869625.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 385.8,
+      "hiPx": 388.0,
+      "loPx": 380.4,
+      "open": 386.03,
+      "stkVolu": 839784.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 377.56,
+      "hiPx": 382.9998,
+      "loPx": 369.63,
+      "open": 382.37,
+      "stkVolu": 1154627.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 382.12,
+      "hiPx": 383.2799,
+      "loPx": 377.96,
+      "open": 382.0,
+      "stkVolu": 631886.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 380.09,
+      "hiPx": 382.89,
+      "loPx": 371.48,
+      "open": 380.44,
+      "stkVolu": 972192.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 383.78,
+      "hiPx": 385.4599,
+      "loPx": 378.01,
+      "open": 379.3,
+      "stkVolu": 906745.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 387.0,
+      "hiPx": 389.205,
+      "loPx": 381.52,
+      "open": 382.97,
+      "stkVolu": 712855.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 386.54,
+      "hiPx": 390.1,
+      "loPx": 383.89,
+      "open": 389.26,
+      "stkVolu": 606488.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 389.12,
+      "hiPx": 389.43,
+      "loPx": 381.3044,
+      "open": 386.67,
+      "stkVolu": 837564.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 397.9,
+      "hiPx": 398.605,
+      "loPx": 386.85,
+      "open": 387.77,
+      "stkVolu": 1000428.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 403.31,
+      "hiPx": 405.43,
+      "loPx": 398.31,
+      "open": 398.925,
+      "stkVolu": 1060101.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 398.66,
+      "hiPx": 405.04,
+      "loPx": 397.0,
+      "open": 403.73,
+      "stkVolu": 1003470.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 394.93,
+      "hiPx": 398.5684,
+      "loPx": 380.6,
+      "open": 398.48,
+      "stkVolu": 1120846.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 405.11,
+      "hiPx": 406.0,
+      "loPx": 397.95,
+      "open": 398.0,
+      "stkVolu": 1575632.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 407.22,
+      "hiPx": 410.79,
+      "loPx": 406.7265,
+      "open": 408.14,
+      "stkVolu": 1076692.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 421.68,
+      "hiPx": 424.94,
+      "loPx": 412.6,
+      "open": 412.6,
+      "stkVolu": 1371218.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 411.99,
+      "hiPx": 418.99,
+      "loPx": 409.13,
+      "open": 418.99,
+      "stkVolu": 2101544.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 410.99,
+      "hiPx": 416.41,
+      "loPx": 408.33,
+      "open": 416.41,
+      "stkVolu": 1094837.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 411.11,
+      "hiPx": 414.5,
+      "loPx": 409.46,
+      "open": 412.79,
+      "stkVolu": 1836958.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 406.13,
+      "hiPx": 423.5,
+      "loPx": 399.065,
+      "open": 406.09,
+      "stkVolu": 2436032.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 395.17,
+      "hiPx": 399.32,
+      "loPx": 384.57,
+      "open": 392.6,
+      "stkVolu": 2094080.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 393.62,
+      "hiPx": 402.0605,
+      "loPx": 391.22,
+      "open": 400.34,
+      "stkVolu": 1444114.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 389.12,
+      "hiPx": 400.09,
+      "loPx": 385.0,
+      "open": 398.0,
+      "stkVolu": 1149708.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 387.5,
+      "hiPx": 391.9,
+      "loPx": 384.59,
+      "open": 388.2,
+      "stkVolu": 930416.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 387.35,
+      "hiPx": 392.39,
+      "loPx": 383.76,
+      "open": 389.82,
+      "stkVolu": 874599.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 386.15,
+      "hiPx": 391.0,
+      "loPx": 384.385,
+      "open": 390.0,
+      "stkVolu": 655464.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 384.12,
+      "hiPx": 387.94,
+      "loPx": 380.44,
+      "open": 386.07,
+      "stkVolu": 926985.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 391.57,
+      "hiPx": 391.79,
+      "loPx": 382.51,
+      "open": 384.41,
+      "stkVolu": 858885.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 379.96,
+      "hiPx": 398.845,
+      "loPx": 369.06,
+      "open": 393.73,
+      "stkVolu": 1728301.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 377.51,
+      "hiPx": 382.5,
+      "loPx": 375.2,
+      "open": 379.96,
+      "stkVolu": 919718.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 380.81,
+      "hiPx": 384.42,
+      "loPx": 371.64,
+      "open": 377.84,
+      "stkVolu": 1436453.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 383.32,
+      "hiPx": 383.6,
+      "loPx": 377.3601,
+      "open": 379.75,
+      "stkVolu": 695767.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 379.27,
+      "hiPx": 384.075,
+      "loPx": 377.4,
+      "open": 383.04,
+      "stkVolu": 750842.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 375.87,
+      "hiPx": 378.97,
+      "loPx": 367.9,
+      "open": 375.99,
+      "stkVolu": 1142357.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 378.21,
+      "hiPx": 380.42,
+      "loPx": 375.69,
+      "open": 376.51,
+      "stkVolu": 699867.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 379.84,
+      "hiPx": 386.29,
+      "loPx": 377.7059,
+      "open": 381.44,
+      "stkVolu": 1037796.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 378.31,
+      "hiPx": 381.86,
+      "loPx": 377.4233,
+      "open": 379.84,
+      "stkVolu": 612467.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 383.92,
+      "hiPx": 384.42,
+      "loPx": 378.76,
+      "open": 379.08,
+      "stkVolu": 1021567.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 381.56,
+      "hiPx": 385.6,
+      "loPx": 379.96,
+      "open": 382.79,
+      "stkVolu": 637329.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 385.96,
+      "hiPx": 387.8134,
+      "loPx": 382.37,
+      "open": 383.56,
+      "stkVolu": 641941.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 377.96,
+      "hiPx": 385.76,
+      "loPx": 373.47,
+      "open": 385.76,
+      "stkVolu": 774538.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 374.68,
+      "hiPx": 375.24,
+      "loPx": 366.35,
+      "open": 370.0,
+      "stkVolu": 686247.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 374.41,
+      "hiPx": 378.4,
+      "loPx": 371.385,
+      "open": 376.49,
+      "stkVolu": 761115.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 376.09,
+      "hiPx": 378.8,
+      "loPx": 370.93,
+      "open": 375.3,
+      "stkVolu": 942185.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 372.5,
+      "hiPx": 379.09,
+      "loPx": 363.01,
+      "open": 378.47,
+      "stkVolu": 1128947.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 375.64,
+      "hiPx": 380.0,
+      "loPx": 373.41,
+      "open": 377.01,
+      "stkVolu": 779978.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 373.47,
+      "hiPx": 375.99,
+      "loPx": 370.27,
+      "open": 374.62,
+      "stkVolu": 502540.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 390.17,
+      "hiPx": 393.18,
+      "loPx": 380.955,
+      "open": 381.2,
+      "stkVolu": 1305893.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 389.64,
+      "hiPx": 400.87,
+      "loPx": 388.96,
+      "open": 391.13,
+      "stkVolu": 1189586.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 382.53,
+      "hiPx": 391.93,
+      "loPx": 382.27,
+      "open": 388.145,
+      "stkVolu": 833476.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 385.68,
+      "hiPx": 387.86,
+      "loPx": 381.545,
+      "open": 382.9,
+      "stkVolu": 774897.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 378.24,
+      "hiPx": 387.2,
+      "loPx": 375.5,
+      "open": 386.03,
+      "stkVolu": 821982.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 376.01,
+      "hiPx": 382.5599,
+      "loPx": 373.395,
+      "open": 378.5,
+      "stkVolu": 887943.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 390.65,
+      "hiPx": 393.415,
+      "loPx": 376.07,
+      "open": 378.03,
+      "stkVolu": 1173140.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 388.58,
+      "hiPx": 393.22,
+      "loPx": 386.935,
+      "open": 392.06,
+      "stkVolu": 1493229.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 396.02,
+      "hiPx": 397.6,
+      "loPx": 382.24,
+      "open": 384.5,
+      "stkVolu": 812611.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 389.53,
+      "hiPx": 397.515,
+      "loPx": 387.42,
+      "open": 396.91,
+      "stkVolu": 846555.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 402.87,
+      "hiPx": 407.0814,
+      "loPx": 396.3668,
+      "open": 400.23,
+      "stkVolu": 1664667.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 400.41,
+      "hiPx": 402.87,
+      "loPx": 389.7,
+      "open": 397.07,
+      "stkVolu": 1009275.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 405.44,
+      "hiPx": 408.74,
+      "loPx": 399.18,
+      "open": 400.41,
+      "stkVolu": 803543.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 409.11,
+      "hiPx": 413.94,
+      "loPx": 405.88,
+      "open": 405.88,
+      "stkVolu": 931825.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 414.42,
+      "hiPx": 415.36,
+      "loPx": 409.0001,
+      "open": 409.11,
+      "stkVolu": 896944.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 420.65,
+      "hiPx": 423.72,
+      "loPx": 407.31,
+      "open": 410.76,
+      "stkVolu": 832265.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 420.86,
+      "hiPx": 431.24,
+      "loPx": 417.98,
+      "open": 424.11,
+      "stkVolu": 996821.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 421.17,
+      "hiPx": 427.49,
+      "loPx": 415.54,
+      "open": 422.36,
+      "stkVolu": 634533.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 427.8,
+      "hiPx": 429.695,
+      "loPx": 421.78,
+      "open": 425.51,
+      "stkVolu": 693579.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 421.51,
+      "hiPx": 434.39,
+      "loPx": 415.21,
+      "open": 429.0,
+      "stkVolu": 934630.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 443.45,
+      "hiPx": 443.97,
+      "loPx": 421.43,
+      "open": 423.19,
+      "stkVolu": 1247234.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 429.92,
+      "hiPx": 443.45,
+      "loPx": 427.295,
+      "open": 443.0,
+      "stkVolu": 1287085.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 417.61,
+      "hiPx": 437.07,
+      "loPx": 416.51,
+      "open": 432.75,
+      "stkVolu": 2246276.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 430.98,
+      "hiPx": 434.95,
+      "loPx": 425.0,
+      "open": 426.17,
+      "stkVolu": 781923.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 431.6,
+      "hiPx": 438.93,
+      "loPx": 420.56,
+      "open": 423.81,
+      "stkVolu": 897467.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 436.93,
+      "hiPx": 442.32,
+      "loPx": 431.995,
+      "open": 437.0,
+      "stkVolu": 781260.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 437.52,
+      "hiPx": 446.5999,
+      "loPx": 434.215,
+      "open": 440.41,
+      "stkVolu": 939411.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 433.85,
+      "hiPx": 440.68,
+      "loPx": 430.0001,
+      "open": 435.94,
+      "stkVolu": 713951.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 440.74,
+      "hiPx": 444.06,
+      "loPx": 437.16,
+      "open": 437.16,
+      "stkVolu": 701371.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 437.43,
+      "hiPx": 441.095,
+      "loPx": 423.3001,
+      "open": 437.52,
+      "stkVolu": 926775.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 412.21,
+      "hiPx": 443.75,
+      "loPx": 404.505,
+      "open": 441.81,
+      "stkVolu": 1732125.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 427.36,
+      "hiPx": 430.52,
+      "loPx": 413.0,
+      "open": 413.0,
+      "stkVolu": 868580.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 440.93,
+      "hiPx": 447.17,
+      "loPx": 438.25,
+      "open": 438.8,
+      "stkVolu": 893332.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 441.82,
+      "hiPx": 446.68,
+      "loPx": 437.89,
+      "open": 444.39,
+      "stkVolu": 825288.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 439.57,
+      "hiPx": 443.3099,
+      "loPx": 433.88,
+      "open": 442.77,
+      "stkVolu": 813033.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 448.69,
+      "hiPx": 459.36,
+      "loPx": 441.82,
+      "open": 441.85,
+      "stkVolu": 1886840.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 453.83,
+      "hiPx": 460.86,
+      "loPx": 438.975,
+      "open": 440.41,
+      "stkVolu": 1766320.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 449.13,
+      "hiPx": 469.43,
+      "loPx": 448.0,
+      "open": 455.48,
+      "stkVolu": 1935337.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 450.82,
+      "hiPx": 456.46,
+      "loPx": 448.7992,
+      "open": 451.54,
+      "stkVolu": 804358.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 438.66,
+      "hiPx": 445.16,
+      "loPx": 433.66,
+      "open": 441.91,
+      "stkVolu": 840287.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 453.45,
+      "hiPx": 459.13,
+      "loPx": 442.0,
+      "open": 442.45,
+      "stkVolu": 984375.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 442.9,
+      "hiPx": 457.52,
+      "loPx": 441.26,
+      "open": 453.37,
+      "stkVolu": 963178.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 445.01,
+      "hiPx": 446.66,
+      "loPx": 430.11,
+      "open": 436.05,
+      "stkVolu": 818603.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 450.38,
+      "hiPx": 456.86,
+      "loPx": 439.66,
+      "open": 455.07,
+      "stkVolu": 700575.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 448.91,
+      "hiPx": 452.56,
+      "loPx": 440.615,
+      "open": 446.79,
+      "stkVolu": 728163.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 449.42,
+      "hiPx": 456.42,
+      "loPx": 448.33,
+      "open": 451.16,
+      "stkVolu": 706241.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 426.93,
+      "hiPx": 449.41,
+      "loPx": 424.74,
+      "open": 448.0,
+      "stkVolu": 1276642.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 429.3,
+      "hiPx": 437.34,
+      "loPx": 415.33,
+      "open": 418.0,
+      "stkVolu": 1254401.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 426.87,
+      "hiPx": 434.7,
+      "loPx": 421.9,
+      "open": 428.76,
+      "stkVolu": 1099497.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 439.29,
+      "hiPx": 443.22,
+      "loPx": 420.0,
+      "open": 422.0,
+      "stkVolu": 1663447.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 445.47,
+      "hiPx": 449.82,
+      "loPx": 439.27,
+      "open": 442.05,
+      "stkVolu": 1276143.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 429.78,
+      "hiPx": 463.405,
+      "loPx": 426.94,
+      "open": 456.9,
+      "stkVolu": 1146922.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 430.15,
+      "hiPx": 431.2999,
+      "loPx": 413.0,
+      "open": 427.71,
+      "stkVolu": 1401213.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 442.64,
+      "hiPx": 448.07,
+      "loPx": 430.9753,
+      "open": 433.5,
+      "stkVolu": 1782093.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 450.14,
+      "hiPx": 450.37,
+      "loPx": 425.0,
+      "open": 443.34,
+      "stkVolu": 1055000.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 460.43,
+      "hiPx": 462.065,
+      "loPx": 452.04,
+      "open": 452.69,
+      "stkVolu": 1009042.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 464.88,
+      "hiPx": 466.25,
+      "loPx": 458.6,
+      "open": 463.47,
+      "stkVolu": 409487.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 452.23,
+      "hiPx": 459.785,
+      "loPx": 449.26,
+      "open": 457.3,
+      "stkVolu": 842763.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 454.72,
+      "hiPx": 458.9999,
+      "loPx": 447.94,
+      "open": 458.02,
+      "stkVolu": 831657.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 456.02,
+      "hiPx": 458.35,
+      "loPx": 440.9001,
+      "open": 454.515,
+      "stkVolu": 734687.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 464.84,
+      "hiPx": 467.09,
+      "loPx": 450.0,
+      "open": 454.655,
+      "stkVolu": 942953.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 460.64,
+      "hiPx": 465.42,
+      "loPx": 456.56,
+      "open": 464.84,
+      "stkVolu": 728790.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 463.09,
+      "hiPx": 473.99,
+      "loPx": 460.34,
+      "open": 471.11,
+      "stkVolu": 835987.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 457.96,
+      "hiPx": 465.4536,
+      "loPx": 457.44,
+      "open": 460.5,
+      "stkVolu": 744877.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 462.21,
+      "hiPx": 469.52,
+      "loPx": 452.1455,
+      "open": 460.17,
+      "stkVolu": 1057797.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 466.91,
+      "hiPx": 467.86,
+      "loPx": 450.26,
+      "open": 460.0,
+      "stkVolu": 716719.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 438.11,
+      "hiPx": 465.494,
+      "loPx": 431.56,
+      "open": 464.85,
+      "stkVolu": 1497126.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 435.87,
+      "hiPx": 443.85,
+      "loPx": 433.3,
+      "open": 436.54,
+      "stkVolu": 1564743.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 438.49,
+      "hiPx": 440.46,
+      "loPx": 430.81,
+      "open": 435.36,
+      "stkVolu": 988038.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 414.25,
+      "hiPx": 441.41,
+      "loPx": 412.59,
+      "open": 436.48,
+      "stkVolu": 1556777.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 421.31,
+      "hiPx": 427.46,
+      "loPx": 419.03,
+      "open": 427.0,
+      "stkVolu": 1099297.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 426.66,
+      "hiPx": 431.99,
+      "loPx": 421.45,
+      "open": 422.21,
+      "stkVolu": 1602472.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 433.03,
+      "hiPx": 435.4,
+      "loPx": 428.51,
+      "open": 433.11,
+      "stkVolu": 772944.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 435.2,
+      "hiPx": 437.405,
+      "loPx": 431.0,
+      "open": 431.94,
+      "stkVolu": 562590.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 433.58,
+      "hiPx": 434.8,
+      "loPx": 430.63,
+      "open": 434.73,
+      "stkVolu": 306389.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 432.67,
+      "hiPx": 433.58,
+      "loPx": 429.68,
+      "open": 433.0,
+      "stkVolu": 279242.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 431.03,
+      "hiPx": 435.95,
+      "loPx": 430.09,
+      "open": 430.54,
+      "stkVolu": 503118.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 428.81,
+      "hiPx": 432.4491,
+      "loPx": 427.78,
+      "open": 430.74,
+      "stkVolu": 465185.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 422.06,
+      "hiPx": 429.17,
+      "loPx": 421.54,
+      "open": 428.65,
+      "stkVolu": 521264.0,
+      "ticker": "PWR",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 439.68,
+      "hiPx": 441.97,
+      "loPx": 424.95,
+      "open": 424.95,
+      "stkVolu": 887063.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 435.82,
+      "hiPx": 452.24,
+      "loPx": 435.0,
+      "open": 444.7,
+      "stkVolu": 1184736.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 438.22,
+      "hiPx": 440.0,
+      "loPx": 418.245,
+      "open": 433.88,
+      "stkVolu": 807573.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 436.89,
+      "hiPx": 442.0,
+      "loPx": 433.44,
+      "open": 440.0,
+      "stkVolu": 716472.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 413.17,
+      "hiPx": 437.95,
+      "loPx": 408.36,
+      "open": 437.78,
+      "stkVolu": 1376998.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 422.57,
+      "hiPx": 423.71,
+      "loPx": 417.1001,
+      "open": 422.45,
+      "stkVolu": 1028739.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 432.66,
+      "hiPx": 435.33,
+      "loPx": 418.91,
+      "open": 421.08,
+      "stkVolu": 746726.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 444.2,
+      "hiPx": 445.63,
+      "loPx": 433.52,
+      "open": 434.79,
+      "stkVolu": 841784.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 437.07,
+      "hiPx": 446.89,
+      "loPx": 426.59,
+      "open": 443.09,
+      "stkVolu": 925809.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 447.64,
+      "hiPx": 454.11,
+      "loPx": 444.32,
+      "open": 445.81,
+      "stkVolu": 785351.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 466.75,
+      "hiPx": 480.93,
+      "loPx": 455.71,
+      "open": 460.15,
+      "stkVolu": 2216756.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 463.49,
+      "hiPx": 469.74,
+      "loPx": 458.88,
+      "open": 461.06,
+      "stkVolu": 909798.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 473.24,
+      "hiPx": 477.96,
+      "loPx": 460.02,
+      "open": 468.35,
+      "stkVolu": 1235337.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 468.78,
+      "hiPx": 483.29,
+      "loPx": 459.43,
+      "open": 479.05,
+      "stkVolu": 979091.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 468.76,
+      "hiPx": 470.99,
+      "loPx": 462.01,
+      "open": 470.2,
+      "stkVolu": 761681.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 470.77,
+      "hiPx": 478.88,
+      "loPx": 467.3,
+      "open": 470.55,
+      "stkVolu": 548490.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 479.27,
+      "hiPx": 483.75,
+      "loPx": 467.0,
+      "open": 474.16,
+      "stkVolu": 821295.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 481.28,
+      "hiPx": 487.0,
+      "loPx": 472.16,
+      "open": 481.0,
+      "stkVolu": 976259.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 483.43,
+      "hiPx": 489.055,
+      "loPx": 473.57,
+      "open": 481.28,
+      "stkVolu": 1035523.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 474.63,
+      "hiPx": 483.435,
+      "loPx": 471.7,
+      "open": 475.0,
+      "stkVolu": 1838390.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 477.77,
+      "hiPx": 478.045,
+      "loPx": 465.72,
+      "open": 472.64,
+      "stkVolu": 1233192.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 488.6,
+      "hiPx": 490.4653,
+      "loPx": 474.21,
+      "open": 480.4,
+      "stkVolu": 1243412.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 464.57,
+      "hiPx": 492.7999,
+      "loPx": 451.1701,
+      "open": 490.01,
+      "stkVolu": 1482763.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 477.72,
+      "hiPx": 479.67,
+      "loPx": 456.2501,
+      "open": 457.11,
+      "stkVolu": 1111982.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 508.11,
+      "hiPx": 508.45,
+      "loPx": 482.51,
+      "open": 489.32,
+      "stkVolu": 1517724.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 514.56,
+      "hiPx": 520.4199,
+      "loPx": 503.2,
+      "open": 508.465,
+      "stkVolu": 1084832.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 510.64,
+      "hiPx": 517.49,
+      "loPx": 507.67,
+      "open": 515.09,
+      "stkVolu": 806405.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 523.96,
+      "hiPx": 534.5,
+      "loPx": 512.11,
+      "open": 520.99,
+      "stkVolu": 1056416.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 515.88,
+      "hiPx": 543.2799,
+      "loPx": 512.39,
+      "open": 530.0,
+      "stkVolu": 1517714.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 524.08,
+      "hiPx": 529.0,
+      "loPx": 508.11,
+      "open": 517.07,
+      "stkVolu": 864947.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 525.13,
+      "hiPx": 534.78,
+      "loPx": 518.62,
+      "open": 520.0,
+      "stkVolu": 930676.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 519.31,
+      "hiPx": 535.65,
+      "loPx": 518.72,
+      "open": 527.74,
+      "stkVolu": 1439454.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 554.0,
+      "hiPx": 554.64,
+      "loPx": 527.05,
+      "open": 544.87,
+      "stkVolu": 1701255.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 552.66,
+      "hiPx": 565.93,
+      "loPx": 548.22,
+      "open": 554.36,
+      "stkVolu": 1061681.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 549.11,
+      "hiPx": 562.38,
+      "loPx": 543.44,
+      "open": 552.0,
+      "stkVolu": 1074815.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 568.21,
+      "hiPx": 570.92,
+      "loPx": 538.09,
+      "open": 550.88,
+      "stkVolu": 1291366.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 562.77,
+      "hiPx": 573.94,
+      "loPx": 562.58,
+      "open": 573.94,
+      "stkVolu": 941717.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 565.05,
+      "hiPx": 565.84,
+      "loPx": 543.23,
+      "open": 565.54,
+      "stkVolu": 1083261.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 563.08,
+      "hiPx": 569.75,
+      "loPx": 551.0,
+      "open": 558.78,
+      "stkVolu": 1537501.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 572.66,
+      "hiPx": 573.9732,
+      "loPx": 556.735,
+      "open": 556.735,
+      "stkVolu": 808145.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 566.0,
+      "hiPx": 569.28,
+      "loPx": 547.0,
+      "open": 558.2,
+      "stkVolu": 1009204.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 568.38,
+      "hiPx": 573.0,
+      "loPx": 560.62,
+      "open": 571.14,
+      "stkVolu": 1056363.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 549.22,
+      "hiPx": 568.09,
+      "loPx": 534.355,
+      "open": 561.07,
+      "stkVolu": 1169489.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 540.19,
+      "hiPx": 553.21,
+      "loPx": 532.0,
+      "open": 534.29,
+      "stkVolu": 1105588.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 568.04,
+      "hiPx": 568.91,
+      "loPx": 531.21,
+      "open": 531.21,
+      "stkVolu": 1611943.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 564.05,
+      "hiPx": 576.8599,
+      "loPx": 561.42,
+      "open": 568.98,
+      "stkVolu": 1151840.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 567.71,
+      "hiPx": 575.71,
+      "loPx": 558.91,
+      "open": 561.21,
+      "stkVolu": 942172.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 566.91,
+      "hiPx": 576.47,
+      "loPx": 559.88,
+      "open": 562.47,
+      "stkVolu": 952292.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 559.02,
+      "hiPx": 574.38,
+      "loPx": 556.0,
+      "open": 572.36,
+      "stkVolu": 2016480.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 574.02,
+      "hiPx": 576.54,
+      "loPx": 565.19,
+      "open": 567.36,
+      "stkVolu": 1421445.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 571.64,
+      "hiPx": 578.4,
+      "loPx": 558.47,
+      "open": 571.51,
+      "stkVolu": 796335.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 572.0,
+      "hiPx": 583.73,
+      "loPx": 570.615,
+      "open": 576.7,
+      "stkVolu": 692933.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 577.95,
+      "hiPx": 580.88,
+      "loPx": 558.5801,
+      "open": 561.8,
+      "stkVolu": 853535.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 555.39,
+      "hiPx": 582.48,
+      "loPx": 551.05,
+      "open": 577.59,
+      "stkVolu": 1689484.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 567.45,
+      "hiPx": 582.0,
+      "loPx": 558.4,
+      "open": 559.68,
+      "stkVolu": 1217491.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 578.44,
+      "hiPx": 581.9358,
+      "loPx": 559.02,
+      "open": 563.77,
+      "stkVolu": 1450991.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 573.5,
+      "hiPx": 582.48,
+      "loPx": 572.8,
+      "open": 580.0,
+      "stkVolu": 979380.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 545.64,
+      "hiPx": 567.2969,
+      "loPx": 544.855,
+      "open": 563.22,
+      "stkVolu": 1265514.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 549.98,
+      "hiPx": 564.12,
+      "loPx": 548.47,
+      "open": 548.7,
+      "stkVolu": 1203961.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 533.78,
+      "hiPx": 557.9,
+      "loPx": 527.23,
+      "open": 557.9,
+      "stkVolu": 1559040.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 549.02,
+      "hiPx": 555.3687,
+      "loPx": 522.03,
+      "open": 536.81,
+      "stkVolu": 1386751.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 560.12,
+      "hiPx": 569.27,
+      "loPx": 554.06,
+      "open": 555.885,
+      "stkVolu": 1163759.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 560.63,
+      "hiPx": 574.99,
+      "loPx": 547.0,
+      "open": 548.03,
+      "stkVolu": 947321.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 554.38,
+      "hiPx": 563.32,
+      "loPx": 550.0,
+      "open": 558.56,
+      "stkVolu": 618536.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 555.57,
+      "hiPx": 558.4,
+      "loPx": 548.19,
+      "open": 550.085,
+      "stkVolu": 522678.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 576.24,
+      "hiPx": 582.24,
+      "loPx": 567.125,
+      "open": 573.27,
+      "stkVolu": 1013620.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 582.06,
+      "hiPx": 592.58,
+      "loPx": 576.0,
+      "open": 576.0,
+      "stkVolu": 935329.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 585.36,
+      "hiPx": 590.5,
+      "loPx": 576.495,
+      "open": 581.5,
+      "stkVolu": 611455.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 595.84,
+      "hiPx": 596.42,
+      "loPx": 582.25,
+      "open": 585.36,
+      "stkVolu": 1022678.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 594.4,
+      "hiPx": 599.0,
+      "loPx": 584.37,
+      "open": 597.61,
+      "stkVolu": 784396.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 591.82,
+      "hiPx": 593.7174,
+      "loPx": 581.14,
+      "open": 586.38,
+      "stkVolu": 970082.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 587.42,
+      "hiPx": 591.96,
+      "loPx": 580.13,
+      "open": 583.57,
+      "stkVolu": 753888.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 601.88,
+      "hiPx": 603.39,
+      "loPx": 584.58,
+      "open": 587.64,
+      "stkVolu": 1176749.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 604.97,
+      "hiPx": 607.26,
+      "loPx": 599.0,
+      "open": 603.9,
+      "stkVolu": 616813.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 605.89,
+      "hiPx": 611.64,
+      "loPx": 602.0,
+      "open": 609.67,
+      "stkVolu": 550268.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 613.78,
+      "hiPx": 621.3125,
+      "loPx": 610.0,
+      "open": 612.93,
+      "stkVolu": 931315.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 633.44,
+      "hiPx": 638.4216,
+      "loPx": 618.41,
+      "open": 618.41,
+      "stkVolu": 991995.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 624.84,
+      "hiPx": 638.9007,
+      "loPx": 621.9,
+      "open": 638.0,
+      "stkVolu": 741470.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 637.28,
+      "hiPx": 640.61,
+      "loPx": 617.18,
+      "open": 630.0,
+      "stkVolu": 1012797.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 630.94,
+      "hiPx": 637.82,
+      "loPx": 614.52,
+      "open": 623.7,
+      "stkVolu": 1304436.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 628.6,
+      "hiPx": 637.0,
+      "loPx": 625.22,
+      "open": 632.43,
+      "stkVolu": 1328648.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 727.77,
+      "hiPx": 728.85,
+      "loPx": 691.875,
+      "open": 699.61,
+      "stkVolu": 2426595.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 742.21,
+      "hiPx": 742.33,
+      "loPx": 717.2,
+      "open": 736.55,
+      "stkVolu": 1328434.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 757.34,
+      "hiPx": 763.1099,
+      "loPx": 739.3,
+      "open": 749.6,
+      "stkVolu": 1316195.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 771.61,
+      "hiPx": 777.835,
+      "loPx": 756.39,
+      "open": 772.6,
+      "stkVolu": 1284023.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 785.24,
+      "hiPx": 788.75,
+      "loPx": 758.21,
+      "open": 773.86,
+      "stkVolu": 1211022.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 750.73,
+      "hiPx": 780.63,
+      "loPx": 742.4,
+      "open": 780.63,
+      "stkVolu": 1979915.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 745.0,
+      "hiPx": 762.22,
+      "loPx": 744.01,
+      "open": 761.67,
+      "stkVolu": 1241744.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 781.38,
+      "hiPx": 781.73,
+      "loPx": 745.0,
+      "open": 749.42,
+      "stkVolu": 1411464.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 765.81,
+      "hiPx": 771.18,
+      "loPx": 743.71,
+      "open": 767.38,
+      "stkVolu": 1344092.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 773.72,
+      "hiPx": 781.52,
+      "loPx": 753.26,
+      "open": 781.36,
+      "stkVolu": 1147352.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 780.08,
+      "hiPx": 782.6816,
+      "loPx": 768.14,
+      "open": 775.0,
+      "stkVolu": 827566.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 769.99,
+      "hiPx": 776.5,
+      "loPx": 746.23,
+      "open": 761.77,
+      "stkVolu": 1012582.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 723.03,
+      "hiPx": 768.08,
+      "loPx": 721.88,
+      "open": 768.08,
+      "stkVolu": 1768710.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 714.13,
+      "hiPx": 725.96,
+      "loPx": 690.79,
+      "open": 706.36,
+      "stkVolu": 1653289.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 709.93,
+      "hiPx": 729.71,
+      "loPx": 706.2,
+      "open": 729.18,
+      "stkVolu": 1315431.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 716.91,
+      "hiPx": 723.965,
+      "loPx": 705.01,
+      "open": 714.33,
+      "stkVolu": 938046.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 723.44,
+      "hiPx": 731.095,
+      "loPx": 710.99,
+      "open": 727.74,
+      "stkVolu": 774925.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 742.18,
+      "hiPx": 748.69,
+      "loPx": 728.8701,
+      "open": 730.69,
+      "stkVolu": 882018.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 733.62,
+      "hiPx": 747.0,
+      "loPx": 723.84,
+      "open": 747.0,
+      "stkVolu": 707995.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 730.1,
+      "hiPx": 739.8,
+      "loPx": 718.7,
+      "open": 737.74,
+      "stkVolu": 720214.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 711.73,
+      "hiPx": 734.13,
+      "loPx": 705.75,
+      "open": 728.58,
+      "stkVolu": 2223918.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 687.48,
+      "hiPx": 709.0,
+      "loPx": 683.26,
+      "open": 702.0,
+      "stkVolu": 1193263.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 706.06,
+      "hiPx": 708.67,
+      "loPx": 691.11,
+      "open": 691.13,
+      "stkVolu": 1053853.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 715.67,
+      "hiPx": 730.04,
+      "loPx": 699.51,
+      "open": 706.55,
+      "stkVolu": 937834.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 719.17,
+      "hiPx": 722.5,
+      "loPx": 693.5,
+      "open": 701.0,
+      "stkVolu": 1017762.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 695.11,
+      "hiPx": 714.075,
+      "loPx": 690.05,
+      "open": 705.94,
+      "stkVolu": 1063735.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 693.81,
+      "hiPx": 703.515,
+      "loPx": 683.48,
+      "open": 703.515,
+      "stkVolu": 851853.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 691.95,
+      "hiPx": 715.92,
+      "loPx": 667.1396,
+      "open": 704.33,
+      "stkVolu": 1210315.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 650.92,
+      "hiPx": 689.78,
+      "loPx": 642.108,
+      "open": 684.69,
+      "stkVolu": 1484060.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 683.29,
+      "hiPx": 684.28,
+      "loPx": 656.2088,
+      "open": 660.17,
+      "stkVolu": 940151.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 707.74,
+      "hiPx": 710.0,
+      "loPx": 684.0,
+      "open": 688.02,
+      "stkVolu": 1030077.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 724.35,
+      "hiPx": 735.33,
+      "loPx": 714.47,
+      "open": 724.03,
+      "stkVolu": 1096598.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 719.29,
+      "hiPx": 738.0,
+      "loPx": 718.88,
+      "open": 726.0,
+      "stkVolu": 841339.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 714.85,
+      "hiPx": 725.655,
+      "loPx": 708.01,
+      "open": 723.61,
+      "stkVolu": 1121745.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 702.25,
+      "hiPx": 729.8334,
+      "loPx": 698.03,
+      "open": 722.05,
+      "stkVolu": 2620580.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 740.14,
+      "hiPx": 742.73,
+      "loPx": 709.045,
+      "open": 712.0,
+      "stkVolu": 1254413.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 702.29,
+      "hiPx": 720.64,
+      "loPx": 692.68,
+      "open": 709.75,
+      "stkVolu": 1693595.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 701.88,
+      "hiPx": 711.33,
+      "loPx": 687.6,
+      "open": 705.8,
+      "stkVolu": 942511.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 718.59,
+      "hiPx": 719.53,
+      "loPx": 690.785,
+      "open": 710.5,
+      "stkVolu": 1525378.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 687.87,
+      "hiPx": 708.36,
+      "loPx": 683.0,
+      "open": 706.0,
+      "stkVolu": 6309111.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 714.45,
+      "hiPx": 716.84,
+      "loPx": 683.01,
+      "open": 690.0,
+      "stkVolu": 1422649.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 720.04,
+      "hiPx": 721.37,
+      "loPx": 703.335,
+      "open": 713.93,
+      "stkVolu": 1015499.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 691.4,
+      "hiPx": 709.07,
+      "loPx": 687.62,
+      "open": 709.07,
+      "stkVolu": 1240844.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 668.31,
+      "hiPx": 697.069,
+      "loPx": 650.17,
+      "open": 693.07,
+      "stkVolu": 1273860.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 674.04,
+      "hiPx": 691.76,
+      "loPx": 668.65,
+      "open": 675.04,
+      "stkVolu": 1123140.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 656.79,
+      "hiPx": 661.75,
+      "loPx": 641.91,
+      "open": 660.56,
+      "stkVolu": 1188575.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 666.33,
+      "hiPx": 670.69,
+      "loPx": 650.0001,
+      "open": 653.0,
+      "stkVolu": 1043767.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 668.17,
+      "hiPx": 690.0,
+      "loPx": 665.255,
+      "open": 686.32,
+      "stkVolu": 875680.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 658.56,
+      "hiPx": 664.95,
+      "loPx": 651.13,
+      "open": 662.0,
+      "stkVolu": 847177.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 646.7,
+      "hiPx": 656.01,
+      "loPx": 642.5,
+      "open": 649.5,
+      "stkVolu": 756904.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 660.94,
+      "hiPx": 665.025,
+      "loPx": 651.42,
+      "open": 663.9,
+      "stkVolu": 873901.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 648.84,
+      "hiPx": 666.5397,
+      "loPx": 634.14,
+      "open": 664.03,
+      "stkVolu": 868861.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 631.02,
+      "hiPx": 640.99,
+      "loPx": 625.22,
+      "open": 633.69,
+      "stkVolu": 1145693.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 628.53,
+      "hiPx": 637.99,
+      "loPx": 608.78,
+      "open": 616.89,
+      "stkVolu": 1225224.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 632.56,
+      "hiPx": 644.96,
+      "loPx": 630.1,
+      "open": 634.19,
+      "stkVolu": 802166.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 639.2,
+      "hiPx": 647.0,
+      "loPx": 632.561,
+      "open": 638.48,
+      "stkVolu": 733730.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 643.14,
+      "hiPx": 646.49,
+      "loPx": 624.61,
+      "open": 629.44,
+      "stkVolu": 579287.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 653.8,
+      "hiPx": 659.1375,
+      "loPx": 642.08,
+      "open": 642.08,
+      "stkVolu": 921062.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 625.84,
+      "hiPx": 655.085,
+      "loPx": 625.33,
+      "open": 650.39,
+      "stkVolu": 777531.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 620.28,
+      "hiPx": 637.26,
+      "loPx": 603.25,
+      "open": 626.43,
+      "stkVolu": 973834.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 588.36,
+      "hiPx": 603.58,
+      "loPx": 570.73,
+      "open": 603.58,
+      "stkVolu": 1429409.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 561.14,
+      "hiPx": 591.59,
+      "loPx": 554.12,
+      "open": 582.73,
+      "stkVolu": 2047683.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 657.98,
+      "hiPx": 679.8,
+      "loPx": 634.51,
+      "open": 647.0,
+      "stkVolu": 3014658.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 667.36,
+      "hiPx": 687.1799,
+      "loPx": 661.82,
+      "open": 679.14,
+      "stkVolu": 1959293.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 680.2,
+      "hiPx": 682.61,
+      "loPx": 654.26,
+      "open": 659.11,
+      "stkVolu": 1105419.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 693.0,
+      "hiPx": 708.06,
+      "loPx": 679.67,
+      "open": 697.42,
+      "stkVolu": 1394393.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 682.99,
+      "hiPx": 704.87,
+      "loPx": 681.34,
+      "open": 694.62,
+      "stkVolu": 793442.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 667.84,
+      "hiPx": 692.57,
+      "loPx": 665.495,
+      "open": 680.2,
+      "stkVolu": 826934.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 671.86,
+      "hiPx": 688.8822,
+      "loPx": 657.4601,
+      "open": 683.0,
+      "stkVolu": 750297.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 660.86,
+      "hiPx": 682.5,
+      "loPx": 658.6,
+      "open": 680.02,
+      "stkVolu": 712073.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 670.58,
+      "hiPx": 680.0,
+      "loPx": 663.7,
+      "open": 670.0,
+      "stkVolu": 939077.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 678.02,
+      "hiPx": 695.5099,
+      "loPx": 677.44,
+      "open": 694.0,
+      "stkVolu": 1022868.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 672.78,
+      "hiPx": 684.87,
+      "loPx": 671.641,
+      "open": 680.22,
+      "stkVolu": 804294.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 685.78,
+      "hiPx": 692.09,
+      "loPx": 672.0927,
+      "open": 673.0,
+      "stkVolu": 694440.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 722.31,
+      "hiPx": 724.8,
+      "loPx": 690.51,
+      "open": 695.0,
+      "stkVolu": 1434749.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 696.15,
+      "hiPx": 712.0,
+      "loPx": 688.38,
+      "open": 708.46,
+      "stkVolu": 1536309.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 677.41,
+      "hiPx": 706.07,
+      "loPx": 658.88,
+      "open": 700.0,
+      "stkVolu": 1131248.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 662.47,
+      "hiPx": 679.21,
+      "loPx": 660.6,
+      "open": 672.32,
+      "stkVolu": 1177881.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 639.34,
+      "hiPx": 667.005,
+      "loPx": 635.57,
+      "open": 664.8,
+      "stkVolu": 1216122.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 616.78,
+      "hiPx": 637.34,
+      "loPx": 610.0,
+      "open": 637.34,
+      "stkVolu": 1600712.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 603.78,
+      "hiPx": 634.1,
+      "loPx": 600.38,
+      "open": 632.95,
+      "stkVolu": 1302775.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 616.73,
+      "hiPx": 620.19,
+      "loPx": 604.16,
+      "open": 612.99,
+      "stkVolu": 1164014.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 621.83,
+      "hiPx": 633.5,
+      "loPx": 617.3417,
+      "open": 631.0,
+      "stkVolu": 957998.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

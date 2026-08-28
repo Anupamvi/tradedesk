@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 517.04,
+      "hiPx": 519.71,
+      "loPx": 506.02,
+      "open": 511.74,
+      "stkVolu": 1809150.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 530.28,
+      "hiPx": 531.19,
+      "loPx": 514.08,
+      "open": 520.0,
+      "stkVolu": 2268050.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 530.0,
+      "hiPx": 537.22,
+      "loPx": 511.5001,
+      "open": 535.0,
+      "stkVolu": 3130662.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 535.77,
+      "hiPx": 545.63,
+      "loPx": 530.0,
+      "open": 535.56,
+      "stkVolu": 2295664.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 539.36,
+      "hiPx": 542.37,
+      "loPx": 520.0,
+      "open": 539.04,
+      "stkVolu": 2510575.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 539.16,
+      "hiPx": 546.65,
+      "loPx": 534.67,
+      "open": 538.0,
+      "stkVolu": 2286510.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 555.04,
+      "hiPx": 555.855,
+      "loPx": 540.0,
+      "open": 541.45,
+      "stkVolu": 2471743.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 559.61,
+      "hiPx": 560.63,
+      "loPx": 545.49,
+      "open": 556.81,
+      "stkVolu": 2576889.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 561.17,
+      "hiPx": 566.5199,
+      "loPx": 552.0001,
+      "open": 559.62,
+      "stkVolu": 1955126.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 570.17,
+      "hiPx": 581.265,
+      "loPx": 566.22,
+      "open": 568.65,
+      "stkVolu": 2569448.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 574.6,
+      "hiPx": 579.025,
+      "loPx": 567.0001,
+      "open": 570.61,
+      "stkVolu": 2052804.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 565.91,
+      "hiPx": 577.625,
+      "loPx": 564.66,
+      "open": 576.14,
+      "stkVolu": 2146844.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 548.99,
+      "hiPx": 558.51,
+      "loPx": 537.155,
+      "open": 558.51,
+      "stkVolu": 3938494.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 629.03,
+      "hiPx": 633.72,
+      "loPx": 585.0,
+      "open": 595.75,
+      "stkVolu": 7081275.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 623.97,
+      "hiPx": 633.07,
+      "loPx": 615.3,
+      "open": 632.27,
+      "stkVolu": 3918587.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 644.59,
+      "hiPx": 651.22,
+      "loPx": 626.0,
+      "open": 630.0,
+      "stkVolu": 3604472.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 647.66,
+      "hiPx": 648.5178,
+      "loPx": 631.16,
+      "open": 638.26,
+      "stkVolu": 2920550.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 632.67,
+      "hiPx": 655.65,
+      "loPx": 629.99,
+      "open": 646.99,
+      "stkVolu": 2749930.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 655.0,
+      "hiPx": 656.17,
+      "loPx": 635.17,
+      "open": 639.95,
+      "stkVolu": 2699556.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 660.29,
+      "hiPx": 677.2899,
+      "loPx": 656.07,
+      "open": 660.0,
+      "stkVolu": 3343017.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 656.5,
+      "hiPx": 664.26,
+      "loPx": 632.46,
+      "open": 638.18,
+      "stkVolu": 3077392.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 662.77,
+      "hiPx": 674.97,
+      "loPx": 653.95,
+      "open": 659.36,
+      "stkVolu": 2155916.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 649.72,
+      "hiPx": 665.11,
+      "loPx": 643.96,
+      "open": 661.24,
+      "stkVolu": 2180246.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 664.55,
+      "hiPx": 666.29,
+      "loPx": 644.0,
+      "open": 646.63,
+      "stkVolu": 1894867.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 645.86,
+      "hiPx": 669.3827,
+      "loPx": 638.52,
+      "open": 665.77,
+      "stkVolu": 2239865.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 649.09,
+      "hiPx": 656.25,
+      "loPx": 639.1701,
+      "open": 655.23,
+      "stkVolu": 1888714.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 650.76,
+      "hiPx": 653.42,
+      "loPx": 637.37,
+      "open": 641.0,
+      "stkVolu": 1687604.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 657.44,
+      "hiPx": 662.8351,
+      "loPx": 651.0,
+      "open": 652.74,
+      "stkVolu": 1804875.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 634.31,
+      "hiPx": 666.15,
+      "loPx": 614.23,
+      "open": 662.32,
+      "stkVolu": 3936413.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 625.27,
+      "hiPx": 640.2799,
+      "loPx": 620.28,
+      "open": 627.0,
+      "stkVolu": 2534442.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 621.91,
+      "hiPx": 624.03,
+      "loPx": 607.86,
+      "open": 624.03,
+      "stkVolu": 2488202.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 625.02,
+      "hiPx": 628.5452,
+      "loPx": 614.23,
+      "open": 621.38,
+      "stkVolu": 1860413.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 603.13,
+      "hiPx": 620.98,
+      "loPx": 595.19,
+      "open": 620.55,
+      "stkVolu": 3096700.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 604.59,
+      "hiPx": 607.77,
+      "loPx": 581.23,
+      "open": 592.61,
+      "stkVolu": 3575848.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 606.0,
+      "hiPx": 620.0,
+      "loPx": 605.31,
+      "open": 607.02,
+      "stkVolu": 2566592.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 607.07,
+      "hiPx": 623.98,
+      "loPx": 602.5,
+      "open": 607.97,
+      "stkVolu": 2727705.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 602.31,
+      "hiPx": 614.471,
+      "loPx": 597.0336,
+      "open": 608.83,
+      "stkVolu": 2129951.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 625.91,
+      "hiPx": 628.58,
+      "loPx": 603.0424,
+      "open": 603.85,
+      "stkVolu": 2689366.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 622.39,
+      "hiPx": 629.9348,
+      "loPx": 618.0,
+      "open": 625.22,
+      "stkVolu": 1862850.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 633.69,
+      "hiPx": 646.95,
+      "loPx": 626.78,
+      "open": 626.78,
+      "stkVolu": 2256421.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 612.97,
+      "hiPx": 634.9999,
+      "loPx": 609.34,
+      "open": 631.86,
+      "stkVolu": 2266374.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 579.68,
+      "hiPx": 594.0,
+      "loPx": 567.86,
+      "open": 590.55,
+      "stkVolu": 5267320.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 577.04,
+      "hiPx": 586.285,
+      "loPx": 565.43,
+      "open": 586.285,
+      "stkVolu": 3657481.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 598.81,
+      "hiPx": 600.37,
+      "loPx": 580.06,
+      "open": 580.81,
+      "stkVolu": 3195354.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 582.08,
+      "hiPx": 604.5,
+      "loPx": 565.5,
+      "open": 599.96,
+      "stkVolu": 3477710.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 600.26,
+      "hiPx": 606.0,
+      "loPx": 584.9401,
+      "open": 594.41,
+      "stkVolu": 2514234.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 605.7,
+      "hiPx": 607.69,
+      "loPx": 594.77,
+      "open": 606.35,
+      "stkVolu": 1863901.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 643.56,
+      "hiPx": 645.19,
+      "loPx": 623.0,
+      "open": 625.0,
+      "stkVolu": 3878653.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 634.15,
+      "hiPx": 653.5,
+      "loPx": 620.1,
+      "open": 648.75,
+      "stkVolu": 4099922.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 625.55,
+      "hiPx": 646.8799,
+      "loPx": 624.15,
+      "open": 632.12,
+      "stkVolu": 2640351.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 628.68,
+      "hiPx": 639.89,
+      "loPx": 624.1,
+      "open": 630.15,
+      "stkVolu": 1851879.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 617.91,
+      "hiPx": 633.52,
+      "loPx": 608.73,
+      "open": 629.5,
+      "stkVolu": 3104072.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 614.79,
+      "hiPx": 619.1138,
+      "loPx": 601.12,
+      "open": 616.4,
+      "stkVolu": 2058377.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 611.0,
+      "hiPx": 627.1,
+      "loPx": 611.0,
+      "open": 622.96,
+      "stkVolu": 2245558.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 624.17,
+      "hiPx": 625.66,
+      "loPx": 596.5064,
+      "open": 611.69,
+      "stkVolu": 4107343.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 644.37,
+      "hiPx": 648.5,
+      "loPx": 620.11,
+      "open": 620.11,
+      "stkVolu": 2566029.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 633.41,
+      "hiPx": 644.7211,
+      "loPx": 622.2002,
+      "open": 644.68,
+      "stkVolu": 2427243.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 628.97,
+      "hiPx": 642.0,
+      "loPx": 624.19,
+      "open": 640.0,
+      "stkVolu": 1617199.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 607.52,
+      "hiPx": 619.747,
+      "loPx": 593.38,
+      "open": 614.905,
+      "stkVolu": 3202477.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 605.17,
+      "hiPx": 615.14,
+      "loPx": 598.11,
+      "open": 610.0,
+      "stkVolu": 1845327.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 602.43,
+      "hiPx": 616.44,
+      "loPx": 596.38,
+      "open": 612.45,
+      "stkVolu": 2188685.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 614.9,
+      "hiPx": 614.94,
+      "loPx": 603.2989,
+      "open": 604.88,
+      "stkVolu": 1818698.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 606.15,
+      "hiPx": 610.66,
+      "loPx": 595.0,
+      "open": 599.64,
+      "stkVolu": 2423637.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 606.23,
+      "hiPx": 622.5,
+      "loPx": 603.615,
+      "open": 611.11,
+      "stkVolu": 2044562.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 594.99,
+      "hiPx": 611.75,
+      "loPx": 588.0,
+      "open": 610.29,
+      "stkVolu": 2668461.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 603.22,
+      "hiPx": 608.59,
+      "loPx": 593.7,
+      "open": 606.0,
+      "stkVolu": 1950843.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 606.12,
+      "hiPx": 609.39,
+      "loPx": 592.0,
+      "open": 603.155,
+      "stkVolu": 2161662.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 625.45,
+      "hiPx": 626.4405,
+      "loPx": 599.0,
+      "open": 613.0,
+      "stkVolu": 2286471.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 634.27,
+      "hiPx": 637.15,
+      "loPx": 621.111,
+      "open": 629.0,
+      "stkVolu": 2414018.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 604.56,
+      "hiPx": 634.27,
+      "loPx": 602.5953,
+      "open": 630.0,
+      "stkVolu": 3003569.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 648.25,
+      "hiPx": 655.99,
+      "loPx": 613.1401,
+      "open": 613.18,
+      "stkVolu": 3406783.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 644.41,
+      "hiPx": 656.8799,
+      "loPx": 615.84,
+      "open": 635.0,
+      "stkVolu": 2890472.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 615.95,
+      "hiPx": 664.6931,
+      "loPx": 613.59,
+      "open": 650.17,
+      "stkVolu": 3246024.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 602.0,
+      "hiPx": 623.625,
+      "loPx": 595.2,
+      "open": 621.5,
+      "stkVolu": 3500605.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 600.0,
+      "hiPx": 608.8188,
+      "loPx": 591.6511,
+      "open": 595.27,
+      "stkVolu": 2747710.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 594.07,
+      "hiPx": 610.0,
+      "loPx": 593.68,
+      "open": 608.12,
+      "stkVolu": 2634422.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 585.33,
+      "hiPx": 596.7799,
+      "loPx": 581.76,
+      "open": 593.86,
+      "stkVolu": 3956373.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 576.0,
+      "hiPx": 609.54,
+      "loPx": 532.72,
+      "open": 607.0,
+      "stkVolu": 10333096.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 595.15,
+      "hiPx": 600.0,
+      "loPx": 580.0,
+      "open": 580.0,
+      "stkVolu": 3952712.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 584.39,
+      "hiPx": 613.81,
+      "loPx": 584.18,
+      "open": 607.0,
+      "stkVolu": 3694197.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 584.39,
+      "hiPx": 594.075,
+      "loPx": 580.01,
+      "open": 590.8,
+      "stkVolu": 2842374.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 570.98,
+      "hiPx": 591.92,
+      "loPx": 565.0,
+      "open": 590.0,
+      "stkVolu": 3589268.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 577.97,
+      "hiPx": 585.575,
+      "loPx": 569.2712,
+      "open": 576.27,
+      "stkVolu": 2808513.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 574.07,
+      "hiPx": 592.67,
+      "loPx": 569.5,
+      "open": 570.0,
+      "stkVolu": 2305116.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 585.14,
+      "hiPx": 592.0,
+      "loPx": 576.5,
+      "open": 580.13,
+      "stkVolu": 2789457.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 581.26,
+      "hiPx": 593.27,
+      "loPx": 576.76,
+      "open": 590.5,
+      "stkVolu": 1853237.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 547.96,
+      "hiPx": 576.21,
+      "loPx": 541.44,
+      "open": 571.0,
+      "stkVolu": 3994942.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 559.7,
+      "hiPx": 567.53,
+      "loPx": 541.29,
+      "open": 550.0,
+      "stkVolu": 2844722.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 550.17,
+      "hiPx": 560.505,
+      "loPx": 545.41,
+      "open": 558.09,
+      "stkVolu": 2215252.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 575.13,
+      "hiPx": 576.89,
+      "loPx": 539.1,
+      "open": 546.7,
+      "stkVolu": 2823781.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 579.8,
+      "hiPx": 595.84,
+      "loPx": 568.2,
+      "open": 586.32,
+      "stkVolu": 2555821.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 576.08,
+      "hiPx": 582.8,
+      "loPx": 563.1,
+      "open": 580.605,
+      "stkVolu": 1748507.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 575.4,
+      "hiPx": 588.94,
+      "loPx": 574.01,
+      "open": 579.46,
+      "stkVolu": 2026343.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 558.17,
+      "hiPx": 574.32,
+      "loPx": 537.36,
+      "open": 574.32,
+      "stkVolu": 5166875.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 578.31,
+      "hiPx": 591.81,
+      "loPx": 542.9087,
+      "open": 545.2,
+      "stkVolu": 4037287.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 577.02,
+      "hiPx": 592.35,
+      "loPx": 569.84,
+      "open": 573.0,
+      "stkVolu": 2998024.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 554.93,
+      "hiPx": 576.4783,
+      "loPx": 552.84,
+      "open": 569.06,
+      "stkVolu": 2986001.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 595.37,
+      "hiPx": 600.0,
+      "loPx": 560.8,
+      "open": 561.0,
+      "stkVolu": 4212143.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 558.03,
+      "hiPx": 628.01,
+      "loPx": 557.69,
+      "open": 607.2,
+      "stkVolu": 4874636.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 555.84,
+      "hiPx": 565.75,
+      "loPx": 530.16,
+      "open": 563.01,
+      "stkVolu": 4872810.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 580.49,
+      "hiPx": 583.0,
+      "loPx": 558.26,
+      "open": 559.44,
+      "stkVolu": 2748868.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 572.56,
+      "hiPx": 582.0,
+      "loPx": 553.25,
+      "open": 575.0,
+      "stkVolu": 2356480.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 589.72,
+      "hiPx": 596.98,
+      "loPx": 579.48,
+      "open": 581.7,
+      "stkVolu": 2223829.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 599.77,
+      "hiPx": 599.77,
+      "loPx": 588.53,
+      "open": 595.0,
+      "stkVolu": 1006604.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 576.9,
+      "hiPx": 590.0,
+      "loPx": 574.8,
+      "open": 590.0,
+      "stkVolu": 2302455.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 601.58,
+      "hiPx": 609.84,
+      "loPx": 585.0001,
+      "open": 586.17,
+      "stkVolu": 2890812.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 601.97,
+      "hiPx": 608.8468,
+      "loPx": 575.38,
+      "open": 595.88,
+      "stkVolu": 2754483.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 629.11,
+      "hiPx": 639.14,
+      "loPx": 602.9,
+      "open": 605.0,
+      "stkVolu": 3698500.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 631.32,
+      "hiPx": 640.0,
+      "loPx": 621.2,
+      "open": 630.86,
+      "stkVolu": 2348031.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 621.9,
+      "hiPx": 636.3977,
+      "loPx": 607.4,
+      "open": 631.06,
+      "stkVolu": 2540100.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 625.3,
+      "hiPx": 636.88,
+      "loPx": 613.2001,
+      "open": 617.0,
+      "stkVolu": 3017483.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 723.0,
+      "hiPx": 731.0,
+      "loPx": 679.0001,
+      "open": 692.15,
+      "stkVolu": 11396415.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 704.2,
+      "hiPx": 711.15,
+      "loPx": 681.2,
+      "open": 711.15,
+      "stkVolu": 4830880.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 671.71,
+      "hiPx": 698.94,
+      "loPx": 656.37,
+      "open": 697.85,
+      "stkVolu": 5225703.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 681.35,
+      "hiPx": 695.05,
+      "loPx": 675.0,
+      "open": 688.48,
+      "stkVolu": 3529608.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 686.22,
+      "hiPx": 699.88,
+      "loPx": 671.0052,
+      "open": 687.0,
+      "stkVolu": 3572244.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 614.19,
+      "hiPx": 693.9999,
+      "loPx": 613.09,
+      "open": 687.0,
+      "stkVolu": 6770081.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 639.43,
+      "hiPx": 658.69,
+      "loPx": 636.535,
+      "open": 649.3,
+      "stkVolu": 4426464.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 658.28,
+      "hiPx": 660.59,
+      "loPx": 641.6,
+      "open": 646.78,
+      "stkVolu": 4489097.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 661.81,
+      "hiPx": 671.4,
+      "loPx": 656.8,
+      "open": 671.11,
+      "stkVolu": 2694275.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 661.45,
+      "hiPx": 664.82,
+      "loPx": 654.0,
+      "open": 664.82,
+      "stkVolu": 1997567.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 667.32,
+      "hiPx": 673.5,
+      "loPx": 658.27,
+      "open": 660.63,
+      "stkVolu": 1110890.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 663.46,
+      "hiPx": 668.2,
+      "loPx": 660.4899,
+      "open": 667.46,
+      "stkVolu": 1155311.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 663.46,
+      "hiPx": 671.0,
+      "loPx": 651.6901,
+      "open": 659.6,
+      "stkVolu": 2186083.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 659.64,
+      "hiPx": 668.44,
+      "loPx": 659.35,
+      "open": 665.65,
+      "stkVolu": 1206972.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 653.57,
+      "hiPx": 666.66,
+      "loPx": 652.75,
+      "open": 656.8,
+      "stkVolu": 1259928.0,
+      "ticker": "GEV",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 679.55,
+      "hiPx": 679.77,
+      "loPx": 658.4,
+      "open": 661.19,
+      "stkVolu": 2741768.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 680.86,
+      "hiPx": 698.74,
+      "loPx": 669.5,
+      "open": 690.62,
+      "stkVolu": 2446599.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 686.33,
+      "hiPx": 687.045,
+      "loPx": 658.8,
+      "open": 681.11,
+      "stkVolu": 2490832.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 662.32,
+      "hiPx": 686.99,
+      "loPx": 661.3,
+      "open": 686.0,
+      "stkVolu": 2601080.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 628.4,
+      "hiPx": 661.12,
+      "loPx": 619.75,
+      "open": 661.12,
+      "stkVolu": 4310075.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 622.5,
+      "hiPx": 632.32,
+      "loPx": 621.11,
+      "open": 632.32,
+      "stkVolu": 3105778.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 639.77,
+      "hiPx": 644.75,
+      "loPx": 617.11,
+      "open": 619.87,
+      "stkVolu": 2828854.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 652.09,
+      "hiPx": 659.17,
+      "loPx": 640.3994,
+      "open": 641.0,
+      "stkVolu": 2090153.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 644.18,
+      "hiPx": 654.0,
+      "loPx": 637.2,
+      "open": 647.92,
+      "stkVolu": 2396203.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 642.23,
+      "hiPx": 666.28,
+      "loPx": 639.43,
+      "open": 654.17,
+      "stkVolu": 2394934.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 681.55,
+      "hiPx": 692.5,
+      "loPx": 663.0,
+      "open": 665.06,
+      "stkVolu": 4986755.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 684.86,
+      "hiPx": 701.0,
+      "loPx": 664.545,
+      "open": 668.12,
+      "stkVolu": 3901877.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 667.89,
+      "hiPx": 690.05,
+      "loPx": 652.59,
+      "open": 686.23,
+      "stkVolu": 4022742.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 661.67,
+      "hiPx": 679.33,
+      "loPx": 645.26,
+      "open": 671.91,
+      "stkVolu": 2858754.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 657.78,
+      "hiPx": 666.13,
+      "loPx": 649.0,
+      "open": 662.18,
+      "stkVolu": 2009616.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 665.99,
+      "hiPx": 687.68,
+      "loPx": 656.0,
+      "open": 656.0,
+      "stkVolu": 2662114.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 692.7,
+      "hiPx": 696.4,
+      "loPx": 673.425,
+      "open": 673.425,
+      "stkVolu": 4714661.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 711.59,
+      "hiPx": 723.0,
+      "loPx": 674.01,
+      "open": 691.4,
+      "stkVolu": 5776324.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 717.39,
+      "hiPx": 722.72,
+      "loPx": 681.7,
+      "open": 717.0,
+      "stkVolu": 3490954.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 726.37,
+      "hiPx": 752.015,
+      "loPx": 715.96,
+      "open": 716.495,
+      "stkVolu": 3865733.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 754.97,
+      "hiPx": 762.36,
+      "loPx": 733.0,
+      "open": 739.68,
+      "stkVolu": 4074379.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 780.25,
+      "hiPx": 791.95,
+      "loPx": 754.11,
+      "open": 775.0,
+      "stkVolu": 3856158.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 746.22,
+      "hiPx": 795.5,
+      "loPx": 708.75,
+      "open": 794.0,
+      "stkVolu": 5057996.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 737.53,
+      "hiPx": 758.34,
+      "loPx": 714.2512,
+      "open": 717.23,
+      "stkVolu": 3608563.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 779.35,
+      "hiPx": 779.56,
+      "loPx": 753.0,
+      "open": 758.07,
+      "stkVolu": 3283908.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 801.54,
+      "hiPx": 814.8599,
+      "loPx": 771.01,
+      "open": 776.21,
+      "stkVolu": 3105772.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 790.79,
+      "hiPx": 809.37,
+      "loPx": 787.0001,
+      "open": 803.855,
+      "stkVolu": 2458281.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 823.67,
+      "hiPx": 834.0,
+      "loPx": 802.7,
+      "open": 822.93,
+      "stkVolu": 2820998.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 816.56,
+      "hiPx": 845.9999,
+      "loPx": 811.6,
+      "open": 827.0,
+      "stkVolu": 2677687.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 802.13,
+      "hiPx": 823.1,
+      "loPx": 795.11,
+      "open": 815.0,
+      "stkVolu": 2020873.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 819.15,
+      "hiPx": 828.53,
+      "loPx": 790.6202,
+      "open": 794.24,
+      "stkVolu": 2221624.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 817.55,
+      "hiPx": 832.8999,
+      "loPx": 811.0,
+      "open": 820.0,
+      "stkVolu": 1808911.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 834.61,
+      "hiPx": 837.3999,
+      "loPx": 810.54,
+      "open": 816.675,
+      "stkVolu": 1655631.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 830.34,
+      "hiPx": 842.5,
+      "loPx": 822.0001,
+      "open": 829.85,
+      "stkVolu": 1712678.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 831.7,
+      "hiPx": 833.1,
+      "loPx": 812.74,
+      "open": 823.0,
+      "stkVolu": 1438182.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 879.73,
+      "hiPx": 879.89,
+      "loPx": 824.9,
+      "open": 830.95,
+      "stkVolu": 2305259.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 876.01,
+      "hiPx": 894.9299,
+      "loPx": 873.61,
+      "open": 887.96,
+      "stkVolu": 2293148.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 876.46,
+      "hiPx": 879.55,
+      "loPx": 830.7,
+      "open": 877.37,
+      "stkVolu": 2796742.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 873.6,
+      "hiPx": 876.355,
+      "loPx": 853.34,
+      "open": 867.7,
+      "stkVolu": 2456197.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 881.18,
+      "hiPx": 893.56,
+      "loPx": 854.0,
+      "open": 865.0,
+      "stkVolu": 2421431.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 842.0,
+      "hiPx": 864.44,
+      "loPx": 811.56,
+      "open": 864.44,
+      "stkVolu": 3558097.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 841.27,
+      "hiPx": 868.61,
+      "loPx": 838.09,
+      "open": 850.6,
+      "stkVolu": 1817473.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 815.01,
+      "hiPx": 844.25,
+      "loPx": 791.0949,
+      "open": 830.01,
+      "stkVolu": 3209153.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 789.23,
+      "hiPx": 816.14,
+      "loPx": 782.37,
+      "open": 792.97,
+      "stkVolu": 2678645.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 830.1,
+      "hiPx": 830.49,
+      "loPx": 777.0,
+      "open": 782.53,
+      "stkVolu": 2878026.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 839.2,
+      "hiPx": 852.9199,
+      "loPx": 832.1,
+      "open": 835.96,
+      "stkVolu": 2393625.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 847.65,
+      "hiPx": 852.7499,
+      "loPx": 832.25,
+      "open": 836.03,
+      "stkVolu": 1706690.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 832.11,
+      "hiPx": 845.25,
+      "loPx": 819.1,
+      "open": 844.13,
+      "stkVolu": 2142896.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 805.02,
+      "hiPx": 845.29,
+      "loPx": 802.76,
+      "open": 832.99,
+      "stkVolu": 2271146.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 827.37,
+      "hiPx": 837.0,
+      "loPx": 811.12,
+      "open": 817.5,
+      "stkVolu": 2361357.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 844.05,
+      "hiPx": 844.27,
+      "loPx": 817.52,
+      "open": 827.37,
+      "stkVolu": 2259252.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 858.47,
+      "hiPx": 880.21,
+      "loPx": 844.525,
+      "open": 844.525,
+      "stkVolu": 2193134.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 877.39,
+      "hiPx": 878.18,
+      "loPx": 829.95,
+      "open": 841.5,
+      "stkVolu": 2509526.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 851.07,
+      "hiPx": 891.99,
+      "loPx": 844.25,
+      "open": 877.77,
+      "stkVolu": 4438066.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 882.64,
+      "hiPx": 920.63,
+      "loPx": 860.0,
+      "open": 865.685,
+      "stkVolu": 3353891.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 909.41,
+      "hiPx": 913.58,
+      "loPx": 860.01,
+      "open": 864.13,
+      "stkVolu": 2782041.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 923.69,
+      "hiPx": 948.38,
+      "loPx": 920.9,
+      "open": 927.0,
+      "stkVolu": 2864889.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 873.12,
+      "hiPx": 917.2636,
+      "loPx": 871.01,
+      "open": 915.0,
+      "stkVolu": 3000650.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 853.16,
+      "hiPx": 878.39,
+      "loPx": 846.0,
+      "open": 867.555,
+      "stkVolu": 2494731.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 817.35,
+      "hiPx": 862.7099,
+      "loPx": 807.0,
+      "open": 860.64,
+      "stkVolu": 2830824.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 872.9,
+      "hiPx": 873.32,
+      "loPx": 824.01,
+      "open": 827.13,
+      "stkVolu": 3469215.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 894.78,
+      "hiPx": 912.62,
+      "loPx": 887.49,
+      "open": 888.49,
+      "stkVolu": 2467657.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 898.57,
+      "hiPx": 913.0,
+      "loPx": 865.95,
+      "open": 869.0,
+      "stkVolu": 1944149.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 897.36,
+      "hiPx": 911.4999,
+      "loPx": 887.0001,
+      "open": 901.83,
+      "stkVolu": 1386258.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 910.75,
+      "hiPx": 910.9399,
+      "loPx": 879.2,
+      "open": 894.19,
+      "stkVolu": 1399055.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 936.07,
+      "hiPx": 962.7197,
+      "loPx": 930.55,
+      "open": 950.0,
+      "stkVolu": 2336882.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 968.02,
+      "hiPx": 979.43,
+      "loPx": 940.76,
+      "open": 943.56,
+      "stkVolu": 2061251.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 991.32,
+      "hiPx": 999.43,
+      "loPx": 970.0101,
+      "open": 973.11,
+      "stkVolu": 2164566.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 991.12,
+      "hiPx": 1007.38,
+      "loPx": 987.16,
+      "open": 998.0,
+      "stkVolu": 1636176.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 987.5,
+      "hiPx": 1006.295,
+      "loPx": 979.0,
+      "open": 1000.0,
+      "stkVolu": 2028253.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 985.92,
+      "hiPx": 1003.99,
+      "loPx": 973.68,
+      "open": 985.1,
+      "stkVolu": 2306947.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 978.32,
+      "hiPx": 989.0,
+      "loPx": 969.52,
+      "open": 982.64,
+      "stkVolu": 1402664.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 1002.75,
+      "hiPx": 1009.49,
+      "loPx": 977.21,
+      "open": 988.65,
+      "stkVolu": 2328796.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 990.18,
+      "hiPx": 1009.8899,
+      "loPx": 990.18,
+      "open": 1006.23,
+      "stkVolu": 1804871.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 991.3,
+      "hiPx": 1016.0,
+      "loPx": 984.09,
+      "open": 994.0,
+      "stkVolu": 2111121.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 1127.56,
+      "hiPx": 1142.0,
+      "loPx": 1074.22,
+      "open": 1076.16,
+      "stkVolu": 4184734.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 1149.53,
+      "hiPx": 1181.95,
+      "loPx": 1133.49,
+      "open": 1147.89,
+      "stkVolu": 3073204.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 1149.19,
+      "hiPx": 1167.0,
+      "loPx": 1125.02,
+      "open": 1161.02,
+      "stkVolu": 3633758.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 1120.23,
+      "hiPx": 1140.0,
+      "loPx": 1084.95,
+      "open": 1135.235,
+      "stkVolu": 3845840.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 1088.93,
+      "hiPx": 1091.83,
+      "loPx": 1050.4901,
+      "open": 1090.0,
+      "stkVolu": 4205987.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 1063.11,
+      "hiPx": 1107.5,
+      "loPx": 1047.5,
+      "open": 1091.79,
+      "stkVolu": 3721142.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 1083.46,
+      "hiPx": 1093.9999,
+      "loPx": 1066.61,
+      "open": 1079.23,
+      "stkVolu": 3533224.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 1062.95,
+      "hiPx": 1093.68,
+      "loPx": 1062.0,
+      "open": 1088.83,
+      "stkVolu": 1890378.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 1073.95,
+      "hiPx": 1098.9,
+      "loPx": 1066.38,
+      "open": 1072.27,
+      "stkVolu": 1923213.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 1095.21,
+      "hiPx": 1109.95,
+      "loPx": 1088.0,
+      "open": 1093.5,
+      "stkVolu": 2075628.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 1118.96,
+      "hiPx": 1125.43,
+      "loPx": 1069.27,
+      "open": 1114.0,
+      "stkVolu": 2282777.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 1045.63,
+      "hiPx": 1115.83,
+      "loPx": 1040.42,
+      "open": 1114.92,
+      "stkVolu": 2588259.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 1040.15,
+      "hiPx": 1069.295,
+      "loPx": 1034.43,
+      "open": 1067.34,
+      "stkVolu": 1828693.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 1073.08,
+      "hiPx": 1086.23,
+      "loPx": 1031.15,
+      "open": 1041.78,
+      "stkVolu": 2509952.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 1071.98,
+      "hiPx": 1076.6799,
+      "loPx": 1033.285,
+      "open": 1054.0,
+      "stkVolu": 2102760.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 1062.57,
+      "hiPx": 1085.0,
+      "loPx": 1047.3,
+      "open": 1084.65,
+      "stkVolu": 1588376.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 1090.53,
+      "hiPx": 1090.7,
+      "loPx": 1049.0,
+      "open": 1061.46,
+      "stkVolu": 1690623.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 1049.23,
+      "hiPx": 1066.0,
+      "loPx": 1038.5,
+      "open": 1066.0,
+      "stkVolu": 2445834.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 1012.25,
+      "hiPx": 1049.33,
+      "loPx": 980.1401,
+      "open": 1049.0,
+      "stkVolu": 3116472.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 1011.8,
+      "hiPx": 1024.84,
+      "loPx": 984.15,
+      "open": 994.3,
+      "stkVolu": 2246667.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 1024.52,
+      "hiPx": 1041.99,
+      "loPx": 1004.5,
+      "open": 1024.03,
+      "stkVolu": 2564634.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 1043.82,
+      "hiPx": 1046.8799,
+      "loPx": 1014.7178,
+      "open": 1018.0,
+      "stkVolu": 1633665.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 1038.74,
+      "hiPx": 1061.4,
+      "loPx": 1034.2,
+      "open": 1060.39,
+      "stkVolu": 1475834.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 1070.47,
+      "hiPx": 1094.9999,
+      "loPx": 1045.0,
+      "open": 1045.78,
+      "stkVolu": 1879653.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 1031.89,
+      "hiPx": 1052.55,
+      "loPx": 1017.33,
+      "open": 1047.28,
+      "stkVolu": 2270044.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 996.0,
+      "hiPx": 1032.7456,
+      "loPx": 990.46,
+      "open": 1025.4,
+      "stkVolu": 3013964.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 968.32,
+      "hiPx": 1003.77,
+      "loPx": 952.01,
+      "open": 996.01,
+      "stkVolu": 5284873.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 950.54,
+      "hiPx": 970.64,
+      "loPx": 939.0,
+      "open": 959.97,
+      "stkVolu": 2679348.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 969.67,
+      "hiPx": 977.0,
+      "loPx": 944.15,
+      "open": 962.78,
+      "stkVolu": 2248232.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 959.36,
+      "hiPx": 992.0,
+      "loPx": 956.59,
+      "open": 976.99,
+      "stkVolu": 2079469.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 963.33,
+      "hiPx": 968.75,
+      "loPx": 923.0,
+      "open": 940.0,
+      "stkVolu": 2180354.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 933.61,
+      "hiPx": 953.0,
+      "loPx": 921.455,
+      "open": 947.29,
+      "stkVolu": 3053471.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 933.85,
+      "hiPx": 952.79,
+      "loPx": 931.86,
+      "open": 947.91,
+      "stkVolu": 1842225.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 920.15,
+      "hiPx": 947.84,
+      "loPx": 878.0,
+      "open": 927.99,
+      "stkVolu": 3842711.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 867.09,
+      "hiPx": 908.05,
+      "loPx": 856.01,
+      "open": 897.51,
+      "stkVolu": 5302759.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 906.79,
+      "hiPx": 920.52,
+      "loPx": 884.735,
+      "open": 888.07,
+      "stkVolu": 4261229.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 940.66,
+      "hiPx": 943.68,
+      "loPx": 907.5,
+      "open": 907.5,
+      "stkVolu": 2787669.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 979.07,
+      "hiPx": 987.22,
+      "loPx": 957.36,
+      "open": 970.0,
+      "stkVolu": 3428155.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 982.35,
+      "hiPx": 1009.3,
+      "loPx": 980.73,
+      "open": 991.85,
+      "stkVolu": 2761128.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 1048.86,
+      "hiPx": 1065.38,
+      "loPx": 992.0,
+      "open": 997.4,
+      "stkVolu": 3996017.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 1109.73,
+      "hiPx": 1117.96,
+      "loPx": 1087.28,
+      "open": 1091.03,
+      "stkVolu": 4344726.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 1127.59,
+      "hiPx": 1142.0,
+      "loPx": 1112.43,
+      "open": 1130.04,
+      "stkVolu": 3916281.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 1034.98,
+      "hiPx": 1073.0,
+      "loPx": 1034.0001,
+      "open": 1055.15,
+      "stkVolu": 3919238.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 1057.65,
+      "hiPx": 1070.999,
+      "loPx": 1023.08,
+      "open": 1046.16,
+      "stkVolu": 2948121.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 1085.47,
+      "hiPx": 1109.98,
+      "loPx": 1055.0,
+      "open": 1089.04,
+      "stkVolu": 2753680.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 1045.17,
+      "hiPx": 1084.4012,
+      "loPx": 1042.0001,
+      "open": 1049.275,
+      "stkVolu": 3654217.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 1102.51,
+      "hiPx": 1111.73,
+      "loPx": 1047.0,
+      "open": 1055.65,
+      "stkVolu": 3180542.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 1174.86,
+      "hiPx": 1178.2,
+      "loPx": 1103.35,
+      "open": 1117.0,
+      "stkVolu": 3096186.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 1134.35,
+      "hiPx": 1161.69,
+      "loPx": 1116.59,
+      "open": 1146.4,
+      "stkVolu": 2359598.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 1113.11,
+      "hiPx": 1143.37,
+      "loPx": 1087.08,
+      "open": 1138.935,
+      "stkVolu": 2363020.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 1152.04,
+      "hiPx": 1195.94,
+      "loPx": 1138.49,
+      "open": 1140.52,
+      "stkVolu": 2882933.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 1077.08,
+      "hiPx": 1099.2556,
+      "loPx": 1028.0,
+      "open": 1096.84,
+      "stkVolu": 4223696.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 1070.99,
+      "hiPx": 1109.2,
+      "loPx": 1050.96,
+      "open": 1075.0,
+      "stkVolu": 2804235.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 1075.26,
+      "hiPx": 1115.075,
+      "loPx": 1065.31,
+      "open": 1110.0,
+      "stkVolu": 2327780.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 1091.57,
+      "hiPx": 1102.79,
+      "loPx": 1053.995,
+      "open": 1077.0,
+      "stkVolu": 1738766.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 1042.6,
+      "hiPx": 1089.21,
+      "loPx": 1038.89,
+      "open": 1070.0,
+      "stkVolu": 2258470.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 1066.01,
+      "hiPx": 1082.0,
+      "loPx": 1057.47,
+      "open": 1071.07,
+      "stkVolu": 1771494.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 1055.28,
+      "hiPx": 1078.8207,
+      "loPx": 1000.25,
+      "open": 1070.91,
+      "stkVolu": 2693369.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 1036.22,
+      "hiPx": 1049.89,
+      "loPx": 1013.3301,
+      "open": 1034.99,
+      "stkVolu": 2829453.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 1057.84,
+      "hiPx": 1069.11,
+      "loPx": 982.0,
+      "open": 995.0,
+      "stkVolu": 3284982.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 1079.18,
+      "hiPx": 1104.0,
+      "loPx": 1050.95,
+      "open": 1081.0,
+      "stkVolu": 2542124.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 1078.81,
+      "hiPx": 1140.99,
+      "loPx": 1068.97,
+      "open": 1114.99,
+      "stkVolu": 3536472.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 985.03,
+      "hiPx": 1038.985,
+      "loPx": 985.03,
+      "open": 1021.01,
+      "stkVolu": 4903803.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 1031.19,
+      "hiPx": 1041.79,
+      "loPx": 978.01,
+      "open": 981.31,
+      "stkVolu": 3560064.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 1014.75,
+      "hiPx": 1037.91,
+      "loPx": 997.04,
+      "open": 1022.795,
+      "stkVolu": 2489359.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 996.57,
+      "hiPx": 1015.22,
+      "loPx": 941.87,
+      "open": 1015.21,
+      "stkVolu": 3584624.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 943.38,
+      "hiPx": 956.8998,
+      "loPx": 913.51,
+      "open": 948.83,
+      "stkVolu": 3904119.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 900.28,
+      "hiPx": 953.99,
+      "loPx": 897.68,
+      "open": 943.99,
+      "stkVolu": 3697294.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 981.98,
+      "hiPx": 986.0,
+      "loPx": 950.0,
+      "open": 959.0,
+      "stkVolu": 3140951.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 990.29,
+      "hiPx": 1042.85,
+      "loPx": 979.14,
+      "open": 1040.99,
+      "stkVolu": 2357606.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 1006.76,
+      "hiPx": 1012.74,
+      "loPx": 958.565,
+      "open": 975.02,
+      "stkVolu": 2011361.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 1018.53,
+      "hiPx": 1046.925,
+      "loPx": 1000.011,
+      "open": 1046.0,
+      "stkVolu": 2187728.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 1017.96,
+      "hiPx": 1038.1466,
+      "loPx": 1009.3,
+      "open": 1019.0,
+      "stkVolu": 1704173.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 1000.3,
+      "hiPx": 1037.0,
+      "loPx": 997.12,
+      "open": 1009.01,
+      "stkVolu": 1763748.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 990.32,
+      "hiPx": 1013.2,
+      "loPx": 963.54,
+      "open": 1013.2,
+      "stkVolu": 2477391.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 990.85,
+      "hiPx": 1004.96,
+      "loPx": 984.43,
+      "open": 1003.93,
+      "stkVolu": 1587469.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 1011.88,
+      "hiPx": 1033.34,
+      "loPx": 1001.0,
+      "open": 1001.0,
+      "stkVolu": 1631886.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 1039.9,
+      "hiPx": 1053.0,
+      "loPx": 1026.63,
+      "open": 1047.005,
+      "stkVolu": 1497856.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 1049.42,
+      "hiPx": 1065.38,
+      "loPx": 1021.02,
+      "open": 1043.5,
+      "stkVolu": 1709054.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 1063.25,
+      "hiPx": 1070.47,
+      "loPx": 1038.985,
+      "open": 1042.1,
+      "stkVolu": 1490972.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 1079.0,
+      "hiPx": 1099.66,
+      "loPx": 1065.4046,
+      "open": 1072.67,
+      "stkVolu": 2091098.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 1004.53,
+      "hiPx": 1049.9,
+      "loPx": 986.17,
+      "open": 1046.895,
+      "stkVolu": 2821506.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 987.46,
+      "hiPx": 1003.0,
+      "loPx": 963.76,
+      "open": 1002.27,
+      "stkVolu": 2056099.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 966.01,
+      "hiPx": 986.0,
+      "loPx": 942.357,
+      "open": 977.0,
+      "stkVolu": 2658138.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 956.85,
+      "hiPx": 976.8675,
+      "loPx": 951.74,
+      "open": 974.73,
+      "stkVolu": 1722833.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 942.1,
+      "hiPx": 949.0,
+      "loPx": 925.74,
+      "open": 949.0,
+      "stkVolu": 1895869.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 926.73,
+      "hiPx": 972.0,
+      "loPx": 923.54,
+      "open": 960.01,
+      "stkVolu": 2026146.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 953.09,
+      "hiPx": 959.87,
+      "loPx": 922.0,
+      "open": 924.875,
+      "stkVolu": 2275979.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 953.83,
+      "hiPx": 979.0,
+      "loPx": 941.27,
+      "open": 979.0,
+      "stkVolu": 1584860.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

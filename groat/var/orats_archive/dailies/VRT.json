@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 127.84,
+      "hiPx": 129.43,
+      "loPx": 124.55,
+      "open": 124.6,
+      "stkVolu": 4003595.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 126.26,
+      "hiPx": 129.0,
+      "loPx": 124.785,
+      "open": 127.84,
+      "stkVolu": 4426977.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 125.89,
+      "hiPx": 131.38,
+      "loPx": 124.9,
+      "open": 129.88,
+      "stkVolu": 6641560.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 128.37,
+      "hiPx": 129.48,
+      "loPx": 125.91,
+      "open": 127.03,
+      "stkVolu": 4936280.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 120.72,
+      "hiPx": 128.82,
+      "loPx": 110.06,
+      "open": 128.0,
+      "stkVolu": 24685984.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 123.3,
+      "hiPx": 124.64,
+      "loPx": 118.7,
+      "open": 120.11,
+      "stkVolu": 7222182.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 124.72,
+      "hiPx": 125.56,
+      "loPx": 122.0,
+      "open": 122.0,
+      "stkVolu": 6560353.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 127.37,
+      "hiPx": 129.44,
+      "loPx": 125.5,
+      "open": 127.94,
+      "stkVolu": 7079566.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 125.4,
+      "hiPx": 128.45,
+      "loPx": 122.51,
+      "open": 127.35,
+      "stkVolu": 6041766.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 131.12,
+      "hiPx": 133.52,
+      "loPx": 127.435,
+      "open": 128.25,
+      "stkVolu": 7989182.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 129.06,
+      "hiPx": 133.2,
+      "loPx": 128.44,
+      "open": 131.515,
+      "stkVolu": 5781898.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 126.21,
+      "hiPx": 129.75,
+      "loPx": 125.4,
+      "open": 129.2,
+      "stkVolu": 4821238.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 125.29,
+      "hiPx": 125.92,
+      "loPx": 119.1,
+      "open": 125.86,
+      "stkVolu": 6335832.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 130.19,
+      "hiPx": 131.44,
+      "loPx": 127.37,
+      "open": 127.91,
+      "stkVolu": 6072862.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 130.87,
+      "hiPx": 132.95,
+      "loPx": 129.39,
+      "open": 131.98,
+      "stkVolu": 4504529.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 137.47,
+      "hiPx": 137.66,
+      "loPx": 132.13,
+      "open": 132.13,
+      "stkVolu": 8556061.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 142.55,
+      "hiPx": 143.1,
+      "loPx": 138.02,
+      "open": 139.13,
+      "stkVolu": 10607149.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 142.7,
+      "hiPx": 146.32,
+      "loPx": 140.38,
+      "open": 143.08,
+      "stkVolu": 15169746.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 144.17,
+      "hiPx": 153.5,
+      "loPx": 140.36,
+      "open": 147.075,
+      "stkVolu": 18502379.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 145.6,
+      "hiPx": 152.59,
+      "loPx": 145.43,
+      "open": 148.75,
+      "stkVolu": 10875599.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 141.59,
+      "hiPx": 143.14,
+      "loPx": 136.0,
+      "open": 137.28,
+      "stkVolu": 11014995.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 140.2,
+      "hiPx": 144.265,
+      "loPx": 139.55,
+      "open": 144.265,
+      "stkVolu": 6744805.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 138.76,
+      "hiPx": 141.4,
+      "loPx": 135.3535,
+      "open": 140.83,
+      "stkVolu": 5091083.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 139.75,
+      "hiPx": 140.21,
+      "loPx": 136.25,
+      "open": 137.59,
+      "stkVolu": 4079323.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 139.39,
+      "hiPx": 141.04,
+      "loPx": 137.4201,
+      "open": 141.0,
+      "stkVolu": 5302536.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 139.93,
+      "hiPx": 141.58,
+      "loPx": 138.4,
+      "open": 141.18,
+      "stkVolu": 3733998.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 139.83,
+      "hiPx": 141.44,
+      "loPx": 138.5,
+      "open": 139.17,
+      "stkVolu": 4109541.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 143.72,
+      "hiPx": 145.6,
+      "loPx": 139.8,
+      "open": 141.3,
+      "stkVolu": 6225573.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 137.4,
+      "hiPx": 145.12,
+      "loPx": 133.95,
+      "open": 145.0,
+      "stkVolu": 9976037.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 132.52,
+      "hiPx": 135.93,
+      "loPx": 131.53,
+      "open": 134.21,
+      "stkVolu": 8129177.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 133.07,
+      "hiPx": 133.35,
+      "loPx": 129.22,
+      "open": 132.52,
+      "stkVolu": 6207691.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 135.69,
+      "hiPx": 135.78,
+      "loPx": 132.25,
+      "open": 132.37,
+      "stkVolu": 3251361.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 129.05,
+      "hiPx": 133.97,
+      "loPx": 127.34,
+      "open": 133.01,
+      "stkVolu": 7307704.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 127.54,
+      "hiPx": 127.64,
+      "loPx": 121.4101,
+      "open": 126.43,
+      "stkVolu": 8282295.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 126.58,
+      "hiPx": 128.63,
+      "loPx": 125.785,
+      "open": 127.77,
+      "stkVolu": 3744317.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 125.97,
+      "hiPx": 131.239,
+      "loPx": 125.72,
+      "open": 127.0,
+      "stkVolu": 5622135.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 125.02,
+      "hiPx": 126.85,
+      "loPx": 123.93,
+      "open": 126.46,
+      "stkVolu": 4610783.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 127.93,
+      "hiPx": 129.275,
+      "loPx": 124.91,
+      "open": 125.51,
+      "stkVolu": 5947545.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 129.31,
+      "hiPx": 131.17,
+      "loPx": 126.5634,
+      "open": 127.43,
+      "stkVolu": 6412823.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 134.23,
+      "hiPx": 134.9325,
+      "loPx": 131.17,
+      "open": 133.01,
+      "stkVolu": 6817490.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 127.55,
+      "hiPx": 133.34,
+      "loPx": 126.23,
+      "open": 133.13,
+      "stkVolu": 6367586.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 124.01,
+      "hiPx": 124.49,
+      "loPx": 119.665,
+      "open": 123.7,
+      "stkVolu": 8130491.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 125.59,
+      "hiPx": 125.735,
+      "loPx": 123.07,
+      "open": 124.8,
+      "stkVolu": 4081872.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 125.7,
+      "hiPx": 127.09,
+      "loPx": 124.47,
+      "open": 125.9,
+      "stkVolu": 4607288.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 124.0,
+      "hiPx": 128.5772,
+      "loPx": 118.7,
+      "open": 127.81,
+      "stkVolu": 7719641.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 121.73,
+      "hiPx": 125.72,
+      "loPx": 120.97,
+      "open": 125.71,
+      "stkVolu": 10224113.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 125.58,
+      "hiPx": 125.98,
+      "loPx": 120.83,
+      "open": 124.08,
+      "stkVolu": 7608500.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 136.74,
+      "hiPx": 141.22,
+      "loPx": 134.24,
+      "open": 134.24,
+      "stkVolu": 12971116.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 135.71,
+      "hiPx": 138.42,
+      "loPx": 133.95,
+      "open": 138.42,
+      "stkVolu": 6779747.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 134.84,
+      "hiPx": 137.0924,
+      "loPx": 133.56,
+      "open": 135.5,
+      "stkVolu": 4065365.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 138.26,
+      "hiPx": 142.06,
+      "loPx": 134.4,
+      "open": 135.92,
+      "stkVolu": 7643918.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 136.65,
+      "hiPx": 141.215,
+      "loPx": 135.13,
+      "open": 140.25,
+      "stkVolu": 5449884.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 136.83,
+      "hiPx": 137.565,
+      "loPx": 132.685,
+      "open": 135.64,
+      "stkVolu": 5123266.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 141.96,
+      "hiPx": 142.62,
+      "loPx": 136.97,
+      "open": 139.0,
+      "stkVolu": 5294975.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 143.6,
+      "hiPx": 144.49,
+      "loPx": 139.38,
+      "open": 142.63,
+      "stkVolu": 6682817.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 151.96,
+      "hiPx": 152.45,
+      "loPx": 142.25,
+      "open": 143.05,
+      "stkVolu": 8731683.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 142.61,
+      "hiPx": 152.1,
+      "loPx": 139.15,
+      "open": 151.32,
+      "stkVolu": 16541269.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 141.62,
+      "hiPx": 146.1,
+      "loPx": 140.85,
+      "open": 143.48,
+      "stkVolu": 5978086.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 139.77,
+      "hiPx": 141.185,
+      "loPx": 133.85,
+      "open": 137.01,
+      "stkVolu": 6197612.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 138.62,
+      "hiPx": 140.98,
+      "loPx": 137.08,
+      "open": 139.0,
+      "stkVolu": 3607596.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 143.31,
+      "hiPx": 145.61,
+      "loPx": 141.4,
+      "open": 142.0,
+      "stkVolu": 5876652.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 150.86,
+      "hiPx": 150.93,
+      "loPx": 144.0,
+      "open": 144.0,
+      "stkVolu": 6822349.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 161.59,
+      "hiPx": 162.225,
+      "loPx": 147.35,
+      "open": 149.12,
+      "stkVolu": 12843988.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 161.64,
+      "hiPx": 168.99,
+      "loPx": 157.3101,
+      "open": 164.3,
+      "stkVolu": 8936068.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 160.2,
+      "hiPx": 163.88,
+      "loPx": 157.83,
+      "open": 161.64,
+      "stkVolu": 5728509.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 162.8,
+      "hiPx": 169.83,
+      "loPx": 162.34,
+      "open": 168.845,
+      "stkVolu": 7203318.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 158.87,
+      "hiPx": 165.0,
+      "loPx": 154.77,
+      "open": 164.75,
+      "stkVolu": 6899058.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 167.38,
+      "hiPx": 167.55,
+      "loPx": 159.2722,
+      "open": 160.525,
+      "stkVolu": 4889887.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 168.88,
+      "hiPx": 170.889,
+      "loPx": 164.75,
+      "open": 168.38,
+      "stkVolu": 4972755.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 169.01,
+      "hiPx": 183.105,
+      "loPx": 168.65,
+      "open": 178.43,
+      "stkVolu": 16066576.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 179.0,
+      "hiPx": 184.44,
+      "loPx": 172.0001,
+      "open": 175.01,
+      "stkVolu": 11056210.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 175.15,
+      "hiPx": 181.84,
+      "loPx": 168.2,
+      "open": 171.69,
+      "stkVolu": 7427538.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 180.51,
+      "hiPx": 182.99,
+      "loPx": 175.6,
+      "open": 180.0,
+      "stkVolu": 5642876.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 177.82,
+      "hiPx": 183.0,
+      "loPx": 175.21,
+      "open": 182.51,
+      "stkVolu": 5000095.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 174.0,
+      "hiPx": 178.0,
+      "loPx": 170.3,
+      "open": 175.0,
+      "stkVolu": 5880669.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 175.73,
+      "hiPx": 179.79,
+      "loPx": 173.95,
+      "open": 178.0,
+      "stkVolu": 6691952.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 174.8,
+      "hiPx": 177.1901,
+      "loPx": 170.56,
+      "open": 175.08,
+      "stkVolu": 8130717.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 171.59,
+      "hiPx": 184.5,
+      "loPx": 162.68,
+      "open": 182.6,
+      "stkVolu": 22483700.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 183.2,
+      "hiPx": 184.0399,
+      "loPx": 174.0,
+      "open": 174.53,
+      "stkVolu": 9679416.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 186.06,
+      "hiPx": 188.89,
+      "loPx": 184.9,
+      "open": 186.85,
+      "stkVolu": 7188475.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 192.9,
+      "hiPx": 194.0,
+      "loPx": 188.914,
+      "open": 189.99,
+      "stkVolu": 6672965.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 190.57,
+      "hiPx": 195.705,
+      "loPx": 186.02,
+      "open": 192.77,
+      "stkVolu": 6044059.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 199.27,
+      "hiPx": 199.5,
+      "loPx": 193.13,
+      "open": 193.7,
+      "stkVolu": 6298911.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 193.76,
+      "hiPx": 202.45,
+      "loPx": 192.39,
+      "open": 193.86,
+      "stkVolu": 5693489.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 192.86,
+      "hiPx": 199.8696,
+      "loPx": 188.58,
+      "open": 196.95,
+      "stkVolu": 7726594.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 191.4,
+      "hiPx": 197.6,
+      "loPx": 189.57,
+      "open": 196.15,
+      "stkVolu": 6065122.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 180.82,
+      "hiPx": 186.9,
+      "loPx": 177.5001,
+      "open": 183.3,
+      "stkVolu": 8984794.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 190.71,
+      "hiPx": 193.4,
+      "loPx": 181.0,
+      "open": 182.075,
+      "stkVolu": 6534680.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 183.02,
+      "hiPx": 191.005,
+      "loPx": 180.51,
+      "open": 191.005,
+      "stkVolu": 5907135.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 179.8,
+      "hiPx": 179.8,
+      "loPx": 169.61,
+      "open": 177.0,
+      "stkVolu": 9143033.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 187.84,
+      "hiPx": 191.41,
+      "loPx": 184.76,
+      "open": 188.02,
+      "stkVolu": 5590097.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 179.05,
+      "hiPx": 187.48,
+      "loPx": 178.04,
+      "open": 184.0,
+      "stkVolu": 5625672.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 173.37,
+      "hiPx": 182.57,
+      "loPx": 173.01,
+      "open": 182.11,
+      "stkVolu": 6131655.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 163.64,
+      "hiPx": 170.65,
+      "loPx": 160.67,
+      "open": 169.975,
+      "stkVolu": 11389923.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 170.97,
+      "hiPx": 175.88,
+      "loPx": 159.66,
+      "open": 162.0,
+      "stkVolu": 10018674.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 166.65,
+      "hiPx": 174.85,
+      "loPx": 164.56,
+      "open": 168.39,
+      "stkVolu": 5249941.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 164.86,
+      "hiPx": 169.126,
+      "loPx": 158.0,
+      "open": 163.31,
+      "stkVolu": 7586347.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 170.65,
+      "hiPx": 174.66,
+      "loPx": 165.91,
+      "open": 166.06,
+      "stkVolu": 6070466.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 159.61,
+      "hiPx": 180.8751,
+      "loPx": 158.08,
+      "open": 176.92,
+      "stkVolu": 10076061.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 159.83,
+      "hiPx": 161.29,
+      "loPx": 149.11,
+      "open": 160.0,
+      "stkVolu": 10577739.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 168.91,
+      "hiPx": 171.8,
+      "loPx": 162.43,
+      "open": 162.43,
+      "stkVolu": 8208234.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 169.57,
+      "hiPx": 169.66,
+      "loPx": 158.89,
+      "open": 167.55,
+      "stkVolu": 8573194.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 172.02,
+      "hiPx": 174.8699,
+      "loPx": 170.55,
+      "open": 172.205,
+      "stkVolu": 5264773.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 179.73,
+      "hiPx": 179.8,
+      "loPx": 172.66,
+      "open": 173.52,
+      "stkVolu": 4059633.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 179.22,
+      "hiPx": 182.645,
+      "loPx": 173.2,
+      "open": 175.9,
+      "stkVolu": 6501549.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 180.91,
+      "hiPx": 186.37,
+      "loPx": 179.62,
+      "open": 182.82,
+      "stkVolu": 5304528.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 178.88,
+      "hiPx": 180.93,
+      "loPx": 172.7,
+      "open": 179.02,
+      "stkVolu": 5374469.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 182.54,
+      "hiPx": 185.34,
+      "loPx": 177.16,
+      "open": 179.34,
+      "stkVolu": 4962322.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 189.02,
+      "hiPx": 189.66,
+      "loPx": 180.1,
+      "open": 182.17,
+      "stkVolu": 7445754.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 185.61,
+      "hiPx": 188.5,
+      "loPx": 182.0,
+      "open": 186.17,
+      "stkVolu": 5556335.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 178.38,
+      "hiPx": 182.5,
+      "loPx": 176.54,
+      "open": 181.18,
+      "stkVolu": 6414726.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 181.82,
+      "hiPx": 185.405,
+      "loPx": 175.55,
+      "open": 179.38,
+      "stkVolu": 5301306.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 178.66,
+      "hiPx": 179.0,
+      "loPx": 167.18,
+      "open": 177.5,
+      "stkVolu": 11321137.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 161.27,
+      "hiPx": 174.15,
+      "loPx": 159.8201,
+      "open": 173.3,
+      "stkVolu": 12512180.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 161.74,
+      "hiPx": 166.55,
+      "loPx": 160.0,
+      "open": 163.41,
+      "stkVolu": 8861391.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 160.66,
+      "hiPx": 162.47,
+      "loPx": 154.65,
+      "open": 158.35,
+      "stkVolu": 7808725.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 149.83,
+      "hiPx": 161.01,
+      "loPx": 147.82,
+      "open": 161.01,
+      "stkVolu": 11959757.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 154.39,
+      "hiPx": 158.755,
+      "loPx": 151.5,
+      "open": 156.43,
+      "stkVolu": 7773779.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 159.82,
+      "hiPx": 162.37,
+      "loPx": 155.27,
+      "open": 156.0,
+      "stkVolu": 9716444.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 166.25,
+      "hiPx": 167.0,
+      "loPx": 162.95,
+      "open": 166.13,
+      "stkVolu": 5688114.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 166.26,
+      "hiPx": 167.96,
+      "loPx": 161.83,
+      "open": 165.53,
+      "stkVolu": 3220439.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 166.87,
+      "hiPx": 167.5,
+      "loPx": 164.62,
+      "open": 166.0,
+      "stkVolu": 1335185.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 167.58,
+      "hiPx": 168.4399,
+      "loPx": 165.85,
+      "open": 167.26,
+      "stkVolu": 2532778.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 165.62,
+      "hiPx": 168.99,
+      "loPx": 163.79,
+      "open": 165.8,
+      "stkVolu": 3075201.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 164.34,
+      "hiPx": 166.3999,
+      "loPx": 163.88,
+      "open": 165.99,
+      "stkVolu": 3764250.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 162.01,
+      "hiPx": 165.7575,
+      "loPx": 161.91,
+      "open": 164.69,
+      "stkVolu": 2575507.0,
+      "ticker": "VRT",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 175.61,
+      "hiPx": 177.25,
+      "loPx": 169.13,
+      "open": 169.465,
+      "stkVolu": 7348208.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 173.95,
+      "hiPx": 183.25,
+      "loPx": 170.44,
+      "open": 182.63,
+      "stkVolu": 5860193.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 174.95,
+      "hiPx": 175.21,
+      "loPx": 162.21,
+      "open": 169.36,
+      "stkVolu": 7813703.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 171.54,
+      "hiPx": 174.21,
+      "loPx": 168.53,
+      "open": 169.0,
+      "stkVolu": 5205647.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 160.78,
+      "hiPx": 171.26,
+      "loPx": 158.77,
+      "open": 170.75,
+      "stkVolu": 7684895.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 163.58,
+      "hiPx": 164.77,
+      "loPx": 161.19,
+      "open": 162.4,
+      "stkVolu": 5665293.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 170.03,
+      "hiPx": 171.33,
+      "loPx": 164.16,
+      "open": 164.18,
+      "stkVolu": 4181075.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 172.72,
+      "hiPx": 175.21,
+      "loPx": 169.74,
+      "open": 170.1,
+      "stkVolu": 3648016.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 170.86,
+      "hiPx": 175.56,
+      "loPx": 167.6,
+      "open": 172.2,
+      "stkVolu": 3780784.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 172.54,
+      "hiPx": 179.67,
+      "loPx": 172.35,
+      "open": 176.0,
+      "stkVolu": 4104038.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 176.93,
+      "hiPx": 180.37,
+      "loPx": 173.5,
+      "open": 174.63,
+      "stkVolu": 4502250.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 175.18,
+      "hiPx": 177.97,
+      "loPx": 170.0063,
+      "open": 170.85,
+      "stkVolu": 4690481.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 181.47,
+      "hiPx": 182.4961,
+      "loPx": 173.0,
+      "open": 176.69,
+      "stkVolu": 5587326.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 181.12,
+      "hiPx": 189.9,
+      "loPx": 179.2,
+      "open": 186.92,
+      "stkVolu": 5508687.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 182.49,
+      "hiPx": 183.72,
+      "loPx": 175.73,
+      "open": 182.22,
+      "stkVolu": 3496291.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 181.23,
+      "hiPx": 185.32,
+      "loPx": 180.08,
+      "open": 181.02,
+      "stkVolu": 3020062.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 189.21,
+      "hiPx": 189.3,
+      "loPx": 178.26,
+      "open": 182.4,
+      "stkVolu": 4390273.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 193.76,
+      "hiPx": 194.0,
+      "loPx": 188.07,
+      "open": 189.8,
+      "stkVolu": 4935707.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 195.1,
+      "hiPx": 199.1909,
+      "loPx": 186.18,
+      "open": 196.98,
+      "stkVolu": 5662049.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 186.18,
+      "hiPx": 200.395,
+      "loPx": 185.6,
+      "open": 194.91,
+      "stkVolu": 4502673.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 190.01,
+      "hiPx": 191.9,
+      "loPx": 182.0,
+      "open": 182.65,
+      "stkVolu": 4112054.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 190.15,
+      "hiPx": 195.0,
+      "loPx": 183.01,
+      "open": 190.01,
+      "stkVolu": 4432998.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 182.56,
+      "hiPx": 194.881,
+      "loPx": 172.6,
+      "open": 190.7,
+      "stkVolu": 8287247.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 177.75,
+      "hiPx": 183.3346,
+      "loPx": 172.35,
+      "open": 176.29,
+      "stkVolu": 6144625.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 195.58,
+      "hiPx": 195.81,
+      "loPx": 180.92,
+      "open": 180.92,
+      "stkVolu": 7197339.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 202.0,
+      "hiPx": 208.43,
+      "loPx": 195.835,
+      "open": 196.78,
+      "stkVolu": 7638392.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 199.62,
+      "hiPx": 206.35,
+      "loPx": 197.38,
+      "open": 203.0,
+      "stkVolu": 6707752.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 248.51,
+      "hiPx": 249.9499,
+      "loPx": 233.0,
+      "open": 233.25,
+      "stkVolu": 19793450.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 236.51,
+      "hiPx": 255.54,
+      "loPx": 234.51,
+      "open": 243.95,
+      "stkVolu": 12438830.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 234.53,
+      "hiPx": 239.51,
+      "loPx": 227.05,
+      "open": 238.22,
+      "stkVolu": 6785153.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 243.53,
+      "hiPx": 245.405,
+      "loPx": 232.12,
+      "open": 234.58,
+      "stkVolu": 6449593.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 243.21,
+      "hiPx": 254.05,
+      "loPx": 240.38,
+      "open": 247.0,
+      "stkVolu": 5350687.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 243.06,
+      "hiPx": 247.7099,
+      "loPx": 239.5241,
+      "open": 241.03,
+      "stkVolu": 3929753.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 243.75,
+      "hiPx": 246.8,
+      "loPx": 238.19,
+      "open": 240.99,
+      "stkVolu": 3879175.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 245.42,
+      "hiPx": 245.77,
+      "loPx": 240.0,
+      "open": 242.6,
+      "stkVolu": 4026050.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 253.15,
+      "hiPx": 253.48,
+      "loPx": 241.27,
+      "open": 246.5,
+      "stkVolu": 5458231.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 262.19,
+      "hiPx": 264.86,
+      "loPx": 255.0,
+      "open": 255.46,
+      "stkVolu": 6580276.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 259.23,
+      "hiPx": 260.15,
+      "loPx": 241.69,
+      "open": 260.15,
+      "stkVolu": 8566379.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 254.89,
+      "hiPx": 257.8,
+      "loPx": 245.67,
+      "open": 251.5,
+      "stkVolu": 6967895.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 257.75,
+      "hiPx": 258.8999,
+      "loPx": 244.22,
+      "open": 249.44,
+      "stkVolu": 5382318.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 244.44,
+      "hiPx": 248.2199,
+      "loPx": 234.72,
+      "open": 245.53,
+      "stkVolu": 6866602.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 251.28,
+      "hiPx": 255.3,
+      "loPx": 245.3401,
+      "open": 249.4,
+      "stkVolu": 4298543.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 249.75,
+      "hiPx": 258.32,
+      "loPx": 238.74,
+      "open": 247.49,
+      "stkVolu": 5291477.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 241.78,
+      "hiPx": 251.47,
+      "loPx": 238.6501,
+      "open": 241.0,
+      "stkVolu": 8772638.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 264.35,
+      "hiPx": 266.67,
+      "loPx": 251.0,
+      "open": 251.49,
+      "stkVolu": 20427931.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 270.06,
+      "hiPx": 274.85,
+      "loPx": 264.5,
+      "open": 265.55,
+      "stkVolu": 11306849.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 268.26,
+      "hiPx": 276.78,
+      "loPx": 266.57,
+      "open": 272.11,
+      "stkVolu": 7103228.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 265.38,
+      "hiPx": 271.44,
+      "loPx": 257.255,
+      "open": 263.65,
+      "stkVolu": 7465350.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 258.88,
+      "hiPx": 269.22,
+      "loPx": 256.0726,
+      "open": 265.2,
+      "stkVolu": 6981158.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 264.74,
+      "hiPx": 270.91,
+      "loPx": 261.68,
+      "open": 261.68,
+      "stkVolu": 7386691.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 268.41,
+      "hiPx": 270.87,
+      "loPx": 259.51,
+      "open": 260.66,
+      "stkVolu": 5121284.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 264.71,
+      "hiPx": 274.73,
+      "loPx": 264.5401,
+      "open": 271.63,
+      "stkVolu": 6673848.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 269.17,
+      "hiPx": 271.101,
+      "loPx": 256.04,
+      "open": 258.44,
+      "stkVolu": 7084563.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 255.88,
+      "hiPx": 272.84,
+      "loPx": 255.51,
+      "open": 268.62,
+      "stkVolu": 87826646.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 256.0,
+      "hiPx": 271.88,
+      "loPx": 255.12,
+      "open": 258.995,
+      "stkVolu": 8888136.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 270.89,
+      "hiPx": 270.91,
+      "loPx": 251.15,
+      "open": 256.0,
+      "stkVolu": 6843039.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 276.16,
+      "hiPx": 282.05,
+      "loPx": 274.0,
+      "open": 276.8,
+      "stkVolu": 5929023.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 252.4,
+      "hiPx": 274.16,
+      "loPx": 252.4,
+      "open": 273.81,
+      "stkVolu": 6621741.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 251.07,
+      "hiPx": 256.8399,
+      "loPx": 248.5,
+      "open": 249.96,
+      "stkVolu": 5444468.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 234.22,
+      "hiPx": 255.45,
+      "loPx": 231.7,
+      "open": 253.71,
+      "stkVolu": 6930419.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 250.58,
+      "hiPx": 251.0,
+      "loPx": 233.0,
+      "open": 233.0,
+      "stkVolu": 6686054.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 259.37,
+      "hiPx": 265.55,
+      "loPx": 257.0,
+      "open": 257.0,
+      "stkVolu": 5112620.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 261.29,
+      "hiPx": 266.9999,
+      "loPx": 247.9154,
+      "open": 249.12,
+      "stkVolu": 3965504.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 258.73,
+      "hiPx": 266.525,
+      "loPx": 258.59,
+      "open": 262.93,
+      "stkVolu": 3305691.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 262.3,
+      "hiPx": 262.48,
+      "loPx": 252.0101,
+      "open": 256.97,
+      "stkVolu": 2937212.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 281.03,
+      "hiPx": 285.6,
+      "loPx": 273.38,
+      "open": 279.87,
+      "stkVolu": 5696708.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 287.64,
+      "hiPx": 291.0,
+      "loPx": 280.97,
+      "open": 280.99,
+      "stkVolu": 5166438.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 295.11,
+      "hiPx": 297.56,
+      "loPx": 289.3,
+      "open": 289.75,
+      "stkVolu": 4644833.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 299.96,
+      "hiPx": 300.68,
+      "loPx": 294.98,
+      "open": 294.98,
+      "stkVolu": 4733863.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 310.51,
+      "hiPx": 312.46,
+      "loPx": 299.01,
+      "open": 307.0,
+      "stkVolu": 4993767.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 301.16,
+      "hiPx": 311.0,
+      "loPx": 296.64,
+      "open": 309.5,
+      "stkVolu": 5353598.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 294.13,
+      "hiPx": 303.31,
+      "loPx": 292.67,
+      "open": 303.0,
+      "stkVolu": 4832598.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 307.34,
+      "hiPx": 308.54,
+      "loPx": 298.22,
+      "open": 298.7,
+      "stkVolu": 5805510.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 314.41,
+      "hiPx": 315.66,
+      "loPx": 305.11,
+      "open": 307.005,
+      "stkVolu": 4672297.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 312.44,
+      "hiPx": 323.0379,
+      "loPx": 310.84,
+      "open": 316.1,
+      "stkVolu": 7285421.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 305.14,
+      "hiPx": 312.98,
+      "loPx": 296.8,
+      "open": 305.32,
+      "stkVolu": 9835897.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 321.75,
+      "hiPx": 325.25,
+      "loPx": 304.2,
+      "open": 304.2,
+      "stkVolu": 7066993.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 323.46,
+      "hiPx": 330.295,
+      "loPx": 316.4001,
+      "open": 328.0,
+      "stkVolu": 5281490.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 322.43,
+      "hiPx": 328.05,
+      "loPx": 307.071,
+      "open": 325.99,
+      "stkVolu": 5442463.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 305.03,
+      "hiPx": 314.51,
+      "loPx": 293.88,
+      "open": 307.195,
+      "stkVolu": 8217552.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 306.18,
+      "hiPx": 309.97,
+      "loPx": 299.8,
+      "open": 307.05,
+      "stkVolu": 4536327.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 328.49,
+      "hiPx": 330.0,
+      "loPx": 312.34,
+      "open": 313.75,
+      "stkVolu": 6268692.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 328.31,
+      "hiPx": 331.97,
+      "loPx": 324.23,
+      "open": 330.65,
+      "stkVolu": 4408615.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 330.97,
+      "hiPx": 332.95,
+      "loPx": 321.45,
+      "open": 329.58,
+      "stkVolu": 4927446.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 341.02,
+      "hiPx": 341.12,
+      "loPx": 330.6,
+      "open": 334.07,
+      "stkVolu": 5456160.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 358.92,
+      "hiPx": 359.84,
+      "loPx": 343.65,
+      "open": 351.56,
+      "stkVolu": 5583202.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 340.01,
+      "hiPx": 359.0,
+      "loPx": 336.18,
+      "open": 358.575,
+      "stkVolu": 5458124.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 339.97,
+      "hiPx": 350.99,
+      "loPx": 339.71,
+      "open": 349.785,
+      "stkVolu": 4080985.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 367.92,
+      "hiPx": 371.995,
+      "loPx": 342.013,
+      "open": 342.013,
+      "stkVolu": 7279183.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 367.13,
+      "hiPx": 370.265,
+      "loPx": 349.02,
+      "open": 361.32,
+      "stkVolu": 6556246.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 369.99,
+      "hiPx": 377.77,
+      "loPx": 360.91,
+      "open": 375.7,
+      "stkVolu": 4460997.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 376.23,
+      "hiPx": 379.935,
+      "loPx": 365.15,
+      "open": 370.24,
+      "stkVolu": 3611280.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 370.94,
+      "hiPx": 373.91,
+      "loPx": 356.27,
+      "open": 364.31,
+      "stkVolu": 4871154.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 339.73,
+      "hiPx": 370.295,
+      "loPx": 330.72,
+      "open": 370.295,
+      "stkVolu": 8086663.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 322.63,
+      "hiPx": 334.625,
+      "loPx": 314.34,
+      "open": 329.68,
+      "stkVolu": 9039473.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 315.67,
+      "hiPx": 329.43,
+      "loPx": 314.25,
+      "open": 325.0,
+      "stkVolu": 6014021.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 323.4,
+      "hiPx": 330.33,
+      "loPx": 319.0,
+      "open": 322.3,
+      "stkVolu": 5221317.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 327.46,
+      "hiPx": 334.89,
+      "loPx": 324.0,
+      "open": 333.96,
+      "stkVolu": 4801845.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 323.91,
+      "hiPx": 343.31,
+      "loPx": 323.26,
+      "open": 341.06,
+      "stkVolu": 6523689.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 319.78,
+      "hiPx": 326.1627,
+      "loPx": 310.1,
+      "open": 326.01,
+      "stkVolu": 5293029.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 314.18,
+      "hiPx": 320.675,
+      "loPx": 307.3001,
+      "open": 316.4,
+      "stkVolu": 5384059.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 315.71,
+      "hiPx": 319.58,
+      "loPx": 308.0,
+      "open": 315.2,
+      "stkVolu": 7227549.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 323.39,
+      "hiPx": 328.58,
+      "loPx": 313.1301,
+      "open": 317.99,
+      "stkVolu": 6162096.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 334.49,
+      "hiPx": 345.18,
+      "loPx": 331.23,
+      "open": 335.15,
+      "stkVolu": 5077343.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 331.44,
+      "hiPx": 343.63,
+      "loPx": 326.79,
+      "open": 340.865,
+      "stkVolu": 3927697.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 323.92,
+      "hiPx": 326.86,
+      "loPx": 306.0,
+      "open": 321.095,
+      "stkVolu": 6075869.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 300.51,
+      "hiPx": 315.0,
+      "loPx": 294.395,
+      "open": 313.755,
+      "stkVolu": 7330005.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 300.57,
+      "hiPx": 310.6066,
+      "loPx": 300.22,
+      "open": 309.25,
+      "stkVolu": 4790038.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 289.52,
+      "hiPx": 307.13,
+      "loPx": 276.5,
+      "open": 300.43,
+      "stkVolu": 11117745.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 280.98,
+      "hiPx": 294.35,
+      "loPx": 275.18,
+      "open": 284.52,
+      "stkVolu": 6904227.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 297.88,
+      "hiPx": 298.66,
+      "loPx": 283.4,
+      "open": 284.25,
+      "stkVolu": 5408777.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 302.87,
+      "hiPx": 305.19,
+      "loPx": 295.1,
+      "open": 303.48,
+      "stkVolu": 4958116.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 311.93,
+      "hiPx": 319.839,
+      "loPx": 310.371,
+      "open": 316.0,
+      "stkVolu": 5346354.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 299.6,
+      "hiPx": 316.3707,
+      "loPx": 299.09,
+      "open": 314.2,
+      "stkVolu": 4581930.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 317.58,
+      "hiPx": 329.6999,
+      "loPx": 303.2,
+      "open": 304.72,
+      "stkVolu": 6181391.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 333.05,
+      "hiPx": 337.79,
+      "loPx": 326.5,
+      "open": 331.23,
+      "stkVolu": 7262597.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 357.96,
+      "hiPx": 358.54,
+      "loPx": 338.0,
+      "open": 338.88,
+      "stkVolu": 7284275.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 318.32,
+      "hiPx": 337.97,
+      "loPx": 316.51,
+      "open": 337.96,
+      "stkVolu": 10277717.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 316.43,
+      "hiPx": 323.74,
+      "loPx": 308.28,
+      "open": 323.73,
+      "stkVolu": 6106142.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 325.57,
+      "hiPx": 340.0,
+      "loPx": 321.34,
+      "open": 338.92,
+      "stkVolu": 6313821.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 303.95,
+      "hiPx": 316.0,
+      "loPx": 300.19,
+      "open": 314.0,
+      "stkVolu": 21988225.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 306.97,
+      "hiPx": 309.2,
+      "loPx": 294.3,
+      "open": 304.65,
+      "stkVolu": 6708648.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 334.82,
+      "hiPx": 337.23,
+      "loPx": 310.0,
+      "open": 310.0,
+      "stkVolu": 7742452.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 311.42,
+      "hiPx": 327.215,
+      "loPx": 309.51,
+      "open": 325.8,
+      "stkVolu": 6259817.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 300.53,
+      "hiPx": 316.99,
+      "loPx": 296.45,
+      "open": 309.81,
+      "stkVolu": 5906879.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 318.47,
+      "hiPx": 329.38,
+      "loPx": 308.02,
+      "open": 311.99,
+      "stkVolu": 6428199.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 305.58,
+      "hiPx": 306.23,
+      "loPx": 287.11,
+      "open": 304.745,
+      "stkVolu": 5986590.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 317.81,
+      "hiPx": 319.65,
+      "loPx": 300.6,
+      "open": 301.64,
+      "stkVolu": 4425213.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 323.92,
+      "hiPx": 338.88,
+      "loPx": 322.38,
+      "open": 333.55,
+      "stkVolu": 3946260.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 318.86,
+      "hiPx": 323.81,
+      "loPx": 315.68,
+      "open": 320.31,
+      "stkVolu": 3001232.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 305.87,
+      "hiPx": 316.08,
+      "loPx": 302.07,
+      "open": 311.94,
+      "stkVolu": 3720338.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 303.58,
+      "hiPx": 317.18,
+      "loPx": 300.19,
+      "open": 315.53,
+      "stkVolu": 3560915.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 304.57,
+      "hiPx": 309.435,
+      "loPx": 289.78,
+      "open": 306.25,
+      "stkVolu": 3873675.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 294.11,
+      "hiPx": 301.28,
+      "loPx": 287.53,
+      "open": 297.0,
+      "stkVolu": 5017758.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 289.56,
+      "hiPx": 297.325,
+      "loPx": 272.93,
+      "open": 279.21,
+      "stkVolu": 6068201.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 291.67,
+      "hiPx": 301.6601,
+      "loPx": 290.96,
+      "open": 295.0,
+      "stkVolu": 3770251.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 304.5,
+      "hiPx": 306.45,
+      "loPx": 297.15,
+      "open": 303.05,
+      "stkVolu": 3485208.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 301.16,
+      "hiPx": 303.8845,
+      "loPx": 293.55,
+      "open": 294.255,
+      "stkVolu": 2935055.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 304.04,
+      "hiPx": 313.61,
+      "loPx": 300.0,
+      "open": 300.0,
+      "stkVolu": 3098537.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 290.36,
+      "hiPx": 302.49,
+      "loPx": 288.55,
+      "open": 300.5,
+      "stkVolu": 3405162.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 287.6,
+      "hiPx": 296.71,
+      "loPx": 272.53,
+      "open": 293.03,
+      "stkVolu": 5017278.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 269.56,
+      "hiPx": 274.66,
+      "loPx": 259.19,
+      "open": 272.58,
+      "stkVolu": 8157528.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 223.04,
+      "hiPx": 248.8,
+      "loPx": 220.92,
+      "open": 245.99,
+      "stkVolu": 21265717.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 227.5,
+      "hiPx": 241.32,
+      "loPx": 224.6,
+      "open": 237.2,
+      "stkVolu": 14508005.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 241.57,
+      "hiPx": 251.709,
+      "loPx": 233.17,
+      "open": 246.87,
+      "stkVolu": 10849593.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 263.05,
+      "hiPx": 264.14,
+      "loPx": 234.96,
+      "open": 236.98,
+      "stkVolu": 9517058.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 269.93,
+      "hiPx": 276.5201,
+      "loPx": 268.12,
+      "open": 275.21,
+      "stkVolu": 5802679.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 277.94,
+      "hiPx": 282.5,
+      "loPx": 270.0,
+      "open": 270.45,
+      "stkVolu": 5933161.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 275.17,
+      "hiPx": 286.36,
+      "loPx": 270.063,
+      "open": 271.13,
+      "stkVolu": 5084738.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 272.4,
+      "hiPx": 285.9038,
+      "loPx": 269.19,
+      "open": 284.92,
+      "stkVolu": 3909487.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 270.1,
+      "hiPx": 278.68,
+      "loPx": 267.52,
+      "open": 277.28,
+      "stkVolu": 2859542.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 281.81,
+      "hiPx": 284.68,
+      "loPx": 273.9,
+      "open": 275.5,
+      "stkVolu": 3686940.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 288.36,
+      "hiPx": 298.29,
+      "loPx": 286.011,
+      "open": 298.29,
+      "stkVolu": 4034344.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 287.07,
+      "hiPx": 293.51,
+      "loPx": 286.88,
+      "open": 287.945,
+      "stkVolu": 3120082.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 293.84,
+      "hiPx": 295.47,
+      "loPx": 285.25,
+      "open": 287.07,
+      "stkVolu": 3153624.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 292.43,
+      "hiPx": 300.3,
+      "loPx": 290.5781,
+      "open": 297.88,
+      "stkVolu": 3575938.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 272.54,
+      "hiPx": 281.6694,
+      "loPx": 270.31,
+      "open": 281.0,
+      "stkVolu": 5584140.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 261.0,
+      "hiPx": 275.55,
+      "loPx": 256.11,
+      "open": 273.0,
+      "stkVolu": 6206531.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 264.63,
+      "hiPx": 264.95,
+      "loPx": 252.16,
+      "open": 258.585,
+      "stkVolu": 5219688.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 261.95,
+      "hiPx": 268.2,
+      "loPx": 257.485,
+      "open": 268.2,
+      "stkVolu": 3212660.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 254.97,
+      "hiPx": 258.3,
+      "loPx": 249.97,
+      "open": 257.0,
+      "stkVolu": 3986115.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 255.75,
+      "hiPx": 267.045,
+      "loPx": 255.03,
+      "open": 263.09,
+      "stkVolu": 3927047.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 263.81,
+      "hiPx": 265.78,
+      "loPx": 255.34,
+      "open": 256.61,
+      "stkVolu": 3930906.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 269.28,
+      "hiPx": 274.76,
+      "loPx": 262.23,
+      "open": 273.0,
+      "stkVolu": 4607784.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+asof_date,ticker,reasons,stage
+2026-08-27,SPY,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,IWM,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,DIA,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,TLT,no directional underlying thesis no_setup,screen
+2026-08-27,UUP,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XLF,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XLI,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XLY,IV rich vs realized — prefer stock or defined-risk short premium option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XLP,IV rich vs realized — prefer stock or defined-risk short premium option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XLU,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XLB,IV rich vs realized — prefer stock or defined-risk short premium option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XLRE,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XLC,no directional underlying thesis no_setup,screen
+2026-08-27,SMH,no directional underlying thesis no_setup,screen
+2026-08-27,SOXX,no directional underlying thesis no_setup,screen
+2026-08-27,BOTZ,IV rich vs realized — prefer stock or defined-risk short premium option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,ITA,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,GRID,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XAR,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,AAPL,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,GOOGL,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,META,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,AVGO,IV rich vs realized — prefer stock or defined-risk short premium earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) stock won the shortlist versus priced option structures,screen
+2026-08-27,TSLA,no directional underlying thesis no_setup,screen
+2026-08-27,AMD,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,AMAT,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,LRCX,no directional underlying thesis no_setup,screen
+2026-08-27,KLAC,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,ASML,no directional underlying thesis no_setup,screen
+2026-08-27,MU,no directional underlying thesis no_setup,screen
+2026-08-27,INTC,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,ARM,no directional underlying thesis no_setup,screen
+2026-08-27,APP,IV below realized/forecast — long premium allowed if liquid IV rich vs realized — prefer stock or defined-risk short premium option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,DDOG,no directional underlying thesis no_setup,screen
+2026-08-27,CSCO,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,VRT,no directional underlying thesis no_setup,screen
+2026-08-27,ETN,no directional underlying thesis no_setup,screen
+2026-08-27,PWR,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,VST,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,CEG,no directional underlying thesis no_setup,screen
+2026-08-27,GEV,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,LMT,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,RTX,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,GE,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,NOC,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,RKLB,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,JPM,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,GS,no directional underlying thesis no_setup,screen
+2026-08-27,V,no directional underlying thesis no_setup,screen
+2026-08-27,MA,no directional underlying thesis no_setup,screen
+2026-08-27,COIN,IV below realized/forecast — long premium allowed if liquid stock won the shortlist versus priced option structures,screen
+2026-08-27,HOOD,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,LLY,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,UNH,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,JNJ,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,ABBV,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,ISRG,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,XOM,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,CVX,option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,COST,IV rich vs realized — prefer stock or defined-risk short premium option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,HD,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,CAT,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,DE,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen
+2026-08-27,BA,IV below realized/forecast — long premium allowed if liquid option chain DATA UNAVAILABLE stock won the shortlist versus priced option structures,screen

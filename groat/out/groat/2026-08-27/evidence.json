@@ -1,0 +1,807 @@
+{
+  "asof": "2026-08-27",
+  "earnings_http": 0,
+  "http": 5,
+  "note": "Same ticker + same setup on cached tape. Options use hist/strikes when cached or under the daily cap. Option P&L is delta+theta clamped to defined risk, not a live exit mark. Not a system win rate. X-HOT is not tested. Does not change today's gates.",
+  "rows": [
+    {
+      "chase_skipped": 0,
+      "choice": "OPTIONS",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2025-09-24",
+          "direction": "bullish",
+          "entry": 186.674,
+          "exit_date": "2025-10-15",
+          "exit_px": 180.61,
+          "hold": 15,
+          "primary": "E",
+          "r": -0.5946239801306576,
+          "result": "time",
+          "stop": 176.4759585441752,
+          "target": 207.07008291164962
+        }
+      ],
+      "instrument": "debit_call_spread",
+      "note": "",
+      "opt_rows": [
+        {
+          "date": "2025-09-24",
+          "priced": false,
+          "reason": "no analog structure"
+        }
+      ],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": -0.5946239801306576,
+        "expectancy_r": -0.5946239801306576,
+        "losses": 0,
+        "n": 1,
+        "time": 1,
+        "win_rate": 0.0,
+        "wins": 0
+      },
+      "ticker": "NOW",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "OPTIONS",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-06-04",
+          "direction": "bullish",
+          "entry": 218.66,
+          "exit_date": "2026-06-09",
+          "exit_px": 202.51338837455276,
+          "hold": 3,
+          "primary": "C",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 202.51338837455276,
+          "target": 250.95322325089447
+        },
+        {
+          "date": "2026-03-11",
+          "direction": "bullish",
+          "entry": 186.03,
+          "exit_date": "2026-03-20",
+          "exit_px": 173.86335670218975,
+          "hold": 7,
+          "primary": "C",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 173.86335670218975,
+          "target": 210.3632865956205
+        },
+        {
+          "date": "2025-12-04",
+          "direction": "bullish",
+          "entry": 183.38,
+          "exit_date": "2025-12-26",
+          "exit_px": 190.53,
+          "hold": 15,
+          "primary": "C",
+          "r": 0.4923660516446151,
+          "result": "time",
+          "stop": 168.85828393911933,
+          "target": 212.42343212176132
+        },
+        {
+          "date": "2025-09-11",
+          "direction": "bullish",
+          "entry": 177.17,
+          "exit_date": "2025-10-02",
+          "exit_px": 188.89,
+          "hold": 15,
+          "primary": "C",
+          "r": 1.1649331075091176,
+          "result": "time",
+          "stop": 167.1093364954148,
+          "target": 197.29132700917037
+        }
+      ],
+      "instrument": "debit_call_spread",
+      "note": "",
+      "opt_rows": [
+        {
+          "date": "2026-06-04",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2026-03-11",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2025-12-04",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "be_hit": true,
+          "date": "2025-09-11",
+          "instrument": "debit_call_spread",
+          "naive_pop": 0.46547751007048155,
+          "pnl": 3.1861328990406754,
+          "pnl_per_risk": 0.7143795737759363,
+          "priced": true,
+          "target_credit": null,
+          "target_debit": 4.459999999999999
+        }
+      ],
+      "options": {
+        "avg_pnl_per_risk": 0.7143795737759363,
+        "be_rate": 1.0,
+        "mean_pop": 0.46547751007048155,
+        "n": 1
+      },
+      "primary": "C",
+      "primary_name": "Post-Earnings Drift",
+      "stock": {
+        "avg_r": -0.08567521021156682,
+        "expectancy_r": -0.08567521021156682,
+        "losses": 2,
+        "n": 4,
+        "time": 2,
+        "win_rate": 0.0,
+        "wins": 0
+      },
+      "ticker": "NVDA",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "OPTIONS",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-03-25",
+          "direction": "bullish",
+          "entry": 154.96,
+          "exit_date": "2026-03-30",
+          "exit_px": 141.1782808042394,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 141.1782808042394,
+          "target": 182.52343839152124
+        },
+        {
+          "date": "2025-12-29",
+          "direction": "bullish",
+          "entry": 184.18,
+          "exit_date": "2026-01-02",
+          "exit_px": 169.56336420648915,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 169.56336420648915,
+          "target": 213.4132715870217
+        },
+        {
+          "date": "2025-10-14",
+          "direction": "bullish",
+          "entry": 179.74,
+          "exit_date": "2025-11-04",
+          "exit_px": 190.74,
+          "hold": 15,
+          "primary": "E",
+          "r": 0.7061572217679553,
+          "result": "time",
+          "stop": 164.1627324157925,
+          "target": 210.89453516841502
+        },
+        {
+          "date": "2025-09-22",
+          "direction": "bullish",
+          "entry": 179.33,
+          "exit_date": "2025-10-13",
+          "exit_px": 177.21,
+          "hold": 15,
+          "primary": "E",
+          "r": -0.15469104139084086,
+          "result": "time",
+          "stop": 165.62526324899687,
+          "target": 206.7394735020063
+        }
+      ],
+      "instrument": "debit_call_spread",
+      "note": "",
+      "opt_rows": [
+        {
+          "date": "2026-03-25",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2025-12-29",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2025-10-14",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2025-09-22",
+          "priced": false,
+          "reason": "no analog structure"
+        }
+      ],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": -0.3621334549057214,
+        "expectancy_r": -0.3621334549057214,
+        "losses": 2,
+        "n": 4,
+        "time": 2,
+        "win_rate": 0.0,
+        "wins": 0
+      },
+      "ticker": "PLTR",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "OPTIONS",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2025-10-10",
+          "direction": "bullish",
+          "entry": 52.86,
+          "exit_date": "2025-10-31",
+          "exit_px": 51.96,
+          "hold": 15,
+          "primary": "E",
+          "r": -0.16257474194970367,
+          "result": "time",
+          "stop": 47.32408470832182,
+          "target": 63.93183058335636
+        }
+      ],
+      "instrument": "debit_call_spread",
+      "note": "",
+      "opt_rows": [
+        {
+          "be_hit": false,
+          "date": "2025-10-10",
+          "instrument": "debit_call_spread",
+          "naive_pop": 0.4589982130334674,
+          "pnl": -0.20400072300591432,
+          "pnl_per_risk": -0.0902658066397851,
+          "priced": true,
+          "target_credit": null,
+          "target_debit": 2.26
+        }
+      ],
+      "options": {
+        "avg_pnl_per_risk": -0.0902658066397851,
+        "be_rate": 0.0,
+        "mean_pop": 0.4589982130334674,
+        "n": 1
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": -0.16257474194970367,
+        "expectancy_r": -0.16257474194970367,
+        "losses": 0,
+        "n": 1,
+        "time": 1,
+        "win_rate": 0.0,
+        "wins": 0
+      },
+      "ticker": "SMCI",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "STOCK",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-06-15",
+          "direction": "bullish",
+          "entry": 173.2275,
+          "exit_date": "2026-07-06",
+          "exit_px": 208.36985279033186,
+          "hold": 13,
+          "primary": "C",
+          "r": 2.0,
+          "result": "win",
+          "stop": 155.65632360483406,
+          "target": 208.36985279033186
+        },
+        {
+          "date": "2026-03-18",
+          "direction": "bullish",
+          "entry": 108.9525,
+          "exit_date": "2026-03-24",
+          "exit_px": 99.27502752586928,
+          "hold": 4,
+          "primary": "C",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 99.27502752586928,
+          "target": 128.30744494826143
+        },
+        {
+          "date": "2025-12-11",
+          "direction": "bullish",
+          "entry": 129.4125,
+          "exit_date": "2025-12-17",
+          "exit_px": 120.21233492079043,
+          "hold": 4,
+          "primary": "C",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 120.21233492079043,
+          "target": 147.81283015841913
+        },
+        {
+          "date": "2025-09-11",
+          "direction": "bullish",
+          "entry": 108.345,
+          "exit_date": "2025-09-18",
+          "exit_px": 121.91129822555857,
+          "hold": 5,
+          "primary": "C",
+          "r": 2.0,
+          "result": "win",
+          "stop": 101.56185088722071,
+          "target": 121.91129822555857
+        }
+      ],
+      "instrument": "stock",
+      "note": "",
+      "opt_rows": [],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "C",
+      "primary_name": "Post-Earnings Drift",
+      "stock": {
+        "avg_r": 0.5,
+        "expectancy_r": 0.5,
+        "losses": 2,
+        "n": 4,
+        "time": 0,
+        "win_rate": 0.5,
+        "wins": 2
+      },
+      "ticker": "CRWD",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "STOCK",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2025-12-29",
+          "direction": "bullish",
+          "entry": 353.16,
+          "exit_date": "2026-01-02",
+          "exit_px": 336.4223272003882,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 336.4223272003882,
+          "target": 386.6353455992236
+        }
+      ],
+      "instrument": "stock",
+      "note": "",
+      "opt_rows": [],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": -1.0,
+        "expectancy_r": -1.0,
+        "losses": 1,
+        "n": 1,
+        "time": 0,
+        "win_rate": 0.0,
+        "wins": 0
+      },
+      "ticker": "ADBE",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "STOCK",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2025-12-29",
+          "direction": "bullish",
+          "entry": 167.88,
+          "exit_date": "2026-01-02",
+          "exit_px": 155.80207283350504,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 155.80207283350504,
+          "target": 192.0358543329899
+        },
+        {
+          "date": "2025-10-14",
+          "direction": "bullish",
+          "entry": 152.88,
+          "exit_date": "2025-10-28",
+          "exit_px": 179.57189643654493,
+          "hold": 10,
+          "primary": "E",
+          "r": 2.0,
+          "result": "win",
+          "stop": 139.53405178172753,
+          "target": 179.57189643654493
+        },
+        {
+          "date": "2025-09-22",
+          "direction": "bullish",
+          "entry": 157.12,
+          "exit_date": "2025-09-25",
+          "exit_px": 144.43665410188152,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 144.43665410188152,
+          "target": 182.48669179623698
+        }
+      ],
+      "instrument": "stock",
+      "note": "",
+      "opt_rows": [],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": 0.0,
+        "expectancy_r": 0.0,
+        "losses": 2,
+        "n": 3,
+        "time": 0,
+        "win_rate": 0.3333333333333333,
+        "wins": 1
+      },
+      "ticker": "SHOP",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "STOCK",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-04-27",
+          "direction": "bullish",
+          "entry": 68.74,
+          "exit_date": "2026-05-14",
+          "exit_px": 62.50617624210716,
+          "hold": 13,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 62.50617624210716,
+          "target": 81.20764751578567
+        },
+        {
+          "date": "2026-01-30",
+          "direction": "bullish",
+          "entry": 74.36,
+          "exit_date": "2026-02-05",
+          "exit_px": 66.50221985309733,
+          "hold": 4,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 66.50221985309733,
+          "target": 90.07556029380534
+        },
+        {
+          "date": "2026-01-07",
+          "direction": "bullish",
+          "entry": 63.49,
+          "exit_date": "2026-01-23",
+          "exit_px": 76.1260382189937,
+          "hold": 11,
+          "primary": "E",
+          "r": 2.0000000000000013,
+          "result": "win",
+          "stop": 57.17198089050316,
+          "target": 76.1260382189937
+        },
+        {
+          "date": "2025-12-11",
+          "direction": "bullish",
+          "entry": 59.67,
+          "exit_date": "2025-12-16",
+          "exit_px": 55.08876381845904,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 55.08876381845904,
+          "target": 68.83247236308192
+        },
+        {
+          "date": "2025-09-26",
+          "direction": "bullish",
+          "entry": 60.49,
+          "exit_date": "2025-10-17",
+          "exit_px": 59.59,
+          "hold": 15,
+          "primary": "E",
+          "r": -0.1662072258848179,
+          "result": "time",
+          "stop": 55.07507297015052,
+          "target": 71.31985405969897
+        }
+      ],
+      "instrument": "stock",
+      "note": "",
+      "opt_rows": [],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": -0.23324144517696332,
+        "expectancy_r": -0.23324144517696332,
+        "losses": 3,
+        "n": 5,
+        "time": 1,
+        "win_rate": 0.2,
+        "wins": 1
+      },
+      "ticker": "URNM",
+      "weak": true
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "STOCK",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-04-30",
+          "direction": "bullish",
+          "entry": 172.71,
+          "exit_date": "2026-05-06",
+          "exit_px": 157.73770343371007,
+          "hold": 4,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 157.73770343371007,
+          "target": 202.6545931325799
+        },
+        {
+          "date": "2026-04-08",
+          "direction": "bullish",
+          "entry": 145.07,
+          "exit_date": "2026-04-22",
+          "exit_px": 178.2416979638105,
+          "hold": 10,
+          "primary": "E",
+          "r": 2.0,
+          "result": "win",
+          "stop": 128.48415101809474,
+          "target": 178.2416979638105
+        },
+        {
+          "date": "2026-03-05",
+          "direction": "bullish",
+          "entry": 139.4,
+          "exit_date": "2026-03-26",
+          "exit_px": 126.0016737279714,
+          "hold": 15,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 126.0016737279714,
+          "target": 166.19665254405723
+        },
+        {
+          "date": "2026-01-28",
+          "direction": "bullish",
+          "entry": 150.15,
+          "exit_date": "2026-02-04",
+          "exit_px": 132.5208665369385,
+          "hold": 5,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 132.5208665369385,
+          "target": 185.408266926123
+        },
+        {
+          "date": "2025-10-13",
+          "direction": "bullish",
+          "entry": 147.45,
+          "exit_date": "2025-11-03",
+          "exit_px": 157.59,
+          "hold": 15,
+          "primary": "E",
+          "r": 0.7140960124511649,
+          "result": "time",
+          "stop": 133.2502287882913,
+          "target": 175.84954242341735
+        },
+        {
+          "date": "2025-09-19",
+          "direction": "bullish",
+          "entry": 149.61,
+          "exit_date": "2025-10-10",
+          "exit_px": 154.1,
+          "hold": 15,
+          "primary": "E",
+          "r": 0.41441289396100406,
+          "result": "time",
+          "stop": 138.77539503130788,
+          "target": 171.27920993738428
+        }
+      ],
+      "instrument": "stock",
+      "note": "",
+      "opt_rows": [],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": 0.021418151068694834,
+        "expectancy_r": 0.021418151068694834,
+        "losses": 3,
+        "n": 6,
+        "time": 2,
+        "win_rate": 0.16666666666666666,
+        "wins": 1
+      },
+      "ticker": "ANET",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "STOCK",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-06-04",
+          "direction": "bullish",
+          "entry": 279.25,
+          "exit_date": "2026-06-26",
+          "exit_px": 304.2,
+          "hold": 15,
+          "primary": "E",
+          "r": 0.7795847650321777,
+          "result": "time",
+          "stop": 247.24578298715193,
+          "target": 343.25843402569615
+        },
+        {
+          "date": "2026-05-12",
+          "direction": "bullish",
+          "entry": 215.6,
+          "exit_date": "2026-05-29",
+          "exit_px": 278.2466998685428,
+          "hold": 12,
+          "primary": "E",
+          "r": 2.000000000000001,
+          "result": "win",
+          "stop": 184.2766500657286,
+          "target": 278.2466998685428
+        },
+        {
+          "date": "2026-03-19",
+          "direction": "bullish",
+          "entry": 169.74,
+          "exit_date": "2026-03-24",
+          "exit_px": 158.58876529137623,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 158.58876529137623,
+          "target": 192.04246941724756
+        },
+        {
+          "date": "2025-10-23",
+          "direction": "bullish",
+          "entry": 215.02,
+          "exit_date": "2025-11-13",
+          "exit_px": 204.58031977732568,
+          "hold": 15,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 204.58031977732568,
+          "target": 235.89936044534866
+        },
+        {
+          "date": "2025-10-01",
+          "direction": "bullish",
+          "entry": 206.8,
+          "exit_date": "2025-10-22",
+          "exit_px": 212.42,
+          "hold": 15,
+          "primary": "E",
+          "r": 0.611736048800764,
+          "result": "time",
+          "stop": 197.61303119046636,
+          "target": 225.17393761906732
+        }
+      ],
+      "instrument": "stock",
+      "note": "",
+      "opt_rows": [],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": 0.27826416276658855,
+        "expectancy_r": 0.27826416276658855,
+        "losses": 2,
+        "n": 5,
+        "time": 2,
+        "win_rate": 0.2,
+        "wins": 1
+      },
+      "ticker": "PANW",
+      "weak": false
+    }
+  ],
+  "strike_http": 5
+}

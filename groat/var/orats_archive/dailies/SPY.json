@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 625.34,
+      "hiPx": 626.28,
+      "loPx": 622.43,
+      "open": 622.45,
+      "stkVolu": 51065789.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 620.68,
+      "hiPx": 624.03,
+      "loPx": 617.87,
+      "open": 623.36,
+      "stkVolu": 74814505.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 620.34,
+      "hiPx": 622.11,
+      "loPx": 619.52,
+      "open": 621.35,
+      "stkVolu": 59024585.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 624.06,
+      "hiPx": 624.72,
+      "loPx": 620.9105,
+      "open": 622.77,
+      "stkVolu": 66113326.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 625.82,
+      "hiPx": 626.8701,
+      "loPx": 623.01,
+      "open": 624.2,
+      "stkVolu": 57528960.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 623.62,
+      "hiPx": 624.86,
+      "loPx": 621.53,
+      "open": 622.74,
+      "stkVolu": 63670226.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 624.81,
+      "hiPx": 625.1581,
+      "loPx": 621.7999,
+      "open": 623.16,
+      "stkVolu": 51898518.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 622.14,
+      "hiPx": 627.86,
+      "loPx": 622.06,
+      "open": 627.52,
+      "stkVolu": 74317260.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 624.22,
+      "hiPx": 624.73,
+      "loPx": 618.05,
+      "open": 623.74,
+      "stkVolu": 88987511.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 628.04,
+      "hiPx": 628.4048,
+      "loPx": 624.18,
+      "open": 624.4,
+      "stkVolu": 68885683.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 627.58,
+      "hiPx": 629.47,
+      "loPx": 626.46,
+      "open": 629.3,
+      "stkVolu": 65621645.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 628.77,
+      "hiPx": 631.54,
+      "loPx": 628.34,
+      "open": 628.77,
+      "stkVolu": 63374984.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 628.86,
+      "hiPx": 629.73,
+      "loPx": 626.19,
+      "open": 629.1,
+      "stkVolu": 60046288.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 634.21,
+      "hiPx": 634.21,
+      "loPx": 629.73,
+      "open": 631.55,
+      "stkVolu": 70511036.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 634.42,
+      "hiPx": 636.15,
+      "loPx": 633.99,
+      "open": 634.6,
+      "stkVolu": 71307134.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 637.1,
+      "hiPx": 637.5799,
+      "loPx": 634.84,
+      "open": 635.09,
+      "stkVolu": 56865364.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 636.94,
+      "hiPx": 638.04,
+      "loPx": 635.54,
+      "open": 637.48,
+      "stkVolu": 54917102.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 635.26,
+      "hiPx": 638.67,
+      "loPx": 634.335,
+      "open": 638.35,
+      "stkVolu": 60556278.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 634.46,
+      "hiPx": 637.68,
+      "loPx": 631.54,
+      "open": 635.92,
+      "stkVolu": 80418851.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 632.08,
+      "hiPx": 639.85,
+      "loPx": 630.765,
+      "open": 639.455,
+      "stkVolu": 103385246.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 621.72,
+      "hiPx": 626.34,
+      "loPx": 619.29,
+      "open": 626.3,
+      "stkVolu": 140103572.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 631.17,
+      "hiPx": 631.215,
+      "loPx": 625.58,
+      "open": 625.67,
+      "stkVolu": 73218015.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 627.97,
+      "hiPx": 632.6052,
+      "loPx": 627.04,
+      "open": 631.79,
+      "stkVolu": 68051401.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 632.78,
+      "hiPx": 633.44,
+      "loPx": 628.13,
+      "open": 629.05,
+      "stkVolu": 64357525.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 632.25,
+      "hiPx": 636.98,
+      "loPx": 629.11,
+      "open": 636.24,
+      "stkVolu": 74205791.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 637.18,
+      "hiPx": 637.645,
+      "loPx": 633.74,
+      "open": 634.06,
+      "stkVolu": 64051626.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 635.92,
+      "hiPx": 638.95,
+      "loPx": 634.66,
+      "open": 637.46,
+      "stkVolu": 58742300.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 642.69,
+      "hiPx": 642.85,
+      "loPx": 636.79,
+      "open": 638.29,
+      "stkVolu": 64821798.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 644.89,
+      "hiPx": 646.19,
+      "loPx": 642.68,
+      "open": 644.91,
+      "stkVolu": 60092790.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 644.95,
+      "hiPx": 645.62,
+      "loPx": 642.34,
+      "open": 642.79,
+      "stkVolu": 59327466.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 643.44,
+      "hiPx": 646.09,
+      "loPx": 642.5153,
+      "open": 645.99,
+      "stkVolu": 68592507.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 643.3,
+      "hiPx": 644.0,
+      "loPx": 642.18,
+      "open": 642.86,
+      "stkVolu": 43804914.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 639.81,
+      "hiPx": 644.105,
+      "loPx": 638.48,
+      "open": 643.12,
+      "stkVolu": 69750731.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 638.11,
+      "hiPx": 639.66,
+      "loPx": 632.95,
+      "open": 639.4,
+      "stkVolu": 88890298.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 635.55,
+      "hiPx": 637.97,
+      "loPx": 633.81,
+      "open": 636.28,
+      "stkVolu": 54805775.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 645.31,
+      "hiPx": 646.5,
+      "loPx": 637.25,
+      "open": 637.76,
+      "stkVolu": 84083214.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 642.47,
+      "hiPx": 645.29,
+      "loPx": 642.35,
+      "open": 644.04,
+      "stkVolu": 51274332.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 645.16,
+      "hiPx": 645.51,
+      "loPx": 641.57,
+      "open": 642.2,
+      "stkVolu": 51581565.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 646.63,
+      "hiPx": 647.37,
+      "loPx": 644.42,
+      "open": 644.57,
+      "stkVolu": 48341069.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 648.92,
+      "hiPx": 649.48,
+      "loPx": 645.34,
+      "open": 647.24,
+      "stkVolu": 61519461.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 645.05,
+      "hiPx": 647.84,
+      "loPx": 643.14,
+      "open": 647.47,
+      "stkVolu": 74522192.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 640.27,
+      "hiPx": 640.49,
+      "loPx": 634.92,
+      "open": 637.5,
+      "stkVolu": 81983545.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 643.74,
+      "hiPx": 644.21,
+      "loPx": 640.46,
+      "open": 642.67,
+      "stkVolu": 70820898.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 649.12,
+      "hiPx": 649.15,
+      "loPx": 643.51,
+      "open": 644.42,
+      "stkVolu": 65219228.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 647.24,
+      "hiPx": 652.21,
+      "loPx": 643.33,
+      "open": 651.48,
+      "stkVolu": 85178935.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 648.78,
+      "hiPx": 649.84,
+      "loPx": 647.23,
+      "open": 648.62,
+      "stkVolu": 63189560.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 650.33,
+      "hiPx": 650.86,
+      "loPx": 647.22,
+      "open": 648.97,
+      "stkVolu": 66133856.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 652.21,
+      "hiPx": 654.55,
+      "loPx": 650.63,
+      "open": 653.62,
+      "stkVolu": 78034529.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 657.63,
+      "hiPx": 658.33,
+      "loPx": 653.59,
+      "open": 654.18,
+      "stkVolu": 69934360.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 657.41,
+      "hiPx": 659.11,
+      "loPx": 656.9,
+      "open": 657.6,
+      "stkVolu": 72780135.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 660.91,
+      "hiPx": 661.04,
+      "loPx": 659.34,
+      "open": 659.64,
+      "stkVolu": 63772412.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 660.0,
+      "hiPx": 661.78,
+      "loPx": 659.21,
+      "open": 661.47,
+      "stkVolu": 61168953.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 659.18,
+      "hiPx": 661.72,
+      "loPx": 654.3,
+      "open": 660.01,
+      "stkVolu": 101952244.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 662.26,
+      "hiPx": 664.89,
+      "loPx": 660.27,
+      "open": 661.89,
+      "stkVolu": 90459242.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 663.7,
+      "hiPx": 664.55,
+      "loPx": 660.37,
+      "open": 662.33,
+      "stkVolu": 97945620.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 666.84,
+      "hiPx": 667.29,
+      "loPx": 662.17,
+      "open": 662.2,
+      "stkVolu": 69452201.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 663.21,
+      "hiPx": 667.34,
+      "loPx": 661.98,
+      "open": 666.72,
+      "stkVolu": 81708872.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 661.1,
+      "hiPx": 664.61,
+      "loPx": 659.67,
+      "open": 664.51,
+      "stkVolu": 68082229.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 658.05,
+      "hiPx": 659.4056,
+      "loPx": 654.405,
+      "open": 657.94,
+      "stkVolu": 89622067.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 661.82,
+      "hiPx": 662.37,
+      "loPx": 657.88,
+      "open": 659.51,
+      "stkVolu": 69179209.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 663.68,
+      "hiPx": 665.28,
+      "loPx": 661.86,
+      "open": 664.36,
+      "stkVolu": 73499015.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 666.18,
+      "hiPx": 666.65,
+      "loPx": 661.61,
+      "open": 662.93,
+      "stkVolu": 86288028.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 668.45,
+      "hiPx": 669.37,
+      "loPx": 663.06,
+      "open": 663.17,
+      "stkVolu": 72545369.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 669.22,
+      "hiPx": 670.565,
+      "loPx": 666.78,
+      "open": 670.45,
+      "stkVolu": 56895993.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 669.21,
+      "hiPx": 672.675,
+      "loPx": 668.16,
+      "open": 669.99,
+      "stkVolu": 70494350.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 671.61,
+      "hiPx": 672.51,
+      "loPx": 669.455,
+      "open": 671.62,
+      "stkVolu": 54623260.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 669.12,
+      "hiPx": 672.99,
+      "loPx": 667.67,
+      "open": 672.54,
+      "stkVolu": 72020067.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 673.11,
+      "hiPx": 673.2056,
+      "loPx": 669.42,
+      "open": 670.25,
+      "stkVolu": 60702241.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 671.16,
+      "hiPx": 673.94,
+      "loPx": 669.21,
+      "open": 673.53,
+      "stkVolu": 66501941.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 653.02,
+      "hiPx": 673.95,
+      "loPx": 652.84,
+      "open": 672.13,
+      "stkVolu": 159422589.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 663.04,
+      "hiPx": 665.13,
+      "loPx": 659.7679,
+      "open": 660.65,
+      "stkVolu": 79560517.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 662.23,
+      "hiPx": 665.83,
+      "loPx": 653.17,
+      "open": 657.17,
+      "stkVolu": 88779560.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 665.17,
+      "hiPx": 670.23,
+      "loPx": 658.93,
+      "open": 666.82,
+      "stkVolu": 81702555.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 660.64,
+      "hiPx": 668.71,
+      "loPx": 657.11,
+      "open": 666.82,
+      "stkVolu": 110563346.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 664.39,
+      "hiPx": 665.755,
+      "loPx": 658.14,
+      "open": 659.5,
+      "stkVolu": 96500870.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 671.3,
+      "hiPx": 672.21,
+      "loPx": 667.27,
+      "open": 667.32,
+      "stkVolu": 60493350.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 671.29,
+      "hiPx": 672.99,
+      "loPx": 669.981,
+      "open": 671.44,
+      "stkVolu": 56249034.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 667.8,
+      "hiPx": 672.0,
+      "loPx": 663.3,
+      "open": 672.0,
+      "stkVolu": 80564006.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 671.76,
+      "hiPx": 672.7101,
+      "loPx": 667.8,
+      "open": 668.12,
+      "stkVolu": 65604461.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 677.25,
+      "hiPx": 678.47,
+      "loPx": 675.65,
+      "open": 676.46,
+      "stkVolu": 74356527.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 685.24,
+      "hiPx": 685.54,
+      "loPx": 682.115,
+      "open": 682.73,
+      "stkVolu": 63339790.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 687.06,
+      "hiPx": 688.905,
+      "loPx": 684.83,
+      "open": 687.05,
+      "stkVolu": 61738073.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 687.39,
+      "hiPx": 689.7,
+      "loPx": 682.87,
+      "open": 688.72,
+      "stkVolu": 85362207.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 679.83,
+      "hiPx": 685.94,
+      "loPx": 679.83,
+      "open": 683.9,
+      "stkVolu": 76335751.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 682.06,
+      "hiPx": 685.08,
+      "loPx": 679.24,
+      "open": 685.04,
+      "stkVolu": 87164122.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 683.34,
+      "hiPx": 685.8,
+      "loPx": 679.94,
+      "open": 685.67,
+      "stkVolu": 57315025.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 675.24,
+      "hiPx": 679.96,
+      "loPx": 674.58,
+      "open": 676.11,
+      "stkVolu": 78426969.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 677.58,
+      "hiPx": 680.86,
+      "loPx": 674.17,
+      "open": 674.98,
+      "stkVolu": 74402376.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 670.31,
+      "hiPx": 677.38,
+      "loPx": 668.72,
+      "open": 676.47,
+      "stkVolu": 85035298.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 670.97,
+      "hiPx": 671.08,
+      "loPx": 661.205,
+      "open": 667.91,
+      "stkVolu": 100592443.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 681.44,
+      "hiPx": 682.18,
+      "loPx": 675.03,
+      "open": 677.235,
+      "stkVolu": 75842888.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 683.0,
+      "hiPx": 683.57,
+      "loPx": 678.73,
+      "open": 679.95,
+      "stkVolu": 58953385.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 683.38,
+      "hiPx": 684.96,
+      "loPx": 680.945,
+      "open": 684.79,
+      "stkVolu": 62312484.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 672.04,
+      "hiPx": 680.86,
+      "loPx": 670.52,
+      "open": 680.5,
+      "stkVolu": 103457788.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 671.93,
+      "hiPx": 675.66,
+      "loPx": 663.265,
+      "open": 665.38,
+      "stkVolu": 96846672.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 665.67,
+      "hiPx": 673.71,
+      "loPx": 662.17,
+      "open": 669.7,
+      "stkVolu": 90456105.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 660.08,
+      "hiPx": 665.12,
+      "loPx": 655.86,
+      "open": 662.095,
+      "stkVolu": 114467488.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 662.63,
+      "hiPx": 667.34,
+      "loPx": 658.745,
+      "open": 660.78,
+      "stkVolu": 94702955.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 652.53,
+      "hiPx": 675.56,
+      "loPx": 651.89,
+      "open": 672.91,
+      "stkVolu": 165293521.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 659.03,
+      "hiPx": 664.55,
+      "loPx": 650.85,
+      "open": 655.05,
+      "stkVolu": 123956203.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 668.73,
+      "hiPx": 670.06,
+      "loPx": 661.59,
+      "open": 662.69,
+      "stkVolu": 80437940.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 675.02,
+      "hiPx": 676.21,
+      "loPx": 664.48,
+      "open": 668.63,
+      "stkVolu": 81077088.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 679.68,
+      "hiPx": 681.7,
+      "loPx": 676.72,
+      "open": 677.63,
+      "stkVolu": 71879597.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 683.39,
+      "hiPx": 683.665,
+      "loPx": 680.5,
+      "open": 680.86,
+      "stkVolu": 49212030.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 680.27,
+      "hiPx": 682.99,
+      "loPx": 678.74,
+      "open": 678.81,
+      "stkVolu": 61201193.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 681.53,
+      "hiPx": 683.82,
+      "loPx": 679.3275,
+      "open": 681.92,
+      "stkVolu": 62953844.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 683.89,
+      "hiPx": 684.91,
+      "loPx": 679.69,
+      "open": 680.57,
+      "stkVolu": 57238481.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 684.39,
+      "hiPx": 685.37,
+      "loPx": 681.34,
+      "open": 685.3,
+      "stkVolu": 61970336.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 685.9,
+      "hiPx": 686.14,
+      "loPx": 685.6562,
+      "open": 685.75,
+      "stkVolu": 26054.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 683.63,
+      "hiPx": 686.64,
+      "loPx": 681.57,
+      "open": 686.59,
+      "stkVolu": 55231462.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 683.04,
+      "hiPx": 685.385,
+      "loPx": 682.59,
+      "open": 683.15,
+      "stkVolu": 58310055.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 687.57,
+      "hiPx": 688.97,
+      "loPx": 681.31,
+      "open": 682.56,
+      "stkVolu": 85671334.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 689.17,
+      "hiPx": 689.25,
+      "loPx": 682.165,
+      "open": 685.14,
+      "stkVolu": 86173678.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 681.76,
+      "hiPx": 688.88,
+      "loPx": 679.1744,
+      "open": 688.17,
+      "stkVolu": 113160347.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 680.73,
+      "hiPx": 685.76,
+      "loPx": 679.25,
+      "open": 685.74,
+      "stkVolu": 90810952.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 678.87,
+      "hiPx": 681.08,
+      "loPx": 674.98,
+      "open": 679.23,
+      "stkVolu": 122030631.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 671.4,
+      "hiPx": 680.435,
+      "loPx": 671.195,
+      "open": 679.89,
+      "stkVolu": 110625198.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 676.47,
+      "hiPx": 680.74,
+      "loPx": 674.9,
+      "open": 677.6,
+      "stkVolu": 108650128.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 680.59,
+      "hiPx": 681.09,
+      "loPx": 676.47,
+      "open": 676.59,
+      "stkVolu": 103599543.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 684.83,
+      "hiPx": 685.36,
+      "loPx": 680.5868,
+      "open": 683.94,
+      "stkVolu": 69556733.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 687.96,
+      "hiPx": 688.2,
+      "loPx": 683.87,
+      "open": 683.92,
+      "stkVolu": 64839951.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 690.38,
+      "hiPx": 690.83,
+      "loPx": 687.8,
+      "open": 687.95,
+      "stkVolu": 39445560.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 690.31,
+      "hiPx": 691.66,
+      "loPx": 689.27,
+      "open": 690.64,
+      "stkVolu": 41613347.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 687.85,
+      "hiPx": 689.2,
+      "loPx": 686.07,
+      "open": 687.54,
+      "stkVolu": 62559503.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 687.01,
+      "hiPx": 688.555,
+      "loPx": 686.58,
+      "open": 687.445,
+      "stkVolu": 47160671.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 681.92,
+      "hiPx": 687.36,
+      "loPx": 681.71,
+      "open": 687.14,
+      "stkVolu": 74144801.0,
+      "ticker": "SPY",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 683.17,
+      "hiPx": 686.87,
+      "loPx": 679.82,
+      "open": 685.71,
+      "stkVolu": 89377203.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 687.72,
+      "hiPx": 689.43,
+      "loPx": 686.375,
+      "open": 686.54,
+      "stkVolu": 71927191.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 691.81,
+      "hiPx": 692.315,
+      "loPx": 687.78,
+      "open": 687.93,
+      "stkVolu": 69273827.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 689.58,
+      "hiPx": 693.96,
+      "loPx": 689.32,
+      "open": 692.19,
+      "stkVolu": 75588337.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 689.51,
+      "hiPx": 690.615,
+      "loPx": 687.49,
+      "open": 688.82,
+      "stkVolu": 64019200.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 694.07,
+      "hiPx": 695.31,
+      "loPx": 689.18,
+      "open": 690.63,
+      "stkVolu": 80125467.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 695.16,
+      "hiPx": 696.09,
+      "loPx": 690.63,
+      "open": 690.68,
+      "stkVolu": 63976002.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 693.77,
+      "hiPx": 696.09,
+      "loPx": 691.35,
+      "open": 695.49,
+      "stkVolu": 78309726.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 690.36,
+      "hiPx": 691.72,
+      "loPx": 686.04,
+      "open": 691.0,
+      "stkVolu": 94676684.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 692.24,
+      "hiPx": 695.45,
+      "loPx": 691.25,
+      "open": 694.57,
+      "stkVolu": 77861974.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 691.66,
+      "hiPx": 694.25,
+      "loPx": 690.1,
+      "open": 693.66,
+      "stkVolu": 79289200.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 677.58,
+      "hiPx": 684.77,
+      "loPx": 676.57,
+      "open": 681.49,
+      "stkVolu": 111623277.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 685.4,
+      "hiPx": 688.735,
+      "loPx": 678.13,
+      "open": 679.65,
+      "stkVolu": 127844467.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 688.98,
+      "hiPx": 691.125,
+      "loPx": 686.92,
+      "open": 689.85,
+      "stkVolu": 77112243.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 689.23,
+      "hiPx": 690.96,
+      "loPx": 687.16,
+      "open": 688.15,
+      "stkVolu": 63059578.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 692.73,
+      "hiPx": 694.13,
+      "loPx": 689.92,
+      "open": 690.49,
+      "stkVolu": 60473813.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 695.49,
+      "hiPx": 696.53,
+      "loPx": 693.57,
+      "open": 694.18,
+      "stkVolu": 55506147.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 695.42,
+      "hiPx": 697.84,
+      "loPx": 693.94,
+      "open": 697.05,
+      "stkVolu": 61172165.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 694.04,
+      "hiPx": 697.06,
+      "loPx": 684.83,
+      "open": 696.39,
+      "stkVolu": 97486198.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 691.97,
+      "hiPx": 694.21,
+      "loPx": 687.12,
+      "open": 691.79,
+      "stkVolu": 101835131.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 695.41,
+      "hiPx": 696.93,
+      "loPx": 689.425,
+      "open": 689.58,
+      "stkVolu": 79286520.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 689.53,
+      "hiPx": 696.96,
+      "loPx": 684.03,
+      "open": 696.21,
+      "stkVolu": 107904611.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 686.19,
+      "hiPx": 691.45,
+      "loPx": 681.76,
+      "open": 690.35,
+      "stkVolu": 105204600.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 677.62,
+      "hiPx": 683.69,
+      "loPx": 675.79,
+      "open": 680.94,
+      "stkVolu": 113610812.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 690.62,
+      "hiPx": 692.31,
+      "loPx": 680.85,
+      "open": 681.46,
+      "stkVolu": 89127566.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 693.95,
+      "hiPx": 695.87,
+      "loPx": 688.34,
+      "open": 689.42,
+      "stkVolu": 73885192.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 692.12,
+      "hiPx": 696.54,
+      "loPx": 691.66,
+      "open": 694.95,
+      "stkVolu": 65185725.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 691.96,
+      "hiPx": 697.14,
+      "loPx": 689.18,
+      "open": 696.39,
+      "stkVolu": 76353872.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 681.27,
+      "hiPx": 695.35,
+      "loPx": 680.37,
+      "open": 694.24,
+      "stkVolu": 118828963.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 681.75,
+      "hiPx": 686.28,
+      "loPx": 677.52,
+      "open": 681.69,
+      "stkVolu": 96267487.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 682.85,
+      "hiPx": 684.94,
+      "loPx": 675.78,
+      "open": 680.14,
+      "stkVolu": 81354660.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 686.29,
+      "hiPx": 689.15,
+      "loPx": 682.83,
+      "open": 684.02,
+      "stkVolu": 73570341.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 684.48,
+      "hiPx": 686.18,
+      "loPx": 681.5475,
+      "open": 683.84,
+      "stkVolu": 58649363.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 689.43,
+      "hiPx": 690.06,
+      "loPx": 681.73,
+      "open": 682.32,
+      "stkVolu": 100033986.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 682.39,
+      "hiPx": 690.0,
+      "loPx": 680.371,
+      "open": 687.83,
+      "stkVolu": 90558087.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 687.35,
+      "hiPx": 688.35,
+      "loPx": 680.0,
+      "open": 681.9,
+      "stkVolu": 73798727.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 693.15,
+      "hiPx": 693.68,
+      "loPx": 690.1,
+      "open": 690.18,
+      "stkVolu": 56369479.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 689.3,
+      "hiPx": 693.3,
+      "loPx": 684.35,
+      "open": 693.28,
+      "stkVolu": 71670990.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 685.99,
+      "hiPx": 686.86,
+      "loPx": 681.64,
+      "open": 683.09,
+      "stkVolu": 83308868.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 686.38,
+      "hiPx": 688.62,
+      "loPx": 678.02,
+      "open": 678.7,
+      "stkVolu": 87477198.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 680.33,
+      "hiPx": 682.61,
+      "loPx": 669.66,
+      "open": 675.06,
+      "stkVolu": 105003113.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 685.13,
+      "hiPx": 687.09,
+      "loPx": 679.62,
+      "open": 681.63,
+      "stkVolu": 79182244.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 681.31,
+      "hiPx": 685.53,
+      "loPx": 675.61,
+      "open": 682.08,
+      "stkVolu": 106606464.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 672.38,
+      "hiPx": 676.11,
+      "loPx": 669.76,
+      "open": 673.41,
+      "stkVolu": 100686951.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 678.27,
+      "hiPx": 679.92,
+      "loPx": 662.39,
+      "open": 666.39,
+      "stkVolu": 102667711.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 677.18,
+      "hiPx": 683.36,
+      "loPx": 674.76,
+      "open": 677.72,
+      "stkVolu": 81505315.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 676.33,
+      "hiPx": 680.08,
+      "loPx": 673.34,
+      "open": 677.58,
+      "stkVolu": 68441672.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 666.06,
+      "hiPx": 671.65,
+      "loPx": 665.87,
+      "open": 671.16,
+      "stkVolu": 108882246.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 662.29,
+      "hiPx": 672.335,
+      "loPx": 661.36,
+      "open": 669.27,
+      "stkVolu": 97200242.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 669.03,
+      "hiPx": 672.07,
+      "loPx": 667.12,
+      "open": 668.38,
+      "stkVolu": 82023130.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 670.79,
+      "hiPx": 674.44,
+      "loPx": 669.7,
+      "open": 672.39,
+      "stkVolu": 87128044.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 661.43,
+      "hiPx": 669.72,
+      "loPx": 661.19,
+      "open": 668.36,
+      "stkVolu": 82062576.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 659.8,
+      "hiPx": 662.98,
+      "loPx": 655.17,
+      "open": 656.97,
+      "stkVolu": 111272539.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 648.57,
+      "hiPx": 656.69,
+      "loPx": 644.72,
+      "open": 656.51,
+      "stkVolu": 163617522.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 655.38,
+      "hiPx": 662.615,
+      "loPx": 653.94,
+      "open": 658.07,
+      "stkVolu": 134802732.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 653.18,
+      "hiPx": 657.03,
+      "loPx": 649.88,
+      "open": 651.32,
+      "stkVolu": 96457478.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 656.82,
+      "hiPx": 660.89,
+      "loPx": 654.24,
+      "open": 658.67,
+      "stkVolu": 90653787.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 645.09,
+      "hiPx": 654.85,
+      "loPx": 644.82,
+      "open": 652.06,
+      "stkVolu": 96494375.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 634.09,
+      "hiPx": 642.66,
+      "loPx": 633.105,
+      "open": 642.5,
+      "stkVolu": 103649368.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 631.97,
+      "hiPx": 640.37,
+      "loPx": 629.28,
+      "open": 640.11,
+      "stkVolu": 99275851.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 650.34,
+      "hiPx": 651.54,
+      "loPx": 637.98,
+      "open": 638.94,
+      "stkVolu": 152534102.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 655.24,
+      "hiPx": 658.52,
+      "loPx": 653.0,
+      "open": 653.9,
+      "stkVolu": 97841472.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 655.83,
+      "hiPx": 658.2,
+      "loPx": 645.11,
+      "open": 646.42,
+      "stkVolu": 68358713.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 658.93,
+      "hiPx": 659.72,
+      "loPx": 655.52,
+      "open": 655.86,
+      "stkVolu": 39105758.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 659.22,
+      "hiPx": 659.61,
+      "loPx": 651.06,
+      "open": 656.65,
+      "stkVolu": 69980362.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 676.01,
+      "hiPx": 677.08,
+      "loPx": 671.46,
+      "open": 676.39,
+      "stkVolu": 93606114.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 679.91,
+      "hiPx": 681.16,
+      "loPx": 673.77,
+      "open": 674.84,
+      "stkVolu": 57134445.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 679.46,
+      "hiPx": 682.03,
+      "loPx": 678.45,
+      "open": 681.32,
+      "stkVolu": 42253456.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 686.1,
+      "hiPx": 686.3,
+      "loPx": 676.58,
+      "open": 677.41,
+      "stkVolu": 54185819.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 694.46,
+      "hiPx": 694.58,
+      "loPx": 687.66,
+      "open": 687.69,
+      "stkVolu": 63480529.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 699.94,
+      "hiPx": 700.28,
+      "loPx": 694.2,
+      "open": 695.26,
+      "stkVolu": 58240384.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 701.66,
+      "hiPx": 702.78,
+      "loPx": 698.53,
+      "open": 701.06,
+      "stkVolu": 49972363.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 710.14,
+      "hiPx": 712.39,
+      "loPx": 705.76,
+      "open": 706.14,
+      "stkVolu": 70661926.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 708.72,
+      "hiPx": 709.91,
+      "loPx": 706.14,
+      "open": 708.78,
+      "stkVolu": 43546812.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 704.08,
+      "hiPx": 711.275,
+      "loPx": 702.64,
+      "open": 710.28,
+      "stkVolu": 58941384.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 711.21,
+      "hiPx": 711.45,
+      "loPx": 708.22,
+      "open": 709.15,
+      "stkVolu": 42518498.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 708.45,
+      "hiPx": 712.3598,
+      "loPx": 702.2803,
+      "open": 709.5,
+      "stkVolu": 56173990.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 713.94,
+      "hiPx": 714.47,
+      "loPx": 709.01,
+      "open": 710.75,
+      "stkVolu": 45181957.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 715.17,
+      "hiPx": 715.63,
+      "loPx": 712.295,
+      "open": 713.17,
+      "stkVolu": 33135943.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 711.69,
+      "hiPx": 712.88,
+      "loPx": 709.25,
+      "open": 711.815,
+      "stkVolu": 43117436.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 711.58,
+      "hiPx": 712.2,
+      "loPx": 708.37,
+      "open": 711.0,
+      "stkVolu": 41859227.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 718.66,
+      "hiPx": 719.79,
+      "loPx": 710.445,
+      "open": 714.63,
+      "stkVolu": 67240949.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 720.65,
+      "hiPx": 724.87,
+      "loPx": 720.47,
+      "open": 721.25,
+      "stkVolu": 43049849.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 718.01,
+      "hiPx": 722.12,
+      "loPx": 714.99,
+      "open": 720.07,
+      "stkVolu": 51950558.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 723.77,
+      "hiPx": 725.04,
+      "loPx": 721.4898,
+      "open": 721.77,
+      "stkVolu": 36933226.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 733.83,
+      "hiPx": 734.59,
+      "loPx": 727.82,
+      "open": 728.16,
+      "stkVolu": 53288940.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 731.58,
+      "hiPx": 736.13,
+      "loPx": 729.75,
+      "open": 735.05,
+      "stkVolu": 51724642.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 737.62,
+      "hiPx": 738.08,
+      "loPx": 734.57,
+      "open": 734.93,
+      "stkVolu": 47227085.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 739.3,
+      "hiPx": 740.79,
+      "loPx": 736.45,
+      "open": 736.45,
+      "stkVolu": 44023951.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 738.18,
+      "hiPx": 738.84,
+      "loPx": 731.83,
+      "open": 736.89,
+      "stkVolu": 54185273.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 742.31,
+      "hiPx": 743.91,
+      "loPx": 735.47,
+      "open": 738.47,
+      "stkVolu": 44200203.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 748.17,
+      "hiPx": 749.53,
+      "loPx": 743.56,
+      "open": 743.65,
+      "stkVolu": 45307603.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 739.17,
+      "hiPx": 743.46,
+      "loPx": 737.96,
+      "open": 741.79,
+      "stkVolu": 60410771.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 738.65,
+      "hiPx": 741.415,
+      "loPx": 733.39,
+      "open": 739.83,
+      "stkVolu": 47843865.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 733.73,
+      "hiPx": 737.65,
+      "loPx": 731.53,
+      "open": 734.78,
+      "stkVolu": 54255913.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 741.25,
+      "hiPx": 741.87,
+      "loPx": 733.89,
+      "open": 735.71,
+      "stkVolu": 45768035.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 742.72,
+      "hiPx": 744.87,
+      "loPx": 737.03,
+      "open": 738.64,
+      "stkVolu": 43332225.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 745.64,
+      "hiPx": 748.94,
+      "loPx": 744.48,
+      "open": 746.24,
+      "stkVolu": 41762006.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 750.59,
+      "hiPx": 752.13,
+      "loPx": 748.37,
+      "open": 750.01,
+      "stkVolu": 41123621.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 750.46,
+      "hiPx": 751.38,
+      "loPx": 748.22,
+      "open": 750.88,
+      "stkVolu": 42106285.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 754.6,
+      "hiPx": 755.15,
+      "loPx": 749.23,
+      "open": 750.25,
+      "stkVolu": 41562563.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 756.48,
+      "hiPx": 758.08,
+      "loPx": 754.69,
+      "open": 755.9,
+      "stkVolu": 55075739.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 758.54,
+      "hiPx": 760.28,
+      "loPx": 754.69,
+      "open": 755.36,
+      "stkVolu": 43634933.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 759.57,
+      "hiPx": 760.4,
+      "loPx": 756.75,
+      "open": 757.03,
+      "stkVolu": 31581852.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 754.24,
+      "hiPx": 758.8,
+      "loPx": 753.57,
+      "open": 758.15,
+      "stkVolu": 51402518.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 757.09,
+      "hiPx": 758.31,
+      "loPx": 751.47,
+      "open": 752.1,
+      "stkVolu": 49923036.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 737.55,
+      "hiPx": 752.82,
+      "loPx": 735.525,
+      "open": 752.31,
+      "stkVolu": 93989416.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 739.22,
+      "hiPx": 745.34,
+      "loPx": 738.19,
+      "open": 743.36,
+      "stkVolu": 49319144.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 737.05,
+      "hiPx": 746.9,
+      "loPx": 722.59,
+      "open": 743.63,
+      "stkVolu": 87683517.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 725.43,
+      "hiPx": 738.38,
+      "loPx": 725.33,
+      "open": 733.39,
+      "stkVolu": 60341349.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 737.76,
+      "hiPx": 740.0,
+      "loPx": 724.405,
+      "open": 728.76,
+      "stkVolu": 86330522.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 741.75,
+      "hiPx": 744.44,
+      "loPx": 735.03,
+      "open": 740.71,
+      "stkVolu": 57079533.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 754.83,
+      "hiPx": 756.68,
+      "loPx": 751.76,
+      "open": 751.85,
+      "stkVolu": 60176425.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 750.33,
+      "hiPx": 755.44,
+      "loPx": 749.88,
+      "open": 754.55,
+      "stkVolu": 67093142.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 740.96,
+      "hiPx": 752.15,
+      "loPx": 739.22,
+      "open": 751.29,
+      "stkVolu": 85945227.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 746.74,
+      "hiPx": 748.23,
+      "loPx": 743.86,
+      "open": 747.76,
+      "stkVolu": 80875657.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 744.39,
+      "hiPx": 750.18,
+      "loPx": 743.13,
+      "open": 747.7,
+      "stkVolu": 46628074.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 733.58,
+      "hiPx": 739.63,
+      "loPx": 732.3,
+      "open": 733.81,
+      "stkVolu": 66846780.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 733.24,
+      "hiPx": 739.945,
+      "loPx": 730.84,
+      "open": 735.17,
+      "stkVolu": 57439507.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 734.3,
+      "hiPx": 739.37,
+      "loPx": 729.6,
+      "open": 738.91,
+      "stkVolu": 54128065.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 728.99,
+      "hiPx": 736.53,
+      "loPx": 716.58,
+      "open": 728.945,
+      "stkVolu": 71033969.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 741.0,
+      "hiPx": 741.56,
+      "loPx": 732.09,
+      "open": 736.525,
+      "stkVolu": 58035228.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 746.77,
+      "hiPx": 748.02,
+      "loPx": 740.89,
+      "open": 741.29,
+      "stkVolu": 55626035.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 745.76,
+      "hiPx": 749.435,
+      "loPx": 742.375,
+      "open": 745.0,
+      "stkVolu": 47100878.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 744.78,
+      "hiPx": 751.31,
+      "loPx": 740.03,
+      "open": 747.4,
+      "stkVolu": 57505953.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 751.28,
+      "hiPx": 752.41,
+      "loPx": 747.41,
+      "open": 748.74,
+      "stkVolu": 50673310.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 747.71,
+      "hiPx": 750.96,
+      "loPx": 745.21,
+      "open": 750.22,
+      "stkVolu": 43721494.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 745.4,
+      "hiPx": 746.15,
+      "loPx": 739.51,
+      "open": 743.16,
+      "stkVolu": 43767393.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 751.71,
+      "hiPx": 751.97,
+      "loPx": 745.59,
+      "open": 747.35,
+      "stkVolu": 41441718.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 754.95,
+      "hiPx": 755.42,
+      "loPx": 748.1,
+      "open": 752.05,
+      "stkVolu": 42191313.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 749.17,
+      "hiPx": 753.9105,
+      "loPx": 748.0,
+      "open": 752.47,
+      "stkVolu": 44013628.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 751.83,
+      "hiPx": 753.34,
+      "loPx": 748.66,
+      "open": 750.91,
+      "stkVolu": 35143138.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 754.81,
+      "hiPx": 755.58,
+      "loPx": 750.2,
+      "open": 754.24,
+      "stkVolu": 43844769.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 750.72,
+      "hiPx": 754.57,
+      "loPx": 747.88,
+      "open": 752.76,
+      "stkVolu": 46409814.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 743.29,
+      "hiPx": 747.29,
+      "loPx": 740.8,
+      "open": 742.08,
+      "stkVolu": 62650961.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 742.09,
+      "hiPx": 748.73,
+      "loPx": 741.5103,
+      "open": 747.06,
+      "stkVolu": 50422324.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 748.28,
+      "hiPx": 749.04,
+      "loPx": 744.18,
+      "open": 746.29,
+      "stkVolu": 34324262.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 747.41,
+      "hiPx": 750.02,
+      "loPx": 746.37,
+      "open": 746.62,
+      "stkVolu": 32836200.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 738.18,
+      "hiPx": 742.56,
+      "loPx": 735.21,
+      "open": 739.37,
+      "stkVolu": 55437332.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 738.93,
+      "hiPx": 743.72,
+      "loPx": 737.29,
+      "open": 738.51,
+      "stkVolu": 44781983.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 739.09,
+      "hiPx": 745.53,
+      "loPx": 735.87,
+      "open": 744.91,
+      "stkVolu": 41461194.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 740.86,
+      "hiPx": 742.7901,
+      "loPx": 735.98,
+      "open": 739.19,
+      "stkVolu": 47322247.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 729.46,
+      "hiPx": 742.68,
+      "loPx": 729.1,
+      "open": 739.97,
+      "stkVolu": 70697215.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 741.69,
+      "hiPx": 742.45,
+      "loPx": 734.59,
+      "open": 736.05,
+      "stkVolu": 66811268.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 747.03,
+      "hiPx": 748.895,
+      "loPx": 737.68,
+      "open": 744.68,
+      "stkVolu": 62445899.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 757.67,
+      "hiPx": 758.58,
+      "loPx": 748.8,
+      "open": 749.44,
+      "stkVolu": 59927538.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 771.33,
+      "hiPx": 773.41,
+      "loPx": 760.52,
+      "open": 760.63,
+      "stkVolu": 69154788.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 769.79,
+      "hiPx": 776.85,
+      "loPx": 769.51,
+      "open": 775.85,
+      "stkVolu": 44689081.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 768.56,
+      "hiPx": 771.82,
+      "loPx": 767.46,
+      "open": 770.21,
+      "stkVolu": 38416896.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 773.26,
+      "hiPx": 773.915,
+      "loPx": 769.61,
+      "open": 771.02,
+      "stkVolu": 43586333.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 773.03,
+      "hiPx": 775.05,
+      "loPx": 771.62,
+      "open": 772.6,
+      "stkVolu": 39249478.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 770.56,
+      "hiPx": 774.61,
+      "loPx": 769.2,
+      "open": 774.53,
+      "stkVolu": 36740555.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 772.49,
+      "hiPx": 774.9,
+      "loPx": 771.28,
+      "open": 774.71,
+      "stkVolu": 33179126.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 777.88,
+      "hiPx": 779.37,
+      "loPx": 774.111,
+      "open": 774.87,
+      "stkVolu": 35634483.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 776.34,
+      "hiPx": 778.8,
+      "loPx": 775.4301,
+      "open": 778.54,
+      "stkVolu": 31367913.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 772.67,
+      "hiPx": 776.775,
+      "loPx": 772.51,
+      "open": 776.18,
+      "stkVolu": 34356577.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 767.45,
+      "hiPx": 769.5,
+      "loPx": 766.92,
+      "open": 768.7,
+      "stkVolu": 43920908.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 769.06,
+      "hiPx": 772.47,
+      "loPx": 768.1,
+      "open": 770.36,
+      "stkVolu": 40306023.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 762.6,
+      "hiPx": 768.15,
+      "loPx": 762.04,
+      "open": 765.96,
+      "stkVolu": 45520302.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 765.72,
+      "hiPx": 767.85,
+      "loPx": 764.17,
+      "open": 766.05,
+      "stkVolu": 39188673.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 763.47,
+      "hiPx": 765.22,
+      "loPx": 762.08,
+      "open": 764.78,
+      "stkVolu": 32430886.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 765.91,
+      "hiPx": 766.78,
+      "loPx": 763.0501,
+      "open": 766.16,
+      "stkVolu": 27422263.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 766.08,
+      "hiPx": 767.35,
+      "loPx": 763.93,
+      "open": 764.73,
+      "stkVolu": 28751592.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 771.1,
+      "hiPx": 772.355,
+      "loPx": 767.16,
+      "open": 768.5,
+      "stkVolu": 34557062.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

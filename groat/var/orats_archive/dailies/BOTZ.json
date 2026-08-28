@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 32.79,
+      "hiPx": 32.8692,
+      "loPx": 32.55,
+      "open": 32.62,
+      "stkVolu": 377124.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 32.16,
+      "hiPx": 32.355,
+      "loPx": 32.04,
+      "open": 32.27,
+      "stkVolu": 624128.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 32.36,
+      "hiPx": 32.4953,
+      "loPx": 32.26,
+      "open": 32.315,
+      "stkVolu": 529329.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 32.77,
+      "hiPx": 32.775,
+      "loPx": 32.4235,
+      "open": 32.64,
+      "stkVolu": 476387.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 32.54,
+      "hiPx": 32.7,
+      "loPx": 32.31,
+      "open": 32.7,
+      "stkVolu": 619053.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 32.27,
+      "hiPx": 32.59,
+      "loPx": 32.27,
+      "open": 32.45,
+      "stkVolu": 432033.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 32.28,
+      "hiPx": 32.34,
+      "loPx": 31.87,
+      "open": 32.065,
+      "stkVolu": 471232.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 32.33,
+      "hiPx": 32.6473,
+      "loPx": 32.32,
+      "open": 32.62,
+      "stkVolu": 436882.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 32.56,
+      "hiPx": 32.5898,
+      "loPx": 32.08,
+      "open": 32.42,
+      "stkVolu": 693519.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 33.22,
+      "hiPx": 33.27,
+      "loPx": 32.78,
+      "open": 32.79,
+      "stkVolu": 864752.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 33.16,
+      "hiPx": 33.33,
+      "loPx": 33.05,
+      "open": 33.31,
+      "stkVolu": 628462.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 33.01,
+      "hiPx": 33.5,
+      "loPx": 33.01,
+      "open": 33.44,
+      "stkVolu": 723100.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 32.88,
+      "hiPx": 32.96,
+      "loPx": 32.48,
+      "open": 32.935,
+      "stkVolu": 833681.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 34.53,
+      "hiPx": 34.545,
+      "loPx": 33.9,
+      "open": 33.9,
+      "stkVolu": 1215923.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 34.49,
+      "hiPx": 34.71,
+      "loPx": 34.4,
+      "open": 34.655,
+      "stkVolu": 784530.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 34.33,
+      "hiPx": 34.3575,
+      "loPx": 34.01,
+      "open": 34.3,
+      "stkVolu": 636070.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 34.26,
+      "hiPx": 34.44,
+      "loPx": 34.1625,
+      "open": 34.41,
+      "stkVolu": 648595.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 33.86,
+      "hiPx": 34.35,
+      "loPx": 33.82,
+      "open": 34.33,
+      "stkVolu": 569575.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 33.7,
+      "hiPx": 34.0,
+      "loPx": 33.5284,
+      "open": 33.87,
+      "stkVolu": 509545.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 33.47,
+      "hiPx": 34.0676,
+      "loPx": 33.4,
+      "open": 34.01,
+      "stkVolu": 706572.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 33.12,
+      "hiPx": 33.3097,
+      "loPx": 32.67,
+      "open": 33.01,
+      "stkVolu": 846731.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 33.97,
+      "hiPx": 33.98,
+      "loPx": 33.57,
+      "open": 33.615,
+      "stkVolu": 733230.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 33.93,
+      "hiPx": 34.19,
+      "loPx": 33.7499,
+      "open": 34.06,
+      "stkVolu": 628987.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 33.6,
+      "hiPx": 33.85,
+      "loPx": 33.535,
+      "open": 33.82,
+      "stkVolu": 902668.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 33.43,
+      "hiPx": 33.91,
+      "loPx": 33.21,
+      "open": 33.84,
+      "stkVolu": 903984.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 33.6,
+      "hiPx": 33.77,
+      "loPx": 33.56,
+      "open": 33.74,
+      "stkVolu": 519645.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 33.31,
+      "hiPx": 33.555,
+      "loPx": 33.24,
+      "open": 33.47,
+      "stkVolu": 411689.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 33.88,
+      "hiPx": 33.88,
+      "loPx": 33.385,
+      "open": 33.5,
+      "stkVolu": 573275.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 34.27,
+      "hiPx": 34.275,
+      "loPx": 33.87,
+      "open": 33.995,
+      "stkVolu": 772454.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 33.91,
+      "hiPx": 33.99,
+      "loPx": 33.665,
+      "open": 33.97,
+      "stkVolu": 562708.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 34.08,
+      "hiPx": 34.12,
+      "loPx": 33.92,
+      "open": 34.12,
+      "stkVolu": 364418.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 34.07,
+      "hiPx": 34.1,
+      "loPx": 33.84,
+      "open": 33.84,
+      "stkVolu": 426636.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 33.48,
+      "hiPx": 34.04,
+      "loPx": 33.41,
+      "open": 34.0,
+      "stkVolu": 462395.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 33.18,
+      "hiPx": 33.25,
+      "loPx": 32.77,
+      "open": 33.15,
+      "stkVolu": 536031.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 32.87,
+      "hiPx": 33.16,
+      "loPx": 32.79,
+      "open": 32.98,
+      "stkVolu": 520367.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 33.81,
+      "hiPx": 33.9,
+      "loPx": 32.94,
+      "open": 32.94,
+      "stkVolu": 771869.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 33.67,
+      "hiPx": 33.95,
+      "loPx": 33.67,
+      "open": 33.805,
+      "stkVolu": 439037.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 33.8,
+      "hiPx": 33.86,
+      "loPx": 33.57,
+      "open": 33.65,
+      "stkVolu": 547548.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 33.8,
+      "hiPx": 33.865,
+      "loPx": 33.512,
+      "open": 33.61,
+      "stkVolu": 347192.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 34.07,
+      "hiPx": 34.155,
+      "loPx": 33.82,
+      "open": 33.9,
+      "stkVolu": 469466.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 33.55,
+      "hiPx": 33.92,
+      "loPx": 33.43,
+      "open": 33.92,
+      "stkVolu": 437526.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 33.3,
+      "hiPx": 33.41,
+      "loPx": 32.9,
+      "open": 33.2,
+      "stkVolu": 474247.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 33.17,
+      "hiPx": 33.49,
+      "loPx": 33.035,
+      "open": 33.41,
+      "stkVolu": 361206.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 33.25,
+      "hiPx": 33.26,
+      "loPx": 32.87,
+      "open": 33.0,
+      "stkVolu": 334496.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 33.58,
+      "hiPx": 33.7,
+      "loPx": 33.18,
+      "open": 33.52,
+      "stkVolu": 593959.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 34.12,
+      "hiPx": 34.185,
+      "loPx": 33.83,
+      "open": 33.85,
+      "stkVolu": 540541.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 33.82,
+      "hiPx": 33.94,
+      "loPx": 33.56,
+      "open": 33.94,
+      "stkVolu": 465609.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 33.73,
+      "hiPx": 34.08,
+      "loPx": 33.6332,
+      "open": 34.05,
+      "stkVolu": 640775.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 34.21,
+      "hiPx": 34.325,
+      "loPx": 33.87,
+      "open": 33.87,
+      "stkVolu": 528371.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 34.04,
+      "hiPx": 34.23,
+      "loPx": 33.995,
+      "open": 34.23,
+      "stkVolu": 346142.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 34.41,
+      "hiPx": 34.41,
+      "loPx": 34.08,
+      "open": 34.1,
+      "stkVolu": 425831.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 34.46,
+      "hiPx": 34.51,
+      "loPx": 34.19,
+      "open": 34.51,
+      "stkVolu": 700581.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 34.37,
+      "hiPx": 34.64,
+      "loPx": 34.03,
+      "open": 34.38,
+      "stkVolu": 640445.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 35.03,
+      "hiPx": 35.0767,
+      "loPx": 34.57,
+      "open": 34.76,
+      "stkVolu": 1001438.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 35.0,
+      "hiPx": 35.05,
+      "loPx": 34.75,
+      "open": 34.855,
+      "stkVolu": 694298.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 35.96,
+      "hiPx": 36.0,
+      "loPx": 35.14,
+      "open": 35.21,
+      "stkVolu": 998716.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 35.66,
+      "hiPx": 36.07,
+      "loPx": 35.61,
+      "open": 35.965,
+      "stkVolu": 969613.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 35.11,
+      "hiPx": 35.545,
+      "loPx": 35.11,
+      "open": 35.545,
+      "stkVolu": 527634.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 34.89,
+      "hiPx": 34.96,
+      "loPx": 34.47,
+      "open": 34.82,
+      "stkVolu": 650805.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 34.85,
+      "hiPx": 34.92,
+      "loPx": 34.57,
+      "open": 34.92,
+      "stkVolu": 451232.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 35.08,
+      "hiPx": 35.21,
+      "loPx": 35.0,
+      "open": 35.05,
+      "stkVolu": 544214.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 35.43,
+      "hiPx": 35.465,
+      "loPx": 35.21,
+      "open": 35.24,
+      "stkVolu": 482725.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 35.71,
+      "hiPx": 35.735,
+      "loPx": 35.44,
+      "open": 35.44,
+      "stkVolu": 526568.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 36.31,
+      "hiPx": 36.36,
+      "loPx": 35.96,
+      "open": 36.095,
+      "stkVolu": 538442.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 36.75,
+      "hiPx": 37.015,
+      "loPx": 36.52,
+      "open": 36.675,
+      "stkVolu": 996226.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 37.4,
+      "hiPx": 37.5501,
+      "loPx": 37.205,
+      "open": 37.41,
+      "stkVolu": 705859.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 36.81,
+      "hiPx": 37.37,
+      "loPx": 36.56,
+      "open": 37.35,
+      "stkVolu": 745703.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 37.24,
+      "hiPx": 37.255,
+      "loPx": 36.84,
+      "open": 36.9,
+      "stkVolu": 573085.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 37.3,
+      "hiPx": 37.51,
+      "loPx": 37.1136,
+      "open": 37.51,
+      "stkVolu": 550688.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 35.65,
+      "hiPx": 37.4376,
+      "loPx": 35.62,
+      "open": 37.35,
+      "stkVolu": 1066361.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 36.75,
+      "hiPx": 36.86,
+      "loPx": 36.28,
+      "open": 36.435,
+      "stkVolu": 1038286.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 36.47,
+      "hiPx": 36.745,
+      "loPx": 35.65,
+      "open": 36.17,
+      "stkVolu": 747171.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 36.86,
+      "hiPx": 37.3,
+      "loPx": 36.4,
+      "open": 37.2,
+      "stkVolu": 778535.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 36.49,
+      "hiPx": 37.08,
+      "loPx": 36.29,
+      "open": 37.07,
+      "stkVolu": 470515.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 36.05,
+      "hiPx": 36.29,
+      "loPx": 35.74,
+      "open": 36.075,
+      "stkVolu": 490516.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 37.06,
+      "hiPx": 37.13,
+      "loPx": 36.726,
+      "open": 36.76,
+      "stkVolu": 586665.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 36.88,
+      "hiPx": 37.1,
+      "loPx": 36.48,
+      "open": 36.82,
+      "stkVolu": 515064.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 36.83,
+      "hiPx": 37.39,
+      "loPx": 36.3899,
+      "open": 37.32,
+      "stkVolu": 1080006.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 37.36,
+      "hiPx": 37.4356,
+      "loPx": 36.85,
+      "open": 36.87,
+      "stkVolu": 488650.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 37.73,
+      "hiPx": 37.92,
+      "loPx": 37.68,
+      "open": 37.765,
+      "stkVolu": 1382316.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 38.18,
+      "hiPx": 38.25,
+      "loPx": 38.04,
+      "open": 38.25,
+      "stkVolu": 763772.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 38.06,
+      "hiPx": 38.25,
+      "loPx": 37.937,
+      "open": 38.1,
+      "stkVolu": 715582.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 38.16,
+      "hiPx": 38.34,
+      "loPx": 37.76,
+      "open": 38.31,
+      "stkVolu": 973600.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 37.405,
+      "hiPx": 37.8099,
+      "loPx": 37.38,
+      "open": 37.605,
+      "stkVolu": 780890.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 37.83,
+      "hiPx": 37.9,
+      "loPx": 37.49,
+      "open": 37.78,
+      "stkVolu": 596174.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 38.25,
+      "hiPx": 38.3486,
+      "loPx": 37.735,
+      "open": 38.18,
+      "stkVolu": 1060813.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 37.32,
+      "hiPx": 37.82,
+      "loPx": 37.28,
+      "open": 37.6,
+      "stkVolu": 1880972.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 37.0,
+      "hiPx": 37.2,
+      "loPx": 36.68,
+      "open": 36.91,
+      "stkVolu": 793682.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 35.98,
+      "hiPx": 36.88,
+      "loPx": 35.78,
+      "open": 36.855,
+      "stkVolu": 1088765.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 36.0,
+      "hiPx": 36.0,
+      "loPx": 35.13,
+      "open": 35.465,
+      "stkVolu": 1309769.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 36.57,
+      "hiPx": 36.645,
+      "loPx": 36.15,
+      "open": 36.61,
+      "stkVolu": 818989.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 36.29,
+      "hiPx": 36.43,
+      "loPx": 36.1,
+      "open": 36.43,
+      "stkVolu": 406530.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 36.19,
+      "hiPx": 36.48,
+      "loPx": 36.06,
+      "open": 36.465,
+      "stkVolu": 584615.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 35.3,
+      "hiPx": 35.97,
+      "loPx": 35.12,
+      "open": 35.872,
+      "stkVolu": 1012719.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 35.15,
+      "hiPx": 35.4856,
+      "loPx": 34.67,
+      "open": 34.73,
+      "stkVolu": 2125993.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 34.32,
+      "hiPx": 34.9,
+      "loPx": 34.102,
+      "open": 34.75,
+      "stkVolu": 1388275.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 33.7,
+      "hiPx": 33.95,
+      "loPx": 33.4,
+      "open": 33.61,
+      "stkVolu": 1875255.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 33.84,
+      "hiPx": 34.13,
+      "loPx": 33.59,
+      "open": 33.81,
+      "stkVolu": 827786.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 33.08,
+      "hiPx": 34.58,
+      "loPx": 33.04,
+      "open": 34.48,
+      "stkVolu": 1002015.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 33.49,
+      "hiPx": 33.715,
+      "loPx": 32.73,
+      "open": 33.14,
+      "stkVolu": 1071672.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 34.07,
+      "hiPx": 34.1265,
+      "loPx": 33.53,
+      "open": 33.64,
+      "stkVolu": 535434.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 34.55,
+      "hiPx": 34.595,
+      "loPx": 33.7844,
+      "open": 34.12,
+      "stkVolu": 602616.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 34.87,
+      "hiPx": 35.0,
+      "loPx": 34.645,
+      "open": 34.71,
+      "stkVolu": 558100.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 35.17,
+      "hiPx": 35.2565,
+      "loPx": 35.08,
+      "open": 35.11,
+      "stkVolu": 277951.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 35.25,
+      "hiPx": 35.5122,
+      "loPx": 35.1,
+      "open": 35.1,
+      "stkVolu": 680122.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 35.15,
+      "hiPx": 35.57,
+      "loPx": 35.09,
+      "open": 35.48,
+      "stkVolu": 547945.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 35.51,
+      "hiPx": 35.515,
+      "loPx": 34.97,
+      "open": 35.08,
+      "stkVolu": 640778.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 36.88,
+      "hiPx": 36.9352,
+      "loPx": 36.39,
+      "open": 36.44,
+      "stkVolu": 1537937.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 36.77,
+      "hiPx": 36.91,
+      "loPx": 36.55,
+      "open": 36.8,
+      "stkVolu": 642105.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 36.89,
+      "hiPx": 37.02,
+      "loPx": 36.655,
+      "open": 36.905,
+      "stkVolu": 692063.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 36.88,
+      "hiPx": 37.095,
+      "loPx": 36.775,
+      "open": 36.94,
+      "stkVolu": 512590.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 37.03,
+      "hiPx": 37.135,
+      "loPx": 36.59,
+      "open": 36.88,
+      "stkVolu": 659335.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 36.93,
+      "hiPx": 36.965,
+      "loPx": 36.48,
+      "open": 36.85,
+      "stkVolu": 459708.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 36.38,
+      "hiPx": 37.12,
+      "loPx": 36.21,
+      "open": 37.1,
+      "stkVolu": 782906.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 36.14,
+      "hiPx": 36.65,
+      "loPx": 36.09,
+      "open": 36.65,
+      "stkVolu": 591795.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 35.79,
+      "hiPx": 35.93,
+      "loPx": 35.571,
+      "open": 35.705,
+      "stkVolu": 650110.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 35.0,
+      "hiPx": 35.84,
+      "loPx": 35.0,
+      "open": 35.7,
+      "stkVolu": 509708.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 35.36,
+      "hiPx": 35.645,
+      "loPx": 35.28,
+      "open": 35.46,
+      "stkVolu": 867023.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 35.96,
+      "hiPx": 35.99,
+      "loPx": 35.57,
+      "open": 35.69,
+      "stkVolu": 455731.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 36.56,
+      "hiPx": 36.62,
+      "loPx": 36.332,
+      "open": 36.4,
+      "stkVolu": 633132.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 36.69,
+      "hiPx": 36.73,
+      "loPx": 36.3301,
+      "open": 36.57,
+      "stkVolu": 708788.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 36.68,
+      "hiPx": 36.75,
+      "loPx": 36.54,
+      "open": 36.7,
+      "stkVolu": 202287.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 36.59,
+      "hiPx": 36.6499,
+      "loPx": 36.4203,
+      "open": 36.64,
+      "stkVolu": 334488.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 36.75,
+      "hiPx": 36.95,
+      "loPx": 36.58,
+      "open": 36.61,
+      "stkVolu": 845671.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 36.58,
+      "hiPx": 36.95,
+      "loPx": 36.56,
+      "open": 36.93,
+      "stkVolu": 335097.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 36.23,
+      "hiPx": 36.54,
+      "loPx": 36.22,
+      "open": 36.53,
+      "stkVolu": 352331.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 36.71,
+      "hiPx": 36.77,
+      "loPx": 36.35,
+      "open": 36.65,
+      "stkVolu": 696138.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 37.61,
+      "hiPx": 37.6661,
+      "loPx": 36.99,
+      "open": 37.05,
+      "stkVolu": 1216703.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 37.93,
+      "hiPx": 37.965956,
+      "loPx": 37.42,
+      "open": 37.45,
+      "stkVolu": 774347.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 38.16,
+      "hiPx": 38.3,
+      "loPx": 37.97,
+      "open": 38.12,
+      "stkVolu": 1178725.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 37.73,
+      "hiPx": 37.99,
+      "loPx": 37.65,
+      "open": 37.96,
+      "stkVolu": 887661.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 38.23,
+      "hiPx": 38.42,
+      "loPx": 38.03,
+      "open": 38.19,
+      "stkVolu": 1434240.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 38.44,
+      "hiPx": 38.525,
+      "loPx": 38.19,
+      "open": 38.37,
+      "stkVolu": 901828.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 37.85,
+      "hiPx": 38.44,
+      "loPx": 37.73,
+      "open": 38.44,
+      "stkVolu": 953140.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 38.0,
+      "hiPx": 38.0199,
+      "loPx": 37.69,
+      "open": 37.95,
+      "stkVolu": 923724.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 38.34,
+      "hiPx": 38.61,
+      "loPx": 38.29,
+      "open": 38.5,
+      "stkVolu": 1222618.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 38.35,
+      "hiPx": 38.53,
+      "loPx": 38.1891,
+      "open": 38.405,
+      "stkVolu": 737489.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 37.17,
+      "hiPx": 37.87,
+      "loPx": 37.09,
+      "open": 37.59,
+      "stkVolu": 1314858.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 37.71,
+      "hiPx": 37.89,
+      "loPx": 37.16,
+      "open": 37.58,
+      "stkVolu": 1215911.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 37.88,
+      "hiPx": 38.0,
+      "loPx": 37.635,
+      "open": 37.9,
+      "stkVolu": 511762.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 37.77,
+      "hiPx": 37.9308,
+      "loPx": 37.655,
+      "open": 37.9,
+      "stkVolu": 644896.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 37.96,
+      "hiPx": 38.28,
+      "loPx": 37.95,
+      "open": 38.05,
+      "stkVolu": 895906.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 38.26,
+      "hiPx": 38.329,
+      "loPx": 38.03,
+      "open": 38.28,
+      "stkVolu": 674414.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 37.99,
+      "hiPx": 38.34,
+      "loPx": 37.84,
+      "open": 38.32,
+      "stkVolu": 746305.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 37.96,
+      "hiPx": 38.36,
+      "loPx": 37.2705,
+      "open": 38.33,
+      "stkVolu": 1060096.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 37.32,
+      "hiPx": 37.92,
+      "loPx": 37.2001,
+      "open": 37.64,
+      "stkVolu": 1062360.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 36.87,
+      "hiPx": 37.0886,
+      "loPx": 36.685,
+      "open": 36.915,
+      "stkVolu": 1018454.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 36.88,
+      "hiPx": 37.25,
+      "loPx": 36.345,
+      "open": 37.2,
+      "stkVolu": 1149544.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 36.61,
+      "hiPx": 37.27,
+      "loPx": 36.18,
+      "open": 37.145,
+      "stkVolu": 1050197.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 35.77,
+      "hiPx": 36.41,
+      "loPx": 35.731,
+      "open": 36.02,
+      "stkVolu": 894207.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 37.48,
+      "hiPx": 37.57,
+      "loPx": 36.32,
+      "open": 36.37,
+      "stkVolu": 1179638.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 38.14,
+      "hiPx": 38.28,
+      "loPx": 37.35,
+      "open": 37.43,
+      "stkVolu": 816679.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 38.36,
+      "hiPx": 38.63,
+      "loPx": 38.25,
+      "open": 38.4,
+      "stkVolu": 762250.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 38.12,
+      "hiPx": 38.66,
+      "loPx": 37.81,
+      "open": 38.6,
+      "stkVolu": 820992.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 37.96,
+      "hiPx": 38.78,
+      "loPx": 37.7901,
+      "open": 38.47,
+      "stkVolu": 814180.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 38.34,
+      "hiPx": 38.605,
+      "loPx": 37.8307,
+      "open": 38.1,
+      "stkVolu": 895179.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 38.62,
+      "hiPx": 38.75,
+      "loPx": 37.94,
+      "open": 38.27,
+      "stkVolu": 775120.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 38.36,
+      "hiPx": 38.7,
+      "loPx": 38.225,
+      "open": 38.45,
+      "stkVolu": 697415.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 38.64,
+      "hiPx": 38.64,
+      "loPx": 38.2501,
+      "open": 38.38,
+      "stkVolu": 866205.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 39.02,
+      "hiPx": 39.22,
+      "loPx": 38.42,
+      "open": 38.485,
+      "stkVolu": 1097878.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 38.58,
+      "hiPx": 38.85,
+      "loPx": 38.2807,
+      "open": 38.68,
+      "stkVolu": 971301.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 39.01,
+      "hiPx": 39.1,
+      "loPx": 38.3801,
+      "open": 38.57,
+      "stkVolu": 769837.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 39.66,
+      "hiPx": 39.778,
+      "loPx": 39.4825,
+      "open": 39.58,
+      "stkVolu": 774819.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 39.5,
+      "hiPx": 39.69,
+      "loPx": 39.06,
+      "open": 39.69,
+      "stkVolu": 1089042.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 39.02,
+      "hiPx": 39.21,
+      "loPx": 38.92,
+      "open": 39.12,
+      "stkVolu": 1287658.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 38.19,
+      "hiPx": 38.42,
+      "loPx": 37.59,
+      "open": 37.85,
+      "stkVolu": 1393765.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 36.9,
+      "hiPx": 37.1801,
+      "loPx": 35.81,
+      "open": 36.38,
+      "stkVolu": 3335484.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 37.13,
+      "hiPx": 37.315,
+      "loPx": 36.64,
+      "open": 36.95,
+      "stkVolu": 1377382.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 36.58,
+      "hiPx": 37.11,
+      "loPx": 36.07,
+      "open": 36.89,
+      "stkVolu": 906479.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 36.09,
+      "hiPx": 36.34,
+      "loPx": 35.85,
+      "open": 35.94,
+      "stkVolu": 847311.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 36.09,
+      "hiPx": 36.19,
+      "loPx": 34.782,
+      "open": 35.19,
+      "stkVolu": 1025687.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 36.28,
+      "hiPx": 37.0,
+      "loPx": 36.15,
+      "open": 36.56,
+      "stkVolu": 634359.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 36.3,
+      "hiPx": 36.47,
+      "loPx": 35.97,
+      "open": 36.18,
+      "stkVolu": 552069.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 35.59,
+      "hiPx": 36.14,
+      "loPx": 35.48,
+      "open": 36.035,
+      "stkVolu": 606207.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 34.83,
+      "hiPx": 35.83,
+      "loPx": 34.725,
+      "open": 35.57,
+      "stkVolu": 1047365.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 35.39,
+      "hiPx": 35.59,
+      "loPx": 35.22,
+      "open": 35.34,
+      "stkVolu": 686937.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 35.38,
+      "hiPx": 35.61,
+      "loPx": 35.23,
+      "open": 35.49,
+      "stkVolu": 449887.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 34.85,
+      "hiPx": 35.44,
+      "loPx": 34.84,
+      "open": 35.355,
+      "stkVolu": 874172.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 34.88,
+      "hiPx": 35.07,
+      "loPx": 34.16,
+      "open": 34.32,
+      "stkVolu": 970007.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 33.6,
+      "hiPx": 34.51,
+      "loPx": 33.385,
+      "open": 34.46,
+      "stkVolu": 1153553.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 34.24,
+      "hiPx": 34.595,
+      "loPx": 33.95,
+      "open": 34.195,
+      "stkVolu": 1333655.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 33.82,
+      "hiPx": 34.08,
+      "loPx": 33.65,
+      "open": 33.765,
+      "stkVolu": 677010.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 34.38,
+      "hiPx": 34.565,
+      "loPx": 34.13,
+      "open": 34.4,
+      "stkVolu": 887533.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 33.29,
+      "hiPx": 33.94,
+      "loPx": 33.245,
+      "open": 33.7,
+      "stkVolu": 948220.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 32.46,
+      "hiPx": 32.97,
+      "loPx": 32.36,
+      "open": 32.97,
+      "stkVolu": 1385170.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 31.99,
+      "hiPx": 32.7,
+      "loPx": 31.875,
+      "open": 32.58,
+      "stkVolu": 967355.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 33.22,
+      "hiPx": 33.265,
+      "loPx": 32.26,
+      "open": 32.26,
+      "stkVolu": 1057289.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 33.9,
+      "hiPx": 34.235,
+      "loPx": 33.82,
+      "open": 33.92,
+      "stkVolu": 661430.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 33.4,
+      "hiPx": 33.62,
+      "loPx": 32.66,
+      "open": 32.91,
+      "stkVolu": 702219.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 33.59,
+      "hiPx": 33.73,
+      "loPx": 33.37,
+      "open": 33.5,
+      "stkVolu": 486411.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 33.39,
+      "hiPx": 33.425,
+      "loPx": 32.74,
+      "open": 33.19,
+      "stkVolu": 580348.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 35.12,
+      "hiPx": 35.58,
+      "loPx": 34.9198,
+      "open": 35.43,
+      "stkVolu": 1146197.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 34.92,
+      "hiPx": 35.065,
+      "loPx": 34.52,
+      "open": 34.81,
+      "stkVolu": 696554.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 35.43,
+      "hiPx": 35.59,
+      "loPx": 35.29,
+      "open": 35.505,
+      "stkVolu": 574432.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 35.97,
+      "hiPx": 35.98,
+      "loPx": 35.1586,
+      "open": 35.19,
+      "stkVolu": 466340.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 36.59,
+      "hiPx": 36.61,
+      "loPx": 36.14,
+      "open": 36.14,
+      "stkVolu": 722572.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 36.73,
+      "hiPx": 36.735,
+      "loPx": 36.35,
+      "open": 36.45,
+      "stkVolu": 550808.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 36.71,
+      "hiPx": 36.98,
+      "loPx": 36.5201,
+      "open": 36.91,
+      "stkVolu": 576943.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 37.41,
+      "hiPx": 37.74,
+      "loPx": 37.28,
+      "open": 37.35,
+      "stkVolu": 872926.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 37.5,
+      "hiPx": 37.53,
+      "loPx": 37.22,
+      "open": 37.41,
+      "stkVolu": 563004.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 36.74,
+      "hiPx": 37.52,
+      "loPx": 36.69,
+      "open": 37.43,
+      "stkVolu": 577519.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 37.37,
+      "hiPx": 37.41,
+      "loPx": 37.15,
+      "open": 37.23,
+      "stkVolu": 658164.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 36.66,
+      "hiPx": 37.13,
+      "loPx": 36.2301,
+      "open": 37.105,
+      "stkVolu": 860116.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 37.36,
+      "hiPx": 37.37,
+      "loPx": 36.775,
+      "open": 36.9,
+      "stkVolu": 779741.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 38.49,
+      "hiPx": 38.64,
+      "loPx": 38.24,
+      "open": 38.45,
+      "stkVolu": 1137859.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 37.66,
+      "hiPx": 37.895,
+      "loPx": 37.43,
+      "open": 37.805,
+      "stkVolu": 860103.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 37.33,
+      "hiPx": 37.64,
+      "loPx": 37.12,
+      "open": 37.61,
+      "stkVolu": 2240629.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 38.45,
+      "hiPx": 38.48,
+      "loPx": 37.79,
+      "open": 37.83,
+      "stkVolu": 1007817.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 38.6,
+      "hiPx": 38.71,
+      "loPx": 38.43,
+      "open": 38.51,
+      "stkVolu": 842424.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 38.38,
+      "hiPx": 38.815,
+      "loPx": 38.14,
+      "open": 38.515,
+      "stkVolu": 1885900.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 38.75,
+      "hiPx": 38.83,
+      "loPx": 38.5601,
+      "open": 38.62,
+      "stkVolu": 639776.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 39.88,
+      "hiPx": 39.9,
+      "loPx": 39.235,
+      "open": 39.26,
+      "stkVolu": 839504.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 39.83,
+      "hiPx": 40.425,
+      "loPx": 39.8,
+      "open": 40.25,
+      "stkVolu": 1160050.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 41.45,
+      "hiPx": 41.49,
+      "loPx": 41.075,
+      "open": 41.245,
+      "stkVolu": 1479491.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 41.31,
+      "hiPx": 41.515,
+      "loPx": 41.2,
+      "open": 41.29,
+      "stkVolu": 1060148.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 40.72,
+      "hiPx": 40.94,
+      "loPx": 40.25,
+      "open": 40.865,
+      "stkVolu": 896369.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 41.63,
+      "hiPx": 41.71,
+      "loPx": 41.065,
+      "open": 41.27,
+      "stkVolu": 1463674.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 41.12,
+      "hiPx": 41.28,
+      "loPx": 40.92,
+      "open": 41.1,
+      "stkVolu": 1164229.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 40.23,
+      "hiPx": 40.545,
+      "loPx": 40.135,
+      "open": 40.45,
+      "stkVolu": 775514.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 39.83,
+      "hiPx": 40.17,
+      "loPx": 39.48,
+      "open": 40.16,
+      "stkVolu": 1054416.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 38.89,
+      "hiPx": 39.106068,
+      "loPx": 38.52,
+      "open": 38.93,
+      "stkVolu": 1543148.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 39.25,
+      "hiPx": 39.265,
+      "loPx": 38.43,
+      "open": 38.68,
+      "stkVolu": 942966.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 39.65,
+      "hiPx": 39.79,
+      "loPx": 39.14,
+      "open": 39.16,
+      "stkVolu": 886963.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 40.29,
+      "hiPx": 40.58,
+      "loPx": 40.15,
+      "open": 40.21,
+      "stkVolu": 977798.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 40.9,
+      "hiPx": 41.04,
+      "loPx": 40.76,
+      "open": 40.91,
+      "stkVolu": 1112090.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 40.07,
+      "hiPx": 40.44,
+      "loPx": 39.905,
+      "open": 40.44,
+      "stkVolu": 1530446.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 40.28,
+      "hiPx": 40.44,
+      "loPx": 39.72,
+      "open": 39.91,
+      "stkVolu": 863156.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 40.15,
+      "hiPx": 40.37,
+      "loPx": 39.96,
+      "open": 40.26,
+      "stkVolu": 867603.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 40.6,
+      "hiPx": 40.735,
+      "loPx": 40.17,
+      "open": 40.32,
+      "stkVolu": 1277910.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 40.64,
+      "hiPx": 40.825,
+      "loPx": 40.43,
+      "open": 40.59,
+      "stkVolu": 787227.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 40.27,
+      "hiPx": 40.69,
+      "loPx": 40.16,
+      "open": 40.68,
+      "stkVolu": 691346.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 40.08,
+      "hiPx": 40.18,
+      "loPx": 39.8,
+      "open": 39.99,
+      "stkVolu": 988674.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 37.98,
+      "hiPx": 39.48,
+      "loPx": 37.855,
+      "open": 39.48,
+      "stkVolu": 1453663.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 38.32,
+      "hiPx": 38.63,
+      "loPx": 38.245,
+      "open": 38.475,
+      "stkVolu": 937103.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 37.62,
+      "hiPx": 38.46,
+      "loPx": 36.7633,
+      "open": 38.24,
+      "stkVolu": 1660357.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 36.24,
+      "hiPx": 37.13,
+      "loPx": 36.21,
+      "open": 36.81,
+      "stkVolu": 1401069.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 37.26,
+      "hiPx": 37.315,
+      "loPx": 36.21,
+      "open": 36.49,
+      "stkVolu": 1216887.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 37.12,
+      "hiPx": 37.31,
+      "loPx": 36.8499,
+      "open": 37.23,
+      "stkVolu": 766250.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 38.25,
+      "hiPx": 38.39,
+      "loPx": 38.15,
+      "open": 38.225,
+      "stkVolu": 613647.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 37.88,
+      "hiPx": 38.31,
+      "loPx": 37.86,
+      "open": 38.19,
+      "stkVolu": 496463.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 37.59,
+      "hiPx": 38.33,
+      "loPx": 37.57,
+      "open": 38.17,
+      "stkVolu": 1034944.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 38.37,
+      "hiPx": 38.45,
+      "loPx": 38.07,
+      "open": 38.26,
+      "stkVolu": 1677712.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 38.33,
+      "hiPx": 38.63,
+      "loPx": 38.2509,
+      "open": 38.42,
+      "stkVolu": 1060878.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 36.64,
+      "hiPx": 36.98,
+      "loPx": 36.5,
+      "open": 36.62,
+      "stkVolu": 1185548.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 36.58,
+      "hiPx": 36.87,
+      "loPx": 36.39,
+      "open": 36.59,
+      "stkVolu": 702273.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 36.61,
+      "hiPx": 36.94,
+      "loPx": 36.3,
+      "open": 36.94,
+      "stkVolu": 970095.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 36.01,
+      "hiPx": 36.36,
+      "loPx": 35.8,
+      "open": 35.9,
+      "stkVolu": 599267.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 36.86,
+      "hiPx": 36.89,
+      "loPx": 36.21,
+      "open": 36.38,
+      "stkVolu": 1351894.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 37.94,
+      "hiPx": 38.03,
+      "loPx": 37.435,
+      "open": 37.5,
+      "stkVolu": 966197.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 38.06,
+      "hiPx": 38.43,
+      "loPx": 37.87,
+      "open": 37.9,
+      "stkVolu": 670545.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 37.39,
+      "hiPx": 38.13,
+      "loPx": 37.1,
+      "open": 37.97,
+      "stkVolu": 847044.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 38.25,
+      "hiPx": 38.43,
+      "loPx": 37.75,
+      "open": 37.79,
+      "stkVolu": 874215.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 36.59,
+      "hiPx": 37.29,
+      "loPx": 36.51,
+      "open": 37.29,
+      "stkVolu": 1334538.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 35.99,
+      "hiPx": 36.025,
+      "loPx": 35.555,
+      "open": 35.83,
+      "stkVolu": 1170470.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 36.63,
+      "hiPx": 36.7002,
+      "loPx": 36.245,
+      "open": 36.49,
+      "stkVolu": 542801.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 36.91,
+      "hiPx": 37.0,
+      "loPx": 36.55,
+      "open": 36.88,
+      "stkVolu": 671073.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 35.87,
+      "hiPx": 36.32,
+      "loPx": 35.78,
+      "open": 36.24,
+      "stkVolu": 975887.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 35.88,
+      "hiPx": 36.22,
+      "loPx": 35.8013,
+      "open": 36.0,
+      "stkVolu": 477099.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 36.03,
+      "hiPx": 36.3352,
+      "loPx": 35.695,
+      "open": 36.27,
+      "stkVolu": 578631.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 35.53,
+      "hiPx": 35.79,
+      "loPx": 35.385,
+      "open": 35.69,
+      "stkVolu": 679203.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 34.4,
+      "hiPx": 34.595,
+      "loPx": 33.935,
+      "open": 34.205,
+      "stkVolu": 1189204.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 34.25,
+      "hiPx": 34.67,
+      "loPx": 34.21,
+      "open": 34.56,
+      "stkVolu": 657946.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 34.89,
+      "hiPx": 34.995,
+      "loPx": 34.63,
+      "open": 34.72,
+      "stkVolu": 703709.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 34.89,
+      "hiPx": 35.1201,
+      "loPx": 34.8701,
+      "open": 34.9,
+      "stkVolu": 591684.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 34.31,
+      "hiPx": 34.685,
+      "loPx": 34.1,
+      "open": 34.55,
+      "stkVolu": 718723.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 33.83,
+      "hiPx": 34.23,
+      "loPx": 33.775,
+      "open": 34.18,
+      "stkVolu": 1202295.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 34.34,
+      "hiPx": 34.63,
+      "loPx": 34.07,
+      "open": 34.48,
+      "stkVolu": 549314.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 33.98,
+      "hiPx": 34.075,
+      "loPx": 33.484,
+      "open": 33.69,
+      "stkVolu": 1076851.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 33.68,
+      "hiPx": 34.495,
+      "loPx": 33.61,
+      "open": 34.18,
+      "stkVolu": 1062993.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 34.9,
+      "hiPx": 34.9,
+      "loPx": 34.125,
+      "open": 34.21,
+      "stkVolu": 876980.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 35.22,
+      "hiPx": 35.53,
+      "loPx": 34.82,
+      "open": 35.38,
+      "stkVolu": 906405.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 35.93,
+      "hiPx": 35.96,
+      "loPx": 35.07,
+      "open": 35.155,
+      "stkVolu": 827735.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 37.09,
+      "hiPx": 37.16,
+      "loPx": 36.42,
+      "open": 36.58,
+      "stkVolu": 1011484.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 37.3,
+      "hiPx": 37.7648,
+      "loPx": 37.28,
+      "open": 37.755,
+      "stkVolu": 698912.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 36.94,
+      "hiPx": 37.24,
+      "loPx": 36.8,
+      "open": 37.15,
+      "stkVolu": 798411.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 37.61,
+      "hiPx": 37.65,
+      "loPx": 37.21,
+      "open": 37.38,
+      "stkVolu": 686754.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 37.42,
+      "hiPx": 37.65,
+      "loPx": 37.335,
+      "open": 37.61,
+      "stkVolu": 468309.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 37.48,
+      "hiPx": 37.715,
+      "loPx": 37.38,
+      "open": 37.56,
+      "stkVolu": 396797.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 37.81,
+      "hiPx": 38.15,
+      "loPx": 37.75,
+      "open": 38.11,
+      "stkVolu": 409555.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 37.82,
+      "hiPx": 37.9,
+      "loPx": 37.63,
+      "open": 37.695,
+      "stkVolu": 729702.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 37.74,
+      "hiPx": 37.91,
+      "loPx": 37.6438,
+      "open": 37.82,
+      "stkVolu": 429463.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 37.82,
+      "hiPx": 38.025,
+      "loPx": 37.79,
+      "open": 37.9,
+      "stkVolu": 454907.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 36.55,
+      "hiPx": 37.04,
+      "loPx": 36.545,
+      "open": 36.924,
+      "stkVolu": 713340.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 36.38,
+      "hiPx": 36.54,
+      "loPx": 36.15,
+      "open": 36.54,
+      "stkVolu": 795926.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 35.81,
+      "hiPx": 36.085,
+      "loPx": 35.6638,
+      "open": 36.0,
+      "stkVolu": 724166.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 36.04,
+      "hiPx": 36.16,
+      "loPx": 35.8937,
+      "open": 36.06,
+      "stkVolu": 685368.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 35.25,
+      "hiPx": 35.73,
+      "loPx": 35.24,
+      "open": 35.73,
+      "stkVolu": 683387.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 35.85,
+      "hiPx": 35.8999,
+      "loPx": 35.635,
+      "open": 35.695,
+      "stkVolu": 632551.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 35.63,
+      "hiPx": 35.865,
+      "loPx": 35.55,
+      "open": 35.78,
+      "stkVolu": 408561.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 36.14,
+      "hiPx": 36.3,
+      "loPx": 36.01,
+      "open": 36.06,
+      "stkVolu": 677409.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

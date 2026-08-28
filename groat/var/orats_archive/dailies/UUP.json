@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 26.98,
+      "hiPx": 27.0,
+      "loPx": 26.91,
+      "open": 26.95,
+      "stkVolu": 1148886.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 27.07,
+      "hiPx": 27.1399,
+      "loPx": 27.02,
+      "open": 27.03,
+      "stkVolu": 1337763.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 27.09,
+      "hiPx": 27.1899,
+      "loPx": 27.08,
+      "open": 27.15,
+      "stkVolu": 1337321.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 27.09,
+      "hiPx": 27.13,
+      "loPx": 27.08,
+      "open": 27.1,
+      "stkVolu": 703234.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 27.14,
+      "hiPx": 27.21,
+      "loPx": 27.12,
+      "open": 27.14,
+      "stkVolu": 1247288.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 27.22,
+      "hiPx": 27.235,
+      "loPx": 27.155,
+      "open": 27.19,
+      "stkVolu": 597525.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 27.29,
+      "hiPx": 27.3,
+      "loPx": 27.22,
+      "open": 27.25,
+      "stkVolu": 1313450.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 27.44,
+      "hiPx": 27.458,
+      "loPx": 27.2949,
+      "open": 27.3,
+      "stkVolu": 1713345.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 27.34,
+      "hiPx": 27.51,
+      "loPx": 27.1833,
+      "open": 27.47,
+      "stkVolu": 2539602.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 27.46,
+      "hiPx": 27.4899,
+      "loPx": 27.44,
+      "open": 27.46,
+      "stkVolu": 1520159.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 27.42,
+      "hiPx": 27.42,
+      "loPx": 27.31,
+      "open": 27.33,
+      "stkVolu": 910762.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 27.24,
+      "hiPx": 27.32,
+      "loPx": 27.19,
+      "open": 27.3,
+      "stkVolu": 2401320.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 27.1,
+      "hiPx": 27.2478,
+      "loPx": 27.09,
+      "open": 27.23,
+      "stkVolu": 1688577.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 27.06,
+      "hiPx": 27.1776,
+      "loPx": 27.0515,
+      "open": 27.16,
+      "stkVolu": 2129521.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 27.13,
+      "hiPx": 27.135,
+      "loPx": 27.0501,
+      "open": 27.1,
+      "stkVolu": 895141.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 27.19,
+      "hiPx": 27.2752,
+      "loPx": 27.19,
+      "open": 27.25,
+      "stkVolu": 870998.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 27.5,
+      "hiPx": 27.5099,
+      "loPx": 27.3726,
+      "open": 27.4,
+      "stkVolu": 1843222.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 27.57,
+      "hiPx": 27.64,
+      "loPx": 27.55,
+      "open": 27.62,
+      "stkVolu": 1876416.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 27.84,
+      "hiPx": 27.855,
+      "loPx": 27.67,
+      "open": 27.76,
+      "stkVolu": 1900263.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 27.9,
+      "hiPx": 27.9199,
+      "loPx": 27.82,
+      "open": 27.9,
+      "stkVolu": 1316258.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 27.57,
+      "hiPx": 27.66,
+      "loPx": 27.53,
+      "open": 27.57,
+      "stkVolu": 3105636.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 27.56,
+      "hiPx": 27.5755,
+      "loPx": 27.5,
+      "open": 27.52,
+      "stkVolu": 935557.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 27.56,
+      "hiPx": 27.63,
+      "loPx": 27.5247,
+      "open": 27.59,
+      "stkVolu": 1073681.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 27.4,
+      "hiPx": 27.4799,
+      "loPx": 27.3701,
+      "open": 27.47,
+      "stkVolu": 1137477.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 27.38,
+      "hiPx": 27.485,
+      "loPx": 27.38,
+      "open": 27.41,
+      "stkVolu": 1405546.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 27.43,
+      "hiPx": 27.45,
+      "loPx": 27.39,
+      "open": 27.42,
+      "stkVolu": 490936.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 27.54,
+      "hiPx": 27.5566,
+      "loPx": 27.4835,
+      "open": 27.5,
+      "stkVolu": 1225238.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 27.4,
+      "hiPx": 27.51,
+      "loPx": 27.34,
+      "open": 27.51,
+      "stkVolu": 863149.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 27.33,
+      "hiPx": 27.33,
+      "loPx": 27.2732,
+      "open": 27.33,
+      "stkVolu": 962304.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 27.43,
+      "hiPx": 27.47,
+      "loPx": 27.395,
+      "open": 27.41,
+      "stkVolu": 657099.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 27.34,
+      "hiPx": 27.3581,
+      "loPx": 27.305,
+      "open": 27.34,
+      "stkVolu": 660551.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 27.41,
+      "hiPx": 27.44,
+      "loPx": 27.39,
+      "open": 27.39,
+      "stkVolu": 645966.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 27.48,
+      "hiPx": 27.48,
+      "loPx": 27.41,
+      "open": 27.42,
+      "stkVolu": 582282.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 27.46,
+      "hiPx": 27.47,
+      "loPx": 27.42,
+      "open": 27.45,
+      "stkVolu": 658659.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 27.6,
+      "hiPx": 27.6,
+      "loPx": 27.495,
+      "open": 27.5,
+      "stkVolu": 1186365.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 27.33,
+      "hiPx": 27.615,
+      "loPx": 27.285,
+      "open": 27.61,
+      "stkVolu": 1553091.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 27.55,
+      "hiPx": 27.57,
+      "loPx": 27.3646,
+      "open": 27.39,
+      "stkVolu": 791297.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 27.48,
+      "hiPx": 27.5081,
+      "loPx": 27.445,
+      "open": 27.49,
+      "stkVolu": 675492.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 27.49,
+      "hiPx": 27.61,
+      "loPx": 27.47,
+      "open": 27.61,
+      "stkVolu": 524022.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 27.39,
+      "hiPx": 27.4575,
+      "loPx": 27.36,
+      "open": 27.44,
+      "stkVolu": 819406.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 27.37,
+      "hiPx": 27.47,
+      "loPx": 27.37,
+      "open": 27.46,
+      "stkVolu": 661863.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 27.55,
+      "hiPx": 27.57,
+      "loPx": 27.4602,
+      "open": 27.57,
+      "stkVolu": 931749.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 27.5,
+      "hiPx": 27.56,
+      "loPx": 27.46,
+      "open": 27.53,
+      "stkVolu": 577170.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 27.54,
+      "hiPx": 27.59,
+      "loPx": 27.53,
+      "open": 27.53,
+      "stkVolu": 906043.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 27.4,
+      "hiPx": 27.42,
+      "loPx": 27.31,
+      "open": 27.38,
+      "stkVolu": 1127438.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 27.32,
+      "hiPx": 27.3799,
+      "loPx": 27.31,
+      "open": 27.33,
+      "stkVolu": 513891.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 27.42,
+      "hiPx": 27.43,
+      "loPx": 27.292,
+      "open": 27.33,
+      "stkVolu": 385171.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 27.44,
+      "hiPx": 27.45,
+      "loPx": 27.37,
+      "open": 27.41,
+      "stkVolu": 465546.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 27.35,
+      "hiPx": 27.41,
+      "loPx": 27.345,
+      "open": 27.41,
+      "stkVolu": 925975.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 27.39,
+      "hiPx": 27.45,
+      "loPx": 27.375,
+      "open": 27.45,
+      "stkVolu": 1069984.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 27.3,
+      "hiPx": 27.355,
+      "loPx": 27.3,
+      "open": 27.34,
+      "stkVolu": 587211.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 27.13,
+      "hiPx": 27.215,
+      "loPx": 27.105,
+      "open": 27.21,
+      "stkVolu": 875068.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 27.22,
+      "hiPx": 27.23,
+      "loPx": 27.01,
+      "open": 27.17,
+      "stkVolu": 1662187.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 27.35,
+      "hiPx": 27.41,
+      "loPx": 27.3201,
+      "open": 27.33,
+      "stkVolu": 1542066.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 27.43,
+      "hiPx": 27.4366,
+      "loPx": 27.3803,
+      "open": 27.42,
+      "stkVolu": 715361.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 27.33,
+      "hiPx": 27.405,
+      "loPx": 27.33,
+      "open": 27.36,
+      "stkVolu": 805541.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 27.31,
+      "hiPx": 27.37,
+      "loPx": 27.3,
+      "open": 27.35,
+      "stkVolu": 886100.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 27.51,
+      "hiPx": 27.52,
+      "loPx": 27.4741,
+      "open": 27.49,
+      "stkVolu": 802159.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 27.7,
+      "hiPx": 27.72,
+      "loPx": 27.585,
+      "open": 27.59,
+      "stkVolu": 1273581.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 27.6,
+      "hiPx": 27.66,
+      "loPx": 27.59,
+      "open": 27.66,
+      "stkVolu": 605780.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 27.54,
+      "hiPx": 27.5551,
+      "loPx": 27.495,
+      "open": 27.51,
+      "stkVolu": 748837.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 27.51,
+      "hiPx": 27.54,
+      "loPx": 27.4635,
+      "open": 27.53,
+      "stkVolu": 1106837.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 27.5,
+      "hiPx": 27.53,
+      "loPx": 27.415,
+      "open": 27.43,
+      "stkVolu": 1273375.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 27.54,
+      "hiPx": 27.61,
+      "loPx": 27.48,
+      "open": 27.48,
+      "stkVolu": 949498.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 27.49,
+      "hiPx": 27.5265,
+      "loPx": 27.47,
+      "open": 27.51,
+      "stkVolu": 707686.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 27.62,
+      "hiPx": 27.6676,
+      "loPx": 27.59,
+      "open": 27.66,
+      "stkVolu": 967771.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 27.78,
+      "hiPx": 27.78,
+      "loPx": 27.6922,
+      "open": 27.72,
+      "stkVolu": 891043.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 27.84,
+      "hiPx": 27.9,
+      "loPx": 27.81,
+      "open": 27.83,
+      "stkVolu": 937431.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 28.03,
+      "hiPx": 28.0557,
+      "loPx": 27.875,
+      "open": 27.88,
+      "stkVolu": 2422369.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 27.89,
+      "hiPx": 28.01,
+      "loPx": 27.85,
+      "open": 28.01,
+      "stkVolu": 1210550.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 27.99,
+      "hiPx": 27.9999,
+      "loPx": 27.95,
+      "open": 27.96,
+      "stkVolu": 580678.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 27.91,
+      "hiPx": 28.0,
+      "loPx": 27.9,
+      "open": 27.98,
+      "stkVolu": 805525.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 27.83,
+      "hiPx": 27.89,
+      "loPx": 27.8,
+      "open": 27.89,
+      "stkVolu": 1133489.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 27.72,
+      "hiPx": 27.81,
+      "loPx": 27.71,
+      "open": 27.79,
+      "stkVolu": 868094.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 27.75,
+      "hiPx": 27.7958,
+      "loPx": 27.74,
+      "open": 27.75,
+      "stkVolu": 670739.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 27.82,
+      "hiPx": 27.82,
+      "loPx": 27.76,
+      "open": 27.78,
+      "stkVolu": 714542.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 27.93,
+      "hiPx": 27.93,
+      "loPx": 27.8699,
+      "open": 27.91,
+      "stkVolu": 1433428.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 27.9,
+      "hiPx": 27.96,
+      "loPx": 27.8701,
+      "open": 27.96,
+      "stkVolu": 1081101.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 27.91,
+      "hiPx": 27.95,
+      "loPx": 27.91,
+      "open": 27.95,
+      "stkVolu": 501326.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 27.91,
+      "hiPx": 27.955,
+      "loPx": 27.9,
+      "open": 27.91,
+      "stkVolu": 692048.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 27.88,
+      "hiPx": 27.9269,
+      "loPx": 27.875,
+      "open": 27.89,
+      "stkVolu": 818304.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 27.86,
+      "hiPx": 27.9255,
+      "loPx": 27.84,
+      "open": 27.91,
+      "stkVolu": 1573863.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 28.02,
+      "hiPx": 28.06,
+      "loPx": 27.85,
+      "open": 27.91,
+      "stkVolu": 1969089.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 28.13,
+      "hiPx": 28.13,
+      "loPx": 28.075,
+      "open": 28.12,
+      "stkVolu": 1519054.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 28.21,
+      "hiPx": 28.21,
+      "loPx": 28.16,
+      "open": 28.16,
+      "stkVolu": 972814.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 28.23,
+      "hiPx": 28.28,
+      "loPx": 28.1843,
+      "open": 28.26,
+      "stkVolu": 852260.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 28.32,
+      "hiPx": 28.346353,
+      "loPx": 28.282,
+      "open": 28.31,
+      "stkVolu": 1204633.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 28.33,
+      "hiPx": 28.3785,
+      "loPx": 28.32,
+      "open": 28.35,
+      "stkVolu": 1340064.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 28.18,
+      "hiPx": 28.26,
+      "loPx": 28.175,
+      "open": 28.24,
+      "stkVolu": 1293800.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 28.16,
+      "hiPx": 28.1782,
+      "loPx": 28.11,
+      "open": 28.15,
+      "stkVolu": 1150800.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 28.18,
+      "hiPx": 28.215,
+      "loPx": 28.16,
+      "open": 28.17,
+      "stkVolu": 998331.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 28.14,
+      "hiPx": 28.145,
+      "loPx": 28.091,
+      "open": 28.1,
+      "stkVolu": 1384049.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 28.15,
+      "hiPx": 28.22,
+      "loPx": 28.13,
+      "open": 28.21,
+      "stkVolu": 1043867.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 28.07,
+      "hiPx": 28.11,
+      "loPx": 28.02,
+      "open": 28.1,
+      "stkVolu": 1014149.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 28.11,
+      "hiPx": 28.1399,
+      "loPx": 28.0601,
+      "open": 28.07,
+      "stkVolu": 1099343.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 28.18,
+      "hiPx": 28.2,
+      "loPx": 28.15,
+      "open": 28.17,
+      "stkVolu": 1188452.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 28.21,
+      "hiPx": 28.23,
+      "loPx": 28.15,
+      "open": 28.18,
+      "stkVolu": 1428076.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 28.39,
+      "hiPx": 28.4,
+      "loPx": 28.27,
+      "open": 28.29,
+      "stkVolu": 1917150.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 28.41,
+      "hiPx": 28.41,
+      "loPx": 28.3301,
+      "open": 28.35,
+      "stkVolu": 1493080.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 28.39,
+      "hiPx": 28.45,
+      "loPx": 28.373,
+      "open": 28.43,
+      "stkVolu": 1305192.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 28.39,
+      "hiPx": 28.42,
+      "loPx": 28.3736,
+      "open": 28.38,
+      "stkVolu": 995985.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 28.31,
+      "hiPx": 28.3273,
+      "loPx": 28.24,
+      "open": 28.32,
+      "stkVolu": 1281553.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 28.23,
+      "hiPx": 28.33,
+      "loPx": 28.22,
+      "open": 28.33,
+      "stkVolu": 1130525.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 28.21,
+      "hiPx": 28.27,
+      "loPx": 28.18,
+      "open": 28.27,
+      "stkVolu": 1215809.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 28.2,
+      "hiPx": 28.21,
+      "loPx": 28.11,
+      "open": 28.12,
+      "stkVolu": 2996316.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 28.19,
+      "hiPx": 28.25,
+      "loPx": 28.18,
+      "open": 28.22,
+      "stkVolu": 1528463.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 28.05,
+      "hiPx": 28.1,
+      "loPx": 28.02,
+      "open": 28.09,
+      "stkVolu": 1962494.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 28.11,
+      "hiPx": 28.11,
+      "loPx": 28.02,
+      "open": 28.02,
+      "stkVolu": 1479810.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 28.08,
+      "hiPx": 28.1275,
+      "loPx": 28.06,
+      "open": 28.08,
+      "stkVolu": 1639751.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 28.12,
+      "hiPx": 28.16,
+      "loPx": 28.08,
+      "open": 28.08,
+      "stkVolu": 1143415.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 28.16,
+      "hiPx": 28.195,
+      "loPx": 28.13,
+      "open": 28.14,
+      "stkVolu": 1191877.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 28.01,
+      "hiPx": 28.16,
+      "loPx": 27.98,
+      "open": 28.16,
+      "stkVolu": 2309548.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 27.91,
+      "hiPx": 27.935,
+      "loPx": 27.86,
+      "open": 27.9,
+      "stkVolu": 1142963.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 27.95,
+      "hiPx": 27.98,
+      "loPx": 27.925,
+      "open": 27.95,
+      "stkVolu": 1141753.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 27.93,
+      "hiPx": 27.96,
+      "loPx": 27.88,
+      "open": 27.91,
+      "stkVolu": 568375.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 27.9,
+      "hiPx": 27.935,
+      "loPx": 27.81,
+      "open": 27.85,
+      "stkVolu": 881375.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 27.96,
+      "hiPx": 27.99,
+      "loPx": 27.915,
+      "open": 27.99,
+      "stkVolu": 655381.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 27.98,
+      "hiPx": 28.005,
+      "loPx": 27.93,
+      "open": 27.93,
+      "stkVolu": 764295.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 28.07,
+      "hiPx": 28.07,
+      "loPx": 28.01,
+      "open": 28.02,
+      "stkVolu": 553340.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 27.03,
+      "hiPx": 27.0357,
+      "loPx": 26.995,
+      "open": 27.02,
+      "stkVolu": 1148617.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 26.94,
+      "hiPx": 26.99,
+      "loPx": 26.925,
+      "open": 26.97,
+      "stkVolu": 1032808.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 26.95,
+      "hiPx": 26.956,
+      "loPx": 26.93,
+      "open": 26.94,
+      "stkVolu": 699444.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 26.97,
+      "hiPx": 27.0,
+      "loPx": 26.92,
+      "open": 26.92,
+      "stkVolu": 743496.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 26.98,
+      "hiPx": 27.015,
+      "loPx": 26.94,
+      "open": 26.96,
+      "stkVolu": 794822.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 27.05,
+      "hiPx": 27.05,
+      "loPx": 27.0,
+      "open": 27.02,
+      "stkVolu": 627488.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 27.03,
+      "hiPx": 27.11,
+      "loPx": 27.03,
+      "open": 27.06,
+      "stkVolu": 575872.0,
+      "ticker": "UUP",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 27.11,
+      "hiPx": 27.1202,
+      "loPx": 27.035,
+      "open": 27.08,
+      "stkVolu": 2375036.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 27.07,
+      "hiPx": 27.186,
+      "loPx": 27.05,
+      "open": 27.17,
+      "stkVolu": 1632853.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 27.16,
+      "hiPx": 27.1601,
+      "loPx": 27.09,
+      "open": 27.1,
+      "stkVolu": 1253207.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 27.2,
+      "hiPx": 27.2,
+      "loPx": 27.14,
+      "open": 27.15,
+      "stkVolu": 1122926.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 27.27,
+      "hiPx": 27.28,
+      "loPx": 27.22,
+      "open": 27.25,
+      "stkVolu": 591004.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 27.33,
+      "hiPx": 27.355,
+      "loPx": 27.3,
+      "open": 27.3,
+      "stkVolu": 806915.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 27.28,
+      "hiPx": 27.28,
+      "loPx": 27.2202,
+      "open": 27.25,
+      "stkVolu": 991741.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 27.35,
+      "hiPx": 27.365,
+      "loPx": 27.27,
+      "open": 27.27,
+      "stkVolu": 748002.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 27.33,
+      "hiPx": 27.35,
+      "loPx": 27.28,
+      "open": 27.31,
+      "stkVolu": 535720.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 27.43,
+      "hiPx": 27.445,
+      "loPx": 27.39,
+      "open": 27.41,
+      "stkVolu": 700112.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 27.43,
+      "hiPx": 27.45,
+      "loPx": 27.365,
+      "open": 27.38,
+      "stkVolu": 1463106.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 27.21,
+      "hiPx": 27.225,
+      "loPx": 27.15,
+      "open": 27.17,
+      "stkVolu": 931670.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 27.27,
+      "hiPx": 27.295,
+      "loPx": 27.175,
+      "open": 27.18,
+      "stkVolu": 1005429.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 27.15,
+      "hiPx": 27.22,
+      "loPx": 27.1201,
+      "open": 27.21,
+      "stkVolu": 826819.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 26.91,
+      "hiPx": 27.138,
+      "loPx": 26.905,
+      "open": 27.13,
+      "stkVolu": 686353.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 26.78,
+      "hiPx": 26.82,
+      "loPx": 26.72075,
+      "open": 26.81,
+      "stkVolu": 1392548.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 26.47,
+      "hiPx": 26.6685,
+      "loPx": 26.395,
+      "open": 26.66,
+      "stkVolu": 1780762.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 26.63,
+      "hiPx": 26.735,
+      "loPx": 26.561,
+      "open": 26.6,
+      "stkVolu": 2744728.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 26.59,
+      "hiPx": 26.709,
+      "loPx": 26.57,
+      "open": 26.57,
+      "stkVolu": 1592485.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 26.85,
+      "hiPx": 26.85,
+      "loPx": 26.7,
+      "open": 26.73,
+      "stkVolu": 2763763.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 26.99,
+      "hiPx": 27.03,
+      "loPx": 26.912,
+      "open": 26.96,
+      "stkVolu": 2780901.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 26.92,
+      "hiPx": 26.99,
+      "loPx": 26.9,
+      "open": 26.98,
+      "stkVolu": 1164969.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 27.01,
+      "hiPx": 27.025,
+      "loPx": 26.95,
+      "open": 26.97,
+      "stkVolu": 1122413.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 27.09,
+      "hiPx": 27.09,
+      "loPx": 27.0,
+      "open": 27.01,
+      "stkVolu": 1840456.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 27.01,
+      "hiPx": 27.02,
+      "loPx": 26.9701,
+      "open": 27.02,
+      "stkVolu": 1305341.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 26.79,
+      "hiPx": 26.845,
+      "loPx": 26.775,
+      "open": 26.81,
+      "stkVolu": 1345298.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 26.8,
+      "hiPx": 26.81,
+      "loPx": 26.73,
+      "open": 26.73,
+      "stkVolu": 1037913.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 26.83,
+      "hiPx": 26.865,
+      "loPx": 26.7599,
+      "open": 26.82,
+      "stkVolu": 1454386.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 26.82,
+      "hiPx": 26.855,
+      "loPx": 26.7701,
+      "open": 26.81,
+      "stkVolu": 1103152.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 26.82,
+      "hiPx": 26.885,
+      "loPx": 26.8,
+      "open": 26.82,
+      "stkVolu": 840570.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 26.91,
+      "hiPx": 27.01,
+      "loPx": 26.8901,
+      "open": 26.95,
+      "stkVolu": 1048619.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 27.08,
+      "hiPx": 27.08,
+      "loPx": 26.965,
+      "open": 26.99,
+      "stkVolu": 1865715.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 27.12,
+      "hiPx": 27.1694,
+      "loPx": 27.095,
+      "open": 27.16,
+      "stkVolu": 937769.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 27.09,
+      "hiPx": 27.16,
+      "loPx": 27.0383,
+      "open": 27.14,
+      "stkVolu": 1281572.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 27.09,
+      "hiPx": 27.09,
+      "loPx": 27.02,
+      "open": 27.07,
+      "stkVolu": 713807.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 27.11,
+      "hiPx": 27.15,
+      "loPx": 27.085,
+      "open": 27.13,
+      "stkVolu": 817346.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 27.08,
+      "hiPx": 27.14,
+      "loPx": 27.054,
+      "open": 27.14,
+      "stkVolu": 1029118.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 27.1,
+      "hiPx": 27.17,
+      "loPx": 27.0601,
+      "open": 27.09,
+      "stkVolu": 1355076.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 27.08,
+      "hiPx": 27.12,
+      "loPx": 27.05,
+      "open": 27.1,
+      "stkVolu": 1037373.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 27.33,
+      "hiPx": 27.3999,
+      "loPx": 27.275,
+      "open": 27.32,
+      "stkVolu": 3348964.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 27.46,
+      "hiPx": 27.65,
+      "loPx": 27.45,
+      "open": 27.54,
+      "stkVolu": 3237226.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 27.41,
+      "hiPx": 27.455,
+      "loPx": 27.39,
+      "open": 27.42,
+      "stkVolu": 2493262.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 27.48,
+      "hiPx": 27.59,
+      "loPx": 27.475,
+      "open": 27.49,
+      "stkVolu": 4091313.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 27.47,
+      "hiPx": 27.59,
+      "loPx": 27.435,
+      "open": 27.57,
+      "stkVolu": 3315917.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 27.46,
+      "hiPx": 27.59,
+      "loPx": 27.4101,
+      "open": 27.51,
+      "stkVolu": 4290514.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 27.45,
+      "hiPx": 27.475,
+      "loPx": 27.34,
+      "open": 27.36,
+      "stkVolu": 3283509.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 27.55,
+      "hiPx": 27.57,
+      "loPx": 27.465,
+      "open": 27.52,
+      "stkVolu": 3203225.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 27.68,
+      "hiPx": 27.71,
+      "loPx": 27.615,
+      "open": 27.63,
+      "stkVolu": 2316085.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 27.89,
+      "hiPx": 27.91,
+      "loPx": 27.745,
+      "open": 27.77,
+      "stkVolu": 4225696.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 27.73,
+      "hiPx": 27.78,
+      "loPx": 27.68,
+      "open": 27.74,
+      "stkVolu": 7286159.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 27.68,
+      "hiPx": 27.705,
+      "loPx": 27.64,
+      "open": 27.67,
+      "stkVolu": 3599414.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 27.85,
+      "hiPx": 27.85,
+      "loPx": 27.704,
+      "open": 27.74,
+      "stkVolu": 4278505.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 27.58,
+      "hiPx": 27.8101,
+      "loPx": 27.5,
+      "open": 27.79,
+      "stkVolu": 5031416.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 27.68,
+      "hiPx": 27.75,
+      "loPx": 27.655,
+      "open": 27.66,
+      "stkVolu": 4216880.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 27.56,
+      "hiPx": 27.6399,
+      "loPx": 27.48,
+      "open": 27.6,
+      "stkVolu": 4152985.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 27.65,
+      "hiPx": 27.71,
+      "loPx": 27.58,
+      "open": 27.66,
+      "stkVolu": 3132183.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 27.7,
+      "hiPx": 27.715,
+      "loPx": 27.63,
+      "open": 27.63,
+      "stkVolu": 3161360.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 27.81,
+      "hiPx": 27.815,
+      "loPx": 27.72,
+      "open": 27.76,
+      "stkVolu": 2410180.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 27.84,
+      "hiPx": 27.88,
+      "loPx": 27.775,
+      "open": 27.83,
+      "stkVolu": 2421260.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 27.98,
+      "hiPx": 28.0,
+      "loPx": 27.91,
+      "open": 27.91,
+      "stkVolu": 2470839.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 27.78,
+      "hiPx": 27.89,
+      "loPx": 27.7701,
+      "open": 27.85,
+      "stkVolu": 3450272.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 27.73,
+      "hiPx": 27.74,
+      "loPx": 27.625,
+      "open": 27.67,
+      "stkVolu": 4154910.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 27.86,
+      "hiPx": 27.89,
+      "loPx": 27.78,
+      "open": 27.85,
+      "stkVolu": 3579388.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 27.83,
+      "hiPx": 27.87,
+      "loPx": 27.77,
+      "open": 27.81,
+      "stkVolu": 3497244.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 27.75,
+      "hiPx": 27.8401,
+      "loPx": 27.725,
+      "open": 27.83,
+      "stkVolu": 3871922.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 27.53,
+      "hiPx": 27.61,
+      "loPx": 27.45,
+      "open": 27.45,
+      "stkVolu": 5402975.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 27.48,
+      "hiPx": 27.5599,
+      "loPx": 27.44,
+      "open": 27.51,
+      "stkVolu": 3167619.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 27.44,
+      "hiPx": 27.49,
+      "loPx": 27.42,
+      "open": 27.42,
+      "stkVolu": 4866157.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 27.38,
+      "hiPx": 27.54,
+      "loPx": 27.38,
+      "open": 27.54,
+      "stkVolu": 3728946.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 27.32,
+      "hiPx": 27.325,
+      "loPx": 27.27,
+      "open": 27.3,
+      "stkVolu": 4075735.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 27.29,
+      "hiPx": 27.34,
+      "loPx": 27.2801,
+      "open": 27.31,
+      "stkVolu": 1926255.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 27.37,
+      "hiPx": 27.38,
+      "loPx": 27.33,
+      "open": 27.34,
+      "stkVolu": 1324749.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 27.36,
+      "hiPx": 27.36,
+      "loPx": 27.2,
+      "open": 27.24,
+      "stkVolu": 1974665.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 27.32,
+      "hiPx": 27.375,
+      "loPx": 27.3,
+      "open": 27.35,
+      "stkVolu": 1209512.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 27.47,
+      "hiPx": 27.47,
+      "loPx": 27.34,
+      "open": 27.35,
+      "stkVolu": 1641316.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 27.48,
+      "hiPx": 27.49,
+      "loPx": 27.4,
+      "open": 27.44,
+      "stkVolu": 768540.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 27.53,
+      "hiPx": 27.5775,
+      "loPx": 27.465,
+      "open": 27.53,
+      "stkVolu": 830311.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 27.48,
+      "hiPx": 27.525,
+      "loPx": 27.45,
+      "open": 27.5,
+      "stkVolu": 1463799.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 27.45,
+      "hiPx": 27.46,
+      "loPx": 27.39,
+      "open": 27.41,
+      "stkVolu": 1210303.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 27.53,
+      "hiPx": 27.5485,
+      "loPx": 27.49,
+      "open": 27.53,
+      "stkVolu": 3308723.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 27.61,
+      "hiPx": 27.63,
+      "loPx": 27.545,
+      "open": 27.56,
+      "stkVolu": 2659170.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 27.36,
+      "hiPx": 27.495,
+      "loPx": 27.34,
+      "open": 27.48,
+      "stkVolu": 3653131.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 27.41,
+      "hiPx": 27.42,
+      "loPx": 27.26,
+      "open": 27.33,
+      "stkVolu": 2575481.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 27.48,
+      "hiPx": 27.505,
+      "loPx": 27.42,
+      "open": 27.43,
+      "stkVolu": 1855890.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 27.5,
+      "hiPx": 27.5,
+      "loPx": 27.4425,
+      "open": 27.48,
+      "stkVolu": 691858.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 27.35,
+      "hiPx": 27.37,
+      "loPx": 27.32,
+      "open": 27.34,
+      "stkVolu": 2479297.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 27.41,
+      "hiPx": 27.41,
+      "loPx": 27.3,
+      "open": 27.32,
+      "stkVolu": 1528575.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 27.34,
+      "hiPx": 27.351,
+      "loPx": 27.31,
+      "open": 27.32,
+      "stkVolu": 1070318.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 27.35,
+      "hiPx": 27.36,
+      "loPx": 27.33,
+      "open": 27.35,
+      "stkVolu": 959218.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 27.45,
+      "hiPx": 27.505,
+      "loPx": 27.44,
+      "open": 27.48,
+      "stkVolu": 2008038.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 27.51,
+      "hiPx": 27.535,
+      "loPx": 27.5,
+      "open": 27.52,
+      "stkVolu": 2113638.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 27.62,
+      "hiPx": 27.63,
+      "loPx": 27.54,
+      "open": 27.55,
+      "stkVolu": 2309310.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 27.77,
+      "hiPx": 27.77,
+      "loPx": 27.71,
+      "open": 27.72,
+      "stkVolu": 1851111.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 27.7,
+      "hiPx": 27.7301,
+      "loPx": 27.67,
+      "open": 27.68,
+      "stkVolu": 2992076.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 27.79,
+      "hiPx": 27.81,
+      "loPx": 27.7599,
+      "open": 27.79,
+      "stkVolu": 1914825.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 27.73,
+      "hiPx": 27.82,
+      "loPx": 27.67,
+      "open": 27.79,
+      "stkVolu": 2509496.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 27.73,
+      "hiPx": 27.8299,
+      "loPx": 27.7101,
+      "open": 27.8,
+      "stkVolu": 1832406.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 27.77,
+      "hiPx": 27.82,
+      "loPx": 27.75,
+      "open": 27.76,
+      "stkVolu": 2022997.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 27.75,
+      "hiPx": 27.78,
+      "loPx": 27.73,
+      "open": 27.75,
+      "stkVolu": 1929256.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 27.75,
+      "hiPx": 27.79,
+      "loPx": 27.71,
+      "open": 27.72,
+      "stkVolu": 2693276.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 27.7,
+      "hiPx": 27.79,
+      "loPx": 27.69,
+      "open": 27.77,
+      "stkVolu": 2942178.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 27.66,
+      "hiPx": 27.735,
+      "loPx": 27.63,
+      "open": 27.71,
+      "stkVolu": 4610343.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 27.76,
+      "hiPx": 27.83,
+      "loPx": 27.745,
+      "open": 27.77,
+      "stkVolu": 2057423.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 27.76,
+      "hiPx": 27.81,
+      "loPx": 27.74,
+      "open": 27.74,
+      "stkVolu": 2048225.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 27.86,
+      "hiPx": 27.88,
+      "loPx": 27.83,
+      "open": 27.86,
+      "stkVolu": 1725569.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 27.84,
+      "hiPx": 27.85,
+      "loPx": 27.78,
+      "open": 27.79,
+      "stkVolu": 880080.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 28.02,
+      "hiPx": 28.046386,
+      "loPx": 27.9001,
+      "open": 27.92,
+      "stkVolu": 2008928.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 28.03,
+      "hiPx": 28.04,
+      "loPx": 27.97,
+      "open": 27.99,
+      "stkVolu": 2424943.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 28.01,
+      "hiPx": 28.05,
+      "loPx": 27.94,
+      "open": 27.96,
+      "stkVolu": 2008194.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 28.05,
+      "hiPx": 28.05,
+      "loPx": 27.95,
+      "open": 27.98,
+      "stkVolu": 1741950.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 27.95,
+      "hiPx": 28.125,
+      "loPx": 27.915,
+      "open": 28.08,
+      "stkVolu": 2647878.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 27.95,
+      "hiPx": 27.99,
+      "loPx": 27.94,
+      "open": 27.96,
+      "stkVolu": 2225491.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 27.97,
+      "hiPx": 27.97,
+      "loPx": 27.87,
+      "open": 27.89,
+      "stkVolu": 4139451.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 27.93,
+      "hiPx": 27.9699,
+      "loPx": 27.89,
+      "open": 27.96,
+      "stkVolu": 1794332.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 28.18,
+      "hiPx": 28.22,
+      "loPx": 27.935,
+      "open": 27.94,
+      "stkVolu": 2963942.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 28.3,
+      "hiPx": 28.315,
+      "loPx": 28.21,
+      "open": 28.23,
+      "stkVolu": 2055269.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 28.36,
+      "hiPx": 28.37,
+      "loPx": 28.2901,
+      "open": 28.34,
+      "stkVolu": 2516185.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 28.45,
+      "hiPx": 28.48,
+      "loPx": 28.4,
+      "open": 28.43,
+      "stkVolu": 2495031.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 28.53,
+      "hiPx": 28.5599,
+      "loPx": 28.49,
+      "open": 28.54,
+      "stkVolu": 2043804.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 28.48,
+      "hiPx": 28.51,
+      "loPx": 28.44,
+      "open": 28.492,
+      "stkVolu": 2076336.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 28.46,
+      "hiPx": 28.47,
+      "loPx": 28.375,
+      "open": 28.39,
+      "stkVolu": 1893354.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 28.37,
+      "hiPx": 28.44,
+      "loPx": 28.37,
+      "open": 28.44,
+      "stkVolu": 1750462.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 28.41,
+      "hiPx": 28.465,
+      "loPx": 28.375,
+      "open": 28.45,
+      "stkVolu": 1484169.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 28.49,
+      "hiPx": 28.49,
+      "loPx": 28.42,
+      "open": 28.48,
+      "stkVolu": 1996384.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 28.34,
+      "hiPx": 28.345,
+      "loPx": 28.27,
+      "open": 28.29,
+      "stkVolu": 2644879.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 28.32,
+      "hiPx": 28.41,
+      "loPx": 28.31,
+      "open": 28.39,
+      "stkVolu": 2837940.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 28.4,
+      "hiPx": 28.41,
+      "loPx": 28.33,
+      "open": 28.34,
+      "stkVolu": 1901989.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 28.36,
+      "hiPx": 28.46,
+      "loPx": 28.3501,
+      "open": 28.41,
+      "stkVolu": 1338364.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 28.36,
+      "hiPx": 28.37,
+      "loPx": 28.33,
+      "open": 28.35,
+      "stkVolu": 1543385.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 28.39,
+      "hiPx": 28.39,
+      "loPx": 28.3123,
+      "open": 28.36,
+      "stkVolu": 1810549.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 28.5,
+      "hiPx": 28.5,
+      "loPx": 28.3748,
+      "open": 28.38,
+      "stkVolu": 3188051.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 28.39,
+      "hiPx": 28.4,
+      "loPx": 28.29,
+      "open": 28.32,
+      "stkVolu": 2503527.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 28.25,
+      "hiPx": 28.37,
+      "loPx": 28.22,
+      "open": 28.37,
+      "stkVolu": 2209526.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 28.34,
+      "hiPx": 28.35,
+      "loPx": 28.28,
+      "open": 28.28,
+      "stkVolu": 2893845.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 28.33,
+      "hiPx": 28.38,
+      "loPx": 28.325,
+      "open": 28.38,
+      "stkVolu": 1134150.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 28.39,
+      "hiPx": 28.43,
+      "loPx": 28.38,
+      "open": 28.38,
+      "stkVolu": 1898101.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 28.48,
+      "hiPx": 28.48,
+      "loPx": 28.42,
+      "open": 28.43,
+      "stkVolu": 1231367.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 28.45,
+      "hiPx": 28.47,
+      "loPx": 28.43,
+      "open": 28.43,
+      "stkVolu": 1230816.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 28.56,
+      "hiPx": 28.5899,
+      "loPx": 28.525,
+      "open": 28.54,
+      "stkVolu": 1529300.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 28.58,
+      "hiPx": 28.58,
+      "loPx": 28.515,
+      "open": 28.58,
+      "stkVolu": 1113505.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 28.6,
+      "hiPx": 28.6,
+      "loPx": 28.55,
+      "open": 28.56,
+      "stkVolu": 1604410.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 28.58,
+      "hiPx": 28.6,
+      "loPx": 28.515,
+      "open": 28.59,
+      "stkVolu": 1037731.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 28.42,
+      "hiPx": 28.5899,
+      "loPx": 28.3,
+      "open": 28.57,
+      "stkVolu": 2289425.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 28.14,
+      "hiPx": 28.36,
+      "loPx": 28.12,
+      "open": 28.36,
+      "stkVolu": 4811386.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 28.17,
+      "hiPx": 28.31,
+      "loPx": 28.1301,
+      "open": 28.24,
+      "stkVolu": 2731210.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 28.17,
+      "hiPx": 28.19,
+      "loPx": 28.11,
+      "open": 28.11,
+      "stkVolu": 2505957.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 28.16,
+      "hiPx": 28.1701,
+      "loPx": 28.1323,
+      "open": 28.16,
+      "stkVolu": 2144400.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 28.09,
+      "hiPx": 28.12,
+      "loPx": 28.075,
+      "open": 28.1,
+      "stkVolu": 2093098.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 28.19,
+      "hiPx": 28.195,
+      "loPx": 28.1101,
+      "open": 28.12,
+      "stkVolu": 1666046.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 28.07,
+      "hiPx": 28.1099,
+      "loPx": 28.05,
+      "open": 28.06,
+      "stkVolu": 1718320.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 28.14,
+      "hiPx": 28.1599,
+      "loPx": 28.11,
+      "open": 28.12,
+      "stkVolu": 3241028.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 28.14,
+      "hiPx": 28.175,
+      "loPx": 28.14,
+      "open": 28.15,
+      "stkVolu": 1247494.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 28.2,
+      "hiPx": 28.21,
+      "loPx": 28.11,
+      "open": 28.11,
+      "stkVolu": 1496934.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 28.18,
+      "hiPx": 28.2099,
+      "loPx": 28.1599,
+      "open": 28.17,
+      "stkVolu": 1127912.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 28.11,
+      "hiPx": 28.13,
+      "loPx": 28.064,
+      "open": 28.1,
+      "stkVolu": 1362235.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 28.1,
+      "hiPx": 28.13,
+      "loPx": 28.055,
+      "open": 28.06,
+      "stkVolu": 643324.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 28.14,
+      "hiPx": 28.14,
+      "loPx": 28.09,
+      "open": 28.12,
+      "stkVolu": 772724.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 27.88,
+      "hiPx": 27.955,
+      "loPx": 27.88,
+      "open": 27.95,
+      "stkVolu": 1473235.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 27.91,
+      "hiPx": 27.935,
+      "loPx": 27.8701,
+      "open": 27.88,
+      "stkVolu": 719570.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 27.9,
+      "hiPx": 27.935,
+      "loPx": 27.89,
+      "open": 27.89,
+      "stkVolu": 592949.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 27.96,
+      "hiPx": 27.98,
+      "loPx": 27.935,
+      "open": 27.94,
+      "stkVolu": 934151.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 27.94,
+      "hiPx": 27.9651,
+      "loPx": 27.93,
+      "open": 27.94,
+      "stkVolu": 762981.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 28.02,
+      "hiPx": 28.035,
+      "loPx": 27.995,
+      "open": 28.01,
+      "stkVolu": 572666.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 28.02,
+      "hiPx": 28.02,
+      "loPx": 27.99,
+      "open": 27.99,
+      "stkVolu": 1047848.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

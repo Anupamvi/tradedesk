@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 98.81,
+      "hiPx": 99.5,
+      "loPx": 98.655,
+      "open": 98.83,
+      "stkVolu": 5028931.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 98.14,
+      "hiPx": 98.92,
+      "loPx": 97.7099,
+      "open": 98.36,
+      "stkVolu": 7239587.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 99.83,
+      "hiPx": 100.285,
+      "loPx": 98.22,
+      "open": 98.825,
+      "stkVolu": 9570186.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 99.81,
+      "hiPx": 101.085,
+      "loPx": 98.91,
+      "open": 99.8,
+      "stkVolu": 7323033.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 101.06,
+      "hiPx": 101.65,
+      "loPx": 100.18,
+      "open": 100.92,
+      "stkVolu": 6572420.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 101.73,
+      "hiPx": 102.025,
+      "loPx": 100.27,
+      "open": 100.33,
+      "stkVolu": 6203800.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 99.62,
+      "hiPx": 101.0,
+      "loPx": 98.78,
+      "open": 100.57,
+      "stkVolu": 12938072.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 101.07,
+      "hiPx": 102.19,
+      "loPx": 100.61,
+      "open": 101.54,
+      "stkVolu": 9190586.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 100.37,
+      "hiPx": 100.42,
+      "loPx": 96.19,
+      "open": 97.72,
+      "stkVolu": 15369651.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 100.79,
+      "hiPx": 101.375,
+      "loPx": 98.26,
+      "open": 99.46,
+      "stkVolu": 9745949.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 100.66,
+      "hiPx": 101.73,
+      "loPx": 100.36,
+      "open": 101.24,
+      "stkVolu": 8115453.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 101.74,
+      "hiPx": 102.59,
+      "loPx": 100.73,
+      "open": 100.88,
+      "stkVolu": 7026672.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 97.69,
+      "hiPx": 101.123,
+      "loPx": 97.04,
+      "open": 101.0,
+      "stkVolu": 14170107.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 97.1,
+      "hiPx": 98.38,
+      "loPx": 96.395,
+      "open": 98.26,
+      "stkVolu": 12013926.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 97.78,
+      "hiPx": 98.62,
+      "loPx": 97.03,
+      "open": 97.57,
+      "stkVolu": 9076557.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 96.96,
+      "hiPx": 97.33,
+      "loPx": 96.32,
+      "open": 96.7,
+      "stkVolu": 8914433.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 98.62,
+      "hiPx": 99.53,
+      "loPx": 97.915,
+      "open": 98.98,
+      "stkVolu": 8156109.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 98.94,
+      "hiPx": 100.22,
+      "loPx": 98.03,
+      "open": 99.39,
+      "stkVolu": 7283710.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 99.09,
+      "hiPx": 100.65,
+      "loPx": 97.95,
+      "open": 99.52,
+      "stkVolu": 12529412.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 94.84,
+      "hiPx": 95.63,
+      "loPx": 90.935,
+      "open": 91.015,
+      "stkVolu": 27661827.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 96.37,
+      "hiPx": 96.66,
+      "loPx": 92.47,
+      "open": 92.71,
+      "stkVolu": 16601018.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 98.41,
+      "hiPx": 98.81,
+      "loPx": 96.64,
+      "open": 97.425,
+      "stkVolu": 11876711.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 96.68,
+      "hiPx": 99.35,
+      "loPx": 95.62,
+      "open": 98.78,
+      "stkVolu": 12100125.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 95.94,
+      "hiPx": 96.47,
+      "loPx": 94.27,
+      "open": 96.3,
+      "stkVolu": 10631883.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 99.15,
+      "hiPx": 100.19,
+      "loPx": 97.97,
+      "open": 98.595,
+      "stkVolu": 9572342.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 101.75,
+      "hiPx": 102.225,
+      "loPx": 98.99,
+      "open": 99.15,
+      "stkVolu": 8765140.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 102.0,
+      "hiPx": 104.15,
+      "loPx": 101.71,
+      "open": 103.9,
+      "stkVolu": 8637010.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 105.28,
+      "hiPx": 105.64,
+      "loPx": 101.392,
+      "open": 102.65,
+      "stkVolu": 11892040.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 106.74,
+      "hiPx": 107.49,
+      "loPx": 105.446,
+      "open": 106.5,
+      "stkVolu": 12118627.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 107.38,
+      "hiPx": 108.02,
+      "loPx": 105.59,
+      "open": 106.2,
+      "stkVolu": 11163780.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 99.51,
+      "hiPx": 105.885,
+      "loPx": 99.26,
+      "open": 104.675,
+      "stkVolu": 23155664.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 98.88,
+      "hiPx": 99.8,
+      "loPx": 98.4,
+      "open": 99.0,
+      "stkVolu": 15119258.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 100.33,
+      "hiPx": 100.63,
+      "loPx": 98.2,
+      "open": 98.83,
+      "stkVolu": 11622873.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 99.15,
+      "hiPx": 101.015,
+      "loPx": 97.32,
+      "open": 100.985,
+      "stkVolu": 14287717.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 98.41,
+      "hiPx": 99.85,
+      "loPx": 97.14,
+      "open": 98.76,
+      "stkVolu": 10706519.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 100.08,
+      "hiPx": 102.55,
+      "loPx": 98.59,
+      "open": 99.05,
+      "stkVolu": 9689672.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 101.28,
+      "hiPx": 101.75,
+      "loPx": 99.9,
+      "open": 99.98,
+      "stkVolu": 5438511.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 103.63,
+      "hiPx": 103.99,
+      "loPx": 101.1,
+      "open": 101.3,
+      "stkVolu": 11781062.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 103.67,
+      "hiPx": 103.775,
+      "loPx": 102.365,
+      "open": 103.17,
+      "stkVolu": 7214720.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 104.09,
+      "hiPx": 104.9,
+      "loPx": 102.955,
+      "open": 104.0,
+      "stkVolu": 7375201.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 100.15,
+      "hiPx": 102.6899,
+      "loPx": 98.81,
+      "open": 101.91,
+      "stkVolu": 12178819.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 97.03,
+      "hiPx": 97.265,
+      "loPx": 94.11,
+      "open": 95.765,
+      "stkVolu": 14695218.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 97.74,
+      "hiPx": 97.855,
+      "loPx": 96.44,
+      "open": 97.03,
+      "stkVolu": 11023278.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 100.42,
+      "hiPx": 101.11,
+      "loPx": 97.159,
+      "open": 97.66,
+      "stkVolu": 8822427.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 102.95,
+      "hiPx": 103.01,
+      "loPx": 100.68,
+      "open": 101.7,
+      "stkVolu": 8142017.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 105.08,
+      "hiPx": 106.37,
+      "loPx": 104.475,
+      "open": 105.005,
+      "stkVolu": 7975405.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 105.57,
+      "hiPx": 105.82,
+      "loPx": 104.46,
+      "open": 104.91,
+      "stkVolu": 7264327.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 107.36,
+      "hiPx": 107.78,
+      "loPx": 104.61,
+      "open": 106.7,
+      "stkVolu": 12279374.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 115.58,
+      "hiPx": 115.9,
+      "loPx": 108.29,
+      "open": 108.35,
+      "stkVolu": 20296063.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 116.96,
+      "hiPx": 117.5,
+      "loPx": 115.875,
+      "open": 115.92,
+      "stkVolu": 11060492.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 119.21,
+      "hiPx": 119.33,
+      "loPx": 117.03,
+      "open": 117.8,
+      "stkVolu": 9785747.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 120.47,
+      "hiPx": 120.97,
+      "loPx": 118.67,
+      "open": 119.975,
+      "stkVolu": 9897207.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 121.9,
+      "hiPx": 123.28,
+      "loPx": 119.51,
+      "open": 120.82,
+      "stkVolu": 10996077.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 126.32,
+      "hiPx": 128.695,
+      "loPx": 125.04,
+      "open": 126.55,
+      "stkVolu": 13763918.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 126.92,
+      "hiPx": 127.8,
+      "loPx": 125.0,
+      "open": 126.355,
+      "stkVolu": 24271855.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 132.2,
+      "hiPx": 132.63,
+      "loPx": 129.16,
+      "open": 129.8,
+      "stkVolu": 13403746.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 131.93,
+      "hiPx": 133.565,
+      "loPx": 129.36,
+      "open": 129.75,
+      "stkVolu": 12051102.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 128.32,
+      "hiPx": 130.225,
+      "loPx": 127.02,
+      "open": 130.0,
+      "stkVolu": 12435947.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 128.13,
+      "hiPx": 129.06,
+      "loPx": 125.0201,
+      "open": 126.44,
+      "stkVolu": 9621715.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 128.33,
+      "hiPx": 128.76,
+      "loPx": 126.37,
+      "open": 127.94,
+      "stkVolu": 8788993.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 131.09,
+      "hiPx": 133.36,
+      "loPx": 131.03,
+      "open": 133.08,
+      "stkVolu": 11015536.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 133.9,
+      "hiPx": 134.21,
+      "loPx": 130.81,
+      "open": 131.345,
+      "stkVolu": 10328761.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 142.79,
+      "hiPx": 143.09,
+      "loPx": 131.94,
+      "open": 132.4,
+      "stkVolu": 15549117.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 146.99,
+      "hiPx": 147.35,
+      "loPx": 143.71,
+      "open": 146.965,
+      "stkVolu": 16417073.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 145.81,
+      "hiPx": 147.91,
+      "loPx": 144.6,
+      "open": 145.82,
+      "stkVolu": 8970274.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 149.15,
+      "hiPx": 153.695,
+      "loPx": 149.12,
+      "open": 149.9,
+      "stkVolu": 11217057.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 140.35,
+      "hiPx": 149.3625,
+      "loPx": 139.5001,
+      "open": 149.23,
+      "stkVolu": 16549789.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 142.54,
+      "hiPx": 142.88,
+      "loPx": 137.61,
+      "open": 137.91,
+      "stkVolu": 13695736.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 141.0,
+      "hiPx": 142.86,
+      "loPx": 140.58,
+      "open": 141.75,
+      "stkVolu": 8102517.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 131.37,
+      "hiPx": 141.8,
+      "loPx": 131.02,
+      "open": 140.6,
+      "stkVolu": 18748964.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 137.81,
+      "hiPx": 138.9,
+      "loPx": 136.58,
+      "open": 138.09,
+      "stkVolu": 10048074.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 138.31,
+      "hiPx": 140.92,
+      "loPx": 134.04,
+      "open": 134.1,
+      "stkVolu": 10509662.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 144.78,
+      "hiPx": 145.22,
+      "loPx": 141.1,
+      "open": 144.0,
+      "stkVolu": 9722650.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 142.37,
+      "hiPx": 147.58,
+      "loPx": 140.37,
+      "open": 147.58,
+      "stkVolu": 11650296.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 141.51,
+      "hiPx": 142.65,
+      "loPx": 139.82,
+      "open": 142.26,
+      "stkVolu": 6389799.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 144.05,
+      "hiPx": 146.4771,
+      "loPx": 143.425,
+      "open": 143.49,
+      "stkVolu": 8919374.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 145.04,
+      "hiPx": 145.435,
+      "loPx": 142.4703,
+      "open": 143.98,
+      "stkVolu": 8855592.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 141.25,
+      "hiPx": 145.745,
+      "loPx": 136.86,
+      "open": 144.895,
+      "stkVolu": 16927780.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 147.54,
+      "hiPx": 148.46,
+      "loPx": 137.37,
+      "open": 138.0,
+      "stkVolu": 13336572.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 151.68,
+      "hiPx": 153.21,
+      "loPx": 148.0,
+      "open": 149.91,
+      "stkVolu": 10966392.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 156.9,
+      "hiPx": 158.245,
+      "loPx": 155.74,
+      "open": 156.14,
+      "stkVolu": 13313095.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 155.62,
+      "hiPx": 156.125,
+      "loPx": 154.28,
+      "open": 155.52,
+      "stkVolu": 7939677.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 160.67,
+      "hiPx": 163.0899,
+      "loPx": 158.085,
+      "open": 158.25,
+      "stkVolu": 12783323.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 161.01,
+      "hiPx": 165.22,
+      "loPx": 160.3,
+      "open": 162.37,
+      "stkVolu": 10440619.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 157.46,
+      "hiPx": 164.06,
+      "loPx": 156.6,
+      "open": 162.55,
+      "stkVolu": 9652073.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 161.24,
+      "hiPx": 162.24,
+      "loPx": 159.0,
+      "open": 159.99,
+      "stkVolu": 7302412.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 155.78,
+      "hiPx": 161.0935,
+      "loPx": 155.16,
+      "open": 155.63,
+      "stkVolu": 11211076.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 165.05,
+      "hiPx": 166.92,
+      "loPx": 157.0,
+      "open": 157.57,
+      "stkVolu": 11130192.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 162.19,
+      "hiPx": 165.2129,
+      "loPx": 160.19,
+      "open": 163.39,
+      "stkVolu": 9640084.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 159.35,
+      "hiPx": 159.9511,
+      "loPx": 153.195,
+      "open": 159.825,
+      "stkVolu": 11609325.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 166.37,
+      "hiPx": 167.15,
+      "loPx": 163.7,
+      "open": 164.555,
+      "stkVolu": 10030598.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 159.18,
+      "hiPx": 164.6225,
+      "loPx": 157.71,
+      "open": 164.17,
+      "stkVolu": 9144638.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 161.42,
+      "hiPx": 162.16,
+      "loPx": 158.48,
+      "open": 161.31,
+      "stkVolu": 8949951.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 153.32,
+      "hiPx": 160.31,
+      "loPx": 151.73,
+      "open": 158.89,
+      "stkVolu": 13693700.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 148.26,
+      "hiPx": 152.945,
+      "loPx": 145.37,
+      "open": 147.505,
+      "stkVolu": 15076125.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 147.46,
+      "hiPx": 153.81,
+      "loPx": 145.94,
+      "open": 147.31,
+      "stkVolu": 10487785.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 143.24,
+      "hiPx": 147.44,
+      "loPx": 142.5,
+      "open": 145.25,
+      "stkVolu": 12706725.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 148.8,
+      "hiPx": 150.4,
+      "loPx": 145.51,
+      "open": 146.77,
+      "stkVolu": 9818266.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 139.59,
+      "hiPx": 154.37,
+      "loPx": 138.3,
+      "open": 153.46,
+      "stkVolu": 13695471.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 142.65,
+      "hiPx": 144.41,
+      "loPx": 135.5,
+      "open": 139.8,
+      "stkVolu": 14654566.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 150.38,
+      "hiPx": 152.56,
+      "loPx": 144.43,
+      "open": 145.6,
+      "stkVolu": 23095991.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 151.93,
+      "hiPx": 152.8,
+      "loPx": 145.5,
+      "open": 149.545,
+      "stkVolu": 9691547.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 155.14,
+      "hiPx": 156.97,
+      "loPx": 152.5,
+      "open": 152.965,
+      "stkVolu": 8398145.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 156.0,
+      "hiPx": 156.2,
+      "loPx": 153.83,
+      "open": 156.2,
+      "stkVolu": 4919184.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 154.79,
+      "hiPx": 156.79,
+      "loPx": 153.25,
+      "open": 154.85,
+      "stkVolu": 7416725.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 158.19,
+      "hiPx": 159.45,
+      "loPx": 155.66,
+      "open": 155.85,
+      "stkVolu": 10711871.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 159.75,
+      "hiPx": 160.1,
+      "loPx": 153.15,
+      "open": 156.885,
+      "stkVolu": 9964303.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 157.09,
+      "hiPx": 158.52,
+      "loPx": 154.92,
+      "open": 157.05,
+      "stkVolu": 8834691.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 158.7,
+      "hiPx": 161.05,
+      "loPx": 157.88,
+      "open": 159.005,
+      "stkVolu": 7834084.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 162.74,
+      "hiPx": 164.619,
+      "loPx": 160.845,
+      "open": 161.98,
+      "stkVolu": 10170531.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 165.81,
+      "hiPx": 166.36,
+      "loPx": 160.75,
+      "open": 160.75,
+      "stkVolu": 8127026.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 168.26,
+      "hiPx": 169.69,
+      "loPx": 162.54,
+      "open": 165.09,
+      "stkVolu": 9259635.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 168.71,
+      "hiPx": 169.15,
+      "loPx": 160.32,
+      "open": 165.66,
+      "stkVolu": 10000003.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 160.52,
+      "hiPx": 167.8,
+      "loPx": 159.0896,
+      "open": 166.84,
+      "stkVolu": 11414843.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 164.3,
+      "hiPx": 166.87,
+      "loPx": 162.16,
+      "open": 163.4,
+      "stkVolu": 10258816.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 163.26,
+      "hiPx": 166.1905,
+      "loPx": 160.79,
+      "open": 164.5,
+      "stkVolu": 8078639.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 154.98,
+      "hiPx": 164.5213,
+      "loPx": 153.6,
+      "open": 163.86,
+      "stkVolu": 12277844.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 164.7,
+      "hiPx": 168.29,
+      "loPx": 162.0,
+      "open": 163.19,
+      "stkVolu": 14006365.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 172.27,
+      "hiPx": 173.58,
+      "loPx": 166.08,
+      "open": 166.08,
+      "stkVolu": 38469396.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 175.26,
+      "hiPx": 175.96,
+      "loPx": 171.49,
+      "open": 175.68,
+      "stkVolu": 11436145.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 175.16,
+      "hiPx": 177.29,
+      "loPx": 174.78,
+      "open": 175.26,
+      "stkVolu": 6482958.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 177.33,
+      "hiPx": 177.5612,
+      "loPx": 175.2,
+      "open": 175.26,
+      "stkVolu": 2598888.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 178.07,
+      "hiPx": 179.8,
+      "loPx": 177.8,
+      "open": 178.43,
+      "stkVolu": 5238945.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 175.87,
+      "hiPx": 179.229,
+      "loPx": 174.75,
+      "open": 176.5,
+      "stkVolu": 6663341.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 173.78,
+      "hiPx": 177.36,
+      "loPx": 173.59,
+      "open": 176.535,
+      "stkVolu": 5670823.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 171.18,
+      "hiPx": 174.91,
+      "loPx": 170.76,
+      "open": 174.485,
+      "stkVolu": 4935798.0,
+      "ticker": "LRCX",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 185.06,
+      "hiPx": 185.78,
+      "loPx": 177.5,
+      "open": 177.85,
+      "stkVolu": 11957364.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 194.76,
+      "hiPx": 198.36,
+      "loPx": 190.12,
+      "open": 190.12,
+      "stkVolu": 16268153.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 206.96,
+      "hiPx": 210.45,
+      "loPx": 197.15,
+      "open": 197.79,
+      "stkVolu": 18787559.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 203.08,
+      "hiPx": 205.38,
+      "loPx": 199.8,
+      "open": 202.58,
+      "stkVolu": 15121022.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 200.96,
+      "hiPx": 203.22,
+      "loPx": 195.04,
+      "open": 202.865,
+      "stkVolu": 13928555.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 218.36,
+      "hiPx": 219.59,
+      "loPx": 202.72,
+      "open": 204.66,
+      "stkVolu": 16758578.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 220.4,
+      "hiPx": 222.58,
+      "loPx": 215.18,
+      "open": 216.12,
+      "stkVolu": 10749065.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 214.38,
+      "hiPx": 220.57,
+      "loPx": 213.39,
+      "open": 219.42,
+      "stkVolu": 12736965.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 208.79,
+      "hiPx": 211.31,
+      "loPx": 206.61,
+      "open": 211.125,
+      "stkVolu": 18187222.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 217.47,
+      "hiPx": 229.57,
+      "loPx": 217.21,
+      "open": 228.145,
+      "stkVolu": 15249844.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 222.96,
+      "hiPx": 225.69,
+      "loPx": 219.0,
+      "open": 221.9,
+      "stkVolu": 14392666.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 222.41,
+      "hiPx": 226.1475,
+      "loPx": 217.61,
+      "open": 218.21,
+      "stkVolu": 11601709.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 228.39,
+      "hiPx": 232.9,
+      "loPx": 220.66,
+      "open": 223.05,
+      "stkVolu": 12454809.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 220.7,
+      "hiPx": 236.1,
+      "loPx": 219.76,
+      "open": 235.56,
+      "stkVolu": 11958641.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 217.94,
+      "hiPx": 223.36,
+      "loPx": 213.8699,
+      "open": 217.87,
+      "stkVolu": 10156786.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 222.87,
+      "hiPx": 225.35,
+      "loPx": 215.9301,
+      "open": 218.98,
+      "stkVolu": 10625570.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 238.46,
+      "hiPx": 239.5,
+      "loPx": 228.76,
+      "open": 230.63,
+      "stkVolu": 12005945.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 239.58,
+      "hiPx": 243.99,
+      "loPx": 237.14,
+      "open": 241.27,
+      "stkVolu": 15630573.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 248.17,
+      "hiPx": 251.3799,
+      "loPx": 236.815,
+      "open": 245.61,
+      "stkVolu": 16801621.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 233.46,
+      "hiPx": 251.87,
+      "loPx": 232.0,
+      "open": 244.26,
+      "stkVolu": 18352886.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 237.5,
+      "hiPx": 242.95,
+      "loPx": 232.0,
+      "open": 233.33,
+      "stkVolu": 13299344.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 230.1,
+      "hiPx": 246.6199,
+      "loPx": 226.8794,
+      "open": 244.89,
+      "stkVolu": 13500371.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 209.78,
+      "hiPx": 231.11,
+      "loPx": 205.11,
+      "open": 229.87,
+      "stkVolu": 19608022.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 213.31,
+      "hiPx": 215.85,
+      "loPx": 204.57,
+      "open": 208.13,
+      "stkVolu": 10928873.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 231.01,
+      "hiPx": 232.45,
+      "loPx": 218.76,
+      "open": 220.67,
+      "stkVolu": 13848778.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 229.28,
+      "hiPx": 231.315,
+      "loPx": 223.39,
+      "open": 229.005,
+      "stkVolu": 9976654.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 226.61,
+      "hiPx": 229.31,
+      "loPx": 220.25,
+      "open": 229.28,
+      "stkVolu": 7909518.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 235.12,
+      "hiPx": 240.34,
+      "loPx": 230.04,
+      "open": 235.545,
+      "stkVolu": 9555840.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 231.29,
+      "hiPx": 238.91,
+      "loPx": 229.64,
+      "open": 236.33,
+      "stkVolu": 10662129.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 235.53,
+      "hiPx": 242.7799,
+      "loPx": 233.39,
+      "open": 236.18,
+      "stkVolu": 9905432.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 235.58,
+      "hiPx": 238.15,
+      "loPx": 228.88,
+      "open": 231.45,
+      "stkVolu": 7368503.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 240.09,
+      "hiPx": 245.27,
+      "loPx": 234.1,
+      "open": 236.38,
+      "stkVolu": 10095399.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 237.39,
+      "hiPx": 237.92,
+      "loPx": 231.42,
+      "open": 234.07,
+      "stkVolu": 6384161.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 244.92,
+      "hiPx": 245.76,
+      "loPx": 236.965,
+      "open": 237.22,
+      "stkVolu": 8601201.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 242.27,
+      "hiPx": 249.4,
+      "loPx": 237.3701,
+      "open": 245.35,
+      "stkVolu": 9488020.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 244.25,
+      "hiPx": 247.76,
+      "loPx": 238.975,
+      "open": 243.45,
+      "stkVolu": 9087090.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 249.48,
+      "hiPx": 256.68,
+      "loPx": 248.39,
+      "open": 249.89,
+      "stkVolu": 9835405.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 239.07,
+      "hiPx": 248.5029,
+      "loPx": 230.7,
+      "open": 246.03,
+      "stkVolu": 10700292.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 233.89,
+      "hiPx": 240.1,
+      "loPx": 232.68,
+      "open": 233.46,
+      "stkVolu": 12988890.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 231.0,
+      "hiPx": 233.83,
+      "loPx": 227.23,
+      "open": 229.28,
+      "stkVolu": 10294014.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 217.27,
+      "hiPx": 224.12,
+      "loPx": 215.79,
+      "open": 223.77,
+      "stkVolu": 12442344.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 222.99,
+      "hiPx": 225.12,
+      "loPx": 219.0,
+      "open": 221.705,
+      "stkVolu": 8614367.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 214.68,
+      "hiPx": 222.41,
+      "loPx": 208.13,
+      "open": 218.41,
+      "stkVolu": 10241012.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 199.33,
+      "hiPx": 211.24,
+      "loPx": 198.45,
+      "open": 205.45,
+      "stkVolu": 13597779.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 211.15,
+      "hiPx": 211.5,
+      "loPx": 194.08,
+      "open": 195.0,
+      "stkVolu": 13421037.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 215.23,
+      "hiPx": 220.8199,
+      "loPx": 210.88,
+      "open": 211.0,
+      "stkVolu": 10699719.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 218.87,
+      "hiPx": 221.62,
+      "loPx": 214.0,
+      "open": 214.45,
+      "stkVolu": 7160496.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 209.49,
+      "hiPx": 215.165,
+      "loPx": 208.0,
+      "open": 213.67,
+      "stkVolu": 9932883.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 212.2,
+      "hiPx": 218.0,
+      "loPx": 211.23,
+      "open": 212.34,
+      "stkVolu": 8906514.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 219.4,
+      "hiPx": 221.46,
+      "loPx": 215.95,
+      "open": 217.95,
+      "stkVolu": 9533106.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 226.47,
+      "hiPx": 226.71,
+      "loPx": 218.55,
+      "open": 220.525,
+      "stkVolu": 10043719.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 224.71,
+      "hiPx": 232.32,
+      "loPx": 222.975,
+      "open": 226.742,
+      "stkVolu": 12478811.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 233.99,
+      "hiPx": 235.14,
+      "loPx": 215.0,
+      "open": 218.17,
+      "stkVolu": 10101889.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 228.36,
+      "hiPx": 236.84,
+      "loPx": 222.045,
+      "open": 234.32,
+      "stkVolu": 26176384.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 233.31,
+      "hiPx": 239.52,
+      "loPx": 227.065,
+      "open": 230.39,
+      "stkVolu": 9506241.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 238.84,
+      "hiPx": 241.37,
+      "loPx": 230.16,
+      "open": 230.16,
+      "stkVolu": 7388016.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 233.45,
+      "hiPx": 237.1,
+      "loPx": 227.36,
+      "open": 236.15,
+      "stkVolu": 8330641.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 211.62,
+      "hiPx": 226.885,
+      "loPx": 211.38,
+      "open": 225.74,
+      "stkVolu": 13460512.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 211.41,
+      "hiPx": 216.9999,
+      "loPx": 209.0,
+      "open": 209.665,
+      "stkVolu": 8503305.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 199.93,
+      "hiPx": 216.29,
+      "loPx": 198.6,
+      "open": 214.555,
+      "stkVolu": 11921042.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 213.66,
+      "hiPx": 213.84,
+      "loPx": 203.01,
+      "open": 205.995,
+      "stkVolu": 11725020.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 222.01,
+      "hiPx": 225.5,
+      "loPx": 215.0,
+      "open": 215.45,
+      "stkVolu": 10697587.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 218.44,
+      "hiPx": 222.01,
+      "loPx": 208.8,
+      "open": 208.84,
+      "stkVolu": 6805362.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 220.65,
+      "hiPx": 221.5599,
+      "loPx": 216.53,
+      "open": 220.13,
+      "stkVolu": 4031245.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 224.35,
+      "hiPx": 224.49,
+      "loPx": 216.5,
+      "open": 218.24,
+      "stkVolu": 6818401.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 246.49,
+      "hiPx": 249.19,
+      "loPx": 241.49,
+      "open": 242.75,
+      "stkVolu": 11022994.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 258.76,
+      "hiPx": 259.0,
+      "loPx": 247.35,
+      "open": 248.33,
+      "stkVolu": 9757778.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 263.66,
+      "hiPx": 268.23,
+      "loPx": 259.331,
+      "open": 263.185,
+      "stkVolu": 9124738.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 267.32,
+      "hiPx": 267.54,
+      "loPx": 260.85,
+      "open": 263.12,
+      "stkVolu": 8773580.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 272.41,
+      "hiPx": 273.5,
+      "loPx": 264.9,
+      "open": 271.855,
+      "stkVolu": 8500605.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 265.16,
+      "hiPx": 267.99,
+      "loPx": 255.48,
+      "open": 267.0,
+      "stkVolu": 11324225.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 260.96,
+      "hiPx": 266.25,
+      "loPx": 259.18,
+      "open": 263.48,
+      "stkVolu": 7829408.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 267.6,
+      "hiPx": 268.76,
+      "loPx": 262.4201,
+      "open": 267.97,
+      "stkVolu": 8465435.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 263.16,
+      "hiPx": 267.65,
+      "loPx": 262.535,
+      "open": 267.1,
+      "stkVolu": 5989903.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 258.37,
+      "hiPx": 265.6,
+      "loPx": 256.71,
+      "open": 263.81,
+      "stkVolu": 7830288.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 265.55,
+      "hiPx": 266.14,
+      "loPx": 257.4,
+      "open": 261.71,
+      "stkVolu": 9803290.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 258.56,
+      "hiPx": 272.8199,
+      "loPx": 253.28,
+      "open": 265.05,
+      "stkVolu": 12269052.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 267.78,
+      "hiPx": 275.84,
+      "loPx": 266.88,
+      "open": 267.5,
+      "stkVolu": 12313193.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 259.47,
+      "hiPx": 268.83,
+      "loPx": 256.31,
+      "open": 267.76,
+      "stkVolu": 8095373.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 251.23,
+      "hiPx": 253.7,
+      "loPx": 243.04,
+      "open": 251.975,
+      "stkVolu": 11499534.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 248.75,
+      "hiPx": 253.955,
+      "loPx": 241.6,
+      "open": 253.17,
+      "stkVolu": 9585252.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 257.86,
+      "hiPx": 258.58,
+      "loPx": 248.66,
+      "open": 252.39,
+      "stkVolu": 10381132.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 256.72,
+      "hiPx": 260.44,
+      "loPx": 250.12,
+      "open": 255.14,
+      "stkVolu": 8094464.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 258.57,
+      "hiPx": 263.08,
+      "loPx": 254.95,
+      "open": 256.685,
+      "stkVolu": 6497388.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 275.8,
+      "hiPx": 280.0,
+      "loPx": 266.635,
+      "open": 266.635,
+      "stkVolu": 11883969.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 297.17,
+      "hiPx": 297.87,
+      "loPx": 285.85,
+      "open": 287.0,
+      "stkVolu": 14788646.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 286.52,
+      "hiPx": 297.995,
+      "loPx": 283.14,
+      "open": 297.03,
+      "stkVolu": 9704518.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 294.05,
+      "hiPx": 297.42,
+      "loPx": 287.52,
+      "open": 295.715,
+      "stkVolu": 8996650.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 296.05,
+      "hiPx": 300.0,
+      "loPx": 292.51,
+      "open": 292.51,
+      "stkVolu": 9149989.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 289.24,
+      "hiPx": 290.35,
+      "loPx": 277.77,
+      "open": 287.215,
+      "stkVolu": 9341845.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 295.44,
+      "hiPx": 298.98,
+      "loPx": 287.18,
+      "open": 295.27,
+      "stkVolu": 8633086.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 299.15,
+      "hiPx": 302.0,
+      "loPx": 293.01,
+      "open": 296.325,
+      "stkVolu": 6404921.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 284.72,
+      "hiPx": 289.44,
+      "loPx": 276.48,
+      "open": 289.44,
+      "stkVolu": 9643209.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 277.96,
+      "hiPx": 294.56,
+      "loPx": 273.08,
+      "open": 292.74,
+      "stkVolu": 8562157.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 273.38,
+      "hiPx": 278.73,
+      "loPx": 263.71,
+      "open": 267.95,
+      "stkVolu": 8308623.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 292.09,
+      "hiPx": 293.63,
+      "loPx": 277.52,
+      "open": 279.58,
+      "stkVolu": 8574213.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 302.24,
+      "hiPx": 303.18,
+      "loPx": 291.8,
+      "open": 292.665,
+      "stkVolu": 9162399.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 305.35,
+      "hiPx": 309.98,
+      "loPx": 303.18,
+      "open": 305.725,
+      "stkVolu": 7859187.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 322.68,
+      "hiPx": 323.98,
+      "loPx": 309.65,
+      "open": 314.765,
+      "stkVolu": 9770815.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 318.93,
+      "hiPx": 333.33,
+      "loPx": 314.28,
+      "open": 331.665,
+      "stkVolu": 8824610.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 318.0,
+      "hiPx": 322.6399,
+      "loPx": 308.74,
+      "open": 317.45,
+      "stkVolu": 8402842.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 318.18,
+      "hiPx": 324.25,
+      "loPx": 316.811,
+      "open": 322.0,
+      "stkVolu": 10872171.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 317.12,
+      "hiPx": 320.83,
+      "loPx": 307.035,
+      "open": 309.27,
+      "stkVolu": 8052836.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 334.41,
+      "hiPx": 335.55,
+      "loPx": 320.86,
+      "open": 324.42,
+      "stkVolu": 8632370.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 343.71,
+      "hiPx": 346.19,
+      "loPx": 332.13,
+      "open": 335.05,
+      "stkVolu": 8630883.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 336.41,
+      "hiPx": 342.369,
+      "loPx": 324.71,
+      "open": 329.75,
+      "stkVolu": 8277041.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 303.28,
+      "hiPx": 323.42,
+      "loPx": 302.74,
+      "open": 320.37,
+      "stkVolu": 13308959.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 324.45,
+      "hiPx": 330.68,
+      "loPx": 315.0,
+      "open": 318.545,
+      "stkVolu": 11465093.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 327.16,
+      "hiPx": 349.09,
+      "loPx": 306.01,
+      "open": 335.5,
+      "stkVolu": 14466754.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 321.8,
+      "hiPx": 348.1611,
+      "loPx": 318.945,
+      "open": 323.29,
+      "stkVolu": 14088451.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 362.52,
+      "hiPx": 364.807,
+      "loPx": 336.2,
+      "open": 336.64,
+      "stkVolu": 14983969.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 366.81,
+      "hiPx": 373.82,
+      "loPx": 354.89,
+      "open": 359.39,
+      "stkVolu": 9256632.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 388.92,
+      "hiPx": 393.07,
+      "loPx": 382.3901,
+      "open": 385.99,
+      "stkVolu": 13459830.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 369.34,
+      "hiPx": 393.0,
+      "loPx": 368.77,
+      "open": 385.135,
+      "stkVolu": 12054938.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 374.18,
+      "hiPx": 397.629,
+      "loPx": 373.24,
+      "open": 382.0,
+      "stkVolu": 10900843.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 389.04,
+      "hiPx": 401.0,
+      "loPx": 386.9,
+      "open": 397.22,
+      "stkVolu": 22686620.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 409.54,
+      "hiPx": 409.75,
+      "loPx": 392.075,
+      "open": 398.39,
+      "stkVolu": 14638623.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 371.33,
+      "hiPx": 377.1,
+      "loPx": 365.26,
+      "open": 369.705,
+      "stkVolu": 16065245.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 374.8,
+      "hiPx": 376.98,
+      "loPx": 361.41,
+      "open": 366.865,
+      "stkVolu": 12016719.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 401.82,
+      "hiPx": 407.99,
+      "loPx": 372.3,
+      "open": 407.99,
+      "stkVolu": 16845288.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 379.09,
+      "hiPx": 389.88,
+      "loPx": 374.311,
+      "open": 385.5,
+      "stkVolu": 19733700.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 410.91,
+      "hiPx": 414.98,
+      "loPx": 379.1,
+      "open": 383.01,
+      "stkVolu": 14049627.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 433.33,
+      "hiPx": 438.5,
+      "loPx": 414.01,
+      "open": 416.29,
+      "stkVolu": 16885085.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 391.26,
+      "hiPx": 415.49,
+      "loPx": 381.0,
+      "open": 404.97,
+      "stkVolu": 18699329.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 351.41,
+      "hiPx": 392.5,
+      "loPx": 342.475,
+      "open": 391.06,
+      "stkVolu": 18973407.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 350.2,
+      "hiPx": 366.08,
+      "loPx": 348.27,
+      "open": 365.34,
+      "stkVolu": 13581653.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 326.13,
+      "hiPx": 330.75,
+      "loPx": 313.1,
+      "open": 322.405,
+      "stkVolu": 15530626.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 333.15,
+      "hiPx": 337.5,
+      "loPx": 322.72,
+      "open": 325.47,
+      "stkVolu": 8029421.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 353.17,
+      "hiPx": 369.95,
+      "loPx": 350.06,
+      "open": 365.13,
+      "stkVolu": 12119689.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 350.33,
+      "hiPx": 354.73,
+      "loPx": 338.1319,
+      "open": 341.36,
+      "stkVolu": 6890932.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 329.92,
+      "hiPx": 337.98,
+      "loPx": 326.9,
+      "open": 335.0,
+      "stkVolu": 9770512.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 346.1,
+      "hiPx": 354.66,
+      "loPx": 338.875,
+      "open": 354.66,
+      "stkVolu": 10699071.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 335.43,
+      "hiPx": 357.25,
+      "loPx": 319.79,
+      "open": 357.25,
+      "stkVolu": 10257338.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 320.96,
+      "hiPx": 336.68,
+      "loPx": 315.16,
+      "open": 324.985,
+      "stkVolu": 10641270.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 313.3,
+      "hiPx": 322.0699,
+      "loPx": 298.65,
+      "open": 303.83,
+      "stkVolu": 12805720.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 306.76,
+      "hiPx": 324.4499,
+      "loPx": 305.26,
+      "open": 321.15,
+      "stkVolu": 8074372.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 322.0,
+      "hiPx": 328.135,
+      "loPx": 313.29,
+      "open": 328.13,
+      "stkVolu": 11936455.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 319.29,
+      "hiPx": 322.25,
+      "loPx": 310.55,
+      "open": 310.55,
+      "stkVolu": 6344664.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 319.78,
+      "hiPx": 325.88,
+      "loPx": 314.35,
+      "open": 315.495,
+      "stkVolu": 8106898.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 305.21,
+      "hiPx": 319.7,
+      "loPx": 301.675,
+      "open": 312.62,
+      "stkVolu": 9278352.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 291.61,
+      "hiPx": 309.5,
+      "loPx": 278.45,
+      "open": 306.305,
+      "stkVolu": 14117637.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 269.61,
+      "hiPx": 277.3,
+      "loPx": 258.53,
+      "open": 275.165,
+      "stkVolu": 16097703.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 252.35,
+      "hiPx": 273.46,
+      "loPx": 250.5,
+      "open": 264.51,
+      "stkVolu": 16103109.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 297.72,
+      "hiPx": 319.5,
+      "loPx": 294.25,
+      "open": 318.29,
+      "stkVolu": 22085849.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 293.02,
+      "hiPx": 318.4,
+      "loPx": 292.93,
+      "open": 315.37,
+      "stkVolu": 12561150.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 294.61,
+      "hiPx": 295.93,
+      "loPx": 276.8447,
+      "open": 283.34,
+      "stkVolu": 10010904.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 317.74,
+      "hiPx": 320.25,
+      "loPx": 306.16,
+      "open": 308.83,
+      "stkVolu": 15796629.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 307.42,
+      "hiPx": 323.64,
+      "loPx": 305.36,
+      "open": 318.54,
+      "stkVolu": 9302038.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 305.77,
+      "hiPx": 314.16,
+      "loPx": 293.65,
+      "open": 300.0,
+      "stkVolu": 7430396.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 311.35,
+      "hiPx": 315.59,
+      "loPx": 303.83,
+      "open": 311.87,
+      "stkVolu": 6714117.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 306.4,
+      "hiPx": 319.99,
+      "loPx": 305.5,
+      "open": 319.5,
+      "stkVolu": 7022760.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 311.41,
+      "hiPx": 316.86,
+      "loPx": 309.35,
+      "open": 315.03,
+      "stkVolu": 7669436.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 326.11,
+      "hiPx": 329.4899,
+      "loPx": 323.5,
+      "open": 326.835,
+      "stkVolu": 8075626.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 337.01,
+      "hiPx": 345.12,
+      "loPx": 324.01,
+      "open": 327.62,
+      "stkVolu": 8900984.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 332.36,
+      "hiPx": 342.0,
+      "loPx": 326.555,
+      "open": 332.36,
+      "stkVolu": 7422941.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 343.84,
+      "hiPx": 345.28,
+      "loPx": 333.4,
+      "open": 337.87,
+      "stkVolu": 8505606.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 327.92,
+      "hiPx": 329.0734,
+      "loPx": 317.411,
+      "open": 324.18,
+      "stkVolu": 10209998.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 307.17,
+      "hiPx": 328.57,
+      "loPx": 305.0801,
+      "open": 328.52,
+      "stkVolu": 10861470.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 310.53,
+      "hiPx": 312.54,
+      "loPx": 302.95,
+      "open": 305.225,
+      "stkVolu": 6802559.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 314.0,
+      "hiPx": 319.1,
+      "loPx": 303.85,
+      "open": 317.86,
+      "stkVolu": 5946979.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 310.17,
+      "hiPx": 311.44,
+      "loPx": 297.78,
+      "open": 307.94,
+      "stkVolu": 8614313.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 314.66,
+      "hiPx": 318.61,
+      "loPx": 307.86,
+      "open": 316.2,
+      "stkVolu": 5023289.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 312.88,
+      "hiPx": 315.72,
+      "loPx": 308.05,
+      "open": 314.61,
+      "stkVolu": 4113545.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 318.58,
+      "hiPx": 321.41,
+      "loPx": 310.44023,
+      "open": 318.88,
+      "stkVolu": 6561055.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

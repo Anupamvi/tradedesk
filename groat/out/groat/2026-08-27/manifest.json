@@ -1,0 +1,35 @@
+{
+  "blocker": "",
+  "date": "2026-08-27",
+  "evidence_http": 5,
+  "live_schwab": false,
+  "mode": "full",
+  "orats_error": "",
+  "orats_http": 7,
+  "orats_ok": 1,
+  "orats_requests_left": 19902,
+  "orats_requests_used": 98,
+  "orats_rows": 99,
+  "regime": "strong_risk_on",
+  "selector": "groat_swing",
+  "tapes": {
+    "DIA": "schwab_history",
+    "IWM": "schwab_history",
+    "QQQ": "schwab_history",
+    "SPY": "schwab_history"
+  },
+  "trade_count": 10,
+  "trades": [
+    "CRWD",
+    "NVDA",
+    "NOW",
+    "ADBE",
+    "PLTR",
+    "SMCI",
+    "SHOP",
+    "URNM",
+    "ANET",
+    "PANW"
+  ],
+  "watch_count": 10
+}

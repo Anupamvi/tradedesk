@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 191.27,
+      "hiPx": 191.85,
+      "loPx": 185.85,
+      "open": 185.85,
+      "stkVolu": 1848809.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 192.85,
+      "hiPx": 194.15,
+      "loPx": 188.8,
+      "open": 190.33,
+      "stkVolu": 2171563.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 192.81,
+      "hiPx": 194.89,
+      "loPx": 187.77,
+      "open": 194.0,
+      "stkVolu": 2444212.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 193.49,
+      "hiPx": 195.9,
+      "loPx": 192.25,
+      "open": 194.42,
+      "stkVolu": 2347925.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 181.92,
+      "hiPx": 194.485,
+      "loPx": 179.55,
+      "open": 194.08,
+      "stkVolu": 3865153.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 181.39,
+      "hiPx": 185.38,
+      "loPx": 180.1094,
+      "open": 182.43,
+      "stkVolu": 2781806.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 182.9,
+      "hiPx": 184.9,
+      "loPx": 178.5055,
+      "open": 179.94,
+      "stkVolu": 2759173.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 186.97,
+      "hiPx": 187.75,
+      "loPx": 180.7,
+      "open": 184.24,
+      "stkVolu": 2619888.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 189.81,
+      "hiPx": 190.12,
+      "loPx": 186.08,
+      "open": 188.77,
+      "stkVolu": 3096406.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 191.25,
+      "hiPx": 193.1,
+      "loPx": 189.085,
+      "open": 190.48,
+      "stkVolu": 3594107.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 197.35,
+      "hiPx": 197.35,
+      "loPx": 191.5275,
+      "open": 191.71,
+      "stkVolu": 4216629.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 197.76,
+      "hiPx": 200.765,
+      "loPx": 195.04,
+      "open": 198.3,
+      "stkVolu": 3624194.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 190.55,
+      "hiPx": 197.22,
+      "loPx": 188.65,
+      "open": 196.63,
+      "stkVolu": 3961351.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 189.15,
+      "hiPx": 190.83,
+      "loPx": 186.0801,
+      "open": 190.02,
+      "stkVolu": 2861519.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 191.58,
+      "hiPx": 192.62,
+      "loPx": 186.72,
+      "open": 190.2,
+      "stkVolu": 2622991.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 198.42,
+      "hiPx": 200.01,
+      "loPx": 191.58,
+      "open": 191.9,
+      "stkVolu": 2698719.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 199.41,
+      "hiPx": 202.34,
+      "loPx": 198.62,
+      "open": 200.91,
+      "stkVolu": 3517576.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 199.43,
+      "hiPx": 202.36,
+      "loPx": 197.68,
+      "open": 200.0,
+      "stkVolu": 2834685.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 200.85,
+      "hiPx": 203.08,
+      "loPx": 199.0001,
+      "open": 200.45,
+      "stkVolu": 2734996.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 207.68,
+      "hiPx": 210.98,
+      "loPx": 203.0,
+      "open": 204.77,
+      "stkVolu": 6792819.0,
+      "ticker": "NET",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 200.11,
+      "hiPx": 211.27,
+      "loPx": 192.8,
+      "open": 198.66,
+      "stkVolu": 6449383.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 208.8,
+      "hiPx": 211.75,
+      "loPx": 202.71,
+      "open": 204.57,
+      "stkVolu": 3658159.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 207.81,
+      "hiPx": 215.58,
+      "loPx": 204.7,
+      "open": 209.0,
+      "stkVolu": 3039493.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 215.53,
+      "hiPx": 215.55,
+      "loPx": 208.475,
+      "open": 209.45,
+      "stkVolu": 2325111.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 210.44,
+      "hiPx": 219.0,
+      "loPx": 204.33,
+      "open": 218.16,
+      "stkVolu": 2702117.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 204.6,
+      "hiPx": 211.79,
+      "loPx": 204.2,
+      "open": 210.59,
+      "stkVolu": 1767234.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 201.17,
+      "hiPx": 206.12,
+      "loPx": 200.1,
+      "open": 202.11,
+      "stkVolu": 2066406.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 202.33,
+      "hiPx": 204.0,
+      "loPx": 197.23,
+      "open": 202.47,
+      "stkVolu": 2248462.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 199.34,
+      "hiPx": 204.52,
+      "loPx": 195.855,
+      "open": 204.0,
+      "stkVolu": 2745991.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 195.38,
+      "hiPx": 198.166,
+      "loPx": 192.955,
+      "open": 195.97,
+      "stkVolu": 2535724.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 200.91,
+      "hiPx": 202.8999,
+      "loPx": 195.0,
+      "open": 195.63,
+      "stkVolu": 2121894.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 202.37,
+      "hiPx": 203.3099,
+      "loPx": 196.56,
+      "open": 199.99,
+      "stkVolu": 2203810.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 196.51,
+      "hiPx": 203.0,
+      "loPx": 193.51,
+      "open": 201.79,
+      "stkVolu": 2190793.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 193.2,
+      "hiPx": 195.5,
+      "loPx": 184.52,
+      "open": 195.0,
+      "stkVolu": 3190965.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 192.77,
+      "hiPx": 193.4899,
+      "loPx": 190.29,
+      "open": 191.0,
+      "stkVolu": 1667257.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 196.17,
+      "hiPx": 197.99,
+      "loPx": 190.4761,
+      "open": 192.3,
+      "stkVolu": 1417048.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 195.88,
+      "hiPx": 197.46,
+      "loPx": 194.13,
+      "open": 196.5,
+      "stkVolu": 1246505.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 198.55,
+      "hiPx": 201.4999,
+      "loPx": 195.94,
+      "open": 196.4,
+      "stkVolu": 2750260.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 205.24,
+      "hiPx": 205.65,
+      "loPx": 199.76,
+      "open": 201.4,
+      "stkVolu": 2433568.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 213.42,
+      "hiPx": 215.65,
+      "loPx": 205.8,
+      "open": 205.8,
+      "stkVolu": 2733149.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 208.71,
+      "hiPx": 214.4336,
+      "loPx": 206.0,
+      "open": 212.48,
+      "stkVolu": 2095433.0,
+      "ticker": "NET",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 208.05,
+      "hiPx": 208.71,
+      "loPx": 199.39,
+      "open": 202.65,
+      "stkVolu": 1893955.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 205.71,
+      "hiPx": 208.9711,
+      "loPx": 203.86,
+      "open": 208.78,
+      "stkVolu": 1382388.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 209.98,
+      "hiPx": 211.14,
+      "loPx": 200.67,
+      "open": 204.99,
+      "stkVolu": 1779951.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 214.43,
+      "hiPx": 214.71,
+      "loPx": 208.4601,
+      "open": 212.11,
+      "stkVolu": 1638321.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 217.91,
+      "hiPx": 220.99,
+      "loPx": 216.23,
+      "open": 216.7,
+      "stkVolu": 2390779.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 218.56,
+      "hiPx": 219.2,
+      "loPx": 214.85,
+      "open": 217.92,
+      "stkVolu": 1671547.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 222.97,
+      "hiPx": 225.29,
+      "loPx": 219.51,
+      "open": 219.97,
+      "stkVolu": 2216013.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 224.64,
+      "hiPx": 230.1,
+      "loPx": 223.0897,
+      "open": 224.9,
+      "stkVolu": 3132440.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 221.32,
+      "hiPx": 225.52,
+      "loPx": 220.43,
+      "open": 223.8,
+      "stkVolu": 1554055.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 226.01,
+      "hiPx": 229.54,
+      "loPx": 220.51,
+      "open": 220.57,
+      "stkVolu": 1878462.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 219.24,
+      "hiPx": 225.1615,
+      "loPx": 218.39,
+      "open": 225.0,
+      "stkVolu": 2579972.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 213.88,
+      "hiPx": 220.19,
+      "loPx": 208.5912,
+      "open": 219.65,
+      "stkVolu": 3407137.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 223.57,
+      "hiPx": 223.81,
+      "loPx": 215.82,
+      "open": 216.75,
+      "stkVolu": 3028370.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 225.94,
+      "hiPx": 227.62,
+      "loPx": 222.18,
+      "open": 224.0,
+      "stkVolu": 4004526.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 228.28,
+      "hiPx": 230.1,
+      "loPx": 222.76,
+      "open": 224.525,
+      "stkVolu": 2636155.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 223.26,
+      "hiPx": 228.34,
+      "loPx": 219.5501,
+      "open": 228.34,
+      "stkVolu": 2005598.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 217.57,
+      "hiPx": 226.985,
+      "loPx": 217.22,
+      "open": 226.0,
+      "stkVolu": 2318920.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 218.2,
+      "hiPx": 219.29,
+      "loPx": 210.87,
+      "open": 213.65,
+      "stkVolu": 2810641.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 216.34,
+      "hiPx": 220.0,
+      "loPx": 213.55,
+      "open": 218.01,
+      "stkVolu": 1888385.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 218.58,
+      "hiPx": 219.8746,
+      "loPx": 216.34,
+      "open": 218.94,
+      "stkVolu": 1852737.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 214.59,
+      "hiPx": 218.84,
+      "loPx": 211.36,
+      "open": 218.84,
+      "stkVolu": 1868903.0,
+      "ticker": "NET",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 217.06,
+      "hiPx": 218.99,
+      "loPx": 212.17,
+      "open": 213.25,
+      "stkVolu": 2326340.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 224.56,
+      "hiPx": 224.815,
+      "loPx": 215.3662,
+      "open": 219.05,
+      "stkVolu": 2208838.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 216.67,
+      "hiPx": 225.0,
+      "loPx": 212.0,
+      "open": 225.0,
+      "stkVolu": 2428511.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 221.03,
+      "hiPx": 225.371,
+      "loPx": 219.215,
+      "open": 219.5,
+      "stkVolu": 1957507.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 217.39,
+      "hiPx": 222.22,
+      "loPx": 213.68,
+      "open": 222.0,
+      "stkVolu": 2138912.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 220.0,
+      "hiPx": 221.99,
+      "loPx": 216.2,
+      "open": 218.71,
+      "stkVolu": 1970616.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 220.95,
+      "hiPx": 221.5221,
+      "loPx": 214.3,
+      "open": 218.76,
+      "stkVolu": 1478837.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 213.82,
+      "hiPx": 226.95,
+      "loPx": 213.15,
+      "open": 222.12,
+      "stkVolu": 2118465.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 222.56,
+      "hiPx": 223.7,
+      "loPx": 215.85,
+      "open": 217.26,
+      "stkVolu": 1824291.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 217.55,
+      "hiPx": 217.96,
+      "loPx": 210.33,
+      "open": 217.33,
+      "stkVolu": 2645682.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 217.38,
+      "hiPx": 225.01,
+      "loPx": 217.26,
+      "open": 220.99,
+      "stkVolu": 2168027.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 211.4,
+      "hiPx": 221.46,
+      "loPx": 209.14,
+      "open": 218.78,
+      "stkVolu": 2588369.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 210.01,
+      "hiPx": 210.08,
+      "loPx": 203.51,
+      "open": 208.225,
+      "stkVolu": 3070694.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 213.04,
+      "hiPx": 213.45,
+      "loPx": 208.8,
+      "open": 212.41,
+      "stkVolu": 2008017.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 212.98,
+      "hiPx": 213.73,
+      "loPx": 208.17,
+      "open": 213.195,
+      "stkVolu": 1395431.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 210.73,
+      "hiPx": 213.83,
+      "loPx": 206.29,
+      "open": 211.92,
+      "stkVolu": 1684656.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 217.16,
+      "hiPx": 217.29,
+      "loPx": 210.01,
+      "open": 210.73,
+      "stkVolu": 2108043.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 217.85,
+      "hiPx": 222.13,
+      "loPx": 217.76,
+      "open": 220.1,
+      "stkVolu": 1357798.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 225.11,
+      "hiPx": 225.44,
+      "loPx": 219.29,
+      "open": 222.44,
+      "stkVolu": 2085893.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 223.99,
+      "hiPx": 228.2,
+      "loPx": 223.75,
+      "open": 226.25,
+      "stkVolu": 1864543.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 227.38,
+      "hiPx": 227.93,
+      "loPx": 223.0101,
+      "open": 224.65,
+      "stkVolu": 2253194.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 222.5,
+      "hiPx": 231.13,
+      "loPx": 222.25,
+      "open": 226.14,
+      "stkVolu": 5281961.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 253.3,
+      "hiPx": 254.3,
+      "loPx": 234.0,
+      "open": 236.5,
+      "stkVolu": 9483091.0,
+      "ticker": "NET",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 248.11,
+      "hiPx": 260.0,
+      "loPx": 245.12,
+      "open": 254.91,
+      "stkVolu": 4317089.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 232.91,
+      "hiPx": 245.63,
+      "loPx": 231.78,
+      "open": 240.25,
+      "stkVolu": 3505660.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 228.51,
+      "hiPx": 233.615,
+      "loPx": 228.22,
+      "open": 232.93,
+      "stkVolu": 2451572.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 225.9,
+      "hiPx": 230.895,
+      "loPx": 221.21,
+      "open": 229.875,
+      "stkVolu": 2786885.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 232.81,
+      "hiPx": 233.08,
+      "loPx": 218.43,
+      "open": 222.82,
+      "stkVolu": 2865828.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 240.53,
+      "hiPx": 244.4999,
+      "loPx": 238.65,
+      "open": 238.65,
+      "stkVolu": 2848363.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 234.95,
+      "hiPx": 241.0581,
+      "loPx": 234.73,
+      "open": 238.58,
+      "stkVolu": 1976966.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 225.68,
+      "hiPx": 236.26,
+      "loPx": 223.8,
+      "open": 235.835,
+      "stkVolu": 2851333.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 213.54,
+      "hiPx": 224.4429,
+      "loPx": 213.23,
+      "open": 223.745,
+      "stkVolu": 2666251.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 210.6,
+      "hiPx": 215.235,
+      "loPx": 204.1857,
+      "open": 209.95,
+      "stkVolu": 3875323.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 202.25,
+      "hiPx": 213.7,
+      "loPx": 201.39,
+      "open": 213.44,
+      "stkVolu": 4094597.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 196.53,
+      "hiPx": 200.54,
+      "loPx": 187.475,
+      "open": 187.475,
+      "stkVolu": 8770315.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 196.2,
+      "hiPx": 197.74,
+      "loPx": 193.1,
+      "open": 197.0,
+      "stkVolu": 4017900.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 191.39,
+      "hiPx": 204.47,
+      "loPx": 189.79,
+      "open": 204.47,
+      "stkVolu": 3201111.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 186.38,
+      "hiPx": 191.595,
+      "loPx": 181.1601,
+      "open": 191.595,
+      "stkVolu": 3322091.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 193.99,
+      "hiPx": 194.16,
+      "loPx": 187.46,
+      "open": 187.865,
+      "stkVolu": 4524220.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 197.49,
+      "hiPx": 197.8,
+      "loPx": 185.23,
+      "open": 193.5,
+      "stkVolu": 3119962.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 196.99,
+      "hiPx": 199.79,
+      "loPx": 195.11,
+      "open": 198.07,
+      "stkVolu": 2259924.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 200.21,
+      "hiPx": 201.8475,
+      "loPx": 197.62,
+      "open": 198.22,
+      "stkVolu": 989364.0,
+      "ticker": "NET",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 197.2,
+      "hiPx": 199.91,
+      "loPx": 195.14,
+      "open": 197.33,
+      "stkVolu": 2115060.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 201.26,
+      "hiPx": 207.18,
+      "loPx": 200.8,
+      "open": 203.62,
+      "stkVolu": 2493434.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 204.35,
+      "hiPx": 204.81,
+      "loPx": 198.05,
+      "open": 199.7,
+      "stkVolu": 1496925.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 204.15,
+      "hiPx": 205.58,
+      "loPx": 200.67,
+      "open": 203.81,
+      "stkVolu": 1447162.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 200.95,
+      "hiPx": 205.31,
+      "loPx": 199.52,
+      "open": 203.701,
+      "stkVolu": 1744565.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 205.86,
+      "hiPx": 207.17,
+      "loPx": 201.79,
+      "open": 202.89,
+      "stkVolu": 1308861.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 208.93,
+      "hiPx": 210.26,
+      "loPx": 204.16,
+      "open": 205.005,
+      "stkVolu": 1905495.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 213.46,
+      "hiPx": 215.3,
+      "loPx": 204.945,
+      "open": 208.74,
+      "stkVolu": 2931708.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 207.95,
+      "hiPx": 211.63,
+      "loPx": 203.26,
+      "open": 211.02,
+      "stkVolu": 2316149.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 202.44,
+      "hiPx": 207.7,
+      "loPx": 199.71,
+      "open": 207.28,
+      "stkVolu": 2109555.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 196.7,
+      "hiPx": 203.62,
+      "loPx": 196.45,
+      "open": 203.1,
+      "stkVolu": 2033848.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 197.53,
+      "hiPx": 198.49,
+      "loPx": 194.15,
+      "open": 195.05,
+      "stkVolu": 2157763.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 191.43,
+      "hiPx": 198.8,
+      "loPx": 191.08,
+      "open": 198.8,
+      "stkVolu": 2147630.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 193.83,
+      "hiPx": 196.35,
+      "loPx": 193.19,
+      "open": 194.76,
+      "stkVolu": 1875282.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 195.68,
+      "hiPx": 197.51,
+      "loPx": 193.31,
+      "open": 194.5,
+      "stkVolu": 4360794.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 202.06,
+      "hiPx": 203.7,
+      "loPx": 197.5,
+      "open": 198.6,
+      "stkVolu": 2694711.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 202.08,
+      "hiPx": 203.15,
+      "loPx": 197.0,
+      "open": 200.92,
+      "stkVolu": 1452908.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 202.66,
+      "hiPx": 203.25,
+      "loPx": 198.79,
+      "open": 200.6,
+      "stkVolu": 738598.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 202.39,
+      "hiPx": 203.4,
+      "loPx": 200.31,
+      "open": 202.17,
+      "stkVolu": 1107660.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 200.7,
+      "hiPx": 202.765,
+      "loPx": 199.0,
+      "open": 199.98,
+      "stkVolu": 1426068.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 199.62,
+      "hiPx": 201.38,
+      "loPx": 199.0,
+      "open": 199.18,
+      "stkVolu": 761039.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 197.15,
+      "hiPx": 201.2,
+      "loPx": 196.935,
+      "open": 200.25,
+      "stkVolu": 1277526.0,
+      "ticker": "NET",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 196.02,
+      "hiPx": 200.3,
+      "loPx": 193.14,
+      "open": 198.9,
+      "stkVolu": 1662802.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 197.66,
+      "hiPx": 205.2,
+      "loPx": 194.94,
+      "open": 195.64,
+      "stkVolu": 2227938.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 198.0,
+      "hiPx": 199.06,
+      "loPx": 191.65,
+      "open": 199.06,
+      "stkVolu": 2485197.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 202.81,
+      "hiPx": 204.6199,
+      "loPx": 197.77,
+      "open": 199.995,
+      "stkVolu": 2155600.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 186.96,
+      "hiPx": 201.9,
+      "loPx": 185.81,
+      "open": 201.71,
+      "stkVolu": 3871805.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 182.78,
+      "hiPx": 188.295,
+      "loPx": 182.43,
+      "open": 186.01,
+      "stkVolu": 2683540.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 186.39,
+      "hiPx": 187.56,
+      "loPx": 180.2301,
+      "open": 181.0,
+      "stkVolu": 2436200.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 188.71,
+      "hiPx": 189.739,
+      "loPx": 185.35,
+      "open": 187.18,
+      "stkVolu": 2196141.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 188.39,
+      "hiPx": 192.76,
+      "loPx": 185.28,
+      "open": 187.81,
+      "stkVolu": 3014594.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 184.14,
+      "hiPx": 191.79,
+      "loPx": 184.1,
+      "open": 190.01,
+      "stkVolu": 2675949.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 184.17,
+      "hiPx": 188.46,
+      "loPx": 181.35,
+      "open": 184.49,
+      "stkVolu": 2289871.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 177.42,
+      "hiPx": 183.6,
+      "loPx": 175.25,
+      "open": 177.75,
+      "stkVolu": 3613438.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 169.97,
+      "hiPx": 178.45,
+      "loPx": 169.45,
+      "open": 177.17,
+      "stkVolu": 5105896.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 173.3,
+      "hiPx": 175.555,
+      "loPx": 168.94,
+      "open": 173.36,
+      "stkVolu": 4278183.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 173.44,
+      "hiPx": 178.67,
+      "loPx": 172.32,
+      "open": 174.96,
+      "stkVolu": 3652106.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 189.35,
+      "hiPx": 194.89,
+      "loPx": 183.65,
+      "open": 184.895,
+      "stkVolu": 7867835.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 205.95,
+      "hiPx": 218.22,
+      "loPx": 205.2,
+      "open": 212.025,
+      "stkVolu": 12530674.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 184.88,
+      "hiPx": 206.225,
+      "loPx": 183.9101,
+      "open": 206.0,
+      "stkVolu": 8947067.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 180.39,
+      "hiPx": 187.0,
+      "loPx": 175.07,
+      "open": 186.27,
+      "stkVolu": 5966013.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 177.35,
+      "hiPx": 181.24,
+      "loPx": 175.63,
+      "open": 179.59,
+      "stkVolu": 3497618.0,
+      "ticker": "NET",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 182.42,
+      "hiPx": 185.22,
+      "loPx": 174.8,
+      "open": 176.285,
+      "stkVolu": 4381999.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 170.31,
+      "hiPx": 181.665,
+      "loPx": 163.91,
+      "open": 181.665,
+      "stkVolu": 7647231.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 166.88,
+      "hiPx": 175.78,
+      "loPx": 162.2203,
+      "open": 172.61,
+      "stkVolu": 7490947.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 163.05,
+      "hiPx": 172.58,
+      "loPx": 162.01,
+      "open": 165.825,
+      "stkVolu": 5936225.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 173.21,
+      "hiPx": 173.66,
+      "loPx": 160.35,
+      "open": 165.37,
+      "stkVolu": 5383726.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 173.75,
+      "hiPx": 175.76,
+      "loPx": 169.02,
+      "open": 173.18,
+      "stkVolu": 4665962.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 179.98,
+      "hiPx": 184.1096,
+      "loPx": 174.89,
+      "open": 179.2,
+      "stkVolu": 11424031.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 189.41,
+      "hiPx": 203.62,
+      "loPx": 185.73,
+      "open": 203.05,
+      "stkVolu": 15668258.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 185.17,
+      "hiPx": 200.5,
+      "loPx": 181.47,
+      "open": 191.0,
+      "stkVolu": 7640414.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 195.85,
+      "hiPx": 198.87,
+      "loPx": 184.45,
+      "open": 186.62,
+      "stkVolu": 6698975.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 193.68,
+      "hiPx": 201.6613,
+      "loPx": 189.5,
+      "open": 195.0,
+      "stkVolu": 5822105.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 191.44,
+      "hiPx": 194.35,
+      "loPx": 185.21,
+      "open": 192.6,
+      "stkVolu": 3459105.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 192.64,
+      "hiPx": 193.67,
+      "loPx": 183.33,
+      "open": 188.83,
+      "stkVolu": 3001552.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 177.14,
+      "hiPx": 195.19,
+      "loPx": 176.7092,
+      "open": 190.61,
+      "stkVolu": 6606177.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 160.19,
+      "hiPx": 176.735,
+      "loPx": 158.83,
+      "open": 174.84,
+      "stkVolu": 8524603.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 163.81,
+      "hiPx": 167.24,
+      "loPx": 159.13,
+      "open": 159.5,
+      "stkVolu": 4803913.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 171.8,
+      "hiPx": 173.26,
+      "loPx": 162.53,
+      "open": 163.79,
+      "stkVolu": 3881313.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 174.66,
+      "hiPx": 177.5,
+      "loPx": 170.24,
+      "open": 173.99,
+      "stkVolu": 4101603.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 172.19,
+      "hiPx": 172.25,
+      "loPx": 166.68,
+      "open": 170.0,
+      "stkVolu": 4441817.0,
+      "ticker": "NET",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 181.02,
+      "hiPx": 181.1,
+      "loPx": 167.65,
+      "open": 167.65,
+      "stkVolu": 3356219.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 178.91,
+      "hiPx": 181.7,
+      "loPx": 171.62,
+      "open": 176.59,
+      "stkVolu": 2782193.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 185.89,
+      "hiPx": 187.365,
+      "loPx": 178.55,
+      "open": 179.99,
+      "stkVolu": 2744319.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 192.31,
+      "hiPx": 193.56,
+      "loPx": 184.64,
+      "open": 185.295,
+      "stkVolu": 3825420.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 195.19,
+      "hiPx": 196.39,
+      "loPx": 187.9993,
+      "open": 190.0,
+      "stkVolu": 2862991.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 201.48,
+      "hiPx": 203.875,
+      "loPx": 192.19,
+      "open": 192.19,
+      "stkVolu": 4229850.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 207.49,
+      "hiPx": 209.91,
+      "loPx": 198.01,
+      "open": 202.81,
+      "stkVolu": 4181361.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 213.0,
+      "hiPx": 215.38,
+      "loPx": 207.28,
+      "open": 208.265,
+      "stkVolu": 3423032.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 212.11,
+      "hiPx": 217.26,
+      "loPx": 210.025,
+      "open": 212.17,
+      "stkVolu": 3602148.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 212.45,
+      "hiPx": 217.73,
+      "loPx": 208.16,
+      "open": 213.1,
+      "stkVolu": 2542867.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 207.33,
+      "hiPx": 213.03,
+      "loPx": 207.28,
+      "open": 210.865,
+      "stkVolu": 3311594.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 211.52,
+      "hiPx": 214.8,
+      "loPx": 206.0,
+      "open": 206.42,
+      "stkVolu": 2954275.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 225.48,
+      "hiPx": 229.15,
+      "loPx": 210.25,
+      "open": 211.11,
+      "stkVolu": 5972976.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 221.36,
+      "hiPx": 227.56,
+      "loPx": 219.625,
+      "open": 223.0,
+      "stkVolu": 3846005.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 215.42,
+      "hiPx": 225.14,
+      "loPx": 214.64,
+      "open": 221.71,
+      "stkVolu": 3927898.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 220.65,
+      "hiPx": 225.98,
+      "loPx": 214.08,
+      "open": 216.42,
+      "stkVolu": 3940173.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 213.15,
+      "hiPx": 221.4899,
+      "loPx": 212.94,
+      "open": 220.17,
+      "stkVolu": 3290514.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 218.0,
+      "hiPx": 225.97,
+      "loPx": 214.8176,
+      "open": 218.0,
+      "stkVolu": 3236135.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 210.13,
+      "hiPx": 219.9799,
+      "loPx": 206.8,
+      "open": 216.0,
+      "stkVolu": 4060170.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 203.02,
+      "hiPx": 207.79,
+      "loPx": 200.02,
+      "open": 205.0,
+      "stkVolu": 3753740.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 194.63,
+      "hiPx": 209.5099,
+      "loPx": 191.29,
+      "open": 204.5,
+      "stkVolu": 3961120.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 206.34,
+      "hiPx": 206.78,
+      "loPx": 194.66,
+      "open": 197.0,
+      "stkVolu": 4159869.0,
+      "ticker": "NET",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 205.43,
+      "hiPx": 210.86,
+      "loPx": 203.24,
+      "open": 210.67,
+      "stkVolu": 2259397.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 211.69,
+      "hiPx": 212.16,
+      "loPx": 200.1,
+      "open": 201.5,
+      "stkVolu": 2101602.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 211.78,
+      "hiPx": 214.94,
+      "loPx": 207.46,
+      "open": 210.26,
+      "stkVolu": 1986970.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 216.29,
+      "hiPx": 216.34,
+      "loPx": 208.13,
+      "open": 211.0,
+      "stkVolu": 3731112.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 211.25,
+      "hiPx": 225.13,
+      "loPx": 209.2,
+      "open": 225.0,
+      "stkVolu": 4120462.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 193.05,
+      "hiPx": 211.485,
+      "loPx": 177.74,
+      "open": 211.0,
+      "stkVolu": 11428321.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 166.99,
+      "hiPx": 193.6,
+      "loPx": 164.05,
+      "open": 193.21,
+      "stkVolu": 13738428.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 184.02,
+      "hiPx": 184.32,
+      "loPx": 168.01,
+      "open": 170.0,
+      "stkVolu": 6596921.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 178.65,
+      "hiPx": 188.73,
+      "loPx": 177.33,
+      "open": 184.87,
+      "stkVolu": 4888898.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 190.13,
+      "hiPx": 190.88,
+      "loPx": 182.0,
+      "open": 184.5,
+      "stkVolu": 5285616.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 197.38,
+      "hiPx": 203.76,
+      "loPx": 191.50234,
+      "open": 194.34,
+      "stkVolu": 5330721.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 200.99,
+      "hiPx": 201.05,
+      "loPx": 193.5,
+      "open": 199.63,
+      "stkVolu": 3635329.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 204.81,
+      "hiPx": 205.255,
+      "loPx": 195.2,
+      "open": 199.0,
+      "stkVolu": 2608837.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 207.67,
+      "hiPx": 211.39,
+      "loPx": 204.82,
+      "open": 206.33,
+      "stkVolu": 2628594.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 207.56,
+      "hiPx": 211.95,
+      "loPx": 206.01,
+      "open": 209.13,
+      "stkVolu": 2055083.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 205.0,
+      "hiPx": 207.48,
+      "loPx": 198.5,
+      "open": 202.075,
+      "stkVolu": 2426661.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 207.07,
+      "hiPx": 208.955,
+      "loPx": 201.45,
+      "open": 204.97,
+      "stkVolu": 2076643.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 212.36,
+      "hiPx": 214.9799,
+      "loPx": 204.42,
+      "open": 206.78,
+      "stkVolu": 3503645.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 208.5,
+      "hiPx": 216.5,
+      "loPx": 207.93,
+      "open": 211.71,
+      "stkVolu": 3290996.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 211.97,
+      "hiPx": 214.82,
+      "loPx": 204.0,
+      "open": 207.3,
+      "stkVolu": 2349174.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 204.97,
+      "hiPx": 211.33,
+      "loPx": 199.67,
+      "open": 211.33,
+      "stkVolu": 3053732.0,
+      "ticker": "NET",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 217.5,
+      "hiPx": 218.28,
+      "loPx": 209.0,
+      "open": 210.85,
+      "stkVolu": 2993702.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 224.17,
+      "hiPx": 224.23,
+      "loPx": 217.48,
+      "open": 219.55,
+      "stkVolu": 2781392.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 244.43,
+      "hiPx": 248.92,
+      "loPx": 229.09,
+      "open": 231.06,
+      "stkVolu": 7171743.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 248.59,
+      "hiPx": 250.97,
+      "loPx": 234.76,
+      "open": 242.44,
+      "stkVolu": 4746661.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 256.79,
+      "hiPx": 258.88,
+      "loPx": 248.62,
+      "open": 251.995,
+      "stkVolu": 8959550.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 196.13,
+      "hiPx": 219.0,
+      "loPx": 192.27,
+      "open": 217.22,
+      "stkVolu": 18919075.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 193.52,
+      "hiPx": 204.2699,
+      "loPx": 192.5012,
+      "open": 195.395,
+      "stkVolu": 6525289.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 186.79,
+      "hiPx": 194.39,
+      "loPx": 186.57,
+      "open": 193.97,
+      "stkVolu": 5580958.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 192.62,
+      "hiPx": 194.66,
+      "loPx": 185.75,
+      "open": 185.75,
+      "stkVolu": 4262404.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 199.81,
+      "hiPx": 201.99,
+      "loPx": 190.5,
+      "open": 193.34,
+      "stkVolu": 4096826.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 197.56,
+      "hiPx": 201.17,
+      "loPx": 194.0,
+      "open": 197.76,
+      "stkVolu": 3386399.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 201.75,
+      "hiPx": 203.505,
+      "loPx": 192.8,
+      "open": 194.16,
+      "stkVolu": 3399520.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 206.73,
+      "hiPx": 208.67,
+      "loPx": 200.42,
+      "open": 203.25,
+      "stkVolu": 3576679.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 210.13,
+      "hiPx": 210.98,
+      "loPx": 202.42,
+      "open": 204.22,
+      "stkVolu": 2996294.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 212.65,
+      "hiPx": 213.745,
+      "loPx": 206.6,
+      "open": 210.49,
+      "stkVolu": 2794363.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 216.17,
+      "hiPx": 216.79,
+      "loPx": 211.07,
+      "open": 214.6,
+      "stkVolu": 2115981.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 217.54,
+      "hiPx": 221.11,
+      "loPx": 208.24,
+      "open": 216.25,
+      "stkVolu": 3462701.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 209.22,
+      "hiPx": 215.35,
+      "loPx": 208.0,
+      "open": 212.23,
+      "stkVolu": 3067667.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 228.11,
+      "hiPx": 228.27,
+      "loPx": 213.3,
+      "open": 214.5,
+      "stkVolu": 4575503.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 241.82,
+      "hiPx": 243.67,
+      "loPx": 228.54,
+      "open": 233.39,
+      "stkVolu": 5737026.0,
+      "ticker": "NET",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 270.82,
+      "hiPx": 271.2,
+      "loPx": 242.37,
+      "open": 244.0,
+      "stkVolu": 8457300.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 272.66,
+      "hiPx": 274.6299,
+      "loPx": 262.5331,
+      "open": 262.774,
+      "stkVolu": 4887054.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 265.33,
+      "hiPx": 270.23,
+      "loPx": 260.74,
+      "open": 270.0,
+      "stkVolu": 3904959.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 268.64,
+      "hiPx": 276.815,
+      "loPx": 253.94,
+      "open": 260.0,
+      "stkVolu": 4418545.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 250.11,
+      "hiPx": 268.82,
+      "loPx": 246.94,
+      "open": 267.87,
+      "stkVolu": 4735502.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 247.79,
+      "hiPx": 254.7,
+      "loPx": 246.0,
+      "open": 253.16,
+      "stkVolu": 3180429.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 236.13,
+      "hiPx": 249.245,
+      "loPx": 228.03,
+      "open": 245.895,
+      "stkVolu": 4980368.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 219.67,
+      "hiPx": 236.89,
+      "loPx": 219.08,
+      "open": 233.465,
+      "stkVolu": 5552174.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 227.44,
+      "hiPx": 228.82,
+      "loPx": 216.5,
+      "open": 218.335,
+      "stkVolu": 3133354.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 228.48,
+      "hiPx": 231.9,
+      "loPx": 222.02,
+      "open": 229.95,
+      "stkVolu": 2262011.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 235.71,
+      "hiPx": 239.0,
+      "loPx": 227.045,
+      "open": 229.345,
+      "stkVolu": 3359251.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 230.97,
+      "hiPx": 238.83,
+      "loPx": 229.0,
+      "open": 233.74,
+      "stkVolu": 2690968.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 226.87,
+      "hiPx": 236.0699,
+      "loPx": 226.85,
+      "open": 231.13,
+      "stkVolu": 2658659.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 224.06,
+      "hiPx": 225.54,
+      "loPx": 216.03,
+      "open": 225.54,
+      "stkVolu": 4440905.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 218.38,
+      "hiPx": 225.58,
+      "loPx": 212.32,
+      "open": 222.07,
+      "stkVolu": 3377764.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 224.94,
+      "hiPx": 230.11,
+      "loPx": 214.6001,
+      "open": 215.16,
+      "stkVolu": 2890552.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 223.48,
+      "hiPx": 228.35,
+      "loPx": 220.91,
+      "open": 223.09,
+      "stkVolu": 2282947.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 226.65,
+      "hiPx": 227.57,
+      "loPx": 216.04,
+      "open": 221.39,
+      "stkVolu": 2975735.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 237.24,
+      "hiPx": 237.34,
+      "loPx": 220.95,
+      "open": 225.88,
+      "stkVolu": 6244155.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 243.76,
+      "hiPx": 248.7099,
+      "loPx": 235.0,
+      "open": 239.29,
+      "stkVolu": 3604557.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 245.28,
+      "hiPx": 247.74,
+      "loPx": 240.0,
+      "open": 240.0,
+      "stkVolu": 2526438.0,
+      "ticker": "NET",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 246.31,
+      "hiPx": 252.349,
+      "loPx": 244.21,
+      "open": 249.72,
+      "stkVolu": 2541310.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 242.41,
+      "hiPx": 248.04,
+      "loPx": 238.9,
+      "open": 242.0,
+      "stkVolu": 2832488.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 247.55,
+      "hiPx": 250.86,
+      "loPx": 239.64,
+      "open": 240.73,
+      "stkVolu": 2076874.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 268.83,
+      "hiPx": 274.0,
+      "loPx": 254.0,
+      "open": 259.175,
+      "stkVolu": 6182628.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 273.4,
+      "hiPx": 274.45,
+      "loPx": 257.6,
+      "open": 267.89,
+      "stkVolu": 3699428.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 275.8,
+      "hiPx": 278.88,
+      "loPx": 268.6002,
+      "open": 272.54,
+      "stkVolu": 3012015.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 268.4,
+      "hiPx": 280.14,
+      "loPx": 266.84,
+      "open": 279.74,
+      "stkVolu": 2302145.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 269.53,
+      "hiPx": 276.3821,
+      "loPx": 263.37,
+      "open": 266.71,
+      "stkVolu": 2119551.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 281.75,
+      "hiPx": 284.63,
+      "loPx": 266.01,
+      "open": 268.0,
+      "stkVolu": 3983664.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 273.04,
+      "hiPx": 291.0,
+      "loPx": 271.13,
+      "open": 288.86,
+      "stkVolu": 2942462.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 272.46,
+      "hiPx": 277.84,
+      "loPx": 266.72,
+      "open": 274.46,
+      "stkVolu": 2641498.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 277.66,
+      "hiPx": 281.99,
+      "loPx": 261.725,
+      "open": 262.68,
+      "stkVolu": 3031181.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 272.42,
+      "hiPx": 280.57,
+      "loPx": 272.12,
+      "open": 278.84,
+      "stkVolu": 3113048.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 272.31,
+      "hiPx": 277.25,
+      "loPx": 268.9768,
+      "open": 272.97,
+      "stkVolu": 3715696.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 268.98,
+      "hiPx": 272.5,
+      "loPx": 265.0701,
+      "open": 271.75,
+      "stkVolu": 2557645.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 262.32,
+      "hiPx": 276.8937,
+      "loPx": 260.57,
+      "open": 272.94,
+      "stkVolu": 2333742.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 262.15,
+      "hiPx": 266.8,
+      "loPx": 261.5,
+      "open": 265.96,
+      "stkVolu": 1821884.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 265.61,
+      "hiPx": 272.4475,
+      "loPx": 257.6,
+      "open": 267.48,
+      "stkVolu": 2607541.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 264.1,
+      "hiPx": 268.455,
+      "loPx": 250.69,
+      "open": 263.36,
+      "stkVolu": 2672280.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 270.38,
+      "hiPx": 279.915,
+      "loPx": 262.95,
+      "open": 264.56,
+      "stkVolu": 3295068.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 283.39,
+      "hiPx": 285.0,
+      "loPx": 265.0,
+      "open": 271.375,
+      "stkVolu": 3149672.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 278.98,
+      "hiPx": 293.8,
+      "loPx": 275.04,
+      "open": 284.92,
+      "stkVolu": 3701594.0,
+      "ticker": "NET",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 282.74,
+      "hiPx": 288.69,
+      "loPx": 276.07,
+      "open": 278.845,
+      "stkVolu": 3095153.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 301.33,
+      "hiPx": 303.76,
+      "loPx": 278.51,
+      "open": 280.0,
+      "stkVolu": 5453796.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 292.96,
+      "hiPx": 305.0,
+      "loPx": 291.0,
+      "open": 300.08,
+      "stkVolu": 3962252.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 284.43,
+      "hiPx": 291.755,
+      "loPx": 280.13,
+      "open": 283.18,
+      "stkVolu": 5616181.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 300.27,
+      "hiPx": 324.73,
+      "loPx": 295.89,
+      "open": 318.0,
+      "stkVolu": 8769274.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 310.59,
+      "hiPx": 312.66,
+      "loPx": 290.49,
+      "open": 295.5,
+      "stkVolu": 7857528.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 306.97,
+      "hiPx": 313.77,
+      "loPx": 295.5,
+      "open": 307.6,
+      "stkVolu": 6073083.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 311.45,
+      "hiPx": 320.3,
+      "loPx": 308.55,
+      "open": 308.96,
+      "stkVolu": 3096758.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 330.83,
+      "hiPx": 332.22,
+      "loPx": 313.02,
+      "open": 313.775,
+      "stkVolu": 5236757.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 315.78,
+      "hiPx": 331.9495,
+      "loPx": 315.19,
+      "open": 331.0,
+      "stkVolu": 3026434.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 307.01,
+      "hiPx": 315.35,
+      "loPx": 303.99,
+      "open": 311.79,
+      "stkVolu": 3320060.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 301.36,
+      "hiPx": 309.9606,
+      "loPx": 297.6326,
+      "open": 303.775,
+      "stkVolu": 2314597.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 291.88,
+      "hiPx": 301.66,
+      "loPx": 285.72,
+      "open": 300.1,
+      "stkVolu": 3096006.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 278.91,
+      "hiPx": 292.485,
+      "loPx": 277.83,
+      "open": 290.62,
+      "stkVolu": 3051961.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 293.14,
+      "hiPx": 293.57,
+      "loPx": 274.03,
+      "open": 280.86,
+      "stkVolu": 2962389.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 280.35,
+      "hiPx": 289.98,
+      "loPx": 280.185,
+      "open": 288.7,
+      "stkVolu": 2638683.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 277.58,
+      "hiPx": 287.0,
+      "loPx": 273.2101,
+      "open": 285.62,
+      "stkVolu": 1877262.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 284.89,
+      "hiPx": 290.89,
+      "loPx": 272.29,
+      "open": 273.82,
+      "stkVolu": 3120839.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 308.23,
+      "hiPx": 309.53,
+      "loPx": 290.275,
+      "open": 290.29,
+      "stkVolu": 4253438.0,
+      "ticker": "NET",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

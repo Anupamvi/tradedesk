@@ -1,0 +1,406 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-01-29",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-06-28",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-08-04",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-11-09",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-02-15",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-05-04",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-08-03",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-11-02",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-02-15",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-05-09",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-07-25",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-11-05",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-02-20",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-05-08",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-08-07",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-11-05",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-02-19",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-05-07",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-07-31",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-11-05",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-02-11",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-05-06",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-08-05",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-11-03",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-02-10",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-05-04",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-08-03",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-10-26",
+      "ticker": "TSLA",
+      "updatedAt": "2017-10-11T19:08:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-02-22",
+      "ticker": "TSLA",
+      "updatedAt": "2018-11-12T17:08:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-05-03",
+      "ticker": "TSLA",
+      "updatedAt": "2018-11-12T17:08:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-08-02",
+      "ticker": "TSLA",
+      "updatedAt": "2018-11-12T17:08:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-11-01",
+      "ticker": "TSLA",
+      "updatedAt": "2018-11-12T17:08:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-02-07",
+      "ticker": "TSLA",
+      "updatedAt": "2018-11-12T17:08:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-05-02",
+      "ticker": "TSLA",
+      "updatedAt": "2018-11-12T17:08:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-08-01",
+      "ticker": "TSLA",
+      "updatedAt": "2018-11-12T17:08:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-10-24",
+      "ticker": "TSLA",
+      "updatedAt": "2018-11-12T17:08:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-01-30",
+      "ticker": "TSLA",
+      "updatedAt": "2019-02-09T00:48:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-04-24",
+      "ticker": "TSLA",
+      "updatedAt": "2019-05-03T23:18:53Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-07-24",
+      "ticker": "TSLA",
+      "updatedAt": "2019-08-02T23:18:40Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-10-23",
+      "ticker": "TSLA",
+      "updatedAt": "2019-11-01T23:18:54Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-01-29",
+      "ticker": "TSLA",
+      "updatedAt": "2020-02-08T00:18:53Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-04-29",
+      "ticker": "TSLA",
+      "updatedAt": "2020-05-08T23:18:47Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-07-22",
+      "ticker": "TSLA",
+      "updatedAt": "2020-07-31T23:19:01Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-10-21",
+      "ticker": "TSLA",
+      "updatedAt": "2020-10-30T23:19:20Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-01-27",
+      "ticker": "TSLA",
+      "updatedAt": "2021-02-06T00:19:12Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-04-26",
+      "ticker": "TSLA",
+      "updatedAt": "2021-05-06T23:19:42Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-07-26",
+      "ticker": "TSLA",
+      "updatedAt": "2021-08-05T23:19:25Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-10-20",
+      "ticker": "TSLA",
+      "updatedAt": "2021-10-29T23:25:12Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-01-26",
+      "ticker": "TSLA",
+      "updatedAt": "2022-02-05T00:19:57Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-04-20",
+      "ticker": "TSLA",
+      "updatedAt": "2022-04-29T23:19:32Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-07-20",
+      "ticker": "TSLA",
+      "updatedAt": "2022-07-29T23:19:56Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-10-19",
+      "ticker": "TSLA",
+      "updatedAt": "2022-10-28T23:19:23Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-01-25",
+      "ticker": "TSLA",
+      "updatedAt": "2023-02-04T00:19:30Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-04-19",
+      "ticker": "TSLA",
+      "updatedAt": "2023-04-28T23:19:13Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-07-19",
+      "ticker": "TSLA",
+      "updatedAt": "2023-07-28T23:19:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-10-18",
+      "ticker": "TSLA",
+      "updatedAt": "2023-10-27T23:19:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-01-24",
+      "ticker": "TSLA",
+      "updatedAt": "2024-02-03T00:19:34Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-04-23",
+      "ticker": "TSLA",
+      "updatedAt": "2024-05-03T23:19:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-07-23",
+      "ticker": "TSLA",
+      "updatedAt": "2024-08-02T23:19:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-10-23",
+      "ticker": "TSLA",
+      "updatedAt": "2024-11-02T00:04:56Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-01-29",
+      "ticker": "TSLA",
+      "updatedAt": "2025-02-08T03:45:32Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-04-22",
+      "ticker": "TSLA",
+      "updatedAt": "2025-05-03T02:43:09Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-07-23",
+      "ticker": "TSLA",
+      "updatedAt": "2025-08-02T02:42:47Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-10-22",
+      "ticker": "TSLA",
+      "updatedAt": "2025-11-01T02:42:11Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-01-28",
+      "ticker": "TSLA",
+      "updatedAt": "2026-02-07T03:42:33Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-04-22",
+      "ticker": "TSLA",
+      "updatedAt": "2026-05-02T02:43:11Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-07-22",
+      "ticker": "TSLA",
+      "updatedAt": "2026-07-31T22:03:07Z"
+    }
+  ]
+}

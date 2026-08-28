@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 237.32,
+      "hiPx": 237.9899,
+      "loPx": 231.2,
+      "open": 233.22,
+      "stkVolu": 18441376.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 232.26,
+      "hiPx": 235.25,
+      "loPx": 229.5,
+      "open": 235.11,
+      "stkVolu": 16584266.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 234.5,
+      "hiPx": 241.4385,
+      "loPx": 233.19,
+      "open": 237.13,
+      "stkVolu": 20401777.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 235.81,
+      "hiPx": 236.51,
+      "loPx": 232.0,
+      "open": 235.51,
+      "stkVolu": 10871629.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 235.0,
+      "hiPx": 240.055,
+      "loPx": 233.5,
+      "open": 239.94,
+      "stkVolu": 11486345.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 230.56,
+      "hiPx": 234.0,
+      "loPx": 229.87,
+      "open": 231.37,
+      "stkVolu": 10208178.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 229.28,
+      "hiPx": 230.64,
+      "loPx": 225.12,
+      "open": 229.45,
+      "stkVolu": 11336967.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 234.96,
+      "hiPx": 235.6,
+      "loPx": 229.2,
+      "open": 232.405,
+      "stkVolu": 10728795.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 241.3,
+      "hiPx": 241.33,
+      "loPx": 233.19,
+      "open": 235.5,
+      "stkVolu": 12597452.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 248.75,
+      "hiPx": 251.5999,
+      "loPx": 242.01,
+      "open": 243.34,
+      "stkVolu": 17631328.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 245.45,
+      "hiPx": 249.68,
+      "loPx": 245.0,
+      "open": 248.5,
+      "stkVolu": 9678072.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 243.54,
+      "hiPx": 246.8,
+      "loPx": 243.24,
+      "open": 245.31,
+      "stkVolu": 7348362.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 238.11,
+      "hiPx": 242.29,
+      "loPx": 235.4101,
+      "open": 241.98,
+      "stkVolu": 11380866.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 241.9,
+      "hiPx": 243.42,
+      "loPx": 238.66,
+      "open": 239.95,
+      "stkVolu": 7255797.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 242.83,
+      "hiPx": 244.08,
+      "loPx": 240.5601,
+      "open": 242.41,
+      "stkVolu": 8237851.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 245.12,
+      "hiPx": 245.47,
+      "loPx": 241.43,
+      "open": 242.34,
+      "stkVolu": 7149571.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 247.71,
+      "hiPx": 247.78,
+      "loPx": 243.42,
+      "open": 246.0,
+      "stkVolu": 6756775.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 249.98,
+      "hiPx": 253.07,
+      "loPx": 246.59,
+      "open": 248.7,
+      "stkVolu": 8415324.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 250.6,
+      "hiPx": 251.05,
+      "loPx": 245.6,
+      "open": 248.64,
+      "stkVolu": 8441378.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 253.77,
+      "hiPx": 260.87,
+      "loPx": 253.318,
+      "open": 255.765,
+      "stkVolu": 15548726.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 244.42,
+      "hiPx": 248.41,
+      "loPx": 242.0,
+      "open": 247.83,
+      "stkVolu": 12718218.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 252.53,
+      "hiPx": 252.91,
+      "loPx": 245.9,
+      "open": 245.9,
+      "stkVolu": 8614784.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 255.67,
+      "hiPx": 258.4872,
+      "loPx": 251.37,
+      "open": 255.41,
+      "stkVolu": 11197287.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 256.43,
+      "hiPx": 256.84,
+      "loPx": 251.72,
+      "open": 256.84,
+      "stkVolu": 9930222.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 249.39,
+      "hiPx": 257.76,
+      "loPx": 246.52,
+      "open": 257.71,
+      "stkVolu": 11954223.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 250.05,
+      "hiPx": 250.8934,
+      "loPx": 247.86,
+      "open": 250.03,
+      "stkVolu": 8313278.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 252.68,
+      "hiPx": 254.69,
+      "loPx": 245.56,
+      "open": 248.4,
+      "stkVolu": 9012112.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 253.86,
+      "hiPx": 257.87,
+      "loPx": 251.08,
+      "open": 252.58,
+      "stkVolu": 10001712.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 244.18,
+      "hiPx": 257.6699,
+      "loPx": 242.635,
+      "open": 257.17,
+      "stkVolu": 14182078.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 244.96,
+      "hiPx": 248.92,
+      "loPx": 242.57,
+      "open": 244.95,
+      "stkVolu": 10285555.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 248.28,
+      "hiPx": 250.63,
+      "loPx": 242.925,
+      "open": 246.92,
+      "stkVolu": 11553988.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 249.07,
+      "hiPx": 249.16,
+      "loPx": 243.62,
+      "open": 246.2,
+      "stkVolu": 6759921.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 234.62,
+      "hiPx": 249.25,
+      "loPx": 232.23,
+      "open": 249.25,
+      "stkVolu": 16819250.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 235.06,
+      "hiPx": 235.88,
+      "loPx": 228.2543,
+      "open": 232.18,
+      "stkVolu": 11256417.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 233.16,
+      "hiPx": 235.9199,
+      "loPx": 232.43,
+      "open": 233.045,
+      "stkVolu": 7403128.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 236.37,
+      "hiPx": 238.5,
+      "loPx": 231.46,
+      "open": 234.06,
+      "stkVolu": 9343637.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 235.41,
+      "hiPx": 239.03,
+      "loPx": 235.27,
+      "open": 237.35,
+      "stkVolu": 6308625.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 234.21,
+      "hiPx": 236.905,
+      "loPx": 232.71,
+      "open": 235.0,
+      "stkVolu": 11805197.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 235.81,
+      "hiPx": 236.53,
+      "loPx": 232.68,
+      "open": 234.995,
+      "stkVolu": 5637590.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 240.32,
+      "hiPx": 241.95,
+      "loPx": 235.12,
+      "open": 235.54,
+      "stkVolu": 8691548.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 226.13,
+      "hiPx": 238.22,
+      "loPx": 223.11,
+      "open": 237.61,
+      "stkVolu": 16618641.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 225.3,
+      "hiPx": 225.45,
+      "loPx": 218.79,
+      "open": 222.0,
+      "stkVolu": 10461903.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 223.45,
+      "hiPx": 225.9,
+      "loPx": 221.75,
+      "open": 225.9,
+      "stkVolu": 8900813.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 223.0,
+      "hiPx": 223.57,
+      "loPx": 219.5601,
+      "open": 222.0,
+      "stkVolu": 10303069.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 232.8,
+      "hiPx": 234.62,
+      "loPx": 225.885,
+      "open": 232.55,
+      "stkVolu": 15386096.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 238.52,
+      "hiPx": 242.42,
+      "loPx": 235.31,
+      "open": 239.89,
+      "stkVolu": 18842040.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 241.51,
+      "hiPx": 243.49,
+      "loPx": 234.56,
+      "open": 239.94,
+      "stkVolu": 41178697.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 328.33,
+      "hiPx": 345.72,
+      "loPx": 312.09,
+      "open": 319.19,
+      "stkVolu": 131618085.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 307.86,
+      "hiPx": 331.0,
+      "loPx": 304.6,
+      "open": 330.34,
+      "stkVolu": 69986027.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 292.18,
+      "hiPx": 307.97,
+      "loPx": 291.75,
+      "open": 305.79,
+      "stkVolu": 51781914.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 302.14,
+      "hiPx": 307.03,
+      "loPx": 297.29,
+      "open": 306.45,
+      "stkVolu": 40004004.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 306.65,
+      "hiPx": 319.97,
+      "loPx": 302.2724,
+      "open": 314.06,
+      "stkVolu": 51923268.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 301.41,
+      "hiPx": 308.66,
+      "loPx": 295.03,
+      "open": 307.69,
+      "stkVolu": 27707949.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 296.62,
+      "hiPx": 303.82,
+      "loPx": 292.0,
+      "open": 303.035,
+      "stkVolu": 24673116.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 308.66,
+      "hiPx": 311.11,
+      "loPx": 297.32,
+      "open": 299.0,
+      "stkVolu": 40776201.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 328.15,
+      "hiPx": 329.5,
+      "loPx": 306.92,
+      "open": 309.63,
+      "stkVolu": 44437549.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 313.83,
+      "hiPx": 325.0,
+      "loPx": 310.05,
+      "open": 324.0,
+      "stkVolu": 35280199.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 308.46,
+      "hiPx": 312.47,
+      "loPx": 300.03,
+      "open": 311.86,
+      "stkVolu": 33765279.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 291.33,
+      "hiPx": 298.75,
+      "loPx": 288.55,
+      "open": 295.27,
+      "stkVolu": 39274883.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 283.46,
+      "hiPx": 294.0,
+      "loPx": 283.0,
+      "open": 293.0,
+      "stkVolu": 25990691.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 282.76,
+      "hiPx": 285.98,
+      "loPx": 279.61,
+      "open": 284.6,
+      "stkVolu": 25778508.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 281.24,
+      "hiPx": 284.0,
+      "loPx": 275.9,
+      "open": 283.69,
+      "stkVolu": 23880810.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 289.01,
+      "hiPx": 289.99,
+      "loPx": 277.88,
+      "open": 278.8,
+      "stkVolu": 23378324.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 288.78,
+      "hiPx": 294.97,
+      "loPx": 286.05,
+      "open": 291.8,
+      "stkVolu": 16215460.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 286.14,
+      "hiPx": 294.64,
+      "loPx": 284.0,
+      "open": 289.6,
+      "stkVolu": 13688407.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 291.59,
+      "hiPx": 296.68,
+      "loPx": 290.8,
+      "open": 292.38,
+      "stkVolu": 14076795.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 284.24,
+      "hiPx": 293.22,
+      "loPx": 271.0,
+      "open": 293.22,
+      "stkVolu": 31723384.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 288.63,
+      "hiPx": 291.53,
+      "loPx": 283.6,
+      "open": 285.42,
+      "stkVolu": 18982122.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 296.96,
+      "hiPx": 300.97,
+      "loPx": 287.26,
+      "open": 291.55,
+      "stkVolu": 26479833.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 292.96,
+      "hiPx": 307.72,
+      "loPx": 292.01,
+      "open": 300.28,
+      "stkVolu": 28895338.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 308.01,
+      "hiPx": 310.7,
+      "loPx": 297.74,
+      "open": 298.7,
+      "stkVolu": 21703725.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 299.0,
+      "hiPx": 304.42,
+      "loPx": 291.98,
+      "open": 303.57,
+      "stkVolu": 17346186.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 303.62,
+      "hiPx": 311.01,
+      "loPx": 298.92,
+      "open": 304.9,
+      "stkVolu": 13698938.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 313.0,
+      "hiPx": 322.54,
+      "loPx": 303.07,
+      "open": 305.6,
+      "stkVolu": 32500863.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 291.31,
+      "hiPx": 304.28,
+      "loPx": 287.5,
+      "open": 303.75,
+      "stkVolu": 37653000.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 277.18,
+      "hiPx": 289.24,
+      "loPx": 275.31,
+      "open": 288.95,
+      "stkVolu": 32810748.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 275.15,
+      "hiPx": 280.2999,
+      "loPx": 272.26,
+      "open": 278.11,
+      "stkVolu": 18370806.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 272.66,
+      "hiPx": 277.2,
+      "loPx": 269.25,
+      "open": 274.82,
+      "stkVolu": 16474016.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 280.07,
+      "hiPx": 283.1,
+      "loPx": 272.385,
+      "open": 272.96,
+      "stkVolu": 16872158.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 283.33,
+      "hiPx": 287.19,
+      "loPx": 282.245,
+      "open": 285.92,
+      "stkVolu": 13194896.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 281.4,
+      "hiPx": 287.0,
+      "loPx": 279.81,
+      "open": 286.57,
+      "stkVolu": 13855836.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 280.83,
+      "hiPx": 285.46,
+      "loPx": 280.54,
+      "open": 283.0,
+      "stkVolu": 12448523.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 275.3,
+      "hiPx": 281.62,
+      "loPx": 271.35,
+      "open": 281.46,
+      "stkVolu": 18007149.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 256.89,
+      "hiPx": 269.76,
+      "loPx": 256.28,
+      "open": 268.74,
+      "stkVolu": 27954197.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 262.61,
+      "hiPx": 265.81,
+      "loPx": 256.7097,
+      "open": 259.51,
+      "stkVolu": 16898693.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 257.85,
+      "hiPx": 265.62,
+      "loPx": 255.23,
+      "open": 265.24,
+      "stkVolu": 15709214.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 248.17,
+      "hiPx": 255.28,
+      "loPx": 245.185,
+      "open": 249.98,
+      "stkVolu": 19772593.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 250.31,
+      "hiPx": 252.4,
+      "loPx": 247.03,
+      "open": 247.91,
+      "stkVolu": 11991459.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 243.8,
+      "hiPx": 249.07,
+      "loPx": 239.29,
+      "open": 247.94,
+      "stkVolu": 18678269.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 239.26,
+      "hiPx": 240.4,
+      "loPx": 232.35,
+      "open": 239.0,
+      "stkVolu": 20969260.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 240.83,
+      "hiPx": 247.24,
+      "loPx": 237.07,
+      "open": 245.95,
+      "stkVolu": 16698716.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 236.15,
+      "hiPx": 237.45,
+      "loPx": 228.89,
+      "open": 236.23,
+      "stkVolu": 20686607.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 226.99,
+      "hiPx": 236.81,
+      "loPx": 226.17,
+      "open": 236.74,
+      "stkVolu": 24194992.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 217.57,
+      "hiPx": 225.16,
+      "loPx": 215.22,
+      "open": 224.99,
+      "stkVolu": 30008998.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 222.85,
+      "hiPx": 227.05,
+      "loPx": 210.77,
+      "open": 210.83,
+      "stkVolu": 36053807.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 219.86,
+      "hiPx": 222.8,
+      "loPx": 215.56,
+      "open": 218.21,
+      "stkVolu": 16143779.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 220.49,
+      "hiPx": 223.7,
+      "loPx": 214.5,
+      "open": 216.205,
+      "stkVolu": 21098291.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 225.53,
+      "hiPx": 228.1499,
+      "loPx": 217.31,
+      "open": 219.06,
+      "stkVolu": 21679490.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 210.69,
+      "hiPx": 234.0,
+      "loPx": 210.3,
+      "open": 231.16,
+      "stkVolu": 27459600.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 198.76,
+      "hiPx": 208.31,
+      "loPx": 193.55,
+      "open": 207.08,
+      "stkVolu": 44834071.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 200.28,
+      "hiPx": 203.82,
+      "loPx": 194.3,
+      "open": 196.855,
+      "stkVolu": 31144706.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 197.03,
+      "hiPx": 199.41,
+      "loPx": 185.63,
+      "open": 194.08,
+      "stkVolu": 29594993.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 204.96,
+      "hiPx": 210.0,
+      "loPx": 202.24,
+      "open": 209.5,
+      "stkVolu": 26544148.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 201.95,
+      "hiPx": 202.3399,
+      "loPx": 197.61,
+      "open": 199.51,
+      "stkVolu": 13848479.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 200.94,
+      "hiPx": 203.5,
+      "loPx": 196.7,
+      "open": 200.5,
+      "stkVolu": 13461204.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 201.1,
+      "hiPx": 209.7,
+      "loPx": 200.0,
+      "open": 205.14,
+      "stkVolu": 19664471.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 207.73,
+      "hiPx": 207.92,
+      "loPx": 199.4,
+      "open": 200.33,
+      "stkVolu": 19060528.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 214.33,
+      "hiPx": 215.41,
+      "loPx": 206.315,
+      "open": 207.86,
+      "stkVolu": 23316937.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 217.58,
+      "hiPx": 219.5,
+      "loPx": 213.62,
+      "open": 219.0,
+      "stkVolu": 24208687.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 220.54,
+      "hiPx": 224.75,
+      "loPx": 216.91,
+      "open": 221.345,
+      "stkVolu": 24711161.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 221.53,
+      "hiPx": 222.62,
+      "loPx": 218.28,
+      "open": 220.03,
+      "stkVolu": 17643643.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 223.01,
+      "hiPx": 225.32,
+      "loPx": 217.58,
+      "open": 221.8,
+      "stkVolu": 47927993.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 198.85,
+      "hiPx": 201.99,
+      "loPx": 186.23,
+      "open": 190.62,
+      "stkVolu": 100612691.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 189.97,
+      "hiPx": 197.85,
+      "loPx": 185.98,
+      "open": 196.37,
+      "stkVolu": 55201644.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 184.92,
+      "hiPx": 188.9697,
+      "loPx": 181.4,
+      "open": 188.29,
+      "stkVolu": 43897509.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 188.65,
+      "hiPx": 189.8,
+      "loPx": 184.49,
+      "open": 184.7,
+      "stkVolu": 32433525.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 178.46,
+      "hiPx": 186.5,
+      "loPx": 177.07,
+      "open": 183.31,
+      "stkVolu": 50222018.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 180.03,
+      "hiPx": 184.76,
+      "loPx": 178.58,
+      "open": 182.72,
+      "stkVolu": 36297285.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 191.97,
+      "hiPx": 195.12,
+      "loPx": 188.12,
+      "open": 188.385,
+      "stkVolu": 77008550.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 198.38,
+      "hiPx": 198.8,
+      "loPx": 192.83,
+      "open": 196.82,
+      "stkVolu": 27148017.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 195.34,
+      "hiPx": 197.2,
+      "loPx": 192.19,
+      "open": 196.43,
+      "stkVolu": 18301588.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 197.49,
+      "hiPx": 198.28,
+      "loPx": 194.42,
+      "open": 195.0,
+      "stkVolu": 9282733.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 197.99,
+      "hiPx": 200.3699,
+      "loPx": 196.11,
+      "open": 198.06,
+      "stkVolu": 11262030.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 195.38,
+      "hiPx": 198.51,
+      "loPx": 192.64,
+      "open": 194.16,
+      "stkVolu": 14748125.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 197.21,
+      "hiPx": 198.38,
+      "loPx": 195.71,
+      "open": 196.06,
+      "stkVolu": 14197359.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 194.91,
+      "hiPx": 197.2,
+      "loPx": 194.73,
+      "open": 196.42,
+      "stkVolu": 10341453.0,
+      "ticker": "ORCL",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 195.71,
+      "hiPx": 198.59,
+      "loPx": 194.21,
+      "open": 197.47,
+      "stkVolu": 14540657.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 192.59,
+      "hiPx": 201.69,
+      "loPx": 192.33,
+      "open": 198.34,
+      "stkVolu": 22635516.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 193.75,
+      "hiPx": 194.875,
+      "loPx": 190.7,
+      "open": 192.56,
+      "stkVolu": 16474464.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 192.84,
+      "hiPx": 195.67,
+      "loPx": 192.0,
+      "open": 195.3,
+      "stkVolu": 11171198.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 189.65,
+      "hiPx": 190.95,
+      "loPx": 186.15,
+      "open": 190.88,
+      "stkVolu": 19468504.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 198.52,
+      "hiPx": 200.18,
+      "loPx": 188.78,
+      "open": 191.655,
+      "stkVolu": 26152742.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 204.68,
+      "hiPx": 206.6,
+      "loPx": 197.0108,
+      "open": 197.6,
+      "stkVolu": 25428545.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 202.29,
+      "hiPx": 207.8,
+      "loPx": 200.655,
+      "open": 205.0,
+      "stkVolu": 15857426.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 193.61,
+      "hiPx": 201.68,
+      "loPx": 190.81,
+      "open": 201.68,
+      "stkVolu": 22473159.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 189.85,
+      "hiPx": 195.01,
+      "loPx": 189.39,
+      "open": 195.01,
+      "stkVolu": 16418626.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 191.09,
+      "hiPx": 191.87,
+      "loPx": 186.53,
+      "open": 189.91,
+      "stkVolu": 19224705.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 179.92,
+      "hiPx": 187.19,
+      "loPx": 179.36,
+      "open": 187.19,
+      "stkVolu": 29129492.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 173.88,
+      "hiPx": 180.6,
+      "loPx": 170.6,
+      "open": 179.68,
+      "stkVolu": 38189995.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 178.18,
+      "hiPx": 180.16,
+      "loPx": 176.5,
+      "open": 179.37,
+      "stkVolu": 21141907.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 177.16,
+      "hiPx": 179.65,
+      "loPx": 172.0,
+      "open": 172.62,
+      "stkVolu": 23011338.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 182.44,
+      "hiPx": 185.31,
+      "loPx": 178.53,
+      "open": 179.1,
+      "stkVolu": 21100378.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 174.9,
+      "hiPx": 179.72,
+      "loPx": 173.68,
+      "open": 179.19,
+      "stkVolu": 27093664.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 172.8,
+      "hiPx": 181.68,
+      "loPx": 171.86,
+      "open": 174.915,
+      "stkVolu": 35882668.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 169.01,
+      "hiPx": 170.23,
+      "loPx": 161.52,
+      "open": 170.15,
+      "stkVolu": 37254511.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 164.58,
+      "hiPx": 168.9,
+      "loPx": 163.24,
+      "open": 168.17,
+      "stkVolu": 27362378.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 160.06,
+      "hiPx": 171.2,
+      "loPx": 160.0,
+      "open": 170.92,
+      "stkVolu": 47421032.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 154.67,
+      "hiPx": 159.38,
+      "loPx": 151.9,
+      "open": 158.26,
+      "stkVolu": 43260101.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 146.67,
+      "hiPx": 153.94,
+      "loPx": 144.432,
+      "open": 153.89,
+      "stkVolu": 42323390.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 136.48,
+      "hiPx": 146.55,
+      "loPx": 135.25,
+      "open": 145.6,
+      "stkVolu": 42788953.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 142.82,
+      "hiPx": 143.2,
+      "loPx": 138.91,
+      "open": 139.75,
+      "stkVolu": 29962414.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 156.59,
+      "hiPx": 159.75,
+      "loPx": 147.0,
+      "open": 148.49,
+      "stkVolu": 49936490.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 159.89,
+      "hiPx": 165.39,
+      "loPx": 156.96,
+      "open": 160.0,
+      "stkVolu": 40092248.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 157.16,
+      "hiPx": 163.66,
+      "loPx": 154.0,
+      "open": 163.66,
+      "stkVolu": 24538854.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 156.48,
+      "hiPx": 159.04,
+      "loPx": 152.5,
+      "open": 157.93,
+      "stkVolu": 23285399.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 160.14,
+      "hiPx": 162.3,
+      "loPx": 155.29,
+      "open": 159.25,
+      "stkVolu": 18596959.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 153.97,
+      "hiPx": 159.28,
+      "loPx": 152.88,
+      "open": 157.98,
+      "stkVolu": 19610800.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 156.17,
+      "hiPx": 157.3,
+      "loPx": 151.37,
+      "open": 154.405,
+      "stkVolu": 14801081.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 156.54,
+      "hiPx": 160.0827,
+      "loPx": 155.77,
+      "open": 157.19,
+      "stkVolu": 14976323.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 148.08,
+      "hiPx": 153.99,
+      "loPx": 147.39,
+      "open": 153.3,
+      "stkVolu": 29621889.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 141.31,
+      "hiPx": 145.8,
+      "loPx": 138.585,
+      "open": 145.69,
+      "stkVolu": 31749782.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 146.14,
+      "hiPx": 146.76,
+      "loPx": 138.73,
+      "open": 140.84,
+      "stkVolu": 21336624.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 147.89,
+      "hiPx": 153.2794,
+      "loPx": 147.335,
+      "open": 149.16,
+      "stkVolu": 27303928.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 150.31,
+      "hiPx": 152.5,
+      "loPx": 145.15,
+      "open": 148.79,
+      "stkVolu": 20652223.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 145.4,
+      "hiPx": 146.08,
+      "loPx": 142.1,
+      "open": 143.88,
+      "stkVolu": 36425195.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 149.25,
+      "hiPx": 150.17,
+      "loPx": 141.18,
+      "open": 141.62,
+      "stkVolu": 22418782.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 149.01,
+      "hiPx": 150.93,
+      "loPx": 143.05,
+      "open": 144.75,
+      "stkVolu": 20120790.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 152.37,
+      "hiPx": 153.61,
+      "loPx": 149.1,
+      "open": 150.01,
+      "stkVolu": 17585394.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 154.79,
+      "hiPx": 157.94,
+      "loPx": 150.12,
+      "open": 152.59,
+      "stkVolu": 24094779.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 152.96,
+      "hiPx": 159.19,
+      "loPx": 151.62,
+      "open": 152.92,
+      "stkVolu": 38000592.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 151.56,
+      "hiPx": 152.0,
+      "loPx": 146.4348,
+      "open": 150.7,
+      "stkVolu": 31173468.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 149.4,
+      "hiPx": 154.14,
+      "loPx": 148.45,
+      "open": 153.62,
+      "stkVolu": 51544623.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 163.12,
+      "hiPx": 171.76,
+      "loPx": 160.58,
+      "open": 166.38,
+      "stkVolu": 83247484.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 159.16,
+      "hiPx": 167.83,
+      "loPx": 158.61,
+      "open": 164.66,
+      "stkVolu": 37133719.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 155.11,
+      "hiPx": 160.77,
+      "loPx": 154.15,
+      "open": 159.05,
+      "stkVolu": 26350375.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 155.97,
+      "hiPx": 158.74,
+      "loPx": 154.5104,
+      "open": 156.06,
+      "stkVolu": 21607689.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 154.69,
+      "hiPx": 158.92,
+      "loPx": 153.5001,
+      "open": 155.44,
+      "stkVolu": 23929463.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 152.9,
+      "hiPx": 154.9652,
+      "loPx": 152.04,
+      "open": 153.4,
+      "stkVolu": 18051075.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 155.52,
+      "hiPx": 156.92,
+      "loPx": 148.89,
+      "open": 150.46,
+      "stkVolu": 22046113.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 149.68,
+      "hiPx": 153.25,
+      "loPx": 147.95,
+      "open": 153.05,
+      "stkVolu": 37551358.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 154.34,
+      "hiPx": 155.78,
+      "loPx": 150.71,
+      "open": 151.42,
+      "stkVolu": 19927945.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 147.09,
+      "hiPx": 153.9,
+      "loPx": 146.85,
+      "open": 153.0,
+      "stkVolu": 26122141.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 146.02,
+      "hiPx": 149.84,
+      "loPx": 144.6008,
+      "open": 149.225,
+      "stkVolu": 20683774.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 142.81,
+      "hiPx": 146.47,
+      "loPx": 142.54,
+      "open": 143.89,
+      "stkVolu": 16961884.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 139.66,
+      "hiPx": 141.69,
+      "loPx": 138.301,
+      "open": 140.93,
+      "stkVolu": 17929588.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 138.8,
+      "hiPx": 141.2,
+      "loPx": 136.95,
+      "open": 140.04,
+      "stkVolu": 20125734.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 147.11,
+      "hiPx": 147.395,
+      "loPx": 139.85,
+      "open": 140.3,
+      "stkVolu": 24491953.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 145.23,
+      "hiPx": 149.65,
+      "loPx": 144.67,
+      "open": 149.09,
+      "stkVolu": 20495868.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 146.38,
+      "hiPx": 146.44,
+      "loPx": 140.3,
+      "open": 142.78,
+      "stkVolu": 14381866.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 145.54,
+      "hiPx": 148.55,
+      "loPx": 143.85,
+      "open": 147.44,
+      "stkVolu": 12556727.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 143.17,
+      "hiPx": 144.57,
+      "loPx": 139.94,
+      "open": 143.78,
+      "stkVolu": 17250445.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 143.66,
+      "hiPx": 151.46,
+      "loPx": 142.9,
+      "open": 150.3,
+      "stkVolu": 23527034.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 137.86,
+      "hiPx": 142.8,
+      "loPx": 136.0,
+      "open": 142.2,
+      "stkVolu": 30407824.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 138.09,
+      "hiPx": 140.165,
+      "loPx": 134.57,
+      "open": 137.32,
+      "stkVolu": 26171810.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 155.62,
+      "hiPx": 155.91,
+      "loPx": 139.72,
+      "open": 139.77,
+      "stkVolu": 49997735.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 163.0,
+      "hiPx": 169.4,
+      "loPx": 161.56,
+      "open": 167.93,
+      "stkVolu": 59779843.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 169.81,
+      "hiPx": 172.56,
+      "loPx": 166.21,
+      "open": 166.89,
+      "stkVolu": 43010821.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 178.34,
+      "hiPx": 180.27,
+      "loPx": 173.8,
+      "open": 176.42,
+      "stkVolu": 46997279.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 175.06,
+      "hiPx": 184.5,
+      "loPx": 173.36,
+      "open": 182.93,
+      "stkVolu": 45282649.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 177.58,
+      "hiPx": 177.76,
+      "loPx": 173.51,
+      "open": 176.81,
+      "stkVolu": 22330910.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 181.17,
+      "hiPx": 185.34,
+      "loPx": 176.0123,
+      "open": 178.35,
+      "stkVolu": 39638047.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 187.5,
+      "hiPx": 189.18,
+      "loPx": 182.8,
+      "open": 186.18,
+      "stkVolu": 32448788.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 176.28,
+      "hiPx": 181.89,
+      "loPx": 174.08,
+      "open": 180.4,
+      "stkVolu": 37084241.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 173.28,
+      "hiPx": 180.71,
+      "loPx": 168.8,
+      "open": 180.505,
+      "stkVolu": 33214988.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 172.96,
+      "hiPx": 173.55,
+      "loPx": 167.9,
+      "open": 172.584,
+      "stkVolu": 21616573.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 165.96,
+      "hiPx": 168.6999,
+      "loPx": 162.05,
+      "open": 162.16,
+      "stkVolu": 33716456.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 163.83,
+      "hiPx": 164.76,
+      "loPx": 160.65,
+      "open": 164.04,
+      "stkVolu": 20587497.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 161.39,
+      "hiPx": 165.18,
+      "loPx": 160.33,
+      "open": 162.02,
+      "stkVolu": 21016368.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 171.83,
+      "hiPx": 174.3,
+      "loPx": 166.15,
+      "open": 166.42,
+      "stkVolu": 26318017.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 180.29,
+      "hiPx": 183.5,
+      "loPx": 174.26,
+      "open": 176.02,
+      "stkVolu": 33504465.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 185.35,
+      "hiPx": 186.52,
+      "loPx": 179.0,
+      "open": 182.125,
+      "stkVolu": 23497237.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 194.03,
+      "hiPx": 194.29,
+      "loPx": 182.67,
+      "open": 186.2,
+      "stkVolu": 27685486.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 194.59,
+      "hiPx": 200.15,
+      "loPx": 190.8,
+      "open": 198.61,
+      "stkVolu": 31803162.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 195.95,
+      "hiPx": 198.0,
+      "loPx": 190.21,
+      "open": 192.58,
+      "stkVolu": 21158338.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 193.84,
+      "hiPx": 195.6822,
+      "loPx": 190.6,
+      "open": 192.15,
+      "stkVolu": 16890587.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 186.83,
+      "hiPx": 192.92,
+      "loPx": 180.8701,
+      "open": 192.92,
+      "stkVolu": 22123411.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 189.76,
+      "hiPx": 191.57,
+      "loPx": 185.06,
+      "open": 189.03,
+      "stkVolu": 15789272.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 195.61,
+      "hiPx": 200.709,
+      "loPx": 185.45,
+      "open": 188.18,
+      "stkVolu": 22544995.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 192.95,
+      "hiPx": 196.43,
+      "loPx": 188.9,
+      "open": 190.49,
+      "stkVolu": 15747148.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 186.61,
+      "hiPx": 190.76,
+      "loPx": 183.27,
+      "open": 190.0,
+      "stkVolu": 19114329.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 181.46,
+      "hiPx": 188.7248,
+      "loPx": 180.93,
+      "open": 186.0,
+      "stkVolu": 16717712.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 188.16,
+      "hiPx": 188.22,
+      "loPx": 178.8,
+      "open": 179.94,
+      "stkVolu": 16517223.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 189.77,
+      "hiPx": 192.82,
+      "loPx": 187.2,
+      "open": 189.01,
+      "stkVolu": 12119718.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 192.08,
+      "hiPx": 197.0,
+      "loPx": 191.1,
+      "open": 191.67,
+      "stkVolu": 10875803.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 193.06,
+      "hiPx": 195.2,
+      "loPx": 190.56,
+      "open": 193.3,
+      "stkVolu": 12856100.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 190.96,
+      "hiPx": 192.14,
+      "loPx": 187.9161,
+      "open": 191.48,
+      "stkVolu": 12125998.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 203.7,
+      "hiPx": 205.0,
+      "loPx": 193.3772,
+      "open": 194.04,
+      "stkVolu": 25339881.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 225.78,
+      "hiPx": 226.29,
+      "loPx": 208.01,
+      "open": 209.0,
+      "stkVolu": 41082199.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 248.15,
+      "hiPx": 250.25,
+      "loPx": 224.6,
+      "open": 230.5,
+      "stkVolu": 48389992.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 244.58,
+      "hiPx": 249.0,
+      "loPx": 238.84,
+      "open": 242.8,
+      "stkVolu": 30294766.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 230.33,
+      "hiPx": 240.51,
+      "loPx": 227.605,
+      "open": 240.48,
+      "stkVolu": 23644680.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 236.34,
+      "hiPx": 238.95,
+      "loPx": 224.0,
+      "open": 227.0,
+      "stkVolu": 19993753.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 213.68,
+      "hiPx": 231.44,
+      "loPx": 209.45005,
+      "open": 229.49,
+      "stkVolu": 29019876.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 211.82,
+      "hiPx": 219.06,
+      "loPx": 209.331,
+      "open": 217.75,
+      "stkVolu": 17227241.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 205.81,
+      "hiPx": 220.5,
+      "loPx": 197.7901,
+      "open": 213.905,
+      "stkVolu": 26040722.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 201.26,
+      "hiPx": 212.4799,
+      "loPx": 198.18,
+      "open": 198.5,
+      "stkVolu": 46108327.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 184.1,
+      "hiPx": 184.77,
+      "loPx": 175.28,
+      "open": 179.67,
+      "stkVolu": 63678509.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 184.13,
+      "hiPx": 185.58,
+      "loPx": 179.0,
+      "open": 185.01,
+      "stkVolu": 29562284.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 192.64,
+      "hiPx": 195.32,
+      "loPx": 186.2134,
+      "open": 187.39,
+      "stkVolu": 20279863.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 188.33,
+      "hiPx": 195.32,
+      "loPx": 187.66,
+      "open": 190.01,
+      "stkVolu": 16985542.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 183.53,
+      "hiPx": 190.19,
+      "loPx": 182.58,
+      "open": 186.155,
+      "stkVolu": 16616626.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 184.29,
+      "hiPx": 187.99,
+      "loPx": 177.7,
+      "open": 183.01,
+      "stkVolu": 31386081.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 175.07,
+      "hiPx": 184.58,
+      "loPx": 174.4,
+      "open": 182.31,
+      "stkVolu": 22935420.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 165.16,
+      "hiPx": 174.33,
+      "loPx": 164.61,
+      "open": 170.23,
+      "stkVolu": 33327886.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 157.53,
+      "hiPx": 165.75,
+      "loPx": 155.35,
+      "open": 162.475,
+      "stkVolu": 38305028.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 152.46,
+      "hiPx": 157.62,
+      "loPx": 150.36,
+      "open": 157.35,
+      "stkVolu": 36914335.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 148.53,
+      "hiPx": 153.54,
+      "loPx": 148.0,
+      "open": 150.26,
+      "stkVolu": 36532141.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 147.76,
+      "hiPx": 154.5,
+      "loPx": 145.2,
+      "open": 153.94,
+      "stkVolu": 34310313.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 146.55,
+      "hiPx": 149.93,
+      "loPx": 144.48,
+      "open": 147.25,
+      "stkVolu": 35926860.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 142.5,
+      "hiPx": 147.55,
+      "loPx": 142.5,
+      "open": 144.49,
+      "stkVolu": 45963999.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 140.27,
+      "hiPx": 147.06,
+      "loPx": 138.8272,
+      "open": 143.3,
+      "stkVolu": 44273642.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 143.76,
+      "hiPx": 145.6222,
+      "loPx": 141.16,
+      "open": 144.3,
+      "stkVolu": 36682951.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 141.6,
+      "hiPx": 145.56,
+      "loPx": 137.55,
+      "open": 143.72,
+      "stkVolu": 47199976.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 140.49,
+      "hiPx": 141.84,
+      "loPx": 137.545,
+      "open": 139.055,
+      "stkVolu": 34607304.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 144.22,
+      "hiPx": 149.07,
+      "loPx": 140.94,
+      "open": 141.42,
+      "stkVolu": 35221882.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 140.64,
+      "hiPx": 145.68,
+      "loPx": 139.26,
+      "open": 145.65,
+      "stkVolu": 29843309.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 131.54,
+      "hiPx": 139.65,
+      "loPx": 131.35,
+      "open": 139.03,
+      "stkVolu": 56690274.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 127.94,
+      "hiPx": 132.76,
+      "loPx": 127.6,
+      "open": 132.0,
+      "stkVolu": 52670410.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 132.49,
+      "hiPx": 133.9,
+      "loPx": 128.84,
+      "open": 130.56,
+      "stkVolu": 48520434.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 124.21,
+      "hiPx": 131.78,
+      "loPx": 123.66,
+      "open": 131.475,
+      "stkVolu": 54780940.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 126.41,
+      "hiPx": 128.435,
+      "loPx": 121.5,
+      "open": 121.7,
+      "stkVolu": 39917140.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 121.38,
+      "hiPx": 125.4897,
+      "loPx": 120.03,
+      "open": 124.27,
+      "stkVolu": 36793230.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 127.05,
+      "hiPx": 127.42,
+      "loPx": 122.21,
+      "open": 122.81,
+      "stkVolu": 27748087.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 125.84,
+      "hiPx": 128.84,
+      "loPx": 124.7,
+      "open": 126.18,
+      "stkVolu": 21096693.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 120.04,
+      "hiPx": 124.7,
+      "loPx": 119.44,
+      "open": 123.96,
+      "stkVolu": 30900642.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 114.99,
+      "hiPx": 123.08,
+      "loPx": 114.75,
+      "open": 122.47,
+      "stkVolu": 46405702.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 119.9,
+      "hiPx": 121.99,
+      "loPx": 116.8,
+      "open": 118.0,
+      "stkVolu": 36916623.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 119.96,
+      "hiPx": 122.33,
+      "loPx": 114.5,
+      "open": 118.18,
+      "stkVolu": 32665418.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 117.74,
+      "hiPx": 121.92,
+      "loPx": 116.2,
+      "open": 119.42,
+      "stkVolu": 28081771.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 127.56,
+      "hiPx": 128.34,
+      "loPx": 121.58,
+      "open": 122.87,
+      "stkVolu": 41338393.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 129.87,
+      "hiPx": 132.4,
+      "loPx": 125.7,
+      "open": 130.07,
+      "stkVolu": 34438662.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 141.85,
+      "hiPx": 143.07,
+      "loPx": 130.21,
+      "open": 131.92,
+      "stkVolu": 49696896.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 145.74,
+      "hiPx": 148.7,
+      "loPx": 141.01,
+      "open": 141.01,
+      "stkVolu": 43723491.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 144.39,
+      "hiPx": 146.3899,
+      "loPx": 142.5,
+      "open": 145.0,
+      "stkVolu": 23524074.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 143.47,
+      "hiPx": 146.58,
+      "loPx": 138.72,
+      "open": 139.25,
+      "stkVolu": 23073334.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 147.02,
+      "hiPx": 147.16,
+      "loPx": 142.34,
+      "open": 145.32,
+      "stkVolu": 22874018.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 151.05,
+      "hiPx": 151.99,
+      "loPx": 146.62,
+      "open": 148.26,
+      "stkVolu": 24265023.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 145.48,
+      "hiPx": 151.99,
+      "loPx": 144.24,
+      "open": 151.2,
+      "stkVolu": 28761753.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 153.28,
+      "hiPx": 154.89,
+      "loPx": 147.89,
+      "open": 152.81,
+      "stkVolu": 43559358.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 156.22,
+      "hiPx": 159.26,
+      "loPx": 151.91,
+      "open": 151.98,
+      "stkVolu": 25739974.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 150.52,
+      "hiPx": 156.39,
+      "loPx": 148.8001,
+      "open": 155.84,
+      "stkVolu": 21905468.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 146.65,
+      "hiPx": 150.4,
+      "loPx": 145.5,
+      "open": 148.45,
+      "stkVolu": 20667953.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 142.79,
+      "hiPx": 146.0,
+      "loPx": 142.35,
+      "open": 143.25,
+      "stkVolu": 19152301.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 143.81,
+      "hiPx": 146.08,
+      "loPx": 137.43,
+      "open": 142.695,
+      "stkVolu": 26552896.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 142.07,
+      "hiPx": 145.92,
+      "loPx": 141.02,
+      "open": 144.3,
+      "stkVolu": 15184406.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 146.47,
+      "hiPx": 148.35,
+      "loPx": 142.6,
+      "open": 143.715,
+      "stkVolu": 19635031.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 142.45,
+      "hiPx": 145.12,
+      "loPx": 141.25,
+      "open": 145.12,
+      "stkVolu": 14158571.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 144.76,
+      "hiPx": 146.335,
+      "loPx": 142.51,
+      "open": 143.3,
+      "stkVolu": 13329370.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 148.87,
+      "hiPx": 151.63,
+      "loPx": 146.825,
+      "open": 147.0,
+      "stkVolu": 18426066.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 151.94,
+      "hiPx": 153.83,
+      "loPx": 147.52,
+      "open": 152.106,
+      "stkVolu": 30251348.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

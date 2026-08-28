@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 379.31,
+      "hiPx": 383.2,
+      "loPx": 377.8,
+      "open": 378.0,
+      "stkVolu": 2863680.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 376.93,
+      "hiPx": 382.22,
+      "loPx": 375.52,
+      "open": 378.9,
+      "stkVolu": 3545108.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 382.24,
+      "hiPx": 386.6011,
+      "loPx": 377.18,
+      "open": 378.5,
+      "stkVolu": 3708199.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 373.38,
+      "hiPx": 384.7451,
+      "loPx": 370.91,
+      "open": 383.5,
+      "stkVolu": 4726562.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 371.43,
+      "hiPx": 373.5,
+      "loPx": 365.51,
+      "open": 371.99,
+      "stkVolu": 4023925.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 363.35,
+      "hiPx": 371.15,
+      "loPx": 362.7,
+      "open": 368.0,
+      "stkVolu": 3548721.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 366.99,
+      "hiPx": 367.68,
+      "loPx": 360.18,
+      "open": 363.185,
+      "stkVolu": 2898705.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 364.18,
+      "hiPx": 368.32,
+      "loPx": 363.88,
+      "open": 367.0,
+      "stkVolu": 2550992.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 361.77,
+      "hiPx": 365.5524,
+      "loPx": 358.71,
+      "open": 364.585,
+      "stkVolu": 3592883.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 366.45,
+      "hiPx": 366.96,
+      "loPx": 359.28,
+      "open": 360.6,
+      "stkVolu": 3340455.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 365.79,
+      "hiPx": 367.79,
+      "loPx": 364.0,
+      "open": 367.065,
+      "stkVolu": 2459234.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 367.68,
+      "hiPx": 368.28,
+      "loPx": 363.13,
+      "open": 366.49,
+      "stkVolu": 2770433.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 372.87,
+      "hiPx": 374.5,
+      "loPx": 368.0,
+      "open": 368.0,
+      "stkVolu": 2448998.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 372.46,
+      "hiPx": 373.99,
+      "loPx": 369.26,
+      "open": 373.49,
+      "stkVolu": 1994599.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 371.69,
+      "hiPx": 375.9974,
+      "loPx": 370.61,
+      "open": 371.9,
+      "stkVolu": 2692132.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 370.74,
+      "hiPx": 372.405,
+      "loPx": 369.51,
+      "open": 372.31,
+      "stkVolu": 2053161.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 369.47,
+      "hiPx": 372.59,
+      "loPx": 368.72,
+      "open": 371.03,
+      "stkVolu": 2984225.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 370.7,
+      "hiPx": 376.16,
+      "loPx": 369.7101,
+      "open": 370.45,
+      "stkVolu": 4234200.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 364.0,
+      "hiPx": 370.72,
+      "loPx": 363.48,
+      "open": 370.68,
+      "stkVolu": 3295204.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 357.69,
+      "hiPx": 362.5,
+      "loPx": 354.27,
+      "open": 362.26,
+      "stkVolu": 4513089.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 347.8,
+      "hiPx": 356.29,
+      "loPx": 347.46,
+      "open": 355.95,
+      "stkVolu": 4307890.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 338.85,
+      "hiPx": 351.21,
+      "loPx": 338.04,
+      "open": 351.16,
+      "stkVolu": 6449344.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 338.74,
+      "hiPx": 342.735,
+      "loPx": 337.35,
+      "open": 339.305,
+      "stkVolu": 3908970.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 345.62,
+      "hiPx": 345.66,
+      "loPx": 339.19,
+      "open": 341.65,
+      "stkVolu": 3347165.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 338.27,
+      "hiPx": 347.38,
+      "loPx": 332.65,
+      "open": 344.04,
+      "stkVolu": 4661824.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 341.05,
+      "hiPx": 341.5684,
+      "loPx": 336.37,
+      "open": 338.675,
+      "stkVolu": 3507764.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 333.65,
+      "hiPx": 343.4035,
+      "loPx": 332.465,
+      "open": 334.53,
+      "stkVolu": 4366242.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 338.43,
+      "hiPx": 338.76,
+      "loPx": 330.04,
+      "open": 333.52,
+      "stkVolu": 3572414.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 351.07,
+      "hiPx": 351.76,
+      "loPx": 337.55,
+      "open": 339.54,
+      "stkVolu": 4375105.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 348.58,
+      "hiPx": 351.5599,
+      "loPx": 346.1,
+      "open": 349.5,
+      "stkVolu": 3745646.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 354.85,
+      "hiPx": 357.29,
+      "loPx": 348.0,
+      "open": 348.33,
+      "stkVolu": 3718652.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 357.24,
+      "hiPx": 358.39,
+      "loPx": 353.0,
+      "open": 355.68,
+      "stkVolu": 2922973.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 361.03,
+      "hiPx": 364.24,
+      "loPx": 358.12,
+      "open": 359.215,
+      "stkVolu": 2808040.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 353.43,
+      "hiPx": 363.0,
+      "loPx": 353.2,
+      "open": 361.68,
+      "stkVolu": 3727897.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 353.43,
+      "hiPx": 353.82,
+      "loPx": 347.0,
+      "open": 349.91,
+      "stkVolu": 2363230.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 362.09,
+      "hiPx": 362.65,
+      "loPx": 354.0,
+      "open": 355.8,
+      "stkVolu": 3058636.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 363.21,
+      "hiPx": 364.65,
+      "loPx": 361.4,
+      "open": 362.56,
+      "stkVolu": 2259516.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 354.91,
+      "hiPx": 363.23,
+      "loPx": 353.695,
+      "open": 363.03,
+      "stkVolu": 4067395.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 356.35,
+      "hiPx": 360.37,
+      "loPx": 355.16,
+      "open": 355.98,
+      "stkVolu": 2353776.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 353.96,
+      "hiPx": 358.26,
+      "loPx": 349.11,
+      "open": 357.63,
+      "stkVolu": 3803095.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 356.7,
+      "hiPx": 357.25,
+      "loPx": 352.455,
+      "open": 353.995,
+      "stkVolu": 2639259.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 345.63,
+      "hiPx": 352.7131,
+      "loPx": 341.28,
+      "open": 350.24,
+      "stkVolu": 4229423.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 348.5,
+      "hiPx": 348.51,
+      "loPx": 343.36,
+      "open": 345.72,
+      "stkVolu": 3035328.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 344.31,
+      "hiPx": 344.405,
+      "loPx": 331.5,
+      "open": 342.24,
+      "stkVolu": 4918293.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 348.97,
+      "hiPx": 354.67,
+      "loPx": 345.1013,
+      "open": 345.805,
+      "stkVolu": 4662587.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 358.7,
+      "hiPx": 358.82,
+      "loPx": 343.59,
+      "open": 348.855,
+      "stkVolu": 5045091.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 354.06,
+      "hiPx": 362.75,
+      "loPx": 353.03,
+      "open": 362.75,
+      "stkVolu": 4324857.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 350.16,
+      "hiPx": 359.19,
+      "loPx": 348.12,
+      "open": 356.29,
+      "stkVolu": 4552514.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 350.55,
+      "hiPx": 355.25,
+      "loPx": 347.16,
+      "open": 354.685,
+      "stkVolu": 11804184.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 349.36,
+      "hiPx": 366.5,
+      "loPx": 341.61,
+      "open": 361.1,
+      "stkVolu": 14146624.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 347.1,
+      "hiPx": 358.0,
+      "loPx": 345.05,
+      "open": 350.5,
+      "stkVolu": 6768570.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 352.73,
+      "hiPx": 356.94,
+      "loPx": 348.3173,
+      "open": 350.155,
+      "stkVolu": 6696990.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 362.07,
+      "hiPx": 365.0,
+      "loPx": 353.18,
+      "open": 353.18,
+      "stkVolu": 6449922.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 367.46,
+      "hiPx": 370.86,
+      "loPx": 365.85,
+      "open": 366.86,
+      "stkVolu": 4752377.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 365.9,
+      "hiPx": 370.31,
+      "loPx": 362.54,
+      "open": 368.94,
+      "stkVolu": 7693030.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 364.08,
+      "hiPx": 365.38,
+      "loPx": 359.36,
+      "open": 364.16,
+      "stkVolu": 4709584.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 361.78,
+      "hiPx": 368.73,
+      "loPx": 361.295,
+      "open": 364.175,
+      "stkVolu": 3831134.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 353.27,
+      "hiPx": 355.595,
+      "loPx": 347.8,
+      "open": 355.595,
+      "stkVolu": 6140007.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 354.16,
+      "hiPx": 357.0,
+      "loPx": 351.5,
+      "open": 351.91,
+      "stkVolu": 3336731.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 360.37,
+      "hiPx": 360.715,
+      "loPx": 352.775,
+      "open": 353.71,
+      "stkVolu": 3072990.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 359.42,
+      "hiPx": 363.17,
+      "loPx": 358.8,
+      "open": 362.04,
+      "stkVolu": 4075860.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 352.75,
+      "hiPx": 362.0,
+      "loPx": 349.9024,
+      "open": 360.54,
+      "stkVolu": 5360695.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 343.72,
+      "hiPx": 349.8299,
+      "loPx": 340.05,
+      "open": 347.16,
+      "stkVolu": 6505709.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 351.48,
+      "hiPx": 351.73,
+      "loPx": 342.42,
+      "open": 343.76,
+      "stkVolu": 3955434.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 346.74,
+      "hiPx": 352.5926,
+      "loPx": 346.305,
+      "open": 352.0,
+      "stkVolu": 3122111.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 350.14,
+      "hiPx": 357.34,
+      "loPx": 342.04,
+      "open": 346.93,
+      "stkVolu": 5340202.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 348.31,
+      "hiPx": 353.33,
+      "loPx": 344.24,
+      "open": 352.59,
+      "stkVolu": 3275506.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 348.77,
+      "hiPx": 354.05,
+      "loPx": 347.52,
+      "open": 350.0,
+      "stkVolu": 3285027.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 347.47,
+      "hiPx": 350.6,
+      "loPx": 344.3,
+      "open": 349.77,
+      "stkVolu": 2895504.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 337.51,
+      "hiPx": 348.72,
+      "loPx": 336.94,
+      "open": 347.91,
+      "stkVolu": 4282397.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 339.32,
+      "hiPx": 340.2765,
+      "loPx": 335.61,
+      "open": 339.25,
+      "stkVolu": 3020060.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 335.94,
+      "hiPx": 338.82,
+      "loPx": 332.72,
+      "open": 335.22,
+      "stkVolu": 3036889.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 330.63,
+      "hiPx": 335.6,
+      "loPx": 329.205,
+      "open": 335.42,
+      "stkVolu": 3929948.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 329.23,
+      "hiPx": 336.65,
+      "loPx": 327.5,
+      "open": 333.86,
+      "stkVolu": 4570870.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 333.26,
+      "hiPx": 335.1,
+      "loPx": 327.7,
+      "open": 327.745,
+      "stkVolu": 4035035.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 343.4,
+      "hiPx": 344.2,
+      "loPx": 334.25,
+      "open": 334.64,
+      "stkVolu": 3903166.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 357.55,
+      "hiPx": 358.37,
+      "loPx": 343.32,
+      "open": 343.59,
+      "stkVolu": 4389672.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 354.09,
+      "hiPx": 360.19,
+      "loPx": 352.8701,
+      "open": 355.48,
+      "stkVolu": 3436003.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 354.12,
+      "hiPx": 354.35,
+      "loPx": 348.71,
+      "open": 352.51,
+      "stkVolu": 2408077.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 353.52,
+      "hiPx": 358.1,
+      "loPx": 353.29,
+      "open": 357.45,
+      "stkVolu": 2016850.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 357.8,
+      "hiPx": 358.56,
+      "loPx": 352.4135,
+      "open": 355.57,
+      "stkVolu": 2828152.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 359.91,
+      "hiPx": 363.7,
+      "loPx": 357.8,
+      "open": 360.0,
+      "stkVolu": 3005594.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 337.86,
+      "hiPx": 355.515,
+      "loPx": 337.05,
+      "open": 355.515,
+      "stkVolu": 6746464.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 339.24,
+      "hiPx": 344.6951,
+      "loPx": 333.1,
+      "open": 338.2,
+      "stkVolu": 4373224.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 340.31,
+      "hiPx": 341.26,
+      "loPx": 336.8,
+      "open": 338.7,
+      "stkVolu": 3763381.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 337.47,
+      "hiPx": 342.46,
+      "loPx": 332.88,
+      "open": 340.31,
+      "stkVolu": 3916593.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 335.35,
+      "hiPx": 340.55,
+      "loPx": 332.81,
+      "open": 335.02,
+      "stkVolu": 3694266.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 335.53,
+      "hiPx": 336.84,
+      "loPx": 331.24,
+      "open": 332.61,
+      "stkVolu": 2646694.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 327.35,
+      "hiPx": 333.2,
+      "loPx": 324.55,
+      "open": 333.0,
+      "stkVolu": 3888696.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 326.95,
+      "hiPx": 331.01,
+      "loPx": 323.0329,
+      "open": 325.83,
+      "stkVolu": 4112574.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 328.85,
+      "hiPx": 329.9576,
+      "loPx": 325.0,
+      "open": 328.0,
+      "stkVolu": 3086999.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 333.22,
+      "hiPx": 334.0,
+      "loPx": 329.13,
+      "open": 329.5,
+      "stkVolu": 2827150.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 337.05,
+      "hiPx": 338.4,
+      "loPx": 333.1752,
+      "open": 333.61,
+      "stkVolu": 2990154.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 333.6,
+      "hiPx": 340.0,
+      "loPx": 332.795,
+      "open": 335.01,
+      "stkVolu": 3084558.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 331.11,
+      "hiPx": 333.75,
+      "loPx": 328.59,
+      "open": 332.91,
+      "stkVolu": 2761396.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 325.07,
+      "hiPx": 332.38,
+      "loPx": 324.43,
+      "open": 331.105,
+      "stkVolu": 3299999.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 324.47,
+      "hiPx": 326.64,
+      "loPx": 320.8,
+      "open": 323.78,
+      "stkVolu": 3286395.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 318.11,
+      "hiPx": 323.36,
+      "loPx": 315.175,
+      "open": 323.175,
+      "stkVolu": 3738436.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 312.4,
+      "hiPx": 323.1847,
+      "loPx": 312.09,
+      "open": 318.87,
+      "stkVolu": 3884778.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 324.19,
+      "hiPx": 327.75,
+      "loPx": 311.585,
+      "open": 312.55,
+      "stkVolu": 4825412.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 318.73,
+      "hiPx": 325.77,
+      "loPx": 318.34,
+      "open": 325.0,
+      "stkVolu": 5414378.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 319.55,
+      "hiPx": 321.52,
+      "loPx": 315.57,
+      "open": 317.77,
+      "stkVolu": 3765001.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 317.52,
+      "hiPx": 321.67,
+      "loPx": 316.1,
+      "open": 319.2,
+      "stkVolu": 3024994.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 320.13,
+      "hiPx": 322.31,
+      "loPx": 317.52,
+      "open": 317.8,
+      "stkVolu": 1802225.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 322.85,
+      "hiPx": 326.14,
+      "loPx": 316.11,
+      "open": 316.39,
+      "stkVolu": 3651321.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 322.81,
+      "hiPx": 325.96,
+      "loPx": 318.08,
+      "open": 321.62,
+      "stkVolu": 3959502.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 326.78,
+      "hiPx": 326.99,
+      "loPx": 320.63,
+      "open": 321.98,
+      "stkVolu": 3082184.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 328.73,
+      "hiPx": 330.89,
+      "loPx": 324.12,
+      "open": 328.57,
+      "stkVolu": 3592313.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 346.26,
+      "hiPx": 348.59,
+      "loPx": 329.71,
+      "open": 330.6,
+      "stkVolu": 7650368.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 339.12,
+      "hiPx": 348.4799,
+      "loPx": 338.06,
+      "open": 347.445,
+      "stkVolu": 4293603.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 344.32,
+      "hiPx": 347.775,
+      "loPx": 338.48,
+      "open": 341.4,
+      "stkVolu": 4267653.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 343.13,
+      "hiPx": 347.92,
+      "loPx": 340.565,
+      "open": 342.125,
+      "stkVolu": 6789914.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 350.43,
+      "hiPx": 357.0,
+      "loPx": 333.79,
+      "open": 341.645,
+      "stkVolu": 10158661.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 356.43,
+      "hiPx": 362.71,
+      "loPx": 349.0901,
+      "open": 351.54,
+      "stkVolu": 5483921.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 351.15,
+      "hiPx": 355.0,
+      "loPx": 343.88,
+      "open": 352.6,
+      "stkVolu": 5480102.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 347.89,
+      "hiPx": 355.86,
+      "loPx": 345.4301,
+      "open": 350.0,
+      "stkVolu": 4118161.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 354.66,
+      "hiPx": 357.8,
+      "loPx": 347.8025,
+      "open": 347.89,
+      "stkVolu": 4371591.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 355.81,
+      "hiPx": 358.34,
+      "loPx": 351.3636,
+      "open": 355.87,
+      "stkVolu": 3352747.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 355.86,
+      "hiPx": 357.55,
+      "loPx": 351.59,
+      "open": 355.525,
+      "stkVolu": 8706340.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 357.53,
+      "hiPx": 359.5706,
+      "loPx": 354.7,
+      "open": 355.59,
+      "stkVolu": 2960799.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 352.42,
+      "hiPx": 359.6699,
+      "loPx": 350.58,
+      "open": 357.47,
+      "stkVolu": 3052537.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 352.98,
+      "hiPx": 354.75,
+      "loPx": 351.11,
+      "open": 352.21,
+      "stkVolu": 1166487.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 353.8,
+      "hiPx": 356.23,
+      "loPx": 352.2819,
+      "open": 352.5,
+      "stkVolu": 1455122.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 353.16,
+      "hiPx": 356.68,
+      "loPx": 351.16,
+      "open": 353.37,
+      "stkVolu": 2794007.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 352.51,
+      "hiPx": 355.2699,
+      "loPx": 350.009,
+      "open": 352.03,
+      "stkVolu": 2252633.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 349.99,
+      "hiPx": 352.88,
+      "loPx": 349.69,
+      "open": 351.01,
+      "stkVolu": 2116207.0,
+      "ticker": "ADBE",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 333.3,
+      "hiPx": 351.12,
+      "loPx": 331.64,
+      "open": 350.18,
+      "stkVolu": 5643504.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 331.56,
+      "hiPx": 334.47,
+      "loPx": 327.44,
+      "open": 330.11,
+      "stkVolu": 5012050.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 335.99,
+      "hiPx": 336.4,
+      "loPx": 329.5,
+      "open": 330.0,
+      "stkVolu": 3187432.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 338.1,
+      "hiPx": 342.78,
+      "loPx": 334.6226,
+      "open": 336.24,
+      "stkVolu": 3183059.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 339.04,
+      "hiPx": 343.95,
+      "loPx": 334.675,
+      "open": 337.38,
+      "stkVolu": 3107661.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 333.95,
+      "hiPx": 335.875,
+      "loPx": 328.0,
+      "open": 335.875,
+      "stkVolu": 3250098.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 327.65,
+      "hiPx": 330.67,
+      "loPx": 323.5,
+      "open": 327.77,
+      "stkVolu": 3541399.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 309.93,
+      "hiPx": 323.0,
+      "loPx": 307.91,
+      "open": 322.49,
+      "stkVolu": 7217338.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 304.44,
+      "hiPx": 309.73,
+      "loPx": 302.47,
+      "open": 308.57,
+      "stkVolu": 5712622.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 304.09,
+      "hiPx": 305.82,
+      "loPx": 301.4,
+      "open": 304.97,
+      "stkVolu": 4774251.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 296.12,
+      "hiPx": 304.88,
+      "loPx": 295.42,
+      "open": 304.56,
+      "stkVolu": 8534411.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 290.37,
+      "hiPx": 295.0,
+      "loPx": 288.33,
+      "open": 294.32,
+      "stkVolu": 6962010.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 294.23,
+      "hiPx": 294.51,
+      "loPx": 288.33,
+      "open": 290.765,
+      "stkVolu": 5645285.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 299.73,
+      "hiPx": 301.82,
+      "loPx": 295.2,
+      "open": 296.0,
+      "stkVolu": 4974504.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 301.07,
+      "hiPx": 303.84,
+      "loPx": 299.2,
+      "open": 301.46,
+      "stkVolu": 4368651.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 304.72,
+      "hiPx": 306.3,
+      "loPx": 301.4,
+      "open": 301.4,
+      "stkVolu": 4115294.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 297.42,
+      "hiPx": 304.215,
+      "loPx": 292.93,
+      "open": 303.81,
+      "stkVolu": 4166284.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 299.58,
+      "hiPx": 303.85,
+      "loPx": 297.685,
+      "open": 299.66,
+      "stkVolu": 3942771.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 291.65,
+      "hiPx": 293.635,
+      "loPx": 284.6,
+      "open": 291.68,
+      "stkVolu": 7410759.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 293.25,
+      "hiPx": 295.34,
+      "loPx": 290.51,
+      "open": 291.6,
+      "stkVolu": 5713026.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 293.38,
+      "hiPx": 299.38,
+      "loPx": 290.93,
+      "open": 297.01,
+      "stkVolu": 4357004.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 271.93,
+      "hiPx": 284.34,
+      "loPx": 271.02,
+      "open": 282.74,
+      "stkVolu": 8324923.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 279.71,
+      "hiPx": 282.8999,
+      "loPx": 264.04,
+      "open": 267.23,
+      "stkVolu": 8554186.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 269.39,
+      "hiPx": 281.95,
+      "loPx": 268.43,
+      "open": 277.49,
+      "stkVolu": 6293553.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 268.38,
+      "hiPx": 275.0,
+      "loPx": 265.31,
+      "open": 271.675,
+      "stkVolu": 5448423.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 266.9,
+      "hiPx": 269.2,
+      "loPx": 262.949,
+      "open": 267.05,
+      "stkVolu": 6576297.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 264.67,
+      "hiPx": 270.79,
+      "loPx": 263.98,
+      "open": 266.69,
+      "stkVolu": 5718574.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 257.16,
+      "hiPx": 264.2,
+      "loPx": 255.71,
+      "open": 263.075,
+      "stkVolu": 8759941.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 262.5,
+      "hiPx": 262.67,
+      "loPx": 251.1001,
+      "open": 258.36,
+      "stkVolu": 8656974.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 263.97,
+      "hiPx": 265.29,
+      "loPx": 257.5,
+      "open": 262.17,
+      "stkVolu": 6589694.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 260.45,
+      "hiPx": 269.128,
+      "loPx": 255.839,
+      "open": 265.235,
+      "stkVolu": 5208323.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 263.17,
+      "hiPx": 263.5,
+      "loPx": 257.14,
+      "open": 260.45,
+      "stkVolu": 5033238.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 259.21,
+      "hiPx": 265.55,
+      "loPx": 257.41,
+      "open": 263.38,
+      "stkVolu": 3616213.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 258.61,
+      "hiPx": 262.08,
+      "loPx": 254.36,
+      "open": 255.0,
+      "stkVolu": 6590752.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 246.68,
+      "hiPx": 254.5,
+      "loPx": 244.8,
+      "open": 254.14,
+      "stkVolu": 7602386.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 255.17,
+      "hiPx": 258.25,
+      "loPx": 244.28,
+      "open": 245.57,
+      "stkVolu": 5529146.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 257.81,
+      "hiPx": 257.99,
+      "loPx": 250.7,
+      "open": 253.33,
+      "stkVolu": 5108563.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 259.04,
+      "hiPx": 263.67,
+      "loPx": 256.595,
+      "open": 261.59,
+      "stkVolu": 6208147.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 262.41,
+      "hiPx": 262.75,
+      "loPx": 253.06,
+      "open": 254.02,
+      "stkVolu": 5098206.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 260.88,
+      "hiPx": 264.22,
+      "loPx": 257.06,
+      "open": 257.6,
+      "stkVolu": 3486901.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 270.99,
+      "hiPx": 272.825,
+      "loPx": 260.05,
+      "open": 260.05,
+      "stkVolu": 6206582.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 273.12,
+      "hiPx": 276.67,
+      "loPx": 270.34,
+      "open": 271.51,
+      "stkVolu": 4329153.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 281.74,
+      "hiPx": 285.36,
+      "loPx": 275.4,
+      "open": 275.4,
+      "stkVolu": 5822261.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 283.62,
+      "hiPx": 283.85,
+      "loPx": 276.05,
+      "open": 280.28,
+      "stkVolu": 4802278.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 282.44,
+      "hiPx": 285.2,
+      "loPx": 277.9,
+      "open": 281.32,
+      "stkVolu": 4728359.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 275.13,
+      "hiPx": 282.395,
+      "loPx": 268.37,
+      "open": 281.82,
+      "stkVolu": 4591633.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 273.705,
+      "hiPx": 280.375,
+      "loPx": 269.25,
+      "open": 277.93,
+      "stkVolu": 4862412.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 269.78,
+      "hiPx": 276.28,
+      "loPx": 269.2,
+      "open": 273.35,
+      "stkVolu": 10894990.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 249.32,
+      "hiPx": 256.7,
+      "loPx": 247.16,
+      "open": 249.0,
+      "stkVolu": 17406382.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 251.86,
+      "hiPx": 256.37,
+      "loPx": 244.55,
+      "open": 248.25,
+      "stkVolu": 11679171.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 254.2,
+      "hiPx": 258.91,
+      "loPx": 252.14,
+      "open": 252.99,
+      "stkVolu": 6456240.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 246.0,
+      "hiPx": 254.49,
+      "loPx": 245.18,
+      "open": 252.46,
+      "stkVolu": 7305642.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 245.99,
+      "hiPx": 250.4,
+      "loPx": 244.27,
+      "open": 246.96,
+      "stkVolu": 4459828.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 248.15,
+      "hiPx": 249.0899,
+      "loPx": 241.0,
+      "open": 242.8,
+      "stkVolu": 10467284.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 247.64,
+      "hiPx": 251.0175,
+      "loPx": 246.22,
+      "open": 248.945,
+      "stkVolu": 4080460.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 238.87,
+      "hiPx": 246.2,
+      "loPx": 237.38,
+      "open": 245.91,
+      "stkVolu": 6268313.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 237.25,
+      "hiPx": 243.58,
+      "loPx": 233.79,
+      "open": 241.2,
+      "stkVolu": 5441648.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 240.88,
+      "hiPx": 243.95,
+      "loPx": 234.28,
+      "open": 234.92,
+      "stkVolu": 4715277.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 234.84,
+      "hiPx": 239.7875,
+      "loPx": 233.155,
+      "open": 239.7875,
+      "stkVolu": 4429433.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 241.13,
+      "hiPx": 243.282,
+      "loPx": 236.725,
+      "open": 236.78,
+      "stkVolu": 4410159.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 243.08,
+      "hiPx": 244.03,
+      "loPx": 239.51,
+      "open": 241.67,
+      "stkVolu": 4575911.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 241.37,
+      "hiPx": 243.48,
+      "loPx": 235.0,
+      "open": 241.96,
+      "stkVolu": 3746693.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 242.92,
+      "hiPx": 245.01,
+      "loPx": 237.72,
+      "open": 242.46,
+      "stkVolu": 3588792.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 244.355,
+      "hiPx": 246.7,
+      "loPx": 240.23,
+      "open": 242.84,
+      "stkVolu": 2757702.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 240.14,
+      "hiPx": 244.77,
+      "loPx": 238.72,
+      "open": 244.17,
+      "stkVolu": 3331009.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 239.31,
+      "hiPx": 247.4391,
+      "loPx": 237.99,
+      "open": 244.3,
+      "stkVolu": 4040080.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 229.94,
+      "hiPx": 236.3,
+      "loPx": 227.7,
+      "open": 235.6,
+      "stkVolu": 6802449.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 225.35,
+      "hiPx": 231.0367,
+      "loPx": 224.13,
+      "open": 229.9,
+      "stkVolu": 5889240.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 240.11,
+      "hiPx": 240.19,
+      "loPx": 226.5,
+      "open": 227.14,
+      "stkVolu": 6115751.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 235.72,
+      "hiPx": 244.01,
+      "loPx": 233.0,
+      "open": 241.99,
+      "stkVolu": 6307478.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 244.66,
+      "hiPx": 245.9291,
+      "loPx": 239.2,
+      "open": 241.17,
+      "stkVolu": 4749594.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 248.155,
+      "hiPx": 254.51,
+      "loPx": 245.78,
+      "open": 253.05,
+      "stkVolu": 5229487.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 244.45,
+      "hiPx": 254.08,
+      "loPx": 243.5,
+      "open": 254.08,
+      "stkVolu": 6194232.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 248.63,
+      "hiPx": 251.63,
+      "loPx": 245.34,
+      "open": 249.49,
+      "stkVolu": 5249971.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 247.18,
+      "hiPx": 254.745,
+      "loPx": 245.1,
+      "open": 247.0,
+      "stkVolu": 5779652.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 255.94,
+      "hiPx": 258.75,
+      "loPx": 251.9,
+      "open": 254.8,
+      "stkVolu": 7111008.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 238.98,
+      "hiPx": 246.54,
+      "loPx": 233.515,
+      "open": 244.88,
+      "stkVolu": 9616953.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 245.44,
+      "hiPx": 245.66,
+      "loPx": 238.42,
+      "open": 239.77,
+      "stkVolu": 6492913.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 239.31,
+      "hiPx": 245.882,
+      "loPx": 239.11,
+      "open": 240.77,
+      "stkVolu": 5067713.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 243.2,
+      "hiPx": 245.26,
+      "loPx": 241.16,
+      "open": 242.13,
+      "stkVolu": 4641728.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 243.57,
+      "hiPx": 243.615,
+      "loPx": 238.67,
+      "open": 240.97,
+      "stkVolu": 2664518.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 246.1,
+      "hiPx": 246.68,
+      "loPx": 236.28,
+      "open": 240.1,
+      "stkVolu": 5129117.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 250.71,
+      "hiPx": 253.56,
+      "loPx": 244.1,
+      "open": 252.0,
+      "stkVolu": 5068506.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 253.96,
+      "hiPx": 255.88,
+      "loPx": 247.34,
+      "open": 249.99,
+      "stkVolu": 5536893.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 255.62,
+      "hiPx": 256.6192,
+      "loPx": 248.49,
+      "open": 254.0,
+      "stkVolu": 3952461.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 250.17,
+      "hiPx": 254.4,
+      "loPx": 248.28,
+      "open": 252.02,
+      "stkVolu": 4452125.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 256.51,
+      "hiPx": 259.44,
+      "loPx": 252.88,
+      "open": 254.77,
+      "stkVolu": 4479879.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 253.04,
+      "hiPx": 253.37,
+      "loPx": 246.1,
+      "open": 252.9,
+      "stkVolu": 3667468.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 246.15,
+      "hiPx": 255.41,
+      "loPx": 244.691,
+      "open": 250.53,
+      "stkVolu": 3225788.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 240.83,
+      "hiPx": 247.58,
+      "loPx": 240.4,
+      "open": 247.002,
+      "stkVolu": 3234045.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 236.07,
+      "hiPx": 239.08,
+      "loPx": 232.84,
+      "open": 238.54,
+      "stkVolu": 3870192.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 237.01,
+      "hiPx": 238.24,
+      "loPx": 231.74,
+      "open": 236.24,
+      "stkVolu": 4991667.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 247.6,
+      "hiPx": 248.57,
+      "loPx": 240.26,
+      "open": 241.76,
+      "stkVolu": 6421209.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 255.64,
+      "hiPx": 256.19,
+      "loPx": 245.24,
+      "open": 247.31,
+      "stkVolu": 5591752.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 254.99,
+      "hiPx": 265.09,
+      "loPx": 251.81,
+      "open": 263.33,
+      "stkVolu": 5854359.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 253.37,
+      "hiPx": 253.69,
+      "loPx": 246.2124,
+      "open": 250.275,
+      "stkVolu": 4789627.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 244.1,
+      "hiPx": 247.95,
+      "loPx": 242.11,
+      "open": 246.45,
+      "stkVolu": 4130996.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 244.76,
+      "hiPx": 249.77,
+      "loPx": 242.71,
+      "open": 245.89,
+      "stkVolu": 3783400.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 240.49,
+      "hiPx": 243.57,
+      "loPx": 238.57,
+      "open": 242.57,
+      "stkVolu": 3217536.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 238.24,
+      "hiPx": 244.24,
+      "loPx": 237.28,
+      "open": 237.76,
+      "stkVolu": 3408880.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 241.44,
+      "hiPx": 244.76,
+      "loPx": 236.66,
+      "open": 239.57,
+      "stkVolu": 3396017.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 259.21,
+      "hiPx": 260.63,
+      "loPx": 244.662,
+      "open": 245.23,
+      "stkVolu": 10808921.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 274.03,
+      "hiPx": 275.44,
+      "loPx": 262.3,
+      "open": 270.0,
+      "stkVolu": 8535314.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 262.11,
+      "hiPx": 272.03,
+      "loPx": 260.05,
+      "open": 267.98,
+      "stkVolu": 5821801.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 256.24,
+      "hiPx": 260.0,
+      "loPx": 252.34,
+      "open": 259.39,
+      "stkVolu": 4871308.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 258.42,
+      "hiPx": 265.94,
+      "loPx": 258.33,
+      "open": 263.02,
+      "stkVolu": 5161943.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 251.44,
+      "hiPx": 262.53,
+      "loPx": 249.05,
+      "open": 259.28,
+      "stkVolu": 4909175.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 244.99,
+      "hiPx": 250.74,
+      "loPx": 244.25,
+      "open": 249.06,
+      "stkVolu": 4728032.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 237.88,
+      "hiPx": 245.25,
+      "loPx": 233.33,
+      "open": 242.975,
+      "stkVolu": 6747403.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 233.38,
+      "hiPx": 238.51,
+      "loPx": 231.74,
+      "open": 233.015,
+      "stkVolu": 5176916.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 218.8,
+      "hiPx": 232.5,
+      "loPx": 218.09,
+      "open": 229.92,
+      "stkVolu": 17786876.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 204.02,
+      "hiPx": 205.65,
+      "loPx": 196.9,
+      "open": 202.4,
+      "stkVolu": 25063668.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 206.36,
+      "hiPx": 211.99,
+      "loPx": 205.7175,
+      "open": 206.88,
+      "stkVolu": 9676899.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 207.32,
+      "hiPx": 210.798,
+      "loPx": 203.84,
+      "open": 205.38,
+      "stkVolu": 7214557.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 196.28,
+      "hiPx": 206.4999,
+      "loPx": 195.02,
+      "open": 204.02,
+      "stkVolu": 10731469.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 195.16,
+      "hiPx": 196.78,
+      "loPx": 190.12,
+      "open": 193.6,
+      "stkVolu": 15852478.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 194.9,
+      "hiPx": 199.25,
+      "loPx": 191.2,
+      "open": 193.393,
+      "stkVolu": 8282579.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 197.43,
+      "hiPx": 200.55,
+      "loPx": 195.35,
+      "open": 197.96,
+      "stkVolu": 6910453.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 196.57,
+      "hiPx": 202.41,
+      "loPx": 195.1,
+      "open": 195.885,
+      "stkVolu": 6947366.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 193.41,
+      "hiPx": 199.299,
+      "loPx": 191.8,
+      "open": 193.0,
+      "stkVolu": 6962337.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 202.73,
+      "hiPx": 203.48,
+      "loPx": 195.29,
+      "open": 195.48,
+      "stkVolu": 9172074.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 206.43,
+      "hiPx": 209.54,
+      "loPx": 204.34,
+      "open": 206.665,
+      "stkVolu": 7527269.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 205.02,
+      "hiPx": 205.6,
+      "loPx": 201.31,
+      "open": 204.095,
+      "stkVolu": 6269459.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 210.98,
+      "hiPx": 213.66,
+      "loPx": 207.06,
+      "open": 209.425,
+      "stkVolu": 5863760.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 219.72,
+      "hiPx": 222.15,
+      "loPx": 213.735,
+      "open": 215.55,
+      "stkVolu": 7907502.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 218.07,
+      "hiPx": 219.76,
+      "loPx": 212.9,
+      "open": 216.1,
+      "stkVolu": 4800154.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 221.54,
+      "hiPx": 230.74,
+      "loPx": 220.29,
+      "open": 221.16,
+      "stkVolu": 8615002.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 220.94,
+      "hiPx": 222.5,
+      "loPx": 216.927,
+      "open": 221.39,
+      "stkVolu": 4508412.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 222.65,
+      "hiPx": 222.71,
+      "loPx": 213.09,
+      "open": 214.115,
+      "stkVolu": 4552937.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 223.64,
+      "hiPx": 228.4,
+      "loPx": 222.82,
+      "open": 226.5,
+      "stkVolu": 3206786.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 230.61,
+      "hiPx": 232.08,
+      "loPx": 225.0,
+      "open": 226.75,
+      "stkVolu": 4623962.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 220.78,
+      "hiPx": 224.2,
+      "loPx": 218.0,
+      "open": 221.16,
+      "stkVolu": 5823430.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 224.56,
+      "hiPx": 231.525,
+      "loPx": 222.91,
+      "open": 223.16,
+      "stkVolu": 4771436.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 235.31,
+      "hiPx": 235.48,
+      "loPx": 222.042,
+      "open": 228.705,
+      "stkVolu": 5787325.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 237.25,
+      "hiPx": 240.15,
+      "loPx": 232.36,
+      "open": 235.26,
+      "stkVolu": 7269910.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 234.74,
+      "hiPx": 236.66,
+      "loPx": 227.5,
+      "open": 235.67,
+      "stkVolu": 5123677.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 227.16,
+      "hiPx": 231.5,
+      "loPx": 222.3,
+      "open": 222.85,
+      "stkVolu": 5060612.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 218.36,
+      "hiPx": 229.66,
+      "loPx": 218.0,
+      "open": 229.66,
+      "stkVolu": 4361285.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 212.17,
+      "hiPx": 222.75,
+      "loPx": 210.875,
+      "open": 222.18,
+      "stkVolu": 4363216.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 225.11,
+      "hiPx": 226.93,
+      "loPx": 216.15,
+      "open": 216.495,
+      "stkVolu": 4719923.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 237.75,
+      "hiPx": 242.05,
+      "loPx": 229.79,
+      "open": 230.39,
+      "stkVolu": 5543598.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 249.18,
+      "hiPx": 254.06,
+      "loPx": 241.6946,
+      "open": 242.85,
+      "stkVolu": 8098747.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 263.43,
+      "hiPx": 266.28,
+      "loPx": 248.54,
+      "open": 249.99,
+      "stkVolu": 9881783.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 247.9,
+      "hiPx": 255.3,
+      "loPx": 242.42,
+      "open": 251.5,
+      "stkVolu": 6876993.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 250.41,
+      "hiPx": 250.71,
+      "loPx": 241.23,
+      "open": 244.73,
+      "stkVolu": 5589512.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 251.34,
+      "hiPx": 262.15,
+      "loPx": 251.17,
+      "open": 258.245,
+      "stkVolu": 4293791.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 257.49,
+      "hiPx": 258.54,
+      "loPx": 245.46,
+      "open": 248.67,
+      "stkVolu": 4202988.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 259.32,
+      "hiPx": 261.005,
+      "loPx": 255.555,
+      "open": 260.07,
+      "stkVolu": 4285520.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 260.24,
+      "hiPx": 260.64,
+      "loPx": 250.84,
+      "open": 252.225,
+      "stkVolu": 4700554.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 265.21,
+      "hiPx": 270.16,
+      "loPx": 261.29,
+      "open": 262.82,
+      "stkVolu": 4752642.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 272.96,
+      "hiPx": 273.13,
+      "loPx": 262.14,
+      "open": 263.055,
+      "stkVolu": 4052624.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 263.71,
+      "hiPx": 272.225,
+      "loPx": 262.68,
+      "open": 270.48,
+      "stkVolu": 4675172.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 258.75,
+      "hiPx": 263.26,
+      "loPx": 255.1,
+      "open": 258.45,
+      "stkVolu": 4191713.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 270.49,
+      "hiPx": 271.88,
+      "loPx": 255.85,
+      "open": 261.605,
+      "stkVolu": 5201571.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 264.02,
+      "hiPx": 273.4,
+      "loPx": 261.67,
+      "open": 273.22,
+      "stkVolu": 2876275.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 254.04,
+      "hiPx": 261.65,
+      "loPx": 251.2001,
+      "open": 259.9,
+      "stkVolu": 3871095.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 263.14,
+      "hiPx": 267.39,
+      "loPx": 258.19,
+      "open": 259.83,
+      "stkVolu": 4774075.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 272.47,
+      "hiPx": 275.7999,
+      "loPx": 261.67,
+      "open": 262.19,
+      "stkVolu": 5541782.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 272.22,
+      "hiPx": 274.25,
+      "loPx": 269.66,
+      "open": 272.725,
+      "stkVolu": 2631358.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 275.3,
+      "hiPx": 277.0995,
+      "loPx": 269.915,
+      "open": 272.37,
+      "stkVolu": 4346427.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 276.27,
+      "hiPx": 279.0,
+      "loPx": 273.245,
+      "open": 275.0,
+      "stkVolu": 3598911.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 273.92,
+      "hiPx": 275.91,
+      "loPx": 269.28,
+      "open": 270.755,
+      "stkVolu": 3140195.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 273.47,
+      "hiPx": 274.6,
+      "loPx": 265.035,
+      "open": 265.19,
+      "stkVolu": 3635877.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 289.15,
+      "hiPx": 291.175,
+      "loPx": 278.37,
+      "open": 279.16,
+      "stkVolu": 6525217.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

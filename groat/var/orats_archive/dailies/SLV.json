@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 33.51,
+      "hiPx": 33.55,
+      "loPx": 33.29,
+      "open": 33.415,
+      "stkVolu": 10356220.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 33.43,
+      "hiPx": 33.44,
+      "loPx": 33.02,
+      "open": 33.06,
+      "stkVolu": 12132961.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 33.29,
+      "hiPx": 33.36,
+      "loPx": 32.97,
+      "open": 33.33,
+      "stkVolu": 17473123.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 33.0,
+      "hiPx": 33.1399,
+      "loPx": 32.96,
+      "open": 33.09,
+      "stkVolu": 17764093.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 33.75,
+      "hiPx": 33.76,
+      "loPx": 33.1108,
+      "open": 33.31,
+      "stkVolu": 44301493.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 35.03,
+      "hiPx": 35.07,
+      "loPx": 34.15,
+      "open": 34.2,
+      "stkVolu": 57917773.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 34.63,
+      "hiPx": 35.29,
+      "loPx": 34.61,
+      "open": 35.22,
+      "stkVolu": 40685412.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 34.26,
+      "hiPx": 34.7197,
+      "loPx": 34.125,
+      "open": 34.69,
+      "stkVolu": 34082255.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 34.41,
+      "hiPx": 34.565,
+      "loPx": 34.05,
+      "open": 34.39,
+      "stkVolu": 26483168.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 34.65,
+      "hiPx": 34.68,
+      "loPx": 34.175,
+      "open": 34.3,
+      "stkVolu": 14813461.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 34.61,
+      "hiPx": 34.86,
+      "loPx": 34.605,
+      "open": 34.79,
+      "stkVolu": 18305346.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 35.35,
+      "hiPx": 35.49,
+      "loPx": 35.09,
+      "open": 35.11,
+      "stkVolu": 28710465.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 35.72,
+      "hiPx": 35.72,
+      "loPx": 35.17,
+      "open": 35.55,
+      "stkVolu": 25205278.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 35.69,
+      "hiPx": 35.91,
+      "loPx": 35.465,
+      "open": 35.76,
+      "stkVolu": 21882762.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 35.49,
+      "hiPx": 35.5499,
+      "loPx": 35.24,
+      "open": 35.36,
+      "stkVolu": 11319791.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 34.66,
+      "hiPx": 35.39,
+      "loPx": 34.475,
+      "open": 35.28,
+      "stkVolu": 24958313.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 34.64,
+      "hiPx": 34.685,
+      "loPx": 34.43,
+      "open": 34.65,
+      "stkVolu": 16543351.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 34.66,
+      "hiPx": 34.7799,
+      "loPx": 34.48,
+      "open": 34.64,
+      "stkVolu": 10705702.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 33.51,
+      "hiPx": 34.295,
+      "loPx": 33.4,
+      "open": 34.12,
+      "stkVolu": 35325633.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 33.32,
+      "hiPx": 33.35,
+      "loPx": 33.1001,
+      "open": 33.3,
+      "stkVolu": 15454449.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 33.59,
+      "hiPx": 33.77,
+      "loPx": 33.39,
+      "open": 33.76,
+      "stkVolu": 16787158.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 33.98,
+      "hiPx": 34.049,
+      "loPx": 33.8501,
+      "open": 33.93,
+      "stkVolu": 9725836.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 34.35,
+      "hiPx": 34.41,
+      "loPx": 33.9906,
+      "open": 34.01,
+      "stkVolu": 16451157.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 34.35,
+      "hiPx": 34.465,
+      "loPx": 34.29,
+      "open": 34.39,
+      "stkVolu": 8747632.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 34.76,
+      "hiPx": 34.99,
+      "loPx": 34.52,
+      "open": 34.85,
+      "stkVolu": 21996134.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 34.88,
+      "hiPx": 34.89,
+      "loPx": 34.51,
+      "open": 34.78,
+      "stkVolu": 15786088.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 34.18,
+      "hiPx": 34.43,
+      "loPx": 34.18,
+      "open": 34.34,
+      "stkVolu": 10749335.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 34.41,
+      "hiPx": 34.5318,
+      "loPx": 34.11,
+      "open": 34.24,
+      "stkVolu": 12143898.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 35.0,
+      "hiPx": 35.04,
+      "loPx": 34.85,
+      "open": 34.87,
+      "stkVolu": 13185609.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 34.5,
+      "hiPx": 34.7454,
+      "loPx": 34.35,
+      "open": 34.65,
+      "stkVolu": 15819732.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 34.5,
+      "hiPx": 34.52,
+      "loPx": 34.2201,
+      "open": 34.34,
+      "stkVolu": 13881745.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 34.55,
+      "hiPx": 34.68,
+      "loPx": 34.4701,
+      "open": 34.66,
+      "stkVolu": 8670779.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 33.87,
+      "hiPx": 34.54,
+      "loPx": 33.85,
+      "open": 34.47,
+      "stkVolu": 18812899.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 34.43,
+      "hiPx": 34.45,
+      "loPx": 34.195,
+      "open": 34.21,
+      "stkVolu": 10903379.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 34.61,
+      "hiPx": 34.69,
+      "loPx": 34.45,
+      "open": 34.48,
+      "stkVolu": 10597930.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 35.34,
+      "hiPx": 35.4651,
+      "loPx": 34.4001,
+      "open": 34.46,
+      "stkVolu": 26003276.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 35.02,
+      "hiPx": 35.35,
+      "loPx": 35.02,
+      "open": 35.07,
+      "stkVolu": 10286441.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 35.02,
+      "hiPx": 35.1,
+      "loPx": 34.88,
+      "open": 34.9,
+      "stkVolu": 13836602.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 34.99,
+      "hiPx": 35.08,
+      "loPx": 34.61,
+      "open": 34.73,
+      "stkVolu": 10084235.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 35.52,
+      "hiPx": 35.52,
+      "loPx": 35.225,
+      "open": 35.41,
+      "stkVolu": 21079110.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 36.19,
+      "hiPx": 36.29,
+      "loPx": 35.32,
+      "open": 35.35,
+      "stkVolu": 28952948.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 37.15,
+      "hiPx": 37.17,
+      "loPx": 36.43,
+      "open": 36.625,
+      "stkVolu": 35875343.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 37.34,
+      "hiPx": 37.64,
+      "loPx": 37.18,
+      "open": 37.33,
+      "stkVolu": 27291243.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 36.93,
+      "hiPx": 37.22,
+      "loPx": 36.6301,
+      "open": 37.2,
+      "stkVolu": 45258540.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 37.21,
+      "hiPx": 37.6,
+      "loPx": 36.97,
+      "open": 37.41,
+      "stkVolu": 25435548.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 37.5,
+      "hiPx": 37.825,
+      "loPx": 37.36,
+      "open": 37.565,
+      "stkVolu": 25131199.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 37.18,
+      "hiPx": 37.58,
+      "loPx": 37.0101,
+      "open": 37.43,
+      "stkVolu": 24001241.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 37.41,
+      "hiPx": 37.485,
+      "loPx": 37.24,
+      "open": 37.35,
+      "stkVolu": 17743557.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 37.79,
+      "hiPx": 37.915,
+      "loPx": 37.325,
+      "open": 37.37,
+      "stkVolu": 19051458.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 38.34,
+      "hiPx": 38.445,
+      "loPx": 38.15,
+      "open": 38.24,
+      "stkVolu": 19902339.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 38.76,
+      "hiPx": 38.79,
+      "loPx": 38.25,
+      "open": 38.3,
+      "stkVolu": 22225103.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 38.6,
+      "hiPx": 39.01,
+      "loPx": 38.34,
+      "open": 39.0,
+      "stkVolu": 25319748.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 37.79,
+      "hiPx": 38.34,
+      "loPx": 37.35,
+      "open": 38.04,
+      "stkVolu": 31045451.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 37.99,
+      "hiPx": 38.0,
+      "loPx": 37.61,
+      "open": 37.855,
+      "stkVolu": 13289167.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 39.04,
+      "hiPx": 39.12,
+      "loPx": 38.19,
+      "open": 38.26,
+      "stkVolu": 36776297.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 40.04,
+      "hiPx": 40.05,
+      "loPx": 39.34,
+      "open": 39.5,
+      "stkVolu": 32055377.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 39.96,
+      "hiPx": 40.36,
+      "loPx": 39.79,
+      "open": 40.31,
+      "stkVolu": 28492555.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 39.82,
+      "hiPx": 40.16,
+      "loPx": 39.635,
+      "open": 40.13,
+      "stkVolu": 31533206.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 41.03,
+      "hiPx": 41.055,
+      "loPx": 40.115,
+      "open": 40.46,
+      "stkVolu": 36395828.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 41.86,
+      "hiPx": 42.33,
+      "loPx": 41.09,
+      "open": 41.23,
+      "stkVolu": 44578528.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 42.5,
+      "hiPx": 42.75,
+      "loPx": 42.18,
+      "open": 42.455,
+      "stkVolu": 41290337.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 42.37,
+      "hiPx": 42.46,
+      "loPx": 41.7,
+      "open": 41.79,
+      "stkVolu": 34884238.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 42.91,
+      "hiPx": 43.4,
+      "loPx": 42.87,
+      "open": 43.03,
+      "stkVolu": 44341795.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 42.53,
+      "hiPx": 43.59,
+      "loPx": 41.66,
+      "open": 43.57,
+      "stkVolu": 58242299.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 43.52,
+      "hiPx": 43.95,
+      "loPx": 43.045,
+      "open": 43.33,
+      "stkVolu": 47523541.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 44.06,
+      "hiPx": 44.26,
+      "loPx": 43.885,
+      "open": 44.005,
+      "stkVolu": 34113998.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 43.39,
+      "hiPx": 43.99,
+      "loPx": 42.95,
+      "open": 43.97,
+      "stkVolu": 42769077.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 44.56,
+      "hiPx": 45.01,
+      "loPx": 44.275,
+      "open": 44.43,
+      "stkVolu": 59455736.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 44.71,
+      "hiPx": 46.35,
+      "loPx": 42.8149,
+      "open": 46.27,
+      "stkVolu": 110701732.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 45.43,
+      "hiPx": 45.995,
+      "loPx": 44.88,
+      "open": 45.48,
+      "stkVolu": 67016996.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 47.26,
+      "hiPx": 47.44,
+      "loPx": 46.58,
+      "open": 46.94,
+      "stkVolu": 57830361.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 46.8,
+      "hiPx": 47.26,
+      "loPx": 45.77,
+      "open": 45.99,
+      "stkVolu": 57821452.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 48.33,
+      "hiPx": 48.405,
+      "loPx": 47.42,
+      "open": 47.75,
+      "stkVolu": 41672865.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 49.17,
+      "hiPx": 49.25,
+      "loPx": 48.0,
+      "open": 48.1,
+      "stkVolu": 48852997.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 46.99,
+      "hiPx": 48.59,
+      "loPx": 45.88,
+      "open": 48.46,
+      "stkVolu": 86492640.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 47.72,
+      "hiPx": 47.83,
+      "loPx": 47.06,
+      "open": 47.76,
+      "stkVolu": 35933500.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 43.79,
+      "hiPx": 45.38,
+      "loPx": 43.3101,
+      "open": 45.19,
+      "stkVolu": 81395272.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 43.88,
+      "hiPx": 44.13,
+      "loPx": 43.28,
+      "open": 43.74,
+      "stkVolu": 43269984.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 44.18,
+      "hiPx": 44.865,
+      "loPx": 44.17,
+      "open": 44.72,
+      "stkVolu": 24565616.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 43.99,
+      "hiPx": 44.39,
+      "loPx": 43.84,
+      "open": 44.08,
+      "stkVolu": 24014018.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 42.4,
+      "hiPx": 43.06,
+      "loPx": 41.7,
+      "open": 42.97,
+      "stkVolu": 42914130.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 42.7,
+      "hiPx": 42.9099,
+      "loPx": 42.23,
+      "open": 42.36,
+      "stkVolu": 27782021.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 43.23,
+      "hiPx": 43.935,
+      "loPx": 42.83,
+      "open": 43.84,
+      "stkVolu": 27351682.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 44.34,
+      "hiPx": 44.435,
+      "loPx": 43.54,
+      "open": 43.68,
+      "stkVolu": 30333235.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 44.01,
+      "hiPx": 44.52,
+      "loPx": 43.89,
+      "open": 44.48,
+      "stkVolu": 21310920.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 43.76,
+      "hiPx": 44.358,
+      "loPx": 43.56,
+      "open": 44.254,
+      "stkVolu": 17946703.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 42.74,
+      "hiPx": 43.435,
+      "loPx": 42.51,
+      "open": 43.04,
+      "stkVolu": 26679118.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 43.65,
+      "hiPx": 43.79,
+      "loPx": 43.35,
+      "open": 43.49,
+      "stkVolu": 16178517.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 43.55,
+      "hiPx": 43.9,
+      "loPx": 43.235,
+      "open": 43.66,
+      "stkVolu": 15957872.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 43.92,
+      "hiPx": 44.23,
+      "loPx": 43.51,
+      "open": 44.02,
+      "stkVolu": 16493113.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 45.79,
+      "hiPx": 45.87,
+      "loPx": 45.005,
+      "open": 45.17,
+      "stkVolu": 20763791.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 46.45,
+      "hiPx": 46.48,
+      "loPx": 45.6,
+      "open": 46.28,
+      "stkVolu": 19693674.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 48.32,
+      "hiPx": 48.6999,
+      "loPx": 46.89,
+      "open": 47.1,
+      "stkVolu": 51559721.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 47.42,
+      "hiPx": 48.4151,
+      "loPx": 47.21,
+      "open": 48.29,
+      "stkVolu": 39328401.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 45.96,
+      "hiPx": 46.705,
+      "loPx": 45.4,
+      "open": 45.77,
+      "stkVolu": 31793455.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 45.47,
+      "hiPx": 46.26,
+      "loPx": 44.945,
+      "open": 45.81,
+      "stkVolu": 23581992.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 46.1,
+      "hiPx": 46.44,
+      "loPx": 45.59,
+      "open": 45.87,
+      "stkVolu": 20909398.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 46.45,
+      "hiPx": 47.5,
+      "loPx": 45.69,
+      "open": 46.8,
+      "stkVolu": 30797069.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 45.78,
+      "hiPx": 46.635,
+      "loPx": 45.535,
+      "open": 46.26,
+      "stkVolu": 28460425.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 45.3,
+      "hiPx": 45.95,
+      "loPx": 44.76,
+      "open": 44.9,
+      "stkVolu": 26351872.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 46.63,
+      "hiPx": 46.635,
+      "loPx": 45.355,
+      "open": 45.41,
+      "stkVolu": 21486797.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 46.67,
+      "hiPx": 46.77,
+      "loPx": 45.97,
+      "open": 46.55,
+      "stkVolu": 24006639.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 48.4,
+      "hiPx": 48.45,
+      "loPx": 47.145,
+      "open": 47.31,
+      "stkVolu": 26280261.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 51.21,
+      "hiPx": 51.27,
+      "loPx": 49.58,
+      "open": 49.67,
+      "stkVolu": 41350005.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 52.52,
+      "hiPx": 53.36,
+      "loPx": 51.61,
+      "open": 51.99,
+      "stkVolu": 66064098.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 53.13,
+      "hiPx": 53.2,
+      "loPx": 51.765,
+      "open": 52.83,
+      "stkVolu": 43952652.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 53.07,
+      "hiPx": 53.389,
+      "loPx": 52.42,
+      "open": 52.99,
+      "stkVolu": 33817721.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 51.76,
+      "hiPx": 52.36,
+      "loPx": 51.135,
+      "open": 52.28,
+      "stkVolu": 48740293.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 52.95,
+      "hiPx": 53.82,
+      "loPx": 52.53,
+      "open": 52.71,
+      "stkVolu": 43566006.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 52.71,
+      "hiPx": 52.965,
+      "loPx": 52.26,
+      "open": 52.89,
+      "stkVolu": 19711177.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 55.17,
+      "hiPx": 55.185,
+      "loPx": 53.36,
+      "open": 53.39,
+      "stkVolu": 59738851.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 56.07,
+      "hiPx": 56.215,
+      "loPx": 54.48,
+      "open": 55.13,
+      "stkVolu": 54915013.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 57.62,
+      "hiPx": 58.295,
+      "loPx": 56.465,
+      "open": 56.77,
+      "stkVolu": 67910898.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 56.1,
+      "hiPx": 58.56,
+      "loPx": 55.13,
+      "open": 58.53,
+      "stkVolu": 78667365.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 58.11,
+      "hiPx": 58.2,
+      "loPx": 57.02,
+      "open": 57.84,
+      "stkVolu": 43227804.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 57.73,
+      "hiPx": 57.99,
+      "loPx": 57.1001,
+      "open": 57.61,
+      "stkVolu": 32461256.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 60.26,
+      "hiPx": 60.64,
+      "loPx": 59.045,
+      "open": 59.27,
+      "stkVolu": 65127976.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 59.32,
+      "hiPx": 60.025,
+      "loPx": 58.58,
+      "open": 59.82,
+      "stkVolu": 47603353.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 60.93,
+      "hiPx": 61.16,
+      "loPx": 59.69,
+      "open": 59.79,
+      "stkVolu": 42610049.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 62.47,
+      "hiPx": 62.82,
+      "loPx": 61.74,
+      "open": 62.6,
+      "stkVolu": 50621723.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 64.84,
+      "hiPx": 64.875,
+      "loPx": 62.37,
+      "open": 63.68,
+      "stkVolu": 75680003.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 65.22,
+      "hiPx": 65.525,
+      "loPx": 63.605,
+      "open": 65.08,
+      "stkVolu": 58825951.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 71.12,
+      "hiPx": 71.225,
+      "loPx": 67.345,
+      "open": 67.83,
+      "stkVolu": 139161231.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 66.01,
+      "hiPx": 66.485,
+      "loPx": 63.92,
+      "open": 65.657,
+      "stkVolu": 153207910.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 68.98,
+      "hiPx": 70.76,
+      "loPx": 68.0307,
+      "open": 69.105,
+      "stkVolu": 117759249.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 64.42,
+      "hiPx": 66.88,
+      "loPx": 63.53,
+      "open": 65.54,
+      "stkVolu": 114745335.0,
+      "ticker": "SLV",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 65.75,
+      "hiPx": 67.36,
+      "loPx": 64.745,
+      "open": 67.3,
+      "stkVolu": 75553309.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 69.08,
+      "hiPx": 70.6,
+      "loPx": 68.52,
+      "open": 69.45,
+      "stkVolu": 103313332.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 73.71,
+      "hiPx": 73.84,
+      "loPx": 71.35,
+      "open": 71.43,
+      "stkVolu": 105539107.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 70.96,
+      "hiPx": 71.545,
+      "loPx": 69.22,
+      "open": 69.82,
+      "stkVolu": 93679522.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 69.71,
+      "hiPx": 69.77,
+      "loPx": 66.92,
+      "open": 67.24,
+      "stkVolu": 77918290.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 72.38,
+      "hiPx": 72.99,
+      "loPx": 70.8713,
+      "open": 71.31,
+      "stkVolu": 90650134.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 77.23,
+      "hiPx": 78.18,
+      "loPx": 76.0,
+      "open": 76.11,
+      "stkVolu": 105429635.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 78.6,
+      "hiPx": 80.8,
+      "loPx": 77.86,
+      "open": 80.03,
+      "stkVolu": 140656895.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 84.56,
+      "hiPx": 84.78,
+      "loPx": 81.28,
+      "open": 83.34,
+      "stkVolu": 177419386.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 83.32,
+      "hiPx": 84.33,
+      "loPx": 80.54,
+      "open": 80.74,
+      "stkVolu": 160702110.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 81.02,
+      "hiPx": 81.52,
+      "loPx": 78.745,
+      "open": 80.33,
+      "stkVolu": 132767200.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 85.39,
+      "hiPx": 86.33,
+      "loPx": 84.3805,
+      "open": 86.19,
+      "stkVolu": 101272337.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 83.96,
+      "hiPx": 85.895,
+      "loPx": 81.89,
+      "open": 85.6,
+      "stkVolu": 141683940.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 87.13,
+      "hiPx": 87.52,
+      "loPx": 84.71,
+      "open": 84.79,
+      "stkVolu": 86965023.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 92.91,
+      "hiPx": 92.9799,
+      "loPx": 89.665,
+      "open": 90.19,
+      "stkVolu": 143739120.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 98.34,
+      "hiPx": 106.7,
+      "loPx": 96.51,
+      "open": 99.37,
+      "stkVolu": 393030303.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 101.59,
+      "hiPx": 101.74,
+      "loPx": 95.07,
+      "open": 97.98,
+      "stkVolu": 215489730.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 105.6,
+      "hiPx": 106.45,
+      "loPx": 100.0,
+      "open": 102.78,
+      "stkVolu": 184566001.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 105.57,
+      "hiPx": 109.83,
+      "loPx": 96.74,
+      "open": 109.53,
+      "stkVolu": 246351280.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 75.44,
+      "hiPx": 92.14,
+      "loPx": 69.12,
+      "open": 89.33,
+      "stkVolu": 510687680.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 72.44,
+      "hiPx": 74.92,
+      "loPx": 68.26,
+      "open": 73.8,
+      "stkVolu": 220063248.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 76.96,
+      "hiPx": 80.72,
+      "loPx": 74.91,
+      "open": 79.05,
+      "stkVolu": 175508757.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 79.18,
+      "hiPx": 82.8,
+      "loPx": 75.76,
+      "open": 82.6,
+      "stkVolu": 130805780.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 66.69,
+      "hiPx": 70.52,
+      "loPx": 65.51,
+      "open": 68.23,
+      "stkVolu": 170927953.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 70.19,
+      "hiPx": 70.84,
+      "loPx": 67.455,
+      "open": 67.72,
+      "stkVolu": 71262667.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 76.04,
+      "hiPx": 76.16,
+      "loPx": 72.55,
+      "open": 72.88,
+      "stkVolu": 88229115.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 73.41,
+      "hiPx": 75.245,
+      "loPx": 72.455,
+      "open": 74.72,
+      "stkVolu": 68588500.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 76.56,
+      "hiPx": 76.99,
+      "loPx": 74.8,
+      "open": 76.92,
+      "stkVolu": 75806854.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 67.73,
+      "hiPx": 75.67,
+      "loPx": 67.355,
+      "open": 75.185,
+      "stkVolu": 128437737.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 69.72,
+      "hiPx": 71.3199,
+      "loPx": 68.86,
+      "open": 71.21,
+      "stkVolu": 69570804.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 66.37,
+      "hiPx": 67.7,
+      "loPx": 65.14,
+      "open": 67.27,
+      "stkVolu": 82561695.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 70.09,
+      "hiPx": 70.97,
+      "loPx": 69.07,
+      "open": 69.66,
+      "stkVolu": 63749363.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 71.01,
+      "hiPx": 71.67,
+      "loPx": 69.85,
+      "open": 70.68,
+      "stkVolu": 49022455.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 76.62,
+      "hiPx": 76.68,
+      "loPx": 72.25,
+      "open": 73.11,
+      "stkVolu": 86636800.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 80.57,
+      "hiPx": 80.695,
+      "loPx": 77.905,
+      "open": 78.4,
+      "stkVolu": 94752135.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 79.08,
+      "hiPx": 79.9399,
+      "loPx": 77.94,
+      "open": 78.23,
+      "stkVolu": 56012584.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 80.04,
+      "hiPx": 82.73,
+      "loPx": 79.88,
+      "open": 81.86,
+      "stkVolu": 64933066.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 80.45,
+      "hiPx": 80.57,
+      "loPx": 72.5169,
+      "open": 78.76,
+      "stkVolu": 52050402.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 84.99,
+      "hiPx": 85.27,
+      "loPx": 82.36,
+      "open": 83.25,
+      "stkVolu": 69525169.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 81.57,
+      "hiPx": 82.3738,
+      "loPx": 78.34,
+      "open": 81.17,
+      "stkVolu": 96957596.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 74.68,
+      "hiPx": 76.14,
+      "loPx": 71.68,
+      "open": 74.21,
+      "stkVolu": 89651703.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 75.34,
+      "hiPx": 77.06,
+      "loPx": 74.41,
+      "open": 76.34,
+      "stkVolu": 39022460.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 74.27,
+      "hiPx": 75.52,
+      "loPx": 73.01,
+      "open": 74.94,
+      "stkVolu": 49446275.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 75.94,
+      "hiPx": 76.97,
+      "loPx": 74.58,
+      "open": 75.09,
+      "stkVolu": 40550717.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 78.26,
+      "hiPx": 78.56,
+      "loPx": 75.2375,
+      "open": 76.43,
+      "stkVolu": 34865493.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 80.09,
+      "hiPx": 81.2788,
+      "loPx": 78.7312,
+      "open": 80.89,
+      "stkVolu": 37263668.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 77.91,
+      "hiPx": 78.0636,
+      "loPx": 76.45,
+      "open": 78.03,
+      "stkVolu": 30665410.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 76.48,
+      "hiPx": 78.54,
+      "loPx": 76.36,
+      "open": 78.53,
+      "stkVolu": 29762309.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 72.69,
+      "hiPx": 76.28,
+      "loPx": 71.915,
+      "open": 76.07,
+      "stkVolu": 46251908.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 73.22,
+      "hiPx": 73.96,
+      "loPx": 72.01,
+      "open": 73.26,
+      "stkVolu": 37193131.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 71.66,
+      "hiPx": 73.72,
+      "loPx": 70.84,
+      "open": 73.16,
+      "stkVolu": 32991836.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 68.7,
+      "hiPx": 70.55,
+      "loPx": 68.66,
+      "open": 69.51,
+      "stkVolu": 46745879.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 65.68,
+      "hiPx": 65.74,
+      "loPx": 60.8501,
+      "open": 61.9,
+      "stkVolu": 96191604.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 61.52,
+      "hiPx": 64.96,
+      "loPx": 61.25,
+      "open": 64.68,
+      "stkVolu": 56912251.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 62.47,
+      "hiPx": 64.11,
+      "loPx": 60.98,
+      "open": 61.3,
+      "stkVolu": 72440030.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 62.95,
+      "hiPx": 63.69,
+      "loPx": 61.269,
+      "open": 61.62,
+      "stkVolu": 48267964.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 65.21,
+      "hiPx": 66.4,
+      "loPx": 64.48,
+      "open": 66.04,
+      "stkVolu": 38165922.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 60.77,
+      "hiPx": 63.135,
+      "loPx": 60.37,
+      "open": 62.1,
+      "stkVolu": 56080493.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 63.44,
+      "hiPx": 64.875,
+      "loPx": 61.22,
+      "open": 61.43,
+      "stkVolu": 52470824.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 63.52,
+      "hiPx": 64.63,
+      "loPx": 63.02,
+      "open": 64.46,
+      "stkVolu": 30511950.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 68.14,
+      "hiPx": 68.2,
+      "loPx": 65.69,
+      "open": 65.84,
+      "stkVolu": 42141649.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 68.14,
+      "hiPx": 68.905,
+      "loPx": 67.375,
+      "open": 67.96,
+      "stkVolu": 38360669.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 65.79,
+      "hiPx": 66.23,
+      "loPx": 63.49,
+      "open": 63.55,
+      "stkVolu": 37002901.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 66.09,
+      "hiPx": 66.29,
+      "loPx": 65.22,
+      "open": 65.85,
+      "stkVolu": 18134493.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 65.94,
+      "hiPx": 66.19,
+      "loPx": 63.2,
+      "open": 65.28,
+      "stkVolu": 30458555.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 67.47,
+      "hiPx": 69.93,
+      "loPx": 66.52,
+      "open": 69.728,
+      "stkVolu": 31631923.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 68.39,
+      "hiPx": 69.34,
+      "loPx": 67.17,
+      "open": 67.615,
+      "stkVolu": 27209990.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 69.08,
+      "hiPx": 69.5499,
+      "loPx": 68.56,
+      "open": 69.1,
+      "stkVolu": 20820568.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 68.28,
+      "hiPx": 68.68,
+      "loPx": 66.58,
+      "open": 67.17,
+      "stkVolu": 25330550.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 72.04,
+      "hiPx": 72.065,
+      "loPx": 70.27,
+      "open": 70.332,
+      "stkVolu": 33053310.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 71.84,
+      "hiPx": 72.9,
+      "loPx": 71.35,
+      "open": 71.92,
+      "stkVolu": 23587683.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 71.24,
+      "hiPx": 72.22,
+      "loPx": 70.655,
+      "open": 71.92,
+      "stkVolu": 21529668.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 73.63,
+      "hiPx": 75.16,
+      "loPx": 73.42,
+      "open": 73.89,
+      "stkVolu": 35188646.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 72.15,
+      "hiPx": 72.815,
+      "loPx": 71.81,
+      "open": 72.65,
+      "stkVolu": 20811509.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 68.49,
+      "hiPx": 71.56,
+      "loPx": 68.35,
+      "open": 70.99,
+      "stkVolu": 31486978.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 70.37,
+      "hiPx": 70.96,
+      "loPx": 70.23,
+      "open": 70.55,
+      "stkVolu": 14416141.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 68.38,
+      "hiPx": 69.24,
+      "loPx": 67.515,
+      "open": 68.77,
+      "stkVolu": 21937399.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 68.79,
+      "hiPx": 69.415,
+      "loPx": 68.1,
+      "open": 68.29,
+      "stkVolu": 16377894.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 68.33,
+      "hiPx": 68.55,
+      "loPx": 67.55,
+      "open": 68.3,
+      "stkVolu": 13347201.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 66.2,
+      "hiPx": 66.54,
+      "loPx": 65.37,
+      "open": 65.79,
+      "stkVolu": 21555758.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 64.84,
+      "hiPx": 65.265,
+      "loPx": 64.13,
+      "open": 64.955,
+      "stkVolu": 18681748.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 66.66,
+      "hiPx": 66.81,
+      "loPx": 65.875,
+      "open": 66.7,
+      "stkVolu": 16140684.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 68.29,
+      "hiPx": 69.65,
+      "loPx": 67.51,
+      "open": 67.58,
+      "stkVolu": 20237187.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 65.94,
+      "hiPx": 67.58,
+      "loPx": 65.61,
+      "open": 66.394,
+      "stkVolu": 20986368.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 65.91,
+      "hiPx": 66.95,
+      "loPx": 65.85,
+      "open": 66.77,
+      "stkVolu": 12632131.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 70.13,
+      "hiPx": 70.39,
+      "loPx": 69.44,
+      "open": 69.555,
+      "stkVolu": 24490774.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 71.6,
+      "hiPx": 74.325,
+      "loPx": 71.16,
+      "open": 73.28,
+      "stkVolu": 33453093.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 73.01,
+      "hiPx": 73.83,
+      "loPx": 72.28,
+      "open": 73.29,
+      "stkVolu": 19125978.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 78.0,
+      "hiPx": 78.0,
+      "loPx": 76.141,
+      "open": 77.05,
+      "stkVolu": 38320830.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 78.55,
+      "hiPx": 78.62,
+      "loPx": 75.145,
+      "open": 76.5,
+      "stkVolu": 30999491.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 79.35,
+      "hiPx": 80.86,
+      "loPx": 78.27,
+      "open": 78.66,
+      "stkVolu": 31013612.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 75.51,
+      "hiPx": 77.29,
+      "loPx": 75.39,
+      "open": 77.29,
+      "stkVolu": 27151507.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 69.04,
+      "hiPx": 70.06,
+      "loPx": 68.545,
+      "open": 69.74,
+      "stkVolu": 45770126.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 69.94,
+      "hiPx": 70.77,
+      "loPx": 68.88,
+      "open": 70.23,
+      "stkVolu": 22926615.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 66.9,
+      "hiPx": 67.8,
+      "loPx": 66.11,
+      "open": 66.68,
+      "stkVolu": 23057283.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 68.73,
+      "hiPx": 69.33,
+      "loPx": 67.33,
+      "open": 67.82,
+      "stkVolu": 22463152.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 69.45,
+      "hiPx": 69.75,
+      "loPx": 67.31,
+      "open": 67.68,
+      "stkVolu": 17099102.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 68.36,
+      "hiPx": 69.06,
+      "loPx": 67.795,
+      "open": 68.86,
+      "stkVolu": 14406290.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 69.72,
+      "hiPx": 69.73,
+      "loPx": 68.585,
+      "open": 69.02,
+      "stkVolu": 15492514.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 67.5,
+      "hiPx": 67.915,
+      "loPx": 66.88,
+      "open": 66.884,
+      "stkVolu": 15831748.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 68.36,
+      "hiPx": 68.76,
+      "loPx": 66.155,
+      "open": 66.55,
+      "stkVolu": 18944972.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 68.33,
+      "hiPx": 69.345,
+      "loPx": 67.48,
+      "open": 68.56,
+      "stkVolu": 16549312.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 67.67,
+      "hiPx": 68.235,
+      "loPx": 66.8,
+      "open": 67.49,
+      "stkVolu": 16531525.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 67.99,
+      "hiPx": 69.03,
+      "loPx": 67.63,
+      "open": 68.69,
+      "stkVolu": 11642590.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 66.21,
+      "hiPx": 67.14,
+      "loPx": 66.1,
+      "open": 67.0,
+      "stkVolu": 13716212.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 66.98,
+      "hiPx": 67.72,
+      "loPx": 66.2,
+      "open": 67.5,
+      "stkVolu": 11803553.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 61.57,
+      "hiPx": 64.245,
+      "loPx": 61.355,
+      "open": 64.06,
+      "stkVolu": 37795074.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 61.58,
+      "hiPx": 62.295,
+      "loPx": 61.235,
+      "open": 62.03,
+      "stkVolu": 22342226.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 59.01,
+      "hiPx": 62.425,
+      "loPx": 58.22,
+      "open": 61.82,
+      "stkVolu": 34115094.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 57.66,
+      "hiPx": 59.47,
+      "loPx": 57.625,
+      "open": 58.19,
+      "stkVolu": 28661815.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 60.82,
+      "hiPx": 61.1,
+      "loPx": 57.3,
+      "open": 57.45,
+      "stkVolu": 30766061.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 61.29,
+      "hiPx": 61.825,
+      "loPx": 59.865,
+      "open": 60.53,
+      "stkVolu": 21271707.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 63.47,
+      "hiPx": 64.5,
+      "loPx": 63.24,
+      "open": 64.28,
+      "stkVolu": 19878899.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 63.39,
+      "hiPx": 63.845,
+      "loPx": 62.76,
+      "open": 63.7,
+      "stkVolu": 16353816.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 60.61,
+      "hiPx": 64.69,
+      "loPx": 60.385,
+      "open": 63.544,
+      "stkVolu": 33399784.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 59.51,
+      "hiPx": 61.12,
+      "loPx": 58.85,
+      "open": 60.74,
+      "stkVolu": 28928220.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 58.91,
+      "hiPx": 60.33,
+      "loPx": 58.75,
+      "open": 60.09,
+      "stkVolu": 16469779.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 55.73,
+      "hiPx": 56.51,
+      "loPx": 55.465,
+      "open": 56.16,
+      "stkVolu": 20777788.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 51.78,
+      "hiPx": 53.895,
+      "loPx": 50.31,
+      "open": 52.94,
+      "stkVolu": 51913722.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 52.36,
+      "hiPx": 53.2,
+      "loPx": 51.5,
+      "open": 52.71,
+      "stkVolu": 24748961.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 53.28,
+      "hiPx": 53.87,
+      "loPx": 52.4593,
+      "open": 52.87,
+      "stkVolu": 15469232.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 52.68,
+      "hiPx": 52.93,
+      "loPx": 51.93,
+      "open": 52.775,
+      "stkVolu": 14264347.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 53.47,
+      "hiPx": 54.645,
+      "loPx": 53.185,
+      "open": 53.33,
+      "stkVolu": 15720009.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 53.58,
+      "hiPx": 55.16,
+      "loPx": 53.225,
+      "open": 53.33,
+      "stkVolu": 16209125.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 55.02,
+      "hiPx": 56.13,
+      "loPx": 54.57,
+      "open": 55.11,
+      "stkVolu": 16965293.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 56.11,
+      "hiPx": 56.37,
+      "loPx": 55.61,
+      "open": 55.742,
+      "stkVolu": 13649049.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 54.46,
+      "hiPx": 55.935,
+      "loPx": 53.745,
+      "open": 55.39,
+      "stkVolu": 14497809.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 52.83,
+      "hiPx": 53.09,
+      "loPx": 51.72,
+      "open": 52.76,
+      "stkVolu": 20091227.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 54.14,
+      "hiPx": 54.775,
+      "loPx": 53.99,
+      "open": 54.11,
+      "stkVolu": 11832998.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 53.95,
+      "hiPx": 54.29,
+      "loPx": 53.23,
+      "open": 53.69,
+      "stkVolu": 11734302.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 52.16,
+      "hiPx": 53.0,
+      "loPx": 51.78,
+      "open": 52.95,
+      "stkVolu": 17653074.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 53.17,
+      "hiPx": 53.935,
+      "loPx": 52.855,
+      "open": 53.53,
+      "stkVolu": 13208724.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 52.21,
+      "hiPx": 52.9,
+      "loPx": 51.1906,
+      "open": 52.71,
+      "stkVolu": 16315322.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 50.39,
+      "hiPx": 51.08,
+      "loPx": 50.02,
+      "open": 50.91,
+      "stkVolu": 19377912.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 50.78,
+      "hiPx": 50.82,
+      "loPx": 49.61,
+      "open": 49.7,
+      "stkVolu": 15482026.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 50.98,
+      "hiPx": 51.7,
+      "loPx": 50.95,
+      "open": 51.2,
+      "stkVolu": 12897577.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 53.08,
+      "hiPx": 53.52,
+      "loPx": 52.66,
+      "open": 52.86,
+      "stkVolu": 12776301.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 53.92,
+      "hiPx": 55.08,
+      "loPx": 53.78,
+      "open": 53.78,
+      "stkVolu": 13925340.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 52.06,
+      "hiPx": 52.46,
+      "loPx": 51.77,
+      "open": 52.09,
+      "stkVolu": 13724967.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 52.59,
+      "hiPx": 53.325,
+      "loPx": 52.3,
+      "open": 52.34,
+      "stkVolu": 11134383.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 52.93,
+      "hiPx": 53.325,
+      "loPx": 52.5699,
+      "open": 53.04,
+      "stkVolu": 13115190.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 51.7,
+      "hiPx": 52.01,
+      "loPx": 51.185,
+      "open": 51.61,
+      "stkVolu": 10764255.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 51.77,
+      "hiPx": 53.555,
+      "loPx": 51.27,
+      "open": 51.72,
+      "stkVolu": 20374085.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 53.5,
+      "hiPx": 53.55,
+      "loPx": 52.205,
+      "open": 52.35,
+      "stkVolu": 16206558.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 52.36,
+      "hiPx": 52.415,
+      "loPx": 51.54,
+      "open": 51.95,
+      "stkVolu": 11609650.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 52.46,
+      "hiPx": 52.62,
+      "loPx": 51.12,
+      "open": 51.25,
+      "stkVolu": 11966291.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 53.84,
+      "hiPx": 54.275,
+      "loPx": 53.58,
+      "open": 53.97,
+      "stkVolu": 14035782.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 56.07,
+      "hiPx": 56.745,
+      "loPx": 55.8,
+      "open": 56.1,
+      "stkVolu": 21619175.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 55.85,
+      "hiPx": 55.88,
+      "loPx": 55.0,
+      "open": 55.46,
+      "stkVolu": 13389022.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 57.5,
+      "hiPx": 58.18,
+      "loPx": 56.99,
+      "open": 57.999,
+      "stkVolu": 20302140.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 59.41,
+      "hiPx": 59.72,
+      "loPx": 57.52,
+      "open": 57.8,
+      "stkVolu": 21772575.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 58.55,
+      "hiPx": 58.99,
+      "loPx": 58.155,
+      "open": 58.674,
+      "stkVolu": 13408867.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 59.06,
+      "hiPx": 59.955,
+      "loPx": 58.79,
+      "open": 59.58,
+      "stkVolu": 18591950.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 58.16,
+      "hiPx": 58.8812,
+      "loPx": 58.01,
+      "open": 58.81,
+      "stkVolu": 11659981.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 58.48,
+      "hiPx": 59.365,
+      "loPx": 58.42,
+      "open": 58.83,
+      "stkVolu": 10303467.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 59.57,
+      "hiPx": 60.145,
+      "loPx": 58.95,
+      "open": 59.0,
+      "stkVolu": 12275110.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 57.44,
+      "hiPx": 59.01,
+      "loPx": 57.23,
+      "open": 58.615,
+      "stkVolu": 13479453.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 60.01,
+      "hiPx": 60.05,
+      "loPx": 58.585,
+      "open": 58.904,
+      "stkVolu": 21288027.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 61.66,
+      "hiPx": 62.33,
+      "loPx": 60.26,
+      "open": 60.26,
+      "stkVolu": 24147928.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 62.72,
+      "hiPx": 63.205,
+      "loPx": 62.26,
+      "open": 62.9,
+      "stkVolu": 22835515.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 62.2,
+      "hiPx": 63.03,
+      "loPx": 61.73,
+      "open": 62.81,
+      "stkVolu": 19895181.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 62.32,
+      "hiPx": 62.62,
+      "loPx": 60.94,
+      "open": 60.99,
+      "stkVolu": 14178744.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 61.59,
+      "hiPx": 61.96,
+      "loPx": 61.015,
+      "open": 61.59,
+      "stkVolu": 12864824.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 62.77,
+      "hiPx": 62.97,
+      "loPx": 61.08,
+      "open": 61.67,
+      "stkVolu": 14484694.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

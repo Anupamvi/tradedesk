@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 155.15,
+      "hiPx": 156.53,
+      "loPx": 146.91,
+      "open": 147.45,
+      "stkVolu": 29996674.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 152.41,
+      "hiPx": 157.3751,
+      "loPx": 151.65,
+      "open": 155.0,
+      "stkVolu": 16225053.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 145.94,
+      "hiPx": 147.85,
+      "loPx": 142.74,
+      "open": 146.06,
+      "stkVolu": 86386002.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 142.75,
+      "hiPx": 146.07,
+      "loPx": 141.93,
+      "open": 145.4,
+      "stkVolu": 9054559.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 137.49,
+      "hiPx": 143.0,
+      "loPx": 136.81,
+      "open": 142.851,
+      "stkVolu": 9708792.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 137.37,
+      "hiPx": 139.62,
+      "loPx": 137.1,
+      "open": 137.49,
+      "stkVolu": 6324160.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 138.8,
+      "hiPx": 141.0,
+      "loPx": 135.8392,
+      "open": 136.01,
+      "stkVolu": 6486645.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 140.56,
+      "hiPx": 141.94,
+      "loPx": 139.0,
+      "open": 139.09,
+      "stkVolu": 4952150.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 139.36,
+      "hiPx": 140.24,
+      "loPx": 137.86,
+      "open": 139.5,
+      "stkVolu": 4045976.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 143.15,
+      "hiPx": 144.32,
+      "loPx": 139.815,
+      "open": 139.85,
+      "stkVolu": 5309842.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 145.02,
+      "hiPx": 145.67,
+      "loPx": 142.67,
+      "open": 143.29,
+      "stkVolu": 3609942.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 145.27,
+      "hiPx": 146.12,
+      "loPx": 143.64,
+      "open": 145.42,
+      "stkVolu": 3683654.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 144.89,
+      "hiPx": 145.9,
+      "loPx": 142.77,
+      "open": 144.74,
+      "stkVolu": 3694000.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 144.0,
+      "hiPx": 145.23,
+      "loPx": 141.75,
+      "open": 145.18,
+      "stkVolu": 3448476.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 146.56,
+      "hiPx": 147.86,
+      "loPx": 144.715,
+      "open": 145.0,
+      "stkVolu": 2931865.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 149.84,
+      "hiPx": 150.4,
+      "loPx": 146.555,
+      "open": 147.465,
+      "stkVolu": 4924632.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 150.77,
+      "hiPx": 151.65,
+      "loPx": 149.66,
+      "open": 150.9,
+      "stkVolu": 2648570.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 150.27,
+      "hiPx": 152.24,
+      "loPx": 148.6,
+      "open": 150.99,
+      "stkVolu": 2875757.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 148.88,
+      "hiPx": 150.795,
+      "loPx": 148.14,
+      "open": 150.26,
+      "stkVolu": 3940295.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 139.98,
+      "hiPx": 143.41,
+      "loPx": 137.675,
+      "open": 143.0,
+      "stkVolu": 10859480.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 135.6,
+      "hiPx": 138.68,
+      "loPx": 134.13,
+      "open": 137.475,
+      "stkVolu": 6067304.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 139.13,
+      "hiPx": 139.14,
+      "loPx": 136.15,
+      "open": 137.2,
+      "stkVolu": 3501097.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 132.94,
+      "hiPx": 139.99,
+      "loPx": 132.72,
+      "open": 139.66,
+      "stkVolu": 5551421.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 136.96,
+      "hiPx": 137.33,
+      "loPx": 133.1,
+      "open": 133.1,
+      "stkVolu": 7405476.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 136.38,
+      "hiPx": 149.0,
+      "loPx": 131.2,
+      "open": 147.75,
+      "stkVolu": 16640887.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 130.91,
+      "hiPx": 139.75,
+      "loPx": 129.36,
+      "open": 136.59,
+      "stkVolu": 10874940.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 128.83,
+      "hiPx": 132.55,
+      "loPx": 128.42,
+      "open": 129.46,
+      "stkVolu": 8536126.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 128.96,
+      "hiPx": 129.9,
+      "loPx": 126.275,
+      "open": 128.9,
+      "stkVolu": 6845384.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 128.71,
+      "hiPx": 129.86,
+      "loPx": 126.98,
+      "open": 129.7,
+      "stkVolu": 4753794.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 124.52,
+      "hiPx": 127.8999,
+      "loPx": 124.18,
+      "open": 127.67,
+      "stkVolu": 6438879.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 127.25,
+      "hiPx": 128.22,
+      "loPx": 123.42,
+      "open": 124.71,
+      "stkVolu": 4566543.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 129.07,
+      "hiPx": 129.55,
+      "loPx": 127.18,
+      "open": 127.68,
+      "stkVolu": 2625436.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 128.99,
+      "hiPx": 131.23,
+      "loPx": 127.84,
+      "open": 129.46,
+      "stkVolu": 4477097.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 128.46,
+      "hiPx": 128.7291,
+      "loPx": 125.56,
+      "open": 128.47,
+      "stkVolu": 3915006.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 129.15,
+      "hiPx": 129.24,
+      "loPx": 126.6739,
+      "open": 128.06,
+      "stkVolu": 2965103.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 131.22,
+      "hiPx": 132.38,
+      "loPx": 128.08,
+      "open": 129.01,
+      "stkVolu": 3826927.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 128.38,
+      "hiPx": 130.89,
+      "loPx": 128.09,
+      "open": 130.51,
+      "stkVolu": 2621774.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 126.31,
+      "hiPx": 129.02,
+      "loPx": 126.25,
+      "open": 128.56,
+      "stkVolu": 5024351.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 131.73,
+      "hiPx": 131.86,
+      "loPx": 128.01,
+      "open": 128.07,
+      "stkVolu": 6071213.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 140.96,
+      "hiPx": 141.36,
+      "loPx": 134.12,
+      "open": 134.37,
+      "stkVolu": 9304193.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 136.68,
+      "hiPx": 142.5,
+      "loPx": 136.04,
+      "open": 139.96,
+      "stkVolu": 5105401.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 134.69,
+      "hiPx": 135.6,
+      "loPx": 132.0,
+      "open": 134.48,
+      "stkVolu": 4848434.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 132.6,
+      "hiPx": 134.4517,
+      "loPx": 131.12,
+      "open": 134.3,
+      "stkVolu": 3718994.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 131.78,
+      "hiPx": 132.32,
+      "loPx": 129.06,
+      "open": 131.97,
+      "stkVolu": 2955513.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 136.08,
+      "hiPx": 136.25,
+      "loPx": 132.395,
+      "open": 132.74,
+      "stkVolu": 4851082.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 136.41,
+      "hiPx": 136.9154,
+      "loPx": 134.65,
+      "open": 136.29,
+      "stkVolu": 4757693.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 140.46,
+      "hiPx": 140.68,
+      "loPx": 136.48,
+      "open": 136.51,
+      "stkVolu": 4493160.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 139.13,
+      "hiPx": 145.155,
+      "loPx": 138.69,
+      "open": 141.34,
+      "stkVolu": 4859391.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 139.15,
+      "hiPx": 141.04,
+      "loPx": 138.5532,
+      "open": 139.83,
+      "stkVolu": 2819248.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 136.5,
+      "hiPx": 139.81,
+      "loPx": 136.24,
+      "open": 138.905,
+      "stkVolu": 3034125.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 138.65,
+      "hiPx": 139.8481,
+      "loPx": 136.1,
+      "open": 136.8,
+      "stkVolu": 4719334.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 134.59,
+      "hiPx": 136.15,
+      "loPx": 132.69,
+      "open": 135.85,
+      "stkVolu": 5104067.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 134.23,
+      "hiPx": 136.54,
+      "loPx": 132.28,
+      "open": 134.76,
+      "stkVolu": 3558493.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 136.81,
+      "hiPx": 137.27,
+      "loPx": 134.53,
+      "open": 135.23,
+      "stkVolu": 3718499.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 138.82,
+      "hiPx": 139.08,
+      "loPx": 135.86,
+      "open": 136.32,
+      "stkVolu": 10124436.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 138.35,
+      "hiPx": 139.41,
+      "loPx": 134.96,
+      "open": 137.4,
+      "stkVolu": 3740605.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 137.49,
+      "hiPx": 139.82,
+      "loPx": 136.71,
+      "open": 138.69,
+      "stkVolu": 3857910.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 136.57,
+      "hiPx": 139.31,
+      "loPx": 135.26,
+      "open": 138.15,
+      "stkVolu": 2806461.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 136.6,
+      "hiPx": 136.97,
+      "loPx": 133.14,
+      "open": 135.19,
+      "stkVolu": 2171837.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 139.07,
+      "hiPx": 140.1999,
+      "loPx": 135.4025,
+      "open": 136.41,
+      "stkVolu": 2755501.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 145.26,
+      "hiPx": 145.87,
+      "loPx": 139.1,
+      "open": 140.17,
+      "stkVolu": 4559416.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 142.4,
+      "hiPx": 144.495,
+      "loPx": 139.63,
+      "open": 144.43,
+      "stkVolu": 4305182.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 152.7,
+      "hiPx": 154.37,
+      "loPx": 143.83,
+      "open": 144.28,
+      "stkVolu": 8079467.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 151.57,
+      "hiPx": 154.77,
+      "loPx": 150.535,
+      "open": 153.53,
+      "stkVolu": 4948348.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 151.82,
+      "hiPx": 155.235,
+      "loPx": 151.51,
+      "open": 152.14,
+      "stkVolu": 5141646.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 157.36,
+      "hiPx": 159.68,
+      "loPx": 153.0101,
+      "open": 153.11,
+      "stkVolu": 4732285.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 154.52,
+      "hiPx": 156.58,
+      "loPx": 152.5001,
+      "open": 156.0,
+      "stkVolu": 3375659.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 164.12,
+      "hiPx": 165.15,
+      "loPx": 154.995,
+      "open": 157.24,
+      "stkVolu": 7521930.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 164.07,
+      "hiPx": 165.63,
+      "loPx": 162.15,
+      "open": 163.1,
+      "stkVolu": 3396127.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 158.74,
+      "hiPx": 166.89,
+      "loPx": 158.15,
+      "open": 164.65,
+      "stkVolu": 4062281.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 164.2,
+      "hiPx": 165.0,
+      "loPx": 159.93,
+      "open": 163.1,
+      "stkVolu": 2941389.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 160.88,
+      "hiPx": 162.14,
+      "loPx": 158.3,
+      "open": 160.63,
+      "stkVolu": 2936653.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 160.02,
+      "hiPx": 162.0,
+      "loPx": 157.51,
+      "open": 161.88,
+      "stkVolu": 3024847.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 151.17,
+      "hiPx": 164.54,
+      "loPx": 149.02,
+      "open": 160.59,
+      "stkVolu": 5323640.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 152.87,
+      "hiPx": 156.24,
+      "loPx": 151.7,
+      "open": 152.4,
+      "stkVolu": 4224271.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 156.295,
+      "hiPx": 158.08,
+      "loPx": 154.185,
+      "open": 155.15,
+      "stkVolu": 2559220.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 156.25,
+      "hiPx": 159.045,
+      "loPx": 155.57,
+      "open": 156.3,
+      "stkVolu": 2105524.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 154.21,
+      "hiPx": 157.55,
+      "loPx": 152.57,
+      "open": 157.55,
+      "stkVolu": 2471021.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 156.59,
+      "hiPx": 156.8299,
+      "loPx": 153.13,
+      "open": 154.24,
+      "stkVolu": 2166910.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 156.47,
+      "hiPx": 160.2,
+      "loPx": 156.39,
+      "open": 158.99,
+      "stkVolu": 2437805.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 157.62,
+      "hiPx": 159.31,
+      "loPx": 156.53,
+      "open": 158.275,
+      "stkVolu": 2452909.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 157.27,
+      "hiPx": 160.12,
+      "loPx": 156.64,
+      "open": 159.02,
+      "stkVolu": 1855760.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 156.0,
+      "hiPx": 157.11,
+      "loPx": 154.0103,
+      "open": 156.76,
+      "stkVolu": 4308601.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 157.07,
+      "hiPx": 159.8899,
+      "loPx": 153.0,
+      "open": 155.0,
+      "stkVolu": 2530638.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 162.81,
+      "hiPx": 163.59,
+      "loPx": 159.34,
+      "open": 161.0,
+      "stkVolu": 4038328.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 162.08,
+      "hiPx": 165.58,
+      "loPx": 160.3,
+      "open": 163.0,
+      "stkVolu": 4311383.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 157.51,
+      "hiPx": 162.875,
+      "loPx": 156.0,
+      "open": 158.31,
+      "stkVolu": 3815035.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 154.98,
+      "hiPx": 159.05,
+      "loPx": 154.69,
+      "open": 158.15,
+      "stkVolu": 5345383.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 190.82,
+      "hiPx": 194.87,
+      "loPx": 177.57,
+      "open": 178.89,
+      "stkVolu": 21307233.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 191.24,
+      "hiPx": 191.32,
+      "loPx": 180.77,
+      "open": 184.29,
+      "stkVolu": 9288212.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 199.72,
+      "hiPx": 201.46,
+      "loPx": 191.67,
+      "open": 192.91,
+      "stkVolu": 6579958.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 197.86,
+      "hiPx": 201.69,
+      "loPx": 196.1137,
+      "open": 198.65,
+      "stkVolu": 5251718.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 190.89,
+      "hiPx": 199.75,
+      "loPx": 188.52,
+      "open": 199.1,
+      "stkVolu": 4670669.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 185.97,
+      "hiPx": 190.59,
+      "loPx": 185.32,
+      "open": 190.0,
+      "stkVolu": 4452231.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 185.01,
+      "hiPx": 187.61,
+      "loPx": 179.0,
+      "open": 181.18,
+      "stkVolu": 3850364.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 180.26,
+      "hiPx": 184.789,
+      "loPx": 178.945,
+      "open": 184.18,
+      "stkVolu": 3974777.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 176.46,
+      "hiPx": 180.21,
+      "loPx": 175.0,
+      "open": 177.44,
+      "stkVolu": 3600199.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 176.31,
+      "hiPx": 179.5,
+      "loPx": 174.82,
+      "open": 177.27,
+      "stkVolu": 3564817.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 159.57,
+      "hiPx": 175.46,
+      "loPx": 158.85,
+      "open": 174.41,
+      "stkVolu": 8715517.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 157.55,
+      "hiPx": 159.835,
+      "loPx": 151.955,
+      "open": 157.862,
+      "stkVolu": 6127574.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 158.44,
+      "hiPx": 160.17,
+      "loPx": 155.88,
+      "open": 158.14,
+      "stkVolu": 6818017.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 158.99,
+      "hiPx": 160.59,
+      "loPx": 155.8846,
+      "open": 157.82,
+      "stkVolu": 3318951.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 158.4,
+      "hiPx": 161.72,
+      "loPx": 157.06,
+      "open": 159.93,
+      "stkVolu": 3458716.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 160.01,
+      "hiPx": 161.6,
+      "loPx": 159.25,
+      "open": 160.28,
+      "stkVolu": 2471901.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 157.9,
+      "hiPx": 160.35,
+      "loPx": 157.13,
+      "open": 159.09,
+      "stkVolu": 3577203.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 156.48,
+      "hiPx": 163.43,
+      "loPx": 155.88,
+      "open": 161.68,
+      "stkVolu": 5757655.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 155.83,
+      "hiPx": 156.3899,
+      "loPx": 153.19,
+      "open": 156.14,
+      "stkVolu": 3728869.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 153.0,
+      "hiPx": 155.72,
+      "loPx": 151.66,
+      "open": 155.18,
+      "stkVolu": 3657934.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 151.41,
+      "hiPx": 153.05,
+      "loPx": 150.075,
+      "open": 153.0,
+      "stkVolu": 6441190.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 154.28,
+      "hiPx": 156.1003,
+      "loPx": 152.52,
+      "open": 152.835,
+      "stkVolu": 3896527.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 152.57,
+      "hiPx": 153.699,
+      "loPx": 151.38,
+      "open": 153.21,
+      "stkVolu": 2824634.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 151.2,
+      "hiPx": 153.225,
+      "loPx": 150.64,
+      "open": 152.2,
+      "stkVolu": 2281631.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 149.9,
+      "hiPx": 151.105,
+      "loPx": 148.6215,
+      "open": 150.11,
+      "stkVolu": 2692424.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 146.0,
+      "hiPx": 150.1763,
+      "loPx": 144.97,
+      "open": 150.0,
+      "stkVolu": 3725192.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 142.05,
+      "hiPx": 147.438,
+      "loPx": 141.76,
+      "open": 146.395,
+      "stkVolu": 3823887.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 140.05,
+      "hiPx": 142.55,
+      "loPx": 138.83,
+      "open": 140.72,
+      "stkVolu": 4047325.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 136.71,
+      "hiPx": 140.85,
+      "loPx": 136.37,
+      "open": 140.39,
+      "stkVolu": 3790028.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 138.29,
+      "hiPx": 141.57,
+      "loPx": 137.41,
+      "open": 140.45,
+      "stkVolu": 4380209.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 140.39,
+      "hiPx": 141.25,
+      "loPx": 137.71,
+      "open": 138.84,
+      "stkVolu": 6302943.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 141.84,
+      "hiPx": 143.41,
+      "loPx": 140.627,
+      "open": 142.18,
+      "stkVolu": 3048952.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 141.23,
+      "hiPx": 142.48,
+      "loPx": 138.33,
+      "open": 141.74,
+      "stkVolu": 3084826.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 138.04,
+      "hiPx": 139.65,
+      "loPx": 135.11,
+      "open": 139.65,
+      "stkVolu": 2005435.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 138.315,
+      "hiPx": 138.45,
+      "loPx": 137.4529,
+      "open": 138.0,
+      "stkVolu": 1256385.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 137.94,
+      "hiPx": 138.55,
+      "loPx": 137.03,
+      "open": 137.53,
+      "stkVolu": 2095981.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 137.48,
+      "hiPx": 138.83,
+      "loPx": 137.21,
+      "open": 137.26,
+      "stkVolu": 1614951.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 135.99,
+      "hiPx": 137.53,
+      "loPx": 135.92,
+      "open": 136.95,
+      "stkVolu": 1603928.0,
+      "ticker": "DDOG",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 133.77,
+      "hiPx": 137.35,
+      "loPx": 132.27,
+      "open": 137.25,
+      "stkVolu": 2566127.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 133.64,
+      "hiPx": 135.665,
+      "loPx": 132.37,
+      "open": 132.92,
+      "stkVolu": 3828397.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 137.1,
+      "hiPx": 137.25,
+      "loPx": 131.58,
+      "open": 133.93,
+      "stkVolu": 3630977.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 141.445,
+      "hiPx": 145.8988,
+      "loPx": 137.02,
+      "open": 137.02,
+      "stkVolu": 5865004.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 130.68,
+      "hiPx": 140.52,
+      "loPx": 130.55,
+      "open": 139.99,
+      "stkVolu": 5476888.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 125.49,
+      "hiPx": 131.4699,
+      "loPx": 125.21,
+      "open": 130.76,
+      "stkVolu": 7057743.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 126.57,
+      "hiPx": 129.24,
+      "loPx": 124.35,
+      "open": 126.2,
+      "stkVolu": 6778852.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 125.5,
+      "hiPx": 128.86,
+      "loPx": 123.355,
+      "open": 127.07,
+      "stkVolu": 5210049.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 122.41,
+      "hiPx": 125.6699,
+      "loPx": 120.6,
+      "open": 124.68,
+      "stkVolu": 4841298.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 120.86,
+      "hiPx": 124.28,
+      "loPx": 120.4601,
+      "open": 122.93,
+      "stkVolu": 6196453.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 119.02,
+      "hiPx": 121.8,
+      "loPx": 117.8067,
+      "open": 120.86,
+      "stkVolu": 5871273.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 117.0,
+      "hiPx": 119.89,
+      "loPx": 115.82,
+      "open": 117.34,
+      "stkVolu": 4929236.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 123.46,
+      "hiPx": 127.0,
+      "loPx": 118.75,
+      "open": 118.85,
+      "stkVolu": 9731790.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 131.25,
+      "hiPx": 133.5,
+      "loPx": 127.46,
+      "open": 128.1,
+      "stkVolu": 9645810.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 130.13,
+      "hiPx": 131.86,
+      "loPx": 129.09,
+      "open": 130.5,
+      "stkVolu": 4073311.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 136.64,
+      "hiPx": 137.0799,
+      "loPx": 130.13,
+      "open": 130.15,
+      "stkVolu": 5395475.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 138.21,
+      "hiPx": 141.9,
+      "loPx": 136.34,
+      "open": 140.92,
+      "stkVolu": 5931767.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 140.56,
+      "hiPx": 143.39,
+      "loPx": 139.02,
+      "open": 139.66,
+      "stkVolu": 6364099.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 128.18,
+      "hiPx": 136.64,
+      "loPx": 125.61,
+      "open": 134.37,
+      "stkVolu": 9773916.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 129.32,
+      "hiPx": 130.4199,
+      "loPx": 127.2,
+      "open": 127.99,
+      "stkVolu": 5338864.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 129.05,
+      "hiPx": 131.44,
+      "loPx": 127.71,
+      "open": 129.69,
+      "stkVolu": 4691253.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 119.66,
+      "hiPx": 128.72,
+      "loPx": 117.3,
+      "open": 128.72,
+      "stkVolu": 7743256.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 115.71,
+      "hiPx": 119.7551,
+      "loPx": 113.02,
+      "open": 118.94,
+      "stkVolu": 6621441.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 106.73,
+      "hiPx": 114.65,
+      "loPx": 105.8,
+      "open": 112.95,
+      "stkVolu": 6563780.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 111.69,
+      "hiPx": 112.38,
+      "loPx": 105.66,
+      "open": 109.0,
+      "stkVolu": 7125901.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 114.01,
+      "hiPx": 115.85,
+      "loPx": 111.48,
+      "open": 115.05,
+      "stkVolu": 10282930.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 129.67,
+      "hiPx": 133.44,
+      "loPx": 123.31,
+      "open": 124.175,
+      "stkVolu": 18828219.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 127.33,
+      "hiPx": 131.38,
+      "loPx": 122.31,
+      "open": 131.16,
+      "stkVolu": 8463266.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 126.13,
+      "hiPx": 133.35,
+      "loPx": 121.77,
+      "open": 131.05,
+      "stkVolu": 6416946.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 125.2,
+      "hiPx": 129.47,
+      "loPx": 122.52,
+      "open": 126.865,
+      "stkVolu": 6395135.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 122.56,
+      "hiPx": 129.8299,
+      "loPx": 120.13,
+      "open": 126.44,
+      "stkVolu": 5108456.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 121.78,
+      "hiPx": 122.2876,
+      "loPx": 115.6,
+      "open": 116.985,
+      "stkVolu": 7061593.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 120.6,
+      "hiPx": 121.81,
+      "loPx": 118.42,
+      "open": 121.74,
+      "stkVolu": 3703477.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 115.66,
+      "hiPx": 123.06,
+      "loPx": 114.78,
+      "open": 119.02,
+      "stkVolu": 4549091.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 102.615,
+      "hiPx": 113.87,
+      "loPx": 101.435,
+      "open": 113.87,
+      "stkVolu": 11431167.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 104.43,
+      "hiPx": 105.7812,
+      "loPx": 98.0101,
+      "open": 101.44,
+      "stkVolu": 7572782.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 110.33,
+      "hiPx": 110.85,
+      "loPx": 104.43,
+      "open": 104.87,
+      "stkVolu": 6218657.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 116.46,
+      "hiPx": 117.85,
+      "loPx": 112.19,
+      "open": 112.89,
+      "stkVolu": 7108038.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 111.96,
+      "hiPx": 113.4717,
+      "loPx": 109.4,
+      "open": 112.755,
+      "stkVolu": 4953906.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 111.11,
+      "hiPx": 112.2344,
+      "loPx": 108.75,
+      "open": 109.17,
+      "stkVolu": 7206984.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 111.77,
+      "hiPx": 113.93,
+      "loPx": 105.17,
+      "open": 106.66,
+      "stkVolu": 5269901.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 118.33,
+      "hiPx": 120.4,
+      "loPx": 111.003,
+      "open": 111.22,
+      "stkVolu": 5190058.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 122.36,
+      "hiPx": 125.205,
+      "loPx": 118.55,
+      "open": 118.55,
+      "stkVolu": 4620838.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 125.75,
+      "hiPx": 126.17,
+      "loPx": 120.27,
+      "open": 120.27,
+      "stkVolu": 4045949.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 128.56,
+      "hiPx": 128.69,
+      "loPx": 124.08,
+      "open": 124.08,
+      "stkVolu": 4764164.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 123.08,
+      "hiPx": 129.4,
+      "loPx": 121.95,
+      "open": 128.89,
+      "stkVolu": 4011349.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 127.49,
+      "hiPx": 127.73,
+      "loPx": 123.25,
+      "open": 124.35,
+      "stkVolu": 3486154.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 127.16,
+      "hiPx": 131.33,
+      "loPx": 126.45,
+      "open": 126.45,
+      "stkVolu": 3628524.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 124.52,
+      "hiPx": 129.78,
+      "loPx": 123.2401,
+      "open": 127.24,
+      "stkVolu": 3993044.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 126.57,
+      "hiPx": 129.26,
+      "loPx": 125.385,
+      "open": 125.81,
+      "stkVolu": 3683162.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 128.87,
+      "hiPx": 132.15,
+      "loPx": 126.01,
+      "open": 126.44,
+      "stkVolu": 2933414.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 131.26,
+      "hiPx": 133.6,
+      "loPx": 127.391,
+      "open": 127.391,
+      "stkVolu": 3454290.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 129.94,
+      "hiPx": 133.4,
+      "loPx": 126.73,
+      "open": 130.85,
+      "stkVolu": 4034354.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 125.08,
+      "hiPx": 128.45,
+      "loPx": 124.47,
+      "open": 128.16,
+      "stkVolu": 10459717.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 129.23,
+      "hiPx": 130.5799,
+      "loPx": 124.0,
+      "open": 125.975,
+      "stkVolu": 3549725.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 122.57,
+      "hiPx": 128.34,
+      "loPx": 121.715,
+      "open": 128.3,
+      "stkVolu": 4005758.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 123.29,
+      "hiPx": 127.47,
+      "loPx": 122.12,
+      "open": 124.91,
+      "stkVolu": 3565517.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 124.3,
+      "hiPx": 127.4463,
+      "loPx": 121.08,
+      "open": 122.39,
+      "stkVolu": 3443903.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 114.48,
+      "hiPx": 120.64,
+      "loPx": 112.66,
+      "open": 120.0,
+      "stkVolu": 6127462.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 115.81,
+      "hiPx": 119.5675,
+      "loPx": 113.11,
+      "open": 115.96,
+      "stkVolu": 5546987.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 118.05,
+      "hiPx": 119.9353,
+      "loPx": 114.52,
+      "open": 116.895,
+      "stkVolu": 3745826.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 118.67,
+      "hiPx": 121.99,
+      "loPx": 116.99,
+      "open": 120.53,
+      "stkVolu": 3600259.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 120.36,
+      "hiPx": 121.45,
+      "loPx": 113.71,
+      "open": 117.28,
+      "stkVolu": 3318028.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 116.5,
+      "hiPx": 119.1,
+      "loPx": 114.56,
+      "open": 117.25,
+      "stkVolu": 3414531.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 116.54,
+      "hiPx": 117.91,
+      "loPx": 111.695,
+      "open": 115.0,
+      "stkVolu": 3881757.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 116.5,
+      "hiPx": 123.32,
+      "loPx": 116.1,
+      "open": 122.468,
+      "stkVolu": 3861596.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 108.98,
+      "hiPx": 119.45,
+      "loPx": 108.51,
+      "open": 118.68,
+      "stkVolu": 6315218.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 105.37,
+      "hiPx": 109.61,
+      "loPx": 100.795,
+      "open": 109.0,
+      "stkVolu": 7718706.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 110.08,
+      "hiPx": 110.2699,
+      "loPx": 103.3,
+      "open": 105.33,
+      "stkVolu": 4502444.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 110.57,
+      "hiPx": 113.16,
+      "loPx": 108.79,
+      "open": 110.245,
+      "stkVolu": 4158084.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 121.06,
+      "hiPx": 121.18,
+      "loPx": 112.45,
+      "open": 113.99,
+      "stkVolu": 5483037.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 123.47,
+      "hiPx": 128.75,
+      "loPx": 122.595,
+      "open": 128.39,
+      "stkVolu": 6308218.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 126.61,
+      "hiPx": 128.43,
+      "loPx": 123.81,
+      "open": 126.65,
+      "stkVolu": 4050572.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 129.74,
+      "hiPx": 129.82,
+      "loPx": 123.5,
+      "open": 125.01,
+      "stkVolu": 3920953.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 129.29,
+      "hiPx": 135.96,
+      "loPx": 128.67,
+      "open": 131.34,
+      "stkVolu": 4722787.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 132.14,
+      "hiPx": 133.325,
+      "loPx": 129.36,
+      "open": 129.59,
+      "stkVolu": 4649369.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 127.86,
+      "hiPx": 130.0,
+      "loPx": 124.45,
+      "open": 127.83,
+      "stkVolu": 6160308.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 129.48,
+      "hiPx": 129.61,
+      "loPx": 124.32,
+      "open": 128.13,
+      "stkVolu": 3195597.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 132.66,
+      "hiPx": 133.58,
+      "loPx": 128.0,
+      "open": 129.4,
+      "stkVolu": 3687870.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 131.55,
+      "hiPx": 136.0,
+      "loPx": 131.06,
+      "open": 133.4,
+      "stkVolu": 3296119.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 133.98,
+      "hiPx": 134.63,
+      "loPx": 128.68,
+      "open": 130.35,
+      "stkVolu": 3487967.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 132.19,
+      "hiPx": 137.0,
+      "loPx": 128.0,
+      "open": 133.05,
+      "stkVolu": 7160485.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 140.53,
+      "hiPx": 142.75,
+      "loPx": 135.38,
+      "open": 138.5,
+      "stkVolu": 6247779.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 146.69,
+      "hiPx": 147.33,
+      "loPx": 139.01,
+      "open": 141.525,
+      "stkVolu": 6723820.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 145.73,
+      "hiPx": 150.0,
+      "loPx": 144.5,
+      "open": 147.71,
+      "stkVolu": 5431258.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 143.71,
+      "hiPx": 145.69,
+      "loPx": 140.714,
+      "open": 143.72,
+      "stkVolu": 8223989.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 188.73,
+      "hiPx": 198.6,
+      "loPx": 179.47,
+      "open": 187.99,
+      "stkVolu": 25969980.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 200.16,
+      "hiPx": 200.36,
+      "loPx": 185.0,
+      "open": 185.5,
+      "stkVolu": 12042619.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 202.32,
+      "hiPx": 203.58,
+      "loPx": 193.16,
+      "open": 196.26,
+      "stkVolu": 7740097.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 199.94,
+      "hiPx": 203.0,
+      "loPx": 195.01,
+      "open": 200.7,
+      "stkVolu": 4803595.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 205.31,
+      "hiPx": 205.4375,
+      "loPx": 195.39,
+      "open": 199.49,
+      "stkVolu": 4578257.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 202.84,
+      "hiPx": 205.0,
+      "loPx": 197.55,
+      "open": 204.45,
+      "stkVolu": 4939931.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 207.98,
+      "hiPx": 211.28,
+      "loPx": 199.91,
+      "open": 200.49,
+      "stkVolu": 5492986.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 208.82,
+      "hiPx": 210.825,
+      "loPx": 203.2002,
+      "open": 205.14,
+      "stkVolu": 5553132.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 215.15,
+      "hiPx": 215.68,
+      "loPx": 207.1,
+      "open": 210.249,
+      "stkVolu": 7169226.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 212.24,
+      "hiPx": 220.35,
+      "loPx": 210.56,
+      "open": 212.39,
+      "stkVolu": 5274450.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 218.04,
+      "hiPx": 219.155,
+      "loPx": 209.56,
+      "open": 211.5,
+      "stkVolu": 4179198.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 222.32,
+      "hiPx": 224.7693,
+      "loPx": 218.72,
+      "open": 220.948,
+      "stkVolu": 4871732.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 223.65,
+      "hiPx": 225.9,
+      "loPx": 218.33,
+      "open": 222.495,
+      "stkVolu": 3634904.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 221.81,
+      "hiPx": 226.48,
+      "loPx": 219.4901,
+      "open": 221.16,
+      "stkVolu": 4577453.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 225.24,
+      "hiPx": 235.0,
+      "loPx": 222.35,
+      "open": 232.63,
+      "stkVolu": 5956149.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 247.35,
+      "hiPx": 249.8071,
+      "loPx": 228.5,
+      "open": 234.0,
+      "stkVolu": 9422411.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 277.49,
+      "hiPx": 278.705,
+      "loPx": 249.44,
+      "open": 251.775,
+      "stkVolu": 11190989.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 269.13,
+      "hiPx": 274.9799,
+      "loPx": 260.37,
+      "open": 264.25,
+      "stkVolu": 9011161.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 250.33,
+      "hiPx": 262.2,
+      "loPx": 245.6301,
+      "open": 260.275,
+      "stkVolu": 8862586.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 243.6,
+      "hiPx": 251.4,
+      "loPx": 240.29,
+      "open": 250.07,
+      "stkVolu": 6976855.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 234.11,
+      "hiPx": 241.61,
+      "loPx": 230.57,
+      "open": 237.4,
+      "stkVolu": 6792767.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 231.68,
+      "hiPx": 240.79,
+      "loPx": 228.74,
+      "open": 236.72,
+      "stkVolu": 5632682.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 227.34,
+      "hiPx": 236.83,
+      "loPx": 219.08,
+      "open": 230.45,
+      "stkVolu": 4519261.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 227.63,
+      "hiPx": 234.2613,
+      "loPx": 220.0,
+      "open": 224.86,
+      "stkVolu": 3525235.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 234.24,
+      "hiPx": 234.7799,
+      "loPx": 224.5301,
+      "open": 228.64,
+      "stkVolu": 5042000.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 229.9,
+      "hiPx": 236.81,
+      "loPx": 227.2346,
+      "open": 235.43,
+      "stkVolu": 5756728.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 233.09,
+      "hiPx": 238.67,
+      "loPx": 228.25,
+      "open": 236.0,
+      "stkVolu": 5812796.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 231.11,
+      "hiPx": 236.52,
+      "loPx": 225.19,
+      "open": 233.225,
+      "stkVolu": 4190742.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 226.63,
+      "hiPx": 235.9999,
+      "loPx": 225.83,
+      "open": 231.0,
+      "stkVolu": 3539127.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 223.0,
+      "hiPx": 225.585,
+      "loPx": 215.3001,
+      "open": 224.04,
+      "stkVolu": 8482324.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 221.37,
+      "hiPx": 228.3794,
+      "loPx": 216.46,
+      "open": 221.765,
+      "stkVolu": 4290862.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 220.57,
+      "hiPx": 225.68,
+      "loPx": 219.44,
+      "open": 221.06,
+      "stkVolu": 3280491.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 222.65,
+      "hiPx": 225.6899,
+      "loPx": 218.0,
+      "open": 218.2,
+      "stkVolu": 2203962.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 220.94,
+      "hiPx": 223.6768,
+      "loPx": 212.73,
+      "open": 218.0,
+      "stkVolu": 2838706.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 239.77,
+      "hiPx": 242.04,
+      "loPx": 223.68,
+      "open": 224.94,
+      "stkVolu": 9628005.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 248.57,
+      "hiPx": 252.25,
+      "loPx": 240.13,
+      "open": 245.0,
+      "stkVolu": 5300276.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 260.36,
+      "hiPx": 261.31,
+      "loPx": 245.0,
+      "open": 246.5,
+      "stkVolu": 5520079.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 264.48,
+      "hiPx": 271.26,
+      "loPx": 261.5,
+      "open": 268.39,
+      "stkVolu": 3590659.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 260.36,
+      "hiPx": 266.13,
+      "loPx": 257.285,
+      "open": 261.74,
+      "stkVolu": 3037621.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 255.37,
+      "hiPx": 262.84,
+      "loPx": 248.01,
+      "open": 249.785,
+      "stkVolu": 4756629.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 256.81,
+      "hiPx": 269.95,
+      "loPx": 254.87,
+      "open": 257.13,
+      "stkVolu": 5367402.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 261.09,
+      "hiPx": 261.89,
+      "loPx": 249.74,
+      "open": 252.5,
+      "stkVolu": 3467045.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 269.0,
+      "hiPx": 271.27,
+      "loPx": 256.0,
+      "open": 258.11,
+      "stkVolu": 6237998.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 257.54,
+      "hiPx": 271.54,
+      "loPx": 255.39,
+      "open": 270.41,
+      "stkVolu": 5136099.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 260.24,
+      "hiPx": 264.27,
+      "loPx": 250.14,
+      "open": 256.71,
+      "stkVolu": 4213520.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 270.73,
+      "hiPx": 271.12,
+      "loPx": 252.02,
+      "open": 255.585,
+      "stkVolu": 4101022.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 264.46,
+      "hiPx": 276.7,
+      "loPx": 261.225,
+      "open": 274.0,
+      "stkVolu": 3229082.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 262.32,
+      "hiPx": 266.91,
+      "loPx": 254.54,
+      "open": 264.82,
+      "stkVolu": 3167269.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 258.69,
+      "hiPx": 264.475,
+      "loPx": 248.61,
+      "open": 255.9,
+      "stkVolu": 3508997.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 263.2,
+      "hiPx": 268.83,
+      "loPx": 257.075,
+      "open": 258.59,
+      "stkVolu": 3285538.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 254.79,
+      "hiPx": 263.32,
+      "loPx": 251.83,
+      "open": 258.5,
+      "stkVolu": 4505748.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 245.77,
+      "hiPx": 252.26,
+      "loPx": 243.62,
+      "open": 251.77,
+      "stkVolu": 3873601.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 244.39,
+      "hiPx": 248.97,
+      "loPx": 241.96,
+      "open": 246.57,
+      "stkVolu": 2447269.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 246.86,
+      "hiPx": 248.44,
+      "loPx": 241.18,
+      "open": 248.44,
+      "stkVolu": 2628029.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 251.86,
+      "hiPx": 257.86,
+      "loPx": 249.0,
+      "open": 254.485,
+      "stkVolu": 3209719.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 250.88,
+      "hiPx": 255.54,
+      "loPx": 237.67,
+      "open": 255.17,
+      "stkVolu": 4053431.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 264.2,
+      "hiPx": 273.7299,
+      "loPx": 252.5,
+      "open": 252.88,
+      "stkVolu": 6621247.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 268.56,
+      "hiPx": 270.33,
+      "loPx": 262.61,
+      "open": 263.805,
+      "stkVolu": 4427151.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 267.97,
+      "hiPx": 278.7584,
+      "loPx": 263.78,
+      "open": 271.5,
+      "stkVolu": 5273364.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 273.6,
+      "hiPx": 278.68,
+      "loPx": 267.5,
+      "open": 272.19,
+      "stkVolu": 5081977.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 288.15,
+      "hiPx": 289.9,
+      "loPx": 271.6,
+      "open": 272.03,
+      "stkVolu": 4826512.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 283.17,
+      "hiPx": 292.72,
+      "loPx": 283.0,
+      "open": 291.43,
+      "stkVolu": 5658057.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 229.29,
+      "hiPx": 243.0,
+      "loPx": 225.26,
+      "open": 227.45,
+      "stkVolu": 15031082.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 233.93,
+      "hiPx": 248.35,
+      "loPx": 233.2,
+      "open": 234.81,
+      "stkVolu": 8541350.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 260.78,
+      "hiPx": 262.99,
+      "loPx": 229.76,
+      "open": 231.2,
+      "stkVolu": 8667503.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 246.78,
+      "hiPx": 258.245,
+      "loPx": 246.33,
+      "open": 256.63,
+      "stkVolu": 4389335.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 240.91,
+      "hiPx": 255.4799,
+      "loPx": 239.34,
+      "open": 240.19,
+      "stkVolu": 6306406.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 252.24,
+      "hiPx": 253.55,
+      "loPx": 240.82,
+      "open": 241.27,
+      "stkVolu": 3610273.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 255.46,
+      "hiPx": 257.96,
+      "loPx": 248.39,
+      "open": 252.39,
+      "stkVolu": 4423260.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 247.32,
+      "hiPx": 254.33,
+      "loPx": 244.48,
+      "open": 250.62,
+      "stkVolu": 3777071.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 246.0,
+      "hiPx": 253.445,
+      "loPx": 243.0,
+      "open": 248.79,
+      "stkVolu": 3637303.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 233.52,
+      "hiPx": 246.66,
+      "loPx": 232.16,
+      "open": 246.66,
+      "stkVolu": 4445454.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 232.55,
+      "hiPx": 236.56,
+      "loPx": 227.11,
+      "open": 233.27,
+      "stkVolu": 3174615.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 235.62,
+      "hiPx": 236.31,
+      "loPx": 228.76,
+      "open": 235.15,
+      "stkVolu": 2805502.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 225.77,
+      "hiPx": 234.53,
+      "loPx": 225.67,
+      "open": 234.41,
+      "stkVolu": 2776805.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 222.99,
+      "hiPx": 229.08,
+      "loPx": 221.31,
+      "open": 226.89,
+      "stkVolu": 3095075.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 227.67,
+      "hiPx": 234.95,
+      "loPx": 219.0,
+      "open": 220.46,
+      "stkVolu": 4046701.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 242.93,
+      "hiPx": 251.99,
+      "loPx": 236.0,
+      "open": 237.0,
+      "stkVolu": 4552900.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

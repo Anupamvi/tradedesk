@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 128.525,
+      "hiPx": 129.494975,
+      "loPx": 124.9975,
+      "open": 124.9975,
+      "stkVolu": 10616104.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 126.365,
+      "hiPx": 127.03875,
+      "loPx": 124.7275,
+      "open": 126.925,
+      "stkVolu": 13077580.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 126.9275,
+      "hiPx": 127.346125,
+      "loPx": 124.435,
+      "open": 126.91,
+      "stkVolu": 8573304.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 128.3775,
+      "hiPx": 128.48,
+      "loPx": 126.76,
+      "open": 128.0,
+      "stkVolu": 7477192.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 121.7775,
+      "hiPx": 128.625,
+      "loPx": 121.6425,
+      "open": 128.2475,
+      "stkVolu": 16754060.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 119.6125,
+      "hiPx": 122.33155,
+      "loPx": 119.3675,
+      "open": 122.0,
+      "stkVolu": 13537464.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 119.045,
+      "hiPx": 120.179225,
+      "loPx": 115.875,
+      "open": 116.705,
+      "stkVolu": 13361936.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 118.32,
+      "hiPx": 120.18,
+      "loPx": 117.63,
+      "open": 119.7725,
+      "stkVolu": 10116496.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 117.6125,
+      "hiPx": 119.162475,
+      "loPx": 116.20875,
+      "open": 118.955,
+      "stkVolu": 7931752.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 117.4575,
+      "hiPx": 118.5775,
+      "loPx": 116.735,
+      "open": 117.5875,
+      "stkVolu": 9026536.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 118.99,
+      "hiPx": 119.315,
+      "loPx": 116.44,
+      "open": 118.0775,
+      "stkVolu": 11613572.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 120.395,
+      "hiPx": 122.51,
+      "loPx": 118.5275,
+      "open": 119.67875,
+      "stkVolu": 13664608.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 117.8075,
+      "hiPx": 121.36395,
+      "loPx": 117.5,
+      "open": 120.375,
+      "stkVolu": 7902260.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 115.38,
+      "hiPx": 117.999975,
+      "loPx": 113.51,
+      "open": 117.8075,
+      "stkVolu": 12096076.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 115.5075,
+      "hiPx": 117.125,
+      "loPx": 115.03,
+      "open": 115.995,
+      "stkVolu": 9944216.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 116.98,
+      "hiPx": 117.7025,
+      "loPx": 115.075,
+      "open": 115.5,
+      "stkVolu": 7178948.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 118.045,
+      "hiPx": 119.1425,
+      "loPx": 117.0,
+      "open": 117.75,
+      "stkVolu": 7303104.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 116.3775,
+      "hiPx": 120.18,
+      "loPx": 114.5,
+      "open": 118.4675,
+      "stkVolu": 10999736.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 115.7875,
+      "hiPx": 116.67,
+      "loPx": 113.355,
+      "open": 115.88,
+      "stkVolu": 8469968.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 113.6425,
+      "hiPx": 116.975,
+      "loPx": 113.44,
+      "open": 116.44,
+      "stkVolu": 11331392.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 111.665,
+      "hiPx": 113.5,
+      "loPx": 109.5225,
+      "open": 112.2375,
+      "stkVolu": 12057596.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 113.715,
+      "hiPx": 114.3725,
+      "loPx": 112.0,
+      "open": 113.225,
+      "stkVolu": 7531184.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 110.4375,
+      "hiPx": 114.45,
+      "loPx": 109.625025,
+      "open": 113.6575,
+      "stkVolu": 12418316.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 112.9225,
+      "hiPx": 112.975,
+      "loPx": 110.502525,
+      "open": 111.25,
+      "stkVolu": 8142680.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 106.25,
+      "hiPx": 112.99625,
+      "loPx": 105.5,
+      "open": 112.9225,
+      "stkVolu": 22840516.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 106.1225,
+      "hiPx": 108.625,
+      "loPx": 105.105,
+      "open": 107.75,
+      "stkVolu": 14528484.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 106.6075,
+      "hiPx": 108.5,
+      "loPx": 104.935,
+      "open": 105.955,
+      "stkVolu": 10101408.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 108.95,
+      "hiPx": 109.575,
+      "loPx": 106.8725,
+      "open": 107.0025,
+      "stkVolu": 9257248.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 108.03,
+      "hiPx": 110.60625,
+      "loPx": 106.965025,
+      "open": 110.0,
+      "stkVolu": 9844412.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 106.215,
+      "hiPx": 108.75,
+      "loPx": 104.9525,
+      "open": 108.085,
+      "stkVolu": 11646320.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 106.975,
+      "hiPx": 107.233,
+      "loPx": 105.750025,
+      "open": 106.32,
+      "stkVolu": 9057568.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 106.585,
+      "hiPx": 107.2425,
+      "loPx": 105.424625,
+      "open": 106.5,
+      "stkVolu": 9010708.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 104.65,
+      "hiPx": 109.0,
+      "loPx": 103.975,
+      "open": 107.75,
+      "stkVolu": 11147332.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 104.7925,
+      "hiPx": 105.235,
+      "loPx": 102.3275,
+      "open": 104.35625,
+      "stkVolu": 8850432.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 103.515,
+      "hiPx": 104.482475,
+      "loPx": 103.415,
+      "open": 104.4475,
+      "stkVolu": 7201640.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 105.1375,
+      "hiPx": 105.99815,
+      "loPx": 103.1377,
+      "open": 103.75,
+      "stkVolu": 8809168.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 104.7075,
+      "hiPx": 106.499975,
+      "loPx": 104.63125,
+      "open": 105.6525,
+      "stkVolu": 9653108.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 104.4,
+      "hiPx": 106.25,
+      "loPx": 104.175,
+      "open": 104.83,
+      "stkVolu": 12586924.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 105.6525,
+      "hiPx": 106.85375,
+      "loPx": 104.995,
+      "open": 105.4,
+      "stkVolu": 32478364.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 110.5,
+      "hiPx": 110.5425,
+      "loPx": 102.312525,
+      "open": 102.5,
+      "stkVolu": 39927212.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 105.925,
+      "hiPx": 112.0,
+      "loPx": 105.0975,
+      "open": 111.21625,
+      "stkVolu": 21940280.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 103.375,
+      "hiPx": 104.505,
+      "loPx": 101.92375,
+      "open": 104.27725,
+      "stkVolu": 15051024.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 103.3,
+      "hiPx": 103.619975,
+      "loPx": 101.07,
+      "open": 103.24625,
+      "stkVolu": 12145996.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 103.115,
+      "hiPx": 103.872475,
+      "loPx": 100.665,
+      "open": 103.3,
+      "stkVolu": 11053604.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 104.4075,
+      "hiPx": 104.527925,
+      "loPx": 101.765,
+      "open": 103.5175,
+      "stkVolu": 8677312.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 107.0575,
+      "hiPx": 107.21125,
+      "loPx": 104.105025,
+      "open": 104.75,
+      "stkVolu": 10189184.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 105.8775,
+      "hiPx": 107.75175,
+      "loPx": 105.1575,
+      "open": 107.0425,
+      "stkVolu": 8507252.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 106.2175,
+      "hiPx": 108.451725,
+      "loPx": 105.5425,
+      "open": 106.89125,
+      "stkVolu": 9115332.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 108.345,
+      "hiPx": 109.564975,
+      "loPx": 106.775,
+      "open": 107.0625,
+      "stkVolu": 9647776.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 109.025,
+      "hiPx": 110.75,
+      "loPx": 108.75,
+      "open": 108.8475,
+      "stkVolu": 11058820.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 111.1925,
+      "hiPx": 112.2175,
+      "loPx": 109.1875,
+      "open": 110.39375,
+      "stkVolu": 11517432.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 111.245,
+      "hiPx": 112.08,
+      "loPx": 108.7,
+      "open": 111.2,
+      "stkVolu": 11632172.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 111.375,
+      "hiPx": 113.499975,
+      "loPx": 108.585,
+      "open": 111.25,
+      "stkVolu": 15491280.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 125.6575,
+      "hiPx": 126.055,
+      "loPx": 115.53,
+      "open": 117.23125,
+      "stkVolu": 40481800.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 125.6375,
+      "hiPx": 126.79905,
+      "loPx": 123.9525,
+      "open": 124.75,
+      "stkVolu": 28371284.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 123.285,
+      "hiPx": 125.075,
+      "loPx": 121.5825,
+      "open": 124.0,
+      "stkVolu": 15501468.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 121.025,
+      "hiPx": 123.765,
+      "loPx": 120.275,
+      "open": 123.285,
+      "stkVolu": 10938188.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 119.0825,
+      "hiPx": 121.74,
+      "loPx": 118.620025,
+      "open": 120.5975,
+      "stkVolu": 8872960.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 118.2725,
+      "hiPx": 120.3875,
+      "loPx": 117.25,
+      "open": 119.225,
+      "stkVolu": 10859080.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 120.355,
+      "hiPx": 120.925,
+      "loPx": 117.5725,
+      "open": 118.025,
+      "stkVolu": 9438900.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 122.1125,
+      "hiPx": 122.625,
+      "loPx": 120.6625,
+      "open": 121.605,
+      "stkVolu": 8791540.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 122.595,
+      "hiPx": 122.72025,
+      "loPx": 119.81345,
+      "open": 121.605,
+      "stkVolu": 9152656.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 124.99,
+      "hiPx": 125.209225,
+      "loPx": 121.34,
+      "open": 121.9375,
+      "stkVolu": 10049508.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 124.2,
+      "hiPx": 125.5675,
+      "loPx": 123.08625,
+      "open": 125.30625,
+      "stkVolu": 10355272.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 122.47,
+      "hiPx": 125.467475,
+      "loPx": 121.575,
+      "open": 124.96,
+      "stkVolu": 7933860.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 123.9875,
+      "hiPx": 125.875,
+      "loPx": 123.595025,
+      "open": 123.8775,
+      "stkVolu": 7797488.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 121.155,
+      "hiPx": 124.463875,
+      "loPx": 119.130025,
+      "open": 124.25,
+      "stkVolu": 11430156.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 127.4875,
+      "hiPx": 127.5,
+      "loPx": 122.5825,
+      "open": 122.9425,
+      "stkVolu": 14470188.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 127.2825,
+      "hiPx": 127.865,
+      "loPx": 125.475,
+      "open": 127.4875,
+      "stkVolu": 8815164.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 123.415,
+      "hiPx": 129.3525,
+      "loPx": 123.32175,
+      "open": 127.25,
+      "stkVolu": 12570448.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 127.1525,
+      "hiPx": 127.795,
+      "loPx": 124.375,
+      "open": 125.2875,
+      "stkVolu": 9362272.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 122.235,
+      "hiPx": 125.135,
+      "loPx": 121.8975,
+      "open": 125.02375,
+      "stkVolu": 11074044.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 122.255,
+      "hiPx": 123.875,
+      "loPx": 121.195,
+      "open": 123.5,
+      "stkVolu": 6923276.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 120.5575,
+      "hiPx": 124.5775,
+      "loPx": 118.847,
+      "open": 122.4325,
+      "stkVolu": 8696012.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 121.1625,
+      "hiPx": 121.5,
+      "loPx": 118.855,
+      "open": 119.50375,
+      "stkVolu": 7707280.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 125.9025,
+      "hiPx": 126.11125,
+      "loPx": 121.6125,
+      "open": 121.6325,
+      "stkVolu": 11280336.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 125.9875,
+      "hiPx": 126.9,
+      "loPx": 124.5875,
+      "open": 125.31,
+      "stkVolu": 5763536.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 125.0275,
+      "hiPx": 126.34,
+      "loPx": 122.9175,
+      "open": 125.67,
+      "stkVolu": 6728108.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 130.495,
+      "hiPx": 130.6075,
+      "loPx": 124.995,
+      "open": 124.995,
+      "stkVolu": 12589148.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 131.83,
+      "hiPx": 133.88,
+      "loPx": 130.4675,
+      "open": 132.2,
+      "stkVolu": 10201812.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 132.425,
+      "hiPx": 133.585,
+      "loPx": 131.31,
+      "open": 133.135,
+      "stkVolu": 7728620.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 136.735,
+      "hiPx": 138.41,
+      "loPx": 133.995,
+      "open": 134.2025,
+      "stkVolu": 13469708.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 136.375,
+      "hiPx": 137.25,
+      "loPx": 133.325,
+      "open": 135.25,
+      "stkVolu": 7122592.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 134.67,
+      "hiPx": 137.494975,
+      "loPx": 133.52625,
+      "open": 135.7775,
+      "stkVolu": 7819492.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 135.7525,
+      "hiPx": 137.374975,
+      "loPx": 134.325,
+      "open": 135.6025,
+      "stkVolu": 7493924.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 137.98,
+      "hiPx": 138.9525,
+      "loPx": 136.275,
+      "open": 137.33,
+      "stkVolu": 7641972.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 133.48,
+      "hiPx": 137.37,
+      "loPx": 132.775,
+      "open": 134.9475,
+      "stkVolu": 10020240.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 133.535,
+      "hiPx": 133.7975,
+      "loPx": 131.5,
+      "open": 132.97,
+      "stkVolu": 6584648.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 133.13,
+      "hiPx": 135.0,
+      "loPx": 129.275,
+      "open": 131.67,
+      "stkVolu": 12399616.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 134.9525,
+      "hiPx": 135.565,
+      "loPx": 129.775,
+      "open": 131.665,
+      "stkVolu": 9708556.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 139.3825,
+      "hiPx": 139.745,
+      "loPx": 136.0625,
+      "open": 136.955,
+      "stkVolu": 8658192.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 139.1825,
+      "hiPx": 139.625,
+      "loPx": 137.8025,
+      "open": 138.805,
+      "stkVolu": 5423056.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 136.465,
+      "hiPx": 141.725,
+      "loPx": 136.25,
+      "open": 140.275,
+      "stkVolu": 7965900.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 132.445,
+      "hiPx": 135.9625,
+      "loPx": 131.535,
+      "open": 135.2475,
+      "stkVolu": 9624076.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 134.3875,
+      "hiPx": 136.01,
+      "loPx": 127.2625,
+      "open": 130.6175,
+      "stkVolu": 7769188.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 132.445,
+      "hiPx": 135.1675,
+      "loPx": 131.645,
+      "open": 134.25,
+      "stkVolu": 5581088.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 128.4175,
+      "hiPx": 132.8325,
+      "loPx": 128.25,
+      "open": 131.205,
+      "stkVolu": 10291868.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 130.1475,
+      "hiPx": 131.495,
+      "loPx": 127.32275,
+      "open": 128.3425,
+      "stkVolu": 6087700.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 125.3275,
+      "hiPx": 134.83,
+      "loPx": 125.0325,
+      "open": 133.14,
+      "stkVolu": 9932208.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 122.6675,
+      "hiPx": 125.25,
+      "loPx": 119.3875,
+      "open": 124.4775,
+      "stkVolu": 12254836.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 126.705,
+      "hiPx": 127.2975,
+      "loPx": 123.5075,
+      "open": 124.54,
+      "stkVolu": 10596720.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 128.085,
+      "hiPx": 128.4275,
+      "loPx": 123.2525,
+      "open": 125.925,
+      "stkVolu": 6608904.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 125.385,
+      "hiPx": 128.749975,
+      "loPx": 124.25,
+      "open": 128.25,
+      "stkVolu": 8855292.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 127.29,
+      "hiPx": 127.6725,
+      "loPx": 125.485,
+      "open": 126.3425,
+      "stkVolu": 4075632.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 126.0325,
+      "hiPx": 126.685,
+      "loPx": 123.7525,
+      "open": 125.80375,
+      "stkVolu": 8234360.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 129.1375,
+      "hiPx": 130.249975,
+      "loPx": 126.75,
+      "open": 128.3675,
+      "stkVolu": 20221052.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 131.0425,
+      "hiPx": 131.25,
+      "loPx": 121.575,
+      "open": 124.4975,
+      "stkVolu": 22315020.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 128.28,
+      "hiPx": 131.3175,
+      "loPx": 127.565,
+      "open": 130.9775,
+      "stkVolu": 9909020.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 128.0075,
+      "hiPx": 131.7225,
+      "loPx": 127.08,
+      "open": 129.035,
+      "stkVolu": 10517792.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 128.7975,
+      "hiPx": 130.075,
+      "loPx": 127.225,
+      "open": 128.25,
+      "stkVolu": 6642160.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 129.495,
+      "hiPx": 132.47405,
+      "loPx": 127.932375,
+      "open": 128.0575,
+      "stkVolu": 8143344.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 129.885,
+      "hiPx": 130.4025,
+      "loPx": 126.135,
+      "open": 128.9625,
+      "stkVolu": 9437012.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 129.4125,
+      "hiPx": 132.0475,
+      "loPx": 128.1275,
+      "open": 129.1675,
+      "stkVolu": 8005824.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 126.195,
+      "hiPx": 129.35895,
+      "loPx": 124.69,
+      "open": 129.1025,
+      "stkVolu": 10710684.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 121.8675,
+      "hiPx": 127.2525,
+      "loPx": 121.8575,
+      "open": 127.2525,
+      "stkVolu": 8739720.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 122.1325,
+      "hiPx": 122.86,
+      "loPx": 120.5,
+      "open": 121.621,
+      "stkVolu": 7034948.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 117.505,
+      "hiPx": 122.61,
+      "loPx": 117.45875,
+      "open": 122.3525,
+      "stkVolu": 9269208.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 119.315,
+      "hiPx": 120.51,
+      "loPx": 118.4775,
+      "open": 119.925,
+      "stkVolu": 7340284.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 120.32,
+      "hiPx": 122.30125,
+      "loPx": 119.6575,
+      "open": 120.0,
+      "stkVolu": 18650684.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 120.785,
+      "hiPx": 121.4675,
+      "loPx": 118.7125,
+      "open": 119.945,
+      "stkVolu": 9213160.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 119.71,
+      "hiPx": 120.8975,
+      "loPx": 118.375,
+      "open": 120.6225,
+      "stkVolu": 8212052.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 119.2775,
+      "hiPx": 119.5,
+      "loPx": 117.6685,
+      "open": 119.2075,
+      "stkVolu": 2980404.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 120.2975,
+      "hiPx": 120.538725,
+      "loPx": 118.7875,
+      "open": 119.25,
+      "stkVolu": 4602608.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 118.9775,
+      "hiPx": 120.8225,
+      "loPx": 118.658375,
+      "open": 119.57375,
+      "stkVolu": 5258576.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 118.9075,
+      "hiPx": 119.53,
+      "loPx": 118.0592,
+      "open": 119.0,
+      "stkVolu": 4672400.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 117.19,
+      "hiPx": 119.015,
+      "loPx": 117.1,
+      "open": 118.995,
+      "stkVolu": 6644172.0,
+      "ticker": "CRWD",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 113.395,
+      "hiPx": 118.5,
+      "loPx": 112.36375,
+      "open": 118.5,
+      "stkVolu": 13299924.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 114.1375,
+      "hiPx": 116.6225,
+      "loPx": 113.75115,
+      "open": 114.6575,
+      "stkVolu": 10462848.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 114.58,
+      "hiPx": 115.115,
+      "loPx": 112.8225,
+      "open": 114.44375,
+      "stkVolu": 9360584.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 119.7275,
+      "hiPx": 121.6375,
+      "loPx": 115.571,
+      "open": 115.7425,
+      "stkVolu": 15868544.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 115.9675,
+      "hiPx": 119.9975,
+      "loPx": 115.157525,
+      "open": 119.55,
+      "stkVolu": 9821828.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 117.6525,
+      "hiPx": 118.995,
+      "loPx": 116.5625,
+      "open": 118.0475,
+      "stkVolu": 9589912.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 116.7475,
+      "hiPx": 117.1525,
+      "loPx": 114.9125,
+      "open": 115.0625,
+      "stkVolu": 7755448.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 117.005,
+      "hiPx": 119.1375,
+      "loPx": 115.235,
+      "open": 116.75,
+      "stkVolu": 10773248.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 115.175,
+      "hiPx": 119.249975,
+      "loPx": 112.94,
+      "open": 116.45,
+      "stkVolu": 15019740.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 113.75,
+      "hiPx": 118.0775,
+      "loPx": 112.5,
+      "open": 115.99,
+      "stkVolu": 11340112.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 113.47,
+      "hiPx": 114.925,
+      "loPx": 110.903625,
+      "open": 114.1875,
+      "stkVolu": 13751688.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 110.6825,
+      "hiPx": 112.56625,
+      "loPx": 110.05775,
+      "open": 110.7565,
+      "stkVolu": 12925916.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 111.47,
+      "hiPx": 114.03,
+      "loPx": 109.7925,
+      "open": 111.25,
+      "stkVolu": 10747340.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 113.4425,
+      "hiPx": 113.617475,
+      "loPx": 111.57,
+      "open": 113.6125,
+      "stkVolu": 6058824.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 113.1225,
+      "hiPx": 114.715,
+      "loPx": 112.3555,
+      "open": 113.6725,
+      "stkVolu": 7083196.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 117.0825,
+      "hiPx": 117.49,
+      "loPx": 113.1225,
+      "open": 113.4975,
+      "stkVolu": 7828244.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 119.165,
+      "hiPx": 121.8,
+      "loPx": 118.350025,
+      "open": 119.365,
+      "stkVolu": 11338128.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 117.2975,
+      "hiPx": 121.75,
+      "loPx": 117.2275,
+      "open": 119.865,
+      "stkVolu": 9529920.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 111.155,
+      "hiPx": 115.3875,
+      "loPx": 107.8475,
+      "open": 115.185,
+      "stkVolu": 20921336.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 110.35125,
+      "hiPx": 112.185,
+      "loPx": 109.5625,
+      "open": 110.125,
+      "stkVolu": 10381532.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 109.7125,
+      "hiPx": 111.81,
+      "loPx": 108.68605,
+      "open": 110.0,
+      "stkVolu": 8294696.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 105.4325,
+      "hiPx": 109.177175,
+      "loPx": 103.7625,
+      "open": 108.98,
+      "stkVolu": 15339548.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 103.84,
+      "hiPx": 105.495,
+      "loPx": 100.3875,
+      "open": 102.985,
+      "stkVolu": 18932048.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 94.29,
+      "hiPx": 104.0725,
+      "loPx": 93.63,
+      "open": 103.6975,
+      "stkVolu": 24212932.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 98.875,
+      "hiPx": 99.2475,
+      "loPx": 94.5925,
+      "open": 96.235,
+      "stkVolu": 19771960.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 102.01,
+      "hiPx": 102.6875,
+      "loPx": 96.5636,
+      "open": 99.04625,
+      "stkVolu": 11303784.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 103.3475,
+      "hiPx": 104.72,
+      "loPx": 100.195,
+      "open": 100.3025,
+      "stkVolu": 12485496.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 103.9525,
+      "hiPx": 104.147475,
+      "loPx": 101.1,
+      "open": 103.425,
+      "stkVolu": 9883632.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 102.885,
+      "hiPx": 105.1675,
+      "loPx": 100.5721,
+      "open": 104.725,
+      "stkVolu": 14010108.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 107.41,
+      "hiPx": 108.2125,
+      "loPx": 103.145,
+      "open": 104.2275,
+      "stkVolu": 14146724.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 103.57125,
+      "hiPx": 106.47053325,
+      "loPx": 100.005025,
+      "open": 105.898,
+      "stkVolu": 17712532.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 103.94,
+      "hiPx": 105.44,
+      "loPx": 100.5,
+      "open": 102.4375,
+      "stkVolu": 11010808.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 105.535,
+      "hiPx": 106.0,
+      "loPx": 102.4925,
+      "open": 104.405,
+      "stkVolu": 8001628.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 97.15,
+      "hiPx": 107.97,
+      "loPx": 96.7775,
+      "open": 104.82,
+      "stkVolu": 33443164.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 87.5825,
+      "hiPx": 96.2775,
+      "loPx": 85.68,
+      "open": 96.24,
+      "stkVolu": 60305003.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 87.5625,
+      "hiPx": 90.225,
+      "loPx": 86.2625,
+      "open": 87.275,
+      "stkVolu": 28554835.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 90.8275,
+      "hiPx": 91.494975,
+      "loPx": 86.625,
+      "open": 87.3925,
+      "stkVolu": 22791530.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 95.275,
+      "hiPx": 96.2725,
+      "loPx": 91.165,
+      "open": 91.812,
+      "stkVolu": 24799292.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 92.995,
+      "hiPx": 93.375,
+      "loPx": 89.8225,
+      "open": 92.265,
+      "stkVolu": 20503128.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 96.215,
+      "hiPx": 96.787475,
+      "loPx": 93.2715,
+      "open": 93.975,
+      "stkVolu": 15086040.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 97.855,
+      "hiPx": 98.73,
+      "loPx": 91.9975,
+      "open": 92.375,
+      "stkVolu": 30852674.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 101.92,
+      "hiPx": 102.1025,
+      "loPx": 95.0275,
+      "open": 96.54625,
+      "stkVolu": 33410114.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 106.54,
+      "hiPx": 107.422475,
+      "loPx": 101.75,
+      "open": 101.825,
+      "stkVolu": 23810288.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 107.2475,
+      "hiPx": 108.4275,
+      "loPx": 105.0575,
+      "open": 106.49,
+      "stkVolu": 18416678.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 108.5325,
+      "hiPx": 109.57,
+      "loPx": 106.38,
+      "open": 106.39375,
+      "stkVolu": 15401412.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 109.0825,
+      "hiPx": 111.9875,
+      "loPx": 107.1375,
+      "open": 111.25,
+      "stkVolu": 13267237.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 110.5075,
+      "hiPx": 113.0,
+      "loPx": 109.05375,
+      "open": 110.6275,
+      "stkVolu": 11644886.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 110.385,
+      "hiPx": 112.5075,
+      "loPx": 109.5825,
+      "open": 110.25,
+      "stkVolu": 9439821.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 110.445,
+      "hiPx": 112.66,
+      "loPx": 108.645,
+      "open": 110.9975,
+      "stkVolu": 8908470.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 105.96,
+      "hiPx": 110.88,
+      "loPx": 105.9425,
+      "open": 110.765,
+      "stkVolu": 14665472.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 108.3,
+      "hiPx": 109.7525,
+      "loPx": 104.9,
+      "open": 106.0225,
+      "stkVolu": 11725917.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 108.9525,
+      "hiPx": 110.6075,
+      "loPx": 106.9975,
+      "open": 107.1925,
+      "stkVolu": 11196523.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 107.045,
+      "hiPx": 110.1775,
+      "loPx": 105.845,
+      "open": 109.75,
+      "stkVolu": 9439285.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 102.25,
+      "hiPx": 106.0775,
+      "loPx": 100.9025,
+      "open": 105.8125,
+      "stkVolu": 36445991.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 103.3275,
+      "hiPx": 104.3575,
+      "loPx": 101.75,
+      "open": 102.765,
+      "stkVolu": 14413174.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 98.2475,
+      "hiPx": 102.715,
+      "loPx": 97.65,
+      "open": 102.60125,
+      "stkVolu": 14545372.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 96.465,
+      "hiPx": 100.08,
+      "loPx": 95.875,
+      "open": 99.745,
+      "stkVolu": 12514632.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 98.155,
+      "hiPx": 98.875,
+      "loPx": 95.2975,
+      "open": 95.7925,
+      "stkVolu": 9834869.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 92.395,
+      "hiPx": 93.615,
+      "loPx": 90.451675,
+      "open": 92.7125,
+      "stkVolu": 24128000.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 95.015,
+      "hiPx": 97.6217,
+      "loPx": 94.0975,
+      "open": 94.8925,
+      "stkVolu": 17526604.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 97.6025,
+      "hiPx": 98.22,
+      "loPx": 94.75,
+      "open": 95.475,
+      "stkVolu": 11906406.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 98.3275,
+      "hiPx": 99.235,
+      "loPx": 96.592525,
+      "open": 99.1875,
+      "stkVolu": 8475717.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 99.78,
+      "hiPx": 100.2,
+      "loPx": 96.6875,
+      "open": 97.795,
+      "stkVolu": 7960345.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 99.6525,
+      "hiPx": 101.25,
+      "loPx": 98.18255,
+      "open": 101.25,
+      "stkVolu": 6382907.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 105.8075,
+      "hiPx": 105.9325,
+      "loPx": 98.89475,
+      "open": 99.46625,
+      "stkVolu": 18507307.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 106.6275,
+      "hiPx": 112.475,
+      "loPx": 105.8375,
+      "open": 109.9975,
+      "stkVolu": 18908677.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 98.67,
+      "hiPx": 106.755,
+      "loPx": 97.7025,
+      "open": 106.495,
+      "stkVolu": 21682167.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 94.755,
+      "hiPx": 99.5125,
+      "loPx": 91.1175,
+      "open": 99.0255,
+      "stkVolu": 35755814.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 100.56,
+      "hiPx": 100.765,
+      "loPx": 94.5625,
+      "open": 95.025,
+      "stkVolu": 16665854.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 99.6225,
+      "hiPx": 102.86,
+      "loPx": 98.35,
+      "open": 101.1625,
+      "stkVolu": 12748147.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 102.79,
+      "hiPx": 102.995,
+      "loPx": 100.5125,
+      "open": 101.75,
+      "stkVolu": 12432576.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 104.55,
+      "hiPx": 106.4425,
+      "loPx": 102.7725,
+      "open": 105.4625,
+      "stkVolu": 11964244.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 105.9875,
+      "hiPx": 107.959975,
+      "loPx": 105.09,
+      "open": 107.24,
+      "stkVolu": 11625211.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 108.2875,
+      "hiPx": 108.4525,
+      "loPx": 104.255,
+      "open": 105.635,
+      "stkVolu": 11540368.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 112.4025,
+      "hiPx": 114.7875,
+      "loPx": 109.125,
+      "open": 109.9375,
+      "stkVolu": 14684238.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 116.67,
+      "hiPx": 116.9875,
+      "loPx": 113.1575,
+      "open": 113.8325,
+      "stkVolu": 11569405.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 111.3475,
+      "hiPx": 113.5,
+      "loPx": 109.1275,
+      "open": 113.4025,
+      "stkVolu": 12901891.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 112.0325,
+      "hiPx": 112.76125,
+      "loPx": 108.89,
+      "open": 111.98375,
+      "stkVolu": 9086912.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 113.6525,
+      "hiPx": 114.495,
+      "loPx": 110.655,
+      "open": 113.3875,
+      "stkVolu": 9188214.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 113.7475,
+      "hiPx": 115.922475,
+      "loPx": 112.58,
+      "open": 114.40625,
+      "stkVolu": 7491716.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 113.095,
+      "hiPx": 113.29,
+      "loPx": 110.81,
+      "open": 112.58,
+      "stkVolu": 7659150.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 111.4375,
+      "hiPx": 112.5028,
+      "loPx": 108.1375,
+      "open": 111.7525,
+      "stkVolu": 9770956.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 113.91,
+      "hiPx": 114.4925,
+      "loPx": 111.39125,
+      "open": 113.6725,
+      "stkVolu": 6087995.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 117.31,
+      "hiPx": 117.9525,
+      "loPx": 113.850025,
+      "open": 114.225,
+      "stkVolu": 8734487.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 119.1325,
+      "hiPx": 120.165,
+      "loPx": 116.5,
+      "open": 118.5975,
+      "stkVolu": 8900042.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 117.0175,
+      "hiPx": 118.824,
+      "loPx": 114.365,
+      "open": 117.1,
+      "stkVolu": 8795457.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 126.43,
+      "hiPx": 126.6975,
+      "loPx": 121.5225,
+      "open": 121.5225,
+      "stkVolu": 20457911.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 131.9425,
+      "hiPx": 132.22875,
+      "loPx": 123.0825,
+      "open": 124.79375,
+      "stkVolu": 16164613.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 135.565,
+      "hiPx": 135.6675,
+      "loPx": 130.5,
+      "open": 130.945,
+      "stkVolu": 11173271.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 136.545,
+      "hiPx": 138.1075,
+      "loPx": 133.25,
+      "open": 135.5,
+      "stkVolu": 14181493.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 140.6425,
+      "hiPx": 142.0925,
+      "loPx": 134.592075,
+      "open": 135.21,
+      "stkVolu": 11203424.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 144.9875,
+      "hiPx": 145.945,
+      "loPx": 138.75,
+      "open": 139.92625,
+      "stkVolu": 11263557.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 148.52,
+      "hiPx": 149.5625,
+      "loPx": 140.1725,
+      "open": 143.2925,
+      "stkVolu": 15437501.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 154.7075,
+      "hiPx": 155.2625,
+      "loPx": 146.8425,
+      "open": 147.37375,
+      "stkVolu": 18799347.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 154.22,
+      "hiPx": 158.56,
+      "loPx": 153.3225,
+      "open": 154.995,
+      "stkVolu": 17860173.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 162.5275,
+      "hiPx": 162.75,
+      "loPx": 153.51595,
+      "open": 153.575,
+      "stkVolu": 17533254.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 162.0575,
+      "hiPx": 164.8875,
+      "loPx": 160.5125,
+      "open": 162.63,
+      "stkVolu": 10584302.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 165.865,
+      "hiPx": 168.71,
+      "loPx": 162.4,
+      "open": 162.625,
+      "stkVolu": 11126653.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 167.8875,
+      "hiPx": 169.374975,
+      "loPx": 162.0,
+      "open": 166.25,
+      "stkVolu": 8352517.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 161.34,
+      "hiPx": 165.164975,
+      "loPx": 158.2725,
+      "open": 160.2525,
+      "stkVolu": 13105449.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 167.75,
+      "hiPx": 169.375,
+      "loPx": 160.38,
+      "open": 162.3325,
+      "stkVolu": 9500986.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 182.75,
+      "hiPx": 182.8725,
+      "loPx": 168.735,
+      "open": 169.35875,
+      "stkVolu": 19281819.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 195.5425,
+      "hiPx": 196.415,
+      "loPx": 183.5,
+      "open": 183.9525,
+      "stkVolu": 18361379.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 192.2375,
+      "hiPx": 194.705,
+      "loPx": 186.345,
+      "open": 191.2125,
+      "stkVolu": 16741201.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 186.9025,
+      "hiPx": 191.749975,
+      "loPx": 185.53,
+      "open": 191.41875,
+      "stkVolu": 20986356.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 179.7725,
+      "hiPx": 180.24,
+      "loPx": 167.7775,
+      "open": 168.5175,
+      "stkVolu": 29799144.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 167.755,
+      "hiPx": 176.555,
+      "loPx": 167.525,
+      "open": 174.185,
+      "stkVolu": 20955279.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 164.6975,
+      "hiPx": 171.0,
+      "loPx": 163.0025,
+      "open": 168.37625,
+      "stkVolu": 13349514.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 161.2325,
+      "hiPx": 166.2175,
+      "loPx": 154.435,
+      "open": 164.6975,
+      "stkVolu": 14962454.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 161.935,
+      "hiPx": 165.5325,
+      "loPx": 158.9875,
+      "open": 159.7575,
+      "stkVolu": 10109478.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 172.8825,
+      "hiPx": 174.1075,
+      "loPx": 160.25,
+      "open": 161.32,
+      "stkVolu": 14136003.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 170.7,
+      "hiPx": 175.5425,
+      "loPx": 169.5,
+      "open": 172.665,
+      "stkVolu": 9247565.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 173.2275,
+      "hiPx": 174.37375,
+      "loPx": 167.215,
+      "open": 172.5,
+      "stkVolu": 10184101.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 169.8725,
+      "hiPx": 175.2175,
+      "loPx": 166.49,
+      "open": 173.2745,
+      "stkVolu": 8575819.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 170.74,
+      "hiPx": 172.7325,
+      "loPx": 167.725,
+      "open": 170.0,
+      "stkVolu": 8393104.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 171.215,
+      "hiPx": 173.9775,
+      "loPx": 165.23,
+      "open": 171.6875,
+      "stkVolu": 21517468.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 168.86,
+      "hiPx": 178.045,
+      "loPx": 168.29875,
+      "open": 171.9195,
+      "stkVolu": 13743286.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 170.23,
+      "hiPx": 172.724975,
+      "loPx": 165.5,
+      "open": 167.2525,
+      "stkVolu": 9488051.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 168.255,
+      "hiPx": 171.786575,
+      "loPx": 167.25,
+      "open": 170.1225,
+      "stkVolu": 7018105.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 169.6625,
+      "hiPx": 173.185,
+      "loPx": 167.50025,
+      "open": 170.095,
+      "stkVolu": 12035637.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 175.2725,
+      "hiPx": 176.21,
+      "loPx": 168.4025,
+      "open": 171.55,
+      "stkVolu": 13329052.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 185.7275,
+      "hiPx": 188.995,
+      "loPx": 176.030025,
+      "open": 177.375,
+      "stkVolu": 19759293.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 190.785,
+      "hiPx": 191.325,
+      "loPx": 183.000075,
+      "open": 184.125,
+      "stkVolu": 14751886.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 193.185,
+      "hiPx": 196.5,
+      "loPx": 191.25,
+      "open": 193.75,
+      "stkVolu": 10740237.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 193.98,
+      "hiPx": 199.53,
+      "loPx": 190.61,
+      "open": 191.255,
+      "stkVolu": 10432159.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 199.38,
+      "hiPx": 209.5,
+      "loPx": 188.55,
+      "open": 189.51,
+      "stkVolu": 10190017.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 194.62,
+      "hiPx": 201.37,
+      "loPx": 192.22,
+      "open": 200.69,
+      "stkVolu": 9551201.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 191.12,
+      "hiPx": 195.66,
+      "loPx": 185.3,
+      "open": 193.51,
+      "stkVolu": 7980608.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 198.4,
+      "hiPx": 198.75,
+      "loPx": 187.0,
+      "open": 188.305,
+      "stkVolu": 6283527.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 187.18,
+      "hiPx": 198.0,
+      "loPx": 186.48,
+      "open": 196.6,
+      "stkVolu": 9269808.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 187.91,
+      "hiPx": 189.25,
+      "loPx": 181.0,
+      "open": 186.86,
+      "stkVolu": 6475288.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 210.73,
+      "hiPx": 211.0,
+      "loPx": 189.46,
+      "open": 190.995,
+      "stkVolu": 12139544.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 206.77,
+      "hiPx": 217.5,
+      "loPx": 205.1,
+      "open": 212.38,
+      "stkVolu": 12002816.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 203.76,
+      "hiPx": 207.69,
+      "loPx": 200.07,
+      "open": 207.17,
+      "stkVolu": 8026802.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 203.08,
+      "hiPx": 209.5,
+      "loPx": 199.52,
+      "open": 200.4,
+      "stkVolu": 9102630.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 198.49,
+      "hiPx": 208.25,
+      "loPx": 197.82,
+      "open": 203.08,
+      "stkVolu": 7379316.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 191.15,
+      "hiPx": 200.0,
+      "loPx": 189.68,
+      "open": 199.81,
+      "stkVolu": 9880264.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 188.42,
+      "hiPx": 193.49,
+      "loPx": 185.05,
+      "open": 192.56,
+      "stkVolu": 9080631.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 183.42,
+      "hiPx": 190.2079,
+      "loPx": 181.7766,
+      "open": 189.51,
+      "stkVolu": 6592314.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 183.28,
+      "hiPx": 185.835,
+      "loPx": 181.83,
+      "open": 185.0,
+      "stkVolu": 5779248.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 180.11,
+      "hiPx": 188.5,
+      "loPx": 179.5,
+      "open": 187.905,
+      "stkVolu": 6585916.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 181.8,
+      "hiPx": 184.665,
+      "loPx": 174.14,
+      "open": 181.33,
+      "stkVolu": 8475300.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 179.38,
+      "hiPx": 186.39,
+      "loPx": 176.46,
+      "open": 182.625,
+      "stkVolu": 7152528.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 185.22,
+      "hiPx": 185.46,
+      "loPx": 177.7468,
+      "open": 180.58,
+      "stkVolu": 8958840.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 190.86,
+      "hiPx": 191.645,
+      "loPx": 184.16,
+      "open": 187.22,
+      "stkVolu": 7887418.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 202.54,
+      "hiPx": 203.17,
+      "loPx": 192.6,
+      "open": 194.04,
+      "stkVolu": 10302612.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 211.22,
+      "hiPx": 212.64,
+      "loPx": 203.5,
+      "open": 205.8,
+      "stkVolu": 8354467.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 209.86,
+      "hiPx": 219.35,
+      "loPx": 209.56,
+      "open": 213.55,
+      "stkVolu": 7324890.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 207.39,
+      "hiPx": 207.63,
+      "loPx": 201.75,
+      "open": 203.0,
+      "stkVolu": 6911327.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 214.42,
+      "hiPx": 216.575,
+      "loPx": 208.2,
+      "open": 213.825,
+      "stkVolu": 5881958.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 225.16,
+      "hiPx": 226.9,
+      "loPx": 214.55,
+      "open": 215.308,
+      "stkVolu": 8178475.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 221.9,
+      "hiPx": 225.52,
+      "loPx": 219.24,
+      "open": 224.0,
+      "stkVolu": 6343090.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 221.78,
+      "hiPx": 224.95,
+      "loPx": 217.89,
+      "open": 219.93,
+      "stkVolu": 6919387.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 225.53,
+      "hiPx": 226.685,
+      "loPx": 220.23,
+      "open": 224.98,
+      "stkVolu": 5822685.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 216.95,
+      "hiPx": 227.5,
+      "loPx": 216.465,
+      "open": 226.64,
+      "stkVolu": 6750292.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 213.9,
+      "hiPx": 219.18,
+      "loPx": 213.01,
+      "open": 216.53,
+      "stkVolu": 6411995.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 212.92,
+      "hiPx": 216.055,
+      "loPx": 209.07,
+      "open": 213.0,
+      "stkVolu": 6887302.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 201.63,
+      "hiPx": 213.98,
+      "loPx": 197.25,
+      "open": 213.38,
+      "stkVolu": 10751416.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 190.34,
+      "hiPx": 200.741,
+      "loPx": 189.93,
+      "open": 197.285,
+      "stkVolu": 8902380.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 191.95,
+      "hiPx": 192.85,
+      "loPx": 187.01,
+      "open": 190.94,
+      "stkVolu": 8201027.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 190.68,
+      "hiPx": 195.4,
+      "loPx": 188.43,
+      "open": 189.52,
+      "stkVolu": 7250971.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 185.38,
+      "hiPx": 194.5,
+      "loPx": 182.35,
+      "open": 191.62,
+      "stkVolu": 8346507.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 189.18,
+      "hiPx": 191.32,
+      "loPx": 181.24,
+      "open": 182.75,
+      "stkVolu": 13619878.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 227.96,
+      "hiPx": 229.08,
+      "loPx": 206.1,
+      "open": 208.25,
+      "stkVolu": 23443130.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

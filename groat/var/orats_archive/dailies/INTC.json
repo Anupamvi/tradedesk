@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 22.49,
+      "hiPx": 22.63,
+      "loPx": 21.99,
+      "open": 22.15,
+      "stkVolu": 61175951.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 22.0,
+      "hiPx": 22.39,
+      "loPx": 21.86,
+      "open": 22.205,
+      "stkVolu": 80725235.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 23.59,
+      "hiPx": 23.785,
+      "loPx": 22.1323,
+      "open": 22.18,
+      "stkVolu": 119545462.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 23.44,
+      "hiPx": 23.53,
+      "loPx": 23.13,
+      "open": 23.29,
+      "stkVolu": 70247739.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 23.82,
+      "hiPx": 24.04,
+      "loPx": 23.48,
+      "open": 23.63,
+      "stkVolu": 54599844.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 23.43,
+      "hiPx": 23.66,
+      "loPx": 23.16,
+      "open": 23.56,
+      "stkVolu": 49367905.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 23.3,
+      "hiPx": 23.4,
+      "loPx": 22.88,
+      "open": 23.24,
+      "stkVolu": 48420516.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 22.92,
+      "hiPx": 23.78,
+      "loPx": 22.9,
+      "open": 23.57,
+      "stkVolu": 66099351.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 22.69,
+      "hiPx": 23.13,
+      "loPx": 22.25,
+      "open": 22.99,
+      "stkVolu": 58865893.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 22.8,
+      "hiPx": 23.045,
+      "loPx": 22.5902,
+      "open": 22.66,
+      "stkVolu": 49384037.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 23.1,
+      "hiPx": 23.59,
+      "loPx": 22.9,
+      "open": 23.22,
+      "stkVolu": 60195598.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 23.26,
+      "hiPx": 23.83,
+      "loPx": 23.16,
+      "open": 23.4,
+      "stkVolu": 61657989.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 23.24,
+      "hiPx": 23.535,
+      "loPx": 23.08,
+      "open": 23.34,
+      "stkVolu": 53969845.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 23.49,
+      "hiPx": 23.62,
+      "loPx": 22.92,
+      "open": 23.255,
+      "stkVolu": 68711715.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 22.63,
+      "hiPx": 23.575,
+      "loPx": 22.6,
+      "open": 23.49,
+      "stkVolu": 131963323.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 20.7,
+      "hiPx": 21.045,
+      "loPx": 20.36,
+      "open": 20.675,
+      "stkVolu": 245077682.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 20.68,
+      "hiPx": 21.29,
+      "loPx": 20.65,
+      "open": 20.82,
+      "stkVolu": 86105582.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 20.41,
+      "hiPx": 20.845,
+      "loPx": 20.34,
+      "open": 20.69,
+      "stkVolu": 100831524.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 20.34,
+      "hiPx": 20.6199,
+      "loPx": 20.08,
+      "open": 20.43,
+      "stkVolu": 67420330.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 19.8,
+      "hiPx": 20.2288,
+      "loPx": 19.66,
+      "open": 20.17,
+      "stkVolu": 90665198.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 19.31,
+      "hiPx": 19.55,
+      "loPx": 18.965,
+      "open": 19.5,
+      "stkVolu": 86496139.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 19.5,
+      "hiPx": 19.59,
+      "loPx": 19.35,
+      "open": 19.515,
+      "stkVolu": 69249371.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 20.19,
+      "hiPx": 20.535,
+      "loPx": 19.68,
+      "open": 19.7,
+      "stkVolu": 97338249.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 20.41,
+      "hiPx": 20.48,
+      "loPx": 19.87,
+      "open": 20.12,
+      "stkVolu": 67074217.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 19.77,
+      "hiPx": 20.44,
+      "loPx": 19.6,
+      "open": 20.0,
+      "stkVolu": 131382767.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 19.95,
+      "hiPx": 20.02,
+      "loPx": 19.61,
+      "open": 20.0,
+      "stkVolu": 75415017.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 20.65,
+      "hiPx": 21.6,
+      "loPx": 20.44,
+      "open": 20.445,
+      "stkVolu": 175545596.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 21.81,
+      "hiPx": 21.86,
+      "loPx": 20.76,
+      "open": 21.2,
+      "stkVolu": 134488173.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 22.22,
+      "hiPx": 22.3,
+      "loPx": 21.36,
+      "open": 21.62,
+      "stkVolu": 86024355.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 23.86,
+      "hiPx": 24.2,
+      "loPx": 21.9,
+      "open": 21.99,
+      "stkVolu": 188052460.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 24.56,
+      "hiPx": 25.645,
+      "loPx": 24.11,
+      "open": 25.01,
+      "stkVolu": 310161102.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 23.66,
+      "hiPx": 24.9,
+      "loPx": 23.21,
+      "open": 24.0,
+      "stkVolu": 212515617.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 25.31,
+      "hiPx": 26.53,
+      "loPx": 24.94,
+      "open": 24.94,
+      "stkVolu": 297659156.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 23.54,
+      "hiPx": 24.933,
+      "loPx": 23.3302,
+      "open": 24.9,
+      "stkVolu": 161149398.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 23.5,
+      "hiPx": 23.57,
+      "loPx": 22.775,
+      "open": 23.525,
+      "stkVolu": 97718294.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 24.8,
+      "hiPx": 25.23,
+      "loPx": 23.65,
+      "open": 23.65,
+      "stkVolu": 200266834.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 24.55,
+      "hiPx": 25.88,
+      "loPx": 24.44,
+      "open": 25.5,
+      "stkVolu": 156825631.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 24.35,
+      "hiPx": 24.735,
+      "loPx": 24.1,
+      "open": 24.58,
+      "stkVolu": 78558225.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 24.85,
+      "hiPx": 24.99,
+      "loPx": 24.05,
+      "open": 24.19,
+      "stkVolu": 90934420.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 24.93,
+      "hiPx": 25.14,
+      "loPx": 24.61,
+      "open": 24.96,
+      "stkVolu": 60035093.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 24.35,
+      "hiPx": 24.97,
+      "loPx": 24.28,
+      "open": 24.76,
+      "stkVolu": 63734417.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 24.21,
+      "hiPx": 24.24,
+      "loPx": 23.68,
+      "open": 23.88,
+      "stkVolu": 57661836.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 24.0,
+      "hiPx": 24.0905,
+      "loPx": 23.72,
+      "open": 24.09,
+      "stkVolu": 47822866.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 24.61,
+      "hiPx": 24.64,
+      "loPx": 23.75,
+      "open": 23.85,
+      "stkVolu": 59056496.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 24.49,
+      "hiPx": 24.71,
+      "loPx": 24.1701,
+      "open": 24.6,
+      "stkVolu": 55975270.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 24.5,
+      "hiPx": 24.735,
+      "loPx": 24.12,
+      "open": 24.48,
+      "stkVolu": 51372839.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 24.44,
+      "hiPx": 24.805,
+      "loPx": 24.27,
+      "open": 24.53,
+      "stkVolu": 42146182.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 24.77,
+      "hiPx": 24.87,
+      "loPx": 24.28,
+      "open": 24.415,
+      "stkVolu": 61600705.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 24.61,
+      "hiPx": 24.93,
+      "loPx": 24.57,
+      "open": 24.76,
+      "stkVolu": 55536921.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 24.08,
+      "hiPx": 24.63,
+      "loPx": 24.05,
+      "open": 24.61,
+      "stkVolu": 52672821.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 24.77,
+      "hiPx": 25.46,
+      "loPx": 24.2201,
+      "open": 24.33,
+      "stkVolu": 83951622.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 25.27,
+      "hiPx": 25.34,
+      "loPx": 24.69,
+      "open": 24.82,
+      "stkVolu": 60336569.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 24.9,
+      "hiPx": 25.26,
+      "loPx": 24.45,
+      "open": 25.075,
+      "stkVolu": 63093682.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 30.57,
+      "hiPx": 32.3771,
+      "loPx": 30.16,
+      "open": 31.78,
+      "stkVolu": 523907959.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 29.58,
+      "hiPx": 30.63,
+      "loPx": 29.33,
+      "open": 30.38,
+      "stkVolu": 225702854.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 28.76,
+      "hiPx": 30.1,
+      "loPx": 28.73,
+      "open": 29.67,
+      "stkVolu": 130314474.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 29.34,
+      "hiPx": 30.2,
+      "loPx": 28.815,
+      "open": 28.99,
+      "stkVolu": 126317911.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 31.22,
+      "hiPx": 31.7,
+      "loPx": 29.23,
+      "open": 29.38,
+      "stkVolu": 164458509.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 33.99,
+      "hiPx": 34.25,
+      "loPx": 31.21,
+      "open": 31.61,
+      "stkVolu": 295709290.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 35.5,
+      "hiPx": 36.3,
+      "loPx": 34.49,
+      "open": 35.015,
+      "stkVolu": 268583278.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 34.48,
+      "hiPx": 35.05,
+      "loPx": 33.73,
+      "open": 34.52,
+      "stkVolu": 152605909.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 33.55,
+      "hiPx": 34.235,
+      "loPx": 33.02,
+      "open": 33.93,
+      "stkVolu": 124818376.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 35.94,
+      "hiPx": 36.06,
+      "loPx": 33.5,
+      "open": 33.53,
+      "stkVolu": 162649650.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 37.3,
+      "hiPx": 37.57,
+      "loPx": 35.44,
+      "open": 35.76,
+      "stkVolu": 149361652.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 36.83,
+      "hiPx": 38.08,
+      "loPx": 36.45,
+      "open": 37.95,
+      "stkVolu": 125359342.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 36.59,
+      "hiPx": 38.68,
+      "loPx": 36.43,
+      "open": 37.19,
+      "stkVolu": 112086069.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 37.17,
+      "hiPx": 38.0468,
+      "loPx": 36.3501,
+      "open": 36.64,
+      "stkVolu": 111140155.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 37.43,
+      "hiPx": 37.79,
+      "loPx": 35.9102,
+      "open": 36.545,
+      "stkVolu": 103202085.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 37.8,
+      "hiPx": 38.1,
+      "loPx": 36.86,
+      "open": 37.53,
+      "stkVolu": 89884658.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 36.37,
+      "hiPx": 39.65,
+      "loPx": 36.3,
+      "open": 38.46,
+      "stkVolu": 183063296.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 37.22,
+      "hiPx": 37.51,
+      "loPx": 36.28,
+      "open": 36.45,
+      "stkVolu": 104020679.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 35.63,
+      "hiPx": 36.545,
+      "loPx": 34.69,
+      "open": 36.0,
+      "stkVolu": 117908345.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 37.15,
+      "hiPx": 37.485,
+      "loPx": 35.64,
+      "open": 36.4,
+      "stkVolu": 99242706.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 36.84,
+      "hiPx": 38.02,
+      "loPx": 36.41,
+      "open": 37.15,
+      "stkVolu": 83357846.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 37.01,
+      "hiPx": 38.38,
+      "loPx": 36.08,
+      "open": 36.36,
+      "stkVolu": 119394707.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 38.1,
+      "hiPx": 38.5198,
+      "loPx": 37.56,
+      "open": 37.57,
+      "stkVolu": 80230234.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 38.12,
+      "hiPx": 38.35,
+      "loPx": 37.67,
+      "open": 38.14,
+      "stkVolu": 73134908.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 36.92,
+      "hiPx": 37.93,
+      "loPx": 36.0401,
+      "open": 37.835,
+      "stkVolu": 87099905.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 38.16,
+      "hiPx": 38.4,
+      "loPx": 36.4301,
+      "open": 36.6,
+      "stkVolu": 121974238.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 38.28,
+      "hiPx": 41.12,
+      "loPx": 37.83,
+      "open": 40.02,
+      "stkVolu": 246379974.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 39.54,
+      "hiPx": 40.67,
+      "loPx": 38.23,
+      "open": 38.39,
+      "stkVolu": 160007604.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 41.53,
+      "hiPx": 42.48,
+      "loPx": 39.54,
+      "open": 39.59,
+      "stkVolu": 181256370.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 41.34,
+      "hiPx": 42.04,
+      "loPx": 40.92,
+      "open": 41.6,
+      "stkVolu": 106962947.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 40.16,
+      "hiPx": 41.43,
+      "loPx": 40.11,
+      "open": 40.97,
+      "stkVolu": 84855468.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 39.99,
+      "hiPx": 40.8263,
+      "loPx": 39.79,
+      "open": 40.68,
+      "stkVolu": 80471369.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 39.5,
+      "hiPx": 40.45,
+      "loPx": 39.05,
+      "open": 40.25,
+      "stkVolu": 61267512.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 37.03,
+      "hiPx": 38.25,
+      "loPx": 36.63,
+      "open": 38.14,
+      "stkVolu": 102250306.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 38.38,
+      "hiPx": 38.6898,
+      "loPx": 37.11,
+      "open": 37.415,
+      "stkVolu": 74631599.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 37.24,
+      "hiPx": 39.8446,
+      "loPx": 36.8,
+      "open": 38.335,
+      "stkVolu": 77629908.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 38.13,
+      "hiPx": 38.27,
+      "loPx": 36.97,
+      "open": 37.26,
+      "stkVolu": 95521436.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 38.45,
+      "hiPx": 39.525,
+      "loPx": 37.9659,
+      "open": 38.93,
+      "stkVolu": 77820266.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 37.88,
+      "hiPx": 38.22,
+      "loPx": 37.49,
+      "open": 38.145,
+      "stkVolu": 53741898.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 37.89,
+      "hiPx": 38.2,
+      "loPx": 37.3525,
+      "open": 38.06,
+      "stkVolu": 53875959.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 35.91,
+      "hiPx": 37.31,
+      "loPx": 35.45,
+      "open": 37.27,
+      "stkVolu": 95593170.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 35.52,
+      "hiPx": 36.1,
+      "loPx": 34.62,
+      "open": 35.025,
+      "stkVolu": 71716180.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 34.71,
+      "hiPx": 35.73,
+      "loPx": 34.23,
+      "open": 35.445,
+      "stkVolu": 72580118.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 34.33,
+      "hiPx": 34.76,
+      "loPx": 33.57,
+      "open": 34.25,
+      "stkVolu": 61504802.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 35.11,
+      "hiPx": 35.7499,
+      "loPx": 34.25,
+      "open": 34.33,
+      "stkVolu": 67115474.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 33.62,
+      "hiPx": 36.68,
+      "loPx": 33.48,
+      "open": 36.0,
+      "stkVolu": 96389096.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 34.5,
+      "hiPx": 34.98,
+      "loPx": 32.89,
+      "open": 33.51,
+      "stkVolu": 105641670.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 35.79,
+      "hiPx": 36.155,
+      "loPx": 34.685,
+      "open": 34.97,
+      "stkVolu": 103804208.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 35.83,
+      "hiPx": 36.13,
+      "loPx": 34.68,
+      "open": 35.55,
+      "stkVolu": 62203283.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 36.81,
+      "hiPx": 37.24,
+      "loPx": 36.13,
+      "open": 36.2,
+      "stkVolu": 54563435.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 40.56,
+      "hiPx": 40.59,
+      "loPx": 37.34,
+      "open": 37.4,
+      "stkVolu": 95799486.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 40.01,
+      "hiPx": 40.375,
+      "loPx": 39.6,
+      "open": 39.86,
+      "stkVolu": 74534896.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 43.47,
+      "hiPx": 43.68,
+      "loPx": 40.05,
+      "open": 40.47,
+      "stkVolu": 167205815.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 43.76,
+      "hiPx": 44.02,
+      "loPx": 42.51,
+      "open": 43.385,
+      "stkVolu": 91957186.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 40.5,
+      "hiPx": 43.2801,
+      "loPx": 40.14,
+      "open": 43.26,
+      "stkVolu": 107850164.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 41.41,
+      "hiPx": 42.83,
+      "loPx": 41.15,
+      "open": 41.155,
+      "stkVolu": 103042015.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 40.3,
+      "hiPx": 42.115,
+      "loPx": 39.7,
+      "open": 41.935,
+      "stkVolu": 93953619.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 40.5,
+      "hiPx": 41.2622,
+      "loPx": 40.03,
+      "open": 40.73,
+      "stkVolu": 61877155.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 40.78,
+      "hiPx": 40.99,
+      "loPx": 38.89,
+      "open": 40.11,
+      "stkVolu": 75974890.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 39.51,
+      "hiPx": 40.19,
+      "loPx": 39.075,
+      "open": 40.07,
+      "stkVolu": 59096759.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 37.81,
+      "hiPx": 40.03,
+      "loPx": 37.62,
+      "open": 39.245,
+      "stkVolu": 87784470.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 37.51,
+      "hiPx": 38.48,
+      "loPx": 37.32,
+      "open": 38.325,
+      "stkVolu": 60898465.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 37.31,
+      "hiPx": 37.96,
+      "loPx": 36.92,
+      "open": 37.58,
+      "stkVolu": 50490257.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 36.05,
+      "hiPx": 37.84,
+      "loPx": 35.965,
+      "open": 37.585,
+      "stkVolu": 54791951.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 36.28,
+      "hiPx": 37.485,
+      "loPx": 35.67,
+      "open": 37.38,
+      "stkVolu": 69468393.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 36.82,
+      "hiPx": 37.58,
+      "loPx": 36.44,
+      "open": 36.48,
+      "stkVolu": 163221251.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 36.37,
+      "hiPx": 37.9,
+      "loPx": 36.29,
+      "open": 37.89,
+      "stkVolu": 51685394.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 36.35,
+      "hiPx": 36.8,
+      "loPx": 36.03,
+      "open": 36.24,
+      "stkVolu": 35957954.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 36.16,
+      "hiPx": 36.175,
+      "loPx": 34.95,
+      "open": 35.17,
+      "stkVolu": 37443756.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 36.2,
+      "hiPx": 36.49,
+      "loPx": 35.85,
+      "open": 36.17,
+      "stkVolu": 28779396.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 36.68,
+      "hiPx": 36.795,
+      "loPx": 35.82,
+      "open": 36.01,
+      "stkVolu": 38062295.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 37.3,
+      "hiPx": 38.26,
+      "loPx": 36.82,
+      "open": 36.91,
+      "stkVolu": 61935279.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 36.9,
+      "hiPx": 37.58,
+      "loPx": 36.87,
+      "open": 37.395,
+      "stkVolu": 51524682.0,
+      "ticker": "INTC",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 39.38,
+      "hiPx": 39.86,
+      "loPx": 37.76,
+      "open": 37.77,
+      "stkVolu": 95396447.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 39.37,
+      "hiPx": 42.1,
+      "loPx": 39.27,
+      "open": 41.59,
+      "stkVolu": 96665355.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 40.04,
+      "hiPx": 40.31,
+      "loPx": 38.95,
+      "open": 39.86,
+      "stkVolu": 66395138.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 42.63,
+      "hiPx": 44.57,
+      "loPx": 40.12,
+      "open": 40.18,
+      "stkVolu": 166028381.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 41.11,
+      "hiPx": 43.34,
+      "loPx": 40.68,
+      "open": 42.62,
+      "stkVolu": 88241955.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 45.55,
+      "hiPx": 45.7265,
+      "loPx": 41.57,
+      "open": 41.825,
+      "stkVolu": 186691417.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 44.06,
+      "hiPx": 45.45,
+      "loPx": 43.89,
+      "open": 44.24,
+      "stkVolu": 101989119.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 47.29,
+      "hiPx": 48.24,
+      "loPx": 45.215,
+      "open": 45.89,
+      "stkVolu": 168656410.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 48.72,
+      "hiPx": 49.0,
+      "loPx": 47.42,
+      "open": 48.95,
+      "stkVolu": 148225796.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 48.32,
+      "hiPx": 50.39,
+      "loPx": 47.825,
+      "open": 49.35,
+      "stkVolu": 132328902.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 46.96,
+      "hiPx": 50.21,
+      "loPx": 46.71,
+      "open": 49.27,
+      "stkVolu": 127314711.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 48.56,
+      "hiPx": 50.23,
+      "loPx": 47.0,
+      "open": 47.3,
+      "stkVolu": 150153031.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 54.25,
+      "hiPx": 54.41,
+      "loPx": 50.15,
+      "open": 50.32,
+      "stkVolu": 220565312.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 54.32,
+      "hiPx": 54.6,
+      "loPx": 53.08,
+      "open": 54.21,
+      "stkVolu": 190066397.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 45.07,
+      "hiPx": 48.13,
+      "loPx": 44.45,
+      "open": 46.86,
+      "stkVolu": 294675401.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 42.49,
+      "hiPx": 44.46,
+      "loPx": 42.275,
+      "open": 44.28,
+      "stkVolu": 149407768.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 43.93,
+      "hiPx": 44.53,
+      "loPx": 43.099,
+      "open": 43.97,
+      "stkVolu": 121832221.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 48.78,
+      "hiPx": 49.285,
+      "loPx": 46.32,
+      "open": 46.6,
+      "stkVolu": 201995055.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 48.66,
+      "hiPx": 48.77,
+      "loPx": 46.99,
+      "open": 47.56,
+      "stkVolu": 124256563.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 46.47,
+      "hiPx": 49.5777,
+      "loPx": 45.96,
+      "open": 48.975,
+      "stkVolu": 114920097.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 48.81,
+      "hiPx": 49.84,
+      "loPx": 45.5,
+      "open": 45.63,
+      "stkVolu": 101414583.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 49.25,
+      "hiPx": 51.49,
+      "loPx": 48.43,
+      "open": 50.055,
+      "stkVolu": 122205136.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 48.6,
+      "hiPx": 49.698,
+      "loPx": 47.0,
+      "open": 49.54,
+      "stkVolu": 128702304.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 48.24,
+      "hiPx": 50.86,
+      "loPx": 46.785,
+      "open": 47.59,
+      "stkVolu": 114307769.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 50.59,
+      "hiPx": 51.3,
+      "loPx": 48.83,
+      "open": 49.1,
+      "stkVolu": 115600223.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 50.24,
+      "hiPx": 51.22,
+      "loPx": 47.59,
+      "open": 49.59,
+      "stkVolu": 94841413.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 47.13,
+      "hiPx": 50.5393,
+      "loPx": 46.765,
+      "open": 50.41,
+      "stkVolu": 99832891.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 48.29,
+      "hiPx": 49.55,
+      "loPx": 46.86,
+      "open": 48.11,
+      "stkVolu": 107681221.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 46.48,
+      "hiPx": 48.95,
+      "loPx": 46.19,
+      "open": 47.8,
+      "stkVolu": 88321152.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 46.79,
+      "hiPx": 47.69,
+      "loPx": 44.97,
+      "open": 45.76,
+      "stkVolu": 69740424.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 46.18,
+      "hiPx": 46.8299,
+      "loPx": 45.455,
+      "open": 45.93,
+      "stkVolu": 65802171.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 45.46,
+      "hiPx": 46.77,
+      "loPx": 44.88,
+      "open": 45.915,
+      "stkVolu": 65306065.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 44.62,
+      "hiPx": 45.17,
+      "loPx": 43.92,
+      "open": 44.95,
+      "stkVolu": 72724938.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 44.11,
+      "hiPx": 44.39,
+      "loPx": 42.88,
+      "open": 43.89,
+      "stkVolu": 90743566.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 43.63,
+      "hiPx": 44.55,
+      "loPx": 43.18,
+      "open": 44.09,
+      "stkVolu": 57130909.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 46.12,
+      "hiPx": 46.6,
+      "loPx": 43.54,
+      "open": 44.095,
+      "stkVolu": 98872271.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 46.88,
+      "hiPx": 46.97,
+      "loPx": 45.08,
+      "open": 46.09,
+      "stkVolu": 75645295.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 45.46,
+      "hiPx": 46.95,
+      "loPx": 44.39,
+      "open": 46.77,
+      "stkVolu": 71457507.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 45.61,
+      "hiPx": 46.56,
+      "loPx": 44.4,
+      "open": 44.46,
+      "stkVolu": 79327248.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 45.5,
+      "hiPx": 45.81,
+      "loPx": 43.95,
+      "open": 44.2,
+      "stkVolu": 60705104.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 43.1,
+      "hiPx": 43.685,
+      "loPx": 42.14,
+      "open": 43.44,
+      "stkVolu": 83971029.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 45.58,
+      "hiPx": 46.125,
+      "loPx": 43.27,
+      "open": 44.07,
+      "stkVolu": 96628102.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 45.95,
+      "hiPx": 46.48,
+      "loPx": 44.7,
+      "open": 44.87,
+      "stkVolu": 78229421.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 43.42,
+      "hiPx": 45.18,
+      "loPx": 43.28,
+      "open": 44.67,
+      "stkVolu": 74698310.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 45.58,
+      "hiPx": 45.76,
+      "loPx": 41.64,
+      "open": 42.74,
+      "stkVolu": 82937382.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 46.78,
+      "hiPx": 47.875,
+      "loPx": 45.41,
+      "open": 45.41,
+      "stkVolu": 85233306.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 47.98,
+      "hiPx": 48.83,
+      "loPx": 46.66,
+      "open": 46.815,
+      "stkVolu": 72480566.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 45.25,
+      "hiPx": 47.435,
+      "loPx": 45.17,
+      "open": 47.4,
+      "stkVolu": 85110211.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 45.77,
+      "hiPx": 46.65,
+      "loPx": 45.39,
+      "open": 45.97,
+      "stkVolu": 68386151.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 45.76,
+      "hiPx": 49.17,
+      "loPx": 45.69,
+      "open": 47.91,
+      "stkVolu": 114199390.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 44.06,
+      "hiPx": 46.08,
+      "loPx": 43.91,
+      "open": 46.08,
+      "stkVolu": 89061571.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 45.03,
+      "hiPx": 45.705,
+      "loPx": 44.052,
+      "open": 44.2,
+      "stkVolu": 78056208.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 46.18,
+      "hiPx": 46.44,
+      "loPx": 43.65,
+      "open": 43.99,
+      "stkVolu": 74051501.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 43.87,
+      "hiPx": 47.55,
+      "loPx": 43.642,
+      "open": 46.95,
+      "stkVolu": 162814210.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 44.01,
+      "hiPx": 45.46,
+      "loPx": 43.74,
+      "open": 44.5,
+      "stkVolu": 80772210.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 44.06,
+      "hiPx": 44.31,
+      "loPx": 43.2,
+      "open": 43.535,
+      "stkVolu": 65323531.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 47.18,
+      "hiPx": 47.845,
+      "loPx": 45.45,
+      "open": 45.85,
+      "stkVolu": 97467909.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 44.1,
+      "hiPx": 46.6,
+      "loPx": 43.915,
+      "open": 46.295,
+      "stkVolu": 82841371.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 43.13,
+      "hiPx": 44.13,
+      "loPx": 42.86,
+      "open": 43.62,
+      "stkVolu": 70002236.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 41.19,
+      "hiPx": 43.99,
+      "loPx": 40.63,
+      "open": 43.72,
+      "stkVolu": 84596011.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 44.13,
+      "hiPx": 44.23,
+      "loPx": 41.6,
+      "open": 41.95,
+      "stkVolu": 95294892.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 48.03,
+      "hiPx": 48.77,
+      "loPx": 44.98,
+      "open": 45.0,
+      "stkVolu": 129598509.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 50.38,
+      "hiPx": 50.49,
+      "loPx": 46.04,
+      "open": 46.06,
+      "stkVolu": 117134237.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 50.78,
+      "hiPx": 52.385,
+      "loPx": 49.87,
+      "open": 50.88,
+      "stkVolu": 79978811.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 52.91,
+      "hiPx": 53.27,
+      "loPx": 51.215,
+      "open": 51.905,
+      "stkVolu": 129543837.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 58.95,
+      "hiPx": 59.17,
+      "loPx": 54.8,
+      "open": 55.365,
+      "stkVolu": 184599933.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 61.72,
+      "hiPx": 62.0799,
+      "loPx": 58.39,
+      "open": 58.4,
+      "stkVolu": 155609887.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 62.38,
+      "hiPx": 63.39,
+      "loPx": 60.75,
+      "open": 61.52,
+      "stkVolu": 98624438.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 65.18,
+      "hiPx": 65.65,
+      "loPx": 62.18,
+      "open": 62.18,
+      "stkVolu": 112110972.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 63.81,
+      "hiPx": 65.18,
+      "loPx": 62.089,
+      "open": 65.16,
+      "stkVolu": 112796097.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 64.94,
+      "hiPx": 65.84,
+      "loPx": 62.875,
+      "open": 63.77,
+      "stkVolu": 92051518.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 68.5,
+      "hiPx": 68.61,
+      "loPx": 64.272,
+      "open": 64.93,
+      "stkVolu": 108328309.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 68.5,
+      "hiPx": 70.325,
+      "loPx": 67.735,
+      "open": 68.85,
+      "stkVolu": 118831534.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 65.7,
+      "hiPx": 69.205,
+      "loPx": 64.47,
+      "open": 68.45,
+      "stkVolu": 96851067.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 66.26,
+      "hiPx": 67.67,
+      "loPx": 65.64,
+      "open": 67.14,
+      "stkVolu": 91402314.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 65.27,
+      "hiPx": 68.77,
+      "loPx": 64.98,
+      "open": 67.935,
+      "stkVolu": 90267286.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 66.78,
+      "hiPx": 68.28,
+      "loPx": 65.42,
+      "open": 66.1,
+      "stkVolu": 155141780.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 82.54,
+      "hiPx": 85.22,
+      "loPx": 79.62,
+      "open": 82.2,
+      "stkVolu": 281405214.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 84.99,
+      "hiPx": 87.1,
+      "loPx": 82.61,
+      "open": 83.67,
+      "stkVolu": 178820193.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 84.52,
+      "hiPx": 84.59,
+      "loPx": 80.8,
+      "open": 81.28,
+      "stkVolu": 147773466.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 94.75,
+      "hiPx": 94.95,
+      "loPx": 85.87,
+      "open": 86.135,
+      "stkVolu": 235070906.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 94.48,
+      "hiPx": 95.69,
+      "loPx": 91.5,
+      "open": 95.6,
+      "stkVolu": 160597313.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 99.62,
+      "hiPx": 100.45,
+      "loPx": 92.61,
+      "open": 93.2,
+      "stkVolu": 158502811.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 95.78,
+      "hiPx": 99.82,
+      "loPx": 95.6,
+      "open": 99.18,
+      "stkVolu": 119294030.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 108.15,
+      "hiPx": 110.48,
+      "loPx": 100.08,
+      "open": 100.505,
+      "stkVolu": 198481963.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 113.01,
+      "hiPx": 113.5,
+      "loPx": 106.5801,
+      "open": 110.975,
+      "stkVolu": 157320083.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 109.62,
+      "hiPx": 114.51,
+      "loPx": 109.15,
+      "open": 111.02,
+      "stkVolu": 122699875.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 124.92,
+      "hiPx": 130.57,
+      "loPx": 111.8,
+      "open": 111.81,
+      "stkVolu": 227681300.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 129.44,
+      "hiPx": 132.75,
+      "loPx": 123.92,
+      "open": 130.88,
+      "stkVolu": 179486503.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 120.61,
+      "hiPx": 127.79,
+      "loPx": 115.0,
+      "open": 124.36,
+      "stkVolu": 172516514.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 120.29,
+      "hiPx": 125.0,
+      "loPx": 116.41,
+      "open": 124.1,
+      "stkVolu": 115364423.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 115.93,
+      "hiPx": 118.57,
+      "loPx": 113.17,
+      "open": 114.66,
+      "stkVolu": 118279791.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 108.77,
+      "hiPx": 110.57,
+      "loPx": 105.02,
+      "open": 109.785,
+      "stkVolu": 135205991.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 108.17,
+      "hiPx": 115.54,
+      "loPx": 103.85,
+      "open": 113.47,
+      "stkVolu": 145763995.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 110.8,
+      "hiPx": 113.0699,
+      "loPx": 102.4,
+      "open": 106.98,
+      "stkVolu": 150234892.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 118.96,
+      "hiPx": 121.94,
+      "loPx": 114.8,
+      "open": 116.22,
+      "stkVolu": 165086920.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 118.5,
+      "hiPx": 119.41,
+      "loPx": 113.17,
+      "open": 116.58,
+      "stkVolu": 102452545.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 119.84,
+      "hiPx": 122.78,
+      "loPx": 118.09,
+      "open": 120.34,
+      "stkVolu": 82663024.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 123.52,
+      "hiPx": 125.62,
+      "loPx": 117.35,
+      "open": 122.095,
+      "stkVolu": 108167302.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 121.77,
+      "hiPx": 125.27,
+      "loPx": 117.0,
+      "open": 124.39,
+      "stkVolu": 93323344.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 120.89,
+      "hiPx": 123.08,
+      "loPx": 116.31,
+      "open": 121.445,
+      "stkVolu": 97320987.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 114.68,
+      "hiPx": 126.64,
+      "loPx": 113.54,
+      "open": 123.85,
+      "stkVolu": 191676126.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 109.33,
+      "hiPx": 113.3,
+      "loPx": 106.33,
+      "open": 109.43,
+      "stkVolu": 134900437.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 107.93,
+      "hiPx": 109.0,
+      "loPx": 104.17,
+      "open": 107.45,
+      "stkVolu": 106336209.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 112.71,
+      "hiPx": 118.29,
+      "loPx": 110.86,
+      "open": 116.42,
+      "stkVolu": 118928807.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 111.78,
+      "hiPx": 113.14,
+      "loPx": 107.4801,
+      "open": 108.4,
+      "stkVolu": 77325824.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 99.17,
+      "hiPx": 106.48,
+      "loPx": 98.33,
+      "open": 106.48,
+      "stkVolu": 145209405.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 110.27,
+      "hiPx": 112.54,
+      "loPx": 106.66,
+      "open": 111.0,
+      "stkVolu": 136973898.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 107.92,
+      "hiPx": 113.998,
+      "loPx": 99.46,
+      "open": 112.99,
+      "stkVolu": 149623108.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 107.04,
+      "hiPx": 111.5,
+      "loPx": 104.92,
+      "open": 106.03,
+      "stkVolu": 122653462.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 116.96,
+      "hiPx": 119.44,
+      "loPx": 110.5118,
+      "open": 113.52,
+      "stkVolu": 188430320.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 124.57,
+      "hiPx": 127.6,
+      "loPx": 115.33,
+      "open": 117.415,
+      "stkVolu": 151526758.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 127.86,
+      "hiPx": 132.61,
+      "loPx": 126.66,
+      "open": 129.49,
+      "stkVolu": 134507523.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 117.05,
+      "hiPx": 128.7,
+      "loPx": 116.0,
+      "open": 125.105,
+      "stkVolu": 132962556.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 121.1,
+      "hiPx": 125.2,
+      "loPx": 118.06,
+      "open": 121.85,
+      "stkVolu": 115324920.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 133.99,
+      "hiPx": 135.48,
+      "loPx": 127.9,
+      "open": 131.805,
+      "stkVolu": 233906555.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 140.94,
+      "hiPx": 141.45,
+      "loPx": 136.21,
+      "open": 139.12,
+      "stkVolu": 127190553.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 132.28,
+      "hiPx": 137.98,
+      "loPx": 128.3,
+      "open": 129.73,
+      "stkVolu": 132976743.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 131.65,
+      "hiPx": 136.08,
+      "loPx": 127.95,
+      "open": 133.045,
+      "stkVolu": 104591698.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 132.87,
+      "hiPx": 140.72,
+      "loPx": 125.41,
+      "open": 139.73,
+      "stkVolu": 123120247.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 128.32,
+      "hiPx": 131.23,
+      "loPx": 125.5,
+      "open": 128.705,
+      "stkVolu": 99475352.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 131.72,
+      "hiPx": 132.05,
+      "loPx": 118.5,
+      "open": 127.0,
+      "stkVolu": 106805299.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 139.63,
+      "hiPx": 142.35,
+      "loPx": 131.5201,
+      "open": 131.99,
+      "stkVolu": 116996685.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 127.02,
+      "hiPx": 135.7399,
+      "loPx": 126.6805,
+      "open": 135.0,
+      "stkVolu": 113107246.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 120.35,
+      "hiPx": 130.74,
+      "loPx": 117.63,
+      "open": 128.915,
+      "stkVolu": 125021717.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 122.2,
+      "hiPx": 127.3,
+      "loPx": 121.52,
+      "open": 122.57,
+      "stkVolu": 86950209.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 110.39,
+      "hiPx": 116.47,
+      "loPx": 108.3,
+      "open": 116.3,
+      "stkVolu": 140405927.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 110.24,
+      "hiPx": 110.49,
+      "loPx": 104.41,
+      "open": 108.3,
+      "stkVolu": 105488080.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 112.54,
+      "hiPx": 116.7699,
+      "loPx": 111.51,
+      "open": 114.87,
+      "stkVolu": 99352457.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 109.84,
+      "hiPx": 110.85,
+      "loPx": 107.45,
+      "open": 109.575,
+      "stkVolu": 70846601.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 103.12,
+      "hiPx": 106.17,
+      "loPx": 101.79,
+      "open": 105.98,
+      "stkVolu": 100988772.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 107.76,
+      "hiPx": 109.19,
+      "loPx": 103.5905,
+      "open": 107.98,
+      "stkVolu": 91129016.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 102.99,
+      "hiPx": 109.61,
+      "loPx": 99.2,
+      "open": 109.3,
+      "stkVolu": 120625478.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 96.98,
+      "hiPx": 101.88,
+      "loPx": 95.48,
+      "open": 101.14,
+      "stkVolu": 107742913.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 95.04,
+      "hiPx": 98.05,
+      "loPx": 89.59,
+      "open": 92.14,
+      "stkVolu": 126779308.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 97.06,
+      "hiPx": 100.98,
+      "loPx": 96.92,
+      "open": 97.58,
+      "stkVolu": 89741378.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 105.45,
+      "hiPx": 106.34,
+      "loPx": 101.22,
+      "open": 103.19,
+      "stkVolu": 105429373.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 102.62,
+      "hiPx": 106.85,
+      "loPx": 101.48,
+      "open": 101.545,
+      "stkVolu": 78431041.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 100.23,
+      "hiPx": 104.18,
+      "loPx": 99.235,
+      "open": 101.14,
+      "stkVolu": 140806900.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 92.32,
+      "hiPx": 101.74,
+      "loPx": 91.58,
+      "open": 100.36,
+      "stkVolu": 181132891.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 91.67,
+      "hiPx": 94.98,
+      "loPx": 86.94,
+      "open": 92.46,
+      "stkVolu": 133247260.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 86.3,
+      "hiPx": 88.2799,
+      "loPx": 83.1,
+      "open": 86.62,
+      "stkVolu": 154346670.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 81.88,
+      "hiPx": 88.47,
+      "loPx": 81.79,
+      "open": 86.57,
+      "stkVolu": 152394563.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 91.13,
+      "hiPx": 94.1,
+      "loPx": 85.97,
+      "open": 86.51,
+      "stkVolu": 140322599.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 90.2,
+      "hiPx": 97.9,
+      "loPx": 90.13,
+      "open": 96.72,
+      "stkVolu": 109039502.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 91.0,
+      "hiPx": 91.68,
+      "loPx": 85.62,
+      "open": 88.4,
+      "stkVolu": 96633640.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 100.86,
+      "hiPx": 101.39,
+      "loPx": 94.32,
+      "open": 95.24,
+      "stkVolu": 124355055.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 101.06,
+      "hiPx": 102.83,
+      "loPx": 97.895,
+      "open": 99.3,
+      "stkVolu": 85388366.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 99.81,
+      "hiPx": 103.3799,
+      "loPx": 95.6,
+      "open": 98.22,
+      "stkVolu": 78088124.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 101.65,
+      "hiPx": 103.66,
+      "loPx": 98.03,
+      "open": 102.33,
+      "stkVolu": 76760636.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 97.52,
+      "hiPx": 100.025,
+      "loPx": 96.3,
+      "open": 98.26,
+      "stkVolu": 101153438.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 97.71,
+      "hiPx": 98.35,
+      "loPx": 95.35,
+      "open": 96.78,
+      "stkVolu": 164063575.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 100.95,
+      "hiPx": 103.16,
+      "loPx": 100.1232,
+      "open": 101.33,
+      "stkVolu": 162446693.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 104.56,
+      "hiPx": 107.57,
+      "loPx": 100.33,
+      "open": 101.51,
+      "stkVolu": 116837589.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 102.5,
+      "hiPx": 106.87,
+      "loPx": 102.05,
+      "open": 104.48,
+      "stkVolu": 95387502.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 103.49,
+      "hiPx": 105.97,
+      "loPx": 101.8,
+      "open": 103.55,
+      "stkVolu": 88616832.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 96.685,
+      "hiPx": 99.31,
+      "loPx": 95.25,
+      "open": 99.22,
+      "stkVolu": 121969461.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 92.8,
+      "hiPx": 98.2,
+      "loPx": 91.28,
+      "open": 97.41,
+      "stkVolu": 110268648.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 92.13,
+      "hiPx": 92.68,
+      "loPx": 89.85,
+      "open": 91.87,
+      "stkVolu": 85654715.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 90.07,
+      "hiPx": 92.768,
+      "loPx": 89.75,
+      "open": 92.71,
+      "stkVolu": 91670104.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 87.26,
+      "hiPx": 88.91,
+      "loPx": 85.14,
+      "open": 88.86,
+      "stkVolu": 96903359.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 87.48,
+      "hiPx": 90.18,
+      "loPx": 87.29,
+      "open": 90.06,
+      "stkVolu": 81853821.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 88.24,
+      "hiPx": 88.2799,
+      "loPx": 85.63,
+      "open": 86.805,
+      "stkVolu": 75752764.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 92.09,
+      "hiPx": 92.95,
+      "loPx": 88.46,
+      "open": 89.91,
+      "stkVolu": 100556675.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 201.82,
+      "hiPx": 202.98,
+      "loPx": 197.855,
+      "open": 197.855,
+      "stkVolu": 2561725.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 201.42,
+      "hiPx": 202.1879,
+      "loPx": 199.67,
+      "open": 200.89,
+      "stkVolu": 3483128.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 203.99,
+      "hiPx": 204.51,
+      "loPx": 200.69,
+      "open": 202.0,
+      "stkVolu": 3411426.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 206.06,
+      "hiPx": 206.18,
+      "loPx": 202.43,
+      "open": 204.8,
+      "stkVolu": 3089967.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 192.07,
+      "hiPx": 205.0,
+      "loPx": 191.17,
+      "open": 204.03,
+      "stkVolu": 9248970.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 187.39,
+      "hiPx": 193.0,
+      "loPx": 186.7,
+      "open": 192.91,
+      "stkVolu": 7412270.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 190.72,
+      "hiPx": 191.4416,
+      "loPx": 186.001,
+      "open": 186.88,
+      "stkVolu": 5050218.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 192.25,
+      "hiPx": 193.52,
+      "loPx": 190.2,
+      "open": 190.71,
+      "stkVolu": 3963239.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 192.59,
+      "hiPx": 193.88,
+      "loPx": 190.695,
+      "open": 192.95,
+      "stkVolu": 3119577.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 196.28,
+      "hiPx": 197.6,
+      "loPx": 193.0798,
+      "open": 193.19,
+      "stkVolu": 4300392.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 195.78,
+      "hiPx": 197.44,
+      "loPx": 194.78,
+      "open": 197.12,
+      "stkVolu": 2978902.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 199.88,
+      "hiPx": 203.2,
+      "loPx": 194.6,
+      "open": 195.935,
+      "stkVolu": 7642519.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 196.73,
+      "hiPx": 201.43,
+      "loPx": 196.31,
+      "open": 199.89,
+      "stkVolu": 3658253.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 199.22,
+      "hiPx": 199.9,
+      "loPx": 194.77,
+      "open": 197.825,
+      "stkVolu": 3050496.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 201.16,
+      "hiPx": 201.45,
+      "loPx": 198.43,
+      "open": 199.0,
+      "stkVolu": 2887811.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 203.27,
+      "hiPx": 205.27,
+      "loPx": 200.65,
+      "open": 201.33,
+      "stkVolu": 3459191.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 204.5,
+      "hiPx": 204.9499,
+      "loPx": 202.51,
+      "open": 203.77,
+      "stkVolu": 2134717.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 193.84,
+      "hiPx": 210.39,
+      "loPx": 193.1,
+      "open": 206.0,
+      "stkVolu": 13615217.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 183.03,
+      "hiPx": 186.12,
+      "loPx": 176.56,
+      "open": 180.27,
+      "stkVolu": 42277248.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 173.6,
+      "hiPx": 183.94,
+      "loPx": 172.93,
+      "open": 183.91,
+      "stkVolu": 29824681.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 172.88,
+      "hiPx": 176.03,
+      "loPx": 168.36,
+      "open": 173.13,
+      "stkVolu": 16242929.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 171.0,
+      "hiPx": 174.48,
+      "loPx": 170.05,
+      "open": 174.475,
+      "stkVolu": 11191556.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 169.09,
+      "hiPx": 171.68,
+      "loPx": 168.18,
+      "open": 171.5,
+      "stkVolu": 8645701.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 172.89,
+      "hiPx": 173.625,
+      "loPx": 168.4,
+      "open": 169.25,
+      "stkVolu": 9890871.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 168.1,
+      "hiPx": 173.5,
+      "loPx": 165.21,
+      "open": 173.5,
+      "stkVolu": 14553490.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 167.06,
+      "hiPx": 170.4584,
+      "loPx": 166.56,
+      "open": 168.89,
+      "stkVolu": 9842196.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 168.17,
+      "hiPx": 170.8994,
+      "loPx": 166.21,
+      "open": 167.2,
+      "stkVolu": 10219730.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 175.4,
+      "hiPx": 175.58,
+      "loPx": 170.25,
+      "open": 171.22,
+      "stkVolu": 11539922.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 176.86,
+      "hiPx": 180.39,
+      "loPx": 175.78,
+      "open": 180.15,
+      "stkVolu": 11947487.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 173.55,
+      "hiPx": 177.85,
+      "loPx": 173.455,
+      "open": 177.0,
+      "stkVolu": 8784615.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 177.09,
+      "hiPx": 177.36,
+      "loPx": 173.5,
+      "open": 174.36,
+      "stkVolu": 9548581.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 176.17,
+      "hiPx": 178.19,
+      "loPx": 174.69,
+      "open": 178.055,
+      "stkVolu": 17895451.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 181.56,
+      "hiPx": 189.0,
+      "loPx": 180.71,
+      "open": 187.81,
+      "stkVolu": 27834466.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 184.43,
+      "hiPx": 187.645,
+      "loPx": 181.47,
+      "open": 181.93,
+      "stkVolu": 13637507.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 183.32,
+      "hiPx": 184.35,
+      "loPx": 180.02,
+      "open": 184.12,
+      "stkVolu": 8181331.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 185.88,
+      "hiPx": 187.1099,
+      "loPx": 182.935,
+      "open": 183.65,
+      "stkVolu": 6861721.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 184.55,
+      "hiPx": 186.07,
+      "loPx": 181.91,
+      "open": 185.18,
+      "stkVolu": 5801233.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 184.23,
+      "hiPx": 186.6578,
+      "loPx": 183.99,
+      "open": 184.22,
+      "stkVolu": 8319130.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 187.61,
+      "hiPx": 188.21,
+      "loPx": 184.69,
+      "open": 185.0,
+      "stkVolu": 5990604.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 191.02,
+      "hiPx": 191.57,
+      "loPx": 187.2,
+      "open": 187.44,
+      "stkVolu": 6031842.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 190.52,
+      "hiPx": 192.785,
+      "loPx": 190.03,
+      "open": 191.37,
+      "stkVolu": 5195150.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 190.52,
+      "hiPx": 191.59,
+      "loPx": 186.35,
+      "open": 187.255,
+      "stkVolu": 7066889.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 191.53,
+      "hiPx": 192.35,
+      "loPx": 188.05,
+      "open": 188.95,
+      "stkVolu": 5482571.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 192.35,
+      "hiPx": 194.48,
+      "loPx": 188.75,
+      "open": 191.53,
+      "stkVolu": 5996127.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 194.46,
+      "hiPx": 196.34,
+      "loPx": 191.85,
+      "open": 193.6,
+      "stkVolu": 5670399.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 197.37,
+      "hiPx": 197.9,
+      "loPx": 194.79,
+      "open": 195.185,
+      "stkVolu": 5506294.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 197.55,
+      "hiPx": 198.13,
+      "loPx": 195.77,
+      "open": 197.69,
+      "stkVolu": 4073968.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 197.33,
+      "hiPx": 202.72,
+      "loPx": 195.7,
+      "open": 197.84,
+      "stkVolu": 6342409.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 198.33,
+      "hiPx": 200.8,
+      "loPx": 197.7181,
+      "open": 198.0,
+      "stkVolu": 4327456.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 196.29,
+      "hiPx": 199.95,
+      "loPx": 196.155,
+      "open": 197.18,
+      "stkVolu": 4431574.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 201.28,
+      "hiPx": 202.11,
+      "loPx": 197.3701,
+      "open": 198.045,
+      "stkVolu": 6076902.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 201.34,
+      "hiPx": 202.12,
+      "loPx": 198.76,
+      "open": 201.5,
+      "stkVolu": 5365532.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 203.12,
+      "hiPx": 204.505,
+      "loPx": 200.325,
+      "open": 203.0,
+      "stkVolu": 4916139.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 205.68,
+      "hiPx": 207.0299,
+      "loPx": 204.265,
+      "open": 204.6,
+      "stkVolu": 5446388.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 208.19,
+      "hiPx": 209.02,
+      "loPx": 205.52,
+      "open": 206.405,
+      "stkVolu": 8925326.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 208.18,
+      "hiPx": 209.51,
+      "loPx": 205.67,
+      "open": 206.89,
+      "stkVolu": 5468050.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 203.25,
+      "hiPx": 208.49,
+      "loPx": 202.25,
+      "open": 207.16,
+      "stkVolu": 7125741.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 200.7,
+      "hiPx": 205.0,
+      "loPx": 200.22,
+      "open": 202.67,
+      "stkVolu": 5159961.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 202.21,
+      "hiPx": 203.84,
+      "loPx": 197.69,
+      "open": 200.0,
+      "stkVolu": 7326395.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 202.37,
+      "hiPx": 203.5499,
+      "loPx": 200.62,
+      "open": 201.48,
+      "stkVolu": 5244253.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 203.96,
+      "hiPx": 204.74,
+      "loPx": 202.6,
+      "open": 203.0,
+      "stkVolu": 5333718.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 203.62,
+      "hiPx": 206.07,
+      "loPx": 201.92,
+      "open": 203.62,
+      "stkVolu": 4396128.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 206.8,
+      "hiPx": 207.19,
+      "loPx": 200.88,
+      "open": 202.16,
+      "stkVolu": 5623781.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 209.3,
+      "hiPx": 209.9,
+      "loPx": 205.44,
+      "open": 208.49,
+      "stkVolu": 4951605.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 207.19,
+      "hiPx": 212.0999,
+      "loPx": 206.9001,
+      "open": 210.1,
+      "stkVolu": 4963007.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 212.58,
+      "hiPx": 213.85,
+      "loPx": 209.13,
+      "open": 209.24,
+      "stkVolu": 7286921.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 211.04,
+      "hiPx": 214.02,
+      "loPx": 208.32,
+      "open": 213.23,
+      "stkVolu": 4982825.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 217.79,
+      "hiPx": 217.94,
+      "loPx": 212.26,
+      "open": 212.6,
+      "stkVolu": 5122939.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 215.17,
+      "hiPx": 217.75,
+      "loPx": 214.19,
+      "open": 217.0,
+      "stkVolu": 4548755.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 208.55,
+      "hiPx": 217.29,
+      "loPx": 208.31,
+      "open": 216.0,
+      "stkVolu": 5425045.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 213.28,
+      "hiPx": 214.72,
+      "loPx": 211.69,
+      "open": 213.42,
+      "stkVolu": 4449204.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 207.56,
+      "hiPx": 210.8,
+      "loPx": 206.7,
+      "open": 209.765,
+      "stkVolu": 4381695.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 206.7,
+      "hiPx": 210.6,
+      "loPx": 203.3801,
+      "open": 208.08,
+      "stkVolu": 4992297.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 205.51,
+      "hiPx": 210.44,
+      "loPx": 204.63,
+      "open": 208.0,
+      "stkVolu": 3675599.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 207.89,
+      "hiPx": 208.98,
+      "loPx": 203.62,
+      "open": 204.09,
+      "stkVolu": 4626840.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 211.82,
+      "hiPx": 212.605,
+      "loPx": 209.53,
+      "open": 209.555,
+      "stkVolu": 4086411.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 214.4,
+      "hiPx": 215.09,
+      "loPx": 211.19,
+      "open": 212.04,
+      "stkVolu": 3835806.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 212.42,
+      "hiPx": 215.17,
+      "loPx": 210.99,
+      "open": 214.0,
+      "stkVolu": 4591459.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 215.02,
+      "hiPx": 216.5069,
+      "loPx": 211.62,
+      "open": 212.05,
+      "stkVolu": 4001693.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 217.11,
+      "hiPx": 218.225,
+      "loPx": 215.8661,
+      "open": 216.75,
+      "stkVolu": 3437151.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 220.29,
+      "hiPx": 221.09,
+      "loPx": 218.0,
+      "open": 219.79,
+      "stkVolu": 5439642.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 221.38,
+      "hiPx": 223.61,
+      "loPx": 219.68,
+      "open": 221.18,
+      "stkVolu": 4608883.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 217.16,
+      "hiPx": 219.8135,
+      "loPx": 216.0,
+      "open": 219.31,
+      "stkVolu": 4607680.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 218.27,
+      "hiPx": 221.27,
+      "loPx": 216.61,
+      "open": 217.54,
+      "stkVolu": 3759931.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 220.24,
+      "hiPx": 221.17,
+      "loPx": 217.75,
+      "open": 219.94,
+      "stkVolu": 3958720.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 219.23,
+      "hiPx": 220.47,
+      "loPx": 215.33,
+      "open": 219.97,
+      "stkVolu": 5011550.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 214.52,
+      "hiPx": 218.0,
+      "loPx": 212.35,
+      "open": 215.72,
+      "stkVolu": 6361809.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 213.18,
+      "hiPx": 215.5999,
+      "loPx": 212.42,
+      "open": 215.2,
+      "stkVolu": 4309348.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 211.37,
+      "hiPx": 213.41,
+      "loPx": 207.35,
+      "open": 209.87,
+      "stkVolu": 5444794.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 212.285,
+      "hiPx": 212.635,
+      "loPx": 207.83,
+      "open": 208.23,
+      "stkVolu": 5046792.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 216.54,
+      "hiPx": 216.82,
+      "loPx": 212.72,
+      "open": 214.22,
+      "stkVolu": 4917095.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 218.27,
+      "hiPx": 218.7499,
+      "loPx": 215.7901,
+      "open": 216.94,
+      "stkVolu": 3581103.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 210.04,
+      "hiPx": 220.03,
+      "loPx": 209.72,
+      "open": 218.14,
+      "stkVolu": 4535075.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 204.77,
+      "hiPx": 211.99,
+      "loPx": 203.1812,
+      "open": 209.8,
+      "stkVolu": 5361219.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 205.25,
+      "hiPx": 206.93,
+      "loPx": 198.4,
+      "open": 201.99,
+      "stkVolu": 5371730.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 202.9,
+      "hiPx": 207.185,
+      "loPx": 202.16,
+      "open": 205.0,
+      "stkVolu": 4860717.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 201.0,
+      "hiPx": 203.99,
+      "loPx": 199.81,
+      "open": 202.5,
+      "stkVolu": 5373225.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 199.9,
+      "hiPx": 202.6,
+      "loPx": 199.24,
+      "open": 199.36,
+      "stkVolu": 7529051.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 185.07,
+      "hiPx": 199.69,
+      "loPx": 183.2,
+      "open": 198.125,
+      "stkVolu": 16078962.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 182.9,
+      "hiPx": 186.75,
+      "loPx": 180.05,
+      "open": 185.02,
+      "stkVolu": 8201446.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 183.89,
+      "hiPx": 186.58,
+      "loPx": 181.92,
+      "open": 185.42,
+      "stkVolu": 16207034.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 186.27,
+      "hiPx": 186.69,
+      "loPx": 181.16,
+      "open": 183.53,
+      "stkVolu": 6035647.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 185.35,
+      "hiPx": 187.145,
+      "loPx": 183.83,
+      "open": 187.145,
+      "stkVolu": 5915205.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 190.13,
+      "hiPx": 190.92,
+      "loPx": 186.95,
+      "open": 187.23,
+      "stkVolu": 4808313.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 187.73,
+      "hiPx": 189.87,
+      "loPx": 185.6201,
+      "open": 189.54,
+      "stkVolu": 6692006.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 189.88,
+      "hiPx": 192.075,
+      "loPx": 188.15,
+      "open": 189.49,
+      "stkVolu": 5874307.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 193.63,
+      "hiPx": 194.0,
+      "loPx": 186.77,
+      "open": 190.08,
+      "stkVolu": 5489767.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 195.68,
+      "hiPx": 196.0,
+      "loPx": 192.432,
+      "open": 194.06,
+      "stkVolu": 4164795.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 198.84,
+      "hiPx": 199.735,
+      "loPx": 195.0,
+      "open": 195.64,
+      "stkVolu": 4611842.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 195.35,
+      "hiPx": 199.9,
+      "loPx": 193.685,
+      "open": 199.37,
+      "stkVolu": 4425273.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 195.0,
+      "hiPx": 196.6645,
+      "loPx": 194.2,
+      "open": 195.02,
+      "stkVolu": 3193486.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 192.96,
+      "hiPx": 195.0,
+      "loPx": 192.11,
+      "open": 194.46,
+      "stkVolu": 4715844.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 190.36,
+      "hiPx": 192.84,
+      "loPx": 188.5,
+      "open": 191.38,
+      "stkVolu": 5776098.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 191.69,
+      "hiPx": 193.66,
+      "loPx": 188.55,
+      "open": 191.055,
+      "stkVolu": 5352724.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 185.88,
+      "hiPx": 191.34,
+      "loPx": 185.7093,
+      "open": 191.34,
+      "stkVolu": 6660313.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 187.09,
+      "hiPx": 188.33,
+      "loPx": 184.635,
+      "open": 185.1,
+      "stkVolu": 5757246.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 183.44,
+      "hiPx": 188.3316,
+      "loPx": 183.28,
+      "open": 187.53,
+      "stkVolu": 5758294.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 185.88,
+      "hiPx": 186.92,
+      "loPx": 183.1901,
+      "open": 185.71,
+      "stkVolu": 7224299.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 186.88,
+      "hiPx": 188.27,
+      "loPx": 186.14,
+      "open": 187.85,
+      "stkVolu": 19050253.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 189.49,
+      "hiPx": 190.52,
+      "loPx": 186.6501,
+      "open": 188.485,
+      "stkVolu": 4982468.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 188.12,
+      "hiPx": 189.72,
+      "loPx": 187.29,
+      "open": 189.07,
+      "stkVolu": 3371298.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 187.22,
+      "hiPx": 187.84,
+      "loPx": 184.7901,
+      "open": 187.43,
+      "stkVolu": 1829308.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 188.45,
+      "hiPx": 188.58,
+      "loPx": 186.51,
+      "open": 187.34,
+      "stkVolu": 2527618.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 186.85,
+      "hiPx": 189.03,
+      "loPx": 186.21,
+      "open": 188.13,
+      "stkVolu": 2659990.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 186.85,
+      "hiPx": 187.75,
+      "loPx": 185.9,
+      "open": 186.25,
+      "stkVolu": 2847620.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 184.2,
+      "hiPx": 186.86,
+      "loPx": 184.1,
+      "open": 186.7,
+      "stkVolu": 3253149.0,
+      "ticker": "PANW",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 179.37,
+      "hiPx": 184.81,
+      "loPx": 177.23,
+      "open": 184.81,
+      "stkVolu": 6909587.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 182.12,
+      "hiPx": 185.84,
+      "loPx": 181.01,
+      "open": 183.0,
+      "stkVolu": 6582930.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 185.86,
+      "hiPx": 186.05,
+      "loPx": 181.45,
+      "open": 181.73,
+      "stkVolu": 5959267.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 193.9,
+      "hiPx": 196.19,
+      "loPx": 187.77,
+      "open": 188.09,
+      "stkVolu": 7613585.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 190.8,
+      "hiPx": 193.89,
+      "loPx": 189.05,
+      "open": 193.69,
+      "stkVolu": 6451293.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 189.02,
+      "hiPx": 192.4199,
+      "loPx": 187.32,
+      "open": 191.93,
+      "stkVolu": 5306460.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 188.88,
+      "hiPx": 189.7499,
+      "loPx": 187.2929,
+      "open": 188.34,
+      "stkVolu": 4281434.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 190.85,
+      "hiPx": 193.2,
+      "loPx": 187.99,
+      "open": 188.0,
+      "stkVolu": 5419617.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 190.93,
+      "hiPx": 192.585,
+      "loPx": 187.95,
+      "open": 190.71,
+      "stkVolu": 5658085.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 187.73,
+      "hiPx": 194.0699,
+      "loPx": 186.5485,
+      "open": 190.66,
+      "stkVolu": 6530304.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 187.66,
+      "hiPx": 189.4999,
+      "loPx": 184.675,
+      "open": 187.63,
+      "stkVolu": 7053068.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 184.06,
+      "hiPx": 188.52,
+      "loPx": 182.27,
+      "open": 184.24,
+      "stkVolu": 7287948.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 181.47,
+      "hiPx": 185.08,
+      "loPx": 178.78,
+      "open": 184.46,
+      "stkVolu": 6300966.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 182.27,
+      "hiPx": 183.095,
+      "loPx": 180.78,
+      "open": 182.475,
+      "stkVolu": 7018027.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 180.18,
+      "hiPx": 184.72,
+      "loPx": 179.7,
+      "open": 183.06,
+      "stkVolu": 5790965.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 184.22,
+      "hiPx": 185.6199,
+      "loPx": 180.685,
+      "open": 181.37,
+      "stkVolu": 5356744.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 183.5,
+      "hiPx": 189.39,
+      "loPx": 182.53,
+      "open": 187.375,
+      "stkVolu": 5539985.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 183.74,
+      "hiPx": 186.68,
+      "loPx": 183.35,
+      "open": 184.53,
+      "stkVolu": 4159810.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 176.2,
+      "hiPx": 182.205,
+      "loPx": 171.251,
+      "open": 181.08,
+      "stkVolu": 12925323.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 176.97,
+      "hiPx": 178.0999,
+      "loPx": 172.99,
+      "open": 174.72,
+      "stkVolu": 7628145.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 175.42,
+      "hiPx": 177.73,
+      "loPx": 173.8,
+      "open": 177.45,
+      "stkVolu": 4978106.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 166.24,
+      "hiPx": 174.55,
+      "loPx": 163.33,
+      "open": 174.12,
+      "stkVolu": 9945882.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 166.72,
+      "hiPx": 167.56,
+      "loPx": 159.44,
+      "open": 164.87,
+      "stkVolu": 10470840.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 154.77,
+      "hiPx": 166.19,
+      "loPx": 154.05,
+      "open": 163.68,
+      "stkVolu": 12780496.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 159.32,
+      "hiPx": 159.545,
+      "loPx": 151.71,
+      "open": 157.61,
+      "stkVolu": 9902493.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 166.0,
+      "hiPx": 166.7499,
+      "loPx": 156.37,
+      "open": 159.795,
+      "stkVolu": 20917735.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 165.51,
+      "hiPx": 168.28,
+      "loPx": 164.3,
+      "open": 166.39,
+      "stkVolu": 30141622.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 165.3,
+      "hiPx": 168.28,
+      "loPx": 163.49,
+      "open": 167.195,
+      "stkVolu": 43667315.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 162.81,
+      "hiPx": 167.9514,
+      "loPx": 157.81,
+      "open": 166.29,
+      "stkVolu": 19646464.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 166.95,
+      "hiPx": 170.49,
+      "loPx": 163.1,
+      "open": 165.03,
+      "stkVolu": 12576988.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 163.5,
+      "hiPx": 166.01,
+      "loPx": 160.08,
+      "open": 165.68,
+      "stkVolu": 16586505.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 152.35,
+      "hiPx": 155.278,
+      "loPx": 147.15,
+      "open": 149.55,
+      "stkVolu": 26756814.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 150.99,
+      "hiPx": 152.6797,
+      "loPx": 148.1501,
+      "open": 152.48,
+      "stkVolu": 13545796.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 148.7,
+      "hiPx": 158.17,
+      "loPx": 148.4,
+      "open": 150.117,
+      "stkVolu": 25857844.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 144.14,
+      "hiPx": 148.63,
+      "loPx": 143.3,
+      "open": 147.72,
+      "stkVolu": 20861538.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 141.67,
+      "hiPx": 147.52,
+      "loPx": 139.5706,
+      "open": 142.93,
+      "stkVolu": 23692183.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 144.84,
+      "hiPx": 145.36,
+      "loPx": 140.3,
+      "open": 142.725,
+      "stkVolu": 11157854.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 149.4,
+      "hiPx": 151.29,
+      "loPx": 144.81,
+      "open": 146.91,
+      "stkVolu": 12124941.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 148.92,
+      "hiPx": 148.99,
+      "loPx": 143.6701,
+      "open": 147.165,
+      "stkVolu": 9430627.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 150.15,
+      "hiPx": 151.86,
+      "loPx": 146.01,
+      "open": 147.9,
+      "stkVolu": 8281324.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 156.09,
+      "hiPx": 156.83,
+      "loPx": 147.86,
+      "open": 149.07,
+      "stkVolu": 10319535.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 158.56,
+      "hiPx": 160.295,
+      "loPx": 154.75,
+      "open": 156.06,
+      "stkVolu": 9541859.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 163.16,
+      "hiPx": 164.7,
+      "loPx": 158.48,
+      "open": 159.13,
+      "stkVolu": 9220461.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 165.05,
+      "hiPx": 165.3599,
+      "loPx": 161.31,
+      "open": 162.32,
+      "stkVolu": 7202500.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 165.1,
+      "hiPx": 167.76,
+      "loPx": 163.49,
+      "open": 164.08,
+      "stkVolu": 9194273.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 165.58,
+      "hiPx": 167.0,
+      "loPx": 160.8316,
+      "open": 165.5,
+      "stkVolu": 6846981.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 164.93,
+      "hiPx": 169.08,
+      "loPx": 163.38,
+      "open": 166.65,
+      "stkVolu": 5487235.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 168.12,
+      "hiPx": 168.74,
+      "loPx": 165.43,
+      "open": 166.28,
+      "stkVolu": 7961542.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 167.015,
+      "hiPx": 171.17,
+      "loPx": 165.8028,
+      "open": 168.9,
+      "stkVolu": 6258637.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 167.45,
+      "hiPx": 168.28,
+      "loPx": 166.15,
+      "open": 167.74,
+      "stkVolu": 5985123.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 169.19,
+      "hiPx": 172.025,
+      "loPx": 167.55,
+      "open": 167.9,
+      "stkVolu": 5520394.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 168.91,
+      "hiPx": 171.805,
+      "loPx": 167.5,
+      "open": 168.05,
+      "stkVolu": 5789554.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 169.74,
+      "hiPx": 171.7,
+      "loPx": 168.0,
+      "open": 168.86,
+      "stkVolu": 6558167.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 162.95,
+      "hiPx": 169.19,
+      "loPx": 161.89,
+      "open": 169.19,
+      "stkVolu": 16455409.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 164.05,
+      "hiPx": 166.35,
+      "loPx": 162.455,
+      "open": 164.43,
+      "stkVolu": 7218791.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 157.21,
+      "hiPx": 162.8,
+      "loPx": 156.14,
+      "open": 162.09,
+      "stkVolu": 7143081.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 153.22,
+      "hiPx": 160.31,
+      "loPx": 152.79,
+      "open": 159.7,
+      "stkVolu": 6349987.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 156.36,
+      "hiPx": 159.39,
+      "loPx": 152.2001,
+      "open": 152.24,
+      "stkVolu": 6081967.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 147.02,
+      "hiPx": 149.37,
+      "loPx": 143.5,
+      "open": 147.55,
+      "stkVolu": 11431350.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 154.35,
+      "hiPx": 159.16,
+      "loPx": 151.465,
+      "open": 151.945,
+      "stkVolu": 12198800.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 160.32,
+      "hiPx": 161.12,
+      "loPx": 155.03,
+      "open": 155.03,
+      "stkVolu": 7751550.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 160.67,
+      "hiPx": 161.795,
+      "loPx": 157.3,
+      "open": 161.445,
+      "stkVolu": 7643219.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 163.21,
+      "hiPx": 163.31,
+      "loPx": 157.51,
+      "open": 159.9,
+      "stkVolu": 4354267.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 161.95,
+      "hiPx": 164.08,
+      "loPx": 159.665,
+      "open": 163.37,
+      "stkVolu": 4814834.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 169.87,
+      "hiPx": 170.98,
+      "loPx": 160.25,
+      "open": 161.58,
+      "stkVolu": 8671274.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 173.78,
+      "hiPx": 179.27,
+      "loPx": 171.63,
+      "open": 173.895,
+      "stkVolu": 12257373.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 166.99,
+      "hiPx": 174.98,
+      "loPx": 164.3,
+      "open": 174.14,
+      "stkVolu": 10583735.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 155.73,
+      "hiPx": 167.595,
+      "loPx": 151.28,
+      "open": 167.595,
+      "stkVolu": 15592662.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 162.51,
+      "hiPx": 162.8,
+      "loPx": 154.84,
+      "open": 155.575,
+      "stkVolu": 8545573.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 161.59,
+      "hiPx": 165.6372,
+      "loPx": 158.83,
+      "open": 163.37,
+      "stkVolu": 7415632.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 164.11,
+      "hiPx": 165.2299,
+      "loPx": 161.69,
+      "open": 164.49,
+      "stkVolu": 7416216.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 166.97,
+      "hiPx": 170.25,
+      "loPx": 165.0,
+      "open": 168.6,
+      "stkVolu": 7222371.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 167.85,
+      "hiPx": 170.62,
+      "loPx": 166.7,
+      "open": 170.48,
+      "stkVolu": 7037338.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 169.56,
+      "hiPx": 170.54,
+      "loPx": 165.2,
+      "open": 167.005,
+      "stkVolu": 4859707.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 174.96,
+      "hiPx": 177.63,
+      "loPx": 169.59,
+      "open": 170.4,
+      "stkVolu": 5856290.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 181.2,
+      "hiPx": 181.52,
+      "loPx": 175.15,
+      "open": 175.5,
+      "stkVolu": 5903222.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 173.21,
+      "hiPx": 175.49,
+      "loPx": 169.6,
+      "open": 173.37,
+      "stkVolu": 6965193.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 178.54,
+      "hiPx": 179.1,
+      "loPx": 173.22,
+      "open": 174.0,
+      "stkVolu": 5887572.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 182.9,
+      "hiPx": 184.02,
+      "loPx": 176.5,
+      "open": 176.86,
+      "stkVolu": 7893753.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 180.99,
+      "hiPx": 186.0,
+      "loPx": 180.74,
+      "open": 184.11,
+      "stkVolu": 6451941.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 181.54,
+      "hiPx": 182.25,
+      "loPx": 177.8,
+      "open": 179.6,
+      "stkVolu": 4157408.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 179.32,
+      "hiPx": 180.85,
+      "loPx": 173.11,
+      "open": 180.85,
+      "stkVolu": 5771507.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 181.08,
+      "hiPx": 183.04,
+      "loPx": 177.41,
+      "open": 182.0,
+      "stkVolu": 4972074.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 184.56,
+      "hiPx": 187.27,
+      "loPx": 180.945,
+      "open": 181.64,
+      "stkVolu": 4891118.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 183.98,
+      "hiPx": 186.24,
+      "loPx": 180.52,
+      "open": 186.0,
+      "stkVolu": 5150740.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 183.68,
+      "hiPx": 184.98,
+      "loPx": 179.19,
+      "open": 180.44,
+      "stkVolu": 5595572.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 196.53,
+      "hiPx": 199.09,
+      "loPx": 190.77,
+      "open": 190.77,
+      "stkVolu": 10556602.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 207.88,
+      "hiPx": 208.09,
+      "loPx": 193.425,
+      "open": 194.85,
+      "stkVolu": 11641798.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 213.66,
+      "hiPx": 214.3,
+      "loPx": 205.65,
+      "open": 207.79,
+      "stkVolu": 9404301.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 215.6,
+      "hiPx": 216.16,
+      "loPx": 210.77,
+      "open": 213.64,
+      "stkVolu": 8295243.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 227.79,
+      "hiPx": 228.85,
+      "loPx": 210.77,
+      "open": 213.04,
+      "stkVolu": 9337732.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 238.21,
+      "hiPx": 239.15,
+      "loPx": 225.375,
+      "open": 227.545,
+      "stkVolu": 10346650.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 242.83,
+      "hiPx": 245.8,
+      "loPx": 230.26,
+      "open": 237.825,
+      "stkVolu": 11551015.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 247.55,
+      "hiPx": 248.8499,
+      "loPx": 235.8101,
+      "open": 238.905,
+      "stkVolu": 8734865.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 240.13,
+      "hiPx": 248.6,
+      "loPx": 239.69,
+      "open": 246.96,
+      "stkVolu": 11030247.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 246.66,
+      "hiPx": 250.0,
+      "loPx": 235.262,
+      "open": 236.205,
+      "stkVolu": 8698919.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 252.92,
+      "hiPx": 253.1,
+      "loPx": 241.0,
+      "open": 241.335,
+      "stkVolu": 6323606.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 260.58,
+      "hiPx": 261.412,
+      "loPx": 249.5,
+      "open": 251.12,
+      "stkVolu": 6629104.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 256.75,
+      "hiPx": 259.84,
+      "loPx": 250.77,
+      "open": 258.17,
+      "stkVolu": 7172823.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 248.47,
+      "hiPx": 251.64,
+      "loPx": 243.0401,
+      "open": 245.618,
+      "stkVolu": 8320886.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 257.77,
+      "hiPx": 259.0,
+      "loPx": 248.41,
+      "open": 249.23,
+      "stkVolu": 5668909.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 281.69,
+      "hiPx": 283.71,
+      "loPx": 256.01,
+      "open": 256.315,
+      "stkVolu": 14998907.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 300.48,
+      "hiPx": 302.95,
+      "loPx": 283.8,
+      "open": 285.425,
+      "stkVolu": 13714483.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 297.18,
+      "hiPx": 299.33,
+      "loPx": 287.27,
+      "open": 287.46,
+      "stkVolu": 20783728.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 280.43,
+      "hiPx": 288.0,
+      "loPx": 275.85,
+      "open": 285.0,
+      "stkVolu": 14716915.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 279.25,
+      "hiPx": 280.72,
+      "loPx": 269.0,
+      "open": 269.855,
+      "stkVolu": 9832316.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 272.05,
+      "hiPx": 280.64,
+      "loPx": 269.4,
+      "open": 278.99,
+      "stkVolu": 7795476.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 266.33,
+      "hiPx": 273.05,
+      "loPx": 264.42,
+      "open": 269.63,
+      "stkVolu": 7009759.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 260.52,
+      "hiPx": 266.44,
+      "loPx": 251.15,
+      "open": 265.3,
+      "stkVolu": 7662884.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 263.22,
+      "hiPx": 266.72,
+      "loPx": 254.43,
+      "open": 258.81,
+      "stkVolu": 6495469.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 279.53,
+      "hiPx": 279.95,
+      "loPx": 258.1,
+      "open": 260.995,
+      "stkVolu": 9672353.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 279.62,
+      "hiPx": 281.98,
+      "loPx": 271.49,
+      "open": 276.935,
+      "stkVolu": 6774241.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 284.54,
+      "hiPx": 285.12,
+      "loPx": 274.33,
+      "open": 280.55,
+      "stkVolu": 7394061.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 279.9,
+      "hiPx": 283.64,
+      "loPx": 275.06,
+      "open": 283.2,
+      "stkVolu": 5017093.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 282.13,
+      "hiPx": 284.32,
+      "loPx": 276.705,
+      "open": 279.46,
+      "stkVolu": 5713782.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 287.78,
+      "hiPx": 288.88,
+      "loPx": 276.46,
+      "open": 285.6,
+      "stkVolu": 12194739.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 286.4,
+      "hiPx": 295.75,
+      "loPx": 284.26,
+      "open": 287.99,
+      "stkVolu": 5855397.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 290.915,
+      "hiPx": 292.140253,
+      "loPx": 282.52,
+      "open": 285.72,
+      "stkVolu": 5430451.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 285.26,
+      "hiPx": 291.0,
+      "loPx": 284.28,
+      "open": 289.62,
+      "stkVolu": 4895677.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 293.09,
+      "hiPx": 295.54,
+      "loPx": 285.27,
+      "open": 289.01,
+      "stkVolu": 8963636.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 304.2,
+      "hiPx": 306.24,
+      "loPx": 290.0,
+      "open": 295.15,
+      "stkVolu": 8269777.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 332.0,
+      "hiPx": 332.88,
+      "loPx": 305.33,
+      "open": 309.83,
+      "stkVolu": 10334725.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 341.02,
+      "hiPx": 342.48,
+      "loPx": 327.35,
+      "open": 327.55,
+      "stkVolu": 9634233.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 352.04,
+      "hiPx": 358.1,
+      "loPx": 341.0,
+      "open": 345.545,
+      "stkVolu": 7265469.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 348.06,
+      "hiPx": 357.3795,
+      "loPx": 346.9,
+      "open": 351.49,
+      "stkVolu": 7699628.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 357.53,
+      "hiPx": 368.17,
+      "loPx": 337.692,
+      "open": 338.96,
+      "stkVolu": 8752651.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 337.04,
+      "hiPx": 363.01,
+      "loPx": 336.0,
+      "open": 359.87,
+      "stkVolu": 8775683.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 320.59,
+      "hiPx": 336.798,
+      "loPx": 314.95,
+      "open": 336.798,
+      "stkVolu": 9443667.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 338.31,
+      "hiPx": 338.37,
+      "loPx": 318.34,
+      "open": 318.34,
+      "stkVolu": 8537359.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 325.91,
+      "hiPx": 340.13,
+      "loPx": 323.85,
+      "open": 338.48,
+      "stkVolu": 4679165.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 330.3,
+      "hiPx": 331.08,
+      "loPx": 316.25,
+      "open": 325.105,
+      "stkVolu": 5374836.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 352.89,
+      "hiPx": 353.6799,
+      "loPx": 330.29,
+      "open": 330.8,
+      "stkVolu": 6013223.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 354.02,
+      "hiPx": 362.71,
+      "loPx": 353.1116,
+      "open": 356.805,
+      "stkVolu": 6703793.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 353.99,
+      "hiPx": 360.44,
+      "loPx": 347.04,
+      "open": 357.06,
+      "stkVolu": 5883952.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 358.68,
+      "hiPx": 368.8,
+      "loPx": 345.041,
+      "open": 347.0,
+      "stkVolu": 7802725.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 348.66,
+      "hiPx": 366.305,
+      "loPx": 348.36,
+      "open": 354.72,
+      "stkVolu": 5567174.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 342.15,
+      "hiPx": 352.0,
+      "loPx": 334.03,
+      "open": 349.435,
+      "stkVolu": 6738061.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 335.28,
+      "hiPx": 344.19,
+      "loPx": 328.64,
+      "open": 342.975,
+      "stkVolu": 6338052.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 325.63,
+      "hiPx": 336.57,
+      "loPx": 321.87,
+      "open": 335.58,
+      "stkVolu": 5938234.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 323.79,
+      "hiPx": 330.0,
+      "loPx": 321.69,
+      "open": 328.09,
+      "stkVolu": 5134255.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 317.32,
+      "hiPx": 331.81,
+      "loPx": 316.7,
+      "open": 331.51,
+      "stkVolu": 5224825.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 319.0,
+      "hiPx": 323.395,
+      "loPx": 308.54,
+      "open": 317.51,
+      "stkVolu": 6511297.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 314.15,
+      "hiPx": 322.11,
+      "loPx": 310.46,
+      "open": 319.38,
+      "stkVolu": 6343662.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 325.68,
+      "hiPx": 326.295,
+      "loPx": 313.045,
+      "open": 316.03,
+      "stkVolu": 6861986.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 331.83,
+      "hiPx": 333.9799,
+      "loPx": 319.48,
+      "open": 332.335,
+      "stkVolu": 5027744.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 347.13,
+      "hiPx": 347.7,
+      "loPx": 330.0,
+      "open": 336.49,
+      "stkVolu": 7306691.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 366.34,
+      "hiPx": 367.5,
+      "loPx": 349.07,
+      "open": 351.6,
+      "stkVolu": 8186943.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 362.66,
+      "hiPx": 376.98,
+      "loPx": 362.22,
+      "open": 373.87,
+      "stkVolu": 5607463.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 359.49,
+      "hiPx": 361.47,
+      "loPx": 349.0,
+      "open": 350.13,
+      "stkVolu": 5684184.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 363.86,
+      "hiPx": 370.5,
+      "loPx": 359.15,
+      "open": 365.5,
+      "stkVolu": 4811281.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 385.04,
+      "hiPx": 385.1699,
+      "loPx": 362.95,
+      "open": 365.38,
+      "stkVolu": 5828043.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 383.8,
+      "hiPx": 387.2,
+      "loPx": 375.93,
+      "open": 384.2,
+      "stkVolu": 6039681.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 387.01,
+      "hiPx": 389.25,
+      "loPx": 376.22,
+      "open": 380.9,
+      "stkVolu": 5492061.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 396.0,
+      "hiPx": 398.88,
+      "loPx": 387.35,
+      "open": 394.115,
+      "stkVolu": 4593415.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 384.27,
+      "hiPx": 397.3061,
+      "loPx": 380.8455,
+      "open": 396.76,
+      "stkVolu": 4353468.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 375.76,
+      "hiPx": 386.0,
+      "loPx": 372.3,
+      "open": 383.25,
+      "stkVolu": 5088770.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 374.14,
+      "hiPx": 378.04,
+      "loPx": 368.0,
+      "open": 370.34,
+      "stkVolu": 4946045.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 359.76,
+      "hiPx": 376.43,
+      "loPx": 351.46,
+      "open": 375.255,
+      "stkVolu": 5286090.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 349.56,
+      "hiPx": 360.7,
+      "loPx": 347.68,
+      "open": 354.12,
+      "stkVolu": 4736223.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 357.87,
+      "hiPx": 360.49,
+      "loPx": 343.01,
+      "open": 352.4,
+      "stkVolu": 5137358.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 350.9,
+      "hiPx": 357.87,
+      "loPx": 347.0466,
+      "open": 356.06,
+      "stkVolu": 5465846.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 339.9,
+      "hiPx": 353.77,
+      "loPx": 335.51,
+      "open": 353.77,
+      "stkVolu": 4732159.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 339.31,
+      "hiPx": 342.25,
+      "loPx": 328.0,
+      "open": 330.455,
+      "stkVolu": 4588323.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 382.85,
+      "hiPx": 387.3325,
+      "loPx": 356.66,
+      "open": 358.56,
+      "stkVolu": 7308760.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

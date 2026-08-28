@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 223.08,
+      "hiPx": 223.33,
+      "loPx": 221.77,
+      "open": 222.01,
+      "stkVolu": 23515741.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 219.73,
+      "hiPx": 222.82,
+      "loPx": 218.41,
+      "open": 221.57,
+      "stkVolu": 41551196.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 221.25,
+      "hiPx": 222.29,
+      "loPx": 220.33,
+      "open": 220.58,
+      "stkVolu": 36339315.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 223.65,
+      "hiPx": 223.69,
+      "loPx": 221.115,
+      "open": 222.57,
+      "stkVolu": 32425152.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 224.8,
+      "hiPx": 226.05,
+      "loPx": 222.86,
+      "open": 223.39,
+      "stkVolu": 33865885.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 221.7,
+      "hiPx": 223.54,
+      "loPx": 221.5727,
+      "open": 223.17,
+      "stkVolu": 31579641.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 223.19,
+      "hiPx": 223.335,
+      "loPx": 221.06,
+      "open": 221.37,
+      "stkVolu": 24632248.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 218.82,
+      "hiPx": 224.23,
+      "loPx": 218.79,
+      "open": 224.07,
+      "stkVolu": 44215375.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 221.02,
+      "hiPx": 221.365,
+      "loPx": 216.91,
+      "open": 220.22,
+      "stkVolu": 48199763.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 223.92,
+      "hiPx": 224.2,
+      "loPx": 220.71,
+      "open": 221.08,
+      "stkVolu": 43548026.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 222.33,
+      "hiPx": 225.36,
+      "loPx": 221.98,
+      "open": 225.29,
+      "stkVolu": 49009884.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 221.43,
+      "hiPx": 224.41,
+      "loPx": 221.25,
+      "open": 223.54,
+      "stkVolu": 28191417.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 223.27,
+      "hiPx": 223.81,
+      "loPx": 220.66,
+      "open": 221.62,
+      "stkVolu": 30873278.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 226.68,
+      "hiPx": 226.71,
+      "loPx": 224.065,
+      "open": 224.82,
+      "stkVolu": 37478061.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 223.55,
+      "hiPx": 225.8499,
+      "loPx": 223.48,
+      "open": 225.515,
+      "stkVolu": 29446650.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 224.38,
+      "hiPx": 224.595,
+      "loPx": 222.54,
+      "open": 224.42,
+      "stkVolu": 24555538.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 224.12,
+      "hiPx": 225.44,
+      "loPx": 223.43,
+      "open": 225.32,
+      "stkVolu": 24934940.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 222.69,
+      "hiPx": 225.69,
+      "loPx": 222.055,
+      "open": 225.61,
+      "stkVolu": 28685904.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 221.56,
+      "hiPx": 224.931,
+      "loPx": 220.12,
+      "open": 223.66,
+      "stkVolu": 48924406.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 219.39,
+      "hiPx": 222.02,
+      "loPx": 218.88,
+      "open": 220.455,
+      "stkVolu": 42913929.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 214.92,
+      "hiPx": 216.56,
+      "loPx": 212.34,
+      "open": 216.22,
+      "stkVolu": 63854124.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 219.73,
+      "hiPx": 219.74,
+      "loPx": 216.08,
+      "open": 216.55,
+      "stkVolu": 34989623.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 220.85,
+      "hiPx": 221.26,
+      "loPx": 218.235,
+      "open": 220.56,
+      "stkVolu": 31337056.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 220.56,
+      "hiPx": 220.99,
+      "loPx": 219.38,
+      "open": 220.95,
+      "stkVolu": 23142100.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 219.84,
+      "hiPx": 222.84,
+      "loPx": 218.505,
+      "open": 222.76,
+      "stkVolu": 37088008.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 220.32,
+      "hiPx": 221.57,
+      "loPx": 219.74,
+      "open": 221.07,
+      "stkVolu": 28318098.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 220.27,
+      "hiPx": 221.68,
+      "loPx": 219.81,
+      "open": 220.77,
+      "stkVolu": 25212844.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 226.81,
+      "hiPx": 226.975,
+      "loPx": 221.15,
+      "open": 221.85,
+      "stkVolu": 43991900.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 231.22,
+      "hiPx": 231.46,
+      "loPx": 227.83,
+      "open": 228.26,
+      "stkVolu": 41705784.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 228.24,
+      "hiPx": 228.8,
+      "loPx": 226.17,
+      "open": 228.44,
+      "stkVolu": 55945507.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 227.13,
+      "hiPx": 228.78,
+      "loPx": 226.035,
+      "open": 228.64,
+      "stkVolu": 33571448.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 227.96,
+      "hiPx": 228.46,
+      "loPx": 226.94,
+      "open": 227.21,
+      "stkVolu": 20144107.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 226.21,
+      "hiPx": 228.98,
+      "loPx": 225.685,
+      "open": 228.02,
+      "stkVolu": 25000687.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 225.41,
+      "hiPx": 226.375,
+      "loPx": 223.69,
+      "open": 225.93,
+      "stkVolu": 29229749.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 225.97,
+      "hiPx": 226.32,
+      "loPx": 223.78,
+      "open": 224.41,
+      "stkVolu": 24539360.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 234.83,
+      "hiPx": 235.42,
+      "loPx": 227.18,
+      "open": 227.37,
+      "stkVolu": 58205537.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 232.36,
+      "hiPx": 234.3,
+      "loPx": 232.36,
+      "open": 234.14,
+      "stkVolu": 28453657.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 234.28,
+      "hiPx": 234.87,
+      "loPx": 232.59,
+      "open": 232.83,
+      "stkVolu": 25121535.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 235.94,
+      "hiPx": 236.12,
+      "loPx": 233.555,
+      "open": 233.74,
+      "stkVolu": 25395394.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 236.22,
+      "hiPx": 236.97,
+      "loPx": 235.345,
+      "open": 236.96,
+      "stkVolu": 25011198.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 235.17,
+      "hiPx": 237.02,
+      "loPx": 234.37,
+      "open": 236.74,
+      "stkVolu": 29254768.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 233.9,
+      "hiPx": 234.4,
+      "loPx": 231.47,
+      "open": 231.99,
+      "stkVolu": 33108624.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 233.67,
+      "hiPx": 235.26,
+      "loPx": 232.46,
+      "open": 233.27,
+      "stkVolu": 33252351.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 236.59,
+      "hiPx": 236.6665,
+      "loPx": 233.58,
+      "open": 234.23,
+      "stkVolu": 30323833.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 237.77,
+      "hiPx": 239.68,
+      "loPx": 234.95,
+      "open": 237.72,
+      "stkVolu": 47542498.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 238.25,
+      "hiPx": 238.56,
+      "loPx": 236.39,
+      "open": 238.51,
+      "stkVolu": 31504586.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 236.85,
+      "hiPx": 237.96,
+      "loPx": 235.42,
+      "open": 237.9,
+      "stkVolu": 35395784.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 236.43,
+      "hiPx": 238.27,
+      "loPx": 235.46,
+      "open": 237.305,
+      "stkVolu": 33910156.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 240.8,
+      "hiPx": 240.9295,
+      "loPx": 236.24,
+      "open": 236.85,
+      "stkVolu": 43629818.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 238.34,
+      "hiPx": 240.32,
+      "loPx": 238.195,
+      "open": 240.2,
+      "stkVolu": 46097640.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 239.35,
+      "hiPx": 240.04,
+      "loPx": 238.55,
+      "open": 239.23,
+      "stkVolu": 33014031.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 238.28,
+      "hiPx": 238.93,
+      "loPx": 236.76,
+      "open": 238.45,
+      "stkVolu": 37059322.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 238.89,
+      "hiPx": 244.28,
+      "loPx": 237.02,
+      "open": 238.82,
+      "stkVolu": 79955604.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 244.84,
+      "hiPx": 245.15,
+      "loPx": 240.13,
+      "open": 240.8,
+      "stkVolu": 49167670.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 242.98,
+      "hiPx": 245.57,
+      "loPx": 242.51,
+      "open": 245.57,
+      "stkVolu": 56092037.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 244.39,
+      "hiPx": 244.785,
+      "loPx": 241.11,
+      "open": 242.24,
+      "stkVolu": 53572930.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 243.84,
+      "hiPx": 247.175,
+      "loPx": 243.44,
+      "open": 245.01,
+      "stkVolu": 41854513.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 241.6,
+      "hiPx": 244.61,
+      "loPx": 241.555,
+      "open": 243.9,
+      "stkVolu": 36002182.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 239.29,
+      "hiPx": 239.99,
+      "loPx": 237.55,
+      "open": 238.98,
+      "stkVolu": 37209480.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 241.34,
+      "hiPx": 241.68,
+      "loPx": 239.3344,
+      "open": 239.62,
+      "stkVolu": 28942766.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 241.62,
+      "hiPx": 242.93,
+      "loPx": 240.81,
+      "open": 242.84,
+      "stkVolu": 26391483.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 241.96,
+      "hiPx": 242.125,
+      "loPx": 239.4,
+      "open": 241.11,
+      "stkVolu": 33447721.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 242.49,
+      "hiPx": 243.04,
+      "loPx": 240.55,
+      "open": 240.57,
+      "stkVolu": 28519998.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 244.02,
+      "hiPx": 244.09,
+      "loPx": 241.47,
+      "open": 243.0,
+      "stkVolu": 28687401.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 245.83,
+      "hiPx": 248.09,
+      "loPx": 245.03,
+      "open": 245.35,
+      "stkVolu": 34579610.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 246.81,
+      "hiPx": 248.475,
+      "loPx": 246.065,
+      "open": 247.73,
+      "stkVolu": 31507374.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 244.16,
+      "hiPx": 247.64,
+      "loPx": 243.19,
+      "open": 247.36,
+      "stkVolu": 31766601.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 246.72,
+      "hiPx": 246.955,
+      "loPx": 243.8,
+      "open": 245.28,
+      "stkVolu": 25824957.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 245.13,
+      "hiPx": 247.25,
+      "loPx": 244.01,
+      "open": 246.31,
+      "stkVolu": 26243148.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 237.79,
+      "hiPx": 246.885,
+      "loPx": 237.56,
+      "open": 245.75,
+      "stkVolu": 70569415.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 244.41,
+      "hiPx": 244.63,
+      "loPx": 241.4001,
+      "open": 241.83,
+      "stkVolu": 36298626.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 247.9,
+      "hiPx": 249.6,
+      "loPx": 240.36,
+      "open": 241.23,
+      "stkVolu": 45320805.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 250.33,
+      "hiPx": 252.77,
+      "loPx": 247.06,
+      "open": 250.36,
+      "stkVolu": 45369046.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 245.06,
+      "hiPx": 251.26,
+      "loPx": 244.0,
+      "open": 250.97,
+      "stkVolu": 52740394.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 243.41,
+      "hiPx": 245.16,
+      "loPx": 241.47,
+      "open": 243.32,
+      "stkVolu": 55379514.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 248.16,
+      "hiPx": 248.33,
+      "loPx": 246.14,
+      "open": 246.62,
+      "stkVolu": 32545025.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 246.99,
+      "hiPx": 248.365,
+      "loPx": 245.505,
+      "open": 247.43,
+      "stkVolu": 26337895.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 243.34,
+      "hiPx": 246.86,
+      "loPx": 240.765,
+      "open": 246.03,
+      "stkVolu": 46578446.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 246.42,
+      "hiPx": 247.12,
+      "loPx": 243.68,
+      "open": 244.29,
+      "stkVolu": 28591002.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 249.43,
+      "hiPx": 251.11,
+      "loPx": 248.97,
+      "open": 249.8,
+      "stkVolu": 26627005.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 250.3,
+      "hiPx": 252.21,
+      "loPx": 249.5,
+      "open": 251.78,
+      "stkVolu": 31798148.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 248.96,
+      "hiPx": 250.9,
+      "loPx": 248.11,
+      "open": 249.55,
+      "stkVolu": 28075893.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 246.84,
+      "hiPx": 251.14,
+      "loPx": 244.69,
+      "open": 248.84,
+      "stkVolu": 55951795.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 244.85,
+      "hiPx": 248.14,
+      "loPx": 244.63,
+      "open": 245.27,
+      "stkVolu": 44538747.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 246.23,
+      "hiPx": 246.79,
+      "loPx": 243.69,
+      "open": 244.99,
+      "stkVolu": 37214671.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 245.44,
+      "hiPx": 246.26,
+      "loPx": 242.485,
+      "open": 246.17,
+      "stkVolu": 28887904.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 241.2,
+      "hiPx": 244.06,
+      "loPx": 240.995,
+      "open": 241.79,
+      "stkVolu": 34468704.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 244.68,
+      "hiPx": 245.7297,
+      "loPx": 241.64,
+      "open": 241.955,
+      "stkVolu": 38229168.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 240.35,
+      "hiPx": 244.785,
+      "loPx": 240.0,
+      "open": 244.26,
+      "stkVolu": 40601196.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 241.61,
+      "hiPx": 241.66,
+      "loPx": 236.2744,
+      "open": 238.41,
+      "stkVolu": 54978865.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 244.03,
+      "hiPx": 245.24,
+      "loPx": 242.25,
+      "open": 245.01,
+      "stkVolu": 31238018.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 244.24,
+      "hiPx": 244.74,
+      "loPx": 242.52,
+      "open": 243.37,
+      "stkVolu": 27357866.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 243.64,
+      "hiPx": 246.375,
+      "loPx": 243.33,
+      "open": 244.84,
+      "stkVolu": 34543226.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 236.79,
+      "hiPx": 242.68,
+      "loPx": 235.84,
+      "open": 241.84,
+      "stkVolu": 65709950.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 237.48,
+      "hiPx": 238.725,
+      "loPx": 233.27,
+      "open": 233.34,
+      "stkVolu": 58344442.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 232.76,
+      "hiPx": 237.84,
+      "loPx": 231.755,
+      "open": 236.46,
+      "stkVolu": 55765896.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 233.47,
+      "hiPx": 235.08,
+      "loPx": 230.955,
+      "open": 231.31,
+      "stkVolu": 63092497.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 233.43,
+      "hiPx": 236.37,
+      "loPx": 232.43,
+      "open": 233.8,
+      "stkVolu": 57280548.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 229.11,
+      "hiPx": 239.1,
+      "loPx": 228.9,
+      "open": 237.24,
+      "stkVolu": 95483018.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 235.6,
+      "hiPx": 237.11,
+      "loPx": 229.58,
+      "open": 229.96,
+      "stkVolu": 99504106.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 239.9,
+      "hiPx": 240.385,
+      "loPx": 235.48,
+      "open": 235.96,
+      "stkVolu": 36135317.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 245.13,
+      "hiPx": 245.55,
+      "loPx": 240.04,
+      "open": 240.74,
+      "stkVolu": 46160790.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 247.3,
+      "hiPx": 248.825,
+      "loPx": 244.77,
+      "open": 245.05,
+      "stkVolu": 34636590.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 248.75,
+      "hiPx": 248.81,
+      "loPx": 247.07,
+      "open": 248.01,
+      "stkVolu": 18911812.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 245.62,
+      "hiPx": 247.685,
+      "loPx": 245.335,
+      "open": 245.57,
+      "stkVolu": 36919964.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 245.17,
+      "hiPx": 247.37,
+      "loPx": 245.12,
+      "open": 247.37,
+      "stkVolu": 31918469.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 249.63,
+      "hiPx": 249.835,
+      "loPx": 245.48,
+      "open": 245.97,
+      "stkVolu": 32846272.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 251.82,
+      "hiPx": 252.66,
+      "loPx": 248.54,
+      "open": 248.97,
+      "stkVolu": 40245796.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 250.77,
+      "hiPx": 252.66,
+      "loPx": 250.275,
+      "open": 251.485,
+      "stkVolu": 36956621.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 250.87,
+      "hiPx": 252.77,
+      "loPx": 250.18,
+      "open": 252.7,
+      "stkVolu": 29100029.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 251.39,
+      "hiPx": 252.95,
+      "loPx": 250.1,
+      "open": 250.25,
+      "stkVolu": 30170111.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 254.81,
+      "hiPx": 256.565,
+      "loPx": 250.54,
+      "open": 250.9,
+      "stkVolu": 51105179.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 257.8,
+      "hiPx": 258.01,
+      "loPx": 254.32,
+      "open": 254.64,
+      "stkVolu": 41345164.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 253.85,
+      "hiPx": 258.2,
+      "loPx": 253.44,
+      "open": 257.95,
+      "stkVolu": 57657743.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 251.93,
+      "hiPx": 255.685,
+      "loPx": 251.74,
+      "open": 255.545,
+      "stkVolu": 43120086.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 249.9,
+      "hiPx": 252.16,
+      "loPx": 248.47,
+      "open": 250.34,
+      "stkVolu": 43115263.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 247.24,
+      "hiPx": 252.16,
+      "loPx": 246.695,
+      "open": 250.37,
+      "stkVolu": 38132440.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 248.71,
+      "hiPx": 251.355,
+      "loPx": 248.21,
+      "open": 250.18,
+      "stkVolu": 39067968.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 250.79,
+      "hiPx": 251.3999,
+      "loPx": 249.06,
+      "open": 249.28,
+      "stkVolu": 43610403.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 253.58,
+      "hiPx": 255.115,
+      "loPx": 252.2,
+      "open": 252.28,
+      "stkVolu": 40497273.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 252.08,
+      "hiPx": 253.22,
+      "loPx": 251.46,
+      "open": 252.42,
+      "stkVolu": 24973497.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 252.71,
+      "hiPx": 252.86,
+      "loPx": 251.12,
+      "open": 251.97,
+      "stkVolu": 12102974.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 251.42,
+      "hiPx": 252.75,
+      "loPx": 250.395,
+      "open": 252.58,
+      "stkVolu": 17429945.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 249.88,
+      "hiPx": 251.5,
+      "loPx": 249.35,
+      "open": 250.26,
+      "stkVolu": 25218779.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 248.03,
+      "hiPx": 250.15,
+      "loPx": 247.95,
+      "open": 249.97,
+      "stkVolu": 22123639.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 246.16,
+      "hiPx": 248.28,
+      "loPx": 246.01,
+      "open": 248.18,
+      "stkVolu": 35351972.0,
+      "ticker": "IWM",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 248.78,
+      "hiPx": 249.09,
+      "loPx": 245.86,
+      "open": 247.63,
+      "stkVolu": 40007650.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 252.73,
+      "hiPx": 253.55,
+      "loPx": 249.57,
+      "open": 249.79,
+      "stkVolu": 37428056.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 256.08,
+      "hiPx": 256.25,
+      "loPx": 251.52,
+      "open": 252.24,
+      "stkVolu": 40677781.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 255.48,
+      "hiPx": 256.795,
+      "loPx": 253.97,
+      "open": 256.4,
+      "stkVolu": 33052026.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 258.27,
+      "hiPx": 258.93,
+      "loPx": 254.36,
+      "open": 254.7,
+      "stkVolu": 37957029.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 260.23,
+      "hiPx": 261.56,
+      "loPx": 258.09,
+      "open": 259.58,
+      "stkVolu": 36301546.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 261.5,
+      "hiPx": 261.66,
+      "loPx": 258.24,
+      "open": 259.28,
+      "stkVolu": 28423355.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 261.35,
+      "hiPx": 262.885,
+      "loPx": 260.46,
+      "open": 262.405,
+      "stkVolu": 33882364.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 263.19,
+      "hiPx": 263.46,
+      "loPx": 260.19,
+      "open": 261.13,
+      "stkVolu": 37164298.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 265.51,
+      "hiPx": 267.045,
+      "loPx": 263.73,
+      "open": 264.06,
+      "stkVolu": 33465208.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 265.76,
+      "hiPx": 267.215,
+      "loPx": 264.71,
+      "open": 265.865,
+      "stkVolu": 33844875.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 262.58,
+      "hiPx": 265.0799,
+      "loPx": 261.06,
+      "open": 261.14,
+      "stkVolu": 47911489.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 267.79,
+      "hiPx": 268.59,
+      "loPx": 262.92,
+      "open": 264.64,
+      "stkVolu": 59952798.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 269.79,
+      "hiPx": 271.595,
+      "loPx": 269.42,
+      "open": 269.83,
+      "stkVolu": 35110779.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 264.81,
+      "hiPx": 269.05,
+      "loPx": 264.46,
+      "open": 269.04,
+      "stkVolu": 42636691.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 263.98,
+      "hiPx": 266.69,
+      "loPx": 263.49,
+      "open": 265.07,
+      "stkVolu": 32119332.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 264.73,
+      "hiPx": 264.86,
+      "loPx": 262.66,
+      "open": 264.05,
+      "stkVolu": 26975518.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 263.3,
+      "hiPx": 266.675,
+      "loPx": 262.56,
+      "open": 265.98,
+      "stkVolu": 37139119.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 263.37,
+      "hiPx": 265.06,
+      "loPx": 259.41,
+      "open": 264.07,
+      "stkVolu": 43922928.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 259.65,
+      "hiPx": 262.98,
+      "loPx": 257.94,
+      "open": 261.07,
+      "stkVolu": 59164154.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 262.18,
+      "hiPx": 263.77,
+      "loPx": 258.35,
+      "open": 258.48,
+      "stkVolu": 42896193.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 262.78,
+      "hiPx": 265.0599,
+      "loPx": 258.551,
+      "open": 263.06,
+      "stkVolu": 54588013.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 260.52,
+      "hiPx": 264.65,
+      "loPx": 257.14,
+      "open": 264.16,
+      "stkVolu": 48826545.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 255.83,
+      "hiPx": 261.62,
+      "loPx": 255.05,
+      "open": 258.5,
+      "stkVolu": 48279639.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 265.02,
+      "hiPx": 265.72,
+      "loPx": 259.58,
+      "open": 259.74,
+      "stkVolu": 43354860.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 266.88,
+      "hiPx": 267.67,
+      "loPx": 263.34,
+      "open": 264.84,
+      "stkVolu": 29064849.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 266.16,
+      "hiPx": 268.52,
+      "loPx": 265.88,
+      "open": 267.23,
+      "stkVolu": 24661655.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 264.95,
+      "hiPx": 268.96,
+      "loPx": 262.1,
+      "open": 268.47,
+      "stkVolu": 41829428.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 259.54,
+      "hiPx": 267.46,
+      "loPx": 258.39,
+      "open": 267.02,
+      "stkVolu": 47628169.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 262.96,
+      "hiPx": 265.17,
+      "loPx": 258.51,
+      "open": 260.6,
+      "stkVolu": 45360322.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 263.04,
+      "hiPx": 264.36,
+      "loPx": 259.06,
+      "open": 262.375,
+      "stkVolu": 33734782.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 263.99,
+      "hiPx": 266.91,
+      "loPx": 261.85,
+      "open": 263.03,
+      "stkVolu": 36034689.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 264.6,
+      "hiPx": 264.64,
+      "loPx": 261.075,
+      "open": 262.57,
+      "stkVolu": 31005952.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 264.61,
+      "hiPx": 267.33,
+      "loPx": 262.14,
+      "open": 262.85,
+      "stkVolu": 47126576.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 260.49,
+      "hiPx": 264.37,
+      "loPx": 258.1,
+      "open": 263.4,
+      "stkVolu": 44001083.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 263.33,
+      "hiPx": 264.14,
+      "loPx": 259.86,
+      "open": 260.4,
+      "stkVolu": 34884242.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 264.58,
+      "hiPx": 265.2814,
+      "loPx": 262.43,
+      "open": 265.25,
+      "stkVolu": 26012137.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 265.99,
+      "hiPx": 266.235,
+      "loPx": 262.12,
+      "open": 265.01,
+      "stkVolu": 41206465.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 261.41,
+      "hiPx": 262.76,
+      "loPx": 259.77,
+      "open": 262.095,
+      "stkVolu": 40631480.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 263.81,
+      "hiPx": 264.28,
+      "loPx": 257.79,
+      "open": 257.81,
+      "stkVolu": 53495715.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 259.24,
+      "hiPx": 261.12,
+      "loPx": 253.31,
+      "open": 256.8,
+      "stkVolu": 59536971.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 261.76,
+      "hiPx": 262.96,
+      "loPx": 258.82,
+      "open": 261.2,
+      "stkVolu": 37979725.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 256.76,
+      "hiPx": 260.755,
+      "loPx": 254.16,
+      "open": 258.99,
+      "stkVolu": 60414629.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 250.89,
+      "hiPx": 253.2999,
+      "loPx": 249.94,
+      "open": 251.49,
+      "stkVolu": 64191990.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 253.62,
+      "hiPx": 254.65,
+      "loPx": 244.39,
+      "open": 247.59,
+      "stkVolu": 65369511.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 253.36,
+      "hiPx": 257.65,
+      "loPx": 252.4,
+      "open": 252.96,
+      "stkVolu": 55879095.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 252.85,
+      "hiPx": 254.38,
+      "loPx": 250.58,
+      "open": 252.34,
+      "stkVolu": 50418071.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 247.41,
+      "hiPx": 249.805,
+      "loPx": 246.575,
+      "open": 248.94,
+      "stkVolu": 61802935.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 246.59,
+      "hiPx": 250.61,
+      "loPx": 245.535,
+      "open": 249.26,
+      "stkVolu": 53933299.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 248.92,
+      "hiPx": 251.465,
+      "loPx": 248.31,
+      "open": 249.76,
+      "stkVolu": 48755653.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 250.05,
+      "hiPx": 251.71,
+      "loPx": 248.96,
+      "open": 249.87,
+      "stkVolu": 40642765.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 246.02,
+      "hiPx": 249.23,
+      "loPx": 245.88,
+      "open": 248.41,
+      "stkVolu": 43192622.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 247.63,
+      "hiPx": 250.085,
+      "loPx": 242.52,
+      "open": 243.03,
+      "stkVolu": 59219537.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 242.22,
+      "hiPx": 247.5,
+      "loPx": 240.33,
+      "open": 246.97,
+      "stkVolu": 76749856.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 247.45,
+      "hiPx": 251.36,
+      "loPx": 246.11,
+      "open": 247.17,
+      "stkVolu": 78746581.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 248.78,
+      "hiPx": 250.16,
+      "loPx": 244.6,
+      "open": 245.51,
+      "stkVolu": 45210764.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 251.82,
+      "hiPx": 253.07,
+      "loPx": 249.52,
+      "open": 251.74,
+      "stkVolu": 45671741.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 247.44,
+      "hiPx": 251.86,
+      "loPx": 247.16,
+      "open": 248.89,
+      "stkVolu": 46830212.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 243.1,
+      "hiPx": 246.74,
+      "loPx": 242.41,
+      "open": 246.01,
+      "stkVolu": 48114404.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 239.61,
+      "hiPx": 245.37,
+      "loPx": 238.69,
+      "open": 245.35,
+      "stkVolu": 51290488.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 248.0,
+      "hiPx": 248.92,
+      "loPx": 242.24,
+      "open": 243.04,
+      "stkVolu": 58660823.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 249.56,
+      "hiPx": 252.44,
+      "loPx": 249.11,
+      "open": 249.92,
+      "stkVolu": 51295864.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 251.29,
+      "hiPx": 252.37,
+      "loPx": 244.87,
+      "open": 244.94,
+      "stkVolu": 30369203.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 252.36,
+      "hiPx": 253.05,
+      "loPx": 250.25,
+      "open": 250.99,
+      "stkVolu": 22151444.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 252.91,
+      "hiPx": 253.48,
+      "loPx": 249.52,
+      "open": 251.21,
+      "stkVolu": 34881919.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 260.47,
+      "hiPx": 262.27,
+      "loPx": 258.41,
+      "open": 261.52,
+      "stkVolu": 46680248.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 261.96,
+      "hiPx": 262.9,
+      "loPx": 258.78,
+      "open": 258.78,
+      "stkVolu": 26758382.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 261.3,
+      "hiPx": 262.75,
+      "loPx": 260.34,
+      "open": 262.4,
+      "stkVolu": 22365908.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 265.07,
+      "hiPx": 265.36,
+      "loPx": 260.02,
+      "open": 260.24,
+      "stkVolu": 23820000.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 268.72,
+      "hiPx": 269.42,
+      "loPx": 266.28,
+      "open": 267.09,
+      "stkVolu": 24270358.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 269.39,
+      "hiPx": 269.585,
+      "loPx": 267.59,
+      "open": 268.78,
+      "stkVolu": 21670617.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 269.95,
+      "hiPx": 270.35,
+      "loPx": 268.05,
+      "open": 269.45,
+      "stkVolu": 30847915.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 275.78,
+      "hiPx": 277.63,
+      "loPx": 273.115,
+      "open": 273.74,
+      "stkVolu": 46462703.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 277.35,
+      "hiPx": 277.665,
+      "loPx": 274.53,
+      "open": 274.65,
+      "stkVolu": 22993851.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 274.51,
+      "hiPx": 279.79,
+      "loPx": 273.76,
+      "open": 278.175,
+      "stkVolu": 32235226.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 276.48,
+      "hiPx": 278.01,
+      "loPx": 274.9,
+      "open": 277.59,
+      "stkVolu": 20274267.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 275.52,
+      "hiPx": 277.87,
+      "loPx": 271.95,
+      "open": 276.73,
+      "stkVolu": 32886591.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 276.65,
+      "hiPx": 278.13,
+      "loPx": 274.23,
+      "open": 276.67,
+      "stkVolu": 21568587.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 277.14,
+      "hiPx": 278.24,
+      "loPx": 276.25,
+      "open": 276.82,
+      "stkVolu": 23399408.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 273.91,
+      "hiPx": 276.97,
+      "loPx": 272.915,
+      "open": 276.05,
+      "stkVolu": 24139406.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 272.08,
+      "hiPx": 274.38,
+      "loPx": 270.36,
+      "open": 273.92,
+      "stkVolu": 29428947.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 277.97,
+      "hiPx": 278.22,
+      "loPx": 272.44,
+      "open": 273.13,
+      "stkVolu": 29220714.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 279.28,
+      "hiPx": 279.81,
+      "loPx": 276.57,
+      "open": 278.66,
+      "stkVolu": 28936703.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 277.88,
+      "hiPx": 280.79,
+      "loPx": 276.1,
+      "open": 278.7,
+      "stkVolu": 28632338.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 282.56,
+      "hiPx": 282.945,
+      "loPx": 280.0,
+      "open": 280.13,
+      "stkVolu": 24863175.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 286.8,
+      "hiPx": 287.045,
+      "loPx": 283.36,
+      "open": 285.36,
+      "stkVolu": 23330334.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 282.26,
+      "hiPx": 287.58,
+      "loPx": 281.15,
+      "open": 287.53,
+      "stkVolu": 28350394.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 284.17,
+      "hiPx": 284.97,
+      "loPx": 282.61,
+      "open": 284.035,
+      "stkVolu": 22474309.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 285.33,
+      "hiPx": 287.05,
+      "loPx": 284.59,
+      "open": 284.92,
+      "stkVolu": 20150350.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 282.57,
+      "hiPx": 284.06,
+      "loPx": 278.28,
+      "open": 284.04,
+      "stkVolu": 27404639.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 282.67,
+      "hiPx": 283.56,
+      "loPx": 279.93,
+      "open": 282.92,
+      "stkVolu": 20742270.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 284.45,
+      "hiPx": 285.655,
+      "loPx": 281.96,
+      "open": 283.84,
+      "stkVolu": 17428746.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 277.6,
+      "hiPx": 280.33,
+      "loPx": 277.24,
+      "open": 280.3,
+      "stkVolu": 35407975.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 275.97,
+      "hiPx": 279.08,
+      "loPx": 273.94,
+      "open": 278.74,
+      "stkVolu": 27243341.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 273.0,
+      "hiPx": 275.075,
+      "loPx": 270.63,
+      "open": 273.805,
+      "stkVolu": 30276939.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 279.87,
+      "hiPx": 280.09,
+      "loPx": 273.41,
+      "open": 274.91,
+      "stkVolu": 31562006.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 282.49,
+      "hiPx": 283.68,
+      "loPx": 277.15,
+      "open": 278.66,
+      "stkVolu": 31680475.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 285.12,
+      "hiPx": 286.61,
+      "loPx": 283.67,
+      "open": 284.1,
+      "stkVolu": 23849296.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 290.51,
+      "hiPx": 290.55,
+      "loPx": 287.74,
+      "open": 288.39,
+      "stkVolu": 24506452.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 290.37,
+      "hiPx": 291.72,
+      "loPx": 289.31,
+      "open": 291.16,
+      "stkVolu": 24519854.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 292.03,
+      "hiPx": 292.74,
+      "loPx": 287.98,
+      "open": 289.64,
+      "stkVolu": 23710563.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 290.43,
+      "hiPx": 291.41,
+      "loPx": 288.33,
+      "open": 291.38,
+      "stkVolu": 26961014.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 288.98,
+      "hiPx": 290.61,
+      "loPx": 286.27,
+      "open": 288.37,
+      "stkVolu": 23826067.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 291.66,
+      "hiPx": 291.865,
+      "loPx": 288.4,
+      "open": 288.46,
+      "stkVolu": 18378829.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 287.67,
+      "hiPx": 290.01,
+      "loPx": 286.78,
+      "open": 289.99,
+      "stkVolu": 29167270.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 292.01,
+      "hiPx": 292.875,
+      "loPx": 286.66,
+      "open": 287.56,
+      "stkVolu": 24307765.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 281.65,
+      "hiPx": 289.395,
+      "loPx": 280.15,
+      "open": 289.1,
+      "stkVolu": 35812835.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 284.11,
+      "hiPx": 286.84,
+      "loPx": 283.575,
+      "open": 285.51,
+      "stkVolu": 27277379.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 285.02,
+      "hiPx": 290.87,
+      "loPx": 277.62,
+      "open": 287.18,
+      "stkVolu": 41761260.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 282.05,
+      "hiPx": 289.0,
+      "loPx": 281.76,
+      "open": 284.59,
+      "stkVolu": 39285001.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 290.41,
+      "hiPx": 291.06,
+      "loPx": 284.07,
+      "open": 284.44,
+      "stkVolu": 41468782.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 292.95,
+      "hiPx": 295.72,
+      "loPx": 290.31,
+      "open": 291.63,
+      "stkVolu": 34415247.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 294.64,
+      "hiPx": 297.91,
+      "loPx": 293.92,
+      "open": 296.56,
+      "stkVolu": 23888987.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 292.08,
+      "hiPx": 296.8,
+      "loPx": 291.58,
+      "open": 295.5,
+      "stkVolu": 23807721.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 289.88,
+      "hiPx": 295.82,
+      "loPx": 288.93,
+      "open": 292.47,
+      "stkVolu": 39920145.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 295.59,
+      "hiPx": 295.97,
+      "loPx": 291.42,
+      "open": 294.55,
+      "stkVolu": 32463155.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 298.18,
+      "hiPx": 299.49,
+      "loPx": 296.16,
+      "open": 297.13,
+      "stkVolu": 22796223.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 295.32,
+      "hiPx": 297.75,
+      "loPx": 292.4,
+      "open": 293.26,
+      "stkVolu": 26821708.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 296.69,
+      "hiPx": 299.69,
+      "loPx": 294.69,
+      "open": 295.88,
+      "stkVolu": 28664854.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 298.91,
+      "hiPx": 301.5,
+      "loPx": 296.73,
+      "open": 299.52,
+      "stkVolu": 27666109.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 299.83,
+      "hiPx": 300.03,
+      "loPx": 295.73,
+      "open": 296.6,
+      "stkVolu": 39832520.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 298.97,
+      "hiPx": 299.16,
+      "loPx": 294.68,
+      "open": 298.11,
+      "stkVolu": 24834054.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 300.45,
+      "hiPx": 300.98,
+      "loPx": 297.44,
+      "open": 298.56,
+      "stkVolu": 23230275.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 299.32,
+      "hiPx": 302.72,
+      "loPx": 298.92,
+      "open": 299.93,
+      "stkVolu": 20607882.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 297.58,
+      "hiPx": 302.23,
+      "loPx": 294.98,
+      "open": 300.54,
+      "stkVolu": 21236397.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 298.9,
+      "hiPx": 300.41,
+      "loPx": 297.62,
+      "open": 297.75,
+      "stkVolu": 18581286.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 296.19,
+      "hiPx": 299.972,
+      "loPx": 295.18,
+      "open": 299.17,
+      "stkVolu": 18057100.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 293.48,
+      "hiPx": 295.1,
+      "loPx": 290.68,
+      "open": 294.03,
+      "stkVolu": 24078351.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 297.24,
+      "hiPx": 297.88,
+      "loPx": 294.9,
+      "open": 295.27,
+      "stkVolu": 16466826.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 295.99,
+      "hiPx": 298.21,
+      "loPx": 293.62,
+      "open": 297.69,
+      "stkVolu": 15888497.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 293.48,
+      "hiPx": 295.78,
+      "loPx": 292.6,
+      "open": 295.06,
+      "stkVolu": 19375486.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 294.51,
+      "hiPx": 296.065,
+      "loPx": 293.75,
+      "open": 295.49,
+      "stkVolu": 18326926.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 295.77,
+      "hiPx": 297.14,
+      "loPx": 294.15,
+      "open": 295.25,
+      "stkVolu": 18832738.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 295.59,
+      "hiPx": 297.81,
+      "loPx": 294.345,
+      "open": 294.65,
+      "stkVolu": 24081328.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 294.04,
+      "hiPx": 296.13,
+      "loPx": 291.64,
+      "open": 292.03,
+      "stkVolu": 28738549.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 292.31,
+      "hiPx": 295.99,
+      "loPx": 292.18,
+      "open": 295.01,
+      "stkVolu": 20539883.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 296.54,
+      "hiPx": 296.75,
+      "loPx": 292.68,
+      "open": 293.43,
+      "stkVolu": 18190168.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 293.79,
+      "hiPx": 296.44,
+      "loPx": 293.41,
+      "open": 295.7,
+      "stkVolu": 19115991.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 292.09,
+      "hiPx": 293.01,
+      "loPx": 290.17,
+      "open": 290.87,
+      "stkVolu": 27795137.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 291.17,
+      "hiPx": 293.97,
+      "loPx": 290.48,
+      "open": 293.41,
+      "stkVolu": 19771042.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 292.91,
+      "hiPx": 295.52,
+      "loPx": 291.1101,
+      "open": 293.98,
+      "stkVolu": 19445522.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 293.37,
+      "hiPx": 293.77,
+      "loPx": 290.375,
+      "open": 293.16,
+      "stkVolu": 20531085.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 288.57,
+      "hiPx": 293.665,
+      "loPx": 288.26,
+      "open": 292.49,
+      "stkVolu": 33297418.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 292.59,
+      "hiPx": 292.84,
+      "loPx": 288.96,
+      "open": 291.15,
+      "stkVolu": 22198835.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 291.2,
+      "hiPx": 293.95,
+      "loPx": 287.83,
+      "open": 293.56,
+      "stkVolu": 28350651.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 296.22,
+      "hiPx": 296.66,
+      "loPx": 292.4,
+      "open": 292.9,
+      "stkVolu": 23175699.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 301.71,
+      "hiPx": 302.39,
+      "loPx": 297.22,
+      "open": 297.59,
+      "stkVolu": 20751765.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 299.77,
+      "hiPx": 303.06,
+      "loPx": 299.75,
+      "open": 302.43,
+      "stkVolu": 17791023.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 298.25,
+      "hiPx": 301.38,
+      "loPx": 297.95,
+      "open": 299.6,
+      "stkVolu": 16314113.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 301.56,
+      "hiPx": 302.03,
+      "loPx": 299.795,
+      "open": 300.46,
+      "stkVolu": 18416787.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 299.98,
+      "hiPx": 301.39,
+      "loPx": 299.08,
+      "open": 300.51,
+      "stkVolu": 16226875.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 300.99,
+      "hiPx": 301.99,
+      "loPx": 300.6,
+      "open": 300.93,
+      "stkVolu": 14942813.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 302.71,
+      "hiPx": 303.41,
+      "loPx": 301.0,
+      "open": 303.02,
+      "stkVolu": 15480555.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 303.5,
+      "hiPx": 305.05,
+      "loPx": 302.72,
+      "open": 304.04,
+      "stkVolu": 14719318.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 305.09,
+      "hiPx": 305.18,
+      "loPx": 302.74,
+      "open": 303.28,
+      "stkVolu": 13163356.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 304.06,
+      "hiPx": 304.33,
+      "loPx": 303.23,
+      "open": 303.96,
+      "stkVolu": 14546781.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 300.23,
+      "hiPx": 303.15,
+      "loPx": 300.11,
+      "open": 302.45,
+      "stkVolu": 18263746.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 301.72,
+      "hiPx": 303.4105,
+      "loPx": 301.23,
+      "open": 302.88,
+      "stkVolu": 14995740.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 297.67,
+      "hiPx": 300.04,
+      "loPx": 297.04,
+      "open": 299.27,
+      "stkVolu": 21638740.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 299.96,
+      "hiPx": 300.33,
+      "loPx": 298.17,
+      "open": 299.85,
+      "stkVolu": 22949563.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 297.97,
+      "hiPx": 299.74,
+      "loPx": 297.4,
+      "open": 299.55,
+      "stkVolu": 12868866.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 299.23,
+      "hiPx": 299.78,
+      "loPx": 297.97,
+      "open": 299.6,
+      "stkVolu": 14617956.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 298.93,
+      "hiPx": 299.95,
+      "loPx": 298.13,
+      "open": 298.64,
+      "stkVolu": 10555686.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 299.81,
+      "hiPx": 300.315,
+      "loPx": 298.14,
+      "open": 298.77,
+      "stkVolu": 13668343.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

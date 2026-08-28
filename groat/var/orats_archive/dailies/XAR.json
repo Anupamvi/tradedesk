@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 208.93,
+      "hiPx": 208.93,
+      "loPx": 206.8,
+      "open": 207.29,
+      "stkVolu": 93296.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 209.7,
+      "hiPx": 210.11,
+      "loPx": 207.9637,
+      "open": 209.28,
+      "stkVolu": 300653.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 208.18,
+      "hiPx": 210.13,
+      "loPx": 205.71,
+      "open": 209.75,
+      "stkVolu": 154078.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 210.0,
+      "hiPx": 210.1,
+      "loPx": 207.835,
+      "open": 209.26,
+      "stkVolu": 162502.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 209.74,
+      "hiPx": 210.88,
+      "loPx": 207.36,
+      "open": 210.88,
+      "stkVolu": 150708.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 212.04,
+      "hiPx": 212.5394,
+      "loPx": 210.34,
+      "open": 210.34,
+      "stkVolu": 162396.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 216.07,
+      "hiPx": 216.3,
+      "loPx": 211.19,
+      "open": 212.29,
+      "stkVolu": 268953.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 214.7,
+      "hiPx": 216.5999,
+      "loPx": 214.39,
+      "open": 216.06,
+      "stkVolu": 227255.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 217.46,
+      "hiPx": 217.88,
+      "loPx": 213.376,
+      "open": 215.62,
+      "stkVolu": 263078.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 222.95,
+      "hiPx": 223.4881,
+      "loPx": 219.11,
+      "open": 219.47,
+      "stkVolu": 379310.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 222.35,
+      "hiPx": 224.17,
+      "loPx": 221.4,
+      "open": 223.49,
+      "stkVolu": 172234.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 218.96,
+      "hiPx": 223.7202,
+      "loPx": 218.69,
+      "open": 223.01,
+      "stkVolu": 245882.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 215.72,
+      "hiPx": 216.66,
+      "loPx": 212.7,
+      "open": 215.85,
+      "stkVolu": 280471.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 221.05,
+      "hiPx": 221.3475,
+      "loPx": 217.56,
+      "open": 217.56,
+      "stkVolu": 183759.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 219.57,
+      "hiPx": 222.7639,
+      "loPx": 219.32,
+      "open": 221.34,
+      "stkVolu": 131223.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 220.48,
+      "hiPx": 221.2199,
+      "loPx": 218.0,
+      "open": 219.77,
+      "stkVolu": 141027.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 220.29,
+      "hiPx": 222.8599,
+      "loPx": 218.0177,
+      "open": 222.25,
+      "stkVolu": 126184.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 217.98,
+      "hiPx": 221.61,
+      "loPx": 217.3,
+      "open": 221.54,
+      "stkVolu": 170130.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 218.72,
+      "hiPx": 219.765,
+      "loPx": 217.4,
+      "open": 218.18,
+      "stkVolu": 128996.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 216.54,
+      "hiPx": 218.42,
+      "loPx": 215.15,
+      "open": 218.32,
+      "stkVolu": 142245.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 214.28,
+      "hiPx": 215.3649,
+      "loPx": 208.85,
+      "open": 212.97,
+      "stkVolu": 314779.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 216.9,
+      "hiPx": 217.455,
+      "loPx": 215.0,
+      "open": 216.0,
+      "stkVolu": 161549.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 218.08,
+      "hiPx": 221.17,
+      "loPx": 216.15,
+      "open": 219.47,
+      "stkVolu": 261934.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 216.84,
+      "hiPx": 218.17,
+      "loPx": 215.8701,
+      "open": 218.17,
+      "stkVolu": 119489.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 215.32,
+      "hiPx": 217.03,
+      "loPx": 213.08,
+      "open": 217.03,
+      "stkVolu": 167113.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 214.39,
+      "hiPx": 218.7899,
+      "loPx": 213.5101,
+      "open": 217.35,
+      "stkVolu": 197165.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 214.93,
+      "hiPx": 216.2,
+      "loPx": 212.8801,
+      "open": 214.83,
+      "stkVolu": 127515.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 218.46,
+      "hiPx": 218.785,
+      "loPx": 215.14,
+      "open": 215.74,
+      "stkVolu": 132785.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 218.98,
+      "hiPx": 221.31,
+      "loPx": 214.8001,
+      "open": 220.7,
+      "stkVolu": 203784.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 216.56,
+      "hiPx": 219.27,
+      "loPx": 216.12,
+      "open": 217.72,
+      "stkVolu": 144629.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 215.51,
+      "hiPx": 217.14,
+      "loPx": 213.98,
+      "open": 217.14,
+      "stkVolu": 152234.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 216.58,
+      "hiPx": 217.44,
+      "loPx": 215.14,
+      "open": 215.7,
+      "stkVolu": 155329.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 211.91,
+      "hiPx": 216.58,
+      "loPx": 211.2,
+      "open": 216.58,
+      "stkVolu": 170843.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 212.06,
+      "hiPx": 212.52,
+      "loPx": 208.77,
+      "open": 211.06,
+      "stkVolu": 179173.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 213.37,
+      "hiPx": 214.18,
+      "loPx": 211.85,
+      "open": 212.09,
+      "stkVolu": 142341.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 216.15,
+      "hiPx": 218.214,
+      "loPx": 214.05,
+      "open": 214.05,
+      "stkVolu": 132389.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 216.2,
+      "hiPx": 219.0,
+      "loPx": 216.05,
+      "open": 216.82,
+      "stkVolu": 152550.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 220.36,
+      "hiPx": 220.87,
+      "loPx": 216.99,
+      "open": 216.99,
+      "stkVolu": 182920.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 219.58,
+      "hiPx": 220.7699,
+      "loPx": 219.0,
+      "open": 220.65,
+      "stkVolu": 206588.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 220.27,
+      "hiPx": 220.6687,
+      "loPx": 218.7126,
+      "open": 220.16,
+      "stkVolu": 134735.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 217.44,
+      "hiPx": 220.8715,
+      "loPx": 216.62,
+      "open": 220.74,
+      "stkVolu": 110240.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 217.71,
+      "hiPx": 218.2668,
+      "loPx": 213.72,
+      "open": 215.42,
+      "stkVolu": 179082.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 215.09,
+      "hiPx": 218.75,
+      "loPx": 213.9,
+      "open": 218.52,
+      "stkVolu": 116597.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 215.29,
+      "hiPx": 215.89,
+      "loPx": 213.08,
+      "open": 215.42,
+      "stkVolu": 108506.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 216.64,
+      "hiPx": 217.26,
+      "loPx": 211.8,
+      "open": 216.87,
+      "stkVolu": 122735.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 217.7,
+      "hiPx": 218.01,
+      "loPx": 216.228,
+      "open": 217.03,
+      "stkVolu": 174493.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 215.5,
+      "hiPx": 217.455,
+      "loPx": 213.72,
+      "open": 217.09,
+      "stkVolu": 108478.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 218.49,
+      "hiPx": 218.49,
+      "loPx": 216.37,
+      "open": 216.37,
+      "stkVolu": 165278.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 220.78,
+      "hiPx": 222.87,
+      "loPx": 218.87,
+      "open": 218.87,
+      "stkVolu": 98987.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 221.32,
+      "hiPx": 222.29,
+      "loPx": 220.4301,
+      "open": 221.39,
+      "stkVolu": 112158.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 223.54,
+      "hiPx": 224.29,
+      "loPx": 221.13,
+      "open": 222.3,
+      "stkVolu": 156411.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 224.51,
+      "hiPx": 225.25,
+      "loPx": 222.25,
+      "open": 224.44,
+      "stkVolu": 200530.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 222.89,
+      "hiPx": 225.2069,
+      "loPx": 221.1303,
+      "open": 224.51,
+      "stkVolu": 106642.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 227.15,
+      "hiPx": 227.32,
+      "loPx": 223.6,
+      "open": 224.13,
+      "stkVolu": 163268.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 226.91,
+      "hiPx": 228.02,
+      "loPx": 225.4244,
+      "open": 228.02,
+      "stkVolu": 127918.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 227.83,
+      "hiPx": 228.078,
+      "loPx": 224.785,
+      "open": 225.82,
+      "stkVolu": 91116.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 230.12,
+      "hiPx": 231.07,
+      "loPx": 228.4,
+      "open": 228.4,
+      "stkVolu": 95954.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 226.47,
+      "hiPx": 230.8,
+      "loPx": 226.27,
+      "open": 230.8,
+      "stkVolu": 121960.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 226.06,
+      "hiPx": 226.825,
+      "loPx": 222.0701,
+      "open": 224.32,
+      "stkVolu": 101999.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 230.33,
+      "hiPx": 231.4499,
+      "loPx": 228.03,
+      "open": 228.06,
+      "stkVolu": 123451.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 230.96,
+      "hiPx": 234.428147,
+      "loPx": 229.67,
+      "open": 233.63,
+      "stkVolu": 190873.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 234.96,
+      "hiPx": 235.26,
+      "loPx": 230.4,
+      "open": 230.4,
+      "stkVolu": 237341.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 236.5,
+      "hiPx": 237.32,
+      "loPx": 233.45,
+      "open": 233.87,
+      "stkVolu": 161748.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 238.1,
+      "hiPx": 239.31,
+      "loPx": 236.13,
+      "open": 237.88,
+      "stkVolu": 162575.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 240.67,
+      "hiPx": 241.995,
+      "loPx": 238.0,
+      "open": 239.54,
+      "stkVolu": 137314.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 247.03,
+      "hiPx": 247.169,
+      "loPx": 242.59,
+      "open": 242.97,
+      "stkVolu": 177253.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 245.76,
+      "hiPx": 248.52,
+      "loPx": 243.87,
+      "open": 247.2,
+      "stkVolu": 134363.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 249.64,
+      "hiPx": 249.6528,
+      "loPx": 245.92,
+      "open": 246.51,
+      "stkVolu": 174696.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 245.48,
+      "hiPx": 250.87,
+      "loPx": 244.84,
+      "open": 249.98,
+      "stkVolu": 205384.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 238.93,
+      "hiPx": 248.0093,
+      "loPx": 238.79,
+      "open": 246.02,
+      "stkVolu": 251508.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 243.94,
+      "hiPx": 244.705,
+      "loPx": 241.37,
+      "open": 241.7,
+      "stkVolu": 181293.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 246.1,
+      "hiPx": 248.6,
+      "loPx": 238.73,
+      "open": 241.48,
+      "stkVolu": 136735.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 242.0,
+      "hiPx": 251.24,
+      "loPx": 239.7836,
+      "open": 249.27,
+      "stkVolu": 247055.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 238.15,
+      "hiPx": 244.71,
+      "loPx": 237.64,
+      "open": 243.43,
+      "stkVolu": 216910.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 235.42,
+      "hiPx": 237.83,
+      "loPx": 232.88,
+      "open": 236.74,
+      "stkVolu": 145285.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 241.35,
+      "hiPx": 241.89,
+      "loPx": 238.72,
+      "open": 239.11,
+      "stkVolu": 108402.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 243.71,
+      "hiPx": 244.625,
+      "loPx": 241.04,
+      "open": 241.98,
+      "stkVolu": 110802.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 237.4,
+      "hiPx": 243.57,
+      "loPx": 234.86,
+      "open": 242.61,
+      "stkVolu": 363486.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 246.24,
+      "hiPx": 246.7099,
+      "loPx": 238.74,
+      "open": 238.76,
+      "stkVolu": 122321.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 250.04,
+      "hiPx": 250.235,
+      "loPx": 248.27,
+      "open": 249.46,
+      "stkVolu": 114439.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 251.24,
+      "hiPx": 253.0238,
+      "loPx": 250.145,
+      "open": 252.2,
+      "stkVolu": 199399.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 250.43,
+      "hiPx": 254.085,
+      "loPx": 249.9473,
+      "open": 252.83,
+      "stkVolu": 123330.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 250.82,
+      "hiPx": 253.0,
+      "loPx": 248.82,
+      "open": 250.14,
+      "stkVolu": 221355.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 247.65,
+      "hiPx": 252.75,
+      "loPx": 247.48,
+      "open": 249.62,
+      "stkVolu": 100756.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 248.55,
+      "hiPx": 249.7952,
+      "loPx": 246.1401,
+      "open": 248.82,
+      "stkVolu": 84912.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 247.69,
+      "hiPx": 249.38,
+      "loPx": 244.6318,
+      "open": 249.38,
+      "stkVolu": 142059.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 241.97,
+      "hiPx": 245.2099,
+      "loPx": 240.89,
+      "open": 242.61,
+      "stkVolu": 130653.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 238.53,
+      "hiPx": 239.7392,
+      "loPx": 236.81,
+      "open": 238.38,
+      "stkVolu": 266807.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 232.97,
+      "hiPx": 238.17,
+      "loPx": 232.88,
+      "open": 238.15,
+      "stkVolu": 182240.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 234.33,
+      "hiPx": 234.835,
+      "loPx": 226.7,
+      "open": 229.66,
+      "stkVolu": 211825.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 237.09,
+      "hiPx": 238.37,
+      "loPx": 234.0,
+      "open": 237.43,
+      "stkVolu": 257564.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 236.11,
+      "hiPx": 237.47,
+      "loPx": 234.47,
+      "open": 236.69,
+      "stkVolu": 69188.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 234.92,
+      "hiPx": 238.3612,
+      "loPx": 234.77,
+      "open": 236.27,
+      "stkVolu": 117968.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 227.13,
+      "hiPx": 234.5253,
+      "loPx": 226.11,
+      "open": 234.48,
+      "stkVolu": 159684.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 228.04,
+      "hiPx": 230.0399,
+      "loPx": 222.42,
+      "open": 223.16,
+      "stkVolu": 119770.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 224.3,
+      "hiPx": 228.56,
+      "loPx": 222.6126,
+      "open": 227.76,
+      "stkVolu": 120925.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 223.52,
+      "hiPx": 225.4175,
+      "loPx": 221.18,
+      "open": 223.29,
+      "stkVolu": 136594.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 224.19,
+      "hiPx": 225.6999,
+      "loPx": 222.35,
+      "open": 223.1,
+      "stkVolu": 95885.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 218.75,
+      "hiPx": 230.0,
+      "loPx": 218.34,
+      "open": 229.19,
+      "stkVolu": 170278.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 220.08,
+      "hiPx": 221.245,
+      "loPx": 215.0201,
+      "open": 218.65,
+      "stkVolu": 147640.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 223.63,
+      "hiPx": 224.0,
+      "loPx": 219.7801,
+      "open": 220.54,
+      "stkVolu": 145045.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 227.65,
+      "hiPx": 228.03,
+      "loPx": 221.81,
+      "open": 224.15,
+      "stkVolu": 86791.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 229.3,
+      "hiPx": 230.72,
+      "loPx": 228.425,
+      "open": 228.84,
+      "stkVolu": 90587.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 230.29,
+      "hiPx": 230.74,
+      "loPx": 229.0,
+      "open": 230.03,
+      "stkVolu": 77156.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 224.26,
+      "hiPx": 228.3,
+      "loPx": 224.08,
+      "open": 228.06,
+      "stkVolu": 275998.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 225.86,
+      "hiPx": 227.815,
+      "loPx": 225.56,
+      "open": 226.32,
+      "stkVolu": 148071.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 227.91,
+      "hiPx": 228.07,
+      "loPx": 224.0,
+      "open": 226.0,
+      "stkVolu": 96429.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 233.65,
+      "hiPx": 234.156,
+      "loPx": 227.8991,
+      "open": 228.5,
+      "stkVolu": 96616.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 230.82,
+      "hiPx": 233.54,
+      "loPx": 228.66,
+      "open": 233.54,
+      "stkVolu": 64956.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 233.15,
+      "hiPx": 233.295,
+      "loPx": 230.235,
+      "open": 232.24,
+      "stkVolu": 63309.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 231.15,
+      "hiPx": 234.7155,
+      "loPx": 230.7537,
+      "open": 232.5,
+      "stkVolu": 54027.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 233.75,
+      "hiPx": 235.16,
+      "loPx": 229.195,
+      "open": 230.76,
+      "stkVolu": 113106.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 239.28,
+      "hiPx": 239.28,
+      "loPx": 232.42,
+      "open": 233.27,
+      "stkVolu": 104153.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 236.69,
+      "hiPx": 240.62,
+      "loPx": 235.52,
+      "open": 239.5,
+      "stkVolu": 108031.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 234.34,
+      "hiPx": 238.64,
+      "loPx": 233.7,
+      "open": 237.85,
+      "stkVolu": 91514.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 232.85,
+      "hiPx": 234.74,
+      "loPx": 231.06,
+      "open": 232.91,
+      "stkVolu": 111086.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 228.93,
+      "hiPx": 234.53,
+      "loPx": 228.32,
+      "open": 232.21,
+      "stkVolu": 138043.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 233.14,
+      "hiPx": 234.77,
+      "loPx": 231.68,
+      "open": 231.68,
+      "stkVolu": 126730.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 241.28,
+      "hiPx": 242.03,
+      "loPx": 234.23,
+      "open": 234.23,
+      "stkVolu": 114195.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 249.8,
+      "hiPx": 249.83,
+      "loPx": 244.105,
+      "open": 244.14,
+      "stkVolu": 155873.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 250.13,
+      "hiPx": 251.1231,
+      "loPx": 248.02,
+      "open": 248.14,
+      "stkVolu": 125641.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 250.54,
+      "hiPx": 251.039,
+      "loPx": 248.99,
+      "open": 250.43,
+      "stkVolu": 55741.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 246.42,
+      "hiPx": 249.98,
+      "loPx": 246.1924,
+      "open": 249.98,
+      "stkVolu": 83662.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 244.85,
+      "hiPx": 247.0,
+      "loPx": 244.47,
+      "open": 245.47,
+      "stkVolu": 103276.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 243.24,
+      "hiPx": 246.21,
+      "loPx": 242.83,
+      "open": 246.21,
+      "stkVolu": 211389.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 241.24,
+      "hiPx": 244.0,
+      "loPx": 240.59,
+      "open": 244.0,
+      "stkVolu": 162164.0,
+      "ticker": "XAR",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 250.4,
+      "hiPx": 250.4,
+      "loPx": 240.02,
+      "open": 242.83,
+      "stkVolu": 199866.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 260.33,
+      "hiPx": 260.62,
+      "loPx": 253.46,
+      "open": 253.47,
+      "stkVolu": 364143.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 266.13,
+      "hiPx": 266.37,
+      "loPx": 259.62,
+      "open": 260.89,
+      "stkVolu": 462559.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 262.61,
+      "hiPx": 268.98,
+      "loPx": 262.435,
+      "open": 266.89,
+      "stkVolu": 271111.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 268.7,
+      "hiPx": 277.925,
+      "loPx": 266.305,
+      "open": 270.97,
+      "stkVolu": 535286.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 276.64,
+      "hiPx": 277.95,
+      "loPx": 271.5,
+      "open": 271.5,
+      "stkVolu": 369210.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 280.9,
+      "hiPx": 281.36,
+      "loPx": 277.85,
+      "open": 278.57,
+      "stkVolu": 704152.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 281.43,
+      "hiPx": 285.26,
+      "loPx": 280.2601,
+      "open": 285.01,
+      "stkVolu": 373002.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 285.71,
+      "hiPx": 285.71,
+      "loPx": 277.75,
+      "open": 280.88,
+      "stkVolu": 305527.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 289.49,
+      "hiPx": 290.25,
+      "loPx": 284.56,
+      "open": 286.42,
+      "stkVolu": 455099.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 292.74,
+      "hiPx": 294.4528,
+      "loPx": 289.81,
+      "open": 290.69,
+      "stkVolu": 489035.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 284.06,
+      "hiPx": 293.49,
+      "loPx": 283.455,
+      "open": 288.51,
+      "stkVolu": 520012.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 285.33,
+      "hiPx": 286.89,
+      "loPx": 278.2069,
+      "open": 286.35,
+      "stkVolu": 704284.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 285.44,
+      "hiPx": 288.445,
+      "loPx": 282.8,
+      "open": 287.89,
+      "stkVolu": 226800.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 283.18,
+      "hiPx": 287.49,
+      "loPx": 281.34,
+      "open": 285.98,
+      "stkVolu": 324886.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 280.01,
+      "hiPx": 282.4156,
+      "loPx": 278.37,
+      "open": 281.37,
+      "stkVolu": 311900.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 285.12,
+      "hiPx": 285.68,
+      "loPx": 280.01,
+      "open": 281.0,
+      "stkVolu": 236107.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 281.57,
+      "hiPx": 285.34,
+      "loPx": 279.18,
+      "open": 285.34,
+      "stkVolu": 333038.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 277.91,
+      "hiPx": 284.6,
+      "loPx": 275.6,
+      "open": 282.97,
+      "stkVolu": 362934.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 272.96,
+      "hiPx": 279.4299,
+      "loPx": 270.71,
+      "open": 275.47,
+      "stkVolu": 199347.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 270.28,
+      "hiPx": 272.32,
+      "loPx": 268.645,
+      "open": 270.55,
+      "stkVolu": 278499.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 278.46,
+      "hiPx": 278.46,
+      "loPx": 271.28,
+      "open": 274.8,
+      "stkVolu": 330243.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 264.9,
+      "hiPx": 278.4,
+      "loPx": 259.825,
+      "open": 278.3,
+      "stkVolu": 387535.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 259.38,
+      "hiPx": 266.485,
+      "loPx": 258.9255,
+      "open": 260.37,
+      "stkVolu": 313430.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 272.23,
+      "hiPx": 272.6398,
+      "loPx": 264.39,
+      "open": 264.39,
+      "stkVolu": 295230.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 276.42,
+      "hiPx": 277.3805,
+      "loPx": 272.03,
+      "open": 272.39,
+      "stkVolu": 252970.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 271.85,
+      "hiPx": 276.74,
+      "loPx": 271.85,
+      "open": 276.74,
+      "stkVolu": 298750.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 266.87,
+      "hiPx": 274.735,
+      "loPx": 265.13,
+      "open": 274.62,
+      "stkVolu": 194965.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 267.68,
+      "hiPx": 273.67,
+      "loPx": 266.74,
+      "open": 269.25,
+      "stkVolu": 184297.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 270.72,
+      "hiPx": 273.82,
+      "loPx": 268.0,
+      "open": 268.25,
+      "stkVolu": 191684.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 273.51,
+      "hiPx": 275.645,
+      "loPx": 268.56,
+      "open": 270.0,
+      "stkVolu": 223548.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 278.32,
+      "hiPx": 280.0,
+      "loPx": 274.655,
+      "open": 275.65,
+      "stkVolu": 433682.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 284.46,
+      "hiPx": 285.0,
+      "loPx": 277.41,
+      "open": 278.28,
+      "stkVolu": 394048.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 282.01,
+      "hiPx": 287.52,
+      "loPx": 280.41,
+      "open": 284.27,
+      "stkVolu": 431662.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 278.89,
+      "hiPx": 281.14,
+      "loPx": 277.08,
+      "open": 279.97,
+      "stkVolu": 299511.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 282.91,
+      "hiPx": 283.67,
+      "loPx": 274.29,
+      "open": 278.29,
+      "stkVolu": 177479.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 280.54,
+      "hiPx": 285.02,
+      "loPx": 277.0,
+      "open": 285.02,
+      "stkVolu": 210176.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 283.71,
+      "hiPx": 284.05,
+      "loPx": 276.72,
+      "open": 279.67,
+      "stkVolu": 350126.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 282.94,
+      "hiPx": 282.94,
+      "loPx": 278.12,
+      "open": 280.02,
+      "stkVolu": 194356.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 289.87,
+      "hiPx": 295.39,
+      "loPx": 286.8,
+      "open": 288.26,
+      "stkVolu": 1089305.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 284.34,
+      "hiPx": 286.6,
+      "loPx": 277.785,
+      "open": 286.31,
+      "stkVolu": 485611.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 287.18,
+      "hiPx": 287.69,
+      "loPx": 281.25,
+      "open": 286.0,
+      "stkVolu": 374163.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 278.77,
+      "hiPx": 285.7712,
+      "loPx": 272.7501,
+      "open": 285.35,
+      "stkVolu": 529203.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 279.29,
+      "hiPx": 282.355,
+      "loPx": 275.0,
+      "open": 275.09,
+      "stkVolu": 322402.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 282.14,
+      "hiPx": 282.39,
+      "loPx": 273.5,
+      "open": 278.1,
+      "stkVolu": 398500.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 277.95,
+      "hiPx": 282.75,
+      "loPx": 277.69,
+      "open": 281.14,
+      "stkVolu": 367153.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 277.45,
+      "hiPx": 279.71,
+      "loPx": 273.93,
+      "open": 276.32,
+      "stkVolu": 215234.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 268.62,
+      "hiPx": 275.94,
+      "loPx": 268.21,
+      "open": 275.94,
+      "stkVolu": 293908.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 265.21,
+      "hiPx": 272.8328,
+      "loPx": 262.86,
+      "open": 271.06,
+      "stkVolu": 267689.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 270.83,
+      "hiPx": 272.635,
+      "loPx": 267.75,
+      "open": 267.99,
+      "stkVolu": 234176.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 273.76,
+      "hiPx": 273.95,
+      "loPx": 269.73,
+      "open": 271.95,
+      "stkVolu": 166258.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 271.04,
+      "hiPx": 275.0,
+      "loPx": 270.92,
+      "open": 272.39,
+      "stkVolu": 240766.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 268.0,
+      "hiPx": 270.05,
+      "loPx": 261.59,
+      "open": 267.35,
+      "stkVolu": 231784.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 258.88,
+      "hiPx": 268.0,
+      "loPx": 256.84,
+      "open": 267.3,
+      "stkVolu": 278290.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 262.84,
+      "hiPx": 268.23,
+      "loPx": 262.51,
+      "open": 263.52,
+      "stkVolu": 278332.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 261.67,
+      "hiPx": 263.63,
+      "loPx": 258.0,
+      "open": 260.36,
+      "stkVolu": 204612.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 266.59,
+      "hiPx": 268.5,
+      "loPx": 265.205,
+      "open": 265.61,
+      "stkVolu": 236062.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 257.03,
+      "hiPx": 264.085,
+      "loPx": 256.52,
+      "open": 262.95,
+      "stkVolu": 154136.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 250.57,
+      "hiPx": 255.92,
+      "loPx": 250.235,
+      "open": 255.4,
+      "stkVolu": 289187.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 242.24,
+      "hiPx": 252.93,
+      "loPx": 240.95,
+      "open": 252.66,
+      "stkVolu": 393079.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 253.98,
+      "hiPx": 254.985,
+      "loPx": 245.0686,
+      "open": 247.155,
+      "stkVolu": 361787.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 259.95,
+      "hiPx": 263.48,
+      "loPx": 258.09,
+      "open": 258.09,
+      "stkVolu": 198189.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 259.58,
+      "hiPx": 264.12,
+      "loPx": 253.0,
+      "open": 254.25,
+      "stkVolu": 170325.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 263.64,
+      "hiPx": 263.97,
+      "loPx": 260.15,
+      "open": 260.3,
+      "stkVolu": 217841.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 260.06,
+      "hiPx": 262.02,
+      "loPx": 257.2201,
+      "open": 261.17,
+      "stkVolu": 168074.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 271.69,
+      "hiPx": 274.5,
+      "loPx": 269.86,
+      "open": 270.61,
+      "stkVolu": 173315.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 269.14,
+      "hiPx": 273.48,
+      "loPx": 268.895,
+      "open": 270.3,
+      "stkVolu": 170312.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 267.81,
+      "hiPx": 269.78,
+      "loPx": 264.79,
+      "open": 268.97,
+      "stkVolu": 188420.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 273.74,
+      "hiPx": 273.8,
+      "loPx": 266.52,
+      "open": 267.235,
+      "stkVolu": 132535.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 276.48,
+      "hiPx": 277.94,
+      "loPx": 274.855,
+      "open": 276.21,
+      "stkVolu": 254122.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 275.47,
+      "hiPx": 277.61,
+      "loPx": 272.4504,
+      "open": 276.88,
+      "stkVolu": 161392.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 272.63,
+      "hiPx": 278.12,
+      "loPx": 270.4901,
+      "open": 277.13,
+      "stkVolu": 146257.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 276.38,
+      "hiPx": 281.97,
+      "loPx": 275.6,
+      "open": 276.53,
+      "stkVolu": 243563.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 276.35,
+      "hiPx": 277.293,
+      "loPx": 274.05,
+      "open": 275.28,
+      "stkVolu": 158559.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 267.46,
+      "hiPx": 276.545,
+      "loPx": 266.1539,
+      "open": 275.96,
+      "stkVolu": 223469.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 263.92,
+      "hiPx": 272.91,
+      "loPx": 261.41,
+      "open": 271.53,
+      "stkVolu": 520814.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 261.58,
+      "hiPx": 264.96,
+      "loPx": 256.01,
+      "open": 263.41,
+      "stkVolu": 271388.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 256.45,
+      "hiPx": 262.05,
+      "loPx": 255.37,
+      "open": 262.05,
+      "stkVolu": 279804.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 258.0,
+      "hiPx": 258.89,
+      "loPx": 255.53,
+      "open": 256.36,
+      "stkVolu": 182465.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 254.91,
+      "hiPx": 258.0,
+      "loPx": 252.185,
+      "open": 256.73,
+      "stkVolu": 232800.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 249.75,
+      "hiPx": 256.01,
+      "loPx": 248.35,
+      "open": 256.01,
+      "stkVolu": 218613.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 259.14,
+      "hiPx": 259.37,
+      "loPx": 251.64,
+      "open": 251.64,
+      "stkVolu": 166272.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 256.44,
+      "hiPx": 260.11,
+      "loPx": 254.78,
+      "open": 259.66,
+      "stkVolu": 203290.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 254.75,
+      "hiPx": 258.9299,
+      "loPx": 253.95,
+      "open": 255.82,
+      "stkVolu": 198360.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 255.22,
+      "hiPx": 258.33,
+      "loPx": 253.74,
+      "open": 257.59,
+      "stkVolu": 207911.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 267.26,
+      "hiPx": 267.9,
+      "loPx": 259.5001,
+      "open": 260.14,
+      "stkVolu": 417669.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 262.76,
+      "hiPx": 270.0,
+      "loPx": 261.5801,
+      "open": 269.645,
+      "stkVolu": 225339.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 265.4,
+      "hiPx": 266.83,
+      "loPx": 263.57,
+      "open": 265.72,
+      "stkVolu": 167575.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 269.4,
+      "hiPx": 271.41,
+      "loPx": 262.67,
+      "open": 264.59,
+      "stkVolu": 276824.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 268.42,
+      "hiPx": 268.82,
+      "loPx": 262.61,
+      "open": 267.44,
+      "stkVolu": 181693.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 270.11,
+      "hiPx": 271.39,
+      "loPx": 262.35,
+      "open": 267.89,
+      "stkVolu": 114944.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 271.35,
+      "hiPx": 272.52,
+      "loPx": 267.5,
+      "open": 270.16,
+      "stkVolu": 115346.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 260.74,
+      "hiPx": 267.38,
+      "loPx": 260.33,
+      "open": 266.53,
+      "stkVolu": 193715.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 263.21,
+      "hiPx": 265.7775,
+      "loPx": 260.51,
+      "open": 263.68,
+      "stkVolu": 233484.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 259.46,
+      "hiPx": 262.1599,
+      "loPx": 256.01,
+      "open": 261.27,
+      "stkVolu": 153103.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 266.5,
+      "hiPx": 266.8875,
+      "loPx": 259.615,
+      "open": 261.73,
+      "stkVolu": 204051.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 266.37,
+      "hiPx": 267.6099,
+      "loPx": 261.11,
+      "open": 263.62,
+      "stkVolu": 113869.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 271.18,
+      "hiPx": 272.52,
+      "loPx": 268.27,
+      "open": 269.34,
+      "stkVolu": 172092.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 276.56,
+      "hiPx": 280.12,
+      "loPx": 274.97,
+      "open": 276.79,
+      "stkVolu": 309345.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 278.9,
+      "hiPx": 279.8598,
+      "loPx": 274.48,
+      "open": 279.48,
+      "stkVolu": 260122.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 289.56,
+      "hiPx": 290.6099,
+      "loPx": 280.0,
+      "open": 281.15,
+      "stkVolu": 297324.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 288.0,
+      "hiPx": 288.2267,
+      "loPx": 280.83,
+      "open": 287.63,
+      "stkVolu": 262547.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 280.0,
+      "hiPx": 284.9777,
+      "loPx": 276.53,
+      "open": 283.67,
+      "stkVolu": 385736.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 279.28,
+      "hiPx": 281.61,
+      "loPx": 277.87,
+      "open": 279.69,
+      "stkVolu": 249123.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 273.46,
+      "hiPx": 276.9,
+      "loPx": 272.46,
+      "open": 276.39,
+      "stkVolu": 263261.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 280.42,
+      "hiPx": 281.65,
+      "loPx": 272.65,
+      "open": 274.33,
+      "stkVolu": 193563.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 272.57,
+      "hiPx": 278.68,
+      "loPx": 269.74,
+      "open": 277.75,
+      "stkVolu": 301567.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 271.11,
+      "hiPx": 276.1564,
+      "loPx": 270.22,
+      "open": 275.54,
+      "stkVolu": 165985.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 273.38,
+      "hiPx": 277.84,
+      "loPx": 263.09,
+      "open": 273.92,
+      "stkVolu": 246427.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 266.73,
+      "hiPx": 274.64,
+      "loPx": 266.73,
+      "open": 272.53,
+      "stkVolu": 206797.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 284.39,
+      "hiPx": 284.47,
+      "loPx": 269.45,
+      "open": 269.45,
+      "stkVolu": 222570.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 279.97,
+      "hiPx": 286.8899,
+      "loPx": 277.88,
+      "open": 285.89,
+      "stkVolu": 215282.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 282.79,
+      "hiPx": 286.59,
+      "loPx": 282.05,
+      "open": 285.04,
+      "stkVolu": 355613.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 281.81,
+      "hiPx": 284.1,
+      "loPx": 279.9053,
+      "open": 282.05,
+      "stkVolu": 179478.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 285.59,
+      "hiPx": 289.86,
+      "loPx": 280.5,
+      "open": 281.45,
+      "stkVolu": 241181.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 284.29,
+      "hiPx": 289.66,
+      "loPx": 280.735,
+      "open": 289.16,
+      "stkVolu": 276968.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 277.87,
+      "hiPx": 283.09,
+      "loPx": 275.6601,
+      "open": 283.09,
+      "stkVolu": 322289.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 275.32,
+      "hiPx": 279.0513,
+      "loPx": 271.9301,
+      "open": 273.09,
+      "stkVolu": 189185.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 272.41,
+      "hiPx": 277.01,
+      "loPx": 271.82,
+      "open": 275.41,
+      "stkVolu": 128365.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 272.78,
+      "hiPx": 278.16,
+      "loPx": 271.5442,
+      "open": 273.59,
+      "stkVolu": 232489.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 274.09,
+      "hiPx": 276.56,
+      "loPx": 270.0,
+      "open": 271.11,
+      "stkVolu": 141317.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 276.98,
+      "hiPx": 278.68,
+      "loPx": 273.94,
+      "open": 275.93,
+      "stkVolu": 183396.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 283.79,
+      "hiPx": 283.99,
+      "loPx": 278.64,
+      "open": 280.0,
+      "stkVolu": 171193.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 285.11,
+      "hiPx": 290.3,
+      "loPx": 283.13,
+      "open": 284.83,
+      "stkVolu": 265982.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 287.56,
+      "hiPx": 294.49,
+      "loPx": 284.01,
+      "open": 287.85,
+      "stkVolu": 203812.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 289.73,
+      "hiPx": 291.415,
+      "loPx": 287.61,
+      "open": 288.35,
+      "stkVolu": 204059.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 279.33,
+      "hiPx": 289.34,
+      "loPx": 277.36,
+      "open": 288.85,
+      "stkVolu": 276223.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 273.83,
+      "hiPx": 278.78,
+      "loPx": 272.16,
+      "open": 277.25,
+      "stkVolu": 134486.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 273.89,
+      "hiPx": 275.86,
+      "loPx": 272.0,
+      "open": 274.74,
+      "stkVolu": 177335.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 271.45,
+      "hiPx": 274.5582,
+      "loPx": 268.2,
+      "open": 273.96,
+      "stkVolu": 299947.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 264.17,
+      "hiPx": 270.95,
+      "loPx": 263.18,
+      "open": 269.505,
+      "stkVolu": 257525.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 266.56,
+      "hiPx": 269.82,
+      "loPx": 266.39,
+      "open": 266.39,
+      "stkVolu": 160274.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 266.32,
+      "hiPx": 270.69,
+      "loPx": 263.48,
+      "open": 268.0,
+      "stkVolu": 124917.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 259.06,
+      "hiPx": 264.265,
+      "loPx": 257.81,
+      "open": 264.17,
+      "stkVolu": 172765.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 258.57,
+      "hiPx": 262.78,
+      "loPx": 255.23,
+      "open": 256.18,
+      "stkVolu": 201624.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 259.31,
+      "hiPx": 263.38,
+      "loPx": 258.91,
+      "open": 260.64,
+      "stkVolu": 177132.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 264.91,
+      "hiPx": 266.285,
+      "loPx": 258.38,
+      "open": 260.54,
+      "stkVolu": 172315.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 264.3,
+      "hiPx": 267.97,
+      "loPx": 263.66,
+      "open": 265.145,
+      "stkVolu": 255936.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 270.54,
+      "hiPx": 273.36,
+      "loPx": 263.78,
+      "open": 263.78,
+      "stkVolu": 218634.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 269.01,
+      "hiPx": 272.43,
+      "loPx": 268.51,
+      "open": 271.13,
+      "stkVolu": 175572.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 273.07,
+      "hiPx": 276.53,
+      "loPx": 269.0,
+      "open": 272.14,
+      "stkVolu": 153364.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 271.92,
+      "hiPx": 272.38,
+      "loPx": 266.8969,
+      "open": 272.31,
+      "stkVolu": 650016.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 258.11,
+      "hiPx": 271.29,
+      "loPx": 257.13,
+      "open": 271.29,
+      "stkVolu": 278059.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 262.83,
+      "hiPx": 263.08,
+      "loPx": 254.93,
+      "open": 258.5,
+      "stkVolu": 189862.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 264.86,
+      "hiPx": 266.2,
+      "loPx": 259.0108,
+      "open": 264.44,
+      "stkVolu": 159892.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 273.63,
+      "hiPx": 273.91,
+      "loPx": 265.01,
+      "open": 266.37,
+      "stkVolu": 187723.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 282.09,
+      "hiPx": 283.36,
+      "loPx": 275.855,
+      "open": 277.4,
+      "stkVolu": 205520.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 282.08,
+      "hiPx": 286.075,
+      "loPx": 280.595,
+      "open": 284.1,
+      "stkVolu": 108597.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 282.91,
+      "hiPx": 290.76,
+      "loPx": 281.46,
+      "open": 283.73,
+      "stkVolu": 157403.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 286.83,
+      "hiPx": 287.055,
+      "loPx": 279.1133,
+      "open": 285.44,
+      "stkVolu": 168098.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 288.29,
+      "hiPx": 291.445,
+      "loPx": 287.32,
+      "open": 288.49,
+      "stkVolu": 154654.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 292.33,
+      "hiPx": 292.82,
+      "loPx": 288.0,
+      "open": 288.37,
+      "stkVolu": 109464.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 293.34,
+      "hiPx": 295.14,
+      "loPx": 290.9914,
+      "open": 294.56,
+      "stkVolu": 196949.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 292.1,
+      "hiPx": 293.37,
+      "loPx": 289.0201,
+      "open": 292.43,
+      "stkVolu": 181330.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 296.73,
+      "hiPx": 297.79,
+      "loPx": 293.12,
+      "open": 294.53,
+      "stkVolu": 401588.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 294.87,
+      "hiPx": 297.69,
+      "loPx": 294.06,
+      "open": 296.15,
+      "stkVolu": 189334.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 290.43,
+      "hiPx": 294.3,
+      "loPx": 289.12,
+      "open": 290.45,
+      "stkVolu": 225125.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 284.1,
+      "hiPx": 291.52,
+      "loPx": 283.0005,
+      "open": 291.52,
+      "stkVolu": 270382.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 271.78,
+      "hiPx": 281.99,
+      "loPx": 271.02,
+      "open": 281.11,
+      "stkVolu": 222065.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 272.74,
+      "hiPx": 275.05,
+      "loPx": 271.8,
+      "open": 274.35,
+      "stkVolu": 148078.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 265.61,
+      "hiPx": 271.5,
+      "loPx": 265.0,
+      "open": 271.27,
+      "stkVolu": 209079.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 264.85,
+      "hiPx": 268.77,
+      "loPx": 263.99,
+      "open": 268.09,
+      "stkVolu": 256226.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 266.65,
+      "hiPx": 269.4,
+      "loPx": 265.57,
+      "open": 265.57,
+      "stkVolu": 94293.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 266.05,
+      "hiPx": 267.37,
+      "loPx": 263.73,
+      "open": 267.37,
+      "stkVolu": 130392.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

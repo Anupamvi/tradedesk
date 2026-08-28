@@ -1,0 +1,96 @@
+{
+  "asof": "2026-08-27",
+  "names": [
+    {
+      "bias": "bullish",
+      "heat": "hot",
+      "narrative": "Q2 print ~$96B, beat/guide, DC strength. Tape +~9%. Crowded promo + Burry-calls chatter. Some beat-and-drop posts — tape did not dump.",
+      "posts_24h": 90,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Crowded",
+      "ticker": "NVDA"
+    },
+    {
+      "bias": "bullish",
+      "heat": "hot",
+      "narrative": "Software AI-spend confirmation with CRM/OKTA. Earnings beat/guide. Tape +20% — already ran.",
+      "posts_24h": 40,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Informed",
+      "ticker": "CRWD"
+    },
+    {
+      "bias": "bullish",
+      "heat": "hot",
+      "narrative": "Named with CRWD/OKTA as software earnings winner. Tape +22% — do not chase.",
+      "posts_24h": 25,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Informed",
+      "ticker": "CRM"
+    },
+    {
+      "bias": "bullish",
+      "heat": "hot",
+      "narrative": "Named with CRWD/CRM as enterprise AI software confirmation; large gap. Extended.",
+      "posts_24h": 15,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Informed",
+      "ticker": "OKTA"
+    },
+    {
+      "bias": "bullish",
+      "heat": "warm",
+      "narrative": "On software rotation watchlists next to CRWD/NVDA; quieter thread than the gap names.",
+      "posts_24h": 8,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Quiet",
+      "ticker": "NOW"
+    },
+    {
+      "bias": "bullish",
+      "heat": "hot",
+      "narrative": "Breakout-watch chatter; promo/ticker spam, no fresh print.",
+      "posts_24h": 25,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Crowded",
+      "ticker": "PLTR"
+    },
+    {
+      "bias": "bullish",
+      "heat": "warm",
+      "narrative": "Memory/HBM cited as next AI supply-chain expression after NVDA. Soft tape, not a spike.",
+      "posts_24h": 12,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Informed",
+      "ticker": "MU"
+    },
+    {
+      "bias": "bearish",
+      "heat": "hot",
+      "narrative": "Post-earnings AH ~-7.6% despite record rev / 46% DC growth. Session was only -1.5% on 1.7x vol; dump is the AH print. Friday open is the confirm.",
+      "posts_24h": 20,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Informed",
+      "ticker": "MRVL"
+    },
+    {
+      "bias": "bullish",
+      "heat": "warm",
+      "narrative": "Tight post-earnings hold of 21 EMA; volume drying. Watch through 38.6 if the AI complex reignites.",
+      "posts_24h": 10,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Informed",
+      "ticker": "SMCI"
+    },
+    {
+      "bias": "unknown",
+      "heat": "warm",
+      "narrative": "Listed as a consumer earnings loser vs AMZN/software winners. Separate bounce/gap-fill chatter. Mixed, not a clean X dip.",
+      "posts_24h": 12,
+      "source": "x_keyword_search 2026-08-28",
+      "tag": "Informed",
+      "ticker": "TSLA"
+    }
+  ],
+  "source": "x_keyword_search 2026-08-28"
+}

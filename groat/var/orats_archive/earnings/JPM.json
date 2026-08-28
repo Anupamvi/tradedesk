@@ -1,0 +1,730 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-12-31",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-12-31",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-12-31",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-12-31",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-03-20",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-12-31",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-12-31",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-01-20",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-12-31",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-01-19",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-04-20",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-07-21",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-10-20",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-01-19",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-04-19",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-07-19",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-10-18",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-01-17",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-04-18",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-07-18",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-17",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-01-16",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-04-17",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-17",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-16",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-22",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-04-16",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-16",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-22",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-21",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-21",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-21",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-20",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-01-19",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-20",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-20",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-19",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-01-18",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-19",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-19",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2006-10-18",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-01-17",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-04-18",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-07-18",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-17",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-01-16",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-04-16",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-17",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-15",
+      "ticker": "JPM",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-01-15",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-04-16",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-07-16",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-10-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-01-15",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-04-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-07-15",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-10-13",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-01-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-04-13",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-07-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-10-13",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-01-12",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-01-13",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-04-13",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-07-13",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-10-12",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-01-16",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-04-12",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-07-12",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-10-11",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-01-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-04-11",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-07-15",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-10-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-01-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-04-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-07-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-10-13",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-01-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-04-13",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-07-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-10-14",
+      "ticker": "JPM",
+      "updatedAt": "2017-10-11T19:06:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-01-13",
+      "ticker": "JPM",
+      "updatedAt": "2018-11-12T17:06:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-04-13",
+      "ticker": "JPM",
+      "updatedAt": "2018-11-12T17:06:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-07-14",
+      "ticker": "JPM",
+      "updatedAt": "2018-11-12T17:06:56Z"
+    },
+    {
+      "anncTod": "2359",
+      "earnDate": "2017-10-12",
+      "ticker": "JPM",
+      "updatedAt": "2018-11-12T17:06:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-01-12",
+      "ticker": "JPM",
+      "updatedAt": "2018-11-12T17:06:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-04-13",
+      "ticker": "JPM",
+      "updatedAt": "2018-11-12T17:06:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-07-13",
+      "ticker": "JPM",
+      "updatedAt": "2018-11-12T17:06:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-10-12",
+      "ticker": "JPM",
+      "updatedAt": "2018-11-12T17:06:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-01-15",
+      "ticker": "JPM",
+      "updatedAt": "2019-01-25T23:02:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-04-12",
+      "ticker": "JPM",
+      "updatedAt": "2019-04-22T23:17:17Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-07-16",
+      "ticker": "JPM",
+      "updatedAt": "2019-07-26T23:17:13Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-10-15",
+      "ticker": "JPM",
+      "updatedAt": "2019-10-25T23:17:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-01-14",
+      "ticker": "JPM",
+      "updatedAt": "2020-01-25T00:18:09Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-04-14",
+      "ticker": "JPM",
+      "updatedAt": "2020-04-24T23:17:20Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-07-14",
+      "ticker": "JPM",
+      "updatedAt": "2020-07-24T23:17:47Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-10-13",
+      "ticker": "JPM",
+      "updatedAt": "2020-10-23T23:17:20Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-01-15",
+      "ticker": "JPM",
+      "updatedAt": "2021-01-26T00:17:30Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-04-14",
+      "ticker": "JPM",
+      "updatedAt": "2021-04-23T23:17:43Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-07-13",
+      "ticker": "JPM",
+      "updatedAt": "2021-07-23T23:18:32Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-10-13",
+      "ticker": "JPM",
+      "updatedAt": "2021-10-22T23:17:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-01-14",
+      "ticker": "JPM",
+      "updatedAt": "2022-01-25T00:17:48Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-04-13",
+      "ticker": "JPM",
+      "updatedAt": "2022-04-22T23:17:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-07-14",
+      "ticker": "JPM",
+      "updatedAt": "2022-07-22T23:17:41Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-10-14",
+      "ticker": "JPM",
+      "updatedAt": "2022-10-24T23:17:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-01-13",
+      "ticker": "JPM",
+      "updatedAt": "2023-01-24T00:17:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-04-14",
+      "ticker": "JPM",
+      "updatedAt": "2023-04-24T23:17:30Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-07-14",
+      "ticker": "JPM",
+      "updatedAt": "2023-07-24T23:17:29Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-10-13",
+      "ticker": "JPM",
+      "updatedAt": "2023-10-23T23:17:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-01-12",
+      "ticker": "JPM",
+      "updatedAt": "2024-01-23T00:17:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-04-12",
+      "ticker": "JPM",
+      "updatedAt": "2024-04-22T23:17:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-07-12",
+      "ticker": "JPM",
+      "updatedAt": "2024-07-22T23:17:52Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-10-11",
+      "ticker": "JPM",
+      "updatedAt": "2024-10-21T23:17:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-01-15",
+      "ticker": "JPM",
+      "updatedAt": "2025-01-25T03:42:45Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-04-11",
+      "ticker": "JPM",
+      "updatedAt": "2025-04-22T02:41:31Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-07-15",
+      "ticker": "JPM",
+      "updatedAt": "2025-07-26T02:41:38Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-10-14",
+      "ticker": "JPM",
+      "updatedAt": "2025-10-25T02:41:17Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-01-13",
+      "ticker": "JPM",
+      "updatedAt": "2026-01-24T03:41:19Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-04-14",
+      "ticker": "JPM",
+      "updatedAt": "2026-04-25T02:41:50Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-07-14",
+      "ticker": "JPM",
+      "updatedAt": "2026-07-24T22:01:53Z"
+    }
+  ]
+}

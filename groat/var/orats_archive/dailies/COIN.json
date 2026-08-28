@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 355.8,
+      "hiPx": 357.8699,
+      "loPx": 348.5,
+      "open": 350.345,
+      "stkVolu": 6704285.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 357.1,
+      "hiPx": 363.9999,
+      "loPx": 351.0,
+      "open": 354.2,
+      "stkVolu": 7885346.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 354.82,
+      "hiPx": 368.79,
+      "loPx": 348.0,
+      "open": 362.75,
+      "stkVolu": 9734990.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 373.85,
+      "hiPx": 374.0,
+      "loPx": 353.2901,
+      "open": 358.63,
+      "stkVolu": 13238439.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 388.96,
+      "hiPx": 389.16,
+      "loPx": 369.0,
+      "open": 372.405,
+      "stkVolu": 17241596.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 387.06,
+      "hiPx": 395.5,
+      "loPx": 378.37,
+      "open": 390.185,
+      "stkVolu": 16694618.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 394.01,
+      "hiPx": 398.5,
+      "loPx": 388.58,
+      "open": 392.495,
+      "stkVolu": 12473533.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 388.02,
+      "hiPx": 400.8799,
+      "loPx": 373.0201,
+      "open": 391.525,
+      "stkVolu": 16889292.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 398.2,
+      "hiPx": 405.88,
+      "loPx": 391.46,
+      "open": 392.8,
+      "stkVolu": 14404657.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 410.75,
+      "hiPx": 415.9599,
+      "loPx": 394.277,
+      "open": 399.7,
+      "stkVolu": 16840535.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 419.78,
+      "hiPx": 444.645,
+      "loPx": 406.5,
+      "open": 419.82,
+      "stkVolu": 28063197.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 413.63,
+      "hiPx": 436.3799,
+      "loPx": 413.44,
+      "open": 425.55,
+      "stkVolu": 17018145.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 404.44,
+      "hiPx": 420.9799,
+      "loPx": 394.37,
+      "open": 419.1,
+      "stkVolu": 14554940.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 397.81,
+      "hiPx": 400.72,
+      "loPx": 387.12,
+      "open": 399.99,
+      "stkVolu": 12433159.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 396.7,
+      "hiPx": 405.3077,
+      "loPx": 392.0,
+      "open": 404.25,
+      "stkVolu": 7904563.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 391.66,
+      "hiPx": 397.48,
+      "loPx": 386.385,
+      "open": 391.9,
+      "stkVolu": 8643321.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 379.49,
+      "hiPx": 395.39,
+      "loPx": 375.26,
+      "open": 394.615,
+      "stkVolu": 11270400.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 371.44,
+      "hiPx": 384.7799,
+      "loPx": 365.74,
+      "open": 383.585,
+      "stkVolu": 9334666.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 377.48,
+      "hiPx": 386.58,
+      "loPx": 372.71,
+      "open": 382.95,
+      "stkVolu": 11099969.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 377.76,
+      "hiPx": 387.14,
+      "loPx": 376.83,
+      "open": 382.89,
+      "stkVolu": 12371232.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 314.69,
+      "hiPx": 337.5825,
+      "loPx": 310.55,
+      "open": 335.14,
+      "stkVolu": 31342212.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 318.17,
+      "hiPx": 324.0,
+      "loPx": 311.0,
+      "open": 319.54,
+      "stkVolu": 12106371.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 297.99,
+      "hiPx": 312.85,
+      "loPx": 297.2,
+      "open": 307.11,
+      "stkVolu": 16863874.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 303.58,
+      "hiPx": 304.77,
+      "loPx": 293.3101,
+      "open": 297.55,
+      "stkVolu": 15982739.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 310.79,
+      "hiPx": 317.94,
+      "loPx": 306.98,
+      "open": 311.23,
+      "stkVolu": 13857155.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 310.54,
+      "hiPx": 313.7,
+      "loPx": 301.23,
+      "open": 311.44,
+      "stkVolu": 9253803.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 319.62,
+      "hiPx": 333.66,
+      "loPx": 318.8,
+      "open": 322.1,
+      "stkVolu": 14664369.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 322.62,
+      "hiPx": 329.86,
+      "loPx": 314.159,
+      "open": 329.35,
+      "stkVolu": 9985842.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 327.01,
+      "hiPx": 345.3899,
+      "loPx": 321.5301,
+      "open": 328.21,
+      "stkVolu": 15399789.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 324.89,
+      "hiPx": 327.451,
+      "loPx": 316.8,
+      "open": 320.49,
+      "stkVolu": 9403598.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 317.55,
+      "hiPx": 323.4,
+      "loPx": 314.56,
+      "open": 322.85,
+      "stkVolu": 7881210.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 320.73,
+      "hiPx": 324.29,
+      "loPx": 307.11,
+      "open": 311.48,
+      "stkVolu": 8798755.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 302.07,
+      "hiPx": 322.59,
+      "loPx": 301.45,
+      "open": 320.69,
+      "stkVolu": 10327734.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 304.39,
+      "hiPx": 306.45,
+      "loPx": 291.46,
+      "open": 304.27,
+      "stkVolu": 8570325.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 300.28,
+      "hiPx": 304.9999,
+      "loPx": 297.8001,
+      "open": 301.415,
+      "stkVolu": 5743375.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 319.85,
+      "hiPx": 322.26,
+      "loPx": 297.19,
+      "open": 300.59,
+      "stkVolu": 13029182.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 306.0,
+      "hiPx": 315.59,
+      "loPx": 305.1,
+      "open": 312.175,
+      "stkVolu": 8473899.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 308.48,
+      "hiPx": 309.2,
+      "loPx": 300.37,
+      "open": 304.0,
+      "stkVolu": 7745448.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 308.97,
+      "hiPx": 312.41,
+      "loPx": 306.69,
+      "open": 307.21,
+      "stkVolu": 5746292.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 308.47,
+      "hiPx": 315.95,
+      "loPx": 306.0,
+      "open": 312.56,
+      "stkVolu": 6292468.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 304.54,
+      "hiPx": 308.22,
+      "loPx": 301.5,
+      "open": 306.19,
+      "stkVolu": 6611440.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 303.56,
+      "hiPx": 310.41,
+      "loPx": 295.4,
+      "open": 299.97,
+      "stkVolu": 6814856.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 302.31,
+      "hiPx": 308.371,
+      "loPx": 301.15,
+      "open": 305.01,
+      "stkVolu": 5220799.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 306.8,
+      "hiPx": 307.7705,
+      "loPx": 300.01,
+      "open": 301.96,
+      "stkVolu": 6211763.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 299.07,
+      "hiPx": 315.74,
+      "loPx": 292.56,
+      "open": 313.85,
+      "stkVolu": 11366974.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 302.13,
+      "hiPx": 306.6,
+      "loPx": 297.1501,
+      "open": 301.88,
+      "stkVolu": 8859639.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 318.78,
+      "hiPx": 319.3905,
+      "loPx": 303.6,
+      "open": 303.77,
+      "stkVolu": 10361311.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 315.34,
+      "hiPx": 328.6691,
+      "loPx": 312.53,
+      "open": 321.4,
+      "stkVolu": 8664815.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 323.95,
+      "hiPx": 326.0,
+      "loPx": 315.53,
+      "open": 319.0,
+      "stkVolu": 7702730.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 323.04,
+      "hiPx": 329.49,
+      "loPx": 319.8,
+      "open": 328.025,
+      "stkVolu": 6929358.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 327.02,
+      "hiPx": 328.44,
+      "loPx": 320.965,
+      "open": 322.87,
+      "stkVolu": 6896855.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 327.91,
+      "hiPx": 333.6,
+      "loPx": 321.3,
+      "open": 332.25,
+      "stkVolu": 7434920.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 320.56,
+      "hiPx": 328.49,
+      "loPx": 311.3,
+      "open": 325.96,
+      "stkVolu": 8921227.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 343.13,
+      "hiPx": 351.89,
+      "loPx": 323.52,
+      "open": 325.82,
+      "stkVolu": 17324499.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 342.46,
+      "hiPx": 349.7,
+      "loPx": 337.66,
+      "open": 342.76,
+      "stkVolu": 13272061.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 331.95,
+      "hiPx": 336.2,
+      "loPx": 328.19,
+      "open": 333.435,
+      "stkVolu": 8720685.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 320.07,
+      "hiPx": 335.6768,
+      "loPx": 317.7,
+      "open": 333.38,
+      "stkVolu": 8245911.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 321.77,
+      "hiPx": 327.3177,
+      "loPx": 320.76,
+      "open": 323.76,
+      "stkVolu": 4869807.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 306.69,
+      "hiPx": 317.99,
+      "loPx": 304.36,
+      "open": 314.2,
+      "stkVolu": 8865274.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 312.59,
+      "hiPx": 314.2374,
+      "loPx": 303.4,
+      "open": 308.58,
+      "stkVolu": 6714775.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 333.99,
+      "hiPx": 334.3799,
+      "loPx": 316.3498,
+      "open": 318.01,
+      "stkVolu": 12066051.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 337.49,
+      "hiPx": 338.1,
+      "loPx": 329.662,
+      "open": 329.995,
+      "stkVolu": 6674692.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 346.17,
+      "hiPx": 349.865,
+      "loPx": 340.5,
+      "open": 343.26,
+      "stkVolu": 8843877.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 372.07,
+      "hiPx": 376.1299,
+      "loPx": 353.4,
+      "open": 354.76,
+      "stkVolu": 15750411.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 380.02,
+      "hiPx": 383.4999,
+      "loPx": 370.03,
+      "open": 373.35,
+      "stkVolu": 13648176.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 386.07,
+      "hiPx": 392.85,
+      "loPx": 380.5015,
+      "open": 390.325,
+      "stkVolu": 8692960.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 375.78,
+      "hiPx": 388.0,
+      "loPx": 363.01,
+      "open": 386.84,
+      "stkVolu": 9146307.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 387.27,
+      "hiPx": 390.49,
+      "loPx": 375.635,
+      "open": 378.62,
+      "stkVolu": 7122777.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 387.0,
+      "hiPx": 392.155,
+      "loPx": 381.8,
+      "open": 384.26,
+      "stkVolu": 6849024.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 357.01,
+      "hiPx": 402.16,
+      "loPx": 351.63,
+      "open": 387.66,
+      "stkVolu": 17223613.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 356.99,
+      "hiPx": 364.895,
+      "loPx": 341.84,
+      "open": 363.2,
+      "stkVolu": 10318439.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 341.55,
+      "hiPx": 353.5,
+      "loPx": 334.77,
+      "open": 340.85,
+      "stkVolu": 9446049.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 336.3,
+      "hiPx": 347.8285,
+      "loPx": 333.1,
+      "open": 345.81,
+      "stkVolu": 7947302.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 330.25,
+      "hiPx": 342.6999,
+      "loPx": 328.71,
+      "open": 338.485,
+      "stkVolu": 7611886.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 336.02,
+      "hiPx": 336.3,
+      "loPx": 317.77,
+      "open": 319.41,
+      "stkVolu": 9571073.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 343.78,
+      "hiPx": 354.06,
+      "loPx": 338.75,
+      "open": 342.21,
+      "stkVolu": 7544064.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 338.62,
+      "hiPx": 344.79,
+      "loPx": 335.5,
+      "open": 342.28,
+      "stkVolu": 6030873.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 320.33,
+      "hiPx": 334.72,
+      "loPx": 310.4801,
+      "open": 333.88,
+      "stkVolu": 12737834.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 322.76,
+      "hiPx": 328.39,
+      "loPx": 318.5,
+      "open": 323.0,
+      "stkVolu": 5866792.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 354.46,
+      "hiPx": 356.88,
+      "loPx": 333.0,
+      "open": 334.995,
+      "stkVolu": 13893113.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 361.43,
+      "hiPx": 373.25,
+      "loPx": 357.3,
+      "open": 362.82,
+      "stkVolu": 9688335.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 355.22,
+      "hiPx": 368.125,
+      "loPx": 354.07,
+      "open": 363.23,
+      "stkVolu": 6527799.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 348.61,
+      "hiPx": 360.0,
+      "loPx": 345.21,
+      "open": 357.425,
+      "stkVolu": 7560500.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 328.51,
+      "hiPx": 344.215,
+      "loPx": 328.21,
+      "open": 343.47,
+      "stkVolu": 8947687.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 343.78,
+      "hiPx": 361.4,
+      "loPx": 334.43,
+      "open": 336.0,
+      "stkVolu": 13757301.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 330.42,
+      "hiPx": 342.8,
+      "loPx": 325.8801,
+      "open": 340.87,
+      "stkVolu": 9341726.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 307.32,
+      "hiPx": 325.45,
+      "loPx": 306.85,
+      "open": 319.0,
+      "stkVolu": 12420251.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 319.3,
+      "hiPx": 324.14,
+      "loPx": 310.8401,
+      "open": 315.885,
+      "stkVolu": 8215486.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 295.22,
+      "hiPx": 316.6,
+      "loPx": 294.72,
+      "open": 316.5,
+      "stkVolu": 12191181.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 309.14,
+      "hiPx": 310.93,
+      "loPx": 283.65,
+      "open": 290.2,
+      "stkVolu": 11984207.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 317.93,
+      "hiPx": 324.8,
+      "loPx": 311.66,
+      "open": 323.02,
+      "stkVolu": 8949778.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 304.01,
+      "hiPx": 317.0899,
+      "loPx": 303.59,
+      "open": 312.2,
+      "stkVolu": 7095194.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 304.0,
+      "hiPx": 311.5,
+      "loPx": 301.46,
+      "open": 309.23,
+      "stkVolu": 6967628.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 283.14,
+      "hiPx": 303.96,
+      "loPx": 279.83,
+      "open": 301.66,
+      "stkVolu": 11109537.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 284.0,
+      "hiPx": 292.76,
+      "loPx": 268.16,
+      "open": 269.52,
+      "stkVolu": 11784788.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 263.95,
+      "hiPx": 277.83,
+      "loPx": 258.22,
+      "open": 274.92,
+      "stkVolu": 15822422.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 261.79,
+      "hiPx": 271.0,
+      "loPx": 261.0,
+      "open": 261.75,
+      "stkVolu": 10854478.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 257.29,
+      "hiPx": 262.8199,
+      "loPx": 247.02,
+      "open": 261.865,
+      "stkVolu": 13287276.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 238.16,
+      "hiPx": 263.63,
+      "loPx": 236.0,
+      "open": 259.98,
+      "stkVolu": 15524200.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 240.41,
+      "hiPx": 246.13,
+      "loPx": 231.17,
+      "open": 243.915,
+      "stkVolu": 12396471.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 255.97,
+      "hiPx": 257.95,
+      "loPx": 243.0101,
+      "open": 244.68,
+      "stkVolu": 10005785.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 254.12,
+      "hiPx": 254.37,
+      "loPx": 240.74,
+      "open": 247.755,
+      "stkVolu": 8525315.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 264.97,
+      "hiPx": 266.6225,
+      "loPx": 253.8432,
+      "open": 256.2,
+      "stkVolu": 9929309.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 272.82,
+      "hiPx": 279.87,
+      "loPx": 269.2901,
+      "open": 274.005,
+      "stkVolu": 8977766.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 259.84,
+      "hiPx": 265.9,
+      "loPx": 252.2,
+      "open": 260.525,
+      "stkVolu": 12119333.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 263.26,
+      "hiPx": 272.55,
+      "loPx": 263.21,
+      "open": 267.68,
+      "stkVolu": 9059342.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 276.92,
+      "hiPx": 277.5923,
+      "loPx": 264.13,
+      "open": 268.0,
+      "stkVolu": 9466658.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 274.05,
+      "hiPx": 284.24,
+      "loPx": 271.26,
+      "open": 273.6,
+      "stkVolu": 6469235.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 269.73,
+      "hiPx": 274.05,
+      "loPx": 265.01,
+      "open": 270.425,
+      "stkVolu": 7173470.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 274.2,
+      "hiPx": 276.63,
+      "loPx": 269.5201,
+      "open": 272.805,
+      "stkVolu": 5936960.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 277.36,
+      "hiPx": 284.74,
+      "loPx": 266.83,
+      "open": 270.63,
+      "stkVolu": 7876570.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 275.09,
+      "hiPx": 279.443,
+      "loPx": 270.76,
+      "open": 273.11,
+      "stkVolu": 6818620.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 269.02,
+      "hiPx": 271.16,
+      "loPx": 258.72,
+      "open": 266.9,
+      "stkVolu": 7969600.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 267.46,
+      "hiPx": 278.2,
+      "loPx": 263.16,
+      "open": 271.66,
+      "stkVolu": 8180316.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 250.42,
+      "hiPx": 268.5827,
+      "loPx": 246.8,
+      "open": 267.99,
+      "stkVolu": 10885692.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 252.61,
+      "hiPx": 257.0,
+      "loPx": 250.32,
+      "open": 253.56,
+      "stkVolu": 6907433.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 244.19,
+      "hiPx": 259.55,
+      "loPx": 243.7,
+      "open": 254.78,
+      "stkVolu": 8429505.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 239.2,
+      "hiPx": 255.41,
+      "loPx": 239.1,
+      "open": 253.095,
+      "stkVolu": 9291486.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 245.12,
+      "hiPx": 247.0,
+      "loPx": 240.85,
+      "open": 244.575,
+      "stkVolu": 10613048.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 247.9,
+      "hiPx": 254.87,
+      "loPx": 247.43,
+      "open": 251.68,
+      "stkVolu": 6233075.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 242.3,
+      "hiPx": 245.1999,
+      "loPx": 238.8,
+      "open": 243.25,
+      "stkVolu": 7004229.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 239.73,
+      "hiPx": 241.0,
+      "loPx": 237.14,
+      "open": 240.28,
+      "stkVolu": 3869012.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 236.9,
+      "hiPx": 240.49,
+      "loPx": 232.8057,
+      "open": 240.4,
+      "stkVolu": 5925726.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 233.77,
+      "hiPx": 239.89,
+      "loPx": 232.78,
+      "open": 234.36,
+      "stkVolu": 6362579.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 231.6,
+      "hiPx": 236.06,
+      "loPx": 231.5,
+      "open": 233.65,
+      "stkVolu": 5652053.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 226.14,
+      "hiPx": 232.39,
+      "loPx": 225.47,
+      "open": 231.22,
+      "stkVolu": 6678151.0,
+      "ticker": "COIN",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 236.53,
+      "hiPx": 238.49,
+      "loPx": 225.91,
+      "open": 230.595,
+      "stkVolu": 8760200.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 254.92,
+      "hiPx": 258.88,
+      "loPx": 246.53,
+      "open": 247.105,
+      "stkVolu": 13695272.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 250.56,
+      "hiPx": 258.35,
+      "loPx": 245.72,
+      "open": 255.21,
+      "stkVolu": 8672516.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 245.93,
+      "hiPx": 248.9399,
+      "loPx": 240.25,
+      "open": 248.285,
+      "stkVolu": 7488912.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 245.59,
+      "hiPx": 250.38,
+      "loPx": 242.25,
+      "open": 244.615,
+      "stkVolu": 6897249.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 240.78,
+      "hiPx": 246.9,
+      "loPx": 237.15,
+      "open": 246.07,
+      "stkVolu": 8104541.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 242.98,
+      "hiPx": 248.0,
+      "loPx": 238.04,
+      "open": 239.63,
+      "stkVolu": 5957250.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 252.69,
+      "hiPx": 255.51,
+      "loPx": 244.65,
+      "open": 245.5,
+      "stkVolu": 9026984.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 255.86,
+      "hiPx": 263.07,
+      "loPx": 253.0,
+      "open": 256.92,
+      "stkVolu": 10804496.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 239.28,
+      "hiPx": 251.2,
+      "loPx": 237.4301,
+      "open": 250.59,
+      "stkVolu": 12098913.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 241.15,
+      "hiPx": 243.19,
+      "loPx": 236.14,
+      "open": 239.485,
+      "stkVolu": 7622434.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 227.73,
+      "hiPx": 234.9,
+      "loPx": 225.96,
+      "open": 232.64,
+      "stkVolu": 9757893.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 226.93,
+      "hiPx": 231.45,
+      "loPx": 222.4,
+      "open": 228.76,
+      "stkVolu": 8476486.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 223.14,
+      "hiPx": 230.75,
+      "loPx": 223.02,
+      "open": 228.525,
+      "stkVolu": 7088821.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 216.95,
+      "hiPx": 222.745,
+      "loPx": 215.72,
+      "open": 222.745,
+      "stkVolu": 12975056.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 213.48,
+      "hiPx": 215.64,
+      "loPx": 210.89,
+      "open": 212.175,
+      "stkVolu": 7077472.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 210.83,
+      "hiPx": 213.555,
+      "loPx": 207.77,
+      "open": 213.48,
+      "stkVolu": 7465529.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 209.43,
+      "hiPx": 214.39,
+      "loPx": 206.8,
+      "open": 213.28,
+      "stkVolu": 9046574.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 199.18,
+      "hiPx": 207.0,
+      "loPx": 194.21,
+      "open": 206.815,
+      "stkVolu": 14604282.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 194.74,
+      "hiPx": 198.96,
+      "loPx": 190.96,
+      "open": 198.7,
+      "stkVolu": 9635409.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 187.86,
+      "hiPx": 190.9399,
+      "loPx": 185.08,
+      "open": 189.805,
+      "stkVolu": 12288663.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 179.66,
+      "hiPx": 188.68,
+      "loPx": 174.05,
+      "open": 188.68,
+      "stkVolu": 12610294.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 168.62,
+      "hiPx": 176.75,
+      "loPx": 164.42,
+      "open": 176.11,
+      "stkVolu": 16627614.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 146.12,
+      "hiPx": 165.0,
+      "loPx": 145.16,
+      "open": 160.43,
+      "stkVolu": 29610518.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 165.12,
+      "hiPx": 165.52,
+      "loPx": 151.57,
+      "open": 154.555,
+      "stkVolu": 19776132.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 167.25,
+      "hiPx": 167.57,
+      "loPx": 159.01,
+      "open": 160.095,
+      "stkVolu": 10618457.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 162.51,
+      "hiPx": 167.92,
+      "loPx": 161.86,
+      "open": 162.56,
+      "stkVolu": 8835243.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 153.2,
+      "hiPx": 158.1,
+      "loPx": 148.85,
+      "open": 157.7,
+      "stkVolu": 13923803.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 141.09,
+      "hiPx": 153.2,
+      "loPx": 139.36,
+      "open": 153.095,
+      "stkVolu": 19986069.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 164.32,
+      "hiPx": 167.65,
+      "loPx": 146.16,
+      "open": 153.7,
+      "stkVolu": 32410122.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 166.02,
+      "hiPx": 170.54,
+      "loPx": 158.4,
+      "open": 162.475,
+      "stkVolu": 16770648.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 164.05,
+      "hiPx": 173.88,
+      "loPx": 163.15,
+      "open": 165.395,
+      "stkVolu": 13792220.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 165.94,
+      "hiPx": 167.58,
+      "loPx": 161.12,
+      "open": 162.42,
+      "stkVolu": 8001662.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 171.35,
+      "hiPx": 175.545,
+      "loPx": 164.12,
+      "open": 164.72,
+      "stkVolu": 13692187.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 160.24,
+      "hiPx": 168.1,
+      "loPx": 158.66,
+      "open": 166.16,
+      "stkVolu": 12685504.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 162.03,
+      "hiPx": 162.28,
+      "loPx": 152.7,
+      "open": 155.835,
+      "stkVolu": 10442922.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 183.94,
+      "hiPx": 185.82,
+      "loPx": 169.75,
+      "open": 171.78,
+      "stkVolu": 23793923.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 181.06,
+      "hiPx": 186.39,
+      "loPx": 176.7501,
+      "open": 181.44,
+      "stkVolu": 12746623.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 175.85,
+      "hiPx": 179.0565,
+      "loPx": 171.81,
+      "open": 175.35,
+      "stkVolu": 11427866.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 185.24,
+      "hiPx": 186.35,
+      "loPx": 172.22,
+      "open": 172.495,
+      "stkVolu": 12306820.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 182.36,
+      "hiPx": 186.3031,
+      "loPx": 172.05,
+      "open": 177.18,
+      "stkVolu": 12828757.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 208.93,
+      "hiPx": 212.07,
+      "loPx": 195.4,
+      "open": 195.91,
+      "stkVolu": 27200266.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 205.71,
+      "hiPx": 213.5,
+      "loPx": 201.5,
+      "open": 205.75,
+      "stkVolu": 15036590.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 197.22,
+      "hiPx": 202.7437,
+      "loPx": 194.66,
+      "open": 197.76,
+      "stkVolu": 11504888.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 199.79,
+      "hiPx": 203.49,
+      "loPx": 192.6293,
+      "open": 198.0,
+      "stkVolu": 12064578.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 196.52,
+      "hiPx": 206.01,
+      "loPx": 194.75,
+      "open": 204.425,
+      "stkVolu": 10846081.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 198.63,
+      "hiPx": 203.1,
+      "loPx": 192.52,
+      "open": 197.51,
+      "stkVolu": 9531734.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 193.23,
+      "hiPx": 198.0,
+      "loPx": 192.46,
+      "open": 196.13,
+      "stkVolu": 7967132.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 195.53,
+      "hiPx": 207.13,
+      "loPx": 193.84,
+      "open": 203.76,
+      "stkVolu": 12137120.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 203.32,
+      "hiPx": 206.44,
+      "loPx": 198.6201,
+      "open": 201.81,
+      "stkVolu": 13054009.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 210.23,
+      "hiPx": 213.47,
+      "loPx": 202.13,
+      "open": 202.27,
+      "stkVolu": 11947951.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 202.29,
+      "hiPx": 209.0,
+      "loPx": 201.14,
+      "open": 206.77,
+      "stkVolu": 12602195.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 202.91,
+      "hiPx": 205.5,
+      "loPx": 191.8655,
+      "open": 195.335,
+      "stkVolu": 9272978.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 197.5,
+      "hiPx": 203.3,
+      "loPx": 194.79,
+      "open": 202.5,
+      "stkVolu": 13305144.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 200.62,
+      "hiPx": 203.95,
+      "loPx": 196.11,
+      "open": 198.6,
+      "stkVolu": 12466491.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 181.04,
+      "hiPx": 201.76,
+      "loPx": 177.595,
+      "open": 199.1,
+      "stkVolu": 20892682.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 181.1,
+      "hiPx": 190.71,
+      "loPx": 180.06,
+      "open": 184.579,
+      "stkVolu": 10432478.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 173.38,
+      "hiPx": 179.75,
+      "loPx": 171.93,
+      "open": 177.0,
+      "stkVolu": 9402566.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 161.14,
+      "hiPx": 168.74,
+      "loPx": 159.83,
+      "open": 168.05,
+      "stkVolu": 12289893.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 160.79,
+      "hiPx": 166.4999,
+      "loPx": 158.46,
+      "open": 164.53,
+      "stkVolu": 11775156.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 174.61,
+      "hiPx": 175.84,
+      "loPx": 162.18,
+      "open": 163.8,
+      "stkVolu": 12665144.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 172.99,
+      "hiPx": 179.3,
+      "loPx": 171.7213,
+      "open": 179.0,
+      "stkVolu": 8828648.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 171.46,
+      "hiPx": 173.03,
+      "loPx": 163.56,
+      "open": 167.63,
+      "stkVolu": 8869330.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 174.79,
+      "hiPx": 177.9,
+      "loPx": 173.47,
+      "open": 175.1,
+      "stkVolu": 7125194.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 175.18,
+      "hiPx": 175.26,
+      "loPx": 166.05,
+      "open": 172.12,
+      "stkVolu": 7653121.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 175.09,
+      "hiPx": 189.565,
+      "loPx": 172.96,
+      "open": 187.89,
+      "stkVolu": 9802388.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 169.02,
+      "hiPx": 177.14,
+      "loPx": 166.4029,
+      "open": 175.83,
+      "stkVolu": 10754897.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 167.85,
+      "hiPx": 170.48,
+      "loPx": 163.13,
+      "open": 169.355,
+      "stkVolu": 7922422.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 174.53,
+      "hiPx": 175.01,
+      "loPx": 164.33,
+      "open": 164.83,
+      "stkVolu": 7481089.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 184.41,
+      "hiPx": 187.14,
+      "loPx": 180.0,
+      "open": 180.03,
+      "stkVolu": 10884800.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 195.9,
+      "hiPx": 196.46,
+      "loPx": 183.52,
+      "open": 185.66,
+      "stkVolu": 11817374.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 199.825,
+      "hiPx": 200.5799,
+      "loPx": 188.5,
+      "open": 197.5,
+      "stkVolu": 11235814.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 206.33,
+      "hiPx": 216.0499,
+      "loPx": 202.95,
+      "open": 205.2,
+      "stkVolu": 15670382.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 211.63,
+      "hiPx": 212.3,
+      "loPx": 200.02,
+      "open": 201.035,
+      "stkVolu": 9967459.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 195.95,
+      "hiPx": 211.23,
+      "loPx": 194.6,
+      "open": 211.2,
+      "stkVolu": 15121135.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 206.24,
+      "hiPx": 211.97,
+      "loPx": 202.34,
+      "open": 204.18,
+      "stkVolu": 12096785.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 197.93,
+      "hiPx": 205.78,
+      "loPx": 193.91,
+      "open": 202.275,
+      "stkVolu": 8778450.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 199.77,
+      "hiPx": 202.54,
+      "loPx": 196.53,
+      "open": 202.08,
+      "stkVolu": 5799055.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 196.68,
+      "hiPx": 204.49,
+      "loPx": 195.25,
+      "open": 199.1,
+      "stkVolu": 7855554.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 194.1,
+      "hiPx": 195.9395,
+      "loPx": 188.75,
+      "open": 190.2,
+      "stkVolu": 6316127.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 181.73,
+      "hiPx": 187.27,
+      "loPx": 177.62,
+      "open": 187.27,
+      "stkVolu": 12609599.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 187.77,
+      "hiPx": 189.559,
+      "loPx": 179.89,
+      "open": 181.6,
+      "stkVolu": 7786743.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 191.25,
+      "hiPx": 194.51,
+      "loPx": 189.86,
+      "open": 191.88,
+      "stkVolu": 6771092.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 202.99,
+      "hiPx": 206.71,
+      "loPx": 197.8529,
+      "open": 199.405,
+      "stkVolu": 11243434.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 197.75,
+      "hiPx": 208.88,
+      "loPx": 194.4,
+      "open": 208.88,
+      "stkVolu": 10074155.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 197.96,
+      "hiPx": 198.5,
+      "loPx": 193.25,
+      "open": 195.775,
+      "stkVolu": 7764913.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 192.96,
+      "hiPx": 198.15,
+      "loPx": 190.32,
+      "open": 196.03,
+      "stkVolu": 9158065.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 201.16,
+      "hiPx": 201.37,
+      "loPx": 182.8,
+      "open": 186.045,
+      "stkVolu": 12909391.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 216.6,
+      "hiPx": 217.845,
+      "loPx": 192.81,
+      "open": 200.38,
+      "stkVolu": 13659330.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 207.64,
+      "hiPx": 218.4599,
+      "loPx": 200.2,
+      "open": 211.9,
+      "stkVolu": 9514449.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 201.8,
+      "hiPx": 204.2,
+      "loPx": 197.5,
+      "open": 204.2,
+      "stkVolu": 8370159.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 212.01,
+      "hiPx": 222.352,
+      "loPx": 195.1,
+      "open": 201.25,
+      "stkVolu": 16576858.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 195.43,
+      "hiPx": 206.0,
+      "loPx": 192.3,
+      "open": 205.64,
+      "stkVolu": 14428628.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 189.44,
+      "hiPx": 194.2,
+      "loPx": 184.15,
+      "open": 190.25,
+      "stkVolu": 10399788.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 193.45,
+      "hiPx": 195.53,
+      "loPx": 185.5301,
+      "open": 188.375,
+      "stkVolu": 7085046.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 191.29,
+      "hiPx": 196.6205,
+      "loPx": 189.73,
+      "open": 193.75,
+      "stkVolu": 7044169.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 193.56,
+      "hiPx": 195.7,
+      "loPx": 187.67,
+      "open": 189.805,
+      "stkVolu": 5674274.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 184.99,
+      "hiPx": 195.59,
+      "loPx": 184.6,
+      "open": 194.02,
+      "stkVolu": 7927566.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 180.01,
+      "hiPx": 187.8,
+      "loPx": 179.11,
+      "open": 186.07,
+      "stkVolu": 7754981.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 173.78,
+      "hiPx": 179.85,
+      "loPx": 173.71,
+      "open": 176.38,
+      "stkVolu": 8196796.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 182.25,
+      "hiPx": 182.65,
+      "loPx": 169.17,
+      "open": 170.486,
+      "stkVolu": 9042941.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 189.03,
+      "hiPx": 191.83,
+      "loPx": 178.85,
+      "open": 180.23,
+      "stkVolu": 10249775.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 182.61,
+      "hiPx": 186.6,
+      "loPx": 176.18,
+      "open": 179.21,
+      "stkVolu": 9063109.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 173.99,
+      "hiPx": 178.55,
+      "loPx": 171.67,
+      "open": 177.17,
+      "stkVolu": 9228403.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 163.22,
+      "hiPx": 172.0,
+      "loPx": 162.75,
+      "open": 171.54,
+      "stkVolu": 9544614.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 164.13,
+      "hiPx": 166.5,
+      "loPx": 161.89,
+      "open": 164.19,
+      "stkVolu": 8499447.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 152.4,
+      "hiPx": 158.7,
+      "loPx": 147.88,
+      "open": 158.7,
+      "stkVolu": 16718538.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 162.11,
+      "hiPx": 164.28,
+      "loPx": 154.9825,
+      "open": 156.605,
+      "stkVolu": 8827826.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 155.5,
+      "hiPx": 164.98,
+      "loPx": 149.9,
+      "open": 157.245,
+      "stkVolu": 8896152.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 153.97,
+      "hiPx": 161.71,
+      "loPx": 152.19,
+      "open": 152.825,
+      "stkVolu": 6406617.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 160.43,
+      "hiPx": 161.74,
+      "loPx": 152.38,
+      "open": 154.7,
+      "stkVolu": 6933145.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 159.78,
+      "hiPx": 165.49,
+      "loPx": 155.42,
+      "open": 160.43,
+      "stkVolu": 6508340.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 169.62,
+      "hiPx": 174.44,
+      "loPx": 168.63,
+      "open": 170.0,
+      "stkVolu": 8971973.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 169.27,
+      "hiPx": 173.8,
+      "loPx": 166.88,
+      "open": 169.3,
+      "stkVolu": 6412812.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 164.915,
+      "hiPx": 174.1,
+      "loPx": 164.67,
+      "open": 166.54,
+      "stkVolu": 8151519.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 163.26,
+      "hiPx": 169.8079,
+      "loPx": 160.54,
+      "open": 167.75,
+      "stkVolu": 9826780.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 164.84,
+      "hiPx": 176.48,
+      "loPx": 163.0501,
+      "open": 164.945,
+      "stkVolu": 8507056.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 158.18,
+      "hiPx": 164.16,
+      "loPx": 156.31,
+      "open": 156.98,
+      "stkVolu": 7590039.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 150.11,
+      "hiPx": 158.42,
+      "loPx": 148.28,
+      "open": 158.3,
+      "stkVolu": 10045489.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 142.52,
+      "hiPx": 152.19,
+      "loPx": 141.48,
+      "open": 151.17,
+      "stkVolu": 7807384.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 149.06,
+      "hiPx": 149.8499,
+      "loPx": 139.18,
+      "open": 139.23,
+      "stkVolu": 10494696.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 151.65,
+      "hiPx": 152.44,
+      "loPx": 145.29,
+      "open": 150.82,
+      "stkVolu": 7141106.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 146.19,
+      "hiPx": 148.86,
+      "loPx": 142.3,
+      "open": 148.18,
+      "stkVolu": 8754496.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 159.24,
+      "hiPx": 164.54,
+      "loPx": 146.3,
+      "open": 147.13,
+      "stkVolu": 11992324.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 165.48,
+      "hiPx": 173.09,
+      "loPx": 163.22,
+      "open": 165.185,
+      "stkVolu": 9693796.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 168.87,
+      "hiPx": 171.67,
+      "loPx": 160.1,
+      "open": 161.365,
+      "stkVolu": 6492774.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 163.51,
+      "hiPx": 170.0951,
+      "loPx": 161.69,
+      "open": 166.815,
+      "stkVolu": 4869416.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 159.36,
+      "hiPx": 161.6,
+      "loPx": 156.2,
+      "open": 159.285,
+      "stkVolu": 4738659.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 158.44,
+      "hiPx": 161.0599,
+      "loPx": 154.78,
+      "open": 156.73,
+      "stkVolu": 4755701.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 159.07,
+      "hiPx": 167.98,
+      "loPx": 158.67,
+      "open": 166.67,
+      "stkVolu": 6133940.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 157.37,
+      "hiPx": 161.19,
+      "loPx": 154.01,
+      "open": 156.2,
+      "stkVolu": 5418067.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 161.5,
+      "hiPx": 162.265,
+      "loPx": 157.25,
+      "open": 159.79,
+      "stkVolu": 7407823.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 167.21,
+      "hiPx": 168.5,
+      "loPx": 160.33,
+      "open": 165.165,
+      "stkVolu": 7570704.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 160.49,
+      "hiPx": 166.57,
+      "loPx": 159.51,
+      "open": 165.37,
+      "stkVolu": 6328713.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 157.12,
+      "hiPx": 160.8014,
+      "loPx": 152.58,
+      "open": 153.36,
+      "stkVolu": 6487131.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 160.43,
+      "hiPx": 164.695,
+      "loPx": 155.15,
+      "open": 158.19,
+      "stkVolu": 5720247.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 175.85,
+      "hiPx": 181.49,
+      "loPx": 167.86,
+      "open": 167.885,
+      "stkVolu": 13677233.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 166.12,
+      "hiPx": 174.958,
+      "loPx": 166.0,
+      "open": 172.25,
+      "stkVolu": 6953799.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 161.16,
+      "hiPx": 165.74,
+      "loPx": 158.88,
+      "open": 163.115,
+      "stkVolu": 5607032.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 158.29,
+      "hiPx": 161.08,
+      "loPx": 153.8,
+      "open": 161.075,
+      "stkVolu": 5372057.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 167.49,
+      "hiPx": 167.87,
+      "loPx": 160.42,
+      "open": 163.32,
+      "stkVolu": 6851657.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 167.9,
+      "hiPx": 168.17,
+      "loPx": 158.58,
+      "open": 162.48,
+      "stkVolu": 5111963.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 160.09,
+      "hiPx": 169.6881,
+      "loPx": 158.68,
+      "open": 166.15,
+      "stkVolu": 6802369.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 163.58,
+      "hiPx": 164.78,
+      "loPx": 159.31,
+      "open": 161.18,
+      "stkVolu": 7881311.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 146.26,
+      "hiPx": 153.68,
+      "loPx": 139.11,
+      "open": 153.1,
+      "stkVolu": 20870338.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 146.5,
+      "hiPx": 152.43,
+      "loPx": 141.03,
+      "open": 144.145,
+      "stkVolu": 9148538.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 150.73,
+      "hiPx": 152.9,
+      "loPx": 145.6,
+      "open": 147.4,
+      "stkVolu": 7289044.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 149.89,
+      "hiPx": 153.99,
+      "loPx": 147.61,
+      "open": 150.8,
+      "stkVolu": 6818876.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 145.41,
+      "hiPx": 150.605,
+      "loPx": 145.14,
+      "open": 146.755,
+      "stkVolu": 5850792.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 153.6,
+      "hiPx": 155.3999,
+      "loPx": 145.57,
+      "open": 148.21,
+      "stkVolu": 8747683.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 148.68,
+      "hiPx": 153.61,
+      "loPx": 147.9,
+      "open": 153.345,
+      "stkVolu": 6089895.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 148.58,
+      "hiPx": 152.9499,
+      "loPx": 146.32,
+      "open": 149.84,
+      "stkVolu": 6472589.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 149.04,
+      "hiPx": 151.51,
+      "loPx": 147.5,
+      "open": 150.1,
+      "stkVolu": 5927349.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 153.9,
+      "hiPx": 154.42,
+      "loPx": 146.94,
+      "open": 149.035,
+      "stkVolu": 7458864.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 148.47,
+      "hiPx": 152.59,
+      "loPx": 147.86,
+      "open": 151.42,
+      "stkVolu": 7265344.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 150.55,
+      "hiPx": 152.2,
+      "loPx": 147.2,
+      "open": 148.355,
+      "stkVolu": 5768314.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 146.23,
+      "hiPx": 150.73,
+      "loPx": 146.02,
+      "open": 148.0,
+      "stkVolu": 6746728.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 160.2,
+      "hiPx": 165.74,
+      "loPx": 147.5,
+      "open": 147.5,
+      "stkVolu": 16961336.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 172.35,
+      "hiPx": 174.78,
+      "loPx": 166.11,
+      "open": 172.745,
+      "stkVolu": 17570761.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 186.49,
+      "hiPx": 191.355,
+      "loPx": 179.2,
+      "open": 180.06,
+      "stkVolu": 22736001.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 179.48,
+      "hiPx": 191.8387,
+      "loPx": 178.52,
+      "open": 188.75,
+      "stkVolu": 13193686.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 187.16,
+      "hiPx": 189.27,
+      "loPx": 174.73,
+      "open": 176.0,
+      "stkVolu": 10565292.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 181.78,
+      "hiPx": 185.5,
+      "loPx": 179.4317,
+      "open": 181.65,
+      "stkVolu": 6275822.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 190.72,
+      "hiPx": 193.81,
+      "loPx": 180.11,
+      "open": 186.33,
+      "stkVolu": 9240893.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 228.672,
+      "hiPx": 230.4158,
+      "loPx": 226.1196,
+      "open": 227.8916,
+      "stkVolu": 3278975.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 232.6368,
+      "hiPx": 232.6368,
+      "loPx": 228.3172,
+      "open": 229.0152,
+      "stkVolu": 4400325.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 228.5332,
+      "hiPx": 233.576544,
+      "loPx": 227.12,
+      "open": 232.6,
+      "stkVolu": 5926425.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 226.7216,
+      "hiPx": 230.68,
+      "loPx": 226.1248,
+      "open": 230.4108,
+      "stkVolu": 4627375.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 228.7404,
+      "hiPx": 230.6516,
+      "loPx": 226.5659,
+      "open": 228.8848,
+      "stkVolu": 4231050.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 228.684,
+      "hiPx": 229.0156,
+      "loPx": 226.425904,
+      "open": 227.7048,
+      "stkVolu": 3773225.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 230.6416,
+      "hiPx": 230.7976,
+      "loPx": 227.561,
+      "open": 227.8944,
+      "stkVolu": 3353250.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 227.0212,
+      "hiPx": 231.6,
+      "loPx": 225.6,
+      "open": 229.7444,
+      "stkVolu": 4094350.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 226.3252,
+      "hiPx": 227.0938,
+      "loPx": 225.0086,
+      "open": 226.1184,
+      "stkVolu": 4226350.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 227.3576,
+      "hiPx": 228.7368,
+      "loPx": 225.856,
+      "open": 226.26,
+      "stkVolu": 3537625.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 228.116,
+      "hiPx": 229.9836,
+      "loPx": 227.360004,
+      "open": 229.9836,
+      "stkVolu": 3676500.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 227.086,
+      "hiPx": 228.66,
+      "loPx": 225.9978,
+      "open": 226.6,
+      "stkVolu": 3909150.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 231.0212,
+      "hiPx": 231.44,
+      "loPx": 227.1,
+      "open": 228.8,
+      "stkVolu": 3592350.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 229.4528,
+      "hiPx": 230.7832,
+      "loPx": 227.2,
+      "open": 230.6372,
+      "stkVolu": 3739275.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 226.0,
+      "hiPx": 230.3532,
+      "loPx": 225.7648,
+      "open": 229.8376,
+      "stkVolu": 4312900.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 225.2908,
+      "hiPx": 227.2112,
+      "loPx": 224.9682,
+      "open": 227.1404,
+      "stkVolu": 4620325.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 227.15,
+      "hiPx": 227.4,
+      "loPx": 223.325,
+      "open": 225.5524,
+      "stkVolu": 5641150.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 223.6308,
+      "hiPx": 227.84,
+      "loPx": 221.6656,
+      "open": 227.84,
+      "stkVolu": 8109175.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 224.5164,
+      "hiPx": 227.6628,
+      "loPx": 217.282,
+      "open": 219.6,
+      "stkVolu": 9292075.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 220.1624,
+      "hiPx": 226.5764,
+      "loPx": 219.7472,
+      "open": 225.0,
+      "stkVolu": 7210175.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 215.4516,
+      "hiPx": 219.1788,
+      "loPx": 213.5648,
+      "open": 219.1788,
+      "stkVolu": 4990300.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 219.0436,
+      "hiPx": 219.2404,
+      "loPx": 213.5768,
+      "open": 216.48,
+      "stkVolu": 5925200.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 218.3144,
+      "hiPx": 220.3,
+      "loPx": 216.3916,
+      "open": 220.1572,
+      "stkVolu": 5546700.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 221.4524,
+      "hiPx": 221.5532,
+      "loPx": 216.6,
+      "open": 218.9788,
+      "stkVolu": 4979375.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 217.284,
+      "hiPx": 223.6,
+      "loPx": 216.226716,
+      "open": 222.0,
+      "stkVolu": 5066725.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 216.2364,
+      "hiPx": 218.1608,
+      "loPx": 214.657,
+      "open": 218.1608,
+      "stkVolu": 4721750.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 214.57,
+      "hiPx": 217.2732,
+      "loPx": 213.9636,
+      "open": 215.2736,
+      "stkVolu": 4374775.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 218.4616,
+      "hiPx": 218.7268,
+      "loPx": 214.57,
+      "open": 214.57,
+      "stkVolu": 3614025.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 217.9168,
+      "hiPx": 219.3336,
+      "loPx": 216.127176,
+      "open": 219.3336,
+      "stkVolu": 4762000.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 219.3908,
+      "hiPx": 220.7718,
+      "loPx": 216.7568,
+      "open": 218.68,
+      "stkVolu": 4494975.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 218.1716,
+      "hiPx": 220.5776,
+      "loPx": 217.4888,
+      "open": 220.5776,
+      "stkVolu": 3950600.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 221.28,
+      "hiPx": 221.4352,
+      "loPx": 216.7808,
+      "open": 217.9616,
+      "stkVolu": 4237725.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 223.3632,
+      "hiPx": 224.1028,
+      "loPx": 221.046,
+      "open": 221.5648,
+      "stkVolu": 4995225.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 225.5912,
+      "hiPx": 225.9148,
+      "loPx": 223.2911,
+      "open": 223.36,
+      "stkVolu": 4387050.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 228.4296,
+      "hiPx": 228.59,
+      "loPx": 223.9632,
+      "open": 225.9136,
+      "stkVolu": 3909325.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 228.8348,
+      "hiPx": 231.799996,
+      "loPx": 226.602,
+      "open": 229.0088,
+      "stkVolu": 4888950.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 228.144,
+      "hiPx": 230.9792,
+      "loPx": 228.0048,
+      "open": 228.3272,
+      "stkVolu": 2890500.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 228.2272,
+      "hiPx": 229.12656,
+      "loPx": 225.7456,
+      "open": 228.0348,
+      "stkVolu": 4274125.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 224.6272,
+      "hiPx": 227.72,
+      "loPx": 223.242276,
+      "open": 227.0476,
+      "stkVolu": 3786300.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 226.0796,
+      "hiPx": 226.6286,
+      "loPx": 223.8,
+      "open": 225.2,
+      "stkVolu": 4198800.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 223.962,
+      "hiPx": 225.3656,
+      "loPx": 223.51,
+      "open": 225.3656,
+      "stkVolu": 3473300.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 220.222,
+      "hiPx": 223.0928,
+      "loPx": 218.2788,
+      "open": 223.0928,
+      "stkVolu": 6114975.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 223.318,
+      "hiPx": 223.8768,
+      "loPx": 219.4,
+      "open": 220.9944,
+      "stkVolu": 4745775.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 223.4344,
+      "hiPx": 223.94,
+      "loPx": 218.1578,
+      "open": 222.8,
+      "stkVolu": 5509250.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 220.232,
+      "hiPx": 226.1002,
+      "loPx": 218.2,
+      "open": 223.7628,
+      "stkVolu": 5060650.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 222.7268,
+      "hiPx": 225.54,
+      "loPx": 220.399,
+      "open": 221.1396,
+      "stkVolu": 5353450.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 222.8732,
+      "hiPx": 224.1772,
+      "loPx": 220.7,
+      "open": 221.872,
+      "stkVolu": 3971950.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 218.9924,
+      "hiPx": 222.56,
+      "loPx": 215.008,
+      "open": 222.56,
+      "stkVolu": 6241850.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 219.92,
+      "hiPx": 221.4798,
+      "loPx": 216.4,
+      "open": 218.9924,
+      "stkVolu": 4495750.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 218.3328,
+      "hiPx": 220.8,
+      "loPx": 217.507696,
+      "open": 218.44,
+      "stkVolu": 3220375.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 222.3932,
+      "hiPx": 222.4,
+      "loPx": 216.96,
+      "open": 220.0,
+      "stkVolu": 4128925.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 219.0004,
+      "hiPx": 223.0632,
+      "loPx": 217.202,
+      "open": 223.0632,
+      "stkVolu": 4308025.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 222.148,
+      "hiPx": 222.2958,
+      "loPx": 218.1984,
+      "open": 219.7536,
+      "stkVolu": 5288475.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 217.7152,
+      "hiPx": 223.5098,
+      "loPx": 216.4316,
+      "open": 222.28,
+      "stkVolu": 5871550.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 217.7776,
+      "hiPx": 218.62652,
+      "loPx": 216.0,
+      "open": 217.9184,
+      "stkVolu": 10514825.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 218.2852,
+      "hiPx": 219.094,
+      "loPx": 214.800004,
+      "open": 216.0,
+      "stkVolu": 5360800.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 220.3608,
+      "hiPx": 220.7032,
+      "loPx": 216.9564,
+      "open": 217.0,
+      "stkVolu": 4478950.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 221.024,
+      "hiPx": 221.1228,
+      "loPx": 217.1398,
+      "open": 221.1228,
+      "stkVolu": 3807950.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 223.0292,
+      "hiPx": 223.2876,
+      "loPx": 218.16,
+      "open": 220.9196,
+      "stkVolu": 6131275.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 221.92,
+      "hiPx": 223.4648,
+      "loPx": 219.2776,
+      "open": 223.138,
+      "stkVolu": 4057025.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 218.1924,
+      "hiPx": 223.442,
+      "loPx": 217.9212,
+      "open": 222.8664,
+      "stkVolu": 5933250.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 215.9708,
+      "hiPx": 218.3242,
+      "loPx": 214.0376,
+      "open": 217.08,
+      "stkVolu": 4937025.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 214.0224,
+      "hiPx": 215.0092,
+      "loPx": 210.000108,
+      "open": 214.08,
+      "stkVolu": 8106100.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 216.982,
+      "hiPx": 217.2384,
+      "loPx": 212.04,
+      "open": 213.0156,
+      "stkVolu": 5213525.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 216.722,
+      "hiPx": 218.6328,
+      "loPx": 214.8052,
+      "open": 217.9788,
+      "stkVolu": 6739775.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 216.7948,
+      "hiPx": 224.9956,
+      "loPx": 210.403,
+      "open": 214.7216,
+      "stkVolu": 8849325.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 209.68,
+      "hiPx": 216.8888,
+      "loPx": 207.52,
+      "open": 216.8888,
+      "stkVolu": 6617525.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 205.2492,
+      "hiPx": 209.5292,
+      "loPx": 204.4,
+      "open": 208.92,
+      "stkVolu": 7228800.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 207.6772,
+      "hiPx": 208.4332,
+      "loPx": 201.5508,
+      "open": 203.3116,
+      "stkVolu": 5562675.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 206.5972,
+      "hiPx": 209.599,
+      "loPx": 205.234,
+      "open": 207.7684,
+      "stkVolu": 4925925.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 210.154,
+      "hiPx": 210.531444,
+      "loPx": 206.778,
+      "open": 208.1536,
+      "stkVolu": 5118975.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 211.2056,
+      "hiPx": 212.7306,
+      "loPx": 207.840172,
+      "open": 208.3872,
+      "stkVolu": 5178400.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 203.2344,
+      "hiPx": 211.6792,
+      "loPx": 202.52,
+      "open": 211.6792,
+      "stkVolu": 6875950.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 198.0924,
+      "hiPx": 203.5076,
+      "loPx": 197.2324,
+      "open": 202.3876,
+      "stkVolu": 7644100.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 202.8008,
+      "hiPx": 203.345,
+      "loPx": 196.942,
+      "open": 197.956,
+      "stkVolu": 7307450.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 205.6752,
+      "hiPx": 206.92,
+      "loPx": 203.217,
+      "open": 204.232,
+      "stkVolu": 7478250.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 211.44,
+      "hiPx": 212.3956,
+      "loPx": 204.36,
+      "open": 205.6,
+      "stkVolu": 7614375.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 209.2236,
+      "hiPx": 213.1184,
+      "loPx": 208.2664,
+      "open": 213.1184,
+      "stkVolu": 4894925.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 203.7388,
+      "hiPx": 210.32,
+      "loPx": 203.22,
+      "open": 210.32,
+      "stkVolu": 7768675.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 205.8464,
+      "hiPx": 207.042952,
+      "loPx": 203.2,
+      "open": 205.2,
+      "stkVolu": 5640275.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 210.176,
+      "hiPx": 210.5376,
+      "loPx": 208.1132,
+      "open": 209.3916,
+      "stkVolu": 5374625.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 204.8228,
+      "hiPx": 211.0,
+      "loPx": 204.8228,
+      "open": 209.6232,
+      "stkVolu": 10187725.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 203.0344,
+      "hiPx": 208.8,
+      "loPx": 197.1255,
+      "open": 208.0004,
+      "stkVolu": 11542700.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 203.2084,
+      "hiPx": 211.190292,
+      "loPx": 202.2,
+      "open": 202.5356,
+      "stkVolu": 8148825.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 203.1096,
+      "hiPx": 204.3932,
+      "loPx": 201.1808,
+      "open": 202.6068,
+      "stkVolu": 4431300.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 201.222,
+      "hiPx": 203.4092,
+      "loPx": 199.3316,
+      "open": 202.544,
+      "stkVolu": 5674975.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 199.6704,
+      "hiPx": 203.2,
+      "loPx": 198.1416,
+      "open": 199.94,
+      "stkVolu": 5674025.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 196.446,
+      "hiPx": 199.5596,
+      "loPx": 195.4796,
+      "open": 199.2404,
+      "stkVolu": 6376075.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 195.962,
+      "hiPx": 197.2,
+      "loPx": 194.216,
+      "open": 195.2,
+      "stkVolu": 7331675.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 197.6,
+      "hiPx": 200.5768,
+      "loPx": 196.202,
+      "open": 196.698,
+      "stkVolu": 6790050.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 198.336,
+      "hiPx": 201.3428,
+      "loPx": 197.7308,
+      "open": 198.2424,
+      "stkVolu": 6581525.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 202.026,
+      "hiPx": 202.8752,
+      "loPx": 198.336,
+      "open": 198.92,
+      "stkVolu": 5091075.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 207.0232,
+      "hiPx": 207.3236,
+      "loPx": 200.7292,
+      "open": 202.2,
+      "stkVolu": 6046825.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 203.0244,
+      "hiPx": 209.43352,
+      "loPx": 202.524,
+      "open": 208.374,
+      "stkVolu": 7344225.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 201.9204,
+      "hiPx": 205.1548,
+      "loPx": 200.8204,
+      "open": 203.266,
+      "stkVolu": 5137750.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 192.1604,
+      "hiPx": 203.561444,
+      "loPx": 190.92,
+      "open": 201.2,
+      "stkVolu": 10439950.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 191.3204,
+      "hiPx": 194.4966,
+      "loPx": 190.2048,
+      "open": 191.9276,
+      "stkVolu": 8141275.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 187.6308,
+      "hiPx": 191.5394,
+      "loPx": 186.5016,
+      "open": 190.806,
+      "stkVolu": 8657950.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 183.324,
+      "hiPx": 188.3,
+      "loPx": 182.8448,
+      "open": 186.92,
+      "stkVolu": 9045125.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 190.72,
+      "hiPx": 191.9864,
+      "loPx": 184.02,
+      "open": 184.02,
+      "stkVolu": 11917525.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 195.0148,
+      "hiPx": 196.0,
+      "loPx": 192.45,
+      "open": 193.3356,
+      "stkVolu": 10055900.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 196.2496,
+      "hiPx": 198.0908,
+      "loPx": 194.6804,
+      "open": 195.3004,
+      "stkVolu": 8381450.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 196.474,
+      "hiPx": 198.0,
+      "loPx": 195.5744,
+      "open": 195.9852,
+      "stkVolu": 7092350.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 196.5876,
+      "hiPx": 198.0992,
+      "loPx": 195.406,
+      "open": 196.1868,
+      "stkVolu": 3332225.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 195.6724,
+      "hiPx": 197.846,
+      "loPx": 195.4068,
+      "open": 196.48,
+      "stkVolu": 6166000.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 205.4028,
+      "hiPx": 207.0488,
+      "loPx": 196.1202,
+      "open": 196.2,
+      "stkVolu": 10837300.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 201.8884,
+      "hiPx": 206.6848,
+      "loPx": 201.686328,
+      "open": 203.7188,
+      "stkVolu": 5129675.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 201.088,
+      "hiPx": 203.2636,
+      "loPx": 200.7952,
+      "open": 202.6,
+      "stkVolu": 4660700.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 207.8816,
+      "hiPx": 207.9808,
+      "loPx": 200.774,
+      "open": 201.4244,
+      "stkVolu": 7596275.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 207.0956,
+      "hiPx": 208.378,
+      "loPx": 204.7868,
+      "open": 207.544,
+      "stkVolu": 7599275.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 207.8304,
+      "hiPx": 209.1476,
+      "loPx": 200.0876,
+      "open": 206.1596,
+      "stkVolu": 8492875.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 211.088,
+      "hiPx": 214.6234,
+      "loPx": 202.5874,
+      "open": 206.94,
+      "stkVolu": 11447125.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 211.1872,
+      "hiPx": 214.392,
+      "loPx": 209.6012,
+      "open": 211.0568,
+      "stkVolu": 6175875.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 212.0656,
+      "hiPx": 214.3212,
+      "loPx": 211.4836,
+      "open": 212.3568,
+      "stkVolu": 5044750.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 218.308,
+      "hiPx": 219.4,
+      "loPx": 213.8592,
+      "open": 214.3156,
+      "stkVolu": 9159850.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 217.4772,
+      "hiPx": 220.806,
+      "loPx": 216.7552,
+      "open": 217.0,
+      "stkVolu": 5720075.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 213.6392,
+      "hiPx": 218.0584,
+      "loPx": 213.3672,
+      "open": 217.0104,
+      "stkVolu": 4463125.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 213.8188,
+      "hiPx": 217.0706,
+      "loPx": 213.3096,
+      "open": 213.5536,
+      "stkVolu": 4871025.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 215.7496,
+      "hiPx": 217.4,
+      "loPx": 213.1024,
+      "open": 213.6124,
+      "stkVolu": 11569175.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 216.2796,
+      "hiPx": 218.8004,
+      "loPx": 215.6,
+      "open": 217.5232,
+      "stkVolu": 3374300.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 217.5708,
+      "hiPx": 217.6528,
+      "loPx": 215.6912,
+      "open": 215.8308,
+      "stkVolu": 3017025.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 217.8604,
+      "hiPx": 219.0808,
+      "loPx": 216.6786,
+      "open": 216.7608,
+      "stkVolu": 1319425.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 217.6056,
+      "hiPx": 219.48,
+      "loPx": 216.6,
+      "open": 217.4512,
+      "stkVolu": 1740350.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 217.6532,
+      "hiPx": 218.48,
+      "loPx": 216.1516,
+      "open": 217.7356,
+      "stkVolu": 2622475.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 217.086,
+      "hiPx": 218.2116,
+      "loPx": 216.5296,
+      "open": 216.5296,
+      "stkVolu": 3387125.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 214.2132,
+      "hiPx": 217.5564,
+      "loPx": 214.1156,
+      "open": 216.6004,
+      "stkVolu": 2822950.0,
+      "ticker": "BKNG",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 212.928,
+      "hiPx": 214.3424,
+      "loPx": 210.0528,
+      "open": 214.2716,
+      "stkVolu": 4248975.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 214.6948,
+      "hiPx": 217.808,
+      "loPx": 211.2614,
+      "open": 212.0028,
+      "stkVolu": 4462850.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 213.9356,
+      "hiPx": 214.7226,
+      "loPx": 210.840624,
+      "open": 214.012,
+      "stkVolu": 5365475.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 217.8288,
+      "hiPx": 218.9556,
+      "loPx": 212.8564,
+      "open": 212.8564,
+      "stkVolu": 4516325.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 217.8,
+      "hiPx": 218.2796,
+      "loPx": 214.32,
+      "open": 217.64,
+      "stkVolu": 4020675.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 219.6844,
+      "hiPx": 220.7536,
+      "loPx": 215.72,
+      "open": 216.6024,
+      "stkVolu": 5123825.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 215.6608,
+      "hiPx": 218.1678,
+      "loPx": 214.432804,
+      "open": 218.1678,
+      "stkVolu": 4475575.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 212.5884,
+      "hiPx": 216.7106,
+      "loPx": 210.7206,
+      "open": 214.6772,
+      "stkVolu": 4728925.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 207.4808,
+      "hiPx": 211.212,
+      "loPx": 202.2996,
+      "open": 210.501,
+      "stkVolu": 6203225.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 207.7224,
+      "hiPx": 209.1004,
+      "loPx": 205.726,
+      "open": 207.646,
+      "stkVolu": 4741600.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 204.6364,
+      "hiPx": 209.12,
+      "loPx": 204.1424,
+      "open": 207.7224,
+      "stkVolu": 9328750.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 201.08,
+      "hiPx": 202.2962,
+      "loPx": 198.0976,
+      "open": 200.4828,
+      "stkVolu": 7165975.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 206.5444,
+      "hiPx": 207.1552,
+      "loPx": 200.0684,
+      "open": 200.3892,
+      "stkVolu": 6822625.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 206.036,
+      "hiPx": 209.9444,
+      "loPx": 204.76288,
+      "open": 208.3164,
+      "stkVolu": 5564800.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 203.94,
+      "hiPx": 205.1932,
+      "loPx": 202.6896,
+      "open": 202.6896,
+      "stkVolu": 5192200.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 204.2912,
+      "hiPx": 206.48,
+      "loPx": 203.4908,
+      "open": 204.5532,
+      "stkVolu": 4518875.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 206.1364,
+      "hiPx": 206.438,
+      "loPx": 203.5316,
+      "open": 204.2912,
+      "stkVolu": 3913900.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 203.4088,
+      "hiPx": 208.4944,
+      "loPx": 202.72,
+      "open": 206.4572,
+      "stkVolu": 5017125.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 204.5328,
+      "hiPx": 205.9104,
+      "loPx": 202.0004,
+      "open": 204.2408,
+      "stkVolu": 6109075.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 200.0736,
+      "hiPx": 204.0172,
+      "loPx": 198.1924,
+      "open": 203.3822,
+      "stkVolu": 6772775.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 204.89,
+      "hiPx": 205.2624,
+      "loPx": 199.2,
+      "open": 201.4,
+      "stkVolu": 5406675.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 185.7856,
+      "hiPx": 204.6,
+      "loPx": 184.6076,
+      "open": 202.3824,
+      "stkVolu": 15853150.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 184.2852,
+      "hiPx": 185.3152,
+      "loPx": 174.5,
+      "open": 182.16,
+      "stkVolu": 15349600.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 177.7368,
+      "hiPx": 187.8814,
+      "loPx": 177.2688,
+      "open": 185.9712,
+      "stkVolu": 9673875.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 178.2868,
+      "hiPx": 180.9576,
+      "loPx": 174.7668,
+      "open": 177.7508,
+      "stkVolu": 13299100.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 169.482,
+      "hiPx": 177.5512,
+      "loPx": 168.7692,
+      "open": 176.7474,
+      "stkVolu": 16942900.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 171.2456,
+      "hiPx": 175.2,
+      "loPx": 167.0352,
+      "open": 168.7808,
+      "stkVolu": 14336900.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 172.4976,
+      "hiPx": 175.1118,
+      "loPx": 167.9792,
+      "open": 170.143,
+      "stkVolu": 16719550.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 166.364,
+      "hiPx": 175.4004,
+      "loPx": 165.594,
+      "open": 171.0984,
+      "stkVolu": 17071750.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 165.624,
+      "hiPx": 167.68,
+      "loPx": 162.864,
+      "open": 166.16,
+      "stkVolu": 15561900.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 165.606,
+      "hiPx": 166.7244,
+      "loPx": 160.8216,
+      "open": 165.2476,
+      "stkVolu": 12258525.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 170.7996,
+      "hiPx": 171.7732,
+      "loPx": 164.0,
+      "open": 164.2504,
+      "stkVolu": 16901400.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 160.298,
+      "hiPx": 165.6614,
+      "loPx": 154.8404,
+      "open": 163.5548,
+      "stkVolu": 22663550.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 163.0716,
+      "hiPx": 163.1988,
+      "loPx": 157.9414,
+      "open": 160.4988,
+      "stkVolu": 20140250.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 154.8332,
+      "hiPx": 162.4,
+      "loPx": 150.618,
+      "open": 162.0752,
+      "stkVolu": 19448446.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 162.7424,
+      "hiPx": 163.319996,
+      "loPx": 155.2,
+      "open": 155.6,
+      "stkVolu": 20130154.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 166.52,
+      "hiPx": 167.18,
+      "loPx": 161.9136,
+      "open": 163.08,
+      "stkVolu": 18738818.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 170.0104,
+      "hiPx": 171.684,
+      "loPx": 166.524,
+      "open": 167.18,
+      "stkVolu": 18878798.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 169.574,
+      "hiPx": 169.71,
+      "loPx": 166.400004,
+      "open": 167.748,
+      "stkVolu": 23009923.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 167.1912,
+      "hiPx": 168.7828,
+      "loPx": 161.12,
+      "open": 162.0,
+      "stkVolu": 13576337.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 166.1548,
+      "hiPx": 167.763,
+      "loPx": 162.9352,
+      "open": 164.602,
+      "stkVolu": 10960376.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 170.1432,
+      "hiPx": 172.9096,
+      "loPx": 165.18,
+      "open": 165.841,
+      "stkVolu": 10469852.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 184.5312,
+      "hiPx": 185.3636,
+      "loPx": 178.888,
+      "open": 180.444,
+      "stkVolu": 20321492.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 182.0172,
+      "hiPx": 183.3904,
+      "loPx": 178.1706,
+      "open": 180.72,
+      "stkVolu": 9557048.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 177.6276,
+      "hiPx": 179.5568,
+      "loPx": 173.6,
+      "open": 178.4684,
+      "stkVolu": 12966074.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 174.8708,
+      "hiPx": 177.276,
+      "loPx": 171.3812,
+      "open": 176.5,
+      "stkVolu": 9619511.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 172.8968,
+      "hiPx": 177.3812,
+      "loPx": 171.034404,
+      "open": 175.101,
+      "stkVolu": 6422295.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 168.7084,
+      "hiPx": 173.9268,
+      "loPx": 168.5336,
+      "open": 170.9764,
+      "stkVolu": 6462846.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 169.6504,
+      "hiPx": 172.8,
+      "loPx": 169.4076,
+      "open": 170.2148,
+      "stkVolu": 5727155.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 171.7208,
+      "hiPx": 173.5692,
+      "loPx": 170.0776,
+      "open": 170.6202,
+      "stkVolu": 5047839.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 177.6932,
+      "hiPx": 179.0132,
+      "loPx": 174.16,
+      "open": 175.096,
+      "stkVolu": 8277379.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 175.2556,
+      "hiPx": 179.0949,
+      "loPx": 175.1612,
+      "open": 176.08,
+      "stkVolu": 6447232.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 171.7716,
+      "hiPx": 177.4688,
+      "loPx": 170.4044,
+      "open": 175.1816,
+      "stkVolu": 5988495.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 172.9616,
+      "hiPx": 173.1676,
+      "loPx": 170.3336,
+      "open": 171.7352,
+      "stkVolu": 11939803.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 175.8716,
+      "hiPx": 177.702396,
+      "loPx": 174.7208,
+      "open": 176.3096,
+      "stkVolu": 8346123.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 171.626,
+      "hiPx": 175.6916,
+      "loPx": 170.6,
+      "open": 174.5964,
+      "stkVolu": 8587029.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 169.51,
+      "hiPx": 174.9956,
+      "loPx": 167.2856,
+      "open": 171.9376,
+      "stkVolu": 6238793.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 168.5504,
+      "hiPx": 171.0,
+      "loPx": 167.3684,
+      "open": 169.1256,
+      "stkVolu": 8121895.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 162.4856,
+      "hiPx": 168.1872,
+      "loPx": 161.2116,
+      "open": 167.96,
+      "stkVolu": 8977930.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 164.7004,
+      "hiPx": 166.542916,
+      "loPx": 162.0,
+      "open": 162.6,
+      "stkVolu": 10225800.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 168.4128,
+      "hiPx": 169.6,
+      "loPx": 162.6206,
+      "open": 165.48,
+      "stkVolu": 9462940.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 167.3824,
+      "hiPx": 170.005996,
+      "loPx": 162.0488,
+      "open": 168.6732,
+      "stkVolu": 8808761.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 167.7724,
+      "hiPx": 168.1096,
+      "loPx": 162.6204,
+      "open": 165.7596,
+      "stkVolu": 5855065.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 176.19,
+      "hiPx": 176.83,
+      "loPx": 166.25,
+      "open": 166.25,
+      "stkVolu": 8190509.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 173.41,
+      "hiPx": 175.88,
+      "loPx": 169.71,
+      "open": 174.416,
+      "stkVolu": 9117794.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 181.0,
+      "hiPx": 186.65,
+      "loPx": 180.09,
+      "open": 181.07,
+      "stkVolu": 8876847.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 176.6,
+      "hiPx": 180.98,
+      "loPx": 173.82,
+      "open": 180.03,
+      "stkVolu": 7232477.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 173.46,
+      "hiPx": 179.41,
+      "loPx": 171.55,
+      "open": 177.15,
+      "stkVolu": 5118347.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 177.25,
+      "hiPx": 177.76,
+      "loPx": 170.59,
+      "open": 170.71,
+      "stkVolu": 5825279.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 181.12,
+      "hiPx": 182.55,
+      "loPx": 178.0,
+      "open": 178.26,
+      "stkVolu": 5523047.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 185.69,
+      "hiPx": 186.6,
+      "loPx": 182.3325,
+      "open": 183.33,
+      "stkVolu": 5933394.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 184.56,
+      "hiPx": 188.17,
+      "loPx": 184.14,
+      "open": 186.57,
+      "stkVolu": 5853017.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 192.01,
+      "hiPx": 192.76,
+      "loPx": 188.0,
+      "open": 188.555,
+      "stkVolu": 7881216.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 192.03,
+      "hiPx": 192.91,
+      "loPx": 189.09,
+      "open": 190.6,
+      "stkVolu": 5372205.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 190.86,
+      "hiPx": 193.92,
+      "loPx": 189.165,
+      "open": 191.45,
+      "stkVolu": 4282724.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 179.4,
+      "hiPx": 191.01,
+      "loPx": 177.9,
+      "open": 190.56,
+      "stkVolu": 9374741.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 176.75,
+      "hiPx": 180.5,
+      "loPx": 174.53,
+      "open": 178.905,
+      "stkVolu": 6009850.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 180.25,
+      "hiPx": 182.09,
+      "loPx": 176.2,
+      "open": 176.64,
+      "stkVolu": 6320557.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 177.52,
+      "hiPx": 181.47,
+      "loPx": 177.11,
+      "open": 178.29,
+      "stkVolu": 5734262.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 173.38,
+      "hiPx": 178.94,
+      "loPx": 173.0,
+      "open": 177.985,
+      "stkVolu": 10931238.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 173.98,
+      "hiPx": 176.83,
+      "loPx": 164.23,
+      "open": 164.54,
+      "stkVolu": 12303606.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 168.36,
+      "hiPx": 175.94,
+      "loPx": 167.2,
+      "open": 174.375,
+      "stkVolu": 8644791.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 169.63,
+      "hiPx": 171.58,
+      "loPx": 168.15,
+      "open": 169.03,
+      "stkVolu": 5444251.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 165.58,
+      "hiPx": 170.86,
+      "loPx": 165.21,
+      "open": 170.0,
+      "stkVolu": 5568223.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 167.63,
+      "hiPx": 169.08,
+      "loPx": 164.05,
+      "open": 165.25,
+      "stkVolu": 8002065.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 168.32,
+      "hiPx": 175.52,
+      "loPx": 168.215,
+      "open": 173.23,
+      "stkVolu": 9043478.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 171.28,
+      "hiPx": 173.72,
+      "loPx": 167.55,
+      "open": 168.245,
+      "stkVolu": 8120929.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 165.93,
+      "hiPx": 170.56,
+      "loPx": 165.62,
+      "open": 169.2,
+      "stkVolu": 8860999.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 157.8,
+      "hiPx": 165.31,
+      "loPx": 156.07,
+      "open": 164.095,
+      "stkVolu": 10544280.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 160.56,
+      "hiPx": 161.19,
+      "loPx": 157.86,
+      "open": 158.43,
+      "stkVolu": 6892531.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 155.03,
+      "hiPx": 158.94,
+      "loPx": 154.77,
+      "open": 158.42,
+      "stkVolu": 6829752.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 154.48,
+      "hiPx": 158.19,
+      "loPx": 153.97,
+      "open": 154.93,
+      "stkVolu": 5678554.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 154.13,
+      "hiPx": 156.65,
+      "loPx": 153.05,
+      "open": 154.94,
+      "stkVolu": 6776964.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 155.07,
+      "hiPx": 156.83,
+      "loPx": 153.12,
+      "open": 155.64,
+      "stkVolu": 6976284.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 154.54,
+      "hiPx": 160.91,
+      "loPx": 153.365,
+      "open": 153.365,
+      "stkVolu": 8389793.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 156.95,
+      "hiPx": 158.23,
+      "loPx": 150.14,
+      "open": 153.45,
+      "stkVolu": 8111291.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 159.68,
+      "hiPx": 160.42,
+      "loPx": 153.51,
+      "open": 155.25,
+      "stkVolu": 7470505.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 161.06,
+      "hiPx": 162.8,
+      "loPx": 159.0,
+      "open": 159.18,
+      "stkVolu": 7380355.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 163.3,
+      "hiPx": 166.24,
+      "loPx": 162.11,
+      "open": 162.85,
+      "stkVolu": 6370880.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 168.37,
+      "hiPx": 170.51,
+      "loPx": 165.0,
+      "open": 165.01,
+      "stkVolu": 9932990.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 169.82,
+      "hiPx": 169.94,
+      "loPx": 166.61,
+      "open": 167.105,
+      "stkVolu": 7323233.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 167.43,
+      "hiPx": 170.5,
+      "loPx": 167.22,
+      "open": 170.29,
+      "stkVolu": 8489894.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 169.25,
+      "hiPx": 171.25,
+      "loPx": 164.89,
+      "open": 168.688,
+      "stkVolu": 6638740.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 167.21,
+      "hiPx": 168.23,
+      "loPx": 162.42,
+      "open": 167.54,
+      "stkVolu": 7011701.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 164.78,
+      "hiPx": 168.42,
+      "loPx": 164.445,
+      "open": 165.705,
+      "stkVolu": 6981137.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 167.49,
+      "hiPx": 171.22,
+      "loPx": 166.36,
+      "open": 168.495,
+      "stkVolu": 6666209.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 165.84,
+      "hiPx": 171.92,
+      "loPx": 164.89,
+      "open": 167.54,
+      "stkVolu": 7810312.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 162.3,
+      "hiPx": 166.73,
+      "loPx": 162.2,
+      "open": 165.55,
+      "stkVolu": 6621025.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 163.99,
+      "hiPx": 168.89,
+      "loPx": 161.58,
+      "open": 162.61,
+      "stkVolu": 8153187.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 160.64,
+      "hiPx": 164.1,
+      "loPx": 159.225,
+      "open": 164.1,
+      "stkVolu": 6791929.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 163.59,
+      "hiPx": 165.0,
+      "loPx": 158.12,
+      "open": 160.655,
+      "stkVolu": 8094549.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 164.94,
+      "hiPx": 168.44,
+      "loPx": 161.69,
+      "open": 166.21,
+      "stkVolu": 6492277.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 174.64,
+      "hiPx": 176.8,
+      "loPx": 169.02,
+      "open": 169.02,
+      "stkVolu": 9471723.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 175.72,
+      "hiPx": 176.71,
+      "loPx": 174.1,
+      "open": 175.72,
+      "stkVolu": 7444099.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 171.63,
+      "hiPx": 176.58,
+      "loPx": 170.7,
+      "open": 174.78,
+      "stkVolu": 5894954.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 171.78,
+      "hiPx": 174.45,
+      "loPx": 170.285,
+      "open": 172.66,
+      "stkVolu": 18363035.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 167.77,
+      "hiPx": 171.0,
+      "loPx": 164.13,
+      "open": 169.04,
+      "stkVolu": 8274747.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 168.94,
+      "hiPx": 170.11,
+      "loPx": 165.85,
+      "open": 167.57,
+      "stkVolu": 9166236.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 181.25,
+      "hiPx": 184.885,
+      "loPx": 171.01,
+      "open": 171.17,
+      "stkVolu": 13956105.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 177.05,
+      "hiPx": 183.175,
+      "loPx": 176.56,
+      "open": 181.195,
+      "stkVolu": 10845598.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 181.46,
+      "hiPx": 183.285,
+      "loPx": 176.92,
+      "open": 177.41,
+      "stkVolu": 12746725.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 182.41,
+      "hiPx": 186.5,
+      "loPx": 181.79,
+      "open": 185.0,
+      "stkVolu": 8451433.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 178.24,
+      "hiPx": 181.38,
+      "loPx": 176.7,
+      "open": 180.31,
+      "stkVolu": 6581970.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 182.64,
+      "hiPx": 185.45,
+      "loPx": 177.52,
+      "open": 179.875,
+      "stkVolu": 7101137.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 184.56,
+      "hiPx": 186.42,
+      "loPx": 181.68,
+      "open": 184.35,
+      "stkVolu": 14189105.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 181.03,
+      "hiPx": 186.89,
+      "loPx": 180.57,
+      "open": 185.485,
+      "stkVolu": 7362063.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 181.95,
+      "hiPx": 188.31,
+      "loPx": 180.9,
+      "open": 184.8,
+      "stkVolu": 5369491.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 174.29,
+      "hiPx": 179.88,
+      "loPx": 172.75,
+      "open": 179.39,
+      "stkVolu": 5003406.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 175.52,
+      "hiPx": 175.65,
+      "loPx": 170.31,
+      "open": 172.275,
+      "stkVolu": 4613005.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 178.39,
+      "hiPx": 180.04,
+      "loPx": 175.83,
+      "open": 175.83,
+      "stkVolu": 3975445.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 175.8,
+      "hiPx": 180.64,
+      "loPx": 174.51,
+      "open": 178.475,
+      "stkVolu": 5079902.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 174.85,
+      "hiPx": 176.875,
+      "loPx": 171.165,
+      "open": 171.165,
+      "stkVolu": 5409847.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 182.8,
+      "hiPx": 183.14,
+      "loPx": 175.2,
+      "open": 175.3,
+      "stkVolu": 6800522.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 184.61,
+      "hiPx": 185.92,
+      "loPx": 179.99,
+      "open": 184.55,
+      "stkVolu": 5879986.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 181.68,
+      "hiPx": 184.36,
+      "loPx": 178.76,
+      "open": 183.23,
+      "stkVolu": 7195966.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 179.45,
+      "hiPx": 182.23,
+      "loPx": 177.36,
+      "open": 181.385,
+      "stkVolu": 4059333.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 179.4,
+      "hiPx": 180.56,
+      "loPx": 177.1,
+      "open": 178.98,
+      "stkVolu": 4039825.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 177.86,
+      "hiPx": 180.37,
+      "loPx": 176.39,
+      "open": 177.97,
+      "stkVolu": 4851041.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 172.83,
+      "hiPx": 175.8,
+      "loPx": 171.02,
+      "open": 174.065,
+      "stkVolu": 4669334.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 177.46,
+      "hiPx": 180.3,
+      "loPx": 174.5,
+      "open": 174.6,
+      "stkVolu": 5012342.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 186.79,
+      "hiPx": 187.34,
+      "loPx": 180.59,
+      "open": 180.672,
+      "stkVolu": 5667051.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 199.31,
+      "hiPx": 199.98,
+      "loPx": 188.48,
+      "open": 189.475,
+      "stkVolu": 9074020.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 201.3,
+      "hiPx": 204.61,
+      "loPx": 195.34,
+      "open": 196.44,
+      "stkVolu": 7908253.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 193.24,
+      "hiPx": 199.9,
+      "loPx": 190.15,
+      "open": 197.0,
+      "stkVolu": 7599100.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 192.9,
+      "hiPx": 194.9599,
+      "loPx": 190.805,
+      "open": 191.605,
+      "stkVolu": 4599771.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 192.71,
+      "hiPx": 199.4299,
+      "loPx": 191.066417,
+      "open": 198.218,
+      "stkVolu": 7057504.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 194.27,
+      "hiPx": 195.15,
+      "loPx": 190.37,
+      "open": 192.83,
+      "stkVolu": 9369624.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 207.02,
+      "hiPx": 211.47,
+      "loPx": 202.13,
+      "open": 207.735,
+      "stkVolu": 10654006.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 207.39,
+      "hiPx": 211.82,
+      "loPx": 205.82,
+      "open": 207.45,
+      "stkVolu": 6867378.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 214.42,
+      "hiPx": 215.69,
+      "loPx": 207.155,
+      "open": 207.245,
+      "stkVolu": 7207614.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 212.88,
+      "hiPx": 215.45,
+      "loPx": 209.21,
+      "open": 213.93,
+      "stkVolu": 4705725.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 212.87,
+      "hiPx": 214.36,
+      "loPx": 208.77,
+      "open": 210.0,
+      "stkVolu": 3496524.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 212.26,
+      "hiPx": 212.87,
+      "loPx": 208.0,
+      "open": 209.565,
+      "stkVolu": 3998222.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 213.34,
+      "hiPx": 214.38,
+      "loPx": 208.53,
+      "open": 212.995,
+      "stkVolu": 3684124.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 212.06,
+      "hiPx": 214.93,
+      "loPx": 211.71,
+      "open": 212.56,
+      "stkVolu": 4105886.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 204.76,
+      "hiPx": 213.49,
+      "loPx": 204.02,
+      "open": 210.83,
+      "stkVolu": 5954908.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 208.25,
+      "hiPx": 211.64,
+      "loPx": 204.81,
+      "open": 205.75,
+      "stkVolu": 4536323.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 213.0,
+      "hiPx": 216.42,
+      "loPx": 207.44,
+      "open": 208.2,
+      "stkVolu": 5144691.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 209.87,
+      "hiPx": 213.0,
+      "loPx": 209.51,
+      "open": 212.0,
+      "stkVolu": 3852890.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 209.62,
+      "hiPx": 211.63,
+      "loPx": 206.29,
+      "open": 210.04,
+      "stkVolu": 4504440.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 213.36,
+      "hiPx": 215.05,
+      "loPx": 210.79,
+      "open": 210.84,
+      "stkVolu": 4911806.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 213.78,
+      "hiPx": 217.32,
+      "loPx": 211.8672,
+      "open": 214.1,
+      "stkVolu": 5530682.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 208.89,
+      "hiPx": 215.585,
+      "loPx": 208.06,
+      "open": 214.45,
+      "stkVolu": 4012351.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 202.56,
+      "hiPx": 207.76,
+      "loPx": 201.76,
+      "open": 207.56,
+      "stkVolu": 5420801.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

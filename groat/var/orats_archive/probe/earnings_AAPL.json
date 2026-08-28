@@ -1,0 +1,904 @@
+{
+  "data": [
+    {
+      "ticker": "AAPL",
+      "earnDate": "1987-09-25",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1988-09-30",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1989-09-29",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1989-12-29",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1990-03-30",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1990-06-29",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1990-09-28",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1990-12-28",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1991-03-29",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1991-06-28",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1991-09-27",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1992-01-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1992-04-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1992-07-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1992-10-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1993-01-14",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1993-04-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1993-07-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1993-10-14",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1994-01-20",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1994-04-21",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1994-07-22",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1994-10-17",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1995-01-19",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1995-04-20",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1995-07-20",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1995-10-18",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1996-01-17",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1996-04-17",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1996-07-17",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1996-10-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1997-01-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1997-04-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1997-07-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1997-10-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1998-01-14",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1998-04-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1998-07-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1998-10-14",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1999-01-13",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1999-04-14",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1999-07-14",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "1999-10-13",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2000-01-19",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2000-04-19",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2000-07-18",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2000-10-18",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2001-01-17",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2001-04-18",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2001-07-17",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2001-10-17",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2002-01-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2002-04-17",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2002-07-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2002-10-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2003-01-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2003-04-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2003-07-16",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2003-10-15",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2004-01-14",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2004-04-14",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2004-07-14",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2004-10-13",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2005-01-12",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2005-04-13",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2005-07-13",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2005-10-11",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2006-01-18",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2006-04-19",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2006-07-19",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2006-10-18",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2007-01-17",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2007-04-25",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2007-07-25",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2007-10-22",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2008-01-22",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2008-04-23",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2008-07-21",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2008-10-21",
+      "anncTod": "1630",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2009-01-21",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2009-04-22",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2009-07-21",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2009-10-19",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2010-01-25",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2010-04-20",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2010-07-20",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2010-10-18",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2011-01-18",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2011-04-20",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2011-07-19",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2011-10-18",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2012-01-24",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2012-04-24",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2012-07-24",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2012-10-25",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2013-01-23",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2013-04-23",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2013-07-23",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2013-10-28",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2014-01-27",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2014-04-23",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2014-07-22",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2014-10-20",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2015-01-27",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2015-04-27",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2015-07-21",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2015-10-27",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2016-01-26",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2016-04-26",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2016-07-26",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2016-10-25",
+      "anncTod": "1630",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2017-01-31",
+      "anncTod": "1630",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2017-05-02",
+      "anncTod": "1630",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2017-08-01",
+      "anncTod": "1630",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2017-11-02",
+      "anncTod": "1630",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2018-02-01",
+      "anncTod": "1630",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2018-05-01",
+      "anncTod": "1630",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2018-07-31",
+      "anncTod": "1630",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2018-11-01",
+      "anncTod": "1630",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2019-01-29",
+      "anncTod": "1630",
+      "updatedAt": "2019-02-09T00:45:23Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2019-04-30",
+      "anncTod": "1630",
+      "updatedAt": "2019-05-10T23:15:21Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2019-07-30",
+      "anncTod": "1630",
+      "updatedAt": "2019-08-09T23:15:18Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2019-10-30",
+      "anncTod": "1630",
+      "updatedAt": "2019-11-09T00:15:23Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2020-01-28",
+      "anncTod": "1630",
+      "updatedAt": "2020-02-08T00:15:19Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2020-04-30",
+      "anncTod": "1630",
+      "updatedAt": "2020-05-08T23:15:17Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2020-07-30",
+      "anncTod": "1630",
+      "updatedAt": "2020-08-07T23:15:13Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2020-10-29",
+      "anncTod": "1630",
+      "updatedAt": "2020-11-07T00:15:15Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2021-01-27",
+      "anncTod": "1630",
+      "updatedAt": "2021-02-06T00:15:15Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2021-04-28",
+      "anncTod": "1630",
+      "updatedAt": "2021-05-07T23:15:16Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2021-07-27",
+      "anncTod": "1630",
+      "updatedAt": "2021-08-06T23:15:15Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2021-10-28",
+      "anncTod": "1630",
+      "updatedAt": "2021-11-05T23:15:15Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2022-01-27",
+      "anncTod": "1630",
+      "updatedAt": "2022-02-05T00:15:18Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2022-04-28",
+      "anncTod": "1630",
+      "updatedAt": "2022-05-06T23:15:14Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2022-07-28",
+      "anncTod": "1630",
+      "updatedAt": "2022-08-06T02:58:16Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2022-10-27",
+      "anncTod": "1630",
+      "updatedAt": "2022-11-04T23:15:14Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2023-02-02",
+      "anncTod": "1630",
+      "updatedAt": "2023-02-11T00:15:15Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2023-05-04",
+      "anncTod": "1630",
+      "updatedAt": "2023-05-12T23:15:22Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2023-08-03",
+      "anncTod": "1630",
+      "updatedAt": "2023-08-11T23:15:17Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2023-11-02",
+      "anncTod": "1630",
+      "updatedAt": "2023-11-11T00:15:18Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2024-02-01",
+      "anncTod": "1630",
+      "updatedAt": "2024-02-10T00:15:18Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2024-05-02",
+      "anncTod": "1630",
+      "updatedAt": "2024-05-10T23:15:17Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2024-08-01",
+      "anncTod": "1630",
+      "updatedAt": "2024-08-09T23:15:17Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2024-10-31",
+      "anncTod": "1630",
+      "updatedAt": "2024-11-09T01:00:18Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2025-01-30",
+      "anncTod": "1630",
+      "updatedAt": "2025-02-08T03:40:17Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2025-05-01",
+      "anncTod": "1630",
+      "updatedAt": "2025-05-10T02:40:13Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2025-07-31",
+      "anncTod": "1630",
+      "updatedAt": "2025-08-09T02:40:13Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2025-10-30",
+      "anncTod": "1630",
+      "updatedAt": "2025-11-08T03:40:11Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2026-01-29",
+      "anncTod": "1630",
+      "updatedAt": "2026-02-07T03:40:12Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2026-04-30",
+      "anncTod": "1630",
+      "updatedAt": "2026-05-09T02:40:14Z"
+    },
+    {
+      "ticker": "AAPL",
+      "earnDate": "2026-07-30",
+      "anncTod": "1630",
+      "updatedAt": "2026-08-07T22:00:16Z"
+    }
+  ]
+}

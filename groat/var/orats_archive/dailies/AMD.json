@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 137.91,
+      "hiPx": 139.5,
+      "loPx": 137.32,
+      "open": 139.11,
+      "stkVolu": 28645993.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 134.8,
+      "hiPx": 137.44,
+      "loPx": 133.5,
+      "open": 136.56,
+      "stkVolu": 37395010.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 137.82,
+      "hiPx": 139.15,
+      "loPx": 135.91,
+      "open": 137.32,
+      "stkVolu": 36124612.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 138.41,
+      "hiPx": 140.65,
+      "loPx": 137.59,
+      "open": 138.69,
+      "stkVolu": 37013130.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 144.16,
+      "hiPx": 145.82,
+      "loPx": 141.85,
+      "open": 143.0,
+      "stkVolu": 61101465.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 146.42,
+      "hiPx": 147.4,
+      "loPx": 141.6,
+      "open": 142.6,
+      "stkVolu": 50049179.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 146.24,
+      "hiPx": 147.58,
+      "loPx": 141.9,
+      "open": 145.09,
+      "stkVolu": 44718554.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 155.61,
+      "hiPx": 158.68,
+      "loPx": 153.56,
+      "open": 153.75,
+      "stkVolu": 93370081.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 160.08,
+      "hiPx": 160.36,
+      "loPx": 152.85,
+      "open": 155.31,
+      "stkVolu": 59492760.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 160.41,
+      "hiPx": 161.96,
+      "loPx": 158.68,
+      "open": 161.81,
+      "stkVolu": 50605117.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 156.99,
+      "hiPx": 160.83,
+      "loPx": 155.81,
+      "open": 159.59,
+      "stkVolu": 48859835.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 157.0,
+      "hiPx": 160.34,
+      "loPx": 156.92,
+      "open": 157.62,
+      "stkVolu": 39021130.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 154.72,
+      "hiPx": 156.2291,
+      "loPx": 149.34,
+      "open": 156.2,
+      "stkVolu": 49028017.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 158.65,
+      "hiPx": 159.4485,
+      "loPx": 156.0,
+      "open": 156.315,
+      "stkVolu": 41510896.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 162.12,
+      "hiPx": 163.93,
+      "loPx": 158.36,
+      "open": 159.12,
+      "stkVolu": 48440112.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 166.47,
+      "hiPx": 167.175,
+      "loPx": 162.36,
+      "open": 163.505,
+      "stkVolu": 53432260.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 173.66,
+      "hiPx": 174.7,
+      "loPx": 168.67,
+      "open": 169.08,
+      "stkVolu": 68267835.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 177.44,
+      "hiPx": 182.31,
+      "loPx": 174.68,
+      "open": 175.205,
+      "stkVolu": 108154838.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 179.51,
+      "hiPx": 180.37,
+      "loPx": 173.8,
+      "open": 175.605,
+      "stkVolu": 64820291.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 176.31,
+      "hiPx": 182.5,
+      "loPx": 173.0,
+      "open": 182.015,
+      "stkVolu": 71765285.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 171.7,
+      "hiPx": 174.4,
+      "loPx": 166.82,
+      "open": 170.16,
+      "stkVolu": 75396130.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 176.78,
+      "hiPx": 177.86,
+      "loPx": 173.56,
+      "open": 174.605,
+      "stkVolu": 52951044.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 174.31,
+      "hiPx": 177.99,
+      "loPx": 171.8,
+      "open": 177.565,
+      "stkVolu": 88808520.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 163.12,
+      "hiPx": 166.18,
+      "loPx": 157.8,
+      "open": 165.05,
+      "stkVolu": 133641835.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 172.4,
+      "hiPx": 175.75,
+      "loPx": 166.7,
+      "open": 166.835,
+      "stkVolu": 95448310.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 172.76,
+      "hiPx": 176.48,
+      "loPx": 170.52,
+      "open": 174.04,
+      "stkVolu": 68866692.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 172.28,
+      "hiPx": 178.82,
+      "loPx": 169.38,
+      "open": 170.04,
+      "stkVolu": 70651033.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 174.95,
+      "hiPx": 175.16,
+      "loPx": 168.5,
+      "open": 173.32,
+      "stkVolu": 52335746.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 184.42,
+      "hiPx": 186.65,
+      "loPx": 179.38,
+      "open": 179.91,
+      "stkVolu": 108305129.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 180.95,
+      "hiPx": 185.44,
+      "loPx": 179.56,
+      "open": 179.83,
+      "stkVolu": 66308821.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 177.51,
+      "hiPx": 180.14,
+      "loPx": 176.25,
+      "open": 180.06,
+      "stkVolu": 51543136.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 176.14,
+      "hiPx": 178.7953,
+      "loPx": 174.36,
+      "open": 176.755,
+      "stkVolu": 35937528.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 166.55,
+      "hiPx": 173.17,
+      "loPx": 166.1,
+      "open": 173.1,
+      "stkVolu": 64455006.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 165.2,
+      "hiPx": 166.65,
+      "loPx": 158.25,
+      "open": 164.1,
+      "stkVolu": 60233226.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 163.71,
+      "hiPx": 165.8799,
+      "loPx": 162.2558,
+      "open": 165.86,
+      "stkVolu": 37880461.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 167.76,
+      "hiPx": 168.53,
+      "loPx": 161.8,
+      "open": 162.17,
+      "stkVolu": 43998605.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 163.36,
+      "hiPx": 165.59,
+      "loPx": 161.72,
+      "open": 165.55,
+      "stkVolu": 36134684.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 166.62,
+      "hiPx": 169.77,
+      "loPx": 164.91,
+      "open": 168.65,
+      "stkVolu": 52138562.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 167.13,
+      "hiPx": 167.68,
+      "loPx": 164.65,
+      "open": 166.0,
+      "stkVolu": 37031044.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 168.58,
+      "hiPx": 170.99,
+      "loPx": 166.65,
+      "open": 168.5,
+      "stkVolu": 36285192.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 162.63,
+      "hiPx": 168.57,
+      "loPx": 161.9,
+      "open": 166.81,
+      "stkVolu": 37516824.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 162.32,
+      "hiPx": 162.3916,
+      "loPx": 156.62,
+      "open": 158.42,
+      "stkVolu": 38656131.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 162.13,
+      "hiPx": 164.75,
+      "loPx": 160.58,
+      "open": 161.81,
+      "stkVolu": 30752786.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 161.79,
+      "hiPx": 162.05,
+      "loPx": 157.79,
+      "open": 159.935,
+      "stkVolu": 32103496.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 151.14,
+      "hiPx": 157.14,
+      "loPx": 150.18,
+      "open": 157.12,
+      "stkVolu": 78255950.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 151.38,
+      "hiPx": 152.6388,
+      "loPx": 149.22,
+      "open": 151.8,
+      "stkVolu": 42043146.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 155.82,
+      "hiPx": 156.66,
+      "loPx": 151.93,
+      "open": 151.99,
+      "stkVolu": 42802472.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 159.54,
+      "hiPx": 164.525,
+      "loPx": 158.0,
+      "open": 163.54,
+      "stkVolu": 52465270.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 155.67,
+      "hiPx": 160.21,
+      "loPx": 154.99,
+      "open": 158.62,
+      "stkVolu": 48817715.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 158.57,
+      "hiPx": 160.41,
+      "loPx": 154.92,
+      "open": 157.0,
+      "stkVolu": 42232777.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 161.16,
+      "hiPx": 162.3,
+      "loPx": 157.6012,
+      "open": 160.01,
+      "stkVolu": 36808726.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 160.46,
+      "hiPx": 161.95,
+      "loPx": 159.22,
+      "open": 161.37,
+      "stkVolu": 27946478.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 159.16,
+      "hiPx": 161.63,
+      "loPx": 155.76,
+      "open": 159.28,
+      "stkVolu": 41823842.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 157.92,
+      "hiPx": 158.7699,
+      "loPx": 149.85,
+      "open": 150.96,
+      "stkVolu": 84549468.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 157.39,
+      "hiPx": 159.84,
+      "loPx": 155.9,
+      "open": 157.38,
+      "stkVolu": 55448076.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 159.79,
+      "hiPx": 162.68,
+      "loPx": 157.42,
+      "open": 157.42,
+      "stkVolu": 46505480.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 160.9,
+      "hiPx": 163.39,
+      "loPx": 159.21,
+      "open": 160.52,
+      "stkVolu": 39448320.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 160.88,
+      "hiPx": 165.1,
+      "loPx": 158.43,
+      "open": 162.98,
+      "stkVolu": 38464120.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 161.27,
+      "hiPx": 161.63,
+      "loPx": 154.7798,
+      "open": 157.135,
+      "stkVolu": 36809877.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 159.46,
+      "hiPx": 162.11,
+      "loPx": 157.05,
+      "open": 160.52,
+      "stkVolu": 30316931.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 161.36,
+      "hiPx": 164.3,
+      "loPx": 159.9,
+      "open": 160.12,
+      "stkVolu": 39828794.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 161.79,
+      "hiPx": 162.28,
+      "loPx": 159.33,
+      "open": 160.795,
+      "stkVolu": 29669331.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 164.01,
+      "hiPx": 164.18,
+      "loPx": 160.49,
+      "open": 160.93,
+      "stkVolu": 39895177.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 169.73,
+      "hiPx": 171.06,
+      "loPx": 166.12,
+      "open": 168.675,
+      "stkVolu": 55475228.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 164.67,
+      "hiPx": 170.68,
+      "loPx": 163.14,
+      "open": 170.68,
+      "stkVolu": 42699147.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 203.71,
+      "hiPx": 226.709,
+      "loPx": 203.01,
+      "open": 226.445,
+      "stkVolu": 248859576.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 211.51,
+      "hiPx": 218.9,
+      "loPx": 209.28,
+      "open": 214.85,
+      "stkVolu": 115748143.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 235.56,
+      "hiPx": 235.87,
+      "loPx": 210.695,
+      "open": 212.95,
+      "stkVolu": 159983459.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 232.89,
+      "hiPx": 240.1,
+      "loPx": 229.53,
+      "open": 236.3,
+      "stkVolu": 94290740.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 214.9,
+      "hiPx": 234.22,
+      "loPx": 213.2001,
+      "open": 232.77,
+      "stkVolu": 118656636.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 216.42,
+      "hiPx": 224.1899,
+      "loPx": 214.9,
+      "open": 220.2,
+      "stkVolu": 63104021.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 218.09,
+      "hiPx": 224.98,
+      "loPx": 215.9,
+      "open": 219.2,
+      "stkVolu": 71216269.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 238.6,
+      "hiPx": 239.24,
+      "loPx": 220.7601,
+      "open": 222.705,
+      "stkVolu": 108480962.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 234.56,
+      "hiPx": 241.2,
+      "loPx": 232.24,
+      "open": 236.285,
+      "stkVolu": 69726437.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 233.08,
+      "hiPx": 235.38,
+      "loPx": 227.91,
+      "open": 233.26,
+      "stkVolu": 55804203.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 240.56,
+      "hiPx": 242.88,
+      "loPx": 234.4,
+      "open": 236.465,
+      "stkVolu": 56741695.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 238.03,
+      "hiPx": 242.26,
+      "loPx": 234.02,
+      "open": 239.39,
+      "stkVolu": 47122393.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 230.23,
+      "hiPx": 240.1324,
+      "loPx": 224.88,
+      "open": 236.85,
+      "stkVolu": 59668778.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 234.99,
+      "hiPx": 235.9,
+      "loPx": 228.54,
+      "open": 230.16,
+      "stkVolu": 39024429.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 252.92,
+      "hiPx": 253.39,
+      "loPx": 241.95,
+      "open": 243.36,
+      "stkVolu": 71221144.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 259.67,
+      "hiPx": 260.42,
+      "loPx": 249.8001,
+      "open": 257.88,
+      "stkVolu": 65613111.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 258.01,
+      "hiPx": 264.58,
+      "loPx": 257.0,
+      "open": 259.14,
+      "stkVolu": 47448669.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 264.33,
+      "hiPx": 267.0799,
+      "loPx": 257.4044,
+      "open": 264.19,
+      "stkVolu": 49335594.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 254.84,
+      "hiPx": 263.88,
+      "loPx": 252.31,
+      "open": 259.92,
+      "stkVolu": 45162492.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 256.12,
+      "hiPx": 262.13,
+      "loPx": 253.4064,
+      "open": 259.6,
+      "stkVolu": 34449205.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 259.65,
+      "hiPx": 260.91,
+      "loPx": 253.89,
+      "open": 259.33,
+      "stkVolu": 36351420.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 250.05,
+      "hiPx": 257.38,
+      "loPx": 247.39,
+      "open": 250.35,
+      "stkVolu": 56491830.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 256.33,
+      "hiPx": 259.65,
+      "loPx": 242.805,
+      "open": 243.24,
+      "stkVolu": 67366572.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 237.7,
+      "hiPx": 253.51,
+      "loPx": 235.74,
+      "open": 253.465,
+      "stkVolu": 66049698.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 233.54,
+      "hiPx": 235.87,
+      "loPx": 224.6401,
+      "open": 230.94,
+      "stkVolu": 52162576.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 243.98,
+      "hiPx": 248.9,
+      "loPx": 240.5,
+      "open": 242.135,
+      "stkVolu": 43361641.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 237.52,
+      "hiPx": 248.46,
+      "loPx": 234.64,
+      "open": 241.655,
+      "stkVolu": 61336768.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 258.89,
+      "hiPx": 263.51,
+      "loPx": 250.0,
+      "open": 253.13,
+      "stkVolu": 108941979.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 247.96,
+      "hiPx": 259.6309,
+      "loPx": 246.06,
+      "open": 251.9,
+      "stkVolu": 63178592.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 246.81,
+      "hiPx": 253.44,
+      "loPx": 235.08,
+      "open": 240.11,
+      "stkVolu": 47655644.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 240.52,
+      "hiPx": 248.77,
+      "loPx": 237.15,
+      "open": 242.745,
+      "stkVolu": 37942206.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 230.29,
+      "hiPx": 238.0,
+      "loPx": 224.71,
+      "open": 236.78,
+      "stkVolu": 45619850.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 223.55,
+      "hiPx": 235.2799,
+      "loPx": 219.7101,
+      "open": 230.26,
+      "stkVolu": 52093445.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 206.02,
+      "hiPx": 234.25,
+      "loPx": 204.53,
+      "open": 232.7,
+      "stkVolu": 66342870.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 203.78,
+      "hiPx": 208.83,
+      "loPx": 195.0,
+      "open": 208.72,
+      "stkVolu": 67421145.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 215.05,
+      "hiPx": 217.13,
+      "loPx": 205.85,
+      "open": 207.16,
+      "stkVolu": 46749561.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 206.13,
+      "hiPx": 206.58,
+      "loPx": 194.275,
+      "open": 201.475,
+      "stkVolu": 69773496.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 214.24,
+      "hiPx": 215.5899,
+      "loPx": 207.0,
+      "open": 210.05,
+      "stkVolu": 43270240.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 217.53,
+      "hiPx": 218.3,
+      "loPx": 214.02,
+      "open": 216.135,
+      "stkVolu": 18657987.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 219.76,
+      "hiPx": 220.98,
+      "loPx": 213.5,
+      "open": 213.875,
+      "stkVolu": 30768722.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 215.24,
+      "hiPx": 225.98,
+      "loPx": 214.39,
+      "open": 221.79,
+      "stkVolu": 42002462.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 217.6,
+      "hiPx": 218.2,
+      "loPx": 211.7686,
+      "open": 216.26,
+      "stkVolu": 28545180.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 215.98,
+      "hiPx": 219.12,
+      "loPx": 214.14,
+      "open": 216.875,
+      "stkVolu": 24478204.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 217.97,
+      "hiPx": 223.642,
+      "loPx": 216.24,
+      "open": 217.26,
+      "stkVolu": 33292396.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 221.11,
+      "hiPx": 223.71,
+      "loPx": 218.36,
+      "open": 219.085,
+      "stkVolu": 30943182.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 221.62,
+      "hiPx": 224.84,
+      "loPx": 217.907,
+      "open": 221.04,
+      "stkVolu": 25166128.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 221.42,
+      "hiPx": 222.605,
+      "loPx": 218.67,
+      "open": 222.0,
+      "stkVolu": 23279366.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 221.43,
+      "hiPx": 221.4989,
+      "loPx": 210.1901,
+      "open": 217.81,
+      "stkVolu": 30694649.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 210.78,
+      "hiPx": 222.49,
+      "loPx": 209.06,
+      "open": 218.37,
+      "stkVolu": 37073910.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 207.58,
+      "hiPx": 215.36,
+      "loPx": 206.58,
+      "open": 212.28,
+      "stkVolu": 27222196.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 209.17,
+      "hiPx": 210.22,
+      "loPx": 205.11,
+      "open": 206.92,
+      "stkVolu": 23467569.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 198.11,
+      "hiPx": 211.5,
+      "loPx": 197.53,
+      "open": 210.035,
+      "stkVolu": 31595409.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 201.06,
+      "hiPx": 206.36,
+      "loPx": 200.5001,
+      "open": 203.815,
+      "stkVolu": 29720136.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 213.43,
+      "hiPx": 215.18,
+      "loPx": 204.2001,
+      "open": 204.6,
+      "stkVolu": 58445450.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 214.95,
+      "hiPx": 220.17,
+      "loPx": 213.31,
+      "open": 220.0,
+      "stkVolu": 24950728.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 214.9,
+      "hiPx": 217.03,
+      "loPx": 212.28,
+      "open": 212.855,
+      "stkVolu": 20272288.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 215.04,
+      "hiPx": 216.54,
+      "loPx": 213.97,
+      "open": 214.98,
+      "stkVolu": 7956797.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 214.99,
+      "hiPx": 216.83,
+      "loPx": 213.03,
+      "open": 215.43,
+      "stkVolu": 15792558.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 215.61,
+      "hiPx": 216.047,
+      "loPx": 209.24,
+      "open": 211.575,
+      "stkVolu": 20326855.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 215.34,
+      "hiPx": 216.82,
+      "loPx": 214.33,
+      "open": 215.865,
+      "stkVolu": 16409566.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 214.16,
+      "hiPx": 217.64,
+      "loPx": 213.8,
+      "open": 215.815,
+      "stkVolu": 17591581.0,
+      "ticker": "AMD",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 223.47,
+      "hiPx": 227.15,
+      "loPx": 218.895,
+      "open": 218.9,
+      "stkVolu": 36446169.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 221.08,
+      "hiPx": 234.02,
+      "loPx": 220.48,
+      "open": 230.245,
+      "stkVolu": 31941147.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 214.35,
+      "hiPx": 222.92,
+      "loPx": 211.25,
+      "open": 222.71,
+      "stkVolu": 40033208.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 210.02,
+      "hiPx": 212.125,
+      "loPx": 207.17,
+      "open": 212.125,
+      "stkVolu": 29715483.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 204.68,
+      "hiPx": 210.94,
+      "loPx": 203.33,
+      "open": 210.9,
+      "stkVolu": 27505031.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 203.17,
+      "hiPx": 207.3,
+      "loPx": 203.07,
+      "open": 205.72,
+      "stkVolu": 24217339.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 207.69,
+      "hiPx": 209.88,
+      "loPx": 199.8,
+      "open": 201.18,
+      "stkVolu": 27287274.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 220.97,
+      "hiPx": 223.11,
+      "loPx": 214.975,
+      "open": 215.1,
+      "stkVolu": 56894937.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 223.6,
+      "hiPx": 224.09,
+      "loPx": 215.11,
+      "open": 217.54,
+      "stkVolu": 40466520.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 227.92,
+      "hiPx": 238.35,
+      "loPx": 227.22,
+      "open": 227.9,
+      "stkVolu": 55270210.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 231.83,
+      "hiPx": 234.49,
+      "loPx": 228.86,
+      "open": 234.3,
+      "stkVolu": 42545614.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 231.92,
+      "hiPx": 239.5,
+      "loPx": 225.4105,
+      "open": 226.08,
+      "stkVolu": 44327712.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 249.8,
+      "hiPx": 252.9,
+      "loPx": 235.78,
+      "open": 235.99,
+      "stkVolu": 62385578.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 253.73,
+      "hiPx": 256.08,
+      "loPx": 246.632,
+      "open": 251.745,
+      "stkVolu": 37945005.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 259.68,
+      "hiPx": 266.96,
+      "loPx": 256.25,
+      "open": 261.18,
+      "stkVolu": 47525928.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 251.31,
+      "hiPx": 258.2899,
+      "loPx": 250.3,
+      "open": 256.745,
+      "stkVolu": 30672461.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 252.03,
+      "hiPx": 255.55,
+      "loPx": 247.96,
+      "open": 252.16,
+      "stkVolu": 25691598.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 252.74,
+      "hiPx": 257.4,
+      "loPx": 250.21,
+      "open": 254.125,
+      "stkVolu": 27061187.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 252.18,
+      "hiPx": 260.5298,
+      "loPx": 240.91,
+      "open": 254.655,
+      "stkVolu": 31685168.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 236.73,
+      "hiPx": 245.24,
+      "loPx": 234.55,
+      "open": 236.93,
+      "stkVolu": 40035670.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 246.27,
+      "hiPx": 249.97,
+      "loPx": 235.0,
+      "open": 235.77,
+      "stkVolu": 36308106.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 242.11,
+      "hiPx": 252.65,
+      "loPx": 237.0376,
+      "open": 251.55,
+      "stkVolu": 53097051.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 200.19,
+      "hiPx": 218.58,
+      "loPx": 199.1501,
+      "open": 215.0,
+      "stkVolu": 107173293.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 192.5,
+      "hiPx": 204.04,
+      "loPx": 190.72,
+      "open": 201.855,
+      "stkVolu": 62196419.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 208.44,
+      "hiPx": 209.27,
+      "loPx": 196.43,
+      "open": 197.13,
+      "stkVolu": 54504470.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 216.0,
+      "hiPx": 217.6,
+      "loPx": 204.15,
+      "open": 206.895,
+      "stkVolu": 38810841.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 213.57,
+      "hiPx": 219.39,
+      "loPx": 213.13,
+      "open": 215.14,
+      "stkVolu": 25326694.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 213.58,
+      "hiPx": 219.65,
+      "loPx": 209.21,
+      "open": 217.88,
+      "stkVolu": 33384744.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 205.94,
+      "hiPx": 218.4564,
+      "loPx": 205.14,
+      "open": 215.83,
+      "stkVolu": 32180957.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 207.32,
+      "hiPx": 210.05,
+      "loPx": 203.8801,
+      "open": 204.02,
+      "stkVolu": 26123882.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 203.08,
+      "hiPx": 205.3,
+      "loPx": 194.83,
+      "open": 202.145,
+      "stkVolu": 33712081.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 200.12,
+      "hiPx": 203.2,
+      "loPx": 195.0001,
+      "open": 198.405,
+      "stkVolu": 35664087.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 203.37,
+      "hiPx": 204.1,
+      "loPx": 198.2939,
+      "open": 200.11,
+      "stkVolu": 25842274.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 200.15,
+      "hiPx": 204.87,
+      "loPx": 198.56,
+      "open": 200.115,
+      "stkVolu": 36317256.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 196.6,
+      "hiPx": 199.38,
+      "loPx": 194.15,
+      "open": 198.09,
+      "stkVolu": 28187909.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 213.84,
+      "hiPx": 216.71,
+      "loPx": 206.5,
+      "open": 211.63,
+      "stkVolu": 81367020.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 210.86,
+      "hiPx": 216.7,
+      "loPx": 210.33,
+      "open": 214.82,
+      "stkVolu": 44588059.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 203.68,
+      "hiPx": 209.79,
+      "loPx": 201.46,
+      "open": 208.8,
+      "stkVolu": 35020472.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 200.21,
+      "hiPx": 201.89,
+      "loPx": 197.74,
+      "open": 200.105,
+      "stkVolu": 31312396.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 198.62,
+      "hiPx": 198.74,
+      "loPx": 190.0,
+      "open": 193.845,
+      "stkVolu": 34120155.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 190.95,
+      "hiPx": 193.64,
+      "loPx": 188.22,
+      "open": 191.46,
+      "stkVolu": 37785697.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 202.07,
+      "hiPx": 202.44,
+      "loPx": 189.86,
+      "open": 192.12,
+      "stkVolu": 40912561.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 199.45,
+      "hiPx": 203.79,
+      "loPx": 194.88,
+      "open": 197.77,
+      "stkVolu": 36000660.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 192.43,
+      "hiPx": 200.24,
+      "loPx": 191.2501,
+      "open": 195.27,
+      "stkVolu": 33913779.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 202.68,
+      "hiPx": 202.97,
+      "loPx": 189.02,
+      "open": 189.36,
+      "stkVolu": 38877220.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 203.23,
+      "hiPx": 206.59,
+      "loPx": 202.2,
+      "open": 202.51,
+      "stkVolu": 29139162.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 204.83,
+      "hiPx": 209.21,
+      "loPx": 203.63,
+      "open": 205.11,
+      "stkVolu": 23076366.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 197.74,
+      "hiPx": 203.62,
+      "loPx": 196.67,
+      "open": 202.825,
+      "stkVolu": 28886913.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 193.39,
+      "hiPx": 199.68,
+      "loPx": 192.27,
+      "open": 198.11,
+      "stkVolu": 27561888.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 196.58,
+      "hiPx": 200.17,
+      "loPx": 194.8,
+      "open": 194.975,
+      "stkVolu": 30285170.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 196.31,
+      "hiPx": 199.21,
+      "loPx": 195.26,
+      "open": 196.68,
+      "stkVolu": 22779675.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 199.46,
+      "hiPx": 202.86,
+      "loPx": 195.75,
+      "open": 196.0,
+      "stkVolu": 28569135.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 205.27,
+      "hiPx": 205.88,
+      "loPx": 192.83,
+      "open": 195.032,
+      "stkVolu": 32245329.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 201.33,
+      "hiPx": 206.3,
+      "loPx": 198.26,
+      "open": 204.885,
+      "stkVolu": 37265103.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 202.68,
+      "hiPx": 209.109,
+      "loPx": 201.71,
+      "open": 206.395,
+      "stkVolu": 31857752.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 205.37,
+      "hiPx": 206.43,
+      "loPx": 200.13,
+      "open": 201.39,
+      "stkVolu": 27258849.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 220.27,
+      "hiPx": 221.33,
+      "loPx": 211.505,
+      "open": 211.505,
+      "stkVolu": 48518269.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 203.77,
+      "hiPx": 221.0,
+      "loPx": 203.43,
+      "open": 217.979,
+      "stkVolu": 49212976.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 201.99,
+      "hiPx": 203.2699,
+      "loPx": 197.69,
+      "open": 201.77,
+      "stkVolu": 29206578.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 196.04,
+      "hiPx": 208.43,
+      "loPx": 192.865,
+      "open": 204.95,
+      "stkVolu": 41053298.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 203.43,
+      "hiPx": 204.0,
+      "loPx": 196.41,
+      "open": 198.05,
+      "stkVolu": 42318748.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 210.21,
+      "hiPx": 213.83,
+      "loPx": 205.84,
+      "open": 207.585,
+      "stkVolu": 40835794.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 217.5,
+      "hiPx": 217.78,
+      "loPx": 200.62,
+      "open": 204.05,
+      "stkVolu": 38463484.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 220.18,
+      "hiPx": 226.31,
+      "loPx": 217.73,
+      "open": 219.28,
+      "stkVolu": 30786420.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 221.53,
+      "hiPx": 222.0984,
+      "loPx": 215.375,
+      "open": 218.255,
+      "stkVolu": 26483009.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 231.82,
+      "hiPx": 234.0,
+      "loPx": 227.09,
+      "open": 232.12,
+      "stkVolu": 35496362.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 236.64,
+      "hiPx": 237.1,
+      "loPx": 230.9101,
+      "open": 233.014,
+      "stkVolu": 27126209.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 245.04,
+      "hiPx": 249.58,
+      "loPx": 238.96,
+      "open": 239.0,
+      "stkVolu": 36477243.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 246.83,
+      "hiPx": 247.33,
+      "loPx": 242.03,
+      "open": 245.025,
+      "stkVolu": 22781787.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 255.07,
+      "hiPx": 255.46,
+      "loPx": 245.7,
+      "open": 249.79,
+      "stkVolu": 25733227.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 258.12,
+      "hiPx": 258.18,
+      "loPx": 251.85,
+      "open": 254.96,
+      "stkVolu": 24695184.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 278.26,
+      "hiPx": 279.34,
+      "loPx": 261.51,
+      "open": 264.99,
+      "stkVolu": 64850772.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 278.39,
+      "hiPx": 281.05,
+      "loPx": 274.14,
+      "open": 281.0,
+      "stkVolu": 35519852.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 274.95,
+      "hiPx": 287.61,
+      "loPx": 272.0,
+      "open": 280.6,
+      "stkVolu": 34833859.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 284.49,
+      "hiPx": 286.2,
+      "loPx": 276.62,
+      "open": 277.33,
+      "stkVolu": 38950875.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 303.46,
+      "hiPx": 304.25,
+      "loPx": 286.14,
+      "open": 291.215,
+      "stkVolu": 49054237.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 305.33,
+      "hiPx": 310.22,
+      "loPx": 299.76,
+      "open": 302.01,
+      "stkVolu": 45619726.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 347.81,
+      "hiPx": 352.99,
+      "loPx": 334.54,
+      "open": 336.755,
+      "stkVolu": 81616660.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 334.63,
+      "hiPx": 349.21,
+      "loPx": 328.81,
+      "open": 346.32,
+      "stkVolu": 50585307.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 323.21,
+      "hiPx": 327.5,
+      "loPx": 310.0,
+      "open": 311.86,
+      "stkVolu": 43002479.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 337.11,
+      "hiPx": 340.17,
+      "loPx": 318.86,
+      "open": 326.58,
+      "stkVolu": 44704367.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 354.49,
+      "hiPx": 354.96,
+      "loPx": 332.6,
+      "open": 341.355,
+      "stkVolu": 42115325.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 360.54,
+      "hiPx": 362.79,
+      "loPx": 349.25,
+      "open": 351.87,
+      "stkVolu": 34279169.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 341.54,
+      "hiPx": 361.85,
+      "loPx": 338.7,
+      "open": 360.31,
+      "stkVolu": 42000243.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 355.26,
+      "hiPx": 359.5716,
+      "loPx": 344.88,
+      "open": 351.51,
+      "stkVolu": 64235117.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 421.39,
+      "hiPx": 430.6,
+      "loPx": 402.04,
+      "open": 409.49,
+      "stkVolu": 87732167.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 408.46,
+      "hiPx": 421.71,
+      "loPx": 401.08,
+      "open": 417.07,
+      "stkVolu": 44885481.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 455.19,
+      "hiPx": 456.29,
+      "loPx": 418.29,
+      "open": 418.59,
+      "stkVolu": 58134868.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 458.79,
+      "hiPx": 469.215,
+      "loPx": 450.88,
+      "open": 460.55,
+      "stkVolu": 46085390.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 448.29,
+      "hiPx": 458.8,
+      "loPx": 426.11,
+      "open": 449.25,
+      "stkVolu": 39140061.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 445.5,
+      "hiPx": 459.5,
+      "loPx": 432.65,
+      "open": 457.035,
+      "stkVolu": 30423354.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 449.7,
+      "hiPx": 453.31,
+      "loPx": 435.68,
+      "open": 440.6,
+      "stkVolu": 26113570.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 424.1,
+      "hiPx": 439.0,
+      "loPx": 423.3616,
+      "open": 433.34,
+      "stkVolu": 29131579.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 420.99,
+      "hiPx": 438.8,
+      "loPx": 410.71,
+      "open": 429.5,
+      "stkVolu": 28432130.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 414.05,
+      "hiPx": 428.75,
+      "loPx": 393.36,
+      "open": 412.6,
+      "stkVolu": 38756913.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 447.58,
+      "hiPx": 449.3899,
+      "loPx": 426.05,
+      "open": 428.04,
+      "stkVolu": 36137499.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 449.59,
+      "hiPx": 451.2,
+      "loPx": 431.6,
+      "open": 441.99,
+      "stkVolu": 27251983.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 467.51,
+      "hiPx": 481.41,
+      "loPx": 461.71,
+      "open": 469.84,
+      "stkVolu": 34758602.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 503.89,
+      "hiPx": 506.96,
+      "loPx": 480.23,
+      "open": 484.74,
+      "stkVolu": 38473784.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 495.54,
+      "hiPx": 510.21,
+      "loPx": 486.6603,
+      "open": 508.0,
+      "stkVolu": 27589331.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 518.09,
+      "hiPx": 527.1999,
+      "loPx": 493.52,
+      "open": 499.0,
+      "stkVolu": 31438519.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 516.1,
+      "hiPx": 522.0,
+      "loPx": 503.43,
+      "open": 520.8,
+      "stkVolu": 30803236.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 510.13,
+      "hiPx": 517.5,
+      "loPx": 486.8,
+      "open": 500.16,
+      "stkVolu": 33309248.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 521.54,
+      "hiPx": 522.49,
+      "loPx": 501.22,
+      "open": 506.3,
+      "stkVolu": 24293209.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 542.52,
+      "hiPx": 546.44,
+      "loPx": 524.3001,
+      "open": 533.75,
+      "stkVolu": 29411149.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 523.2,
+      "hiPx": 532.19,
+      "loPx": 499.8701,
+      "open": 514.75,
+      "stkVolu": 29109999.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 466.38,
+      "hiPx": 505.62,
+      "loPx": 463.95,
+      "open": 499.525,
+      "stkVolu": 46900606.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 490.33,
+      "hiPx": 494.97,
+      "loPx": 477.71,
+      "open": 485.0,
+      "stkVolu": 25158813.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 475.505,
+      "hiPx": 505.0,
+      "loPx": 437.23,
+      "open": 502.75,
+      "stkVolu": 37799812.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 452.4,
+      "hiPx": 477.4499,
+      "loPx": 448.33,
+      "open": 467.97,
+      "stkVolu": 27777399.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 488.45,
+      "hiPx": 490.46,
+      "loPx": 458.02,
+      "open": 461.6,
+      "stkVolu": 30463082.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 511.57,
+      "hiPx": 521.71,
+      "loPx": 494.0,
+      "open": 499.87,
+      "stkVolu": 31618462.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 547.26,
+      "hiPx": 558.37,
+      "loPx": 530.5,
+      "open": 535.75,
+      "stkVolu": 33482425.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 507.29,
+      "hiPx": 548.95,
+      "loPx": 507.25,
+      "open": 546.89,
+      "stkVolu": 28411694.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 512.48,
+      "hiPx": 532.5,
+      "loPx": 507.3008,
+      "open": 529.655,
+      "stkVolu": 27085340.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 537.37,
+      "hiPx": 539.69,
+      "loPx": 526.315,
+      "open": 531.58,
+      "stkVolu": 43805645.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 551.63,
+      "hiPx": 562.9899,
+      "loPx": 535.7101,
+      "open": 545.5,
+      "stkVolu": 25983245.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 519.85,
+      "hiPx": 528.489,
+      "loPx": 506.81,
+      "open": 509.08,
+      "stkVolu": 30196780.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 519.74,
+      "hiPx": 524.96,
+      "loPx": 503.5,
+      "open": 520.82,
+      "stkVolu": 26548270.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 532.57,
+      "hiPx": 550.88,
+      "loPx": 507.0,
+      "open": 543.93,
+      "stkVolu": 27115339.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 521.58,
+      "hiPx": 525.11,
+      "loPx": 502.61,
+      "open": 519.795,
+      "stkVolu": 52705137.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 539.49,
+      "hiPx": 542.19,
+      "loPx": 495.35,
+      "open": 522.84,
+      "stkVolu": 26671016.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 580.91,
+      "hiPx": 584.73,
+      "loPx": 545.565,
+      "open": 545.57,
+      "stkVolu": 34488503.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 540.88,
+      "hiPx": 564.09,
+      "loPx": 538.74,
+      "open": 557.53,
+      "stkVolu": 28326776.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 517.82,
+      "hiPx": 547.65,
+      "loPx": 506.0,
+      "open": 538.16,
+      "stkVolu": 28228930.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 552.05,
+      "hiPx": 572.5,
+      "loPx": 527.0,
+      "open": 535.35,
+      "stkVolu": 30684180.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 516.11,
+      "hiPx": 524.97,
+      "loPx": 503.11,
+      "open": 515.91,
+      "stkVolu": 29166801.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 517.405,
+      "hiPx": 522.98,
+      "loPx": 498.15,
+      "open": 504.805,
+      "stkVolu": 23768536.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 546.72,
+      "hiPx": 559.5,
+      "loPx": 535.2,
+      "open": 537.265,
+      "stkVolu": 26900808.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 557.89,
+      "hiPx": 560.25,
+      "loPx": 540.05,
+      "open": 544.005,
+      "stkVolu": 20704530.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 534.39,
+      "hiPx": 551.87,
+      "loPx": 526.92,
+      "open": 537.5,
+      "stkVolu": 22957350.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 548.13,
+      "hiPx": 574.2,
+      "loPx": 546.77,
+      "open": 567.22,
+      "stkVolu": 21201370.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 529.14,
+      "hiPx": 558.89,
+      "loPx": 509.57,
+      "open": 556.02,
+      "stkVolu": 27826203.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 500.94,
+      "hiPx": 518.74,
+      "loPx": 491.8,
+      "open": 509.33,
+      "stkVolu": 27093696.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 495.76,
+      "hiPx": 505.8795,
+      "loPx": 460.21,
+      "open": 476.88,
+      "stkVolu": 32115875.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 503.57,
+      "hiPx": 522.44,
+      "loPx": 502.36,
+      "open": 516.995,
+      "stkVolu": 23440720.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 544.43,
+      "hiPx": 548.1399,
+      "loPx": 522.6001,
+      "open": 526.0,
+      "stkVolu": 29045125.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 552.33,
+      "hiPx": 561.47,
+      "loPx": 526.6,
+      "open": 526.875,
+      "stkVolu": 24776665.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 539.69,
+      "hiPx": 556.49,
+      "loPx": 525.0,
+      "open": 544.74,
+      "stkVolu": 27155083.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 521.95,
+      "hiPx": 549.0,
+      "loPx": 518.0,
+      "open": 546.92,
+      "stkVolu": 27200730.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 494.95,
+      "hiPx": 528.0,
+      "loPx": 476.93,
+      "open": 527.505,
+      "stkVolu": 31800253.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 454.62,
+      "hiPx": 472.75,
+      "loPx": 442.27,
+      "open": 467.0,
+      "stkVolu": 36315461.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 429.56,
+      "hiPx": 457.22,
+      "loPx": 424.0316,
+      "open": 452.675,
+      "stkVolu": 32304898.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 485.39,
+      "hiPx": 498.2,
+      "loPx": 457.68,
+      "open": 460.0,
+      "stkVolu": 36936565.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 476.15,
+      "hiPx": 515.62,
+      "loPx": 475.76,
+      "open": 510.275,
+      "stkVolu": 26615744.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 484.64,
+      "hiPx": 490.9464,
+      "loPx": 455.3,
+      "open": 461.79,
+      "stkVolu": 24422256.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 518.58,
+      "hiPx": 530.13,
+      "loPx": 502.2,
+      "open": 504.0,
+      "stkVolu": 48463564.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 482.05,
+      "hiPx": 502.0,
+      "loPx": 478.2,
+      "open": 484.495,
+      "stkVolu": 49615835.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 489.28,
+      "hiPx": 496.72,
+      "loPx": 469.5,
+      "open": 471.75,
+      "stkVolu": 24675347.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 483.36,
+      "hiPx": 498.99,
+      "loPx": 476.06,
+      "open": 497.94,
+      "stkVolu": 26618791.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 469.56,
+      "hiPx": 483.36,
+      "loPx": 469.29,
+      "open": 477.09,
+      "stkVolu": 19656615.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 474.32,
+      "hiPx": 475.99,
+      "loPx": 463.21,
+      "open": 474.75,
+      "stkVolu": 18052466.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 482.93,
+      "hiPx": 491.6899,
+      "loPx": 480.88,
+      "open": 488.32,
+      "stkVolu": 18628269.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 483.01,
+      "hiPx": 497.99,
+      "loPx": 481.0,
+      "open": 483.0,
+      "stkVolu": 18764893.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 514.39,
+      "hiPx": 514.67,
+      "loPx": 483.2,
+      "open": 487.6,
+      "stkVolu": 25570295.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 506.0,
+      "hiPx": 517.3493,
+      "loPx": 504.52,
+      "open": 514.16,
+      "stkVolu": 20057628.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 484.39,
+      "hiPx": 491.81,
+      "loPx": 474.975,
+      "open": 487.56,
+      "stkVolu": 23721548.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 466.42,
+      "hiPx": 487.005,
+      "loPx": 462.55,
+      "open": 486.08,
+      "stkVolu": 19208418.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 469.455,
+      "hiPx": 475.5299,
+      "loPx": 460.27,
+      "open": 465.67,
+      "stkVolu": 15178892.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 473.25,
+      "hiPx": 477.36,
+      "loPx": 462.111,
+      "open": 476.495,
+      "stkVolu": 14343885.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 456.745,
+      "hiPx": 468.54,
+      "loPx": 451.0,
+      "open": 468.54,
+      "stkVolu": 16602165.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 479.18,
+      "hiPx": 481.5,
+      "loPx": 469.07,
+      "open": 475.0,
+      "stkVolu": 19001388.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 480.93,
+      "hiPx": 491.12,
+      "loPx": 474.58,
+      "open": 475.07,
+      "stkVolu": 14348127.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 476.67,
+      "hiPx": 483.0,
+      "loPx": 469.63,
+      "open": 481.5,
+      "stkVolu": 16441282.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

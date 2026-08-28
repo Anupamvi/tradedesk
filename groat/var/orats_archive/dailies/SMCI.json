@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 48.56,
+      "hiPx": 49.63,
+      "loPx": 48.42,
+      "open": 49.23,
+      "stkVolu": 18665575.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 47.11,
+      "hiPx": 48.35,
+      "loPx": 46.22,
+      "open": 48.23,
+      "stkVolu": 33006690.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 49.11,
+      "hiPx": 49.255,
+      "loPx": 47.36,
+      "open": 47.44,
+      "stkVolu": 29002561.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 50.02,
+      "hiPx": 50.2,
+      "loPx": 48.37,
+      "open": 48.745,
+      "stkVolu": 35063577.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 50.36,
+      "hiPx": 51.7,
+      "loPx": 49.68,
+      "open": 50.8,
+      "stkVolu": 33264404.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 49.24,
+      "hiPx": 50.26,
+      "loPx": 49.08,
+      "open": 49.755,
+      "stkVolu": 24861382.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 49.73,
+      "hiPx": 50.66,
+      "loPx": 48.78,
+      "open": 49.24,
+      "stkVolu": 25603020.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 53.17,
+      "hiPx": 54.2,
+      "loPx": 51.53,
+      "open": 51.865,
+      "stkVolu": 62012767.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 53.22,
+      "hiPx": 53.2889,
+      "loPx": 51.42,
+      "open": 53.045,
+      "stkVolu": 30066055.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 52.75,
+      "hiPx": 54.15,
+      "loPx": 52.61,
+      "open": 53.51,
+      "stkVolu": 31534551.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 51.77,
+      "hiPx": 53.87,
+      "loPx": 51.27,
+      "open": 53.325,
+      "stkVolu": 31842399.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 51.5,
+      "hiPx": 53.98,
+      "loPx": 51.4,
+      "open": 52.69,
+      "stkVolu": 38140234.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 49.86,
+      "hiPx": 51.86,
+      "loPx": 48.85,
+      "open": 51.84,
+      "stkVolu": 31829294.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 51.7,
+      "hiPx": 52.16,
+      "loPx": 50.58,
+      "open": 50.7,
+      "stkVolu": 25249626.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 52.52,
+      "hiPx": 53.35,
+      "loPx": 51.33,
+      "open": 51.815,
+      "stkVolu": 37679316.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 54.47,
+      "hiPx": 54.515,
+      "loPx": 51.62,
+      "open": 52.15,
+      "stkVolu": 34308424.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 60.05,
+      "hiPx": 60.08,
+      "loPx": 55.3,
+      "open": 55.81,
+      "stkVolu": 72578842.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 58.63,
+      "hiPx": 61.48,
+      "loPx": 58.15,
+      "open": 59.73,
+      "stkVolu": 57488295.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 60.71,
+      "hiPx": 62.28,
+      "loPx": 59.0201,
+      "open": 59.56,
+      "stkVolu": 53032928.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 58.97,
+      "hiPx": 62.358,
+      "loPx": 58.46,
+      "open": 62.11,
+      "stkVolu": 46751846.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 56.64,
+      "hiPx": 58.05,
+      "loPx": 55.07,
+      "open": 57.1101,
+      "stkVolu": 40840313.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 58.23,
+      "hiPx": 59.19,
+      "loPx": 57.62,
+      "open": 58.155,
+      "stkVolu": 32743628.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 57.26,
+      "hiPx": 59.4,
+      "loPx": 56.79,
+      "open": 58.81,
+      "stkVolu": 49970613.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 46.79,
+      "hiPx": 48.13,
+      "loPx": 44.83,
+      "open": 47.33,
+      "stkVolu": 115217930.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 46.67,
+      "hiPx": 48.82,
+      "loPx": 46.57,
+      "open": 47.15,
+      "stkVolu": 43942161.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 44.6,
+      "hiPx": 47.37,
+      "loPx": 44.53,
+      "open": 46.91,
+      "stkVolu": 43796793.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 45.2,
+      "hiPx": 46.48,
+      "loPx": 44.98,
+      "open": 45.075,
+      "stkVolu": 31865885.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 46.43,
+      "hiPx": 46.6,
+      "loPx": 44.8,
+      "open": 45.665,
+      "stkVolu": 30437803.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 46.07,
+      "hiPx": 46.64,
+      "loPx": 45.56,
+      "open": 46.43,
+      "stkVolu": 26004354.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 45.49,
+      "hiPx": 45.6682,
+      "loPx": 44.67,
+      "open": 45.35,
+      "stkVolu": 22948718.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 45.37,
+      "hiPx": 45.57,
+      "loPx": 44.16,
+      "open": 45.255,
+      "stkVolu": 27407548.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 45.86,
+      "hiPx": 46.64,
+      "loPx": 45.1807,
+      "open": 45.28,
+      "stkVolu": 22586452.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 43.24,
+      "hiPx": 45.85,
+      "loPx": 43.17,
+      "open": 45.85,
+      "stkVolu": 30319218.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 42.61,
+      "hiPx": 43.47,
+      "loPx": 41.31,
+      "open": 43.3,
+      "stkVolu": 31496647.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 42.31,
+      "hiPx": 42.955,
+      "loPx": 41.82,
+      "open": 42.595,
+      "stkVolu": 16552115.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 43.88,
+      "hiPx": 44.1,
+      "loPx": 41.63,
+      "open": 41.65,
+      "stkVolu": 24089060.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 44.07,
+      "hiPx": 44.93,
+      "loPx": 43.28,
+      "open": 43.6,
+      "stkVolu": 18782031.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 44.36,
+      "hiPx": 44.39,
+      "loPx": 43.635,
+      "open": 44.06,
+      "stkVolu": 18168178.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 44.76,
+      "hiPx": 45.01,
+      "loPx": 43.87,
+      "open": 44.36,
+      "stkVolu": 18925090.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 43.97,
+      "hiPx": 45.34,
+      "loPx": 43.91,
+      "open": 44.82,
+      "stkVolu": 22120089.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 41.54,
+      "hiPx": 42.86,
+      "loPx": 41.44,
+      "open": 42.8,
+      "stkVolu": 36835946.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 40.78,
+      "hiPx": 40.86,
+      "loPx": 39.56,
+      "open": 40.025,
+      "stkVolu": 29924319.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 40.1,
+      "hiPx": 40.9799,
+      "loPx": 39.7735,
+      "open": 40.9,
+      "stkVolu": 20472793.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 40.7,
+      "hiPx": 40.8,
+      "loPx": 39.75,
+      "open": 40.28,
+      "stkVolu": 22479421.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 40.41,
+      "hiPx": 41.18,
+      "loPx": 39.74,
+      "open": 40.985,
+      "stkVolu": 21771670.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 40.035,
+      "hiPx": 41.12,
+      "loPx": 39.89,
+      "open": 40.895,
+      "stkVolu": 19077227.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 42.92,
+      "hiPx": 43.0,
+      "loPx": 40.165,
+      "open": 40.24,
+      "stkVolu": 37458970.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 43.91,
+      "hiPx": 45.57,
+      "loPx": 43.333,
+      "open": 44.0,
+      "stkVolu": 40876010.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 43.95,
+      "hiPx": 44.51,
+      "loPx": 43.46,
+      "open": 44.29,
+      "stkVolu": 24437708.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 45.0,
+      "hiPx": 47.0,
+      "loPx": 44.63,
+      "open": 46.56,
+      "stkVolu": 38138273.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 45.38,
+      "hiPx": 45.77,
+      "loPx": 44.2,
+      "open": 45.23,
+      "stkVolu": 22441791.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 44.91,
+      "hiPx": 45.82,
+      "loPx": 44.5,
+      "open": 45.545,
+      "stkVolu": 18139175.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 44.9,
+      "hiPx": 45.4,
+      "loPx": 43.69,
+      "open": 44.595,
+      "stkVolu": 22589246.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 45.94,
+      "hiPx": 46.33,
+      "loPx": 44.54,
+      "open": 45.42,
+      "stkVolu": 26315798.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 45.81,
+      "hiPx": 46.52,
+      "loPx": 45.445,
+      "open": 46.0,
+      "stkVolu": 28688363.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 46.87,
+      "hiPx": 48.53,
+      "loPx": 45.17,
+      "open": 45.395,
+      "stkVolu": 39930638.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 46.99,
+      "hiPx": 47.7,
+      "loPx": 45.86,
+      "open": 47.39,
+      "stkVolu": 27042453.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 46.2,
+      "hiPx": 48.15,
+      "loPx": 46.17,
+      "open": 47.23,
+      "stkVolu": 24991318.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 46.24,
+      "hiPx": 47.16,
+      "loPx": 44.2,
+      "open": 45.06,
+      "stkVolu": 24372206.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 45.82,
+      "hiPx": 45.97,
+      "loPx": 44.4,
+      "open": 45.64,
+      "stkVolu": 22879401.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 46.36,
+      "hiPx": 47.38,
+      "loPx": 45.94,
+      "open": 46.28,
+      "stkVolu": 25012582.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 47.94,
+      "hiPx": 48.2,
+      "loPx": 46.1967,
+      "open": 46.215,
+      "stkVolu": 32168456.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 52.39,
+      "hiPx": 52.48,
+      "loPx": 47.36,
+      "open": 47.57,
+      "stkVolu": 48357216.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 52.5,
+      "hiPx": 52.93,
+      "loPx": 51.06,
+      "open": 52.445,
+      "stkVolu": 32744408.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 51.96,
+      "hiPx": 53.51,
+      "loPx": 50.8,
+      "open": 52.74,
+      "stkVolu": 32220401.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 54.62,
+      "hiPx": 56.1135,
+      "loPx": 53.96,
+      "open": 54.05,
+      "stkVolu": 40241633.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 55.07,
+      "hiPx": 57.48,
+      "loPx": 53.6,
+      "open": 56.26,
+      "stkVolu": 37885889.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 58.68,
+      "hiPx": 58.69,
+      "loPx": 54.58,
+      "open": 55.27,
+      "stkVolu": 45151411.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 57.98,
+      "hiPx": 58.78,
+      "loPx": 57.258,
+      "open": 57.63,
+      "stkVolu": 29801486.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 52.86,
+      "hiPx": 58.51,
+      "loPx": 52.56,
+      "open": 58.24,
+      "stkVolu": 45087764.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 54.75,
+      "hiPx": 55.65,
+      "loPx": 54.02,
+      "open": 54.805,
+      "stkVolu": 24588862.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 53.11,
+      "hiPx": 55.21,
+      "loPx": 52.98,
+      "open": 54.13,
+      "stkVolu": 19789133.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 53.94,
+      "hiPx": 55.0699,
+      "loPx": 52.86,
+      "open": 54.5,
+      "stkVolu": 16646034.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 53.84,
+      "hiPx": 56.225,
+      "loPx": 53.27,
+      "open": 54.0,
+      "stkVolu": 24656551.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 52.18,
+      "hiPx": 53.63,
+      "loPx": 51.62,
+      "open": 53.065,
+      "stkVolu": 20681849.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 55.04,
+      "hiPx": 56.6,
+      "loPx": 54.6,
+      "open": 55.04,
+      "stkVolu": 45553310.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 54.82,
+      "hiPx": 55.3499,
+      "loPx": 53.91,
+      "open": 55.16,
+      "stkVolu": 29016458.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 52.5,
+      "hiPx": 54.53,
+      "loPx": 50.03,
+      "open": 54.49,
+      "stkVolu": 34326246.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 47.92,
+      "hiPx": 51.84,
+      "loPx": 47.38,
+      "open": 51.73,
+      "stkVolu": 57175672.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 48.29,
+      "hiPx": 49.64,
+      "loPx": 48.21,
+      "open": 48.875,
+      "stkVolu": 25206612.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 51.57,
+      "hiPx": 51.625,
+      "loPx": 49.72,
+      "open": 49.72,
+      "stkVolu": 27434470.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 52.36,
+      "hiPx": 54.03,
+      "loPx": 51.37,
+      "open": 51.665,
+      "stkVolu": 28064410.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 52.69,
+      "hiPx": 54.08,
+      "loPx": 51.56,
+      "open": 53.8,
+      "stkVolu": 25028515.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 50.37,
+      "hiPx": 52.32,
+      "loPx": 50.3348,
+      "open": 51.9,
+      "stkVolu": 17736566.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 51.96,
+      "hiPx": 52.99,
+      "loPx": 50.8,
+      "open": 51.39,
+      "stkVolu": 19822788.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 50.75,
+      "hiPx": 53.01,
+      "loPx": 50.55,
+      "open": 52.87,
+      "stkVolu": 23811285.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 47.4,
+      "hiPx": 49.43,
+      "loPx": 46.86,
+      "open": 48.625,
+      "stkVolu": 37973477.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 42.03,
+      "hiPx": 46.34,
+      "loPx": 42.02,
+      "open": 44.975,
+      "stkVolu": 61413576.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 40.335,
+      "hiPx": 42.8201,
+      "loPx": 40.3,
+      "open": 42.5,
+      "stkVolu": 32092126.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 39.76,
+      "hiPx": 40.09,
+      "loPx": 38.135,
+      "open": 39.845,
+      "stkVolu": 32960238.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 40.19,
+      "hiPx": 41.63,
+      "loPx": 39.9,
+      "open": 41.455,
+      "stkVolu": 26396732.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 38.82,
+      "hiPx": 39.99,
+      "loPx": 38.58,
+      "open": 39.99,
+      "stkVolu": 21707766.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 37.91,
+      "hiPx": 39.45,
+      "loPx": 37.5725,
+      "open": 39.19,
+      "stkVolu": 24749669.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 35.09,
+      "hiPx": 37.8,
+      "loPx": 34.78,
+      "open": 37.76,
+      "stkVolu": 37471530.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 36.42,
+      "hiPx": 37.35,
+      "loPx": 33.69,
+      "open": 34.235,
+      "stkVolu": 37325154.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 34.1,
+      "hiPx": 35.82,
+      "loPx": 33.635,
+      "open": 35.58,
+      "stkVolu": 32689527.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 34.9,
+      "hiPx": 35.78,
+      "loPx": 33.55,
+      "open": 34.31,
+      "stkVolu": 28024905.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 33.73,
+      "hiPx": 34.9661,
+      "loPx": 33.2,
+      "open": 34.55,
+      "stkVolu": 28892793.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 31.56,
+      "hiPx": 35.54,
+      "loPx": 31.445,
+      "open": 35.53,
+      "stkVolu": 37801477.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 32.19,
+      "hiPx": 32.57,
+      "loPx": 31.03,
+      "open": 32.14,
+      "stkVolu": 28321163.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 33.32,
+      "hiPx": 33.54,
+      "loPx": 31.98,
+      "open": 32.39,
+      "stkVolu": 27885144.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 32.48,
+      "hiPx": 32.63,
+      "loPx": 31.17,
+      "open": 32.16,
+      "stkVolu": 22199789.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 32.83,
+      "hiPx": 33.42,
+      "loPx": 32.45,
+      "open": 33.19,
+      "stkVolu": 21642423.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 33.85,
+      "hiPx": 33.86,
+      "loPx": 32.88,
+      "open": 33.33,
+      "stkVolu": 10755849.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 33.41,
+      "hiPx": 33.95,
+      "loPx": 32.57,
+      "open": 33.37,
+      "stkVolu": 20952352.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 32.92,
+      "hiPx": 34.33,
+      "loPx": 32.89,
+      "open": 33.59,
+      "stkVolu": 19433999.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 33.68,
+      "hiPx": 33.705,
+      "loPx": 32.6698,
+      "open": 33.0,
+      "stkVolu": 16253151.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 34.23,
+      "hiPx": 34.41,
+      "loPx": 33.08,
+      "open": 33.5,
+      "stkVolu": 17205733.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 34.69,
+      "hiPx": 34.79,
+      "loPx": 33.45,
+      "open": 33.845,
+      "stkVolu": 19415332.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 35.37,
+      "hiPx": 35.88,
+      "loPx": 34.7201,
+      "open": 35.15,
+      "stkVolu": 21290282.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 35.02,
+      "hiPx": 35.5,
+      "loPx": 34.58,
+      "open": 35.47,
+      "stkVolu": 17512951.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 34.9,
+      "hiPx": 35.1299,
+      "loPx": 34.18,
+      "open": 34.97,
+      "stkVolu": 17615746.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 34.02,
+      "hiPx": 34.16,
+      "loPx": 32.905,
+      "open": 34.15,
+      "stkVolu": 23178866.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 32.33,
+      "hiPx": 34.6,
+      "loPx": 32.23,
+      "open": 33.745,
+      "stkVolu": 22435069.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 31.37,
+      "hiPx": 32.86,
+      "loPx": 31.24,
+      "open": 32.8,
+      "stkVolu": 18470601.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 31.66,
+      "hiPx": 31.91,
+      "loPx": 30.95,
+      "open": 31.3,
+      "stkVolu": 20835778.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 29.84,
+      "hiPx": 31.91,
+      "loPx": 29.835,
+      "open": 31.49,
+      "stkVolu": 24797175.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 29.37,
+      "hiPx": 30.91,
+      "loPx": 29.095,
+      "open": 30.705,
+      "stkVolu": 25658727.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 31.11,
+      "hiPx": 31.24,
+      "loPx": 29.59,
+      "open": 29.59,
+      "stkVolu": 39854147.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 31.07,
+      "hiPx": 31.69,
+      "loPx": 30.87,
+      "open": 31.17,
+      "stkVolu": 21470422.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 30.76,
+      "hiPx": 31.11,
+      "loPx": 30.265,
+      "open": 30.94,
+      "stkVolu": 18146693.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 30.55,
+      "hiPx": 30.8,
+      "loPx": 30.34,
+      "open": 30.65,
+      "stkVolu": 6805570.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 30.64,
+      "hiPx": 30.845,
+      "loPx": 30.14,
+      "open": 30.64,
+      "stkVolu": 14262721.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 30.08,
+      "hiPx": 31.14,
+      "loPx": 29.94,
+      "open": 30.07,
+      "stkVolu": 19595369.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 29.65,
+      "hiPx": 30.36,
+      "loPx": 29.64,
+      "open": 30.36,
+      "stkVolu": 21568249.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 29.27,
+      "hiPx": 29.87,
+      "loPx": 29.02,
+      "open": 29.71,
+      "stkVolu": 24844990.0,
+      "ticker": "SMCI",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 30.96,
+      "hiPx": 31.4,
+      "loPx": 29.93,
+      "open": 29.96,
+      "stkVolu": 30675094.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 30.07,
+      "hiPx": 32.04,
+      "loPx": 29.98,
+      "open": 31.68,
+      "stkVolu": 38591801.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 30.54,
+      "hiPx": 30.66,
+      "loPx": 29.43,
+      "open": 30.645,
+      "stkVolu": 29127522.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 30.01,
+      "hiPx": 30.6299,
+      "loPx": 29.78,
+      "open": 30.625,
+      "stkVolu": 22808170.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 29.9,
+      "hiPx": 30.06,
+      "loPx": 29.21,
+      "open": 30.04,
+      "stkVolu": 21598185.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 30.16,
+      "hiPx": 31.025,
+      "loPx": 29.55,
+      "open": 30.03,
+      "stkVolu": 27159838.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 30.12,
+      "hiPx": 30.535,
+      "loPx": 29.765,
+      "open": 29.93,
+      "stkVolu": 24840607.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 28.6,
+      "hiPx": 29.89,
+      "loPx": 27.8,
+      "open": 29.89,
+      "stkVolu": 52519660.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 28.27,
+      "hiPx": 28.755,
+      "loPx": 27.75,
+      "open": 28.26,
+      "stkVolu": 25019236.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 29.42,
+      "hiPx": 29.855,
+      "loPx": 28.57,
+      "open": 28.71,
+      "stkVolu": 33266312.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 32.64,
+      "hiPx": 32.98,
+      "loPx": 29.6,
+      "open": 29.72,
+      "stkVolu": 79038202.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 31.41,
+      "hiPx": 31.725,
+      "loPx": 30.22,
+      "open": 31.21,
+      "stkVolu": 39742103.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 32.24,
+      "hiPx": 32.68,
+      "loPx": 30.96,
+      "open": 31.655,
+      "stkVolu": 37885069.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 32.45,
+      "hiPx": 33.485,
+      "loPx": 32.37,
+      "open": 33.0,
+      "stkVolu": 29917816.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 31.7,
+      "hiPx": 33.635,
+      "loPx": 31.325,
+      "open": 33.55,
+      "stkVolu": 34482350.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 30.8,
+      "hiPx": 31.55,
+      "loPx": 30.66,
+      "open": 31.48,
+      "stkVolu": 19400442.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 31.2,
+      "hiPx": 31.29,
+      "loPx": 29.9,
+      "open": 30.83,
+      "stkVolu": 20774563.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 31.21,
+      "hiPx": 32.33,
+      "loPx": 30.97,
+      "open": 31.59,
+      "stkVolu": 24239906.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 30.12,
+      "hiPx": 30.76,
+      "loPx": 29.14,
+      "open": 30.72,
+      "stkVolu": 28135473.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 29.11,
+      "hiPx": 30.37,
+      "loPx": 28.8998,
+      "open": 30.19,
+      "stkVolu": 24089622.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 29.71,
+      "hiPx": 30.96,
+      "loPx": 28.8,
+      "open": 29.03,
+      "stkVolu": 26817001.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 29.67,
+      "hiPx": 30.17,
+      "loPx": 28.64,
+      "open": 30.0,
+      "stkVolu": 42513873.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 33.76,
+      "hiPx": 34.94,
+      "loPx": 31.7,
+      "open": 32.95,
+      "stkVolu": 115558234.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 30.85,
+      "hiPx": 33.49,
+      "loPx": 29.37,
+      "open": 33.015,
+      "stkVolu": 60313982.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 34.38,
+      "hiPx": 34.7,
+      "loPx": 31.22,
+      "open": 31.835,
+      "stkVolu": 49279810.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 33.53,
+      "hiPx": 33.905,
+      "loPx": 32.65,
+      "open": 33.21,
+      "stkVolu": 32251890.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 33.33,
+      "hiPx": 34.39,
+      "loPx": 33.01,
+      "open": 33.85,
+      "stkVolu": 24777531.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 32.04,
+      "hiPx": 33.91,
+      "loPx": 31.635,
+      "open": 33.89,
+      "stkVolu": 24547164.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 30.43,
+      "hiPx": 32.32,
+      "loPx": 30.42,
+      "open": 32.185,
+      "stkVolu": 25527940.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 30.54,
+      "hiPx": 31.22,
+      "loPx": 30.26,
+      "open": 30.64,
+      "stkVolu": 21660684.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 30.11,
+      "hiPx": 30.75,
+      "loPx": 29.58,
+      "open": 30.305,
+      "stkVolu": 20377352.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 29.71,
+      "hiPx": 30.415,
+      "loPx": 29.35,
+      "open": 30.2,
+      "stkVolu": 16814720.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 32.16,
+      "hiPx": 32.2,
+      "loPx": 30.99,
+      "open": 31.25,
+      "stkVolu": 42320070.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 32.42,
+      "hiPx": 32.91,
+      "loPx": 31.415,
+      "open": 31.415,
+      "stkVolu": 26058941.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 30.71,
+      "hiPx": 32.09,
+      "loPx": 30.565,
+      "open": 31.76,
+      "stkVolu": 21437208.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 31.13,
+      "hiPx": 31.37,
+      "loPx": 30.29,
+      "open": 31.05,
+      "stkVolu": 17982582.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 33.6,
+      "hiPx": 33.855,
+      "loPx": 31.46,
+      "open": 31.47,
+      "stkVolu": 32402874.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 32.28,
+      "hiPx": 33.45,
+      "loPx": 31.16,
+      "open": 33.22,
+      "stkVolu": 28496121.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 32.39,
+      "hiPx": 33.04,
+      "loPx": 31.38,
+      "open": 31.86,
+      "stkVolu": 27204820.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 31.83,
+      "hiPx": 31.975,
+      "loPx": 30.55,
+      "open": 30.9,
+      "stkVolu": 28730017.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 30.68,
+      "hiPx": 31.33,
+      "loPx": 29.6803,
+      "open": 30.89,
+      "stkVolu": 26566022.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 32.65,
+      "hiPx": 32.96,
+      "loPx": 30.85,
+      "open": 30.96,
+      "stkVolu": 31472436.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 32.24,
+      "hiPx": 33.51,
+      "loPx": 31.47,
+      "open": 32.315,
+      "stkVolu": 26932479.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 31.31,
+      "hiPx": 32.41,
+      "loPx": 31.115,
+      "open": 31.44,
+      "stkVolu": 21134588.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 31.98,
+      "hiPx": 32.16,
+      "loPx": 29.85,
+      "open": 30.7,
+      "stkVolu": 27705326.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 31.79,
+      "hiPx": 32.38,
+      "loPx": 31.555,
+      "open": 31.85,
+      "stkVolu": 19233134.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 31.79,
+      "hiPx": 33.07,
+      "loPx": 31.55,
+      "open": 32.51,
+      "stkVolu": 22009241.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 30.9,
+      "hiPx": 31.81,
+      "loPx": 30.8,
+      "open": 31.66,
+      "stkVolu": 16569358.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 30.75,
+      "hiPx": 31.225,
+      "loPx": 30.22,
+      "open": 31.04,
+      "stkVolu": 18279112.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 31.86,
+      "hiPx": 32.43,
+      "loPx": 30.92,
+      "open": 31.5,
+      "stkVolu": 28823950.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 31.51,
+      "hiPx": 32.811,
+      "loPx": 31.48,
+      "open": 31.955,
+      "stkVolu": 20833629.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 30.35,
+      "hiPx": 31.675,
+      "loPx": 30.325,
+      "open": 31.32,
+      "stkVolu": 24360497.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 30.79,
+      "hiPx": 31.52,
+      "loPx": 29.79,
+      "open": 30.0,
+      "stkVolu": 25754925.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 20.53,
+      "hiPx": 23.095,
+      "loPx": 20.35,
+      "open": 22.52,
+      "stkVolu": 242958521.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 21.58,
+      "hiPx": 22.14,
+      "loPx": 19.48,
+      "open": 20.31,
+      "stkVolu": 114269718.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 22.23,
+      "hiPx": 22.56,
+      "loPx": 20.99,
+      "open": 21.3,
+      "stkVolu": 69821358.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 24.05,
+      "hiPx": 24.19,
+      "loPx": 22.57,
+      "open": 22.63,
+      "stkVolu": 67917074.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 22.21,
+      "hiPx": 23.74,
+      "loPx": 21.86,
+      "open": 23.32,
+      "stkVolu": 53777298.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 21.97,
+      "hiPx": 22.36,
+      "loPx": 21.38,
+      "open": 22.21,
+      "stkVolu": 33020433.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 21.06,
+      "hiPx": 22.25,
+      "loPx": 20.71,
+      "open": 22.18,
+      "stkVolu": 34074917.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 22.77,
+      "hiPx": 22.8,
+      "loPx": 21.34,
+      "open": 21.39,
+      "stkVolu": 37631148.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 22.51,
+      "hiPx": 23.365,
+      "loPx": 22.35,
+      "open": 22.87,
+      "stkVolu": 33420872.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 23.22,
+      "hiPx": 23.335,
+      "loPx": 21.87,
+      "open": 21.98,
+      "stkVolu": 30446148.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 22.05,
+      "hiPx": 23.46,
+      "loPx": 22.03,
+      "open": 23.07,
+      "stkVolu": 23564773.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 22.67,
+      "hiPx": 22.69,
+      "loPx": 21.79,
+      "open": 22.0,
+      "stkVolu": 25328298.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 23.37,
+      "hiPx": 24.18,
+      "loPx": 22.86,
+      "open": 23.99,
+      "stkVolu": 31894248.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 23.22,
+      "hiPx": 23.95,
+      "loPx": 23.09,
+      "open": 23.39,
+      "stkVolu": 28653966.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 25.26,
+      "hiPx": 25.545,
+      "loPx": 23.64,
+      "open": 23.64,
+      "stkVolu": 43565769.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 25.97,
+      "hiPx": 25.99,
+      "loPx": 24.45,
+      "open": 25.06,
+      "stkVolu": 30023561.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 27.2,
+      "hiPx": 27.795,
+      "loPx": 26.5,
+      "open": 27.0,
+      "stkVolu": 40885366.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 27.29,
+      "hiPx": 27.93,
+      "loPx": 26.95,
+      "open": 27.73,
+      "stkVolu": 27816852.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 28.4,
+      "hiPx": 28.72,
+      "loPx": 26.67,
+      "open": 27.58,
+      "stkVolu": 28966108.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 28.56,
+      "hiPx": 29.13,
+      "loPx": 28.18,
+      "open": 29.06,
+      "stkVolu": 21872276.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 28.81,
+      "hiPx": 28.88,
+      "loPx": 27.71,
+      "open": 28.07,
+      "stkVolu": 22593909.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 28.43,
+      "hiPx": 29.9359,
+      "loPx": 28.35,
+      "open": 29.085,
+      "stkVolu": 29805186.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 29.18,
+      "hiPx": 29.44,
+      "loPx": 28.78,
+      "open": 28.88,
+      "stkVolu": 24811766.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 26.75,
+      "hiPx": 27.6,
+      "loPx": 26.0607,
+      "open": 26.5,
+      "stkVolu": 46874199.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 29.08,
+      "hiPx": 29.485,
+      "loPx": 27.28,
+      "open": 27.53,
+      "stkVolu": 38559400.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 27.85,
+      "hiPx": 29.49,
+      "loPx": 27.46,
+      "open": 28.825,
+      "stkVolu": 28746051.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 27.25,
+      "hiPx": 27.64,
+      "loPx": 26.51,
+      "open": 26.97,
+      "stkVolu": 23282197.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 26.32,
+      "hiPx": 27.09,
+      "loPx": 25.46,
+      "open": 27.028,
+      "stkVolu": 26097137.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 27.4,
+      "hiPx": 27.515,
+      "loPx": 26.35,
+      "open": 26.91,
+      "stkVolu": 21028128.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 27.09,
+      "hiPx": 28.3,
+      "loPx": 26.875,
+      "open": 27.64,
+      "stkVolu": 25043923.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 27.92,
+      "hiPx": 28.5,
+      "loPx": 27.34,
+      "open": 27.49,
+      "stkVolu": 29340519.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 27.83,
+      "hiPx": 28.29,
+      "loPx": 27.42,
+      "open": 28.25,
+      "stkVolu": 55291270.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 34.66,
+      "hiPx": 34.71,
+      "loPx": 31.12,
+      "open": 31.44,
+      "stkVolu": 127295696.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 33.62,
+      "hiPx": 35.58,
+      "loPx": 32.92,
+      "open": 34.005,
+      "stkVolu": 61495297.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 35.37,
+      "hiPx": 35.64,
+      "loPx": 32.3,
+      "open": 33.33,
+      "stkVolu": 50774248.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 33.52,
+      "hiPx": 36.37,
+      "loPx": 33.44,
+      "open": 35.07,
+      "stkVolu": 39601085.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 32.79,
+      "hiPx": 33.48,
+      "loPx": 31.24,
+      "open": 33.04,
+      "stkVolu": 35190084.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 32.0,
+      "hiPx": 33.01,
+      "loPx": 31.775,
+      "open": 32.9,
+      "stkVolu": 25441554.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 33.03,
+      "hiPx": 33.81,
+      "loPx": 31.52,
+      "open": 32.02,
+      "stkVolu": 32397638.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 31.04,
+      "hiPx": 31.96,
+      "loPx": 30.64,
+      "open": 31.6,
+      "stkVolu": 27358949.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 30.85,
+      "hiPx": 31.3,
+      "loPx": 29.52,
+      "open": 31.22,
+      "stkVolu": 26671792.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 30.56,
+      "hiPx": 31.345,
+      "loPx": 29.465,
+      "open": 30.27,
+      "stkVolu": 23166924.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 33.46,
+      "hiPx": 33.96,
+      "loPx": 30.87,
+      "open": 31.09,
+      "stkVolu": 38110972.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 33.46,
+      "hiPx": 33.7999,
+      "loPx": 32.26,
+      "open": 32.95,
+      "stkVolu": 28075549.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 35.58,
+      "hiPx": 35.935,
+      "loPx": 33.68,
+      "open": 33.8,
+      "stkVolu": 39440978.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 37.1,
+      "hiPx": 37.91,
+      "loPx": 35.4347,
+      "open": 36.0,
+      "stkVolu": 43168968.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 38.19,
+      "hiPx": 38.815,
+      "loPx": 36.76,
+      "open": 38.29,
+      "stkVolu": 35757991.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 41.3,
+      "hiPx": 43.55,
+      "loPx": 37.61,
+      "open": 38.0,
+      "stkVolu": 74574063.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 46.09,
+      "hiPx": 48.34,
+      "loPx": 44.17,
+      "open": 44.5,
+      "stkVolu": 93235112.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 46.88,
+      "hiPx": 48.08,
+      "loPx": 45.655,
+      "open": 45.8,
+      "stkVolu": 50422431.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 50.17,
+      "hiPx": 51.4,
+      "loPx": 48.56,
+      "open": 48.76,
+      "stkVolu": 54883660.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 47.42,
+      "hiPx": 50.02,
+      "loPx": 45.66,
+      "open": 49.47,
+      "stkVolu": 51041858.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 46.9,
+      "hiPx": 47.84,
+      "loPx": 45.21,
+      "open": 45.235,
+      "stkVolu": 32738391.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 41.64,
+      "hiPx": 45.2599,
+      "loPx": 41.0401,
+      "open": 45.0,
+      "stkVolu": 49259573.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 43.99,
+      "hiPx": 44.735,
+      "loPx": 42.18,
+      "open": 43.81,
+      "stkVolu": 31631051.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 40.64,
+      "hiPx": 44.95,
+      "loPx": 38.04,
+      "open": 44.9,
+      "stkVolu": 51851076.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 29.27,
+      "hiPx": 36.51,
+      "loPx": 29.14,
+      "open": 35.6,
+      "stkVolu": 191345438.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 31.97,
+      "hiPx": 32.05,
+      "loPx": 28.61,
+      "open": 29.3,
+      "stkVolu": 251249179.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 30.46,
+      "hiPx": 31.81,
+      "loPx": 29.45,
+      "open": 30.76,
+      "stkVolu": 84854716.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 30.85,
+      "hiPx": 32.07,
+      "loPx": 30.722,
+      "open": 31.73,
+      "stkVolu": 61776822.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 29.22,
+      "hiPx": 30.75,
+      "loPx": 29.12,
+      "open": 30.69,
+      "stkVolu": 54280797.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 27.78,
+      "hiPx": 29.84,
+      "loPx": 27.71,
+      "open": 29.765,
+      "stkVolu": 53631218.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 30.66,
+      "hiPx": 30.91,
+      "loPx": 28.28,
+      "open": 28.44,
+      "stkVolu": 68325332.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 35.46,
+      "hiPx": 36.8,
+      "loPx": 32.27,
+      "open": 32.3298,
+      "stkVolu": 128512315.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 33.32,
+      "hiPx": 34.41,
+      "loPx": 32.805,
+      "open": 33.25,
+      "stkVolu": 60658831.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 32.45,
+      "hiPx": 33.98,
+      "loPx": 31.3901,
+      "open": 33.45,
+      "stkVolu": 51833508.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 31.68,
+      "hiPx": 33.68,
+      "loPx": 31.3594,
+      "open": 33.34,
+      "stkVolu": 46185585.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 30.63,
+      "hiPx": 31.71,
+      "loPx": 30.28,
+      "open": 30.965,
+      "stkVolu": 48554539.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 28.15,
+      "hiPx": 31.22,
+      "loPx": 27.75,
+      "open": 31.0,
+      "stkVolu": 91157911.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 29.33,
+      "hiPx": 29.91,
+      "loPx": 28.17,
+      "open": 28.42,
+      "stkVolu": 56264036.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 27.65,
+      "hiPx": 28.63,
+      "loPx": 27.48,
+      "open": 28.28,
+      "stkVolu": 52034237.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 27.22,
+      "hiPx": 29.215,
+      "loPx": 26.695,
+      "open": 28.05,
+      "stkVolu": 42867499.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 27.19,
+      "hiPx": 27.74,
+      "loPx": 26.74,
+      "open": 27.5,
+      "stkVolu": 30951854.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 26.25,
+      "hiPx": 26.97,
+      "loPx": 25.405,
+      "open": 26.58,
+      "stkVolu": 38985406.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 28.17,
+      "hiPx": 28.22,
+      "loPx": 26.03,
+      "open": 26.14,
+      "stkVolu": 37264440.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 28.24,
+      "hiPx": 29.12,
+      "loPx": 28.185,
+      "open": 28.75,
+      "stkVolu": 33573063.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 28.31,
+      "hiPx": 29.0,
+      "loPx": 27.91,
+      "open": 28.3,
+      "stkVolu": 25067110.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 27.66,
+      "hiPx": 28.2399,
+      "loPx": 27.215,
+      "open": 27.64,
+      "stkVolu": 22796349.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 27.65,
+      "hiPx": 28.13,
+      "loPx": 27.32,
+      "open": 27.96,
+      "stkVolu": 22413519.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 26.89,
+      "hiPx": 28.35,
+      "loPx": 26.1719,
+      "open": 28.11,
+      "stkVolu": 25550557.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 24.68,
+      "hiPx": 26.72,
+      "loPx": 24.65,
+      "open": 26.52,
+      "stkVolu": 36021897.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 24.18,
+      "hiPx": 25.17,
+      "loPx": 23.38,
+      "open": 24.33,
+      "stkVolu": 32264796.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 23.83,
+      "hiPx": 24.5399,
+      "loPx": 23.772,
+      "open": 24.345,
+      "stkVolu": 24919435.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 25.5,
+      "hiPx": 25.54,
+      "loPx": 24.33,
+      "open": 24.4,
+      "stkVolu": 51156443.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 30.56,
+      "hiPx": 32.2844,
+      "loPx": 28.5,
+      "open": 28.89,
+      "stkVolu": 163015097.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 31.2,
+      "hiPx": 32.585,
+      "loPx": 30.18,
+      "open": 30.33,
+      "stkVolu": 86788866.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 30.1,
+      "hiPx": 31.33,
+      "loPx": 29.275,
+      "open": 30.62,
+      "stkVolu": 49701580.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 29.81,
+      "hiPx": 30.94,
+      "loPx": 28.5,
+      "open": 30.6,
+      "stkVolu": 35912282.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 28.45,
+      "hiPx": 28.87,
+      "loPx": 27.13,
+      "open": 28.64,
+      "stkVolu": 36449752.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 25.7,
+      "hiPx": 28.07,
+      "loPx": 25.68,
+      "open": 28.02,
+      "stkVolu": 40892234.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 27.73,
+      "hiPx": 28.1699,
+      "loPx": 26.6501,
+      "open": 26.84,
+      "stkVolu": 38544949.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 28.4,
+      "hiPx": 29.3,
+      "loPx": 27.21,
+      "open": 28.65,
+      "stkVolu": 34956061.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 28.64,
+      "hiPx": 28.925,
+      "loPx": 27.44,
+      "open": 28.0,
+      "stkVolu": 24010919.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 31.69,
+      "hiPx": 31.84,
+      "loPx": 29.07,
+      "open": 29.65,
+      "stkVolu": 56404626.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 30.32,
+      "hiPx": 31.78,
+      "loPx": 30.29,
+      "open": 31.71,
+      "stkVolu": 35605035.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 29.38,
+      "hiPx": 30.935,
+      "loPx": 29.33,
+      "open": 30.0,
+      "stkVolu": 26697951.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 31.13,
+      "hiPx": 31.34,
+      "loPx": 29.68,
+      "open": 29.94,
+      "stkVolu": 32380697.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 31.46,
+      "hiPx": 33.3856,
+      "loPx": 31.425,
+      "open": 32.0,
+      "stkVolu": 56320400.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 31.6,
+      "hiPx": 32.36,
+      "loPx": 30.92,
+      "open": 32.02,
+      "stkVolu": 95520451.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 37.61,
+      "hiPx": 38.15,
+      "loPx": 33.9401,
+      "open": 34.99,
+      "stkVolu": 165736379.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 39.16,
+      "hiPx": 42.31,
+      "loPx": 38.2,
+      "open": 38.28,
+      "stkVolu": 122775704.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 39.84,
+      "hiPx": 40.6,
+      "loPx": 38.73,
+      "open": 39.16,
+      "stkVolu": 61990870.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 38.28,
+      "hiPx": 39.51,
+      "loPx": 37.68,
+      "open": 39.31,
+      "stkVolu": 55467039.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 37.41,
+      "hiPx": 38.16,
+      "loPx": 36.22,
+      "open": 37.1,
+      "stkVolu": 52260068.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 36.58,
+      "hiPx": 37.685,
+      "loPx": 35.72,
+      "open": 37.15,
+      "stkVolu": 35466176.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 36.5,
+      "hiPx": 38.74,
+      "loPx": 35.582,
+      "open": 36.9,
+      "stkVolu": 51286605.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 37.24,
+      "hiPx": 37.67,
+      "loPx": 36.42,
+      "open": 37.155,
+      "stkVolu": 36474341.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 35.17,
+      "hiPx": 36.7,
+      "loPx": 34.09,
+      "open": 36.49,
+      "stkVolu": 39934865.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 38.46,
+      "hiPx": 38.6,
+      "loPx": 36.01,
+      "open": 36.13,
+      "stkVolu": 48106902.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 37.39,
+      "hiPx": 38.27,
+      "loPx": 37.23,
+      "open": 38.025,
+      "stkVolu": 33723170.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 38.46,
+      "hiPx": 39.47,
+      "loPx": 37.48,
+      "open": 38.69,
+      "stkVolu": 41662108.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

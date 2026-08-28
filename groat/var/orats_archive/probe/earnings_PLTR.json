@@ -1,0 +1,148 @@
+{
+  "data": [
+    {
+      "ticker": "PLTR",
+      "earnDate": "2020-11-12",
+      "anncTod": "1630",
+      "updatedAt": "2020-11-21T00:18:18Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2021-02-16",
+      "anncTod": "0900",
+      "updatedAt": "2021-02-27T00:18:23Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2021-05-11",
+      "anncTod": "0900",
+      "updatedAt": "2021-05-21T23:19:00Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2021-08-12",
+      "anncTod": "0900",
+      "updatedAt": "2021-08-20T23:18:36Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2021-11-09",
+      "anncTod": "0900",
+      "updatedAt": "2021-11-20T00:18:30Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2022-02-17",
+      "anncTod": "0900",
+      "updatedAt": "2022-02-26T00:18:11Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2022-05-09",
+      "anncTod": "0900",
+      "updatedAt": "2022-05-19T23:18:38Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2022-08-08",
+      "anncTod": "0900",
+      "updatedAt": "2022-08-18T23:20:39Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2022-11-07",
+      "anncTod": "0900",
+      "updatedAt": "2022-11-18T00:18:25Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2023-02-13",
+      "anncTod": "1630",
+      "updatedAt": "2023-02-24T00:18:35Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2023-05-08",
+      "anncTod": "1630",
+      "updatedAt": "2023-05-18T23:18:28Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2023-08-07",
+      "anncTod": "1630",
+      "updatedAt": "2023-08-17T23:18:24Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2023-11-02",
+      "anncTod": "0900",
+      "updatedAt": "2023-11-11T00:18:42Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2024-02-05",
+      "anncTod": "1630",
+      "updatedAt": "2024-02-16T00:18:44Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2024-05-06",
+      "anncTod": "1630",
+      "updatedAt": "2024-05-16T23:18:53Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2024-08-05",
+      "anncTod": "1630",
+      "updatedAt": "2024-08-15T23:18:56Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2024-11-04",
+      "anncTod": "1630",
+      "updatedAt": "2024-11-15T01:03:52Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2025-02-03",
+      "anncTod": "1630",
+      "updatedAt": "2025-02-14T03:44:26Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2025-05-05",
+      "anncTod": "1630",
+      "updatedAt": "2025-05-16T02:42:30Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2025-08-04",
+      "anncTod": "1630",
+      "updatedAt": "2025-08-15T02:41:32Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2025-11-03",
+      "anncTod": "1630",
+      "updatedAt": "2025-11-14T03:41:35Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2026-02-02",
+      "anncTod": "1630",
+      "updatedAt": "2026-02-13T03:42:07Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2026-05-04",
+      "anncTod": "1630",
+      "updatedAt": "2026-05-15T02:41:54Z"
+    },
+    {
+      "ticker": "PLTR",
+      "earnDate": "2026-08-03",
+      "anncTod": "1630",
+      "updatedAt": "2026-08-13T22:02:16Z"
+    }
+  ]
+}

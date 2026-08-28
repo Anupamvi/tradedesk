@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 556.22,
+      "hiPx": 557.2,
+      "loPx": 553.18,
+      "open": 553.18,
+      "stkVolu": 26443524.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 552.03,
+      "hiPx": 554.34,
+      "loPx": 549.58,
+      "open": 553.52,
+      "stkVolu": 45349323.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 552.34,
+      "hiPx": 554.01,
+      "loPx": 551.1,
+      "open": 553.38,
+      "stkVolu": 36153258.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 556.25,
+      "hiPx": 557.63,
+      "loPx": 553.1,
+      "open": 554.48,
+      "stkVolu": 43045534.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 555.45,
+      "hiPx": 557.3,
+      "loPx": 552.75,
+      "open": 556.89,
+      "stkVolu": 34710913.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 554.2,
+      "hiPx": 555.79,
+      "loPx": 552.05,
+      "open": 553.3,
+      "stkVolu": 39618635.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 556.21,
+      "hiPx": 556.945,
+      "loPx": 551.63,
+      "open": 553.99,
+      "stkVolu": 36453314.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 556.72,
+      "hiPx": 560.8,
+      "loPx": 556.66,
+      "open": 560.25,
+      "stkVolu": 43277661.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 557.29,
+      "hiPx": 560.21,
+      "loPx": 551.56,
+      "open": 557.28,
+      "stkVolu": 52314711.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 561.8,
+      "hiPx": 562.31,
+      "loPx": 557.21,
+      "open": 558.02,
+      "stkVolu": 40423778.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 561.26,
+      "hiPx": 564.7262,
+      "loPx": 559.98,
+      "open": 563.12,
+      "stkVolu": 50484704.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 564.17,
+      "hiPx": 566.06,
+      "loPx": 562.06,
+      "open": 562.09,
+      "stkVolu": 39595214.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 561.25,
+      "hiPx": 564.35,
+      "loPx": 558.61,
+      "open": 564.3,
+      "stkVolu": 43270647.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 563.81,
+      "hiPx": 563.85,
+      "loPx": 559.58,
+      "open": 562.34,
+      "stkVolu": 40215259.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 565.01,
+      "hiPx": 566.24,
+      "loPx": 563.295,
+      "open": 565.13,
+      "stkVolu": 42275541.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 566.37,
+      "hiPx": 567.695,
+      "loPx": 564.27,
+      "open": 564.93,
+      "stkVolu": 30630813.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 568.14,
+      "hiPx": 569.04,
+      "loPx": 566.87,
+      "open": 567.74,
+      "stkVolu": 31498739.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 567.26,
+      "hiPx": 572.11,
+      "loPx": 566.53,
+      "open": 570.76,
+      "stkVolu": 45463317.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 568.02,
+      "hiPx": 570.62,
+      "loPx": 565.05,
+      "open": 568.18,
+      "stkVolu": 43433777.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 565.01,
+      "hiPx": 574.63,
+      "loPx": 563.87,
+      "open": 574.54,
+      "stkVolu": 64613590.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 553.88,
+      "hiPx": 559.02,
+      "loPx": 551.68,
+      "open": 558.83,
+      "stkVolu": 69400789.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 564.1,
+      "hiPx": 564.315,
+      "loPx": 558.95,
+      "open": 559.05,
+      "stkVolu": 47669751.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 560.27,
+      "hiPx": 566.5607,
+      "loPx": 559.73,
+      "open": 565.39,
+      "stkVolu": 48666640.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 567.32,
+      "hiPx": 567.76,
+      "loPx": 560.63,
+      "open": 561.11,
+      "stkVolu": 41823677.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 569.24,
+      "hiPx": 573.32,
+      "loPx": 565.11,
+      "open": 571.67,
+      "stkVolu": 44462972.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 574.55,
+      "hiPx": 574.77,
+      "loPx": 570.15,
+      "open": 570.45,
+      "stkVolu": 35255472.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 572.85,
+      "hiPx": 576.8,
+      "loPx": 571.57,
+      "open": 574.69,
+      "stkVolu": 33112917.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 580.05,
+      "hiPx": 580.35,
+      "loPx": 572.485,
+      "open": 575.16,
+      "stkVolu": 42271441.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 580.34,
+      "hiPx": 583.3199,
+      "loPx": 578.94,
+      "open": 582.76,
+      "stkVolu": 41209294.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 579.89,
+      "hiPx": 581.88,
+      "loPx": 577.91,
+      "open": 578.28,
+      "stkVolu": 45425043.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 577.34,
+      "hiPx": 579.84,
+      "loPx": 575.5743,
+      "open": 579.8,
+      "stkVolu": 49480161.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 577.11,
+      "hiPx": 577.765,
+      "loPx": 575.2412,
+      "open": 576.44,
+      "stkVolu": 29830957.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 569.28,
+      "hiPx": 576.56,
+      "loPx": 568.25,
+      "open": 576.39,
+      "stkVolu": 53752635.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 565.9,
+      "hiPx": 568.45,
+      "loPx": 558.84,
+      "open": 568.33,
+      "stkVolu": 76781087.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 563.28,
+      "hiPx": 566.49,
+      "loPx": 560.98,
+      "open": 564.35,
+      "stkVolu": 46436899.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 571.97,
+      "hiPx": 573.99,
+      "loPx": 563.27,
+      "open": 564.67,
+      "stkVolu": 51502129.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 570.32,
+      "hiPx": 573.2871,
+      "loPx": 569.16,
+      "open": 570.4,
+      "stkVolu": 34044749.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 572.61,
+      "hiPx": 572.92,
+      "loPx": 568.8,
+      "open": 569.83,
+      "stkVolu": 34103014.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 573.49,
+      "hiPx": 574.405,
+      "loPx": 570.37,
+      "open": 571.59,
+      "stkVolu": 36927144.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 577.08,
+      "hiPx": 578.0,
+      "loPx": 572.46,
+      "open": 574.11,
+      "stkVolu": 46787857.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 570.4,
+      "hiPx": 575.03,
+      "loPx": 568.54,
+      "open": 574.655,
+      "stkVolu": 56030409.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 565.62,
+      "hiPx": 565.965,
+      "loPx": 559.535,
+      "open": 561.31,
+      "stkVolu": 65876765.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 570.07,
+      "hiPx": 571.695,
+      "loPx": 566.725,
+      "open": 569.23,
+      "stkVolu": 54230213.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 575.23,
+      "hiPx": 575.6,
+      "loPx": 569.025,
+      "open": 570.74,
+      "stkVolu": 47526280.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 576.06,
+      "hiPx": 581.12,
+      "loPx": 571.53,
+      "open": 580.49,
+      "stkVolu": 68342532.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 578.8,
+      "hiPx": 580.84,
+      "loPx": 577.77,
+      "open": 578.37,
+      "stkVolu": 46430425.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 580.51,
+      "hiPx": 580.94,
+      "loPx": 577.04,
+      "open": 579.67,
+      "stkVolu": 44007592.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 580.7,
+      "hiPx": 583.77,
+      "loPx": 578.55,
+      "open": 583.74,
+      "stkVolu": 49307959.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 584.08,
+      "hiPx": 584.88,
+      "loPx": 581.62,
+      "open": 583.24,
+      "stkVolu": 44745766.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 586.66,
+      "hiPx": 587.86,
+      "loPx": 584.1,
+      "open": 585.04,
+      "stkVolu": 50745886.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 591.68,
+      "hiPx": 591.79,
+      "loPx": 588.295,
+      "open": 588.44,
+      "stkVolu": 44360315.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 591.18,
+      "hiPx": 592.86,
+      "loPx": 590.49,
+      "open": 592.61,
+      "stkVolu": 36942130.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 590.0,
+      "hiPx": 591.75,
+      "loPx": 584.365,
+      "open": 591.1,
+      "stkVolu": 69384820.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 595.32,
+      "hiPx": 598.14,
+      "loPx": 592.96,
+      "open": 594.91,
+      "stkVolu": 61069294.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 599.35,
+      "hiPx": 600.05,
+      "loPx": 595.85,
+      "open": 597.33,
+      "stkVolu": 58196109.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 602.2,
+      "hiPx": 602.87,
+      "loPx": 597.72,
+      "open": 597.74,
+      "stkVolu": 57154769.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 598.2,
+      "hiPx": 602.57,
+      "loPx": 596.98,
+      "open": 602.37,
+      "stkVolu": 64635486.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 596.1,
+      "hiPx": 599.9,
+      "loPx": 593.36,
+      "open": 599.58,
+      "stkVolu": 49850301.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 593.53,
+      "hiPx": 595.115,
+      "loPx": 588.5,
+      "open": 592.2,
+      "stkVolu": 70920209.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 595.97,
+      "hiPx": 596.3,
+      "loPx": 591.06,
+      "open": 594.35,
+      "stkVolu": 54337416.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 598.73,
+      "hiPx": 602.05,
+      "loPx": 597.41,
+      "open": 599.11,
+      "stkVolu": 48332934.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 600.37,
+      "hiPx": 600.71,
+      "loPx": 596.1,
+      "open": 598.43,
+      "stkVolu": 46533814.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 603.25,
+      "hiPx": 603.79,
+      "loPx": 596.34,
+      "open": 597.17,
+      "stkVolu": 46899612.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 605.73,
+      "hiPx": 607.16,
+      "loPx": 602.93,
+      "open": 607.06,
+      "stkVolu": 43765410.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 603.18,
+      "hiPx": 607.3255,
+      "loPx": 601.385,
+      "open": 606.51,
+      "stkVolu": 46482098.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 607.71,
+      "hiPx": 609.36,
+      "loPx": 605.97,
+      "open": 608.45,
+      "stkVolu": 41962115.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 604.51,
+      "hiPx": 609.71,
+      "loPx": 603.03,
+      "open": 609.02,
+      "stkVolu": 58209463.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 611.44,
+      "hiPx": 611.75,
+      "loPx": 605.26,
+      "open": 605.41,
+      "stkVolu": 50629754.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 610.7,
+      "hiPx": 611.61,
+      "loPx": 607.48,
+      "open": 611.48,
+      "stkVolu": 45550958.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 589.5,
+      "hiPx": 613.18,
+      "loPx": 589.05,
+      "open": 611.4,
+      "stkVolu": 97614783.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 602.01,
+      "hiPx": 602.95,
+      "loPx": 597.23,
+      "open": 599.68,
+      "stkVolu": 65872584.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 598.0,
+      "hiPx": 602.69,
+      "loPx": 590.13,
+      "open": 595.31,
+      "stkVolu": 69203187.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 602.22,
+      "hiPx": 606.7,
+      "loPx": 595.93,
+      "open": 604.01,
+      "stkVolu": 62805456.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 599.99,
+      "hiPx": 608.31,
+      "loPx": 595.5,
+      "open": 605.11,
+      "stkVolu": 70981963.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 603.93,
+      "hiPx": 605.51,
+      "loPx": 596.37,
+      "open": 597.95,
+      "stkVolu": 72024872.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 611.54,
+      "hiPx": 612.8,
+      "loPx": 607.065,
+      "open": 607.14,
+      "stkVolu": 45761697.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 611.38,
+      "hiPx": 612.7213,
+      "loPx": 609.32,
+      "open": 611.64,
+      "stkVolu": 44538161.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 605.49,
+      "hiPx": 611.41,
+      "loPx": 599.74,
+      "open": 610.82,
+      "stkVolu": 61478802.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 610.58,
+      "hiPx": 611.37,
+      "loPx": 604.52,
+      "open": 604.91,
+      "stkVolu": 42844298.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 617.1,
+      "hiPx": 618.42,
+      "loPx": 615.13,
+      "open": 615.99,
+      "stkVolu": 47632473.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 628.09,
+      "hiPx": 628.55,
+      "loPx": 624.03,
+      "open": 624.52,
+      "stkVolu": 54098611.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 632.92,
+      "hiPx": 634.68,
+      "loPx": 629.25,
+      "open": 630.36,
+      "stkVolu": 61195733.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 635.77,
+      "hiPx": 637.01,
+      "loPx": 630.25,
+      "open": 635.59,
+      "stkVolu": 67422806.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 626.05,
+      "hiPx": 633.5,
+      "loPx": 625.94,
+      "open": 632.17,
+      "stkVolu": 61628621.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 629.07,
+      "hiPx": 634.2,
+      "loPx": 626.69,
+      "open": 634.17,
+      "stkVolu": 66305147.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 632.08,
+      "hiPx": 635.82,
+      "loPx": 629.85,
+      "open": 635.11,
+      "stkVolu": 37154307.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 619.25,
+      "hiPx": 626.95,
+      "loPx": 618.455,
+      "open": 623.28,
+      "stkVolu": 63830768.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 623.28,
+      "hiPx": 626.6,
+      "loPx": 617.21,
+      "open": 618.49,
+      "stkVolu": 48688484.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 611.67,
+      "hiPx": 622.04,
+      "loPx": 610.3,
+      "open": 621.79,
+      "stkVolu": 72115128.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 609.74,
+      "hiPx": 609.95,
+      "loPx": 598.67,
+      "open": 608.31,
+      "stkVolu": 81835388.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 623.23,
+      "hiPx": 624.31,
+      "loPx": 616.89,
+      "open": 618.92,
+      "stkVolu": 55919931.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 621.57,
+      "hiPx": 622.72,
+      "loPx": 617.52,
+      "open": 620.57,
+      "stkVolu": 44868841.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 621.08,
+      "hiPx": 624.86,
+      "loPx": 617.81,
+      "open": 624.84,
+      "stkVolu": 47444384.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 608.4,
+      "hiPx": 618.12,
+      "loPx": 606.08,
+      "open": 617.54,
+      "stkVolu": 71333634.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 608.86,
+      "hiPx": 613.35,
+      "loPx": 597.17,
+      "open": 599.55,
+      "stkVolu": 80087291.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 603.66,
+      "hiPx": 612.48,
+      "loPx": 599.87,
+      "open": 606.3,
+      "stkVolu": 63850367.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 596.31,
+      "hiPx": 602.31,
+      "loPx": 591.34,
+      "open": 599.62,
+      "stkVolu": 83327279.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 599.87,
+      "hiPx": 606.16,
+      "loPx": 594.59,
+      "open": 597.07,
+      "stkVolu": 73111487.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 585.67,
+      "hiPx": 614.03,
+      "loPx": 584.75,
+      "open": 611.62,
+      "stkVolu": 117743195.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 590.07,
+      "hiPx": 596.98,
+      "loPx": 580.74,
+      "open": 587.47,
+      "stkVolu": 103344155.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 605.16,
+      "hiPx": 606.68,
+      "loPx": 595.16,
+      "open": 595.28,
+      "stkVolu": 60168149.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 608.89,
+      "hiPx": 610.2601,
+      "loPx": 597.32,
+      "open": 603.51,
+      "stkVolu": 57560867.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 614.27,
+      "hiPx": 616.19,
+      "loPx": 610.39,
+      "open": 612.51,
+      "stkVolu": 42393598.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 619.25,
+      "hiPx": 619.32,
+      "loPx": 615.4174,
+      "open": 616.11,
+      "stkVolu": 23034394.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 617.17,
+      "hiPx": 619.4401,
+      "loPx": 612.52,
+      "open": 613.63,
+      "stkVolu": 40957588.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 622.0,
+      "hiPx": 623.75,
+      "loPx": 617.59,
+      "open": 619.46,
+      "stkVolu": 54541834.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 623.52,
+      "hiPx": 624.22,
+      "loPx": 618.03,
+      "open": 619.62,
+      "stkVolu": 47841627.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 622.94,
+      "hiPx": 624.94,
+      "loPx": 619.54,
+      "open": 624.93,
+      "stkVolu": 47067751.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 625.48,
+      "hiPx": 628.92,
+      "loPx": 623.71,
+      "open": 624.38,
+      "stkVolu": 53614169.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 624.28,
+      "hiPx": 628.84,
+      "loPx": 621.69,
+      "open": 627.21,
+      "stkVolu": 43462406.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 625.05,
+      "hiPx": 625.87,
+      "loPx": 621.0,
+      "open": 623.01,
+      "stkVolu": 37155999.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 627.61,
+      "hiPx": 629.21,
+      "loPx": 620.99,
+      "open": 623.85,
+      "stkVolu": 55031384.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 625.58,
+      "hiPx": 625.78,
+      "loPx": 617.72,
+      "open": 623.82,
+      "stkVolu": 58272844.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 613.62,
+      "hiPx": 623.54,
+      "loPx": 611.36,
+      "open": 622.08,
+      "stkVolu": 75158726.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 610.54,
+      "hiPx": 618.42,
+      "loPx": 609.32,
+      "open": 618.37,
+      "stkVolu": 49538197.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 611.75,
+      "hiPx": 613.51,
+      "loPx": 606.9101,
+      "open": 608.26,
+      "stkVolu": 55152819.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 600.41,
+      "hiPx": 613.65,
+      "loPx": 600.28,
+      "open": 613.06,
+      "stkVolu": 70654327.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 609.11,
+      "hiPx": 612.93,
+      "loPx": 606.92,
+      "open": 609.8,
+      "stkVolu": 78875824.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 617.05,
+      "hiPx": 617.62,
+      "loPx": 611.87,
+      "open": 611.95,
+      "stkVolu": 60369829.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 619.21,
+      "hiPx": 621.65,
+      "loPx": 617.77,
+      "open": 621.35,
+      "stkVolu": 43703101.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 622.11,
+      "hiPx": 622.41,
+      "loPx": 617.78,
+      "open": 618.2,
+      "stkVolu": 41120445.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 623.93,
+      "hiPx": 624.28,
+      "loPx": 621.72,
+      "open": 621.99,
+      "stkVolu": 18468707.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 623.89,
+      "hiPx": 625.515,
+      "loPx": 623.14,
+      "open": 624.66,
+      "stkVolu": 28959778.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 620.87,
+      "hiPx": 622.78,
+      "loPx": 618.73,
+      "open": 620.1,
+      "stkVolu": 32458308.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 619.43,
+      "hiPx": 622.18,
+      "loPx": 619.215,
+      "open": 619.84,
+      "stkVolu": 31226754.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 614.31,
+      "hiPx": 619.96,
+      "loPx": 614.05,
+      "open": 619.65,
+      "stkVolu": 40746527.0,
+      "ticker": "QQQ",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 613.12,
+      "hiPx": 622.85,
+      "loPx": 610.15,
+      "open": 620.06,
+      "stkVolu": 61859163.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 617.99,
+      "hiPx": 620.81,
+      "loPx": 616.72,
+      "open": 619.32,
+      "stkVolu": 46828359.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 623.42,
+      "hiPx": 624.0213,
+      "loPx": 618.54,
+      "open": 619.23,
+      "stkVolu": 43137520.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 624.02,
+      "hiPx": 627.94,
+      "loPx": 622.56,
+      "open": 623.04,
+      "stkVolu": 44880339.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 620.47,
+      "hiPx": 623.42,
+      "loPx": 617.8,
+      "open": 623.03,
+      "stkVolu": 50435941.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 626.65,
+      "hiPx": 627.89,
+      "loPx": 619.06,
+      "open": 621.41,
+      "stkVolu": 49688734.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 627.17,
+      "hiPx": 628.845,
+      "loPx": 622.26,
+      "open": 622.31,
+      "stkVolu": 37388651.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 626.24,
+      "hiPx": 629.47,
+      "loPx": 623.695,
+      "open": 627.27,
+      "stkVolu": 44481380.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 619.55,
+      "hiPx": 623.45,
+      "loPx": 614.56,
+      "open": 622.24,
+      "stkVolu": 72598700.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 621.78,
+      "hiPx": 630.0,
+      "loPx": 620.75,
+      "open": 626.6,
+      "stkVolu": 53934892.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 621.26,
+      "hiPx": 626.08,
+      "loPx": 618.88,
+      "open": 625.5,
+      "stkVolu": 61058094.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 608.06,
+      "hiPx": 615.055,
+      "loPx": 607.05,
+      "open": 610.53,
+      "stkVolu": 81988898.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 616.28,
+      "hiPx": 620.42,
+      "loPx": 607.8635,
+      "open": 609.47,
+      "stkVolu": 79837881.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 620.76,
+      "hiPx": 622.46,
+      "loPx": 617.78,
+      "open": 622.35,
+      "stkVolu": 42254757.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 622.72,
+      "hiPx": 625.3999,
+      "loPx": 618.65,
+      "open": 619.73,
+      "stkVolu": 43645825.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 625.46,
+      "hiPx": 627.61,
+      "loPx": 622.12,
+      "open": 623.21,
+      "stkVolu": 35983008.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 631.13,
+      "hiPx": 632.0427,
+      "loPx": 627.34,
+      "open": 628.91,
+      "stkVolu": 38997212.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 633.22,
+      "hiPx": 636.6,
+      "loPx": 631.81,
+      "open": 635.46,
+      "stkVolu": 50691691.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 629.43,
+      "hiPx": 633.67,
+      "loPx": 618.27,
+      "open": 632.65,
+      "stkVolu": 79944047.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 621.87,
+      "hiPx": 628.256,
+      "loPx": 619.2975,
+      "open": 625.71,
+      "stkVolu": 65650714.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 626.14,
+      "hiPx": 628.49,
+      "loPx": 618.66,
+      "open": 618.7,
+      "stkVolu": 49020292.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 616.52,
+      "hiPx": 629.98,
+      "loPx": 610.96,
+      "open": 628.3,
+      "stkVolu": 81233969.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 605.75,
+      "hiPx": 615.1,
+      "loPx": 600.47,
+      "open": 615.02,
+      "stkVolu": 81850748.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 597.03,
+      "hiPx": 604.81,
+      "loPx": 594.76,
+      "open": 600.21,
+      "stkVolu": 89354492.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 609.65,
+      "hiPx": 611.41,
+      "loPx": 598.77,
+      "open": 600.19,
+      "stkVolu": 78019338.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 614.32,
+      "hiPx": 616.46,
+      "loPx": 605.07,
+      "open": 607.54,
+      "stkVolu": 56797557.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 611.47,
+      "hiPx": 617.02,
+      "loPx": 611.01,
+      "open": 615.305,
+      "stkVolu": 53938859.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 613.11,
+      "hiPx": 617.52,
+      "loPx": 607.69,
+      "open": 616.38,
+      "stkVolu": 58575101.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 600.64,
+      "hiPx": 615.81,
+      "loPx": 599.5699,
+      "open": 614.71,
+      "stkVolu": 81378903.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 601.92,
+      "hiPx": 606.48,
+      "loPx": 596.42,
+      "open": 600.43,
+      "stkVolu": 69237547.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 601.3,
+      "hiPx": 603.95,
+      "loPx": 593.34,
+      "open": 598.375,
+      "stkVolu": 69013763.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 605.79,
+      "hiPx": 609.771,
+      "loPx": 600.72,
+      "open": 602.11,
+      "stkVolu": 64250668.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 603.47,
+      "hiPx": 605.815,
+      "loPx": 600.75,
+      "open": 602.81,
+      "stkVolu": 60960839.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 608.81,
+      "hiPx": 610.35,
+      "loPx": 599.23,
+      "open": 600.12,
+      "stkVolu": 74127323.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 601.41,
+      "hiPx": 608.01,
+      "loPx": 599.05,
+      "open": 606.605,
+      "stkVolu": 63859111.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 607.87,
+      "hiPx": 608.99,
+      "loPx": 599.73,
+      "open": 602.4,
+      "stkVolu": 55023732.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 616.68,
+      "hiPx": 616.83,
+      "loPx": 611.0,
+      "open": 611.07,
+      "stkVolu": 55710653.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 609.24,
+      "hiPx": 615.59,
+      "loPx": 603.98,
+      "open": 615.59,
+      "stkVolu": 96178870.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 607.29,
+      "hiPx": 608.32,
+      "loPx": 602.19,
+      "open": 602.98,
+      "stkVolu": 68125196.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 608.09,
+      "hiPx": 609.92,
+      "loPx": 597.99,
+      "open": 598.86,
+      "stkVolu": 75264644.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 601.58,
+      "hiPx": 603.96,
+      "loPx": 591.87,
+      "open": 596.33,
+      "stkVolu": 97015532.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 610.75,
+      "hiPx": 612.88,
+      "loPx": 603.43,
+      "open": 604.16,
+      "stkVolu": 70943888.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 608.91,
+      "hiPx": 612.76,
+      "loPx": 602.26,
+      "open": 607.4,
+      "stkVolu": 89602407.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 599.75,
+      "hiPx": 606.0,
+      "loPx": 598.33,
+      "open": 600.31,
+      "stkVolu": 86302307.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 607.76,
+      "hiPx": 609.27,
+      "loPx": 591.33,
+      "open": 594.225,
+      "stkVolu": 93068170.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 607.77,
+      "hiPx": 613.29,
+      "loPx": 605.42,
+      "open": 607.78,
+      "stkVolu": 64078867.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 607.69,
+      "hiPx": 612.43,
+      "loPx": 605.03,
+      "open": 608.95,
+      "stkVolu": 60114800.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 597.26,
+      "hiPx": 604.14,
+      "loPx": 597.05,
+      "open": 602.76,
+      "stkVolu": 71836629.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 593.72,
+      "hiPx": 603.5999,
+      "loPx": 592.57,
+      "open": 599.73,
+      "stkVolu": 63145490.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 600.38,
+      "hiPx": 603.86,
+      "loPx": 599.11,
+      "open": 600.04,
+      "stkVolu": 49077155.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 603.31,
+      "hiPx": 605.9,
+      "loPx": 601.87,
+      "open": 603.14,
+      "stkVolu": 47106607.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 594.9,
+      "hiPx": 603.16,
+      "loPx": 594.56,
+      "open": 601.49,
+      "stkVolu": 56127962.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 593.02,
+      "hiPx": 595.8,
+      "loPx": 587.08,
+      "open": 589.51,
+      "stkVolu": 75597578.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 582.06,
+      "hiPx": 591.17,
+      "loPx": 578.54,
+      "open": 591.06,
+      "stkVolu": 91964677.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 588.0,
+      "hiPx": 595.08,
+      "loPx": 585.96,
+      "open": 590.52,
+      "stkVolu": 89936118.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 583.98,
+      "hiPx": 587.93,
+      "loPx": 581.93,
+      "open": 584.81,
+      "stkVolu": 57750895.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 587.82,
+      "hiPx": 591.37,
+      "loPx": 585.69,
+      "open": 589.14,
+      "stkVolu": 60475491.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 573.79,
+      "hiPx": 584.63,
+      "loPx": 573.43,
+      "open": 582.6,
+      "stkVolu": 81492124.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 562.58,
+      "hiPx": 571.02,
+      "loPx": 561.57,
+      "open": 570.81,
+      "stkVolu": 82702240.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 558.28,
+      "hiPx": 568.05,
+      "loPx": 555.6,
+      "open": 567.38,
+      "stkVolu": 70602622.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 577.18,
+      "hiPx": 578.64,
+      "loPx": 564.21,
+      "open": 564.29,
+      "stkVolu": 95877997.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 584.31,
+      "hiPx": 587.739,
+      "loPx": 580.42,
+      "open": 581.48,
+      "stkVolu": 79435132.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 584.98,
+      "hiPx": 586.05,
+      "loPx": 571.92,
+      "open": 573.97,
+      "stkVolu": 50941709.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 588.5,
+      "hiPx": 590.61,
+      "loPx": 584.69,
+      "open": 586.23,
+      "stkVolu": 35108496.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 588.59,
+      "hiPx": 588.98,
+      "loPx": 578.4001,
+      "open": 585.64,
+      "stkVolu": 49948195.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 606.09,
+      "hiPx": 609.9,
+      "loPx": 602.12,
+      "open": 608.71,
+      "stkVolu": 63085996.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 610.19,
+      "hiPx": 610.5,
+      "loPx": 603.03,
+      "open": 605.93,
+      "stkVolu": 37837538.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 611.07,
+      "hiPx": 613.67,
+      "loPx": 609.58,
+      "open": 611.84,
+      "stkVolu": 34038533.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 617.39,
+      "hiPx": 626.74,
+      "loPx": 608.11,
+      "open": 609.48,
+      "stkVolu": 32972110.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 628.6,
+      "hiPx": 628.6,
+      "loPx": 620.1,
+      "open": 620.22,
+      "stkVolu": 49921081.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 637.4,
+      "hiPx": 637.83,
+      "loPx": 628.2,
+      "open": 629.08,
+      "stkVolu": 50102386.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 640.47,
+      "hiPx": 642.18,
+      "loPx": 635.255,
+      "open": 639.21,
+      "stkVolu": 42320581.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 648.85,
+      "hiPx": 650.0,
+      "loPx": 644.07,
+      "open": 645.59,
+      "stkVolu": 53488871.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 646.79,
+      "hiPx": 648.76,
+      "loPx": 642.52,
+      "open": 648.04,
+      "stkVolu": 37138511.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 644.33,
+      "hiPx": 650.2,
+      "loPx": 642.21,
+      "open": 648.41,
+      "stkVolu": 39580523.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 655.11,
+      "hiPx": 655.33,
+      "loPx": 648.52,
+      "open": 650.15,
+      "stkVolu": 37368402.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 651.42,
+      "hiPx": 656.92,
+      "loPx": 645.52,
+      "open": 653.55,
+      "stkVolu": 40099827.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 663.88,
+      "hiPx": 664.51,
+      "loPx": 656.5301,
+      "open": 658.51,
+      "stkVolu": 45563050.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 664.23,
+      "hiPx": 664.43,
+      "loPx": 660.69,
+      "open": 663.4,
+      "stkVolu": 32717030.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 657.55,
+      "hiPx": 659.64,
+      "loPx": 653.81,
+      "open": 657.41,
+      "stkVolu": 34147916.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 661.57,
+      "hiPx": 661.72,
+      "loPx": 656.5899,
+      "open": 658.63,
+      "stkVolu": 31724860.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 667.74,
+      "hiPx": 668.9,
+      "loPx": 657.56,
+      "open": 665.35,
+      "stkVolu": 40622226.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 674.15,
+      "hiPx": 675.97,
+      "loPx": 668.8,
+      "open": 669.16,
+      "stkVolu": 39172607.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 672.88,
+      "hiPx": 676.73,
+      "loPx": 668.9,
+      "open": 674.66,
+      "stkVolu": 34541990.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 681.61,
+      "hiPx": 682.7734,
+      "loPx": 677.51,
+      "open": 677.96,
+      "stkVolu": 37101063.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 695.77,
+      "hiPx": 695.93,
+      "loPx": 686.48,
+      "open": 687.78,
+      "stkVolu": 38778492.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 694.94,
+      "hiPx": 701.24,
+      "loPx": 691.77,
+      "open": 696.58,
+      "stkVolu": 43779087.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 711.23,
+      "hiPx": 711.23,
+      "loPx": 699.5,
+      "open": 699.92,
+      "stkVolu": 44320421.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 713.29,
+      "hiPx": 714.59,
+      "loPx": 708.91,
+      "open": 710.36,
+      "stkVolu": 36019146.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 707.24,
+      "hiPx": 710.18,
+      "loPx": 696.64,
+      "open": 708.22,
+      "stkVolu": 45873009.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 714.71,
+      "hiPx": 716.65,
+      "loPx": 704.83,
+      "open": 709.96,
+      "stkVolu": 40012526.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 719.79,
+      "hiPx": 722.03,
+      "loPx": 714.22,
+      "open": 714.62,
+      "stkVolu": 33327545.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 708.93,
+      "hiPx": 715.13,
+      "loPx": 705.55,
+      "open": 710.14,
+      "stkVolu": 51792656.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 705.88,
+      "hiPx": 712.07,
+      "loPx": 698.85,
+      "open": 711.54,
+      "stkVolu": 49834549.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 701.53,
+      "hiPx": 706.49,
+      "loPx": 695.25,
+      "open": 699.81,
+      "stkVolu": 46827529.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 713.15,
+      "hiPx": 713.15,
+      "loPx": 703.79,
+      "open": 705.29,
+      "stkVolu": 36779222.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 714.51,
+      "hiPx": 717.12,
+      "loPx": 706.77,
+      "open": 708.99,
+      "stkVolu": 36415360.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 717.54,
+      "hiPx": 722.12,
+      "loPx": 715.95,
+      "open": 718.07,
+      "stkVolu": 33118575.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 730.28,
+      "hiPx": 731.17,
+      "loPx": 724.16,
+      "open": 725.96,
+      "stkVolu": 34254692.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 729.45,
+      "hiPx": 733.32,
+      "loPx": 725.44,
+      "open": 732.96,
+      "stkVolu": 35148674.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 735.6,
+      "hiPx": 736.6,
+      "loPx": 726.41,
+      "open": 729.73,
+      "stkVolu": 32839952.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 738.31,
+      "hiPx": 741.63,
+      "loPx": 735.25,
+      "open": 737.84,
+      "stkVolu": 37541668.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 742.74,
+      "hiPx": 745.65,
+      "loPx": 735.99,
+      "open": 737.04,
+      "stkVolu": 33890559.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 746.16,
+      "hiPx": 746.44,
+      "loPx": 739.23,
+      "open": 742.4,
+      "stkVolu": 30085237.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 744.21,
+      "hiPx": 748.65,
+      "loPx": 741.01,
+      "open": 747.31,
+      "stkVolu": 40270198.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 740.61,
+      "hiPx": 743.4988,
+      "loPx": 732.62,
+      "open": 735.48,
+      "stkVolu": 40782580.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 705.06,
+      "hiPx": 731.69,
+      "loPx": 704.32,
+      "open": 730.06,
+      "stkVolu": 99606571.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 716.07,
+      "hiPx": 723.03,
+      "loPx": 713.07,
+      "open": 717.81,
+      "stkVolu": 47401451.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 707.83,
+      "hiPx": 725.66,
+      "loPx": 686.37,
+      "open": 722.98,
+      "stkVolu": 91932171.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 693.69,
+      "hiPx": 711.28,
+      "loPx": 692.93,
+      "open": 701.66,
+      "stkVolu": 65334283.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 717.12,
+      "hiPx": 718.3721,
+      "loPx": 695.0,
+      "open": 699.29,
+      "stkVolu": 71798857.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 721.34,
+      "hiPx": 724.01,
+      "loPx": 711.28,
+      "open": 717.61,
+      "stkVolu": 51236021.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 744.0,
+      "hiPx": 744.7599,
+      "loPx": 737.38,
+      "open": 738.1,
+      "stkVolu": 46710216.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 729.86,
+      "hiPx": 744.22,
+      "loPx": 729.64,
+      "open": 742.25,
+      "stkVolu": 45348675.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 722.51,
+      "hiPx": 735.68,
+      "loPx": 720.85,
+      "open": 735.19,
+      "stkVolu": 51669322.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 740.62,
+      "hiPx": 741.82,
+      "loPx": 732.51,
+      "open": 737.2,
+      "stkVolu": 50154595.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 737.95,
+      "hiPx": 745.45,
+      "loPx": 734.39,
+      "open": 742.02,
+      "stkVolu": 43518595.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 713.65,
+      "hiPx": 723.61,
+      "loPx": 712.1101,
+      "open": 715.74,
+      "stkVolu": 53354151.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 710.62,
+      "hiPx": 719.93,
+      "loPx": 704.45,
+      "open": 715.37,
+      "stkVolu": 52480437.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 716.38,
+      "hiPx": 726.83,
+      "loPx": 705.3,
+      "open": 725.9,
+      "stkVolu": 50144089.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 706.52,
+      "hiPx": 715.555,
+      "loPx": 702.81,
+      "open": 707.13,
+      "stkVolu": 47081821.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 724.08,
+      "hiPx": 724.58,
+      "loPx": 705.172,
+      "open": 713.99,
+      "stkVolu": 44939090.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 736.4,
+      "hiPx": 737.62,
+      "loPx": 723.91,
+      "open": 724.18,
+      "stkVolu": 42121829.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 725.17,
+      "hiPx": 731.92,
+      "loPx": 724.6,
+      "open": 729.19,
+      "stkVolu": 40803791.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 712.6,
+      "hiPx": 730.83,
+      "loPx": 707.56,
+      "open": 725.58,
+      "stkVolu": 51086080.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 722.82,
+      "hiPx": 726.08,
+      "loPx": 718.45,
+      "open": 719.93,
+      "stkVolu": 30220428.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 709.43,
+      "hiPx": 716.35,
+      "loPx": 704.9,
+      "open": 714.17,
+      "stkVolu": 42483079.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 711.44,
+      "hiPx": 712.2599,
+      "loPx": 700.91,
+      "open": 704.95,
+      "stkVolu": 35603179.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 723.28,
+      "hiPx": 724.23,
+      "loPx": 715.125,
+      "open": 718.33,
+      "stkVolu": 33654712.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 725.51,
+      "hiPx": 726.39,
+      "loPx": 717.0,
+      "open": 720.7,
+      "stkVolu": 26415898.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 711.74,
+      "hiPx": 718.74,
+      "loPx": 710.08,
+      "open": 717.72,
+      "stkVolu": 36552362.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 719.69,
+      "hiPx": 722.29,
+      "loPx": 714.34,
+      "open": 720.22,
+      "stkVolu": 29448117.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 717.74,
+      "hiPx": 724.36,
+      "loPx": 710.23,
+      "open": 723.85,
+      "stkVolu": 32627583.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 705.94,
+      "hiPx": 713.599,
+      "loPx": 702.61,
+      "open": 712.01,
+      "stkVolu": 39402024.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 695.33,
+      "hiPx": 702.3,
+      "loPx": 686.76,
+      "open": 691.65,
+      "stkVolu": 54109267.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 696.06,
+      "hiPx": 705.8,
+      "loPx": 695.51,
+      "open": 702.16,
+      "stkVolu": 29687558.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 708.97,
+      "hiPx": 710.05,
+      "loPx": 702.8,
+      "open": 706.57,
+      "stkVolu": 33728341.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 705.35,
+      "hiPx": 709.65,
+      "loPx": 703.62,
+      "open": 703.62,
+      "stkVolu": 23692181.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 691.96,
+      "hiPx": 698.66,
+      "loPx": 687.79,
+      "open": 694.67,
+      "stkVolu": 44028575.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 684.23,
+      "hiPx": 692.63,
+      "loPx": 682.48,
+      "open": 690.41,
+      "stkVolu": 42876658.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 682.12,
+      "hiPx": 692.3,
+      "loPx": 675.945,
+      "open": 691.68,
+      "stkVolu": 42681473.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 675.49,
+      "hiPx": 679.4,
+      "loPx": 667.88,
+      "open": 676.23,
+      "stkVolu": 51398741.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 661.73,
+      "hiPx": 680.05,
+      "loPx": 661.14,
+      "open": 675.505,
+      "stkVolu": 57233269.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 683.55,
+      "hiPx": 685.12,
+      "loPx": 673.3,
+      "open": 674.76,
+      "stkVolu": 66753681.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 687.99,
+      "hiPx": 695.77,
+      "loPx": 680.0512,
+      "open": 692.11,
+      "stkVolu": 50540483.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 700.07,
+      "hiPx": 701.59,
+      "loPx": 685.82,
+      "open": 688.3,
+      "stkVolu": 44965071.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 723.85,
+      "hiPx": 725.66,
+      "loPx": 707.53,
+      "open": 708.16,
+      "stkVolu": 59778624.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 717.3,
+      "hiPx": 728.54,
+      "loPx": 716.92,
+      "open": 726.25,
+      "stkVolu": 33540176.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 714.65,
+      "hiPx": 719.32,
+      "loPx": 708.5,
+      "open": 710.82,
+      "stkVolu": 33035860.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 723.03,
+      "hiPx": 723.63,
+      "loPx": 716.51,
+      "open": 720.15,
+      "stkVolu": 31070371.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 720.87,
+      "hiPx": 724.67,
+      "loPx": 720.33,
+      "open": 722.39,
+      "stkVolu": 26243183.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 718.45,
+      "hiPx": 723.35,
+      "loPx": 715.5,
+      "open": 723.29,
+      "stkVolu": 29286144.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 723.7,
+      "hiPx": 727.25,
+      "loPx": 722.92,
+      "open": 727.08,
+      "stkVolu": 29065976.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 732.07,
+      "hiPx": 733.96,
+      "loPx": 724.03,
+      "open": 725.15,
+      "stkVolu": 31599737.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 731.07,
+      "hiPx": 734.39,
+      "loPx": 728.32,
+      "open": 733.41,
+      "stkVolu": 23790607.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 729.87,
+      "hiPx": 734.58,
+      "loPx": 729.27,
+      "open": 732.95,
+      "stkVolu": 26452580.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 717.51,
+      "hiPx": 722.13,
+      "loPx": 715.92,
+      "open": 720.21,
+      "stkVolu": 48997172.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 716.08,
+      "hiPx": 721.4999,
+      "loPx": 712.61,
+      "open": 720.39,
+      "stkVolu": 35801712.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 710.93,
+      "hiPx": 714.94,
+      "loPx": 708.52,
+      "open": 712.09,
+      "stkVolu": 33396416.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 713.44,
+      "hiPx": 715.6738,
+      "loPx": 709.2,
+      "open": 715.23,
+      "stkVolu": 33399407.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 706.32,
+      "hiPx": 709.79,
+      "loPx": 702.7,
+      "open": 709.66,
+      "stkVolu": 37443142.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 710.72,
+      "hiPx": 714.04,
+      "loPx": 707.45,
+      "open": 711.22,
+      "stkVolu": 23869646.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 711.37,
+      "hiPx": 713.02,
+      "loPx": 707.97,
+      "open": 708.41,
+      "stkVolu": 20392390.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 721.11,
+      "hiPx": 721.35,
+      "loPx": 714.525,
+      "open": 716.93,
+      "stkVolu": 28723422.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}

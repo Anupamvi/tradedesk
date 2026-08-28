@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 272.15,
+      "hiPx": 274.73,
+      "loPx": 269.315,
+      "open": 269.7,
+      "stkVolu": 5031804.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-03"
+    },
+    {
+      "clsPx": 269.8,
+      "hiPx": 274.0,
+      "loPx": 268.2114,
+      "open": 271.51,
+      "stkVolu": 6283544.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-07"
+    },
+    {
+      "clsPx": 273.65,
+      "hiPx": 276.8,
+      "loPx": 269.73,
+      "open": 270.79,
+      "stkVolu": 6661156.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-08"
+    },
+    {
+      "clsPx": 270.92,
+      "hiPx": 275.56,
+      "loPx": 269.37,
+      "open": 274.36,
+      "stkVolu": 6373573.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-09"
+    },
+    {
+      "clsPx": 263.97,
+      "hiPx": 271.485,
+      "loPx": 263.21,
+      "open": 270.9,
+      "stkVolu": 7252495.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-10"
+    },
+    {
+      "clsPx": 258.07,
+      "hiPx": 262.95,
+      "loPx": 257.26,
+      "open": 262.58,
+      "stkVolu": 7011161.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-11"
+    },
+    {
+      "clsPx": 259.68,
+      "hiPx": 262.23,
+      "loPx": 257.5,
+      "open": 258.6,
+      "stkVolu": 6533856.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-14"
+    },
+    {
+      "clsPx": 257.58,
+      "hiPx": 261.81,
+      "loPx": 257.23,
+      "open": 261.0,
+      "stkVolu": 5201492.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 257.95,
+      "hiPx": 258.98,
+      "loPx": 254.52,
+      "open": 258.93,
+      "stkVolu": 5649489.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 259.88,
+      "hiPx": 260.2,
+      "loPx": 256.655,
+      "open": 257.99,
+      "stkVolu": 5837430.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 262.38,
+      "hiPx": 262.98,
+      "loPx": 259.12,
+      "open": 260.3,
+      "stkVolu": 6381212.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 262.28,
+      "hiPx": 264.31,
+      "loPx": 261.6375,
+      "open": 263.62,
+      "stkVolu": 6714731.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 263.59,
+      "hiPx": 265.89,
+      "loPx": 262.0,
+      "open": 263.0,
+      "stkVolu": 5001439.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 267.22,
+      "hiPx": 268.48,
+      "loPx": 262.5,
+      "open": 263.915,
+      "stkVolu": 5620704.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 267.7,
+      "hiPx": 269.3,
+      "loPx": 265.64,
+      "open": 267.98,
+      "stkVolu": 5877061.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 269.11,
+      "hiPx": 271.0988,
+      "loPx": 267.01,
+      "open": 268.01,
+      "stkVolu": 4015439.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 270.25,
+      "hiPx": 270.34,
+      "loPx": 266.59,
+      "open": 269.5,
+      "stkVolu": 4533658.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 267.39,
+      "hiPx": 274.0,
+      "loPx": 267.3055,
+      "open": 271.595,
+      "stkVolu": 5137094.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 264.81,
+      "hiPx": 267.77,
+      "loPx": 263.33,
+      "open": 266.865,
+      "stkVolu": 3928206.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 258.33,
+      "hiPx": 265.04,
+      "loPx": 257.86,
+      "open": 265.0,
+      "stkVolu": 7340250.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 250.74,
+      "hiPx": 255.99,
+      "loPx": 250.13,
+      "open": 254.99,
+      "stkVolu": 7646866.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 252.32,
+      "hiPx": 253.5,
+      "loPx": 250.64,
+      "open": 251.0,
+      "stkVolu": 4403485.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 247.49,
+      "hiPx": 253.29,
+      "loPx": 247.01,
+      "open": 253.01,
+      "stkVolu": 6760966.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 249.17,
+      "hiPx": 250.26,
+      "loPx": 247.02,
+      "open": 249.37,
+      "stkVolu": 5834652.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 240.88,
+      "hiPx": 253.005,
+      "loPx": 236.9724,
+      "open": 250.69,
+      "stkVolu": 10010178.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 240.51,
+      "hiPx": 242.95,
+      "loPx": 237.83,
+      "open": 241.29,
+      "stkVolu": 8812027.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 232.68,
+      "hiPx": 241.87,
+      "loPx": 231.57,
+      "open": 238.92,
+      "stkVolu": 10740077.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 231.66,
+      "hiPx": 233.6686,
+      "loPx": 226.48,
+      "open": 233.0,
+      "stkVolu": 13183187.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 237.03,
+      "hiPx": 237.35,
+      "loPx": 229.605,
+      "open": 233.01,
+      "stkVolu": 10209168.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 233.37,
+      "hiPx": 237.0,
+      "loPx": 232.8686,
+      "open": 237.0,
+      "stkVolu": 7544771.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 242.44,
+      "hiPx": 244.5,
+      "loPx": 234.63,
+      "open": 236.15,
+      "stkVolu": 12942819.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 243.97,
+      "hiPx": 244.52,
+      "loPx": 239.49,
+      "open": 239.77,
+      "stkVolu": 8809192.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 246.0,
+      "hiPx": 248.5,
+      "loPx": 243.445,
+      "open": 245.0,
+      "stkVolu": 8642172.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 246.45,
+      "hiPx": 247.57,
+      "loPx": 244.45,
+      "open": 245.7,
+      "stkVolu": 8195052.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 245.83,
+      "hiPx": 246.29,
+      "loPx": 240.02,
+      "open": 245.04,
+      "stkVolu": 5646824.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 248.29,
+      "hiPx": 249.53,
+      "loPx": 244.1101,
+      "open": 245.78,
+      "stkVolu": 6694286.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 247.87,
+      "hiPx": 249.37,
+      "loPx": 246.79,
+      "open": 249.37,
+      "stkVolu": 4957726.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 243.74,
+      "hiPx": 248.83,
+      "loPx": 242.85,
+      "open": 246.7,
+      "stkVolu": 8862311.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 250.16,
+      "hiPx": 250.37,
+      "loPx": 245.61,
+      "open": 245.75,
+      "stkVolu": 6506877.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 254.53,
+      "hiPx": 255.65,
+      "loPx": 250.29,
+      "open": 252.48,
+      "stkVolu": 8461229.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 256.25,
+      "hiPx": 257.64,
+      "loPx": 252.87,
+      "open": 255.4,
+      "stkVolu": 7363207.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 252.86,
+      "hiPx": 254.99,
+      "loPx": 248.75,
+      "open": 254.82,
+      "stkVolu": 9312525.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 256.45,
+      "hiPx": 258.0,
+      "loPx": 250.545,
+      "open": 255.06,
+      "stkVolu": 17417946.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 244.01,
+      "hiPx": 245.22,
+      "loPx": 234.62,
+      "open": 240.06,
+      "stkVolu": 30967514.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 250.76,
+      "hiPx": 251.13,
+      "loPx": 244.36,
+      "open": 244.83,
+      "stkVolu": 13029436.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 252.32,
+      "hiPx": 252.935,
+      "loPx": 247.3,
+      "open": 250.8,
+      "stkVolu": 12607245.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 252.06,
+      "hiPx": 255.34,
+      "loPx": 251.21,
+      "open": 251.32,
+      "stkVolu": 10901937.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 242.57,
+      "hiPx": 253.99,
+      "loPx": 241.73,
+      "open": 252.75,
+      "stkVolu": 11363641.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 246.28,
+      "hiPx": 247.17,
+      "loPx": 243.5,
+      "open": 243.7,
+      "stkVolu": 6944891.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 242.76,
+      "hiPx": 247.5888,
+      "loPx": 241.25,
+      "open": 246.095,
+      "stkVolu": 8386354.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 242.52,
+      "hiPx": 244.71,
+      "loPx": 240.84,
+      "open": 243.25,
+      "stkVolu": 7244575.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 239.31,
+      "hiPx": 242.68,
+      "loPx": 237.24,
+      "open": 242.52,
+      "stkVolu": 8779787.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 242.21,
+      "hiPx": 243.0,
+      "loPx": 239.38,
+      "open": 239.97,
+      "stkVolu": 10123962.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 244.28,
+      "hiPx": 247.29,
+      "loPx": 242.95,
+      "open": 244.155,
+      "stkVolu": 9344384.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 247.09,
+      "hiPx": 247.2,
+      "loPx": 243.35,
+      "open": 246.02,
+      "stkVolu": 11813947.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 249.69,
+      "hiPx": 250.48,
+      "loPx": 243.16,
+      "open": 245.28,
+      "stkVolu": 7523794.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 244.56,
+      "hiPx": 251.36,
+      "loPx": 244.13,
+      "open": 249.74,
+      "stkVolu": 7669787.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 245.89,
+      "hiPx": 248.8412,
+      "loPx": 243.01,
+      "open": 245.665,
+      "stkVolu": 6707081.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 240.95,
+      "hiPx": 244.66,
+      "loPx": 239.485,
+      "open": 244.5,
+      "stkVolu": 8145495.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 243.43,
+      "hiPx": 244.53,
+      "loPx": 240.35,
+      "open": 240.69,
+      "stkVolu": 4974641.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 245.1,
+      "hiPx": 245.82,
+      "loPx": 242.87,
+      "open": 244.72,
+      "stkVolu": 6373506.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 237.0,
+      "hiPx": 245.21,
+      "loPx": 235.81,
+      "open": 245.05,
+      "stkVolu": 10801099.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 235.69,
+      "hiPx": 242.47,
+      "loPx": 233.51,
+      "open": 236.49,
+      "stkVolu": 10016630.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 238.88,
+      "hiPx": 239.4,
+      "loPx": 233.6,
+      "open": 235.43,
+      "stkVolu": 7679234.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 240.36,
+      "hiPx": 242.81,
+      "loPx": 238.5,
+      "open": 238.75,
+      "stkVolu": 8849786.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 245.78,
+      "hiPx": 250.47,
+      "loPx": 235.41,
+      "open": 239.33,
+      "stkVolu": 13922574.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 239.74,
+      "hiPx": 247.36,
+      "loPx": 237.55,
+      "open": 246.48,
+      "stkVolu": 8387424.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 240.43,
+      "hiPx": 241.32,
+      "loPx": 235.645,
+      "open": 239.74,
+      "stkVolu": 7120245.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 245.33,
+      "hiPx": 245.96,
+      "loPx": 237.1473,
+      "open": 239.27,
+      "stkVolu": 7929056.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 241.68,
+      "hiPx": 249.05,
+      "loPx": 240.72,
+      "open": 246.52,
+      "stkVolu": 7988316.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 248.75,
+      "hiPx": 249.3499,
+      "loPx": 242.365,
+      "open": 242.89,
+      "stkVolu": 8276527.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 239.77,
+      "hiPx": 248.28,
+      "loPx": 239.55,
+      "open": 248.11,
+      "stkVolu": 9123850.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 236.58,
+      "hiPx": 241.317,
+      "loPx": 235.9,
+      "open": 240.87,
+      "stkVolu": 8389242.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 246.0,
+      "hiPx": 256.74,
+      "loPx": 242.67,
+      "open": 253.19,
+      "stkVolu": 24869700.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 243.08,
+      "hiPx": 250.78,
+      "loPx": 242.16,
+      "open": 246.57,
+      "stkVolu": 10851168.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 254.28,
+      "hiPx": 255.4,
+      "loPx": 244.3,
+      "open": 245.0,
+      "stkVolu": 9963869.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 263.41,
+      "hiPx": 267.125,
+      "loPx": 254.0,
+      "open": 254.5,
+      "stkVolu": 13354739.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 256.64,
+      "hiPx": 262.4,
+      "loPx": 256.51,
+      "open": 262.2,
+      "stkVolu": 9369960.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 255.05,
+      "hiPx": 258.56,
+      "loPx": 254.12,
+      "open": 257.6,
+      "stkVolu": 6110051.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 254.83,
+      "hiPx": 258.5,
+      "loPx": 254.0,
+      "open": 257.42,
+      "stkVolu": 5490805.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 255.47,
+      "hiPx": 258.1,
+      "loPx": 254.92,
+      "open": 257.08,
+      "stkVolu": 4942412.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 254.26,
+      "hiPx": 258.84,
+      "loPx": 254.14,
+      "open": 255.47,
+      "stkVolu": 6435589.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 251.46,
+      "hiPx": 253.57,
+      "loPx": 249.04,
+      "open": 252.0,
+      "stkVolu": 7904176.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 256.65,
+      "hiPx": 259.2808,
+      "loPx": 250.0,
+      "open": 250.5,
+      "stkVolu": 7767832.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 260.41,
+      "hiPx": 261.82,
+      "loPx": 252.63,
+      "open": 254.795,
+      "stkVolu": 6878316.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 261.34,
+      "hiPx": 261.56,
+      "loPx": 255.1,
+      "open": 260.0,
+      "stkVolu": 7054310.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 254.44,
+      "hiPx": 259.26,
+      "loPx": 253.4567,
+      "open": 258.15,
+      "stkVolu": 6792207.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 252.68,
+      "hiPx": 256.83,
+      "loPx": 252.01,
+      "open": 254.7,
+      "stkVolu": 5241235.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 239.27,
+      "hiPx": 250.535,
+      "loPx": 234.48,
+      "open": 250.535,
+      "stkVolu": 11041831.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 239.88,
+      "hiPx": 240.97,
+      "loPx": 235.79,
+      "open": 236.15,
+      "stkVolu": 5741472.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 241.71,
+      "hiPx": 241.91,
+      "loPx": 235.08,
+      "open": 240.0,
+      "stkVolu": 6486584.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 244.5,
+      "hiPx": 245.7,
+      "loPx": 241.16,
+      "open": 241.9,
+      "stkVolu": 5762752.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 246.02,
+      "hiPx": 248.4316,
+      "loPx": 243.68,
+      "open": 245.74,
+      "stkVolu": 4278214.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 240.43,
+      "hiPx": 245.895,
+      "loPx": 239.91,
+      "open": 245.25,
+      "stkVolu": 5542078.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 243.66,
+      "hiPx": 245.18,
+      "loPx": 237.42,
+      "open": 238.31,
+      "stkVolu": 5512886.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 237.03,
+      "hiPx": 242.83,
+      "loPx": 235.5894,
+      "open": 242.07,
+      "stkVolu": 5280850.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 233.5,
+      "hiPx": 237.79,
+      "loPx": 230.27,
+      "open": 236.24,
+      "stkVolu": 8045145.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 227.88,
+      "hiPx": 232.28,
+      "loPx": 225.06,
+      "open": 232.0,
+      "stkVolu": 9710689.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 225.37,
+      "hiPx": 231.0699,
+      "loPx": 223.3,
+      "open": 229.245,
+      "stkVolu": 7521103.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 227.11,
+      "hiPx": 228.68,
+      "loPx": 221.9575,
+      "open": 224.86,
+      "stkVolu": 7479250.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 226.82,
+      "hiPx": 228.84,
+      "loPx": 225.04,
+      "open": 227.34,
+      "stkVolu": 8563304.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 234.12,
+      "hiPx": 234.63,
+      "loPx": 226.52,
+      "open": 226.8,
+      "stkVolu": 10232974.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 228.15,
+      "hiPx": 232.819,
+      "loPx": 226.0,
+      "open": 230.51,
+      "stkVolu": 8506615.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 230.54,
+      "hiPx": 232.56,
+      "loPx": 228.625,
+      "open": 229.0,
+      "stkVolu": 3691505.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 232.83,
+      "hiPx": 234.25,
+      "loPx": 228.6,
+      "open": 228.67,
+      "stkVolu": 5634655.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 234.71,
+      "hiPx": 236.65,
+      "loPx": 231.62,
+      "open": 233.02,
+      "stkVolu": 7626188.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 238.72,
+      "hiPx": 239.26,
+      "loPx": 233.16,
+      "open": 235.36,
+      "stkVolu": 13781999.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 247.46,
+      "hiPx": 248.97,
+      "loPx": 237.6,
+      "open": 243.685,
+      "stkVolu": 20912133.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 260.57,
+      "hiPx": 261.88,
+      "loPx": 249.5,
+      "open": 250.83,
+      "stkVolu": 15852440.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 259.53,
+      "hiPx": 264.28,
+      "loPx": 256.342,
+      "open": 261.88,
+      "stkVolu": 10805445.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 261.02,
+      "hiPx": 262.25,
+      "loPx": 259.0,
+      "open": 260.0,
+      "stkVolu": 8045882.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 264.2,
+      "hiPx": 265.93,
+      "loPx": 259.1456,
+      "open": 260.75,
+      "stkVolu": 8894682.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 262.35,
+      "hiPx": 267.9,
+      "loPx": 260.77,
+      "open": 263.5,
+      "stkVolu": 7783785.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 262.23,
+      "hiPx": 264.49,
+      "loPx": 260.91,
+      "open": 263.52,
+      "stkVolu": 6006578.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 254.58,
+      "hiPx": 262.28,
+      "loPx": 253.0875,
+      "open": 261.21,
+      "stkVolu": 10271792.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 254.91,
+      "hiPx": 255.86,
+      "loPx": 252.11,
+      "open": 254.0,
+      "stkVolu": 6145269.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 258.14,
+      "hiPx": 261.97,
+      "loPx": 256.25,
+      "open": 256.33,
+      "stkVolu": 6268965.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 257.85,
+      "hiPx": 260.07,
+      "loPx": 256.16,
+      "open": 258.42,
+      "stkVolu": 5654161.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 259.91,
+      "hiPx": 262.04,
+      "loPx": 255.5,
+      "open": 260.68,
+      "stkVolu": 20732079.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 264.63,
+      "hiPx": 264.63,
+      "loPx": 258.405,
+      "open": 260.62,
+      "stkVolu": 5664201.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 263.43,
+      "hiPx": 264.24,
+      "loPx": 260.52,
+      "open": 262.715,
+      "stkVolu": 4745113.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 265.26,
+      "hiPx": 266.3,
+      "loPx": 262.55,
+      "open": 263.23,
+      "stkVolu": 2076637.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 266.08,
+      "hiPx": 267.91,
+      "loPx": 264.8,
+      "open": 264.8,
+      "stkVolu": 2456402.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 266.23,
+      "hiPx": 269.11,
+      "loPx": 264.71,
+      "open": 264.71,
+      "stkVolu": 4300077.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 265.92,
+      "hiPx": 268.28,
+      "loPx": 265.33,
+      "open": 266.66,
+      "stkVolu": 3291837.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 264.91,
+      "hiPx": 266.1,
+      "loPx": 264.391,
+      "open": 265.29,
+      "stkVolu": 3367930.0,
+      "ticker": "CRM",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 253.62,
+      "hiPx": 265.38,
+      "loPx": 252.48,
+      "open": 265.0,
+      "stkVolu": 9680584.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 256.26,
+      "hiPx": 259.59,
+      "loPx": 252.3062,
+      "open": 253.62,
+      "stkVolu": 6421470.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 262.9,
+      "hiPx": 263.55,
+      "loPx": 255.0,
+      "open": 255.2,
+      "stkVolu": 6103321.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 266.12,
+      "hiPx": 267.825,
+      "loPx": 263.5,
+      "open": 263.5,
+      "stkVolu": 5976201.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 260.53,
+      "hiPx": 265.202386,
+      "loPx": 260.41,
+      "open": 264.4,
+      "stkVolu": 5243453.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 259.94,
+      "hiPx": 261.025,
+      "loPx": 256.509,
+      "open": 260.0,
+      "stkVolu": 5174372.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 259.4,
+      "hiPx": 261.559,
+      "loPx": 255.77,
+      "open": 259.0,
+      "stkVolu": 4927734.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 241.06,
+      "hiPx": 260.91,
+      "loPx": 240.355,
+      "open": 257.66,
+      "stkVolu": 13660962.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 239.57,
+      "hiPx": 242.24,
+      "loPx": 236.46,
+      "open": 239.18,
+      "stkVolu": 10149314.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 233.53,
+      "hiPx": 238.84,
+      "loPx": 231.67,
+      "open": 237.02,
+      "stkVolu": 11489590.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 227.11,
+      "hiPx": 232.95,
+      "loPx": 226.44,
+      "open": 232.95,
+      "stkVolu": 13902610.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 220.07,
+      "hiPx": 227.9399,
+      "loPx": 219.355,
+      "open": 223.54,
+      "stkVolu": 13050762.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 221.58,
+      "hiPx": 223.39,
+      "loPx": 218.9633,
+      "open": 220.15,
+      "stkVolu": 12616556.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 228.09,
+      "hiPx": 228.72,
+      "loPx": 221.11,
+      "open": 222.24,
+      "stkVolu": 9482971.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 228.05,
+      "hiPx": 230.85,
+      "loPx": 226.65,
+      "open": 226.78,
+      "stkVolu": 9408048.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 229.4,
+      "hiPx": 230.949,
+      "loPx": 227.585,
+      "open": 229.43,
+      "stkVolu": 7239632.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 228.53,
+      "hiPx": 235.74,
+      "loPx": 226.27,
+      "open": 231.94,
+      "stkVolu": 9838362.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 227.96,
+      "hiPx": 231.86,
+      "loPx": 227.67,
+      "open": 229.39,
+      "stkVolu": 8465904.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 214.08,
+      "hiPx": 217.28,
+      "loPx": 208.78,
+      "open": 216.67,
+      "stkVolu": 18555570.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 212.29,
+      "hiPx": 215.55,
+      "loPx": 211.03,
+      "open": 214.16,
+      "stkVolu": 11090431.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 210.81,
+      "hiPx": 216.89,
+      "loPx": 209.8,
+      "open": 214.35,
+      "stkVolu": 7950855.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 196.38,
+      "hiPx": 205.555,
+      "loPx": 193.11,
+      "open": 205.0,
+      "stkVolu": 20194180.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 199.44,
+      "hiPx": 200.674,
+      "loPx": 187.28,
+      "open": 193.31,
+      "stkVolu": 23009974.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 189.97,
+      "hiPx": 199.56,
+      "loPx": 188.79,
+      "open": 193.99,
+      "stkVolu": 21956303.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 191.35,
+      "hiPx": 194.6,
+      "loPx": 187.1201,
+      "open": 191.63,
+      "stkVolu": 13652621.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 194.03,
+      "hiPx": 195.1999,
+      "loPx": 185.73,
+      "open": 189.3,
+      "stkVolu": 12112033.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 193.45,
+      "hiPx": 199.1,
+      "loPx": 190.75,
+      "open": 191.9,
+      "stkVolu": 13392989.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 185.0,
+      "hiPx": 193.665,
+      "loPx": 181.81,
+      "open": 193.15,
+      "stkVolu": 16350186.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 185.43,
+      "hiPx": 188.32,
+      "loPx": 180.24,
+      "open": 185.96,
+      "stkVolu": 16849111.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 189.72,
+      "hiPx": 193.45,
+      "loPx": 184.3,
+      "open": 186.44,
+      "stkVolu": 14822879.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 184.29,
+      "hiPx": 193.0,
+      "loPx": 183.17,
+      "open": 190.97,
+      "stkVolu": 13692933.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 187.79,
+      "hiPx": 188.14,
+      "loPx": 181.8645,
+      "open": 183.88,
+      "stkVolu": 9852893.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 185.29,
+      "hiPx": 186.95,
+      "loPx": 183.23,
+      "open": 186.6,
+      "stkVolu": 9565134.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 185.16,
+      "hiPx": 191.73,
+      "loPx": 183.73,
+      "open": 185.32,
+      "stkVolu": 10816216.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 178.16,
+      "hiPx": 182.47,
+      "loPx": 174.57,
+      "open": 181.27,
+      "stkVolu": 15498634.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 185.42,
+      "hiPx": 188.67,
+      "loPx": 176.28,
+      "open": 177.64,
+      "stkVolu": 15564730.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 191.75,
+      "hiPx": 192.6,
+      "loPx": 182.261,
+      "open": 183.0,
+      "stkVolu": 21875066.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 199.47,
+      "hiPx": 201.035,
+      "loPx": 191.33,
+      "open": 196.76,
+      "stkVolu": 26680489.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 194.79,
+      "hiPx": 195.92,
+      "loPx": 189.9248,
+      "open": 191.91,
+      "stkVolu": 16346535.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 192.95,
+      "hiPx": 195.94,
+      "loPx": 190.675,
+      "open": 192.5,
+      "stkVolu": 9932748.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 196.05,
+      "hiPx": 198.67,
+      "loPx": 189.58,
+      "open": 190.75,
+      "stkVolu": 13208923.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 193.08,
+      "hiPx": 196.47,
+      "loPx": 192.1,
+      "open": 195.1,
+      "stkVolu": 11583729.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 201.39,
+      "hiPx": 204.42,
+      "loPx": 194.24,
+      "open": 194.36,
+      "stkVolu": 15860914.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 202.11,
+      "hiPx": 202.96,
+      "loPx": 197.37,
+      "open": 200.79,
+      "stkVolu": 9657395.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 198.79,
+      "hiPx": 203.67,
+      "loPx": 195.87,
+      "open": 198.56,
+      "stkVolu": 10754797.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 194.91,
+      "hiPx": 199.57,
+      "loPx": 190.6,
+      "open": 197.26,
+      "stkVolu": 14467396.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 194.13,
+      "hiPx": 199.55,
+      "loPx": 191.2876,
+      "open": 196.4,
+      "stkVolu": 9580004.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 199.28,
+      "hiPx": 204.855,
+      "loPx": 193.15,
+      "open": 194.13,
+      "stkVolu": 26309733.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 192.83,
+      "hiPx": 200.9999,
+      "loPx": 191.75,
+      "open": 199.73,
+      "stkVolu": 14834718.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 198.34,
+      "hiPx": 198.63,
+      "loPx": 195.15,
+      "open": 195.15,
+      "stkVolu": 13419635.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 195.31,
+      "hiPx": 202.38,
+      "loPx": 194.45,
+      "open": 198.22,
+      "stkVolu": 11559323.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 194.34,
+      "hiPx": 196.15,
+      "loPx": 192.64,
+      "open": 193.4,
+      "stkVolu": 10525102.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 194.99,
+      "hiPx": 200.395,
+      "loPx": 193.3,
+      "open": 195.59,
+      "stkVolu": 9254295.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 195.38,
+      "hiPx": 195.6699,
+      "loPx": 190.0,
+      "open": 193.21,
+      "stkVolu": 20201081.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 195.18,
+      "hiPx": 198.05,
+      "loPx": 192.0,
+      "open": 197.09,
+      "stkVolu": 13976236.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 183.02,
+      "hiPx": 192.14,
+      "loPx": 182.29,
+      "open": 192.14,
+      "stkVolu": 18631394.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 181.96,
+      "hiPx": 187.385,
+      "loPx": 179.85,
+      "open": 185.7,
+      "stkVolu": 12565193.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 185.64,
+      "hiPx": 187.47,
+      "loPx": 179.53,
+      "open": 181.18,
+      "stkVolu": 10330721.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 179.31,
+      "hiPx": 184.11,
+      "loPx": 178.816,
+      "open": 184.0,
+      "stkVolu": 9901975.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 185.03,
+      "hiPx": 186.39,
+      "loPx": 179.58,
+      "open": 180.1,
+      "stkVolu": 11617715.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 186.67,
+      "hiPx": 188.5,
+      "loPx": 182.31,
+      "open": 184.9,
+      "stkVolu": 11041377.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 186.24,
+      "hiPx": 188.98,
+      "loPx": 183.01,
+      "open": 186.85,
+      "stkVolu": 11677678.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 187.18,
+      "hiPx": 187.58,
+      "loPx": 181.575,
+      "open": 185.3,
+      "stkVolu": 11635452.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 185.03,
+      "hiPx": 188.14,
+      "loPx": 183.6001,
+      "open": 187.5,
+      "stkVolu": 14390963.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 182.96,
+      "hiPx": 186.58,
+      "loPx": 182.017,
+      "open": 184.95,
+      "stkVolu": 12344587.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 176.37,
+      "hiPx": 186.77,
+      "loPx": 175.78,
+      "open": 186.5,
+      "stkVolu": 13472050.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 170.85,
+      "hiPx": 174.29,
+      "loPx": 167.12,
+      "open": 173.17,
+      "stkVolu": 20855393.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 164.96,
+      "hiPx": 171.26,
+      "loPx": 163.52,
+      "open": 171.26,
+      "stkVolu": 18109343.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 172.82,
+      "hiPx": 173.4,
+      "loPx": 165.77,
+      "open": 167.05,
+      "stkVolu": 12390752.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 171.31,
+      "hiPx": 177.5,
+      "loPx": 170.5,
+      "open": 175.21,
+      "stkVolu": 13123641.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 177.6,
+      "hiPx": 179.62,
+      "loPx": 172.88,
+      "open": 174.22,
+      "stkVolu": 14340255.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 181.22,
+      "hiPx": 184.55,
+      "loPx": 178.57,
+      "open": 184.0,
+      "stkVolu": 11866659.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 182.14,
+      "hiPx": 187.98,
+      "loPx": 181.03,
+      "open": 185.43,
+      "stkVolu": 17225680.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 186.27,
+      "hiPx": 189.0,
+      "loPx": 182.122,
+      "open": 182.5,
+      "stkVolu": 14382264.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 187.11,
+      "hiPx": 193.56,
+      "loPx": 184.1001,
+      "open": 186.6,
+      "stkVolu": 12073660.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 189.8,
+      "hiPx": 191.15,
+      "loPx": 187.03,
+      "open": 188.2,
+      "stkVolu": 14565948.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 173.3,
+      "hiPx": 178.87,
+      "loPx": 170.65,
+      "open": 177.56,
+      "stkVolu": 22719938.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 178.16,
+      "hiPx": 178.45,
+      "loPx": 174.4,
+      "open": 175.62,
+      "stkVolu": 10817611.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 180.18,
+      "hiPx": 184.29,
+      "loPx": 177.51,
+      "open": 178.26,
+      "stkVolu": 11906973.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 181.32,
+      "hiPx": 184.42,
+      "loPx": 181.32,
+      "open": 182.43,
+      "stkVolu": 8711743.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 181.22,
+      "hiPx": 181.7835,
+      "loPx": 177.35,
+      "open": 179.2,
+      "stkVolu": 6882845.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 176.53,
+      "hiPx": 178.6934,
+      "loPx": 173.0,
+      "open": 178.3,
+      "stkVolu": 14408281.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 183.82,
+      "hiPx": 186.04,
+      "loPx": 178.75,
+      "open": 182.185,
+      "stkVolu": 12324379.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 185.48,
+      "hiPx": 190.31,
+      "loPx": 183.97,
+      "open": 184.24,
+      "stkVolu": 8444726.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 186.99,
+      "hiPx": 187.39,
+      "loPx": 181.1,
+      "open": 185.55,
+      "stkVolu": 9740802.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 181.19,
+      "hiPx": 187.1,
+      "loPx": 179.58,
+      "open": 185.52,
+      "stkVolu": 11303437.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 186.34,
+      "hiPx": 188.58,
+      "loPx": 184.0,
+      "open": 184.6,
+      "stkVolu": 13955115.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 181.82,
+      "hiPx": 181.8718,
+      "loPx": 176.88,
+      "open": 179.68,
+      "stkVolu": 15123889.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 177.49,
+      "hiPx": 182.5,
+      "loPx": 176.31,
+      "open": 179.905,
+      "stkVolu": 11145016.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 171.31,
+      "hiPx": 177.575,
+      "loPx": 170.58,
+      "open": 177.575,
+      "stkVolu": 10214014.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 165.84,
+      "hiPx": 169.78,
+      "loPx": 164.75,
+      "open": 169.78,
+      "stkVolu": 11951930.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 167.58,
+      "hiPx": 169.3476,
+      "loPx": 164.3275,
+      "open": 166.0,
+      "stkVolu": 9749385.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 173.51,
+      "hiPx": 175.97,
+      "loPx": 169.0,
+      "open": 169.25,
+      "stkVolu": 13883384.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 179.48,
+      "hiPx": 180.78,
+      "loPx": 171.8,
+      "open": 172.89,
+      "stkVolu": 13671181.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 179.42,
+      "hiPx": 187.44,
+      "loPx": 178.81,
+      "open": 185.0,
+      "stkVolu": 17510823.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 180.1,
+      "hiPx": 180.31,
+      "loPx": 173.34,
+      "open": 176.04,
+      "stkVolu": 13025257.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 176.31,
+      "hiPx": 177.34,
+      "loPx": 171.99,
+      "open": 175.38,
+      "stkVolu": 10949098.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 180.07,
+      "hiPx": 183.35,
+      "loPx": 177.6801,
+      "open": 179.84,
+      "stkVolu": 10184791.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 179.08,
+      "hiPx": 182.3599,
+      "loPx": 177.6812,
+      "open": 178.43,
+      "stkVolu": 13617242.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 177.51,
+      "hiPx": 183.92,
+      "loPx": 176.89,
+      "open": 178.0,
+      "stkVolu": 18524937.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 176.17,
+      "hiPx": 182.48,
+      "loPx": 171.65,
+      "open": 178.43,
+      "stkVolu": 22559427.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 191.1,
+      "hiPx": 194.1448,
+      "loPx": 180.02,
+      "open": 180.24,
+      "stkVolu": 33998871.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 209.6,
+      "hiPx": 211.34,
+      "loPx": 198.21,
+      "open": 198.75,
+      "stkVolu": 27594795.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 200.84,
+      "hiPx": 204.39,
+      "loPx": 195.76,
+      "open": 201.02,
+      "stkVolu": 19216627.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 190.61,
+      "hiPx": 197.68,
+      "loPx": 189.73,
+      "open": 197.27,
+      "stkVolu": 14154391.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 188.75,
+      "hiPx": 198.09,
+      "loPx": 186.11,
+      "open": 197.81,
+      "stkVolu": 14453550.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 185.66,
+      "hiPx": 192.51,
+      "loPx": 184.83,
+      "open": 189.8,
+      "stkVolu": 13183928.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 182.55,
+      "hiPx": 185.02,
+      "loPx": 181.71,
+      "open": 183.91,
+      "stkVolu": 11177766.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 175.35,
+      "hiPx": 182.46,
+      "loPx": 171.56,
+      "open": 179.5,
+      "stkVolu": 15427785.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 170.92,
+      "hiPx": 175.53,
+      "loPx": 170.03,
+      "open": 170.6,
+      "stkVolu": 10820543.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 166.45,
+      "hiPx": 168.98,
+      "loPx": 163.31,
+      "open": 168.27,
+      "stkVolu": 16666029.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 165.89,
+      "hiPx": 166.54,
+      "loPx": 161.4,
+      "open": 164.74,
+      "stkVolu": 13589398.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 164.55,
+      "hiPx": 169.9458,
+      "loPx": 164.17,
+      "open": 166.03,
+      "stkVolu": 13541806.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 161.71,
+      "hiPx": 166.3,
+      "loPx": 160.5,
+      "open": 164.055,
+      "stkVolu": 16385305.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 155.02,
+      "hiPx": 161.4274,
+      "loPx": 154.23,
+      "open": 160.25,
+      "stkVolu": 19986161.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 151.78,
+      "hiPx": 154.47,
+      "loPx": 149.8,
+      "open": 152.73,
+      "stkVolu": 57940830.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 150.12,
+      "hiPx": 153.87,
+      "loPx": 146.32,
+      "open": 150.16,
+      "stkVolu": 20502834.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 153.42,
+      "hiPx": 155.18,
+      "loPx": 150.85,
+      "open": 151.65,
+      "stkVolu": 20720688.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 152.76,
+      "hiPx": 157.06,
+      "loPx": 150.4,
+      "open": 151.81,
+      "stkVolu": 13146831.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 150.19,
+      "hiPx": 154.0,
+      "loPx": 148.78,
+      "open": 150.01,
+      "stkVolu": 11334729.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 158.37,
+      "hiPx": 158.46,
+      "loPx": 151.49,
+      "open": 151.49,
+      "stkVolu": 21267939.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 157.93,
+      "hiPx": 161.76,
+      "loPx": 157.7,
+      "open": 160.27,
+      "stkVolu": 12664074.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 156.66,
+      "hiPx": 157.69,
+      "loPx": 154.07,
+      "open": 155.09,
+      "stkVolu": 13690515.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 163.23,
+      "hiPx": 165.81,
+      "loPx": 161.2,
+      "open": 162.22,
+      "stkVolu": 14164644.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 166.11,
+      "hiPx": 167.21,
+      "loPx": 162.0,
+      "open": 163.0,
+      "stkVolu": 10493199.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 165.65,
+      "hiPx": 167.7219,
+      "loPx": 162.37,
+      "open": 163.99,
+      "stkVolu": 10595529.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 169.52,
+      "hiPx": 172.38,
+      "loPx": 167.681,
+      "open": 169.22,
+      "stkVolu": 13057946.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 166.58,
+      "hiPx": 167.53,
+      "loPx": 164.78,
+      "open": 167.37,
+      "stkVolu": 9792382.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 162.5,
+      "hiPx": 163.7999,
+      "loPx": 156.48,
+      "open": 158.33,
+      "stkVolu": 13858605.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 163.32,
+      "hiPx": 166.3,
+      "loPx": 162.42,
+      "open": 165.6,
+      "stkVolu": 8321511.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 171.22,
+      "hiPx": 172.76,
+      "loPx": 165.92,
+      "open": 165.92,
+      "stkVolu": 14020677.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 167.56,
+      "hiPx": 171.35,
+      "loPx": 161.47,
+      "open": 162.49,
+      "stkVolu": 13507926.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 167.0,
+      "hiPx": 172.8,
+      "loPx": 166.56,
+      "open": 170.52,
+      "stkVolu": 13328089.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 172.68,
+      "hiPx": 174.54,
+      "loPx": 166.88,
+      "open": 170.84,
+      "stkVolu": 12057492.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 170.77,
+      "hiPx": 175.43,
+      "loPx": 169.7504,
+      "open": 171.5,
+      "stkVolu": 10191465.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 173.79,
+      "hiPx": 175.39,
+      "loPx": 166.495,
+      "open": 167.86,
+      "stkVolu": 13426526.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 170.06,
+      "hiPx": 172.425,
+      "loPx": 166.93,
+      "open": 167.06,
+      "stkVolu": 12831764.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 163.0,
+      "hiPx": 169.57,
+      "loPx": 162.21,
+      "open": 169.47,
+      "stkVolu": 12194506.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 156.93,
+      "hiPx": 165.88,
+      "loPx": 155.145,
+      "open": 165.05,
+      "stkVolu": 12774982.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 163.66,
+      "hiPx": 164.45,
+      "loPx": 159.55,
+      "open": 160.38,
+      "stkVolu": 10899068.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 173.6,
+      "hiPx": 176.9488,
+      "loPx": 167.14,
+      "open": 168.0,
+      "stkVolu": 17317431.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 181.5,
+      "hiPx": 184.54,
+      "loPx": 176.905,
+      "open": 176.905,
+      "stkVolu": 17204648.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 188.38,
+      "hiPx": 190.18,
+      "loPx": 182.01,
+      "open": 182.01,
+      "stkVolu": 18139477.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 180.71,
+      "hiPx": 182.5078,
+      "loPx": 175.9,
+      "open": 180.99,
+      "stkVolu": 12189410.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 184.02,
+      "hiPx": 184.45,
+      "loPx": 177.0253,
+      "open": 177.695,
+      "stkVolu": 9691524.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 185.95,
+      "hiPx": 193.7,
+      "loPx": 185.9,
+      "open": 188.99,
+      "stkVolu": 12908027.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 190.99,
+      "hiPx": 191.285,
+      "loPx": 183.0,
+      "open": 183.09,
+      "stkVolu": 9326930.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 192.98,
+      "hiPx": 194.94,
+      "loPx": 190.425,
+      "open": 193.28,
+      "stkVolu": 9605450.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 186.77,
+      "hiPx": 187.02,
+      "loPx": 183.0,
+      "open": 183.44,
+      "stkVolu": 13297636.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 192.74,
+      "hiPx": 194.7,
+      "loPx": 190.6,
+      "open": 191.09,
+      "stkVolu": 11392789.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 197.51,
+      "hiPx": 198.184,
+      "loPx": 190.0,
+      "open": 190.17,
+      "stkVolu": 9706611.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 197.47,
+      "hiPx": 199.39,
+      "loPx": 195.5001,
+      "open": 196.94,
+      "stkVolu": 11171642.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 193.32,
+      "hiPx": 196.5,
+      "loPx": 191.78,
+      "open": 192.0,
+      "stkVolu": 12787896.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 201.37,
+      "hiPx": 202.99,
+      "loPx": 191.39,
+      "open": 196.835,
+      "stkVolu": 15058682.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 196.21,
+      "hiPx": 204.4,
+      "loPx": 195.32,
+      "open": 202.75,
+      "stkVolu": 8664790.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 190.97,
+      "hiPx": 194.94,
+      "loPx": 189.91,
+      "open": 193.83,
+      "stkVolu": 14378800.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 196.14,
+      "hiPx": 199.41,
+      "loPx": 193.23,
+      "open": 194.09,
+      "stkVolu": 14152940.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 206.09,
+      "hiPx": 207.95,
+      "loPx": 194.21,
+      "open": 194.21,
+      "stkVolu": 17843612.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 205.43,
+      "hiPx": 207.8795,
+      "loPx": 203.0,
+      "open": 205.22,
+      "stkVolu": 11482298.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 209.17,
+      "hiPx": 211.07,
+      "loPx": 204.7261,
+      "open": 205.58,
+      "stkVolu": 9685429.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 209.06,
+      "hiPx": 213.17,
+      "loPx": 207.39,
+      "open": 208.42,
+      "stkVolu": 9586822.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 205.69,
+      "hiPx": 210.31,
+      "loPx": 204.76,
+      "open": 205.85,
+      "stkVolu": 10089513.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 205.62,
+      "hiPx": 206.44,
+      "loPx": 198.95,
+      "open": 199.94,
+      "stkVolu": 14888872.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 252.05,
+      "hiPx": 254.48,
+      "loPx": 230.05,
+      "open": 230.05,
+      "stkVolu": 55517471.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-08-27"
+    }
+  ]
+}
