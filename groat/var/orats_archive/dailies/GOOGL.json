@@ -2606,9 +2606,18 @@
       "hiPx": 341.69,
       "loPx": 338.52,
       "open": 339.67,
-      "stkVolu": 23391384.0,
+      "stkVolu": 23391389.0,
       "ticker": "GOOGL",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 342.6,
+      "hiPx": 343.29,
+      "loPx": 340.27,
+      "open": 340.705,
+      "stkVolu": 1115149.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

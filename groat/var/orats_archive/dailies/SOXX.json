@@ -2606,9 +2606,18 @@
       "hiPx": 527.78,
       "loPx": 517.0001,
       "open": 526.06,
-      "stkVolu": 9045980.0,
+      "stkVolu": 9045983.0,
       "ticker": "SOXX",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 519.73,
+      "hiPx": 521.5,
+      "loPx": 517.46,
+      "open": 521.2,
+      "stkVolu": 446904.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

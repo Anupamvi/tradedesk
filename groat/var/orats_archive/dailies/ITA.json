@@ -2606,9 +2606,18 @@
       "hiPx": 236.6881,
       "loPx": 233.175,
       "open": 236.4,
-      "stkVolu": 675541.0,
+      "stkVolu": 675828.0,
       "ticker": "ITA",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 234.155,
+      "hiPx": 235.26,
+      "loPx": 234.035,
+      "open": 235.24,
+      "stkVolu": 20877.0,
+      "ticker": "ITA",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

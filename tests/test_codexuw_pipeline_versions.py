@@ -6,7 +6,7 @@ from codexuw.pipeline_versions import PIPELINE_VERSION_LOCKS, PREVIOUS_PIPELINE_
 
 def test_codex_daily_pipeline_versions_are_locked() -> None:
     expected = {
-        "v2": ("Codex Daily V2", "v2.1"),
+        "v2": ("Codex Daily V2", "v2.2-no-signal-caps-20260826"),
         "v3": ("Codex Daily V3", "v3.2-profit-integrity-20260719"),
         "v4": ("Codex Daily V4", "v4.27-debit-production-handoff-20260816"),
     }
@@ -16,7 +16,7 @@ def test_codex_daily_pipeline_versions_are_locked() -> None:
         assert record["pipeline_name"] == name
         assert record["pipeline_version"] == version
         assert record["lock_status"] == "locked"
-        expected_lock = {"v2": "2026-05-21", "v3": "2026-07-19", "v4": "2026-08-16"}[key]
+        expected_lock = {"v2": "2026-08-26", "v3": "2026-07-19", "v4": "2026-08-16"}[key]
         assert record["locked_on"] == expected_lock
 
 
@@ -60,7 +60,7 @@ def test_locked_versions_mark_schwab_live_portfolio_and_gex_context() -> None:
 
 def test_pipeline_constants_match_locked_registry() -> None:
     assert engine.PIPELINE_NAME == "Codex Daily V2"
-    assert engine.PIPELINE_VERSION == "v2.1"
+    assert engine.PIPELINE_VERSION == "v2.2-no-signal-caps-20260826"
     assert opportunity.PIPELINE_NAME_V3 == "Codex Daily V3"
     assert opportunity.PIPELINE_VERSION_V3 == "v3.2-profit-integrity-20260719"
     assert daily_v4.PIPELINE_NAME_V4 == "Codex Daily V4"

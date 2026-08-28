@@ -2606,9 +2606,18 @@
       "hiPx": 427.96,
       "loPx": 415.2101,
       "open": 427.62,
-      "stkVolu": 1622764.0,
+      "stkVolu": 1622827.0,
       "ticker": "ETN",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 413.49,
+      "hiPx": 419.03,
+      "loPx": 413.49,
+      "open": 417.5,
+      "stkVolu": 91261.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

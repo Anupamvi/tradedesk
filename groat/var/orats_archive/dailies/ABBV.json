@@ -2606,9 +2606,18 @@
       "hiPx": 262.4977,
       "loPx": 257.25,
       "open": 260.81,
-      "stkVolu": 4764633.0,
+      "stkVolu": 4764797.0,
       "ticker": "ABBV",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 257.0,
+      "hiPx": 259.0,
+      "loPx": 256.0,
+      "open": 258.67,
+      "stkVolu": 123719.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

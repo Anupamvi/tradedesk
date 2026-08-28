@@ -2609,6 +2609,15 @@
       "stkVolu": 6290727.0,
       "ticker": "AMAT",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 473.82,
+      "hiPx": 477.965,
+      "loPx": 471.23,
+      "open": 476.26,
+      "stkVolu": 523253.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

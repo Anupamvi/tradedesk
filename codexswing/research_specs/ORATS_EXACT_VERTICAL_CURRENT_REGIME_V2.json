@@ -1,0 +1,81 @@
+{
+  "schema_version": "codexswing.research_spec.v2",
+  "strategy_family": "ORATS_EXACT_VERTICAL_CURRENT_REGIME_V2",
+  "status": "ACTIVE_FIXED_RESEARCH_SPEC",
+  "universe": {
+    "source": "ORATS cores complete delayed universe",
+    "asset_types": [3, 7],
+    "minimum_price": 5.0,
+    "minimum_average_option_volume_20d": 5000,
+    "minimum_option_open_interest": 10000,
+    "minimum_orats_confidence": 0.8,
+    "direction_diversification": true,
+    "etf_cap_fraction": 0.35
+  },
+  "signal": {
+    "stock_history": "ORATS hist/dailies adjusted",
+    "volatility_history": "ORATS hist/ivrank",
+    "current_stock": "Schwab regular session",
+    "analog_count": 100,
+    "horizon_sessions": 5,
+    "stock_round_trip_cost_bps": 10,
+    "entry": "next-session 0.1% breakout, skip gap beyond 1%, reject same-day invalidation"
+  },
+  "structures": [
+    "BULL_CALL_DEBIT",
+    "BEAR_PUT_DEBIT",
+    "BULL_PUT_CREDIT",
+    "BEAR_CALL_CREDIT"
+  ],
+  "contract_selector": {
+    "dte_min": 21,
+    "dte_max": 60,
+    "maximum_leg_relative_spread": 0.25,
+    "minimum_leg_open_interest": 100,
+    "minimum_leg_volume": 10,
+    "minimum_width": "max(1.00, 0.5% spot)",
+    "maximum_width": "6.5% spot"
+  },
+  "option_replay": {
+    "source": "ORATS hist/strikes exact EOD bid/ask",
+    "entry_fill": "66% of two-leg package width from favorable side",
+    "exit_fill": "natural liquidation",
+    "commission_per_contract_per_leg_per_side": 0.65,
+    "split": {
+      "train": 0.5,
+      "validation": 0.2,
+      "untouched_holdout": 0.3
+    },
+    "overlap_control": "effective trades separated by at least five sessions and five-session cluster bootstrap"
+  },
+  "historical_gate": {
+    "minimum_closed_holdout": 20,
+    "minimum_effective_nonoverlapping_holdout": 8,
+    "minimum_mean_net_pnl_dollars": 0,
+    "minimum_bootstrap_2_5_percent_mean_net_pnl_dollars": 0,
+    "minimum_profit_factor": 1.1,
+    "minimum_wilson_95_lower_pop": 0.4,
+    "positive_validation_mean_required": true,
+    "temporal_stability_required": true
+  },
+  "current_contract_gate": {
+    "positive_expected_pnl_after_costs": true,
+    "fresh_schwab_quote_required": true,
+    "defined_maximum_loss_required": true
+  },
+  "portfolio_gate": {
+    "available_funds_multiple_of_max_loss": 1.5,
+    "maximum_loss_cap_dollars": 2000,
+    "maximum_loss_cap_fraction_liquidation_value": 0.01,
+    "maximum_existing_ticker_concentration": 0.1,
+    "same_underlying_option_position_allowed": false,
+    "same_underlying_working_order_allowed": false
+  },
+  "public_context": {
+    "status": "SHADOW_ONLY",
+    "numeric_vote": false,
+    "promotion_requires_incremental_ablation": true
+  },
+  "broker_order_authorized": false,
+  "broker_order_submission": "USER_ONLY"
+}

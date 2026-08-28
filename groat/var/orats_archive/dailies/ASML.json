@@ -2606,9 +2606,18 @@
       "hiPx": 1751.78,
       "loPx": 1719.11,
       "open": 1746.53,
-      "stkVolu": 1028217.0,
+      "stkVolu": 1028219.0,
       "ticker": "ASML",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 1730.6,
+      "hiPx": 1734.75,
+      "loPx": 1719.6988,
+      "open": 1734.75,
+      "stkVolu": 58295.0,
+      "ticker": "ASML",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

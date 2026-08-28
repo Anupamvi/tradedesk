@@ -2606,9 +2606,18 @@
       "hiPx": 832.99,
       "loPx": 807.31,
       "open": 827.42,
-      "stkVolu": 1836526.0,
+      "stkVolu": 1836549.0,
       "ticker": "CAT",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 817.49,
+      "hiPx": 821.23,
+      "loPx": 815.11,
+      "open": 819.01,
+      "stkVolu": 81574.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

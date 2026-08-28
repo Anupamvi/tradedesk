@@ -2609,6 +2609,15 @@
       "stkVolu": 32419233.0,
       "ticker": "AAPL",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 317.89,
+      "hiPx": 318.13,
+      "loPx": 315.5,
+      "open": 316.845,
+      "stkVolu": 2490742.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

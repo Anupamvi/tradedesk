@@ -1,0 +1,814 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-04-15",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-07-15",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-10-18",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-01-28",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-04-19",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-07-20",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-10-18",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-01-24",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-04-18",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-07-24",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-10-17",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-01-23",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-04-16",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-07-23",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-10-22",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-01-21",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-04-15",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-07-22",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-10-14",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-01-27",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-04-21",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-07-22",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-10-20",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-01-26",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-04-20",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-07-20",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-10-19",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-01-25",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-04-18",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-07-18",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-10-17",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-01-23",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-04-17",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-07-17",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-16",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-01-22",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-04-16",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-23",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-15",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-21",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-04-15",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-15",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-15",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-28",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-05-11",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-21",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-20",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-02-03",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-27",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-27",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-26",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-02-01",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-26",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-26",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-10-25",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-01-31",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-02-23",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-04-25",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-07-25",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-24",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-01-30",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-04-23",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-23",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-12-10",
+      "ticker": "CDNS",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-02-04",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-04-29",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-07-29",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-10-28",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-02-03",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-04-28",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-07-28",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-10-27",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-02-02",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-04-27",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-07-28",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-10-26",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-02-01",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-04-25",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-07-25",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-10-24",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-01-30",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-04-24",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-07-24",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-10-23",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-01-29",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-04-21",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-07-21",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-10-20",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-02-04",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-04-27",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-07-27",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-10-26",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-02-03",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-04-25",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-07-25",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-10-24",
+      "ticker": "CDNS",
+      "updatedAt": "2017-10-11T19:03:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-02-01",
+      "ticker": "CDNS",
+      "updatedAt": "2018-11-12T17:05:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-04-24",
+      "ticker": "CDNS",
+      "updatedAt": "2018-11-12T17:05:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-07-24",
+      "ticker": "CDNS",
+      "updatedAt": "2018-11-12T17:05:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-10-26",
+      "ticker": "CDNS",
+      "updatedAt": "2018-11-12T17:05:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-01-31",
+      "ticker": "CDNS",
+      "updatedAt": "2018-11-12T17:05:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-04-23",
+      "ticker": "CDNS",
+      "updatedAt": "2018-11-12T17:05:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-07-23",
+      "ticker": "CDNS",
+      "updatedAt": "2018-11-12T17:05:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-10-22",
+      "ticker": "CDNS",
+      "updatedAt": "2018-11-12T17:05:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-02-19",
+      "ticker": "CDNS",
+      "updatedAt": "2019-03-02T00:45:54Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-04-22",
+      "ticker": "CDNS",
+      "updatedAt": "2019-05-02T23:16:06Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-07-22",
+      "ticker": "CDNS",
+      "updatedAt": "2019-08-01T23:15:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-10-21",
+      "ticker": "CDNS",
+      "updatedAt": "2019-10-31T23:16:12Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-02-12",
+      "ticker": "CDNS",
+      "updatedAt": "2020-02-22T00:16:02Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-04-20",
+      "ticker": "CDNS",
+      "updatedAt": "2020-04-30T23:15:54Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-07-20",
+      "ticker": "CDNS",
+      "updatedAt": "2020-07-30T23:16:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-10-19",
+      "ticker": "CDNS",
+      "updatedAt": "2020-10-29T23:15:52Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-02-22",
+      "ticker": "CDNS",
+      "updatedAt": "2021-03-05T00:16:06Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-04-26",
+      "ticker": "CDNS",
+      "updatedAt": "2021-05-06T23:16:00Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-07-26",
+      "ticker": "CDNS",
+      "updatedAt": "2021-08-05T23:15:55Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-10-25",
+      "ticker": "CDNS",
+      "updatedAt": "2021-11-04T23:16:05Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-02-22",
+      "ticker": "CDNS",
+      "updatedAt": "2022-03-05T00:15:49Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-04-25",
+      "ticker": "CDNS",
+      "updatedAt": "2022-05-05T23:16:01Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-07-25",
+      "ticker": "CDNS",
+      "updatedAt": "2022-08-04T23:15:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-10-24",
+      "ticker": "CDNS",
+      "updatedAt": "2022-11-03T23:15:56Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-02-13",
+      "ticker": "CDNS",
+      "updatedAt": "2023-02-24T00:15:56Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-04-24",
+      "ticker": "CDNS",
+      "updatedAt": "2023-05-04T23:15:56Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-07-24",
+      "ticker": "CDNS",
+      "updatedAt": "2023-08-03T23:16:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-10-23",
+      "ticker": "CDNS",
+      "updatedAt": "2023-11-02T23:15:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-02-12",
+      "ticker": "CDNS",
+      "updatedAt": "2024-02-23T00:16:00Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-04-22",
+      "ticker": "CDNS",
+      "updatedAt": "2024-05-02T23:16:05Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-07-22",
+      "ticker": "CDNS",
+      "updatedAt": "2024-08-01T23:16:06Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-10-28",
+      "ticker": "CDNS",
+      "updatedAt": "2024-11-08T01:01:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-02-18",
+      "ticker": "CDNS",
+      "updatedAt": "2025-03-01T03:41:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-04-28",
+      "ticker": "CDNS",
+      "updatedAt": "2025-05-09T02:40:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-07-28",
+      "ticker": "CDNS",
+      "updatedAt": "2025-08-08T02:40:38Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-10-27",
+      "ticker": "CDNS",
+      "updatedAt": "2025-11-07T03:40:33Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-02-17",
+      "ticker": "CDNS",
+      "updatedAt": "2026-02-28T03:40:34Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-04-27",
+      "ticker": "CDNS",
+      "updatedAt": "2026-05-07T02:40:41Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-07-27",
+      "ticker": "CDNS",
+      "updatedAt": "2026-08-06T22:00:51Z"
+    }
+  ]
+}

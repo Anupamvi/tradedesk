@@ -2606,9 +2606,18 @@
       "hiPx": 536.63,
       "loPx": 532.92,
       "open": 533.56,
-      "stkVolu": 2508768.0,
+      "stkVolu": 2508817.0,
       "ticker": "DIA",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 535.8399,
+      "hiPx": 536.95,
+      "loPx": 535.78,
+      "open": 536.53,
+      "stkVolu": 321950.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

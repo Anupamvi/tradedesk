@@ -21,6 +21,17 @@ class TestCliFlags(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parse_args(["full", "--date", "2026-08-26", "--orats-token", "nope"])
 
+    def test_positional_date_is_full_scan(self):
+        args = parse_args(["2026-08-27"])
+        self.assertEqual(args.cmd, "full")
+        self.assertEqual(args.date, "2026-08-27")
+
+    def test_full_then_date(self):
+        args = parse_args(["full", "2026-08-27"])
+        self.assertEqual(args.cmd, "full")
+        self.assertEqual(args.date, "2026-08-27")
+        self.assertIsNone(args.ticker)
+
 
 class TestRedact(unittest.TestCase):
     def test_query_and_raw(self):

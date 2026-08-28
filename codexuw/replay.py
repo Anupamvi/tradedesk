@@ -838,12 +838,31 @@ def _entry_fillable(row: pd.Series | dict[str, Any]) -> bool:
     return _truthy(row.get("exact_evaluated"))
 
 
+def _replay_count_cap(sleeve_cap: int | None, day_cap: int) -> int | None:
+    """Return 0 to skip, None for no count cap, or a positive count.
+
+    Sleeve 0 skips that sleeve. Sleeve None is not a quota. A positive day cap
+    still bounds the sleeve when the operator asked for one.
+    """
+
+    if sleeve_cap is not None and int(sleeve_cap) <= 0:
+        return 0
+    caps: list[int] = []
+    if sleeve_cap is not None and int(sleeve_cap) > 0:
+        caps.append(int(sleeve_cap))
+    if day_cap > 0:
+        caps.append(int(day_cap))
+    if not caps:
+        return None
+    return min(caps)
+
+
 def apply_replay_decision_selection(
     detail: pd.DataFrame,
     *,
-    max_selected_per_day: int = 8,
-    max_credit_selected_per_day: int = 1,
-    max_debit_selected_per_day: int = 1,
+    max_selected_per_day: int = 0,
+    max_credit_selected_per_day: int | None = None,
+    max_debit_selected_per_day: int | None = None,
 ) -> pd.DataFrame:
     if detail.empty:
         return detail
@@ -927,8 +946,8 @@ def apply_replay_decision_selection(
         primary_by_day.setdefault(day, []).append((idx, score))
     selected_days: set[str] = set()
     for day, day_items in primary_by_day.items():
-        credit_cap = max(0, min(max_selected_per_day, max_credit_selected_per_day))
-        if credit_cap <= 0:
+        credit_cap = _replay_count_cap(max_credit_selected_per_day, max_selected_per_day)
+        if credit_cap == 0:
             continue
         selected_for_day = 0
         for idx, _score in sorted(day_items, key=lambda item: item[1], reverse=True):
@@ -936,7 +955,7 @@ def apply_replay_decision_selection(
             out.at[idx, "decision_reason"] = "decision_selected_credit_edge_sleeve"
             selected_for_day += 1
             selected_days.add(day)
-            if selected_for_day >= credit_cap:
+            if credit_cap is not None and selected_for_day >= credit_cap:
                 break
     secondary_by_day: dict[str, list[tuple[int, float]]] = {}
     for idx, day, score in secondary_eligible:
@@ -959,7 +978,7 @@ def apply_replay_decision_selection(
             )
             selected_for_day += 1
             selected_days.add(day)
-            if selected_for_day >= max_selected_per_day:
+            if max_selected_per_day > 0 and selected_for_day >= max_selected_per_day:
                 break
 
     selected_tickers_by_day: dict[str, set[str]] = {}
@@ -970,6 +989,9 @@ def apply_replay_decision_selection(
     debit_by_day: dict[str, list[tuple[int, float]]] = {}
     for idx, day, score in debit_eligible:
         debit_by_day.setdefault(day, []).append((idx, score))
+    debit_cap = _replay_count_cap(max_debit_selected_per_day, 0)
+    if debit_cap == 0:
+        debit_by_day = {}
     for day, day_items in debit_by_day.items():
         selected_for_day = 0
         selected_tickers = selected_tickers_by_day.setdefault(day, set())
@@ -983,7 +1005,7 @@ def apply_replay_decision_selection(
             selected_for_day += 1
             if ticker:
                 selected_tickers.add(ticker)
-            if selected_for_day >= max(0, max_debit_selected_per_day):
+            if debit_cap is not None and selected_for_day >= debit_cap:
                 break
     return out
 
@@ -1433,17 +1455,17 @@ def run_replay(
     entry_start: dt.date | None = None,
     entry_end: dt.date | None = None,
     report_date: dt.date | None = None,
-    max_tickers: int = 60,
-    max_candidates: int = 50,
-    max_eval_candidates: int = 50,
+    max_tickers: int = 0,
+    max_candidates: int = 0,
+    max_eval_candidates: int = 0,
     bot_max_rows: int = 0,
     slippage_pct: float = 0.10,
     profit_take_pct: float = 0.50,
     stop_loss_mult: float | None = None,
     debit_time_stop_dte: int = -1,
-    max_selected_per_day: int = 8,
-    max_credit_selected_per_day: int = 1,
-    max_debit_selected_per_day: int = 1,
+    max_selected_per_day: int = 0,
+    max_credit_selected_per_day: int | None = None,
+    max_debit_selected_per_day: int | None = None,
     monthly_profit_target: float = 10_000.0,
     dark_pool_weight: float = 0.0,
 ) -> Path:
@@ -1551,7 +1573,9 @@ def run_replay(
             & pd.to_numeric(candidates["estimated_eod_debit"], errors="coerce").gt(debit_target).fillna(False)
         )
         candidates.loc[debit_above_target, "replay_price_annotation"] = "estimated_debit_above_target_kept_for_replay"
-        candidates = candidates[credit_mask | debit_mask].head(max_eval_candidates)
+        candidates = candidates[credit_mask | debit_mask]
+        if max_eval_candidates and max_eval_candidates > 0:
+            candidates = candidates.head(max_eval_candidates)
         entry_day = next((day for day in sorted(history) if asof < day), None)
         replay_quotes = quote_history
         bot_entry_quotes: dict[str, dict[str, object]] = {}
@@ -1711,6 +1735,15 @@ def run_replay(
         "target_months": target_metrics.to_dict(orient="records") if not target_metrics.empty else [],
         "daily_opportunity_coverage": daily_coverage_metrics,
     }
+    from .debit_shadow import SHADOW_SPLIT_DAY, format_shadow_report_section, write_replay_debit_shadow
+
+    _shadow_paths, shadow_metrics = write_replay_debit_shadow(
+        detail=detail,
+        out_dir=out_dir,
+        split_day=SHADOW_SPLIT_DAY,
+    )
+    payload["debit_shadow_metrics"] = shadow_metrics
+    payload["debit_shadow_ledger"] = str(_shadow_paths["ledger"])
     (out_dir / "codexuw_replay_manifest.json").write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
     report = out_dir / "codexuw_replay_report.md"
     lines = [
@@ -1719,7 +1752,7 @@ def run_replay(
         f"- History days loaded: {payload['days']}",
         f"- Entry days scanned: {payload['entry_days']}",
         f"- Discovery settings: max tickers {max_tickers}; max candidates {max_candidates}; max exact-eval candidates {max_eval_candidates}",
-        f"- Decision selection: outcome-blind credit edge sleeve capped at {max_credit_selected_per_day} per day, plus independent debit sleeve capped at {max_debit_selected_per_day} per day",
+        f"- Decision selection: outcome-blind credit/debit sleeves with no count quota unless an operator cap is passed (credit={max_credit_selected_per_day}, debit={max_debit_selected_per_day}, day={max_selected_per_day})",
         f"- Breach-evaluated candidates: {payload['evaluated']}",
         f"- Breach win rate: {payload['win_rate']:.1%}" if payload["win_rate"] is not None else "- Breach win rate: n/a",
         f"- Exact-spread evaluated candidates: {metrics.get('all', {}).get('evaluated', 0)}",
@@ -1852,6 +1885,7 @@ def run_replay(
         lines.extend(["", "## Decision-Selected Trades", "", selected_display.to_markdown(index=False), ""])
     else:
         lines.extend(["", "## Decision-Selected Trades", "", "_No would-have-executed decision-selected trades._", ""])
+    lines.extend(format_shadow_report_section(shadow_metrics))
     report.write_text("\n".join(lines), encoding="utf-8")
     if report_date is not None:
         write_replay_asof_report(detail, out_dir, report_date)
@@ -1869,12 +1903,22 @@ def main() -> None:
     parser.add_argument("--entry-end", default="", help="Optional last as-of date for generated entries")
     parser.add_argument("--report-date", default="", help="Write a per-date historical trade ticket report")
     parser.add_argument("--max-days", type=int, default=30)
-    parser.add_argument("--max-tickers", type=int, default=60)
-    parser.add_argument("--max-candidates", type=int, default=50)
-    parser.add_argument("--max-eval-candidates", type=int, default=50)
-    parser.add_argument("--max-selected-per-day", type=int, default=8)
-    parser.add_argument("--max-credit-selected-per-day", type=int, default=1)
-    parser.add_argument("--max-debit-selected-per-day", type=int, default=1)
+    parser.add_argument("--max-tickers", type=int, default=0, help="Discovery cap. Default 0 scans every eligible ticker.")
+    parser.add_argument("--max-candidates", type=int, default=0, help="Candidate cap. Default 0 keeps every constructed candidate.")
+    parser.add_argument("--max-eval-candidates", type=int, default=0, help="Exact-eval cap. Default 0 evaluates every remaining candidate.")
+    parser.add_argument("--max-selected-per-day", type=int, default=0, help="Optional day count cap. Default 0 selects every policy-clear name.")
+    parser.add_argument(
+        "--max-credit-selected-per-day",
+        type=int,
+        default=None,
+        help="Optional credit-sleeve cap. Omit for no sleeve quota. 0 selects no credit trades.",
+    )
+    parser.add_argument(
+        "--max-debit-selected-per-day",
+        type=int,
+        default=None,
+        help="Optional debit-sleeve cap. Omit for no sleeve quota. 0 selects no debit trades.",
+    )
     parser.add_argument("--bot-max-rows", type=int, default=0)
     parser.add_argument(
         "--dark-pool-weight",

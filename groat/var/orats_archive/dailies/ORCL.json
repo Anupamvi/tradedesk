@@ -2606,9 +2606,18 @@
       "hiPx": 153.83,
       "loPx": 147.52,
       "open": 152.106,
-      "stkVolu": 30251348.0,
+      "stkVolu": 30251433.0,
       "ticker": "ORCL",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 152.68,
+      "hiPx": 153.99,
+      "loPx": 152.05,
+      "open": 153.6,
+      "stkVolu": 1655222.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

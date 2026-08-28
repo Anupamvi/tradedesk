@@ -2606,9 +2606,18 @@
       "hiPx": 357.57,
       "loPx": 352.225,
       "open": 354.68,
-      "stkVolu": 5214626.0,
+      "stkVolu": 5214828.0,
       "ticker": "JPM",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 355.38,
+      "hiPx": 356.59,
+      "loPx": 355.0,
+      "open": 355.67,
+      "stkVolu": 126736.0,
+      "ticker": "JPM",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

@@ -2606,9 +2606,18 @@
       "hiPx": 259.66,
       "loPx": 255.02,
       "open": 259.23,
-      "stkVolu": 35927700.0,
+      "stkVolu": 35927807.0,
       "ticker": "AMZN",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 258.69,
+      "hiPx": 259.55,
+      "loPx": 257.78,
+      "open": 258.32,
+      "stkVolu": 2182547.0,
+      "ticker": "AMZN",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

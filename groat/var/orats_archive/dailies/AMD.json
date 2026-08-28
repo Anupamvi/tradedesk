@@ -2606,9 +2606,18 @@
       "hiPx": 483.0,
       "loPx": 469.63,
       "open": 481.5,
-      "stkVolu": 16441282.0,
+      "stkVolu": 16441821.0,
       "ticker": "AMD",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 473.2801,
+      "hiPx": 474.0,
+      "loPx": 469.6601,
+      "open": 472.52,
+      "stkVolu": 1091380.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

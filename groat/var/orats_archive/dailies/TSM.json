@@ -2606,9 +2606,18 @@
       "hiPx": 429.64,
       "loPx": 420.53,
       "open": 423.015,
-      "stkVolu": 12749776.0,
+      "stkVolu": 12749846.0,
       "ticker": "TSM",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 426.43,
+      "hiPx": 427.9,
+      "loPx": 425.4,
+      "open": 427.49,
+      "stkVolu": 630064.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

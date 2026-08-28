@@ -10,9 +10,9 @@
 python3 -m codexuw.daily \
   --base-dir /Users/anuppamvi/uw_root/tradedesk/YYYY-MM-DD \
   --out-dir /Users/anuppamvi/uw_root/tradedesk/out/codexdaily_v2_YYYY-MM-DD \
-  --max-tickers 60 \
-  --max-candidates 50 \
-  --max-final-trades 8 \
+  --max-tickers 0 \
+  --max-candidates 0 \
+  --max-final-trades 0 \
   --risk-budget 15000 \
   --monthly-profit-target 10000 \
   --max-contracts-per-trade 20 \
@@ -24,6 +24,36 @@ python3 -m codexuw.daily \
 
 - V2 must still use Schwab live chains/pricing and Schwab portfolio state for execution decisions. Do not force trades when live edge, liquidity, catalyst, or risk controls do not support them.
 - Core investment holdings are protected by default. Do not recommend covered calls on long-term holdings unless the user explicitly allows the ticker or asks for `--portfolio-income-mode existing-core-review`.
+
+## Groko Default
+
+- Treat `groko`, `grok o`, and discussions of the Groko pipeline as the **Options Agent v1.84 fork** under `groko/`, not Codex Daily V2 and not live `uwos.options_agent`.
+- Groko has **no Python import of `codexuw`**. Codex-named CSVs are optional leftover evidence files on disk only.
+- Groko is the independent `groko` package: `python3 -m groko`.
+- Default Groko live-planning command for a dated UW folder:
+
+```bash
+python3 -m groko \
+  --date YYYY-MM-DD \
+  --base-dir /Users/anuppamvi/uw_root/tradedesk \
+  --out-dir /Users/anuppamvi/uw_root/tradedesk/out/groko/YYYY-MM-DD \
+  --live-schwab \
+  --live-portfolio
+```
+
+- Replay:
+
+```bash
+python3 -m groko.replay \
+  --root /Users/anuppamvi/uw_root/tradedesk \
+  --start YYYY-MM-DD \
+  --end YYYY-MM-DD \
+  --split-day YYYY-MM-DD \
+  --output-dir /Users/anuppamvi/uw_root/tradedesk/out/groko_replay_YYYY-MM-DD
+```
+
+- Do not edit `uwos.options_agent` for Groko work. Do not write Groko artifacts under `codexuw_*` names.
+- No trade/order placement.
 
 ## Groat Default
 

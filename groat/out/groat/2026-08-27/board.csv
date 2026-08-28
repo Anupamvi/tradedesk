@@ -1,6 +1,4 @@
 asof_date,ticker,action,lane,choice,direction,primary,score,opt_conf,naive_pop,target_debit,target_credit,close,trend,rs_20,iv30,hv20,vrp,group,group_status
-2026-08-27,CRWD,TRADE,FIRE,STOCK,bullish,C,63.0000,,,,,227.9600,strong_up,0.1911,52.2700,53.3200,-1.0500,cybersecurity,accelerating
-2026-08-27,NVDA,TRADE,FIRE,OPTIONS,bullish,C,63.0000,60,0.3715,1.8000,,227.9800,strong_up,0.1292,33.1600,32.8600,0.3000,semiconductors,accelerating
 2026-08-27,NOW,TRADE,FIRE,OPTIONS,bullish,E,61.0000,70,0.4269,3.5500,,138.4300,up,0.2180,52.3400,53.2300,-0.8900,software,accelerating
 2026-08-27,ADBE,TRADE,FIRE,STOCK,bullish,E,61.0000,,,,,289.1500,up,0.1267,54.3500,44.7700,9.5800,software,accelerating
 2026-08-27,PLTR,TRADE,SWING,OPTIONS,bullish,E,55.0000,70,0.4183,3.5500,,185.9300,up,0.4811,46.5100,78.8600,-32.3500,software,accelerating
@@ -8,4 +6,6 @@ asof_date,ticker,action,lane,choice,direction,primary,score,opt_conf,naive_pop,t
 2026-08-27,SHOP,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,154.3300,up,0.2212,43.5700,58.2200,-14.6500,software,accelerating
 2026-08-27,URNM,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,61.0500,up,0.1949,43.4000,42.2700,1.1300,nuclear,accelerating
 2026-08-27,ANET,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,201.0900,strong_up,0.1362,48.7200,59.0100,-10.2900,networking,accelerating
-2026-08-27,PANW,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,382.8500,strong_up,0.1359,62.9600,49.3800,13.5800,cybersecurity,accelerating
+2026-08-27,DELL,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,472.2600,strong_up,0.1270,75.7600,75.3600,0.4000,ai_infrastructure,accelerating
+2026-08-27,CIBR,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,100.7900,strong_up,0.0800,29.8400,30.4400,-0.6000,cybersecurity,accelerating
+2026-08-27,SNOW,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,329.1100,strong_up,0.0644,69.8200,46.8100,23.0100,software,accelerating

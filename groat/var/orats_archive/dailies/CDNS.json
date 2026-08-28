@@ -2609,6 +2609,15 @@
       "stkVolu": 2716853.0,
       "ticker": "CDNS",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 341.7,
+      "hiPx": 347.43,
+      "loPx": 341.7,
+      "open": 347.43,
+      "stkVolu": 49290.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

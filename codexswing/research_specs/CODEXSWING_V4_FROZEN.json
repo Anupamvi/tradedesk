@@ -1,0 +1,14 @@
+{
+  "schema_version": "codexswing.frozen_source_manifest.v1",
+  "frozen_model": "codexswing-v0.4",
+  "purpose": "Protect the active v0.4 research path while v0.5 is developed in isolation.",
+  "files": {
+    "src/codexswing/cli.py": "7c09b4f02d384ec2d00b434995bcf7bf2e3101552f77da906ed4fb5704cf10e7",
+    "src/codexswing/research/current_ideas.py": "1e953cee580b0518334c74083f6d79ababfe94cdcf63fb00987283ae1c73a29f",
+    "src/codexswing/research/readiness.py": "6d868a31569bb53aef90429e810a1cdee16d5aa3b2397b1a9973246de086d590",
+    "src/codexswing/backtest/orats_option_replay.py": "64481cc86f169cd852a34526597c318253958c1686f02c430586d3628060e279",
+    "src/codexswing/research/contracts.py": "662d244413082d2a5911d18a0ec0b21f2ec05337e6a904451021645f206dd636",
+    "src/codexswing/report/idea_html.py": "53b7249bb67e65209255449ae4bc18d165c06165dd245dc6ff0c147ea879c794"
+  }
+}
+

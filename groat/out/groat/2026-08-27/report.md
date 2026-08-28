@@ -15,11 +15,10 @@ Why this one, not the others:
 - **NOW** **← take this** — long strike is near the money (1.1% from last); net delta 0.20; naive POP 43%; conf 70; X Quiet.
 - **SMCI** — long strike is 4.0% OTM; net delta 0.21; naive POP 40%; conf 80; X Informed.
 - **PLTR** — long strike is 2.2% OTM; net delta 0.15; naive POP 42%; conf 70; X Crowded.
-- **NVDA** — long strike is 3.1% OTM; net delta 0.08; naive POP 37%; conf 60; X Crowded.
 
 **Stock if you want one: ADBE** — buy ~289.15, stop **261.48**, target **344.49**, 18 shares. Setup Emerging Sector Rotation.
 
-Caution / size down: NVDA (Crowded X, net delta 0.08); PLTR (Crowded X).
+Caution / size down: PLTR (Crowded X).
 
 Analog caution (stock setup avg R < 0, n≥5): URNM.
 
@@ -32,28 +31,28 @@ Same ticker + same setup on cached tape. Options use hist/strikes when cached or
 | ticker | setup | stock n | W/L/time | avg R | options n | opt P&L / risk | BE vs naive POP |
 |---|---|---:|---|---:|---:|---:|---|
 | **NOW** | E Emerging Sector Rotation | 1 | 0/0/1 | -0.59 | 0 | — | — |
-| **NVDA** | C Post-Earnings Drift | 4 | 0/2/2 | -0.09 | 1 | 0.71 | 100% vs 47% |
 | **PLTR** | E Emerging Sector Rotation | 4 | 0/2/2 | -0.36 | 0 | — | — |
 | **SMCI** | E Emerging Sector Rotation | 1 | 0/0/1 | -0.16 | 1 | -0.09 | 0% vs 46% |
-| **CRWD** | C Post-Earnings Drift | 4 | 2/2/0 | 0.50 | 0 | — | — |
 | **ADBE** | E Emerging Sector Rotation | 1 | 0/1/0 | -1.00 | 0 | — | — |
 | **SHOP** | E Emerging Sector Rotation | 3 | 1/2/0 | 0.00 | 0 | — | — |
 | **URNM** ⚠ | E Emerging Sector Rotation | 5 | 1/3/1 | -0.23 | 0 | — | — |
 | **ANET** | E Emerging Sector Rotation | 6 | 1/3/2 | 0.02 | 0 | — | — |
-| **PANW** | E Emerging Sector Rotation | 5 | 1/2/2 | 0.28 | 0 | — | — |
+| **DELL** | E Emerging Sector Rotation | 2 | 1/0/1 | 1.42 | 0 | — | — |
+| **CIBR** | E Emerging Sector Rotation | 4 | 1/3/0 | -0.25 | 0 | — | — |
+| **SNOW** | E Emerging Sector Rotation | 4 | 2/0/2 | 1.48 | 0 | — | — |
 
 | ticker | analog dates (entry → exit / result / R) |
 |---|---|
 | **NOW** | 2025-09-24→2025-10-15 time -0.59R |
-| **NVDA** | 2026-06-04→2026-06-09 loss -1.00R; 2026-03-11→2026-03-20 loss -1.00R; 2025-12-04→2025-12-26 time 0.49R; 2025-09-11→2025-10-02 time 1.16R |
 | **PLTR** | 2026-03-25→2026-03-30 loss -1.00R; 2025-12-29→2026-01-02 loss -1.00R; 2025-10-14→2025-11-04 time 0.71R; 2025-09-22→2025-10-13 time -0.15R |
 | **SMCI** | 2025-10-10→2025-10-31 time -0.16R |
-| **CRWD** | 2026-06-15→2026-07-06 win 2.00R; 2026-03-18→2026-03-24 loss -1.00R; 2025-12-11→2025-12-17 loss -1.00R; 2025-09-11→2025-09-18 win 2.00R |
 | **ADBE** | 2025-12-29→2026-01-02 loss -1.00R |
 | **SHOP** | 2025-12-29→2026-01-02 loss -1.00R; 2025-10-14→2025-10-28 win 2.00R; 2025-09-22→2025-09-25 loss -1.00R |
 | **URNM** | 2026-04-27→2026-05-14 loss -1.00R; 2026-01-30→2026-02-05 loss -1.00R; 2026-01-07→2026-01-23 win 2.00R; 2025-12-11→2025-12-16 loss -1.00R; 2025-09-26→2025-10-17 time -0.17R |
 | **ANET** | 2026-04-30→2026-05-06 loss -1.00R; 2026-04-08→2026-04-22 win 2.00R; 2026-03-05→2026-03-26 loss -1.00R; 2026-01-28→2026-02-04 loss -1.00R; 2025-10-13→2025-11-03 time 0.71R; 2025-09-19→2025-10-10 time 0.41R |
-| **PANW** | 2026-06-04→2026-06-26 time 0.78R; 2026-05-12→2026-05-29 win 2.00R; 2026-03-19→2026-03-24 loss -1.00R; 2025-10-23→2025-11-13 loss -1.00R; 2025-10-01→2025-10-22 time 0.61R |
+| **DELL** | 2026-04-29→2026-05-08 win 2.00R; 2025-10-10→2025-10-31 time 0.83R |
+| **CIBR** | 2026-06-04→2026-06-09 loss -1.00R; 2026-05-12→2026-05-29 win 2.00R; 2025-10-23→2025-11-06 loss -1.00R; 2025-10-01→2025-10-16 loss -1.00R |
+| **SNOW** | 2026-07-24→2026-08-04 win 2.00R; 2026-06-11→2026-07-06 time 0.75R; 2025-10-14→2025-11-03 win 2.00R; 2025-09-22→2025-10-13 time 1.16R |
 
 Hierarchy: market regime → underlying thesis → price/AVWAP/volume → catalyst → relative strength → risk/reward → ORATS vol + structure → positioning → X.
 X excitement cannot rescue a bad chart. Never invent ORATS, prices, posts, or news.
@@ -134,8 +133,6 @@ Other setups: **A** Trend pullback; **B** Breakout; **D** Relative-strength lead
 
 | ticker | setup | vehicle | pay/collect | naive POP | conf | last |
 |---|---|---|---|---:|---:|---:|
-| **CRWD** | C Post-Earnings Drift | **STOCK** | — | n/a | — | 227.96 |
-| **NVDA** | C Post-Earnings Drift | **OPTIONS** | debit 1.80 | 37% | 60 | 227.98 |
 | **NOW** | E Emerging Sector Rotation | **OPTIONS** | debit 3.55 | 43% | 70 | 138.43 |
 | **ADBE** | E Emerging Sector Rotation | **STOCK** | — | n/a | — | 289.15 |
 | **PLTR** | E Emerging Sector Rotation | **OPTIONS** | debit 3.55 | 42% | 70 | 185.93 |
@@ -143,12 +140,12 @@ Other setups: **A** Trend pullback; **B** Breakout; **D** Relative-strength lead
 | **SHOP** | E Emerging Sector Rotation | **STOCK** | — | n/a | — | 154.33 |
 | **URNM** | E Emerging Sector Rotation | **STOCK** | — | n/a | — | 61.05 |
 | **ANET** | E Emerging Sector Rotation | **STOCK** | — | n/a | — | 201.09 |
-| **PANW** | E Emerging Sector Rotation | **STOCK** | — | n/a | — | 382.85 |
+| **DELL** | E Emerging Sector Rotation | **STOCK** | — | n/a | — | 472.26 |
+| **CIBR** | E Emerging Sector Rotation | **STOCK** | — | n/a | — | 100.79 |
+| **SNOW** | E Emerging Sector Rotation | **STOCK** | — | n/a | — | 329.11 |
 
 | ticker | exact structure | stop / invalidation |
 |---|---|---|
-| **CRWD** | STOCK long entry 227.96 stop 198.66 target 286.56 R/R 2.00 shares 17 | close beyond stop 198.66 |
-| **NVDA** | debit_call_spread BUY 235.0 call / SELL 240.0 call 2026-09-25 | thesis/setup break |
 | **NOW** | debit_call_spread BUY 140.0 call / SELL 150.0 call 2026-09-18 | thesis/setup break |
 | **ADBE** | STOCK long entry 289.15 stop 261.48 target 344.49 R/R 2.00 shares 18 | close beyond stop 261.48 |
 | **PLTR** | debit_call_spread BUY 190.0 call / SELL 200.0 call 2026-09-25 | thesis/setup break |
@@ -156,12 +153,17 @@ Other setups: **A** Trend pullback; **B** Breakout; **D** Relative-strength lead
 | **SHOP** | STOCK long entry 154.33 stop 142.30 target 178.39 R/R 2.00 shares 41 | close beyond stop 142.30 |
 | **URNM** | STOCK long entry 61.05 stop 55.34 target 72.47 R/R 2.00 shares 87 | close beyond stop 55.34 |
 | **ANET** | STOCK long entry 201.09 stop 183.14 target 236.98 R/R 2.00 shares 27 | close beyond stop 183.14 |
-| **PANW** | STOCK long entry 382.85 stop 347.71 target 453.12 R/R 2.00 shares 14 | close beyond stop 347.71 |
+| **DELL** | STOCK long entry 472.26 stop 416.29 target 584.19 R/R 2.00 shares 8 | close beyond stop 416.29 |
+| **CIBR** | STOCK long entry 100.79 stop 94.59 target 113.19 R/R 2.00 shares 80 | close beyond stop 94.59 |
+| **SNOW** | STOCK long entry 329.11 stop 302.19 target 382.95 R/R 2.00 shares 18 | close beyond stop 302.19 |
 
 ## WATCH
 
 | ticker | setup | last | RS20 | score | parked because |
 |---|---|---:|---:|---:|---|
+| CRWD | C | 227.96 | 19.11% | 63.0 | setup_C_replay_park |
+| NVDA | C | 227.98 | 12.92% | 63.0 | setup_C_replay_park |
+| PANW | E | 382.85 | 13.59% | 55.0 | setup_E_post_rip |
 | NET | E | 308.23 | 4.80% | 50.0 | below_trade_score |
 | XLK | E | 188.61 | 3.36% | 50.0 | below_trade_score |
 | TSM | E | 427.30 | 1.98% | 50.0 | below_trade_score |
@@ -169,9 +171,6 @@ Other setups: **A** Trend pullback; **B** Breakout; **D** Relative-strength lead
 | CRM | C | 252.05 | 35.51% | 45.0 | below_trade_score |
 | MRVL | A | 241.45 | 27.76% | 45.0 | below_trade_score |
 | SNPS | C | 464.89 | 20.89% | 45.0 | below_trade_score |
-| OKTA | C | 172.91 | 19.17% | 45.0 | below_trade_score |
-| XBI | D | 168.23 | 7.11% | 45.0 | below_trade_score |
-| UBER | A | 76.95 | 5.39% | 45.0 | below_trade_score |
 
 ## FIRE — spike / dip
 
@@ -215,131 +214,6 @@ Starts from what is loud on X, then asks the tape. **dipped** = already red with
 | **TSLA** | narrative only — wait for a dip into 20 EMA/AVWAP or a real volume spike | Listed as a consumer earnings loser vs AMZN/software winners. Separate bounce/gap-fill chatter. Mixed, not a clean X dip. |
 
 ## Tickets
-
----
-
-### CRWD · TRADE · **STOCK**
-
-CRWD — bullish Post-Earnings Drift in accelerating cybersecurity
-
-CRWD is a bullish idea in a strong risk on tape because Post-Earnings Drift (C), FIRE spike: 1d +20.5% on 2.7x volume, 20d RS vs SPY 19.11%, cybersecurity group is accelerating.
-
-| | |
-|---|---|
-| **Setup** | C — Post-Earnings Drift |
-| **Lane** | FIRE / bullish |
-| **Last** | 227.96 |
-| **Trade** | STOCK long entry 227.96 stop 198.66 target 286.56 R/R 2.00 shares 17 |
-| **Pay / collect** | stock (no option premium) |
-| **Naive POP** | n/a — n/a for stock; no delta-based POP |
-| **Conf** | n/a n/a (quality of the *structure*, not P(win)) |
-| **Score** | 63.0 |
-| **Evidence** | stock 2W/2L/0t n=4 avg R 0.50 |
-| **Stop / invalidation** | close beyond stop 198.66 |
-| **RS 20d vs SPY** | 19.11% |
-| **Trend / MAs** | strong_up · 20 202.72 / 50 195.27 / 200 140.08 |
-| **Group** | cybersecurity (CIBR) · accelerating |
-| **AVWAP** | year 134.72 · swing-low 203.69 |
-| **ORATS IV/HV** | IV30 52.27 · HV20 53.32 · VRP -1.05 |
-| **Earnings** | 2026-12-01 (web.alphaquery) |
-| **X** | Informed — Earnings-day tape 2026-08-27: +20.5% on beat/guide (ARR, Falcon Flex). Mixed: Kurtz Form 4 sales 8/25-26. Not a trigger. |
-| **Fill** | stock last; options never mid |
-| **Greeks** | Δ DATA UNAVAILABLE · Γ DATA UNAVAILABLE · Θ DATA UNAVAILABLE · ν DATA UNAVAILABLE |
-
-More context:
-
-Price is 227.96, trend strong_up, 20 EMA 202.72 / 50 195.27 / 200 140.08, relative volume 2.7.
-
-Group cybersecurity (CIBR) is accelerating. AVWAP year 134.72, swing-low 203.69.
-
-Earnings 2026-12-01 (web.alphaquery).
-
-Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 198.66.
-
-Tape notes:
-
-- holding earnings AVWAP 1 sessions after lastErn
-- group accelerating with positive 20d RS
-- close above prior 20-session close high
-- 20d RS vs SPY +19.1% with accumulation structure
-- FIRE spike: 1d +20.5% on 2.7x volume
-
-All structures reviewed:
-
-| structure | result | debit | credit | why |
-|---|---|---:|---:|---|
-| stock | PASS | — | — | stock plan clears R/R |
-| long_call | REJECT | — | — | no liquid structure in 21-75 DTE |
-| long_put | REJECT | — | — | against bullish underlying thesis |
-| debit_call_spread | REJECT | — | — | no liquid structure in 21-75 DTE |
-| debit_put_spread | REJECT | — | — | against bullish underlying thesis |
-| put_credit_spread | REJECT | — | — | no liquid structure in 21-75 DTE |
-| call_credit_spread | REJECT | — | — | against bullish underlying thesis |
-
-Macro in hold window: 2026-09-04 Employment Situation; 2026-09-10 PPI; 2026-09-11 CPI; 2026-09-16 FOMC decision
-
----
-
-### NVDA · TRADE · **OPTIONS**
-
-NVDA — bullish Post-Earnings Drift in accelerating semiconductors
-
-NVDA is a bullish idea in a strong risk on tape because Post-Earnings Drift (C), FIRE spike: 1d +8.7% on 2.4x volume, 20d RS vs SPY 12.92%, semiconductors group is accelerating.
-
-| | |
-|---|---|
-| **Setup** | C — Post-Earnings Drift |
-| **Lane** | FIRE / bullish |
-| **Last** | 227.98 |
-| **Trade** | debit_call_spread BUY 235.0 call / SELL 240.0 call 2026-09-25 |
-| **Pay / collect** | debit 1.80 |
-| **Naive POP** | 37% — naive P(spot > breakeven 236.80) from ORATS call deltas. Not a backtested win rate. |
-| **Conf** | 60 medium (quality of the *structure*, not P(win)) |
-| **Score** | 63.0 |
-| **Evidence** | stock 0W/2L/2t n=4 avg R -0.09; options n=1 P&L/risk 0.71 (spot-delta, not a live mark) |
-| **Stop / invalidation** | close back below 20 EMA / swing-low AVWAP |
-| **RS 20d vs SPY** | 12.92% |
-| **Trend / MAs** | strong_up · 20 215.47 / 50 208.16 / 200 195.73 |
-| **Group** | semiconductors (SMH) · accelerating |
-| **AVWAP** | year 197.34 · swing-low 208.72 |
-| **ORATS IV/HV** | IV30 33.16 · HV20 32.86 · VRP 0.30 |
-| **Earnings** | 2026-11-18 (web.alphaquery) |
-| **X** | Crowded — Post-print +8.7% / FY28 +70% guide widely repeated; heavy promo/crypto spam. Confirm, not trigger. Crowded do not size up. |
-| **Fill** | long ask minus short bid (never mid) |
-| **Greeks** | Δ 0.08 · Γ 0.0016 · Θ -0.0123 · ν 0.0174 |
-
-More context:
-
-Price is 227.98, trend strong_up, 20 EMA 215.47 / 50 208.16 / 200 195.73, relative volume 2.4.
-
-Group semiconductors (SMH) is accelerating. AVWAP year 197.34, swing-low 208.72.
-
-Earnings 2026-11-18 (web.alphaquery).
-
-Instrument shortlist picked **OPTIONS**. Invalidation: close back below 20 EMA / swing-low AVWAP.
-
-Tape notes:
-
-- holding earnings AVWAP 1 sessions after lastErn
-- group accelerating with positive 20d RS
-- close above prior 20-session close high
-- trend pullback into 20 EMA / AVWAP / 50 DMA
-- 20d RS vs SPY +12.9% with accumulation structure
-- FIRE spike: 1d +8.7% on 2.4x volume
-
-All structures reviewed:
-
-| structure | result | debit | credit | why |
-|---|---|---:|---:|---|
-| stock | PASS | — | — | stock plan clears R/R |
-| long_call | REJECT | — | — | no liquid structure in 21-75 DTE |
-| long_put | REJECT | — | — | against bullish underlying thesis |
-| debit_call_spread | PASS | 1.80 | — | defined-risk directional; better than naked long when IV is not cheap |
-| debit_put_spread | REJECT | 4.45 | — | against bullish underlying thesis |
-| put_credit_spread | REJECT | — | — | no liquid structure in 21-75 DTE |
-| call_credit_spread | REJECT | — | — | against bullish underlying thesis |
-
-Macro in hold window: 2026-09-04 Employment Situation; 2026-09-10 PPI; 2026-09-11 CPI; 2026-09-16 FOMC decision
 
 ---
 
@@ -765,29 +639,29 @@ Macro in hold window: 2026-09-04 Employment Situation; 2026-09-10 PPI; 2026-09-1
 
 ---
 
-### PANW · TRADE · **STOCK**
+### DELL · TRADE · **STOCK**
 
-PANW — bullish Emerging Sector Rotation in accelerating cybersecurity
+DELL — bullish Emerging Sector Rotation in accelerating ai_infrastructure
 
-PANW is a bullish idea in a strong risk on tape because Emerging Sector Rotation (E), 20d RS vs SPY 13.59%, cybersecurity group is accelerating.
+DELL is a bullish idea in a strong risk on tape because Emerging Sector Rotation (E), 20d RS vs SPY 12.70%, ai_infrastructure group is accelerating.
 
 | | |
 |---|---|
 | **Setup** | E — Emerging Sector Rotation |
 | **Lane** | SWING / bullish |
-| **Last** | 382.85 |
-| **Trade** | STOCK long entry 382.85 stop 347.71 target 453.12 R/R 2.00 shares 14 |
+| **Last** | 472.26 |
+| **Trade** | STOCK long entry 472.26 stop 416.29 target 584.19 R/R 2.00 shares 8 |
 | **Pay / collect** | stock (no option premium) |
 | **Naive POP** | n/a — n/a for stock; no delta-based POP |
 | **Conf** | n/a n/a (quality of the *structure*, not P(win)) |
 | **Score** | 55.0 |
-| **Evidence** | stock 1W/2L/2t n=5 avg R 0.28 |
-| **Stop / invalidation** | close beyond stop 347.71 |
-| **RS 20d vs SPY** | 13.59% |
-| **Trend / MAs** | strong_up · 20 358.31 / 50 341.63 / 200 228.81 |
-| **Group** | cybersecurity (CIBR) · accelerating |
-| **AVWAP** | year 222.04 · swing-low 356.67 |
-| **ORATS IV/HV** | IV30 62.96 · HV20 49.38 · VRP 13.58 |
+| **Evidence** | stock 1W/0L/1t n=2 avg R 1.42 |
+| **Stop / invalidation** | close beyond stop 416.29 |
+| **RS 20d vs SPY** | 12.70% |
+| **Trend / MAs** | strong_up · 20 450.60 / 50 432.43 / 200 243.16 |
+| **Group** | ai_infrastructure (SMH) · accelerating |
+| **AVWAP** | year 265.60 · swing-low 445.13 |
+| **ORATS IV/HV** | IV30 75.76 · HV20 75.36 · VRP 0.40 |
 | **Earnings** | 2026-09-01 (web.alphaquery) — ordinary options blocked |
 | **X** | DATA UNAVAILABLE — X not fetched. Skill layer must search $TICKER and write this file. |
 | **Fill** | stock last; options never mid |
@@ -795,20 +669,20 @@ PANW is a bullish idea in a strong risk on tape because Emerging Sector Rotation
 
 More context:
 
-Price is 382.85, trend strong_up, 20 EMA 358.31 / 50 341.63 / 200 228.81, relative volume 1.3.
+Price is 472.26, trend strong_up, 20 EMA 450.60 / 50 432.43 / 200 243.16, relative volume 0.9.
 
-Group cybersecurity (CIBR) is accelerating. AVWAP year 222.04, swing-low 356.67.
+Group ai_infrastructure (SMH) is accelerating. AVWAP year 265.60, swing-low 445.13.
 
 Earnings 2026-09-01 (web.alphaquery); ordinary options blocked through the print.
 
-Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 347.71.
+Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 416.29.
 
 Tape notes:
 
 - group accelerating with positive 20d RS
 - trend pullback into 20 EMA / AVWAP / 50 DMA
 - volume contracted on the pullback
-- 20d RS vs SPY +13.6% with accumulation structure
+- 20d RS vs SPY +12.7% with accumulation structure
 
 All structures reviewed:
 
@@ -821,6 +695,251 @@ All structures reviewed:
 | debit_put_spread | REJECT | — | — | earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) |
 | put_credit_spread | REJECT | — | — | earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) |
 | call_credit_spread | REJECT | — | — | earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) |
+
+Macro in hold window: 2026-09-04 Employment Situation; 2026-09-10 PPI; 2026-09-11 CPI; 2026-09-16 FOMC decision
+
+---
+
+### CIBR · TRADE · **STOCK**
+
+CIBR — bullish Emerging Sector Rotation in accelerating cybersecurity
+
+CIBR is a bullish idea in a strong risk on tape because Emerging Sector Rotation (E), 20d RS vs SPY 8.00%, cybersecurity group is accelerating.
+
+| | |
+|---|---|
+| **Setup** | E — Emerging Sector Rotation |
+| **Lane** | SWING / bullish |
+| **Last** | 100.79 |
+| **Trade** | STOCK long entry 100.79 stop 94.59 target 113.19 R/R 2.00 shares 80 |
+| **Pay / collect** | stock (no option premium) |
+| **Naive POP** | n/a — n/a for stock; no delta-based POP |
+| **Conf** | n/a n/a (quality of the *structure*, not P(win)) |
+| **Score** | 55.0 |
+| **Evidence** | stock 1W/3L/0t n=4 avg R -0.25 |
+| **Stop / invalidation** | close beyond stop 94.59 |
+| **RS 20d vs SPY** | 8.00% |
+| **Trend / MAs** | strong_up · 20 95.59 / 50 92.38 / 200 76.76 |
+| **Group** | cybersecurity (CIBR) · accelerating |
+| **AVWAP** | year 77.19 · swing-low 96.08 |
+| **ORATS IV/HV** | IV30 29.84 · HV20 30.44 · VRP -0.60 |
+| **Earnings** | DATA UNAVAILABLE (exempt) |
+| **X** | DATA UNAVAILABLE — X not fetched. Skill layer must search $TICKER and write this file. |
+| **Fill** | stock last; options never mid |
+| **Greeks** | Δ DATA UNAVAILABLE · Γ DATA UNAVAILABLE · Θ DATA UNAVAILABLE · ν DATA UNAVAILABLE |
+
+More context:
+
+Price is 100.79, trend strong_up, 20 EMA 95.59 / 50 92.38 / 200 76.76, relative volume 1.2.
+
+Group cybersecurity (CIBR) is accelerating. AVWAP year 77.19, swing-low 96.08.
+
+Earnings DATA UNAVAILABLE (exempt).
+
+Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 94.59.
+
+Tape notes:
+
+- group accelerating with positive 20d RS
+- 20d RS vs SPY +8.0% with accumulation structure
+
+All structures reviewed:
+
+| structure | result | debit | credit | why |
+|---|---|---:|---:|---|
+| stock | PASS | — | — | stock plan clears R/R |
+| long_call | REJECT | — | — | option chain DATA UNAVAILABLE |
+| long_put | REJECT | — | — | option chain DATA UNAVAILABLE |
+| debit_call_spread | REJECT | — | — | option chain DATA UNAVAILABLE |
+| debit_put_spread | REJECT | — | — | option chain DATA UNAVAILABLE |
+| put_credit_spread | REJECT | — | — | option chain DATA UNAVAILABLE |
+| call_credit_spread | REJECT | — | — | option chain DATA UNAVAILABLE |
+
+Macro in hold window: 2026-09-04 Employment Situation; 2026-09-10 PPI; 2026-09-11 CPI; 2026-09-16 FOMC decision
+
+---
+
+### SNOW · TRADE · **STOCK**
+
+SNOW — bullish Emerging Sector Rotation in accelerating software
+
+SNOW is a bullish idea in a strong risk on tape because Emerging Sector Rotation (E), 20d RS vs SPY 6.44%, software group is accelerating.
+
+| | |
+|---|---|
+| **Setup** | E — Emerging Sector Rotation |
+| **Lane** | SWING / bullish |
+| **Last** | 329.11 |
+| **Trade** | STOCK long entry 329.11 stop 302.19 target 382.95 R/R 2.00 shares 18 |
+| **Pay / collect** | stock (no option premium) |
+| **Naive POP** | n/a — n/a for stock; no delta-based POP |
+| **Conf** | n/a n/a (quality of the *structure*, not P(win)) |
+| **Score** | 55.0 |
+| **Evidence** | stock 2W/0L/2t n=4 avg R 1.48 |
+| **Stop / invalidation** | close beyond stop 302.19 |
+| **RS 20d vs SPY** | 6.44% |
+| **Trend / MAs** | strong_up · 20 316.93 / 50 285.28 / 200 216.94 |
+| **Group** | software (IGV) · accelerating |
+| **AVWAP** | year 204.57 · swing-low 283.89 |
+| **ORATS IV/HV** | IV30 69.82 · HV20 46.81 · VRP 23.01 |
+| **Earnings** | 2026-09-02 (web.alphaquery) — ordinary options blocked |
+| **X** | DATA UNAVAILABLE — X not fetched. Skill layer must search $TICKER and write this file. |
+| **Fill** | stock last; options never mid |
+| **Greeks** | Δ DATA UNAVAILABLE · Γ DATA UNAVAILABLE · Θ DATA UNAVAILABLE · ν DATA UNAVAILABLE |
+
+More context:
+
+Price is 329.11, trend strong_up, 20 EMA 316.93 / 50 285.28 / 200 216.94, relative volume 0.9.
+
+Group software (IGV) is accelerating. AVWAP year 204.57, swing-low 283.89.
+
+Earnings 2026-09-02 (web.alphaquery); ordinary options blocked through the print.
+
+Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 302.19.
+
+Tape notes:
+
+- group accelerating with positive 20d RS
+- trend pullback into 20 EMA / AVWAP / 50 DMA
+- volume contracted on the pullback
+- 20d RS vs SPY +6.4% with accumulation structure
+
+All structures reviewed:
+
+| structure | result | debit | credit | why |
+|---|---|---:|---:|---|
+| stock | PASS | — | — | stock plan clears R/R |
+| long_call | REJECT | — | — | earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) |
+| long_put | REJECT | — | — | earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) |
+| debit_call_spread | REJECT | — | — | earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) |
+| debit_put_spread | REJECT | — | — | earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) |
+| put_credit_spread | REJECT | — | — | earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) |
+| call_credit_spread | REJECT | — | — | earnings inside intended hold — ordinary options rejected (not an EVENT TRADE) |
+
+Macro in hold window: 2026-09-04 Employment Situation; 2026-09-10 PPI; 2026-09-11 CPI; 2026-09-16 FOMC decision
+
+---
+
+### CRWD · WATCH · **STOCK**
+
+CRWD — bullish Post-Earnings Drift in accelerating cybersecurity
+
+CRWD is a bullish idea in a strong risk on tape because Post-Earnings Drift (C), FIRE spike: 1d +20.5% on 2.7x volume, 20d RS vs SPY 19.11%, cybersecurity group is accelerating.
+
+| | |
+|---|---|
+| **Setup** | C — Post-Earnings Drift |
+| **Lane** | FIRE / bullish |
+| **Last** | 227.96 |
+| **Trade** | STOCK long entry 227.96 stop 198.66 target 286.56 R/R 2.00 shares 17 |
+| **Pay / collect** | stock (no option premium) |
+| **Naive POP** | n/a — n/a for stock; no delta-based POP |
+| **Conf** | n/a n/a (quality of the *structure*, not P(win)) |
+| **Score** | 63.0 |
+| **Evidence** | no same-setup analog |
+| **Stop / invalidation** | close beyond stop 198.66 |
+| **RS 20d vs SPY** | 19.11% |
+| **Trend / MAs** | strong_up · 20 202.72 / 50 195.27 / 200 140.08 |
+| **Group** | cybersecurity (CIBR) · accelerating |
+| **AVWAP** | year 134.72 · swing-low 203.69 |
+| **ORATS IV/HV** | IV30 52.27 · HV20 53.32 · VRP -1.05 |
+| **Earnings** | 2026-12-01 (web.alphaquery) |
+| **X** | Informed — Earnings-day tape 2026-08-27: +20.5% on beat/guide (ARR, Falcon Flex). Mixed: Kurtz Form 4 sales 8/25-26. Not a trigger. |
+| **Fill** | stock last; options never mid |
+| **Greeks** | Δ DATA UNAVAILABLE · Γ DATA UNAVAILABLE · Θ DATA UNAVAILABLE · ν DATA UNAVAILABLE |
+
+More context:
+
+Price is 227.96, trend strong_up, 20 EMA 202.72 / 50 195.27 / 200 140.08, relative volume 2.7.
+
+Group cybersecurity (CIBR) is accelerating. AVWAP year 134.72, swing-low 203.69.
+
+Earnings 2026-12-01 (web.alphaquery).
+
+Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 198.66.
+
+Tape notes:
+
+- holding earnings AVWAP 1 sessions after lastErn
+- group accelerating with positive 20d RS
+- close above prior 20-session close high
+- 20d RS vs SPY +19.1% with accumulation structure
+- FIRE spike: 1d +20.5% on 2.7x volume
+
+All structures reviewed:
+
+| structure | result | debit | credit | why |
+|---|---|---:|---:|---|
+| stock | PASS | — | — | stock plan clears R/R |
+| long_call | REJECT | — | — | no liquid structure in 21-75 DTE |
+| long_put | REJECT | — | — | against bullish underlying thesis |
+| debit_call_spread | REJECT | — | — | no liquid structure in 21-75 DTE |
+| debit_put_spread | REJECT | — | — | against bullish underlying thesis |
+| put_credit_spread | REJECT | — | — | no liquid structure in 21-75 DTE |
+| call_credit_spread | REJECT | — | — | against bullish underlying thesis |
+
+Macro in hold window: 2026-09-04 Employment Situation; 2026-09-10 PPI; 2026-09-11 CPI; 2026-09-16 FOMC decision
+
+---
+
+### NVDA · WATCH · **OPTIONS**
+
+NVDA — bullish Post-Earnings Drift in accelerating semiconductors
+
+NVDA is a bullish idea in a strong risk on tape because Post-Earnings Drift (C), FIRE spike: 1d +8.7% on 2.4x volume, 20d RS vs SPY 12.92%, semiconductors group is accelerating.
+
+| | |
+|---|---|
+| **Setup** | C — Post-Earnings Drift |
+| **Lane** | FIRE / bullish |
+| **Last** | 227.98 |
+| **Trade** | debit_call_spread BUY 235.0 call / SELL 240.0 call 2026-09-25 |
+| **Pay / collect** | debit 1.80 |
+| **Naive POP** | 37% — naive P(spot > breakeven 236.80) from ORATS call deltas. Not a backtested win rate. |
+| **Conf** | 60 medium (quality of the *structure*, not P(win)) |
+| **Score** | 63.0 |
+| **Evidence** | no same-setup analog |
+| **Stop / invalidation** | close back below 20 EMA / swing-low AVWAP |
+| **RS 20d vs SPY** | 12.92% |
+| **Trend / MAs** | strong_up · 20 215.47 / 50 208.16 / 200 195.73 |
+| **Group** | semiconductors (SMH) · accelerating |
+| **AVWAP** | year 197.34 · swing-low 208.72 |
+| **ORATS IV/HV** | IV30 33.16 · HV20 32.86 · VRP 0.30 |
+| **Earnings** | 2026-11-18 (web.alphaquery) |
+| **X** | Crowded — Post-print +8.7% / FY28 +70% guide widely repeated; heavy promo/crypto spam. Confirm, not trigger. Crowded do not size up. |
+| **Fill** | long ask minus short bid (never mid) |
+| **Greeks** | Δ 0.08 · Γ 0.0016 · Θ -0.0123 · ν 0.0174 |
+
+More context:
+
+Price is 227.98, trend strong_up, 20 EMA 215.47 / 50 208.16 / 200 195.73, relative volume 2.4.
+
+Group semiconductors (SMH) is accelerating. AVWAP year 197.34, swing-low 208.72.
+
+Earnings 2026-11-18 (web.alphaquery).
+
+Instrument shortlist picked **OPTIONS**. Invalidation: close back below 20 EMA / swing-low AVWAP.
+
+Tape notes:
+
+- holding earnings AVWAP 1 sessions after lastErn
+- group accelerating with positive 20d RS
+- close above prior 20-session close high
+- trend pullback into 20 EMA / AVWAP / 50 DMA
+- 20d RS vs SPY +12.9% with accumulation structure
+- FIRE spike: 1d +8.7% on 2.4x volume
+
+All structures reviewed:
+
+| structure | result | debit | credit | why |
+|---|---|---:|---:|---|
+| stock | PASS | — | — | stock plan clears R/R |
+| long_call | REJECT | — | — | no liquid structure in 21-75 DTE |
+| long_put | REJECT | — | — | against bullish underlying thesis |
+| debit_call_spread | PASS | 1.80 | — | defined-risk directional; better than naked long when IV is not cheap |
+| debit_put_spread | REJECT | 4.45 | — | against bullish underlying thesis |
+| put_credit_spread | REJECT | — | — | no liquid structure in 21-75 DTE |
+| call_credit_spread | REJECT | — | — | against bullish underlying thesis |
 
 Macro in hold window: 2026-09-04 Employment Situation; 2026-09-10 PPI; 2026-09-11 CPI; 2026-09-16 FOMC decision
 

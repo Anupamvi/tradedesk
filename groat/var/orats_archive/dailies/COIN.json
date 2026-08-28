@@ -2606,9 +2606,18 @@
       "hiPx": 193.81,
       "loPx": 180.11,
       "open": 186.33,
-      "stkVolu": 9240893.0,
+      "stkVolu": 9240928.0,
       "ticker": "COIN",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 186.79,
+      "hiPx": 189.1,
+      "loPx": 185.91,
+      "open": 186.025,
+      "stkVolu": 555313.0,
+      "ticker": "COIN",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

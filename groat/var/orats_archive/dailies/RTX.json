@@ -2606,9 +2606,18 @@
       "hiPx": 212.52,
       "loPx": 209.825,
       "open": 211.34,
-      "stkVolu": 3849744.0,
+      "stkVolu": 3849925.0,
       "ticker": "RTX",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 211.93,
+      "hiPx": 213.5,
+      "loPx": 211.76,
+      "open": 212.73,
+      "stkVolu": 65643.0,
+      "ticker": "RTX",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

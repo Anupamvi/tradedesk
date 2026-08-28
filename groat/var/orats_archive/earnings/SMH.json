@@ -1,0 +1,46 @@
+{
+  "data": [
+    {
+      "anncTod": "0900",
+      "earnDate": "2006-10-24",
+      "ticker": "SMH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-02-08",
+      "ticker": "SMH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-04-25",
+      "ticker": "SMH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-07-25",
+      "ticker": "SMH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-10-28",
+      "ticker": "SMH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-02-11",
+      "ticker": "SMH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-04-29",
+      "ticker": "SMH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    }
+  ]
+}

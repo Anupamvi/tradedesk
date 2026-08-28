@@ -2606,9 +2606,18 @@
       "hiPx": 355.74,
       "loPx": 345.45,
       "open": 346.155,
-      "stkVolu": 30136157.0,
+      "stkVolu": 30136164.0,
       "ticker": "TSLA",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 357.2966,
+      "hiPx": 358.8,
+      "loPx": 354.925,
+      "open": 357.095,
+      "stkVolu": 2613122.0,
+      "ticker": "TSLA",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

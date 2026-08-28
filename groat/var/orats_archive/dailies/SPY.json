@@ -2606,9 +2606,18 @@
       "hiPx": 772.355,
       "loPx": 767.16,
       "open": 768.5,
-      "stkVolu": 34557062.0,
+      "stkVolu": 34557064.0,
       "ticker": "SPY",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 772.16,
+      "hiPx": 772.21,
+      "loPx": 771.47,
+      "open": 771.76,
+      "stkVolu": 1378606.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

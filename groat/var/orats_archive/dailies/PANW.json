@@ -2606,9 +2606,18 @@
       "hiPx": 387.3325,
       "loPx": 356.66,
       "open": 358.56,
-      "stkVolu": 7308760.0,
+      "stkVolu": 7308818.0,
       "ticker": "PANW",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 368.98,
+      "hiPx": 378.52,
+      "loPx": 365.11,
+      "open": 377.26,
+      "stkVolu": 610888.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

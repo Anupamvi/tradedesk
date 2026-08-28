@@ -2606,9 +2606,18 @@
       "hiPx": 200.88,
       "loPx": 197.82,
       "open": 199.57,
-      "stkVolu": 8118507.0,
+      "stkVolu": 8118876.0,
       "ticker": "CVX",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 200.29,
+      "hiPx": 200.9996,
+      "loPx": 199.555,
+      "open": 199.98,
+      "stkVolu": 162120.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

@@ -2606,9 +2606,18 @@
       "hiPx": 633.5,
       "loPx": 617.3417,
       "open": 631.0,
-      "stkVolu": 957998.0,
+      "stkVolu": 958057.0,
       "ticker": "PWR",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 615.74,
+      "hiPx": 622.6,
+      "loPx": 614.0,
+      "open": 619.45,
+      "stkVolu": 22346.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

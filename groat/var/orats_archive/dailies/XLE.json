@@ -2606,9 +2606,18 @@
       "hiPx": 62.72,
       "loPx": 61.55,
       "open": 62.23,
-      "stkVolu": 29603926.0,
+      "stkVolu": 29603990.0,
       "ticker": "XLE",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 62.38,
+      "hiPx": 62.68,
+      "loPx": 62.25,
+      "open": 62.35,
+      "stkVolu": 1289798.0,
+      "ticker": "XLE",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

@@ -2602,13 +2602,22 @@
       "tradeDate": "2026-08-26"
     },
     {
-      "clsPx": 255.375,
+      "clsPx": 255.21,
       "hiPx": 267.69,
       "loPx": 249.4654,
       "open": 255.46,
       "stkVolu": 4879951.0,
       "ticker": "ARM",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 250.4,
+      "hiPx": 251.69,
+      "loPx": 249.09,
+      "open": 251.1,
+      "stkVolu": 220402.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

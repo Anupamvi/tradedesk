@@ -2606,9 +2606,18 @@
       "hiPx": 423.35,
       "loPx": 418.43,
       "open": 420.815,
-      "stkVolu": 7088983.0,
+      "stkVolu": 7088987.0,
       "ticker": "GLD",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 422.36,
+      "hiPx": 422.4699,
+      "loPx": 421.72,
+      "open": 422.24,
+      "stkVolu": 571052.0,
+      "ticker": "GLD",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

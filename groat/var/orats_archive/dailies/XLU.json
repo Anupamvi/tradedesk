@@ -2606,9 +2606,18 @@
       "hiPx": 43.33,
       "loPx": 42.92,
       "open": 43.22,
-      "stkVolu": 16034606.0,
+      "stkVolu": 16034681.0,
       "ticker": "XLU",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 43.275,
+      "hiPx": 43.38,
+      "loPx": 43.145,
+      "open": 43.34,
+      "stkVolu": 788438.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

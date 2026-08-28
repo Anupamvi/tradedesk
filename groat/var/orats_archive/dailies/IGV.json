@@ -2606,9 +2606,18 @@
       "hiPx": 110.405,
       "loPx": 105.45,
       "open": 105.69,
-      "stkVolu": 24499182.0,
+      "stkVolu": 24499273.0,
       "ticker": "IGV",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 109.63,
+      "hiPx": 110.27,
+      "loPx": 109.43,
+      "open": 109.81,
+      "stkVolu": 737961.0,
+      "ticker": "IGV",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

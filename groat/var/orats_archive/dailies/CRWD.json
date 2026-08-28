@@ -2606,9 +2606,18 @@
       "hiPx": 229.08,
       "loPx": 206.1,
       "open": 208.25,
-      "stkVolu": 23443130.0,
+      "stkVolu": 23443204.0,
       "ticker": "CRWD",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 217.89,
+      "hiPx": 228.69,
+      "loPx": 216.45,
+      "open": 228.23,
+      "stkVolu": 1548984.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

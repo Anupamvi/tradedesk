@@ -2606,9 +2606,18 @@
       "hiPx": 182.97,
       "loPx": 180.83,
       "open": 182.91,
-      "stkVolu": 476148.0,
+      "stkVolu": 476361.0,
       "ticker": "GRID",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 181.895,
+      "hiPx": 182.49,
+      "loPx": 181.5925,
+      "open": 182.42,
+      "stkVolu": 27417.0,
+      "ticker": "GRID",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

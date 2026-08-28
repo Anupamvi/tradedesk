@@ -2606,9 +2606,18 @@
       "hiPx": 207.76,
       "loPx": 201.76,
       "open": 207.56,
-      "stkVolu": 5420801.0,
+      "stkVolu": 5420803.0,
       "ticker": "BKNG",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 205.14,
+      "hiPx": 205.63,
+      "loPx": 203.5,
+      "open": 203.58,
+      "stkVolu": 220868.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

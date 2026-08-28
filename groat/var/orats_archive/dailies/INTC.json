@@ -2606,9 +2606,18 @@
       "hiPx": 92.95,
       "loPx": 88.46,
       "open": 89.91,
-      "stkVolu": 100556675.0,
+      "stkVolu": 100556755.0,
       "ticker": "INTC",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 91.61,
+      "hiPx": 91.73,
+      "loPx": 89.96,
+      "open": 90.265,
+      "stkVolu": 6537206.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

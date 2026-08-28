@@ -2606,9 +2606,18 @@
       "hiPx": 371.72,
       "loPx": 360.61,
       "open": 361.79,
-      "stkVolu": 21329897.0,
+      "stkVolu": 21329954.0,
       "ticker": "AVGO",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 374.09,
+      "hiPx": 376.5345,
+      "loPx": 372.31,
+      "open": 373.6,
+      "stkVolu": 1525668.0,
+      "ticker": "AVGO",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

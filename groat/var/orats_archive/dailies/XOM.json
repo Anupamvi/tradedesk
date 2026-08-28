@@ -2606,9 +2606,18 @@
       "hiPx": 158.19,
       "loPx": 156.14,
       "open": 157.625,
-      "stkVolu": 14296983.0,
+      "stkVolu": 14297271.0,
       "ticker": "XOM",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 156.98,
+      "hiPx": 157.42,
+      "loPx": 156.23,
+      "open": 156.6,
+      "stkVolu": 379490.0,
+      "ticker": "XOM",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "cache_fingerprint": "7e6ed491d98b2b72ebd57c0d875a081d96bd6dc70241d95d7cd61db814429421",
+  "candidate_limit": 0,
+  "day_audit_path": "groko_replay_2026-01-02_2026-08-26/groko_replay_day_audit.csv",
+  "day_audit_sha256": "d643f6076f63e511d200d663fb2a9199d4835df7b95c8dc2f3a5c3957ed6c1bd",
+  "expected_history_days": 160,
+  "manifest_path": "groko_replay_2026-01-02_2026-08-26/groko_replay_manifest.json",
+  "manifest_sha256": "2c9bcee8dd1c45a64b20ebe59786e9a7f2ddab1c05a8c59a446d58865dda200c",
+  "pipeline_version": "groko-v1.0-forked-oa-v1.84-20260826",
+  "producer": "groko.replay",
+  "production_discovery_parity": true,
+  "production_validation": false,
+  "replay_detail_path": "groko_replay_2026-01-02_2026-08-26/groko_replay_detail.csv",
+  "replay_detail_sha256": "3b02d133d21149dbea8baa0338e9b4770904d3044e1a84adec4f462c8c315a21",
+  "schema_version": "groko.replay_pin.v2",
+  "split_day": "2026-05-01"
+}

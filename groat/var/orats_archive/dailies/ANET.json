@@ -2606,9 +2606,18 @@
       "hiPx": 206.13,
       "loPx": 199.215,
       "open": 205.9,
-      "stkVolu": 4698899.0,
+      "stkVolu": 4699005.0,
       "ticker": "ANET",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 198.45,
+      "hiPx": 200.1,
+      "loPx": 196.52,
+      "open": 200.0,
+      "stkVolu": 178481.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

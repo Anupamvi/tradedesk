@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codexswing"
+version = "0.3.0"
+description = "ORATS-first stock and options swing decision-support pipeline"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Proprietary"}
+dependencies = []
+
+[project.scripts]
+codexswing = "codexswing.cli:main"
+codexswing-v5 = "codexswing.v5.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

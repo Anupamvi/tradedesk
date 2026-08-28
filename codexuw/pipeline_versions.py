@@ -100,7 +100,7 @@ V4_DEBIT_PRODUCTION_RELEASE_DATE = "2026-08-16"
 V4_DEBIT_PRODUCTION_RELEASE_TIMESTAMP = "2026-08-16T22:00:00-07:00"
 
 PIPELINE_NAME_V2 = "Codex Daily V2"
-PIPELINE_VERSION_V2 = "v2.1"
+PIPELINE_VERSION_V2 = "v2.2-no-signal-caps-20260826"
 PIPELINE_NAME_V3 = "Codex Daily V3"
 PIPELINE_VERSION_V3_PREVIOUS = f"v3.1-{EXECUTION_CONFIDENCE_RELEASE_ID}"
 PIPELINE_VERSION_V3 = f"v3.2-{V3_PROFIT_INTEGRITY_RELEASE_ID}"
@@ -368,7 +368,7 @@ PIPELINE_VERSION_LOCKS: dict[str, dict[str, Any]] = {
         "pipeline_name": PIPELINE_NAME_V2,
         "pipeline_version": PIPELINE_VERSION_V2,
         "lock_status": PIPELINE_LOCK_STATUS,
-        "locked_on": PIPELINE_LOCK_DATE,
+        "locked_on": "2026-08-26",
         "live_schwab_required_for_execute": True,
         "portfolio_state_required_for_execute": True,
         "gex_context": "confirmation framework records level_or_gex_protection; live pricing comes from Schwab chains",

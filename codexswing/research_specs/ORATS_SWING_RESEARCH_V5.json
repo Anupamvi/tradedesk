@@ -1,0 +1,86 @@
+{
+  "schema_version": "codexswing.v5.research_spec.v1",
+  "model_version": "codexswing-v0.5",
+  "status": "IMPLEMENTED_NOT_EXECUTED",
+  "validation_status": "NO_REPLAY_RUN",
+  "network_policy": "DENY",
+  "api_budget": {
+    "reported_remaining_orats_requests": 12000,
+    "authorized_orats_requests_this_execution": 0,
+    "minimum_reserved_orats_requests": 12000,
+    "note": "User-reported balance is planning metadata, not a live API usage reading."
+  },
+  "source_contract": {
+    "mode": "LOCAL_CACHE_ONLY",
+    "cache_only_endpoints": [
+      "hist/cores",
+      "hist/dailies",
+      "hist/strikes",
+      "hist/earnings",
+      "hist/summaries"
+    ],
+    "prohibited_during_build": [
+      "ORATS network calls",
+      "Schwab network calls",
+      "credential loading",
+      "broker order construction or submission"
+    ]
+  },
+  "regime_matching": {
+    "analog_count": 250,
+    "same_ticker": true,
+    "same_signal_side": true,
+    "point_in_time_only": true,
+    "outcome_labels_prohibited": true,
+    "features": [
+      "iv_percentile_1y",
+      "iv_vs_realized_forecast_20d",
+      "implied_vol_forecast_wedge_20d",
+      "term_slope",
+      "contango",
+      "stock_change_1w",
+      "stock_change_1m"
+    ]
+  },
+  "replay_variants": {
+    "strategies": [
+      "LONG_CALL",
+      "LONG_PUT",
+      "BULL_CALL_DEBIT",
+      "BEAR_PUT_DEBIT",
+      "BULL_PUT_CREDIT",
+      "BEAR_CALL_CREDIT"
+    ],
+    "horizons_sessions": [3, 5, 10, 20],
+    "exit_policies": [
+      {"policy_id": "FIXED_HOLD", "profit_target_r": 0.0, "stop_loss_r": 0.0},
+      {"policy_id": "PT_025R_SL_035R", "profit_target_r": 0.25, "stop_loss_r": 0.35},
+      {"policy_id": "PT_050R_SL_035R", "profit_target_r": 0.50, "stop_loss_r": 0.35}
+    ],
+    "variant_count": 72,
+    "selection_rule": "Every variant is counted before outcomes are inspected; untouched holdout never selects a winner."
+  },
+  "event_exclusions": {
+    "earnings": true,
+    "dividend_assignment": true,
+    "earnings_rule": "Reject when an earnings date falls from entry through planned exit, inclusive.",
+    "dividend_rule": "Reject short-call structures when ex-dividend exposure reaches the session before ex-date through planned exit."
+  },
+  "multiple_testing": {
+    "method": "CLUSTER_BOOTSTRAP_PLUS_HOLM_BONFERRONI",
+    "family_alpha": 0.05,
+    "family_definition": "All 72 predeclared strategy-horizon-exit variants.",
+    "promotion_requires": [
+      "positive train expectancy",
+      "positive validation expectancy",
+      "positive untouched holdout expectancy",
+      "Holm-adjusted clustered one-sided p-value no greater than family alpha"
+    ]
+  },
+  "prospective_ledger": {
+    "schema": "codexswing.v5.shadow_ledger.v1",
+    "mode": "APPEND_ONLY_HASH_CHAIN",
+    "event_types": ["SIGNAL", "QUOTE", "TRIGGER", "EXIT", "OUTCOME"],
+    "broker_interaction": "NONE"
+  }
+}

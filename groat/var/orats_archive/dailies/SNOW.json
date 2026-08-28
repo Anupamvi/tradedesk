@@ -2606,9 +2606,18 @@
       "hiPx": 333.5,
       "loPx": 320.0,
       "open": 322.5,
-      "stkVolu": 4069299.0,
+      "stkVolu": 4069726.0,
       "ticker": "SNOW",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 333.13,
+      "hiPx": 334.8,
+      "loPx": 328.02,
+      "open": 330.37,
+      "stkVolu": 216614.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

@@ -517,6 +517,27 @@ def test_selection_stays_one_lot_until_closed_live_outcome_gate_passes() -> None
     assert final["size_up_evidence"].tolist() == ["no closed V3 outcomes"]
 
 
+def test_exhausted_risk_budget_does_not_force_an_over_budget_lot() -> None:
+    scored = pd.DataFrame(
+        [
+            _credit_row(ticker="AAA", max_loss=400.0, score=8.0),
+            _credit_row(ticker="BBB", max_loss=400.0, score=7.8),
+        ]
+    )
+
+    final = select_final_trades(
+        assign_trade_statuses(scored),
+        regime={"sizing_stance": "normal"},
+        risk_budget=400.0,
+        recent_performance={"status": "unavailable"},
+        max_final_trades=0,
+        risk_config={"risk_mandate": "capital-preservation", "max_contracts_per_trade": 1},
+    )
+
+    assert final["ticker"].tolist() == ["AAA"]
+    assert final["contracts"].tolist() == [1]
+
+
 def test_zero_max_final_trades_means_uncapped_visibility() -> None:
     scored = pd.DataFrame(
         [

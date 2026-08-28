@@ -1,0 +1,8 @@
+[project]
+name = "groki-eq"
+version = "0.1.0"
+requires-python = ">=3.9"
+description = "Index equity 20-day breakout"
+
+[tool.setuptools.packages.find]
+include = ["groki_eq*"]

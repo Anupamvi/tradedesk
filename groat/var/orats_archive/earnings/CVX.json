@@ -1,0 +1,850 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-01-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-01-27",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-04-28",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-07-28",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-10-27",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-01-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-04-27",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-07-26",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-10-26",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-01-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-04-26",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-07-26",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-10-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-01-24",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-04-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-07-24",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-10-24",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-01-24",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-04-22",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-07-22",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-10-21",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-01-23",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-04-23",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-08-06",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-11-12",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-01-22",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-04-23",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-07-23",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-11-06",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-01-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-04-22",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-07-23",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-10-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-01-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-04-26",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-07-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-10-24",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-01-24",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-04-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-07-24",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-01-29",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-04-25",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-30",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-31",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-31",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-05-02",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-08-12",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-31",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-30",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-30",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-30",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-29",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-01-28",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-29",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-29",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-28",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-01-27",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-28",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-28",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2006-10-27",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-02-02",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-04-27",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-07-27",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-11-02",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-02-01",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-05-02",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-08-01",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-31",
+      "ticker": "CVX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-01-30",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-05-01",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-07-31",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-09-21",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-10-30",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-01-29",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-04-30",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-07-30",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-10-29",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-01-28",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-04-29",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-07-29",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-10-28",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-01-27",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-04-27",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-07-27",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-11-02",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-02-01",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-04-26",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-08-02",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-11-01",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-01-31",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-05-02",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-08-01",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-10-31",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-01-30",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-05-01",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-07-31",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-10-30",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-01-29",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-04-29",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-07-29",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:04:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-10-28",
+      "ticker": "CVX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-01-27",
+      "ticker": "CVX",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-04-28",
+      "ticker": "CVX",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-07-28",
+      "ticker": "CVX",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-10-27",
+      "ticker": "CVX",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-02-02",
+      "ticker": "CVX",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-04-27",
+      "ticker": "CVX",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-07-27",
+      "ticker": "CVX",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-11-02",
+      "ticker": "CVX",
+      "updatedAt": "2018-11-12T23:01:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-02-01",
+      "ticker": "CVX",
+      "updatedAt": "2019-02-12T00:46:20Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-04-26",
+      "ticker": "CVX",
+      "updatedAt": "2019-05-07T00:27:17Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-08-02",
+      "ticker": "CVX",
+      "updatedAt": "2019-08-12T23:16:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-11-01",
+      "ticker": "CVX",
+      "updatedAt": "2019-11-12T00:16:27Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-01-31",
+      "ticker": "CVX",
+      "updatedAt": "2020-02-11T00:16:33Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-05-01",
+      "ticker": "CVX",
+      "updatedAt": "2020-05-11T23:16:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-07-31",
+      "ticker": "CVX",
+      "updatedAt": "2020-08-10T23:16:13Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-10-30",
+      "ticker": "CVX",
+      "updatedAt": "2020-11-10T00:16:13Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-01-29",
+      "ticker": "CVX",
+      "updatedAt": "2021-02-09T00:16:17Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-04-30",
+      "ticker": "CVX",
+      "updatedAt": "2021-05-10T23:16:32Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-07-30",
+      "ticker": "CVX",
+      "updatedAt": "2021-08-09T23:16:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-10-29",
+      "ticker": "CVX",
+      "updatedAt": "2021-11-09T00:16:24Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-01-28",
+      "ticker": "CVX",
+      "updatedAt": "2022-02-08T00:16:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-04-29",
+      "ticker": "CVX",
+      "updatedAt": "2022-05-09T23:16:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-07-29",
+      "ticker": "CVX",
+      "updatedAt": "2022-08-08T23:16:35Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-10-28",
+      "ticker": "CVX",
+      "updatedAt": "2022-11-08T00:16:11Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-01-27",
+      "ticker": "CVX",
+      "updatedAt": "2023-02-07T00:16:23Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-04-28",
+      "ticker": "CVX",
+      "updatedAt": "2023-05-08T23:16:04Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-07-28",
+      "ticker": "CVX",
+      "updatedAt": "2023-08-07T23:16:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-10-27",
+      "ticker": "CVX",
+      "updatedAt": "2023-11-07T00:16:17Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-02-02",
+      "ticker": "CVX",
+      "updatedAt": "2024-02-13T00:16:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-04-26",
+      "ticker": "CVX",
+      "updatedAt": "2024-05-06T23:16:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-08-02",
+      "ticker": "CVX",
+      "updatedAt": "2024-08-12T23:16:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-11-01",
+      "ticker": "CVX",
+      "updatedAt": "2024-11-12T01:01:21Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-01-31",
+      "ticker": "CVX",
+      "updatedAt": "2025-02-11T03:41:35Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-05-02",
+      "ticker": "CVX",
+      "updatedAt": "2025-05-13T02:40:52Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-08-01",
+      "ticker": "CVX",
+      "updatedAt": "2025-08-12T02:41:13Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-10-31",
+      "ticker": "CVX",
+      "updatedAt": "2025-11-11T03:40:39Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-01-30",
+      "ticker": "CVX",
+      "updatedAt": "2026-02-10T03:40:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-05-01",
+      "ticker": "CVX",
+      "updatedAt": "2026-05-12T02:41:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-07-31",
+      "ticker": "CVX",
+      "updatedAt": "2026-08-10T22:00:56Z"
+    }
+  ]
+}

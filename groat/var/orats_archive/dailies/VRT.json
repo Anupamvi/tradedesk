@@ -2606,9 +2606,18 @@
       "hiPx": 274.76,
       "loPx": 262.23,
       "open": 273.0,
-      "stkVolu": 4607784.0,
+      "stkVolu": 4607814.0,
       "ticker": "VRT",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 265.69,
+      "hiPx": 270.0,
+      "loPx": 265.02,
+      "open": 269.06,
+      "stkVolu": 227843.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

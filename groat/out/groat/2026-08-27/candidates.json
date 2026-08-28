@@ -7,644 +7,6 @@
       "above_sma50": true,
       "action": "TRADE",
       "asof_date": "2026-08-27",
-      "atr14": 11.608412636380034,
-      "avwap_earnings": 208.6258756612523,
-      "avwap_swing_high": 203.86419501255796,
-      "avwap_swing_low": 203.68767734292754,
-      "avwap_year": 134.720766033278,
-      "choice": "STOCK",
-      "choice_why": [
-        "stock won the shortlist versus priced option structures"
-      ],
-      "close": 227.96,
-      "direction": "bullish",
-      "earnings": {
-        "date": "2026-12-01",
-        "days": 96,
-        "history": [
-          "2024-11-26",
-          "2025-03-04",
-          "2025-06-03",
-          "2025-08-27",
-          "2025-12-02",
-          "2026-03-03",
-          "2026-06-03",
-          "2026-08-26"
-        ],
-        "last": "2026-08-26",
-        "note": "",
-        "overlaps_hold": false,
-        "raw_daysToNextErn": 0,
-        "raw_nextErn": "0000-00-00",
-        "raw_wksNextErn": 13,
-        "schwab_note": "skipped_web_already_had_next",
-        "source": "web.alphaquery",
-        "ticker": "CRWD",
-        "usable": true
-      },
-      "ema20": 202.72051414547752,
-      "etf": "CIBR",
-      "evidence": {
-        "note": "",
-        "options": {
-          "avg_pnl_per_risk": null,
-          "be_rate": null,
-          "mean_pop": null,
-          "n": 0
-        },
-        "stock": {
-          "avg_r": 0.5,
-          "expectancy_r": 0.5,
-          "losses": 2,
-          "n": 4,
-          "time": 0,
-          "win_rate": 0.5,
-          "wins": 2
-        },
-        "ticker": "CRWD",
-        "weak": false
-      },
-      "extension_atr": 2.1742409272585235,
-      "filings": "DATA UNAVAILABLE",
-      "fire": {
-        "chase": false,
-        "kind": "spike",
-        "note": "FIRE spike: 1d +20.5% on 2.7x volume",
-        "ret_1": 0.2049899566550375,
-        "ret_2": 0.2296903657352467,
-        "rvol": 2.687027088992513
-      },
-      "forecast_20d": 52.434,
-      "group": "cybersecurity",
-      "group_status": "accelerating",
-      "hv20": 53.32,
-      "iv30": 52.27,
-      "iv_pctile": 77.0,
-      "iv_vs_forecast": -0.16399999999999437,
-      "lane": "FIRE",
-      "macros": [
-        {
-          "date": "2026-09-04",
-          "event": "Employment Situation",
-          "impact": "high"
-        },
-        {
-          "date": "2026-09-10",
-          "event": "PPI",
-          "impact": "high"
-        },
-        {
-          "date": "2026-09-11",
-          "event": "CPI",
-          "impact": "high"
-        },
-        {
-          "date": "2026-09-16",
-          "event": "FOMC decision",
-          "impact": "high"
-        }
-      ],
-      "naive_pop": null,
-      "naive_pop_note": null,
-      "news": "DATA UNAVAILABLE",
-      "opt_conf": null,
-      "opt_conf_drivers": [],
-      "opt_conf_label": "n/a",
-      "opt_conf_note": "stock or no trade",
-      "options": null,
-      "orats_raw": true,
-      "picked": {
-        "entry": 227.96,
-        "hold_sessions": 15,
-        "instrument": "stock",
-        "invalidation": "close beyond stop 198.66",
-        "notional": 3875.32,
-        "ok": true,
-        "reason": "",
-        "risk_dollars": 498.14131471334343,
-        "rr": 2.000000000000001,
-        "shares": 17,
-        "side": "long",
-        "stop": 198.6575697227445,
-        "target": 286.56486055451103
-      },
-      "premium_side": null,
-      "primary": "C",
-      "primary_name": "Post-Earnings Drift",
-      "reasons": [],
-      "regime": "strong_risk_on",
-      "ret_1": 0.2049899566550375,
-      "ret_2": 0.2296903657352467,
-      "reviews": [
-        {
-          "expiry": null,
-          "instrument": "stock",
-          "legs": null,
-          "reason": "stock plan clears R/R",
-          "rr": 2.000000000000001,
-          "status": "PASS",
-          "strategy": "stock",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": null,
-          "instrument": "long_call",
-          "legs": null,
-          "reason": "no liquid structure in 21-75 DTE",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "long_call",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": null,
-          "instrument": "long_put",
-          "legs": null,
-          "reason": "against bullish underlying thesis",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "long_put",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": null,
-          "instrument": "debit_call_spread",
-          "legs": null,
-          "reason": "no liquid structure in 21-75 DTE",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "debit_call_spread",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": null,
-          "instrument": "debit_put_spread",
-          "legs": null,
-          "reason": "against bullish underlying thesis",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "debit_put_spread",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": null,
-          "instrument": "put_credit_spread",
-          "legs": null,
-          "reason": "no liquid structure in 21-75 DTE",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "put_credit_spread",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": null,
-          "instrument": "call_credit_spread",
-          "legs": null,
-          "reason": "against bullish underlying thesis",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "call_credit_spread",
-          "target_credit": null,
-          "target_debit": null
-        }
-      ],
-      "rs_20": 0.19109993342365583,
-      "rs_5": 0.18650023791401082,
-      "rs_60": 0.17064518494877778,
-      "rsi14": 64.04973596894072,
-      "rvol": 2.687027088992513,
-      "score": 63.0,
-      "setup_notes": [
-        "holding earnings AVWAP 1 sessions after lastErn",
-        "group accelerating with positive 20d RS",
-        "close above prior 20-session close high",
-        "20d RS vs SPY +19.1% with accumulation structure",
-        "FIRE spike: 1d +20.5% on 2.7x volume"
-      ],
-      "setups": [
-        "C",
-        "E",
-        "B",
-        "D",
-        "H"
-      ],
-      "sleeve": "groat_swing",
-      "slope": -0.2026,
-      "sma200": 140.08133750000002,
-      "sma50": 195.27364999999992,
-      "stale": false,
-      "stock": {
-        "entry": 227.96,
-        "hold_sessions": 15,
-        "instrument": "stock",
-        "invalidation": "close beyond stop 198.66",
-        "notional": 3875.32,
-        "ok": true,
-        "reason": "",
-        "risk_dollars": 498.14131471334343,
-        "rr": 2.000000000000001,
-        "shares": 17,
-        "side": "long",
-        "stop": 198.6575697227445,
-        "target": 286.56486055451103
-      },
-      "tape_ok": true,
-      "target_credit": null,
-      "target_debit": null,
-      "thesis": {
-        "headline": "CRWD \u2014 bullish Post-Earnings Drift in accelerating cybersecurity",
-        "invalidation": "close beyond stop 198.66",
-        "paragraphs": [
-          "CRWD is a bullish idea in a strong risk on tape because Post-Earnings Drift (C), FIRE spike: 1d +20.5% on 2.7x volume, 20d RS vs SPY 19.11%, cybersecurity group is accelerating.",
-          "Price is 227.96, trend strong_up, 20 EMA 202.72 / 50 195.27 / 200 140.08, relative volume 2.7.",
-          "Group cybersecurity (CIBR) is accelerating. AVWAP year 134.72, swing-low 203.69.",
-          "Earnings 2026-12-01 (web.alphaquery).",
-          "Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 198.66."
-        ],
-        "why_now": [
-          "Post-Earnings Drift (C)",
-          "FIRE spike: 1d +20.5% on 2.7x volume",
-          "20d RS vs SPY 19.11%",
-          "cybersecurity group is accelerating"
-        ]
-      },
-      "ticker": "CRWD",
-      "trend": "strong_up",
-      "vrp": -1.0499999999999972,
-      "x": "Informed",
-      "x_notes": "Earnings-day tape 2026-08-27: +20.5% on beat/guide (ARR, Falcon Flex). Mixed: Kurtz Form 4 sales 8/25-26. Not a trigger.",
-      "xhot": {
-        "bias": "bullish",
-        "chase": true,
-        "heat": "hot",
-        "kind": "spike",
-        "move": "will_dip",
-        "narrative": "Software AI-spend confirmation with CRM/OKTA. Earnings beat/guide. Tape +20% \u2014 already ran.",
-        "play": "X-hot spike already extended \u2014 do not chase; the swing is the pullback, not the rip",
-        "playable": false,
-        "posts_24h": 40,
-        "source": "x_keyword_search 2026-08-28",
-        "tag": "Informed"
-      }
-    },
-    {
-      "above_ema20": true,
-      "above_sma200": true,
-      "above_sma50": true,
-      "action": "TRADE",
-      "asof_date": "2026-08-27",
-      "atr14": 7.294793204908345,
-      "avwap_earnings": 220.58120164993292,
-      "avwap_swing_high": 218.29663938520326,
-      "avwap_swing_low": 208.72231803379535,
-      "avwap_year": 197.3358256655177,
-      "choice": "OPTIONS",
-      "choice_why": [
-        "shortlisted debit_call_spread after reviewing stock, long call/put, debit spreads, and credit spreads"
-      ],
-      "close": 227.98,
-      "direction": "bullish",
-      "earnings": {
-        "date": "2026-11-18",
-        "days": 83,
-        "history": [
-          "2024-11-20",
-          "2025-02-26",
-          "2025-05-28",
-          "2025-08-27",
-          "2025-11-19",
-          "2026-02-25",
-          "2026-05-20",
-          "2026-08-26"
-        ],
-        "last": "2026-08-26",
-        "note": "",
-        "overlaps_hold": false,
-        "raw_daysToNextErn": 0,
-        "raw_nextErn": "0000-00-00",
-        "raw_wksNextErn": 11,
-        "schwab_note": "skipped_web_already_had_next",
-        "source": "web.alphaquery",
-        "ticker": "NVDA",
-        "usable": true
-      },
-      "ema20": 215.4668573099018,
-      "etf": "SMH",
-      "evidence": {
-        "note": "",
-        "options": {
-          "avg_pnl_per_risk": 0.7143795737759363,
-          "be_rate": 1.0,
-          "mean_pop": 0.46547751007048155,
-          "n": 1
-        },
-        "stock": {
-          "avg_r": -0.08567521021156682,
-          "expectancy_r": -0.08567521021156682,
-          "losses": 2,
-          "n": 4,
-          "time": 2,
-          "win_rate": 0.0,
-          "wins": 0
-        },
-        "ticker": "NVDA",
-        "weak": false
-      },
-      "extension_atr": 1.7153526273614788,
-      "filings": "DATA UNAVAILABLE",
-      "fire": {
-        "chase": false,
-        "kind": "spike",
-        "note": "FIRE spike: 1d +8.7% on 2.4x volume",
-        "ret_1": 0.08737956691786697,
-        "ret_2": 0.07007744660877724,
-        "rvol": 2.388626205537283
-      },
-      "forecast_20d": 33.06,
-      "group": "semiconductors",
-      "group_status": "accelerating",
-      "hv20": 32.86,
-      "iv30": 33.16,
-      "iv_pctile": 6.0,
-      "iv_vs_forecast": 0.09999999999999432,
-      "lane": "FIRE",
-      "macros": [
-        {
-          "date": "2026-09-04",
-          "event": "Employment Situation",
-          "impact": "high"
-        },
-        {
-          "date": "2026-09-10",
-          "event": "PPI",
-          "impact": "high"
-        },
-        {
-          "date": "2026-09-11",
-          "event": "CPI",
-          "impact": "high"
-        },
-        {
-          "date": "2026-09-16",
-          "event": "FOMC decision",
-          "impact": "high"
-        }
-      ],
-      "naive_pop": 0.3714679999999998,
-      "naive_pop_note": "naive P(spot > breakeven 236.80) from ORATS call deltas. Not a backtested win rate.",
-      "news": "DATA UNAVAILABLE",
-      "opt_conf": 60,
-      "opt_conf_drivers": [
-        "quoted conservative fill",
-        "thin OI",
-        "earnings >=45d",
-        "defined R/R>=1.5",
-        "30d DTE",
-        "primary setup C",
-        "X Crowded"
-      ],
-      "opt_conf_label": "medium",
-      "opt_conf_note": "structure confidence, not P(win)",
-      "options": {
-        "breakeven": 236.8,
-        "contracts": 2,
-        "debit": 1.7999999999999998,
-        "delta": 0.0837,
-        "dte": 30.0,
-        "expiry": "2026-09-25",
-        "fill_assumption": "long ask minus short bid (never mid)",
-        "gamma": 0.0015500000000000028,
-        "instrument": "debit_call_spread",
-        "legs": "BUY 235.0 call / SELL 240.0 call 2026-09-25",
-        "long_delta": 0.4016,
-        "long_strike": 235.0,
-        "max_gain": 640.0,
-        "max_loss": 359.99999999999994,
-        "naive_pop": 0.3714679999999998,
-        "naive_pop_note": "naive P(spot > breakeven 236.80) from ORATS call deltas. Not a backtested win rate.",
-        "ok": true,
-        "premium": 1.7999999999999998,
-        "premium_side": "debit",
-        "reason": "defined-risk directional; better than naked long when IV is not cheap",
-        "rr": 1.7777777777777781,
-        "short_delta": 0.3179,
-        "short_strike": 240.0,
-        "target_credit": null,
-        "target_debit": 1.7999999999999998,
-        "theta": -0.012300000000000005,
-        "vega": 0.0174,
-        "width": 5.0
-      },
-      "orats_raw": true,
-      "picked": {
-        "breakeven": 236.8,
-        "contracts": 2,
-        "debit": 1.7999999999999998,
-        "delta": 0.0837,
-        "dte": 30.0,
-        "expiry": "2026-09-25",
-        "fill_assumption": "long ask minus short bid (never mid)",
-        "gamma": 0.0015500000000000028,
-        "instrument": "debit_call_spread",
-        "legs": "BUY 235.0 call / SELL 240.0 call 2026-09-25",
-        "long_delta": 0.4016,
-        "long_strike": 235.0,
-        "max_gain": 640.0,
-        "max_loss": 359.99999999999994,
-        "naive_pop": 0.3714679999999998,
-        "naive_pop_note": "naive P(spot > breakeven 236.80) from ORATS call deltas. Not a backtested win rate.",
-        "ok": true,
-        "premium": 1.7999999999999998,
-        "premium_side": "debit",
-        "reason": "defined-risk directional; better than naked long when IV is not cheap",
-        "rr": 1.7777777777777781,
-        "short_delta": 0.3179,
-        "short_strike": 240.0,
-        "target_credit": null,
-        "target_debit": 1.7999999999999998,
-        "theta": -0.012300000000000005,
-        "vega": 0.0174,
-        "width": 5.0
-      },
-      "premium_side": "debit",
-      "primary": "C",
-      "primary_name": "Post-Earnings Drift",
-      "reasons": [],
-      "regime": "strong_risk_on",
-      "ret_1": 0.08737956691786697,
-      "ret_2": 0.07007744660877724,
-      "reviews": [
-        {
-          "expiry": null,
-          "instrument": "stock",
-          "legs": null,
-          "reason": "stock plan clears R/R",
-          "rr": 1.9999999999999982,
-          "status": "PASS",
-          "strategy": "stock",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": null,
-          "instrument": "long_call",
-          "legs": null,
-          "reason": "no liquid structure in 21-75 DTE",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "long_call",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": null,
-          "instrument": "long_put",
-          "legs": null,
-          "reason": "against bullish underlying thesis",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "long_put",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": "2026-09-25",
-          "instrument": "debit_call_spread",
-          "legs": "BUY 235.0 call / SELL 240.0 call 2026-09-25",
-          "reason": "defined-risk directional; better than naked long when IV is not cheap",
-          "rr": 1.7777777777777781,
-          "status": "PASS",
-          "strategy": "debit_call_spread",
-          "target_credit": null,
-          "target_debit": 1.7999999999999998
-        },
-        {
-          "expiry": "2026-09-18",
-          "instrument": "debit_put_spread",
-          "legs": "BUY 230.0 put / SELL 220.0 put 2026-09-18",
-          "reason": "against bullish underlying thesis",
-          "rr": 1.2471910112359554,
-          "status": "REJECT",
-          "strategy": "debit_put_spread",
-          "target_credit": null,
-          "target_debit": 4.449999999999999
-        },
-        {
-          "expiry": null,
-          "instrument": "put_credit_spread",
-          "legs": null,
-          "reason": "no liquid structure in 21-75 DTE",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "put_credit_spread",
-          "target_credit": null,
-          "target_debit": null
-        },
-        {
-          "expiry": null,
-          "instrument": "call_credit_spread",
-          "legs": null,
-          "reason": "against bullish underlying thesis",
-          "rr": null,
-          "status": "REJECT",
-          "strategy": "call_credit_spread",
-          "target_credit": null,
-          "target_debit": null
-        }
-      ],
-      "rs_20": 0.12923574805785476,
-      "rs_5": 0.040179722042372745,
-      "rs_60": 0.007978064658739958,
-      "rsi14": 61.319424865642425,
-      "rvol": 2.388626205537283,
-      "score": 63.0,
-      "setup_notes": [
-        "holding earnings AVWAP 1 sessions after lastErn",
-        "group accelerating with positive 20d RS",
-        "close above prior 20-session close high",
-        "trend pullback into 20 EMA / AVWAP / 50 DMA",
-        "20d RS vs SPY +12.9% with accumulation structure",
-        "FIRE spike: 1d +8.7% on 2.4x volume"
-      ],
-      "setups": [
-        "C",
-        "E",
-        "B",
-        "A",
-        "D",
-        "H"
-      ],
-      "sleeve": "groat_swing",
-      "slope": 0.9307,
-      "sma200": 195.73270000000008,
-      "sma50": 208.16199999999998,
-      "stale": false,
-      "stock": {
-        "entry": 227.98,
-        "hold_sessions": 15,
-        "instrument": "stock",
-        "invalidation": "close beyond stop 212.91",
-        "notional": 7523.339999999999,
-        "ok": true,
-        "reason": "",
-        "risk_dollars": 497.18857028993125,
-        "rr": 1.9999999999999982,
-        "shares": 33,
-        "side": "long",
-        "stop": 212.9136796881839,
-        "target": 258.11264062363216
-      },
-      "tape_ok": true,
-      "target_credit": null,
-      "target_debit": 1.7999999999999998,
-      "thesis": {
-        "headline": "NVDA \u2014 bullish Post-Earnings Drift in accelerating semiconductors",
-        "invalidation": "close back below 20 EMA / swing-low AVWAP",
-        "paragraphs": [
-          "NVDA is a bullish idea in a strong risk on tape because Post-Earnings Drift (C), FIRE spike: 1d +8.7% on 2.4x volume, 20d RS vs SPY 12.92%, semiconductors group is accelerating.",
-          "Price is 227.98, trend strong_up, 20 EMA 215.47 / 50 208.16 / 200 195.73, relative volume 2.4.",
-          "Group semiconductors (SMH) is accelerating. AVWAP year 197.34, swing-low 208.72.",
-          "Earnings 2026-11-18 (web.alphaquery).",
-          "Instrument shortlist picked **OPTIONS**. Invalidation: close back below 20 EMA / swing-low AVWAP."
-        ],
-        "why_now": [
-          "Post-Earnings Drift (C)",
-          "FIRE spike: 1d +8.7% on 2.4x volume",
-          "20d RS vs SPY 12.92%",
-          "semiconductors group is accelerating"
-        ]
-      },
-      "ticker": "NVDA",
-      "trend": "strong_up",
-      "vrp": 0.29999999999999716,
-      "x": "Crowded",
-      "x_notes": "Post-print +8.7% / FY28 +70% guide widely repeated; heavy promo/crypto spam. Confirm, not trigger. Crowded do not size up.",
-      "xhot": {
-        "bias": "bullish",
-        "chase": false,
-        "heat": "hot",
-        "kind": "spike",
-        "move": "will_rise",
-        "narrative": "Q2 print ~$96B, beat/guide, DC strength. Tape +~9%. Crowded promo + Burry-calls chatter. Some beat-and-drop posts \u2014 tape did not dump.",
-        "play": "X-hot continuation \u2014 defined-risk call debit or stock, 1 lot if Crowded",
-        "playable": true,
-        "posts_24h": 90,
-        "source": "x_keyword_search 2026-08-28",
-        "tag": "Crowded"
-      }
-    },
-    {
-      "above_ema20": true,
-      "above_sma200": true,
-      "above_sma50": true,
-      "action": "TRADE",
-      "asof_date": "2026-08-27",
       "atr14": 6.3907882541297365,
       "avwap_earnings": 114.89884148122049,
       "avwap_swing_high": 112.77547585102208,
@@ -2764,33 +2126,33 @@
       "above_sma50": true,
       "action": "TRADE",
       "asof_date": "2026-08-27",
-      "atr14": 17.56753694488421,
-      "avwap_earnings": 323.89713688832785,
-      "avwap_swing_high": 364.6765167246246,
-      "avwap_swing_low": 356.6683516681329,
-      "avwap_year": 222.04480206694276,
+      "atr14": 27.98347703066481,
+      "avwap_earnings": 419.0978159540745,
+      "avwap_swing_high": 464.8315414057957,
+      "avwap_swing_low": 445.12790208957443,
+      "avwap_year": 265.6033144552143,
       "choice": "STOCK",
       "choice_why": [
         "IV rich vs realized \u2014 prefer stock or defined-risk short premium",
         "earnings inside intended hold \u2014 ordinary options rejected (not an EVENT TRADE)",
         "stock won the shortlist versus priced option structures"
       ],
-      "close": 382.85,
+      "close": 472.26,
       "direction": "bullish",
       "earnings": {
         "date": "2026-09-01",
         "days": 5,
         "history": [
-          "2024-08-19",
-          "2024-11-20",
-          "2025-02-13",
-          "2025-05-20",
-          "2025-08-18",
-          "2025-11-19",
-          "2026-02-17",
-          "2026-06-02"
+          "2024-08-29",
+          "2024-11-26",
+          "2025-02-27",
+          "2025-05-29",
+          "2025-08-28",
+          "2025-11-25",
+          "2026-02-26",
+          "2026-05-28"
         ],
-        "last": "2026-06-02",
+        "last": "2026-05-28",
         "note": "",
         "overlaps_hold": true,
         "raw_daysToNextErn": 0,
@@ -2798,11 +2160,11 @@
         "raw_wksNextErn": 0,
         "schwab_note": "skipped_web_already_had_next",
         "source": "web.alphaquery",
-        "ticker": "PANW",
+        "ticker": "DELL",
         "usable": true
       },
-      "ema20": 358.30952830435194,
-      "etf": "CIBR",
+      "ema20": 450.6013290975886,
+      "etf": "SMH",
       "evidence": {
         "note": "",
         "options": {
@@ -2812,34 +2174,34 @@
           "n": 0
         },
         "stock": {
-          "avg_r": 0.27826416276658855,
-          "expectancy_r": 0.27826416276658855,
-          "losses": 2,
-          "n": 5,
-          "time": 2,
-          "win_rate": 0.2,
+          "avg_r": 1.416808887938521,
+          "expectancy_r": 1.416808887938521,
+          "losses": 0,
+          "n": 2,
+          "time": 1,
+          "win_rate": 0.5,
           "wins": 1
         },
-        "ticker": "PANW",
+        "ticker": "DELL",
         "weak": false
       },
-      "extension_atr": 1.396921593086186,
+      "extension_atr": 0.773980691487246,
       "filings": "DATA UNAVAILABLE",
       "fire": {
         "chase": false,
         "kind": null,
         "note": "",
-        "ret_1": 0.12831923609678464,
-        "ret_2": 0.1263606943218596,
-        "rvol": 1.3262064347566118
+        "ret_1": 0.01819671424259406,
+        "ret_2": 0.0459800664451826,
+        "rvol": 0.8758142963860198
       },
-      "forecast_20d": 53.453,
-      "group": "cybersecurity",
+      "forecast_20d": 65.491,
+      "group": "ai_infrastructure",
       "group_status": "accelerating",
-      "hv20": 49.38,
-      "iv30": 62.96,
-      "iv_pctile": 87.0,
-      "iv_vs_forecast": 9.506999999999998,
+      "hv20": 75.36,
+      "iv30": 75.76,
+      "iv_pctile": 70.0,
+      "iv_vs_forecast": 10.269000000000005,
       "lane": "SWING",
       "macros": [
         {
@@ -2873,27 +2235,27 @@
       "options": null,
       "orats_raw": true,
       "picked": {
-        "entry": 382.85,
+        "entry": 472.26,
         "hold_sessions": 15,
         "instrument": "stock",
-        "invalidation": "close beyond stop 347.71",
-        "notional": 5359.900000000001,
+        "invalidation": "close beyond stop 416.29",
+        "notional": 3778.08,
         "ok": true,
         "reason": "",
-        "risk_dollars": 491.8910344567579,
+        "risk_dollars": 447.7356324906368,
         "rr": 2.0,
-        "shares": 14,
+        "shares": 8,
         "side": "long",
-        "stop": 347.7149261102316,
-        "target": 453.12014777953686
+        "stop": 416.2930459386704,
+        "target": 584.1939081226592
       },
       "premium_side": null,
       "primary": "E",
       "primary_name": "Emerging Sector Rotation",
       "reasons": [],
       "regime": "strong_risk_on",
-      "ret_1": 0.12831923609678464,
-      "ret_2": 0.1263606943218596,
+      "ret_1": 0.01819671424259406,
+      "ret_2": 0.0459800664451826,
       "reviews": [
         {
           "expiry": null,
@@ -2973,17 +2335,17 @@
           "target_debit": null
         }
       ],
-      "rs_20": 0.13588772267815585,
-      "rs_5": 0.08408792926506048,
-      "rs_60": 0.273096824329085,
-      "rsi14": 60.43590526099691,
-      "rvol": 1.3262064347566118,
+      "rs_20": 0.12696869284632228,
+      "rs_5": 0.07505843802437573,
+      "rs_60": 0.06970239697506475,
+      "rsi14": 56.91722277688043,
+      "rvol": 0.8758142963860198,
       "score": 55.0,
       "setup_notes": [
         "group accelerating with positive 20d RS",
         "trend pullback into 20 EMA / AVWAP / 50 DMA",
         "volume contracted on the pullback",
-        "20d RS vs SPY +13.6% with accumulation structure"
+        "20d RS vs SPY +12.7% with accumulation structure"
       ],
       "setups": [
         "E",
@@ -2991,47 +2353,588 @@
         "D"
       ],
       "sleeve": "groat_swing",
-      "slope": -0.0304,
-      "sma200": 228.80835000000002,
-      "sma50": 341.62589999999994,
+      "slope": -0.2521,
+      "sma200": 243.16299999999993,
+      "sma50": 432.4292,
       "stale": false,
       "stock": {
-        "entry": 382.85,
+        "entry": 472.26,
         "hold_sessions": 15,
         "instrument": "stock",
-        "invalidation": "close beyond stop 347.71",
-        "notional": 5359.900000000001,
+        "invalidation": "close beyond stop 416.29",
+        "notional": 3778.08,
         "ok": true,
         "reason": "",
-        "risk_dollars": 491.8910344567579,
+        "risk_dollars": 447.7356324906368,
         "rr": 2.0,
-        "shares": 14,
+        "shares": 8,
         "side": "long",
-        "stop": 347.7149261102316,
-        "target": 453.12014777953686
+        "stop": 416.2930459386704,
+        "target": 584.1939081226592
       },
       "tape_ok": true,
       "target_credit": null,
       "target_debit": null,
       "thesis": {
-        "headline": "PANW \u2014 bullish Emerging Sector Rotation in accelerating cybersecurity",
-        "invalidation": "close beyond stop 347.71",
+        "headline": "DELL \u2014 bullish Emerging Sector Rotation in accelerating ai_infrastructure",
+        "invalidation": "close beyond stop 416.29",
         "paragraphs": [
-          "PANW is a bullish idea in a strong risk on tape because Emerging Sector Rotation (E), 20d RS vs SPY 13.59%, cybersecurity group is accelerating.",
-          "Price is 382.85, trend strong_up, 20 EMA 358.31 / 50 341.63 / 200 228.81, relative volume 1.3.",
-          "Group cybersecurity (CIBR) is accelerating. AVWAP year 222.04, swing-low 356.67.",
+          "DELL is a bullish idea in a strong risk on tape because Emerging Sector Rotation (E), 20d RS vs SPY 12.70%, ai_infrastructure group is accelerating.",
+          "Price is 472.26, trend strong_up, 20 EMA 450.60 / 50 432.43 / 200 243.16, relative volume 0.9.",
+          "Group ai_infrastructure (SMH) is accelerating. AVWAP year 265.60, swing-low 445.13.",
           "Earnings 2026-09-01 (web.alphaquery); ordinary options blocked through the print.",
-          "Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 347.71."
+          "Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 416.29."
         ],
         "why_now": [
           "Emerging Sector Rotation (E)",
-          "20d RS vs SPY 13.59%",
+          "20d RS vs SPY 12.70%",
+          "ai_infrastructure group is accelerating"
+        ]
+      },
+      "ticker": "DELL",
+      "trend": "strong_up",
+      "vrp": 0.4000000000000057,
+      "x": "DATA UNAVAILABLE",
+      "x_notes": "X not fetched. Skill layer must search $TICKER and write this file.",
+      "xhot": {}
+    },
+    {
+      "above_ema20": true,
+      "above_sma200": true,
+      "above_sma50": true,
+      "action": "TRADE",
+      "asof_date": "2026-08-27",
+      "atr14": 2.8467609703873236,
+      "avwap_earnings": null,
+      "avwap_swing_high": 95.97813785709137,
+      "avwap_swing_low": 96.08208917654296,
+      "avwap_year": 77.18541663245315,
+      "choice": "STOCK",
+      "choice_why": [
+        "option chain DATA UNAVAILABLE",
+        "stock won the shortlist versus priced option structures"
+      ],
+      "close": 100.79,
+      "direction": "bullish",
+      "earnings": {
+        "date": null,
+        "days": null,
+        "last": null,
+        "note": "ETF/index exempt from single-name earnings gate",
+        "overlaps_hold": false,
+        "raw_daysToNextErn": 0,
+        "raw_nextErn": "0000-00-00",
+        "raw_wksNextErn": 0,
+        "source": "exempt",
+        "ticker": "CIBR",
+        "usable": true
+      },
+      "ema20": 95.58799261405046,
+      "etf": "CIBR",
+      "evidence": {
+        "note": "",
+        "options": {
+          "avg_pnl_per_risk": null,
+          "be_rate": null,
+          "mean_pop": null,
+          "n": 0
+        },
+        "stock": {
+          "avg_r": -0.25,
+          "expectancy_r": -0.25,
+          "losses": 3,
+          "n": 4,
+          "time": 0,
+          "win_rate": 0.25,
+          "wins": 1
+        },
+        "ticker": "CIBR",
+        "weak": false
+      },
+      "extension_atr": 1.8273425271956605,
+      "filings": "DATA UNAVAILABLE",
+      "fire": {
+        "chase": false,
+        "kind": null,
+        "note": "",
+        "ret_1": 0.07612641469143733,
+        "ret_2": 0.09009301319489516,
+        "rvol": 1.2137662083632788
+      },
+      "forecast_20d": 29.799,
+      "group": "cybersecurity",
+      "group_status": "accelerating",
+      "hv20": 30.44,
+      "iv30": 29.84,
+      "iv_pctile": 71.0,
+      "iv_vs_forecast": 0.04100000000000037,
+      "lane": "SWING",
+      "macros": [
+        {
+          "date": "2026-09-04",
+          "event": "Employment Situation",
+          "impact": "high"
+        },
+        {
+          "date": "2026-09-10",
+          "event": "PPI",
+          "impact": "high"
+        },
+        {
+          "date": "2026-09-11",
+          "event": "CPI",
+          "impact": "high"
+        },
+        {
+          "date": "2026-09-16",
+          "event": "FOMC decision",
+          "impact": "high"
+        }
+      ],
+      "naive_pop": null,
+      "naive_pop_note": null,
+      "news": "DATA UNAVAILABLE",
+      "opt_conf": null,
+      "opt_conf_drivers": [],
+      "opt_conf_label": "n/a",
+      "opt_conf_note": "stock or no trade",
+      "options": null,
+      "orats_raw": true,
+      "picked": {
+        "entry": 100.79,
+        "hold_sessions": 15,
+        "instrument": "stock",
+        "invalidation": "close beyond stop 94.59",
+        "notional": 8063.200000000001,
+        "ok": true,
+        "reason": "",
+        "risk_dollars": 495.869898046808,
+        "rr": 2.0,
+        "shares": 80,
+        "side": "long",
+        "stop": 94.5916262744149,
+        "target": 113.1867474511702
+      },
+      "premium_side": null,
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "reasons": [],
+      "regime": "strong_risk_on",
+      "ret_1": 0.07612641469143733,
+      "ret_2": 0.09009301319489516,
+      "reviews": [
+        {
+          "expiry": null,
+          "instrument": "stock",
+          "legs": null,
+          "reason": "stock plan clears R/R",
+          "rr": 2.0,
+          "status": "PASS",
+          "strategy": "stock",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "long_call",
+          "legs": null,
+          "reason": "option chain DATA UNAVAILABLE",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "long_call",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "long_put",
+          "legs": null,
+          "reason": "option chain DATA UNAVAILABLE",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "long_put",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "debit_call_spread",
+          "legs": null,
+          "reason": "option chain DATA UNAVAILABLE",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "debit_call_spread",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "debit_put_spread",
+          "legs": null,
+          "reason": "option chain DATA UNAVAILABLE",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "debit_put_spread",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "put_credit_spread",
+          "legs": null,
+          "reason": "option chain DATA UNAVAILABLE",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "put_credit_spread",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "call_credit_spread",
+          "legs": null,
+          "reason": "option chain DATA UNAVAILABLE",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "call_credit_spread",
+          "target_credit": null,
+          "target_debit": null
+        }
+      ],
+      "rs_20": 0.07998739489816153,
+      "rs_5": 0.0673985970947577,
+      "rs_60": 0.05341662691101434,
+      "rsi14": 62.333751985747114,
+      "rvol": 1.2137662083632788,
+      "score": 55.0,
+      "setup_notes": [
+        "group accelerating with positive 20d RS",
+        "20d RS vs SPY +8.0% with accumulation structure"
+      ],
+      "setups": [
+        "E",
+        "D"
+      ],
+      "sleeve": "groat_swing",
+      "slope": -0.504,
+      "sma200": 76.76080000000002,
+      "sma50": 92.37519999999999,
+      "stale": false,
+      "stock": {
+        "entry": 100.79,
+        "hold_sessions": 15,
+        "instrument": "stock",
+        "invalidation": "close beyond stop 94.59",
+        "notional": 8063.200000000001,
+        "ok": true,
+        "reason": "",
+        "risk_dollars": 495.869898046808,
+        "rr": 2.0,
+        "shares": 80,
+        "side": "long",
+        "stop": 94.5916262744149,
+        "target": 113.1867474511702
+      },
+      "tape_ok": true,
+      "target_credit": null,
+      "target_debit": null,
+      "thesis": {
+        "headline": "CIBR \u2014 bullish Emerging Sector Rotation in accelerating cybersecurity",
+        "invalidation": "close beyond stop 94.59",
+        "paragraphs": [
+          "CIBR is a bullish idea in a strong risk on tape because Emerging Sector Rotation (E), 20d RS vs SPY 8.00%, cybersecurity group is accelerating.",
+          "Price is 100.79, trend strong_up, 20 EMA 95.59 / 50 92.38 / 200 76.76, relative volume 1.2.",
+          "Group cybersecurity (CIBR) is accelerating. AVWAP year 77.19, swing-low 96.08.",
+          "Earnings DATA UNAVAILABLE (exempt).",
+          "Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 94.59."
+        ],
+        "why_now": [
+          "Emerging Sector Rotation (E)",
+          "20d RS vs SPY 8.00%",
           "cybersecurity group is accelerating"
         ]
       },
-      "ticker": "PANW",
+      "ticker": "CIBR",
       "trend": "strong_up",
-      "vrp": 13.579999999999998,
+      "vrp": -0.6000000000000014,
+      "x": "DATA UNAVAILABLE",
+      "x_notes": "X not fetched. Skill layer must search $TICKER and write this file.",
+      "xhot": {}
+    },
+    {
+      "above_ema20": true,
+      "above_sma200": true,
+      "above_sma50": true,
+      "action": "TRADE",
+      "asof_date": "2026-08-27",
+      "atr14": 13.45913058041791,
+      "avwap_earnings": 262.5572912422483,
+      "avwap_swing_high": 325.9033669104563,
+      "avwap_swing_low": 283.8873054739784,
+      "avwap_year": 204.57324122143322,
+      "choice": "STOCK",
+      "choice_why": [
+        "IV rich vs realized \u2014 prefer stock or defined-risk short premium",
+        "earnings inside intended hold \u2014 ordinary options rejected (not an EVENT TRADE)",
+        "stock won the shortlist versus priced option structures"
+      ],
+      "close": 329.11,
+      "direction": "bullish",
+      "earnings": {
+        "date": "2026-09-02",
+        "days": 6,
+        "history": [
+          "2024-08-21",
+          "2024-11-20",
+          "2025-02-26",
+          "2025-05-21",
+          "2025-08-27",
+          "2025-12-03",
+          "2026-02-25",
+          "2026-05-27"
+        ],
+        "last": "2026-05-27",
+        "note": "",
+        "overlaps_hold": true,
+        "raw_daysToNextErn": 0,
+        "raw_nextErn": "0000-00-00",
+        "raw_wksNextErn": 0,
+        "schwab_note": "skipped_web_already_had_next",
+        "source": "web.alphaquery",
+        "ticker": "SNOW",
+        "usable": true
+      },
+      "ema20": 316.93281176752714,
+      "etf": "IGV",
+      "evidence": {
+        "note": "",
+        "options": {
+          "avg_pnl_per_risk": null,
+          "be_rate": null,
+          "mean_pop": null,
+          "n": 0
+        },
+        "stock": {
+          "avg_r": 1.4757141260238928,
+          "expectancy_r": 1.4757141260238928,
+          "losses": 0,
+          "n": 4,
+          "time": 2,
+          "win_rate": 0.5,
+          "wins": 2
+        },
+        "ticker": "SNOW",
+        "weak": false
+      },
+      "extension_atr": 0.9047529600604237,
+      "filings": "DATA UNAVAILABLE",
+      "fire": {
+        "chase": false,
+        "kind": null,
+        "note": "",
+        "ret_1": 0.043567872657513496,
+        "ret_2": 0.038136395180115024,
+        "rvol": 0.9152070357584294
+      },
+      "forecast_20d": 52.38,
+      "group": "software",
+      "group_status": "accelerating",
+      "hv20": 46.81,
+      "iv30": 69.82,
+      "iv_pctile": 61.0,
+      "iv_vs_forecast": 17.43999999999999,
+      "lane": "SWING",
+      "macros": [
+        {
+          "date": "2026-09-04",
+          "event": "Employment Situation",
+          "impact": "high"
+        },
+        {
+          "date": "2026-09-10",
+          "event": "PPI",
+          "impact": "high"
+        },
+        {
+          "date": "2026-09-11",
+          "event": "CPI",
+          "impact": "high"
+        },
+        {
+          "date": "2026-09-16",
+          "event": "FOMC decision",
+          "impact": "high"
+        }
+      ],
+      "naive_pop": null,
+      "naive_pop_note": null,
+      "news": "DATA UNAVAILABLE",
+      "opt_conf": null,
+      "opt_conf_drivers": [],
+      "opt_conf_label": "n/a",
+      "opt_conf_note": "stock or no trade",
+      "options": null,
+      "orats_raw": true,
+      "picked": {
+        "entry": 329.11,
+        "hold_sessions": 15,
+        "instrument": "stock",
+        "invalidation": "close beyond stop 302.19",
+        "notional": 5923.9800000000005,
+        "ok": true,
+        "reason": "",
+        "risk_dollars": 484.5287008950446,
+        "rr": 2.0,
+        "shares": 18,
+        "side": "long",
+        "stop": 302.1917388391642,
+        "target": 382.94652232167164
+      },
+      "premium_side": null,
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "reasons": [],
+      "regime": "strong_risk_on",
+      "ret_1": 0.043567872657513496,
+      "ret_2": 0.038136395180115024,
+      "reviews": [
+        {
+          "expiry": null,
+          "instrument": "stock",
+          "legs": null,
+          "reason": "stock plan clears R/R",
+          "rr": 2.0,
+          "status": "PASS",
+          "strategy": "stock",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "long_call",
+          "legs": null,
+          "reason": "earnings inside intended hold \u2014 ordinary options rejected (not an EVENT TRADE)",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "long_call",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "long_put",
+          "legs": null,
+          "reason": "earnings inside intended hold \u2014 ordinary options rejected (not an EVENT TRADE)",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "long_put",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "debit_call_spread",
+          "legs": null,
+          "reason": "earnings inside intended hold \u2014 ordinary options rejected (not an EVENT TRADE)",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "debit_call_spread",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "debit_put_spread",
+          "legs": null,
+          "reason": "earnings inside intended hold \u2014 ordinary options rejected (not an EVENT TRADE)",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "debit_put_spread",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "put_credit_spread",
+          "legs": null,
+          "reason": "earnings inside intended hold \u2014 ordinary options rejected (not an EVENT TRADE)",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "put_credit_spread",
+          "target_credit": null,
+          "target_debit": null
+        },
+        {
+          "expiry": null,
+          "instrument": "call_credit_spread",
+          "legs": null,
+          "reason": "earnings inside intended hold \u2014 ordinary options rejected (not an EVENT TRADE)",
+          "rr": null,
+          "status": "REJECT",
+          "strategy": "call_credit_spread",
+          "target_credit": null,
+          "target_debit": null
+        }
+      ],
+      "rs_20": 0.06437280971633763,
+      "rs_5": 0.013193302664121553,
+      "rs_60": 0.24510220004526495,
+      "rsi14": 62.16391933621761,
+      "rvol": 0.9152070357584294,
+      "score": 55.0,
+      "setup_notes": [
+        "group accelerating with positive 20d RS",
+        "trend pullback into 20 EMA / AVWAP / 50 DMA",
+        "volume contracted on the pullback",
+        "20d RS vs SPY +6.4% with accumulation structure"
+      ],
+      "setups": [
+        "E",
+        "A",
+        "D"
+      ],
+      "sleeve": "groat_swing",
+      "slope": 0.6602,
+      "sma200": 216.935,
+      "sma50": 285.2836000000001,
+      "stale": false,
+      "stock": {
+        "entry": 329.11,
+        "hold_sessions": 15,
+        "instrument": "stock",
+        "invalidation": "close beyond stop 302.19",
+        "notional": 5923.9800000000005,
+        "ok": true,
+        "reason": "",
+        "risk_dollars": 484.5287008950446,
+        "rr": 2.0,
+        "shares": 18,
+        "side": "long",
+        "stop": 302.1917388391642,
+        "target": 382.94652232167164
+      },
+      "tape_ok": true,
+      "target_credit": null,
+      "target_debit": null,
+      "thesis": {
+        "headline": "SNOW \u2014 bullish Emerging Sector Rotation in accelerating software",
+        "invalidation": "close beyond stop 302.19",
+        "paragraphs": [
+          "SNOW is a bullish idea in a strong risk on tape because Emerging Sector Rotation (E), 20d RS vs SPY 6.44%, software group is accelerating.",
+          "Price is 329.11, trend strong_up, 20 EMA 316.93 / 50 285.28 / 200 216.94, relative volume 0.9.",
+          "Group software (IGV) is accelerating. AVWAP year 204.57, swing-low 283.89.",
+          "Earnings 2026-09-02 (web.alphaquery); ordinary options blocked through the print.",
+          "Instrument shortlist picked **STOCK**. Invalidation: close beyond stop 302.19."
+        ],
+        "why_now": [
+          "Emerging Sector Rotation (E)",
+          "20d RS vs SPY 6.44%",
+          "software group is accelerating"
+        ]
+      },
+      "ticker": "SNOW",
+      "trend": "strong_up",
+      "vrp": 23.00999999999999,
       "x": "DATA UNAVAILABLE",
       "x_notes": "X not fetched. Skill layer must search $TICKER and write this file.",
       "xhot": {}
@@ -7900,6 +7803,26 @@
       },
       "ema20": 95.58799261405046,
       "etf": "CIBR",
+      "evidence": {
+        "note": "",
+        "options": {
+          "avg_pnl_per_risk": null,
+          "be_rate": null,
+          "mean_pop": null,
+          "n": 0
+        },
+        "stock": {
+          "avg_r": -0.25,
+          "expectancy_r": -0.25,
+          "losses": 3,
+          "n": 4,
+          "time": 0,
+          "win_rate": 0.25,
+          "wins": 1
+        },
+        "ticker": "CIBR",
+        "weak": false
+      },
       "extension_atr": 1.8273425271956605,
       "filings": "DATA UNAVAILABLE",
       "fire": {
@@ -10794,7 +10717,7 @@
       "above_ema20": true,
       "above_sma200": true,
       "above_sma50": true,
-      "action": "TRADE",
+      "action": "WATCH",
       "asof_date": "2026-08-27",
       "atr14": 7.294793204908345,
       "avwap_earnings": 220.58120164993292,
@@ -10833,26 +10756,6 @@
       },
       "ema20": 215.4668573099018,
       "etf": "SMH",
-      "evidence": {
-        "note": "",
-        "options": {
-          "avg_pnl_per_risk": 0.7143795737759363,
-          "be_rate": 1.0,
-          "mean_pop": 0.46547751007048155,
-          "n": 1
-        },
-        "stock": {
-          "avg_r": -0.08567521021156682,
-          "expectancy_r": -0.08567521021156682,
-          "losses": 2,
-          "n": 4,
-          "time": 2,
-          "win_rate": 0.0,
-          "wins": 0
-        },
-        "ticker": "NVDA",
-        "weak": false
-      },
       "extension_atr": 1.7153526273614788,
       "filings": "DATA UNAVAILABLE",
       "fire": {
@@ -10972,7 +10875,9 @@
       "premium_side": "debit",
       "primary": "C",
       "primary_name": "Post-Earnings Drift",
-      "reasons": [],
+      "reasons": [
+        "setup_C_replay_park"
+      ],
       "regime": "strong_risk_on",
       "ret_1": 0.08737956691786697,
       "ret_2": 0.07007744660877724,
@@ -15930,6 +15835,26 @@
       },
       "ema20": 316.93281176752714,
       "etf": "IGV",
+      "evidence": {
+        "note": "",
+        "options": {
+          "avg_pnl_per_risk": null,
+          "be_rate": null,
+          "mean_pop": null,
+          "n": 0
+        },
+        "stock": {
+          "avg_r": 1.4757141260238928,
+          "expectancy_r": 1.4757141260238928,
+          "losses": 0,
+          "n": 4,
+          "time": 2,
+          "win_rate": 0.5,
+          "wins": 2
+        },
+        "ticker": "SNOW",
+        "weak": false
+      },
       "extension_atr": 0.9047529600604237,
       "filings": "DATA UNAVAILABLE",
       "fire": {
@@ -16836,7 +16761,7 @@
       "above_ema20": true,
       "above_sma200": true,
       "above_sma50": true,
-      "action": "TRADE",
+      "action": "WATCH",
       "asof_date": "2026-08-27",
       "atr14": 11.608412636380034,
       "avwap_earnings": 208.6258756612523,
@@ -16875,26 +16800,6 @@
       },
       "ema20": 202.72051414547752,
       "etf": "CIBR",
-      "evidence": {
-        "note": "",
-        "options": {
-          "avg_pnl_per_risk": null,
-          "be_rate": null,
-          "mean_pop": null,
-          "n": 0
-        },
-        "stock": {
-          "avg_r": 0.5,
-          "expectancy_r": 0.5,
-          "losses": 2,
-          "n": 4,
-          "time": 0,
-          "win_rate": 0.5,
-          "wins": 2
-        },
-        "ticker": "CRWD",
-        "weak": false
-      },
       "extension_atr": 2.1742409272585235,
       "filings": "DATA UNAVAILABLE",
       "fire": {
@@ -16962,7 +16867,9 @@
       "premium_side": null,
       "primary": "C",
       "primary_name": "Post-Earnings Drift",
-      "reasons": [],
+      "reasons": [
+        "setup_C_replay_park"
+      ],
       "regime": "strong_risk_on",
       "ret_1": 0.2049899566550375,
       "ret_2": 0.2296903657352467,
@@ -17128,7 +17035,7 @@
       "above_ema20": true,
       "above_sma200": true,
       "above_sma50": true,
-      "action": "TRADE",
+      "action": "WATCH",
       "asof_date": "2026-08-27",
       "atr14": 17.56753694488421,
       "avwap_earnings": 323.89713688832785,
@@ -17169,26 +17076,6 @@
       },
       "ema20": 358.30952830435194,
       "etf": "CIBR",
-      "evidence": {
-        "note": "",
-        "options": {
-          "avg_pnl_per_risk": null,
-          "be_rate": null,
-          "mean_pop": null,
-          "n": 0
-        },
-        "stock": {
-          "avg_r": 0.27826416276658855,
-          "expectancy_r": 0.27826416276658855,
-          "losses": 2,
-          "n": 5,
-          "time": 2,
-          "win_rate": 0.2,
-          "wins": 1
-        },
-        "ticker": "PANW",
-        "weak": false
-      },
       "extension_atr": 1.396921593086186,
       "filings": "DATA UNAVAILABLE",
       "fire": {
@@ -17256,7 +17143,9 @@
       "premium_side": null,
       "primary": "E",
       "primary_name": "Emerging Sector Rotation",
-      "reasons": [],
+      "reasons": [
+        "setup_E_post_rip"
+      ],
       "regime": "strong_risk_on",
       "ret_1": 0.12831923609678464,
       "ret_2": 0.1263606943218596,
@@ -17964,6 +17853,26 @@
       },
       "ema20": 450.6013290975886,
       "etf": "SMH",
+      "evidence": {
+        "note": "",
+        "options": {
+          "avg_pnl_per_risk": null,
+          "be_rate": null,
+          "mean_pop": null,
+          "n": 0
+        },
+        "stock": {
+          "avg_r": 1.416808887938521,
+          "expectancy_r": 1.416808887938521,
+          "losses": 0,
+          "n": 2,
+          "time": 1,
+          "win_rate": 0.5,
+          "wins": 1
+        },
+        "ticker": "DELL",
+        "weak": false
+      },
       "extension_atr": 0.773980691487246,
       "filings": "DATA UNAVAILABLE",
       "fire": {

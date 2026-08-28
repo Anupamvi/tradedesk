@@ -2606,9 +2606,18 @@
       "hiPx": 315.88,
       "loPx": 306.5,
       "open": 312.0,
-      "stkVolu": 4045658.0,
+      "stkVolu": 4045685.0,
       "ticker": "APP",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 322.375,
+      "hiPx": 324.71,
+      "loPx": 315.92,
+      "open": 316.25,
+      "stkVolu": 630465.0,
+      "ticker": "APP",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

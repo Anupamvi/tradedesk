@@ -2606,9 +2606,18 @@
       "hiPx": 550.83,
       "loPx": 540.08,
       "open": 540.08,
-      "stkVolu": 844614.0,
+      "stkVolu": 844619.0,
       "ticker": "VRTX",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 543.77,
+      "hiPx": 549.57,
+      "loPx": 543.75,
+      "open": 547.09,
+      "stkVolu": 34151.0,
+      "ticker": "VRTX",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

@@ -21,6 +21,7 @@ from groat.config import (
     ticker_group,
 )
 from groat.dates import today_et
+from groat.gates import trade_park_reason
 from groat.earnings import web_resolve
 from groat.num import to_float
 from groat.evidence import attach_evidence
@@ -240,8 +241,13 @@ def build_candidate(
         if not row.get("primary"):
             reasons.append("no_setup")
     elif row["choice"] in ("STOCK", "OPTIONS") and row["score"] >= TRADE_SCORE_MIN:
-        action = "TRADE"
-        reasons = []
+        park = trade_park_reason(row.get("primary"), snap, setup)
+        if park:
+            action = "WATCH"
+            reasons = [park]
+        else:
+            action = "TRADE"
+            reasons = []
     else:
         action = "WATCH"
         reasons = ["below_trade_score"] if row["score"] < TRADE_SCORE_MIN else []

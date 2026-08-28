@@ -2606,9 +2606,18 @@
       "hiPx": 283.81,
       "loPx": 279.09,
       "open": 280.15,
-      "stkVolu": 1773762.0,
+      "stkVolu": 1773808.0,
       "ticker": "CEG",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 281.77,
+      "hiPx": 283.77,
+      "loPx": 281.15,
+      "open": 281.53,
+      "stkVolu": 98223.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

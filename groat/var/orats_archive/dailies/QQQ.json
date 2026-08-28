@@ -2606,9 +2606,18 @@
       "hiPx": 721.35,
       "loPx": 714.525,
       "open": 716.93,
-      "stkVolu": 28723422.0,
+      "stkVolu": 28723451.0,
       "ticker": "QQQ",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 720.01,
+      "hiPx": 720.01,
+      "loPx": 718.1762,
+      "open": 719.74,
+      "stkVolu": 1664674.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

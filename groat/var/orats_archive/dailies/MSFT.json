@@ -2602,13 +2602,22 @@
       "tradeDate": "2026-08-26"
     },
     {
-      "clsPx": 504.91,
+      "clsPx": 505.06,
       "hiPx": 506.48,
       "loPx": 490.08,
       "open": 494.88,
-      "stkVolu": 28688753.0,
+      "stkVolu": 28688756.0,
       "ticker": "MSFT",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 508.08,
+      "hiPx": 509.5,
+      "loPx": 504.8675,
+      "open": 505.33,
+      "stkVolu": 1882144.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

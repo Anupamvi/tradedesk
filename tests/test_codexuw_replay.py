@@ -699,7 +699,7 @@ def test_decision_selection_requires_volatility_richness_even_with_high_iv_rank(
     ].iloc[0]
 
 
-def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
+def test_decision_selection_honors_explicit_one_credit_cap() -> None:
     detail = pd.DataFrame(
         [
             {
@@ -753,15 +753,71 @@ def test_decision_selection_caps_credit_edge_sleeve_at_one_per_day() -> None:
         ]
     )
 
-    selected = apply_replay_decision_selection(detail, max_selected_per_day=8)
-
-    # The invariant under test is the cap: at most one credit trade per session,
-    # however the sleeve happens to rank them. TOP/ADD both clear policy, SKIP is
-    # a Bull Put in a downtrend and is eligible but competes in the same sleeve.
-    credit = selected[selected["ticker"].isin(["TOP", "ADD"])]
-    assert credit["decision_pass"].sum() == 1
-    assert (
-        selected.loc[selected["ticker"].eq("ADD"), "decision_reason"].iloc[0]
-        in {"decision_eligible", "decision_selected_credit_edge_sleeve"}
+    selected = apply_replay_decision_selection(
+        detail,
+        max_selected_per_day=8,
+        max_credit_selected_per_day=1,
     )
-    assert not selected.loc[selected["ticker"].eq("SKIP"), "decision_pass"].iloc[0]
+
+    credit = selected[selected["ticker"].isin(["TOP", "ADD", "SKIP"])]
+    assert credit["decision_pass"].sum() == 1
+    assert selected.loc[selected["decision_pass"].eq(True), "ticker"].iloc[0] in {"TOP", "ADD", "SKIP"}
+
+
+def test_decision_selection_takes_all_policy_clear_credits_when_uncapped() -> None:
+    detail = pd.DataFrame(
+        [
+            {
+                "asof": "2026-04-29",
+                "ticker": "TOP",
+                "direction": "Bear Call",
+                "regime": "uptrend",
+                "stock_price_eod": 100.0,
+                "short_strike_eod": 110.0,
+                "entry_credit_pct_width": 0.25,
+                "entry_quote_width_pct": 0.10,
+                "iv30d": 0.30,
+                "realized_volatility_30d": 0.20,
+                "dte": 30,
+                "iv_rank": 45.0,
+                "combined_flow_bias": -0.12,
+                "exact_evaluated": True,
+            },
+            {
+                "asof": "2026-04-29",
+                "ticker": "ADD",
+                "direction": "Bear Call",
+                "regime": "uptrend",
+                "stock_price_eod": 100.0,
+                "short_strike_eod": 110.0,
+                "entry_credit_pct_width": 0.26,
+                "entry_quote_width_pct": 0.10,
+                "iv30d": 0.45,
+                "realized_volatility_30d": 0.30,
+                "dte": 30,
+                "iv_rank": 45.0,
+                "combined_flow_bias": -0.20,
+                "exact_evaluated": True,
+            },
+            {
+                "asof": "2026-04-29",
+                "ticker": "SKIP",
+                "direction": "Bull Put",
+                "regime": "downtrend",
+                "stock_price_eod": 100.0,
+                "short_strike_eod": 94.0,
+                "entry_credit_pct_width": 0.26,
+                "entry_quote_width_pct": 0.10,
+                "iv30d": 0.45,
+                "realized_volatility_30d": 0.30,
+                "dte": 30,
+                "iv_rank": 45.0,
+                "combined_flow_bias": 0.20,
+                "exact_evaluated": True,
+            },
+        ]
+    )
+
+    selected = apply_replay_decision_selection(detail, max_selected_per_day=0)
+
+    assert set(selected.loc[selected["decision_pass"].eq(True), "ticker"]) == {"TOP", "ADD", "SKIP"}

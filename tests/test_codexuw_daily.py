@@ -25,7 +25,7 @@ def test_write_data_error_report_documents_no_trade_reason(tmp_path) -> None:
     assert "# Codex Daily V2 - Daily Decision Engine - 2026-05-01" in text
     assert "| Pipeline | Codex Daily V2 |" in text
     assert manifest["pipeline_name"] == "Codex Daily V2"
-    assert manifest["pipeline_version"] == "v2.1"
+    assert manifest["pipeline_version"] == "v2.2-no-signal-caps-20260826"
     assert "No high-quality trades today" in text
     assert "Issue type: data problem" in text
     assert "No stock-screener export found" in text
@@ -58,7 +58,7 @@ def test_find_export_point_in_time_rejects_future_latest_alias(tmp_path) -> None
     ) == same_day
 
 
-def test_daily_defaults_to_eight_final_trades(monkeypatch, tmp_path) -> None:
+def test_daily_defaults_do_not_apply_signal_count_caps(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(
         "sys.argv",
         [
@@ -72,7 +72,11 @@ def test_daily_defaults_to_eight_final_trades(monkeypatch, tmp_path) -> None:
 
     args = parse_args()
 
-    assert args.max_final_trades == 8
+    assert args.max_tickers == 0
+    assert args.max_candidates == 0
+    assert args.max_final_trades == 0
+    assert args.max_credit_selected_per_day is None
+    assert args.max_debit_selected_per_day is None
     assert args.portfolio_income_mode == "trading-sleeve-only"
     assert args.index_income_mode == "fallback"
     assert args.risk_mandate == "capital-preservation"

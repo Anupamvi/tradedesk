@@ -2606,9 +2606,18 @@
       "hiPx": 112.57,
       "loPx": 111.61,
       "open": 112.15,
-      "stkVolu": 13545505.0,
+      "stkVolu": 13545819.0,
       "ticker": "CSCO",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 110.93,
+      "hiPx": 112.5,
+      "loPx": 110.64,
+      "open": 112.31,
+      "stkVolu": 523919.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

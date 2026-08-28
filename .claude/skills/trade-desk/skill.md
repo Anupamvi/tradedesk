@@ -154,6 +154,13 @@ For ROLL verdicts, include specifics:
 After generating all verdict cards, write the full analysis to:
 `c:/uw_root/out/trade_analysis/trade-analysis-{date}.md`
 
+Plain GitHub-flavored markdown only. **No HTML** (`span`, `div`, inline styles). Those tags print as junk.
+
+- Title `#`, sections `##`.
+- Verdicts as **CLOSE** / **HOLD** / **ASSESS** / **ROLL**.
+- Put / call / credit / debit as words, not styled pills.
+- Immediate-actions table first, then option cards, then equity table.
+
 Use the Write tool to create the file, then present clickable links to the user.
 
 ## Error Handling

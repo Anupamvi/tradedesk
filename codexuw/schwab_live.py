@@ -465,6 +465,8 @@ def find_credit_spread_alternatives(
     preferred = safe_float(preferred_width)
     df["_width_pref_distance"] = (df["spread_width"] - preferred).abs() if math.isfinite(preferred) else 0.0
 
+    df["_one_lot_risk"] = (df["spread_width"] - df["credit"]) * 100.0
+    df["_risk_sized"] = df["_one_lot_risk"].le(750.0).fillna(False)
     actionable = df[
         df["credit_pct_width"].between(
             min_actionable_credit_width_ratio,
@@ -475,11 +477,10 @@ def find_credit_spread_alternatives(
         & (df["liq_score"] >= 100)
         & (df["displayed_entry_size"] >= 1)
         & df["regular_session_quote"].astype(bool)
-        & (((df["spread_width"] - df["credit"]) * 100.0) <= 750.0)
     ]
     actionable_ranked = actionable.sort_values(
-        ["credit_pct_width", "liq_score", "quote_width_pct", "_rank"],
-        ascending=[False, False, True, False],
+        ["_risk_sized", "credit_pct_width", "liq_score", "quote_width_pct", "_rank"],
+        ascending=[False, False, False, True, False],
         kind="mergesort",
     )
     # Keep more than one qualifying structure. A single high-distance, low-credit

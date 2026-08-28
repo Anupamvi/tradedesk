@@ -2606,9 +2606,18 @@
       "hiPx": 100.97,
       "loPx": 96.655,
       "open": 96.845,
-      "stkVolu": 1959001.0,
+      "stkVolu": 1959069.0,
       "ticker": "CIBR",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 99.88,
+      "hiPx": 101.0394,
+      "loPx": 99.66,
+      "open": 100.78,
+      "stkVolu": 124209.0,
+      "ticker": "CIBR",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

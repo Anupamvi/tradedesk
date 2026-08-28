@@ -8,7 +8,7 @@ Skills live in `./skills/` and are mirrored under tradedesk `.grok/skills/groat`
 
 When the user says the phrases below, read the matching skill and run it. Do not tell the user to type `python3`.
 
-- `groat`, `groat full`, `RUN FULL SCAN`, `groat YYYY-MM-DD` → `skills/groat/SKILL.md` (full scan)
+- `groat`, `gorat`, `groat YYYY-MM-DD`, `groat full`, `RUN FULL SCAN` → `skills/groat/SKILL.md` (full scan)
 - `groat delta`, `RUN DELTA SCAN` → same skill, delta mode
 - `ANALYZE TICKER`, `groat analyze TICKER` → same skill, analyze mode
 - `REVIEW OPEN TRADES`, `groat review` → same skill, review mode

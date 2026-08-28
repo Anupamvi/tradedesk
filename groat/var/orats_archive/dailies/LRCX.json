@@ -2606,9 +2606,18 @@
       "hiPx": 321.41,
       "loPx": 310.44023,
       "open": 318.88,
-      "stkVolu": 6561055.0,
+      "stkVolu": 6561235.0,
       "ticker": "LRCX",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 313.715,
+      "hiPx": 318.29,
+      "loPx": 310.78,
+      "open": 318.03,
+      "stkVolu": 221254.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

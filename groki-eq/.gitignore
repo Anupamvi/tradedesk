@@ -1,0 +1,13 @@
+out/
+var/
+.env
+.env.*
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.DS_Store
+*.token
+token.txt
+orats_token*

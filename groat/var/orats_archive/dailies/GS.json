@@ -2606,9 +2606,18 @@
       "hiPx": 1052.55,
       "loPx": 1035.0,
       "open": 1041.68,
-      "stkVolu": 1713058.0,
+      "stkVolu": 1713130.0,
       "ticker": "GS",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 1041.71,
+      "hiPx": 1048.84,
+      "loPx": 1039.0,
+      "open": 1046.49,
+      "stkVolu": 40940.0,
+      "ticker": "GS",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

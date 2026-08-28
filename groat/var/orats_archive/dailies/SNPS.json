@@ -2606,9 +2606,18 @@
       "hiPx": 464.98,
       "loPx": 415.31,
       "open": 419.66,
-      "stkVolu": 4073850.0,
+      "stkVolu": 4073868.0,
       "ticker": "SNPS",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 449.67,
+      "hiPx": 462.45,
+      "loPx": 449.0383,
+      "open": 461.85,
+      "stkVolu": 84544.0,
+      "ticker": "SNPS",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

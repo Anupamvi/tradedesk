@@ -2606,9 +2606,18 @@
       "hiPx": 267.37,
       "loPx": 263.73,
       "open": 267.37,
-      "stkVolu": 130392.0,
+      "stkVolu": 130461.0,
       "ticker": "XAR",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 265.73,
+      "hiPx": 266.52,
+      "loPx": 265.53,
+      "open": 266.52,
+      "stkVolu": 4848.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

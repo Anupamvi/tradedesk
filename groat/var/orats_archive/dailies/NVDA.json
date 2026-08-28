@@ -2606,9 +2606,18 @@
       "hiPx": 230.47,
       "loPx": 220.9,
       "open": 222.86,
-      "stkVolu": 298909777.0,
+      "stkVolu": 298909822.0,
       "ticker": "NVDA",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 227.375,
+      "hiPx": 227.83,
+      "loPx": 226.05,
+      "open": 227.36,
+      "stkVolu": 14847450.0,
+      "ticker": "NVDA",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

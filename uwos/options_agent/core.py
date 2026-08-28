@@ -48,8 +48,11 @@ from uwos.options_agent.shadow_outcomes import (
 from ._vendor.paths import project_root
 
 PIPELINE_NAME = "Options Agent"
-PIPELINE_VERSION = "options-agent-v1.78-risk-normalized-bull-call-20260822-083000"
+PIPELINE_VERSION = "options-agent-v1.84-construction-cap-parity-20260826-210000"
 PREVIOUS_PIPELINE_VERSIONS = (
+    "options-agent-v1.83-selector-execution-parity-20260826-180000",
+    "options-agent-v1.82-send-now-credit-parity-20260826-120000",
+    "options-agent-v1.78-risk-normalized-bull-call-20260822-083000",
     "options-agent-v1.77-independent-long-options-20260821-081510",
     "options-agent-v1.76-route-specific-debit-20260821-063647",
     "options-agent-v1.75-credit-risk-parity-20260813-072836",
@@ -121,14 +124,14 @@ PREVIOUS_PIPELINE_VERSIONS = (
     "options-agent-v1.0-exec-confidence-20260612-143405",
     "options-agent-v0",
 )
-PIPELINE_RELEASED_AT = "2026-08-22T08:30:00-07:00"
+PIPELINE_RELEASED_AT = "2026-08-26T12:00:00-07:00"
 DEFAULT_FORWARD_REGISTRY_ACCOUNT = "acct_3326"
 DEFAULT_OUTPUT_NAMESPACE = "options_agent"
 DEFAULT_TOP_TRADES = 20
 # The live-validation queue must cover every slot the promoted selector may
 # choose; operators can still lower or remove the bound with the environment.
-DEFAULT_LIVE_CHAIN_TICKER_CAP = 25
-MAX_REPORT_ACTION_ROWS = 20
+DEFAULT_LIVE_CHAIN_TICKER_CAP = 35
+MAX_REPORT_ACTION_ROWS = 35
 MAX_REPORT_REVIEW_ROWS = 10
 MIN_WALKFORWARD_TRAIN_SAMPLE_SIZE = 20
 MIN_WALKFORWARD_TRAIN_DAYS = 4
@@ -430,8 +433,11 @@ def _v0_require_per_ticker_agent_review() -> bool:
 
 
 STRICT_GOAL_RUNTIME_DEFAULTS = {
-    "PIPELINE_VERSION": "options-agent-v1.78-risk-normalized-bull-call-20260822-083000",
+    "PIPELINE_VERSION": "options-agent-v1.84-construction-cap-parity-20260826-210000",
     "PREVIOUS_PIPELINE_VERSIONS": (
+        "options-agent-v1.83-selector-execution-parity-20260826-180000",
+        "options-agent-v1.82-send-now-credit-parity-20260826-120000",
+        "options-agent-v1.78-risk-normalized-bull-call-20260822-083000",
         "options-agent-v1.77-independent-long-options-20260821-081510",
         "options-agent-v1.76-route-specific-debit-20260821-063647",
         "options-agent-v1.75-credit-risk-parity-20260813-072836",
@@ -503,7 +509,7 @@ STRICT_GOAL_RUNTIME_DEFAULTS = {
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     ),
-    "PIPELINE_RELEASED_AT": "2026-08-22T08:30:00-07:00",
+    "PIPELINE_RELEASED_AT": "2026-08-26T12:00:00-07:00",
     "PINNED_REPLAY_SELECTOR_POLICY_COMPATIBLE_VERSIONS": frozenset(
         {"options-agent-v1.68-five-source-market-context-20260806-081546"}
     ),
@@ -7872,7 +7878,17 @@ def _active_selector_source_preflight_ready(row: Mapping[str, Any]) -> bool:
     if minimum_volume is not None and (contract_volume is None or contract_volume < minimum_volume):
         return False
     credit_width = _as_float(row.get("credit_width_ratio"))
-    if credit_width is None or not 0.16 <= credit_width <= 0.30:
+    if credit_width is None or not MIN_SEND_NOW_CREDIT_WIDTH_RATIO <= credit_width <= 0.30:
+        return False
+    quote_width = _as_float(row.get("entry_quote_width_pct"))
+    if quote_width is None:
+        quote_width = _as_float(row.get("live_quote_width_pct"))
+    if quote_width is not None and quote_width > MAX_SELECTOR_ENTRY_QUOTE_WIDTH_PCT:
+        return False
+    credit_dollars = _as_float(row.get("entry_credit"))
+    if credit_dollars is None:
+        credit_dollars = _as_float(row.get("credit"))
+    if credit_dollars is not None and credit_dollars < MIN_SEND_NOW_CREDIT:
         return False
     return True
 
@@ -9317,9 +9333,9 @@ def _dated_spread_pair(
             economics_ratio = entry / width
             requirement_count = sum(
                 (
-                    MIN_CREDIT_WIDTH_RATIO <= economics_ratio <= 0.30,
-                    expected_ratio is not None and expected_ratio >= 0.75,
-                    quote_width <= 0.25,
+                    MIN_SEND_NOW_CREDIT_WIDTH_RATIO <= economics_ratio <= 0.30,
+                    entry >= MIN_SEND_NOW_CREDIT,
+                    quote_width <= MAX_SELECTOR_ENTRY_QUOTE_WIDTH_PCT,
                     liquidity >= 100.0,
                     (width - entry) * 100.0 <= 750.0,
                 )
@@ -9329,8 +9345,7 @@ def _dated_spread_pair(
                 float(quality_pass),
                 float(requirement_count),
                 -abs(dte - 35),
-                -abs(economics_ratio - 0.22),
-                min(expected_ratio or 0.0, 2.0),
+                -abs(economics_ratio - 0.275),
                 min(liquidity, 5000.0) / 5000.0,
                 -quote_width,
             )
@@ -9389,6 +9404,27 @@ def _dated_spread_pair(
     return short, long, selected
 
 
+def _credit_send_now_target_entry(
+    width: float,
+    source_target: Optional[float] = None,
+) -> float:
+    """Limit price for a credit send-now: $0.50 and 25% of width, never the 16% construction floor."""
+
+    send_now_width_target = (
+        math.ceil(max(width, 0.0) * MIN_SEND_NOW_CREDIT_WIDTH_RATIO * 100.0 - 1e-9) / 100.0
+        if width > 0
+        else 0.0
+    )
+    return round(
+        max(
+            source_target or 0.0,
+            MIN_SEND_NOW_CREDIT,
+            send_now_width_target,
+        ),
+        2,
+    )
+
+
 def construct_credit_spread(candidate: Mapping[str, Any], hot: pd.DataFrame) -> dict[str, Any]:
     """Build a conservative one-lot credit spread attempt for a candidate."""
 
@@ -9422,7 +9458,7 @@ def construct_credit_spread(candidate: Mapping[str, Any], hot: pd.DataFrame) -> 
         return priced_error_row(
             candidate,
             structure,
-            "no expected-move-aware protective spread pair in dated UW hot-chain source",
+            "no quality-aware protective spread pair in dated UW hot-chain source",
         )
     short, long, dated_selection = pair
     short_bid = _as_float(short.get("bid")) or 0.0
@@ -9540,7 +9576,7 @@ def construct_credit_spread(candidate: Mapping[str, Any], hot: pd.DataFrame) -> 
         "remaining_upside": max_profit,
         "breakeven": round(breakeven, 2),
         "target_exit": round(entry_credit * CREDIT_TAKE_PROFIT_REMAINING, 2),
-        "target_entry": round(width * MIN_CREDIT_WIDTH_RATIO, 2),
+        "target_entry": _credit_send_now_target_entry(width),
         "invalidation": "fresh quote fails, thesis breaks, or underlying violates breakeven/flow support",
         "score": round(float(candidate.get("score") or 0), 2),
         "signal_premium": round(float(candidate.get("signal_premium") or 0), 2),
@@ -10504,7 +10540,11 @@ def _trade_quality_rejects(
         rejects.append(f"signal_premium_below_{int(MIN_SIGNAL_PREMIUM):d}")
     if not macro_tape_candidate and abs(combined_flow_bias) < MIN_DIRECTIONAL_BIAS:
         rejects.append(f"directional_bias_below_{MIN_DIRECTIONAL_BIAS:.2f}")
-    if max_loss > MAX_ONE_LOT_LOSS:
+    send_now_credit = (
+        entry_credit >= MIN_SEND_NOW_CREDIT
+        and credit_width_ratio >= MIN_SEND_NOW_CREDIT_WIDTH_RATIO
+    )
+    if max_loss > MAX_ONE_LOT_LOSS and not send_now_credit:
         rejects.append(f"one_lot_max_loss_above_{int(MAX_ONE_LOT_LOSS):d}")
     return rejects
 
@@ -10981,6 +11021,8 @@ def _selector_alternative_is_compatible(
             "entry_type": entry_type,
             "dte": alternative.get("dte"),
             "credit_width_ratio": entry / width if entry_type == "CREDIT" and width > 0 else "",
+            "entry_credit": entry if entry_type == "CREDIT" else "",
+            "credit": entry if entry_type == "CREDIT" else "",
             "debit_width_ratio": entry / width if entry_type == "DEBIT" and width > 0 else "",
             "live_quote_width_pct": alternative.get("quote_width_pct"),
             "live_short_volume": alternative.get("short_volume"),
@@ -16173,10 +16215,9 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         # instruction. Fresh live validation and portfolio sizing still govern
         # any order that can actually be entered.
         #
-        # Raised 9 -> 25 on 2026-07-27.  The cap, not capital and not the
-        # opportunity set, was a binding throughput constraint.  Re-swept after
-        # the expected-move floor was lowered, scoring each cap against the
-        # recorded replay P&L:
+        # Raised 9 -> 25 on 2026-07-27, then 25 -> 35 on 2026-08-26. The count,
+        # not capital and not the opportunity set, was a binding throughput
+        # constraint. Re-swept after the expected-move floor was lowered:
         #
         #   cap   fills/mo    $/mo    PF    held-out PF   worst month
         #    15       47.7    1577  2.796      2.172          +439
@@ -16185,12 +16226,12 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         #    50       79.8    2520  2.941      1.992          +477
         #
         # 25 and 35 form the shelf; 50 is a cliff (held-out PF collapses to
-        # 1.99 while adding only 4 fills a month, so those marginal fills are
-        # bad ones).  25 is taken as the least-aggressive point of the shelf,
-        # matching how CREDIT_TAKE_PROFIT_REMAINING was chosen above, and it
-        # keeps peak concurrent margin at ~$51k per 1x versus ~$61k at 35.
-        "daily_cap": 25,
-        "daily_sleeve_cap": 25,
+        # 1.99 while adding only 4 fills a month). 35 is strictly better than
+        # 25 on fills, dollars, and PF with the same worst month. 25 was the
+        # leftover quota. 50 is rejected because the extra names are junk.
+        # Live concurrent risk and buying power still size the book.
+        "daily_cap": 35,
+        "daily_sleeve_cap": 35,
         "max_etf_per_day": MAX_SELECTOR_ETF_SELECTIONS_PER_DAY,
         "replay_asset_class": PROMOTED_SELECTOR_REPLAY_ASSET_CLASS,
         "etf_eligibility": "direct_ticker_expectancy_only",
@@ -16228,9 +16269,14 @@ SELECTOR_CHALLENGER_POLICIES: tuple[dict[str, Any], ...] = (
         "min_contract_oi": 100.0,
         "credit_flow_gate": False,
         "credit_flow_usage": "rank_only",
-        # UW EOD quote width is a stale discovery field. The exact fresh leg
-        # reprice remains the liquidity gate for both replay and live entry.
-        "source_quote_width_policy": "rank_only_replay",
+        # Source-session quote width must match the next-session 25% reprice
+        # cap. Rank-only left 1102/2151 selected names wider than 25%; most
+        # then failed execution. Fill rate was 6% when source width > 25% vs
+        # 17% when it was already inside the cap.
+        "source_quote_width_policy": "live_parity",
+        # Expected-move 0.30 as a hard gate excluded 760 credit candidates whose
+        # fills ran PF 2.70 versus 2.37 inside the gate. Keep it off selection.
+        "credit_expected_move_gate": False,
         "use_training_gate": False,
     },
     {
@@ -16712,6 +16758,7 @@ def _selector_v4_replay_assessment(
             ),
             "live_quote_width_pct": row.get("entry_quote_width_pct"),
             "credit_width_ratio": row.get("entry_credit_pct_width"),
+            "entry_credit": row.get("entry_credit"),
             "debit_width_ratio": row.get("entry_debit_pct_width"),
             "live_distance_pct": expected_move_ratio if entry_type == "CREDIT" else "",
             "live_expected_move_pct": 1.0 if entry_type == "CREDIT" else "",
@@ -19323,6 +19370,10 @@ def _selector_policy_row_assessment(
         reasons.append("etf_direct_ticker_expectancy_not_proven")
     dte = int(_as_float(row.get("dte")) or 0)
     quote_width = _as_float(row.get("live_quote_width_pct"))
+    if quote_width is None:
+        quote_width = _as_float(row.get("dated_combo_quote_width_pct"))
+    if quote_width is None:
+        quote_width = _as_float(row.get("entry_quote_width_pct"))
     source_quote_width_rank_only = bool(
         policy
         and _as_text(policy.get("source_quote_width_policy")).lower()
@@ -19357,12 +19408,18 @@ def _selector_policy_row_assessment(
             reasons.append(
                 f"risk_off_bear_call_dte_below_{MIN_RISK_OFF_BEAR_CALL_DTE}"
             )
-        if credit_width is None or not 0.16 <= credit_width <= 0.30:
-            reasons.append("credit_width_outside_0.16_0.30")
+        if credit_width is None or not MIN_SEND_NOW_CREDIT_WIDTH_RATIO <= credit_width <= 0.30:
+            reasons.append("credit_width_outside_0.25_0.30")
+        credit_dollars = _as_float(row.get("entry_credit"))
+        if credit_dollars is None:
+            credit_dollars = _as_float(row.get("credit"))
+        if credit_dollars is not None and credit_dollars < MIN_SEND_NOW_CREDIT:
+            reasons.append(f"credit_below_send_now_{MIN_SEND_NOW_CREDIT:.2f}")
         credit_flow_gate = not policy or bool(policy.get("credit_flow_gate", True))
         if credit_flow_gate and (flow_alignment is None or flow_alignment < 0.10):
             reasons.append("credit_flow_alignment_below_0.10")
-        if (
+        credit_em_gate = bool(policy.get("credit_expected_move_gate")) if policy else False
+        if credit_em_gate and (
             expected_move_ratio is None
             or expected_move_ratio < MIN_SELECTOR_CREDIT_DISTANCE_EXPECTED_MOVE
         ):
@@ -19380,12 +19437,10 @@ def _selector_policy_row_assessment(
             reasons.append(
                 f"credit_quote_width_above_{MAX_SELECTOR_ENTRY_QUOTE_WIDTH_PCT:.2f}"
             )
-        if expected_move_ratio is not None:
-            score += min(2.0, max(0.0, expected_move_ratio))
         if flow_alignment is not None:
             score += min(2.0, max(0.0, flow_alignment) * 6.0)
         if credit_width is not None:
-            score += min(1.0, max(0.0, credit_width - 0.16) * 8.0)
+            score += min(1.0, max(0.0, credit_width - MIN_SEND_NOW_CREDIT_WIDTH_RATIO) * 8.0)
         sleeve = "CREDIT"
     elif entry_type == "DEBIT" and route in LONG_OPTION_ROUTES:
         if not MIN_LIVE_DTE <= dte <= MAX_LIVE_DTE:
@@ -23036,7 +23091,12 @@ def _target_order_status(
         return "not_actionable_risk_reward"
     if strategy_family == "short_put" and not ENABLE_CASH_SECURED_PUT_ROUTE:
         return "review_only_disabled_strategy_route"
-    if strategy_family != "short_put" and max_loss > MAX_ONE_LOT_LOSS:
+    send_now_credit = (
+        entry_type == "CREDIT"
+        and credit_width >= MIN_SEND_NOW_CREDIT_WIDTH_RATIO
+        and (entry_limit or 0.0) >= MIN_SEND_NOW_CREDIT
+    )
+    if strategy_family != "short_put" and max_loss > MAX_ONE_LOT_LOSS and not send_now_credit:
         return "not_actionable_risk_reward"
     if strategy_family != "short_put" and entry_type != "DEBIT" and credit_width < MIN_CREDIT_WIDTH_RATIO:
         return "not_actionable_credit_width"
@@ -35716,20 +35776,8 @@ def _apply_live_credit_spread(
     width = _as_float(live.get("spread_width")) or 0.0
     short_strike = _as_float(live.get("short_strike")) or 0.0
     long_strike = _as_float(live.get("long_strike")) or 0.0
-    source_target_entry = (
-        _as_float(live.get("target_entry"))
-        or round(width * MIN_CREDIT_WIDTH_RATIO, 2)
-    )
-    send_now_width_target = (
-        math.ceil(width * MIN_SEND_NOW_CREDIT_WIDTH_RATIO * 100.0 - 1e-9) / 100.0
-        if width > 0
-        else 0.0
-    )
-    quality_target_entry = max(
-        source_target_entry,
-        MIN_SEND_NOW_CREDIT,
-        send_now_width_target,
-    )
+    source_target_entry = _as_float(live.get("target_entry"))
+    quality_target_entry = _credit_send_now_target_entry(width, source_target_entry)
     max_profit = round(credit * 100, 2)
     max_loss = round(max((width - credit) * 100, 0.0), 2)
     credit_width_ratio = round(credit / width, 4) if width > 0 else 0.0

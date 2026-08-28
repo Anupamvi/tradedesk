@@ -803,7 +803,7 @@ def generate_candidates(
     if not credit.empty:
         direction_sign = credit["direction"].map(lambda value: _direction_sign(value))
         credit["_edge_align"] = credit["combined_flow_bias"] * direction_sign
-        credit["_edge_dte_pref"] = (pd.to_numeric(credit["dte"], errors="coerce").fillna(45) - 21).abs()
+        credit["_edge_dte_pref"] = (pd.to_numeric(credit["dte"], errors="coerce").fillna(45) - 35).abs()
         credit["_edge_score"] = (
             credit["_edge_align"].clip(lower=0.0, upper=0.30) * 8.0
             + pd.to_numeric(credit["source_contract_volume"], errors="coerce").fillna(0).clip(upper=5000) / 2500.0
@@ -1413,7 +1413,7 @@ def _decision_sort_score(row: pd.Series) -> float:
     align = _flow_alignment(row)
     quote_width = safe_float(row.get("quote_width_pct"))
     score = 0.0
-    if math.isfinite(ratio):
+    if _is_debit_strategy(row) and math.isfinite(ratio):
         score += min(2.0, max(0.0, ratio))
     if math.isfinite(align):
         score += min(2.0, max(0.0, align) * 6.0)
@@ -1457,7 +1457,7 @@ def _secondary_income_eligible(
         and math.isfinite(align)
         and align >= 0.12
         and math.isfinite(score)
-        and score >= 1.60
+        and score >= 1.10
         and math.isfinite(dte)
         and dte <= 35
     )
@@ -2379,7 +2379,7 @@ def select_final_trades(
     regime: dict[str, Any],
     risk_budget: float,
     recent_performance: dict[str, Any] | None = None,
-    max_final_trades: int = 8,
+    max_final_trades: int = 0,
     max_positions_per_ticker: int = 1,
     risk_config: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
@@ -2499,7 +2499,17 @@ def select_final_trades(
     max_contracts = safe_float(risk_config.get("max_contracts_per_trade"))
     min_ev_per_risk = safe_float(risk_config.get("minimum_expected_value_per_dollar_risk"), 0.0)
     index_income_mode = str(risk_config.get("index_income_mode") or "fallback").strip().lower()
+    max_credit_selected = risk_config.get("max_credit_selected_per_day")
+    max_debit_selected = risk_config.get("max_debit_selected_per_day")
+    credit_selected = 0
+    debit_selected = 0
     for _, row in approved.iterrows():
+        if _is_debit_strategy(row):
+            if max_debit_selected is not None and debit_selected >= int(max_debit_selected):
+                continue
+        elif _is_credit_strategy(row):
+            if max_credit_selected is not None and credit_selected >= int(max_credit_selected):
+                continue
         is_addon = bool(selected) and validated_addon_income_lane(row.get("direction"), safe_float(row.get("credit_pct_width")))
         if "trade_status" not in approved.columns and selected and not is_addon:
             continue
@@ -2553,8 +2563,13 @@ def select_final_trades(
         )
         if ticker in AI_TECH:
             remaining_contract_risk = min(remaining_contract_risk, risk_budget * default_factor_fraction - ai_risk)
-        # Dollar budgets scale a position down but never suppress an eligible trade.
-        contracts = min(contracts, int(remaining_contract_risk // max_loss))
+        affordable = int(remaining_contract_risk // max_loss) if max_loss > 0 else 0
+        if affordable < 1:
+            if selected:
+                continue
+            contracts = 1
+        else:
+            contracts = min(contracts, affordable)
         if not allow_size_up:
             contracts = min(contracts, 1)
         contracts = max(1, contracts)
@@ -2675,6 +2690,10 @@ def select_final_trades(
             notes.append("recent performance defensive sizing")
         out["risk_notes"] = "; ".join(notes) if notes else "standard defined-risk spread"
         selected.append(out)
+        if _is_debit_strategy(row):
+            debit_selected += 1
+        elif _is_credit_strategy(row):
+            credit_selected += 1
         total_risk += risk
         ticker_risk[ticker] += risk
         ticker_positions[ticker] += 1

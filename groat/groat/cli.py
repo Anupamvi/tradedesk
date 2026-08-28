@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -17,6 +18,10 @@ from groat.pipeline import build_analyze, build_delta, build_full
 from groat.schwab import live_note, use_live_schwab
 
 
+_YMD = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_CMDS = ("full", "delta", "analyze", "review", "replay")
+
+
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="groat",
@@ -26,22 +31,62 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "cmd",
         nargs="?",
-        default="full",
-        choices=["full", "delta", "analyze", "review"],
+        default=None,
+        help="full | delta | analyze | review | replay | YYYY-MM-DD (full scan that date)",
     )
-    parser.add_argument("ticker", nargs="?", default=None, help="ticker for analyze")
-    parser.add_argument("--date", required=True, help="session date YYYY-MM-DD")
+    parser.add_argument("ticker", nargs="?", default=None, help="ticker for analyze, or YYYY-MM-DD")
+    parser.add_argument("--date", default=None, help="session date YYYY-MM-DD (default: today ET)")
     parser.add_argument("--out-dir", default=str(OUT_DIR))
     parser.add_argument("--live-schwab", action="store_true")
     parser.add_argument("--no-schwab", action="store_true")
     parser.add_argument("--orats-token-file", default=None)
     parser.add_argument("--max-orats-requests", type=int, default=None)
     parser.add_argument("--max-final", type=int, default=None)
-    return parser.parse_args(argv)
+    parser.add_argument(
+        "--max-strike-http",
+        type=int,
+        default=40,
+        help="replay: hist/strikes HTTP per option slice (0 = stock only)",
+    )
+    parser.add_argument(
+        "--option-slices",
+        type=int,
+        default=0,
+        help="replay: number of option hist/strikes slices (default 0 = stock only)",
+    )
+    args = parser.parse_args(argv)
+    if args.cmd and _YMD.match(args.cmd):
+        if args.date and args.date != args.cmd:
+            parser.error("conflicting dates")
+        args.date = args.cmd
+        args.cmd = "full"
+    if args.ticker and _YMD.match(args.ticker) and (args.cmd or "full") in ("full", "delta", "review", "replay"):
+        if args.date and args.date != args.ticker:
+            parser.error("conflicting dates")
+        args.date = args.ticker
+        args.ticker = None
+    args.cmd = args.cmd or "full"
+    if args.cmd not in _CMDS:
+        parser.error("cmd must be full, delta, analyze, review, replay, or a YYYY-MM-DD date")
+    if not args.date:
+        args.date = today_et()
+    return args
 
 
 def print_result(info: Dict[str, object]) -> None:
     print("groat_mode=%s" % (info.get("mode") or "full"))
+    if info.get("mode") == "replay":
+        print("tape=%s..%s" % (info.get("tape_from") or "", info.get("tape_to") or ""))
+        print("hits=%s" % (info.get("n_hits") or 0))
+        print("orats_http=%s" % (info.get("orats_http") or 0))
+        print("orats_requests_used=%s" % (info.get("orats_requests_used") or 0))
+        print("orats_requests_left=%s" % (info.get("orats_requests_left") or 0))
+        overall = info.get("overall") or {}
+        print("stock_n=%s avg_r=%s" % (overall.get("n") or 0, overall.get("avg_r")))
+        print("opt_n=%s opt_avg_pnl_per_risk=%s" % (overall.get("opt_n") or 0, overall.get("opt_avg_pnl_per_risk")))
+        if info.get("option_slices"):
+            print("option_slices=%s" % len(info.get("option_slices") or []))
+        return
     print("regime=%s" % (info.get("regime_label") or ""))
     print("orats_ok=%s" % (info.get("orats_ok") or 0))
     print("orats_http=%s" % (info.get("orats_http") or 0))
@@ -141,6 +186,8 @@ def run(
     live_schwab: bool = False,
     no_schwab: bool = False,
     today: Optional[str] = None,
+    max_strike_http: int = 40,
+    option_slices: int = 0,
     universe=None,
     bars_by_ticker=None,
     cores_by_ticker=None,
@@ -148,6 +195,33 @@ def run(
     vix_bars=None,
 ) -> Dict[str, object]:
     today = today or today_et()
+    if cmd == "replay":
+        from groat.replay import render_replay, run_replay
+
+        payload = run_replay(
+            date,
+            token=token,
+            today=today,
+            getter=getter,
+            max_requests=max_orats_requests,
+            max_strike_http=max_strike_http,
+            option_slices=option_slices,
+            universe=list(universe) if universe is not None else None,
+            bars_by_ticker=bars_by_ticker,
+        )
+        day = report.day_dir(out_dir, date)
+        report.write_text(day / "replay.md", render_replay(payload))
+        report.write_json(day / "replay.json", payload)
+        payload["out_dir"] = str(day)
+        payload["orats_ok"] = 1
+        payload["orats_rows"] = 0
+        payload["trade_count"] = 0
+        payload["watch_count"] = 0
+        payload["trade_tickers"] = []
+        payload["regime_label"] = ""
+        payload["orats_map"] = {}
+        payload["error"] = ""
+        return payload
     live = use_live_schwab(date, live_flag=live_schwab, no_schwab=no_schwab, today=today)
     built = build_full(
         date,
@@ -246,12 +320,14 @@ def main(argv: Optional[List[str]] = None) -> int:
             max_orats_requests=args.max_orats_requests,
             live_schwab=args.live_schwab,
             no_schwab=args.no_schwab,
+            max_strike_http=args.max_strike_http,
+            option_slices=args.option_slices,
         )
     except Exception as exc:
         print("orats_ok=0", file=sys.stderr)
         print(redact(str(exc), token), file=sys.stderr)
         return 1
     print_result(result)
-    if args.cmd in ("full", "delta", "analyze", "review"):
+    if args.cmd in ("full", "delta", "analyze", "review", "replay"):
         return 0
     return 0

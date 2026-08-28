@@ -57,9 +57,36 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Clean CodexUW daily options income pipeline")
     parser.add_argument("--base-dir", required=True, help="Dated UW folder, e.g. /path/to/2026-04-30")
     parser.add_argument("--out-dir", required=True, help="Output directory")
-    parser.add_argument("--max-tickers", type=int, default=28)
-    parser.add_argument("--max-candidates", type=int, default=50)
-    parser.add_argument("--max-final-trades", type=int, default=8, help="Maximum final executable trades to select without forcing lower-quality setups")
+    parser.add_argument(
+        "--max-tickers",
+        type=int,
+        default=0,
+        help="Discovery cap. Default 0 scans every eligible source ticker.",
+    )
+    parser.add_argument(
+        "--max-candidates",
+        type=int,
+        default=0,
+        help="Candidate cap. Default 0 keeps every constructed candidate before scoring.",
+    )
+    parser.add_argument(
+        "--max-final-trades",
+        type=int,
+        default=0,
+        help="Visibility cap for Execute rows. Default 0 shows all valid Execute rows; ticker, sector, factor, and dollar risk still control sizing.",
+    )
+    parser.add_argument(
+        "--max-credit-selected-per-day",
+        type=int,
+        default=None,
+        help="Optional credit-sleeve cap for final selection. Omit to leave live selection uncapped by sleeve. 0 selects no credit trades.",
+    )
+    parser.add_argument(
+        "--max-debit-selected-per-day",
+        type=int,
+        default=None,
+        help="Optional debit-sleeve cap for final selection. Omit to leave live selection uncapped by sleeve. 0 selects no debit trades.",
+    )
     parser.add_argument("--risk-budget", type=float, default=3000.0)
     parser.add_argument("--bot-max-rows", type=int, default=0, help="Optional cap for bot tape rows; 0 means full file")
     parser.add_argument("--offline", action="store_true", help="Skip Schwab live chain validation")
@@ -253,6 +280,8 @@ def main() -> None:
             max_candidates=args.max_candidates,
             max_eval_candidates=args.max_candidates,
             max_selected_per_day=args.max_final_trades,
+            max_credit_selected_per_day=args.max_credit_selected_per_day,
+            max_debit_selected_per_day=args.max_debit_selected_per_day,
             bot_max_rows=args.bot_max_rows,
             monthly_profit_target=args.monthly_profit_target,
         )
@@ -378,6 +407,8 @@ def main() -> None:
             if ticker.strip()
         ],
         "allow_new_trades": True,
+        "max_credit_selected_per_day": args.max_credit_selected_per_day,
+        "max_debit_selected_per_day": args.max_debit_selected_per_day,
     }
     if args.daily_loss_limit > 0 and portfolio and portfolio.get("status") == "ok":
         if float(portfolio.get("day_pnl") or 0.0) <= -abs(args.daily_loss_limit):
@@ -451,8 +482,12 @@ def main() -> None:
         run_provenance=run_provenance,
         target_model=target_model,
     )
+    from .debit_shadow import write_daily_debit_shadow
+
+    shadow_ledger = write_daily_debit_shadow(scored=scored, asof=asof, out_dir=out_dir)
     print(f"Wrote: {report}")
     print(f"Final trades: {len(final)}")
+    print(f"Wrote debit shadow ledger: {shadow_ledger}")
 
 
 if __name__ == "__main__":

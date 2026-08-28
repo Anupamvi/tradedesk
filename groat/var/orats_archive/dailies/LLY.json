@@ -2606,9 +2606,18 @@
       "hiPx": 1190.11,
       "loPx": 1171.71,
       "open": 1182.25,
-      "stkVolu": 2734985.0,
+      "stkVolu": 2735051.0,
       "ticker": "LLY",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 1165.52,
+      "hiPx": 1174.0,
+      "loPx": 1165.52,
+      "open": 1172.66,
+      "stkVolu": 149060.0,
+      "ticker": "LLY",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

@@ -2606,9 +2606,18 @@
       "hiPx": 188.735,
       "loPx": 185.67,
       "open": 186.47,
-      "stkVolu": 8138886.0,
+      "stkVolu": 8139215.0,
       "ticker": "XLK",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 188.01,
+      "hiPx": 188.11,
+      "loPx": 187.29,
+      "open": 188.07,
+      "stkVolu": 413408.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

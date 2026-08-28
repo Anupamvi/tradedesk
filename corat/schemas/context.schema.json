@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.corat/schemas/context.schema.json",
+  "title": "CORAT evidence context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "as_of", "market_events", "tickers"],
+  "properties": {
+    "schema_version": {"const": "corat.context.v1"},
+    "as_of": {"type": "string", "format": "date"},
+    "research_metadata": {"type": "object"},
+    "market_events": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/datedEvent"}
+    },
+    "tickers": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[A-Z0-9.^/-]{1,20}$"},
+      "additionalProperties": {"$ref": "#/$defs/tickerContext"}
+    }
+  },
+  "$defs": {
+    "classification": {
+      "enum": ["FACT", "REPORTED INFORMATION", "RUMOR / X SPECULATION"]
+    },
+    "credibility": {
+      "enum": ["PRIMARY", "HIGH", "MEDIUM", "LOW"]
+    },
+    "direction": {
+      "enum": ["BULLISH", "BEARISH", "NEUTRAL", "MIXED", "UNKNOWN"]
+    },
+    "freshness": {
+      "enum": [
+        "NEW",
+        "DEVELOPING",
+        "KNOWN BUT UNDER-APPRECIATED",
+        "KNOWN BUT POTENTIALLY UNDER-APPRECIATED",
+        "FULLY PRICED",
+        "STALE",
+        "DATA UNAVAILABLE"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["classification", "credibility", "source", "source_url", "published_at", "direction"],
+      "anyOf": [
+        {"required": ["title"]},
+        {"required": ["claim"]}
+      ],
+      "properties": {
+        "classification": {"$ref": "#/$defs/classification"},
+        "credibility": {"$ref": "#/$defs/credibility"},
+        "source": {"type": "string", "minLength": 1},
+        "source_url": {"type": "string", "format": "uri", "pattern": "^https?://"},
+        "published_at": {"type": "string", "format": "date"},
+        "title": {"type": "string", "minLength": 1},
+        "claim": {"type": "string", "minLength": 1},
+        "direction": {"$ref": "#/$defs/direction"},
+        "freshness": {"$ref": "#/$defs/freshness"},
+        "event_date": {"type": "string", "format": "date"},
+        "spam_risk": {"type": "boolean"},
+        "window": {"type": "string"}
+      }
+    },
+    "datedEvent": {
+      "allOf": [
+        {"$ref": "#/$defs/evidence"},
+        {"required": ["event_date"]}
+      ]
+    },
+    "tickerContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "catalysts": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "events": {"type": "array", "items": {"$ref": "#/$defs/datedEvent"}},
+        "x_intelligence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "options_flow": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "mention_acceleration": {}
+      },
+      "required": ["catalysts", "events", "x_intelligence", "options_flow"]
+    }
+  }
+}

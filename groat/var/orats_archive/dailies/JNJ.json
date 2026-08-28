@@ -2606,9 +2606,18 @@
       "hiPx": 268.45,
       "loPx": 263.83,
       "open": 268.45,
-      "stkVolu": 7311296.0,
+      "stkVolu": 7311379.0,
       "ticker": "JNJ",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 265.22,
+      "hiPx": 266.27,
+      "loPx": 264.27,
+      "open": 265.78,
+      "stkVolu": 806948.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

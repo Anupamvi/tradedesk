@@ -2606,9 +2606,18 @@
       "hiPx": 594.01,
       "loPx": 588.1101,
       "open": 593.76,
-      "stkVolu": 3194104.0,
+      "stkVolu": 3194143.0,
       "ticker": "MA",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 594.405,
+      "hiPx": 596.0,
+      "loPx": 592.0825,
+      "open": 593.95,
+      "stkVolu": 80033.0,
+      "ticker": "MA",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

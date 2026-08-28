@@ -2606,9 +2606,18 @@
       "hiPx": 353.495,
       "loPx": 339.6,
       "open": 352.79,
-      "stkVolu": 5096587.0,
+      "stkVolu": 5096588.0,
       "ticker": "GE",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 344.96,
+      "hiPx": 345.5,
+      "loPx": 343.21,
+      "open": 345.085,
+      "stkVolu": 95434.0,
+      "ticker": "GE",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

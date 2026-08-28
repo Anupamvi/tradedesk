@@ -2606,9 +2606,18 @@
       "hiPx": 45.045,
       "loPx": 44.63,
       "open": 44.79,
-      "stkVolu": 4637801.0,
+      "stkVolu": 4637833.0,
       "ticker": "XLRE",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 44.68,
+      "hiPx": 44.9,
+      "loPx": 44.58,
+      "open": 44.885,
+      "stkVolu": 293491.0,
+      "ticker": "XLRE",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

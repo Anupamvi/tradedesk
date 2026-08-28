@@ -2606,9 +2606,18 @@
       "hiPx": 77.69,
       "loPx": 76.2,
       "open": 77.66,
-      "stkVolu": 14389099.0,
+      "stkVolu": 14389121.0,
       "ticker": "UBER",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 77.9709,
+      "hiPx": 78.1,
+      "loPx": 76.72,
+      "open": 77.0,
+      "stkVolu": 662750.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

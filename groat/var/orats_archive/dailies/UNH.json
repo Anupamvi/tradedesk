@@ -2606,9 +2606,18 @@
       "hiPx": 399.88,
       "loPx": 393.77,
       "open": 396.87,
-      "stkVolu": 3670812.0,
+      "stkVolu": 3670816.0,
       "ticker": "UNH",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 393.55,
+      "hiPx": 396.74,
+      "loPx": 392.66,
+      "open": 396.42,
+      "stkVolu": 128447.0,
+      "ticker": "UNH",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

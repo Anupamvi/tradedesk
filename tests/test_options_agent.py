@@ -59,8 +59,11 @@ def _strict_mode_for_goal_era_tests(request: pytest.FixtureRequest, monkeypatch:
 def test_goal_runtime_defaults_are_locked() -> None:
     source = Path(core.__file__).read_text()
 
-    assert core.PIPELINE_VERSION == "options-agent-v1.78-risk-normalized-bull-call-20260822-083000"
+    assert core.PIPELINE_VERSION == "options-agent-v1.84-construction-cap-parity-20260826-210000"
     assert core.PREVIOUS_PIPELINE_VERSIONS == (
+        "options-agent-v1.83-selector-execution-parity-20260826-180000",
+        "options-agent-v1.82-send-now-credit-parity-20260826-120000",
+        "options-agent-v1.78-risk-normalized-bull-call-20260822-083000",
         "options-agent-v1.77-independent-long-options-20260821-081510",
         "options-agent-v1.76-route-specific-debit-20260821-063647",
         "options-agent-v1.75-credit-risk-parity-20260813-072836",
@@ -132,7 +135,7 @@ def test_goal_runtime_defaults_are_locked() -> None:
         "options-agent-v1.0-exec-confidence-20260612-143405",
         "options-agent-v0",
     )
-    assert core.PIPELINE_RELEASED_AT == "2026-08-22T08:30:00-07:00"
+    assert core.PIPELINE_RELEASED_AT == "2026-08-26T12:00:00-07:00"
     assert core.MAX_LIVE_DISPATCH_SNAPSHOT_AGE_SECONDS == 0
     assert core.OPTIONS_AGENT_V0_RECONSTRUCTION is False
     assert core.ENABLE_CASH_SECURED_PUT_ROUTE is True
@@ -2996,6 +2999,15 @@ def test_trade_quality_gates_reject_junk_setups() -> None:
     assert "signal_premium_below_1000000" in rejects
     assert "directional_bias_below_0.10" in rejects
     assert "one_lot_max_loss_above_750" in rejects
+
+    send_now = core._trade_quality_rejects(
+        entry_credit=5.30,
+        credit_width_ratio=0.265,
+        max_loss=1_470,
+        signal_premium=3_000_000,
+        combined_flow_bias=0.30,
+    )
+    assert send_now == []
 
 
 def test_trade_tickets_require_executable_live_validated_entry() -> None:
@@ -9557,7 +9569,7 @@ def test_promoted_selector_policy_uses_only_validated_core_credit_rows() -> None
                 "underlying_quality_tier": "core",
                 "regime": "risk_on",
                 "dte": 30,
-                "credit_width_ratio": 0.22,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": 0.30,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,
@@ -9574,7 +9586,7 @@ def test_promoted_selector_policy_uses_only_validated_core_credit_rows() -> None
                 "underlying_quality_tier": "core",
                 "regime": "risk_off",
                 "dte": 30,
-                "credit_width_ratio": 0.20,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": -0.20,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,
@@ -9711,7 +9723,7 @@ def test_multi_sleeve_challenger_can_replay_credit_and_debit_candidates() -> Non
                 "regime": "risk_on",
                 "dte": 30,
                 "entry_quote_width_pct": 0.10,
-                "entry_credit_pct_width": 0.22,
+                "entry_credit_pct_width": 0.26,
                 "combined_flow_bias": 0.30,
                 "expected_move_ratio": 1.00,
                 "source_contract_volume": 50.0,
@@ -9788,6 +9800,97 @@ def test_unavailable_selector_is_explicitly_marked() -> None:
     assert annotated["selector_policy_reason"] == "current replay failed integrity validation"
 
 
+def test_promoted_selector_rejects_credit_width_below_send_now_floor() -> None:
+    policy = next(
+        item
+        for item in core.SELECTOR_CHALLENGER_POLICIES
+        if item["policy_id"] == core.PROMOTED_SELECTOR_POLICY_ID
+    )
+    row = {
+        "ticker": "THIN_CREDIT",
+        "strategy_route": "bear_call_credit",
+        "entry_type": "CREDIT",
+        "underlying_quality_tier": "core",
+        "regime": "risk_on",
+        "dte": 30,
+        "credit_width_ratio": 0.22,
+        "combined_flow_bias": -0.30,
+        "live_distance_pct": 0.08,
+        "live_expected_move_pct": 0.08,
+        "live_quote_width_pct": 0.10,
+        "source_contract_volume": 50,
+        "dated_source_contract_volume": 100,
+        "source_contract_oi": 1_000,
+        "max_profit": 110.0,
+        "max_loss": 390.0,
+    }
+    eligible, _, reasons, _ = core._selector_policy_row_assessment(row, policy=policy)
+    assert eligible is False
+    assert "credit_width_outside_0.25_0.30" in reasons
+    eligible, _, reasons, _ = core._selector_policy_row_assessment(
+        {**row, "credit_width_ratio": 0.26},
+        policy=policy,
+    )
+    assert eligible is True
+    assert "credit_width_outside_0.25_0.30" not in reasons
+    assert core.MIN_CREDIT_WIDTH_RATIO == pytest.approx(0.16)
+
+
+def test_promoted_selector_matches_send_now_execution_contract() -> None:
+    policy = next(
+        item
+        for item in core.SELECTOR_CHALLENGER_POLICIES
+        if item["policy_id"] == core.PROMOTED_SELECTOR_POLICY_ID
+    )
+    assert policy["source_quote_width_policy"] == "live_parity"
+    assert policy["credit_expected_move_gate"] is False
+    assert policy["daily_cap"] == 35
+    assert policy["daily_sleeve_cap"] == 35
+    assert core.DEFAULT_LIVE_CHAIN_TICKER_CAP >= policy["daily_cap"]
+    base = {
+        "ticker": "EXEC",
+        "strategy_route": "bull_put_credit",
+        "entry_type": "CREDIT",
+        "underlying_quality_tier": "core",
+        "regime": "risk_on",
+        "dte": 30,
+        "credit_width_ratio": 0.26,
+        "entry_credit": 0.80,
+        "combined_flow_bias": 0.30,
+        "live_distance_pct": 0.08,
+        "live_expected_move_pct": 0.08,
+        "live_quote_width_pct": 0.10,
+        "source_contract_volume": 50,
+        "dated_source_contract_volume": 100,
+        "source_contract_oi": 1_000,
+        "max_profit": 110.0,
+        "max_loss": 390.0,
+        "expected_move_ratio": 0.20,
+    }
+
+    ok, _, reasons, _ = core._selector_policy_row_assessment(base, policy=policy)
+    assert ok is True
+    assert "credit_distance_expected_move_below_0.30" not in reasons
+
+    wide, _, reasons, _ = core._selector_policy_row_assessment(
+        {**base, "live_quote_width_pct": 0.55},
+        policy=policy,
+    )
+    assert wide is False
+    assert "credit_quote_width_above_0.25" in reasons
+
+    cheap, _, reasons, _ = core._selector_policy_row_assessment(
+        {**base, "entry_credit": 0.40, "credit": 0.40},
+        policy=policy,
+    )
+    assert cheap is False
+    assert "credit_below_send_now_0.50" in reasons
+
+    assert core._active_selector_source_preflight_ready(base) is True
+    assert core._active_selector_source_preflight_ready({**base, "credit_width_ratio": 0.22}) is False
+    assert core._active_selector_source_preflight_ready({**base, "live_quote_width_pct": 0.40}) is False
+
+
 def test_promoted_credit_selector_uses_flow_for_rank_not_eligibility() -> None:
     row = {
         "ticker": "WEAK_FLOW",
@@ -9796,7 +9899,7 @@ def test_promoted_credit_selector_uses_flow_for_rank_not_eligibility() -> None:
         "underlying_quality_tier": "core",
         "regime": "risk_on",
         "dte": 30,
-        "credit_width_ratio": 0.22,
+        "credit_width_ratio": 0.26,
         "combined_flow_bias": -0.05,
         "live_distance_pct": 0.08,
         "live_expected_move_pct": 0.08,
@@ -9847,7 +9950,7 @@ def test_promoted_selector_uses_replay_source_volume_and_keeps_live_liquidity_se
         "underlying_quality_tier": "core",
         "regime": "risk_on",
         "dte": 30,
-        "credit_width_ratio": 0.20,
+        "credit_width_ratio": 0.26,
         "combined_flow_bias": 0.30,
         "live_distance_pct": 0.08,
         "live_expected_move_pct": 0.08,
@@ -9884,7 +9987,7 @@ def test_promoted_selector_uses_replay_source_volume_and_keeps_live_liquidity_se
         "underlying_quality_tier": "core",
         "regime": "risk_on",
         "dte": 30,
-        "entry_credit_pct_width": 0.20,
+        "entry_credit_pct_width": 0.26,
         "combined_flow_bias": 0.30,
         "entry_quote_width_pct": 0.10,
         "expected_move_ratio": 1.0,
@@ -9910,7 +10013,7 @@ def test_promoted_selector_fills_second_slot_with_distinct_same_sleeve_ticker() 
                 "underlying_quality_tier": "core",
                 "regime": "risk_on",
                 "dte": 30,
-                "credit_width_ratio": 0.22,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": flow,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,
@@ -9950,7 +10053,7 @@ def test_promoted_selector_blocks_etfs_when_replay_was_common_stock_only() -> No
             "underlying_quality_tier": "core",
             "regime": "mixed",
             "dte": 30,
-            "credit_width_ratio": 0.20,
+            "credit_width_ratio": 0.26,
             "combined_flow_bias": flow,
             "live_distance_pct": 0.08,
             "live_expected_move_pct": 0.08,
@@ -9986,7 +10089,7 @@ def test_promoted_selector_blocks_etfs_when_replay_was_common_stock_only() -> No
 
 def test_promoted_selector_live_and_replay_use_the_same_capacity_and_ranking() -> None:
     policy = core._promoted_selector_policy_definition()
-    assert core._promoted_selector_daily_cap() == 25
+    assert core._promoted_selector_daily_cap() == 35
 
     candidates = []
     for ticker, flow, decision_score, premium in (
@@ -10005,8 +10108,8 @@ def test_promoted_selector_live_and_replay_use_the_same_capacity_and_ranking() -
                 "underlying_quality_tier": "core",
                 "regime": "risk_on",
                 "dte": 30,
-                "credit_width_ratio": 0.22,
-                "entry_credit_pct_width": 0.22,
+                "credit_width_ratio": 0.26,
+                "entry_credit_pct_width": 0.26,
                 "combined_flow_bias": flow,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,
@@ -10478,7 +10581,7 @@ def test_selector_avoids_short_dte_bear_calls_only_in_risk_off_regime(
         "regime": regime,
         "iv_rank": 40.0,
         "dte": dte,
-        "credit_width_ratio": 0.20,
+        "credit_width_ratio": 0.26,
         "combined_flow_bias": -0.20,
         "live_distance_pct": 0.08,
         "live_expected_move_pct": 0.08,
@@ -10641,7 +10744,7 @@ def test_send_now_allows_long_dte_trade_crossing_high_impact_macro_inside_hold()
         "macro_calendar_status": "verified",
         "macro_event_count_within_holding_horizon": 1,
         "macro_events_within_holding_horizon": "FOMC decision 2026-07-29",
-        "credit_width_ratio": 0.20,
+        "credit_width_ratio": 0.26,
     }
 
     blockers = core._send_now_economics_blockers(
@@ -10664,7 +10767,7 @@ def test_send_now_blocks_short_dte_trade_crossing_high_impact_macro_inside_hold(
         "macro_calendar_status": "verified",
         "macro_event_count_within_holding_horizon": 1,
         "macro_events_within_holding_horizon": "FOMC decision 2026-07-29",
-        "credit_width_ratio": 0.20,
+        "credit_width_ratio": 0.26,
     }
 
     blockers = core._send_now_economics_blockers(
@@ -10746,7 +10849,7 @@ def test_live_selector_matches_replay_while_negative_expectancy_still_blocks_gre
                 "underlying_quality_tier": "core",
                 "regime": "risk_on",
                 "dte": 30,
-                "credit_width_ratio": 0.20,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": 0.30,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,
@@ -10775,7 +10878,7 @@ def test_live_selector_matches_replay_while_negative_expectancy_still_blocks_gre
                 "underlying_quality_tier": "core",
                 "regime": "risk_on",
                 "dte": 30,
-                "credit_width_ratio": 0.20,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": 0.25,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,
@@ -10859,7 +10962,7 @@ def test_selector_allows_same_best_ticker_on_consecutive_sessions() -> None:
                 "entry_type": "CREDIT",
                 "regime": "risk_on",
                 "dte": 30,
-                "entry_credit_pct_width": 0.20,
+                "entry_credit_pct_width": 0.26,
                 "expected_move_ratio": 1.0,
                 "combined_flow_bias": -0.30,
                 "entry_quote_width_pct": 0.10,
@@ -19661,7 +19764,7 @@ def test_selector_policy_rejects_retired_credit_route_and_accepts_proven_one() -
                 "underlying_quality_tier": "core",
                 "regime": "risk_on",
                 "dte": 30,
-                "credit_width_ratio": 0.2,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": 0.3,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,
@@ -19678,7 +19781,7 @@ def test_selector_policy_rejects_retired_credit_route_and_accepts_proven_one() -
                 "underlying_quality_tier": "core",
                 "regime": "risk_off",
                 "dte": 30,
-                "credit_width_ratio": 0.2,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": -0.3,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,
@@ -20769,7 +20872,7 @@ def test_live_validation_prioritizes_source_qualified_promoted_selector_lane(
                 "issue_type": "COMMON STOCK",
                 "dte": 20,
                 "source_contract_volume": 100.0,
-                "credit_width_ratio": 0.20,
+                "credit_width_ratio": 0.26,
                 "hard_rejects": "",
                 "earnings_within_holding_horizon": False,
             },
@@ -20793,7 +20896,7 @@ def test_source_selector_preflight_keeps_generic_negative_cohort_diagnostic() ->
         "dte": 20,
         "source_contract_volume": 100.0,
         "source_contract_oi": 1_000.0,
-        "credit_width_ratio": 0.20,
+        "credit_width_ratio": 0.26,
         "hard_rejects": "",
         "earnings_within_holding_horizon": False,
         "actual_forward_strategy_expectancy_status": "WARN",
@@ -20840,7 +20943,7 @@ def test_default_live_validation_covers_all_source_qualified_selector_tickers(
                 "dte": 20,
                 "source_contract_volume": 100.0,
                 "source_contract_oi": 1_000.0,
-                "credit_width_ratio": 0.20,
+                "credit_width_ratio": 0.26,
                 "hard_rejects": "",
                 "earnings_within_holding_horizon": False,
             }
@@ -20941,7 +21044,7 @@ def test_promoted_selector_live_replacement_keeps_credit_dte_window() -> None:
         "dte": 10,
         "source_contract_volume": 100.0,
         "source_contract_oi": 1_000.0,
-        "credit_width_ratio": 0.20,
+        "credit_width_ratio": 0.26,
         "hard_rejects": "",
         "earnings_within_holding_horizon": False,
     }
@@ -21070,7 +21173,7 @@ def test_dated_credit_spread_preserves_width_and_route_fields() -> None:
     assert row["long_strike"] == 95.0
     assert row["spread_width"] == 5.0
     assert row["credit_width_ratio"] == 0.18
-    assert row["target_entry"] == 0.8
+    assert row["target_entry"] == 1.25
     assert row["source_contract_volume"] == 900.0
     assert "CREDIT" in row["trade_plan"]
 
@@ -24683,7 +24786,7 @@ def test_event_gates_use_the_replay_aligned_holding_horizon() -> None:
         "entry_type": "CREDIT",
         "underlying_quality_tier": "core",
         "regime": "risk_on",
-        "credit_width_ratio": 0.20,
+        "credit_width_ratio": 0.26,
         "combined_flow_bias": -0.20,
         "live_distance_pct": 0.08,
         "live_expected_move_pct": 0.08,
@@ -25320,7 +25423,7 @@ def test_live_credit_selection_prefers_selector_compatible_expiry() -> None:
         **short_expiry,
         "selected_expiry": "2026-08-14",
         "dte": 35,
-        "credit": 1.10,
+        "credit": 1.30,
         "breakeven_expected_move_ratio": 0.90,
     }
 
@@ -25435,7 +25538,7 @@ def test_live_credit_selection_recomputes_events_for_each_alternative_expiry() -
         "short_strike": 195.0,
         "long_strike": 200.0,
         "spread_width": 5.0,
-        "credit": 0.84,
+        "credit": 1.30,
         "target_entry": 0.80,
         "breakeven_expected_move_ratio": 0.83,
         "distance_pct": 0.083,
@@ -25475,7 +25578,7 @@ def test_live_credit_selection_recomputes_events_for_each_alternative_expiry() -
 
     # Both alternatives clear the events recomputed for the 2026-07-24 expiry,
     # which is what this test is guarding. Ranking then prefers the richer
-    # structure: 0.68 on a 2.5 wide spread is 27.2% of width versus 16.8% for
+    # structure: 0.68 on a 2.5 wide spread is 27.2% of width versus 26.0% for
     # the 5.0 wide one. Its short strike sits at 0.53 of the expected move,
     # which clears MIN_SELECTOR_CREDIT_DISTANCE_EXPECTED_MOVE (0.30) but would
     # have been refused by the previous 0.75 floor.
@@ -25787,6 +25890,104 @@ def test_live_credit_builder_searches_risk_sized_width_when_anchor_is_too_wide()
     )
     actionable = next(item for item in alternatives if item["construction_source"] == "actionable_quality")
     assert actionable["spread_width"] == 5.0
+
+
+def test_actionable_credit_construction_does_not_drop_wide_send_now_spreads() -> None:
+    from uwos.options_agent._vendor.schwab_live import find_credit_spread_alternatives
+
+    expiry = dt.date(2026, 8, 21)
+    contracts = pd.DataFrame(
+        [
+            {
+                "expiry": expiry,
+                "right": "P",
+                "strike": 480.0,
+                "symbol": "XYZ 260821P00480000",
+                "bid": 6.40,
+                "ask": 6.50,
+                "mark": 6.45,
+                "delta": -0.22,
+                "iv": 0.30,
+                "open_interest": 2_000,
+                "volume": 400,
+            },
+            {
+                "expiry": expiry,
+                "right": "P",
+                "strike": 460.0,
+                "symbol": "XYZ 260821P00460000",
+                "bid": 1.00,
+                "ask": 1.10,
+                "mark": 1.05,
+                "delta": -0.10,
+                "iv": 0.30,
+                "open_interest": 1_500,
+                "volume": 200,
+            },
+        ]
+    )
+
+    alternatives = find_credit_spread_alternatives(
+        contracts,
+        direction="Bull Put",
+        expiry=expiry,
+        spot=500.0,
+        preferred_width=20.0,
+        expected_move_pct=0.08,
+        as_of_date=dt.date(2026, 7, 10),
+    )
+    actionable = next(item for item in alternatives if item["construction_source"] == "actionable_quality")
+    assert actionable["spread_width"] == 20.0
+    assert actionable["credit"] >= 0.50
+    assert 0.25 <= actionable["credit_pct_width"] <= 0.30
+    assert (actionable["spread_width"] - actionable["credit"]) * 100 > 750.0
+
+
+def test_actionable_credit_construction_does_not_require_expected_move_buffer() -> None:
+    from uwos.options_agent._vendor.schwab_live import find_credit_spread_alternatives
+
+    expiry = dt.date(2026, 6, 4)
+    contracts = pd.DataFrame(
+        [
+            {
+                "expiry": expiry,
+                "right": "P",
+                "strike": 95.0,
+                "symbol": "AAA260604P00095000",
+                "bid": 1.75,
+                "ask": 1.80,
+                "mark": 1.775,
+                "delta": -0.30,
+                "open_interest": 1000,
+                "volume": 500,
+            },
+            {
+                "expiry": expiry,
+                "right": "P",
+                "strike": 90.0,
+                "symbol": "AAA260604P00090000",
+                "bid": 0.40,
+                "ask": 0.45,
+                "mark": 0.425,
+                "delta": -0.12,
+                "open_interest": 1000,
+                "volume": 500,
+            },
+        ]
+    )
+
+    alternatives = find_credit_spread_alternatives(
+        contracts,
+        direction="Bull Put",
+        expiry=expiry,
+        spot=100.0,
+        preferred_width=5.0,
+        expected_move_pct=0.10,
+        as_of_date=dt.date(2026, 5, 5),
+    )
+    actionable = next(row for row in alternatives if row["construction_source"] == "actionable_quality")
+    assert actionable["credit_pct_width"] >= 0.25
+    assert actionable["breakeven_expected_move_ratio"] < 0.75
 
 
 def test_live_credit_builder_returns_all_actionable_candidates_for_global_scoring() -> None:
@@ -26777,7 +26978,7 @@ def test_selector_economic_score_prefers_larger_planned_profit_within_quality_sl
                 "underlying_quality_tier": "core",
                 "regime": "risk_on",
                 "dte": 30,
-                "credit_width_ratio": 0.22,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": 0.35,
                 "live_distance_pct": 0.09,
                 "live_expected_move_pct": 0.08,
@@ -26797,7 +26998,7 @@ def test_selector_economic_score_prefers_larger_planned_profit_within_quality_sl
                 "underlying_quality_tier": "core",
                 "regime": "risk_on",
                 "dte": 30,
-                "credit_width_ratio": 0.20,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": 0.25,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,
@@ -26857,7 +27058,7 @@ def test_selector_replay_never_exceeds_policy_daily_cap_across_sleeves() -> None
                 "strategy_route": "bull_put_credit",
                 "entry_type": "CREDIT",
                 "entry_quote_width_pct": 0.10,
-                "entry_credit_pct_width": 0.22,
+                "entry_credit_pct_width": 0.26,
                 "combined_flow_bias": 0.30,
                 "expected_move_ratio": 1.0,
                 "dte": 30,
@@ -26920,7 +27121,7 @@ def test_rank_only_source_quote_width_preserves_live_liquidity_gate() -> None:
         "expiry": "2026-02-06",
         "dte": 30,
         "entry_quote_width_pct": 0.55,
-        "entry_credit_pct_width": 0.22,
+        "entry_credit_pct_width": 0.26,
         "combined_flow_bias": -0.30,
         "expected_move_ratio": 1.0,
         "source_contract_volume": 100.0,
@@ -26935,8 +27136,8 @@ def test_rank_only_source_quote_width_preserves_live_liquidity_gate() -> None:
         policy=policy,
     )
 
-    assert eligible
-    assert "credit_quote_width_above_0.25" not in reasons
+    assert not eligible
+    assert "credit_quote_width_above_0.25" in reasons
 
     live_row = {
         "ticker": "AAA",
@@ -26946,7 +27147,7 @@ def test_rank_only_source_quote_width_preserves_live_liquidity_gate() -> None:
         "underlying_quality_tier": "core",
         "regime": "risk_on",
         "dte": 30,
-        "credit_width_ratio": 0.22,
+        "credit_width_ratio": 0.26,
         "combined_flow_bias": 0.30,
         "live_distance_pct": 0.08,
         "live_expected_move_pct": 0.08,
@@ -26977,10 +27178,10 @@ def test_market_closed_selector_uses_dated_preflight_until_live_quote_exists() -
         "underlying_quality_tier": "core",
         "regime": "mixed",
         "dte": 30,
-        "credit_width_ratio": 0.22,
+        "credit_width_ratio": 0.26,
         "combined_flow_bias": -0.30,
         "dated_expected_move_ratio": 0.80,
-        "dated_combo_quote_width_pct": 0.55,
+        "dated_combo_quote_width_pct": 0.10,
         "dated_source_contract_volume": 100.0,
         "source_contract_oi": 1_000.0,
         "live_validation_status": "STALE_LIVE_QUOTE",
@@ -26993,7 +27194,6 @@ def test_market_closed_selector_uses_dated_preflight_until_live_quote_exists() -
     )
 
     assert eligible
-    assert "credit_distance_expected_move_below_0.30" not in reasons
     assert "credit_quote_width_above_0.25" not in reasons
 
     bad_live_row = {
@@ -27008,7 +27208,6 @@ def test_market_closed_selector_uses_dated_preflight_until_live_quote_exists() -
     )
 
     assert not eligible
-    assert "credit_distance_expected_move_below_0.30" in reasons
     assert "credit_quote_width_above_0.25" in reasons
 
 
@@ -27036,8 +27235,8 @@ def test_selector_deduplicates_canonical_share_classes_in_replay_and_live_board(
                 "regime": "risk_on",
                 "expiry": "2026-02-06",
                 "dte": 30,
-                "entry_quote_width_pct": 0.55,
-                "entry_credit_pct_width": 0.22,
+                "entry_quote_width_pct": 0.10,
+                "entry_credit_pct_width": 0.26,
                 "combined_flow_bias": -0.30,
                 "expected_move_ratio": 1.0,
                 "source_contract_volume": 100.0,
@@ -27058,7 +27257,7 @@ def test_selector_deduplicates_canonical_share_classes_in_replay_and_live_board(
                 "underlying_quality_tier": "core",
                 "regime": "risk_on",
                 "dte": 30,
-                "credit_width_ratio": 0.22,
+                "credit_width_ratio": 0.26,
                 "combined_flow_bias": -0.30,
                 "live_distance_pct": 0.08,
                 "live_expected_move_pct": 0.08,

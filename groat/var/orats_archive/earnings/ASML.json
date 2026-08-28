@@ -1,0 +1,640 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-03-19",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-01-23",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-07-23",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-01-22",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-06-17",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-01-20",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-01-18",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-01-17",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-17",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-16",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-04-16",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-16",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-15",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-15",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-21",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-14",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-13",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-01-19",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-13",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-13",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-12",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-01-18",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-19",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-19",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1200",
+      "earnDate": "2006-10-18",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-01-17",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-04-18",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-07-18",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-17",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-01-16",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-04-16",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-16",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-15",
+      "ticker": "ASML",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-01-15",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-04-15",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-07-15",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-10-14",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-01-20",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-04-14",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-07-14",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-10-13",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-01-19",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-04-13",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-07-13",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-10-12",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-01-18",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-04-18",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-07-18",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-10-17",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-01-17",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-04-17",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-07-17",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-10-16",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-01-22",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-04-16",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-07-16",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-10-15",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-01-21",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-04-15",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-07-15",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-10-13",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-10-14",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-10-28",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-01-20",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-04-20",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-07-20",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-10-19",
+      "ticker": "ASML",
+      "updatedAt": "2017-10-11T19:03:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-01-18",
+      "ticker": "ASML",
+      "updatedAt": "2018-11-12T17:04:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-04-19",
+      "ticker": "ASML",
+      "updatedAt": "2018-11-12T17:04:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-07-19",
+      "ticker": "ASML",
+      "updatedAt": "2018-11-12T17:04:44Z"
+    },
+    {
+      "anncTod": "2359",
+      "earnDate": "2017-10-18",
+      "ticker": "ASML",
+      "updatedAt": "2018-11-12T17:04:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-01-17",
+      "ticker": "ASML",
+      "updatedAt": "2018-11-12T17:04:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-04-18",
+      "ticker": "ASML",
+      "updatedAt": "2018-11-12T17:04:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-07-18",
+      "ticker": "ASML",
+      "updatedAt": "2018-11-12T17:04:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-10-17",
+      "ticker": "ASML",
+      "updatedAt": "2018-11-12T17:04:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-01-23",
+      "ticker": "ASML",
+      "updatedAt": "2019-02-02T00:45:42Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-04-17",
+      "ticker": "ASML",
+      "updatedAt": "2019-04-26T23:15:47Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-07-17",
+      "ticker": "ASML",
+      "updatedAt": "2019-07-26T23:15:34Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-10-16",
+      "ticker": "ASML",
+      "updatedAt": "2019-10-25T23:15:39Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-01-22",
+      "ticker": "ASML",
+      "updatedAt": "2020-02-01T00:15:37Z"
+    },
+    {
+      "anncTod": "2359",
+      "earnDate": "2020-04-15",
+      "ticker": "ASML",
+      "updatedAt": "2020-01-24T00:15:11Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-07-15",
+      "ticker": "ASML",
+      "updatedAt": "2020-07-24T23:15:37Z"
+    },
+    {
+      "anncTod": "2359",
+      "earnDate": "2020-10-14",
+      "ticker": "ASML",
+      "updatedAt": "2020-10-23T23:15:33Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-01-20",
+      "ticker": "ASML",
+      "updatedAt": "2021-01-30T00:15:33Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-04-21",
+      "ticker": "ASML",
+      "updatedAt": "2021-04-30T23:15:35Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-07-21",
+      "ticker": "ASML",
+      "updatedAt": "2021-07-30T23:15:30Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-10-20",
+      "ticker": "ASML",
+      "updatedAt": "2021-10-28T23:15:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-01-19",
+      "ticker": "ASML",
+      "updatedAt": "2022-01-29T00:15:24Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-04-20",
+      "ticker": "ASML",
+      "updatedAt": "2022-04-29T23:15:30Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-07-20",
+      "ticker": "ASML",
+      "updatedAt": "2022-07-29T23:15:27Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-10-19",
+      "ticker": "ASML",
+      "updatedAt": "2022-10-28T23:15:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-01-25",
+      "ticker": "ASML",
+      "updatedAt": "2023-02-04T00:15:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-04-19",
+      "ticker": "ASML",
+      "updatedAt": "2023-04-28T23:15:30Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-07-19",
+      "ticker": "ASML",
+      "updatedAt": "2023-07-28T23:15:33Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-10-18",
+      "ticker": "ASML",
+      "updatedAt": "2023-10-27T23:15:32Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-01-24",
+      "ticker": "ASML",
+      "updatedAt": "2024-02-03T00:15:35Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-04-17",
+      "ticker": "ASML",
+      "updatedAt": "2024-04-26T23:15:34Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-07-17",
+      "ticker": "ASML",
+      "updatedAt": "2024-07-26T23:15:34Z"
+    },
+    {
+      "anncTod": "1200",
+      "earnDate": "2024-10-15",
+      "ticker": "ASML",
+      "updatedAt": "2024-10-25T23:15:38Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-01-29",
+      "ticker": "ASML",
+      "updatedAt": "2025-02-08T03:40:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-04-16",
+      "ticker": "ASML",
+      "updatedAt": "2025-04-26T02:40:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-07-16",
+      "ticker": "ASML",
+      "updatedAt": "2025-07-26T02:40:21Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-10-15",
+      "ticker": "ASML",
+      "updatedAt": "2025-10-25T02:40:19Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-01-28",
+      "ticker": "ASML",
+      "updatedAt": "2026-02-07T03:40:21Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-04-15",
+      "ticker": "ASML",
+      "updatedAt": "2026-04-25T02:40:24Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-07-15",
+      "ticker": "ASML",
+      "updatedAt": "2026-07-24T22:00:33Z"
+    }
+  ]
+}

@@ -2609,6 +2609,15 @@
       "stkVolu": 2242458.0,
       "ticker": "COST",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 941.76,
+      "hiPx": 942.0,
+      "loPx": 937.11,
+      "open": 938.935,
+      "stkVolu": 112487.0,
+      "ticker": "COST",
+      "tradeDate": "2026-08-28"
     }
   ]
 }

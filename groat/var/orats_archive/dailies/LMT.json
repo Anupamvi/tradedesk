@@ -2606,9 +2606,18 @@
       "hiPx": 566.03,
       "loPx": 560.02,
       "open": 564.81,
-      "stkVolu": 823466.0,
+      "stkVolu": 823593.0,
       "ticker": "LMT",
       "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 565.6,
+      "hiPx": 568.425,
+      "loPx": 564.37,
+      "open": 567.97,
+      "stkVolu": 27605.0,
+      "ticker": "LMT",
+      "tradeDate": "2026-08-28"
     }
   ]
 }
