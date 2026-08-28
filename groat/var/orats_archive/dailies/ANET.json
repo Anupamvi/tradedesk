@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 198.45,
+      "clsPx": 195.4225,
       "hiPx": 200.1,
-      "loPx": 196.52,
+      "loPx": 194.61,
       "open": 200.0,
-      "stkVolu": 178481.0,
+      "stkVolu": 3061348.0,
       "ticker": "ANET",
       "tradeDate": "2026-08-28"
     }
