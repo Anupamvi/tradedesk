@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 77.9709,
-      "hiPx": 78.1,
+      "clsPx": 78.78,
+      "hiPx": 78.995,
       "loPx": 76.72,
       "open": 77.0,
-      "stkVolu": 662750.0,
+      "stkVolu": 10700278.0,
       "ticker": "UBER",
       "tradeDate": "2026-08-28"
     }

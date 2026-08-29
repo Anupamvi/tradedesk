@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 170.575,
-      "hiPx": 172.91,
-      "loPx": 168.39,
+      "clsPx": 166.5,
+      "hiPx": 173.42,
+      "loPx": 166.1,
       "open": 172.2,
-      "stkVolu": 350611.0,
+      "stkVolu": 4424901.0,
       "ticker": "OKTA",
       "tradeDate": "2026-08-28"
     }

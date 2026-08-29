@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 347.75,
+      "clsPx": 347.6817,
       "hiPx": 358.8,
       "loPx": 345.2,
       "open": 357.095,
-      "stkVolu": 32831670.0,
+      "stkVolu": 32838063.0,
       "ticker": "TSLA",
       "tradeDate": "2026-08-28"
     }

@@ -6,7 +6,7 @@ from unittest import mock
 
 from groat.cli import parse_args
 from groat.envload import ORATS_TOKEN_MISSING, load_orats_token, load_merged_env
-from groat.orats import map_cores_row, parse_core, redact
+from groat.orats import fetch_cores, map_cores_row, parse_core, redact
 
 SECRET = "ORATSSECRETTOKENXYZ"
 
@@ -105,6 +105,48 @@ class TestParseCore(unittest.TestCase):
         self.assertIsNone(empty["hv20"])
         self.assertIsNone(empty["vrp"])
         self.assertFalse(empty["raw"])
+
+
+class TestRefreshBypassesCache(unittest.TestCase):
+    def test_fetch_cores_refresh_hits_http(self):
+        calls = []
+
+        def getter(path, query, token):
+            calls.append(path)
+            return 200, {"data": [{"ticker": "SPY", "iv30d": 12.0, "orHv20d": 10.0}]}, ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / "archive"
+            (archive / "2026-08-28").mkdir(parents=True)
+            (archive / "2026-08-28" / "cores.json").write_text(
+                json.dumps({"data": [{"ticker": "SPY", "iv30d": 99.0, "orHv20d": 99.0}]}),
+                encoding="utf-8",
+            )
+            with mock.patch("groat.orats.archive_dir", return_value=archive):
+                with mock.patch("groat.orats.can_http", return_value=True):
+                    stale = fetch_cores(
+                        "2026-08-28", ["SPY"], "tok", "2026-08-28", getter=getter, refresh=False
+                    )
+                    fresh = fetch_cores(
+                        "2026-08-28", ["SPY"], "tok", "2026-08-28", getter=getter, refresh=True
+                    )
+        self.assertEqual(stale["rows"]["SPY"]["iv30d"], 99.0)
+        self.assertEqual(stale["http"], 0)
+        self.assertEqual(fresh["rows"]["SPY"]["iv30d"], 12.0)
+        self.assertGreaterEqual(fresh["http"], 1)
+        self.assertTrue(calls)
+
+
+class TestTapeRefresh(unittest.TestCase):
+    def test_ensure_bars_refresh_bypasses_schwab_cache(self):
+        from groat.prices import ensure_bars
+
+        bars = [{"date": "2026-08-28", "open": 1, "high": 2, "low": 1, "close": 1.5, "volume": 10}]
+        with mock.patch("groat.prices.load_cached_bars", return_value=[]):
+            with mock.patch("groat.schwab.price_history_bars", return_value=bars) as hist:
+                out = ensure_bars("SPY", "tok", asof="2026-08-28", live=False, refresh=True)
+        self.assertEqual(hist.call_args.kwargs.get("use_cache"), False)
+        self.assertEqual(out["tape"], "schwab_history")
 
 
 if __name__ == "__main__":

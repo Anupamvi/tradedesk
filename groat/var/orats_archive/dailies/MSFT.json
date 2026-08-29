@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 513.1,
+      "clsPx": 512.72,
       "hiPx": 517.78,
       "loPx": 504.8675,
       "open": 505.33,
-      "stkVolu": 28968049.0,
+      "stkVolu": 29116123.0,
       "ticker": "MSFT",
       "tradeDate": "2026-08-28"
     }

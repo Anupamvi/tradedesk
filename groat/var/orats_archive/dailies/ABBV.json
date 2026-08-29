@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 257.0,
+      "clsPx": 255.0012,
       "hiPx": 259.0,
-      "loPx": 256.0,
+      "loPx": 255.0797,
       "open": 258.67,
-      "stkVolu": 123719.0,
+      "stkVolu": 3222325.0,
       "ticker": "ABBV",
       "tradeDate": "2026-08-28"
     }

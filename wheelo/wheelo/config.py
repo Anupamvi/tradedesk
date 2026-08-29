@@ -1,11 +1,12 @@
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 CODE_DIR = Path(__file__).resolve().parent.parent
 TRADEDESK_ENV = Path("/Users/anuppamvi/tradedesk/.env")
 OUT_DIR = CODE_DIR / "out" / "wheelo"
 UNIVERSE_PATH = CODE_DIR / "configs" / "universe.txt"
+OWN_LIST_PATH = CODE_DIR / "configs" / "own_list.txt"
 DEFAULT_CFG_PATH = CODE_DIR / "configs" / "default.json"
 BOOK_PATH = CODE_DIR / "var" / "book.json"
 PIT_TZ = "America/New_York"
@@ -30,6 +31,19 @@ def load_json_config(path: Path = DEFAULT_CFG_PATH) -> Dict[str, Any]:
     if not path.is_file():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_own_list(path: Path = OWN_LIST_PATH) -> List[str]:
+    return load_universe(path)
+
+
+def load_scan_universe(cfg: Optional[Dict[str, Any]] = None) -> List[str]:
+    data = cfg if cfg is not None else load_json_config()
+    source = str((data.get("universe") or {}).get("source") or "own_list").lower()
+    if source in ("universe", "screener"):
+        return load_universe()
+    names = load_own_list()
+    return names if names else load_universe()
 
 
 def load_universe(path: Path = UNIVERSE_PATH) -> List[str]:

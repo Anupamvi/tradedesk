@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 295.93,
+      "clsPx": 295.9,
       "hiPx": 300.39,
       "loPx": 295.67,
       "open": 299.7,
-      "stkVolu": 19030152.0,
+      "stkVolu": 19033300.0,
       "ticker": "IWM",
       "tradeDate": "2026-08-28"
     }

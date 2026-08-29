@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+out/
+var/orats_archive/
+var/schwab_bars/
+.pytest_cache/

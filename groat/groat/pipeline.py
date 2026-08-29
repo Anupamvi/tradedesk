@@ -132,6 +132,7 @@ def load_bars(
             max_requests=max_requests,
             asof=asof,
             live=live,
+            refresh=True,
         )
     return out
 
@@ -320,7 +321,9 @@ def build_full(
     cores = dict(cores_by_ticker or {})
     orats_http = 0
     if cores_by_ticker is None:
-        pack = fetch_cores(asof, names, token, today, getter=getter, max_requests=max_requests)
+        pack = fetch_cores(
+            asof, names, token, today, getter=getter, max_requests=max_requests, refresh=True
+        )
         cores = pack.get("rows") or {}
         orats_error = pack.get("error") or ""
         orats_http = int(pack.get("http") or 0)
@@ -367,6 +370,7 @@ def build_full(
             getter=getter,
             max_requests=max_requests,
             dte=STRIKE_DTE,
+            refresh=True,
         )
         strikes = pack_s.get("rows") or {}
         orats_http += int(pack_s.get("http") or 0)

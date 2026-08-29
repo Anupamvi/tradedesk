@@ -1,15 +1,6 @@
 {
   "data": [
     {
-      "clsPx": 625.34,
-      "hiPx": 626.28,
-      "loPx": 622.43,
-      "open": 622.45,
-      "stkVolu": 51065789.0,
-      "ticker": "SPY",
-      "tradeDate": "2025-07-03"
-    },
-    {
       "clsPx": 620.68,
       "hiPx": 624.03,
       "loPx": 617.87,
@@ -2611,11 +2602,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 769.55,
+      "clsPx": 769.15,
       "hiPx": 775.3,
       "loPx": 768.3076,
       "open": 771.76,
-      "stkVolu": 36651265.0,
+      "stkVolu": 36679894.0,
       "ticker": "SPY",
       "tradeDate": "2026-08-28"
     }

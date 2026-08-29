@@ -369,16 +369,18 @@ def fetch_cores(
     today: str,
     getter=None,
     max_requests: Optional[int] = None,
+    refresh: bool = False,
 ) -> Dict[str, Any]:
     wanted = [str(t).upper() for t in tickers if t]
     cache = cores_cache(asof)
-    cached = _read_json(cache)
     by_ticker = {}
-    if cached is not None:
-        for row in rows_of(cached):
-            name = str(row.get("ticker") or "").upper()
-            if name:
-                by_ticker[name] = row
+    if not refresh:
+        cached = _read_json(cache)
+        if cached is not None:
+            for row in rows_of(cached):
+                name = str(row.get("ticker") or "").upper()
+                if name:
+                    by_ticker[name] = row
     missing = [t for t in wanted if t not in by_ticker]
     if not missing:
         usage = load_usage()
@@ -451,12 +453,13 @@ def fetch_strikes(
     getter=None,
     max_requests: Optional[int] = None,
     dte: str = "21,30,45,60",
+    refresh: bool = False,
 ) -> Dict[str, Any]:
     wanted = [str(t).upper() for t in tickers if t]
     by_ticker = {}
     missing = []
     for name in wanted:
-        cached = _read_json(strikes_cache(asof, name, dte))
+        cached = None if refresh else _read_json(strikes_cache(asof, name, dte))
         if cached is not None:
             by_ticker[name] = rows_of(cached)
         else:

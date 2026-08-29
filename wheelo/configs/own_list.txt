@@ -1,0 +1,139 @@
+# Wheelo own-list — holdable multi-year growth. Inclusion rules (do not skip):
+# 1. Must be a real operating business you'd still own after a 20% drawdown.
+# 2. Must cover each major growth sleeve: compute, software, platforms, payments,
+#    healthcare, industrials/defense, power, quality energy, consumer compounders.
+# 3. Liquid listed US names (include obvious leaders: PLTR, ORCL, TSLA, MU, HOOD).
+# 4. Exclude crypto-treasury, miners, binary biotech, broken consumer (NKE), MSTR.
+# Thesis break → sell. A red day is not a thesis break.
+
+# Semiconductors / AI compute
+NVDA
+AVGO
+TSM
+ASML
+AMAT
+LRCX
+KLAC
+AMD
+MU
+MRVL
+ADI
+TXN
+ON
+INTC
+ARM
+QCOM
+
+# Networking / data-center hardware
+ANET
+DELL
+HPE
+STX
+WDC
+
+# Software / cyber / cloud
+MSFT
+NOW
+CRM
+CRWD
+PANW
+INTU
+ADBE
+SNPS
+CDNS
+NET
+SNOW
+DDOG
+PLTR
+ORCL
+WDAY
+
+# Internet / platforms
+GOOGL
+AMZN
+META
+NFLX
+SHOP
+MELI
+UBER
+DASH
+APP
+ABNB
+TSLA
+
+# Payments / financials
+V
+MA
+JPM
+BX
+BLK
+HOOD
+SOFI
+XYZ
+PYPL
+CFG
+SCHW
+AXP
+SPGI
+ICE
+CME
+
+# Healthcare
+LLY
+UNH
+ISRG
+TMO
+DHR
+SYK
+BSX
+PODD
+DXCM
+VRTX
+REGN
+ABBV
+
+# Industrials / aerospace / defense
+SPCX
+CAT
+DE
+GE
+HON
+RTX
+LMT
+NOC
+GD
+ETN
+PH
+AXON
+TDG
+PWR
+CARR
+TT
+URI
+RKLB
+
+# AI power / electrical
+CEG
+VST
+VRT
+GEV
+NEE
+
+# Energy (quality, not E&P lottery)
+XOM
+CVX
+
+# Consumer / retail compounders
+AAPL
+COST
+HD
+TJX
+ORLY
+CMG
+WM
+CTAS
+LIN
+
+# Do not add from TJ's book: MSTR, CLSK, RIOT, BMNR, NBIS, ENPH.
+# Those are crypto-treasury / miner / high-beta tape, not "fine to hold if assigned."
+# His own YTD screen: BMNR -$588k, SOFI -$55k, RIOT -$35k. PLTR/MU/SPCX/HOOD are the keepers.

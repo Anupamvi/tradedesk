@@ -53,6 +53,8 @@ If `ORATS_TOKEN` is missing (exit 2), tell the user to edit `CODE/.env` or run `
 
 Schwab: `CODE/.env` then `/Users/anuppamvi/tradedesk/.env`. Live Schwab when `--date` is today.
 
+Every `full` / `delta` / `analyze` **always refreshes**: ORATS cores, ORATS strikes, and Schwab daily tape (`price_history` + live quote when `--date` is today). Do not reuse that date’s chain or bar cache. Replay analog `hist/strikes` still uses cache + `--max-strike-http`.
+
 ## Evening vs morning (when they ask about placing last night’s trades)
 
 **Do not place last evening’s option ticket blindly at 9:30 ET.**

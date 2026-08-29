@@ -107,7 +107,6 @@ WBD
 PARA
 # REITs / yield
 O
-VNQ
 SPG
 AMT
 PLD
@@ -144,22 +143,6 @@ MSTR
 MARA
 RIOT
 CLSK
-IBIT
-GLD
-SLV
-USO
-XLE
-XLF
-XLI
-XLV
-XLK
-SMH
-IWM
-EEM
-EFA
-HYG
-LQD
-TLT
 # Keep a few higher-priced names; price filter drops them when >$60
 JPM
 GS

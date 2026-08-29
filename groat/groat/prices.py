@@ -90,6 +90,7 @@ def ensure_bars(
     schwab_bars: Optional[List[dict]] = None,
     asof: Optional[str] = None,
     live: bool = False,
+    refresh: bool = False,
 ) -> Dict[str, object]:
     name = str(ticker).upper()
     cached = load_cached_bars(name)
@@ -100,7 +101,7 @@ def ensure_bars(
         from groat.schwab import price_history_bars, quote_bar
 
         try:
-            extra = price_history_bars(name, asof or last or "")
+            extra = price_history_bars(name, asof or last or "", use_cache=not refresh)
             if live and asof:
                 qb = quote_bar(name, asof)
                 if qb:

@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 817.49,
+      "clsPx": 800.79,
       "hiPx": 821.23,
-      "loPx": 815.11,
+      "loPx": 799.166,
       "open": 819.01,
-      "stkVolu": 81574.0,
+      "stkVolu": 1786494.0,
       "ticker": "CAT",
       "tradeDate": "2026-08-28"
     }

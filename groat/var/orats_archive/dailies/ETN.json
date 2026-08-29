@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 404.1,
+      "clsPx": 404.0,
       "hiPx": 419.03,
       "loPx": 402.31,
       "open": 417.5,
-      "stkVolu": 1822181.0,
+      "stkVolu": 1822277.0,
       "ticker": "ETN",
       "tradeDate": "2026-08-28"
     }

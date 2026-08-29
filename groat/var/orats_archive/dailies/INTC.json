@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 89.37,
+      "clsPx": 89.36,
       "hiPx": 93.7,
       "loPx": 89.05,
       "open": 90.265,
-      "stkVolu": 85838752.0,
+      "stkVolu": 85855871.0,
       "ticker": "INTC",
       "tradeDate": "2026-08-28"
     }

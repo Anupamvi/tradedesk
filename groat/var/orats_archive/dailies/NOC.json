@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 545.64,
+      "clsPx": 544.0662,
       "hiPx": 547.675,
-      "loPx": 544.83,
+      "loPx": 542.785,
       "open": 547.37,
-      "stkVolu": 11011.0,
+      "stkVolu": 392856.0,
       "ticker": "NOC",
       "tradeDate": "2026-08-28"
     }

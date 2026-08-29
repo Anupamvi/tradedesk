@@ -2611,11 +2611,11 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 300.12,
+      "clsPx": 300.1421,
       "hiPx": 307.5,
       "loPx": 298.02,
       "open": 306.21,
-      "stkVolu": 2542929.0,
+      "stkVolu": 2544670.0,
       "ticker": "NET",
       "tradeDate": "2026-08-28"
     }

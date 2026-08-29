@@ -244,6 +244,7 @@ def fetch_cores(
     max_requests: Optional[int] = None,
     max_tickers: int = 40,
     fields: str = CORE_FIELDS,
+    refresh: bool = False,
 ) -> Dict[str, Any]:
     wanted = cap_tickers(tickers, max_tickers)
     if not wanted:
@@ -259,14 +260,14 @@ def fetch_cores(
             "capped": [],
         }
     cache = cores_cache(asof)
-    cached = _read_json(cache)
+    cached = None if refresh else _read_json(cache)
     by_ticker = {}
     if cached is not None:
         for row in rows_of(cached):
             name = str(row.get("ticker") or "").upper()
             if name:
                 by_ticker[name] = row
-    missing = [t for t in wanted if t not in by_ticker]
+    missing = wanted[:] if refresh else [t for t in wanted if t not in by_ticker]
     if not missing:
         usage = load_usage()
         return {
@@ -340,12 +341,13 @@ def fetch_strikes(
     max_requests: Optional[int] = None,
     max_tickers: int = 20,
     dte: str = ORATS_STRIKE_DTE,
+    refresh: bool = False,
 ) -> Dict[str, Any]:
     wanted = cap_tickers(tickers, max_tickers)
     by_ticker = {}
     missing = []
     for name in wanted:
-        cached = _read_json(strikes_cache(asof, name, dte))
+        cached = None if refresh else _read_json(strikes_cache(asof, name, dte))
         if cached is not None:
             by_ticker[name] = rows_of(cached)
         else:

@@ -69,6 +69,20 @@ python3 -m groat full --date YYYY-MM-DD
 - Output: `/Users/anuppamvi/tradedesk/groat/out/groat/YYYY-MM-DD/`
 - ORATS token lives in `groat/.env`. Schwab fills from `groat/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, prices, X posts, or news.
 
+## Wheelo Default
+
+- Treat `wheelo`, `wheelo select`, `wheelo daily`, and `wheelo YYYY-MM-DD` as the **Wheelo** CSP/CC desk under `wheelo/`, not `uwos.wheel_pipeline` and not Groat.
+- Wheelo is independent: `python3 -m wheelo` from `/Users/anuppamvi/tradedesk/wheelo`. Do not import other desks as the execute path.
+- Schwab quotes shortlist first. ORATS delayed `/cores` and `/strikes` run only after that shortlist (≤80 cores, ≤20 strikes, default 15 HTTP/run). Today/live always refetches; disk JSON is audit only. Empty TRADE board is valid. No order placement. User sizes cash. Ticket **conf** is 0-85 structure/research quality, not P(win); TRADE / WATCH / NO_TRADE. Lead with the rotation pick (highest-conf TRADE CSP). Do not lecture sleeve math.
+- Default:
+
+```bash
+python3 -m wheelo full --date YYYY-MM-DD --capital 35000
+```
+
+- Output: `/Users/anuppamvi/tradedesk/wheelo/out/wheelo/YYYY-MM-DD/`
+- ORATS token lives in `wheelo/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, Schwab, or X numbers. Credits are put bid, not mid.
+
 ## Pattern Analysis V2 Default
 
 - Treat `pattern analysis`, `run pattern analysis`, `pattern-analysis`, and plain `pattern` requests as **Pattern Analysis V2** unless the user explicitly asks for V1, the frozen baseline, or `uwos.options_pattern_pipeline_v1`.
