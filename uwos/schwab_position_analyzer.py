@@ -305,6 +305,62 @@ def parse_schwab_option_symbol(symbol: str):
     return underlying, expiry, put_call, strike
 
 
+def compute_price_trend_context(payload: Any) -> Dict[str, Any]:
+    """Compute an inspectable 20-day EMA trend from Schwab daily candles."""
+    result = {
+        "ema20": None,
+        "ema20_slope_5d_pct": None,
+        "trend_direction": None,
+        "three_day_lower_lows": None,
+        "three_day_higher_highs": None,
+        "trend_source": "schwab_daily_candles",
+    }
+    candles = payload.get("candles", []) if isinstance(payload, dict) else []
+    clean = []
+    for candle in candles:
+        if not isinstance(candle, dict):
+            continue
+        close = _safe_float(candle.get("close"))
+        low = _safe_float(candle.get("low"))
+        high = _safe_float(candle.get("high"))
+        timestamp = _safe_float(candle.get("datetime"))
+        if close is None or close <= 0:
+            continue
+        clean.append((timestamp or 0.0, close, low, high))
+    clean.sort(key=lambda row: row[0])
+    if len(clean) < 20:
+        return result
+
+    alpha = 2.0 / 21.0
+    ema_values = [clean[0][1]]
+    for _, close, _, _ in clean[1:]:
+        ema_values.append(alpha * close + (1.0 - alpha) * ema_values[-1])
+    ema20 = ema_values[-1]
+    slope = None
+    if len(ema_values) >= 6 and ema_values[-6] > 0:
+        slope = (ema20 / ema_values[-6] - 1.0) * 100.0
+    last_close = clean[-1][1]
+    direction = "mixed"
+    if slope is not None and last_close >= ema20 and slope > 0:
+        direction = "bullish"
+    elif slope is not None and last_close < ema20 and slope < 0:
+        direction = "bearish"
+
+    last_three = clean[-3:]
+    lows = [row[2] for row in last_three]
+    highs = [row[3] for row in last_three]
+    result.update(
+        {
+            "ema20": round(ema20, 2),
+            "ema20_slope_5d_pct": round(slope, 2) if slope is not None else None,
+            "trend_direction": direction,
+            "three_day_lower_lows": all(v is not None for v in lows) and lows[0] > lows[1] > lows[2],
+            "three_day_higher_highs": all(v is not None for v in highs) and highs[0] < highs[1] < highs[2],
+        }
+    )
+    return result
+
+
 def analyze_positions(
     svc: SchwabLiveDataService,
     days: int = 90,
@@ -370,6 +426,14 @@ def analyze_positions(
             chains_payload[ul] = svc.get_option_chain(ul, strike_count=None)
         except Exception:
             pass
+
+    price_trend_by_underlying = {}
+    for ul in option_underlyings:
+        try:
+            history_payload = svc.get_daily_price_history(ul, days=90)
+        except Exception:
+            history_payload = {}
+        price_trend_by_underlying[ul] = compute_price_trend_context(history_payload)
 
     # 5b. Compute GEX per underlying from full chain
     gex_by_underlying = {}
@@ -524,8 +588,9 @@ def analyze_positions(
             bid_ask_spread_pct = round((ask - bid) / live_quote["mark"] * 100, 1)
 
         yf_ctx = yf_context.get(underlying, {})
-        ul = pos.get("underlying", "")
+        ul = underlying
         gex_info = gex_by_underlying.get(ul, {})
+        price_trend = price_trend_by_underlying.get(underlying, {})
         computed = {
             **metrics,
             "bid_ask_spread_pct": bid_ask_spread_pct,
@@ -553,6 +618,7 @@ def analyze_positions(
             "underlying_quote": {
                 "last": underlying_price,
                 "change_pct": _safe_float(uq_body.get("netPercentChangeInDouble")),
+                **price_trend,
             },
             "computed": computed,
         })
@@ -565,6 +631,7 @@ def analyze_positions(
             "transactions": "schwab",
             "quotes": "schwab",
             "option_chains": "schwab",
+            "price_history": "schwab",
             "external_yfinance": bool(include_yfinance),
         },
         "positions": enriched,

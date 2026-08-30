@@ -642,6 +642,30 @@ class SchwabLiveDataService:
         response.raise_for_status()
         return response.json()
 
+    def get_daily_price_history(self, symbol: str, *, days: int = 90) -> Dict[str, Any]:
+        """Fetch bounded daily candles for trade-management trend checks."""
+        ticker = str(symbol or "").strip().upper()
+        if not ticker:
+            raise RuntimeError("No price-history symbol provided.")
+        client = self.connect()
+        end_datetime = dt.datetime.combine(dt.date.today() + dt.timedelta(days=1), dt.time.min)
+        start_datetime = end_datetime - dt.timedelta(days=max(int(days), 30))
+        try:
+            response = client.get_price_history_every_day(
+                ticker,
+                start_datetime=start_datetime,
+                end_datetime=end_datetime,
+            )
+        except Exception as exc:
+            if _is_refresh_token_error(exc):
+                raise RuntimeError(
+                    "Schwab token refresh failed while fetching daily price history."
+                ) from exc
+            raise
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, dict) else {"candles": []}
+
     def get_news(self, symbols: Sequence[str], *, limit: int = 20) -> Dict[str, Any]:
         """Best-effort Schwab news fetch.
 

@@ -118,23 +118,6 @@ def _spread_legs_description(group: Dict[str, Any], qty: Any) -> str:
     return f"{short_desc} / {long_desc}"
 
 
-def _format_deadline(row: Dict[str, Any]) -> str:
-    expiry_text = _text(row.get("expiry"), "")
-    dte = safe(row.get("_raw_dte"), None)
-    if not expiry_text or dte is None:
-        return "at the next market close"
-    try:
-        expiry = dt.date.fromisoformat(expiry_text)
-    except ValueError:
-        return "at the next market close"
-
-    as_of = expiry - dt.timedelta(days=int(round(dte)))
-    deadline = as_of
-    while deadline.weekday() >= 5:
-        deadline += dt.timedelta(days=1)
-    return f"by market close (4:00 PM ET) on {deadline.strftime('%A, %B')} {deadline.day}, {deadline.year}"
-
-
 def _action_instruction(row: Dict[str, Any]) -> str:
     action = row.get("action") or row.get("verdict")
     kind = row.get("_kind")
@@ -161,59 +144,18 @@ def _action_instruction(row: Dict[str, Any]) -> str:
             else "Roll this option; if you cannot roll for acceptable risk/reward, close it."
         )
     if action == "SET STOP":
-        long_strike = safe(row.get("_long_strike"), None)
         short_strike = safe(row.get("_short_strike"), None)
-        deadline = _format_deadline(row)
-        if "bull call debit" in category and long_strike is not None:
-            if spot is not None and short_strike is not None:
-                midpoint = (long_strike + short_strike) / 2.0
-                if spot >= short_strike:
-                    return (
-                        f"Set a stop: take profit now, or close the whole spread if the stock cannot hold "
-                        f"{_fmt_strike(short_strike)} {deadline}; max profit is capped, so do not leave gains "
-                        "exposed to theta/gamma decay."
-                    )
-                if spot > long_strike:
-                    if spot >= midpoint:
-                        return (
-                            f"Set a stop: protect gains at the spread midpoint; close the whole spread if the stock "
-                            f"falls back below {_fmt_strike(midpoint)} {deadline}. If it reaches "
-                            f"{_fmt_strike(short_strike)} before then, take profit rather than waiting for expiration."
-                        )
-                    return (
-                        f"Set a stop: close the whole spread if the stock cannot stay above "
-                        f"{_fmt_strike(long_strike)} {deadline}; theta/gamma decay is working against the position, "
-                        "so do not roll unless the bullish thesis is still strong."
-                    )
-            return (
-                f"Set a stop: close the whole spread if the stock cannot reclaim {_fmt_strike(long_strike)} {deadline}; "
-                "theta/gamma decay is working against the position, so do not roll unless the bullish thesis is still strong."
-            )
-        if "bear put debit" in category and long_strike is not None:
-            if spot is not None and short_strike is not None:
-                midpoint = (long_strike + short_strike) / 2.0
-                if spot <= short_strike:
-                    return (
-                        f"Set a stop: take profit now, or close the whole spread if the stock cannot stay below "
-                        f"{_fmt_strike(short_strike)} {deadline}; max profit is capped, so do not leave gains exposed "
-                        "to theta/gamma decay."
-                    )
-                if spot < long_strike:
-                    if spot <= midpoint:
-                        return (
-                            f"Set a stop: protect gains at the spread midpoint; close the whole spread if the stock "
-                            f"rebounds above {_fmt_strike(midpoint)} {deadline}. If it reaches "
-                            f"{_fmt_strike(short_strike)} before then, take profit rather than waiting for expiration."
-                        )
-                    return (
-                        f"Set a stop: close the whole spread if the stock cannot stay below "
-                        f"{_fmt_strike(long_strike)} {deadline}; theta/gamma decay is working against the position, "
-                        "so do not roll unless the bearish thesis is still strong."
-                    )
-            return (
-                f"Set a stop: close the whole spread if the stock cannot break below {_fmt_strike(long_strike)} {deadline}; "
-                "theta/gamma decay is working against the position, so do not roll unless the bearish thesis is still strong."
-            )
+        if "debit" in category and is_spread:
+            entry = safe(row.get("_entry_net"), None)
+            review = entry * 0.60 if entry is not None else None
+            hard_exit = entry * 0.40 if entry is not None else None
+            levels = []
+            if review is not None:
+                levels.append(f"review at whole-spread close credit {_fmt_price(review)} (40% loss)")
+            if hard_exit is not None:
+                levels.append(f"hard exit at {_fmt_price(hard_exit)} (60% loss)")
+            levels.append("also exit on a verified EMA20 trend break against the thesis")
+            return "Set monitored triggers: " + "; ".join(levels) + ". Do not use the long strike alone as a deadline."
         if "credit" in category and short_strike is not None:
             return (
                 f"Set a stop at the short strike {_fmt_strike(short_strike)}; if breached, roll the whole position or close it."
@@ -221,6 +163,18 @@ def _action_instruction(row: Dict[str, Any]) -> str:
         if "debit" in category:
             return "Set a stop; close if the option remains OTM inside 14 DTE or the loss reaches about 60%."
         return "Set a stop/exit trigger; close or roll only when that trigger hits."
+    if action == "HOLD" and is_spread and "debit" in category:
+        entry = safe(row.get("_entry_net"), None)
+        review = entry * 0.60 if entry is not None else None
+        hard_exit = entry * 0.40 if entry is not None else None
+        levels = []
+        if review is not None:
+            levels.append(f"review at close credit {_fmt_price(review)}")
+        if hard_exit is not None:
+            levels.append(f"hard exit at {_fmt_price(hard_exit)}")
+        level_text = "; ".join(levels)
+        suffix = f" Monitor {level_text} and the verified EMA20 trend." if level_text else " Monitor debit loss and the verified EMA20 trend."
+        return "Hold the whole spread; being below the long strike alone is not an exit signal." + suffix
     return "Hold; no action right now."
 
 
@@ -242,11 +196,16 @@ def _spread_order_guidance(metrics: Dict[str, Any]) -> str:
         return "; ".join(parts)
     if net_type == "debit":
         parts = []
+        if entry is not None:
+            parts.append(f"entry debit {_fmt_price(entry)}")
         if current is not None:
             parts.append(f"current close credit about {_fmt_price(current)}")
         if entry is not None:
             parts.append(f"profit target credit near {_fmt_price(entry * 1.60)}")
-            parts.append(f"loss stop credit near {_fmt_price(entry * 0.50)}")
+            parts.append(f"40% loss review credit {_fmt_price(entry * 0.60)}")
+            parts.append(f"60% hard-exit credit {_fmt_price(entry * 0.40)}")
+        if metrics.get("breakeven") is not None:
+            parts.append(f"breakeven {_fmt_price(metrics.get('breakeven'))}")
         parts.append("use one spread limit order; do not leg out")
         return "; ".join(parts)
     return ""
@@ -307,6 +266,16 @@ def _row_card(row: Dict[str, Any]) -> List[str]:
     entry = _text(row.get("entry_date"), "")
     if entry:
         risk.append(f"entry {entry}")
+    otm = _text(row.get("long_strike_otm"), "")
+    if otm:
+        risk.append(f"long strike OTM {otm}")
+    drawdown = _text(row.get("debit_drawdown"), "")
+    if drawdown:
+        risk.append(f"debit drawdown {drawdown}")
+    ema20 = _text(row.get("ema20"), "")
+    trend = _text(row.get("trend_direction"), "")
+    if ema20 or trend:
+        risk.append(f"EMA20 {ema20 or '-'} / trend {trend or '-'}")
 
     lines = [
         f"{_action_marker(row.get('action'))} {row['underlying']} | {row['action']}",
@@ -370,6 +339,10 @@ def build_recommendations(result: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "theta_day": _fmt_money(metrics["theta_pnl_per_day"]),
                     "gamma_risk": _fmt_num(metrics["gamma_risk"], 1),
                     "entry_date": metrics["entry_date"],
+                    "long_strike_otm": _fmt_pct(metrics.get("long_strike_otm_pct")),
+                    "debit_drawdown": _fmt_pct(metrics.get("debit_drawdown_pct")),
+                    "ema20": _fmt_price(metrics.get("ema20")),
+                    "trend_direction": metrics.get("trend_direction") or "",
                     "reason": reason,
                     "_priority": ACTION_PRIORITY.get(verdict, 9),
                     "_kind": "SPREAD",
@@ -464,6 +437,7 @@ def build_report(
             f"transactions={sources.get('transactions', 'schwab')}",
             f"quotes={sources.get('quotes', 'schwab')}",
             f"option chains={sources.get('option_chains', 'schwab')}",
+            f"price history={sources.get('price_history', 'schwab')}",
             f"yfinance={'on' if sources.get('external_yfinance') else 'off'}",
         ]
     )

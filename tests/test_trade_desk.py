@@ -222,7 +222,7 @@ class TestTradeDeskReport(unittest.TestCase):
                     "qty": -1,
                     "avg_cost": 1.0,
                     "greeks": {"delta": 0.29},
-                    "underlying_quote": {"last": 141.4},
+                    "underlying_quote": {"last": 139.0, "trend_direction": "bearish", "ema20": 142.0},
                     "computed": {"dte": 20, "unrealized_pnl": 20.0, "max_profit": 100.0},
                 },
                 {
@@ -235,7 +235,7 @@ class TestTradeDeskReport(unittest.TestCase):
                     "qty": 1,
                     "avg_cost": 2.5,
                     "greeks": {"delta": 0.45},
-                    "underlying_quote": {"last": 141.4},
+                    "underlying_quote": {"last": 139.0, "trend_direction": "bearish", "ema20": 142.0},
                     "computed": {"dte": 20, "unrealized_pnl": -40.0, "max_loss": 250.0},
                 },
             ],
@@ -244,9 +244,12 @@ class TestTradeDeskReport(unittest.TestCase):
         rows = build_recommendations(result)
         self.assertEqual(rows[0]["verdict"], "ASSESS")
         self.assertEqual(rows[0]["action"], "SET STOP")
-        self.assertIn("cannot reclaim $145", rows[0]["instruction"])
-        self.assertIn("theta/gamma decay is working against the position", rows[0]["instruction"])
-        self.assertIn("Monday, April 20, 2026", rows[0]["instruction"])
+        self.assertIn("40% loss", rows[0]["instruction"])
+        self.assertIn("60% loss", rows[0]["instruction"])
+        self.assertIn("verified EMA20 trend break", rows[0]["instruction"])
+        self.assertIn("Do not use the long strike alone as a deadline", rows[0]["instruction"])
+        self.assertNotIn("Monday", rows[0]["instruction"])
+        self.assertNotIn("reclaim", rows[0]["instruction"])
 
         with tempfile.TemporaryDirectory() as td:
             report = build_report(
@@ -258,7 +261,7 @@ class TestTradeDeskReport(unittest.TestCase):
             )
         self.assertIn("SET STOP", report)
         self.assertIn("🟡 SET STOP", report)
-        self.assertIn("Do this: Set a stop", report)
+        self.assertIn("Do this: Set monitored triggers", report)
         self.assertNotIn("ASSESS", report)
 
     def test_profitable_debit_spread_stop_uses_spread_midpoint(self):
@@ -298,10 +301,73 @@ class TestTradeDeskReport(unittest.TestCase):
 
         rows = build_recommendations(result)
         self.assertEqual(rows[0]["action"], "SET STOP")
-        self.assertIn("spread midpoint", rows[0]["instruction"])
-        self.assertIn("falls back below $195", rows[0]["instruction"])
-        self.assertIn("If it reaches $205", rows[0]["instruction"])
-        self.assertNotIn("reclaim $185", rows[0]["instruction"])
+        self.assertIn("40% loss", rows[0]["instruction"])
+        self.assertIn("60% loss", rows[0]["instruction"])
+        self.assertIn("verified EMA20 trend break", rows[0]["instruction"])
+        self.assertNotIn("reclaim", rows[0]["instruction"])
+
+    def test_pltr_like_new_near_otm_debit_spread_holds_with_inspectable_stops(self):
+        from uwos.trade_desk import build_recommendations
+
+        trend = {
+            "last": 185.42,
+            "ema20": 169.0,
+            "ema20_slope_5d_pct": 1.2,
+            "trend_direction": "bullish",
+        }
+        result = {
+            "as_of": "2026-08-29T16:00:00Z",
+            "positions": [
+                {
+                    "symbol": "PLTR  260925C00200000",
+                    "underlying": "PLTR",
+                    "asset_type": "OPTION",
+                    "put_call": "CALL",
+                    "strike": 200.0,
+                    "expiry": "2026-09-25",
+                    "qty": -1,
+                    "avg_cost": 4.25,
+                    "entry_date": "2026-08-28",
+                    "live_quote": {"bid": 4.15, "ask": 4.25, "mark": 4.20},
+                    "greeks": {"delta": 0.35},
+                    "underlying_quote": trend,
+                    "computed": {"dte": 27, "unrealized_pnl": 5.0, "max_profit": 425.0},
+                },
+                {
+                    "symbol": "PLTR  260925C00190000",
+                    "underlying": "PLTR",
+                    "asset_type": "OPTION",
+                    "put_call": "CALL",
+                    "strike": 190.0,
+                    "expiry": "2026-09-25",
+                    "qty": 1,
+                    "avg_cost": 7.55,
+                    "entry_date": "2026-08-28",
+                    "live_quote": {"bid": 7.50, "ask": 7.65, "mark": 7.575},
+                    "greeks": {"delta": 0.52},
+                    "underlying_quote": trend,
+                    "computed": {"dte": 27, "unrealized_pnl": 2.5, "max_loss": 755.0},
+                },
+            ],
+        }
+
+        row = build_recommendations(result)[0]
+
+        self.assertEqual(row["category"], "Bull Call Debit")
+        self.assertEqual(row["verdict"], "HOLD")
+        self.assertEqual(row["action"], "HOLD")
+        self.assertIn("below the long strike alone is not an exit signal", row["instruction"])
+        self.assertIn("entry debit $3.30", row["order_guidance"])
+        self.assertIn("current close credit about $3.25", row["order_guidance"])
+        self.assertIn("40% loss review credit $1.98", row["order_guidance"])
+        self.assertIn("60% hard-exit credit $1.32", row["order_guidance"])
+        self.assertIn("breakeven $193.30", row["order_guidance"])
+        self.assertEqual(row["long_strike_otm"], "+2.5%")
+        self.assertEqual(row["debit_drawdown"], "+1.5%")
+        self.assertEqual(row["ema20"], "$169.00")
+        self.assertEqual(row["trend_direction"], "bullish")
+        self.assertNotIn("Monday", row["instruction"])
+        self.assertNotIn("reclaim", row["instruction"])
 
     def test_debit_spread_decay_can_make_it_unrecoverable(self):
         from uwos.trade_desk import build_recommendations
@@ -340,7 +406,7 @@ class TestTradeDeskReport(unittest.TestCase):
 
         rows = build_recommendations(result)
         self.assertEqual(rows[0]["action"], "CLOSE")
-        self.assertIn("theta decay makes recovery unlikely", rows[0]["reason"])
+        self.assertIn("expiration-window theta risk is now dominant", rows[0]["reason"])
         self.assertIn("Close the whole spread", rows[0]["instruction"])
 
     def test_now_like_credit_spread_near_short_strike_cannot_hold(self):

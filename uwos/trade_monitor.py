@@ -445,6 +445,8 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
 
     # ---- DEBIT rules ----
     if category == "DEBIT":
+        from uwos.debit_management import evaluate_debit_management
+
         # Calculate OTM distance for long leg
         otm_pct = 0.0
         if strike > 0 and ul_price > 0:
@@ -453,21 +455,20 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
             elif pc == "PUT":
                 otm_pct = (ul_price - strike) / ul_price * 100  # positive = OTM
 
-        # Down > 60% = CLOSE
-        if pnl_pct <= -60:
-            return ("CLOSE", f"down {pnl_pct:.0f}% — debit rule >60% loss")
-        # OTM > 5% with DTE < 35
-        if otm_pct > 5 and dte >= 0 and dte < 35:
-            return ("CLOSE", f"OTM {otm_pct:.1f}% with {dte:.0f} DTE — debit rule")
-        # Any amount OTM with DTE < 14
-        if otm_pct > 0 and dte >= 0 and dte < 14:
-            return ("CLOSE", f"OTM with {dte:.0f} DTE — theta acceleration")
-        # Down > 40% = ASSESS
-        if pnl_pct <= -40:
-            return ("ASSESS", f"down {pnl_pct:.0f}% — escalated review")
-        # OTM 3-5% with DTE < 35
-        if otm_pct > 3 and dte >= 0 and dte < 35:
-            return ("ASSESS", f"OTM {otm_pct:.1f}% with {dte:.0f} DTE")
+        trend_direction = str((pos.get("underlying_quote") or {}).get("trend_direction") or "").lower()
+        trend_against = None
+        if trend_direction in {"bullish", "bearish"}:
+            trend_against = (pc == "CALL" and trend_direction == "bearish") or (
+                pc == "PUT" and trend_direction == "bullish"
+            )
+        debit_verdict, debit_reason = evaluate_debit_management(
+            otm_pct=otm_pct,
+            dte=dte if dte >= 0 else None,
+            loss_pct=max(-pnl_pct, 0.0),
+            trend_against_thesis=trend_against,
+        )
+        if debit_verdict != "HOLD":
+            return debit_verdict, debit_reason
         # Earnings proximity for debit: IV crush risk
         earnings_days = safe(c.get("days_to_earnings"), 999)
         if 0 < earnings_days <= 5:
@@ -475,7 +476,7 @@ def compute_verdict(pos: Dict) -> Tuple[str, str]:
                 return ("CLOSE", f"EARNINGS in {earnings_days:.0f}d — take +{pnl_pct:.0f}% profit, IV crush risk after")
             else:
                 return ("ASSESS", f"EARNINGS in {earnings_days:.0f}d — IV crush risk, assess exit")
-        return ("HOLD", f"{'ITM' if otm_pct <= 0 else f'OTM {otm_pct:.1f}%'}, {dte:.0f} DTE")
+        return ("HOLD", f"{debit_reason}, {dte:.0f} DTE")
 
     return ("HOLD", "unknown")
 

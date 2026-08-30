@@ -57,6 +57,13 @@ class _FakeClient:
             raise self.exc
         return self.response
 
+    def get_price_history_every_day(self, symbol, **kwargs):
+        self.price_history_symbol = symbol
+        self.price_history_kwargs = kwargs
+        if self.exc is not None:
+            raise self.exc
+        return self.response
+
 
 class _FakeReadTimeout(Exception):
     pass
@@ -83,6 +90,20 @@ def test_get_option_chain_applies_bounded_timeout_and_restores(monkeypatch: pyte
     assert client.session.request_params["apikey"] == "fake-api-key"
     assert client.session.request_params["strikeCount"] == 4
     assert client.session.timeout == "original-timeout"
+
+
+def test_get_daily_price_history_uses_bounded_date_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _FakeClient(response=_FakeResponse({"candles": [{"close": 100.0}]}))
+    service = SchwabLiveDataService(SchwabAuthConfig(api_key="key", app_secret="secret"))
+    monkeypatch.setattr(service, "connect", lambda: client)
+
+    payload = service.get_daily_price_history("pltr", days=90)
+
+    assert payload == {"candles": [{"close": 100.0}]}
+    assert client.price_history_symbol == "PLTR"
+    start = client.price_history_kwargs["start_datetime"]
+    end = client.price_history_kwargs["end_datetime"]
+    assert 89 <= (end - start).days <= 91
 
 
 def test_get_option_chain_raises_actionable_timeout_and_restores(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import copy
+import datetime as dt
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+
+from uwos.debit_management import evaluate_debit_management
 
 
 EPS = 1e-9
@@ -226,6 +229,12 @@ def _entry_date(short_leg: Dict[str, Any], long_leg: Dict[str, Any]) -> str:
     return f"{dates[0]}..{dates[-1]}"
 
 
+def _underlying_context(short_leg: Dict[str, Any], long_leg: Dict[str, Any]) -> Dict[str, Any]:
+    short_context = short_leg.get("underlying_quote") or {}
+    long_context = long_leg.get("underlying_quote") or {}
+    return short_context if short_context else long_context
+
+
 def compute_spread_metrics(group: Dict[str, Any]) -> Dict[str, Any]:
     short_leg = group["short_leg"]
     long_leg = group["long_leg"]
@@ -266,7 +275,8 @@ def compute_spread_metrics(group: Dict[str, Any]) -> Dict[str, Any]:
     pct_of_max = (pnl / max_profit * 100.0) if max_profit and max_profit > EPS else None
     pnl_on_risk_pct = (pnl / max_loss * 100.0) if max_loss and max_loss > EPS else None
 
-    spot = safe_float((short_leg.get("underlying_quote") or {}).get("last"), None)
+    underlying_context = _underlying_context(short_leg, long_leg)
+    spot = safe_float(underlying_context.get("last"), None)
     if spot is None:
         spot = safe_float((long_leg.get("underlying_quote") or {}).get("last"), None)
 
@@ -325,9 +335,40 @@ def compute_spread_metrics(group: Dict[str, Any]) -> Dict[str, Any]:
 
     exit_net_to_entry = None
     loss_vs_entry_credit = None
-    if net_type == "credit" and entry_net_per_contract is not None and entry_net_per_contract > EPS and close_net is not None:
+    debit_drawdown_pct = None
+    if entry_net_per_contract is not None and entry_net_per_contract > EPS and close_net is not None:
         exit_net_to_entry = close_net / entry_net_per_contract
-        loss_vs_entry_credit = close_net - entry_net_per_contract
+        if net_type == "credit":
+            loss_vs_entry_credit = close_net - entry_net_per_contract
+        else:
+            debit_drawdown_pct = max((1.0 - exit_net_to_entry) * 100.0, 0.0)
+
+    long_strike_otm_pct = None
+    if spot is not None and spot > EPS:
+        if right == "CALL":
+            long_strike_otm_pct = max((long_strike - spot) / spot * 100.0, 0.0)
+        elif right == "PUT":
+            long_strike_otm_pct = max((spot - long_strike) / spot * 100.0, 0.0)
+
+    trend_direction = str(underlying_context.get("trend_direction") or "").lower() or None
+    ema20 = safe_float(underlying_context.get("ema20"), None)
+    ema20_slope_5d_pct = safe_float(underlying_context.get("ema20_slope_5d_pct"), None)
+    trend_against_thesis = None
+    if trend_direction in {"bullish", "bearish"}:
+        if group.get("strategy") == "Bull Call Debit":
+            trend_against_thesis = trend_direction == "bearish"
+        elif group.get("strategy") == "Bear Put Debit":
+            trend_against_thesis = trend_direction == "bullish"
+
+    entry_date = _entry_date(short_leg, long_leg)
+    days_held = None
+    if entry_date and ".." not in entry_date and dte is not None:
+        try:
+            expiry_date = dt.date.fromisoformat(str(group["expiry"]))
+            as_of_date = expiry_date - dt.timedelta(days=int(round(dte)))
+            days_held = max((as_of_date - dt.date.fromisoformat(entry_date)).days, 0)
+        except (TypeError, ValueError):
+            pass
 
     return {
         "underlying": group["underlying"],
@@ -344,7 +385,8 @@ def compute_spread_metrics(group: Dict[str, Any]) -> Dict[str, Any]:
         "strike_pair": f"{short_strike:g}/{long_strike:g}",
         "underlying_price": spot,
         "dte": dte,
-        "entry_date": _entry_date(short_leg, long_leg),
+        "entry_date": entry_date,
+        "days_held": days_held,
         "unrealized_pnl": pnl,
         "pnl_on_risk_pct": pnl_on_risk_pct,
         "pct_of_max_profit": pct_of_max,
@@ -358,6 +400,12 @@ def compute_spread_metrics(group: Dict[str, Any]) -> Dict[str, Any]:
         "distance_to_short_pct": distance_to_short_pct,
         "exit_net_to_entry": exit_net_to_entry,
         "loss_vs_entry_credit": loss_vs_entry_credit,
+        "debit_drawdown_pct": debit_drawdown_pct,
+        "long_strike_otm_pct": long_strike_otm_pct,
+        "ema20": ema20,
+        "ema20_slope_5d_pct": ema20_slope_5d_pct,
+        "trend_direction": trend_direction,
+        "trend_against_thesis": trend_against_thesis,
         "short_delta": safe_float((short_leg.get("greeks") or {}).get("delta"), None),
         "short_leg_itm": short_leg_itm,
         "short_strike_threatened": short_strike_threatened,
@@ -480,22 +528,18 @@ def compute_spread_verdict(group: Dict[str, Any]) -> Tuple[str, str, Dict[str, A
             f"{base}: target zone reached with {dte:.0f} DTE; close the spread as one order",
             m,
         )
-    if risk_pct is not None and risk_pct <= -60:
+    debit_drawdown = safe_float(m.get("debit_drawdown_pct"), None)
+    loss_pct = debit_drawdown if debit_drawdown is not None else max(-(risk_pct or 0.0), 0.0)
+    debit_verdict, debit_reason = evaluate_debit_management(
+        otm_pct=safe_float(m.get("long_strike_otm_pct"), None),
+        dte=dte,
+        loss_pct=loss_pct,
+        trend_against_thesis=m.get("trend_against_thesis"),
+    )
+    if debit_verdict != "HOLD":
         return (
-            "CLOSE",
-            f"{base}: down {risk_pct:.0f}% of debit risk; close both legs together",
-            m,
-        )
-    if m["debit_failed_zone"] and dte is not None and dte < 35:
-        if dte <= 14:
-            return (
-                "CLOSE",
-                f"{base}: outside the profit zone with {dte:.0f} DTE; theta decay makes recovery unlikely",
-                m,
-            )
-        return (
-            "ASSESS",
-            f"{base}: debit spread is outside the profit zone with {dte:.0f} DTE; evaluate whole-spread exit",
+            debit_verdict,
+            f"{base}: {debit_reason}; manage both legs together",
             m,
         )
     if abs(short_delta) > 0.70 and dte is not None and dte <= 7:
@@ -504,6 +548,5 @@ def compute_spread_verdict(group: Dict[str, Any]) -> Tuple[str, str, Dict[str, A
             f"{base}: short leg high-delta near expiry; manage as a spread, never as a naked leg",
             m,
         )
-    pct_text = f"{pct_max:.0f}% max" if pct_max is not None else "defined-risk"
     dte_text = f", {dte:.0f} DTE" if dte is not None else ""
-    return ("HOLD", f"{base}: {pct_text}{dte_text}", m)
+    return ("HOLD", f"{base}: {debit_reason}{dte_text}; do not exit solely because spot is below the long strike", m)

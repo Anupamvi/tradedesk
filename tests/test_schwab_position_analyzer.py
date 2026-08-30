@@ -320,5 +320,38 @@ class TestAnalyzePositionsDataSources(unittest.TestCase):
         self.assertTrue(result["context_sources"]["external_yfinance"])
 
 
+class TestSchwabPriceTrendContext(unittest.TestCase):
+    def test_rising_price_history_is_bullish(self):
+        from uwos.schwab_position_analyzer import compute_price_trend_context
+
+        candles = []
+        for index in range(30):
+            close = 150.0 + index
+            candles.append(
+                {
+                    "datetime": 1_700_000_000_000 + index * 86_400_000,
+                    "close": close,
+                    "low": close - 1.0,
+                    "high": close + 1.0,
+                }
+            )
+
+        trend = compute_price_trend_context({"candles": candles})
+
+        self.assertEqual(trend["trend_direction"], "bullish")
+        self.assertGreater(trend["ema20_slope_5d_pct"], 0)
+        self.assertTrue(trend["three_day_higher_highs"])
+        self.assertFalse(trend["three_day_lower_lows"])
+
+    def test_insufficient_history_is_explicitly_unknown(self):
+        from uwos.schwab_position_analyzer import compute_price_trend_context
+
+        trend = compute_price_trend_context({"candles": [{"datetime": 1, "close": 100.0}]})
+
+        self.assertIsNone(trend["ema20"])
+        self.assertIsNone(trend["trend_direction"])
+        self.assertEqual(trend["trend_source"], "schwab_daily_candles")
+
+
 if __name__ == "__main__":
     unittest.main()
