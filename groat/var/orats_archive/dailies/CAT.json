@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 800.79,
+      "clsPx": 800.25,
       "hiPx": 821.23,
       "loPx": 799.166,
       "open": 819.01,
-      "stkVolu": 1786494.0,
+      "stkVolu": 1788584.0,
       "ticker": "CAT",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 789.85,
+      "hiPx": 802.9,
+      "loPx": 789.23,
+      "open": 800.0,
+      "stkVolu": 425264.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

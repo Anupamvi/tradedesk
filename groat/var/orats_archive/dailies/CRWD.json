@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 218.75,
+      "clsPx": 218.4,
       "hiPx": 228.69,
       "loPx": 210.53,
       "open": 228.23,
-      "stkVolu": 14704612.0,
+      "stkVolu": 14728309.0,
       "ticker": "CRWD",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 226.325,
+      "hiPx": 233.88,
+      "loPx": 221.0,
+      "open": 221.835,
+      "stkVolu": 4579306.0,
+      "ticker": "CRWD",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

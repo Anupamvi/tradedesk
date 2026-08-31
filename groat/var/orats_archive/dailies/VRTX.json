@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 541.5,
+      "clsPx": 541.69,
       "hiPx": 549.57,
       "loPx": 540.08,
       "open": 547.09,
-      "stkVolu": 886796.0,
+      "stkVolu": 886917.0,
       "ticker": "VRTX",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 536.25,
+      "hiPx": 538.89,
+      "loPx": 532.2281,
+      "open": 535.38,
+      "stkVolu": 81111.0,
+      "ticker": "VRTX",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

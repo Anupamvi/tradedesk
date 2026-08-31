@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 318.8,
+      "clsPx": 317.76,
       "hiPx": 335.4499,
       "loPx": 315.92,
       "open": 316.25,
-      "stkVolu": 6617039.0,
+      "stkVolu": 6631133.0,
       "ticker": "APP",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 308.0275,
+      "hiPx": 317.89,
+      "loPx": 306.25,
+      "open": 315.245,
+      "stkVolu": 1220500.0,
+      "ticker": "APP",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 343.0375,
+      "clsPx": 342.58,
       "hiPx": 345.6299,
       "loPx": 341.27,
       "open": 345.085,
-      "stkVolu": 2534717.0,
+      "stkVolu": 2537469.0,
       "ticker": "GE",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 334.295,
+      "hiPx": 339.75,
+      "loPx": 334.295,
+      "open": 338.83,
+      "stkVolu": 422699.0,
+      "ticker": "GE",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

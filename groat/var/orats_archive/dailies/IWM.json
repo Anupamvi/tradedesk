@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 295.9,
+      "clsPx": 295.75,
       "hiPx": 300.39,
       "loPx": 295.67,
       "open": 299.7,
-      "stkVolu": 19033300.0,
+      "stkVolu": 19061314.0,
       "ticker": "IWM",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 293.01,
+      "hiPx": 295.35,
+      "loPx": 293.0,
+      "open": 295.09,
+      "stkVolu": 5822705.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

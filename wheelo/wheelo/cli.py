@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -10,11 +11,11 @@ from wheelo.config import OUT_DIR
 from wheelo.dates import today_et
 from wheelo.envload import ORATS_TOKEN_MISSING, load_orats_token
 from wheelo.orats import redact
-from wheelo.pipeline import run_pipeline
+from wheelo.pipeline import overlay_x_artifacts, run_pipeline
 
 
 _YMD = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-_CMDS = ("select", "daily", "full", "analyze", "review")
+_CMDS = ("select", "daily", "full", "analyze", "review", "xhot")
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
@@ -27,7 +28,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "cmd",
         nargs="?",
         default=None,
-        help="select | daily | full | analyze | review | YYYY-MM-DD",
+        help="select | daily | full | analyze | review | xhot | YYYY-MM-DD",
     )
     parser.add_argument("ticker", nargs="?", default=None, help="ticker for analyze, or YYYY-MM-DD")
     parser.add_argument("--date", default=None, help="session date YYYY-MM-DD (default: today ET)")
@@ -51,7 +52,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         args.ticker = None
     args.cmd = args.cmd or "full"
     if args.cmd not in _CMDS:
-        parser.error("cmd must be select, daily, full, analyze, review, or a YYYY-MM-DD date")
+        parser.error("cmd must be select, daily, full, analyze, review, xhot, or a YYYY-MM-DD date")
     if args.cmd == "analyze" and not args.ticker:
         parser.error("analyze requires a ticker")
     if not args.date:
@@ -84,6 +85,26 @@ def print_result(info: Dict[str, object]) -> None:
 
 def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
+    if args.cmd == "xhot":
+        day = overlay_x_artifacts(args.date, Path(args.out_dir), args.capital)
+        applied = 0
+        cand_path = day / "candidates.json"
+        if cand_path.is_file():
+            try:
+                rows = json.loads(cand_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                rows = []
+            applied = sum(
+                1
+                for row in rows
+                if isinstance(row, dict) and row.get("x_status") not in (None, "", "DATA UNAVAILABLE")
+            )
+        print("wheelo_mode=xhot")
+        print("date=%s" % args.date)
+        print("orats_http=0")
+        print("xhot_applied=%s" % applied)
+        print("out=%s" % day)
+        return 0
     token = load_orats_token(token_file=args.orats_token_file)
     if not token:
         print(ORATS_TOKEN_MISSING, file=sys.stderr)

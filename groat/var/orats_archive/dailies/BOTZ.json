@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 35.96,
+      "clsPx": 35.75,
       "hiPx": 36.31,
       "loPx": 35.68,
       "open": 36.27,
-      "stkVolu": 495670.0,
+      "stkVolu": 496883.0,
       "ticker": "BOTZ",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 35.895,
+      "hiPx": 36.07,
+      "loPx": 35.87,
+      "open": 35.95,
+      "stkVolu": 140686.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

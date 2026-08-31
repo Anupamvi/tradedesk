@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 209.6987,
+      "clsPx": 209.82,
       "hiPx": 210.6097,
       "loPx": 207.55,
       "open": 209.99,
-      "stkVolu": 4560566.0,
+      "stkVolu": 4571015.0,
       "ticker": "BA",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 206.4401,
+      "hiPx": 208.7699,
+      "loPx": 206.27,
+      "open": 208.5,
+      "stkVolu": 869677.0,
+      "ticker": "BA",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

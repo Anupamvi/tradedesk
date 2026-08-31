@@ -2615,9 +2615,18 @@
       "hiPx": 83.5987,
       "loPx": 82.7801,
       "open": 83.04,
-      "stkVolu": 35602798.0,
+      "stkVolu": 35809817.0,
       "ticker": "TLT",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 82.25,
+      "hiPx": 82.48,
+      "loPx": 82.145,
+      "open": 82.47,
+      "stkVolu": 7286401.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

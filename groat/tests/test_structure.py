@@ -1,6 +1,7 @@
 import unittest
 
-from groat.structure import choose, stock_plan
+from groat.config import DTE_MAX, DTE_MIN, STRIKE_DTE, quote_width_cap
+from groat.structure import choose, debit_spread, quote_ok, stock_plan
 from groat.technicals import snapshot
 from tests.barsutil import trend_bars
 
@@ -78,6 +79,45 @@ class TestStructure(unittest.TestCase):
         )
         self.assertTrue(out["vol_missing"])
         self.assertIn(out["choice"], ("STOCK", "NO TRADE"))
+
+    def test_strike_dte_is_hold_window_range(self):
+        parts = [int(x) for x in STRIKE_DTE.split(",")]
+        self.assertEqual(parts, [DTE_MIN, DTE_MAX])
+
+    def test_quote_width_cap_is_floor_not_ceiling(self):
+        self.assertAlmostEqual(quote_width_cap(1.0), 0.20)
+        self.assertAlmostEqual(quote_width_cap(7.8), 7.8 * 0.08)
+
+    def test_quote_ok_at_cap_survives_float_width(self):
+        self.assertTrue(quote_ok(7.7, 7.9, 800))
+
+    def test_debit_spread_sizes_when_atm_long_cannot(self):
+        spot = 185.0
+        earn = {
+            "usable": True,
+            "source": "orats.nextErn",
+            "overlaps_hold": False,
+            "date": "2026-12-01",
+        }
+        strikes = [
+            _strike(dte=45, expiry="2026-10-16", strike=185, delta=0.50, bid=7.7, ask=7.9, oi=800, spot=spot),
+            _strike(dte=45, expiry="2026-10-16", strike=190, delta=0.40, bid=4.8, ask=5.0, oi=600, spot=spot),
+            _strike(dte=45, expiry="2026-10-16", strike=195, delta=0.30, bid=3.3, ask=3.5, oi=400, spot=spot),
+        ]
+        debit = debit_spread(strikes, "bullish", earn)
+        self.assertIsNotNone(debit)
+        self.assertTrue(debit["ok"])
+        self.assertGreaterEqual(debit["contracts"], 1)
+        self.assertLessEqual(debit["debit"] * 100, 500)
+        self.assertEqual(debit["long_strike"], 190.0)
+        self.assertEqual(debit["short_strike"], 195.0)
+
+        bars = trend_bars(220, end="2026-08-26")
+        snap = snapshot(bars, "2026-08-26")
+        vol = {"iv30": 18.0, "hv20": 28.0, "vrp": -10.0, "forecast_20d": 26.0}
+        out = choose(snap, "bullish", vol, strikes, earn, setup={"primary": "E", "chase": False})
+        self.assertEqual(out["choice"], "OPTIONS")
+        self.assertEqual(out["options"]["instrument"], "debit_call_spread")
 
 
 if __name__ == "__main__":

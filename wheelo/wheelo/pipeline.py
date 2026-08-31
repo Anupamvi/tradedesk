@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence
@@ -49,7 +51,7 @@ from wheelo.scoring import (
     stage0_reason,
 )
 from wheelo.schwab import option_chain, option_quotes, price_history_bars, quotes_many, use_live_schwab
-from wheelo.xhot import load_hot
+from wheelo.xhot import clear_hot, load_hot
 from wheelo.yfinance_overlay import fetch_yfinance
 
 
@@ -266,7 +268,8 @@ def build_select(
     cfg = _cfg(cfg)
     today = today or today_et()
     names = list(universe if universe is not None else load_scan_universe(cfg))
-    hot = load_hot(asof)
+    clear_hot(asof)
+    hot: Dict[str, dict] = {}
     orats_cfg = cfg.get("orats") or {}
     max_core = int(orats_cfg.get("max_core_tickers") or 40)
     max_strike = int(orats_cfg.get("max_strike_tickers") or 20)
@@ -536,6 +539,52 @@ def write_select_artifacts(built: dict, out_dir: Path) -> Path:
         )
     write_csv(day / "board.csv", BOARD_COLUMNS, board_rows)
     return day
+
+
+def overlay_x_artifacts(asof: str, out_dir: Path = OUT_DIR, capital: float = 35000) -> Path:
+    """Stamp a fresh var/xhot/DATE/hot.json onto an existing board. 0 ORATS / 0 Schwab.
+
+    Ignores leftover hot.json older than candidates.json.
+    """
+    day = day_dir(out_dir, asof)
+    cand_path = day / "candidates.json"
+    if not cand_path.is_file():
+        return day
+    cands = json.loads(cand_path.read_text(encoding="utf-8"))
+    hot = load_hot(asof, newer_than=cand_path)
+    for cand in cands:
+        row = hot.get(str(cand.get("ticker") or "").upper())
+        if not row:
+            continue
+        cand["x_status"] = str(row.get("tag") or row.get("bias") or "present")
+        if cand.get("conf_drivers"):
+            drivers = [d for d in cand["conf_drivers"] if "X " not in str(d) and str(d) != "X DATA UNAVAILABLE"]
+            drivers.append("X %s" % cand["x_status"])
+            cand["conf_drivers"] = drivers
+    x_queue = [{"ticker": c.get("ticker"), "need": "x_sentiment"} for c in cands if c.get("x_status") == "DATA UNAVAILABLE"]
+    man = {}
+    man_path = day / "manifest.json"
+    if man_path.is_file():
+        try:
+            man = json.loads(man_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            man = {}
+    rejections = []
+    rej_path = day / "rejections.csv"
+    if rej_path.is_file():
+        with rej_path.open(newline="", encoding="utf-8") as handle:
+            rejections = list(csv.DictReader(handle))
+    return write_select_artifacts(
+        {
+            "asof": asof,
+            "candidates": cands,
+            "rejections": rejections,
+            "manifest": man,
+            "x_queue": x_queue,
+            "capital": capital,
+        },
+        out_dir,
+    )
 
 
 def build_daily(

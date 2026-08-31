@@ -1,0 +1,12 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "isolated": false,
+    "userDataDir": "/Users/anuppamvi/.grok/browser/grok-option",
+    "launchOptions": {
+      "channel": "chrome",
+      "headless": false
+    }
+  },
+  "capabilities": ["core", "vision", "network", "storage"]
+}

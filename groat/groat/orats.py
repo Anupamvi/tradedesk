@@ -20,6 +20,7 @@ from groat.config import (
     ORATS_MONTHLY_CAP,
     ORATS_TICKER_BATCH,
     PROBE_TICKER,
+    STRIKE_DTE,
 )
 from groat.num import to_float
 
@@ -452,7 +453,7 @@ def fetch_strikes(
     today: str,
     getter=None,
     max_requests: Optional[int] = None,
-    dte: str = "21,30,45,60",
+    dte: str = STRIKE_DTE,
     refresh: bool = False,
 ) -> Dict[str, Any]:
     wanted = [str(t).upper() for t in tickers if t]

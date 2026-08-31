@@ -2615,9 +2615,18 @@
       "hiPx": 113.53,
       "loPx": 111.83,
       "open": 111.87,
-      "stkVolu": 3743447.0,
+      "stkVolu": 3743489.0,
       "ticker": "XLC",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 111.41,
+      "hiPx": 112.59,
+      "loPx": 111.25,
+      "open": 112.48,
+      "stkVolu": 543974.0,
+      "ticker": "XLC",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

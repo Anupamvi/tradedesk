@@ -61,7 +61,7 @@ def quote_ok(bid, ask, oi, min_oi=MIN_OI) -> bool:
     mid = (bid + ask) / 2.0
     width = ask - bid
     cap = quote_width_cap(mid)
-    if cap is None or width > cap:
+    if cap is None or round(width, 2) > round(cap, 2):
         return False
     if oi is None or oi < min_oi:
         return False
@@ -286,81 +286,111 @@ def long_option(rows: Sequence[dict], direction: str, earnings: dict) -> Optiona
     return ranked[0][2]
 
 
+def _vertical_width_ok(gap) -> bool:
+    gap = to_float(gap)
+    if gap is None:
+        return False
+    return gap in (2.5, 5.0, 10.0) or 4.0 <= gap <= 11.0
+
+
 def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Optional[dict]:
     chain = _by_expiry(rows)
     side = "call" if direction == "bullish" else "put"
-    best = None
+    ranked = []
     for expiry, legs in chain.items():
         if _earnings_blocks(expiry, earnings):
             continue
         dte = to_float(legs[0].get("dte"))
-        long_leg = _closest(legs, 0.60, side)
-        short_leg = _closest(legs, 0.30, side)
-        if not long_leg or not short_leg:
-            continue
-        if side == "call" and short_leg["strike"] <= long_leg["strike"]:
-            continue
-        if side == "put" and short_leg["strike"] >= long_leg["strike"]:
-            continue
-        long_ask = long_leg["call_ask"] if side == "call" else long_leg["put_ask"]
-        short_bid = short_leg["call_bid"] if side == "call" else short_leg["put_bid"]
-        if long_ask is None or short_bid is None:
-            continue
-        debit = long_ask - short_bid
-        width = abs(short_leg["strike"] - long_leg["strike"])
-        if debit <= 0 or width <= 0 or debit >= 0.70 * width:
-            continue
-        if not quote_ok(short_leg["call_bid"] if side == "call" else short_leg["put_bid"],
-                        short_leg["call_ask"] if side == "call" else short_leg["put_ask"],
-                        short_leg["call_oi"] if side == "call" else short_leg["put_oi"],
-                        MIN_OI_SHORT):
-            continue
-        max_gain = width - debit
-        rr = max_gain / debit if debit else 0
-        contracts = int(math.floor((ACCOUNT_DOLLARS * RISK_PCT) / (debit * CONTRACT_MULTIPLIER)))
-        if contracts < 1 or rr < RR_MIN:
-            continue
-        pop, pop_note = naive_pop_debit_vertical(long_leg, short_leg, debit, side)
-        if side == "call":
-            breakeven = long_leg["strike"] + debit
-        else:
-            breakeven = long_leg["strike"] - debit
-        cand = {
-            "ok": True,
-            "instrument": "debit_%s_spread" % side,
-            "expiry": expiry,
-            "dte": dte,
-            "long_strike": long_leg["strike"],
-            "short_strike": short_leg["strike"],
-            "debit": debit,
-            "width": width,
-            "rr": rr,
-            "delta": (long_leg.get("delta") or 0) - (short_leg.get("delta") or 0)
-            if side == "call"
-            else ((long_leg.get("delta") or 1) - 1) - ((short_leg.get("delta") or 1) - 1),
-            "theta": (to_float(long_leg.get("theta")) or 0) - (to_float(short_leg.get("theta")) or 0),
-            "vega": (to_float(long_leg.get("vega")) or 0) - (to_float(short_leg.get("vega")) or 0),
-            "gamma": (to_float(long_leg.get("gamma")) or 0) - (to_float(short_leg.get("gamma")) or 0),
-            "contracts": contracts,
-            "max_loss": contracts * debit * CONTRACT_MULTIPLIER,
-            "max_gain": contracts * max_gain * CONTRACT_MULTIPLIER,
-            "target_debit": debit,
-            "target_credit": None,
-            "premium": debit,
-            "premium_side": "debit",
-            "long_delta": long_leg.get("delta"),
-            "short_delta": short_leg.get("delta"),
-            "breakeven": breakeven,
-            "naive_pop": pop,
-            "naive_pop_note": pop_note,
-            "fill_assumption": "long ask minus short bid (never mid)",
-            "legs": "BUY %s %s / SELL %s %s %s"
-            % (long_leg["strike"], side, short_leg["strike"], side, expiry),
-            "reason": "defined-risk directional; better than naked long when IV is not cheap",
-        }
-        if best is None or cand["rr"] > best["rr"]:
-            best = cand
-    return best
+        pref_lo, pref_hi = DTE_LONG_PREF
+        pref = 0 if dte is not None and pref_lo <= dte <= pref_hi else 1
+        for long_leg in legs:
+            ld = to_float(long_leg.get("delta"))
+            if ld is None:
+                continue
+            use = ld if side == "call" else ld - 1.0
+            if not (0.30 <= abs(use) <= 0.60):
+                continue
+            long_ask = long_leg["call_ask"] if side == "call" else long_leg["put_ask"]
+            long_bid = long_leg["call_bid"] if side == "call" else long_leg["put_bid"]
+            long_oi = long_leg["call_oi"] if side == "call" else long_leg["put_oi"]
+            if not quote_ok(long_bid, long_ask, long_oi, MIN_OI):
+                continue
+            for short_leg in legs:
+                gap = abs(short_leg["strike"] - long_leg["strike"])
+                if not _vertical_width_ok(gap):
+                    continue
+                if side == "call" and short_leg["strike"] <= long_leg["strike"]:
+                    continue
+                if side == "put" and short_leg["strike"] >= long_leg["strike"]:
+                    continue
+                short_bid = short_leg["call_bid"] if side == "call" else short_leg["put_bid"]
+                short_ask = short_leg["call_ask"] if side == "call" else short_leg["put_ask"]
+                short_oi = short_leg["call_oi"] if side == "call" else short_leg["put_oi"]
+                if not quote_ok(short_bid, short_ask, short_oi, MIN_OI_SHORT):
+                    continue
+                if long_ask is None or short_bid is None:
+                    continue
+                debit = long_ask - short_bid
+                width = gap
+                if debit <= 0 or width <= 0 or debit >= 0.70 * width:
+                    continue
+                max_gain = width - debit
+                rr = max_gain / debit if debit else 0
+                contracts = int(math.floor((ACCOUNT_DOLLARS * RISK_PCT) / (debit * CONTRACT_MULTIPLIER)))
+                if contracts < 1 or rr < RR_MIN:
+                    continue
+                pop, pop_note = naive_pop_debit_vertical(long_leg, short_leg, debit, side)
+                if side == "call":
+                    breakeven = long_leg["strike"] + debit
+                else:
+                    breakeven = long_leg["strike"] - debit
+                cand = {
+                    "ok": True,
+                    "instrument": "debit_%s_spread" % side,
+                    "expiry": expiry,
+                    "dte": dte,
+                    "long_strike": long_leg["strike"],
+                    "short_strike": short_leg["strike"],
+                    "debit": debit,
+                    "width": width,
+                    "rr": rr,
+                    "delta": (long_leg.get("delta") or 0) - (short_leg.get("delta") or 0)
+                    if side == "call"
+                    else ((long_leg.get("delta") or 1) - 1) - ((short_leg.get("delta") or 1) - 1),
+                    "theta": (to_float(long_leg.get("theta")) or 0) - (to_float(short_leg.get("theta")) or 0),
+                    "vega": (to_float(long_leg.get("vega")) or 0) - (to_float(short_leg.get("vega")) or 0),
+                    "gamma": (to_float(long_leg.get("gamma")) or 0) - (to_float(short_leg.get("gamma")) or 0),
+                    "contracts": contracts,
+                    "max_loss": contracts * debit * CONTRACT_MULTIPLIER,
+                    "max_gain": contracts * max_gain * CONTRACT_MULTIPLIER,
+                    "target_debit": debit,
+                    "target_credit": None,
+                    "premium": debit,
+                    "premium_side": "debit",
+                    "long_delta": long_leg.get("delta"),
+                    "short_delta": short_leg.get("delta"),
+                    "breakeven": breakeven,
+                    "naive_pop": pop,
+                    "naive_pop_note": pop_note,
+                    "fill_assumption": "long ask minus short bid (never mid)",
+                    "legs": "BUY %s %s / SELL %s %s %s"
+                    % (long_leg["strike"], side, short_leg["strike"], side, expiry),
+                    "reason": "defined-risk directional; better than naked long when IV is not cheap",
+                }
+                long_d = abs(use)
+                ranked.append(
+                    (
+                        pref,
+                        0 if rr >= RR_PREFER else 1,
+                        abs(long_d - 0.45),
+                        -rr,
+                        cand,
+                    )
+                )
+    if not ranked:
+        return None
+    ranked.sort(key=lambda x: (x[0], x[1], x[2], x[3]))
+    return ranked[0][4]
 
 
 def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich: bool) -> Optional[dict]:
@@ -381,7 +411,7 @@ def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich:
         width_choices = []
         for other in legs:
             gap = abs(other["strike"] - short["strike"])
-            if gap in (2.5, 5.0, 10.0) or 4.0 <= gap <= 11.0:
+            if _vertical_width_ok(gap):
                 width_choices.append(other)
         for long_leg in width_choices:
             if side == "put" and long_leg["strike"] >= short["strike"]:

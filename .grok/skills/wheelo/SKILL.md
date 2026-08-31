@@ -48,9 +48,13 @@ Do not cores/strikes the universe file. Schwab quotes first, then ORATS on ≤80
 
 Delayed `nextErn` is often `0000-00-00`. Use `wksNextErn` (~7d per week) for the earnings gate.
 
-## X after the scan
+## X after the scan (mandatory every run)
 
-Read `x_queue.json`. Search X for those tickers plus the rotation pick. Write `CODE/var/xhot/DATE/hot.json`:
+The scan **deletes** `var/xhot/DATE/hot.json` at start. Do **not** reuse a leftover file. Do **not** skip X because a prior `hot.json` exists.
+
+1. Read `out/wheelo/DATE/x_queue.json` plus the rotation pick.
+2. Search X **now** (`x_keyword_search`, last 7d). Never invent posts.
+3. Write a **new** `CODE/var/xhot/DATE/hot.json`:
 
 ```json
 {"asof":"DATE","source":"x_keyword_search","names":[
@@ -58,7 +62,17 @@ Read `x_queue.json`. Search X for those tickers plus the rotation pick. Write `C
 ]}
 ```
 
-Bias: `bullish` / `bearish` / `unknown`. Tag: Quiet|Informed|Crowded. Missing X → **DATA UNAVAILABLE**. Do not change ORATS/Schwab numbers from X. Do not burn a second ORATS run just to overlay X.
+Bias: `bullish` / `bearish` / `unknown`. Tag: Quiet|Informed|Crowded. If a ticker has no usable posts, still write it with tag `Quiet` and narrative `DATA UNAVAILABLE` — do not leave the board column blank by skipping the overlay.
+
+4. Stamp the **new** file onto the board (0 ORATS). Do not re-run `full`.
+
+```bash
+python3 -m wheelo xhot --date DATE
+```
+
+5. Reply from the **overlaid** `board.md`. If the X column still says DATA UNAVAILABLE after you searched, you forgot step 4.
+
+Do not change ORATS/Schwab numbers from X.
 
 ## Reply shape
 

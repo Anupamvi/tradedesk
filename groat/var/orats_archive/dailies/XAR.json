@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 263.28,
+      "clsPx": 261.79,
       "hiPx": 266.52,
       "loPx": 260.88,
       "open": 266.52,
-      "stkVolu": 162420.0,
+      "stkVolu": 162446.0,
       "ticker": "XAR",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 255.55,
+      "hiPx": 260.03,
+      "loPx": 255.51,
+      "open": 260.0,
+      "stkVolu": 55802.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

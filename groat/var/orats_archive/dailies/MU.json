@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 930.825,
+      "clsPx": 932.86,
       "hiPx": 946.7999,
       "loPx": 909.09,
       "open": 919.29,
-      "stkVolu": 22776953.0,
+      "stkVolu": 22890088.0,
       "ticker": "MU",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 939.87,
+      "hiPx": 952.99,
+      "loPx": 930.79,
+      "open": 931.39,
+      "stkVolu": 6659192.0,
+      "ticker": "MU",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

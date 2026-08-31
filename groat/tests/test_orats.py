@@ -6,7 +6,8 @@ from unittest import mock
 
 from groat.cli import parse_args
 from groat.envload import ORATS_TOKEN_MISSING, load_orats_token, load_merged_env
-from groat.orats import fetch_cores, map_cores_row, parse_core, redact
+from groat.config import STRIKE_DTE
+from groat.orats import fetch_cores, fetch_strikes, map_cores_row, parse_core, redact
 
 SECRET = "ORATSSECRETTOKENXYZ"
 
@@ -135,6 +136,33 @@ class TestRefreshBypassesCache(unittest.TestCase):
         self.assertEqual(fresh["rows"]["SPY"]["iv30d"], 12.0)
         self.assertGreaterEqual(fresh["http"], 1)
         self.assertTrue(calls)
+
+
+class TestStrikesDteRange(unittest.TestCase):
+    def test_fetch_strikes_sends_min_max_dte_range(self):
+        calls = []
+
+        def getter(path, query, token):
+            calls.append((path, dict(query)))
+            return 200, {"data": [{"ticker": "PLTR", "expirDate": "2026-10-16", "dte": 45, "strike": 185}]}, ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / "archive"
+            archive.mkdir(parents=True)
+            with mock.patch("groat.orats.archive_dir", return_value=archive):
+                with mock.patch("groat.orats.can_http", return_value=True):
+                    pack = fetch_strikes(
+                        "2026-08-31",
+                        ["PLTR"],
+                        "tok",
+                        "2026-08-31",
+                        getter=getter,
+                        refresh=True,
+                    )
+        self.assertTrue(pack["ok"])
+        self.assertEqual(calls[0][0], "/strikes")
+        self.assertEqual(calls[0][1]["dte"], STRIKE_DTE)
+        self.assertEqual(STRIKE_DTE, "21,75")
 
 
 class TestTapeRefresh(unittest.TestCase):

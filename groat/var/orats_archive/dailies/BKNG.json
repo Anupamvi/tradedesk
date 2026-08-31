@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 205.7,
+      "clsPx": 205.63,
       "hiPx": 207.56,
       "loPx": 203.06,
       "open": 203.58,
-      "stkVolu": 3591060.0,
+      "stkVolu": 3591995.0,
       "ticker": "BKNG",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 201.7,
+      "hiPx": 203.98,
+      "loPx": 199.9,
+      "open": 203.98,
+      "stkVolu": 688305.0,
+      "ticker": "BKNG",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 1704.9888,
+      "clsPx": 1696.16,
       "hiPx": 1740.0,
       "loPx": 1692.88,
       "open": 1734.75,
-      "stkVolu": 1257176.0,
+      "stkVolu": 1259364.0,
       "ticker": "ASML",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 1687.02,
+      "hiPx": 1716.9,
+      "loPx": 1686.67,
+      "open": 1708.68,
+      "stkVolu": 456449.0,
+      "ticker": "ASML",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

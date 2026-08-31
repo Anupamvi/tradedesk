@@ -1,0 +1,20 @@
+{
+  "asof": "2026-08-31",
+  "note": "1) Market heat \u2192 var/xhot/DATE/hot.json. 2) $TICKER \u2192 var/xintel/DATE/TICKER.json tag Quiet|Informed|Crowded. Do not invent posts.",
+  "tickers": [
+    "PLTR",
+    "SHOP",
+    "ADBE",
+    "IGV",
+    "XLE",
+    "CVX",
+    "GOOGL",
+    "AMZN",
+    "GLD",
+    "SPY",
+    "TSLA",
+    "CRWD",
+    "XOM",
+    "XLU"
+  ]
+}

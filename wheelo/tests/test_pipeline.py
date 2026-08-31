@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest import mock
 
 from wheelo import orats as orats_mod
+from wheelo import xhot as xhot_mod
 from wheelo.orats import reset_process_http
 from wheelo.pipeline import build_daily, build_select, run_pipeline
 
@@ -70,6 +71,7 @@ class TestFunnel(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(orats_mod, "CODE_DIR", self.root),
+            mock.patch.object(xhot_mod, "CODE_DIR", self.root),
         ]
         for p in self.patches:
             p.start()
@@ -271,13 +273,18 @@ class TestDailyNoOratsWhenSchwab(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.p = mock.patch.object(orats_mod, "CODE_DIR", self.root)
-        self.p.start()
+        self.patches = [
+            mock.patch.object(orats_mod, "CODE_DIR", self.root),
+            mock.patch.object(xhot_mod, "CODE_DIR", self.root),
+        ]
+        for p in self.patches:
+            p.start()
         reset_process_http()
         self.fake = FakeOrats()
 
     def tearDown(self):
-        self.p.stop()
+        for p in self.patches:
+            p.stop()
         self.tmp.cleanup()
 
     def test_marks_skip_orats(self):
@@ -306,13 +313,18 @@ class TestRunPipelineArtifacts(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.p = mock.patch.object(orats_mod, "CODE_DIR", self.root)
-        self.p.start()
+        self.patches = [
+            mock.patch.object(orats_mod, "CODE_DIR", self.root),
+            mock.patch.object(xhot_mod, "CODE_DIR", self.root),
+        ]
+        for p in self.patches:
+            p.start()
         reset_process_http()
         self.fake = FakeOrats()
 
     def tearDown(self):
-        self.p.stop()
+        for p in self.patches:
+            p.stop()
         self.tmp.cleanup()
 
     def test_writes_board(self):
@@ -341,3 +353,84 @@ class TestRunPipelineArtifacts(unittest.TestCase):
         self.assertTrue((day / "board.md").is_file())
         self.assertTrue((day / "manifest.json").is_file())
         self.assertTrue((day / "rejections.csv").is_file())
+
+    def test_select_clears_leftover_hot_json(self):
+        from wheelo.xhot import hot_path, write_hot
+
+        write_hot(
+            "2026-08-28",
+            [{"ticker": "T00", "tag": "Crowded", "bias": "bearish", "posts_24h": 9, "narrative": "stale"}],
+        )
+        self.assertTrue(hot_path("2026-08-28").is_file())
+        uni = ["T00", "T01"]
+        quotes = {
+            "T00": {"ticker": "T00", "last": 22.0, "volume": 5000},
+            "T01": {"ticker": "T01", "last": 24.0, "volume": 4000},
+        }
+        built = build_select(
+            "2026-08-28",
+            "tok",
+            35000,
+            today="2026-08-28",
+            live=True,
+            getter=self.fake,
+            universe=uni,
+            quotes=quotes,
+            history_fn=lambda t, d: [],
+            chain_fn=lambda *a, **k: None,
+            yfinance_fn=lambda t: {"ok": False, "error": "yfinance_skipped"},
+        )
+        self.assertFalse(hot_path("2026-08-28").is_file())
+        for cand in built.get("candidates") or []:
+            self.assertEqual(cand.get("x_status"), "DATA UNAVAILABLE")
+
+    def test_xhot_overlay_does_not_call_orats(self):
+        from wheelo import xhot as xhot_mod
+        from wheelo.pipeline import overlay_x_artifacts
+        from wheelo.xhot import write_hot
+
+        out = Path(self.tmp.name) / "out"
+        day = out / "2026-08-31"
+        day.mkdir(parents=True)
+        (day / "candidates.json").write_text(
+            '[{"ticker":"AMAT","conf":78,"conf_label":"TRADE","conf_drivers":["X DATA UNAVAILABLE"],"x_status":"DATA UNAVAILABLE","premium":{"csp_strike":425,"csp_bid":11,"expiry":"2026-10-02","dte":32,"iv_rank":49}}]',
+            encoding="utf-8",
+        )
+        (day / "manifest.json").write_text('{"orats_http":11,"shortlist_a":80,"shortlist_b":78,"shortlist_c":25}', encoding="utf-8")
+        with mock.patch.object(xhot_mod, "CODE_DIR", self.root):
+            write_hot(
+                "2026-08-31",
+                [{"ticker": "AMAT", "tag": "Informed", "bias": "bullish", "posts_24h": 6, "narrative": "WFE"}],
+            )
+            overlay_x_artifacts("2026-08-31", out_dir=out)
+        board = (day / "board.md").read_text(encoding="utf-8")
+        self.assertIn("Informed", board)
+        self.assertIn("| Informed |", board)
+
+    def test_overlay_ignores_stale_hot_json(self):
+        import os
+        import time
+
+        from wheelo import xhot as xhot_local
+        from wheelo.pipeline import overlay_x_artifacts
+        from wheelo.xhot import write_hot
+
+        out = Path(self.tmp.name) / "out"
+        day = out / "2026-08-31"
+        day.mkdir(parents=True)
+        (day / "candidates.json").write_text(
+            '[{"ticker":"AMAT","conf":78,"conf_label":"TRADE","x_status":"DATA UNAVAILABLE","premium":{"csp_strike":425,"csp_bid":11,"expiry":"2026-10-02","dte":32,"iv_rank":49}}]',
+            encoding="utf-8",
+        )
+        (day / "manifest.json").write_text('{"orats_http":11}', encoding="utf-8")
+        with mock.patch.object(xhot_local, "CODE_DIR", self.root):
+            path = write_hot(
+                "2026-08-31",
+                [{"ticker": "AMAT", "tag": "Informed", "bias": "bullish", "posts_24h": 6, "narrative": "stale"}],
+            )
+            past = time.time() - 120
+            os.utime(path, (past, past))
+            overlay_x_artifacts("2026-08-31", out_dir=out)
+        board = (day / "board.md").read_text(encoding="utf-8")
+        self.assertIn("DATA UNAVAILABLE", board)
+        self.assertNotIn("| Informed |", board)

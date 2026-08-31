@@ -1,0 +1,31 @@
+{
+  "blocker": "",
+  "date": "2026-08-31",
+  "evidence_http": 16,
+  "live_schwab": true,
+  "mode": "full",
+  "orats_error": "",
+  "orats_http": 35,
+  "orats_ok": 1,
+  "orats_requests_left": 19580,
+  "orats_requests_used": 420,
+  "orats_rows": 97,
+  "regime": "weak_risk_on",
+  "selector": "groat_swing",
+  "tapes": {
+    "DIA": "schwab_history",
+    "IWM": "schwab_history",
+    "QQQ": "schwab_history",
+    "SPY": "schwab_history"
+  },
+  "trade_count": 6,
+  "trades": [
+    "PLTR",
+    "SHOP",
+    "ADBE",
+    "IGV",
+    "XLE",
+    "CVX"
+  ],
+  "watch_count": 10
+}

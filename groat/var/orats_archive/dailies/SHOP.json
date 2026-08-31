@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 152.93,
+      "clsPx": 152.9,
       "hiPx": 156.49,
       "loPx": 152.4564,
       "open": 154.825,
-      "stkVolu": 4989289.0,
+      "stkVolu": 4990607.0,
       "ticker": "SHOP",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 146.14,
+      "hiPx": 151.28,
+      "loPx": 144.88,
+      "open": 150.7,
+      "stkVolu": 1568622.0,
+      "ticker": "SHOP",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

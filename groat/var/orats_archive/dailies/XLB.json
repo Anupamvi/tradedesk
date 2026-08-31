@@ -2615,9 +2615,18 @@
       "hiPx": 53.8,
       "loPx": 52.84,
       "open": 53.66,
-      "stkVolu": 13594439.0,
+      "stkVolu": 13595059.0,
       "ticker": "XLB",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 52.88,
+      "hiPx": 53.26,
+      "loPx": 52.865,
+      "open": 53.16,
+      "stkVolu": 2229637.0,
+      "ticker": "XLB",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

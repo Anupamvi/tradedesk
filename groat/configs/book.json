@@ -1,3 +1,26 @@
 {
-  "positions": []
+  "positions": [
+    {
+      "contracts": 1,
+      "direction": "bullish",
+      "entry": 2.73,
+      "entry_dollars": 273,
+      "expiry": "2026-09-25",
+      "instrument": "debit_call_spread",
+      "invalidation": "close back below 20 EMA 199.27 / swing-low AVWAP 190.10",
+      "long_strike": 210.0,
+      "max_gain": 727,
+      "max_loss": 273,
+      "notes": "Groat 2026-08-31 desk pick. Filled 2.73 vs ticket 2.90.",
+      "opened": "2026-08-31",
+      "setup": "E",
+      "short_strike": 220.0,
+      "side": "long",
+      "stop": 199.27,
+      "structure": "BUY 210.0 call / SELL 220.0 call 2026-09-25",
+      "target_debit": 2.90,
+      "ticker": "CVX",
+      "underlying_entry": 206.4
+    }
+  ]
 }

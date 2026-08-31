@@ -26,6 +26,11 @@ class TestCliFlags(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parse_args(["analyze"])
 
+    def test_xhot_cmd(self):
+        args = parse_args(["xhot", "--date", "2026-08-31"])
+        self.assertEqual(args.cmd, "xhot")
+        self.assertEqual(args.date, "2026-08-31")
+
 
 class TestRedact(unittest.TestCase):
     def test_query_and_raw(self):

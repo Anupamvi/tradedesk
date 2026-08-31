@@ -2611,13 +2611,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 137.65,
+      "clsPx": 137.09,
       "hiPx": 141.1,
       "loPx": 136.61,
       "open": 140.89,
-      "stkVolu": 3054385.0,
+      "stkVolu": 3074067.0,
       "ticker": "VST",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 135.81,
+      "hiPx": 137.53,
+      "loPx": 135.62,
+      "open": 136.79,
+      "stkVolu": 891298.0,
+      "ticker": "VST",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

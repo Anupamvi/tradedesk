@@ -14,6 +14,7 @@ from groat.config import (
     INDEX_TICKERS,
     MACRO_TICKERS,
     SECTOR_ETFS,
+    STRIKE_DTE,
     load_universe,
 )
 from groat.gates import trade_park_reason
@@ -87,7 +88,7 @@ def _fetch_strikes(
         today,
         getter=getter,
         max_requests=(max_requests if use_http else 0),
-        dte="21,30,45,60",
+        dte=STRIKE_DTE,
     )
     budget[0] += int(pack.get("http") or 0)
     return (pack.get("rows") or {}).get(ticker) or []

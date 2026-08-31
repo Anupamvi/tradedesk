@@ -2602,13 +2602,22 @@
       "tradeDate": "2026-08-27"
     },
     {
-      "clsPx": 769.15,
+      "clsPx": 769.35,
       "hiPx": 775.3,
       "loPx": 768.3076,
       "open": 771.76,
-      "stkVolu": 36679894.0,
+      "stkVolu": 36744344.0,
       "ticker": "SPY",
       "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 764.899,
+      "hiPx": 767.62,
+      "loPx": 764.715,
+      "open": 767.33,
+      "stkVolu": 6268646.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-08-31"
     }
   ]
 }

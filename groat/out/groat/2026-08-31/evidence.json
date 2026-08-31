@@ -1,0 +1,643 @@
+{
+  "asof": "2026-08-31",
+  "earnings_http": 0,
+  "http": 16,
+  "note": "Same ticker + same setup on cached tape. Options use hist/strikes when cached or under the daily cap. Option P&L is delta+theta clamped to defined risk, not a live exit mark. Not a system win rate. X-HOT is not tested. Does not change today's gates.",
+  "rows": [
+    {
+      "chase_skipped": 0,
+      "choice": "OPTIONS",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-08-07",
+          "direction": "bullish",
+          "entry": 186.56,
+          "exit_date": "2026-08-18",
+          "exit_px": 204.05681756467794,
+          "hold": 7,
+          "primary": "E",
+          "r": 2.0,
+          "result": "win",
+          "stop": 177.81159121766103,
+          "target": 204.05681756467794
+        },
+        {
+          "date": "2026-07-16",
+          "direction": "bullish",
+          "entry": 183.86,
+          "exit_date": "2026-08-06",
+          "exit_px": 189.23,
+          "hold": 15,
+          "primary": "E",
+          "r": 0.692085439719719,
+          "result": "time",
+          "stop": 176.10084239920621,
+          "target": 199.3783152015876
+        },
+        {
+          "date": "2026-06-10",
+          "direction": "bullish",
+          "entry": 189.8,
+          "exit_date": "2026-06-15",
+          "exit_px": 181.1462198064657,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 181.1462198064657,
+          "target": 207.10756038706865
+        },
+        {
+          "date": "2026-05-18",
+          "direction": "bullish",
+          "entry": 196.12,
+          "exit_date": "2026-05-26",
+          "exit_px": 186.82677335176632,
+          "hold": 5,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 186.82677335176632,
+          "target": 214.70645329646737
+        },
+        {
+          "date": "2026-01-22",
+          "direction": "bullish",
+          "entry": 166.66,
+          "exit_date": "2026-02-04",
+          "exit_px": 180.8625103736118,
+          "hold": 9,
+          "primary": "E",
+          "r": 2.0,
+          "result": "win",
+          "stop": 159.5587448131941,
+          "target": 180.8625103736118
+        },
+        {
+          "date": "2025-09-17",
+          "direction": "bullish",
+          "entry": 160.09,
+          "exit_date": "2025-09-30",
+          "exit_px": 154.68811456166986,
+          "hold": 9,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 154.68811456166986,
+          "target": 170.89377087666028
+        }
+      ],
+      "instrument": "debit_call_spread",
+      "note": "",
+      "opt_rows": [
+        {
+          "be_hit": true,
+          "date": "2026-08-07",
+          "instrument": "debit_call_spread",
+          "naive_pop": 0.35300242887064964,
+          "pnl": 3.4290783066408035,
+          "pnl_per_risk": 1.2334814052664762,
+          "priced": true,
+          "target_credit": null,
+          "target_debit": 2.78
+        },
+        {
+          "date": "2026-07-16",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "be_hit": false,
+          "date": "2026-06-10",
+          "instrument": "debit_call_spread",
+          "naive_pop": 0.3033782627817173,
+          "pnl": -1.4577330832219089,
+          "pnl_per_risk": -0.6073887846757954,
+          "priced": true,
+          "target_credit": null,
+          "target_debit": 2.4
+        },
+        {
+          "be_hit": false,
+          "date": "2026-05-18",
+          "instrument": "debit_call_spread",
+          "naive_pop": 0.3352072109001616,
+          "pnl": -1.8705120187939797,
+          "pnl_per_risk": -0.7166712715685746,
+          "priced": true,
+          "target_credit": null,
+          "target_debit": 2.61
+        },
+        {
+          "date": "2026-01-22",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "be_hit": false,
+          "date": "2025-09-17",
+          "instrument": "debit_call_spread",
+          "naive_pop": 0.29478114075963974,
+          "pnl": -1.1005491346925949,
+          "pnl_per_risk": -0.7146422952549317,
+          "priced": true,
+          "target_credit": null,
+          "target_debit": 1.54
+        }
+      ],
+      "options": {
+        "avg_pnl_per_risk": -0.20130523655820637,
+        "be_rate": 0.25,
+        "mean_pop": 0.32159226082804204,
+        "n": 4
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": 0.2820142399532865,
+        "expectancy_r": 0.2820142399532865,
+        "losses": 3,
+        "n": 6,
+        "time": 1,
+        "win_rate": 0.3333333333333333,
+        "wins": 2
+      },
+      "ticker": "CVX",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "OPTIONS",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-03-25",
+          "direction": "bullish",
+          "entry": 154.96,
+          "exit_date": "2026-03-30",
+          "exit_px": 141.1782808042394,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 141.1782808042394,
+          "target": 182.52343839152124
+        },
+        {
+          "date": "2025-12-29",
+          "direction": "bullish",
+          "entry": 184.18,
+          "exit_date": "2026-01-02",
+          "exit_px": 169.56336420648915,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 169.56336420648915,
+          "target": 213.4132715870217
+        },
+        {
+          "date": "2025-10-14",
+          "direction": "bullish",
+          "entry": 179.74,
+          "exit_date": "2025-11-04",
+          "exit_px": 190.74,
+          "hold": 15,
+          "primary": "E",
+          "r": 0.7061572217679553,
+          "result": "time",
+          "stop": 164.1627324157925,
+          "target": 210.89453516841502
+        },
+        {
+          "date": "2025-09-22",
+          "direction": "bullish",
+          "entry": 179.33,
+          "exit_date": "2025-10-13",
+          "exit_px": 177.21,
+          "hold": 15,
+          "primary": "E",
+          "r": -0.15469104139084086,
+          "result": "time",
+          "stop": 165.62526324899687,
+          "target": 206.7394735020063
+        }
+      ],
+      "instrument": "debit_call_spread",
+      "note": "",
+      "opt_rows": [
+        {
+          "be_hit": false,
+          "date": "2026-03-25",
+          "instrument": "debit_call_spread",
+          "naive_pop": 0.34223285687265714,
+          "pnl": -2.05028367005378,
+          "pnl_per_risk": -0.6488239462195506,
+          "priced": true,
+          "target_credit": null,
+          "target_debit": 3.1599999999999997
+        },
+        {
+          "be_hit": false,
+          "date": "2025-12-29",
+          "instrument": "debit_call_spread",
+          "naive_pop": 0.3676214195444379,
+          "pnl": -2.703655566168882,
+          "pnl_per_risk": -0.8502061528832963,
+          "priced": true,
+          "target_credit": null,
+          "target_debit": 3.1799999999999997
+        },
+        {
+          "date": "2025-10-14",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "be_hit": false,
+          "date": "2025-09-22",
+          "instrument": "debit_call_spread",
+          "naive_pop": 0.36084737593801536,
+          "pnl": -0.4806604139801899,
+          "pnl_per_risk": -0.16574497033799648,
+          "priced": true,
+          "target_credit": null,
+          "target_debit": 2.9000000000000004
+        }
+      ],
+      "options": {
+        "avg_pnl_per_risk": -0.5549250231469478,
+        "be_rate": 0.0,
+        "mean_pop": 0.35690055078503674,
+        "n": 3
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": -0.3621334549057214,
+        "expectancy_r": -0.3621334549057214,
+        "losses": 2,
+        "n": 4,
+        "time": 2,
+        "win_rate": 0.0,
+        "wins": 0
+      },
+      "ticker": "PLTR",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "OPTIONS",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-08-10",
+          "direction": "bullish",
+          "entry": 60.18,
+          "exit_date": "2026-08-31",
+          "exit_px": 63.78,
+          "hold": 15,
+          "primary": "E",
+          "r": 1.3183341588488913,
+          "result": "time",
+          "stop": 57.44928110309805,
+          "target": 65.6414377938039
+        },
+        {
+          "date": "2026-07-17",
+          "direction": "bullish",
+          "entry": 57.68,
+          "exit_date": "2026-08-07",
+          "exit_px": 57.5,
+          "hold": 15,
+          "primary": "E",
+          "r": -0.07534978172945245,
+          "result": "time",
+          "stop": 55.291141056170545,
+          "target": 62.45771788765891
+        },
+        {
+          "date": "2026-06-10",
+          "direction": "bullish",
+          "entry": 58.25,
+          "exit_date": "2026-06-15",
+          "exit_px": 55.57561689859671,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 55.57561689859671,
+          "target": 63.59876620280659
+        },
+        {
+          "date": "2026-05-18",
+          "direction": "bullish",
+          "entry": 60.58,
+          "exit_date": "2026-05-27",
+          "exit_px": 57.54385896349588,
+          "hold": 6,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 57.54385896349588,
+          "target": 66.65228207300824
+        },
+        {
+          "date": "2026-02-05",
+          "direction": "bullish",
+          "entry": 52.21,
+          "exit_date": "2026-02-27",
+          "exit_px": 55.92,
+          "hold": 15,
+          "primary": "E",
+          "r": 1.173705645623565,
+          "result": "time",
+          "stop": 49.0490711812339,
+          "target": 58.531857637532205
+        },
+        {
+          "date": "2025-12-11",
+          "direction": "bullish",
+          "entry": 45.96,
+          "exit_date": "2025-12-16",
+          "exit_px": 44.48386759034049,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 44.48386759034049,
+          "target": 48.91226481931903
+        },
+        {
+          "date": "2025-11-18",
+          "direction": "bullish",
+          "entry": 45.53,
+          "exit_date": "2025-11-24",
+          "exit_px": 43.959993439220604,
+          "hold": 4,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 43.959993439220604,
+          "target": 48.670013121558796
+        },
+        {
+          "date": "2025-09-26",
+          "direction": "bullish",
+          "entry": 45.995,
+          "exit_date": "2025-09-30",
+          "exit_px": 44.3397526413813,
+          "hold": 2,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 44.3397526413813,
+          "target": 49.30549471723739
+        }
+      ],
+      "instrument": "debit_call_spread",
+      "note": "",
+      "opt_rows": [
+        {
+          "date": "2026-08-10",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2026-07-17",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2026-06-10",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2026-05-18",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2026-02-05",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2025-12-11",
+          "priced": false,
+          "reason": "no analog structure"
+        },
+        {
+          "date": "2025-11-18",
+          "priced": false,
+          "reason": "chain DATA UNAVAILABLE"
+        },
+        {
+          "date": "2025-09-26",
+          "priced": false,
+          "reason": "chain DATA UNAVAILABLE"
+        }
+      ],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": -0.3229137471571245,
+        "expectancy_r": -0.3229137471571245,
+        "losses": 5,
+        "n": 8,
+        "time": 3,
+        "win_rate": 0.0,
+        "wins": 0
+      },
+      "ticker": "XLE",
+      "weak": true
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "STOCK",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2025-12-29",
+          "direction": "bullish",
+          "entry": 167.88,
+          "exit_date": "2026-01-02",
+          "exit_px": 155.80207283350504,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 155.80207283350504,
+          "target": 192.0358543329899
+        },
+        {
+          "date": "2025-10-14",
+          "direction": "bullish",
+          "entry": 152.88,
+          "exit_date": "2025-10-28",
+          "exit_px": 179.57189643654493,
+          "hold": 10,
+          "primary": "E",
+          "r": 2.0,
+          "result": "win",
+          "stop": 139.53405178172753,
+          "target": 179.57189643654493
+        },
+        {
+          "date": "2025-09-22",
+          "direction": "bullish",
+          "entry": 157.12,
+          "exit_date": "2025-09-25",
+          "exit_px": 144.43665410188152,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 144.43665410188152,
+          "target": 182.48669179623698
+        }
+      ],
+      "instrument": "stock",
+      "note": "",
+      "opt_rows": [],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": 0.0,
+        "expectancy_r": 0.0,
+        "losses": 2,
+        "n": 3,
+        "time": 0,
+        "win_rate": 0.3333333333333333,
+        "wins": 1
+      },
+      "ticker": "SHOP",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "STOCK",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2025-12-29",
+          "direction": "bullish",
+          "entry": 353.16,
+          "exit_date": "2026-01-02",
+          "exit_px": 336.4223272003882,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 336.4223272003882,
+          "target": 386.6353455992236
+        }
+      ],
+      "instrument": "stock",
+      "note": "",
+      "opt_rows": [],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": -1.0,
+        "expectancy_r": -1.0,
+        "losses": 1,
+        "n": 1,
+        "time": 0,
+        "win_rate": 0.0,
+        "wins": 0
+      },
+      "ticker": "ADBE",
+      "weak": false
+    },
+    {
+      "chase_skipped": 0,
+      "choice": "STOCK",
+      "direction": "bullish",
+      "hits": [
+        {
+          "date": "2026-06-04",
+          "direction": "bullish",
+          "entry": 100.06,
+          "exit_date": "2026-06-09",
+          "exit_px": 93.64416679755448,
+          "hold": 3,
+          "primary": "E",
+          "r": -1.0,
+          "result": "loss",
+          "stop": 93.64416679755448,
+          "target": 112.89166640489105
+        },
+        {
+          "date": "2025-10-14",
+          "direction": "bullish",
+          "entry": 113.59,
+          "exit_date": "2025-11-04",
+          "exit_px": 112.0,
+          "hold": 15,
+          "primary": "E",
+          "r": -0.3776708907881917,
+          "result": "time",
+          "stop": 109.37998530524366,
+          "target": 122.01002938951268
+        },
+        {
+          "date": "2025-09-22",
+          "direction": "bullish",
+          "entry": 117.79,
+          "exit_date": "2025-10-13",
+          "exit_px": 114.64,
+          "hold": 15,
+          "primary": "E",
+          "r": -0.49133986904181526,
+          "result": "time",
+          "stop": 111.37895909232246,
+          "target": 130.6120818153551
+        }
+      ],
+      "instrument": "stock",
+      "note": "",
+      "opt_rows": [],
+      "options": {
+        "avg_pnl_per_risk": null,
+        "be_rate": null,
+        "mean_pop": null,
+        "n": 0
+      },
+      "primary": "E",
+      "primary_name": "Emerging Sector Rotation",
+      "stock": {
+        "avg_r": -0.6230035866100024,
+        "expectancy_r": -0.6230035866100024,
+        "losses": 1,
+        "n": 3,
+        "time": 2,
+        "win_rate": 0.0,
+        "wins": 0
+      },
+      "ticker": "IGV",
+      "weak": false
+    }
+  ],
+  "strike_http": 16
+}

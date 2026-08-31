@@ -38,7 +38,8 @@ RR_PREFER = 2.0
 RR_MIN = 1.2
 CHASE_ATR = 2.5
 EARNINGS_HOLD_DAYS = 21
-STRIKE_DTE = "21,30,45,60"
+# ORATS /strikes `dte` is a min,max RANGE (not a list of target slices).
+STRIKE_DTE = "21,75"
 SLEEVE = "groat_swing"
 EVIDENCE_MAX_ANALOGS = 12
 EVIDENCE_MAX_STRIKE_HTTP = 16
@@ -135,7 +136,7 @@ def ticker_etf(ticker: str) -> str:
 def quote_width_cap(mid: Optional[float]) -> Optional[float]:
     if mid is None or mid <= 0:
         return None
-    return min(QUOTE_WIDTH_ABS, QUOTE_WIDTH_PCT_OF_MID * mid)
+    return max(QUOTE_WIDTH_ABS, QUOTE_WIDTH_PCT_OF_MID * mid)
 
 
 def load_universe(path: Optional[Path] = None) -> List[str]:

@@ -1,0 +1,11 @@
+asof_date,ticker,action,lane,choice,direction,primary,score,opt_conf,naive_pop,target_debit,target_credit,close,trend,rs_20,iv30,hv20,vrp,group,group_status
+2026-08-31,PLTR,TRADE,SWING,OPTIONS,bullish,E,55.0000,70,0.3206,2.5500,,185.6900,up,0.4683,45.0400,79.7700,-34.7300,software,accelerating
+2026-08-31,SHOP,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,146.1400,strong_up,0.2394,43.8600,55.5300,-11.6700,software,accelerating
+2026-08-31,ADBE,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,291.2000,up,0.1490,52.4600,43.7000,8.7600,software,accelerating
+2026-08-31,IGV,TRADE,SWING,STOCK,bullish,E,55.0000,,,,,109.3800,strong_up,0.1132,30.3500,34.0200,-3.6700,software,accelerating
+2026-08-31,XLE,TRADE,SWING,OPTIONS,bullish,E,55.0000,71,0.3698,1.6500,,63.7800,strong_up,0.0753,25.4600,23.0800,2.3800,energy,emerging
+2026-08-31,CVX,TRADE,SWING,OPTIONS,bullish,E,55.0000,75,0.3710,2.9000,,206.4000,strong_up,0.0589,25.5600,22.9600,2.6000,energy,emerging
+2026-08-31,CRWD,WATCH,SWING,OPTIONS,bullish,C,51.0000,85,0.3333,1.6500,,226.3250,strong_up,0.1079,53.1700,71.3000,-18.1300,cybersecurity,mature
+2026-08-31,SNOW,WATCH,SWING,STOCK,bullish,E,50.0000,,,,,324.9950,strong_up,0.0473,69.0500,45.3800,23.6700,software,accelerating
+2026-08-31,NET,WATCH,SWING,STOCK,bullish,E,50.0000,,,,,297.9750,strong_up,0.0443,54.4600,66.6200,-12.1600,software,accelerating
+2026-08-31,XLK,WATCH,SWING,STOCK,bullish,E,50.0000,,,,,185.5500,strong_up,0.0326,23.7300,23.6100,0.1200,technology,accelerating
