@@ -9,7 +9,11 @@ metadata:
 
 # grok-option
 
+CODE=`/Users/anuppamvi/tradedesk/grok-option`
+
 Defined-risk swing scanner. Not Anu v1. Bar is **$10k profit / month**. Do not chase it by sizing up or loosening geometry.
+
+`.grok/skills/grok-option` and `~/.grok/skills/grok-option` are symlinks to CODE so relative `references/` / `assets/` / `scripts/` still resolve. Do not load a nested skill folder that lacks those directories.
 
 Read `references/assumption-audit.md` before the first scan in a session. Pull the matching reference when a mode needs depth. Copy the card from `assets/daily-card.md`. Plain markdown only — no HTML. See `assets/report-style.md`.
 
@@ -53,7 +57,7 @@ Do not reorder. Empty table is valid when quotes or geometry fail. Empty is a **
 
 ## Tools
 
-- Schwab: `python3 ~/.grok/skills/grok-option/scripts/schwab_market.py structures TICKER --expiry YYYY-MM-DD` then `vertical` for the row. See `references/schwab.md`.
+- Schwab: `python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py structures TICKER --expiry YYYY-MM-DD` then `vertical` for the row. See `references/schwab.md`. The `~/.grok/skills/grok-option/scripts/...` path still works (symlink).
 - Web: VIX, index, earnings date, WTI/Brent, named geo copy.
 - X keyword + semantic search: Shock watch finder (geo/oil/kinetic) at regime; then candidate veto/confirm. Never a Spike row from X alone.
 - Browser: Playwright MCP or `scripts/browser_fetch.py` for X/news when APIs miss. Not a substitute for Schwab chain. See `references/browser.md`. Never type passwords.

@@ -8,7 +8,7 @@ Never invent IV/OI from a blurry screenshot. Read the DOM (snapshot or extracted
 
 1. **MCP Playwright** — `search_tool` for `playwright browser_navigate` (qualified name like `playwright__browser_navigate`). Then `use_tool`. Persistent profile: `~/.grok/browser/grok-option`. Cookies (including x.com) survive sessions once the user has logged in headed.
 2. **Python Playwright fallback** — if MCP is not in this session:
-   `python3 ~/.grok/skills/grok-option/scripts/browser_fetch.py URL`
+   `python3 /Users/anuppamvi/tradedesk/grok-option/scripts/browser_fetch.py URL`
    Add `--headed` for a first login. Same profile directory.
 3. **Attach to a debug Chrome** — user runs `scripts/open-chrome-debug.sh`, then MCP with CDP `http://127.0.0.1:9222`, or `browser_fetch.py --cdp http://127.0.0.1:9222`. This is the path for “use my already-logged-in Chrome.” Default Chrome without a debug port cannot be taken over while it is running.
 4. **Thin fallback** — `web_search` / `open_page` / `x_keyword_search`. Mark **THIN**. No Prime.

@@ -21,10 +21,10 @@ Never print keys, secrets, or raw token JSON. If refresh fails, tell the user to
 From any cwd:
 
 ```bash
-python3 ~/.grok/skills/grok-option/scripts/schwab_market.py quote AAPL XOM
-python3 ~/.grok/skills/grok-option/scripts/schwab_market.py chain XOM --from-date YYYY-MM-DD --to-date YYYY-MM-DD --strike-count 12
-python3 ~/.grok/skills/grok-option/scripts/schwab_market.py structures AMZN --expiry YYYY-MM-DD
-python3 ~/.grok/skills/grok-option/scripts/schwab_market.py vertical --symbol XOM --right P --expiry YYYY-MM-DD --short 110 --long 105 --kind credit
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py quote AAPL XOM
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py chain XOM --from-date YYYY-MM-DD --to-date YYYY-MM-DD --strike-count 12
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py structures AMZN --expiry YYYY-MM-DD
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py vertical --symbol XOM --right P --expiry YYYY-MM-DD --short 110 --long 105 --kind credit
 ```
 
 `structures` prices all five actions on that expiry (put credit, call credit, iron condor, call debit, put debit). Do not skip it and only run puts.

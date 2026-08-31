@@ -83,6 +83,12 @@ python3 -m wheelo full --date YYYY-MM-DD --capital 35000
 - Output: `/Users/anuppamvi/tradedesk/wheelo/out/wheelo/YYYY-MM-DD/`
 - ORATS token lives in `wheelo/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, Schwab, or X numbers. Credits are put bid, not mid.
 
+## grok-option Default
+
+- Treat `grok-option`, `Anu table`, `Expert Trade Table`, `run today's scan`, `bull put`, and `sell put credit` as the **grok-option** desk under `grok-option/`, not Groat, not Groko, not Codex Daily.
+- Canonical path: `/Users/anuppamvi/tradedesk/grok-option`. Skill + Schwab scripts live there. `.grok/skills/grok-option` and `~/.grok/skills/grok-option` are symlinks to that folder.
+- Schwab live chain first (`python3 grok-option/scripts/schwab_market.py`). No ORATS. No order placement. Empty table is valid when quotes or geometry fail.
+
 ## Pattern Analysis V2 Default
 
 - Treat `pattern analysis`, `run pattern analysis`, `pattern-analysis`, and plain `pattern` requests as **Pattern Analysis V2** unless the user explicitly asks for V1, the frozen baseline, or `uwos.options_pattern_pipeline_v1`.
