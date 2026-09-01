@@ -10,7 +10,7 @@
 
 - **Need:** Needs stock > 90.34 by 25 Sep. Max at 94+
 - **Risk:** Lose at most $134 / lot
-- **POP (delta):** 35% · **EV rank:** 39.5 · **conf:** 70
+- **POP (delta):** 35% · **EV rank:** 39.5 · **conf:** 60
 - **Why this one:** Typical win is bigger than typical loss. Hit rate may still be modest. Size small. Not a promise.
 - **Not a promise.** Re-quote live before click. Do not fill last night’s number at 9:30.
 
