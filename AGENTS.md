@@ -69,6 +69,21 @@ python3 -m groat full --date YYYY-MM-DD
 - Output: `/Users/anuppamvi/tradedesk/groat/out/groat/YYYY-MM-DD/`
 - ORATS token lives in `groat/.env`. Schwab fills from `groat/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, prices, X posts, or news.
 
+## Xhigh Default
+
+- Treat `xhigh`, `xhigh full`, and `xhigh YYYY-MM-DD` as the **xhigh** new-setup wheel/swing scanner under `xhigh/`. Not Groat, not Wheelo, not Groko.
+- Independent: `python3 -m xhigh` from `/Users/anuppamvi/tradedesk/xhigh`. Do not import other desks as the execute path. Do not steal `groat` / `RUN FULL SCAN` / `wheelo` triggers.
+- Schwab movers + `lastPrice` only. Catalog: CSP, put credit, call debit, call credit, put debit, iron condor. No ticket cap. CLICK only if EV > 0. No harvest. No covered calls. Empty CLICK is valid. No order placement. **v1 locked** — `xhigh/docs/LOCK.md`.
+- Default:
+
+```bash
+python3 -m xhigh full --date YYYY-MM-DD
+```
+
+- Output: `/Users/anuppamvi/tradedesk/xhigh/out/xhigh/YYYY-MM-DD/`
+- ORATS from `xhigh/.env` then `groat/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, Schwab, X, or earnings numbers.
+- CSP short put 8–15% below last. Call debit long −2% to +4% vs last. Credits are bid. Debits are long ask − short bid.
+
 ## Wheelo Default
 
 - Treat `wheelo`, `wheelo select`, `wheelo daily`, and `wheelo YYYY-MM-DD` as the **Wheelo** CSP/CC desk under `wheelo/`, not `uwos.wheel_pipeline` and not Groat.

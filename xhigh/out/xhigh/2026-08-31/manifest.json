@@ -1,0 +1,58 @@
+{
+  "date": "2026-08-31",
+  "live_schwab": true,
+  "orats_http": 2,
+  "schwab_http": 26,
+  "movers": [
+    "NVDA",
+    "AMZN",
+    "AAPL",
+    "WMT",
+    "GOOGL",
+    "MSFT",
+    "NKE",
+    "KO",
+    "CRM",
+    "CSCO",
+    "VVOS",
+    "GPRO",
+    "CLGN",
+    "RDHL",
+    "COOT",
+    "AAL",
+    "INTC"
+  ],
+  "shortlist": [
+    "NVDA",
+    "AMZN",
+    "AAPL",
+    "WMT",
+    "GOOGL",
+    "MSFT",
+    "NKE",
+    "KO",
+    "CRM",
+    "CSCO",
+    "INTC"
+  ],
+  "quality": [
+    "NVDA",
+    "AMZN",
+    "AAPL",
+    "WMT",
+    "GOOGL",
+    "MSFT",
+    "NKE",
+    "KO",
+    "CRM",
+    "CSCO",
+    "INTC"
+  ],
+  "orats_token": true,
+  "chain_http": 10,
+  "macro": {
+    "spy_last": 767.5499,
+    "spy_5d": 0.47,
+    "vix_last": null
+  }
+}
