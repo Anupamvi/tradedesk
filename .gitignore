@@ -31,3 +31,8 @@ skills-lock.json
 2026-07-13_overlay_from_2026-07-10/
 2026-07-16-overlay-2026-07-17/
 anu-trading-desk-site/
+
+# Local workspace copies and generated browser artifacts.
+Cursor/
+codexswing/.playwright-cli/
+codexswing/output/
