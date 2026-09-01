@@ -24,7 +24,7 @@ Follow this order. Skip a step only if the input cannot exist (then mark THIN or
 
 ## MANAGE extras
 
-For each open defined-risk line: DTE, quoted value vs entry, % of credit, **earnings vs remaining expiry**, thesis. If `earnings_date <= expiry`, close or roll to an expiry still before the print. Apply 60–65% / 2.0× / 2.5×. Core holdings are not cover-call bait unless the user asks.
+For each open defined-risk line: DTE, quoted value vs entry, % of credit, **earnings vs remaining expiry**, thesis. If `earnings_date <= expiry`, close or roll to an expiry still before the print. Apply 60–65% / 2.0× / 2.5×. Short call vs shares held: close the spread rather than deliver shares unless the user says sell the stock.
 
 ## JOURNAL extras
 

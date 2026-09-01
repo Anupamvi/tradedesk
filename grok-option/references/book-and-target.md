@@ -2,9 +2,9 @@
 
 **Bar:** **$10k profit / month** ($120k/year). Stated. That is the scoreboard. It is not a size-up button and not a daily-fill quota.
 
-**Account:** live Schwab when pulled. **$715k** on 2026-08-26, cash ~$24k. Mixed book: core equity + options overlay. Size % off that total unless the user names an options-only sleeve. $150k is only if equity is unknown **and** Schwab is down.
+**Account:** live Schwab when pulled. **$715k** on 2026-08-26, cash ~$24k. Mixed book: equity + options overlay. Size % off that total unless the user names an options-only sleeve. $150k is only if equity is unknown **and** Schwab is down.
 
-Core longs (AMZN, NVDA, AMD, GOOG, AAPL, META, TSLA, HOOD, VGT, UNH, COST, RKLB) are not cover-call bait unless the user asks. **No call credit and no iron condor on those names** (short call against the core). Put credit and Fire debit are allowed if other gates pass.
+**No protected-ticker list.** Do not skip a call credit or iron condor because a name is “core” or because Schwab shows long shares. Permission is **this session’s signals**: regime geometry, earnings-overlap, Event/Crowded, quotes, theme cap. If both credit wings pass the same name/expiry, print **one iron condor**. If Schwab shows long stock in that name, tag Notes `shares held — close the spread; do not deliver unless asked`. Early assignment is a manage item, not a SCAN veto. Naked short calls stay banned.
 
 ## What $10k/month is on this account
 
@@ -69,7 +69,7 @@ If 20-trade rolling expectancy < 0: **freeze Fire and Spike, cut size 50%**, AUD
 
 ## Correlation
 
-Do not size NVDA, AMD, MU, AVGO, SMH, CRWV, ORCL as independent Shield/Fire risk. One theme bucket. XOM, CVX, COP are one energy bucket — Spike is one name, not three.
+Theme is **this session’s tape**, not a saved ticker list. Names the market is pricing as one cluster (AI/semi/cloud while a mega-cap chip/infra print is live; energy while a shock map is live) share **one** theme cap (30% of aggregate). Do not size those as independent Shield/Fire. Spike is still one name on a live energy or defense map (`spike.md`).
 
 ## Cash
 

@@ -16,7 +16,7 @@ Defined-risk only. No naked shorts. No undefined-risk strangles as Core.
 
 **Banned labels:** "Buy Put Credit", "Buy Call Credit", "Sell Debit", whale-copy one-liners.
 
-**Scan all five.** On every allowed name/expiry run Schwab `structures` (or price each action with `vertical`). A scan that only looks at puts is incomplete. If both credit sides pass the same name/expiry, emit **one** iron condor, not a put row and a call row. Fire scores call debit and put debit separately (one Fire per name).
+**Scan all five.** On every allowed name/expiry run Schwab `structures` (or price each action with `vertical`). A scan that only looks at puts is incomplete. If both credit sides pass the same name/expiry, emit **one** iron condor, not a put row and a call row. Long stock in the Schwab book does **not** skip the call wing or the condor. Fire scores call debit and put debit separately (one Fire per name).
 
 ## Credit / debit math (no estimates)
 

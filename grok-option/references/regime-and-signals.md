@@ -22,7 +22,7 @@ Events are **scoped**. A name’s print does not zero the whole book.
 | Scope | What counts | What it blocks |
 |-------|-------------|----------------|
 | **Name** | That ticker’s earnings/halt | All sleeves on that ticker (plus expiry-overlap firewall) until the next session after the print |
-| **Theme** | Mega-cap print the index is pricing | **That sector only.** NVDA → semiconductors / AI-infra (NVDA, AMD, AVGO, MU, SMH, CRWV, INTC, MRVL, TSM, ORCL). Not healthcare, energy, banks, staples, or AAPL hardware. Score every other sector **today** |
+| **Theme** | Mega-cap print the index is pricing | **That sector only**, from this session’s tape (e.g. a chip/AI-infra print → semiconductors / AI-infra, not healthcare, energy, banks, staples, or hardware). Score every other sector **today**. Do not keep a saved ticker deny-list |
 | **Index** | FOMC **decision day**, CPI/PCE **the morning of**, NFP **the morning of**, Chair speech **the calendar date of** | Skip expiries that **land on** that date. No **index** Fire (SPY/QQQ) that day. Single-name Shield and Fire on non-theme names stay live if geometry + earnings-overlap pass |
 | **Session empty** | Crisis, or FOMC **decision day** | Prefer empty table. A speech later in the week is not an empty week |
 

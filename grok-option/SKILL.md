@@ -81,6 +81,7 @@ Do not reorder. Empty table is valid when quotes or geometry fail. Empty is a **
 - Copying a whale strike/expiry as the trade
 - Any expiry on or after the name’s next earnings date (overlap); missing earnings date is a skip, not a pass
 - Naked / undefined risk
+- Skipping a passing call credit or iron condor because of a saved ticker list or because Schwab shows long shares (tag assignment in Notes; do not veto)
 - Treating PCR, dark-pool prints, or X as entries (X may start Shock watch, not a Spike row)
 - Automating passwords / 2FA; inventing quotes from a screenshot with no DOM text
 - Spike off the written map, a fade unless the user said fade, or a calendar Event dressed as a shock
