@@ -18,9 +18,9 @@ Follow this order. Skip a step only if the input cannot exist (then mark THIN or
 
 8. **Book caps** — Live Schwab equity when pulled ($715k on 2026-08-26), else $150k fallback. Size into the per-name band, then buying power. Theme, one Fire per name, one Spike per scan. No Shield on mapped shock names. Reject overflow. Do not size up to chase $10k/month.
 
-9. **Write the card** — executable table first. 1-lot max profit / 1-lot max loss / Rec lots from Conf. Then Shock watch, then sleeve board. `daily-card.md`. Plain markdown, no HTML. Never put trades under “not executable.” Never mix 1-lot P/L with N-lot dollars. Then 3–5 **Assumptions in force** bullets.
+9. **Write the card to disk** — `CODE/out/grok-option/YYYY-MM-DD/GROK_OPTION.md` from `daily-card.md`. Chat is the file link, not a substitute. Executable table first. 1-lot max profit / 1-lot max loss / Rec lots from Conf. Then Shock watch, then sleeve board, then **Cleared structures — review** with a full row for every geometry-pass (legs, net, Conf, Rec lots, Status). Plain markdown, no HTML. Never put trades under “not executable.” Never mix 1-lot P/L with N-lot dollars. Then 3–5 **Assumptions in force** bullets.
 
-10. **Stop** — Do not emit a second “ideas” table. Watch notes go under the table, unlabeled as executable.
+10. **Stop** — Do not emit a second **executable** table. The review board is mandatory so parked trades stay reviewable. Watch notes go under the table, unlabeled as executable.
 
 ## MANAGE extras
 

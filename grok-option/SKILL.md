@@ -3,7 +3,7 @@ name: grok-option
 description: Use when the user wants a grok-option scan, Expert Trade Table, credit or debit swing setup, unusual options review, book check, or journal update. Triggers include run today's scan, run the scanner, grok-option, Anu table, sell put credit, bull put, bear call, manage open book, revalidate assumptions, oil spike, geo event, ride the wave, playwright, logged-in x.com, and schwab chain. Applies quote-verified rules, regime gate, X veto, earnings firewall, spike path, Schwab live chain, and empty-table permission.
 metadata:
   type: workflow
-  version: "3.9"
+  version: "3.11"
   owner: Kla
 ---
 
@@ -15,7 +15,13 @@ Defined-risk swing scanner. Not Anu v1. Bar is **$10k profit / month**. Do not c
 
 `.grok/skills/grok-option` and `~/.grok/skills/grok-option` are symlinks to CODE so relative `references/` / `assets/` / `scripts/` still resolve. Do not load a nested skill folder that lacks those directories.
 
-Read `references/assumption-audit.md` before the first scan in a session. Pull the matching reference when a mode needs depth. Copy the card from `assets/daily-card.md`. Plain markdown only — no HTML. See `assets/report-style.md`.
+Read `references/assumption-audit.md` before the first scan in a session. Pull the matching reference when a mode needs depth. Copy the card from `assets/daily-card.md`. Plain markdown only — no HTML. Icons/colors: `assets/report-style.md` (🟢🟡🔴🔵⚡, GitHub alerts). No color spans.
+
+**Every SCAN writes a full dated report to disk.** Chat is the file link plus a one-line count, not the report.
+
+```text
+/Users/anuppamvi/tradedesk/grok-option/out/grok-option/YYYY-MM-DD/GROK_OPTION.md
+```
 
 Equity is live Schwab when pulled (**$715k** on 2026-08-26). $150k only if unknown and Schwab is down. Caps and the $10k bar live in `references/book-and-target.md`.
 
@@ -42,8 +48,18 @@ Do not reorder. Empty table is valid when quotes or geometry fail. Empty is a **
 6. **X on candidates** — required after the chain. Veto/confirm only, never a trigger. Tag every table row `X: Quiet` / `Informed` / `Crowded veto` / `Event veto`. One regime pass (VIX, NVDA, Chair, 0DTE). Missing this pass is an incomplete scan. See `references/x-sentiment.md`.
 7. **Sleeve** — A Shield, B Fire, C cash/hedge, D Spike. Events are **name / theme / index** (`regime-and-signals.md`). Crisis kills Shield/Fire; Spike is the only Crisis debit if `spike.md` gates pass.
 8. **Book caps** — `references/book-and-target.md`. Reject rows that breach per-name, aggregate, theme, one-Fire-per-name, or one-Spike-per-scan.
-9. **Write the card** — executable table **first** (0–7 rows). Dollar columns are **1-lot** max profit and max loss. **Rec lots** from Conf (`expert-table.md`). Buy/Sell cells name every leg (`Buy 225 Put` / `Sell 240 Put`; condor lists all four). Then Shock watch, then sleeve board. Copy `assets/daily-card.md`. Never title the trades “not executable.” A put-only table with no sleeve board is incomplete. Never mix a 1-lot P/L with an N-lot dollar.
-10. **Assumptions in force** — 3–5 bullets from the audit file. Stop. No second executable table.
+9. **Write the card to disk** — create `out/grok-option/YYYY-MM-DD/` and write `GROK_OPTION.md` from `assets/daily-card.md`. Chat reply: clickable file link + `Expert n | Review n`. Do not leave the user with only an inline table. Executable table **first** (0–7 rows). Dollar columns are **1-lot** max profit and max loss. **Rec lots** from Conf (`expert-table.md`). Buy/Sell cells name every leg (`Buy 225 Put` / `Sell 240 Put`; condor lists all four). Then Shock watch, then sleeve board, then **Cleared structures — review** (full rows, same columns + Status). Every geometry-pass structure gets a review row. Never collapse cleared trades into a one-line sleeve cell. Never title the trades “not executable.” A put-only table with no sleeve board is incomplete. Never mix a 1-lot P/L with an N-lot dollar.
+10. **Assumptions in force** — 3–5 bullets from the audit file. Stop. No second **executable** table. The review board is required and is not executable.
+
+## Reply shape
+
+```
+**grok-option YYYY-MM-DD** | 😌 Calm | 🟢 Expert {n} | 🟡 Review {n} | 🔴 Fail {n}
+
+Report: [GROK_OPTION.md](/Users/anuppamvi/tradedesk/grok-option/out/grok-option/YYYY-MM-DD/GROK_OPTION.md)
+```
+
+Do not paste a truncated table in chat as the deliverable. The file uses 🟢/🟡/🔴/🔵/⚡ from `assets/report-style.md`. No HTML.
 
 ## Sleeves
 
@@ -85,6 +101,8 @@ Do not reorder. Empty table is valid when quotes or geometry fail. Empty is a **
 - Treating PCR, dark-pool prints, or X as entries (X may start Shock watch, not a Spike row)
 - Automating passwords / 2FA; inventing quotes from a screenshot with no DOM text
 - Spike off the written map, a fade unless the user said fade, or a calendar Event dressed as a shock
+- Chat-only SCAN with no dated `GROK_OPTION.md` on disk
+- Hiding a geometry-pass trade in a one-line sleeve dump so it cannot be reviewed
 
 ## AUDIT
 

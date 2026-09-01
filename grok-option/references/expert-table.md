@@ -2,9 +2,13 @@
 
 One executable table, dated today, **0–7 rows**. Empty is valid. Never backfill from watch, alternates, or diagnostics.
 
-Card order is mandatory: **Expert table first**, then Shock watch, then sleeve board. Never put the executable table under a “not executable” heading.
+Card order is mandatory: **Expert table first**, then Shock watch, then sleeve board, then **Cleared structures — review**. Never put the executable table under a “not executable” heading.
+
+Write the full card to `out/grok-option/YYYY-MM-DD/GROK_OPTION.md`. An inline-only chat table is incomplete.
 
 **Sleeve board** is scored-but-not-traded. Print it **below** the table. Status is **YES** / no. A put-only executable table with no board is incomplete.
+
+**Cleared structures — review** uses the same dollar/leg columns plus **●** (`🟢` / `🟡` / `🔴` / `⚡`) and **Why**. Every structure that met Calm/Normal geometry + quotes gets a row here even if sector cap, overlay, Crowded Fire, missing flow, wide AH, or “do not add” kept it off the Expert table. Do not one-line those trades. This is not a second executable table. Icons in `assets/report-style.md`.
 
 ## Columns
 

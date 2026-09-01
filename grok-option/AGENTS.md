@@ -17,3 +17,11 @@ python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py vertical
 
 The user places every Schwab order. Empty table is valid when quotes or geometry fail.
 Never invent quotes, IV, OI, or delta. Missing source → skip the structure.
+
+Every SCAN writes:
+
+```text
+/Users/anuppamvi/tradedesk/grok-option/out/grok-option/YYYY-MM-DD/GROK_OPTION.md
+```
+
+Chat is the file link plus 🟢 Expert / 🟡 Review / 🔴 Fail counts. Do not replace the file with an inline-only table. Geometry-pass trades that miss the Expert table still appear as full 🟡 rows. Icons in `assets/report-style.md`. No HTML color tags.
