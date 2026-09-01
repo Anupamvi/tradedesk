@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 28.14,
+      "clsPx": 28.09,
       "hiPx": 28.16,
-      "loPx": 28.13,
+      "loPx": 28.105,
       "open": 28.13,
-      "stkVolu": 181341.0,
+      "stkVolu": 1242170.0,
       "ticker": "UUP",
       "tradeDate": "2026-08-31"
     }

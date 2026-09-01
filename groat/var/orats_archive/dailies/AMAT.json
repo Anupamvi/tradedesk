@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 457.1223,
+      "clsPx": 457.33,
       "hiPx": 465.9,
-      "loPx": 456.42,
+      "loPx": 453.91,
       "open": 462.41,
-      "stkVolu": 1043037.0,
+      "stkVolu": 6177322.0,
       "ticker": "AMAT",
       "tradeDate": "2026-08-31"
     }

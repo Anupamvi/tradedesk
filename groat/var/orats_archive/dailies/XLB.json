@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 52.88,
+      "clsPx": 52.78,
       "hiPx": 53.26,
-      "loPx": 52.865,
+      "loPx": 52.565,
       "open": 53.16,
-      "stkVolu": 2229637.0,
+      "stkVolu": 12113055.0,
       "ticker": "XLB",
       "tradeDate": "2026-08-31"
     }

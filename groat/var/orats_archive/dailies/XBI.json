@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 160.25,
-      "hiPx": 161.69,
+      "clsPx": 162.3116,
+      "hiPx": 163.22,
       "loPx": 159.6206,
       "open": 161.0,
-      "stkVolu": 2116014.0,
+      "stkVolu": 7356083.0,
       "ticker": "XBI",
       "tradeDate": "2026-08-31"
     }

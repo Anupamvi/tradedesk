@@ -44,6 +44,20 @@ def snapshot(bars: List[dict], atr_n: int = 14) -> Dict[str, object]:
         ext = (last - e20) / a
     trend_up = bool(last is not None and e20 is not None and e50 is not None and last > e20 > e50)
     trend_down = bool(last is not None and e20 is not None and e50 is not None and last < e20 < e50)
+    window = bars[-126:] if len(bars) >= 20 else bars
+    lows = [to_float(b.get("low")) for b in window if to_float(b.get("low")) is not None]
+    low_126 = min(lows) if lows else None
+    peak = None
+    max_dd = None
+    for c in closes[-126:] if len(closes) >= 20 else closes:
+        if c is None:
+            continue
+        if peak is None or c > peak:
+            peak = c
+        if peak and peak > 0:
+            dd = (c - peak) / peak
+            if max_dd is None or dd < max_dd:
+                max_dd = dd
     return {
         "close": last,
         "ema20": e20,
@@ -52,6 +66,8 @@ def snapshot(bars: List[dict], atr_n: int = 14) -> Dict[str, object]:
         "extension_atr": ext,
         "trend_up": trend_up,
         "trend_down": trend_down,
+        "low_126": low_126,
+        "max_dd_126": max_dd,
     }
 
 

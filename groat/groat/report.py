@@ -221,6 +221,7 @@ def _card(row: dict) -> List[str]:
                 ("Earnings", earn_txt),
                 ("X", x_txt),
                 ("Fill", picked.get("fill_assumption") or "stock last; options never mid"),
+                ("Fill as-of", picked.get("fill_asof") or "n/a — revalidate at the open"),
                 ("Greeks", "Δ %s · Γ %s · Θ %s · ν %s"
                  % (
                      fmt(picked.get("delta")),
@@ -314,11 +315,12 @@ def render_board(asof: str, built: dict, include_desk_pick: bool = True) -> str:
         lines.append("Empty board. Valid.")
         lines.append("")
     else:
-        lines.append("| ticker | setup | vehicle | pay/collect | naive POP | conf | last |")
-        lines.append("|---|---|---|---|---:|---:|---:|")
+        lines.append("| ticker | setup | vehicle | pay/collect | naive POP | conf | last | book |")
+        lines.append("|---|---|---|---|---:|---:|---:|---|")
         for row in trades:
+            held = "IN BOOK" if row.get("in_book") else ("held" if row.get("held") else "")
             lines.append(
-                "| **%s** | %s %s | **%s** | %s | %s | %s | %s |"
+                "| **%s** | %s %s | **%s** | %s | %s | %s | %s | %s |"
                 % (
                     row.get("ticker"),
                     row.get("primary") or "",
@@ -328,6 +330,7 @@ def render_board(asof: str, built: dict, include_desk_pick: bool = True) -> str:
                     _pop_cell(row),
                     row.get("opt_conf") if row.get("opt_conf") is not None else "—",
                     fmt(row.get("close")),
+                    held or "—",
                 )
             )
         lines.append("")
@@ -371,10 +374,13 @@ def render_board(asof: str, built: dict, include_desk_pick: bool = True) -> str:
         lines.append("No FIRE names. Valid.")
         lines.append("")
     else:
-        lines.append("| ticker | kind | 1d | rvol | vehicle | pay/collect | naive POP | X |")
-        lines.append("|---|---|---:|---:|---|---|---:|---|")
+        lines.append("| ticker | kind | 1d | rvol | vehicle | pay/collect | board | X |")
+        lines.append("|---|---|---:|---:|---|---|---|---|")
         for row in fire:
             fire_info = row.get("fire") or {}
+            board_state = "%s" % (row.get("action") or "")
+            if row.get("reasons"):
+                board_state += " · " + "; ".join(row.get("reasons") or [])[:40]
             lines.append(
                 "| **%s** | %s | %s | %s | **%s** | %s | %s | %s |"
                 % (
@@ -384,10 +390,18 @@ def render_board(asof: str, built: dict, include_desk_pick: bool = True) -> str:
                     fmt(row.get("rvol"), 1),
                     row.get("choice"),
                     _premium_cell(row) or "—",
-                    _pop_cell(row),
+                    board_state,
                     row.get("x") or "DATA UNAVAILABLE",
                 )
             )
+        lines.append("")
+        lines.append("FIRE names are not auto-TRADE. Parked/IGNORE rows still show the ticket for visibility.")
+        lines.append("")
+    errors = built.get("schwab_chain_errors") or []
+    if errors:
+        lines.extend(["## Schwab chain errors", ""])
+        for err in errors[:12]:
+            lines.append("- **%s**: %s" % (err.get("ticker"), err.get("error")))
         lines.append("")
     xhot = built.get("xhot") or []
     lines.extend(["## X-HOT — conversation first", ""])

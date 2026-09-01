@@ -12,6 +12,6 @@ Job: **every** legal ticket is listed; **CLICK** only if typical win > typical l
 4. **Catalog:** CSP, put credit, call debit, call credit, put debit, iron condor. Tape decides which are allowed. All that pass print.
 5. **Fills:** credit = bid (net = short bid − long ask). Debit = long ask − short bid. No mids. No ORATS theoreticals.
 6. **DTE 25–45.** Earnings date required and after expiry + 3 days. `wksNextErn` is **est**.
-7. **Rank:** `POP (delta)` from Schwab delta, `conf` 0–85 research quality, `ev_proxy` defined-risk EV per lot. Not P(win). Not fat-credit.
+7. **CLICK is two sleeves.** Swing debit: defined-risk EV > 0. Wheel CSP: paid ≥ 8% annualized on cash, 8–15% OTM, |delta| ≤ 0.25. Do **not** score a CSP as crash-to-zero (strike × 100). Defined-risk credits: EV > 0 **or** credit ≥ 18% of width. Not P(win). Not fat-credit.
 8. **Intel** (X, news, SEC, earnings content, macro) may KILL or cut conf. It never writes a strike or fill.
 9. **No orders.**

@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 82.25,
-      "hiPx": 82.48,
+      "clsPx": 82.3863,
+      "hiPx": 82.53,
       "loPx": 82.145,
       "open": 82.47,
-      "stkVolu": 7286401.0,
+      "stkVolu": 37317413.0,
       "ticker": "TLT",
       "tradeDate": "2026-08-31"
     }

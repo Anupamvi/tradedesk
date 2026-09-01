@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 109.38,
-      "hiPx": 110.1,
+      "clsPx": 110.26,
+      "hiPx": 110.57,
       "loPx": 108.5712,
       "open": 108.71,
-      "stkVolu": 2051598.0,
+      "stkVolu": 8791771.0,
       "ticker": "IGV",
       "tradeDate": "2026-08-31"
     }

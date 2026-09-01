@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 178.26,
+      "clsPx": 180.5,
       "hiPx": 179.45,
-      "loPx": 178.22,
+      "loPx": 177.9874,
       "open": 179.01,
-      "stkVolu": 144550.0,
+      "stkVolu": 422716.0,
       "ticker": "GRID",
       "tradeDate": "2026-08-31"
     }

@@ -504,7 +504,8 @@ def attach_evidence(
         "earnings_http": earn_http,
         "http": strike_budget[0] + earn_http,
         "note": (
-            "Same ticker + same setup on cached tape. Options use hist/strikes when cached or under the daily cap. "
+            "Same ticker + same setup on cached tape — not this ticket's P(win). "
+            "Options use hist/strikes when cached or under the daily cap. "
             "Option P&L is delta+theta clamped to defined risk, not a live exit mark. "
             "Not a system win rate. X-HOT is not tested. Does not change today's gates."
         ),

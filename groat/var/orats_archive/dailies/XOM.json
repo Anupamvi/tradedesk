@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 160.075,
+      "clsPx": 161.2,
       "hiPx": 161.59,
-      "loPx": 159.52,
+      "loPx": 158.74,
       "open": 159.94,
-      "stkVolu": 3133640.0,
+      "stkVolu": 18369118.0,
       "ticker": "XOM",
       "tradeDate": "2026-08-31"
     }

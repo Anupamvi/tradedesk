@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 944.45,
+      "clsPx": 943.89,
       "hiPx": 949.3,
-      "loPx": 943.71,
+      "loPx": 940.71,
       "open": 945.19,
-      "stkVolu": 183081.0,
+      "stkVolu": 2393041.0,
       "ticker": "COST",
       "tradeDate": "2026-08-31"
     }

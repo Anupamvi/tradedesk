@@ -23,12 +23,17 @@
     "otm_max": 0.15,
     "ideal_otm": 0.1,
     "min_credit_frac": 0.004,
-    "max_spread_frac_of_credit": 0.35
+    "max_spread_frac_of_credit": 0.35,
+    "click_annualized_min": 0.08,
+    "click_max_abs_delta": 0.25,
+    "click_credit_frac": 0.008,
+    "through_strike_frac": 0.85
   },
   "put_credit": {
     "short_otm_min": 0.08,
     "short_otm_max": 0.15,
-    "min_credit": 0.2
+    "min_credit": 0.2,
+    "considerate_width_min": 0.06
   },
   "call_debit": {
     "long_otm_min": -0.02,
@@ -61,7 +66,9 @@
   },
   "score": {
     "conf_floor": 40,
-    "conf_max": 85
+    "conf_max": 85,
+    "credit_width_min": 0.18,
+    "credit_pop_min": 0.7
   }
 }
 ```

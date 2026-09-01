@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 98.655,
-      "hiPx": 100.2,
-      "loPx": 98.55,
+      "clsPx": 100.29,
+      "hiPx": 100.433,
+      "loPx": 98.5301,
       "open": 98.58,
-      "stkVolu": 376653.0,
+      "stkVolu": 1698122.0,
       "ticker": "CIBR",
       "tradeDate": "2026-08-31"
     }

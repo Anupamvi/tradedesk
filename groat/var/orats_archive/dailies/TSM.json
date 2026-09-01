@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 420.92,
+      "clsPx": 416.4,
       "hiPx": 423.8,
-      "loPx": 417.165,
+      "loPx": 414.6001,
       "open": 417.23,
-      "stkVolu": 2284468.0,
+      "stkVolu": 6747964.0,
       "ticker": "TSM",
       "tradeDate": "2026-08-31"
     }

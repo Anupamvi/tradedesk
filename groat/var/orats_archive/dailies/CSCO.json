@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 109.75,
-      "hiPx": 111.36,
+      "clsPx": 110.65,
+      "hiPx": 111.38,
       "loPx": 109.61,
       "open": 110.28,
-      "stkVolu": 1963036.0,
+      "stkVolu": 20845396.0,
       "ticker": "CSCO",
       "tradeDate": "2026-08-31"
     }

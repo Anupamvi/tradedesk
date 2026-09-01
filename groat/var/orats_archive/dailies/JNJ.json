@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 266.38,
+      "clsPx": 266.4,
       "hiPx": 267.77,
-      "loPx": 265.5675,
+      "loPx": 265.17,
       "open": 267.125,
-      "stkVolu": 1034919.0,
+      "stkVolu": 7900418.0,
       "ticker": "JNJ",
       "tradeDate": "2026-08-31"
     }

@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 291.2,
-      "hiPx": 291.3,
+      "clsPx": 293.385,
+      "hiPx": 294.13,
       "loPx": 286.26,
       "open": 287.65,
-      "stkVolu": 492634.0,
+      "stkVolu": 5214252.0,
       "ticker": "ADBE",
       "tradeDate": "2026-08-31"
     }

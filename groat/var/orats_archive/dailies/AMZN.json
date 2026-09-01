@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 260.11,
+      "clsPx": 260.2015,
       "hiPx": 264.36,
-      "loPx": 259.716,
+      "loPx": 257.12,
       "open": 263.825,
-      "stkVolu": 8074174.0,
+      "stkVolu": 46089422.0,
       "ticker": "AMZN",
       "tradeDate": "2026-08-31"
     }

@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 56.805,
+      "clsPx": 56.8,
       "hiPx": 57.37,
-      "loPx": 56.57,
+      "loPx": 56.5421,
       "open": 57.11,
-      "stkVolu": 70782.0,
+      "stkVolu": 288309.0,
       "ticker": "URNM",
       "tradeDate": "2026-08-31"
     }

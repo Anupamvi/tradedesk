@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 315.36,
+      "clsPx": 316.9961,
       "hiPx": 321.235,
-      "loPx": 315.35,
+      "loPx": 312.8,
       "open": 319.6,
-      "stkVolu": 6595056.0,
+      "stkVolu": 41242724.0,
       "ticker": "AAPL",
       "tradeDate": "2026-08-31"
     }

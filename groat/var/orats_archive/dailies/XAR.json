@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 255.55,
+      "clsPx": 256.0,
       "hiPx": 260.03,
-      "loPx": 255.51,
+      "loPx": 255.46,
       "open": 260.0,
-      "stkVolu": 55802.0,
+      "stkVolu": 237846.0,
       "ticker": "XAR",
       "tradeDate": "2026-08-31"
     }

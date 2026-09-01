@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 340.095,
-      "hiPx": 341.4503,
+      "clsPx": 339.5,
+      "hiPx": 342.375,
       "loPx": 336.22,
       "open": 336.22,
-      "stkVolu": 119966.0,
+      "stkVolu": 1607104.0,
       "ticker": "CDNS",
       "tradeDate": "2026-08-31"
     }

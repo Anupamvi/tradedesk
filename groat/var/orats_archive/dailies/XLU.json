@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 41.935,
-      "hiPx": 42.08,
+      "clsPx": 42.32,
+      "hiPx": 42.395,
       "loPx": 41.86,
       "open": 42.0,
-      "stkVolu": 7032399.0,
+      "stkVolu": 31626919.0,
       "ticker": "XLU",
       "tradeDate": "2026-08-31"
     }

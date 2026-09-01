@@ -32,6 +32,8 @@ from groat.regime import classify as classify_regime
 from groat.rotation import group_status_map, name_group_row, rank_groups
 from groat.confidence import options_confidence
 from groat.setups import classify_setups
+from groat.book import book_index, same_ticket, schwab_held_index
+from groat.chainfill import overlay_strikes
 from groat.structure import choose
 from groat.technicals import snapshot
 from groat.thesis import build_thesis
@@ -304,7 +306,11 @@ def build_full(
     if vix_bars is not None:
         bars_map[VIX_SYMBOL] = vix_bars
     elif bars_by_ticker is None:
-        vix_pack = ensure_bars(VIX_SYMBOL, token, getter=getter, max_requests=max_requests, asof=asof, live=live)
+        vix_pack = {"bars": []}
+        for vix_sym in (VIX_SYMBOL, "VIX", "$VIX"):
+            vix_pack = ensure_bars(vix_sym, token, getter=getter, max_requests=max_requests, asof=asof, live=live)
+            if vix_pack.get("bars"):
+                break
         tapes[VIX_SYMBOL] = vix_pack
         bars_map[VIX_SYMBOL] = vix_pack.get("bars") or []
 
@@ -349,8 +355,8 @@ def build_full(
         return (1 if setup.get("primary") else 0, hits, rs_n)
 
     prelim.sort(key=prelim_key, reverse=True)
-    option_names = [n for n, setup, snap in prelim if setup.get("primary") and setup.get("direction") in ("bullish", "bearish")][
-        :20
+    option_names = [
+        n for n, setup, snap in prelim if setup.get("primary") and setup.get("direction") in ("bullish", "bearish")
     ]
     for name, setup, snap in prelim:
         if (setup.get("fire") or {}).get("kind") and name not in option_names:
@@ -358,9 +364,10 @@ def build_full(
     for ticker in hot_map:
         if ticker not in option_names:
             option_names.append(ticker)
-    option_names = option_names[:28]
+    option_names = option_names[:40]
 
     strikes = dict(strikes_by_ticker or {})
+    chain_errors: List[dict] = []
     if strikes_by_ticker is None and option_names and token:
         pack_s = fetch_strikes(
             asof,
@@ -376,6 +383,8 @@ def build_full(
         orats_http += int(pack_s.get("http") or 0)
         if pack_s.get("error") and not orats_error:
             orats_error = pack_s.get("error")
+        if live or bars_by_ticker is None:
+            strikes = overlay_strikes(asof, option_names, strikes, errors=chain_errors)
 
     if use_web is None:
         use_web = bars_by_ticker is None
@@ -389,6 +398,16 @@ def build_full(
     if use_web:
         for name in option_names:
             web_e[name] = web_resolve(name, asof, use_web=True)
+
+    held = book_index()
+    schwab_held = {}
+    if live or bars_by_ticker is None:
+        try:
+            from groat.schwab import positions_all
+
+            schwab_held = schwab_held_index(positions_all())
+        except Exception:
+            schwab_held = {}
 
     earn_map = {}
     for name in names:
@@ -417,6 +436,46 @@ def build_full(
             earn=earn_map.get(name),
             hist_rows=hist_e.get(name),
         )
+        book_pos = held.get(name) or {}
+        schwab_pos = schwab_held.get(name) or {}
+        row["in_book"] = bool(book_pos.get("in_book"))
+        row["held_schwab"] = bool(schwab_pos.get("held_schwab"))
+        row["held"] = bool(row["in_book"] or row["held_schwab"])
+        notes = []
+        picked = row.get("picked") if isinstance(row.get("picked"), dict) else {}
+        row["same_ticket"] = bool(row["in_book"] and same_ticket(book_pos, picked))
+        if row["in_book"]:
+            open_line = str(book_pos.get("structure") or "")
+            if book_pos.get("entry") is not None:
+                open_line += " @ %s" % book_pos.get("entry")
+            if book_pos.get("expiry"):
+                open_line += " exp %s" % book_pos.get("expiry")
+            if row["same_ticket"]:
+                notes.append("IN BOOK — this is the open ticket (%s). Do not add." % open_line.strip(" —"))
+            else:
+                notes.append(
+                    "IN BOOK open: %s. Board structure is different — visibility only, not a roll/add."
+                    % (open_line or "see book.json")
+                )
+        if row["held_schwab"]:
+            legs = schwab_pos.get("legs") or []
+            bits = []
+            for leg in legs[:4]:
+                if leg.get("right"):
+                    bits.append(
+                        "%s %s %s"
+                        % (str(leg.get("right") or "").upper(), leg.get("expiry") or "", leg.get("strike") or "")
+                    )
+                elif leg.get("symbol"):
+                    bits.append(str(leg.get("symbol")))
+            notes.append("Schwab holds: %s" % (", ".join(bits) if bits else "this underlying"))
+        row["held_note"] = "; ".join(notes)
+        if row["held_note"]:
+            thesis = dict(row.get("thesis") or {})
+            paras = list(thesis.get("paragraphs") or [])
+            paras.append(row["held_note"] + " Shown for visibility — do not add a second lot unless you have a scale plan.")
+            thesis["paragraphs"] = paras
+            row["thesis"] = thesis
         candidates.append(row)
         if row["action"] == "IGNORE":
             rejections.append(
@@ -518,6 +577,7 @@ def build_full(
         "option_names": option_names,
         "snaps": snaps,
         "cores_n": len(cores),
+        "schwab_chain_errors": chain_errors,
     }
 
 

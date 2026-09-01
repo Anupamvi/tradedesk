@@ -1,0 +1,64 @@
+{
+  "data": [
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-04-25",
+      "ticker": "GEV",
+      "updatedAt": "2024-05-03T23:17:03Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-07-24",
+      "ticker": "GEV",
+      "updatedAt": "2024-08-02T23:17:09Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-10-23",
+      "ticker": "GEV",
+      "updatedAt": "2024-11-02T00:02:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-01-22",
+      "ticker": "GEV",
+      "updatedAt": "2025-02-01T03:42:13Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-04-23",
+      "ticker": "GEV",
+      "updatedAt": "2025-05-03T02:41:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-07-23",
+      "ticker": "GEV",
+      "updatedAt": "2025-08-02T02:41:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-10-22",
+      "ticker": "GEV",
+      "updatedAt": "2025-11-01T02:41:03Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-01-28",
+      "ticker": "GEV",
+      "updatedAt": "2026-02-07T03:41:09Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-04-22",
+      "ticker": "GEV",
+      "updatedAt": "2026-05-02T02:41:38Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-07-22",
+      "ticker": "GEV",
+      "updatedAt": "2026-07-31T22:01:28Z"
+    }
+  ]
+}

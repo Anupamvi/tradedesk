@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 355.9,
+      "clsPx": 356.15,
       "hiPx": 357.77,
-      "loPx": 354.79,
+      "loPx": 354.7701,
       "open": 355.9,
-      "stkVolu": 1045427.0,
+      "stkVolu": 7964106.0,
       "ticker": "JPM",
       "tradeDate": "2026-08-31"
     }

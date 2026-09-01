@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 111.41,
+      "clsPx": 112.0,
       "hiPx": 112.59,
       "loPx": 111.25,
       "open": 112.48,
-      "stkVolu": 543974.0,
+      "stkVolu": 3317167.0,
       "ticker": "XLC",
       "tradeDate": "2026-08-31"
     }

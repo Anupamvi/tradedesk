@@ -8,8 +8,34 @@ from xhigh.config import CONTRACT_MULTIPLIER
 from xhigh.num import to_float
 
 
-CREDIT = ("csp", "put_credit", "call_credit", "iron_condor")
+WHEEL = ("csp",)
+DEFINED_CREDIT = ("put_credit", "call_credit", "iron_condor")
+CREDIT = WHEEL + DEFINED_CREDIT
 DEBIT = ("call_debit", "put_debit")
+
+
+def csp_annualized(idea: dict) -> Optional[float]:
+    credit = to_float(idea.get("credit"))
+    strike = to_float(idea.get("strike"))
+    dte = to_float(idea.get("dte"))
+    if credit is None or strike is None or strike <= 0 or dte is None or dte <= 0:
+        return None
+    return (credit / strike) * (365.0 / dte)
+
+
+def credit_over_width(idea: dict) -> Optional[float]:
+    credit = to_float(idea.get("credit"))
+    width = to_float(idea.get("width"))
+    if credit is None or width is None or width <= 0:
+        return None
+    return credit / width
+
+
+def short_abs_delta(idea: dict) -> Optional[float]:
+    d = to_float(idea.get("delta") or idea.get("short_delta") or idea.get("put_short_delta"))
+    if d is None:
+        return None
+    return abs(d)
 
 
 def pop_delta(idea: dict) -> Optional[float]:
@@ -44,10 +70,7 @@ def max_loss_per_share(idea: dict) -> Optional[float]:
     credit = to_float(idea.get("credit"))
     debit = to_float(idea.get("debit"))
     if structure == "csp":
-        strike = to_float(idea.get("strike"))
-        if strike is None:
-            return None
-        return strike
+        return None
     if structure in ("put_credit", "call_credit", "iron_condor"):
         width = to_float(idea.get("width"))
         if width is None or credit is None:
@@ -62,10 +85,15 @@ def ev_proxy(idea: dict, pop: Optional[float]) -> Optional[float]:
     if pop is None:
         return None
     structure = idea.get("structure")
+    if structure == "csp":
+        ann = csp_annualized(idea)
+        if ann is None:
+            return None
+        return round(ann * 100.0, 2)
     ml = max_loss_per_share(idea)
     if ml is None:
         return None
-    if structure in CREDIT:
+    if structure in DEFINED_CREDIT:
         credit = to_float(idea.get("credit"))
         if credit is None:
             return None

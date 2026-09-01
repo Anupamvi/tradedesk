@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 148.85,
-      "hiPx": 150.14,
+      "clsPx": 149.3202,
+      "hiPx": 151.26,
       "loPx": 147.75,
       "open": 149.31,
-      "stkVolu": 3001901.0,
+      "stkVolu": 16118904.0,
       "ticker": "ORCL",
       "tradeDate": "2026-08-31"
     }

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections import Counter
 from typing import Dict, List, Optional, Sequence
 
 from groat.config import (
@@ -17,6 +18,7 @@ from groat.config import (
     HOLD_SESSIONS,
     MIN_OI,
     MIN_OI_SHORT,
+    QUOTE_WIDTH_ABS,
     RISK_PCT,
     RR_MIN,
     RR_PREFER,
@@ -50,22 +52,59 @@ def parse_strike(row: dict) -> Optional[dict]:
         "put_oi": to_float(row.get("putOpenInterest")),
         "put_vol": to_float(row.get("putVolume")),
         "smv": to_float(row.get("smvVol")),
+        "quote_source": str(row.get("quoteSource") or "") or None,
+        "quote_asof": row.get("quoteAsof") or row.get("quote_asof"),
     }
 
 
-def quote_ok(bid, ask, oi, min_oi=MIN_OI) -> bool:
-    if bid is None or ask is None or ask <= 0 or bid <= 0:
-        return False
-    if ask < bid:
-        return False
+def quote_fail(bid, ask, oi, min_oi=MIN_OI, quote_source=None) -> Optional[str]:
+    if bid is None or ask is None or ask <= 0 or bid <= 0 or ask < bid:
+        return "no_quote"
     mid = (bid + ask) / 2.0
     width = ask - bid
-    cap = quote_width_cap(mid)
+    src = str(quote_source or "")
+    if src.startswith("schwab"):
+        cap = max(QUOTE_WIDTH_ABS, 0.20 * mid)
+    else:
+        cap = quote_width_cap(mid)
     if cap is None or round(width, 2) > round(cap, 2):
-        return False
+        return "wide_quote"
     if oi is None or oi < min_oi:
-        return False
-    return True
+        return "thin_oi"
+    return None
+
+
+def quote_ok(bid, ask, oi, min_oi=MIN_OI, quote_source=None) -> bool:
+    return quote_fail(bid, ask, oi, min_oi, quote_source) is None
+
+
+def _fail_payload(kills: Counter) -> dict:
+    labels = {
+        "no_quote": "missing bid/ask",
+        "wide_quote": "quotes too wide for a conservative fill",
+        "thin_oi": "open interest below minimum",
+        "size_zero": "debit too large to size 1 lot at 1% of the 50k account",
+        "rr_below_min": "debit R/R below 1.2",
+        "debit_fat": "debit takes too much of the spread width",
+        "lottery_otm": "long strike too far OTM / net delta too small",
+        "theta_kill": "hold-window theta too large vs debit",
+        "earnings": "earnings inside expiry/hold",
+    }
+    if not kills:
+        return {"ok": False, "reason": "no liquid structure in 21-75 DTE"}
+    key = kills.most_common(1)[0][0]
+    return {"ok": False, "reason": labels.get(key, key)}
+
+
+def _iv_flags(vol: dict) -> tuple:
+    vrp = to_float(vol.get("vrp"))
+    iv = to_float(vol.get("iv30"))
+    fcst = to_float(vol.get("forecast_20d"))
+    if vrp is not None:
+        return vrp >= 4.0, vrp <= -2.0
+    rich = iv is not None and fcst is not None and iv > fcst + 2
+    cheap = iv is not None and fcst is not None and iv + 1 < fcst
+    return rich, cheap
 
 
 def _mid(bid, ask) -> Optional[float]:
@@ -203,7 +242,7 @@ def _closest(rows: List[dict], target_delta: float, side: str) -> Optional[dict]
         bid = row.get("call_bid") if side == "call" else row.get("put_bid")
         ask = row.get("call_ask") if side == "call" else row.get("put_ask")
         oi = row.get("call_oi") if side == "call" else row.get("put_oi")
-        if not quote_ok(bid, ask, oi, MIN_OI):
+        if not quote_ok(bid, ask, oi, MIN_OI, row.get("quote_source")):
             continue
         if best is None or gap < best_gap:
             best = row
@@ -214,17 +253,20 @@ def _closest(rows: List[dict], target_delta: float, side: str) -> Optional[dict]
 def long_option(rows: Sequence[dict], direction: str, earnings: dict) -> Optional[dict]:
     chain = _by_expiry(rows)
     if not chain:
-        return None
+        return {"ok": False, "reason": "option chain empty in 21-75 DTE"}
     side = "call" if direction == "bullish" else "put"
     ranked = []
+    kills = Counter()
     for expiry, legs in chain.items():
         if _earnings_blocks(expiry, earnings):
+            kills["earnings"] += 1
             continue
         dte = to_float(legs[0].get("dte"))
         pref_lo, pref_hi = DTE_LONG_PREF
         pref = 0 if dte is not None and pref_lo <= dte <= pref_hi else 1
         pick = _closest(legs, 0.55, side)
         if not pick:
+            kills["wide_quote"] += 1
             continue
         ask = pick["call_ask"] if side == "call" else pick["put_ask"]
         bid = pick["call_bid"] if side == "call" else pick["put_bid"]
@@ -232,14 +274,17 @@ def long_option(rows: Sequence[dict], direction: str, earnings: dict) -> Optiona
         theta = to_float(pick.get("theta")) or 0.0
         hold_theta = abs(theta) * HOLD_SESSIONS
         if debit and hold_theta > 0.40 * debit:
+            kills["theta_kill"] += 1
             continue
         delta = to_float(pick.get("delta"))
         if side == "put" and delta is not None:
             delta = delta - 1.0
         if delta is not None and abs(delta) < 0.35:
+            kills["lottery_otm"] += 1
             continue
         contracts = int(math.floor((ACCOUNT_DOLLARS * RISK_PCT) / (debit * CONTRACT_MULTIPLIER))) if debit else 0
         if contracts < 1:
+            kills["size_zero"] += 1
             continue
         target_mult = 2.0
         rr = (target_mult * debit - debit) / debit if debit else 0
@@ -273,7 +318,9 @@ def long_option(rows: Sequence[dict], direction: str, earnings: dict) -> Optiona
                     "premium_side": "debit",
                     "naive_pop": naive_pop_long(delta)[0],
                     "naive_pop_note": naive_pop_long(delta)[1],
-                    "fill_assumption": "ask (never mid)",
+                    "fill_assumption": "ask (never mid)"
+                    + (" · %s" % pick.get("quote_source") if pick.get("quote_source") else ""),
+                    "fill_asof": pick.get("quote_asof"),
                     "legs": "BUY %s %s %s %s @ %.2f ask"
                     % (contracts, expiry, pick["strike"], side[0].upper(), debit),
                     "reason": "cheap-to-fair vol directional with 21-75 DTE",
@@ -281,7 +328,7 @@ def long_option(rows: Sequence[dict], direction: str, earnings: dict) -> Optiona
             )
         )
     if not ranked:
-        return None
+        return _fail_payload(kills)
     ranked.sort(key=lambda x: (x[0], x[1]))
     return ranked[0][2]
 
@@ -297,8 +344,12 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
     chain = _by_expiry(rows)
     side = "call" if direction == "bullish" else "put"
     ranked = []
+    kills = Counter()
+    if not chain:
+        return {"ok": False, "reason": "option chain empty in 21-75 DTE"}
     for expiry, legs in chain.items():
         if _earnings_blocks(expiry, earnings):
+            kills["earnings"] += 1
             continue
         dte = to_float(legs[0].get("dte"))
         pref_lo, pref_hi = DTE_LONG_PREF
@@ -313,7 +364,9 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
             long_ask = long_leg["call_ask"] if side == "call" else long_leg["put_ask"]
             long_bid = long_leg["call_bid"] if side == "call" else long_leg["put_bid"]
             long_oi = long_leg["call_oi"] if side == "call" else long_leg["put_oi"]
-            if not quote_ok(long_bid, long_ask, long_oi, MIN_OI):
+            fail = quote_fail(long_bid, long_ask, long_oi, MIN_OI, long_leg.get("quote_source"))
+            if fail:
+                kills[fail] += 1
                 continue
             for short_leg in legs:
                 gap = abs(short_leg["strike"] - long_leg["strike"])
@@ -326,18 +379,37 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
                 short_bid = short_leg["call_bid"] if side == "call" else short_leg["put_bid"]
                 short_ask = short_leg["call_ask"] if side == "call" else short_leg["put_ask"]
                 short_oi = short_leg["call_oi"] if side == "call" else short_leg["put_oi"]
-                if not quote_ok(short_bid, short_ask, short_oi, MIN_OI_SHORT):
+                fail = quote_fail(short_bid, short_ask, short_oi, MIN_OI_SHORT, short_leg.get("quote_source"))
+                if fail:
+                    kills[fail] += 1
                     continue
                 if long_ask is None or short_bid is None:
+                    kills["no_quote"] += 1
                     continue
                 debit = long_ask - short_bid
                 width = gap
                 if debit <= 0 or width <= 0 or debit >= 0.70 * width:
+                    kills["debit_fat"] += 1
                     continue
                 max_gain = width - debit
                 rr = max_gain / debit if debit else 0
                 contracts = int(math.floor((ACCOUNT_DOLLARS * RISK_PCT) / (debit * CONTRACT_MULTIPLIER)))
-                if contracts < 1 or rr < RR_MIN:
+                if contracts < 1:
+                    kills["size_zero"] += 1
+                    continue
+                if rr < RR_MIN:
+                    kills["rr_below_min"] += 1
+                    continue
+                net_d = abs((to_float(long_leg.get("delta")) or 0) - (to_float(short_leg.get("delta")) or 0))
+                spot = to_float(long_leg.get("spot"))
+                otm = None
+                if spot and spot > 0:
+                    if side == "call":
+                        otm = (long_leg["strike"] / spot) - 1.0
+                    else:
+                        otm = 1.0 - (long_leg["strike"] / spot)
+                if otm is not None and otm > 0.06 and (abs(use) < 0.38 or net_d < 0.12):
+                    kills["lottery_otm"] += 1
                     continue
                 pop, pop_note = naive_pop_debit_vertical(long_leg, short_leg, debit, side)
                 if side == "call":
@@ -372,25 +444,40 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
                     "breakeven": breakeven,
                     "naive_pop": pop,
                     "naive_pop_note": pop_note,
-                    "fill_assumption": "long ask minus short bid (never mid)",
+                    "fill_assumption": "long ask minus short bid (never mid)"
+                    + (
+                        " · %s" % (long_leg.get("quote_source") or short_leg.get("quote_source"))
+                        if (long_leg.get("quote_source") or short_leg.get("quote_source"))
+                        else ""
+                    ),
+                    "fill_asof": long_leg.get("quote_asof") or short_leg.get("quote_asof"),
                     "legs": "BUY %s %s / SELL %s %s %s"
                     % (long_leg["strike"], side, short_leg["strike"], side, expiry),
                     "reason": "defined-risk directional; better than naked long when IV is not cheap",
                 }
-                long_d = abs(use)
+                quality = 0
+                if otm is not None and otm > 0.05:
+                    quality += 1
+                if otm is not None and otm > 0.08:
+                    quality += 2
+                if net_d < 0.12:
+                    quality += 2
+                if abs(use) < 0.40:
+                    quality += 1
                 ranked.append(
                     (
                         pref,
+                        quality,
                         0 if rr >= RR_PREFER else 1,
-                        abs(long_d - 0.45),
+                        abs(abs(use) - 0.45),
                         -rr,
                         cand,
                     )
                 )
     if not ranked:
-        return None
-    ranked.sort(key=lambda x: (x[0], x[1], x[2], x[3]))
-    return ranked[0][4]
+        return _fail_payload(kills)
+    ranked.sort(key=lambda x: (x[0], x[1], x[2], x[3], x[4]))
+    return ranked[0][5]
 
 
 def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich: bool) -> Optional[dict]:
@@ -423,7 +510,7 @@ def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich:
             short_ask = short["put_ask"] if side == "put" else short["call_ask"]
             short_oi = short["put_oi"] if side == "put" else short["call_oi"]
             long_oi = long_leg["put_oi"] if side == "put" else long_leg["call_oi"]
-            if not quote_ok(short_bid, short_ask, short_oi, MIN_OI_SHORT):
+            if not quote_ok(short_bid, short_ask, short_oi, MIN_OI_SHORT, short.get("quote_source")):
                 continue
             if long_ask is None:
                 continue
@@ -465,7 +552,12 @@ def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich:
                 "theta": short.get("theta"),
                 "vega": short.get("vega"),
                 "gamma": short.get("gamma"),
-                "fill_assumption": "short bid minus long ask (never mid)",
+                "fill_assumption": "short bid minus long ask (never mid)"
+                + (
+                    " · %s" % (short.get("quote_source") or long_leg.get("quote_source"))
+                    if (short.get("quote_source") or long_leg.get("quote_source"))
+                    else ""
+                ),
                 "legs": "SELL %s %s / BUY %s %s %s" % (short["strike"], side, long_leg["strike"], side, expiry),
                 "reason": "IV rich vs realized; defined-risk short premium. R/R is credit/width, not 2:1 directional.",
             }
@@ -546,11 +638,9 @@ def choose(
 
     iv = to_float(vol.get("iv30"))
     hv = to_float(vol.get("hv20"))
-    fcst = to_float(vol.get("forecast_20d"))
     vrp = to_float(vol.get("vrp"))
     vol_missing = iv is None or hv is None
-    iv_rich = (vrp is not None and vrp >= 4.0) or (iv is not None and fcst is not None and iv > fcst + 2)
-    iv_cheap = (vrp is not None and vrp <= -2.0) or (iv is not None and fcst is not None and iv + 1 < fcst)
+    iv_rich, iv_cheap = _iv_flags(vol)
 
     options_block = None
     if not earnings.get("usable") and earnings.get("source") != "exempt":
@@ -574,7 +664,7 @@ def choose(
             reviews.append(_review(name, "REJECT", options_block))
             continue
         cand = fn()
-        priced[name] = cand
+        priced[name] = cand if cand and cand.get("ok") else None
         if aligned != direction:
             reviews.append(
                 _review(
@@ -627,13 +717,15 @@ def choose(
 
     choice = "NO TRADE"
     picked = None
-    if best_opt and best_opt.get("ok") and (not stock.get("ok") or _options_better(best_opt, stock, iv_cheap, iv_rich)):
+    if best_opt and best_opt.get("ok"):
         choice = "OPTIONS"
         picked = best_opt
         why.append(
             "shortlisted %s after reviewing stock, long call/put, debit spreads, and credit spreads"
             % (best_opt.get("instrument") or "options")
         )
+        if stock.get("ok"):
+            why.append("stock also clears — options are the working ticket; stock is the fallback")
     elif stock.get("ok"):
         choice = "STOCK"
         picked = stock
@@ -656,18 +748,3 @@ def choose(
         "vol_missing": vol_missing,
         "options_block": options_block,
     }
-
-
-def _options_better(opt: dict, stock: dict, iv_cheap: bool, iv_rich: bool) -> bool:
-    opt_rr = to_float(opt.get("rr")) or 0
-    stk_rr = to_float(stock.get("rr")) or 0
-    inst = str(opt.get("instrument") or "")
-    if inst.endswith("credit_spread"):
-        return iv_rich and stk_rr < RR_PREFER
-    if "long_" in inst:
-        return iv_cheap and opt_rr >= RR_MIN
-    if "debit_" in inst:
-        if iv_cheap and opt_rr >= RR_MIN:
-            return True
-        return opt_rr >= stk_rr or (opt.get("max_loss") or 0) < (stock.get("risk_dollars") or 0) * 0.8
-    return opt_rr > stk_rr

@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 178.85,
-      "hiPx": 179.8,
+      "clsPx": 186.8394,
+      "hiPx": 189.9474,
       "loPx": 176.71,
       "open": 178.51,
-      "stkVolu": 1369273.0,
+      "stkVolu": 10710613.0,
       "ticker": "COIN",
       "tradeDate": "2026-08-31"
     }

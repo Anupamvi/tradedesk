@@ -271,6 +271,7 @@ def build_full(
             skips.append({"ticker": name, "reason": "no_geometry"})
             continue
         for idea in ideas:
+            idea["low_126"] = snap.get("low_126")
             if not _legal(idea, last, gates):
                 skips.append({"ticker": name, "reason": "illegal_%s" % idea.get("structure")})
                 continue

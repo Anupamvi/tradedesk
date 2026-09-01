@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 602.235,
-      "hiPx": 608.1,
+      "clsPx": 611.5553,
+      "hiPx": 608.87,
       "loPx": 600.85,
       "open": 601.73,
-      "stkVolu": 114915.0,
+      "stkVolu": 1388458.0,
       "ticker": "PWR",
       "tradeDate": "2026-08-31"
     }

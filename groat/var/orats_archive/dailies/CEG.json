@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 277.12,
-      "hiPx": 279.0,
-      "loPx": 274.51,
+      "clsPx": 275.5394,
+      "hiPx": 279.44,
+      "loPx": 274.06,
       "open": 274.67,
-      "stkVolu": 346889.0,
+      "stkVolu": 2575285.0,
       "ticker": "CEG",
       "tradeDate": "2026-08-31"
     }

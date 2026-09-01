@@ -52,7 +52,7 @@ Intel never creates a trade or changes last/bid/ask.
 
 ## Disprove (CLICK rows only)
 
-KILL / SURVIVE / INSUFFICIENT DATA. New CSP: “Would I still want 100 shares 8–15% lower?” if yes → SURVIVE. Missing earnings date on an option → KILL the option. Missing delta → not CLICK.
+KILL / SURVIVE / INSUFFICIENT DATA. Naked CSP only if you want the shares at the strike **and** would hold if cut in half in 6 months. If the 6-month low already traded through the strike, the desk should recommend a **put credit** (defined-risk), not a naked CSP. Missing earnings date on an option → KILL the option. Missing delta → not CLICK.
 
 ## Reply
 

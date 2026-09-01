@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 555.79,
+      "clsPx": 555.75,
       "hiPx": 558.43,
-      "loPx": 552.99,
+      "loPx": 552.79,
       "open": 554.38,
-      "stkVolu": 1227461.0,
+      "stkVolu": 4325053.0,
       "ticker": "SMH",
       "tradeDate": "2026-08-31"
     }

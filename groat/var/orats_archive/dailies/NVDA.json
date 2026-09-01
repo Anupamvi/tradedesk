@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 220.1098,
-      "hiPx": 220.37,
+      "clsPx": 220.27,
+      "hiPx": 221.3,
       "loPx": 216.21,
       "open": 218.87,
-      "stkVolu": 31599262.0,
+      "stkVolu": 124702660.0,
       "ticker": "NVDA",
       "tradeDate": "2026-08-31"
     }

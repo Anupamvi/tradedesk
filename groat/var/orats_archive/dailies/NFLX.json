@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 80.975,
-      "hiPx": 81.51,
+      "clsPx": 81.1,
+      "hiPx": 81.73,
       "loPx": 80.65,
       "open": 81.0,
-      "stkVolu": 3386903.0,
+      "stkVolu": 30740806.0,
       "ticker": "NFLX",
       "tradeDate": "2026-08-31"
     }

@@ -1,7 +1,7 @@
 import unittest
 
 from groat.config import DTE_MAX, DTE_MIN, STRIKE_DTE, quote_width_cap
-from groat.structure import choose, debit_spread, quote_ok, stock_plan
+from groat.structure import _iv_flags, choose, debit_spread, quote_ok, stock_plan
 from groat.technicals import snapshot
 from tests.barsutil import trend_bars
 
@@ -118,6 +118,49 @@ class TestStructure(unittest.TestCase):
         out = choose(snap, "bullish", vol, strikes, earn, setup={"primary": "E", "chase": False})
         self.assertEqual(out["choice"], "OPTIONS")
         self.assertEqual(out["options"]["instrument"], "debit_call_spread")
+
+    def test_passed_debit_is_the_ticket_even_when_iv_is_fair(self):
+        spot = 185.0
+        earn = {
+            "usable": True,
+            "source": "orats.nextErn",
+            "overlaps_hold": False,
+            "date": "2026-12-01",
+        }
+        strikes = [
+            _strike(dte=45, expiry="2026-10-16", strike=185, delta=0.50, bid=7.7, ask=7.9, oi=800, spot=spot),
+            _strike(dte=45, expiry="2026-10-16", strike=190, delta=0.40, bid=4.8, ask=5.0, oi=600, spot=spot),
+            _strike(dte=45, expiry="2026-10-16", strike=195, delta=0.30, bid=3.3, ask=3.5, oi=400, spot=spot),
+        ]
+        bars = trend_bars(220, end="2026-08-26")
+        snap = snapshot(bars, "2026-08-26")
+        vol = {"iv30": 28.0, "hv20": 26.0, "vrp": 2.0, "forecast_20d": 26.0}
+        out = choose(snap, "bullish", vol, strikes, earn, setup={"primary": "E", "chase": False})
+        self.assertEqual(out["choice"], "OPTIONS")
+        self.assertIsNotNone(out["options"].get("target_debit"))
+
+    def test_iv_flags_vrp_is_xor(self):
+        rich, cheap = _iv_flags({"vrp": -12.1, "iv30": 43.4, "forecast_20d": 39.9})
+        self.assertFalse(rich)
+        self.assertTrue(cheap)
+        rich, cheap = _iv_flags({"vrp": 5.0, "iv30": 20.0, "forecast_20d": 30.0})
+        self.assertTrue(rich)
+        self.assertFalse(cheap)
+        rich, cheap = _iv_flags({"vrp": 1.0, "iv30": 24.0, "forecast_20d": 23.0})
+        self.assertFalse(rich)
+        self.assertFalse(cheap)
+
+    def test_lottery_otm_debit_is_rejected(self):
+        spot = 147.0
+        earn = {"usable": True, "source": "exempt", "overlaps_hold": False, "date": None}
+        far = [
+            _strike(dte=45, expiry="2026-10-16", strike=160, delta=0.33, bid=1.4, ask=1.6, oi=400, spot=spot),
+            _strike(dte=45, expiry="2026-10-16", strike=165, delta=0.26, bid=0.8, ask=1.0, oi=400, spot=spot),
+        ]
+        out = debit_spread(far, "bullish", earn)
+        self.assertTrue(out)
+        self.assertFalse(out.get("ok"))
+        self.assertIn("OTM", out.get("reason") or "")
 
 
 if __name__ == "__main__":

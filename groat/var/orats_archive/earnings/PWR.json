@@ -1,0 +1,694 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-03-09",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-05-07",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-08-10",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-11-10",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-02-25",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-05-11",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-08-05",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-11-04",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-02-24",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-05-04",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-08-02",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-11-01",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-02-22",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-05-02",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-08-01",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-11-06",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-02-14",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-05-08",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-08-13",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-11-11",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-02-27",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-05-06",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-08-06",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-11-13",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-02-26",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-05-05",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-08-06",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-11-03",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-03-10",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-05-05",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-08-04",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-11-04",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-02-23",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-05-04",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-08-02",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2006-11-02",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-02-22",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-05-03",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-08-02",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-11-08",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-02-21",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-05-07",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-08-06",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-11-05",
+      "ticker": "PWR",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-02-24",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-05-06",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-08-05",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-11-04",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-02-22",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-05-05",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-08-04",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-11-03",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-02-23",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-05-04",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-08-03",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-11-02",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-02-22",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-05-03",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-08-02",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-10-31",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-02-21",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-05-02",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-08-01",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-10-31",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-02-20",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-05-01",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-07-31",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-11-05",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-02-19",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-04-30",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-08-05",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-11-05",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-02-25",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-05-05",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-08-04",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-11-03",
+      "ticker": "PWR",
+      "updatedAt": "2017-10-11T19:07:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-02-21",
+      "ticker": "PWR",
+      "updatedAt": "2018-11-12T17:08:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-05-04",
+      "ticker": "PWR",
+      "updatedAt": "2018-11-12T17:08:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-08-03",
+      "ticker": "PWR",
+      "updatedAt": "2018-11-12T17:08:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-11-02",
+      "ticker": "PWR",
+      "updatedAt": "2018-11-12T17:08:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-02-22",
+      "ticker": "PWR",
+      "updatedAt": "2018-11-12T17:08:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-05-03",
+      "ticker": "PWR",
+      "updatedAt": "2018-11-12T17:08:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-08-02",
+      "ticker": "PWR",
+      "updatedAt": "2018-11-12T17:08:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-11-01",
+      "ticker": "PWR",
+      "updatedAt": "2018-11-12T17:08:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-02-21",
+      "ticker": "PWR",
+      "updatedAt": "2019-03-02T00:48:29Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-05-02",
+      "ticker": "PWR",
+      "updatedAt": "2019-05-10T23:18:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-08-01",
+      "ticker": "PWR",
+      "updatedAt": "2019-08-09T23:18:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-10-31",
+      "ticker": "PWR",
+      "updatedAt": "2019-11-09T00:18:21Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-02-27",
+      "ticker": "PWR",
+      "updatedAt": "2020-03-07T00:18:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-05-07",
+      "ticker": "PWR",
+      "updatedAt": "2020-05-15T23:18:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-08-06",
+      "ticker": "PWR",
+      "updatedAt": "2020-08-14T23:18:23Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-10-29",
+      "ticker": "PWR",
+      "updatedAt": "2020-11-07T00:18:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-02-25",
+      "ticker": "PWR",
+      "updatedAt": "2021-03-06T00:18:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-05-06",
+      "ticker": "PWR",
+      "updatedAt": "2021-05-14T23:18:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-08-05",
+      "ticker": "PWR",
+      "updatedAt": "2021-08-13T23:18:45Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-11-04",
+      "ticker": "PWR",
+      "updatedAt": "2021-11-13T00:18:42Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-02-24",
+      "ticker": "PWR",
+      "updatedAt": "2022-03-05T00:18:29Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-05-05",
+      "ticker": "PWR",
+      "updatedAt": "2022-05-13T23:18:35Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-08-04",
+      "ticker": "PWR",
+      "updatedAt": "2022-08-12T23:19:58Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-11-03",
+      "ticker": "PWR",
+      "updatedAt": "2022-11-12T00:18:45Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-02-23",
+      "ticker": "PWR",
+      "updatedAt": "2023-03-04T00:18:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-05-04",
+      "ticker": "PWR",
+      "updatedAt": "2023-05-12T23:18:29Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-08-03",
+      "ticker": "PWR",
+      "updatedAt": "2023-08-11T23:18:33Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-11-02",
+      "ticker": "PWR",
+      "updatedAt": "2023-11-11T00:18:47Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-02-22",
+      "ticker": "PWR",
+      "updatedAt": "2024-03-02T00:18:39Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-05-02",
+      "ticker": "PWR",
+      "updatedAt": "2024-05-10T23:18:42Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-08-01",
+      "ticker": "PWR",
+      "updatedAt": "2024-08-09T23:18:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-10-31",
+      "ticker": "PWR",
+      "updatedAt": "2024-11-09T01:03:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-02-20",
+      "ticker": "PWR",
+      "updatedAt": "2025-03-01T03:44:09Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-05-01",
+      "ticker": "PWR",
+      "updatedAt": "2025-05-10T02:42:39Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-07-31",
+      "ticker": "PWR",
+      "updatedAt": "2025-08-09T02:42:16Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-10-30",
+      "ticker": "PWR",
+      "updatedAt": "2025-11-08T03:41:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-02-19",
+      "ticker": "PWR",
+      "updatedAt": "2026-02-28T03:42:02Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-04-30",
+      "ticker": "PWR",
+      "updatedAt": "2026-05-09T02:42:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-07-30",
+      "ticker": "PWR",
+      "updatedAt": "2026-08-07T22:02:24Z"
+    }
+  ]
+}

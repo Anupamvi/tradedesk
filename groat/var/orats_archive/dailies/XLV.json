@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 170.01,
-      "hiPx": 170.63,
+      "clsPx": 170.98,
+      "hiPx": 170.98,
       "loPx": 169.2,
       "open": 170.25,
-      "stkVolu": 1693762.0,
+      "stkVolu": 7317681.0,
       "ticker": "XLV",
       "tradeDate": "2026-08-31"
     }

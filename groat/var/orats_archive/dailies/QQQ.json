@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 713.55,
-      "hiPx": 717.001,
+      "clsPx": 716.7,
+      "hiPx": 717.58,
       "loPx": 713.16,
       "open": 715.17,
-      "stkVolu": 5828267.0,
+      "stkVolu": 32237181.0,
       "ticker": "QQQ",
       "tradeDate": "2026-08-31"
     }

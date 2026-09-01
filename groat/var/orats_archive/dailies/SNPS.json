@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 443.64,
-      "hiPx": 444.57,
+      "clsPx": 439.5033,
+      "hiPx": 445.86,
       "loPx": 434.45,
       "open": 437.95,
-      "stkVolu": 195201.0,
+      "stkVolu": 1681072.0,
       "ticker": "SNPS",
       "tradeDate": "2026-08-31"
     }

@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 647.56,
-      "hiPx": 653.18,
+      "clsPx": 656.0,
+      "hiPx": 657.17,
       "loPx": 641.13,
       "open": 648.0,
-      "stkVolu": 193623.0,
+      "stkVolu": 1786736.0,
       "ticker": "DE",
       "tradeDate": "2026-08-31"
     }

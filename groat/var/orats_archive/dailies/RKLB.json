@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 63.035,
-      "hiPx": 63.87,
+      "clsPx": 64.06,
+      "hiPx": 64.1122,
       "loPx": 62.79,
       "open": 63.73,
-      "stkVolu": 3597700.0,
+      "stkVolu": 15279381.0,
       "ticker": "RKLB",
       "tradeDate": "2026-08-31"
     }

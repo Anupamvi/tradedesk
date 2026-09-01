@@ -76,6 +76,29 @@ def options_confidence(picked, vol, earnings, snap, setup=None, x_tag=None) -> d
         conf -= 12
         drivers.append("stale price")
 
+    close = to_float((snap or {}).get("close"))
+    long_k = to_float(picked.get("long_strike") or picked.get("strike"))
+    if close and close > 0 and long_k is not None:
+        if "put" in inst and "credit" not in inst:
+            otm = 1.0 - (long_k / close)
+        else:
+            otm = (long_k / close) - 1.0
+        if "put" in inst and "credit" in inst:
+            otm = 1.0 - (to_float(picked.get("short_strike")) or long_k) / close
+        if otm is not None and otm > 0.08:
+            conf -= 16
+            drivers.append("long strike >8% OTM")
+        elif otm is not None and otm > 0.05:
+            conf -= 10
+            drivers.append("long strike >5% OTM")
+    net_d = abs(to_float(picked.get("delta")) or 0)
+    if 0 < net_d < 0.10:
+        conf -= 16
+        drivers.append("net delta <0.10")
+    elif 0 < net_d < 0.15:
+        conf -= 8
+        drivers.append("net delta <0.15")
+
     tag = str(x_tag or "").lower()
     if tag == "informed":
         conf += 5

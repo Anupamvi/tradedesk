@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 570.67,
+      "clsPx": 572.0,
       "hiPx": 578.675,
       "loPx": 569.1386,
       "open": 577.63,
-      "stkVolu": 2642838.0,
+      "stkVolu": 13383754.0,
       "ticker": "META",
       "tradeDate": "2026-08-31"
     }

@@ -158,6 +158,9 @@ def render_desk_picks(picks: dict) -> List[str]:
             "Act: work the fill at or inside the stated debit/credit. 1 lot first if X is Crowded. Invalidation: %s."
             % (p.get("invalidation") or "thesis/setup break")
         )
+        if best_opt.get("held") or best_opt.get("in_book"):
+            lines.append("")
+            lines.append(best_opt.get("held_note") or "Already held. Shown for visibility — do not add.")
         lines.append("")
     else:
         lines.append("**Options:** none cleared. Valid.")
@@ -167,7 +170,8 @@ def render_desk_picks(picks: dict) -> List[str]:
         lines.append("")
         for row in ranked[:6]:
             tag = " **← take this**" if best_opt is not None and row.get("ticker") == best_opt.get("ticker") else ""
-            lines.append("- **%s**%s — %s." % (row.get("ticker"), tag, "; ".join(_opt_why(row))))
+            held = " IN BOOK" if row.get("in_book") or row.get("held") else ""
+            lines.append("- **%s**%s%s — %s." % (row.get("ticker"), tag, held, "; ".join(_opt_why(row))))
         lines.append("")
     if best_stk:
         p = _picked(best_stk)

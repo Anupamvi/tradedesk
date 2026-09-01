@@ -2620,11 +2620,11 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 185.69,
-      "hiPx": 186.94,
+      "clsPx": 186.55,
+      "hiPx": 187.94,
       "loPx": 183.79,
       "open": 184.495,
-      "stkVolu": 5089272.0,
+      "stkVolu": 25941184.0,
       "ticker": "PLTR",
       "tradeDate": "2026-08-31"
     }
