@@ -1,0 +1,120 @@
+{
+  "schema": "cultra.pattern-model.v2",
+  "version": "CULTRA_PATTERN_MODEL_V2_DEVELOPMENT",
+  "status": "DEVELOPMENT_ONLY_PRIOR_HOLDOUT_EXPOSED",
+  "frozen_at": null,
+  "purpose": "One reproducible exact-leg pattern learner for historical evaluation and current research ranking",
+  "historical_domain": {
+    "source": "CULTRA_ORATS_EXACT_CHAIN_DATABASE",
+    "universe": ["DIA", "GLD", "IWM", "QQQ", "SLV", "SPY", "TLT", "XLE", "XLF", "XLK"],
+    "prior_holdout_status": "INVALIDATED_EXPOSED_AS_DEVELOPMENT_DATA",
+    "current_equity_transfer_status": "OUT_OF_DOMAIN_RESEARCH_ONLY"
+  },
+  "families": {
+    "LONG_CALL": {
+      "direction": "BULLISH",
+      "long_delta": 0.55,
+      "requires_long_vol_value": true
+    },
+    "LONG_PUT": {
+      "direction": "BEARISH",
+      "long_absolute_delta": 0.45,
+      "requires_long_vol_value": true
+    },
+    "CALL_DEBIT_VERTICAL": {
+      "direction": "BULLISH",
+      "long_delta": 0.60,
+      "short_delta": 0.35,
+      "requires_long_vol_value": false
+    },
+    "PUT_DEBIT_VERTICAL": {
+      "direction": "BEARISH",
+      "long_absolute_delta": 0.45,
+      "short_absolute_delta": 0.20,
+      "requires_long_vol_value": false
+    }
+  },
+  "features": [
+    "direction_aligned_momentum_20",
+    "absolute_momentum_20",
+    "realized_volatility_20",
+    "implied_volatility_20",
+    "iv_to_realized_ratio",
+    "maximum_leg_relative_spread",
+    "entry_debit_fraction_of_maximum_loss",
+    "capped_reward_to_risk",
+    "momentum_iv_interaction"
+  ],
+  "signal_policy": {
+    "bullish_momentum_threshold": 0.03,
+    "bearish_momentum_threshold": -0.03,
+    "long_option_max_iv_to_realized_ratio": 1.10
+  },
+  "contract_policy": {
+    "minimum_calendar_dte": 28,
+    "maximum_calendar_dte": 84,
+    "preferred_calendar_dte": 49,
+    "minimum_bid": 0.01,
+    "minimum_open_interest": 100,
+    "maximum_relative_spread": 0.25
+  },
+  "cost_policy": {
+    "commission_per_contract_per_side": 0.65,
+    "fee_per_contract_per_side": 0.03,
+    "additional_slippage_fraction_of_spread": 0.10,
+    "minimum_slippage_per_share_per_leg_per_side": 0.01,
+    "contract_multiplier": 100
+  },
+  "exit_policy": {
+    "profit_target_fraction_of_maximum_loss": 0.50,
+    "stop_loss_fraction_of_maximum_loss": 0.40,
+    "time_exit_sessions": 20,
+    "ambiguous_daily_order": "STOP_FIRST"
+  },
+  "manual_research_action_policy": {
+    "structure_preference": [
+      "CALL_DEBIT_VERTICAL",
+      "PUT_DEBIT_VERTICAL",
+      "LONG_CALL",
+      "LONG_PUT"
+    ],
+    "require_20_and_60_session_direction_alignment": true,
+    "entry_limit": "EXPLICIT_MAXIMUM_NET_DEBIT",
+    "market_open_quote_refresh_owner": "CULTRA_PIPELINE",
+    "earnings_confirmation_window_weeks": 4,
+    "candidate_retention_rule": "KEEP_EVERY_EXACT_STRUCTURE_SELECTED_BY_FROZEN_SIGNAL_AND_STRUCTURE_RULES",
+    "profit_evidence_required_for_action": true,
+    "green_action_rule": "CALIBRATED_POP_AND_POSITIVE_POINT_AND_CONSERVATIVE_EDGE_AND_EVENT_CLEAR_AND_MAXIMUM_PROFIT_EXCEEDS_MAXIMUM_LOSS",
+    "amber_action_rule": "CALIBRATED_POP_AND_POSITIVE_POINT_AND_CONSERVATIVE_EDGE_AND_EVENT_CLEAR_BUT_DEBIT_MUST_IMPROVE_FOR_ONE_TO_ONE_PAYOFF",
+    "red_action_rule": "EARNINGS_INSIDE_HOLDING_WINDOW_OR_EVENT_DATE_UNAVAILABLE",
+    "no_fixed_output_count": true,
+    "failed_model_outputs_may_influence_selection": false
+  },
+  "learning_policy": {
+    "minimum_training_sessions": 120,
+    "validation_sessions": 40,
+    "step_sessions": 40,
+    "embargo_sessions": 60,
+    "logistic_l2": 2.0,
+    "ridge_l2": 50.0,
+    "maximum_newton_iterations": 60,
+    "convergence_tolerance": 1e-8,
+    "minimum_calibration_observations": 20,
+    "bootstrap_iterations": 5000,
+    "bootstrap_seed": 260830,
+    "minimum_oof_observations": 100,
+    "minimum_independent_exposure_clusters": 20,
+    "maximum_pop_ece": 0.05,
+    "pop_must_beat_base_brier": true,
+    "ev_must_beat_base_mse": true,
+    "selected_oof_return_lower_bound_must_exceed_zero": true
+  },
+  "publication_policy": {
+    "manual_ticket_enabled": false,
+    "broker_submission_enabled": false,
+    "quantity": "USER DETERMINED",
+    "no_final_top_n": true,
+    "current_equity_probabilities": "UNAVAILABLE_OUT_OF_DOMAIN",
+    "current_equity_edge": "DIAGNOSTIC_ONLY_UNTIL_BROAD_HISTORICAL_VALIDATION"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "cultra.sources.v1",
+  "orats": {
+    "role": "delayed_analytical_research",
+    "credential_file": ".env",
+    "credential_key": "ORATS_TOKEN",
+    "live_endpoints_allowed": false
+  },
+  "schwab": {
+    "role": "current_market_data_only",
+    "token_path": "/Users/anuppamvi/tradedesk/tokens/schwab_token.json",
+    "allowed_capabilities": ["quotes", "option_chains", "price_history", "contract_availability"],
+    "forbidden_capabilities": ["accounts", "positions", "balances", "orders", "transactions"]
+  },
+  "portfolio_inputs": {
+    "enabled": false,
+    "reason": "The user controls quantity and portfolio risk."
+  }
+}
+

@@ -1,0 +1,31 @@
+{
+  "schema": "cultra.historical-validation-amendment.v1",
+  "version": "CULTRA_HISTORICAL_VALIDATION_V1_1",
+  "frozen_at": "2026-08-30T17:32:09Z",
+  "base_config": "historical_validation.v1.json",
+  "base_config_sha256": "4ab2e9b7aa9bc42b457c22a1dcda5a313bc73280055103ba1316393b54d19ea7",
+  "stage": "PRE_OUTCOME_INSPECTION",
+  "change_reason": "Ensure every 20-session exit remains inside the already frozen 20-60 DTE historical data envelope without reconstructing missing contracts.",
+  "changes": {
+    "catalog_version": "cultra-options-catalog-v1",
+    "data.entry_dte": [
+      52,
+      60
+    ],
+    "data.preferred_dte": 56,
+    "data.maximum_unresolved_path_fraction": 0.05
+  },
+  "unchanged": [
+    "universe",
+    "hypotheses",
+    "signals",
+    "costs",
+    "target",
+    "stop",
+    "time_exit",
+    "walk_forward",
+    "embargo",
+    "holdout",
+    "promotion_gates"
+  ]
+}

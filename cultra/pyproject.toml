@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cultra"
+version = "0.7.0"
+description = "Clean-room, evidence-gated options research pipeline"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+cultra = "cultra.cli:main"
+
+[tool.setuptools]
+packages = ["cultra"]

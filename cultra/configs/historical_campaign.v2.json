@@ -1,0 +1,173 @@
+{
+  "schema": "cultra.historical-campaign.v2",
+  "version": "CULTRA_HISTORICAL_CAMPAIGN_V2",
+  "status": "OFFLINE_FREEZE_REQUIRED",
+  "scope": {
+    "asset_types": ["STOCK", "ETF"],
+    "coverage": "US_LISTED_SECURITY_UNDERLYINGS_WITH_MIN_1000_DAILY_CBOE_OPTIONS_VOLUME_ACROSS_2_CBOE_VENUES",
+    "named_universe": null,
+    "daily_production_universe_cap": null,
+    "ticket_output_cap": null,
+    "portfolio_gates_enabled": false
+  },
+  "acquisition": {
+    "historical_sessions": 450,
+    "cohort_size": 10,
+    "cohort_block_sessions": 120,
+    "maximum_holding_sessions": 60,
+    "minimum_point_in_time_universe": 100,
+    "minimum_stock_fraction": 0.8,
+    "transition_policy": "CENSOR_ENTRIES_BEFORE_COHORT_ROTATION",
+    "historical_core_ticker_batch_size": 2,
+    "historical_chain_ticker_batch_size": 10,
+    "historical_split_ticker_batch_size": 10,
+    "slice_hard_cap": 90,
+    "automatic_retries": 0,
+    "expected_cold_attempts": 474,
+    "expected_slices": 6,
+    "exact_slice_attempts": [90, 90, 90, 90, 90, 24],
+    "initial_campaign_max_actual_attempts": 474,
+    "sum_of_generic_slice_caps": 540,
+    "unused_cap_capacity_not_authorized": 66,
+    "optional_continuous_entry_extension_attempts": 183
+  },
+  "universe_policy": {
+    "manifest_schema": "cultra.point-in-time-universe.v1",
+    "selection_observation": "EXACT_BLOCK_SELECTION_DATE",
+    "selection_fields": [
+      "asset_type",
+      "classification_source_roles",
+      "classification_status",
+      "eligible_from",
+      "eligible_through",
+      "liquidity_rank",
+      "observed_at",
+      "optionable",
+      "sampling_stratum",
+      "ticker"
+    ],
+    "unknown_or_outcome_fields_rejected": true,
+    "future_membership_used_for_selection": false,
+    "cohorts_disjoint": true,
+    "unresolved_members_preserved_but_not_sampled": true,
+    "stock_floor_enforced_during_selection": true,
+    "raw_source_hash_binding_required": true,
+    "orats_source_allowed": false,
+    "exact_selection_snapshot_count": 4
+  },
+  "timing_policy": {
+    "version": "SIGNAL_CLOSE_T_ENTRY_T_PLUS_1_V1",
+    "signal_timestamp": "AFTER_SESSION_T_CLOSE",
+    "entry_timestamp": "SESSION_T_PLUS_1_CLOSE_EXECUTABLE_QUOTE",
+    "entry_execution": "BUY_ASK_SELL_BID",
+    "path_starts": "FIRST_SESSION_AFTER_ENTRY",
+    "holding_horizons_sessions": [20, 40, 60],
+    "ambiguous_daily_target_stop_order": "STOP_FIRST"
+  },
+  "session_calendar_policy": {
+    "manifest_schema": "cultra.market-session-calendar.v1",
+    "required_session_count": 450,
+    "market_timezone": "America/New_York",
+    "timezone_aware_close_timestamp_required": true,
+    "entry_quote_observation": "SESSION_T_PLUS_1_CLOSE",
+    "independent_source_required": true,
+    "orats_source_allowed": false
+  },
+  "historical_prerequisite_policy": {
+    "freeze_schema": "cultra.historical-prerequisite-freeze.v1",
+    "raw_source_hash_binding_required": true,
+    "orats_source_allowed": false,
+    "network_during_preparation_allowed": false
+  },
+  "hypothesis_registry": {
+    "version": "cultra-hypothesis-registry-v1",
+    "registry_hash": "0286cf5e1637596dcebc663c76670c9783fb55bab126bee02f10f6fe35ec962b",
+    "structure_template_version": "cultra-structure-templates-v1",
+    "structure_template_registry_hash": "64f0f756cf727c6ef59507ab09169958e6a3ef7d2dace3cb749524396168b615",
+    "hypothesis_count": 90,
+    "post_holdout_parameter_changes_allowed": false
+  },
+  "learning_policy": {
+    "candidate_generation": "EVERY_GEOMETRICALLY_EXECUTABLE_TICKER_DATE_STRUCTURE",
+    "outcome_dependent_prescreen_allowed": false,
+    "feature_availability": "SIGNAL_CLOSE_T_ONLY",
+    "missing_required_feature": "DATA_UNAVAILABLE",
+    "probability_model": "LOGISTIC_L2",
+    "return_model": "RIDGE_RETURN_ON_RISK",
+    "l2_grid": [0.1, 1.0, 10.0],
+    "hyperparameter_selection": "CHRONOLOGICAL_VALIDATION_ONLY",
+    "maximum_newton_iterations": 100,
+    "convergence_tolerance": 1e-8,
+    "standardization": "TRAINING_WINDOW_ONLY",
+    "raw_model_scores_publishable_as_pop": false,
+    "feature_profiles": {
+      "DIRECTIONAL_COMPOSITE_V1": ["momentum_20", "realized_volatility_20", "atmFcstIvM1", "atmIvM1", "confidence", "orFcst20d", "orHv20d", "relative_spread", "entry_price_on_risk"],
+      "VOLATILITY_DISLOCATION_V1": ["realized_volatility_20", "atmFcstIvM1", "atmIvM1", "iv30d", "iv60d", "orHv20d", "orHv60d", "relative_spread", "entry_price_on_risk"],
+      "TERM_STRUCTURE_SLOPE_V1": ["atmFcstIvM1", "atmIvM1", "contango", "iv30d", "iv60d", "relative_spread", "entry_price_on_risk"],
+      "SKEW_CURVATURE_V1": ["atmFcstIvM1", "atmIvM1", "slope", "chain_skew_slope", "chain_skew_curvature", "relative_spread", "entry_price_on_risk"],
+      "PREMIUM_DISLOCATION_V1": ["atmFcstIvM1", "atmIvM1", "confidence", "orFcst20d", "orHv20d", "slope", "relative_spread", "entry_price_on_risk"]
+    }
+  },
+  "split_policy": {
+    "walk_forward": "EXPANDING",
+    "minimum_training_sessions": 120,
+    "validation_sessions": 59,
+    "development_signal_windows": [
+      {"block_index": 0, "role": "RESEARCH", "signal_sessions": 59},
+      {"block_index": 1, "role": "TUNING", "signal_sessions": 59},
+      {"block_index": 2, "role": "VALIDATION", "signal_sessions": 59}
+    ],
+    "holdout_signal_window": {"block_index": 3, "signal_sessions": 29},
+    "final_holdout_fraction": 0.2,
+    "embargo_sessions_at_every_boundary": 60,
+    "holdout_use": "ONCE",
+    "cluster_dimensions": ["ticker", "signal_date"]
+  },
+  "cost_policy": {
+    "version": "CULTRA_COSTS_V2",
+    "entry_execution": "BUY_ASK_SELL_BID",
+    "exit_execution": "SELL_BID_BUY_ASK",
+    "commission_per_contract_per_side": 0.65,
+    "fee_per_contract_per_side": 0.03,
+    "slippage_fraction_of_quoted_spread_per_side": 0.1,
+    "minimum_slippage_dollars_per_contract_per_side": 0.01,
+    "spread_dependent_slippage_required": true,
+    "assignment_exercise_dividend_and_partial_fill_stress_required": true
+  },
+  "event_policy": {
+    "point_in_time_earnings_required": true,
+    "point_in_time_dividends_required": true,
+    "delistings_and_contract_adjustments_required": true,
+    "orats_event_requests_in_base_estimate": 0,
+    "independent_source_manifest_required_before_slice_1": true,
+    "raw_source_hash_binding_required": true,
+    "coverage_attestation_required": true,
+    "sampled_stock_earnings_required_inside_cohort_block": true
+  },
+  "calibration_policy": {
+    "targets": ["POP_NET", "P_TARGET", "P_STOP", "P_MAX_LOSS"],
+    "candidate_methods": ["LOGISTIC", "ISOTONIC"],
+    "selection_metric": "VALIDATION_BRIER",
+    "selection_frozen_before_holdout": true,
+    "maximum_ece": 0.05,
+    "must_beat_unconditional_brier": true,
+    "minimum_positive_events_per_target": 20,
+    "minimum_negative_events_per_target": 20
+  },
+  "promotion_policy": {
+    "positive_net_expectancy_required_in": ["TRAINING", "VALIDATION", "HOLDOUT"],
+    "minimum_holdout_resolved_trades": 100,
+    "minimum_holdout_ticker_date_clusters": 40,
+    "minimum_resolution_rate": 0.95,
+    "unresolved_worst_case_expectancy_must_be_positive": true,
+    "holdout_confidence": 0.95,
+    "two_way_cluster_bootstrap_required": true,
+    "holm_family_size": 90,
+    "maximum_holm_adjusted_p_value": 0.05,
+    "maximum_single_ticker_or_period_profit_fraction": 0.2,
+    "calendar_concentration_period_sessions": 5,
+    "manual_ticket_minimum_state": "HOLDOUT_PASS",
+    "maximum_evidence_age_calendar_days": 180,
+    "shadow_policy": "CONTINUOUS_NONBLOCKING_REVOCATION_MONITOR"
+  }
+}

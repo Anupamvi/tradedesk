@@ -1,0 +1,60 @@
+{
+  "schema": "cultra.current-research.v1",
+  "version": "CULTRA_CURRENT_RESEARCH_V1",
+  "frozen_at": "2026-08-30T18:05:00Z",
+  "universe": ["DIA", "GLD", "IWM", "QQQ", "SLV", "SPY", "TLT", "XLE", "XLF", "XLK"],
+  "signal_policy": {
+    "momentum_lookback_sessions": 20,
+    "bullish_momentum_threshold": 0.03,
+    "bearish_momentum_threshold": -0.03,
+    "realized_volatility_lookback_sessions": 20,
+    "long_option_max_iv_to_realized_ratio": 1.10
+  },
+  "contract_policy": {
+    "minimum_entry_dte": 35,
+    "maximum_entry_dte": 50,
+    "preferred_entry_dte": 45,
+    "minimum_bid": 0.01,
+    "minimum_open_interest": 100,
+    "maximum_relative_spread": 0.25,
+    "long_call_delta": 0.55,
+    "long_put_absolute_delta": 0.45,
+    "call_vertical_long_delta": 0.60,
+    "call_vertical_short_delta": 0.35,
+    "put_vertical_long_absolute_delta": 0.45,
+    "put_vertical_short_absolute_delta": 0.20
+  },
+  "comparable_evidence": {
+    "source_run": "cultra-historical-validation-v1-1-calendar-fix",
+    "partitions": ["training", "validation"],
+    "match": ["strategy_family", "ticker"],
+    "minimum_resolved_observations": 40,
+    "bootstrap_confidence": 0.95,
+    "bootstrap_iterations": 5000,
+    "bootstrap_seed": 1701,
+    "require_positive_point_return": true,
+    "require_positive_lower_bound_return": true
+  },
+  "cost_policy": {
+    "commission_per_contract_per_side": 0.65,
+    "fee_per_contract_per_side": 0.03,
+    "additional_slippage_fraction_of_spread": 0.10,
+    "minimum_slippage_per_share_per_leg_per_side": 0.01,
+    "contract_multiplier": 100
+  },
+  "exit_policy": {
+    "profit_target_fraction_of_max_loss": 0.50,
+    "stop_loss_fraction_of_max_loss": 0.40,
+    "time_exit_sessions": 20,
+    "ambiguous_daily_order": "STOP_FIRST"
+  },
+  "visibility": {
+    "eligible_label": "UNVALIDATED_RESEARCH_ORDER",
+    "market_closed_label": "NEXT_SESSION_RESEARCH_ORDER_REQUIRES_QUOTE_REFRESH",
+    "manual_ticket_enabled": false,
+    "broker_submission_enabled": false,
+    "quantity": "USER DETERMINED",
+    "no_top_n": true,
+    "pop_failure_behavior": "SHOW_RESEARCH_ORDER_WITH_POP_UNAVAILABLE_AND_CALIBRATION_FAILURE; NEVER_PROMOTE_TO_TICKET"
+  }
+}
