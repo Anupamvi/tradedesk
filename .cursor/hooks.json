@@ -3,7 +3,7 @@
   "hooks": {
     "subagentStart": [
       {
-        "command": ".cursor/hooks/deny-non-composer-subagents.sh",
+        "command": "./hooks/deny-non-composer-subagents.sh",
         "matcher": "*"
       }
     ]
