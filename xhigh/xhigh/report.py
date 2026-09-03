@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from xhigh.rec import decorate, render_recommendation
+from xhigh.rec import decorate, render_recommendation, sort_clicks
 
 
 def _md_table(rows: List[dict], cols: List[tuple]) -> List[str]:
@@ -30,8 +30,8 @@ CLICK_COLS = [
     ("pay / collect", "target_s"),
     ("need", "need_s"),
     ("risk", "risk_s"),
+    ("P:R", "rr_s"),
     ("POP", "pop_s"),
-    ("EV", "ev_proxy"),
 ]
 
 SKIP_COLS = [
@@ -41,6 +41,7 @@ SKIP_COLS = [
     ("strategy", "strategy"),
     ("expiry", "expiry_s"),
     ("target", "target_s"),
+    ("P:R", "rr_s"),
     ("why skip", "why_s"),
 ]
 
@@ -61,7 +62,7 @@ def write_run(
     dest.mkdir(parents=True, exist_ok=True)
     skip = skip if skip is not None else []
     pooled = [decorate(r, gates) for r in list(tickets) + list(skip) + list(watch)]
-    click = [r for r in pooled if r.get("action") == "CLICK"]
+    click = sort_clicks([r for r in pooled if r.get("action") == "CLICK"])
     skip = [r for r in pooled if r.get("action") == "SKIP"]
     watch = [r for r in pooled if r.get("action") == "WATCH"]
 

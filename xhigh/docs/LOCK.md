@@ -10,9 +10,10 @@ Do not add harvest, CCs, new structures, or loosen strike bands. Fix only geomet
 - CSP OTM < 8% → None. Long call ≥ 10% above last → None. Width / last > 7% → None.
 - Credit = bid. Debit = long ask − short bid.
 - No positions API, no harvest, no `/orders`, no ticket-count cap.
-- **Swing CLICK:** defined-risk EV > 0.
+- **Swing CLICK:** long at/ITM (|delta| ≥ 0.50), DTE ≥ 35, R/R ≥ 1.5, no ex-div before expiry. Put-debit max not below the 6-month low. Positive EV is not enough.
 - **Wheel CLICK:** CSP annualized ≥ 8% on cash, |delta| ≤ 0.25, 8–15% OTM, 6-month low not already through the strike. Show 50%-off 6-month P&L in dollars. Not a growth forecast.
-- **Credit CLICK:** EV > 0 or credit ≥ 18% of width with POP ≥ 70%.
+- **Credit CLICK:** credit ≥ 10% of width and POP ≥ 70%.
+- Every sleeve that passes its CLICK rule is listed. Rank small dollars-at-risk first.
 - Recommendation at top of `board.md` / `recommendation.md`, wheel and swing separate.
 
 ## Known limits

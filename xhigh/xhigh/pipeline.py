@@ -11,7 +11,7 @@ from xhigh import report
 from xhigh import schwab
 from xhigh import tape
 from xhigh.config import OUT_DIR
-from xhigh.dates import add_days, fmt_expiry
+from xhigh.dates import add_days, fmt_expiry, today_et
 from xhigh.envload import ORATS_TOKEN_MISSING, load_orats_token
 from xhigh.gates import load_gates
 from xhigh.geometry import catalog_for_name, spot_from_quote, ticket_legal
@@ -133,7 +133,15 @@ def _earn_s(earn: dict) -> str:
     return str(day)
 
 
-def _ticket(ticker: str, last: float, earn: dict, idea: dict, gates: dict) -> Optional[dict]:
+def _ticket(
+    ticker: str,
+    last: float,
+    earn: dict,
+    idea: dict,
+    gates: dict,
+    asof: str = "",
+    core: Optional[dict] = None,
+) -> Optional[dict]:
     if idea.get("structure") in ("csp", "put_credit", "call_credit", "iron_condor"):
         target_s = "credit %s" % fmt(idea.get("credit"))
     elif idea.get("structure") in ("call_debit", "put_debit"):
@@ -162,7 +170,11 @@ def _ticket(ticker: str, last: float, earn: dict, idea: dict, gates: dict) -> Op
         "earn_s": _earn_s(earn),
         "x_tag": "DATA UNAVAILABLE",
         "spot": last,
+        "asof": asof,
     }
+    core = core or {}
+    if core.get("div_date"):
+        row["div_date"] = core.get("div_date")
     row.update({k: v for k, v in idea.items() if k not in row})
     if isinstance(row.get("invalidation"), float):
         row["invalidation"] = round(row["invalidation"], 2)
@@ -239,8 +251,10 @@ def build_full(
             continue
         quality.append(name)
 
-    from_d = add_days(date, int(gates.get("dte_min") or 25) - 2) or date
-    to_d = add_days(date, int(gates.get("dte_max") or 45) + 2) or date
+    # Live Schwab chains require fromDate >= today; anchor DTE window on session date when replaying.
+    chain_anchor = today_et() if live else date
+    from_d = add_days(chain_anchor, int(gates.get("dte_min") or 25) - 2) or chain_anchor
+    to_d = add_days(chain_anchor, int(gates.get("dte_max") or 45) + 2) or chain_anchor
 
     new_rows: List[dict] = []
     chain_http = 0
@@ -275,7 +289,7 @@ def build_full(
             if not _legal(idea, last, gates):
                 skips.append({"ticker": name, "reason": "illegal_%s" % idea.get("structure")})
                 continue
-            row = _ticket(name, last, earn, idea, gates)
+            row = _ticket(name, last, earn, idea, gates, asof=date, core=core)
             if row:
                 new_rows.append(row)
 

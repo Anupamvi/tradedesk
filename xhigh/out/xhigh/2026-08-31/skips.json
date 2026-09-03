@@ -1,34 +1,6 @@
 [
   {
-    "ticker": "VVOS",
+    "ticker": "SPY",
     "reason": "quote"
-  },
-  {
-    "ticker": "GPRO",
-    "reason": "quote"
-  },
-  {
-    "ticker": "CLGN",
-    "reason": "quote"
-  },
-  {
-    "ticker": "RDHL",
-    "reason": "quote"
-  },
-  {
-    "ticker": "COOT",
-    "reason": "quote"
-  },
-  {
-    "ticker": "AAL",
-    "reason": "quote"
-  },
-  {
-    "ticker": "NKE",
-    "reason": "no_geometry"
-  },
-  {
-    "ticker": "CRM",
-    "reason": "chase"
   }
 ]

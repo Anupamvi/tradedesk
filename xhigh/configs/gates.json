@@ -64,7 +64,10 @@
   "score": {
     "conf_floor": 40,
     "conf_max": 85,
-    "credit_width_min": 0.18,
-    "credit_pop_min": 0.70
+    "credit_width_min": 0.10,
+    "credit_pop_min": 0.70,
+    "debit_long_delta_min": 0.50,
+    "debit_rr_min": 1.5,
+    "debit_click_dte_min": 35
   }
 }

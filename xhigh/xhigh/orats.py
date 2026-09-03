@@ -21,6 +21,7 @@ from xhigh.config import (
     ORATS_MONTHLY_CAP,
     ORATS_TICKER_BATCH,
 )
+from xhigh.dates import parse_any_date
 from xhigh.num import to_float
 
 _TOKEN_QUERY = re.compile(r"(token=)[^&]+", re.I)
@@ -202,6 +203,7 @@ def parse_core(row: Optional[dict]) -> Dict[str, Any]:
         "next_ern": str(row.get("nextErn") or ""),
         "wks_next_ern": to_float(row.get("wksNextErn")),
         "last_ern": str(row.get("lastErn") or ""),
+        "div_date": parse_any_date(row.get("divDate")),
         "tk_over": row.get("tkOver"),
         "raw": row,
     }

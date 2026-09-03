@@ -31,6 +31,30 @@ def credit_over_width(idea: dict) -> Optional[float]:
     return credit / width
 
 
+def credit_to_risk(idea: dict) -> Optional[float]:
+    credit = to_float(idea.get("credit"))
+    width = to_float(idea.get("width"))
+    if credit is None or width is None or width <= credit:
+        return None
+    return credit / (width - credit)
+
+
+def rr_line(idea: dict) -> str:
+    s = idea.get("structure")
+    if s in DEBIT:
+        debit = to_float(idea.get("debit"))
+        gain = to_float(idea.get("max_gain"))
+        if debit is None or debit <= 0 or gain is None:
+            return "DATA UNAVAILABLE"
+        return "%.1f : 1" % (gain / debit)
+    cr = credit_to_risk(idea)
+    if cr is None:
+        return "DATA UNAVAILABLE"
+    if cr <= 0:
+        return "DATA UNAVAILABLE"
+    return "1 : %.1f" % (1.0 / cr)
+
+
 def short_abs_delta(idea: dict) -> Optional[float]:
     d = to_float(idea.get("delta") or idea.get("short_delta") or idea.get("put_short_delta"))
     if d is None:
@@ -58,10 +82,9 @@ def pop_delta(idea: dict) -> Optional[float]:
         return max(0.0, min(1.0, 1.0 - abs(pd) - abs(cd)))
     if structure in DEBIT:
         ld = to_float(idea.get("long_delta"))
-        sd = to_float(idea.get("short_delta"))
-        if ld is None or sd is None:
+        if ld is None:
             return None
-        return max(0.0, min(1.0, abs(ld) - abs(sd)))
+        return max(0.0, min(1.0, abs(ld)))
     return None
 
 

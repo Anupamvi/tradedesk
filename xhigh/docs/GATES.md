@@ -13,14 +13,14 @@ Units: ORATS vol fields are **percent**. Schwab last is dollars. Delta is Schwab
 | DTE | 25–45 |
 | Earnings | expiry < earn − 3d; missing → no option |
 | Cheap vol (skip short premium) | ivHvXernRatio < 0.90 **and** ivPctile1y < 40; ratio > 5 ignored |
-| POP | `1 − \|short delta\|` (credit); `\|long\| − \|short\|` (debit); condor subtracts both shorts |
-| EV debit / defined credit | `100 * [win * pop − max_loss * (1 − pop)]`; max_loss = debit or (width − credit) |
+| POP | `1 − \|short delta\|` (credit); `\|long delta\|` (debit); condor `1 − \|put short\| − \|call short\|` |
+| EV debit / defined credit | Display only. `100 * [win * pop − max_loss * (1 − pop)]`. **Not** the CLICK rule. |
 | Wheel CSP rank | annualized `(credit/strike)*(365/dte)` as percent. **Not** strike × 100. |
 | Wheel naked CSP | annualized ≥ 8%, \|delta\| ≤ 0.25, and 6-month low is **not** already < 85% of strike |
-| Wheel if 6m low through strike | **put credit** instead (defined-risk). CLICK if credit/width ≥ 6% and POP ≥ 70% |
+| Defined-credit CLICK | credit ≥ **10% of width** and POP ≥ 70%. Put credit SKIP if a known ex-div sits before expiry (stock drop attacks the short put). 8–15% OTM is naturally ~1:7; 1:14 still SKIP. |
+| Swing debit CLICK | long at/ITM (\|delta\| ≥ **0.50**), DTE ≥ **35**, R/R ≥ 1.5, no ex-div before expiry. Put-debit max must not sit below the 6-month low. 25-DTE 0.35-delta is SKIP (KO). Positive EV is not enough. |
+| Board | Every sleeve that passes its CLICK rule is listed. Rank small dollars-at-risk first. |
 | Wheel stress (display) | If last halves in 6 months, P&L vs (strike − credit) × 100. Scenario, not a forecast |
-| Defined-credit CLICK | EV > 0 **or** (credit/width ≥ 18% and POP ≥ 70%) |
-| Swing CLICK | defined-risk EV > 0 and conf ≥ 40 |
 | Ticket cap | none |
 
 Vintage: Schwab live last/bid/ask/delta. ORATS delayed cores only.
