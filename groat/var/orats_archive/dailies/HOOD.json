@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 105.12,
+      "clsPx": 104.81,
       "hiPx": 105.47,
       "loPx": 100.68,
       "open": 103.42,
       "stkVolu": 16327114.0,
       "ticker": "HOOD",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 103.51,
+      "hiPx": 106.96,
+      "loPx": 102.45,
+      "open": 105.34,
+      "stkVolu": 22636200.0,
+      "ticker": "HOOD",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 108.87,
+      "hiPx": 107.46,
+      "loPx": 101.89,
+      "open": 103.72,
+      "stkVolu": 16848770.0,
+      "ticker": "HOOD",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

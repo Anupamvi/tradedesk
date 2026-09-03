@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 208.01,
+      "clsPx": 207.78,
       "hiPx": 208.7699,
       "loPx": 206.27,
       "open": 208.5,
       "stkVolu": 5217647.0,
       "ticker": "BA",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 205.66,
+      "hiPx": 208.11,
+      "loPx": 205.5,
+      "open": 206.7,
+      "stkVolu": 5017053.0,
+      "ticker": "BA",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 208.82,
+      "hiPx": 210.65,
+      "loPx": 206.42,
+      "open": 207.0,
+      "stkVolu": 6433555.0,
+      "ticker": "BA",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

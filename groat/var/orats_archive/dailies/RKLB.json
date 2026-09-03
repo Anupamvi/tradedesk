@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 64.06,
+      "clsPx": 63.92,
       "hiPx": 64.1122,
       "loPx": 62.79,
       "open": 63.73,
       "stkVolu": 15279381.0,
       "ticker": "RKLB",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 62.54,
+      "hiPx": 63.9352,
+      "loPx": 61.93,
+      "open": 62.24,
+      "stkVolu": 14442989.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 64.0,
+      "hiPx": 63.52,
+      "loPx": 61.45,
+      "open": 62.35,
+      "stkVolu": 16639581.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

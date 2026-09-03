@@ -10,17 +10,32 @@ from groat.technicals import avwap
 
 
 SETUP_NAMES = {
-    "A": "Trend Pullback",
-    "B": "Breakout + Confirmation",
-    "C": "Post-Earnings Drift",
-    "D": "Relative-Strength Leader",
-    "E": "Emerging Sector Rotation",
-    "F": "Oversold Reversal",
-    "G": "Failed Breakout / Trend Breakdown",
+    "A": "Trend pullback",
+    "B": "Breakout",
+    "C": "Post-earnings drift",
+    "D": "RS leader",
+    "E": "Sector rotation",
+    "F": "Oversold reversal",
+    "G": "Failed breakout",
     "H": "FIRE spike/dip",
 }
 
-SETUP_PRIORITY = ("C", "E", "B", "A", "D", "G", "F", "H")
+# One line for the board. These are pattern names, not grades (A is not best).
+SETUP_LINE = (
+    "Setups: **sector rotation** = hot group · **RS leader** = stock beating SPY · "
+    "**trend pullback** = dip to 20 EMA · **post-earnings drift** is not a TRADE."
+)
+
+
+def setup_label(code) -> str:
+    key = str(code or "")
+    return SETUP_NAMES.get(key, key or "—")
+
+# Replay expectancy: E +0.27R, D +0.17R, A ~0R, F small-n, H −0.22R, B/C/G parked.
+# D outranks A so an RS leader that is also a pullback is scored as D, not A.
+# Red-day A still wins over E/D (SHOP: rotation on a red tag of the 20 is a pullback).
+SETUP_PRIORITY = ("C", "E", "B", "D", "A", "G", "F", "H")
+RS_LEADER_MIN = 0.04
 
 SETUP_GUIDE = {
     "A": "Trend pullback — strong uptrend, dip into 20 EMA / AVWAP / 50 DMA with quieter volume.",
@@ -87,10 +102,15 @@ def classify_setups(
     elif last_ern is None and not earn.get("usable") and str(earn.get("source") or "") != "exempt":
         notes.append("earnings date DATA UNAVAILABLE")
 
-    # E — emerging group
-    if group_status in ("accelerating", "emerging") and rs20 is not None and rs20 > 0 and trend in ("up", "strong_up"):
+    # E — emerging group, strongest names only. +0.8% RS is not rotation.
+    if (
+        group_status in ("accelerating", "emerging")
+        and rs20 is not None
+        and rs20 >= RS_LEADER_MIN
+        and trend in ("up", "strong_up")
+    ):
         hits.append("E")
-        notes.append("group %s with positive 20d RS" % group_status)
+        notes.append("group %s with 20d RS %+0.1f%%" % (group_status, rs20 * 100.0))
 
     # B — breakout
     if hi20c is not None and px is not None and px > hi20c:
@@ -100,11 +120,10 @@ def classify_setups(
             hits.append("B")
             notes.append("close above prior 20-session close high")
 
-    # A — trend pullback
-    if trend in ("up", "strong_up") and px and ema20:
+    # A — trend pullback. Low may tag 20 EMA; close must hold it.
+    if trend in ("up", "strong_up") and px and ema20 and px >= ema20:
         pulled = _near(to_float(snap.get("low")), ema20, atr, 0.9) or _near(px, ema20, atr, 0.6)
         pulled = pulled or (av_low is not None and _near(px, av_low, atr, 0.7))
-        pulled = pulled or (sma50 is not None and ema20 > sma50 and px < ema20 and px >= sma50)
         vol_in = v5 is not None and v20 is not None and v5 < v20
         if pulled and (ext is None or ext < 1.8):
             hits.append("A")
@@ -112,8 +131,8 @@ def classify_setups(
             if vol_in:
                 notes.append("volume contracted on the pullback")
 
-    # D — RS leader
-    if rs20 is not None and rs20 >= 0.04 and snap.get("above_sma50") and trend in ("up", "strong_up", "range"):
+    # D — RS leader even if the group is not the hottest
+    if rs20 is not None and rs20 >= RS_LEADER_MIN and snap.get("above_sma50") and trend in ("up", "strong_up", "range"):
         hits.append("D")
         notes.append("20d RS vs SPY %+0.1f%% with accumulation structure" % (rs20 * 100.0))
 
@@ -148,8 +167,21 @@ def classify_setups(
         hits.append("H")
         notes.append(fire.get("note") or "FIRE tape")
 
+    # Red-day tag of the 20 is a pullback. Keep E/D in setups; don't let them outrank A.
+    ret1 = to_float(snap.get("ret_1"))
+    pullback_primary = (
+        "A" in hits
+        and ret1 is not None
+        and ret1 < 0
+        and (ext is None or ext < 0.5)
+    )
+    if pullback_primary and ("E" in hits or "D" in hits):
+        notes.append("red-day pullback, treat as A not rotation / RS-leader chase")
+
     primary = None
     for code in SETUP_PRIORITY:
+        if pullback_primary and code in ("E", "D"):
+            continue
         if code in hits:
             primary = code
             break
@@ -189,7 +221,10 @@ def _fire(snap: dict, rvol, ext, trend: str) -> dict:
     rvol = to_float(rvol)
     kind = None
     note = ""
-    if rvol is not None and rvol >= 1.5:
+    vol_ok = rvol is not None and (
+        rvol >= 1.5 or (ret1 is not None and abs(ret1) >= 0.05 and rvol >= 1.2)
+    )
+    if vol_ok:
         if ret1 is not None and ret1 >= 0.03:
             kind = "spike"
             note = "FIRE spike: 1d %+0.1f%% on %.1fx volume" % (ret1 * 100.0, rvol)

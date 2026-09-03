@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 60.1507,
+      "clsPx": 60.13,
       "hiPx": 60.42,
       "loPx": 59.66,
       "open": 60.39,
       "stkVolu": 14752321.0,
       "ticker": "SLV",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 57.92,
+      "hiPx": 59.0621,
+      "loPx": 57.85,
+      "open": 58.39,
+      "stkVolu": 17814046.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 59.04,
+      "hiPx": 59.24,
+      "loPx": 58.55,
+      "open": 58.73,
+      "stkVolu": 10760558.0,
+      "ticker": "SLV",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

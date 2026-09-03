@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 381.78,
+      "clsPx": 382.13,
       "hiPx": 383.73,
       "loPx": 370.0,
       "open": 370.0,
       "stkVolu": 8803059.0,
       "ticker": "PANW",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 362.09,
+      "hiPx": 375.92,
+      "loPx": 357.26,
+      "open": 374.62,
+      "stkVolu": 9282651.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 330.3203,
+      "hiPx": 350.67,
+      "loPx": 321.39,
+      "open": 346.0,
+      "stkVolu": 13214770.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

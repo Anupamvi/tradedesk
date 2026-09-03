@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 457.33,
+      "clsPx": 458.39,
       "hiPx": 465.9,
       "loPx": 453.91,
       "open": 462.41,
       "stkVolu": 6177322.0,
       "ticker": "AMAT",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 441.85,
+      "hiPx": 451.45,
+      "loPx": 438.83,
+      "open": 450.72,
+      "stkVolu": 7150153.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 438.79,
+      "hiPx": 443.5,
+      "loPx": 433.57,
+      "open": 443.5,
+      "stkVolu": 6523059.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

@@ -1,0 +1,838 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-01-11",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-01-10",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-04-07",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-07-09",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-10-06",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-01-08",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-04-06",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-07-06",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-10-05",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-01-07",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-04-04",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-07-01",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-10-03",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-01-06",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-04-10",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-07-10",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-01-10",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-04-09",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-07-10",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-10-07",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-01-13",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-04-07",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-07-08",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-10-07",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-01-13",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-04-07",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-07-08",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-10-06",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-01-13",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-04-14",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-07-14",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-10-06",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-01-19",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-04-12",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-07-19",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-10-11",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-01-17",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-04-18",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-07-12",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-17",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-01-16",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-04-17",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-17",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-16",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-16",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-04-16",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-16",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-16",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-20",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-14",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-14",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-07",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-01-18",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-13",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-13",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-11",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-01-18",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-12",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-20",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-10-18",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-01-23",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-04-19",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-07-19",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-18",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-01-17",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-04-17",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-17",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-16",
+      "ticker": "AMD",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-01-22",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-04-21",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-07-21",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-10-15",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-01-21",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-04-15",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-07-15",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-10-14",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-01-20",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-04-21",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-07-21",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-10-27",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-01-24",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-04-19",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-07-19",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-10-18",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-01-22",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-04-18",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-07-18",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-10-17",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-01-21",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-04-17",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-07-17",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-10-16",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-01-20",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-04-16",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-07-16",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-10-15",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-01-19",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-04-21",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-07-21",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-10-20",
+      "ticker": "AMD",
+      "updatedAt": "2017-10-11T19:02:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-01-31",
+      "ticker": "AMD",
+      "updatedAt": "2018-11-12T17:04:35Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-05-01",
+      "ticker": "AMD",
+      "updatedAt": "2018-11-12T17:04:35Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-07-25",
+      "ticker": "AMD",
+      "updatedAt": "2018-11-12T17:04:35Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-10-24",
+      "ticker": "AMD",
+      "updatedAt": "2018-11-12T17:04:35Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-01-30",
+      "ticker": "AMD",
+      "updatedAt": "2018-11-12T17:04:35Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-04-25",
+      "ticker": "AMD",
+      "updatedAt": "2018-11-12T17:04:35Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-07-25",
+      "ticker": "AMD",
+      "updatedAt": "2018-11-12T17:04:35Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-10-24",
+      "ticker": "AMD",
+      "updatedAt": "2018-11-12T17:04:35Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-01-29",
+      "ticker": "AMD",
+      "updatedAt": "2019-02-09T00:45:29Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-04-30",
+      "ticker": "AMD",
+      "updatedAt": "2019-05-10T23:15:27Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-07-30",
+      "ticker": "AMD",
+      "updatedAt": "2019-08-09T23:15:23Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-10-29",
+      "ticker": "AMD",
+      "updatedAt": "2019-11-09T00:15:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-01-28",
+      "ticker": "AMD",
+      "updatedAt": "2020-02-08T00:15:25Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-04-28",
+      "ticker": "AMD",
+      "updatedAt": "2020-05-08T23:15:22Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-07-28",
+      "ticker": "AMD",
+      "updatedAt": "2020-08-07T23:15:17Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-10-27",
+      "ticker": "AMD",
+      "updatedAt": "2020-11-07T00:15:20Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-01-26",
+      "ticker": "AMD",
+      "updatedAt": "2021-02-06T00:15:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-04-27",
+      "ticker": "AMD",
+      "updatedAt": "2021-05-07T23:15:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-07-27",
+      "ticker": "AMD",
+      "updatedAt": "2021-08-06T23:15:25Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-10-26",
+      "ticker": "AMD",
+      "updatedAt": "2021-11-05T23:15:25Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-02-01",
+      "ticker": "AMD",
+      "updatedAt": "2022-02-12T00:15:24Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-05-03",
+      "ticker": "AMD",
+      "updatedAt": "2022-05-13T23:15:24Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-08-02",
+      "ticker": "AMD",
+      "updatedAt": "2022-08-12T23:15:33Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-11-01",
+      "ticker": "AMD",
+      "updatedAt": "2022-11-12T00:15:24Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-01-31",
+      "ticker": "AMD",
+      "updatedAt": "2023-02-11T00:15:25Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-05-02",
+      "ticker": "AMD",
+      "updatedAt": "2023-05-12T23:15:30Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-08-01",
+      "ticker": "AMD",
+      "updatedAt": "2023-08-11T23:15:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-10-31",
+      "ticker": "AMD",
+      "updatedAt": "2023-11-11T00:15:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-01-30",
+      "ticker": "AMD",
+      "updatedAt": "2024-02-10T00:15:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-04-30",
+      "ticker": "AMD",
+      "updatedAt": "2024-05-10T23:15:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-07-30",
+      "ticker": "AMD",
+      "updatedAt": "2024-08-09T23:15:27Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-10-29",
+      "ticker": "AMD",
+      "updatedAt": "2024-11-09T01:00:27Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-02-04",
+      "ticker": "AMD",
+      "updatedAt": "2025-02-15T03:40:27Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-05-06",
+      "ticker": "AMD",
+      "updatedAt": "2025-05-17T02:40:18Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-08-05",
+      "ticker": "AMD",
+      "updatedAt": "2025-08-16T02:40:13Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-11-04",
+      "ticker": "AMD",
+      "updatedAt": "2025-11-15T03:40:14Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-02-03",
+      "ticker": "AMD",
+      "updatedAt": "2026-02-14T03:40:15Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-05-05",
+      "ticker": "AMD",
+      "updatedAt": "2026-05-16T02:40:14Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-08-04",
+      "ticker": "AMD",
+      "updatedAt": "2026-08-14T22:00:29Z"
+    }
+  ]
+}

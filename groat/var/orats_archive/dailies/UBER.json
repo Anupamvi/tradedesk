@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 75.84,
+      "clsPx": 75.65,
       "hiPx": 78.2927,
       "loPx": 75.34,
       "open": 78.17,
       "stkVolu": 18505906.0,
       "ticker": "UBER",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 75.24,
+      "hiPx": 76.11,
+      "loPx": 74.62,
+      "open": 75.27,
+      "stkVolu": 11220638.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 76.89,
+      "hiPx": 77.24,
+      "loPx": 75.36,
+      "open": 76.05,
+      "stkVolu": 13014668.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

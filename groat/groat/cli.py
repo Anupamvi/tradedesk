@@ -12,10 +12,12 @@ from groat.book import positions as load_positions
 from groat.config import OUT_DIR
 from groat.dates import today_et
 from groat.envload import ORATS_TOKEN_MISSING, load_orats_token
+from groat.gates import open_trade_verdict
 from groat.num import to_float
 from groat.orats import map_line, redact
 from groat.pipeline import build_analyze, build_delta, build_full
 from groat.schwab import live_note, use_live_schwab
+from groat.xintel import missing_x_tickers
 
 
 _YMD = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -93,9 +95,24 @@ def print_result(info: Dict[str, object]) -> None:
     print("orats_rows=%s" % (info.get("orats_rows") or 0))
     print("trade_count=%s" % (info.get("trade_count") or 0))
     print("watch_count=%s" % (info.get("watch_count") or 0))
+    print(
+        "chains_requested=%s empty=%s not_requested=%s schwab_errors=%s"
+        % (
+            len(info.get("option_names") or []),
+            len(info.get("chain_empty") or []),
+            len(info.get("chain_not_requested") or []),
+            len(info.get("schwab_chain_errors") or []),
+        )
+    )
     trades = info.get("trade_tickers") or []
     if trades:
         print("trades=%s" % ",".join(str(t) for t in trades))
+    missing_x = info.get("x_missing_on_trade")
+    if missing_x is None:
+        missing_x = []
+    print("x_missing_on_trade=%s" % (",".join(str(t) for t in missing_x) if missing_x else "none"))
+    if missing_x:
+        print("x_incomplete=1 search_$TICKER_and_rerun")
     if int(info.get("trade_count") or 0) == 0:
         print("blocker=%s" % (info.get("blocker") or "empty_board"))
     ev = info.get("evidence") if isinstance(info.get("evidence"), dict) else {}
@@ -132,44 +149,18 @@ def _review_rows(asof: str, built: dict) -> List[dict]:
     for pos in load_positions():
         ticker = str(pos.get("ticker") or "").upper()
         snap = snaps.get(ticker) or {}
-        last = to_float(snap.get("close"))
-        stop = to_float(pos.get("stop"))
-        target = to_float(pos.get("target"))
-        side = str(pos.get("side") or pos.get("direction") or "long").lower()
-        if "short" in side or "bear" in side:
-            side = "short"
-        else:
-            side = "long"
-        verdict = "HOLD"
-        why = "original thesis not invalidated"
-        if last is None:
-            why = "last price DATA UNAVAILABLE"
-        elif stop is not None and side == "long" and last <= stop:
-            verdict = "EXIT"
-            why = "stop / invalidation hit"
-        elif stop is not None and side == "short" and last >= stop:
-            verdict = "EXIT"
-            why = "stop / invalidation hit"
-        elif target is not None and side == "long" and last >= target:
-            verdict = "TAKE PROFIT"
-            why = "structure target reached"
-        elif target is not None and side == "short" and last <= target:
-            verdict = "TAKE PROFIT"
-            why = "structure target reached"
-        if verdict == "HOLD" and not pos.get("scale_plan"):
-            # ADD is forbidden without a predefined scale plan
-            pass
+        judged = open_trade_verdict(pos, snap)
         rows.append(
             {
                 "ticker": ticker,
                 "instrument": pos.get("instrument") or pos.get("structure") or "",
                 "entry": pos.get("entry"),
-                "stop": stop,
-                "target": target,
-                "last": last,
-                "verdict": verdict,
-                "why": why,
-                "side": side,
+                "stop": judged.get("stop"),
+                "target": pos.get("target"),
+                "last": judged.get("last"),
+                "verdict": judged.get("verdict") or "HOLD",
+                "why": judged.get("why") or "",
+                "side": judged.get("side") or "long",
             }
         )
     return rows
@@ -284,7 +275,12 @@ def run(
         "orats_requests_used": built.get("orats_requests_used") or 0,
         "orats_requests_left": built.get("orats_requests_left") or 0,
         "orats_error": built.get("orats_error") or "",
+        "option_names": built.get("option_names") or [],
+        "chain_empty": built.get("chain_empty") or [],
+        "chain_not_requested": built.get("chain_not_requested") or [],
+        "schwab_chain_errors": built.get("schwab_chain_errors") or [],
         "blocker": blocker,
+        "x_missing_on_trade": missing_x_tickers(built.get("trades") or []),
         "tapes": built.get("tapes") or {},
         "evidence_http": ((built.get("evidence") or {}) if isinstance(built.get("evidence"), dict) else {}).get("http") or 0,
     }
@@ -295,6 +291,7 @@ def run(
     built["mode"] = cmd
     built["regime_label"] = (built.get("regime") or {}).get("regime")
     built["trade_tickers"] = [r.get("ticker") for r in (built.get("trades") or [])]
+    built["x_missing_on_trade"] = missing_x_tickers(built.get("trades") or [])
     built["blocker"] = blocker
     built["orats_map"] = orats_map
     built["error"] = built.get("orats_error") or ""
@@ -328,6 +325,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(redact(str(exc), token), file=sys.stderr)
         return 1
     print_result(result)
-    if args.cmd in ("full", "delta", "analyze", "review", "replay"):
-        return 0
+    if result.get("x_missing_on_trade"):
+        return 3
     return 0

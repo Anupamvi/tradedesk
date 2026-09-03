@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 532.04,
+      "clsPx": 531.57,
       "hiPx": 533.56,
       "loPx": 530.78,
       "open": 533.56,
       "stkVolu": 1746083.0,
       "ticker": "DIA",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 527.75,
+      "hiPx": 531.65,
+      "loPx": 526.84,
+      "open": 528.67,
+      "stkVolu": 3190633.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 530.86,
+      "hiPx": 532.17,
+      "loPx": 529.24,
+      "open": 529.51,
+      "stkVolu": 3114797.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

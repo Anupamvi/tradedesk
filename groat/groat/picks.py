@@ -104,15 +104,24 @@ def _opt_why(row: dict) -> List[str]:
     return notes
 
 
+def _fresh(row: dict) -> bool:
+    """Desk pick 'take this' skips in-book names. Same-right Schwab holds are already WATCH."""
+    return not row.get("in_book")
+
+
 def desk_picks(trades: List[dict]) -> Dict[str, object]:
     opts = [r for r in trades if r.get("choice") == "OPTIONS"]
     stocks = [r for r in trades if r.get("choice") == "STOCK"]
-    best_opt = max(opts, key=score_option_ticket) if opts else None
-    best_stk = max(stocks, key=score_stock_ticket) if stocks else None
+    fresh_opts = [r for r in opts if _fresh(r)]
+    fresh_stocks = [r for r in stocks if _fresh(r)]
+    uncorr_opts = [r for r in fresh_opts if not r.get("book_group_held")]
+    uncorr_stocks = [r for r in fresh_stocks if not r.get("book_group_held")]
+    best_opt = max(uncorr_opts or fresh_opts, key=score_option_ticket) if fresh_opts else None
+    best_stk = max(uncorr_stocks or fresh_stocks, key=score_stock_ticket) if fresh_stocks else None
     caution = []
     for row in opts:
         d = abs(_net_delta(row) or 0)
-        if row.get("x") == "Crowded" or d < 0.10:
+        if row.get("x") == "Crowded" or d < 0.10 or row.get("book_group_held"):
             caution.append(row)
     ranked_opts = sorted(opts, key=score_option_ticket, reverse=True)
     return {
@@ -120,6 +129,7 @@ def desk_picks(trades: List[dict]) -> Dict[str, object]:
         "best_stock": best_stk,
         "caution": caution,
         "ranked_options": ranked_opts,
+        "trade_names": [r.get("ticker") for r in trades if r.get("ticker")],
     }
 
 
@@ -128,42 +138,76 @@ def render_desk_picks(picks: dict) -> List[str]:
     best_opt = picks.get("best_options")
     best_stk = picks.get("best_stock")
     ranked = picks.get("ranked_options") or []
-    if not best_opt and not best_stk:
+    trade_names = [t for t in (picks.get("trade_names") or []) if t]
+    if trade_names:
+        lines.append("TRADE list: " + " · ".join("**%s**" % t for t in trade_names))
+        lines.append("")
+    if not best_opt and not best_stk and not ranked:
         lines.append("No TRADE rows to pick. Valid.")
         lines.append("")
         return lines
     if best_opt:
         p = _picked(best_opt)
+        pay = ("debit %s" % fmt(p.get("target_debit"))) if p.get("target_debit") is not None else (
+            "credit %s" % fmt(p.get("target_credit")) if p.get("target_credit") is not None else "n/a"
+        )
+        x_tag = str(best_opt.get("x") or "DATA UNAVAILABLE")
+        if x_tag in ("", "DATA UNAVAILABLE"):
+            x_line = "⚪ X missing — do not treat as Quiet"
+        elif x_tag == "Crowded":
+            x_line = "🔴 Crowded — 1 lot"
+        elif x_tag == "Informed":
+            x_line = "🟢 Informed"
+        else:
+            x_line = "🟡 %s" % x_tag
+        lines.append("🎯 **Take options: %s**" % best_opt.get("ticker"))
+        lines.append("")
         lines.append(
-            "**Take options: %s** — %s. Pay **%s**. Naive POP **%s**, conf **%s**."
+            "**%s** · %s"
             % (
-                best_opt.get("ticker"),
+                SETUP_NAMES.get(best_opt.get("primary") or "", best_opt.get("primary") or "—"),
                 p.get("legs") or best_opt.get("choice"),
-                ("debit %s" % fmt(p.get("target_debit"))) if p.get("target_debit") is not None else (
-                    "credit %s" % fmt(p.get("target_credit")) if p.get("target_credit") is not None else "n/a"
-                ),
+            )
+        )
+        lines.append("")
+        lines.append(
+            "pay **%s** · last **%s** · naive POP **%s** · conf **%s** · %s"
+            % (
+                pay,
+                fmt(best_opt.get("close")),
                 fmt_pct(best_opt.get("naive_pop"), 0) if best_opt.get("naive_pop") is not None else "n/a",
                 best_opt.get("opt_conf") if best_opt.get("opt_conf") is not None else "n/a",
+                x_line,
             )
         )
         lines.append("")
         lines.append(
             "Why this one: "
             + "; ".join(_opt_why(best_opt))
-            + ". Setup %s (%s). Sub-50%% naive POP is normal for an OTM/near-OTM debit — conf is structure quality, not P(win)."
-            % (best_opt.get("primary") or "", SETUP_NAMES.get(best_opt.get("primary") or "", ""))
+            + ". Setup: %s. Sub-50%% naive POP is normal for an OTM/near-OTM debit — conf is structure quality, not P(win)."
+            % (SETUP_NAMES.get(best_opt.get("primary") or "", best_opt.get("primary") or "—"))
         )
         lines.append("")
         lines.append(
             "Act: work the fill at or inside the stated debit/credit. 1 lot first if X is Crowded. Invalidation: %s."
             % (p.get("invalidation") or "thesis/setup break")
         )
+        fill_note = best_opt.get("fill_note") or p.get("fill_note")
+        if fill_note:
+            lines.append("")
+            lines.append("**Do not click this option** if: %s" % fill_note)
+        if best_opt.get("book_group_note"):
+            lines.append("")
+            lines.append(best_opt.get("book_group_note"))
         if best_opt.get("held") or best_opt.get("in_book"):
             lines.append("")
             lines.append(best_opt.get("held_note") or "Already held. Shown for visibility — do not add.")
         lines.append("")
     else:
-        lines.append("**Options:** none cleared. Valid.")
+        if ranked:
+            lines.append("**Options:** TRADE names are in book. Shown below for visibility — do not add.")
+        else:
+            lines.append("**Options:** none cleared. Valid.")
         lines.append("")
     if ranked:
         lines.append("Why this one, not the others:")

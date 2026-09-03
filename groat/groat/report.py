@@ -7,12 +7,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Sequence
 
-from groat.num import fmt, fmt_pct
+from groat.num import fmt, fmt_pct, to_float
 from groat.regime import render_regime
 from groat.rotation import render_rotation
-from groat.evidence import render_evidence, render_evidence_file
+from groat.evidence import render_evidence_file
 from groat.picks import render_desk_picks
-from groat.setups import SETUP_GUIDE, SETUP_NAMES
+from groat.setups import SETUP_LINE, setup_label
+from groat.xintel import missing_x_tickers
 
 
 BOARD_COLUMNS = [
@@ -92,11 +93,14 @@ def _cell(value) -> str:
     return str(value)
 
 
+def _picked(row: dict) -> dict:
+    p = row.get("picked")
+    return p if isinstance(p, dict) else {}
+
+
 def _pop_cell(row: dict) -> str:
-    picked = row.get("picked") or {}
-    pop = None
-    if isinstance(picked, dict):
-        pop = picked.get("naive_pop")
+    picked = _picked(row)
+    pop = picked.get("naive_pop")
     if pop is None:
         pop = row.get("naive_pop")
     if pop is None:
@@ -105,9 +109,12 @@ def _pop_cell(row: dict) -> str:
 
 
 def _premium_cell(row: dict) -> str:
-    picked = row.get("picked") or {}
-    debit = picked.get("target_debit") if isinstance(picked, dict) else row.get("target_debit")
-    credit = picked.get("target_credit") if isinstance(picked, dict) else row.get("target_credit")
+    picked = _picked(row)
+    if row.get("choice") == "STOCK":
+        side = picked.get("side") or "stock"
+        return "%s @ %s" % (side, fmt(picked.get("entry") or row.get("close")))
+    debit = picked.get("target_debit") if picked else row.get("target_debit")
+    credit = picked.get("target_credit") if picked else row.get("target_credit")
     if debit is not None:
         return "debit %s" % fmt(debit)
     if credit is not None:
@@ -144,21 +151,152 @@ def _evidence_cell(row: dict) -> str:
     return "; ".join(bits)
 
 
-def _instrument_line(row: dict) -> str:
-    picked = row.get("picked") or {}
-    choice = row.get("choice") or "NO TRADE"
-    if choice == "STOCK" and picked:
-        return "STOCK %s entry %s stop %s target %s R/R %s shares %s" % (
-            picked.get("side") or "",
-            fmt(picked.get("entry")),
-            fmt(picked.get("stop")),
-            fmt(picked.get("target")),
-            fmt(picked.get("rr")),
-            picked.get("shares") or "",
-        )
-    if choice == "OPTIONS" and picked:
-        return "%s %s" % (picked.get("instrument") or "options", picked.get("legs") or "")
-    return "NO TRADE"
+def _strategy_cell(row: dict) -> str:
+    inst = str(_picked(row).get("instrument") or row.get("choice") or "")
+    names = {
+        "debit_call_spread": "call debit",
+        "debit_put_spread": "put debit",
+        "put_credit_spread": "put credit",
+        "call_credit_spread": "call credit",
+        "long_call": "long call",
+        "long_put": "long put",
+        "stock": "stock",
+    }
+    return names.get(inst, inst.replace("_", " ") or "—")
+
+
+def _strikes_cell(row: dict) -> str:
+    p = _picked(row)
+    if row.get("choice") == "STOCK":
+        return "stock"
+    long_k = p.get("long_strike") if p.get("long_strike") is not None else p.get("strike")
+    short_k = p.get("short_strike")
+    if long_k is not None and short_k is not None:
+        return "%s / %s" % (fmt(long_k, 1), fmt(short_k, 1))
+    if long_k is not None:
+        return fmt(long_k, 1)
+    return "—"
+
+
+def _exp_cell(row: dict) -> str:
+    exp = str(_picked(row).get("expiry") or "")[:10]
+    return exp or "—"
+
+
+def _enter_band(row: dict) -> dict:
+    """Stock level you must not cross to click this ticket."""
+    p = _picked(row)
+    guard = row.get("fill_guard") if isinstance(row.get("fill_guard"), dict) else {}
+    if not guard:
+        guard = p.get("fill_guard") if isinstance(p.get("fill_guard"), dict) else {}
+    last = to_float(row.get("close"))
+    direction = str(row.get("direction") or "")
+    floor = to_float(guard.get("stock_min"))
+    ceil = to_float(guard.get("stock_max"))
+    if row.get("choice") == "STOCK":
+        stop = to_float(p.get("stop"))
+        if stop is None:
+            return {"icon": "⚪", "text": "—", "ok": None}
+        if "bear" in direction or str(p.get("side") or "") == "short":
+            ok = last is None or last < stop
+            return {
+                "icon": "🟢" if ok else "🔴",
+                "text": "skip if last > **%s**" % fmt(stop),
+                "ok": ok,
+            }
+        ok = last is None or last > stop
+        return {
+            "icon": "🟢" if ok else "🔴",
+            "text": "skip if last < **%s**" % fmt(stop),
+            "ok": ok,
+        }
+    if floor is None and direction != "bearish":
+        floor = to_float(row.get("ema20"))
+    if ceil is None and direction == "bearish":
+        ceil = to_float(row.get("ema20"))
+    if floor is not None:
+        text = "skip if last < **%s**" % fmt(floor)
+        if last is None:
+            return {"icon": "⚪", "text": text, "ok": None}
+        ok = last >= floor
+        near = ok and floor > 0 and (last - floor) / floor <= 0.005
+        icon = "🟢" if ok and not near else ("🟡" if near else "🔴")
+        return {"icon": icon, "text": text, "ok": ok}
+    if ceil is not None:
+        text = "skip if last > **%s**" % fmt(ceil)
+        if last is None:
+            return {"icon": "⚪", "text": text, "ok": None}
+        ok = last <= ceil
+        near = ok and ceil > 0 and (ceil - last) / ceil <= 0.005
+        icon = "🟢" if ok and not near else ("🟡" if near else "🔴")
+        return {"icon": icon, "text": text, "ok": ok}
+    return {"icon": "⚪", "text": "—", "ok": None}
+
+
+def _x_cell(row: dict) -> str:
+    tag = str(row.get("x") or "DATA UNAVAILABLE")
+    if tag in ("", "DATA UNAVAILABLE"):
+        return "⚪ X missing"
+    if tag == "Crowded":
+        return "🔴 Crowded"
+    if tag == "Informed":
+        return "🟢 Informed"
+    if tag == "Quiet":
+        return "🟡 Quiet"
+    return "⚪ %s" % tag
+
+
+def _park_label(reason: str) -> str:
+    labels = {
+        "analog_0win_veto": "analog 0-win",
+        "analog_fast_stop_veto": "analog fast-stop",
+        "already_held_calls": "already hold calls",
+        "already_held_puts": "already hold puts",
+        "below_20ema": "below 20 EMA",
+        "below_trade_score": "score short",
+        "score_below_watch": "score too low",
+        "same_group_in_book": "same group as book",
+        "setup_B_replay_park": "breakout parked",
+        "setup_C_replay_park": "post-earnings parked",
+        "setup_G_replay_park": "breakdown parked",
+        "setup_H_replay_park": "FIRE parked",
+        "setup_E_post_rip": "too extended",
+    }
+    return labels.get(reason, reason.replace("_", " ") if reason else "—")
+
+
+def _ticket_cell(row: dict) -> str:
+    if row.get("choice") == "STOCK":
+        return _premium_cell(row) or "stock"
+    return "%s %s · %s" % (_strategy_cell(row), _strikes_cell(row), _exp_cell(row))
+
+
+def _ticket_table(rows: List[dict], parked: bool = False) -> List[str]:
+    head = "| | ticker | setup | ticket | pay | last | click | X |"
+    rule = "|---|---|---|---|---|---:|---|---|"
+    if parked:
+        head += " why not |"
+        rule += "---|"
+    lines = [head, rule]
+    for row in rows:
+        band = _enter_band(row)
+        action = str(row.get("action") or "")
+        mark = "🟢" if action == "TRADE" else ("🟡" if action == "WATCH" else "⚪")
+        cells = [
+            mark,
+            "**%s**" % (row.get("ticker") or ""),
+            setup_label(row.get("primary")),
+            _ticket_cell(row),
+            _premium_cell(row) or ("stock" if row.get("choice") == "STOCK" else "—"),
+            fmt(row.get("close")),
+            "%s %s" % (band["icon"], band["text"]),
+            _x_cell(row),
+        ]
+        if parked:
+            cells.append(_park_label((row.get("reasons") or ["—"])[0]))
+        lines.append("| " + " | ".join(cells) + " |")
+    lines.append("")
+    return lines
 
 
 def _kv(rows: Sequence[tuple]) -> List[str]:
@@ -170,289 +308,157 @@ def _kv(rows: Sequence[tuple]) -> List[str]:
 
 
 def _card(row: dict) -> List[str]:
-    earn = row.get("earnings") or {}
-    picked = row.get("picked") if isinstance(row.get("picked"), dict) else {}
-    thesis = row.get("thesis") or {}
-    reviews = row.get("reviews") or []
-    setup = row.get("primary") or "—"
-    setup_name = SETUP_NAMES.get(setup, "no setup")
-    pop_note = picked.get("naive_pop_note") or row.get("naive_pop_note") or "n/a for stock; no delta-based POP"
-    earn_txt = "%s (%s)" % (earn.get("date") or "DATA UNAVAILABLE", earn.get("source") or "DATA UNAVAILABLE")
-    if earn.get("overlaps_hold"):
-        earn_txt += " — ordinary options blocked"
-    x_txt = row.get("x") or "DATA UNAVAILABLE"
-    if row.get("x_notes"):
-        x_txt += " — %s" % row.get("x_notes")
-    invalid = picked.get("invalidation") or (thesis.get("invalidation") if thesis else None) or "thesis/setup break"
-    paras = thesis.get("paragraphs") or []
-    headline = thesis.get("headline") or "%s — %s" % (row.get("ticker"), setup_name)
+    picked = _picked(row)
+    setup_name = setup_label(row.get("primary")) if row.get("primary") else "no setup"
+    band = _enter_band(row)
+    debit = picked.get("target_debit")
+    credit = picked.get("target_credit")
+    pay = _premium_cell(row) or ("stock" if row.get("choice") == "STOCK" else "—")
     lines = [
         "---",
         "",
-        "### %s · %s · **%s**" % (row.get("ticker"), row.get("action"), row.get("choice") or "NO TRADE"),
+        "### %s %s · **%s** · %s" % (
+            "🟢" if row.get("action") == "TRADE" else "🟡",
+            row.get("ticker"),
+            _strategy_cell(row),
+            _x_cell(row),
+        ),
         "",
-        headline,
+        "%s. Last **%s**."
+        % (setup_name, fmt(row.get("close"))),
         "",
     ]
-    if paras:
-        lines.append(paras[0])
-        lines.append("")
-    lines.extend(
-        _kv(
-            [
-                ("Setup", "%s — %s" % (setup, setup_name)),
-                ("Lane", "%s / %s" % (row.get("lane") or "SWING", row.get("direction") or "")),
-                ("Last", fmt(row.get("close"))),
-                ("Trade", _instrument_line(row)),
-                ("Pay / collect", _premium_cell(row) or "stock (no option premium)"),
-                ("Naive POP", "%s — %s" % (_pop_cell(row), pop_note)),
-                ("Conf", "%s %s (quality of the *structure*, not P(win))"
-                 % (row.get("opt_conf") if row.get("opt_conf") is not None else "n/a",
-                    row.get("opt_conf_label") or "")),
-                ("Score", fmt(row.get("score"), 1)),
-                ("Evidence", _evidence_cell(row)),
-                ("Stop / invalidation", invalid),
-                ("RS 20d vs SPY", fmt_pct(row.get("rs_20"))),
-                ("Trend / MAs", "%s · 20 %s / 50 %s / 200 %s"
-                 % (row.get("trend") or "", fmt(row.get("ema20")), fmt(row.get("sma50")), fmt(row.get("sma200")))),
-                ("Group", "%s (%s) · %s" % (row.get("group"), row.get("etf"), row.get("group_status"))),
-                ("AVWAP", "year %s · swing-low %s" % (fmt(row.get("avwap_year")), fmt(row.get("avwap_swing_low")))),
-                ("ORATS IV/HV", "IV30 %s · HV20 %s · VRP %s" % (fmt(row.get("iv30")), fmt(row.get("hv20")), fmt(row.get("vrp")))),
-                ("Earnings", earn_txt),
-                ("X", x_txt),
-                ("Fill", picked.get("fill_assumption") or "stock last; options never mid"),
-                ("Fill as-of", picked.get("fill_asof") or "n/a — revalidate at the open"),
-                ("Greeks", "Δ %s · Γ %s · Θ %s · ν %s"
-                 % (
-                     fmt(picked.get("delta")),
-                     fmt(picked.get("gamma"), 4),
-                     fmt(picked.get("theta"), 4),
-                     fmt(picked.get("vega"), 4),
-                 )),
-            ]
-        )
+    kv = [
+        ("Setup", setup_name),
+        ("Strategy", _strategy_cell(row)),
+        ("Strikes", _strikes_cell(row)),
+        ("Expiry", _exp_cell(row)),
+        ("Pay", pay),
+        ("Last", fmt(row.get("close"))),
+        ("Don't enter", "%s %s" % (band["icon"], band["text"])),
+        ("Debit max" if debit is not None else "Credit min", fmt(debit) if debit is not None else fmt(credit) if credit is not None else "—"),
+        ("Naive POP / conf", "%s / %s" % (_pop_cell(row), row.get("opt_conf") if row.get("opt_conf") is not None else "—")),
+    ]
+    if row.get("book_group_note"):
+        kv.append(("Book overlap", row.get("book_group_note")))
+    lines.extend(_kv(kv))
+    return lines
+
+
+def _counts_line(built: dict) -> str:
+    return "Regime **%s** · TRADE %s · WATCH %s · FIRE %s · X-HOT %s" % (
+        ((built.get("regime") or {}).get("regime") or "unknown"),
+        len(built.get("trades") or []),
+        len(built.get("watch") or []),
+        len(built.get("fire") or []),
+        len(built.get("xhot") or []),
     )
-    if len(paras) > 1:
-        lines.append("More context:")
+
+
+def _legend() -> List[str]:
+    return [
+        "You click every Schwab order. Empty TRADE is valid.",
+        "",
+        "Click: 🟢 last is clear · 🟡 within 0.5% · 🔴 already through — do not click. **Pay** is max debit / min credit.",
+        "X: 🟢 Informed · 🟡 Quiet · 🔴 Crowded · ⚪ missing (do not treat missing as Quiet).",
+        "",
+        SETUP_LINE,
+        "",
+    ]
+
+
+def _alerts(built: dict) -> List[str]:
+    lines: List[str] = []
+    if built.get("session_incomplete"):
+        lines.append(
+            "Session volume is incomplete (median rvol %s). FIRE / 1d ranks are not final."
+            % (fmt(built.get("median_rvol"), 2) if built.get("median_rvol") is not None else "n/a")
+        )
         lines.append("")
-        for para in paras[1:]:
-            lines.append(para)
-            lines.append("")
-    if row.get("setup_notes"):
-        lines.append("Tape notes:")
+    missing_x = missing_x_tickers(built.get("trades") or [])
+    if missing_x:
+        lines.append("⚠️ X missing on TRADE: **%s**. Search $TICKER and write `var/xintel/` before clicking." % ", ".join(missing_x))
         lines.append("")
-        for note in row.get("setup_notes") or []:
-            lines.append("- %s" % note)
+    empty = list(built.get("chain_empty") or [])
+    if empty:
+        lines.append("Chain fetch empty: " + ", ".join(empty[:20]) + ".")
         lines.append("")
-    if reviews:
-        lines.append("All structures reviewed:")
-        lines.append("")
-        lines.append("| structure | result | debit | credit | why |")
-        lines.append("|---|---|---:|---:|---|")
-        for rev in reviews:
-            lines.append(
-                "| %s | %s | %s | %s | %s |"
-                % (
-                    rev.get("strategy") or "",
-                    rev.get("status") or "",
-                    fmt(rev.get("target_debit")) if rev.get("target_debit") is not None else "—",
-                    fmt(rev.get("target_credit")) if rev.get("target_credit") is not None else "—",
-                    (rev.get("reason") or "")[:80],
-                )
-            )
-        lines.append("")
-    macros = row.get("macros") or []
-    if macros:
-        lines.append("Macro in hold window: " + "; ".join("%s %s" % (ev.get("date"), ev.get("event")) for ev in macros))
+    for err in (built.get("schwab_chain_errors") or [])[:8]:
+        lines.append("- chain **%s**: %s" % (err.get("ticker"), err.get("error")))
+    tape_errors = built.get("tape_errors") or []
+    for err in tape_errors[:8]:
+        lines.append("- tape **%s**: %s" % (err.get("ticker"), err.get("error")))
+    if (built.get("schwab_chain_errors") or []) or tape_errors:
         lines.append("")
     return lines
 
 
-def render_board(asof: str, built: dict, include_desk_pick: bool = True) -> str:
+def _board_body(built: dict) -> List[str]:
     trades = built.get("trades") or []
     watch = built.get("watch") or []
     fire = built.get("fire") or []
-    lines = [
-        "# Groat %s" % asof,
-        "",
-        "Regime **%s** · TRADE %s · WATCH %s · FIRE %s · X-HOT %s"
-        % (
-            ((built.get("regime") or {}).get("regime") or "unknown"),
-            len(trades),
-            len(watch),
-            len(fire),
-            len(built.get("xhot") or []),
-        ),
-        "",
-        "You click every Schwab order. Empty board is valid. Prefer 1–3 names.",
-        "",
-    ]
-    if include_desk_pick:
-        lines.extend(render_desk_picks(built.get("picks") or {}))
-        lines.extend(render_evidence(built.get("evidence") or {}))
-    lines.extend(
-        [
-        "## How to read this",
-        "",
-        "| field | what it is | what it is not |",
-        "|---|---|---|",
-        "| **setup C** | Post-earnings drift: print already out; price holds earnings AVWAP. | Not an earnings lottery. |",
-        "| **setup E** | Emerging sector rotation: the *group* is attracting capital; pick a leader in it. | Not “the stock is a great company.” |",
-        "| **conf** | 0–85 quality of the *option structure* (quotes, OI, IV, earnings distance, X). | **Not** probability of profit. |",
-        "| **naive POP** | P(spot beyond breakeven) from ORATS call deltas. | **Not** a backtested win rate. Stock = n/a. |",
-        "| **score** | Rank of the underlying idea. | Not POP. |",
-        "| **FIRE** | Tape first: volume + 1–2 day shock, then X confirms or vetoes. | Not “it’s loud on X.” |",
-        "| **X-HOT** | Conversation first: loud on X, then tape says dipped / will_rise / will_dip. | Not a trade by itself. Heat without a trigger is Watch. |",
-        "| **evidence** | Same ticker + same setup on cached tape; options via hist/strikes if cached/capped. | **Not** a system win rate. Does not change today’s gates. |",
-        "",
-        "Other setups: " + "; ".join("**%s** %s" % (k, SETUP_GUIDE[k].split("—")[0].strip()) for k in ("A", "B", "D", "F", "G", "H")),
-        "",
-        "## TRADE — index",
-        "",
-        ]
-    )
+    xhot = built.get("xhot") or []
+    lines: List[str] = ["## TRADE", ""]
     if not trades:
-        lines.append("Empty board. Valid.")
+        lines.append("Empty. Valid.")
         lines.append("")
     else:
-        lines.append("| ticker | setup | vehicle | pay/collect | naive POP | conf | last | book |")
-        lines.append("|---|---|---|---|---:|---:|---:|---|")
+        lines.extend(_ticket_table(trades))
         for row in trades:
-            held = "IN BOOK" if row.get("in_book") else ("held" if row.get("held") else "")
-            lines.append(
-                "| **%s** | %s %s | **%s** | %s | %s | %s | %s | %s |"
-                % (
-                    row.get("ticker"),
-                    row.get("primary") or "",
-                    SETUP_NAMES.get(row.get("primary") or "", ""),
-                    row.get("choice"),
-                    _premium_cell(row) or "—",
-                    _pop_cell(row),
-                    row.get("opt_conf") if row.get("opt_conf") is not None else "—",
-                    fmt(row.get("close")),
-                    held or "—",
-                )
-            )
-        lines.append("")
-        lines.append("| ticker | exact structure | stop / invalidation |")
-        lines.append("|---|---|---|")
-        for row in trades:
-            picked = row.get("picked") if isinstance(row.get("picked"), dict) else {}
-            lines.append(
-                "| **%s** | %s | %s |"
-                % (
-                    row.get("ticker"),
-                    _instrument_line(row),
-                    picked.get("invalidation") or "thesis/setup break",
-                )
-            )
-        lines.append("")
+            lines.extend(_card(row))
+            lines.append("")
     lines.extend(["## WATCH", ""])
     if not watch:
         lines.append("None.")
         lines.append("")
     else:
-        lines.append("| ticker | setup | last | RS20 | score | parked because |")
-        lines.append("|---|---|---:|---:|---:|---|")
-        for row in watch:
-            lines.append(
-                "| %s | %s | %s | %s | %s | %s |"
-                % (
-                    row.get("ticker"),
-                    row.get("primary") or "",
-                    fmt(row.get("close")),
-                    fmt_pct(row.get("rs_20")),
-                    fmt(row.get("score"), 1),
-                    "; ".join(row.get("reasons") or [])[:70] or "below trade score",
-                )
-            )
-        lines.append("")
-    lines.extend(["## FIRE — spike / dip", ""])
-    lines.append("Needs volume + a 1–2 day shock **first**. X only confirms or vetoes.")
+        lines.extend(_ticket_table(watch, parked=True))
+    lines.extend(["## FIRE", ""])
+    lines.append("Tape first. Not auto-TRADE.")
     lines.append("")
     if not fire:
-        lines.append("No FIRE names. Valid.")
+        lines.append("None.")
         lines.append("")
     else:
-        lines.append("| ticker | kind | 1d | rvol | vehicle | pay/collect | board | X |")
-        lines.append("|---|---|---:|---:|---|---|---|---|")
-        for row in fire:
-            fire_info = row.get("fire") or {}
-            board_state = "%s" % (row.get("action") or "")
-            if row.get("reasons"):
-                board_state += " · " + "; ".join(row.get("reasons") or [])[:40]
-            lines.append(
-                "| **%s** | %s | %s | %s | **%s** | %s | %s | %s |"
-                % (
-                    row.get("ticker"),
-                    fire_info.get("kind") or "",
-                    fmt_pct(row.get("ret_1")),
-                    fmt(row.get("rvol"), 1),
-                    row.get("choice"),
-                    _premium_cell(row) or "—",
-                    board_state,
-                    row.get("x") or "DATA UNAVAILABLE",
-                )
-            )
-        lines.append("")
-        lines.append("FIRE names are not auto-TRADE. Parked/IGNORE rows still show the ticket for visibility.")
-        lines.append("")
-    errors = built.get("schwab_chain_errors") or []
-    if errors:
-        lines.extend(["## Schwab chain errors", ""])
-        for err in errors[:12]:
-            lines.append("- **%s**: %s" % (err.get("ticker"), err.get("error")))
-        lines.append("")
-    xhot = built.get("xhot") or []
-    lines.extend(["## X-HOT — conversation first", ""])
-    lines.append(
-        "Starts from what is loud on X, then asks the tape. "
-        "**dipped** = already red with heat (buy-the-dip only if 20 EMA/AVWAP holds). "
-        "**will_rise** = bullish X and tape allows continuation or a later entry. "
-        "**will_dip** = bearish X, or a spike already extended (the trade is the pullback, not the chase). "
-        "Heat without a volume/price trigger is Watch, not a trade."
-    )
+        lines.extend(_ticket_table(fire, parked=True))
+    lines.extend(["## X-HOT", ""])
+    lines.append("Conversation first. Not a trade by itself.")
     lines.append("")
     if not xhot:
-        lines.append("X-HOT DATA UNAVAILABLE until `var/xhot/DATE/hot.json` is written (skill searches X).")
+        lines.append("X-HOT DATA UNAVAILABLE until `var/xhot/DATE/hot.json` is written.")
         lines.append("")
     else:
-        lines.append("| ticker | move | tape | 1d | rvol | X | vehicle |")
-        lines.append("|---|---|---|---:|---:|---|---|")
+        lines.append("| ticker | move | last | 1d | rvol | board |")
+        lines.append("|---|---|---:|---:|---:|---|")
         for row in xhot:
             xh = row.get("xhot") or {}
             lines.append(
-                "| **%s** | **%s** | %s | %s | %s | %s / %s | %s |"
+                "| **%s** | **%s** | %s | %s | %s | %s |"
                 % (
                     row.get("ticker"),
                     xh.get("move") or "noise",
-                    xh.get("kind") or "",
+                    fmt(row.get("close")),
                     fmt_pct(row.get("ret_1")),
                     fmt(row.get("rvol"), 1),
-                    xh.get("tag") or "",
-                    xh.get("bias") or "",
-                    row.get("choice") or "",
+                    row.get("action") or "",
                 )
             )
         lines.append("")
-        lines.append("| ticker | play | X narrative |")
-        lines.append("|---|---|---|")
-        for row in xhot:
-            xh = row.get("xhot") or {}
-            narr = str(xh.get("narrative") or "").replace("|", "/")
-            lines.append(
-                "| **%s** | %s | %s |"
-                % (row.get("ticker"), xh.get("play") or "", narr)
-            )
-        lines.append("")
-    lines.extend(["## Tickets", ""])
-    seen = set()
-    for row in list(trades) + list(fire) + list(xhot):
-        t = row.get("ticker")
-        if t in seen:
-            continue
-        seen.add(t)
-        lines.extend(_card(row))
+    return lines
+
+
+def render_board(asof: str, built: dict, include_desk_pick: bool = True) -> str:
+    lines = [
+        "# Groat %s" % asof,
+        "",
+        _counts_line(built),
+        "",
+    ]
+    lines.extend(_legend())
+    lines.extend(_alerts(built))
+    if include_desk_pick:
+        lines.extend(render_desk_picks(built.get("picks") or {}))
+    lines.extend(_board_body(built))
     return "\n".join(lines)
 
 
@@ -460,34 +466,21 @@ def render_report(asof: str, built: dict) -> str:
     lines = [
         "# Groat full scan %s" % asof,
         "",
-        "You click every Schwab order. Empty board is valid. Prefer 1–3 names.",
+        _counts_line(built),
         "",
     ]
+    lines.extend(_legend())
+    lines.extend(_alerts(built))
     lines.extend(render_desk_picks(built.get("picks") or {}))
-    lines.extend(render_evidence(built.get("evidence") or {}))
+    lines.extend(_board_body(built))
     lines.extend(
         [
-            "Hierarchy: market regime → underlying thesis → price/AVWAP/volume → catalyst → relative strength → risk/reward → ORATS vol + structure → positioning → X.",
-            "X excitement cannot rescue a bad chart. Never invent ORATS, prices, posts, or news.",
-            "",
-        ]
-    )
-    lines.extend(render_regime(built.get("regime") or {}))
-    lines.extend(render_rotation(built.get("groups") or []))
-    lines.append(render_board(asof, built, include_desk_pick=False))
-    lines.extend(
-        [
-            "",
-            "## Data caveats",
+            "## Data",
             "",
             "- ORATS rows: %s · error: %s"
             % (built.get("orats_rows") or 0, built.get("orats_error") or "none"),
-            "- Option chains pulled only for top underlying theses: %s"
-            % ", ".join(built.get("option_names") or [])
-            or "none",
-            "- X is confirm/veto only. Write `var/xintel/DATE/TICKER.json` after searching $TICKER. Missing file → DATA UNAVAILABLE. FIRE needs volume+price first.",
-            "- Dealer GEX is not computed. Do not present estimated GEX as fact.",
-            "- Conservative option fills: debit at ask, credit at short bid minus long ask. Never assume midpoint.",
+            "- Chain fetch empty: %s" % (", ".join(built.get("chain_empty") or []) or "none"),
+            "- Debit at ask, credit at short bid minus long ask. Never mid.",
             "",
         ]
     )

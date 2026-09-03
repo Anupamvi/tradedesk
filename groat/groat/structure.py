@@ -408,7 +408,7 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
                         otm = (long_leg["strike"] / spot) - 1.0
                     else:
                         otm = 1.0 - (long_leg["strike"] / spot)
-                if otm is not None and otm > 0.06 and (abs(use) < 0.38 or net_d < 0.12):
+                if otm is not None and (otm > 0.05 or (otm > 0.03 and (abs(use) < 0.38 or net_d < 0.12))):
                     kills["lottery_otm"] += 1
                     continue
                 pop, pop_note = naive_pop_debit_vertical(long_leg, short_leg, debit, side)
@@ -611,6 +611,7 @@ def choose(
     strikes: Sequence[dict],
     earnings: dict,
     setup: Optional[dict] = None,
+    chain_status: Optional[str] = None,
 ) -> Dict[str, object]:
     setup = setup or {}
     reviews = []
@@ -648,7 +649,12 @@ def choose(
     elif earnings.get("overlaps_hold") and earnings.get("source") != "exempt":
         options_block = "earnings inside intended hold — ordinary options rejected (not an EVENT TRADE)"
     elif not strikes:
-        options_block = "option chain DATA UNAVAILABLE"
+        if chain_status == "not_requested":
+            options_block = "option chain not requested (outside today's 40 — not a fetch fail)"
+        elif chain_status == "empty":
+            options_block = "option chain fetch empty / DATA UNAVAILABLE"
+        else:
+            options_block = "option chain DATA UNAVAILABLE"
 
     builders = (
         ("long_call", "bullish", lambda: long_option(strikes, "bullish", earnings)),

@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 302.1999,
+      "clsPx": 301.49,
       "hiPx": 303.4,
       "loPx": 298.77,
       "open": 303.19,
       "stkVolu": 6953409.0,
       "ticker": "LRCX",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 290.2,
+      "hiPx": 296.34,
+      "loPx": 286.59,
+      "open": 294.555,
+      "stkVolu": 8254193.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 287.91,
+      "hiPx": 292.1895,
+      "loPx": 284.4,
+      "open": 291.5,
+      "stkVolu": 4843435.0,
+      "ticker": "LRCX",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

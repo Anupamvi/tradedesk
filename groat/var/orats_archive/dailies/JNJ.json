@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 266.4,
+      "clsPx": 265.85,
       "hiPx": 267.77,
       "loPx": 265.17,
       "open": 267.125,
       "stkVolu": 7900418.0,
       "ticker": "JNJ",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 271.19,
+      "hiPx": 271.91,
+      "loPx": 267.02,
+      "open": 270.83,
+      "stkVolu": 6035314.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 275.7,
+      "hiPx": 281.07,
+      "loPx": 273.53,
+      "open": 274.74,
+      "stkVolu": 7913032.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

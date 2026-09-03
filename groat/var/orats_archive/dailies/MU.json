@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 955.935,
+      "clsPx": 958.73,
       "hiPx": 959.9699,
       "loPx": 930.79,
       "open": 931.39,
       "stkVolu": 22569478.0,
       "ticker": "MU",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 933.44,
+      "hiPx": 969.44,
+      "loPx": 922.39,
+      "open": 941.125,
+      "stkVolu": 27762236.0,
+      "ticker": "MU",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 954.84,
+      "hiPx": 958.0,
+      "loPx": 927.1569,
+      "open": 930.825,
+      "stkVolu": 21440498.0,
+      "ticker": "MU",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

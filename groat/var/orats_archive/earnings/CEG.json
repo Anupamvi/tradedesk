@@ -1,0 +1,598 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-04-15",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-07-17",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-10-16",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-01-15",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-04-16",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-07-16",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-10-15",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-01-21",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-04-20",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-07-15",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-10-21",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-01-20",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-04-18",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-07-21",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-10-20",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-01-19",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-04-23",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-07-19",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-10-18",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-01-17",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-04-18",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-07-24",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-10-30",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-01-23",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-04-24",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-07-17",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-10-16",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-01-18",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-04-16",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-07-16",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-10-15",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-01-21",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-04-28",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-07-21",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-10-20",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-01-19",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-04-27",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-07-20",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-26",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-01-30",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-04-26",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-31",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-31",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-31",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-04-30",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-31",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-30",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-30",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-28",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-30",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-29",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-01-28",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-27",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-29",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-28",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-01-31",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-28",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-28",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2006-10-27",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-01-31",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-04-25",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-07-27",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-31",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-01-30",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-04-30",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-31",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-11-06",
+      "ticker": "CEG",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-02-18",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-05-05",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-07-31",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-10-30",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-02-22",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-04-30",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-07-28",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-10-29",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-02-04",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-05-06",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-08-03",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-10-28",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-02-17",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-01-01",
+      "ticker": "CEG",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-05-12",
+      "ticker": "CEG",
+      "updatedAt": "2022-05-20T23:16:02Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-08-04",
+      "ticker": "CEG",
+      "updatedAt": "2022-08-12T23:16:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-11-08",
+      "ticker": "CEG",
+      "updatedAt": "2022-11-19T00:16:00Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-02-16",
+      "ticker": "CEG",
+      "updatedAt": "2023-02-25T00:15:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-05-04",
+      "ticker": "CEG",
+      "updatedAt": "2023-05-12T23:15:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-08-03",
+      "ticker": "CEG",
+      "updatedAt": "2023-08-11T23:15:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-11-06",
+      "ticker": "CEG",
+      "updatedAt": "2023-11-17T00:16:00Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-02-27",
+      "ticker": "CEG",
+      "updatedAt": "2024-03-09T00:16:02Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-05-09",
+      "ticker": "CEG",
+      "updatedAt": "2024-05-17T23:15:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-08-06",
+      "ticker": "CEG",
+      "updatedAt": "2024-08-16T23:16:03Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-11-04",
+      "ticker": "CEG",
+      "updatedAt": "2024-11-15T01:01:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-02-18",
+      "ticker": "CEG",
+      "updatedAt": "2025-03-01T03:41:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-05-06",
+      "ticker": "CEG",
+      "updatedAt": "2025-05-17T02:40:43Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-08-07",
+      "ticker": "CEG",
+      "updatedAt": "2025-08-16T02:40:30Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-11-07",
+      "ticker": "CEG",
+      "updatedAt": "2025-11-18T03:40:30Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-02-24",
+      "ticker": "CEG",
+      "updatedAt": "2026-03-07T03:40:35Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-05-11",
+      "ticker": "CEG",
+      "updatedAt": "2026-05-22T02:40:38Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-08-06",
+      "ticker": "CEG",
+      "updatedAt": "2026-08-14T22:00:54Z"
+    }
+  ]
+}

@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 260.2015,
+      "clsPx": 259.77,
       "hiPx": 264.36,
       "loPx": 257.12,
       "open": 263.825,
       "stkVolu": 46089422.0,
       "ticker": "AMZN",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 254.92,
+      "hiPx": 255.82,
+      "loPx": 251.93,
+      "open": 254.83,
+      "stkVolu": 31700056.0,
+      "ticker": "AMZN",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 256.4,
+      "hiPx": 256.24,
+      "loPx": 253.4,
+      "open": 254.255,
+      "stkVolu": 24013334.0,
+      "ticker": "AMZN",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

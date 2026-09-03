@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 799.0,
+      "clsPx": 797.47,
       "hiPx": 802.9,
       "loPx": 789.05,
       "open": 800.0,
       "stkVolu": 3071690.0,
       "ticker": "CAT",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 779.16,
+      "hiPx": 790.22,
+      "loPx": 774.55,
+      "open": 788.88,
+      "stkVolu": 2948262.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 790.85,
+      "hiPx": 793.94,
+      "loPx": 771.39,
+      "open": 778.51,
+      "stkVolu": 2507620.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

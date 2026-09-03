@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 416.4,
+      "clsPx": 415.32,
       "hiPx": 423.8,
       "loPx": 414.6001,
       "open": 417.23,
       "stkVolu": 6747964.0,
       "ticker": "TSM",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 414.0,
+      "hiPx": 418.62,
+      "loPx": 412.065,
+      "open": 417.8,
+      "stkVolu": 7928439.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 415.9722,
+      "hiPx": 416.5,
+      "loPx": 411.27,
+      "open": 413.2,
+      "stkVolu": 6301000.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 356.15,
+      "clsPx": 356.02,
       "hiPx": 357.77,
       "loPx": 354.7701,
       "open": 355.9,
       "stkVolu": 7964106.0,
       "ticker": "JPM",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 354.95,
+      "hiPx": 359.93,
+      "loPx": 354.12,
+      "open": 355.73,
+      "stkVolu": 5079819.0,
+      "ticker": "JPM",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 356.3,
+      "hiPx": 361.47,
+      "loPx": 353.79,
+      "open": 357.55,
+      "stkVolu": 5343789.0,
+      "ticker": "JPM",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

@@ -1,7 +1,8 @@
 """Post-selection analogs: stock setup walk + thin options replay.
 
 Runs after the daily TRADE shortlist. Same ticker + same setup, not a universe
-backtest. Does not change gates. Small n. X-HOT is not in this file.
+backtest. n≥4 with 0 wins and avg R<0 parks TRADE→WATCH (analog_0win_veto).
+Small n and mixed records stay TRADE. X-HOT is not in this file.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from groat.config import (
     ticker_group,
 )
 from groat.earnings import cadence_next, parse_any_date, parse_ern_history
+from groat.gates import analog_park_reason, ANALOG_FAST_HOLD
 from groat.num import fmt, to_float
 from groat.orats import fetch_hist_earnings, fetch_strikes
 from groat.rotation import classify_group
@@ -276,6 +278,14 @@ def find_stock_analogs(
     return {"hits": hits, "chase_skipped": chase_n, "scanned": scanned}
 
 
+def _stock_sum_with_fast(hits: List[dict]) -> dict:
+    stock_sum = _summarize_stock(hits)
+    stock_sum["fast_loss_n"] = sum(
+        1 for h in hits if h.get("result") == "loss" and int(h.get("hold") or 99) <= ANALOG_FAST_HOLD
+    )
+    return stock_sum
+
+
 def _summarize_stock(hits: List[dict]) -> dict:
     scored = [h for h in hits if h.get("r") is not None]
     if not scored:
@@ -417,7 +427,7 @@ def attach_evidence(
             cores.get(ticker),
         )
         hits = analog.get("hits") or []
-        stock_sum = _summarize_stock(hits)
+        stock_sum = _stock_sum_with_fast(hits)
         opt_rows = []
         want_opt = trade.get("choice") == "OPTIONS"
         instrument = str(((trade.get("picked") or {}) if isinstance(trade.get("picked"), dict) else {}).get("instrument") or "")
@@ -465,7 +475,33 @@ def attach_evidence(
                 )
                 opt_rows.append(proxy)
         opt_sum = _summarize_opt(opt_rows)
-        weak = int(stock_sum.get("n") or 0) >= 5 and (stock_sum.get("avg_r") is not None) and stock_sum["avg_r"] < 0
+        veto = analog_park_reason(stock_sum)
+        extra_codes = []
+        for code in trade.get("setups") or []:
+            if code in ("A", "D", "E", "F") and code != primary and code not in extra_codes:
+                extra_codes.append(code)
+        for code in extra_codes:
+            extra = find_stock_analogs(
+                ticker,
+                bars,
+                asof,
+                code,
+                direction,
+                bars_map,
+                spy_bars,
+                hist_e.get(ticker),
+                cores.get(ticker),
+            )
+            extra_sum = _stock_sum_with_fast(extra.get("hits") or [])
+            extra_veto = analog_park_reason(extra_sum)
+            if extra_veto:
+                veto = veto or extra_veto
+                also = list(stock_sum.get("also_veto") or [])
+                also.append({"setup": code, "reason": extra_veto, "n": extra_sum.get("n")})
+                stock_sum["also_veto"] = also
+        weak = bool(veto) or (
+            int(stock_sum.get("n") or 0) >= 5 and (stock_sum.get("avg_r") is not None) and stock_sum["avg_r"] < 0
+        )
         row = {
             "ticker": ticker,
             "primary": primary,
@@ -479,6 +515,7 @@ def attach_evidence(
             "hits": hits,
             "opt_rows": opt_rows,
             "weak": weak,
+            "analog_veto": veto,
             "note": "",
         }
         if stock_sum["n"] == 0:
@@ -488,11 +525,12 @@ def attach_evidence(
             "stock": stock_sum,
             "options": opt_sum,
             "weak": weak,
+            "analog_veto": veto,
             "note": row["note"],
         }
         rows.append(row)
     if picks is not None:
-        weak_names = [r["ticker"] for r in rows if r.get("weak")]
+        weak_names = [r["ticker"] for r in rows if r.get("weak") and not r.get("analog_veto")]
         if weak_names:
             picks["evidence_line"] = "Analog caution (stock setup avg R < 0, n≥5): " + ", ".join(weak_names) + "."
         else:
@@ -507,7 +545,9 @@ def attach_evidence(
             "Same ticker + same setup on cached tape — not this ticket's P(win). "
             "Options use hist/strikes when cached or under the daily cap. "
             "Option P&L is delta+theta clamped to defined risk, not a live exit mark. "
-            "Not a system win rate. X-HOT is not tested. Does not change today's gates."
+            "Not a system win rate. X-HOT is not tested. "
+            "n≥4 with 0 wins and avg R<0, or n≥3 with ≥2 fast −1R stops that beat wins, parks TRADE→WATCH. "
+            "Mixed or small-n stay TRADE."
         ),
     }
 
@@ -550,12 +590,11 @@ def render_evidence(payload: dict) -> List[str]:
             vs = "—"
         flag = " ⚠" if row.get("weak") else ""
         lines.append(
-            "| **%s**%s | %s %s | %s | %s | %s | %s | %s | %s |"
+            "| **%s**%s | %s | %s | %s | %s | %s | %s | %s |"
             % (
                 row.get("ticker"),
                 flag,
-                row.get("primary") or "",
-                row.get("primary_name") or "",
+                row.get("primary_name") or SETUP_NAMES.get(row.get("primary") or "", row.get("primary") or "—"),
                 n if n else "0",
                 wlt,
                 avg,

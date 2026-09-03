@@ -1,0 +1,796 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-12-17",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-03-22",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-06-07",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-10-27",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-12-13",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-03-23",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-06-15",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-10-26",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-12-19",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-03-21",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-06-05",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-10-10",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-12-17",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-03-13",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-05-29",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-10-14",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-12-18",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-03-12",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-05-28",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-10-08",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-12-17",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-03-04",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-05-27",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-10-07",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-12-09",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-03-02",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-05-24",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-10-12",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-12-14",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-03-26",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-05-31",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-11",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-12-13",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-03-05",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-05-30",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-10",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-12-12",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-03-05",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-05-28",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-08",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-12-09",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-03-03",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-05-27",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-07",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-12-09",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-03-02",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-05-26",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-06",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-12-08",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-03-02",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-05-31",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-10-12",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2006-12-13",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-12-14",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-03-08",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-05-31",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-10",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-12-13",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-03-05",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-05-29",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-08",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-12-11",
+      "ticker": "COST",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-03-04",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-05-28",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-10-07",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-12-10",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-03-03",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-05-27",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-10-06",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-12-08",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-03-02",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-05-25",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-10-05",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-12-08",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-02-29",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-05-24",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-10-10",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-12-12",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-03-12",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-05-30",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-10-09",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-12-11",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-03-06",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-05-29",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-10-08",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-12-10",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-03-05",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-05-27",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-09-29",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-12-08",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-03-02",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-05-25",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-09-29",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-12-07",
+      "ticker": "COST",
+      "updatedAt": "2017-10-11T19:03:54Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-03-02",
+      "ticker": "COST",
+      "updatedAt": "2018-11-12T17:05:23Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-05-25",
+      "ticker": "COST",
+      "updatedAt": "2018-11-12T17:05:23Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-10-05",
+      "ticker": "COST",
+      "updatedAt": "2018-11-12T17:05:23Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-12-14",
+      "ticker": "COST",
+      "updatedAt": "2018-11-12T17:05:23Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-03-07",
+      "ticker": "COST",
+      "updatedAt": "2018-11-12T17:05:23Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-05-31",
+      "ticker": "COST",
+      "updatedAt": "2018-11-12T17:05:23Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-10-04",
+      "ticker": "COST",
+      "updatedAt": "2018-11-12T17:05:23Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-12-13",
+      "ticker": "COST",
+      "updatedAt": "2018-12-21T23:00:56Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-03-07",
+      "ticker": "COST",
+      "updatedAt": "2019-03-15T22:46:05Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-05-30",
+      "ticker": "COST",
+      "updatedAt": "2019-06-07T23:16:08Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-10-03",
+      "ticker": "COST",
+      "updatedAt": "2019-10-11T23:16:14Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-12-12",
+      "ticker": "COST",
+      "updatedAt": "2019-12-21T00:17:30Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-03-05",
+      "ticker": "COST",
+      "updatedAt": "2020-03-13T23:16:08Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-05-28",
+      "ticker": "COST",
+      "updatedAt": "2020-06-05T23:15:56Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-09-24",
+      "ticker": "COST",
+      "updatedAt": "2020-10-02T23:16:06Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-12-10",
+      "ticker": "COST",
+      "updatedAt": "2020-12-19T00:16:04Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-03-04",
+      "ticker": "COST",
+      "updatedAt": "2021-03-13T00:16:02Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-05-27",
+      "ticker": "COST",
+      "updatedAt": "2021-06-04T23:16:09Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-09-23",
+      "ticker": "COST",
+      "updatedAt": "2021-10-01T23:16:38Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-12-09",
+      "ticker": "COST",
+      "updatedAt": "2021-12-18T00:15:51Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-03-03",
+      "ticker": "COST",
+      "updatedAt": "2022-03-12T00:15:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-05-26",
+      "ticker": "COST",
+      "updatedAt": "2022-06-03T23:16:09Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-09-22",
+      "ticker": "COST",
+      "updatedAt": "2022-09-30T23:16:04Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-12-08",
+      "ticker": "COST",
+      "updatedAt": "2022-12-17T00:16:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-03-02",
+      "ticker": "COST",
+      "updatedAt": "2023-03-11T00:16:13Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-05-25",
+      "ticker": "COST",
+      "updatedAt": "2023-06-02T23:16:06Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-09-26",
+      "ticker": "COST",
+      "updatedAt": "2023-10-06T23:16:06Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-12-14",
+      "ticker": "COST",
+      "updatedAt": "2023-12-23T00:16:12Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-03-07",
+      "ticker": "COST",
+      "updatedAt": "2024-03-15T23:16:12Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-05-30",
+      "ticker": "COST",
+      "updatedAt": "2024-06-07T23:16:12Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-09-26",
+      "ticker": "COST",
+      "updatedAt": "2024-10-04T23:16:20Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-12-12",
+      "ticker": "COST",
+      "updatedAt": "2024-12-21T03:41:15Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-03-06",
+      "ticker": "COST",
+      "updatedAt": "2025-03-15T02:41:21Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-05-29",
+      "ticker": "COST",
+      "updatedAt": "2025-06-07T02:40:43Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-09-25",
+      "ticker": "COST",
+      "updatedAt": "2025-10-04T02:40:38Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-12-11",
+      "ticker": "COST",
+      "updatedAt": "2025-12-20T03:40:36Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-03-05",
+      "ticker": "COST",
+      "updatedAt": "2026-03-14T02:40:46Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-05-28",
+      "ticker": "COST",
+      "updatedAt": "2026-06-05T22:01:04Z"
+    }
+  ]
+}

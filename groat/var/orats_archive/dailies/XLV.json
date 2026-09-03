@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 170.98,
+      "clsPx": 170.54,
       "hiPx": 170.98,
       "loPx": 169.2,
       "open": 170.25,
       "stkVolu": 7317681.0,
       "ticker": "XLV",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 171.67,
+      "hiPx": 173.5252,
+      "loPx": 171.03,
+      "open": 172.62,
+      "stkVolu": 7823534.0,
+      "ticker": "XLV",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 173.34,
+      "hiPx": 174.4825,
+      "loPx": 172.09,
+      "open": 172.09,
+      "stkVolu": 7805407.0,
+      "ticker": "XLV",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

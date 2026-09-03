@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 37.2888,
+      "clsPx": 37.28,
       "hiPx": 37.59,
       "loPx": 36.12,
       "open": 36.535,
       "stkVolu": 22915018.0,
       "ticker": "SMCI",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 36.71,
+      "hiPx": 37.15,
+      "loPx": 35.72,
+      "open": 36.43,
+      "stkVolu": 26862940.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 36.69,
+      "hiPx": 37.88,
+      "loPx": 35.63,
+      "open": 37.65,
+      "stkVolu": 33258780.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

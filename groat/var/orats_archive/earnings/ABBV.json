@@ -1,0 +1,358 @@
+{
+  "data": [
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-05-08",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-10-23",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-11-12",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-11-23",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-03-15",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-04-26",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-07-26",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-10-25",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-01-31",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-04-25",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-07-25",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-10-31",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-01-30",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-04-23",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-07-24",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-10-30",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-01-29",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-04-28",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-07-29",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:02:37Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-10-28",
+      "ticker": "ABBV",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-01-27",
+      "ticker": "ABBV",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-04-27",
+      "ticker": "ABBV",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-07-28",
+      "ticker": "ABBV",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-10-27",
+      "ticker": "ABBV",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-01-26",
+      "ticker": "ABBV",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-04-26",
+      "ticker": "ABBV",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-07-27",
+      "ticker": "ABBV",
+      "updatedAt": "2018-11-12T17:04:25Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-11-02",
+      "ticker": "ABBV",
+      "updatedAt": "2018-11-12T23:00:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-01-25",
+      "ticker": "ABBV",
+      "updatedAt": "2019-02-05T00:45:27Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-04-25",
+      "ticker": "ABBV",
+      "updatedAt": "2019-05-03T23:15:23Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-07-26",
+      "ticker": "ABBV",
+      "updatedAt": "2019-08-05T23:15:19Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-11-01",
+      "ticker": "ABBV",
+      "updatedAt": "2019-11-12T00:15:24Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-02-07",
+      "ticker": "ABBV",
+      "updatedAt": "2020-02-15T00:15:21Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-05-01",
+      "ticker": "ABBV",
+      "updatedAt": "2020-05-11T23:15:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-07-31",
+      "ticker": "ABBV",
+      "updatedAt": "2020-08-10T23:15:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-10-30",
+      "ticker": "ABBV",
+      "updatedAt": "2020-11-10T00:15:15Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-02-03",
+      "ticker": "ABBV",
+      "updatedAt": "2021-02-13T00:15:16Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-04-30",
+      "ticker": "ABBV",
+      "updatedAt": "2021-05-10T23:15:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-07-30",
+      "ticker": "ABBV",
+      "updatedAt": "2021-08-09T23:15:16Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-10-29",
+      "ticker": "ABBV",
+      "updatedAt": "2021-11-09T00:15:16Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-02-02",
+      "ticker": "ABBV",
+      "updatedAt": "2022-02-12T00:15:15Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-04-29",
+      "ticker": "ABBV",
+      "updatedAt": "2022-05-09T23:15:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-07-29",
+      "ticker": "ABBV",
+      "updatedAt": "2022-08-08T23:15:15Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-10-28",
+      "ticker": "ABBV",
+      "updatedAt": "2022-11-08T00:15:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-02-09",
+      "ticker": "ABBV",
+      "updatedAt": "2023-02-18T00:15:16Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-04-27",
+      "ticker": "ABBV",
+      "updatedAt": "2023-05-05T23:15:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-07-27",
+      "ticker": "ABBV",
+      "updatedAt": "2023-08-04T23:15:15Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-10-27",
+      "ticker": "ABBV",
+      "updatedAt": "2023-11-07T00:15:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-02-02",
+      "ticker": "ABBV",
+      "updatedAt": "2024-02-13T00:15:17Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-04-26",
+      "ticker": "ABBV",
+      "updatedAt": "2024-05-06T23:15:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-07-25",
+      "ticker": "ABBV",
+      "updatedAt": "2024-08-02T23:15:16Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-10-30",
+      "ticker": "ABBV",
+      "updatedAt": "2024-11-09T01:00:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-01-31",
+      "ticker": "ABBV",
+      "updatedAt": "2025-02-11T03:40:19Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-04-25",
+      "ticker": "ABBV",
+      "updatedAt": "2025-05-06T02:40:13Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-07-31",
+      "ticker": "ABBV",
+      "updatedAt": "2025-08-09T02:40:13Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-10-31",
+      "ticker": "ABBV",
+      "updatedAt": "2025-11-11T03:40:10Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-02-04",
+      "ticker": "ABBV",
+      "updatedAt": "2026-02-14T03:40:11Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-04-29",
+      "ticker": "ABBV",
+      "updatedAt": "2026-05-09T02:40:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-07-31",
+      "ticker": "ABBV",
+      "updatedAt": "2026-08-10T22:00:14Z"
+    }
+  ]
+}

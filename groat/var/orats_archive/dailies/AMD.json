@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 469.6,
+      "clsPx": 470.72,
       "hiPx": 475.8099,
       "loPx": 463.68,
       "open": 466.22,
       "stkVolu": 12462999.0,
       "ticker": "AMD",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 459.61,
+      "hiPx": 461.5,
+      "loPx": 452.3,
+      "open": 459.91,
+      "stkVolu": 16212787.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 456.8751,
+      "hiPx": 462.21,
+      "loPx": 452.36,
+      "open": 459.51,
+      "stkVolu": 11938812.0,
+      "ticker": "AMD",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

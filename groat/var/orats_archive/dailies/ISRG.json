@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 376.87,
+      "clsPx": 376.86,
       "hiPx": 377.37,
       "loPx": 365.3215,
       "open": 369.0,
       "stkVolu": 1923582.0,
       "ticker": "ISRG",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 369.25,
+      "hiPx": 375.4,
+      "loPx": 366.35,
+      "open": 375.0,
+      "stkVolu": 1849101.0,
+      "ticker": "ISRG",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 371.81,
+      "hiPx": 382.41,
+      "loPx": 368.25,
+      "open": 369.0,
+      "stkVolu": 2053566.0,
+      "ticker": "ISRG",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

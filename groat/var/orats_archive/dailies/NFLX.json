@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 81.1,
+      "clsPx": 81.05,
       "hiPx": 81.73,
       "loPx": 80.65,
       "open": 81.0,
       "stkVolu": 30740806.0,
       "ticker": "NFLX",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 80.81,
+      "hiPx": 82.1255,
+      "loPx": 79.6,
+      "open": 80.165,
+      "stkVolu": 21164924.0,
+      "ticker": "NFLX",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 82.45,
+      "hiPx": 83.12,
+      "loPx": 80.3,
+      "open": 80.55,
+      "stkVolu": 22077832.0,
+      "ticker": "NFLX",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

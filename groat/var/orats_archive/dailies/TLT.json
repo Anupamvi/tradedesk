@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 82.3863,
+      "clsPx": 82.52,
       "hiPx": 82.53,
       "loPx": 82.145,
       "open": 82.47,
       "stkVolu": 37317413.0,
       "ticker": "TLT",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 81.87,
+      "hiPx": 82.35,
+      "loPx": 81.78,
+      "open": 81.89,
+      "stkVolu": 25623870.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 81.95,
+      "hiPx": 82.0476,
+      "loPx": 81.745,
+      "open": 81.975,
+      "stkVolu": 21454291.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

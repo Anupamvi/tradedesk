@@ -11,7 +11,9 @@ from groat.technicals import snapshot
 
 def rank_groups(asof: str, bars_map: Dict[str, list], spy_bars: list) -> List[dict]:
     rows = []
-    for etf, group in SECTOR_ETFS.items():
+    themes = dict(SECTOR_ETFS)
+    themes["QQQ"] = "megacap"
+    for etf, group in themes.items():
         snap = snapshot(bars_map.get(etf) or [], asof, bench_bars=spy_bars)
         if not snap.get("ok"):
             rows.append(

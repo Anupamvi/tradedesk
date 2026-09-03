@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 57.73,
+      "clsPx": 57.71,
       "hiPx": 57.925,
       "loPx": 57.69,
       "open": 57.86,
       "stkVolu": 25215699.0,
       "ticker": "XLF",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 57.2,
+      "hiPx": 57.98,
+      "loPx": 57.13,
+      "open": 57.61,
+      "stkVolu": 32401547.0,
+      "ticker": "XLF",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 57.67,
+      "hiPx": 58.2261,
+      "loPx": 57.32,
+      "open": 57.38,
+      "stkVolu": 31324726.0,
+      "ticker": "XLF",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

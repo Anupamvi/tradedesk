@@ -97,6 +97,7 @@ def ensure_bars(
     last = cached[-1]["date"] if cached else ""
     stale = bool(asof and ((not last) or last < asof))
     extra = list(schwab_bars or [])
+    schwab_err = ""
     if not extra:
         from groat.schwab import price_history_bars, quote_bar
 
@@ -106,19 +107,20 @@ def ensure_bars(
                 qb = quote_bar(name, asof)
                 if qb:
                     extra = merge_bars(extra, [qb])
-        except Exception:
+        except Exception as exc:
             extra = extra or []
+            schwab_err = str(exc)[:160]
     if extra:
         merged = merge_bars(cached, extra)
         write_dailies_payload(name, bars_to_payload(name, merged))
         last2 = merged[-1]["date"] if merged else ""
         if not asof or last2 >= asof:
-            return {"bars": merged, "tape": "schwab_history", "http": 0, "error": ""}
+            return {"bars": merged, "tape": "schwab_history", "http": 0, "error": schwab_err}
         cached = merged
         last = last2
         stale = bool(asof and last < asof)
     if cached and not stale:
-        return {"bars": cached, "tape": "orats_cache", "http": 0, "error": ""}
+        return {"bars": cached, "tape": "orats_cache", "http": 0, "error": schwab_err}
     if not token:
         return {
             "bars": cached,
@@ -138,6 +140,6 @@ def ensure_bars(
             "bars": [],
             "tape": tape,
             "http": pack.get("http") or 0,
-            "error": pack.get("error") or "missing_bars",
+            "error": pack.get("error") or schwab_err or "missing_bars",
         }
-    return {"bars": bars, "tape": tape, "http": pack.get("http") or 0, "error": ""}
+    return {"bars": bars, "tape": tape, "http": pack.get("http") or 0, "error": pack.get("error") or schwab_err}

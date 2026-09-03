@@ -23,6 +23,20 @@ class TestFire(unittest.TestCase):
         self.assertEqual(setup["fire"]["kind"], "spike")
         self.assertEqual(setup["lane"], "FIRE")
 
+    def test_big_gap_day_fires_at_rvol_12(self):
+        bars = trend_bars(80, end="2026-08-26", slope=0.2)
+        snap = snapshot(bars, "2026-08-26")
+        snap["ret_1"] = 0.067
+        snap["rvol"] = 1.48
+        snap["extension_atr"] = 0.2
+        setup = classify_setups(snap, group_row={"status": "deteriorating"}, earnings={"usable": True, "source": "exempt"})
+        self.assertEqual(setup["fire"]["kind"], "spike")
+        modest = dict(snap)
+        modest["ret_1"] = 0.04
+        modest["rvol"] = 1.40
+        setup2 = classify_setups(modest, group_row={"status": "deteriorating"}, earnings={"usable": True, "source": "exempt"})
+        self.assertIsNone(setup2["fire"]["kind"])
+
 
 class TestAllStrategies(unittest.TestCase):
     def test_reviews_cover_stock_and_six_option_structures(self):
@@ -147,6 +161,7 @@ class TestDeskPicksAndXhot(unittest.TestCase):
 
         text = "\n".join(render_desk_picks(picks))
         self.assertIn("## Desk pick", text)
+        self.assertIn("TRADE list: **NOW**", text)
         self.assertIn("Take options: NOW", text)
         self.assertIn("Why this one, not the others", text)
         board = render_board(
@@ -159,6 +174,160 @@ class TestDeskPicksAndXhot(unittest.TestCase):
             {"regime": {"regime": "strong_risk_on"}, "trades": [now], "watch": [], "fire": [], "xhot": [], "picks": picks, "groups": []},
         )
         self.assertIn("## Desk pick", report.split("# Market regime")[0])
+
+    def test_desk_pick_skips_in_book_for_take_this(self):
+        cvx = {
+            "ticker": "CVX",
+            "choice": "OPTIONS",
+            "in_book": True,
+            "naive_pop": 0.50,
+            "opt_conf": 80,
+            "score": 70,
+            "x": "Quiet",
+            "ret_1": 0.02,
+            "close": 210.0,
+            "picked": {"long_strike": 210.0, "delta": 0.22, "instrument": "debit_call_spread", "legs": "BUY 210c", "target_debit": 2.73},
+        }
+        shop = {
+            "ticker": "SHOP",
+            "choice": "OPTIONS",
+            "in_book": False,
+            "naive_pop": 0.40,
+            "opt_conf": 68,
+            "score": 60,
+            "x": "Quiet",
+            "ret_1": 0.04,
+            "close": 147.0,
+            "picked": {"long_strike": 150.0, "delta": 0.18, "instrument": "debit_call_spread", "legs": "BUY 150c", "target_debit": 4.00},
+        }
+        self.assertGreater(score_option_ticket(cvx), score_option_ticket(shop))
+        picks = desk_picks([cvx, shop])
+        self.assertEqual(picks["best_options"]["ticker"], "SHOP")
+        from groat.picks import render_desk_picks
+
+        text = "\n".join(render_desk_picks(picks))
+        self.assertIn("Take options: SHOP", text)
+        self.assertIn("**CVX**", text)
+        self.assertIn("IN BOOK", text)
+        self.assertNotIn("Take options: CVX", text)
+
+    def test_desk_pick_prints_do_not_click_band(self):
+        shop = {
+            "ticker": "SHOP",
+            "choice": "OPTIONS",
+            "in_book": False,
+            "naive_pop": 0.42,
+            "opt_conf": 70,
+            "score": 55,
+            "x": "Informed",
+            "close": 147.47,
+            "fill_note": "Do not click if last < **146.23** (20 EMA). Do not pay more than debit **4.00**.",
+            "picked": {
+                "long_strike": 150.0,
+                "delta": 0.15,
+                "instrument": "debit_call_spread",
+                "legs": "BUY 150c",
+                "target_debit": 4.00,
+                "invalidation": "close back below 20 EMA 146.23 / swing-low AVWAP 131.14",
+                "fill_note": "Do not click if last < **146.23** (20 EMA). Do not pay more than debit **4.00**.",
+            },
+        }
+        picks = desk_picks([shop])
+        from groat.picks import render_desk_picks
+
+        text = "\n".join(render_desk_picks(picks))
+        self.assertIn("Do not click this option", text)
+        self.assertIn("146.23", text)
+        self.assertIn("4.00", text)
+
+    def test_board_watch_ticket_table_has_setup_strikes_and_skip_icon(self):
+        from groat.report import render_board, render_report
+
+        xlp = {
+            "ticker": "XLP",
+            "action": "WATCH",
+            "choice": "OPTIONS",
+            "primary": "E",
+            "direction": "bullish",
+            "close": 85.23,
+            "ema20": 85.51,
+            "reasons": ["below_trade_score"],
+            "fill_guard": {"stock_min": 85.51, "debit_max": 1.68},
+            "picked": {
+                "instrument": "debit_call_spread",
+                "long_strike": 85.0,
+                "short_strike": 90.0,
+                "expiry": "2026-10-16",
+                "target_debit": 1.68,
+            },
+        }
+        shop = {
+            "ticker": "SHOP",
+            "action": "TRADE",
+            "choice": "OPTIONS",
+            "primary": "A",
+            "direction": "bullish",
+            "close": 147.47,
+            "ema20": 146.23,
+            "fill_guard": {"stock_min": 146.23, "debit_max": 4.00},
+            "picked": {
+                "instrument": "debit_call_spread",
+                "long_strike": 150.0,
+                "short_strike": 160.0,
+                "expiry": "2026-10-16",
+                "target_debit": 4.00,
+            },
+        }
+        built = {
+            "regime": {"regime": "weak_risk_on"},
+            "trades": [shop],
+            "watch": [xlp],
+            "fire": [],
+            "xhot": [],
+            "picks": {},
+        }
+        board = render_board("2026-09-02", built)
+        self.assertNotIn("How to read this", board)
+        self.assertIn("| | ticker | setup | ticket | pay | last | click | X |", board)
+        self.assertIn("**XLP**", board)
+        self.assertIn("Sector rotation", board)
+        self.assertIn("Trend pullback", board)
+        self.assertIn("RS leader", board)
+        self.assertIn("hot group", board)
+        self.assertIn("call debit", board)
+        self.assertIn("85.0 / 90.0", board)
+        self.assertIn("2026-10-16", board)
+        self.assertIn("debit 1.68", board)
+        self.assertIn("skip if last < **85.51**", board)
+        self.assertIn("🔴", board)
+        self.assertIn("**SHOP**", board)
+        self.assertIn("skip if last < **146.23**", board)
+        self.assertIn("🟢", board)
+        report = render_report("2026-09-02", built)
+        self.assertIn("**XLP**", report)
+        self.assertNotIn("# Market regime", report)
+        self.assertNotIn("How to read this", report)
+
+    def test_desk_pick_in_book_only_stays_visible(self):
+        cvx = {
+            "ticker": "CVX",
+            "choice": "OPTIONS",
+            "in_book": True,
+            "naive_pop": 0.50,
+            "opt_conf": 80,
+            "score": 70,
+            "x": "Quiet",
+            "close": 210.0,
+            "picked": {"long_strike": 210.0, "delta": 0.22, "instrument": "debit_call_spread", "legs": "BUY 210c"},
+        }
+        picks = desk_picks([cvx])
+        self.assertIsNone(picks["best_options"])
+        from groat.picks import render_desk_picks
+
+        text = "\n".join(render_desk_picks(picks))
+        self.assertIn("in book", text.lower())
+        self.assertIn("**CVX**", text)
+        self.assertNotIn("Take options: CVX", text)
 
     def test_xhot_needs_tape(self):
         hot = {"bias": "bullish", "narrative": "loud on X", "tag": "Informed"}

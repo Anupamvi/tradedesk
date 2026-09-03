@@ -1,0 +1,610 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-04-18",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-12-31",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-12-31",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-03-31",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-24",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-17",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-15",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-04-17",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-17",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-15",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-21",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-15",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-15",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-14",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-01-24",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-21",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-25",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-19",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-01-24",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-24",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-24",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-10-23",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-01-24",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-04-18",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-07-23",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-22",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-01-23",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-04-21",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-25",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-20",
+      "ticker": "NFLX",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-01-26",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-04-23",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-07-23",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-10-22",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-01-27",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-04-21",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-07-21",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-10-20",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-01-26",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-04-25",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-07-25",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-10-24",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-01-25",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-04-23",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-07-24",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-10-23",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-01-23",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-04-22",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-07-22",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-10-21",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-01-22",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-04-21",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-07-21",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-10-15",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-01-20",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-04-15",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-07-15",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-10-14",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-01-19",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-04-18",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-07-18",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-10-17",
+      "ticker": "NFLX",
+      "updatedAt": "2017-10-11T19:06:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-01-18",
+      "ticker": "NFLX",
+      "updatedAt": "2018-11-12T17:07:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-04-17",
+      "ticker": "NFLX",
+      "updatedAt": "2018-11-12T17:07:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-07-17",
+      "ticker": "NFLX",
+      "updatedAt": "2018-11-12T17:07:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-10-16",
+      "ticker": "NFLX",
+      "updatedAt": "2018-11-12T17:07:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-01-22",
+      "ticker": "NFLX",
+      "updatedAt": "2018-11-12T17:07:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-04-16",
+      "ticker": "NFLX",
+      "updatedAt": "2018-11-12T17:07:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-07-16",
+      "ticker": "NFLX",
+      "updatedAt": "2018-11-12T17:07:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-10-16",
+      "ticker": "NFLX",
+      "updatedAt": "2018-11-12T17:07:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-01-17",
+      "ticker": "NFLX",
+      "updatedAt": "2019-01-25T23:02:43Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-04-16",
+      "ticker": "NFLX",
+      "updatedAt": "2019-04-26T23:18:02Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-07-17",
+      "ticker": "NFLX",
+      "updatedAt": "2019-07-26T23:17:39Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-10-16",
+      "ticker": "NFLX",
+      "updatedAt": "2019-10-25T23:18:13Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-01-21",
+      "ticker": "NFLX",
+      "updatedAt": "2020-02-01T00:17:56Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-04-21",
+      "ticker": "NFLX",
+      "updatedAt": "2020-05-01T23:17:48Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-07-16",
+      "ticker": "NFLX",
+      "updatedAt": "2020-07-24T23:18:25Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-10-20",
+      "ticker": "NFLX",
+      "updatedAt": "2020-10-30T23:18:01Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-01-19",
+      "ticker": "NFLX",
+      "updatedAt": "2021-01-30T00:18:11Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-04-20",
+      "ticker": "NFLX",
+      "updatedAt": "2021-04-30T23:18:37Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-07-20",
+      "ticker": "NFLX",
+      "updatedAt": "2021-07-30T23:18:04Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-10-19",
+      "ticker": "NFLX",
+      "updatedAt": "2021-10-29T23:21:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-01-20",
+      "ticker": "NFLX",
+      "updatedAt": "2022-01-29T00:17:42Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-04-19",
+      "ticker": "NFLX",
+      "updatedAt": "2022-04-29T23:18:12Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-07-19",
+      "ticker": "NFLX",
+      "updatedAt": "2022-07-29T23:18:35Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-10-18",
+      "ticker": "NFLX",
+      "updatedAt": "2022-10-28T23:18:04Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-01-19",
+      "ticker": "NFLX",
+      "updatedAt": "2023-01-28T00:18:29Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-04-18",
+      "ticker": "NFLX",
+      "updatedAt": "2023-04-28T23:17:53Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-07-19",
+      "ticker": "NFLX",
+      "updatedAt": "2023-07-28T23:18:09Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-10-18",
+      "ticker": "NFLX",
+      "updatedAt": "2023-10-27T23:18:05Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-01-23",
+      "ticker": "NFLX",
+      "updatedAt": "2024-02-03T00:18:14Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-04-18",
+      "ticker": "NFLX",
+      "updatedAt": "2024-04-26T23:18:15Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-07-18",
+      "ticker": "NFLX",
+      "updatedAt": "2024-07-26T23:18:25Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-10-17",
+      "ticker": "NFLX",
+      "updatedAt": "2024-10-25T23:18:29Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-01-21",
+      "ticker": "NFLX",
+      "updatedAt": "2025-02-01T03:43:29Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-04-17",
+      "ticker": "NFLX",
+      "updatedAt": "2025-04-26T02:42:15Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-07-17",
+      "ticker": "NFLX",
+      "updatedAt": "2025-07-26T02:41:58Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-10-21",
+      "ticker": "NFLX",
+      "updatedAt": "2025-11-01T02:41:34Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-01-20",
+      "ticker": "NFLX",
+      "updatedAt": "2026-01-31T03:41:36Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-04-16",
+      "ticker": "NFLX",
+      "updatedAt": "2026-04-25T02:42:12Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-07-16",
+      "ticker": "NFLX",
+      "updatedAt": "2026-07-24T22:02:15Z"
+    }
+  ]
+}

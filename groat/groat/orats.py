@@ -420,7 +420,7 @@ def fetch_cores(
         if status != 200 or payload is None:
             ok = False
             err = err or "http_%s" % status
-            break
+            continue
         for row in rows_of(payload):
             name = str(row.get("ticker") or "").upper()
             if name:

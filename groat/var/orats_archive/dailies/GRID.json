@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 180.5,
+      "clsPx": 178.39,
       "hiPx": 179.45,
       "loPx": 177.9874,
       "open": 179.01,
       "stkVolu": 422716.0,
       "ticker": "GRID",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 175.47,
+      "hiPx": 176.9515,
+      "loPx": 174.7102,
+      "open": 176.3,
+      "stkVolu": 1176606.0,
+      "ticker": "GRID",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 179.04,
+      "hiPx": 175.87,
+      "loPx": 174.2027,
+      "open": 175.71,
+      "stkVolu": 550163.0,
+      "ticker": "GRID",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

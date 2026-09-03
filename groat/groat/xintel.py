@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from groat.config import CODE_DIR
 
@@ -49,6 +49,22 @@ def load_xintel(asof: str, ticker: str) -> Dict[str, Any]:
         "source": payload.get("source") or "xintel_file",
         "crowded": tag.lower() == "crowded",
     }
+
+
+def missing_x_tickers(rows: Sequence[dict]) -> List[str]:
+    """TRADE/WATCH names with no Quiet|Informed|Crowded file."""
+    out = []
+    seen = set()
+    for row in rows or []:
+        tag = str(row.get("x") or "DATA UNAVAILABLE")
+        if tag not in ("", "DATA UNAVAILABLE"):
+            continue
+        ticker = str(row.get("ticker") or "").upper()
+        if not ticker or ticker in seen:
+            continue
+        seen.add(ticker)
+        out.append(ticker)
+    return out
 
 
 def write_xintel(asof: str, ticker: str, payload: Dict[str, Any]) -> Path:

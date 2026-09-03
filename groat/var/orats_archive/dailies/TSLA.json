@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 367.4203,
+      "clsPx": 367.95,
       "hiPx": 368.92,
       "loPx": 347.15,
       "open": 347.21,
       "stkVolu": 61732258.0,
       "ticker": "TSLA",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 356.09,
+      "hiPx": 362.7,
+      "loPx": 352.96,
+      "open": 360.9,
+      "stkVolu": 36193926.0,
+      "ticker": "TSLA",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 356.85,
+      "hiPx": 360.62,
+      "loPx": 349.92,
+      "open": 360.41,
+      "stkVolu": 33951909.0,
+      "ticker": "TSLA",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

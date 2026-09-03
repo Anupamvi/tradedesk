@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 459.88,
+      "clsPx": 456.01,
       "hiPx": 474.49,
       "loPx": 456.01,
       "open": 459.85,
       "stkVolu": 7686469.0,
       "ticker": "DELL",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 425.0,
+      "hiPx": 463.0,
+      "loPx": 421.8901,
+      "open": 455.69,
+      "stkVolu": 15947971.0,
+      "ticker": "DELL",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 485.83,
+      "hiPx": 497.9899,
+      "loPx": 432.2651,
+      "open": 462.05,
+      "stkVolu": 36720176.0,
+      "ticker": "DELL",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

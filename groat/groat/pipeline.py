@@ -21,7 +21,14 @@ from groat.config import (
     ticker_group,
 )
 from groat.dates import today_et
-from groat.gates import trade_park_reason
+from groat.gates import (
+    apply_already_held_park,
+    apply_analog_0win_park,
+    apply_below_ema_park,
+    apply_same_group_book_park,
+    stamp_fill_guard,
+    trade_park_reason,
+)
 from groat.earnings import web_resolve
 from groat.num import to_float
 from groat.evidence import attach_evidence
@@ -32,7 +39,7 @@ from groat.regime import classify as classify_regime
 from groat.rotation import group_status_map, name_group_row, rank_groups
 from groat.confidence import options_confidence
 from groat.setups import classify_setups
-from groat.book import book_index, same_ticket, schwab_held_index
+from groat.book import book_index, open_group_sets, same_ticket, schwab_held_index
 from groat.chainfill import overlay_strikes
 from groat.structure import choose
 from groat.technicals import snapshot
@@ -49,11 +56,17 @@ def _end_hold(asof: str, days: int = EARNINGS_HOLD_DAYS) -> str:
 
 
 def score_row(row: dict, regime: str, group_status: str) -> float:
+    """Score from replay expectancy, not letter order.
+
+    D/E can clear TRADE_SCORE_MIN=52 on a clean tape. Mature A cannot
+    (replay A ≈ 0R). FIRE/H is a confirm, not a reason to TRADE.
+    """
     s = 0.0
     primary = row.get("primary") or ""
-    s += {"C": 18, "E": 16, "H": 15, "B": 14, "A": 14, "D": 12, "G": 10, "F": 6}.get(primary, 0)
-    if (row.get("fire") or {}).get("kind") and not (row.get("fire") or {}).get("chase"):
-        s += 6
+    s += {"E": 18, "D": 18, "A": 10, "C": 10, "F": 8, "B": 8, "H": 6, "G": 6}.get(primary, 0)
+    fire = row.get("fire") or {}
+    if fire.get("kind") and not fire.get("chase") and primary != "H":
+        s += 4
     rs20 = row.get("rs_20")
     if rs20 is not None:
         if rs20 > 0.05:
@@ -62,12 +75,22 @@ def score_row(row: dict, regime: str, group_status: str) -> float:
             s += 5
         elif rs20 < -0.05:
             s -= 8
-    if group_status in ("accelerating", "emerging"):
-        s += 8
-    elif group_status == "mature":
-        s += 2
-    elif group_status == "deteriorating":
-        s -= 10
+    # D's edge is beating SPY, not sitting in a hot group.
+    # Neutral used to score 49 and only energy E could TRADE — that is the original bug.
+    if primary == "D":
+        if group_status in ("accelerating", "emerging"):
+            s += 6
+        elif group_status == "deteriorating":
+            s -= 2
+        else:
+            s += 4
+    else:
+        if group_status in ("accelerating", "emerging"):
+            s += 8
+        elif group_status == "mature":
+            s += 2
+        elif group_status == "deteriorating":
+            s -= 10
     if row.get("above_sma200"):
         s += 4
     if row.get("above_sma50"):
@@ -139,6 +162,38 @@ def load_bars(
     return out
 
 
+def _prelim_key(item):
+    name, setup, snap = item
+    hits = len(setup.get("setups") or [])
+    rs = snap.get("rs_20")
+    rs_n = rs if rs is not None else -9
+    return (1 if setup.get("primary") else 0, hits, rs_n)
+
+
+def select_option_names(prelim, hot_map=None, cap: int = 40) -> list:
+    """FIRE and X-HOT first, then ranked theses. Cap must not drop a hot name already in the list."""
+    ordered = []
+    seen = set()
+
+    def add(name):
+        up = str(name or "").upper()
+        if not up or up in seen:
+            return
+        seen.add(up)
+        ordered.append(up)
+
+    for name, setup, snap in prelim or []:
+        if (setup.get("fire") or {}).get("kind"):
+            add(name)
+    for ticker in hot_map or {}:
+        add(ticker)
+    ranked = sorted(list(prelim or []), key=_prelim_key, reverse=True)
+    for name, setup, snap in ranked:
+        if setup.get("primary") and setup.get("direction") in ("bullish", "bearish"):
+            add(name)
+    return ordered[:cap]
+
+
 def build_candidate(
     asof: str,
     ticker: str,
@@ -150,12 +205,13 @@ def build_candidate(
     bars: list,
     earn: Optional[dict] = None,
     hist_rows: Optional[list] = None,
+    chain_status: Optional[str] = None,
 ) -> dict:
     vol = parse_core(core_row)
     earn = earn or earnings_info(ticker, core_row, asof, hist_rows=hist_rows)
     setup = classify_setups(snap, group_row=group_row, earnings=earn, bars=bars)
     direction = setup.get("direction") or "neutral"
-    chosen = choose(snap, direction, vol, strikes or [], earn, setup=setup)
+    chosen = choose(snap, direction, vol, strikes or [], earn, setup=setup, chain_status=chain_status)
     macros = events_between(asof, _end_hold(asof))
     xinfo = load_xintel(asof, ticker)
     picked = chosen.get("picked") or {}
@@ -233,6 +289,7 @@ def build_candidate(
         "news": "DATA UNAVAILABLE",
         "filings": "DATA UNAVAILABLE",
     }
+    stamp_fill_guard(row)
     row["thesis"] = build_thesis(row)
     row["score"] = score_row(row, str(regime.get("regime") or ""), str(group_row.get("status") or ""))
     if row["stale"] or not snap.get("ok"):
@@ -240,7 +297,15 @@ def build_candidate(
         reasons = [snap.get("reason") or "missing_bars"]
     elif row["choice"] == "NO TRADE" or row["score"] < WATCH_SCORE_MIN:
         action = "IGNORE"
-        reasons = list(row["choice_why"] or ["score_below_watch"])
+        reasons = []
+        if row["score"] < WATCH_SCORE_MIN:
+            reasons.append("score_below_watch")
+        if row["choice"] == "NO TRADE":
+            reasons.extend(list(row["choice_why"] or []))
+        elif row.get("choice_why"):
+            reasons.extend(list(row["choice_why"]))
+        if not reasons:
+            reasons = ["score_below_watch"]
         if not row.get("primary"):
             reasons.append("no_setup")
     elif row["choice"] in ("STOCK", "OPTIONS") and row["score"] >= TRADE_SCORE_MIN:
@@ -256,7 +321,20 @@ def build_candidate(
         reasons = ["below_trade_score"] if row["score"] < TRADE_SCORE_MIN else []
     row["action"] = action
     row["reasons"] = reasons
+    apply_below_ema_park(row)
     return row
+
+
+def _rank_actionable(candidates: Sequence[dict]) -> tuple:
+    ranked = sorted(
+        [c for c in candidates if c.get("action") in ("TRADE", "WATCH")],
+        key=lambda r: (r.get("action") == "TRADE", r.get("score") or 0, r.get("rs_20") or -9),
+        reverse=True,
+    )
+    trades = [c for c in ranked if c.get("action") == "TRADE"][:MAX_FINAL]
+    watch = [c for c in ranked if c.get("action") == "WATCH"][:MAX_FINAL]
+    board = (trades + watch)[:MAX_FINAL]
+    return ranked, trades, watch, board
 
 
 def _wanted_tickers(universe: Sequence[str]) -> List[str]:
@@ -347,24 +425,8 @@ def build_full(
         )
         prelim.append((name, setup, snap))
 
-    def prelim_key(item):
-        name, setup, snap = item
-        hits = len(setup.get("setups") or [])
-        rs = snap.get("rs_20")
-        rs_n = rs if rs is not None else -9
-        return (1 if setup.get("primary") else 0, hits, rs_n)
-
-    prelim.sort(key=prelim_key, reverse=True)
-    option_names = [
-        n for n, setup, snap in prelim if setup.get("primary") and setup.get("direction") in ("bullish", "bearish")
-    ]
-    for name, setup, snap in prelim:
-        if (setup.get("fire") or {}).get("kind") and name not in option_names:
-            option_names.append(name)
-    for ticker in hot_map:
-        if ticker not in option_names:
-            option_names.append(ticker)
-    option_names = option_names[:40]
+    prelim.sort(key=_prelim_key, reverse=True)
+    option_names = select_option_names(prelim, hot_map, cap=40)
 
     strikes = dict(strikes_by_ticker or {})
     chain_errors: List[dict] = []
@@ -400,14 +462,17 @@ def build_full(
             web_e[name] = web_resolve(name, asof, use_web=True)
 
     held = book_index()
+    open_groups, open_tickers = open_group_sets()
     schwab_held = {}
+    schwab_pos_error = ""
     if live or bars_by_ticker is None:
         try:
             from groat.schwab import positions_all
 
             schwab_held = schwab_held_index(positions_all())
-        except Exception:
+        except Exception as exc:
             schwab_held = {}
+            schwab_pos_error = str(exc)[:160]
 
     earn_map = {}
     for name in names:
@@ -424,6 +489,10 @@ def build_full(
     rejections = []
     for name in names:
         snap = snaps.get(name) or {"ok": False, "reason": "missing_bars", "stale": True}
+        if name in option_names:
+            chain_status = "ok" if (strikes.get(name) or []) else "empty"
+        else:
+            chain_status = "not_requested"
         row = build_candidate(
             asof,
             name,
@@ -431,16 +500,19 @@ def build_full(
             cores.get(name),
             name_group_row(name, groups),
             regime,
-            strikes.get(name),
+            strikes.get(name) or [],
             bars_map.get(name) or [],
             earn=earn_map.get(name),
             hist_rows=hist_e.get(name),
+            chain_status=chain_status,
         )
+        row["chain_status"] = chain_status
         book_pos = held.get(name) or {}
         schwab_pos = schwab_held.get(name) or {}
         row["in_book"] = bool(book_pos.get("in_book"))
         row["held_schwab"] = bool(schwab_pos.get("held_schwab"))
         row["held"] = bool(row["in_book"] or row["held_schwab"])
+        row["schwab_legs"] = list(schwab_pos.get("legs") or [])
         notes = []
         picked = row.get("picked") if isinstance(row.get("picked"), dict) else {}
         row["same_ticket"] = bool(row["in_book"] and same_ticket(book_pos, picked))
@@ -476,6 +548,8 @@ def build_full(
             paras.append(row["held_note"] + " Shown for visibility — do not add a second lot unless you have a scale plan.")
             thesis["paragraphs"] = paras
             row["thesis"] = thesis
+        apply_already_held_park(row)
+        apply_same_group_book_park(row, open_groups, open_tickers)
         candidates.append(row)
         if row["action"] == "IGNORE":
             rejections.append(
@@ -522,15 +596,7 @@ def build_full(
     )
     xhot_rows = xhot_rows[:10]
 
-    ranked = sorted(
-        [c for c in candidates if c.get("action") in ("TRADE", "WATCH")],
-        key=lambda r: (r.get("action") == "TRADE", r.get("score") or 0, r.get("rs_20") or -9),
-        reverse=True,
-    )
-    trades = [c for c in ranked if c.get("action") == "TRADE"][:MAX_FINAL]
-    watch = [c for c in ranked if c.get("action") == "WATCH"][:MAX_FINAL]
-    # keep only top 5-10 combined, trades first
-    board = (trades + watch)[:MAX_FINAL]
+    ranked, trades, watch, board = _rank_actionable(candidates)
     picks = desk_picks(trades)
     evidence = attach_evidence(
         asof,
@@ -546,8 +612,33 @@ def build_full(
         allow_orats_http=bars_by_ticker is None,
     )
     orats_http += int(evidence.get("http") or 0)
+    analog_parked = []
+    for row in list(trades):
+        if apply_analog_0win_park(row):
+            ticker = str(row.get("ticker") or "")
+            if ticker:
+                analog_parked.append(ticker)
+    evidence_line = str(picks.get("evidence_line") or "").strip()
+    if analog_parked:
+        ranked, trades, watch, board = _rank_actionable(candidates)
+        picks = desk_picks(trades)
+        veto_line = "Analog veto parked to WATCH: " + ", ".join(analog_parked) + "."
+        picks["evidence_line"] = (" ".join(x for x in (evidence_line, veto_line) if x)).strip()
+    else:
+        picks["evidence_line"] = evidence_line
     usage = load_usage()
     tape_summary = {k: (tapes[k].get("tape") if k in tapes else "") for k in list(INDEX_TICKERS)}
+    rvols = [to_float(s.get("rvol")) for s in snaps.values()]
+    rvols = [v for v in rvols if v is not None]
+    median_rvol = sorted(rvols)[len(rvols) // 2] if rvols else None
+    session_incomplete = bool(live and median_rvol is not None and median_rvol < 0.45)
+    tape_errors = [
+        {"ticker": k, "error": v.get("error")}
+        for k, v in tapes.items()
+        if v.get("error")
+    ]
+    if schwab_pos_error:
+        tape_errors.append({"ticker": "SCHWAB_POSITIONS", "error": schwab_pos_error})
     return {
         "asof": asof,
         "sleeve": SLEEVE,
@@ -575,9 +666,19 @@ def build_full(
         "orats_requests_left": usage.get("left") or 0,
         "tapes": tape_summary,
         "option_names": option_names,
+        "chain_empty": [n for n in option_names if not (strikes.get(n) or [])],
+        "chain_not_requested": [
+            str(c.get("ticker"))
+            for c in candidates
+            if c.get("chain_status") == "not_requested" and c.get("primary") and c.get("direction") in ("bullish", "bearish")
+        ],
         "snaps": snaps,
         "cores_n": len(cores),
         "schwab_chain_errors": chain_errors,
+        "tape_errors": tape_errors,
+        "session_incomplete": session_incomplete,
+        "median_rvol": median_rvol,
+        "schwab_pos_error": schwab_pos_error,
     }
 
 

@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 1161.7,
+      "clsPx": 1156.73,
       "hiPx": 1171.4479,
       "loPx": 1147.0,
       "open": 1168.47,
       "stkVolu": 3057885.0,
       "ticker": "LLY",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 1160.0,
+      "hiPx": 1188.325,
+      "loPx": 1156.8501,
+      "open": 1188.0,
+      "stkVolu": 2522522.0,
+      "ticker": "LLY",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 1162.0,
+      "hiPx": 1187.83,
+      "loPx": 1158.0,
+      "open": 1164.15,
+      "stkVolu": 2446970.0,
+      "ticker": "LLY",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

@@ -78059,6 +78059,36 @@
       "unadjOpen": 14.57,
       "unadjStockVolume": 0,
       "updatedAt": "2026-08-28T22:07:51Z"
+    },
+    {
+      "clsPx": 14.92,
+      "hiPx": 15.48,
+      "loPx": 14.86,
+      "open": 15.24,
+      "stockVolume": 0,
+      "ticker": "VIX",
+      "tradeDate": "2026-08-31",
+      "unadjClsPx": 14.92,
+      "unadjHiPx": 15.48,
+      "unadjLoPx": 14.86,
+      "unadjOpen": 15.24,
+      "unadjStockVolume": 0,
+      "updatedAt": "2026-08-31T22:08:08Z"
+    },
+    {
+      "clsPx": 16.34,
+      "hiPx": 16.8,
+      "loPx": 14.95,
+      "open": 14.95,
+      "stockVolume": 0,
+      "ticker": "VIX",
+      "tradeDate": "2026-09-01",
+      "unadjClsPx": 16.34,
+      "unadjHiPx": 16.8,
+      "unadjLoPx": 14.95,
+      "unadjOpen": 14.95,
+      "unadjStockVolume": 0,
+      "updatedAt": "2026-09-01T22:09:08Z"
     }
   ]
 }

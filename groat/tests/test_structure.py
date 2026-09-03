@@ -162,6 +162,18 @@ class TestStructure(unittest.TestCase):
         self.assertFalse(out.get("ok"))
         self.assertIn("OTM", out.get("reason") or "")
 
+    def test_five_pct_otm_debit_is_rejected_even_with_delta(self):
+        spot = 100.0
+        earn = {"usable": True, "source": "exempt", "overlaps_hold": False, "date": None}
+        far = [
+            _strike(dte=45, expiry="2026-10-16", strike=105.5, delta=0.45, bid=2.4, ask=2.6, oi=400, spot=spot),
+            _strike(dte=45, expiry="2026-10-16", strike=110.5, delta=0.28, bid=1.1, ask=1.3, oi=400, spot=spot),
+        ]
+        out = debit_spread(far, "bullish", earn)
+        self.assertTrue(out)
+        self.assertFalse(out.get("ok"))
+        self.assertIn("OTM", out.get("reason") or "")
+
 
 if __name__ == "__main__":
     unittest.main()

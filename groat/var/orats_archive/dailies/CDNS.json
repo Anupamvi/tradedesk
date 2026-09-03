@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 339.5,
+      "clsPx": 338.78,
       "hiPx": 342.375,
       "loPx": 336.22,
-      "open": 336.22,
+      "open": 336.62,
       "stkVolu": 1607104.0,
       "ticker": "CDNS",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 313.04,
+      "hiPx": 332.84,
+      "loPx": 311.87,
+      "open": 331.19,
+      "stkVolu": 2284808.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 307.97,
+      "hiPx": 313.21,
+      "loPx": 303.66,
+      "open": 312.62,
+      "stkVolu": 2561174.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

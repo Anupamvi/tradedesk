@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 89.6927,
+      "clsPx": 89.51,
       "hiPx": 91.85,
       "loPx": 88.97,
       "open": 90.0,
       "stkVolu": 65188218.0,
       "ticker": "INTC",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 88.97,
+      "hiPx": 89.41,
+      "loPx": 85.72,
+      "open": 86.84,
+      "stkVolu": 73962063.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 90.27,
+      "hiPx": 90.43,
+      "loPx": 87.5,
+      "open": 88.85,
+      "stkVolu": 61554546.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

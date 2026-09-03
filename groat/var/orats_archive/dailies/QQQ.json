@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 716.7,
+      "clsPx": 716.76,
       "hiPx": 717.58,
       "loPx": 713.16,
       "open": 715.17,
       "stkVolu": 32237181.0,
       "ticker": "QQQ",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 707.64,
+      "hiPx": 712.3,
+      "loPx": 704.66,
+      "open": 707.39,
+      "stkVolu": 35236116.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 709.55,
+      "hiPx": 709.7988,
+      "loPx": 705.1,
+      "open": 707.1,
+      "stkVolu": 23476207.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

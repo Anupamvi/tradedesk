@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 611.5553,
+      "clsPx": 607.09,
       "hiPx": 608.87,
       "loPx": 600.85,
       "open": 601.73,
       "stkVolu": 1388458.0,
       "ticker": "PWR",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 611.39,
+      "hiPx": 612.19,
+      "loPx": 593.7,
+      "open": 605.32,
+      "stkVolu": 989128.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 611.8605,
+      "hiPx": 612.17,
+      "loPx": 597.875,
+      "open": 609.1,
+      "stkVolu": 807260.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

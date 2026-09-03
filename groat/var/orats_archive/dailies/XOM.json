@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 161.2,
+      "clsPx": 160.95,
       "hiPx": 161.59,
       "loPx": 158.74,
       "open": 159.94,
       "stkVolu": 18369118.0,
       "ticker": "XOM",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 164.55,
+      "hiPx": 164.7,
+      "loPx": 162.215,
+      "open": 163.6,
+      "stkVolu": 11389651.0,
+      "ticker": "XOM",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 164.4799,
+      "hiPx": 165.02,
+      "loPx": 162.76,
+      "open": 163.93,
+      "stkVolu": 11289258.0,
+      "ticker": "XOM",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

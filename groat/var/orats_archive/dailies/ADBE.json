@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 293.385,
+      "clsPx": 292.79,
       "hiPx": 294.13,
       "loPx": 286.26,
       "open": 287.65,
       "stkVolu": 5214252.0,
       "ticker": "ADBE",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 286.08,
+      "hiPx": 294.53,
+      "loPx": 285.48,
+      "open": 288.26,
+      "stkVolu": 4454523.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 280.7821,
+      "hiPx": 287.49,
+      "loPx": 279.425,
+      "open": 283.5,
+      "stkVolu": 3857183.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

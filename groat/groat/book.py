@@ -83,6 +83,23 @@ def same_ticket(book_pos: dict, picked: Optional[dict]) -> bool:
     return True
 
 
+def open_group_sets(path: Optional[Path] = None):
+    """Open book tickers and their industry groups. Skips other/index/macro."""
+    from groat.config import ticker_group
+
+    groups = set()
+    tickers = set()
+    for pos in positions(path):
+        ticker = underlying_symbol(str(pos.get("ticker") or "")).upper()
+        if not ticker:
+            continue
+        tickers.add(ticker)
+        group = ticker_group(ticker)
+        if group and group not in ("other", "index", "macro"):
+            groups.add(group)
+    return groups, tickers
+
+
 def book_index(path: Optional[Path] = None) -> Dict[str, dict]:
     out = {}
     for pos in positions(path):

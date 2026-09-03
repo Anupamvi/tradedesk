@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 408.18,
+      "clsPx": 408.42,
       "hiPx": 408.8,
       "loPx": 404.9,
       "open": 407.76,
       "stkVolu": 9490022.0,
       "ticker": "GLD",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 396.75,
+      "hiPx": 401.25,
+      "loPx": 396.45,
+      "open": 398.285,
+      "stkVolu": 13143009.0,
+      "ticker": "GLD",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 402.0,
+      "hiPx": 403.33,
+      "loPx": 399.58,
+      "open": 399.71,
+      "stkVolu": 13714094.0,
+      "ticker": "GLD",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

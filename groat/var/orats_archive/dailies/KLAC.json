@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 175.1,
+      "clsPx": 175.45,
       "hiPx": 177.61,
       "loPx": 174.17,
       "open": 176.86,
       "stkVolu": 7605538.0,
       "ticker": "KLAC",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 170.89,
+      "hiPx": 173.1965,
+      "loPx": 168.07,
+      "open": 172.74,
+      "stkVolu": 10479036.0,
+      "ticker": "KLAC",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 172.3,
+      "hiPx": 172.95,
+      "loPx": 167.56,
+      "open": 171.76,
+      "stkVolu": 6469528.0,
+      "ticker": "KLAC",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

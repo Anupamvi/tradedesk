@@ -95,14 +95,19 @@ def options_confidence(picked, vol, earnings, snap, setup=None, x_tag=None) -> d
     if 0 < net_d < 0.10:
         conf -= 16
         drivers.append("net delta <0.10")
-    elif 0 < net_d < 0.15:
+    elif 0 < net_d < 0.16:
         conf -= 8
-        drivers.append("net delta <0.15")
+        drivers.append("net delta <0.16")
 
     tag = str(x_tag or "").lower()
+    ret1 = to_float((snap or {}).get("ret_1"))
+    direction = str((setup or {}).get("direction") or "")
     if tag == "informed":
-        conf += 5
-        drivers.append("X Informed")
+        if direction == "bullish" and ret1 is not None and ret1 <= -0.03:
+            drivers.append("X Informed, no bonus (red day)")
+        else:
+            conf += 5
+            drivers.append("X Informed")
     elif tag == "crowded":
         conf -= 10
         drivers.append("X Crowded")

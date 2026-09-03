@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 206.8662,
+      "clsPx": 206.14,
       "hiPx": 208.4152,
       "loPx": 203.8355,
       "open": 206.08,
       "stkVolu": 12067376.0,
       "ticker": "CVX",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 211.05,
+      "hiPx": 211.08,
+      "loPx": 207.8,
+      "open": 209.0,
+      "stkVolu": 8558928.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 211.8054,
+      "hiPx": 212.79,
+      "loPx": 209.46,
+      "open": 210.49,
+      "stkVolu": 7597216.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

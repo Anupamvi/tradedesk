@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 237.21,
+      "clsPx": 237.04,
       "hiPx": 239.7,
       "loPx": 232.3,
       "open": 233.965,
       "stkVolu": 4242308.0,
       "ticker": "DDOG",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 223.84,
+      "hiPx": 237.38,
+      "loPx": 223.02,
+      "open": 232.88,
+      "stkVolu": 3431910.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 222.0,
+      "hiPx": 219.79,
+      "loPx": 208.22,
+      "open": 219.46,
+      "stkVolu": 6173929.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-09-02"
     }
   ]
 }

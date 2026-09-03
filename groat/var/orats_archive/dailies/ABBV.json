@@ -2620,13 +2620,31 @@
       "tradeDate": "2026-08-28"
     },
     {
-      "clsPx": 257.95,
+      "clsPx": 256.42,
       "hiPx": 258.24,
       "loPx": 252.33,
       "open": 254.17,
       "stkVolu": 4315487.0,
       "ticker": "ABBV",
       "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 259.99,
+      "hiPx": 262.265,
+      "loPx": 257.79,
+      "open": 260.99,
+      "stkVolu": 3866739.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 261.8,
+      "hiPx": 262.97,
+      "loPx": 257.7,
+      "open": 262.7,
+      "stkVolu": 4225524.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-09-02"
     }
   ]
 }
