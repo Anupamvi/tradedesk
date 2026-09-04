@@ -119,15 +119,15 @@
         <div class="inputs">
           <div>
             <label for="amount">Amount</label>
-            <input id="amount" type="text" inputmode="decimal" placeholder="100000" autocomplete="off">
+            <input id="amount" type="text" inputmode="decimal" placeholder="e.g. 100000" autocomplete="off">
           </div>
           <div>
             <label for="weekly">Weekly buy (recipe)</label>
-            <input id="weekly" type="text" inputmode="decimal" placeholder="250" autocomplete="off">
+            <input id="weekly" type="text" inputmode="decimal" placeholder="e.g. 250" autocomplete="off">
           </div>
           <div>
             <label for="monthly">Monthly add (paths)</label>
-            <input id="monthly" type="text" inputmode="decimal" placeholder="1000" autocomplete="off">
+            <input id="monthly" type="text" inputmode="decimal" placeholder="e.g. 1000" autocomplete="off">
           </div>
         </div>
         <p class="hint">Typing an amount splits default 48/10/7/5/20/5/5 and aggressive 45/15/10/5/15/5/5. Last amount is saved on this machine.</p>
@@ -144,7 +144,7 @@
           <div class="inputs">
             <div>
               <label for="monthly_add">Monthly add going forward</label>
-              <input id="monthly_add" type="text" inputmode="decimal" placeholder="1000" autocomplete="off">
+              <input id="monthly_add" type="text" inputmode="decimal" placeholder="e.g. 1000" autocomplete="off">
             </div>
             <div>
               <label>Compare mix to</label>
@@ -206,7 +206,7 @@
       return html;
     }
 
-    function sleeveCard(name, block) {
+    function sleeveCard(name, block, plan) {
       const rows = block.allocation.rows || [];
       const bar = rows.map(r => `<span class="seg" style="width:${(r.weight*100).toFixed(3)}%;background:${COLORS[r.ticker]}"></span>`).join("");
       let body = rows.map(r => `<tr>
@@ -220,6 +220,7 @@
         <h3>${title}</h3>
         <div class="bar">${bar}</div>
         <table><thead><tr><th>ETF</th><th class="num">Wt</th><th class="num">Split</th><th class="num">Weekly</th></tr></thead><tbody>${body}</tbody></table>
+        <p class="meta">Paths on <strong>${usd(plan.amount)}</strong> + <strong>${usd(plan.monthly)}</strong>/mo</p>
         ${pathTable(block.projections)}
         <p class="meta">NVDA look-through <strong>${pct(block.allocation.nvda_weight)}</strong> · SMH −45% hit <strong>${usd(block.allocation.smh_crash_dollars)}</strong></p>
       </article>`;
@@ -227,7 +228,7 @@
 
     function renderPlan(plan) {
       const el = document.getElementById("sleeves");
-      el.innerHTML = ["default","aggressive"].map(name => sleeveCard(name, plan.sleeves[name])).join("");
+      el.innerHTML = ["default","aggressive"].map(name => sleeveCard(name, plan.sleeves[name], plan)).join("");
     }
 
     function renderBook(book) {
@@ -249,7 +250,7 @@
         </tr>`;
       }).join("");
       out.innerHTML = `
-        <p class="meta">Submitted <strong>${esc(book.submitted_at || "")}</strong> · total <strong>${usd(book.total)}</strong> · vs ${esc(book.compare_to)} sleeve · 10y base <strong>${pct(book.rates["10y"].base)}</strong></p>
+        <p class="meta">Submitted <strong>${esc(book.submitted_at || "")}</strong> · total <strong>${usd(book.total)}</strong> + <strong>${usd(book.monthly_add)}</strong>/mo · vs ${esc(book.compare_to)} sleeve · 10y base <strong>${pct(book.rates["10y"].base)}</strong></p>
         <div class="bar">${book.rows.map(r => `<span class="seg" style="width:${(r.weight*100).toFixed(3)}%;background:${COLORS[r.ticker]}"></span>`).join("")}</div>
         <table><thead><tr><th>ETF</th><th class="num">Held</th><th class="num">Mix</th><th class="num">Target</th><th>Band</th><th class="num">Gap</th></tr></thead><tbody>${rows}</tbody></table>
         <p class="meta">NVDA look-through <strong>${pct(book.nvda_weight)}</strong> (${usd(book.nvda_dollars)}) · SMH −45% hit <strong>${usd(book.smh_crash_dollars)}</strong> · fee <strong>${(book.fee*100).toFixed(3)}%</strong></p>

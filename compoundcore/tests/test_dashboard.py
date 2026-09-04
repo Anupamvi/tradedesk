@@ -43,6 +43,8 @@ class TestDashboardHttp(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("Compound Core", html)
         self.assertIn("Submit allocations", html)
+        self.assertIn("e.g. 100000", html)
+        self.assertIn("My book", html)
         status, calc = self._json("/calculator.html")
         self.assertEqual(status, 200)
         self.assertIn("Compound Core calculator", calc)
@@ -61,6 +63,10 @@ class TestDashboardHttp(unittest.TestCase):
         self.assertEqual(voo["dollars"], 48000.0)
         smh_agg = [r for r in data["planner"]["sleeves"]["aggressive"]["allocation"]["rows"] if r["ticker"] == "SMH"][0]
         self.assertEqual(smh_agg["dollars"], 10000.0)
+        self.assertEqual(
+            int(round(data["planner"]["sleeves"]["default"]["projections"]["10y"]["base"]["nominal"] / 1000.0)) * 1000,
+            337000,
+        )
         status, again = self._json("/api/state")
         self.assertEqual(again["saved"]["planner"]["amount"], 100000.0)
         self.assertEqual(
@@ -85,7 +91,10 @@ class TestDashboardHttp(unittest.TestCase):
         )
         self.assertEqual(status, 200)
         self.assertTrue(data["book"]["present"])
-        self.assertGreater(data["book"]["projections"]["10y"]["base"]["nominal"], 100000)
+        self.assertEqual(
+            int(round(data["book"]["projections"]["10y"]["base"]["nominal"] / 1000.0)) * 1000,
+            337000,
+        )
         status, again = self._json("/api/state")
         self.assertTrue(again["book"]["present"])
         self.assertEqual(again["book"]["total"], 100000.0)
