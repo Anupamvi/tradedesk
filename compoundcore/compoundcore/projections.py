@@ -46,17 +46,17 @@ def real_value(nominal: float, years: float, inflation: float = INFLATION) -> fl
     return nominal / ((1.0 + inflation) ** years)
 
 
-def path_table(
+def path_table_from_rates(
     principal: float,
     monthly: float,
-    sleeve: str = "default",
+    rates: Dict[str, Dict[str, float]],
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
-    """Nested [horizon][scenario] -> {nominal, real, contributed}."""
+    """Nested [horizon][scenario] -> {nominal, real, contributed, annual}."""
     out: Dict[str, Dict[str, Dict[str, float]]] = {}
     for years, horizon in ((5, "5y"), (10, "10y")):
         out[horizon] = {}
         for scenario in SCENARIOS:
-            annual = portfolio_rate(sleeve, horizon, scenario)
+            annual = float(rates[horizon][scenario])
             nominal = fv_dca(principal, monthly, annual, years)
             contributed = principal + monthly * years * 12
             out[horizon][scenario] = {
@@ -79,6 +79,19 @@ def path_table(
         "contributed": principal + monthly * 10 * 12,
     }
     return out
+
+
+def path_table(
+    principal: float,
+    monthly: float,
+    sleeve: str = "default",
+) -> Dict[str, Dict[str, Dict[str, float]]]:
+    """Nested [horizon][scenario] -> {nominal, real, contributed}."""
+    rates = {
+        "5y": {s: portfolio_rate(sleeve, "5y", s) for s in SCENARIOS},
+        "10y": {s: portfolio_rate(sleeve, "10y", s) for s in SCENARIOS},
+    }
+    return path_table_from_rates(principal, monthly, rates)
 
 
 def round_thousands(value: float) -> int:

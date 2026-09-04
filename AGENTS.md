@@ -113,10 +113,12 @@ python3 -m wheelo full --date YYYY-MM-DD --capital 35000
 
 ```bash
 python3 -m compoundcore 100000 --weekly 250 --monthly 1000
+python3 -m compoundcore dashboard
 ```
 
 - Playbook: `/Users/anuppamvi/tradedesk/compoundcore/docs/PLAYBOOK.md`
-- HTML calculator: `/Users/anuppamvi/tradedesk/compoundcore/web/calculator.html`
+- Persistent dashboard: `python3 -m compoundcore dashboard` then open `http://127.0.0.1:8765/` (both sleeves + submit actual holdings).
+- Raw HTML calculator: `/Users/anuppamvi/tradedesk/compoundcore/web/calculator.html`
 - Output is a dollar split plus 5-year / 10-year stress–bear–base–bull paths. Not a 40%/yr plan.
 
 ## Pattern Analysis V2 Default

@@ -32,6 +32,9 @@ skills-lock.json
 2026-07-16-overlay-2026-07-17/
 anu-trading-desk-site/
 
+# Compound Core dashboard state (actual holdings live here).
+compoundcore/var/
+
 # Local workspace copies and generated browser artifacts.
 Cursor/
 codexswing/.playwright-cli/

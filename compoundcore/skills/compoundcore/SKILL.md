@@ -1,9 +1,9 @@
 ---
 name: compoundcore
 description: >
-  Run the Compound Core long-term index sleeve and dollar calculator.
+  Run the Compound Core long-term index sleeve, dollar calculator, and dashboard.
   Triggers include compound core, compoundcore, core sleeve, core calculator,
-  ToothFolio, VOO VGT SMH VB sleeve, allocate core, /compoundcore.
+  core dashboard, ToothFolio, VOO VGT SMH VB sleeve, allocate core, /compoundcore.
   Independent of groat, wheelo, xhigh, groko, and Codex Daily.
   No stock-picking, no options, no order placement.
 ---
@@ -24,7 +24,8 @@ Never invent CMA numbers, ETF holdings, prices, or X posts. Missing source → *
 | `compound core $250000` / `allocate 250000` / a dollar amount | `calc --amount AMOUNT` both sleeves |
 | weekly and/or monthly mentioned | add `--weekly` and/or `--monthly` |
 | `aggressive` / `default` only | `--sleeve aggressive` or `--sleeve default` |
-| `core calculator` | write/open `web/calculator.html` |
+| `core dashboard` / persistent dashboard / my book | `dashboard` then open `http://127.0.0.1:8765/` |
+| `core calculator` | write/open `web/calculator.html` (raw HTML) |
 
 If they give one number and no weekly/monthly, still print both sleeves' dollar split, the per-$1,000 weekly recipe, and lump-sum 5y/10y paths.
 
@@ -34,15 +35,16 @@ From CODE, timeout 30000ms.
 
 ```bash
 PYTHONPATH=. python3 -m compoundcore AMOUNT --weekly WEEKLY --monthly MONTHLY
+PYTHONPATH=. python3 -m compoundcore dashboard
 PYTHONPATH=. python3 -m compoundcore calculator
 ```
 
 `python3 -m compoundcore 100000` is `calc --amount 100000 --sleeve both`.
 
-Playbook path: `CODE/docs/PLAYBOOK.md`.
+Dashboard (persistent, both sleeves + actual holdings): `http://127.0.0.1:8765/`. Raw calculator stays `CODE/web/calculator.html`. Playbook path: `CODE/docs/PLAYBOOK.md`.
 
 ## Reply shape
 
-Lead with the **default** dollar table for their amount, then aggressive, then 5y/10y base (and stress). One line: no orders, not a 40%/yr plan. Link the playbook.
+Lead with the **default** dollar table for their amount, then aggressive, then 5y/10y base (and stress). One line: no orders, not a 40%/yr plan. Link the playbook. If they asked for the dashboard, start it and give the local URL.
 
 Do not lecture sleeve math beyond the table. Do not recommend 50/30/20 VOO/VGT/SMH as the default. Do not place trades.

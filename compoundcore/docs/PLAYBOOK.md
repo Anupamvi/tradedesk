@@ -4,15 +4,16 @@ Long-term **core** sleeve. Compounding, no stock-picking, no options, no orders.
 
 As-of **4 Sep 2026**. Mixed taxable + IRA. Money needed inside 5 years does not belong here. Living-expense cash sits **outside** the 5% VGSH.
 
-Calculator (enter $ amount, both sleeves):
+Calculator and dashboard:
 
 ```bash
 cd /Users/anuppamvi/tradedesk/compoundcore
 PYTHONPATH=. python3 -m compoundcore 100000 --weekly 250 --monthly 1000
-PYTHONPATH=. python3 -m compoundcore calculator   # writes web/calculator.html
+PYTHONPATH=. python3 -m compoundcore dashboard          # http://127.0.0.1:8765/
+PYTHONPATH=. python3 -m compoundcore calculator         # writes web/calculator.html
 ```
 
-Open [`web/calculator.html`](../web/calculator.html) and type an amount. Default and aggressive split at once.
+Open the dashboard at `http://127.0.0.1:8765/` for both sleeves plus a **My book** form. Submit the dollars you actually hold; refresh keeps the mix and compounded paths. The raw file [`web/calculator.html`](../web/calculator.html) still opens as plain HTML.
 
 ---
 

@@ -22,7 +22,7 @@ PLAYBOOK = Path(__file__).resolve().parent.parent / "docs" / "PLAYBOOK.md"
 def _normalize(argv: List[str]) -> List[str]:
     if not argv:
         return ["calc"]
-    if argv[0] in ("calc", "allocate", "project", "playbook", "calculator", "-h", "--help"):
+    if argv[0] in ("calc", "allocate", "project", "playbook", "calculator", "dashboard", "-h", "--help"):
         return argv
     if re.match(r"^\$?\d", argv[0]):
         rest = argv[1:]
@@ -96,8 +96,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     book = sub.add_parser("playbook", help="Print the playbook path")
     book.add_argument("--print", dest="dump", action="store_true", help="Print the playbook markdown")
 
-    html = sub.add_parser("calculator", help="Write the HTML calculator")
+    html = sub.add_parser("calculator", help="Write the raw HTML calculator")
     html.add_argument("--out", default=str(DEFAULT_HTML), help="Output path")
+
+    dash = sub.add_parser("dashboard", help="Persistent local dashboard (both sleeves + my book)")
+    dash.add_argument("--host", default="127.0.0.1")
+    dash.add_argument("--port", type=int, default=8765)
+    dash.add_argument("--state", default="", help="JSON state path (default: var/dashboard.json)")
 
     args = parser.parse_args(raw)
     cmd = args.cmd or "calc"
@@ -117,6 +122,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(path)
         return 0
 
+    if cmd == "dashboard":
+        from compoundcore.dashboard import serve
+
+        return serve(args.host, args.port, args.state or None)
+
     amount = _money(getattr(args, "amount", None))
     if cmd in ("calc", "allocate", "project") and amount <= 0:
         if cmd == "calc" and getattr(args, "amount", None) in (None, ""):
@@ -127,6 +137,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "  python3 -m compoundcore 250000 --weekly 500 --monthly 1000\n"
                 "  python3 -m compoundcore calc --amount 100000 --sleeve both\n"
                 "  python3 -m compoundcore playbook\n"
+                "  python3 -m compoundcore dashboard\n"
                 "  python3 -m compoundcore calculator\n"
                 "\n"
                 "Playbook: %s\n" % PLAYBOOK

@@ -59,3 +59,17 @@ class TestCliAndCalculator(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             self.assertIn('id="amount"', text)
             self.assertIn("Aggressive variant", calculator_html())
+
+    def test_cli_help_mentions_dashboard(self):
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(ROOT)
+        proc = subprocess.run(
+            [sys.executable, "-m", "compoundcore"],
+            cwd=str(ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("dashboard", proc.stdout)

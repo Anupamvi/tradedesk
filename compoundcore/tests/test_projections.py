@@ -1,7 +1,7 @@
 import unittest
 
-from compoundcore.projections import fv_dca, fv_lump, path_table, round_thousands
-from compoundcore.sleeve import portfolio_rate
+from compoundcore.projections import fv_dca, fv_lump, path_table, path_table_from_rates, round_thousands
+from compoundcore.sleeve import rates_from_weights, portfolio_rate, weights
 
 
 class TestProjections(unittest.TestCase):
@@ -78,3 +78,13 @@ class TestProjections(unittest.TestCase):
             a["10y"]["bull"]["nominal"],
             d["10y"]["bull"]["nominal"],
         )
+
+    def test_path_table_from_actual_mix(self):
+        mix = dict(weights("default"))
+        mix["SMH"] = 0.20
+        mix["VOO"] = 0.35
+        rates = rates_from_weights(mix)
+        table = path_table_from_rates(100000, 0, rates)
+        default = path_table(100000, 0, "default")
+        self.assertLess(table["10y"]["stress"]["nominal"], default["10y"]["stress"]["nominal"])
+        self.assertAlmostEqual(table["10y"]["base"]["annual"], rates["10y"]["base"], places=12)

@@ -87,11 +87,12 @@ DEFAULT_PORTFOLIO_RATES = {
     "10y": {"stress": 0.005, "bear": 0.032, "base": 0.058, "bull": 0.081},
 }
 
-# Same 5y-vs-10y spread applied to the aggressive mix.
-_FIVE_VS_TEN = {
+# Same 5y-vs-10y spread applied to any mix (aggressive sleeve and live book).
+FIVE_VS_TEN = {
     path: DEFAULT_PORTFOLIO_RATES["5y"][path] - DEFAULT_PORTFOLIO_RATES["10y"][path]
     for path in ("stress", "bear", "base", "bull")
 }
+_FIVE_VS_TEN = FIVE_VS_TEN
 
 INFLATION = 0.020  # Vanguard US inflation range 1.5–2.5% (30 Jun 2026), midpoint
 FANTASY_ANNUAL = 0.40
@@ -171,6 +172,22 @@ def bands(sleeve: str = "default") -> Dict[str, Band]:
             half_pp=half,
         )
     return out
+
+
+def rates_from_weights(w: Mapping[str, float]) -> Dict[str, Dict[str, float]]:
+    """10y geometric blocks weighted by `w`, then the locked 5y overlay."""
+    total = sum(float(w.get(t, 0.0) or 0.0) for t in TICKER_ORDER)
+    if total <= 0:
+        z = {path: 0.0 for path in SCENARIOS}
+        return {"5y": dict(z), "10y": dict(z)}
+    ten = {}
+    for path in SCENARIOS:
+        ten[path] = sum(
+            (float(w.get(t, 0.0) or 0.0) / total) * BUILDING_BLOCKS_10Y[t][path]
+            for t in TICKER_ORDER
+        )
+    five = {path: ten[path] + FIVE_VS_TEN[path] for path in SCENARIOS}
+    return {"5y": five, "10y": ten}
 
 
 def weighted_block(sleeve: str, scenario: str) -> float:

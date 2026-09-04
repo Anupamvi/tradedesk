@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compound Core dashboard</title>
+  <style>
+    :root {
+      --bg: #070b12;
+      --panel: #101826;
+      --panel-2: #162033;
+      --line: #243044;
+      --ink: #eef3fb;
+      --muted: #8b97ab;
+      --gold: #e8b84a;
+      --ok: #3dd68c;
+      --warn: #ff6b4a;
+      --blue: #4c8dff;
+      --VOO: #4c8dff;
+      --VGT: #7c5cff;
+      --SMH: #ff6b4a;
+      --VB: #3dd68c;
+      --VXUS: #3ec6d6;
+      --GLDM: #e8b84a;
+      --VGSH: #8b95a8;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+      font: 15px/1.45 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    }
+    a { color: var(--gold); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+      padding: 22px 28px 16px; border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; background: rgba(7,11,18,0.92); backdrop-filter: blur(8px); z-index: 2;
+    }
+    h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.03em; }
+    h1 span { color: var(--gold); }
+    .lede { color: var(--muted); margin: 4px 0 0; font-size: 0.92rem; }
+    .nav { display: flex; gap: 14px; font-size: 0.88rem; color: var(--muted); white-space: nowrap; }
+    main { max-width: 1280px; margin: 0 auto; padding: 22px 28px 72px; }
+    section { margin: 0 0 28px; }
+    h2 { font-size: 1.05rem; margin: 0 0 12px; letter-spacing: -0.02em; }
+    h2 em { font-style: normal; color: var(--gold); }
+    .card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px 14px;
+    }
+    .inputs, .hold-grid { display: grid; gap: 12px; }
+    .inputs { grid-template-columns: repeat(3, 1fr); margin-bottom: 14px; }
+    .hold-grid { grid-template-columns: repeat(4, 1fr); }
+    label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 5px; }
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+      background: #0c1320; color: var(--ink);
+      font: 1.05rem/1.2 ui-monospace, "IBM Plex Mono", Menlo, Consolas, monospace;
+    }
+    input:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
+    .hint { color: var(--muted); font-size: 0.85rem; margin: 8px 0 0; }
+    .sleeves { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .sleeve h3 { margin: 0 0 8px; font-size: 1rem; }
+    .sleeve.default h3 { color: var(--blue); }
+    .sleeve.aggressive h3 { color: var(--warn); }
+    .bar { height: 10px; background: #0c1320; border-radius: 99px; overflow: hidden; display: flex; margin: 0 0 12px; }
+    .seg { height: 100%; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); }
+    th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    td.num, th.num { text-align: right; font-family: ui-monospace, "IBM Plex Mono", Menlo, Consolas, monospace; font-size: 0.88rem; }
+    .meta { color: var(--muted); font-size: 0.85rem; margin: 10px 0 0; }
+    .meta strong { color: var(--ink); }
+    .paths { margin-top: 12px; }
+    .book-form { display: grid; gap: 14px; }
+    .book-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    button {
+      background: var(--gold); color: #1a1406; border: 0; border-radius: 8px;
+      padding: 10px 16px; font: 650 0.95rem/1 system-ui; cursor: pointer;
+    }
+    button:hover { filter: brightness(1.05); }
+    button:disabled { opacity: 0.55; cursor: default; }
+    .radios { display: flex; gap: 14px; color: var(--muted); font-size: 0.9rem; }
+    .empty {
+      border: 1px dashed var(--line); border-radius: 12px; padding: 22px; color: var(--muted);
+      background: var(--panel-2);
+    }
+    .status { display: inline-block; min-width: 2.6rem; text-align: center; border-radius: 99px; padding: 1px 8px; font-size: 0.72rem; letter-spacing: 0.04em; }
+    .in { background: #163528; color: var(--ok); }
+    .low { background: #3a2410; color: var(--gold); }
+    .high { background: #3a1612; color: var(--warn); }
+    .flash { color: var(--ok); font-size: 0.88rem; }
+    .err { color: var(--warn); font-size: 0.88rem; }
+    footer { margin-top: 8px; color: var(--muted); font-size: 0.82rem; }
+    .disclaimer { border-left: 3px solid var(--warn); padding: 8px 12px; color: #f0c7bc; }
+    @media (max-width: 960px) {
+      .inputs, .sleeves, .hold-grid { grid-template-columns: 1fr 1fr; }
+      header, main { padding-left: 16px; padding-right: 16px; }
+    }
+    @media (max-width: 640px) {
+      .inputs, .sleeves, .hold-grid { grid-template-columns: 1fr; }
+      header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Compound Core <span>dashboard</span></h1>
+      <p class="lede">Both sleeves, then the book you actually hold. No orders. As-of <span id="asof">—</span>.</p>
+    </div>
+    <div class="nav">
+      <a href="/calculator.html">Raw calculator HTML</a>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>1. Split a <em>dollar amount</em></h2>
+      <div class="card">
+        <div class="inputs">
+          <div>
+            <label for="amount">Amount</label>
+            <input id="amount" type="text" inputmode="decimal" placeholder="100000" autocomplete="off">
+          </div>
+          <div>
+            <label for="weekly">Weekly buy (recipe)</label>
+            <input id="weekly" type="text" inputmode="decimal" placeholder="250" autocomplete="off">
+          </div>
+          <div>
+            <label for="monthly">Monthly add (paths)</label>
+            <input id="monthly" type="text" inputmode="decimal" placeholder="1000" autocomplete="off">
+          </div>
+        </div>
+        <p class="hint">Typing an amount splits default 48/10/7/5/20/5/5 and aggressive 45/15/10/5/15/5/5. Last amount is saved on this machine.</p>
+        <p id="plan-msg" class="hint"></p>
+        <div class="sleeves" id="sleeves"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. My book — <em>submit what you actually hold</em></h2>
+      <div class="card">
+        <form id="book-form" class="book-form">
+          <div class="hold-grid" id="hold-inputs"></div>
+          <div class="inputs">
+            <div>
+              <label for="monthly_add">Monthly add going forward</label>
+              <input id="monthly_add" type="text" inputmode="decimal" placeholder="1000" autocomplete="off">
+            </div>
+            <div>
+              <label>Compare mix to</label>
+              <div class="radios" style="margin-top:10px">
+                <label><input type="radio" name="compare_to" value="default" checked> Default sleeve</label>
+                <label><input type="radio" name="compare_to" value="aggressive"> Aggressive</label>
+              </div>
+            </div>
+          </div>
+          <div class="book-actions">
+            <button type="submit" id="submit-book">Submit allocations</button>
+            <span id="book-msg" class="hint"></span>
+          </div>
+        </form>
+        <div id="book-out" style="margin-top:16px"></div>
+      </div>
+    </section>
+    <footer>
+      <p class="disclaimer">Not financial advice. CMAs are not guarantees. The 40% screenshot is a trailing year, not a forecast. This dashboard stores a JSON file on this machine only.</p>
+    </footer>
+  </main>
+  <script>
+    const TICKERS = ["VOO","VGT","SMH","VB","VXUS","GLDM","VGSH"];
+    const COLORS = {VOO:"#4c8dff",VGT:"#7c5cff",SMH:"#ff6b4a",VB:"#3dd68c",VXUS:"#3ec6d6",GLDM:"#e8b84a",VGSH:"#8b95a8"};
+    const PATHS = ["stress","bear","base","bull"];
+    let saveTimer = null;
+    let hydrating = false;
+
+    function money(raw) {
+      const t = String(raw || "").replace(/[$,]/g, "").trim();
+      if (!t) return 0;
+      const n = Number(t);
+      return Number.isFinite(n) ? n : NaN;
+    }
+    function usd(n) {
+      if (!Number.isFinite(n)) return "—";
+      const abs = Math.abs(n);
+      const digits = abs >= 1000 ? 0 : 2;
+      return n.toLocaleString("en-US", {style:"currency", currency:"USD", maximumFractionDigits: digits, minimumFractionDigits: digits});
+    }
+    function pct(x) { return (x * 100).toFixed(1) + "%"; }
+    function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+
+    function pathTable(proj) {
+      if (!proj) return "";
+      let html = `<table class="paths"><thead><tr><th>Horizon</th>`;
+      PATHS.forEach(p => html += `<th class="num">${p}</th>`);
+      html += `</tr></thead><tbody>`;
+      ["5y","10y"].forEach(h => {
+        html += `<tr><td>${h} nominal</td>`;
+        PATHS.forEach(p => html += `<td class="num">${usd(proj[h][p].nominal)}</td>`);
+        html += `</tr><tr><td>${h} real</td>`;
+        PATHS.forEach(p => html += `<td class="num">${usd(proj[h][p].real)}</td>`);
+        html += `</tr>`;
+      });
+      html += `<tr><td>10y contributed</td>`;
+      PATHS.forEach(p => html += `<td class="num">${usd(proj["10y"][p].contributed)}</td>`);
+      html += `</tr></tbody></table>`;
+      return html;
+    }
+
+    function sleeveCard(name, block) {
+      const rows = block.allocation.rows || [];
+      const bar = rows.map(r => `<span class="seg" style="width:${(r.weight*100).toFixed(3)}%;background:${COLORS[r.ticker]}"></span>`).join("");
+      let body = rows.map(r => `<tr>
+        <td>${esc(r.ticker)}</td>
+        <td class="num">${pct(r.weight)}</td>
+        <td class="num">${usd(r.dollars)}</td>
+        <td class="num">${usd(r.weekly)}</td>
+      </tr>`).join("");
+      const title = name === "default" ? "Default sleeve" : "Aggressive variant";
+      return `<article class="sleeve ${esc(name)}">
+        <h3>${title}</h3>
+        <div class="bar">${bar}</div>
+        <table><thead><tr><th>ETF</th><th class="num">Wt</th><th class="num">Split</th><th class="num">Weekly</th></tr></thead><tbody>${body}</tbody></table>
+        ${pathTable(block.projections)}
+        <p class="meta">NVDA look-through <strong>${pct(block.allocation.nvda_weight)}</strong> · SMH −45% hit <strong>${usd(block.allocation.smh_crash_dollars)}</strong></p>
+      </article>`;
+    }
+
+    function renderPlan(plan) {
+      const el = document.getElementById("sleeves");
+      el.innerHTML = ["default","aggressive"].map(name => sleeveCard(name, plan.sleeves[name])).join("");
+    }
+
+    function renderBook(book) {
+      const out = document.getElementById("book-out");
+      if (!book || !book.present) {
+        out.innerHTML = `<div class="empty">No allocations submitted yet. Enter the dollars you actually hold and submit. The mix, band gaps, and compounded 5y/10y paths show up here and stay after refresh.</div>`;
+        return;
+      }
+      const rows = book.rows.map(r => {
+        const gap = r.gap_dollars;
+        const gapTxt = gap > 0.5 ? usd(gap) + " to target" : gap < -0.5 ? usd(Math.abs(gap)) + " over" : "on target";
+        return `<tr>
+          <td>${esc(r.ticker)}</td>
+          <td class="num">${usd(r.dollars)}</td>
+          <td class="num">${pct(r.weight)}</td>
+          <td class="num">${pct(r.target)}</td>
+          <td><span class="status ${esc(r.status)}">${esc(r.status).toUpperCase()}</span></td>
+          <td class="num">${gapTxt}</td>
+        </tr>`;
+      }).join("");
+      out.innerHTML = `
+        <p class="meta">Submitted <strong>${esc(book.submitted_at || "")}</strong> · total <strong>${usd(book.total)}</strong> · vs ${esc(book.compare_to)} sleeve · 10y base <strong>${pct(book.rates["10y"].base)}</strong></p>
+        <div class="bar">${book.rows.map(r => `<span class="seg" style="width:${(r.weight*100).toFixed(3)}%;background:${COLORS[r.ticker]}"></span>`).join("")}</div>
+        <table><thead><tr><th>ETF</th><th class="num">Held</th><th class="num">Mix</th><th class="num">Target</th><th>Band</th><th class="num">Gap</th></tr></thead><tbody>${rows}</tbody></table>
+        <p class="meta">NVDA look-through <strong>${pct(book.nvda_weight)}</strong> (${usd(book.nvda_dollars)}) · SMH −45% hit <strong>${usd(book.smh_crash_dollars)}</strong> · fee <strong>${(book.fee*100).toFixed(3)}%</strong></p>
+        <h3 style="margin:16px 0 6px;font-size:0.95rem">Compounded growth on this mix</h3>
+        ${pathTable(book.projections)}
+      `;
+    }
+
+    function fillForm(saved) {
+      hydrating = true;
+      document.getElementById("amount").value = saved.planner.amount ? String(saved.planner.amount) : "";
+      document.getElementById("weekly").value = saved.planner.weekly ? String(saved.planner.weekly) : "";
+      document.getElementById("monthly").value = saved.planner.monthly ? String(saved.planner.monthly) : "";
+      TICKERS.forEach(t => {
+        const el = document.getElementById("h-" + t);
+        if (el) el.value = saved.book.holdings[t] ? String(saved.book.holdings[t]) : "";
+      });
+      document.getElementById("monthly_add").value = saved.book.monthly_add ? String(saved.book.monthly_add) : "";
+      const cmp = saved.book.compare_to || "default";
+      document.querySelectorAll("input[name=compare_to]").forEach(r => { r.checked = r.value === cmp; });
+      hydrating = false;
+    }
+
+    function buildHoldInputs() {
+      document.getElementById("hold-inputs").innerHTML = TICKERS.map(t => `
+        <div>
+          <label for="h-${t}">${t} dollars</label>
+          <input id="h-${t}" name="${t}" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+        </div>
+      `).join("");
+    }
+
+    function plannerBody() {
+      return {
+        amount: money(document.getElementById("amount").value),
+        weekly: money(document.getElementById("weekly").value),
+        monthly: money(document.getElementById("monthly").value)
+      };
+    }
+
+    async function persistPlanner() {
+      const body = plannerBody();
+      if ([body.amount, body.weekly, body.monthly].some(n => Number.isNaN(n))) {
+        document.getElementById("plan-msg").textContent = "Use non-negative dollar amounts.";
+        document.getElementById("plan-msg").className = "err";
+        return;
+      }
+      document.getElementById("plan-msg").textContent = "";
+      const res = await fetch("/api/planner", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById("plan-msg").textContent = data.error || "Could not save.";
+        document.getElementById("plan-msg").className = "err";
+        return;
+      }
+      renderPlan(data.planner);
+    }
+
+    function scheduleSave() {
+      if (hydrating) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(persistPlanner, 180);
+    }
+
+    async function loadState() {
+      const res = await fetch("/api/state");
+      const data = await res.json();
+      document.getElementById("asof").textContent = data.asof;
+      fillForm(data.saved);
+      renderPlan(data.planner);
+      renderBook(data.book);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      buildHoldInputs();
+      ["amount","weekly","monthly"].forEach(id => {
+        document.getElementById(id).addEventListener("input", scheduleSave);
+      });
+      document.getElementById("book-form").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const holdings = {};
+        let bad = false;
+        TICKERS.forEach(t => {
+          const n = money(document.getElementById("h-" + t).value);
+          if (Number.isNaN(n) || n < 0) bad = true;
+          holdings[t] = n || 0;
+        });
+        const monthly_add = money(document.getElementById("monthly_add").value);
+        if (bad || Number.isNaN(monthly_add) || monthly_add < 0) {
+          document.getElementById("book-msg").textContent = "Holdings must be non-negative dollars.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        const compare_to = (document.querySelector("input[name=compare_to]:checked") || {}).value || "default";
+        const btn = document.getElementById("submit-book");
+        btn.disabled = true;
+        const res = await fetch("/api/book", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({holdings, monthly_add, compare_to})
+        });
+        const data = await res.json();
+        btn.disabled = false;
+        if (!res.ok) {
+          document.getElementById("book-msg").textContent = data.error || "Could not save book.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        document.getElementById("book-msg").textContent = "Saved. Refresh keeps this book.";
+        document.getElementById("book-msg").className = "flash";
+        renderBook(data.book);
+      });
+      loadState().catch(err => {
+        document.getElementById("plan-msg").textContent = "Dashboard needs the local server: python3 -m compoundcore dashboard";
+        document.getElementById("plan-msg").className = "err";
+        console.error(err);
+      });
+    });
+  </script>
+</body>
+</html>

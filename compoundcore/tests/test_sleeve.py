@@ -7,6 +7,7 @@ from compoundcore.sleeve import (
     blended_fee,
     nvda_lookthrough,
     portfolio_rate,
+    rates_from_weights,
     smh_crash_hit,
     us_share_of_equities,
     vxus_tax_drag_bps,
@@ -77,6 +78,11 @@ class TestSleeve(unittest.TestCase):
         high = vxus_tax_drag_bps(0.24, sleeve="default")
         self.assertAlmostEqual(low, 9.0, places=6)
         self.assertAlmostEqual(high, 14.4, places=6)
+
+    def test_rates_from_weights_matches_blocks(self):
+        rates = rates_from_weights(weights("default"))
+        self.assertAlmostEqual(rates["10y"]["base"], weighted_block("default", "base"), places=12)
+        self.assertAlmostEqual(rates["5y"]["base"], rates["10y"]["base"] - 0.008, places=12)
 
     def test_unknown_sleeve(self):
         with self.assertRaises(ValueError):

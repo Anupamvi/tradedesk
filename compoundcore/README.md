@@ -10,13 +10,16 @@ Default weights: **VOO 48 / VGT 10 / SMH 7 / VB 5 / VXUS 20 / GLDM 5 / VGSH 5**.
 cd /Users/anuppamvi/tradedesk/compoundcore
 PYTHONPATH=. python3 -m compoundcore 100000
 PYTHONPATH=. python3 -m compoundcore 250000 --weekly 500 --monthly 1000
+PYTHONPATH=. python3 -m compoundcore dashboard
 PYTHONPATH=. python3 -m compoundcore calculator
 PYTHONPATH=. python3 -m unittest discover -s tests -v
 ```
 
 Playbook: [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md)
 
-HTML calculator: [`web/calculator.html`](web/calculator.html) — enter a dollar amount; both sleeves split and project.
+Persistent dashboard: `python3 -m compoundcore dashboard` then open `http://127.0.0.1:8765/`. Type a dollar amount to split **both** sleeves. Submit actual holdings in **My book**; refresh keeps the mix and compounded 5y/10y paths.
+
+Raw HTML calculator: [`web/calculator.html`](web/calculator.html) — open the file as-is.
 
 ## Rules in one line
 
