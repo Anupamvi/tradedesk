@@ -117,7 +117,7 @@ python3 -m compoundcore dashboard
 ```
 
 - Playbook: `/Users/anuppamvi/tradedesk/compoundcore/docs/PLAYBOOK.md`
-- Persistent dashboard: `python3 -m compoundcore dashboard` then open `http://127.0.0.1:8765/` (both sleeves + submit actual holdings).
+- Persistent dashboard: `python3 -m compoundcore dashboard` then open `http://127.0.0.1:8765/` (both sleeves + saved book with real gain/loss).
 - Raw HTML calculator: `/Users/anuppamvi/tradedesk/compoundcore/web/calculator.html`
 - Output is a dollar split plus 5-year / 10-year stress–bear–base–bull paths. Not a 40%/yr plan.
 

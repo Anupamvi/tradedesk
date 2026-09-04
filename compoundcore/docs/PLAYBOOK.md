@@ -13,7 +13,7 @@ PYTHONPATH=. python3 -m compoundcore dashboard          # http://127.0.0.1:8765/
 PYTHONPATH=. python3 -m compoundcore calculator         # writes web/calculator.html
 ```
 
-Open the dashboard at `http://127.0.0.1:8765/` for both sleeves plus a **My book** form. Submit the dollars you actually hold; refresh keeps the mix and compounded paths. The raw file [`web/calculator.html`](../web/calculator.html) still opens as plain HTML.
+Open the dashboard at `http://127.0.0.1:8765/` for both sleeves plus **My book**. Save cost vs now; refresh keeps real gain or loss. The raw file [`web/calculator.html`](../web/calculator.html) still opens as plain HTML.
 
 ---
 

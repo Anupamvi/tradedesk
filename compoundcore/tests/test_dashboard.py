@@ -42,7 +42,9 @@ class TestDashboardHttp(unittest.TestCase):
         status, html = self._json("/")
         self.assertEqual(status, 200)
         self.assertIn("Compound Core", html)
-        self.assertIn("Submit allocations", html)
+        self.assertIn("Save my book", html)
+        self.assertIn("Cost $", html)
+        self.assertIn("Now $", html)
         self.assertIn("e.g. 100000", html)
         self.assertIn("My book", html)
         status, calc = self._json("/calculator.html")
@@ -91,17 +93,59 @@ class TestDashboardHttp(unittest.TestCase):
         )
         self.assertEqual(status, 200)
         self.assertTrue(data["book"]["present"])
+        self.assertFalse(data["book"]["pnl_ready"])
         self.assertEqual(
             int(round(data["book"]["projections"]["10y"]["base"]["nominal"] / 1000.0)) * 1000,
             337000,
         )
         status, again = self._json("/api/state")
         self.assertTrue(again["book"]["present"])
-        self.assertEqual(again["book"]["total"], 100000.0)
-        self.assertAlmostEqual(
-            again["book"]["projections"]["10y"]["base"]["nominal"],
-            data["book"]["projections"]["10y"]["base"]["nominal"],
+        self.assertEqual(again["book"]["invested"], 100000.0)
+
+    def test_saved_book_shows_real_gain_and_loss(self):
+        positions = {
+            "VOO": {"cost": 48000, "current": 52800, "shares": 80},
+            "VGT": {"cost": 10000, "current": 9000, "shares": 20},
+            "SMH": {"cost": 7000, "current": 7000, "shares": 12},
+            "VB": {"cost": 5000, "current": 5000, "shares": 0},
+            "VXUS": {"cost": 20000, "current": 20000, "shares": 0},
+            "GLDM": {"cost": 5000, "current": 5000, "shares": 0},
+            "VGSH": {"cost": 5000, "current": 5000, "shares": 0},
+        }
+        status, data = self._json(
+            "/api/book",
+            {"positions": positions, "monthly_add": 0, "compare_to": "default"},
+            method="POST",
         )
+        self.assertEqual(status, 200)
+        self.assertTrue(data["book"]["pnl_ready"])
+        self.assertEqual(data["book"]["invested"], 100000.0)
+        self.assertEqual(data["book"]["market"], 103800.0)
+        self.assertEqual(data["book"]["pnl"], 3800.0)
+        status, again = self._json("/api/state")
+        self.assertEqual(again["book"]["pnl"], 3800.0)
+        self.assertEqual(again["saved"]["book"]["positions"]["VOO"]["cost"], 48000.0)
+        self.assertEqual(again["saved"]["book"]["positions"]["VGT"]["current"], 9000.0)
+
+    def test_refresh_marks_from_quotes_keeps_cost(self):
+        from unittest.mock import patch
+
+        positions = {
+            "VOO": {"cost": 48000, "current": 48000, "shares": 80},
+            "VGT": {"cost": 0, "current": 0, "shares": 0},
+            "SMH": {"cost": 0, "current": 0, "shares": 0},
+            "VB": {"cost": 0, "current": 0, "shares": 0},
+            "VXUS": {"cost": 0, "current": 0, "shares": 0},
+            "GLDM": {"cost": 0, "current": 0, "shares": 0},
+            "VGSH": {"cost": 0, "current": 0, "shares": 0},
+        }
+        self._json("/api/book", {"positions": positions}, method="POST")
+        with patch("compoundcore.quotes.last_prices", return_value={"VOO": 650.0}):
+            status, data = self._json("/api/book/refresh", {}, method="POST")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["book"]["positions"]["VOO"]["cost"], 48000.0)
+        self.assertEqual(data["book"]["positions"]["VOO"]["current"], 52000.0)
+        self.assertEqual(data["book"]["pnl"], 4000.0)
 
     def test_rejects_negative_holdings(self):
         req = urllib.request.Request(

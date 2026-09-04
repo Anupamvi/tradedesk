@@ -41,7 +41,7 @@ PYTHONPATH=. python3 -m compoundcore calculator
 
 `python3 -m compoundcore 100000` is `calc --amount 100000 --sleeve both`.
 
-Dashboard (persistent, both sleeves + actual holdings): `http://127.0.0.1:8765/`. Raw calculator stays `CODE/web/calculator.html`. Playbook path: `CODE/docs/PLAYBOOK.md`.
+Dashboard (persistent): both sleeves, then **My book** with saved cost vs now and real gain/loss. `http://127.0.0.1:8765/`. Raw calculator stays `CODE/web/calculator.html`. Playbook path: `CODE/docs/PLAYBOOK.md`.
 
 ## Reply shape
 

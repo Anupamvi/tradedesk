@@ -14,10 +14,12 @@ from compoundcore.book import (
     book_view,
     default_state_path,
     load_state,
+    mark_with_prices,
     now_iso,
     parse_money,
     save_state,
 )
+from compoundcore import quotes as quotes_mod
 from compoundcore.projections import path_table
 from compoundcore.sleeve import ASOF, SLEEVE_NAMES, TICKER_ORDER, public_snapshot
 
@@ -55,18 +57,22 @@ def dashboard_payload(path: Path) -> Dict[str, Any]:
         "snapshot": public_snapshot(),
         "planner": plan_payload(planner["amount"], planner["weekly"], planner["monthly"]),
         "book": book_view(
-            book["holdings"],
-            book["monthly_add"],
-            book["compare_to"],
-            book.get("submitted_at"),
+            holdings=book.get("holdings"),
+            monthly_add=book["monthly_add"],
+            compare_to=book["compare_to"],
+            submitted_at=book.get("submitted_at"),
+            positions=book.get("positions"),
+            marked_at=book.get("marked_at"),
         ),
         "saved": {
             "planner": planner,
             "book": {
-                "holdings": book["holdings"],
+                "positions": book["positions"],
+                "holdings": {t: book["positions"][t]["cost"] for t in TICKER_ORDER},
                 "monthly_add": book["monthly_add"],
                 "compare_to": book["compare_to"],
                 "submitted_at": book.get("submitted_at"),
+                "marked_at": book.get("marked_at"),
             },
         },
     }
@@ -84,23 +90,43 @@ def _apply_planner(state: Dict[str, Any], body: Dict[str, Any]) -> Dict[str, Any
     return state
 
 
-def _holdings_from_body(body: Dict[str, Any]) -> Dict[str, Any]:
-    nested = body.get("holdings")
+def _positions_from_body(body: Dict[str, Any], existing: Dict[str, Any]) -> Dict[str, Any]:
+    nested = body.get("positions")
     if isinstance(nested, dict):
-        src = nested
-    else:
-        src = body
-    return {ticker: src.get(ticker, 0) for ticker in TICKER_ORDER}
+        return nested
+    holdings = body.get("holdings") if isinstance(body.get("holdings"), dict) else body
+    current = body.get("current") if isinstance(body.get("current"), dict) else {}
+    shares = body.get("shares") if isinstance(body.get("shares"), dict) else {}
+    out = {}
+    for ticker in TICKER_ORDER:
+        prev = existing.get(ticker) if isinstance(existing.get(ticker), dict) else {}
+        out[ticker] = {
+            "cost": holdings.get(ticker, prev.get("cost", 0)),
+            "current": current.get(ticker, prev.get("current", 0)),
+            "shares": shares.get(ticker, prev.get("shares", 0)),
+        }
+    return out
 
 
 def _apply_book(state: Dict[str, Any], body: Dict[str, Any]) -> Dict[str, Any]:
     book = dict(state["book"])
-    book["holdings"] = _holdings_from_body(body)
+    book["positions"] = _positions_from_body(body, book.get("positions") or {})
     if "monthly_add" in body:
         book["monthly_add"] = parse_money(body.get("monthly_add"), "monthly_add")
     if "compare_to" in body:
         book["compare_to"] = body.get("compare_to") or "default"
-    book["submitted_at"] = now_iso()
+    stamp = now_iso()
+    book["submitted_at"] = stamp
+    if any(float((book["positions"].get(t) or {}).get("current") or 0) > 0 for t in TICKER_ORDER):
+        book["marked_at"] = stamp
+    state["book"] = book
+    return state
+
+
+def _apply_refresh(state: Dict[str, Any], prices: Dict[str, float]) -> Dict[str, Any]:
+    book = dict(state["book"])
+    book["positions"] = mark_with_prices(book.get("positions") or {}, prices)
+    book["marked_at"] = now_iso()
     state["book"] = book
     return state
 
@@ -155,6 +181,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     state = _apply_book(state, body)
                     save_state(state, self.state_path)
                     self._send_json(200, dashboard_payload(self.state_path))
+                    return
+                if parsed.path == "/api/book/refresh":
+                    prices = quotes_mod.last_prices(TICKER_ORDER)
+                    if not prices:
+                        self._send_json(503, {"error": "DATA UNAVAILABLE: no live quotes"})
+                        return
+                    state = _apply_refresh(state, prices)
+                    save_state(state, self.state_path)
+                    payload = dashboard_payload(self.state_path)
+                    payload["book"]["quote_status"] = "schwab"
+                    self._send_json(200, payload)
                     return
         except ValueError as exc:
             self._send_json(400, {"error": str(exc)})

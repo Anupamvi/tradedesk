@@ -90,6 +90,20 @@
     .high { background: #3a1612; color: var(--warn); }
     .flash { color: var(--ok); font-size: 0.88rem; }
     .err { color: var(--warn); font-size: 0.88rem; }
+    .gain { color: var(--ok); }
+    .loss { color: var(--warn); }
+    .pnl {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      margin: 0 0 16px; padding: 14px; border: 1px solid var(--line); border-radius: 12px;
+      background: var(--panel-2);
+    }
+    .pnl div { display: flex; flex-direction: column; gap: 4px; }
+    .pnl span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .pnl strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+    .pos-table input { padding: 7px 8px; font-size: 0.92rem; }
+    button.ghost {
+      background: transparent; color: var(--gold); border: 1px solid var(--gold);
+    }
     footer { margin-top: 8px; color: var(--muted); font-size: 0.82rem; }
     .disclaimer { border-left: 3px solid var(--warn); padding: 8px 12px; color: #f0c7bc; }
     @media (max-width: 960px) {
@@ -97,7 +111,7 @@
       header, main { padding-left: 16px; padding-right: 16px; }
     }
     @media (max-width: 640px) {
-      .inputs, .sleeves, .hold-grid { grid-template-columns: 1fr; }
+      .inputs, .sleeves, .hold-grid, .pnl { grid-template-columns: 1fr; }
       header { flex-direction: column; align-items: flex-start; }
     }
   </style>
@@ -106,7 +120,7 @@
   <header>
     <div>
       <h1>Compound Core <span>dashboard</span></h1>
-      <p class="lede">Both sleeves, then the book you actually hold. No orders. As-of <span id="asof">—</span>.</p>
+      <p class="lede">Both sleeves, then the book you actually hold — cost vs now, real gain or loss. No orders. As-of <span id="asof">—</span>.</p>
     </div>
     <div class="nav">
       <a href="/calculator.html">Raw calculator HTML</a>
@@ -137,10 +151,21 @@
     </section>
 
     <section>
-      <h2>2. My book — <em>submit what you actually hold</em></h2>
+      <h2>2. My book — <em>saved allocations, real gain or loss</em></h2>
       <div class="card">
+        <p class="hint" style="margin-top:0">Cost is what you put in. Now is what it is worth. Save that book; refresh keeps it. Shares are optional — with live quotes they fill Now. Forward CMA paths are a forecast, not this P&amp;L.</p>
         <form id="book-form" class="book-form">
-          <div class="hold-grid" id="hold-inputs"></div>
+          <table class="pos-table">
+            <thead>
+              <tr>
+                <th>ETF</th>
+                <th class="num">Shares</th>
+                <th class="num">Cost $</th>
+                <th class="num">Now $</th>
+              </tr>
+            </thead>
+            <tbody id="hold-inputs"></tbody>
+          </table>
           <div class="inputs">
             <div>
               <label for="monthly_add">Monthly add going forward</label>
@@ -155,7 +180,8 @@
             </div>
           </div>
           <div class="book-actions">
-            <button type="submit" id="submit-book">Submit allocations</button>
+            <button type="submit" id="submit-book">Save my book</button>
+            <button type="button" class="ghost" id="refresh-marks">Refresh prices</button>
             <span id="book-msg" class="hint"></span>
           </div>
         </form>
@@ -184,6 +210,27 @@
       const abs = Math.abs(n);
       const digits = abs >= 1000 ? 0 : 2;
       return n.toLocaleString("en-US", {style:"currency", currency:"USD", maximumFractionDigits: digits, minimumFractionDigits: digits});
+    }
+    function signedUsd(n) {
+      if (!Number.isFinite(n)) return "—";
+      const abs = Math.abs(n);
+      const digits = abs >= 1000 ? 0 : 2;
+      const core = Math.abs(n).toLocaleString("en-US", {style:"currency", currency:"USD", maximumFractionDigits: digits, minimumFractionDigits: digits});
+      if (n > 0) return "+" + core;
+      if (n < 0) return "−" + core.replace("$-", "$").replace("-", "");
+      return core;
+    }
+    function signedPct(x) {
+      if (!Number.isFinite(x)) return "—";
+      const n = x * 100;
+      const txt = Math.abs(n).toFixed(1) + "%";
+      if (n > 0) return "+" + txt;
+      if (n < 0) return "−" + txt;
+      return txt;
+    }
+    function pnlClass(n) {
+      if (!Number.isFinite(n) || n === 0) return "";
+      return n > 0 ? "gain" : "loss";
     }
     function pct(x) { return (x * 100).toFixed(1) + "%"; }
     function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
@@ -234,27 +281,42 @@
     function renderBook(book) {
       const out = document.getElementById("book-out");
       if (!book || !book.present) {
-        out.innerHTML = `<div class="empty">No allocations submitted yet. Enter the dollars you actually hold and submit. The mix, band gaps, and compounded 5y/10y paths show up here and stay after refresh.</div>`;
+        out.innerHTML = `<div class="empty">No book saved yet. Enter cost (what you invested) and now (what it is worth), then save. Real gain or loss shows here and stays after refresh.</div>`;
         return;
       }
+      const ready = book.pnl_ready && Number.isFinite(book.pnl);
+      const cls = pnlClass(book.pnl);
+      const hero = ready
+        ? `<div class="pnl">
+            <div><span>Invested</span><strong>${usd(book.invested)}</strong></div>
+            <div><span>Now</span><strong>${usd(book.market)}</strong></div>
+            <div class="${cls}"><span>${book.pnl > 0 ? "Gain" : book.pnl < 0 ? "Loss" : "Flat"}</span><strong>${signedUsd(book.pnl)} ${signedPct(book.pnl_pct)}</strong></div>
+          </div>`
+        : `<div class="empty">Book saved (invested ${usd(book.invested)}). Enter Now $ for each holding — or shares plus Refresh prices — to see real gain or loss. Unmarked cost: ${usd(book.unmarked_cost)}.</div>`;
       const rows = book.rows.map(r => {
         const gap = r.gap_dollars;
         const gapTxt = gap > 0.5 ? usd(gap) + " to target" : gap < -0.5 ? usd(Math.abs(gap)) + " over" : "on target";
+        const pnlTxt = r.held && r.marked ? `${signedUsd(r.pnl)} (${signedPct(r.pnl_pct)})` : (r.held ? "unmarked" : "—");
         return `<tr>
           <td>${esc(r.ticker)}</td>
-          <td class="num">${usd(r.dollars)}</td>
+          <td class="num">${r.shares ? r.shares : "—"}</td>
+          <td class="num">${usd(r.cost)}</td>
+          <td class="num">${r.marked && r.held ? usd(r.current) : "—"}</td>
+          <td class="num ${pnlClass(r.pnl)}">${pnlTxt}</td>
           <td class="num">${pct(r.weight)}</td>
           <td class="num">${pct(r.target)}</td>
           <td><span class="status ${esc(r.status)}">${esc(r.status).toUpperCase()}</span></td>
           <td class="num">${gapTxt}</td>
         </tr>`;
       }).join("");
+      const markedNote = book.marked_at ? ` · marked <strong>${esc(book.marked_at)}</strong>` : "";
       out.innerHTML = `
-        <p class="meta">Submitted <strong>${esc(book.submitted_at || "")}</strong> · total <strong>${usd(book.total)}</strong> + <strong>${usd(book.monthly_add)}</strong>/mo · vs ${esc(book.compare_to)} sleeve · 10y base <strong>${pct(book.rates["10y"].base)}</strong></p>
+        ${hero}
+        <p class="meta">Saved <strong>${esc(book.submitted_at || "")}</strong>${markedNote} · mix on ${esc(book.mix_source)} · vs ${esc(book.compare_to)} sleeve</p>
         <div class="bar">${book.rows.map(r => `<span class="seg" style="width:${(r.weight*100).toFixed(3)}%;background:${COLORS[r.ticker]}"></span>`).join("")}</div>
-        <table><thead><tr><th>ETF</th><th class="num">Held</th><th class="num">Mix</th><th class="num">Target</th><th>Band</th><th class="num">Gap</th></tr></thead><tbody>${rows}</tbody></table>
-        <p class="meta">NVDA look-through <strong>${pct(book.nvda_weight)}</strong> (${usd(book.nvda_dollars)}) · SMH −45% hit <strong>${usd(book.smh_crash_dollars)}</strong> · fee <strong>${(book.fee*100).toFixed(3)}%</strong></p>
-        <h3 style="margin:16px 0 6px;font-size:0.95rem">Compounded growth on this mix</h3>
+        <table><thead><tr><th>ETF</th><th class="num">Shares</th><th class="num">Cost</th><th class="num">Now</th><th class="num">Gain/Loss</th><th class="num">Mix</th><th class="num">Target</th><th>Band</th><th class="num">Gap</th></tr></thead><tbody>${rows}</tbody></table>
+        <p class="meta">NVDA look-through <strong>${pct(book.nvda_weight)}</strong> · SMH −45% hit <strong>${usd(book.smh_crash_dollars)}</strong> · fee <strong>${(book.fee*100).toFixed(3)}%</strong></p>
+        <h3 style="margin:16px 0 6px;font-size:0.95rem">Forward CMA on this mix — not your P&amp;L</h3>
         ${pathTable(book.projections)}
       `;
     }
@@ -264,9 +326,14 @@
       document.getElementById("amount").value = saved.planner.amount ? String(saved.planner.amount) : "";
       document.getElementById("weekly").value = saved.planner.weekly ? String(saved.planner.weekly) : "";
       document.getElementById("monthly").value = saved.planner.monthly ? String(saved.planner.monthly) : "";
+      const positions = saved.book.positions || {};
       TICKERS.forEach(t => {
-        const el = document.getElementById("h-" + t);
-        if (el) el.value = saved.book.holdings[t] ? String(saved.book.holdings[t]) : "";
+        const pos = positions[t] || {};
+        const cost = pos.cost != null ? pos.cost : (saved.book.holdings && saved.book.holdings[t]) || 0;
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ? String(val) : ""; };
+        set("h-" + t + "-shares", pos.shares);
+        set("h-" + t + "-cost", cost);
+        set("h-" + t + "-current", pos.current);
       });
       document.getElementById("monthly_add").value = saved.book.monthly_add ? String(saved.book.monthly_add) : "";
       const cmp = saved.book.compare_to || "default";
@@ -276,11 +343,26 @@
 
     function buildHoldInputs() {
       document.getElementById("hold-inputs").innerHTML = TICKERS.map(t => `
-        <div>
-          <label for="h-${t}">${t} dollars</label>
-          <input id="h-${t}" name="${t}" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
-        </div>
+        <tr>
+          <td>${t}</td>
+          <td><input id="h-${t}-shares" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} shares"></td>
+          <td><input id="h-${t}-cost" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} cost"></td>
+          <td><input id="h-${t}-current" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} now"></td>
+        </tr>
       `).join("");
+    }
+
+    function readPositions() {
+      const positions = {};
+      let bad = false;
+      TICKERS.forEach(t => {
+        const shares = money(document.getElementById("h-" + t + "-shares").value);
+        const cost = money(document.getElementById("h-" + t + "-cost").value);
+        const current = money(document.getElementById("h-" + t + "-current").value);
+        if ([shares, cost, current].some(n => Number.isNaN(n) || n < 0)) bad = true;
+        positions[t] = {shares: shares || 0, cost: cost || 0, current: current || 0};
+      });
+      return {positions, bad};
     }
 
     function plannerBody() {
@@ -335,16 +417,10 @@
       });
       document.getElementById("book-form").addEventListener("submit", async (ev) => {
         ev.preventDefault();
-        const holdings = {};
-        let bad = false;
-        TICKERS.forEach(t => {
-          const n = money(document.getElementById("h-" + t).value);
-          if (Number.isNaN(n) || n < 0) bad = true;
-          holdings[t] = n || 0;
-        });
+        const {positions, bad} = readPositions();
         const monthly_add = money(document.getElementById("monthly_add").value);
         if (bad || Number.isNaN(monthly_add) || monthly_add < 0) {
-          document.getElementById("book-msg").textContent = "Holdings must be non-negative dollars.";
+          document.getElementById("book-msg").textContent = "Cost, now, and shares must be non-negative.";
           document.getElementById("book-msg").className = "err";
           return;
         }
@@ -354,7 +430,7 @@
         const res = await fetch("/api/book", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({holdings, monthly_add, compare_to})
+          body: JSON.stringify({positions, monthly_add, compare_to})
         });
         const data = await res.json();
         btn.disabled = false;
@@ -363,8 +439,42 @@
           document.getElementById("book-msg").className = "err";
           return;
         }
-        document.getElementById("book-msg").textContent = "Saved. Refresh keeps this book.";
+        document.getElementById("book-msg").textContent = "Saved. Refresh keeps this book and its gain or loss.";
         document.getElementById("book-msg").className = "flash";
+        fillForm(data.saved);
+        renderBook(data.book);
+      });
+      document.getElementById("refresh-marks").addEventListener("click", async () => {
+        const {positions, bad} = readPositions();
+        if (bad) {
+          document.getElementById("book-msg").textContent = "Shares must be non-negative.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        const monthly_add = money(document.getElementById("monthly_add").value) || 0;
+        const compare_to = (document.querySelector("input[name=compare_to]:checked") || {}).value || "default";
+        const btn = document.getElementById("refresh-marks");
+        btn.disabled = true;
+        await fetch("/api/book", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({positions, monthly_add, compare_to})
+        });
+        const res = await fetch("/api/book/refresh", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        btn.disabled = false;
+        if (!res.ok) {
+          document.getElementById("book-msg").textContent = data.error || "DATA UNAVAILABLE";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        document.getElementById("book-msg").textContent = "Marked from live last prices. Cost is unchanged.";
+        document.getElementById("book-msg").className = "flash";
+        fillForm(data.saved);
         renderBook(data.book);
       });
       loadState().catch(err => {
