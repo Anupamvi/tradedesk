@@ -154,18 +154,46 @@ def scrape_handles(handles: list[str], hours: int = 24) -> dict[str, Any]:
     return {"since_utc": since_dt.isoformat(), "results": results}
 
 
+def write_markdown_report(payload: dict[str, Any], path: Path) -> None:
+    lines = [
+        "# X Handle Posts — prior 24 hours",
+        "",
+        f"**Window start (UTC):** {payload['since_utc']}",
+        "",
+    ]
+    for handle, posts in payload["results"].items():
+        lines.append(f"## @{handle} ({len(posts)} posts)")
+        lines.append("")
+        for i, post in enumerate(posts, 1):
+            lines.append(f"### {i}. {post['summary']}")
+            lines.append(f"**Link:** {post['url']}")
+            lines.append("")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--hours", type=int, default=24)
     parser.add_argument("--handles", nargs="*", default=DEFAULT_HANDLES)
-    parser.add_argument("--out", default="")
+    parser.add_argument("--out", default="", help="Optional JSON output path")
+    parser.add_argument(
+        "--report-md",
+        default="",
+        help="Markdown report path (default: reports/x_daily_handles_YYYY-MM-DD.md)",
+    )
     args = parser.parse_args()
     payload = scrape_handles(args.handles, hours=args.hours)
-    out = json.dumps(payload, indent=2, ensure_ascii=False)
+    report_path = Path(args.report_md) if args.report_md else Path(
+        f"reports/x_daily_handles_{datetime.now(timezone.utc).date().isoformat()}.md"
+    )
+    write_markdown_report(payload, report_path)
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
-            f.write(out)
-    print(out)
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+    print(f"Wrote markdown report: {report_path}")
+    for handle, posts in payload["results"].items():
+        print(f"  @{handle}: {len(posts)} posts")
 
 
 if __name__ == "__main__":
