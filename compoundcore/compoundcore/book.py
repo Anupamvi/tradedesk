@@ -48,6 +48,7 @@ def empty_state() -> Dict[str, Any]:
             "compare_to": "default",
             "submitted_at": None,
             "marked_at": None,
+            "last_refresh": None,
         },
     }
 
@@ -153,6 +154,7 @@ def load_state(path: Optional[Path] = None) -> Dict[str, Any]:
             "compare_to": compare_to,
             "submitted_at": submitted,
             "marked_at": marked,
+            "last_refresh": book.get("last_refresh") if isinstance(book.get("last_refresh"), dict) else None,
         },
     }
 
@@ -175,6 +177,7 @@ def save_state(state: Mapping[str, Any], path: Optional[Path] = None) -> Path:
             "compare_to": _require_sleeve(str(state["book"].get("compare_to") or "default")),
             "submitted_at": state["book"].get("submitted_at"),
             "marked_at": state["book"].get("marked_at"),
+            "last_refresh": state["book"].get("last_refresh") if isinstance(state["book"].get("last_refresh"), dict) else None,
         },
     }
     tmp = dest.with_name(dest.name + ".tmp")
@@ -201,6 +204,77 @@ def mark_with_prices(
         if shares > 0 and px > 0:
             out[ticker]["current"] = round(shares * px, 2)
     return out
+
+
+def apply_broker_positions(
+    positions: Mapping[str, Mapping[str, float]],
+    broker: Mapping[str, Mapping[str, float]],
+) -> Dict[str, Dict[str, float]]:
+    """Overlay Schwab sleeve lots. Cost is filled only when still zero."""
+    out = normalize_positions(positions)
+    src = broker or {}
+    for ticker in TICKER_ORDER:
+        row = src.get(ticker) if isinstance(src.get(ticker), dict) else {}
+        try:
+            shares = float(row.get("shares") or 0)
+        except (TypeError, ValueError):
+            shares = 0.0
+        try:
+            market = float(row.get("market") or 0)
+        except (TypeError, ValueError):
+            market = 0.0
+        try:
+            basis = float(row.get("cost") or 0)
+        except (TypeError, ValueError):
+            basis = 0.0
+        if shares > 0:
+            out[ticker]["shares"] = round(shares, 6)
+        if market > 0:
+            out[ticker]["current"] = round(market, 2)
+        if out[ticker]["cost"] <= 0 and basis > 0:
+            out[ticker]["cost"] = round(basis, 2)
+    return out
+
+
+def apply_refresh(
+    state: Dict[str, Any],
+    prices: Optional[Mapping[str, float]] = None,
+    broker: Optional[Mapping[str, Mapping[str, float]]] = None,
+) -> tuple:
+    """Apply live marks. Cost already saved by the user is never overwritten."""
+    book = dict(state.get("book") or {})
+    positions = normalize_positions(book.get("positions"), book.get("holdings"))
+    steps = []
+    broker_map = dict(broker or {})
+    price_map = dict(prices or {})
+    if broker_map:
+        positions = apply_broker_positions(positions, broker_map)
+        steps.append("schwab-positions:%d" % len(broker_map))
+    else:
+        steps.append("schwab-positions:DATA UNAVAILABLE")
+    if price_map:
+        positions = mark_with_prices(positions, price_map)
+        steps.append("schwab-quotes:%d" % len(price_map))
+    else:
+        steps.append("schwab-quotes:DATA UNAVAILABLE")
+    book["positions"] = positions
+    live = bool(broker_map or price_map)
+    stamp = now_iso()
+    if live:
+        book["marked_at"] = stamp
+        if not book.get("submitted_at"):
+            book["submitted_at"] = stamp
+    report = {
+        "at": stamp,
+        "steps": steps,
+        "quote_count": len(price_map),
+        "position_count": len(broker_map),
+        "live": live,
+    }
+    book["last_refresh"] = report
+    state = dict(state)
+    state["book"] = book
+    return state, report
 
 
 def _us_of_equity(w: Mapping[str, float]) -> float:

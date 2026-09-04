@@ -43,6 +43,8 @@ class TestDashboardHttp(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("Compound Core", html)
         self.assertIn("Save my book", html)
+        self.assertIn('id="refresh-all"', html)
+        self.assertIn("/api/refresh", html)
         self.assertIn("Cost $", html)
         self.assertIn("Now $", html)
         self.assertIn("e.g. 100000", html)
@@ -140,12 +142,66 @@ class TestDashboardHttp(unittest.TestCase):
             "VGSH": {"cost": 0, "current": 0, "shares": 0},
         }
         self._json("/api/book", {"positions": positions}, method="POST")
-        with patch("compoundcore.quotes.last_prices", return_value={"VOO": 650.0}):
-            status, data = self._json("/api/book/refresh", {}, method="POST")
+        with patch("compoundcore.quotes.last_prices", return_value={"VOO": 650.0}), patch(
+            "compoundcore.quotes.sleeve_positions", return_value={}
+        ):
+            status, data = self._json("/api/refresh", {}, method="POST")
         self.assertEqual(status, 200)
         self.assertEqual(data["book"]["positions"]["VOO"]["cost"], 48000.0)
         self.assertEqual(data["book"]["positions"]["VOO"]["current"], 52000.0)
         self.assertEqual(data["book"]["pnl"], 4000.0)
+        self.assertEqual(data["refresh"]["quote_count"], 1)
+        self.assertTrue(data["refresh"]["live"])
+
+    def test_refresh_without_live_data_keeps_saved_book(self):
+        from unittest.mock import patch
+
+        positions = {
+            "VOO": {"cost": 48000, "current": 52800, "shares": 80},
+            "VGT": {"cost": 0, "current": 0, "shares": 0},
+            "SMH": {"cost": 0, "current": 0, "shares": 0},
+            "VB": {"cost": 0, "current": 0, "shares": 0},
+            "VXUS": {"cost": 0, "current": 0, "shares": 0},
+            "GLDM": {"cost": 0, "current": 0, "shares": 0},
+            "VGSH": {"cost": 0, "current": 0, "shares": 0},
+        }
+        self._json("/api/book", {"positions": positions}, method="POST")
+        with patch("compoundcore.quotes.last_prices", return_value={}), patch(
+            "compoundcore.quotes.sleeve_positions", return_value={}
+        ):
+            status, data = self._json("/api/refresh", {}, method="POST")
+        self.assertEqual(status, 200)
+        self.assertFalse(data["refresh"]["live"])
+        self.assertEqual(data["book"]["pnl"], 4800.0)
+        self.assertIn("DATA UNAVAILABLE", " ".join(data["refresh"]["steps"]))
+
+    def test_refresh_applies_broker_lots_without_clobbering_cost(self):
+        from unittest.mock import patch
+
+        positions = {
+            "VOO": {"cost": 48000, "current": 48000, "shares": 80},
+            "VGT": {"cost": 0, "current": 0, "shares": 0},
+            "SMH": {"cost": 0, "current": 0, "shares": 0},
+            "VB": {"cost": 0, "current": 0, "shares": 0},
+            "VXUS": {"cost": 0, "current": 0, "shares": 0},
+            "GLDM": {"cost": 0, "current": 0, "shares": 0},
+            "VGSH": {"cost": 0, "current": 0, "shares": 0},
+        }
+        self._json("/api/book", {"positions": positions}, method="POST")
+        broker = {
+            "VOO": {"shares": 90, "market": 58500, "cost": 40000},
+            "VGT": {"shares": 20, "market": 11000, "cost": 10000},
+        }
+        with patch("compoundcore.quotes.last_prices", return_value={"VOO": 650.0, "VGT": 500.0}), patch(
+            "compoundcore.quotes.sleeve_positions", return_value=broker
+        ):
+            status, data = self._json("/api/refresh", {}, method="POST")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["book"]["positions"]["VOO"]["cost"], 48000.0)
+        self.assertEqual(data["book"]["positions"]["VOO"]["shares"], 90.0)
+        self.assertEqual(data["book"]["positions"]["VOO"]["current"], 58500.0)
+        self.assertEqual(data["book"]["positions"]["VGT"]["cost"], 10000.0)
+        self.assertEqual(data["book"]["positions"]["VGT"]["current"], 10000.0)
 
     def test_rejects_negative_holdings(self):
         req = urllib.request.Request(

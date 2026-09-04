@@ -39,7 +39,9 @@
     h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.03em; }
     h1 span { color: var(--gold); }
     .lede { color: var(--muted); margin: 4px 0 0; font-size: 0.92rem; }
-    .nav { display: flex; gap: 14px; font-size: 0.88rem; color: var(--muted); white-space: nowrap; }
+    .nav { display: flex; gap: 14px; font-size: 0.88rem; color: var(--muted); white-space: nowrap; align-items: center; }
+    #refresh-status { color: var(--muted); font-size: 0.82rem; }
+    button.nav-refresh { padding: 8px 14px; }
     main { max-width: 1280px; margin: 0 auto; padding: 22px 28px 72px; }
     section { margin: 0 0 28px; }
     h2 { font-size: 1.05rem; margin: 0 0 12px; letter-spacing: -0.02em; }
@@ -123,6 +125,8 @@
       <p class="lede">Both sleeves, then the book you actually hold — cost vs now, real gain or loss. No orders. As-of <span id="asof">—</span>.</p>
     </div>
     <div class="nav">
+      <span id="refresh-status"></span>
+      <button type="button" class="nav-refresh" id="refresh-all">Refresh</button>
       <a href="/calculator.html">Raw calculator HTML</a>
     </div>
   </header>
@@ -153,7 +157,7 @@
     <section>
       <h2>2. My book — <em>saved allocations, real gain or loss</em></h2>
       <div class="card">
-        <p class="hint" style="margin-top:0">Cost is what you put in. Now is what it is worth. Save that book; refresh keeps it. Shares are optional — with live quotes they fill Now. Forward CMA paths are a forecast, not this P&amp;L.</p>
+        <p class="hint" style="margin-top:0">Cost is what you put in. Now is what it is worth. <strong>Refresh</strong> runs Schwab quotes and sleeve lots in the backend, then recomputes gain or loss. Cost you already saved is not overwritten. Forward CMA is a forecast, not this P&amp;L.</p>
         <form id="book-form" class="book-form">
           <table class="pos-table">
             <thead>
@@ -181,7 +185,7 @@
           </div>
           <div class="book-actions">
             <button type="submit" id="submit-book">Save my book</button>
-            <button type="button" class="ghost" id="refresh-marks">Refresh prices</button>
+            <button type="button" class="ghost" id="refresh-marks">Refresh</button>
             <span id="book-msg" class="hint"></span>
           </div>
         </form>
@@ -408,6 +412,67 @@
       fillForm(data.saved);
       renderPlan(data.planner);
       renderBook(data.book);
+      showRefresh(data.refresh);
+    }
+
+    function showRefresh(report) {
+      const el = document.getElementById("refresh-status");
+      if (!report || !report.at) {
+        el.textContent = "";
+        return;
+      }
+      const bits = [];
+      if (report.quote_count) bits.push(report.quote_count + " quotes");
+      if (report.position_count) bits.push(report.position_count + " positions");
+      if (!report.live) bits.push("live DATA UNAVAILABLE");
+      el.textContent = "Last refresh " + report.at + (bits.length ? " · " + bits.join(" · ") : "");
+    }
+
+    async function refreshAll(btn) {
+      const {positions, bad} = readPositions();
+      if (bad) {
+        document.getElementById("book-msg").textContent = "Cost, now, and shares must be non-negative.";
+        document.getElementById("book-msg").className = "err";
+        return;
+      }
+      const monthly_add = money(document.getElementById("monthly_add").value) || 0;
+      const compare_to = (document.querySelector("input[name=compare_to]:checked") || {}).value || "default";
+      const buttons = [document.getElementById("refresh-all"), document.getElementById("refresh-marks")];
+      buttons.forEach(b => { if (b) b.disabled = true; });
+      const label = btn ? btn.textContent : "Refresh";
+      if (btn) btn.textContent = "Refreshing…";
+      try {
+        const res = await fetch("/api/refresh", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({positions, monthly_add, compare_to})
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          document.getElementById("book-msg").textContent = data.error || "Refresh failed.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        fillForm(data.saved);
+        renderPlan(data.planner);
+        renderBook(data.book);
+        showRefresh(data.refresh);
+        const report = data.refresh || {};
+        if (report.live) {
+          document.getElementById("book-msg").textContent = "Refreshed from Schwab. Saved cost is unchanged.";
+          document.getElementById("book-msg").className = "flash";
+        } else {
+          document.getElementById("book-msg").textContent = "Refreshed saved book. Live quotes and positions DATA UNAVAILABLE.";
+          document.getElementById("book-msg").className = "err";
+        }
+      } catch (err) {
+        document.getElementById("book-msg").textContent = "Refresh failed.";
+        document.getElementById("book-msg").className = "err";
+        console.error(err);
+      } finally {
+        buttons.forEach(b => { if (b) b.disabled = false; });
+        if (btn) btn.textContent = label;
+      }
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -444,39 +509,8 @@
         fillForm(data.saved);
         renderBook(data.book);
       });
-      document.getElementById("refresh-marks").addEventListener("click", async () => {
-        const {positions, bad} = readPositions();
-        if (bad) {
-          document.getElementById("book-msg").textContent = "Shares must be non-negative.";
-          document.getElementById("book-msg").className = "err";
-          return;
-        }
-        const monthly_add = money(document.getElementById("monthly_add").value) || 0;
-        const compare_to = (document.querySelector("input[name=compare_to]:checked") || {}).value || "default";
-        const btn = document.getElementById("refresh-marks");
-        btn.disabled = true;
-        await fetch("/api/book", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({positions, monthly_add, compare_to})
-        });
-        const res = await fetch("/api/book/refresh", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({})
-        });
-        const data = await res.json();
-        btn.disabled = false;
-        if (!res.ok) {
-          document.getElementById("book-msg").textContent = data.error || "DATA UNAVAILABLE";
-          document.getElementById("book-msg").className = "err";
-          return;
-        }
-        document.getElementById("book-msg").textContent = "Marked from live last prices. Cost is unchanged.";
-        document.getElementById("book-msg").className = "flash";
-        fillForm(data.saved);
-        renderBook(data.book);
-      });
+      document.getElementById("refresh-all").addEventListener("click", () => refreshAll(document.getElementById("refresh-all")));
+      document.getElementById("refresh-marks").addEventListener("click", () => refreshAll(document.getElementById("refresh-marks")));
       loadState().catch(err => {
         document.getElementById("plan-msg").textContent = "Dashboard needs the local server: python3 -m compoundcore dashboard";
         document.getElementById("plan-msg").className = "err";

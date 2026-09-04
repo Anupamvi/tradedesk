@@ -11,10 +11,10 @@ from urllib.parse import parse_qs, urlparse
 
 from compoundcore.allocate import distribution
 from compoundcore.book import (
+    apply_refresh,
     book_view,
     default_state_path,
     load_state,
-    mark_with_prices,
     now_iso,
     parse_money,
     save_state,
@@ -73,8 +73,10 @@ def dashboard_payload(path: Path) -> Dict[str, Any]:
                 "compare_to": book["compare_to"],
                 "submitted_at": book.get("submitted_at"),
                 "marked_at": book.get("marked_at"),
+                "last_refresh": book.get("last_refresh"),
             },
         },
+        "refresh": book.get("last_refresh"),
     }
 
 
@@ -123,12 +125,10 @@ def _apply_book(state: Dict[str, Any], body: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def _apply_refresh(state: Dict[str, Any], prices: Dict[str, float]) -> Dict[str, Any]:
-    book = dict(state["book"])
-    book["positions"] = mark_with_prices(book.get("positions") or {}, prices)
-    book["marked_at"] = now_iso()
-    state["book"] = book
-    return state
+def _run_refresh(state: Dict[str, Any]) -> tuple:
+    broker = quotes_mod.sleeve_positions()
+    prices = quotes_mod.last_prices(TICKER_ORDER)
+    return apply_refresh(state, prices=prices, broker=broker)
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -182,15 +182,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     save_state(state, self.state_path)
                     self._send_json(200, dashboard_payload(self.state_path))
                     return
-                if parsed.path == "/api/book/refresh":
-                    prices = quotes_mod.last_prices(TICKER_ORDER)
-                    if not prices:
-                        self._send_json(503, {"error": "DATA UNAVAILABLE: no live quotes"})
-                        return
-                    state = _apply_refresh(state, prices)
+                if parsed.path in ("/api/book/refresh", "/api/refresh"):
+                    if body.get("positions") or body.get("holdings"):
+                        state = _apply_book(state, body)
+                    state, report = _run_refresh(state)
                     save_state(state, self.state_path)
                     payload = dashboard_payload(self.state_path)
-                    payload["book"]["quote_status"] = "schwab"
+                    payload["refresh"] = report
+                    if report.get("quote_count"):
+                        payload["book"]["quote_status"] = "schwab"
                     self._send_json(200, payload)
                     return
         except ValueError as exc:

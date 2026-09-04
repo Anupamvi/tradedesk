@@ -17,7 +17,7 @@ PYTHONPATH=. python3 -m unittest discover -s tests -v
 
 Playbook: [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md)
 
-Persistent dashboard: `python3 -m compoundcore dashboard` then open `http://127.0.0.1:8765/`. Type a dollar amount to split **both** sleeves. In **My book**, save cost vs now; refresh keeps real gain or loss.
+Persistent dashboard: `python3 -m compoundcore dashboard` then open `http://127.0.0.1:8765/`. Type a dollar amount to split **both** sleeves. In **My book**, save cost vs now; **Refresh** pulls Schwab quotes and sleeve lots and shows real gain or loss.
 
 Raw HTML calculator: [`web/calculator.html`](web/calculator.html) — open the file as-is.
 

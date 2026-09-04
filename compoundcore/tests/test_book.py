@@ -98,13 +98,27 @@ class TestBook(unittest.TestCase):
         self.assertIsNone(view["pnl"])
 
     def test_mark_with_prices_keeps_cost(self):
-        from compoundcore.book import mark_with_prices
+        from compoundcore.book import apply_refresh, mark_with_prices
 
         positions = {t: {"cost": 0.0, "current": 0.0, "shares": 0.0} for t in weights("default")}
         positions["VOO"] = {"cost": 48000, "current": 48000, "shares": 80}
         marked = mark_with_prices(positions, {"VOO": 650.0})
         self.assertEqual(marked["VOO"]["cost"], 48000.0)
         self.assertEqual(marked["VOO"]["current"], 52000.0)
+
+        state = empty_state()
+        state["book"]["positions"] = positions
+        state["book"]["submitted_at"] = "now"
+        updated, report = apply_refresh(
+            state,
+            prices={"VOO": 650.0},
+            broker={"VGT": {"shares": 10, "market": 5500, "cost": 5000}},
+        )
+        self.assertTrue(report["live"])
+        self.assertEqual(updated["book"]["positions"]["VOO"]["cost"], 48000.0)
+        self.assertEqual(updated["book"]["positions"]["VOO"]["current"], 52000.0)
+        self.assertEqual(updated["book"]["positions"]["VGT"]["cost"], 5000.0)
+        self.assertEqual(updated["book"]["positions"]["VGT"]["shares"], 10.0)
 
     def test_actual_mix_drives_rates(self):
         holdings = {t: 0.0 for t in weights("default")}
