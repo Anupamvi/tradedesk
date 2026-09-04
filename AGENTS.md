@@ -104,6 +104,21 @@ python3 -m wheelo full --date YYYY-MM-DD --capital 35000
 - Canonical path: `/Users/anuppamvi/tradedesk/grok-option`. Skill + Schwab scripts live there. `.grok/skills/grok-option` and `~/.grok/skills/grok-option` are symlinks to that folder.
 - Schwab live chain first (`python3 grok-option/scripts/schwab_market.py`). No ORATS. No order placement. Empty table is valid when quotes or geometry fail.
 
+## Compound Core Default
+
+- Treat `compound core`, `compoundcore`, `core sleeve`, `core calculator`, `ToothFolio`, and VOO/VGT/SMH/VB indexing-sleeve requests as **Compound Core** under `compoundcore/`. Not Groat, not Wheelo, not Groko, not Codex Daily.
+- Independent: `python3 -m compoundcore` from `/Users/anuppamvi/tradedesk/compoundcore`. Do not import other desks as the execute path.
+- Default weights: VOO 48 / VGT 10 / SMH 7 / VB 5 / VXUS 20 / GLDM 5 / VGSH 5. Aggressive variant is 45/15/10/5/15/5/5. Weekly DCA. No stock-picking, no options, no order placement. Empty of trading-desk tickets is the point. Core is never abandoned; SMH is band-trimmed only.
+- Default:
+
+```bash
+python3 -m compoundcore 100000 --weekly 250 --monthly 1000
+```
+
+- Playbook: `/Users/anuppamvi/tradedesk/compoundcore/docs/PLAYBOOK.md`
+- HTML calculator: `/Users/anuppamvi/tradedesk/compoundcore/web/calculator.html`
+- Output is a dollar split plus 5-year / 10-year stress–bear–base–bull paths. Not a 40%/yr plan.
+
 ## Pattern Analysis V2 Default
 
 - Treat `pattern analysis`, `run pattern analysis`, `pattern-analysis`, and plain `pattern` requests as **Pattern Analysis V2** unless the user explicitly asks for V1, the frozen baseline, or `uwos.options_pattern_pipeline_v1`.
