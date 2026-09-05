@@ -73,3 +73,27 @@ class TestCliAndCalculator(unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("dashboard", proc.stdout)
+
+    def test_ensure_dashboard_script_starts_server(self):
+        import urllib.request
+
+        with tempfile.TemporaryDirectory() as tmp:
+            port = 18765
+            env = os.environ.copy()
+            env["COMPOUNDCORE_DASHBOARD_PORT"] = str(port)
+            env["COMPOUNDCORE_DASHBOARD_PIDFILE"] = str(Path(tmp) / "dashboard.pid")
+            env["COMPOUNDCORE_DASHBOARD_LOG"] = str(Path(tmp) / "dashboard.log")
+            proc = subprocess.run(
+                [str(ROOT / "scripts" / "ensure-dashboard.sh")],
+                cwd=str(ROOT),
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
+            with urllib.request.urlopen("http://127.0.0.1:%d/" % port, timeout=5) as resp:
+                body = resp.read().decode("utf-8")
+            self.assertIn("Compound Core", body)
+            pid = int(Path(tmp).joinpath("dashboard.pid").read_text(encoding="utf-8").strip())
+            os.kill(pid, 15)

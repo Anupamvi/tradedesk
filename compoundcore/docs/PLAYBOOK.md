@@ -9,11 +9,12 @@ Calculator and dashboard:
 ```bash
 cd /Users/anuppamvi/tradedesk/compoundcore
 PYTHONPATH=. python3 -m compoundcore 100000 --weekly 250 --monthly 1000
-PYTHONPATH=. python3 -m compoundcore dashboard          # http://127.0.0.1:8765/
+./scripts/ensure-dashboard.sh                              # http://127.0.0.1:8765/
+./scripts/install-macos-dashboard-service.sh                 # macOS login service (once)
 PYTHONPATH=. python3 -m compoundcore calculator         # writes web/calculator.html
 ```
 
-Open the dashboard at `http://127.0.0.1:8765/` for both sleeves plus **My book**. Save cost vs now; refresh keeps real gain or loss. The raw file [`web/calculator.html`](../web/calculator.html) still opens as plain HTML.
+Open the dashboard at `http://127.0.0.1:8765/` for both sleeves plus **My book** (agents start it for you; Cloud Agents expose port **8765**). Save cost vs now; refresh keeps real gain or loss. The raw file [`web/calculator.html`](../web/calculator.html) still opens as plain HTML.
 
 ---
 
