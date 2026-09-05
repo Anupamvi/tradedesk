@@ -201,10 +201,13 @@
     const COLORS = {VOO:"#4c8dff",VGT:"#7c5cff",SMH:"#ff6b4a",VB:"#3dd68c",VXUS:"#3ec6d6",GLDM:"#e8b84a",VGSH:"#8b95a8"};
     const PATHS = ["stress","bear","base","bull"];
     let saveTimer = null;
+    let previewTimer = null;
     let hydrating = false;
+    let stateLoaded = false;
+    let plannerDirty = false;
 
     function money(raw) {
-      const t = String(raw || "").replace(/[$,]/g, "").trim();
+      const t = String(raw || "").replace(/[$,\s]/g, "").trim();
       if (!t) return 0;
       const n = Number(t);
       return Number.isFinite(n) ? n : NaN;
@@ -325,11 +328,15 @@
       `;
     }
 
-    function fillForm(saved) {
+    function fillForm(saved, opts) {
+      opts = opts || {};
       hydrating = true;
-      document.getElementById("amount").value = saved.planner.amount ? String(saved.planner.amount) : "";
-      document.getElementById("weekly").value = saved.planner.weekly ? String(saved.planner.weekly) : "";
-      document.getElementById("monthly").value = saved.planner.monthly ? String(saved.planner.monthly) : "";
+      if (!opts.skipPlanner) {
+        document.getElementById("amount").value = saved.planner.amount ? String(saved.planner.amount) : "";
+        document.getElementById("weekly").value = saved.planner.weekly ? String(saved.planner.weekly) : "";
+        document.getElementById("monthly").value = saved.planner.monthly ? String(saved.planner.monthly) : "";
+        plannerDirty = false;
+      }
       const positions = saved.book.positions || {};
       TICKERS.forEach(t => {
         const pos = positions[t] || {};
@@ -377,42 +384,85 @@
       };
     }
 
+    async function previewPlanner() {
+      if (!stateLoaded || hydrating) return;
+      const body = plannerBody();
+      if ([body.amount, body.weekly, body.monthly].some(n => Number.isNaN(n))) return;
+      try {
+        const q = new URLSearchParams({
+          amount: String(body.amount),
+          weekly: String(body.weekly),
+          monthly: String(body.monthly)
+        });
+        const res = await fetch("/api/plan?" + q);
+        const plan = await res.json();
+        if (!res.ok) return;
+        renderPlan(plan);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     async function persistPlanner() {
       const body = plannerBody();
       if ([body.amount, body.weekly, body.monthly].some(n => Number.isNaN(n))) {
         document.getElementById("plan-msg").textContent = "Use non-negative dollar amounts.";
         document.getElementById("plan-msg").className = "err";
-        return;
+        return false;
       }
       document.getElementById("plan-msg").textContent = "";
-      const res = await fetch("/api/planner", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        document.getElementById("plan-msg").textContent = data.error || "Could not save.";
+      try {
+        const res = await fetch("/api/planner", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          document.getElementById("plan-msg").textContent = data.error || "Could not save.";
+          document.getElementById("plan-msg").className = "err";
+          return false;
+        }
+        plannerDirty = false;
+        renderPlan(data.planner);
+        return true;
+      } catch (err) {
+        document.getElementById("plan-msg").textContent = "Could not save planner.";
         document.getElementById("plan-msg").className = "err";
-        return;
+        console.error(err);
+        return false;
       }
-      renderPlan(data.planner);
     }
 
-    function scheduleSave() {
-      if (hydrating) return;
+    async function syncPlanner() {
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(persistPlanner, 180);
+      clearTimeout(previewTimer);
+      await previewPlanner();
+      return persistPlanner();
+    }
+
+    function schedulePlannerUpdate() {
+      if (hydrating || !stateLoaded) return;
+      plannerDirty = true;
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(previewPlanner, 60);
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(persistPlanner, 350);
     }
 
     async function loadState() {
       const res = await fetch("/api/state");
       const data = await res.json();
       document.getElementById("asof").textContent = data.asof;
-      fillForm(data.saved);
-      renderPlan(data.planner);
+      if (!plannerDirty) {
+        fillForm(data.saved);
+        renderPlan(data.planner);
+      } else {
+        fillForm(data.saved, {skipPlanner: true});
+      }
       renderBook(data.book);
       showRefresh(data.refresh);
+      stateLoaded = true;
     }
 
     function showRefresh(report) {
@@ -435,6 +485,12 @@
         document.getElementById("book-msg").className = "err";
         return;
       }
+      const planner = plannerBody();
+      if ([planner.amount, planner.weekly, planner.monthly].some(n => Number.isNaN(n))) {
+        document.getElementById("book-msg").textContent = "Planner amounts must be non-negative.";
+        document.getElementById("book-msg").className = "err";
+        return;
+      }
       const monthly_add = money(document.getElementById("monthly_add").value) || 0;
       const compare_to = (document.querySelector("input[name=compare_to]:checked") || {}).value || "default";
       const buttons = [document.getElementById("refresh-all"), document.getElementById("refresh-marks")];
@@ -442,10 +498,11 @@
       const label = btn ? btn.textContent : "Refresh";
       if (btn) btn.textContent = "Refreshing…";
       try {
+        await syncPlanner();
         const res = await fetch("/api/refresh", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({positions, monthly_add, compare_to})
+          body: JSON.stringify({positions, monthly_add, compare_to, ...planner})
         });
         const data = await res.json();
         if (!res.ok) {
@@ -478,7 +535,9 @@
     document.addEventListener("DOMContentLoaded", () => {
       buildHoldInputs();
       ["amount","weekly","monthly"].forEach(id => {
-        document.getElementById(id).addEventListener("input", scheduleSave);
+        const el = document.getElementById(id);
+        el.addEventListener("input", schedulePlannerUpdate);
+        el.addEventListener("change", schedulePlannerUpdate);
       });
       document.getElementById("book-form").addEventListener("submit", async (ev) => {
         ev.preventDefault();

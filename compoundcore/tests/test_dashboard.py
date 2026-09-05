@@ -78,6 +78,26 @@ class TestDashboardHttp(unittest.TestCase):
             data["planner"]["sleeves"]["default"]["projections"]["10y"]["base"]["nominal"],
         )
 
+    def test_plan_preview_without_persisting(self):
+        status, data = self._json("/api/plan?amount=100000&weekly=250&monthly=1000")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["amount"], 100000.0)
+        voo = data["sleeves"]["default"]["allocation"]["rows"][0]
+        self.assertEqual(voo["dollars"], 48000.0)
+        status, state = self._json("/api/state")
+        self.assertEqual(state["saved"]["planner"]["amount"], 0.0)
+
+    def test_refresh_applies_planner_amount_from_body(self):
+        status, data = self._json(
+            "/api/refresh",
+            {"amount": 50000, "weekly": 100, "monthly": 500},
+            method="POST",
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["saved"]["planner"]["amount"], 50000.0)
+        voo = data["planner"]["sleeves"]["default"]["allocation"]["rows"][0]
+        self.assertEqual(voo["dollars"], 24000.0)
+
     def test_submit_book_then_refresh_shows_growth(self):
         holdings = {
             "VOO": 48000,

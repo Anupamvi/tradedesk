@@ -185,6 +185,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 if parsed.path in ("/api/book/refresh", "/api/refresh"):
                     if body.get("positions") or body.get("holdings"):
                         state = _apply_book(state, body)
+                    if any(k in body for k in ("amount", "weekly", "monthly")):
+                        state = _apply_planner(state, body)
                     state, report = _run_refresh(state)
                     save_state(state, self.state_path)
                     payload = dashboard_payload(self.state_path)
