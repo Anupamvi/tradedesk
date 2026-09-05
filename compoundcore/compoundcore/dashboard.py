@@ -14,9 +14,12 @@ from compoundcore.book import (
     apply_refresh,
     book_view,
     default_state_path,
+    derive_positions_from_costs,
     load_state,
+    normalize_positions,
     now_iso,
     parse_money,
+    positions_from_amount,
     save_state,
 )
 from compoundcore import quotes as quotes_mod
@@ -131,6 +134,37 @@ def _run_refresh(state: Dict[str, Any]) -> tuple:
     return apply_refresh(state, prices=prices, broker=broker)
 
 
+def _derive_book(body: Dict[str, Any], state_path: Path) -> Dict[str, Any]:
+    compare_to = body.get("compare_to") or "default"
+    prices = dict(quotes_mod.last_prices(TICKER_ORDER))
+    live = bool(prices)
+    if not prices:
+        state = load_state(state_path)
+        cached = (state.get("book") or {}).get("last_quotes")
+        if isinstance(cached, dict):
+            for ticker in TICKER_ORDER:
+                try:
+                    px = float(cached.get(ticker) or 0)
+                except (TypeError, ValueError):
+                    px = 0.0
+                if px > 0:
+                    prices[ticker] = px
+    if "amount" in body and body.get("amount") not in (None, ""):
+        amount = parse_money(body.get("amount"), "amount")
+        positions, missing = positions_from_amount(amount, compare_to, prices)
+    else:
+        positions = normalize_positions(body.get("positions"))
+        positions, missing = derive_positions_from_costs(positions, prices)
+    return {
+        "positions": positions,
+        "quotes": prices,
+        "live": live,
+        "missing": missing,
+        "compare_to": compare_to,
+        "quote_source": "schwab" if live else ("cache" if prices else "none"),
+    }
+
+
 class DashboardHandler(BaseHTTPRequestHandler):
     state_path: Path
 
@@ -160,6 +194,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 return
             self._send_json(200, plan_payload(amount, weekly, monthly))
             return
+        if path == "/api/quotes":
+            prices = quotes_mod.last_prices(TICKER_ORDER)
+            self._send_json(
+                200,
+                {"quotes": prices, "live": bool(prices), "tickers": list(TICKER_ORDER)},
+            )
+            return
         self.send_error(404, "Not found")
 
     def do_POST(self) -> None:  # noqa: N802
@@ -181,6 +222,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     state = _apply_book(state, body)
                     save_state(state, self.state_path)
                     self._send_json(200, dashboard_payload(self.state_path))
+                    return
+                if parsed.path == "/api/quotes/refresh":
+                    prices = dict(quotes_mod.last_prices(TICKER_ORDER))
+                    if prices:
+                        book = dict(state.get("book") or {})
+                        book["last_quotes"] = prices
+                        state["book"] = book
+                        save_state(state, self.state_path)
+                    self._send_json(200, {"quotes": prices, "live": bool(prices)})
+                    return
+                if parsed.path == "/api/book/derive":
+                    self._send_json(200, _derive_book(body, self.state_path))
                     return
                 if parsed.path in ("/api/book/refresh", "/api/refresh"):
                     if body.get("positions") or body.get("holdings"):

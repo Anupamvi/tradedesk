@@ -6,8 +6,9 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
+from compoundcore.allocate import allocate_dollars
 from compoundcore.projections import path_table_from_rates
 from compoundcore.sleeve import (
     ASOF,
@@ -155,6 +156,7 @@ def load_state(path: Optional[Path] = None) -> Dict[str, Any]:
             "submitted_at": submitted,
             "marked_at": marked,
             "last_refresh": book.get("last_refresh") if isinstance(book.get("last_refresh"), dict) else None,
+            "last_quotes": book.get("last_quotes") if isinstance(book.get("last_quotes"), dict) else None,
         },
     }
 
@@ -178,6 +180,7 @@ def save_state(state: Mapping[str, Any], path: Optional[Path] = None) -> Path:
             "submitted_at": state["book"].get("submitted_at"),
             "marked_at": state["book"].get("marked_at"),
             "last_refresh": state["book"].get("last_refresh") if isinstance(state["book"].get("last_refresh"), dict) else None,
+            "last_quotes": state["book"].get("last_quotes") if isinstance(state["book"].get("last_quotes"), dict) else None,
         },
     }
     tmp = dest.with_name(dest.name + ".tmp")
@@ -204,6 +207,46 @@ def mark_with_prices(
         if shares > 0 and px > 0:
             out[ticker]["current"] = round(shares * px, 2)
     return out
+
+
+def derive_positions_from_costs(
+    positions: Mapping[str, Mapping[str, float]],
+    prices: Mapping[str, float],
+) -> Tuple[Dict[str, Dict[str, float]], List[str]]:
+    """Given cost $ per ticker, fill shares and current from live prices. Never invent quotes."""
+    out = normalize_positions(positions)
+    missing: List[str] = []
+    for ticker in TICKER_ORDER:
+        cost = out[ticker]["cost"]
+        if cost <= 0:
+            continue
+        try:
+            px = float(prices.get(ticker) or 0)
+        except (TypeError, ValueError):
+            px = 0.0
+        if px <= 0:
+            missing.append(ticker)
+            continue
+        shares = round(cost / px, 6)
+        out[ticker]["shares"] = shares
+        out[ticker]["current"] = round(shares * px, 2)
+    return out, missing
+
+
+def positions_from_amount(
+    amount: float,
+    sleeve: str,
+    prices: Mapping[str, float],
+) -> Tuple[Dict[str, Dict[str, float]], List[str]]:
+    """Split amount across a sleeve into cost $, then derive shares and now from prices."""
+    if amount < 0:
+        raise ValueError("amount must be >= 0")
+    sleeve_key = _require_sleeve(sleeve)
+    dollars = allocate_dollars(amount, sleeve_key)
+    positions = {ticker: empty_position() for ticker in TICKER_ORDER}
+    for ticker in TICKER_ORDER:
+        positions[ticker]["cost"] = round(dollars[ticker], 2)
+    return derive_positions_from_costs(positions, prices)
 
 
 def apply_broker_positions(
@@ -270,7 +313,10 @@ def apply_refresh(
         "quote_count": len(price_map),
         "position_count": len(broker_map),
         "live": live,
+        "quotes": price_map,
     }
+    if price_map:
+        book["last_quotes"] = dict(price_map)
     book["last_refresh"] = report
     state = dict(state)
     state["book"] = book

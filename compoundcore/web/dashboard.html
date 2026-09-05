@@ -127,6 +127,7 @@
     <div class="nav">
       <span id="refresh-status"></span>
       <button type="button" class="nav-refresh" id="refresh-all">Refresh</button>
+      <a href="/" id="open-dashboard" title="Open dashboard in Safari">Open in Safari</a>
       <a href="/calculator.html">Raw calculator HTML</a>
     </div>
   </header>
@@ -157,14 +158,25 @@
     <section>
       <h2>2. My book — <em>saved allocations, real gain or loss</em></h2>
       <div class="card">
-        <p class="hint" style="margin-top:0">Cost is what you put in. Now is what it is worth. <strong>Refresh</strong> runs Schwab quotes and sleeve lots in the backend, then recomputes gain or loss. Cost you already saved is not overwritten. Forward CMA is a forecast, not this P&amp;L.</p>
+        <p class="hint" style="margin-top:0">Enter a <strong>total $</strong> or per-ETF <strong>Cost $</strong> — shares and Now $ fill from live Schwab quotes. Save when ready. <strong>Refresh</strong> updates marks without overwriting saved cost.</p>
         <form id="book-form" class="book-form">
+          <div class="inputs" style="grid-template-columns: 1fr 1fr auto; align-items: end;">
+            <div>
+              <label for="book_total">Total $ to book</label>
+              <input id="book_total" type="text" inputmode="decimal" placeholder="e.g. 100000" autocomplete="off">
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <button type="button" class="ghost" id="book-from-planner">Use section 1 amount</button>
+            </div>
+          </div>
+          <p class="hint">Splits by the sleeve selected below, then calculates shares and Now $ at live prices.</p>
           <table class="pos-table">
             <thead>
               <tr>
                 <th>ETF</th>
-                <th class="num">Shares</th>
                 <th class="num">Cost $</th>
+                <th class="num">Shares</th>
                 <th class="num">Now $</th>
               </tr>
             </thead>
@@ -202,9 +214,11 @@
     const PATHS = ["stress","bear","base","bull"];
     let saveTimer = null;
     let previewTimer = null;
+    let bookDeriveTimer = null;
     let hydrating = false;
     let stateLoaded = false;
     let plannerDirty = false;
+    let bookTotalDirty = false;
 
     function money(raw) {
       const t = String(raw || "").replace(/[$,\s]/g, "").trim();
@@ -341,7 +355,12 @@
       TICKERS.forEach(t => {
         const pos = positions[t] || {};
         const cost = pos.cost != null ? pos.cost : (saved.book.holdings && saved.book.holdings[t]) || 0;
-        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ? String(val) : ""; };
+        const set = (id, val) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (val === null || val === undefined || val === "") el.value = "";
+          else el.value = String(val);
+        };
         set("h-" + t + "-shares", pos.shares);
         set("h-" + t + "-cost", cost);
         set("h-" + t + "-current", pos.current);
@@ -356,11 +375,95 @@
       document.getElementById("hold-inputs").innerHTML = TICKERS.map(t => `
         <tr>
           <td>${t}</td>
-          <td><input id="h-${t}-shares" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} shares"></td>
           <td><input id="h-${t}-cost" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} cost"></td>
+          <td><input id="h-${t}-shares" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} shares"></td>
           <td><input id="h-${t}-current" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} now"></td>
         </tr>
       `).join("");
+    }
+
+    function applyPositionsToInputs(positions) {
+      hydrating = true;
+      TICKERS.forEach(t => {
+        const pos = positions[t] || {};
+        const set = (id, val) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (val === null || val === undefined || val === "") el.value = "";
+          else el.value = String(val);
+        };
+        set("h-" + t + "-shares", pos.shares);
+        set("h-" + t + "-cost", pos.cost);
+        set("h-" + t + "-current", pos.current);
+      });
+      hydrating = false;
+    }
+
+    async function refreshQuotesCache() {
+      try {
+        const res = await fetch("/api/quotes/refresh", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
+        return res.ok ? res.json() : null;
+      } catch (err) {
+        console.error(err);
+        return null;
+      }
+    }
+
+    async function deriveBook() {
+      if (hydrating || !stateLoaded) return;
+      const compare_to = (document.querySelector("input[name=compare_to]:checked") || {}).value || "default";
+      const body = {compare_to, positions: readPositions().positions};
+      const total = money(document.getElementById("book_total").value);
+      const hasTotal = Number.isFinite(total) && total > 0;
+      const hasCost = TICKERS.some(t => money(document.getElementById("h-" + t + "-cost").value) > 0);
+      if (!hasTotal && !hasCost) return;
+      if (hasTotal) body.amount = total;
+      try {
+        let res = await fetch("/api/book/derive", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(body)
+        });
+        let data = await res.json();
+        if (res.ok && hasTotal && data.quote_source === "none" && (data.missing || []).length) {
+          await refreshQuotesCache();
+          res = await fetch("/api/book/derive", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body)
+          });
+          data = await res.json();
+        }
+        if (!res.ok) {
+          document.getElementById("book-msg").textContent = data.error || "Could not derive book.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        applyPositionsToInputs(data.positions);
+        if (data.live && !(data.missing || []).length) {
+          document.getElementById("book-msg").textContent = "Filled cost, shares, and Now $ from live quotes. Save my book when ready.";
+          document.getElementById("book-msg").className = "flash";
+        } else if (!data.live && data.quote_source === "cache" && !(data.missing || []).length) {
+          document.getElementById("book-msg").textContent = "Filled from last Refresh quotes. Save my book, then Refresh for live marks.";
+          document.getElementById("book-msg").className = "flash";
+        } else if (data.live && (data.missing || []).length) {
+          document.getElementById("book-msg").textContent = "Partial quotes — missing: " + (data.missing || []).join(", ") + ". Refresh or check Schwab.";
+          document.getElementById("book-msg").className = "err";
+        } else {
+          document.getElementById("book-msg").textContent = "Cost split applied. Refresh once for Schwab quotes to fill shares and Now $.";
+          document.getElementById("book-msg").className = "err";
+        }
+      } catch (err) {
+        document.getElementById("book-msg").textContent = "Could not derive book.";
+        document.getElementById("book-msg").className = "err";
+        console.error(err);
+      }
+    }
+
+    function scheduleBookDerive() {
+      if (hydrating || !stateLoaded) return;
+      clearTimeout(bookDeriveTimer);
+      bookDeriveTimer = setTimeout(deriveBook, 320);
     }
 
     function readPositions() {
@@ -448,6 +551,13 @@
       previewTimer = setTimeout(previewPlanner, 60);
       clearTimeout(saveTimer);
       saveTimer = setTimeout(persistPlanner, 350);
+      if (!bookTotalDirty) {
+        const amt = money(document.getElementById("amount").value);
+        if (Number.isFinite(amt) && amt > 0) {
+          document.getElementById("book_total").value = String(amt);
+          scheduleBookDerive();
+        }
+      }
     }
 
     async function loadState() {
@@ -534,6 +644,29 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       buildHoldInputs();
+      TICKERS.forEach(t => {
+        document.getElementById("h-" + t + "-cost").addEventListener("input", scheduleBookDerive);
+        document.getElementById("h-" + t + "-cost").addEventListener("change", scheduleBookDerive);
+      });
+      document.getElementById("book_total").addEventListener("input", () => {
+        bookTotalDirty = true;
+        scheduleBookDerive();
+      });
+      document.getElementById("book_total").addEventListener("change", scheduleBookDerive);
+      document.querySelectorAll("input[name=compare_to]").forEach(r => {
+        r.addEventListener("change", scheduleBookDerive);
+      });
+      document.getElementById("book-from-planner").addEventListener("click", () => {
+        const amt = money(document.getElementById("amount").value);
+        if (!Number.isFinite(amt) || amt <= 0) {
+          document.getElementById("book-msg").textContent = "Enter an amount in section 1 first.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        document.getElementById("book_total").value = String(amt);
+        bookTotalDirty = true;
+        scheduleBookDerive();
+      });
       ["amount","weekly","monthly"].forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener("input", schedulePlannerUpdate);
@@ -570,6 +703,13 @@
       });
       document.getElementById("refresh-all").addEventListener("click", () => refreshAll(document.getElementById("refresh-all")));
       document.getElementById("refresh-marks").addEventListener("click", () => refreshAll(document.getElementById("refresh-marks")));
+      const openDash = document.getElementById("open-dashboard");
+      if (openDash && navigator.userAgent.includes("Macintosh")) {
+        openDash.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          window.open(window.location.origin + "/", "_blank");
+        });
+      }
       loadState().catch(err => {
         document.getElementById("plan-msg").textContent = "Dashboard needs the local server: python3 -m compoundcore dashboard";
         document.getElementById("plan-msg").className = "err";

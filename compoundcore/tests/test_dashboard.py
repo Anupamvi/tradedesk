@@ -98,6 +98,52 @@ class TestDashboardHttp(unittest.TestCase):
         voo = data["planner"]["sleeves"]["default"]["allocation"]["rows"][0]
         self.assertEqual(voo["dollars"], 24000.0)
 
+    def test_book_derive_from_amount(self):
+        from unittest.mock import patch
+
+        prices = {"VOO": 600.0, "VGT": 500.0, "SMH": 250.0, "VB": 220.0, "VXUS": 55.0, "GLDM": 40.0, "VGSH": 50.0}
+        with patch("compoundcore.quotes.last_prices", return_value=prices):
+            status, data = self._json(
+                "/api/book/derive",
+                {"amount": 100000, "compare_to": "default"},
+                method="POST",
+            )
+        self.assertEqual(status, 200)
+        self.assertTrue(data["live"])
+        self.assertEqual(data["positions"]["VOO"]["cost"], 48000.0)
+        self.assertEqual(data["positions"]["VOO"]["shares"], 80.0)
+        self.assertEqual(data["positions"]["VOO"]["current"], 48000.0)
+
+    def test_quotes_endpoint(self):
+        from unittest.mock import patch
+
+        with patch("compoundcore.quotes.last_prices", return_value={"VOO": 600.0}):
+            status, data = self._json("/api/quotes")
+        self.assertEqual(status, 200)
+        self.assertTrue(data["live"])
+        self.assertEqual(data["quotes"]["VOO"], 600.0)
+
+    def test_book_derive_uses_cached_quotes(self):
+        from unittest.mock import patch
+
+        prices = {"VOO": 600.0, "VGT": 500.0, "SMH": 250.0, "VB": 220.0, "VXUS": 55.0, "GLDM": 40.0, "VGSH": 50.0}
+        self._json(
+            "/api/refresh",
+            {"amount": 0, "positions": {"VOO": {"cost": 0, "current": 0, "shares": 0}}},
+            method="POST",
+        )
+        with patch("compoundcore.quotes.last_prices", return_value=prices):
+            self._json("/api/refresh", {}, method="POST")
+        with patch("compoundcore.quotes.last_prices", return_value={}):
+            status, data = self._json(
+                "/api/book/derive",
+                {"amount": 100000, "compare_to": "default"},
+                method="POST",
+            )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["quote_source"], "cache")
+        self.assertEqual(data["positions"]["VOO"]["shares"], 80.0)
+
     def test_submit_book_then_refresh_shows_growth(self):
         holdings = {
             "VOO": 48000,

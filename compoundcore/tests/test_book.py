@@ -97,6 +97,23 @@ class TestBook(unittest.TestCase):
         self.assertFalse(view["pnl_ready"])
         self.assertIsNone(view["pnl"])
 
+    def test_derive_positions_from_costs(self):
+        from compoundcore.book import derive_positions_from_costs, positions_from_amount
+
+        positions = {t: {"cost": 0.0, "current": 0.0, "shares": 0.0} for t in weights("default")}
+        positions["VOO"] = {"cost": 48000, "current": 0, "shares": 0}
+        prices = {"VOO": 600.0}
+        out, missing = derive_positions_from_costs(positions, prices)
+        self.assertEqual(out["VOO"]["shares"], 80.0)
+        self.assertEqual(out["VOO"]["current"], 48000.0)
+        self.assertEqual(missing, [])
+
+        all_prices = {"VOO": 600.0, "VGT": 500.0, "SMH": 250.0, "VB": 220.0, "VXUS": 55.0, "GLDM": 40.0, "VGSH": 50.0}
+        split, missing2 = positions_from_amount(100000, "default", all_prices)
+        self.assertEqual(split["VOO"]["cost"], 48000.0)
+        self.assertGreater(split["VOO"]["shares"], 0)
+        self.assertEqual(missing2, [])
+
     def test_mark_with_prices_keeps_cost(self):
         from compoundcore.book import apply_refresh, mark_with_prices
 

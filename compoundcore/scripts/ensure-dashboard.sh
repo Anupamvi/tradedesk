@@ -6,11 +6,28 @@ HOST="${COMPOUNDCORE_DASHBOARD_HOST:-127.0.0.1}"
 PORT="${COMPOUNDCORE_DASHBOARD_PORT:-8765}"
 PIDFILE="${COMPOUNDCORE_DASHBOARD_PIDFILE:-$ROOT/var/dashboard.pid}"
 LOG="${COMPOUNDCORE_DASHBOARD_LOG:-$ROOT/var/dashboard.log}"
+URL="http://127.0.0.1:${PORT}/"
+
+open_dashboard() {
+  if [[ "${COMPOUNDCORE_OPEN_BROWSER:-1}" == "0" ]]; then
+    return 0
+  fi
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    if [[ -d "/Applications/Safari.app" ]]; then
+      open -a Safari "$URL" 2>/dev/null || open "$URL"
+    else
+      open "$URL"
+    fi
+  elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$URL" >/dev/null 2>&1 || true
+  fi
+}
 
 mkdir -p "$ROOT/var"
 
-if curl -sf --max-time 2 "http://127.0.0.1:${PORT}/" >/dev/null 2>&1; then
+if curl -sf --max-time 2 "${URL}" >/dev/null 2>&1; then
   echo "Compound Core dashboard already running on port ${PORT}"
+  open_dashboard
   exit 0
 fi
 
@@ -18,6 +35,7 @@ if [[ -f "$PIDFILE" ]]; then
   old_pid="$(cat "$PIDFILE" 2>/dev/null || true)"
   if [[ -n "${old_pid}" ]] && kill -0 "$old_pid" 2>/dev/null; then
     echo "Compound Core dashboard already running (pid ${old_pid})"
+    open_dashboard
     exit 0
   fi
 fi
@@ -28,8 +46,9 @@ nohup python3 -m compoundcore dashboard --host "$HOST" --port "$PORT" >>"$LOG" 2
 echo $! >"$PIDFILE"
 sleep 0.6
 
-if curl -sf --max-time 2 "http://127.0.0.1:${PORT}/" >/dev/null 2>&1; then
-  echo "Compound Core dashboard http://127.0.0.1:${PORT}/"
+if curl -sf --max-time 2 "${URL}" >/dev/null 2>&1; then
+  echo "Compound Core dashboard ${URL}"
+  open_dashboard
   exit 0
 fi
 
