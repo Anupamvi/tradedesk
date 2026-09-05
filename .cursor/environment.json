@@ -1,0 +1,4 @@
+{
+  "name": "UW Trade Desk",
+  "install": "bash .cursor/install.sh"
+}

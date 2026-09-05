@@ -1,0 +1,6 @@
+# Cloud Agent dependency constraints.
+# requirements.txt only floors pandas at >=2.2.0, but the code targets the
+# pandas 2.x API. pandas 3.0 changed the default column dtype to `str` and
+# rejects non-string assignment, which breaks the options-agent pipeline.
+# Cap pandas to the 2.x line so the pipelines and test suite behave as intended.
+pandas<3
