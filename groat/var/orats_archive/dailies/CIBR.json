@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 93.9706,
+      "clsPx": 93.54,
       "hiPx": 95.99,
       "loPx": 92.68,
       "open": 95.71,
       "stkVolu": 2576495.0,
       "ticker": "CIBR",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 95.32,
+      "hiPx": 95.41,
+      "loPx": 93.425,
+      "open": 94.36,
+      "stkVolu": 1264847.0,
+      "ticker": "CIBR",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 95.0799,
+      "hiPx": 95.75,
+      "loPx": 94.45,
+      "open": 94.5,
+      "stkVolu": 416283.0,
+      "ticker": "CIBR",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

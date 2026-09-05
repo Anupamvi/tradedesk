@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 399.3,
+      "clsPx": 399.66,
       "hiPx": 401.14,
       "loPx": 396.51,
       "open": 399.27,
       "stkVolu": 3266755.0,
       "ticker": "UNH",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 400.94,
+      "hiPx": 405.16,
+      "loPx": 395.3005,
+      "open": 400.02,
+      "stkVolu": 5489555.0,
+      "ticker": "UNH",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 397.86,
+      "hiPx": 402.225,
+      "loPx": 397.05,
+      "open": 397.05,
+      "stkVolu": 395031.0,
+      "ticker": "UNH",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

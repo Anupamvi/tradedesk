@@ -63,7 +63,7 @@ def quote_fail(bid, ask, oi, min_oi=MIN_OI, quote_source=None) -> Optional[str]:
     mid = (bid + ask) / 2.0
     width = ask - bid
     src = str(quote_source or "")
-    if src.startswith("schwab"):
+    if src == "schwab_quote":
         cap = max(QUOTE_WIDTH_ABS, 0.20 * mid)
     else:
         cap = quote_width_cap(mid)
@@ -408,7 +408,7 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
                         otm = (long_leg["strike"] / spot) - 1.0
                     else:
                         otm = 1.0 - (long_leg["strike"] / spot)
-                if otm is not None and (otm > 0.05 or (otm > 0.03 and (abs(use) < 0.38 or net_d < 0.12))):
+                if otm is not None and otm > 0.03:
                     kills["lottery_otm"] += 1
                     continue
                 pop, pop_note = naive_pop_debit_vertical(long_leg, short_leg, debit, side)

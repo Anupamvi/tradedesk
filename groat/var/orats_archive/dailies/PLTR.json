@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 169.95,
+      "clsPx": 169.46,
       "hiPx": 177.57,
       "loPx": 165.71,
       "open": 176.99,
       "stkVolu": 39873969.0,
       "ticker": "PLTR",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 182.53,
+      "hiPx": 185.83,
+      "loPx": 171.91,
+      "open": 172.5,
+      "stkVolu": 38107976.0,
+      "ticker": "PLTR",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 176.985,
+      "hiPx": 182.19,
+      "loPx": 175.75,
+      "open": 180.01,
+      "stkVolu": 8644407.0,
+      "ticker": "PLTR",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

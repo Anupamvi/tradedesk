@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 390.79,
+      "clsPx": 390.85,
       "hiPx": 394.89,
       "loPx": 386.0,
       "open": 391.275,
       "stkVolu": 1631294.0,
       "ticker": "ETN",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 397.12,
+      "hiPx": 397.87,
+      "loPx": 384.7701,
+      "open": 390.03,
+      "stkVolu": 1477441.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 409.27,
+      "hiPx": 409.45,
+      "loPx": 400.05,
+      "open": 400.9,
+      "stkVolu": 425446.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

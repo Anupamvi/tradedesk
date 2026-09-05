@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 183.85,
+      "clsPx": 183.6,
       "hiPx": 183.78,
       "loPx": 182.27,
       "open": 183.46,
       "stkVolu": 5706707.0,
       "ticker": "XLK",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 185.97,
+      "hiPx": 186.32,
+      "loPx": 182.49,
+      "open": 183.52,
+      "stkVolu": 6094599.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 187.35,
+      "hiPx": 188.2,
+      "loPx": 186.42,
+      "open": 187.19,
+      "stkVolu": 1681318.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

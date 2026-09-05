@@ -32,9 +32,16 @@ class TestFillPx(unittest.TestCase):
         self.assertLess(bid, 2.73)
         self.assertGreater(ask, 2.73)
 
+    def test_close_session_does_not_pad_mark(self):
+        bid, ask, src = fill_px({"bid": 0, "ask": 0, "last": 2.73, "mark": 2.70}, allow_stale_pad=False)
+        self.assertEqual(src, "none")
+        self.assertFalse(bid and bid > 0 and ask and ask > 0)
+
     def test_schwab_closed_market_width_allows_session_quotes(self):
         self.assertTrue(quote_ok(3.9, 4.45, 356, quote_source="schwab_quote"))
         self.assertFalse(quote_ok(3.9, 4.45, 356))
+        self.assertFalse(quote_ok(3.9, 4.45, 356, quote_source="schwab_mark"))
+        self.assertFalse(quote_ok(3.9, 4.45, 356, quote_source="schwab_last"))
 
 
 class TestOverlay(unittest.TestCase):

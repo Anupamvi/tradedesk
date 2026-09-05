@@ -90,6 +90,8 @@ def print_result(info: Dict[str, object]) -> None:
             print("option_slices=%s" % len(info.get("option_slices") or []))
         return
     print("regime=%s" % (info.get("regime_label") or ""))
+    if info.get("session"):
+        print("session=%s" % info.get("session"))
     print("orats_ok=%s" % (info.get("orats_ok") or 0))
     print("orats_http=%s" % (info.get("orats_http") or 0))
     print("orats_rows=%s" % (info.get("orats_rows") or 0))
@@ -134,13 +136,15 @@ def _prev_candidates(out_dir: Path, asof: str) -> Optional[dict]:
     dates = sorted(p.name for p in root.iterdir() if p.is_dir() and len(p.name) == 10 and p.name < asof)
     if not dates:
         return None
-    path = root / dates[-1] / "candidates.json"
-    if not path.is_file():
-        return None
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
+    folder = root / dates[-1]
+    for rel in ("close/candidates.json", "candidates.json", "open/candidates.json"):
+        path = folder / rel
+        if path.is_file():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+    return None
 
 
 def _review_rows(asof: str, built: dict) -> List[dict]:
@@ -214,6 +218,11 @@ def run(
         payload["error"] = ""
         return payload
     live = use_live_schwab(date, live_flag=live_schwab, no_schwab=no_schwab, today=today)
+    session = None
+    if cmd != "replay":
+        from groat.dates import session_phase
+
+        session = session_phase(date, today)
     built = build_full(
         date,
         token,
@@ -226,6 +235,8 @@ def run(
         cores_by_ticker=cores_by_ticker,
         strikes_by_ticker=strikes_by_ticker,
         vix_bars=vix_bars,
+        session=session,
+        out_dir=out_dir,
     )
     day = report.day_dir(out_dir, date)
     report.write_scan_artifacts(day, date, built)
@@ -269,6 +280,8 @@ def run(
         "watch_count": int(built.get("watch_count") or 0),
         "trades": [r.get("ticker") for r in (built.get("trades") or [])],
         "live_schwab": live,
+        "session": built.get("session") or "",
+        "session_incomplete": bool(built.get("session_incomplete")),
         "orats_ok": built.get("orats_ok") or 0,
         "orats_http": built.get("orats_http") or 0,
         "orats_rows": built.get("orats_rows") or 0,
@@ -285,6 +298,9 @@ def run(
         "evidence_http": ((built.get("evidence") or {}) if isinstance(built.get("evidence"), dict) else {}).get("http") or 0,
     }
     report.write_json(day / "manifest.json", manifest)
+    from groat.persist import copy_session_artifacts
+
+    copy_session_artifacts(day, str(built.get("session") or session or ""))
     built["date"] = date
     built["out_dir"] = str(day)
     built["live_schwab"] = live

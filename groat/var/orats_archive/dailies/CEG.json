@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 289.5,
+      "clsPx": 290.04,
       "hiPx": 290.81,
       "loPx": 277.88,
       "open": 280.0,
       "stkVolu": 2930844.0,
       "ticker": "CEG",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 285.05,
+      "hiPx": 296.62,
+      "loPx": 282.25,
+      "open": 292.4,
+      "stkVolu": 3138973.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 292.24,
+      "hiPx": 292.37,
+      "loPx": 284.04,
+      "open": 284.04,
+      "stkVolu": 428646.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 186.17,
+      "clsPx": 186.1,
       "hiPx": 189.89,
       "loPx": 184.08,
       "open": 188.0,
       "stkVolu": 4369531.0,
       "ticker": "ANET",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 191.44,
+      "hiPx": 192.0,
+      "loPx": 181.27,
+      "open": 185.25,
+      "stkVolu": 4111668.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 194.3582,
+      "hiPx": 197.1,
+      "loPx": 190.56,
+      "open": 192.82,
+      "stkVolu": 919697.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

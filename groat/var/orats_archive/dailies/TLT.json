@@ -2645,6 +2645,24 @@
       "stkVolu": 21454291.0,
       "ticker": "TLT",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 82.07,
+      "hiPx": 82.43,
+      "loPx": 82.06,
+      "open": 82.355,
+      "stkVolu": 18042011.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 82.37,
+      "hiPx": 82.5,
+      "loPx": 82.255,
+      "open": 82.29,
+      "stkVolu": 4870745.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

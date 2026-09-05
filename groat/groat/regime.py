@@ -71,12 +71,19 @@ def classify(
     if vix_px is not None and vix_px >= 28 and spy_ret5 is not None and spy_ret5 <= -0.03:
         label = "high_vol_liquidation"
         notes.append("VIX elevated with a sharp SPY decline")
-    elif trend == "strong_up" and (spy_ret20 or 0) > 0.01 and (iwm_rs20 is None or iwm_rs20 > -0.04):
-        label = "strong_risk_on"
-        notes.append("SPY stacked above 20/50/200 with a rising 20 EMA")
+    elif trend in ("up", "strong_up") and (spy_ret20 or 0) > 0.01 and (iwm_rs20 is None or iwm_rs20 > -0.04):
+        if trend == "strong_up":
+            label = "strong_risk_on"
+            notes.append("SPY stacked above 20/50/200 with a rising 20 EMA")
+        else:
+            label = "weak_risk_on"
+            notes.append("Uptrend with a positive 20-day return")
     elif trend in ("up", "strong_up") and spy_ret20 is not None and spy_ret20 < 0:
         label = "weak_risk_on"
         notes.append("Uptrend structure but 20-day return is negative")
+    elif trend in ("up", "strong_up"):
+        label = "weak_risk_on"
+        notes.append("Uptrend without a full 20-day thrust — selective, not a chase day")
     elif trend == "range" or (
         spy.get("ema20")
         and spy.get("sma50")
@@ -98,9 +105,6 @@ def classify(
     elif iwm_rs20 is not None and qqq_rs20 is not None and abs(iwm_rs20 - qqq_rs20) > 0.04:
         label = "rotation"
         notes.append("IWM and QQQ 20-day relative strength diverge")
-    elif trend == "up":
-        label = "weak_risk_on"
-        notes.append("Uptrend without full 20>50>200 stack")
     else:
         label = "unknown"
         notes.append("Tape does not match a clean regime bucket")

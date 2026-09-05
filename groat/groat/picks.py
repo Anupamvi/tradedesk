@@ -63,8 +63,8 @@ def score_option_ticket(row: dict) -> float:
     ret1 = to_float(row.get("ret_1"))
     if ret1 is not None and ret1 >= 0.12:
         s -= 10
-    elif ret1 is not None and 0.03 <= ret1 <= 0.11:
-        s += 3
+    elif ret1 is not None and ret1 >= 0.03:
+        s -= 6
     return s
 
 
@@ -109,27 +109,44 @@ def _fresh(row: dict) -> bool:
     return not row.get("in_book")
 
 
+def _desk_ticket_ok(row: dict) -> bool:
+    """Do not promote Crowded leftover or lottery OTM as the take."""
+    if str(row.get("x") or "") == "Crowded":
+        return False
+    otm = _otm_pct(row)
+    if otm is not None and otm > 0.03:
+        return False
+    d = abs(_net_delta(row) or 0)
+    if 0 < d < 0.12:
+        return False
+    return True
+
+
 def desk_picks(trades: List[dict]) -> Dict[str, object]:
     opts = [r for r in trades if r.get("choice") == "OPTIONS"]
     stocks = [r for r in trades if r.get("choice") == "STOCK"]
     fresh_opts = [r for r in opts if _fresh(r)]
     fresh_stocks = [r for r in stocks if _fresh(r)]
-    uncorr_opts = [r for r in fresh_opts if not r.get("book_group_held")]
-    uncorr_stocks = [r for r in fresh_stocks if not r.get("book_group_held")]
-    best_opt = max(uncorr_opts or fresh_opts, key=score_option_ticket) if fresh_opts else None
-    best_stk = max(uncorr_stocks or fresh_stocks, key=score_stock_ticket) if fresh_stocks else None
+    opt_pool = [r for r in fresh_opts if _desk_ticket_ok(r)]
+    stk_pool = [r for r in fresh_stocks if str(r.get("x") or "") != "Crowded"]
+    best_opt = max(opt_pool, key=score_option_ticket) if opt_pool else None
+    best_stk = max(stk_pool, key=score_stock_ticket) if stk_pool else None
     caution = []
     for row in opts:
         d = abs(_net_delta(row) or 0)
         if row.get("x") == "Crowded" or d < 0.10 or row.get("book_group_held"):
             caution.append(row)
     ranked_opts = sorted(opts, key=score_option_ticket, reverse=True)
+    none_note = ""
+    if fresh_opts and best_opt is None:
+        none_note = "No desk pick. Crowded leftover or >3% OTM is not a take. Empty is valid."
     return {
         "best_options": best_opt,
         "best_stock": best_stk,
         "caution": caution,
         "ranked_options": ranked_opts,
         "trade_names": [r.get("ticker") for r in trades if r.get("ticker")],
+        "none_note": none_note,
     }
 
 
@@ -204,7 +221,10 @@ def render_desk_picks(picks: dict) -> List[str]:
             lines.append(best_opt.get("held_note") or "Already held. Shown for visibility — do not add.")
         lines.append("")
     else:
-        if ranked:
+        none_note = str(picks.get("none_note") or "").strip()
+        if none_note:
+            lines.append("**Options:** %s" % none_note)
+        elif ranked:
             lines.append("**Options:** TRADE names are in book. Shown below for visibility — do not add.")
         else:
             lines.append("**Options:** none cleared. Valid.")

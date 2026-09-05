@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 258.44,
+      "clsPx": 256.93,
       "hiPx": 264.55,
       "loPx": 253.6,
       "open": 259.38,
       "stkVolu": 14393707.0,
       "ticker": "CRM",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 264.43,
+      "hiPx": 268.27,
+      "loPx": 261.6,
+      "open": 261.98,
+      "stkVolu": 16037830.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 260.19,
+      "hiPx": 263.6,
+      "loPx": 259.07,
+      "open": 263.36,
+      "stkVolu": 2379851.0,
+      "ticker": "CRM",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

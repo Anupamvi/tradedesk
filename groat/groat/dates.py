@@ -8,13 +8,45 @@ try:
 except ImportError:
     ZoneInfo = None
 
+# Regular session. Open auction is not a close list. After 16:00 ET is the daily close.
+RTH_OPEN_HOUR = 9
+RTH_OPEN_MINUTE = 45
+RTH_CLOSE_HOUR = 16
+RTH_CLOSE_MINUTE = 0
 
-def today_et() -> str:
+
+def now_et(now: Optional[datetime] = None) -> datetime:
+    if now is not None:
+        return now
     if ZoneInfo is not None:
-        now = datetime.now(ZoneInfo(PIT_TZ))
-    else:
-        now = datetime.now()
-    return now.date().isoformat()
+        return datetime.now(ZoneInfo(PIT_TZ))
+    return datetime.now()
+
+
+def today_et(now: Optional[datetime] = None) -> str:
+    return now_et(now).date().isoformat()
+
+
+def session_phase(asof: str, today: str = "", now: Optional[datetime] = None) -> str:
+    """open = pre/open auction; rth = 9:45–16:00 ET today; close = official session.
+
+    Historical asof < today is always close. After 16:00 ET on asof==today is close.
+    """
+    day = (asof or "")[:10]
+    today_s = (today or today_et(now))[:10]
+    if not day:
+        return "close"
+    if day < today_s:
+        return "close"
+    if day > today_s:
+        return "open"
+    stamp = now_et(now)
+    hm = stamp.hour * 60 + stamp.minute
+    if hm < RTH_OPEN_HOUR * 60 + RTH_OPEN_MINUTE:
+        return "open"
+    if hm >= RTH_CLOSE_HOUR * 60 + RTH_CLOSE_MINUTE:
+        return "close"
+    return "rth"
 
 
 def parse_ymd(value: str) -> Optional[str]:

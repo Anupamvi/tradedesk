@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 249.43,
+      "clsPx": 250.21,
       "hiPx": 253.58,
       "loPx": 249.25,
       "open": 253.21,
       "stkVolu": 242667.0,
       "ticker": "XAR",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 253.93,
+      "hiPx": 253.98,
+      "loPx": 249.2801,
+      "open": 253.1,
+      "stkVolu": 216852.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 253.175,
+      "hiPx": 255.0,
+      "loPx": 252.64,
+      "open": 253.0,
+      "stkVolu": 27204.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

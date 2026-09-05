@@ -67,6 +67,12 @@ def build_thesis(row: dict) -> dict:
         "Instrument shortlist picked **%s**. Invalidation: %s."
         % (choice, invalidation),
     ]
+    news = str(row.get("news") or "").strip()
+    filings = str(row.get("filings") or "").strip()
+    if news and news != "DATA UNAVAILABLE":
+        lines.append("News: %s." % news)
+    if filings and filings != "DATA UNAVAILABLE":
+        lines.append("Filings: %s." % filings)
     if choice == "NO TRADE":
         lines.append("No trade: edge is not objective enough to risk capital today.")
     headline = "%s — %s %s in %s %s" % (ticker, direction, setup_name, gstat, group)

@@ -35,14 +35,19 @@ def _conservative_band(px: float) -> Tuple[float, float]:
     return max(0.01, round(px - pad, 2)), round(px + pad, 2)
 
 
-def fill_px(leg: dict) -> Tuple[Optional[float], Optional[float], str]:
-    """Conservative fill: bid/ask if live-looking, else padded mark/last. Never invent."""
+def fill_px(leg: dict, allow_stale_pad: bool = True) -> Tuple[Optional[float], Optional[float], str]:
+    """Conservative fill: bid/ask if live-looking, else padded mark/last. Never invent.
+
+    After the close, allow_stale_pad=False — dead bid/ask stay dead so delayed ORATS remains.
+    """
     bid = to_float(leg.get("bid"))
     ask = to_float(leg.get("ask"))
     mark = to_float(leg.get("mark"))
     last = to_float(leg.get("last"))
     if bid is not None and ask is not None and bid > 0 and ask > 0 and ask >= bid:
         return bid, ask, "schwab_quote"
+    if not allow_stale_pad:
+        return bid, ask, "none"
     if mark is not None and mark > 0:
         lo, hi = _conservative_band(mark)
         return lo, hi, "schwab_mark"
@@ -134,11 +139,11 @@ def flatten_chain(payload: Optional[dict]) -> Dict[Tuple[str, float], dict]:
     return out
 
 
-def overlay_row(raw: dict, rec: dict) -> dict:
+def overlay_row(raw: dict, rec: dict, allow_stale_pad: bool = True) -> dict:
     row = dict(raw)
     call = rec.get("call") or {}
     put = rec.get("put") or {}
-    cb, ca, csrc = fill_px(call)
+    cb, ca, csrc = fill_px(call, allow_stale_pad=allow_stale_pad)
     if cb is not None and ca is not None:
         row["callBidPrice"] = cb
         row["callAskPrice"] = ca
@@ -155,7 +160,7 @@ def overlay_row(raw: dict, rec: dict) -> dict:
         row["theta"] = call["theta"]
     if call.get("vega") is not None:
         row["vega"] = call["vega"]
-    pb, pa, psrc = fill_px(put)
+    pb, pa, psrc = fill_px(put, allow_stale_pad=allow_stale_pad)
     if pb is not None and pa is not None:
         row["putBidPrice"] = pb
         row["putAskPrice"] = pa
@@ -171,7 +176,7 @@ def overlay_row(raw: dict, rec: dict) -> dict:
     return row
 
 
-def schwab_map_to_orats(flat: Dict[Tuple[str, float], dict], asof: str) -> List[dict]:
+def schwab_map_to_orats(flat: Dict[Tuple[str, float], dict], asof: str, allow_stale_pad: bool = True) -> List[dict]:
     rows = []
     for (expiry, strike), rec in sorted(flat.items()):
         dte = _dte(asof, expiry)
@@ -179,8 +184,8 @@ def schwab_map_to_orats(flat: Dict[Tuple[str, float], dict], asof: str) -> List[
             continue
         call = rec.get("call") or {}
         put = rec.get("put") or {}
-        cb, ca, csrc = fill_px(call)
-        pb, pa, psrc = fill_px(put)
+        cb, ca, csrc = fill_px(call, allow_stale_pad=allow_stale_pad)
+        pb, pa, psrc = fill_px(put, allow_stale_pad=allow_stale_pad)
         if (cb is None or ca is None) and (pb is None or pa is None):
             continue
         rows.append(
@@ -209,7 +214,7 @@ def schwab_map_to_orats(flat: Dict[Tuple[str, float], dict], asof: str) -> List[
     return rows
 
 
-def overlay_ticker(asof: str, orats_rows: Sequence[dict], flat: Dict[Tuple[str, float], dict]) -> List[dict]:
+def overlay_ticker(asof: str, orats_rows: Sequence[dict], flat: Dict[Tuple[str, float], dict], allow_stale_pad: bool = True) -> List[dict]:
     if not flat:
         return list(orats_rows or [])
     out = []
@@ -219,7 +224,7 @@ def overlay_ticker(asof: str, orats_rows: Sequence[dict], flat: Dict[Tuple[str, 
         strike = to_float(raw.get("strike"))
         rec = flat.get((expiry, float(strike))) if strike is not None else None
         if rec:
-            out.append(overlay_row(raw, rec))
+            out.append(overlay_row(raw, rec, allow_stale_pad=allow_stale_pad))
             seen.add((expiry, float(strike)))
         else:
             out.append(dict(raw))
@@ -237,7 +242,7 @@ def overlay_ticker(asof: str, orats_rows: Sequence[dict], flat: Dict[Tuple[str, 
             "stockPrice": rec.get("spot"),
             "spotPrice": rec.get("spot"),
         }
-        out.append(overlay_row(stub, rec))
+        out.append(overlay_row(stub, rec, allow_stale_pad=allow_stale_pad))
     return out
 
 
@@ -263,6 +268,7 @@ def overlay_strikes(
     strikes_by_ticker: Dict[str, list],
     chain_fn=None,
     errors: Optional[list] = None,
+    allow_stale_pad: bool = True,
 ) -> Dict[str, list]:
     if not schwab_credentials() and chain_fn is None:
         return dict(strikes_by_ticker)
@@ -283,7 +289,7 @@ def overlay_strikes(
             continue
         existing = out.get(ticker) or []
         if existing:
-            out[ticker] = overlay_ticker(asof, existing, flat)
+            out[ticker] = overlay_ticker(asof, existing, flat, allow_stale_pad=allow_stale_pad)
         else:
-            out[ticker] = schwab_map_to_orats(flat, asof)
+            out[ticker] = schwab_map_to_orats(flat, asof, allow_stale_pad=allow_stale_pad)
     return out

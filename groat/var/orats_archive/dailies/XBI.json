@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 164.63,
+      "clsPx": 165.37,
       "hiPx": 168.06,
       "loPx": 162.27,
       "open": 164.445,
       "stkVolu": 8653695.0,
       "ticker": "XBI",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 164.38,
+      "hiPx": 165.96,
+      "loPx": 162.85,
+      "open": 165.22,
+      "stkVolu": 5401012.0,
+      "ticker": "XBI",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 163.47,
+      "hiPx": 164.35,
+      "loPx": 162.51,
+      "open": 162.74,
+      "stkVolu": 1737760.0,
+      "ticker": "XBI",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

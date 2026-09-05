@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 376.6,
+      "clsPx": 305.84,
       "hiPx": 319.25,
       "loPx": 303.89,
       "open": 310.54,
       "stkVolu": 11649536.0,
       "ticker": "SNOW",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 356.47,
+      "hiPx": 384.56,
+      "loPx": 355.47,
+      "open": 377.245,
+      "stkVolu": 21835875.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 352.315,
+      "hiPx": 356.83,
+      "loPx": 344.63,
+      "open": 353.63,
+      "stkVolu": 2796154.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

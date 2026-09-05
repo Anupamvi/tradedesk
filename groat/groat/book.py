@@ -127,7 +127,7 @@ def schwab_held_index(rows: Optional[List[dict]] = None) -> Dict[str, dict]:
         if not ticker:
             continue
         slot = out.setdefault(ticker, {"held_schwab": True, "source": "schwab", "legs": []})
-        occ = parse_occ(str(pos.get("ticker") or ""))
+        occ = parse_occ(str(pos.get("symbol") or pos.get("ticker") or ""))
         slot["legs"].append(
             {
                 "symbol": pos.get("ticker"),

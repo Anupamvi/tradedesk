@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 501.86,
+      "clsPx": 501.44,
       "hiPx": 504.02,
       "loPx": 493.31,
       "open": 498.18,
       "stkVolu": 5813323.0,
       "ticker": "SOXX",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 502.2,
+      "hiPx": 503.317,
+      "loPx": 489.21,
+      "open": 496.64,
+      "stkVolu": 6445566.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 517.485,
+      "hiPx": 520.11,
+      "loPx": 507.25,
+      "open": 509.31,
+      "stkVolu": 3392969.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

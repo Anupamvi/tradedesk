@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 235.8,
+      "clsPx": 234.86,
       "hiPx": 236.44,
       "loPx": 229.39,
       "open": 233.375,
       "stkVolu": 2433874.0,
       "ticker": "ARM",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 242.59,
+      "hiPx": 244.07,
+      "loPx": 225.46,
+      "open": 231.09,
+      "stkVolu": 3994254.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 253.82,
+      "hiPx": 255.69,
+      "loPx": 247.51,
+      "open": 248.59,
+      "stkVolu": 1565564.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

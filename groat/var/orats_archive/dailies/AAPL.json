@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 324.83,
+      "clsPx": 324.96,
       "hiPx": 328.4,
       "loPx": 323.53,
       "open": 326.865,
       "stkVolu": 33776370.0,
       "ticker": "AAPL",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 328.21,
+      "hiPx": 330.81,
+      "loPx": 324.11,
+      "open": 324.87,
+      "stkVolu": 37225838.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 320.82,
+      "hiPx": 328.93,
+      "loPx": 320.44,
+      "open": 328.305,
+      "stkVolu": 10199404.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

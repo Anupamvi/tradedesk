@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 104.47,
+      "clsPx": 103.42,
       "hiPx": 105.31,
       "loPx": 102.5998,
       "open": 105.265,
       "stkVolu": 12271027.0,
       "ticker": "IGV",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 106.95,
+      "hiPx": 107.41,
+      "loPx": 105.05,
+      "open": 105.21,
+      "stkVolu": 9980755.0,
+      "ticker": "IGV",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 104.78,
+      "hiPx": 106.22,
+      "loPx": 104.56,
+      "open": 105.9,
+      "stkVolu": 3719540.0,
+      "ticker": "IGV",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

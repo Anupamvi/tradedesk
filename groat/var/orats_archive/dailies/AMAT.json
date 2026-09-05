@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 438.79,
+      "clsPx": 438.46,
       "hiPx": 443.5,
       "loPx": 433.57,
       "open": 443.5,
       "stkVolu": 6523059.0,
       "ticker": "AMAT",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 435.91,
+      "hiPx": 437.1433,
+      "loPx": 426.13,
+      "open": 432.415,
+      "stkVolu": 6004455.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 455.185,
+      "hiPx": 460.2,
+      "loPx": 443.36,
+      "open": 452.5,
+      "stkVolu": 1912874.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

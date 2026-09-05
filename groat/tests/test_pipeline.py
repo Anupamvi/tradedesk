@@ -165,6 +165,20 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(names[0], "DELL")
         self.assertEqual(len(names), 40)
 
+    def test_de_names_are_not_chopped_by_chain_cap(self):
+        prelim = []
+        for i in range(45):
+            prelim.append(
+                (
+                    "D%s" % i,
+                    {"primary": "D", "direction": "bullish", "setups": ["D"], "fire": {}},
+                    {"rs_20": 0.20 - i * 0.001},
+                )
+            )
+        names = select_option_names(prelim, {}, cap=40)
+        self.assertEqual(len(names), 45)
+        self.assertIn("D44", names)
+
     def test_choose_says_not_requested_not_fetch_fail(self):
         snap = {"close": 100, "atr14": 2, "ema20": 99, "extension_atr": 0.2, "primary": "A"}
         vol = {"iv30": 20, "hv20": 25, "vrp": -5}
@@ -235,6 +249,10 @@ class TestPipeline(unittest.TestCase):
         self.assertGreaterEqual(score_row(e, "weak_risk_on", "accelerating"), 52)
         # Original bug: D maxed at 51 so only energy E could TRADE.
         self.assertGreater(score_row(d, "weak_risk_on", "mature"), score_row(a, "weak_risk_on", "accelerating"))
+        crowded = dict(base, primary="D", x="Crowded")
+        ripped = dict(base, primary="D", ret_1=0.04)
+        self.assertLess(score_row(crowded, "weak_risk_on", "mature"), 52)
+        self.assertLess(score_row(ripped, "weak_risk_on", "mature"), 52)
 
     def test_analog_veto_parks_one_name_not_the_book(self):
         pltr = {

@@ -226,17 +226,14 @@ def find_stock_analogs(
     hist_rows: Optional[list],
     core: Optional[dict],
     limit: int = EVIDENCE_MAX_ANALOGS,
+    pinned_dates: Optional[Sequence[str]] = None,
 ) -> Dict[str, Any]:
     days = [str(b.get("date") or "")[:10] for b in bars if str(b.get("date") or "")[:10] < asof]
     days = [d for d in days if len(d) == 10]
     chase_n = 0
     scanned = 0
-    hits = []
+    qualifying = []
     for day in reversed(days):
-        if len(hits) >= limit:
-            break
-        if _overlaps(day, hits, bars):
-            continue
         snap = snapshot(bars, day, bench_bars=spy_bars)
         scanned += 1
         if not snap.get("ok") or snap.get("stale"):
@@ -260,7 +257,7 @@ def find_stock_analogs(
             continue
         if outcome.get("result") == "time" and int(outcome.get("hold") or 0) < HOLD_SESSIONS:
             continue
-        hits.append(
+        qualifying.append(
             {
                 "date": day,
                 "primary": primary,
@@ -275,7 +272,30 @@ def find_stock_analogs(
                 "hold": outcome.get("hold"),
             }
         )
-    return {"hits": hits, "chase_skipped": chase_n, "scanned": scanned}
+    qualifying.sort(key=lambda h: h.get("date") or "")
+    by_date = {h.get("date"): h for h in qualifying}
+    hits = []
+    seen_dates = set()
+    for day in pinned_dates or []:
+        hit = by_date.get(day)
+        if not hit:
+            continue
+        if len(hits) >= limit:
+            break
+        if _overlaps(hit.get("date") or "", hits, bars):
+            continue
+        hits.append(hit)
+        seen_dates.add(hit.get("date"))
+    for hit in qualifying:
+        if len(hits) >= limit:
+            break
+        if hit.get("date") in seen_dates:
+            continue
+        if _overlaps(hit.get("date") or "", hits, bars):
+            continue
+        hits.append(hit)
+        seen_dates.add(hit.get("date"))
+    return {"hits": hits, "chase_skipped": chase_n, "scanned": scanned, "qualifying_n": len(qualifying)}
 
 
 def _stock_sum_with_fast(hits: List[dict]) -> dict:
@@ -340,7 +360,7 @@ def _fetch_analog_strikes(
         token or "",
         today,
         getter=getter,
-        max_requests=(max_requests if use_http else 0),
+        max_requests=(None if use_http else 0),
         dte=STRIKE_DTE,
     )
     budget[0] += int(pack.get("http") or 0)
@@ -359,6 +379,7 @@ def attach_evidence(
     getter=None,
     max_requests: Optional[int] = None,
     allow_orats_http: bool = False,
+    prior_analog: Optional[dict] = None,
 ) -> dict:
     hist_e = dict(hist_e or {})
     cores = cores or {}
@@ -425,6 +446,7 @@ def attach_evidence(
             spy_bars,
             hist_e.get(ticker),
             cores.get(ticker),
+            pinned_dates=((prior_analog or {}).get((ticker, primary)) or {}).get("dates") if prior_analog else None,
         )
         hits = analog.get("hits") or []
         stock_sum = _stock_sum_with_fast(hits)
@@ -513,6 +535,7 @@ def attach_evidence(
             "options": opt_sum,
             "chase_skipped": analog.get("chase_skipped") or 0,
             "hits": hits,
+            "analog_dates": [h.get("date") for h in hits if h.get("date")],
             "opt_rows": opt_rows,
             "weak": weak,
             "analog_veto": veto,
@@ -526,9 +549,17 @@ def attach_evidence(
             "options": opt_sum,
             "weak": weak,
             "analog_veto": veto,
+            "analog_dates": row.get("analog_dates") or [],
             "note": row["note"],
         }
         rows.append(row)
+    analog_unpriced = False
+    for row in rows:
+        if row.get("choice") != "OPTIONS":
+            continue
+        if int((row.get("options") or {}).get("n") or 0) == 0 and (row.get("opt_rows") or row.get("hits")):
+            analog_unpriced = True
+            break
     if picks is not None:
         weak_names = [r["ticker"] for r in rows if r.get("weak") and not r.get("analog_veto")]
         if weak_names:
@@ -541,6 +572,7 @@ def attach_evidence(
         "strike_http": strike_budget[0],
         "earnings_http": earn_http,
         "http": strike_budget[0] + earn_http,
+        "analog_options_unpriced": analog_unpriced,
         "note": (
             "Same ticker + same setup on cached tape — not this ticket's P(win). "
             "Options use hist/strikes when cached or under the daily cap. "

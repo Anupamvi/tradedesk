@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 146.25,
+      "clsPx": 145.75,
       "hiPx": 146.69,
       "loPx": 139.72,
       "open": 140.26,
       "stkVolu": 21906714.0,
       "ticker": "ORCL",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 154.04,
+      "hiPx": 156.77,
+      "loPx": 146.92,
+      "open": 147.27,
+      "stkVolu": 25101731.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 158.41,
+      "hiPx": 159.7,
+      "loPx": 156.91,
+      "open": 159.455,
+      "stkVolu": 9524191.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

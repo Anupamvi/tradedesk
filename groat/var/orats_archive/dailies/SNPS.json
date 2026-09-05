@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 415.8,
+      "clsPx": 415.97,
       "hiPx": 418.725,
       "loPx": 410.52,
       "open": 413.78,
       "stkVolu": 1270060.0,
       "ticker": "SNPS",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 416.31,
+      "hiPx": 419.84,
+      "loPx": 413.11,
+      "open": 419.1,
+      "stkVolu": 1459327.0,
+      "ticker": "SNPS",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 383.25,
+      "hiPx": 418.12,
+      "loPx": 382.155,
+      "open": 418.12,
+      "stkVolu": 946099.0,
+      "ticker": "SNPS",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

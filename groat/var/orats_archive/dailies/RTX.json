@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 201.2267,
+      "clsPx": 200.78,
       "hiPx": 206.88,
       "loPx": 200.31,
       "open": 206.88,
       "stkVolu": 4694226.0,
       "ticker": "RTX",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 202.13,
+      "hiPx": 202.665,
+      "loPx": 200.1,
+      "open": 202.0,
+      "stkVolu": 3706633.0,
+      "ticker": "RTX",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 200.7,
+      "hiPx": 201.6357,
+      "loPx": 199.04,
+      "open": 200.77,
+      "stkVolu": 660437.0,
+      "ticker": "RTX",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

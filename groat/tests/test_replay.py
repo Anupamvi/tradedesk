@@ -21,7 +21,7 @@ class TestReplay(unittest.TestCase):
         asof = "2026-08-26"
         spy = trend_bars(220, end=asof, start_px=500, slope=0.3)
         igv = trend_bars(220, end=asof, start_px=80, slope=0.6)
-        now = trend_bars(220, end=asof, start_px=90, slope=0.55)
+        now = trend_bars(220, end=asof, start_px=90, slope=0.25, pullback=1.2)
         payload = run_replay(
             asof,
             token="",
@@ -54,6 +54,11 @@ class TestGates(unittest.TestCase):
             "setup_E_post_rip",
         )
         self.assertIsNone(trade_park_reason("E", {"ret_1": 0.02, "extension_atr": 1.0}, {}))
+        self.assertEqual(
+            trade_park_reason("D", {"ret_1": 0.03, "extension_atr": 1.0}, {}),
+            "setup_D_post_rip",
+        )
+        self.assertIsNone(trade_park_reason("D", {"ret_1": 0.02, "extension_atr": 1.0}, {}))
 
     def test_same_group_book_parks_new_name_not_held_ticker(self):
         xle = {"ticker": "XLE", "action": "TRADE", "group": "energy", "reasons": []}
@@ -66,6 +71,7 @@ class TestGates(unittest.TestCase):
         self.assertEqual(cvx["action"], "TRADE")
         self.assertEqual(apply_same_group_book_park(now, {"energy", "software"}, {"CVX", "SHOP"}), "same_group_in_book")
         self.assertEqual(now["action"], "TRADE")
+        self.assertTrue(now.get("book_group_held"))
 
     def test_analog_0win_needs_n4_and_no_wins(self):
         self.assertEqual(
@@ -80,7 +86,7 @@ class TestGates(unittest.TestCase):
         self.assertIsNone(analog_0win_reason({"n": 3, "wins": 0, "avg_r": -0.50}))
         self.assertIsNone(analog_0win_reason({"n": 4, "wins": 1, "avg_r": -0.20}))
         self.assertIsNone(analog_0win_reason({"n": 4, "wins": 2, "avg_r": 0.10}))
-        self.assertEqual(analog_0win_reason({"n": 4, "wins": 0, "avg_r": 0.05}), "analog_0win_veto")
+        self.assertIsNone(analog_0win_reason({"n": 4, "wins": 0, "avg_r": 0.05}))
         self.assertIsNone(analog_0win_reason({"n": 0, "wins": 0, "avg_r": None}))
         self.assertIsNone(analog_0win_reason(None))
 
@@ -252,7 +258,8 @@ class TestGates(unittest.TestCase):
         self.assertIn("146.23", row["picked"]["invalidation"])
         self.assertEqual(row["fill_guard"]["stock_min"], 146.23)
         self.assertEqual(row["fill_guard"]["debit_max"], 4.0)
-        self.assertNotIn("131.14", row["fill_note"])
+        self.assertIn("131.14", row["fill_note"])
+        self.assertIn("AVWAP", row["fill_note"])
 
     def test_review_exits_call_debit_below_ema_even_without_book_stop(self):
         shop = open_trade_verdict(

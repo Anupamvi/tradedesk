@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 597.99,
+      "clsPx": 592.85,
       "hiPx": 600.38,
       "loPx": 577.0,
       "open": 578.785,
       "stkVolu": 16552678.0,
       "ticker": "META",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 610.68,
+      "hiPx": 619.46,
+      "loPx": 604.35,
+      "open": 604.49,
+      "stkVolu": 19737139.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 612.92,
+      "hiPx": 616.33,
+      "loPx": 605.27,
+      "open": 612.35,
+      "stkVolu": 4086106.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

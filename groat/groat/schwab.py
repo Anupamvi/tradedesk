@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from groat.config import CODE_DIR
-from groat.dates import today_et
+from groat.dates import today_et, session_phase
 from groat.envload import schwab_credentials
 from groat.num import to_float
 
@@ -194,6 +194,8 @@ def price_history_bars(ticker: str, asof: str, lookback_days: int = 420, use_cac
 def quote_bar(ticker: str, asof: str) -> Optional[dict]:
     if asof != today_et():
         return None
+    if session_phase(asof, asof) != "rth":
+        return None
     token = _access_token()
     if not token:
         return None
@@ -217,7 +219,9 @@ def quote_bar(ticker: str, asof: str) -> Optional[dict]:
                 return val
         return None
 
-    last = num("lastPrice", "regularMarketLastPrice", "mark", "closePrice")
+    last = num("regularMarketLastPrice", "lastPrice", "mark")
+    if last is None:
+        last = num("closePrice")
     if last is None:
         return None
     high = num("highPrice", "regularMarketDayHigh") or last
@@ -229,6 +233,8 @@ def quote_bar(ticker: str, asof: str) -> Optional[dict]:
 
 def quotes_many(tickers, asof: str) -> Dict[str, dict]:
     if asof != today_et():
+        return {}
+    if session_phase(asof, asof) != "rth":
         return {}
     token = _access_token()
     if not token:
@@ -246,7 +252,12 @@ def quotes_many(tickers, asof: str) -> Dict[str, dict]:
             if not isinstance(wrap, dict):
                 continue
             q = wrap.get("quote") if isinstance(wrap.get("quote"), dict) else wrap
-            last = to_float(q.get("lastPrice")) or to_float(q.get("mark")) or to_float(q.get("closePrice"))
+            last = (
+                to_float(q.get("regularMarketLastPrice"))
+                or to_float(q.get("lastPrice"))
+                or to_float(q.get("mark"))
+                or to_float(q.get("closePrice"))
+            )
             if last is None:
                 continue
             out[str(key).upper()] = {
@@ -278,11 +289,18 @@ def option_chain(ticker: str, from_date: str, to_date: str) -> Optional[dict]:
     return _get_json("%s/chains?%s" % (MARKET, query), token, timeout=60.0)
 
 
-def positions_all() -> List[dict]:
+def load_positions() -> tuple:
+    """Return (rows, error). Empty rows with no error means a real empty book. Failed fetch is an error."""
+    from groat.book import underlying_symbol
+
+    if not schwab_credentials():
+        return [], ""
     token = _access_token()
     if not token:
-        return []
+        return [], "schwab_positions: token unusable"
     payload = _get_json("%s/accounts?fields=positions" % TRADER, token, timeout=45.0)
+    if payload is None:
+        return [], "schwab_positions: DATA UNAVAILABLE"
     rows = []
     accounts = payload if isinstance(payload, list) else []
     if isinstance(payload, dict):
@@ -295,13 +313,26 @@ def positions_all() -> List[dict]:
             if not isinstance(pos, dict):
                 continue
             inst = pos.get("instrument") or {}
+            raw = str(inst.get("symbol") or "").upper()
+            asset = str(inst.get("assetType") or "")
+            under = str(inst.get("underlyingSymbol") or "").upper()
+            if asset.upper() == "OPTION" and under:
+                ticker = under
+            else:
+                ticker = underlying_symbol(raw) or under or raw
             rows.append(
                 {
-                    "ticker": str(inst.get("symbol") or "").upper(),
-                    "asset": str(inst.get("assetType") or ""),
+                    "ticker": ticker,
+                    "symbol": raw,
+                    "asset": asset,
                     "quantity": pos.get("longQuantity") or pos.get("shortQuantity"),
                     "average_price": pos.get("averagePrice"),
                     "market_value": pos.get("marketValue"),
                 }
             )
+    return rows, ""
+
+
+def positions_all() -> List[dict]:
+    rows, _err = load_positions()
     return rows

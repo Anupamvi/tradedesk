@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 498.0,
+      "clsPx": 496.82,
       "hiPx": 500.27,
       "loPx": 493.81,
-      "open": 499.85,
+      "open": 500.17,
       "stkVolu": 15336074.0,
       "ticker": "MSFT",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 510.12,
+      "hiPx": 515.65,
+      "loPx": 500.8,
+      "open": 501.66,
+      "stkVolu": 24125893.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 502.4351,
+      "hiPx": 511.0,
+      "loPx": 501.44,
+      "open": 510.0,
+      "stkVolu": 4017508.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

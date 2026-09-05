@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "planner": {
+    "amount": 100000.0,
+    "weekly": 0.0,
+    "monthly": 0.0
+  },
+  "book": {
+    "positions": {
+      "VOO": {
+        "cost": 0.0,
+        "current": 0.0,
+        "shares": 0.0
+      },
+      "VGT": {
+        "cost": 0.0,
+        "current": 0.0,
+        "shares": 0.0
+      },
+      "SMH": {
+        "cost": 0.0,
+        "current": 0.0,
+        "shares": 0.0
+      },
+      "VB": {
+        "cost": 0.0,
+        "current": 0.0,
+        "shares": 0.0
+      },
+      "VXUS": {
+        "cost": 0.0,
+        "current": 0.0,
+        "shares": 0.0
+      },
+      "GLDM": {
+        "cost": 0.0,
+        "current": 0.0,
+        "shares": 0.0
+      },
+      "VGSH": {
+        "cost": 0.0,
+        "current": 0.0,
+        "shares": 0.0
+      }
+    },
+    "holdings": {
+      "VOO": 0.0,
+      "VGT": 0.0,
+      "SMH": 0.0,
+      "VB": 0.0,
+      "VXUS": 0.0,
+      "GLDM": 0.0,
+      "VGSH": 0.0
+    },
+    "monthly_add": 0.0,
+    "compare_to": "default",
+    "submitted_at": null,
+    "marked_at": null,
+    "last_refresh": null
+  }
+}

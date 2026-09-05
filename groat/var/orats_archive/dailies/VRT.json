@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 257.02,
+      "clsPx": 256.7,
       "hiPx": 260.05,
       "loPx": 251.5,
       "open": 254.97,
       "stkVolu": 3014437.0,
       "ticker": "VRT",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 268.83,
+      "hiPx": 270.99,
+      "loPx": 254.5,
+      "open": 256.49,
+      "stkVolu": 4245904.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 274.59,
+      "hiPx": 277.82,
+      "loPx": 271.2,
+      "open": 273.945,
+      "stkVolu": 895975.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

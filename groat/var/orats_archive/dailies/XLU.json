@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 42.5594,
+      "clsPx": 42.67,
       "hiPx": 42.71,
       "loPx": 42.02,
       "open": 42.4,
       "stkVolu": 29770593.0,
       "ticker": "XLU",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 43.03,
+      "hiPx": 43.13,
+      "loPx": 42.77,
+      "open": 42.82,
+      "stkVolu": 22880343.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 43.11,
+      "hiPx": 43.18,
+      "loPx": 42.75,
+      "open": 42.77,
+      "stkVolu": 4408254.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 28.1216,
+      "clsPx": 28.17,
       "hiPx": 28.175,
       "loPx": 28.12,
       "open": 28.17,
       "stkVolu": 1047456.0,
       "ticker": "UUP",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 28.01,
+      "hiPx": 28.025,
+      "loPx": 27.9549,
+      "open": 27.99,
+      "stkVolu": 2009573.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 28.045,
+      "hiPx": 28.0598,
+      "loPx": 28.03,
+      "open": 28.04,
+      "stkVolu": 141911.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

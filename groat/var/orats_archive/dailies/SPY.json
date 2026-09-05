@@ -1,24 +1,6 @@
 {
   "data": [
     {
-      "clsPx": 624.06,
-      "hiPx": 624.72,
-      "loPx": 620.9105,
-      "open": 622.77,
-      "stkVolu": 66113326.0,
-      "ticker": "SPY",
-      "tradeDate": "2025-07-09"
-    },
-    {
-      "clsPx": 625.82,
-      "hiPx": 626.8701,
-      "loPx": 623.01,
-      "open": 624.2,
-      "stkVolu": 57528960.0,
-      "ticker": "SPY",
-      "tradeDate": "2025-07-10"
-    },
-    {
       "clsPx": 623.62,
       "hiPx": 624.86,
       "loPx": 621.53,
@@ -2611,13 +2593,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 765.37,
+      "clsPx": 765.16,
       "hiPx": 766.43,
       "loPx": 761.73,
       "open": 762.45,
       "stkVolu": 29566216.0,
       "ticker": "SPY",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 773.17,
+      "hiPx": 774.03,
+      "loPx": 767.45,
+      "open": 767.9,
+      "stkVolu": 43531581.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 771.0,
+      "hiPx": 772.87,
+      "loPx": 770.73,
+      "open": 772.01,
+      "stkVolu": 7500799.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

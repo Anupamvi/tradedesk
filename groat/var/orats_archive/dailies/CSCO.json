@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 109.24,
+      "clsPx": 109.455,
       "hiPx": 110.51,
       "loPx": 108.395,
       "open": 110.315,
       "stkVolu": 11371861.0,
       "ticker": "CSCO",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 108.61,
+      "hiPx": 109.67,
+      "loPx": 107.6,
+      "open": 108.8,
+      "stkVolu": 14219126.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 109.71,
+      "hiPx": 110.355,
+      "loPx": 109.24,
+      "open": 109.64,
+      "stkVolu": 2136635.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

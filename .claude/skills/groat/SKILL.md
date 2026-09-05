@@ -47,7 +47,7 @@ python3 -m groat review --date DATE
 python3 -m groat replay --date DATE --option-slices 3 --max-strike-http 40
 ```
 
-`groat replay` / `groat replay YYYY-MM-DD` is **Python on cached tape**, not an LLM mode. Surviving setups only (park B/C/G; park post-rip E). Stock walk is free; `--option-slices N --max-strike-http 40` prices options on those hits only.
+`groat replay` / `groat replay YYYY-MM-DD` is **Python on cached tape**, not an LLM mode. Surviving setups only (park B/C/G/H; park post-rip D at 3% 1d and E at 12% 1d). Stock walk is free; `--option-slices N --max-strike-http 40` prices options on those hits only.
 
 If `ORATS_TOKEN` is missing (exit 2), tell the user to edit `CODE/.env` or run `read -s ORATS_TOKEN && export ORATS_TOKEN`. Do not ask them to paste the token. Never print it.
 
@@ -59,12 +59,14 @@ Every `full` / `delta` / `analyze` **always refreshes**: ORATS cores, ORATS stri
 
 **Do not place last evening’s option ticket blindly at 9:30 ET.**
 
-- **Evening (16:30–18:00 ET)** is the **daily list**: full session 1d/rvol/FIRE, Delayed ORATS cores/strikes for that close, analog evidence. That is the default daily `groat`.
-- **Overnight / open can change the setup materially:** gap through stop or AVWAP, IV/ask on the debit, chase if the name rips again, news/AH earnings. Stock thesis often survives a quiet open. **Option fills from last night are stale.**
-- **Morning:** if they want to **click orders**, re-run `groat full --date TODAY` after **~9:45–10:15 ET** (open auction done). Then work **today’s** debit/credit, not last night’s print. Skip names that gapped >1 ATR against the stop or are now extended >2.5 ATR.
-- Do **not** make morning the only daily run. Delayed ORATS + incomplete 1d bars at 9:30 will mis-rank FIRE/X-HOT.
+- **Evening (after 16:00 ET)** is the **daily list**: official close only (no AH last overwrite, no mark-padded fills labeled as close). Writes `out/groat/DATE/` and copies to `out/groat/DATE/close/`.
+- **Morning / open auction (before 9:45 ET)** is incomplete: new TRADE is blocked. After ~9:45–10:15 ET, re-run if placing. Copies to `out/groat/DATE/open/`. Do not overwrite close with open or vice versa.
+- Same ticker+setup that was TRADE last **complete** session stays WATCH unless it pulled back into 20 EMA / AVWAP or group_status changed. Incomplete morning `open/` is not the TRADE prior — evening still uses yesterday close.
+- Same-group as an open book name (e.g. XOM while CVX energy is open) stays TRADE with a caveat. Your decision whether to add a lot.
+- Crowded leftover and >3% OTM lottery are not a desk pick. Empty desk pick is valid.
+- Regime **unknown** and incomplete session block new TRADE.
 
-Cadence: evening full scan → watchlist. Next session: morning revalidate only if placing.
+Cadence: evening full scan → watchlist. Next session: morning revalidate only if placing. Do **not** place last evening’s option ticket blindly at 9:30 ET.
 
 ## X before / after the Python scan
 
@@ -82,9 +84,14 @@ Bias: `bullish` / `bearish` / `unknown`. Downweight pumps. Re-run Groat so tape 
 
 After the scan:
 
-1. Read `board.md` — **Desk pick first**, then **Evidence**.
-2. X on `x_queue.json`. Write `CODE/var/xintel/DATE/TICKER.json` (`tag` Quiet|Informed|Crowded). Re-run if tags were missing.
-3. Missing X → **DATA UNAVAILABLE**. Do not invent posts. Do not change ORATS/price/debit/credit numbers.
+CLI prints `x_missing_on_trade=...` and exits **3** if any TRADE row has no X tag. That run is incomplete. Do not show that board to the user yet.
+
+1. Read `x_queue.json` and every TRADE ticker (WATCH after that).
+2. Search X for each. Write `CODE/var/xintel/DATE/TICKER.json` (`tag` Quiet|Informed|Crowded). Promo spam = Crowded.
+3. If `x_missing_on_trade` is not `none`, re-run `python3 -m groat full --date DATE` and only then reply.
+- Do not invent posts. Do not change ORATS/price/debit/credit numbers. Missing X stays **DATA UNAVAILABLE** — never map it to Quiet.
+- X-HOT `hot.json` is a heat lane. It does **not** satisfy `var/xintel/DATE/TICKER.json`. Exit 3 still applies.
+- Optional catalysts: `var/news/DATE/TICKER.json` and `var/filings/DATE/TICKER.json` (`summary`). Missing stays **DATA UNAVAILABLE**. Do not invent news.
 
 ## Reply shape
 
@@ -121,4 +128,5 @@ After the scan:
 - **conf** is structure quality 0–85, not P(win).
 - Prefer 2:1 R/R. Risk 0.5–1% of the 50k research account.
 - Do not chase >2.5 ATR above 20 EMA.
+- D post-rip parks at ≥3% 1d; E at ≥12% 1d.
 - Do not import other desks as the execute path.

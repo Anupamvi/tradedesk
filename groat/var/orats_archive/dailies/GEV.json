@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 922.4,
+      "clsPx": 921.94,
       "hiPx": 927.49,
       "loPx": 882.97,
       "open": 898.53,
       "stkVolu": 2654511.0,
       "ticker": "GEV",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 941.84,
+      "hiPx": 948.35,
+      "loPx": 908.06,
+      "open": 924.56,
+      "stkVolu": 1764380.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 950.395,
+      "hiPx": 959.0,
+      "loPx": 945.33,
+      "open": 950.0,
+      "stkVolu": 392171.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 364.2268,
+      "clsPx": 367.24,
       "hiPx": 371.09,
       "loPx": 364.65,
       "open": 369.68,
       "stkVolu": 38874578.0,
       "ticker": "AVGO",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 357.16,
+      "hiPx": 359.4,
+      "loPx": 342.3305,
+      "open": 351.74,
+      "stkVolu": 60242595.0,
+      "ticker": "AVGO",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 355.8006,
+      "hiPx": 360.16,
+      "loPx": 354.43,
+      "open": 359.7,
+      "stkVolu": 9576712.0,
+      "ticker": "AVGO",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

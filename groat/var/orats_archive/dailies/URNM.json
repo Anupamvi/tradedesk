@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 55.0,
+      "clsPx": 54.95,
       "hiPx": 56.04,
       "loPx": 54.16,
       "open": 54.72,
       "stkVolu": 510029.0,
       "ticker": "URNM",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 57.2,
+      "hiPx": 57.46,
+      "loPx": 56.39,
+      "open": 56.39,
+      "stkVolu": 638661.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 57.01,
+      "hiPx": 57.36,
+      "loPx": 56.29,
+      "open": 56.56,
+      "stkVolu": 79854.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-04"
     }
   ]
 }
