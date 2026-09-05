@@ -133,3 +133,9 @@ python3 -m uwos.pattern_analysis_v2 \
 - Future pattern-pipeline work should happen in `uwos/options_pattern_pipeline_v1/` or a newly named successor package such as `uwos/options_pattern_pipeline_v2/`.
 - If a future change needs rollback to V1 behavior, restore from `uwos/options_pattern_pipeline_v1_frozen_v1/` instead of reconstructing the code manually.
 - Before committing future pattern-pipeline changes, verify that `uwos/options_pattern_pipeline_v1_frozen_v1/` has no accidental diff.
+
+## Model policy (repo-wide)
+
+- **Composer 2.5** or **Grok 4.6** (non-fast) only — never Claude, GPT, or Gemini.
+- Never spawn `computerUse` or `mediaReview`. Use tests or **cursor-ide-browser** MCP for UI checks.
+- Enforced by `.cursor/hooks/` on this repo (all cloud agents on `anupamvi/tradedesk`). See `.cursor/rules/composer-grok-only.mdc`.

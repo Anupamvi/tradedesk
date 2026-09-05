@@ -1,0 +1,16 @@
+---
+description: Composer/Grok only — never spawn Other-Models subagents (entire tradedesk repo)
+alwaysApply: true
+---
+
+# Model policy (all desks, all branches)
+
+Parent agent: **Composer 2.5** or **Grok 4.6** (non-fast). Protect the **Other Models** pool.
+
+## Never spawn
+
+- `computerUse` (Claude) — use **cursor-ide-browser** MCP or repo tests
+- `mediaReview` (Gemini)
+- Subagents on Claude, GPT, Gemini, or `*-fast` models
+
+Repo hook `.cursor/hooks/deny-non-composer-subagents.sh` enforces this for cloud agents on this repo.
