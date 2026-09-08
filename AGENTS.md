@@ -69,6 +69,20 @@ python3 -m groat full --date YYYY-MM-DD
 - Output: `/Users/anuppamvi/tradedesk/groat/out/groat/YYYY-MM-DD/`
 - ORATS token lives in `groat/.env`. Schwab fills from `groat/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, prices, X posts, or news.
 
+## Trendbook Default
+
+- Treat `trendbook`, `trend book`, and `weekly trend` as the **trendbook** weekly Stage 2 / relative-strength desk under `trendbook/`. Not Groat, not xhigh, not grok-option, not UW `trend-analysis`.
+- Independent: `python3 -m trendbook` from `/Users/anuppamvi/tradedesk/trendbook`. Do not import other desks as the execute path. Do not steal `groat` / `RUN FULL SCAN` / `xhigh` / `grok-option` / `trend-analysis` triggers.
+- Schwab daily bars (token stays at `SCHWAB_TOKEN_PATH`). ORATS Delayed cores/strikes after Stage 2, token from `xhigh/.env` then `groat/.env` then tradedesk `.env`. No Unusual Whales. No X API. Empty ADD is valid. No order placement. ADD = Stage 2 breakout (weeks 1–4, week-1 volume expansion, residual 3m after beta ≥ 0) or an early pullback. Live 52-week-high probe. Five-year tape. NEW = weak tag, wait for confirmation. Grade A/B/C is structure, not P(win).
+- Default:
+
+```bash
+python3 -m trendbook full --date YYYY-MM-DD
+```
+
+- Output: `/Users/anuppamvi/tradedesk/trendbook/out/trendbook/YYYY-MM-DD/`
+- Never print the token. Never invent ORATS or Schwab numbers. Stock first; call debit only on ADD names with cheap IV.
+
 ## Xhigh Default
 
 - Treat `xhigh`, `xhigh full`, and `xhigh YYYY-MM-DD` as the **xhigh** new-setup wheel/swing scanner under `xhigh/`. Not Groat, not Wheelo, not Groko.

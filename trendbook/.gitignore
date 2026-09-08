@@ -1,0 +1,11 @@
+.env
+.env.*
+tokens/
+out/
+var/orats_archive/
+var/book/
+var/outcomes/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
