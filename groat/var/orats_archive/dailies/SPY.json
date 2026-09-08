@@ -2611,13 +2611,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 765.37,
+      "clsPx": 765.16,
       "hiPx": 766.43,
       "loPx": 761.73,
       "open": 762.45,
       "stkVolu": 29566216.0,
       "ticker": "SPY",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 773.17,
+      "hiPx": 774.03,
+      "loPx": 767.45,
+      "open": 767.9,
+      "stkVolu": 43531581.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 770.19,
+      "hiPx": 772.87,
+      "loPx": 769.0,
+      "open": 772.01,
+      "stkVolu": 34054199.0,
+      "ticker": "SPY",
+      "tradeDate": "2026-09-04"
     }
   ]
 }

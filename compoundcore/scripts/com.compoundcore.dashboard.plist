@@ -6,9 +6,20 @@
   <string>com.compoundcore.dashboard</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/bash</string>
-    <string>__REPO_ROOT__/scripts/ensure-dashboard.sh</string>
+    <string>/usr/bin/python3</string>
+    <string>-m</string>
+    <string>compoundcore</string>
+    <string>dashboard</string>
+    <string>--host</string>
+    <string>127.0.0.1</string>
+    <string>--port</string>
+    <string>8765</string>
   </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>__REPO_ROOT__</string>
+  </dict>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>

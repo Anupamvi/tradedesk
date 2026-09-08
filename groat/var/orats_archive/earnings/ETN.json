@@ -1,0 +1,850 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-01-29",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-04-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-07-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-10-23",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-01-29",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-04-22",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-07-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-10-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-02-01",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-04-21",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-07-21",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-10-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-01-30",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-04-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-07-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-10-18",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-01-22",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-04-18",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-07-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-10-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-01-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-04-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-07-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-10-13",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-01-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-04-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-07-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-10-13",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-01-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-04-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-07-19",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-10-19",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-01-24",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-04-17",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-07-17",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-10-16",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-01-22",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-04-16",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-07-16",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-01-22",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-04-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-21",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-04-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-21",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-01-24",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-18",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-17",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-01-23",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-17",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-17",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-10-16",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2006-10-17",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-01-22",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-04-16",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-07-16",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-01-22",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-04-14",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-15",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-20",
+      "ticker": "ETN",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-01-26",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-04-20",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-07-20",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-10-19",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-01-25",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-04-20",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-07-21",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-10-20",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-01-27",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-04-20",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-07-25",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-10-24",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-01-26",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-04-23",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-07-23",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-10-31",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-02-05",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-04-29",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-07-23",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-08-02",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-10-25",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-02-04",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-04-29",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-07-29",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-10-29",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-02-03",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-04-29",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-07-29",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-10-30",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-02-03",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-04-29",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-08-02",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-11-01",
+      "ticker": "ETN",
+      "updatedAt": "2017-10-11T19:04:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-02-02",
+      "ticker": "ETN",
+      "updatedAt": "2018-11-12T17:05:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-05-02",
+      "ticker": "ETN",
+      "updatedAt": "2018-11-12T17:05:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-08-01",
+      "ticker": "ETN",
+      "updatedAt": "2018-11-12T17:05:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-10-31",
+      "ticker": "ETN",
+      "updatedAt": "2018-11-12T17:05:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-02-01",
+      "ticker": "ETN",
+      "updatedAt": "2018-11-12T17:05:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-05-01",
+      "ticker": "ETN",
+      "updatedAt": "2018-11-12T17:05:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-07-31",
+      "ticker": "ETN",
+      "updatedAt": "2018-11-12T17:05:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-10-30",
+      "ticker": "ETN",
+      "updatedAt": "2018-11-12T17:05:55Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-01-31",
+      "ticker": "ETN",
+      "updatedAt": "2019-02-09T00:46:39Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-04-30",
+      "ticker": "ETN",
+      "updatedAt": "2019-05-10T23:16:30Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-07-30",
+      "ticker": "ETN",
+      "updatedAt": "2019-08-09T23:16:43Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-10-29",
+      "ticker": "ETN",
+      "updatedAt": "2019-11-09T00:16:39Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-02-04",
+      "ticker": "ETN",
+      "updatedAt": "2020-02-15T00:16:43Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-04-30",
+      "ticker": "ETN",
+      "updatedAt": "2020-05-08T23:16:24Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-07-29",
+      "ticker": "ETN",
+      "updatedAt": "2020-08-07T23:16:21Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-11-03",
+      "ticker": "ETN",
+      "updatedAt": "2020-11-14T00:16:19Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-02-02",
+      "ticker": "ETN",
+      "updatedAt": "2021-02-13T00:16:43Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-05-04",
+      "ticker": "ETN",
+      "updatedAt": "2021-05-14T23:16:49Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-08-03",
+      "ticker": "ETN",
+      "updatedAt": "2021-08-13T23:16:43Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-11-02",
+      "ticker": "ETN",
+      "updatedAt": "2021-11-13T00:16:38Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-02-04",
+      "ticker": "ETN",
+      "updatedAt": "2022-02-15T00:16:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-05-03",
+      "ticker": "ETN",
+      "updatedAt": "2022-05-13T23:16:38Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-08-02",
+      "ticker": "ETN",
+      "updatedAt": "2022-08-12T23:17:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-11-01",
+      "ticker": "ETN",
+      "updatedAt": "2022-11-12T00:16:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-02-08",
+      "ticker": "ETN",
+      "updatedAt": "2023-02-18T00:16:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-05-02",
+      "ticker": "ETN",
+      "updatedAt": "2023-05-12T23:16:41Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-08-01",
+      "ticker": "ETN",
+      "updatedAt": "2023-08-11T23:16:41Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-10-31",
+      "ticker": "ETN",
+      "updatedAt": "2023-11-11T00:16:43Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-02-01",
+      "ticker": "ETN",
+      "updatedAt": "2024-02-10T00:16:47Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-04-30",
+      "ticker": "ETN",
+      "updatedAt": "2024-05-10T23:16:41Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-08-01",
+      "ticker": "ETN",
+      "updatedAt": "2024-08-09T23:16:50Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-10-31",
+      "ticker": "ETN",
+      "updatedAt": "2024-11-09T01:01:50Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-01-31",
+      "ticker": "ETN",
+      "updatedAt": "2025-02-11T03:42:00Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-05-02",
+      "ticker": "ETN",
+      "updatedAt": "2025-05-13T02:41:07Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-08-05",
+      "ticker": "ETN",
+      "updatedAt": "2025-08-16T02:40:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-11-04",
+      "ticker": "ETN",
+      "updatedAt": "2025-11-15T03:40:51Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-02-03",
+      "ticker": "ETN",
+      "updatedAt": "2026-02-14T03:40:58Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-05-05",
+      "ticker": "ETN",
+      "updatedAt": "2026-05-16T02:40:52Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-07-31",
+      "ticker": "ETN",
+      "updatedAt": "2026-08-10T22:01:10Z"
+    }
+  ]
+}

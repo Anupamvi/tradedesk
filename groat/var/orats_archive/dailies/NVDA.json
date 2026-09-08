@@ -2638,13 +2638,31 @@
       "tradeDate": "2026-09-01"
     },
     {
-      "clsPx": 225.35,
+      "clsPx": 224.41,
       "hiPx": 227.95,
       "loPx": 218.48,
       "open": 218.785,
       "stkVolu": 157104683.0,
       "ticker": "NVDA",
       "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 228.45,
+      "hiPx": 230.4,
+      "loPx": 224.75,
+      "open": 226.02,
+      "stkVolu": 134681610.0,
+      "ticker": "NVDA",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 230.36,
+      "hiPx": 234.76,
+      "loPx": 229.63,
+      "open": 231.09,
+      "stkVolu": 135352420.0,
+      "ticker": "NVDA",
+      "tradeDate": "2026-09-04"
     }
   ]
 }
