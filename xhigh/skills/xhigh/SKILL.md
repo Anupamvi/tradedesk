@@ -36,7 +36,7 @@ python3 -m xhigh full --date DATE
 
 Analyze: `python3 -m xhigh analyze TICKER --date DATE`.
 
-If `orats=missing`, say so. Do not print the token.
+If `orats=missing`, say so. Do not print the token. Schwab uses tradedesk `tokens/schwab_token.json`, not `xhigh/tokens`.
 
 ## Intel after the scan
 
@@ -58,4 +58,4 @@ KILL / SURVIVE / INSUFFICIENT DATA. Naked CSP only if you want the shares at the
 
 Copy **Recommendation** from `out/xhigh/DATE/recommendation.md` (also the top of `board.md`) **verbatim at the top**. Then the CLICK table. Do not lead with a 20-row dump. 🟢 CLICK / 🔴 SKIP / 🟡 WATCH. 0 CLICK is valid.
 
-Credits are **bid**. Debits are **ask − short bid**. A 270-call on a $186 stock is a bug. Do not promise profit. POP is delta, not a forecast.
+Credits are **bid**. Debits are **ask − short bid**. A 270-call on a $186 stock is a bug. Do not promise profit. POP is delta, not a forecast. Keep **conf**. After CLICK, also write **PD, N, R_cons, L** and sort CLICK **PD desc, nulls last**. Print `PD sort only — conf unchanged.` Every sleeve that passes is still listed.

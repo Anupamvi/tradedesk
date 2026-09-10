@@ -12,7 +12,21 @@ Write the full card to `out/grok-option/YYYY-MM-DD/GROK_OPTION.md`. An inline-on
 
 ## Columns
 
-Card table: `Ticker | Sleeve | Action | Expiry | Buy (long) | Sell (short) | Max profit $ | Max loss $ | Rec lots | Score | Conf | Data`
+Card table: `Ticker | Sleeve | Action | Expiry | Buy (long) | Sell (short) | Max profit $ | Max loss $ | Rec lots | Score | Conf | PD | N | R_cons | L | Data`
+
+Keep **Conf**. After a row is already Expert/TRADE, also compute **PD** (does not change Conf, Rec lots, or sleeves):
+
+```
+risk_budget = 0.01 * 50000
+max_loss = 1-lot contractual max loss at conservative Schwab prices
+N = floor(min(risk_budget / max_loss, liquidity_lots))
+R_cons = planned_reward / planned_risk, cap 3
+L = 1 / 0.5 / 0 from size vs N and spread
+PD = N * R_cons * L   if N >= 1 and quote age <= 120s
+else PD = null (DATA UNAVAILABLE or N=0)
+```
+
+Sort the Expert table **PD desc, nulls last**. Print `PD sort only — conf unchanged.` Sleeve board still lists every structure.
 
 **Buy** and **Sell** must name every leg with the word Buy/Sell, the strike, and Put or Call. Never `P 445 / C 550` with no verb.
 

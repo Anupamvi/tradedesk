@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Sequence
 
 from groat.num import fmt, fmt_pct, to_float
+from groat.pd import PD_NOTE, pd_cells
 from groat.regime import render_regime
 from groat.rotation import render_rotation
 from groat.evidence import render_evidence_file
@@ -26,6 +27,10 @@ BOARD_COLUMNS = [
     "primary",
     "score",
     "opt_conf",
+    "pd",
+    "pd_n",
+    "r_cons",
+    "pd_l",
     "naive_pop",
     "target_debit",
     "target_credit",
@@ -272,9 +277,13 @@ def _ticket_cell(row: dict) -> str:
 
 
 def _ticket_table(rows: List[dict], parked: bool = False) -> List[str]:
-    head = "| | ticker | setup | ticket | pay | last | click | X |"
-    rule = "|---|---|---|---|---|---:|---|---|"
-    if parked:
+    trade_cols = not parked
+    if trade_cols:
+        head = "| | ticker | setup | ticket | pay | last | conf | PD | N | R_cons | L | click | X |"
+        rule = "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---|---|"
+    else:
+        head = "| | ticker | setup | ticket | pay | last | click | X |"
+        rule = "|---|---|---|---|---|---:|---|---|"
         head += " why not |"
         rule += "---|"
     lines = [head, rule]
@@ -289,9 +298,24 @@ def _ticket_table(rows: List[dict], parked: bool = False) -> List[str]:
             _ticket_cell(row),
             _premium_cell(row) or ("stock" if row.get("choice") == "STOCK" else "—"),
             fmt(row.get("close")),
-            "%s %s" % (band["icon"], band["text"]),
-            _x_cell(row),
         ]
+        if trade_cols:
+            cells_pd = pd_cells(row)
+            cells.extend(
+                [
+                    str(row.get("opt_conf") if row.get("opt_conf") is not None else "—"),
+                    cells_pd["pd_s"],
+                    cells_pd["n_s"],
+                    cells_pd["r_cons_s"],
+                    cells_pd["l_s"],
+                ]
+            )
+        cells.extend(
+            [
+                "%s %s" % (band["icon"], band["text"]),
+                _x_cell(row),
+            ]
+        )
         if parked:
             cells.append(_park_label((row.get("reasons") or ["—"])[0]))
         lines.append("| " + " | ".join(cells) + " |")
@@ -338,10 +362,13 @@ def _card(row: dict) -> List[str]:
         ("Don't enter", "%s %s" % (band["icon"], band["text"])),
         ("Debit max" if debit is not None else "Credit min", fmt(debit) if debit is not None else fmt(credit) if credit is not None else "—"),
         ("Naive POP / conf", "%s / %s" % (_pop_cell(row), row.get("opt_conf") if row.get("opt_conf") is not None else "—")),
+        ("PD / N / R_cons / L", "%s / %s / %s / %s" % (pd_cells(row)["pd_s"], pd_cells(row)["n_s"], pd_cells(row)["r_cons_s"], pd_cells(row)["l_s"])),
     ]
     if row.get("book_group_note"):
         kv.append(("Book overlap", row.get("book_group_note")))
     lines.extend(_kv(kv))
+    lines.append(PD_NOTE)
+    lines.append("")
     return lines
 
 
@@ -358,6 +385,7 @@ def _counts_line(built: dict) -> str:
 def _legend() -> List[str]:
     return [
         "You click every Schwab order. Empty TRADE is valid.",
+        PD_NOTE,
         "",
         "Click: 🟢 last is clear · 🟡 within 0.5% · 🔴 already through — do not click. **Pay** is max debit / min credit.",
         "X: 🟢 Informed · 🟡 Quiet · 🔴 Crowded · ⚪ missing (do not treat missing as Quiet).",

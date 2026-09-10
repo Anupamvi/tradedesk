@@ -122,6 +122,7 @@ CLI prints `x_missing_on_trade=...` and exits **3** if any TRADE row has no X ta
 - Conservative fills: debit at ask, credit at short bid − long ask. Never mid. Report **target debit/credit**.
 - Review stock, long call, long put, call debit, put debit, put credit, call credit, then shortlist.
 - **conf** is structure quality 0–85, not P(win).
+- After TRADE, also write **PD, N, R_cons, L**. Sort TRADE PD desc (nulls last). Conf unchanged. Print `PD sort only — conf unchanged.`
 - Prefer 2:1 R/R. Risk 0.5–1% of the 50k research account.
 - Do not chase >2.5 ATR above 20 EMA.
 - Do not import other desks as the execute path.

@@ -25,6 +25,7 @@ class TestEmptyBoard(unittest.TestCase):
             board = Path(info["files"]["board"])
             text = board.read_text(encoding="utf-8")
             self.assertIn("CLICK 0", text)
+            self.assertIn("PD sort only — conf unchanged.", text)
 
 
 if __name__ == "__main__":

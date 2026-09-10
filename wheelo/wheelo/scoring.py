@@ -73,6 +73,10 @@ class PremiumScore:
     composite: float = 0.0
     rejected: bool = False
     reject_reason: str = ""
+    put_oi: float = 0.0
+    put_bid_size: float = 0.0
+    put_ask_size: float = 0.0
+    quote_date: str = ""
 
 
 @dataclass
@@ -397,6 +401,10 @@ def score_premium(rows: List[dict], core: dict, cfg: dict) -> PremiumScore:
     ps.csp_bid = to_float(put_row.get("putBidPrice")) or 0.0
     ps.csp_ask = to_float(put_row.get("putAskPrice")) or 0.0
     ps.csp_premium = ps.csp_bid
+    ps.put_oi = to_float(put_row.get("putOpenInterest")) or 0.0
+    ps.put_bid_size = to_float(put_row.get("putBidSize")) or 0.0
+    ps.put_ask_size = to_float(put_row.get("putAskSize")) or 0.0
+    ps.quote_date = str(put_row.get("quoteDate") or "")
     if call_row is not None:
         ps.cc_strike = to_float(call_row.get("strike")) or 0.0
         ps.cc_bid = to_float(call_row.get("callBidPrice")) or 0.0

@@ -96,7 +96,10 @@ class TestPipeline(unittest.TestCase):
             self.assertNotIn("secret-token", blob)
             board = (out / ASOF / "board.md").read_text(encoding="utf-8")
             self.assertIn("Groat", board)
+            self.assertIn("PD sort only — conf unchanged.", board)
             self.assertTrue("Empty board. Valid." in board or "TRADE" in board or "WATCH" in board)
+            if "## TRADE" in board and "Empty. Valid." not in board.split("## TRADE")[1][:80]:
+                self.assertIn("| conf | PD | N | R_cons | L |", board)
 
     def test_delta_without_prior(self):
         bars = {k: flat_bars(40, end=ASOF) for k in ("SPY", "QQQ")}

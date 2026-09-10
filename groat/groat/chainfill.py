@@ -64,6 +64,9 @@ def _contract(row: Any) -> dict:
         "last": to_float(row.get("lastPrice") or row.get("last")),
         "oi": to_float(row.get("openInterest")),
         "vol": to_float(row.get("totalVolume")),
+        "bid_size": to_float(row.get("bidSize")),
+        "ask_size": to_float(row.get("askSize")),
+        "quote_time_ms": to_float(row.get("quoteTimeInLong") or row.get("quoteTime")),
         "delta": to_float(row.get("delta")),
         "gamma": to_float(row.get("gamma")),
         "theta": to_float(row.get("theta")),
@@ -99,6 +102,9 @@ def flatten_chain(payload: Optional[dict]) -> Dict[Tuple[str, float], dict]:
     if not isinstance(payload, dict):
         return out
     asof_print = quote_asof_from_payload(payload)
+    und_ms = None
+    und0 = payload.get("underlying") if isinstance(payload.get("underlying"), dict) else {}
+    und_ms = to_float((und0 or {}).get("quoteTime") or (und0 or {}).get("tradeTime"))
 
     def absorb(mmap: dict, side: str) -> None:
         for exp_key, strikes in (mmap or {}).items():
@@ -131,6 +137,7 @@ def flatten_chain(payload: Optional[dict]) -> Dict[Tuple[str, float], dict]:
     for rec in out.values():
         rec["spot"] = spot
         rec["quote_asof"] = asof_print
+        rec["quote_time_ms"] = (rec.get("call") or {}).get("quote_time_ms") or (rec.get("put") or {}).get("quote_time_ms") or und_ms
     return out
 
 
@@ -168,6 +175,16 @@ def overlay_row(raw: dict, rec: dict) -> dict:
         row["spotPrice"] = rec["spot"]
     if rec.get("quote_asof"):
         row["quoteAsof"] = rec["quote_asof"]
+    if rec.get("quote_time_ms") is not None:
+        row["quoteTimeMs"] = rec["quote_time_ms"]
+    if call.get("bid_size") is not None:
+        row["callBidSize"] = call["bid_size"]
+    if call.get("ask_size") is not None:
+        row["callAskSize"] = call["ask_size"]
+    if put.get("bid_size") is not None:
+        row["putBidSize"] = put["bid_size"]
+    if put.get("ask_size") is not None:
+        row["putAskSize"] = put["ask_size"]
     return row
 
 
@@ -204,6 +221,11 @@ def schwab_map_to_orats(flat: Dict[Tuple[str, float], dict], asof: str) -> List[
                 "putVolume": put.get("vol"),
                 "quoteSource": csrc if csrc != "none" else psrc,
                 "quoteAsof": rec.get("quote_asof"),
+                "quoteTimeMs": rec.get("quote_time_ms"),
+                "callBidSize": call.get("bid_size"),
+                "callAskSize": call.get("ask_size"),
+                "putBidSize": put.get("bid_size"),
+                "putAskSize": put.get("ask_size"),
             }
         )
     return rows

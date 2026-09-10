@@ -19,7 +19,7 @@ Units: ORATS vol fields are **percent**. Schwab last is dollars. Delta is Schwab
 | Wheel naked CSP | annualized ≥ 8%, \|delta\| ≤ 0.25, and 6-month low is **not** already < 85% of strike |
 | Defined-credit CLICK | credit ≥ **10% of width** and POP ≥ 70%. Put credit SKIP if a known ex-div sits before expiry (stock drop attacks the short put). 8–15% OTM is naturally ~1:7; 1:14 still SKIP. |
 | Swing debit CLICK | long at/ITM (\|delta\| ≥ **0.50**), DTE ≥ **35**, R/R ≥ 1.5, no ex-div before expiry. Put-debit max must not sit below the 6-month low. 25-DTE 0.35-delta is SKIP (KO). Positive EV is not enough. |
-| Board | Every sleeve that passes its CLICK rule is listed. Rank small dollars-at-risk first. |
+| Board | Every sleeve that passes its CLICK rule is listed. Rank CLICK by PD desc (nulls last). Keep conf. |
 | Wheel stress (display) | If last halves in 6 months, P&L vs (strike − credit) × 100. Scenario, not a forecast |
 | Ticket cap | none |
 

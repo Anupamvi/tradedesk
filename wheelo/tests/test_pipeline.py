@@ -353,6 +353,9 @@ class TestRunPipelineArtifacts(unittest.TestCase):
         self.assertTrue((day / "board.md").is_file())
         self.assertTrue((day / "manifest.json").is_file())
         self.assertTrue((day / "rejections.csv").is_file())
+        board = (day / "board.md").read_text(encoding="utf-8")
+        self.assertIn("conf", board.lower())
+        self.assertIn("PD sort only — conf unchanged.", board)
 
     def test_select_clears_leftover_hot_json(self):
         from wheelo.xhot import hot_path, write_hot

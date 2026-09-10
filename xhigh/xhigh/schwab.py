@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+import subprocess
 import time
 import urllib.error
 import urllib.parse
@@ -56,11 +58,36 @@ def _token_blob(path: Path) -> dict:
     return {"token": payload if isinstance(payload, dict) else {}}
 
 
+_SYNC = Path("/Users/anuppamvi/tradedesk/scripts/schwab_sync_gcp.sh")
+_synced = False
+
+
+def _schwab_cloud(mode: str, wait: bool = False) -> None:
+    if not _SYNC.is_file():
+        return
+    env = os.environ.copy()
+    env["PATH"] = str(Path.home() / "google-cloud-sdk" / "bin") + ":" + env.get("PATH", "")
+    cmd = ["bash", str(_SYNC), mode]
+    kw = dict(env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        if wait:
+            subprocess.run(cmd, timeout=90, **kw)
+        else:
+            subprocess.Popen(cmd, start_new_session=True, **kw)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
 def _save_token(path: Path, blob: dict) -> None:
     path.write_text(json.dumps(blob, indent=2) + "\n", encoding="utf-8")
+    _schwab_cloud("push")
 
 
 def _access_token() -> Optional[str]:
+    global _synced
+    if not _synced:
+        _synced = True
+        _schwab_cloud("reconcile", wait=True)
     creds = schwab_credentials()
     if not creds:
         return None
@@ -246,6 +273,8 @@ def option_chain(ticker: str, from_date: str, to_date: str) -> Optional[dict]:
 def flatten_chain(payload: Optional[dict]) -> List[dict]:
     if not isinstance(payload, dict):
         return []
+    und = payload.get("underlying") if isinstance(payload.get("underlying"), dict) else {}
+    und_ms = to_float((und or {}).get("quoteTime") or (und or {}).get("tradeTime"))
     rows = []
     for key, side in (("callExpDateMap", "call"), ("putExpDateMap", "put")):
         block = payload.get(key) or {}
@@ -271,9 +300,24 @@ def flatten_chain(payload: Optional[dict]) -> List[dict]:
                             "delta": to_float(c.get("delta")),
                             "dte": to_float(c.get("daysToExpiration")),
                             "oi": to_float(c.get("openInterest")),
+                            "bid_size": to_float(c.get("bidSize")),
+                            "ask_size": to_float(c.get("askSize")),
+                            "quote_time_ms": to_float(c.get("quoteTimeInLong") or c.get("quoteTime")) or und_ms,
                         }
                     )
     return rows
+
+
+def _mover_index(idx: str) -> str:
+    name = str(idx or "").strip()
+    aliases = {
+        "$SPX.X": "$SPX",
+        "$DJI.X": "$DJI",
+        "$COMPX.X": "$COMPX",
+        "$NDX.X": "$NDX",
+        "$RUT.X": "$RUT",
+    }
+    return aliases.get(name.upper(), name)
 
 
 def movers_symbols(indexes=MOVER_INDEXES) -> List[str]:
@@ -283,7 +327,7 @@ def movers_symbols(indexes=MOVER_INDEXES) -> List[str]:
     names = []
     seen = set()
     for idx in indexes:
-        encoded = urllib.parse.quote(idx, safe="")
+        encoded = urllib.parse.quote(_mover_index(idx), safe="")
         payload = _get_json("%s/movers/%s" % (MARKET, encoded), token)
         time.sleep(0.05)
         rows = []

@@ -32,6 +32,11 @@ CLICK_COLS = [
     ("risk", "risk_s"),
     ("P:R", "rr_s"),
     ("POP", "pop_s"),
+    ("conf", "conf"),
+    ("PD", "pd_s"),
+    ("N", "n_s"),
+    ("R_cons", "r_cons_s"),
+    ("L", "l_s"),
 ]
 
 SKIP_COLS = [

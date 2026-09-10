@@ -12,6 +12,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.append(str(_SCRIPT_DIR))
+
 
 def tradedesk_root() -> Path:
     env = os.environ.get("UW_ROOT", "").strip()
@@ -61,6 +65,9 @@ def contract_row(expiry: str, strike: Optional[float], c: Dict[str, Any]) -> Dic
         "iv": fnum(c.get("volatility")),
         "oi": fnum(c.get("openInterest")),
         "volume": fnum(c.get("totalVolume")),
+        "bid_size": fnum(c.get("bidSize")),
+        "ask_size": fnum(c.get("askSize")),
+        "quote_time_ms": fnum(c.get("quoteTimeInLong") or c.get("quoteTime")),
     }
 
 
@@ -165,6 +172,7 @@ def vertical_math(*, kind: str, short: Dict[str, Any], long: Dict[str, Any]) -> 
             "width": width,
             "credit_width": round(frac, 4) if frac is not None else None,
             "max_loss_1lot": round(max_loss, 2),
+            "max_profit_1lot": round(conservative * 100, 2),
             "worse_fill": abs(mid - conservative) > 0.05 * abs(mid) if mid else False,
         }
     conservative = float(la) - float(sb)
@@ -178,6 +186,7 @@ def vertical_math(*, kind: str, short: Dict[str, Any], long: Dict[str, Any]) -> 
         "width": width,
         "debit_width": round(frac, 4) if frac is not None else None,
         "max_loss_1lot": round(conservative * 100, 2),
+        "max_profit_1lot": round((width - conservative) * 100, 2) if width > conservative else 0.0,
         "worse_fill": abs(mid - conservative) > 0.05 * abs(mid) if mid else False,
     }
 
@@ -262,6 +271,8 @@ def cmd_vertical(args: argparse.Namespace) -> Dict[str, Any]:
         }
     math = vertical_math(kind=args.kind, short=short, long=long)
     summary = svc.summarize_option_chain(args.symbol.upper(), payload)
+    priced = {"ok": bool(math.get("ok")), "pricing": math, "kind": args.kind, "short": short, "long": long}
+    _stamp_pd(priced, short=short, long=long)
     return {
         "source": "schwab",
         "token_path": cfg.token_path,
@@ -273,9 +284,35 @@ def cmd_vertical(args: argparse.Namespace) -> Dict[str, Any]:
         "short": short,
         "long": long,
         "pricing": math,
+        "pd": priced.get("pd"),
+        "pd_n": priced.get("pd_n"),
+        "r_cons": priced.get("r_cons"),
+        "pd_l": priced.get("pd_l"),
+        "pd_reason": priced.get("pd_reason"),
         "underlying_price": summary.get("underlying_price"),
         "atm_straddle": atm_straddle(payload, summary.get("underlying_price"), expiry=args.expiry),
     }
+
+
+def _stamp_pd(row: Optional[Dict[str, Any]], *, short=None, long=None) -> Optional[Dict[str, Any]]:
+    if not isinstance(row, dict) or not row.get("ok"):
+        return row
+    from pd_rank import attach_structure_pd
+
+    payload = dict(row)
+    if short is not None:
+        payload["short_leg"] = short
+        if payload.get("quote_time_ms") is None:
+            payload["quote_time_ms"] = short.get("quote_time_ms")
+    if long is not None:
+        payload["long_leg"] = long
+        if payload.get("quote_time_ms") is None:
+            payload["quote_time_ms"] = long.get("quote_time_ms")
+    attach_structure_pd(payload)
+    for key in ("pd", "pd_n", "r_cons", "pd_l", "pd_reason", "pd_s", "n_s", "r_cons_s", "l_s"):
+        if key in payload:
+            row[key] = payload[key]
+    return row
 
 
 def _index_legs(rows: List[Dict[str, Any]]) -> Dict[float, Dict[str, Any]]:
@@ -362,6 +399,7 @@ def _credit_put(puts: Dict[float, Dict[str, Any]], spot: float, sigma: float, ma
                 "otm": spot - sh,
                 "sigma_mult": (spot - sh) / sigma if sigma else None,
             }
+            _stamp_pd(cand, short=short, long=long)
             if _credit_better(cand, best):
                 best = cand
     return best or {"ok": False, "reason": "no put credit met delta/sigma/width", "tried": tried}
@@ -397,6 +435,7 @@ def _credit_call(calls: Dict[float, Dict[str, Any]], spot: float, sigma: float, 
                 "otm": sh - spot,
                 "sigma_mult": (sh - spot) / sigma if sigma else None,
             }
+            _stamp_pd(cand, short=short, long=long)
             if _credit_better(cand, best):
                 best = cand
     return best or {"ok": False, "reason": "no call credit met delta/sigma/width", "tried": tried}
@@ -436,6 +475,7 @@ def _debit_vertical(legs: Dict[float, Dict[str, Any]], *, right: str, spot: floa
                 "long_delta": ld,
                 "pricing": math,
             }
+            _stamp_pd(cand, short=short, long=long)
             score = abs(abs(float(ld)) - 0.40)
             if best is None or score < best["_s"]:
                 cand["_s"] = score
@@ -487,12 +527,24 @@ def cmd_structures(args: argparse.Namespace) -> Dict[str, Any]:
         pnet = float((put_c.get("pricing") or {}).get("net") or 0)
         cnet = float((call_c.get("pricing") or {}).get("net") or 0)
         if pnet >= CREDIT_DOLLAR_FLOOR and cnet >= CREDIT_DOLLAR_FLOOR:
+            pwidth = float((put_c.get("pricing") or {}).get("width") or 0)
+            cwidth = float((call_c.get("pricing") or {}).get("width") or 0)
+            wing = max(pwidth, cwidth)
+            total = pnet + cnet
             condor = {
                 "ok": True,
                 "action": "Sell iron condor",
                 "put": put_c,
                 "call": call_c,
+                "pricing": {
+                    "kind": "credit",
+                    "net": total,
+                    "width": wing,
+                    "max_loss_1lot": round(max(0.0, wing - total) * 100, 2),
+                    "max_profit_1lot": round(total * 100, 2),
+                },
             }
+            _stamp_pd(condor)
         else:
             condor = {"ok": False, "reason": "a wing is below $100 1-lot credit; print the vertical"}
     return {

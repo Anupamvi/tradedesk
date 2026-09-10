@@ -38,6 +38,7 @@ from groat.prices import ensure_bars
 from groat.regime import classify as classify_regime
 from groat.rotation import group_status_map, name_group_row, rank_groups
 from groat.confidence import options_confidence
+from groat.pd import attach_trade_pd, sort_by_pd
 from groat.setups import classify_setups
 from groat.book import book_index, open_group_sets, same_ticket, schwab_held_index
 from groat.chainfill import overlay_strikes
@@ -626,6 +627,15 @@ def build_full(
         picks["evidence_line"] = (" ".join(x for x in (evidence_line, veto_line) if x)).strip()
     else:
         picks["evidence_line"] = evidence_line
+    for row in trades:
+        attach_trade_pd(row)
+    trades = sort_by_pd(
+        trades,
+        tie=lambda r: (-(r.get("score") or 0), -(to_float(r.get("rs_20")) or -9)),
+    )
+    if isinstance(picks, dict):
+        picks["trade_names"] = [r.get("ticker") for r in trades if r.get("ticker")]
+    board = (list(trades) + list(watch))[:MAX_FINAL]
     usage = load_usage()
     tape_summary = {k: (tapes[k].get("tape") if k in tapes else "") for k in list(INDEX_TICKERS)}
     rvols = [to_float(s.get("rvol")) for s in snaps.values()]

@@ -15,9 +15,11 @@
 
 Max profit $ and Max loss $ are **1 lot**. Rec lots from Conf, then sleeve cap, then cash/BP.
 
+PD sort only — conf unchanged.
+
 ### 🟢 TICKER · 🛡️ Shield · Sell iron condor
 
-**YYYY-MM-DD** · Conf **79% naive · book n/a** · Score 65 · 📒 MIXED · X: 🤫 Quiet
+**YYYY-MM-DD** · Conf **79% naive · book n/a** · PD **…** · N **…** · R_cons **…** · L **…** · Score 65 · 📒 MIXED · X: 🤫 Quiet
 
 | Buy (long) | Sell (short) | Credit | 1-lot P/L | Rec lots |
 |------------|--------------|--------|-----------|----------|
@@ -27,9 +29,9 @@ Max profit $ and Max loss $ are **1 lot**. Rec lots from Conf, then sleeve cap, 
 
 Slim compare:
 
-| ● | Ticker | Action | Expiry | 1-lot P/L | Rec | Conf | Data |
-|---|--------|--------|--------|-----------|-----|------|------|
-| 🟢 |  |  |  | +$ / −$ |  |  |  |
+| ● | Ticker | Action | Expiry | 1-lot P/L | Rec | Conf | PD | N | R_cons | L | Data |
+|---|--------|--------|--------|-----------|-----|------|----|---|--------|---|------|
+| 🟢 |  |  |  | +$ / −$ |  |  |  |  |  |  |  |
 
 If none: 🔴 **No executable rows. Empty table is the scan.**
 
@@ -54,9 +56,9 @@ If none: 🔴 **No executable rows. Empty table is the scan.**
 
 Same 1-lot math. **●** is 🟢 / 🟡 / 🔴 / ⚡. Every geometry-pass is a row.
 
-| ● | Ticker | Sleeve | Action | Expiry | Buy (long) | Sell (short) | Max profit $ | Max loss $ | Rec lots | Score | Conf | Data | Why |
-|---|---------|--------|--------|--------|------------|--------------|--------------|------------|----------|-------|------|------|-----|
-| 🟢 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| ● | Ticker | Sleeve | Action | Expiry | Buy (long) | Sell (short) | Max profit $ | Max loss $ | Rec lots | Score | Conf | PD | N | R_cons | L | Data | Why |
+|---|---------|--------|--------|--------|------------|--------------|--------------|------------|----------|-------|------|----|---|--------|---|------|-----|
+| 🟢 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
 ## 🔵 Fire (quoted, no flow)
 

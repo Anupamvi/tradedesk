@@ -6,6 +6,7 @@ from typing import List, Optional
 
 from xhigh.dates import parse_any_date
 from xhigh.num import fmt, to_float
+from xhigh.pd import PD_NOTE, attach_trade_pd, sort_by_pd
 from xhigh.score import DEFINED_CREDIT, DEBIT, csp_annualized, credit_over_width, rr_line, short_abs_delta
 
 
@@ -328,8 +329,17 @@ def _click_block(row: dict) -> List[str]:
         "",
         "- **Need:** %s" % row.get("need_s"),
         "- **Risk:** %s" % row.get("risk_s"),
-        "- **Profit:risk:** %s · **POP (delta):** %s · **conf:** %s"
-        % (row.get("rr_s") or rr_line(row), row.get("pop_s"), row.get("conf")),
+        "- **Profit:risk:** %s · **POP (delta):** %s · **conf:** %s · **PD:** %s · **N:** %s · **R_cons:** %s · **L:** %s"
+        % (
+            row.get("rr_s") or rr_line(row),
+            row.get("pop_s"),
+            row.get("conf"),
+            row.get("pd_s") or "DATA UNAVAILABLE",
+            row.get("n_s") or "—",
+            row.get("r_cons_s") or "—",
+            row.get("l_s") or "—",
+        ),
+        "- %s" % PD_NOTE,
         "- **Why this one:** %s" % row.get("why_s"),
     ]
     if row.get("structure") == "csp":
@@ -367,11 +377,13 @@ def risk_dollars(row: dict) -> Optional[float]:
 
 
 def sort_clicks(click: List[dict]) -> List[dict]:
-    def key(row: dict):
-        risk = risk_dollars(row)
-        return (risk is None, risk if risk is not None else 0.0)
+    stamped = [attach_trade_pd(dict(row)) for row in click]
 
-    return sorted(click, key=key)
+    def tie(row: dict):
+        risk = risk_dollars(row)
+        return (0 if risk is not None else 1, risk if risk is not None else 0.0)
+
+    return sort_by_pd(stamped, tie=tie)
 
 
 def render_recommendation(date: str, click: List[dict], skip: List[dict], watch: List[dict], macro: Optional[dict] = None) -> List[str]:
@@ -379,6 +391,8 @@ def render_recommendation(date: str, click: List[dict], skip: List[dict], watch:
         "# xhigh %s" % date,
         "",
         "## Recommendation",
+        "",
+        PD_NOTE,
         "",
     ]
     n_c, n_s, n_w = len(click), len(skip), len(watch)
@@ -408,7 +422,7 @@ def render_recommendation(date: str, click: List[dict], skip: List[dict], watch:
             "### How to read this",
             "",
             "1. **Geometry first** — strike must sit on live last. A 270-call on a $186 stock is a bug, never a trade.",
-            "2. **Sleeves are independent.** A name can have a swing debit and a defined-risk credit. Rank small dollars-at-risk first. Do not hide a passing credit because a debit also passed.",
+            "2. **Sleeves are independent.** A name can have a swing debit and a defined-risk credit. Rank CLICK by PD desc (nulls last). Keep conf. Do not hide a passing credit because a debit also passed.",
             "3. **Swing CLICK** — long at/ITM (|delta| ≥ 0.50), DTE ≥ 35, R/R ≥ 1.5, and no ex-div before expiry. A 25-DTE 0.35-delta debit is how KO lost 34% in a day. EV is not the click rule.",
             "4. **Wheel** — Naked CSP only if paid ≥ 8% annualized and the 6-month low did **not** already trade through the strike. If it did, recommend a **put credit** instead (defined-risk). A 50% drop is shown in dollars on naked puts. Not a growth forecast.",
             "5. **Credit CLICK** — paid at least **10% of the spread width** and POP ≥ 70%. An 8–15% OTM put is naturally ~1:7; requiring 1:4 emptied the board. 1:14 still SKIP.",

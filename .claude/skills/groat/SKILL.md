@@ -82,9 +82,12 @@ Bias: `bullish` / `bearish` / `unknown`. Downweight pumps. Re-run Groat so tape 
 
 After the scan:
 
-1. Read `board.md` — **Desk pick first**, then **Evidence**.
-2. X on `x_queue.json`. Write `CODE/var/xintel/DATE/TICKER.json` (`tag` Quiet|Informed|Crowded). Re-run if tags were missing.
-3. Missing X → **DATA UNAVAILABLE**. Do not invent posts. Do not change ORATS/price/debit/credit numbers.
+CLI prints `x_missing_on_trade=...` and exits **3** if any TRADE row has no X tag. That run is incomplete. Do not show that board to the user yet.
+
+1. Read `x_queue.json` and every TRADE ticker (WATCH after that).
+2. Search X for each. Write `CODE/var/xintel/DATE/TICKER.json` (`tag` Quiet|Informed|Crowded). Promo spam = Crowded.
+3. If `x_missing_on_trade` is not `none`, re-run `python3 -m groat full --date DATE` and only then reply.
+4. Do not invent posts. Do not change ORATS/price/debit/credit numbers. Missing X stays **DATA UNAVAILABLE** — never map it to Quiet.
 
 ## Reply shape
 
@@ -119,6 +122,7 @@ After the scan:
 - Conservative fills: debit at ask, credit at short bid − long ask. Never mid. Report **target debit/credit**.
 - Review stock, long call, long put, call debit, put debit, put credit, call credit, then shortlist.
 - **conf** is structure quality 0–85, not P(win).
+- After TRADE, also write **PD, N, R_cons, L**. Sort TRADE PD desc (nulls last). Conf unchanged. Print `PD sort only — conf unchanged.`
 - Prefer 2:1 R/R. Risk 0.5–1% of the 50k research account.
 - Do not chase >2.5 ATR above 20 EMA.
 - Do not import other desks as the execute path.

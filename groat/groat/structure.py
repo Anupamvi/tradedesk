@@ -54,6 +54,11 @@ def parse_strike(row: dict) -> Optional[dict]:
         "smv": to_float(row.get("smvVol")),
         "quote_source": str(row.get("quoteSource") or "") or None,
         "quote_asof": row.get("quoteAsof") or row.get("quote_asof"),
+        "quote_time_ms": to_float(row.get("quoteTimeMs") or row.get("quote_time_ms")),
+        "call_bid_size": to_float(row.get("callBidSize")),
+        "call_ask_size": to_float(row.get("callAskSize")),
+        "put_bid_size": to_float(row.get("putBidSize")),
+        "put_ask_size": to_float(row.get("putAskSize")),
     }
 
 
@@ -111,6 +116,36 @@ def _mid(bid, ask) -> Optional[float]:
     if bid is None or ask is None:
         return None
     return (bid + ask) / 2.0
+
+
+def _spread_frac(bid, ask) -> Optional[float]:
+    mid = _mid(bid, ask)
+    bid_n = to_float(bid)
+    ask_n = to_float(ask)
+    if mid is None or mid <= 0 or bid_n is None or ask_n is None:
+        return None
+    return (ask_n - bid_n) / mid
+
+
+def _lots(*values) -> Optional[int]:
+    nums = [to_float(v) for v in values]
+    nums = [n for n in nums if n is not None]
+    if not nums:
+        return None
+    return int(min(nums))
+
+
+def _pd_econ(*, max_loss_1lot, planned_reward, planned_risk, liquidity_lots, spread_frac, quote_time_ms=None, fill_asof=None, pd_size=None) -> dict:
+    return {
+        "max_loss_1lot": max_loss_1lot,
+        "planned_reward": planned_reward,
+        "planned_risk": planned_risk,
+        "liquidity_lots": liquidity_lots,
+        "spread_frac": spread_frac,
+        "quote_time_ms": quote_time_ms,
+        "fill_asof": fill_asof,
+        "pd_size": pd_size,
+    }
 
 
 def _clamp01(value) -> Optional[float]:
@@ -214,6 +249,14 @@ def stock_plan(snap: dict, direction: str) -> Dict[str, object]:
         "notional": shares * px,
         "hold_sessions": HOLD_SESSIONS,
         "invalidation": "close beyond stop %.2f" % stop,
+        **_pd_econ(
+            max_loss_1lot=risk,
+            planned_reward=reward,
+            planned_risk=risk,
+            liquidity_lots=shares,
+            spread_frac=None,
+            pd_size=shares,
+        ),
     }
 
 
@@ -324,6 +367,19 @@ def long_option(rows: Sequence[dict], direction: str, earnings: dict) -> Optiona
                     "legs": "BUY %s %s %s %s @ %.2f ask"
                     % (contracts, expiry, pick["strike"], side[0].upper(), debit),
                     "reason": "cheap-to-fair vol directional with 21-75 DTE",
+                    **_pd_econ(
+                        max_loss_1lot=debit * CONTRACT_MULTIPLIER,
+                        planned_reward=debit * CONTRACT_MULTIPLIER,
+                        planned_risk=debit * CONTRACT_MULTIPLIER,
+                        liquidity_lots=_lots(
+                            pick.get("call_oi") if side == "call" else pick.get("put_oi"),
+                            pick.get("call_ask_size") if side == "call" else pick.get("put_ask_size"),
+                        ),
+                        spread_frac=_spread_frac(bid, ask),
+                        quote_time_ms=pick.get("quote_time_ms"),
+                        fill_asof=pick.get("quote_asof"),
+                        pd_size=contracts,
+                    ),
                 },
             )
         )
@@ -454,6 +510,24 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
                     "legs": "BUY %s %s / SELL %s %s %s"
                     % (long_leg["strike"], side, short_leg["strike"], side, expiry),
                     "reason": "defined-risk directional; better than naked long when IV is not cheap",
+                    **_pd_econ(
+                        max_loss_1lot=debit * CONTRACT_MULTIPLIER,
+                        planned_reward=max_gain * CONTRACT_MULTIPLIER,
+                        planned_risk=debit * CONTRACT_MULTIPLIER,
+                        liquidity_lots=_lots(
+                            long_oi,
+                            short_oi,
+                            long_leg.get("call_ask_size") if side == "call" else long_leg.get("put_ask_size"),
+                            short_leg.get("call_bid_size") if side == "call" else short_leg.get("put_bid_size"),
+                        ),
+                        spread_frac=max(
+                            [f for f in (_spread_frac(long_bid, long_ask), _spread_frac(short_bid, short_ask)) if f is not None],
+                            default=None,
+                        ),
+                        quote_time_ms=long_leg.get("quote_time_ms") or short_leg.get("quote_time_ms"),
+                        fill_asof=long_leg.get("quote_asof") or short_leg.get("quote_asof"),
+                        pd_size=contracts,
+                    ),
                 }
                 quality = 0
                 if otm is not None and otm > 0.05:
@@ -507,6 +581,7 @@ def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich:
                 continue
             short_bid = short["put_bid"] if side == "put" else short["call_bid"]
             long_ask = long_leg["put_ask"] if side == "put" else long_leg["call_ask"]
+            long_bid = long_leg["put_bid"] if side == "put" else long_leg["call_bid"]
             short_ask = short["put_ask"] if side == "put" else short["call_ask"]
             short_oi = short["put_oi"] if side == "put" else short["call_oi"]
             long_oi = long_leg["put_oi"] if side == "put" else long_leg["call_oi"]
@@ -558,8 +633,27 @@ def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich:
                     if (short.get("quote_source") or long_leg.get("quote_source"))
                     else ""
                 ),
+                "fill_asof": short.get("quote_asof") or long_leg.get("quote_asof"),
                 "legs": "SELL %s %s / BUY %s %s %s" % (short["strike"], side, long_leg["strike"], side, expiry),
                 "reason": "IV rich vs realized; defined-risk short premium. R/R is credit/width, not 2:1 directional.",
+                **_pd_econ(
+                    max_loss_1lot=max_loss * CONTRACT_MULTIPLIER,
+                    planned_reward=credit * CONTRACT_MULTIPLIER,
+                    planned_risk=max_loss * CONTRACT_MULTIPLIER,
+                    liquidity_lots=_lots(
+                        short_oi,
+                        long_oi,
+                        short.get("put_bid_size") if side == "put" else short.get("call_bid_size"),
+                        long_leg.get("put_ask_size") if side == "put" else long_leg.get("call_ask_size"),
+                    ),
+                    spread_frac=max(
+                        [f for f in (_spread_frac(short_bid, short_ask), _spread_frac(long_bid, long_ask)) if f is not None],
+                        default=None,
+                    ),
+                    quote_time_ms=short.get("quote_time_ms") or long_leg.get("quote_time_ms"),
+                    fill_asof=short.get("quote_asof") or long_leg.get("quote_asof"),
+                    pd_size=contracts,
+                ),
             }
             key = cand["credit_pct"]
             if best is None or key > best.get("credit_pct", 0):
