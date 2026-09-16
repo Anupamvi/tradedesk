@@ -1,9 +1,9 @@
 ---
 name: grok-option
-description: Use when the user wants a grok-option scan, Expert Trade Table, credit or debit swing setup, unusual options review, book check, or journal update. Triggers include run today's scan, run the scanner, grok-option, Anu table, sell put credit, bull put, bear call, manage open book, revalidate assumptions, oil spike, geo event, ride the wave, playwright, logged-in x.com, and schwab chain. Applies quote-verified rules, regime gate, X veto, earnings firewall, spike path, Schwab live chain, and empty-table permission.
+description: Use when the user wants a grok-option scan, Expert Trade Table, credit or debit swing setup, unusual options review, book check, or journal update. Triggers include run today's scan, run the scanner, grok-option, Anu table, sell put credit, bull put, bear call, manage open book, revalidate assumptions, oil spike, geo event, ride the wave, playwright, logged-in x.com, and schwab chain. Applies quote-verified rules, regime gate, X veto, earnings firewall, name calendar before Expert, spike path, Schwab live chain, and empty-table permission.
 metadata:
   type: workflow
-  version: "3.12"
+  version: "3.13"
   owner: Kla
 ---
 
@@ -45,11 +45,12 @@ Do not reorder. Empty table is valid when quotes or geometry fail. Empty is a **
 3. **Stock-only universe** — common stock. If a shock is sourced, include that shock’s **written map** only. No ETFs unless the user said allow index hedge. No warrants, blanks, or unquotable names.
 4. **Notional filter** — liquid weeklies and monthlies. Cluster AI/semi/cloud as one theme; energy map is one theme.
 5. **Live chain** — Schwab `scan` (14–60 DTE Fridays, regime from live `$VIX`) or `structures` per name/expiry (all five actions). Then `vertical` to fill a row. Conservative net. **Pick highest credit/width, then dollars** (1-lot credit ≥ $100 when it exists; do not 15-wide a thinner-edge scrap). Skip a **structure** if a leg is missing, earnings unknown, or `earnings_date <= expiry`. Do not skip the other four because puts printed. Do not scan a single monthly and call it full. See `references/schwab.md` and `references/structures-and-pricing.md`.
-6. **X on candidates** — required after the chain. Veto/confirm only, never a trigger. Tag every table row `X: Quiet` / `Informed` / `Crowded veto` / `Event veto`. One regime pass (VIX, NVDA, Chair, 0DTE). Missing this pass is an incomplete scan. See `references/x-sentiment.md`.
-7. **Sleeve** — A Shield, B Fire, C cash/hedge, D Spike. Events are **name / theme / index** (`regime-and-signals.md`). Crisis kills Shield/Fire; Spike is the only Crisis debit if `spike.md` gates pass.
-8. **Book caps** — `references/book-and-target.md`. Reject rows that breach per-name, aggregate, theme, one-Fire-per-name, or one-Spike-per-scan.
-9. **Write the card to disk** — create `out/grok-option/YYYY-MM-DD/` and write `GROK_OPTION.md` from `assets/daily-card.md`. Chat reply: clickable file link + `Expert n | Review n`. Do not leave the user with only an inline table. Executable table **first** (0–7 rows). Dollar columns are **1-lot** max profit and max loss. **Rec lots** from Conf (`expert-table.md`). Keep Conf. After a row is already Expert, also write **PD, N, R_cons, L** and sort Expert **PD desc, nulls last**. Print `PD sort only — conf unchanged.` Sleeve board still lists all six structures. Buy/Sell cells name every leg (`Buy 225 Put` / `Sell 240 Put`; condor lists all four). Then Shock watch, then sleeve board, then **Cleared structures — review** (full rows, same columns + Status). Every geometry-pass structure gets a review row. Never collapse cleared trades into a one-line sleeve cell. Never title the trades “not executable.” A put-only table with no sleeve board is incomplete. Never mix a 1-lot P/L with an N-lot dollar.
-10. **Assumptions in force** — 3–5 bullets from the audit file. Stop. No second **executable** table. The review board is required and is not executable.
+6. **Name calendar** — required **before Expert**. For every geometry-pass candidate, web-source dated events in `(scan_date, expiry]`: company IR earnings (IR beats aggregator estimates), deliveries, product unveil, shareholder vote, named launch. One search per Expert-candidate ticker. Do not invent. **Seasonality folklore is not a veto and not a trigger.** A sourced dated event in the short’s life parks **that wing**. If that breaks an IC, print the unthreatened vertical or skip the name. Company IR date in the life is overlap, even if calendars still show a later estimate. Missing this pass is an incomplete scan — do not Expert. See `references/regime-and-signals.md`.
+7. **X on candidates** — required after the chain. Veto/confirm only, never a trigger. Tag every table row `X: Quiet` / `Informed` / `Crowded veto` / `Event veto`. One regime pass (VIX, NVDA, Chair, 0DTE). Missing this pass is an incomplete scan. See `references/x-sentiment.md`.
+8. **Sleeve** — A Shield, B Fire, C cash/hedge, D Spike. Events are **name / theme / index** (`regime-and-signals.md`). Crisis kills Shield/Fire; Spike is the only Crisis debit if `spike.md` gates pass.
+9. **Book caps** — `references/book-and-target.md`. Reject rows that breach per-name, aggregate, theme, one-Fire-per-name, or one-Spike-per-scan.
+10. **Write the card to disk** — create `out/grok-option/YYYY-MM-DD/` and write `GROK_OPTION.md` from `assets/daily-card.md`. Chat reply: clickable file link + `Expert n | Review n`. Do not leave the user with only an inline table. Executable table **first** (0–7 rows). Dollar columns are **1-lot** max profit and max loss. **Rec lots** from Conf (`expert-table.md`). Keep Conf. After a row is already Expert, also write **PD, N, R_cons, L** and sort Expert **PD desc, nulls last**. Print `PD sort only — conf unchanged.` Sleeve board still lists all six structures. Buy/Sell cells name every leg (`Buy 225 Put` / `Sell 240 Put`; condor lists all four). Then Shock watch, then sleeve board, then **Cleared structures — review** (full rows, same columns + Status). Every geometry-pass structure gets a review row. Never collapse cleared trades into a one-line sleeve cell. Never title the trades “not executable.” A put-only table with no sleeve board is incomplete. Never mix a 1-lot P/L with an N-lot dollar.
+11. **Assumptions in force** — 3–5 bullets from the audit file. Stop. No second **executable** table. The review board is required and is not executable.
 
 ## Reply shape
 
@@ -63,7 +64,7 @@ Do not paste a truncated table in chat as the deliverable. The file uses 🟢/�
 
 ## Sleeves
 
-**A SHIELD** — put credit **and** call credit. If both pass the same name/expiry, print **one iron condor**, not two verticals. Do not default to puts. Geometry in `structures-and-pricing.md`. Calm Score 65, size 1.0% then BP. NVDA = semis only. Manage 60–65% / 2.0×.
+**A SHIELD** — put credit **and** call credit. If both pass the same name/expiry **and** neither wing is name-calendar parked, print **one iron condor**, not two verticals. A sourced dated event against one short → that vertical only, not the IC. Do not default to puts. Geometry in `structures-and-pricing.md`. Calm Score 65, size 1.0% then BP. NVDA = semis only. Manage 60–65% / 2.0×.
 
 **B FIRE** — score **both** call debit and put debit. Half size when cheap IV, not Crowded, not name/theme Event, not Crisis, quoted debit. Opening flow is required for an **Expert table** Fire row (Score 80 path). Missing flow → sleeve board only, not a printed debit next to 80% Conf Shields. VWAP unverified → no Prime.
 
@@ -74,7 +75,7 @@ Do not paste a truncated table in chat as the deliverable. The file uses 🟢/�
 ## Tools
 
 - Schwab: `python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py scan --asof YYYY-MM-DD --regime auto` then `structures TICKER --expiry YYYY-MM-DD --regime normal` then `vertical` for the row. See `references/schwab.md`. The `~/.grok/skills/grok-option/scripts/...` path still works (symlink).
-- Web: VIX, index, earnings date, WTI/Brent, named geo copy.
+- Web: VIX, index, **company IR earnings date** (beats aggregator estimates), WTI/Brent, named geo copy, and **name calendar** (deliveries, product unveil, vote, named launch) for every Expert candidate.
 - X keyword + semantic search: Shock watch finder (geo/oil/kinetic) at regime; then candidate veto/confirm. Never a Spike row from X alone.
 - Browser: Playwright MCP or `scripts/browser_fetch.py` for X/news when APIs miss. Not a substitute for Schwab chain. See `references/browser.md`. Never type passwords.
 - Credit net = short bid minus long ask. Debit net = long ask minus short bid. If mids disagree by more than 5%, print the worse fill.
@@ -96,8 +97,10 @@ Do not paste a truncated table in chat as the deliverable. The file uses 🟢/�
 - Theme-cap breach
 - Copying a whale strike/expiry as the trade
 - Any expiry on or after the name’s next earnings date (overlap); missing earnings date is a skip, not a pass
+- Using an aggregator “est.” earnings date when company IR already printed a date
+- Expert a call, put, or iron-condor wing when a sourced dated event in `(scan, expiry]` threatens that short
 - Naked / undefined risk
-- Skipping a passing call credit or iron condor because of a saved ticker list or because Schwab shows long shares (tag assignment in Notes; do not veto)
+- Skipping a passing call credit or iron condor because of a saved ticker list or because Schwab shows long shares (tag assignment in Notes; do not veto). Name-calendar park is not a ticker blacklist.
 - Treating PCR, dark-pool prints, or X as entries (X may start Shock watch, not a Spike row)
 - Automating passwords / 2FA; inventing quotes from a screenshot with no DOM text
 - Spike off the written map, a fade unless the user said fade, or a calendar Event dressed as a shock

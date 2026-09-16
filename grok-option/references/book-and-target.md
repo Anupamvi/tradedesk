@@ -4,7 +4,7 @@
 
 **Account:** live Schwab when pulled. **$715k** on 2026-08-26, cash ~$24k. Mixed book: equity + options overlay. Size % off that total unless the user names an options-only sleeve. $150k is only if equity is unknown **and** Schwab is down.
 
-**No protected-ticker list.** Do not skip a call credit or iron condor because a name is “core” or because Schwab shows long shares. Permission is **this session’s signals**: regime geometry, earnings-overlap, Event/Crowded, quotes, theme cap. If both credit wings pass the same name/expiry, print **one iron condor**. If Schwab shows long stock in that name, tag Notes `shares held — close the spread; do not deliver unless asked`. Early assignment is a manage item, not a SCAN veto. Naked short calls stay banned.
+**No protected-ticker list.** Do not skip a call credit or iron condor because a name is “core” or because Schwab shows long shares. Permission is **this session’s signals**: regime geometry, earnings-overlap, **name calendar**, Event/Crowded, quotes, theme cap. If both credit wings pass the same name/expiry **and** neither is name-calendar parked, print **one iron condor**. A sourced dated event against one short → the other vertical, not the IC. If Schwab shows long stock in that name, tag Notes `shares held — close the spread; do not deliver unless asked`. Early assignment is a manage item, not a SCAN veto. Naked short calls stay banned.
 
 ## What $10k/month is on this account
 

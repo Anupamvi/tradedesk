@@ -8,7 +8,7 @@ Defined-risk only. No naked shorts. No undefined-risk strangles as Core.
 |--------|-----------|--------------------|
 | Shield | Put credit vertical (bull put) | Sell put credit |
 | Shield | Call credit vertical (bear call) | Sell call credit |
-| Shield | Iron condor only if **both** credit sides independently pass **that regime’s** geometry + quotes | Sell iron condor |
+| Shield | Iron condor only if **both** credit sides independently pass **that regime’s** geometry + quotes **and** neither wing is name-calendar parked | Sell iron condor |
 | Fire | Call debit vertical | Buy call debit |
 | Fire | Put debit vertical | Buy put debit |
 | Spike | Call or put debit vertical on the written shock map | Buy call debit or Buy put debit |
@@ -16,7 +16,7 @@ Defined-risk only. No naked shorts. No undefined-risk strangles as Core.
 
 **Banned labels:** "Buy Put Credit", "Buy Call Credit", "Sell Debit", whale-copy one-liners.
 
-**Scan all five.** On every allowed name/expiry run Schwab `structures` (or price each action with `vertical`). A scan that only looks at puts is incomplete. If both credit sides pass the same name/expiry, emit **one** iron condor, not a put row and a call row. Long stock in the Schwab book does **not** skip the call wing or the condor. Fire scores call debit and put debit separately (one Fire per name).
+**Scan all five.** On every allowed name/expiry run Schwab `structures` (or price each action with `vertical`). A scan that only looks at puts is incomplete. If both credit sides pass the same name/expiry **and** neither wing is name-calendar parked, emit **one iron condor**, not a put row and a call row. A sourced dated event against one short → print the other vertical; do not Expert the IC. Long stock in the Schwab book does **not** skip the call wing or the condor. Fire scores call debit and put debit separately (one Fire per name).
 
 ## Credit / debit math (no estimates)
 
@@ -63,7 +63,9 @@ Shield: liquid weeklies and monthlies on mega-caps. Scan **14–60 DTE**. Prefer
 Fire: match the thesis horizon; no 0–1 DTE lotto as a named sleeve without user ask. One live Fire per name.
 Spike: 7–21 DTE debit on the mapped name; no 0–1 DTE; one Spike row. See `spike.md`.
 
-**Earnings overlap (hard):** require a confirmed next earnings date and `expiry_date < earnings_date`. If the print’s calendar date is on or before expiry, or the date is unknown, **not a row**. Detail in `regime-and-signals.md`. Do not pick a later expiry to “wait out” 1-sigma if that later expiry crosses earnings — skip instead.
+**Earnings overlap (hard):** require a confirmed next earnings date and `expiry_date < earnings_date`. Company IR beats aggregator estimates. If the print’s calendar date is on or before expiry, or the date is unknown, **not a row**. Detail in `regime-and-signals.md`. Do not pick a later expiry to “wait out” 1-sigma if that later expiry crosses earnings — skip instead.
+
+**Name calendar (hard, before Expert):** web-source dated events in `(scan_date, expiry]` for every geometry-pass candidate — deliveries, product unveil, vote, named launch, plus the IR earnings date. Seasonality folklore (“TSLA always rips in October”) is not a veto and not a trigger. A sourced event parks **that wing**. Missing this pass is an incomplete scan.
 
 ## Management (default)
 

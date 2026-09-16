@@ -18,6 +18,7 @@ python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py vertical
 
 The user places every Schwab order. Empty table is valid when quotes or geometry fail.
 Never invent quotes, IV, OI, or delta. Missing source → skip the structure.
+Before Expert: web-source **name calendar** (company IR earnings, deliveries, unveil, vote) in `(scan, expiry]`. Seasonality folklore is not a veto. A sourced event parks that wing. IR beats aggregator estimates.
 
 Every SCAN writes:
 

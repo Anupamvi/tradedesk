@@ -7,6 +7,7 @@
 **Board:** 🟢 Expert *n* · 🟡 Review *n* · 🔴 Fail *n*
 **Shock:** …
 **Data:** 📒 MIXED · **Calendar:** …
+**Name calendar:** IR earnings + dated events in `(scan, expiry]` per Expert candidate. Seasonality folklore is not a veto.
 
 > [!IMPORTANT]
 > Re-quote at 9:35 before send. Do not 9:31 auto-send.

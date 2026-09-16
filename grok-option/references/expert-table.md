@@ -8,7 +8,7 @@ Write the full card to `out/grok-option/YYYY-MM-DD/GROK_OPTION.md`. An inline-on
 
 **Sleeve board** is scored-but-not-traded. Print it **below** the table. Status is **YES** / no. A put-only executable table with no board is incomplete.
 
-**Cleared structures — review** uses the same dollar/leg columns plus **●** (`🟢` / `🟡` / `🔴` / `⚡`) and **Why**. Every structure that met Calm/Normal geometry + quotes gets a row here even if sector cap, overlay, Crowded Fire, missing flow, wide AH, or “do not add” kept it off the Expert table. Do not one-line those trades. This is not a second executable table. Icons in `assets/report-style.md`.
+**Cleared structures — review** uses the same dollar/leg columns plus **●** (`🟢` / `🟡` / `🔴` / `⚡`) and **Why**. Every structure that met Calm/Normal geometry + quotes gets a row here even if sector cap, overlay, Crowded Fire, missing flow, wide AH, name-calendar wing park, or “do not add” kept it off the Expert table. Do not one-line those trades. This is not a second executable table. Icons in `assets/report-style.md`.
 
 ## Columns
 
@@ -71,7 +71,8 @@ N-lot dollars (rec lots × 1-lot P/L) belong in **Notes**, never in the dollar c
 
 - Invented IV, IV rank, OI, OI%, volume multiple, delta, or “est.”
 - "Buy Put Credit"
-- Rows that failed 1-sigma, width, earnings overlap (`earnings_date <= expiry` or date unknown), or book caps
+- Rows that failed 1-sigma, width, earnings overlap (`earnings_date <= expiry` or date unknown), name-calendar (sourced dated event in the short’s life), or book caps
+- An iron condor whose call or put wing is name-calendar parked (print the other vertical, or Review the IC)
 - ETF/index rows unless the user allowed index hedge
 - More than one live Fire per name
 - More than one Spike row
@@ -91,9 +92,9 @@ Then 3–5 **Assumptions in force** bullets (from the audit file). Optional cata
 
 ## Score gates (all must hold)
 
-**80** — FULL quotes; Shield meeting **Elevated** geometry (0.25 / 1σ) (or Fire with VWAP + opening flow + not Crowded/Event; or Spike with sourced shock + VWAP + not Crowded); `expiry_date < earnings_date`; book caps OK.
+**80** — FULL quotes; Shield meeting **Elevated** geometry (0.25 / 1σ) (or Fire with VWAP + opening flow + not Crowded/Event; or Spike with sourced shock + VWAP + not Crowded); `expiry_date < earnings_date`; name-calendar wing clear; book caps OK.
 
-**65** — MIXED, or **cheap-vol Shield** (Calm or Normal at 0.12 / 0.22Δ / 0.80σ), or Spike Crowded-but-quoted. Still `expiry_date < earnings_date`.
+**65** — MIXED, or **cheap-vol Shield** (Calm or Normal at 0.12 / 0.22Δ / 0.80σ), or Spike Crowded-but-quoted. Still `expiry_date < earnings_date` and name-calendar wing clear.
 
 **50** — tradable but weak (wide-ish quotes, THIN sentiment). Never Prime.
 

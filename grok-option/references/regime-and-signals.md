@@ -21,14 +21,14 @@ Events are **scoped**. A name’s print does not zero the whole book.
 
 | Scope | What counts | What it blocks |
 |-------|-------------|----------------|
-| **Name** | That ticker’s earnings/halt | All sleeves on that ticker (plus expiry-overlap firewall) until the next session after the print |
+| **Name** | That ticker’s earnings/halt **or** a sourced dated catalyst in the option’s life (deliveries, product unveil, vote, named launch) | Earnings/halt: all sleeves on that ticker until the next session after the print. Dated catalyst: park **the threatened wing** (call event → no call credit / no IC; put event → no put credit / no IC). Unthreatened vertical may still Expert if geometry + overlap pass |
 | **Theme** | Mega-cap print the index is pricing | **That sector only**, from this session’s tape (e.g. a chip/AI-infra print → semiconductors / AI-infra, not healthcare, energy, banks, staples, or hardware). Score every other sector **today**. Do not keep a saved ticker deny-list |
 | **Index** | FOMC **decision day**, CPI/PCE **the morning of**, NFP **the morning of**, Chair speech **the calendar date of** | Skip expiries that **land on** that date. No **index** Fire (SPY/QQQ) that day. Single-name Shield and Fire on non-theme names stay live if geometry + earnings-overlap pass |
 | **Session empty** | Crisis, or FOMC **decision day** | Prefer empty table. A speech later in the week is not an empty week |
 
 PCE already printed this session is **done**. Calendar Event is not a Spike. Weekly OPEX (non-monthly Friday) is a liquidity note unless it is also the Chair/FOMC date.
 
-**Over-gate test.** Before skipping a name: if it is not in a name/theme freeze, and geometry + earnings-overlap pass, it is a row. A later-week index event is an expiry skip, not a book-off switch.
+**Over-gate test.** Before skipping a name: if it is not in a name/theme freeze, and geometry + earnings-overlap pass, it is a row. A later-week index event is an expiry skip, not a book-off switch. A dated catalyst parks **the threatened wing**, not the whole book and not the other vertical.
 
 **When a cluster reopens.** Name/theme: that cluster only, next regular session after the print. Index Fire on SPY/QQQ: next session after the speech/print. The rest of the book never closed.
 
@@ -56,7 +56,9 @@ Fire prefers the underlying on the same side of VWAP (or clearly reclaiming it) 
 
 Hard skip for **every** sleeve (Shield, Fire, condor, hedge). The 7 / 14 / 15-day windows are retired. A 45-DTE that is still alive on earnings day is an earnings trade even if the print is “far.”
 
-Source a **confirmed** next earnings date (and BMO/AMC when published). Web or an attached calendar. Do not guess. “Late September” or missing date = **not a row**.
+Source a **confirmed** next earnings date (and BMO/AMC when published). **Company IR beats aggregator estimates.** Web or an attached calendar. Do not guess. Do not keep an Expert row on “est. Oct 27” the day after IR set Oct 13. “Late September” or missing date = **not a row**.
+
+**Name calendar (before Expert).** For every geometry-pass candidate, one web search covering `(scan_date, expiry]`: IR earnings, deliveries, product unveil, shareholder vote, named launch. Seasonality folklore is not a veto. A sourced dated event parks that wing. 2026-09-16 miss: TSLA Oct-16 405C Expert while Tesla dated Roadster unveil **Oct 1** and Q3 deliveries sit in the life.
 
 **Overlap (skip):** `earnings_date <= expiry_date`  
 The option’s life is `[scan_date, expiry_date]`. If the print’s calendar date sits on or before expiry, the contract can eat the surprise and the IV crush/expansion. Same-day counts (AMC on expiry Friday still pumps that session).
