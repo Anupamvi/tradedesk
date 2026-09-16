@@ -2663,6 +2663,69 @@
       "stkVolu": 3830018.0,
       "ticker": "XLRE",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 43.9,
+      "hiPx": 44.26,
+      "loPx": 43.6612,
+      "open": 43.665,
+      "stkVolu": 4883393.0,
+      "ticker": "XLRE",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 43.41,
+      "hiPx": 43.91,
+      "loPx": 43.375,
+      "open": 43.75,
+      "stkVolu": 5897924.0,
+      "ticker": "XLRE",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 43.05,
+      "hiPx": 43.61,
+      "loPx": 42.94,
+      "open": 43.47,
+      "stkVolu": 4729708.0,
+      "ticker": "XLRE",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 43.42,
+      "hiPx": 43.55,
+      "loPx": 43.23,
+      "open": 43.4,
+      "stkVolu": 4389380.0,
+      "ticker": "XLRE",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 43.12,
+      "hiPx": 43.59,
+      "loPx": 42.965,
+      "open": 43.39,
+      "stkVolu": 6178545.0,
+      "ticker": "XLRE",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 43.07,
+      "hiPx": 43.16,
+      "loPx": 42.7,
+      "open": 43.11,
+      "stkVolu": 4644775.0,
+      "ticker": "XLRE",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 43.35,
+      "hiPx": 43.365,
+      "loPx": 43.072,
+      "open": 43.072,
+      "stkVolu": 477353.0,
+      "ticker": "XLRE",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

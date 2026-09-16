@@ -73,37 +73,18 @@ class TestLiveHighQuote(unittest.TestCase):
 
 
 class TestBreakoutVolume(unittest.TestCase):
-    def test_quiet_break_week_blocks_week1_only(self):
-        self.assertEqual(
-            assign_action(
-                True,
-                False,
-                "held",
-                weeks=1,
-                entry_reason="in_trend_wait",
-                hh_hl=True,
-                mansfield_rising=True,
-                mansfield_spy=0.10,
-                residual_63=0.10,
-                break_vol_expand=False,
-            ),
-            "NEW",
+    def test_quiet_break_week_is_never_add(self):
+        kwargs = dict(
+            entry_reason="in_trend_wait",
+            hh_hl=True,
+            mansfield_rising=True,
+            mansfield_spy=0.10,
+            residual_63=0.10,
+            break_vol_expand=False,
+            from_base=True,
         )
-        self.assertEqual(
-            assign_action(
-                True,
-                False,
-                "held",
-                weeks=3,
-                entry_reason="in_trend_wait",
-                hh_hl=True,
-                mansfield_rising=True,
-                mansfield_spy=0.10,
-                residual_63=0.10,
-                break_vol_expand=False,
-            ),
-            "ADD",
-        )
+        self.assertEqual(assign_action(True, False, "held", weeks=1, **kwargs), "NEW")
+        self.assertEqual(assign_action(True, False, "held", weeks=3, **kwargs), "NEW")
 
     def test_already_bought_is_hold(self):
         self.assertEqual(
@@ -118,6 +99,7 @@ class TestBreakoutVolume(unittest.TestCase):
                 mansfield_spy=0.10,
                 residual_63=0.10,
                 vol_expand=True,
+                from_base=True,
                 already_bought=True,
             ),
             "HOLD",
@@ -135,6 +117,7 @@ class TestBreakoutVolume(unittest.TestCase):
                 mansfield_spy=0.10,
                 residual_63=0.10,
                 vol_expand=True,
+                from_base=True,
                 regime_risk="off",
             ),
             "HOLD",
@@ -168,6 +151,7 @@ class TestBreakoutVolume(unittest.TestCase):
                 rs_63=0.12,
                 residual_63=0.08,
                 vol_expand=False,
+                from_base=True,
             ),
             "NEW",
         )
@@ -184,8 +168,27 @@ class TestBreakoutVolume(unittest.TestCase):
                 rs_63=0.12,
                 residual_63=0.08,
                 vol_expand=True,
+                from_base=True,
             ),
             "ADD",
+        )
+
+    def test_stage3_reclaim_is_not_breakout(self):
+        self.assertEqual(
+            assign_action(
+                True,
+                False,
+                "held",
+                weeks=2,
+                entry_reason="in_trend_wait",
+                hh_hl=True,
+                mansfield_rising=True,
+                mansfield_spy=0.10,
+                residual_63=0.31,
+                vol_expand=True,
+                from_base=False,
+            ),
+            "NEW",
         )
 
     def test_negative_residual_blocks_breakout(self):
@@ -201,6 +204,8 @@ class TestBreakoutVolume(unittest.TestCase):
                 mansfield_spy=0.10,
                 rs_63=0.20,
                 residual_63=-0.05,
+                vol_expand=True,
+                from_base=True,
             ),
             "NEW",
         )

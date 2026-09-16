@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+import subprocess
 import time
 import urllib.error
 import urllib.parse
@@ -60,11 +62,36 @@ def _token_blob(path: Path) -> dict:
     return {"token": payload if isinstance(payload, dict) else {}}
 
 
+_SYNC = Path("/Users/anuppamvi/tradedesk/scripts/schwab_sync_gcp.sh")
+_synced = False
+
+
+def _schwab_cloud(mode: str, wait: bool = False) -> None:
+    if not _SYNC.is_file():
+        return
+    env = os.environ.copy()
+    env["PATH"] = str(Path.home() / "google-cloud-sdk" / "bin") + ":" + env.get("PATH", "")
+    cmd = ["bash", str(_SYNC), mode]
+    kw = dict(env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        if wait:
+            subprocess.run(cmd, timeout=90, **kw)
+        else:
+            subprocess.Popen(cmd, start_new_session=True, **kw)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
 def _save_token(path: Path, blob: dict) -> None:
     path.write_text(json.dumps(blob, indent=2) + "\n", encoding="utf-8")
+    _schwab_cloud("push")
 
 
 def _access_token() -> Optional[str]:
+    global _synced
+    if not _synced:
+        _synced = True
+        _schwab_cloud("reconcile", wait=True)
     creds = schwab_credentials()
     if not creds:
         return None

@@ -58,7 +58,7 @@ def render_board(asof: str, rows: List[dict], meta: dict) -> str:
         ),
         "",
         "Grade is campaign structure, not P(win). A = long, still expanding, near highs. C = weak tag, stalled, or messy.",
-        "ADD = first Stage 2 ticket this campaign (breakout with break-week volume, or an early pullback). One ADD per campaign. NEW = weak tag. HOLD = in trend or entry already used. LATE = old and dying.",
+        "ADD = first ticket this campaign: a Stage 2 breakout from a base (Stage 1/4, or a 1–2 week Stage 3 poke still near the 30-week) with break-week volume, or the first early pullback. A Stage 3 MA-turn after the stock already ran is NEW, not a buy. One ADD per campaign. NEW = weak tag. HOLD = in trend or entry already used. LATE = old and dying.",
         "Empty ADD is valid.",
         "",
         "## ADD — buy stock this week",
@@ -256,7 +256,9 @@ def render_evidence(asof: str, rows: List[dict]) -> str:
     for r in rows:
         if r.get("action") == "OUT" and not r.get("had_trend"):
             continue
-        vol = r.get("vol_expand")
+        vol = r.get("break_vol_expand")
+        if vol is None:
+            vol = r.get("vol_expand")
         vol_s = "yes" if vol is True else ("no" if vol is False else "—")
         lines.append(
             "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |"
@@ -284,7 +286,7 @@ def render_replay(asof: str, rows: List[dict]) -> str:
     lines = [
         "# Universe replay %s" % asof,
         "",
-        "First week the name tagged Stage 2 and was beating SPY, then 4/8/13-week forward return from that close. No future bars in the tag.",
+        "First week of the latest campaign (current or last ended) that tagged Stage 2 and was beating SPY, then 4/8/13-week forward return from that close. Not the first tag in the five-year tape. No future bars in the tag.",
         "",
         "Tagged %s of %s names." % (len(tagged), len(rows)),
         "",

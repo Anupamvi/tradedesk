@@ -11,7 +11,7 @@ description: >
 
 CODE=`/Users/anuppamvi/tradedesk/trendbook`
 
-Weekly trend book: Weinstein Stage 2 + beating SPY. Buys the breakout (including a young spike) and the first early pullback. Stock first. Empty **ADD** is valid. Never submit, cancel, or replace an order.
+Weekly trend book: Weinstein Stage 2 + beating SPY. Buys a breakout from a base, or the first early pullback. A Stage 3 MA-turn after the stock already ran is not a buy. Stock first. Empty **ADD** is valid. Never submit, cancel, or replace an order.
 
 Do not treat `groat`, `RUN FULL SCAN`, `xhigh`, `grok-option`, `trend-analysis`, or `pattern` as this desk.
 
@@ -54,4 +54,4 @@ Schwab uses `SCHWAB_TOKEN_PATH` from tradedesk `.env` (do not copy the token int
 - Evidence: [evidence.md](/Users/anuppamvi/tradedesk/trendbook/out/trendbook/DATE/evidence.md)
 ```
 
-Universe is generated each run (`var/universe.json`): this desk's Stage-2 memory, live 52-week highs, Schwab movers. Not `configs/universe.txt`, not groat/xhigh. Empty ADD is valid; a typical week should print 1–2 genuine first tickets when the tape has them. One ADD per campaign. ADD = Stage 2 breakout (weeks 1–4, break-week volume not contracted, residual 3m after beta ≥ 0, not lagging sector) or the first early pullback with residual ≥ 0. No new ADD if SPY is not Stage 2; tight regime (UUP Stage 2 + TLT Stage 4) is half size, blocked only if residual is negative. Earnings inside 10 days is HOLD. Stop = weekly close below the 30-week. NEW = weak tag. LATE = old and dying. Grade A/B/C is structure, not P(win). Outcomes: next-week open fill, hold 8 weeks or two off weeks; CAPTURE = return > 0. A wick is not a win. HOLD/NEW/LATE are not trades.
+Universe is generated each run (`var/universe.json`): this desk's Stage-2 memory, live 52-week highs, Schwab movers. Not `configs/universe.txt`, not groat/xhigh. Empty ADD is valid. ADD is a buy, not a tag. One ADD per campaign. Breakout ADD = from a base (prior Stage 1/4, or a 1–2 week Stage 3 poke still within 10% of the 30-week) with break-week volume expansion, residual 3m after beta ≥ 0, not lagging sector, weeks 1–4. A Stage 3 MA-turn after the stock already ran is NEW. Incomplete mid-week bars do not create a second week. Pullback ADD = first early 10-week / 50-day / 30-week dip with residual ≥ 0. No new ADD if SPY is not Stage 2; tight regime (UUP Stage 2 + TLT Stage 4) is half size, blocked only if residual is negative. Earnings inside 10 days is HOLD. Stop = weekly close below the 30-week. NEW = weak tag. LATE = old and dying. Grade A/B/C is structure, not P(win). Outcomes: next-week open fill, hold 8 weeks or two off weeks; CAPTURE = return > 0. A wick is not a win. HOLD/NEW/LATE are not trades.

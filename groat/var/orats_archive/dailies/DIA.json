@@ -2663,6 +2663,69 @@
       "stkVolu": 2325722.0,
       "ticker": "DIA",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 528.03,
+      "hiPx": 530.39,
+      "loPx": 527.35,
+      "open": 530.22,
+      "stkVolu": 3649741.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 524.07,
+      "hiPx": 525.74,
+      "loPx": 523.25,
+      "open": 525.64,
+      "stkVolu": 3784538.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 520.75,
+      "hiPx": 523.02,
+      "loPx": 519.8,
+      "open": 522.29,
+      "stkVolu": 4750332.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 525.79,
+      "hiPx": 527.36,
+      "loPx": 524.29,
+      "open": 525.37,
+      "stkVolu": 3437463.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 524.49,
+      "hiPx": 526.785,
+      "loPx": 523.095,
+      "open": 524.54,
+      "stkVolu": 2702182.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 521.23,
+      "hiPx": 523.64,
+      "loPx": 519.21,
+      "open": 523.18,
+      "stkVolu": 3227139.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 520.89,
+      "hiPx": 522.3,
+      "loPx": 519.97,
+      "open": 521.9,
+      "stkVolu": 809890.0,
+      "ticker": "DIA",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

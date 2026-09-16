@@ -135,6 +135,42 @@ def score_row(row: dict, regime: str, group_status: str) -> float:
     return s
 
 
+def _maybe_fallback_stock(row: dict, chosen: dict, regime: str, group_status: str) -> bool:
+    """Keep STOCK when a live OPTIONS ticket would miss TRADE_SCORE_MIN and stock still clears.
+
+    Morning chains can print a debit with RR 1.2–1.5 that scores 49 while the stock
+    ticket at 2:1 still scores 53. Do not silently demote a TRADE stock to WATCH options.
+    """
+    stock = chosen.get("stock") if isinstance(chosen, dict) else None
+    if row.get("choice") != "OPTIONS" or not isinstance(stock, dict) or not stock.get("ok"):
+        return False
+    if (to_float(row.get("score")) or 0) >= TRADE_SCORE_MIN:
+        return False
+    probe = dict(row)
+    probe["choice"] = "STOCK"
+    probe["picked"] = stock
+    probe_score = score_row(probe, regime, group_status)
+    if probe_score < TRADE_SCORE_MIN:
+        return False
+    row["choice"] = "STOCK"
+    row["picked"] = stock
+    row["target_debit"] = None
+    row["target_credit"] = None
+    row["premium_side"] = stock.get("premium_side")
+    row["opt_conf"] = None
+    row["opt_conf_label"] = "n/a"
+    row["opt_conf_note"] = "stock or no trade"
+    row["opt_conf_drivers"] = []
+    row["naive_pop"] = None
+    row["naive_pop_note"] = None
+    why = list(row.get("choice_why") or [])
+    why.append("options ticket scores below TRADE; stock still clears")
+    row["choice_why"] = why
+    stamp_fill_guard(row)
+    row["score"] = probe_score
+    return True
+
+
 def load_bars(
     tickers: Sequence[str],
     token: str,
@@ -212,7 +248,11 @@ def build_candidate(
     earn = earn or earnings_info(ticker, core_row, asof, hist_rows=hist_rows)
     setup = classify_setups(snap, group_row=group_row, earnings=earn, bars=bars)
     direction = setup.get("direction") or "neutral"
-    chosen = choose(snap, direction, vol, strikes or [], earn, setup=setup, chain_status=chain_status)
+    choose_snap = snap
+    if snap.get("session_incomplete") and snap.get("live_last") is not None:
+        choose_snap = dict(snap)
+        choose_snap["close"] = snap.get("live_last")
+    chosen = choose(choose_snap, direction, vol, strikes or [], earn, setup=setup, chain_status=chain_status)
     macros = events_between(asof, _end_hold(asof))
     xinfo = load_xintel(asof, ticker)
     picked = chosen.get("picked") or {}
@@ -228,7 +268,11 @@ def build_candidate(
         "etf": ticker_etf(ticker),
         "group_status": group_row.get("status") or "DATA UNAVAILABLE",
         "sleeve": SLEEVE,
-        "close": snap.get("close"),
+        "close": snap.get("live_last")
+        if snap.get("session_incomplete") and snap.get("live_last") is not None
+        else snap.get("close"),
+        "structure_close": snap.get("structure_close") or snap.get("close"),
+        "session_incomplete": bool(snap.get("session_incomplete")),
         "ema20": snap.get("ema20"),
         "sma50": snap.get("sma50"),
         "sma200": snap.get("sma200"),
@@ -239,7 +283,9 @@ def build_candidate(
         "rs_60": snap.get("rs_60"),
         "rvol": snap.get("rvol"),
         "rsi14": snap.get("rsi14"),
-        "ret_1": snap.get("ret_1"),
+        "ret_1": snap.get("live_ret_1")
+        if snap.get("session_incomplete") and snap.get("live_ret_1") is not None
+        else snap.get("ret_1"),
         "ret_2": snap.get("ret_2"),
         "extension_atr": snap.get("extension_atr"),
         "avwap_year": snap.get("avwap_year"),
@@ -292,7 +338,11 @@ def build_candidate(
     }
     stamp_fill_guard(row)
     row["thesis"] = build_thesis(row)
-    row["score"] = score_row(row, str(regime.get("regime") or ""), str(group_row.get("status") or ""))
+    regime_label = str(regime.get("regime") or "")
+    group_status = str(group_row.get("status") or "")
+    row["score"] = score_row(row, regime_label, group_status)
+    if _maybe_fallback_stock(row, chosen, regime_label, group_status):
+        row["thesis"] = build_thesis(row)
     if row["stale"] or not snap.get("ok"):
         action = "IGNORE"
         reasons = [snap.get("reason") or "missing_bars"]

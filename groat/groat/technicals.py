@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Sequence
 
-from groat.config import ATR_N
+from groat.config import ATR_N, INCOMPLETE_RVOL
 from groat.num import pct_change, to_float
 
 
@@ -206,6 +206,22 @@ def year_start(asof: str) -> str:
     return asof[:4] + "-01-01"
 
 
+def session_bar_incomplete(upto: Sequence[dict], asof: str) -> bool:
+    """True when asof's bar is a live stub vs prior 20d volume. Not a completed session."""
+    if not upto:
+        return False
+    last = upto[-1]
+    if str(last.get("date") or "")[:10] != asof or len(upto) < 2:
+        return False
+    v20 = volume_avg(upto[:-1], 20)
+    if not v20:
+        return False
+    today_v = to_float(last.get("volume"))
+    if today_v is None:
+        return True
+    return today_v / v20 < INCOMPLETE_RVOL
+
+
 def snapshot(bars: Sequence[dict], asof: str, bench_bars: Optional[Sequence[dict]] = None) -> Dict[str, object]:
     upto = bars_through(bars, asof)
     empty = {
@@ -214,6 +230,65 @@ def snapshot(bars: Sequence[dict], asof: str, bench_bars: Optional[Sequence[dict
         "reason": "missing_bars",
         "date": upto[-1]["date"] if upto else "",
         "stale": True,
+        "session_incomplete": False,
+    }
+    if not upto:
+        return empty
+    last = upto[-1]
+    incomplete = session_bar_incomplete(upto, asof)
+    struct = list(upto[:-1]) if incomplete else list(upto)
+    if not struct:
+        return empty
+    out = _snapshot_from_bars(struct, struct[-1]["date"], bench_bars)
+    if not out.get("ok"):
+        return out
+    out["asof"] = asof
+    out["session_incomplete"] = incomplete
+    out["structure_date"] = struct[-1]["date"]
+    out["structure_close"] = out.get("close")
+    if not incomplete:
+        out["stale"] = last["date"] != asof
+        out["reason"] = "stale_price" if out["stale"] else ""
+        return out
+    # Live last for fills/click/chase. Setups keep structure close/ret/hi20/RS.
+    live_px = to_float(last.get("close"))
+    out["stale"] = False
+    out["reason"] = ""
+    out["live_last"] = live_px
+    out["live_open"] = to_float(last.get("open"))
+    out["live_high"] = to_float(last.get("high"))
+    out["live_low"] = to_float(last.get("low"))
+    out["live_ret_1"] = pct_change(live_px, out.get("structure_close"))
+    today_v = to_float(last.get("volume"))
+    out["volume"] = today_v
+    v20 = out.get("vol_20")
+    out["rvol"] = (today_v / v20) if (v20 and today_v) else None
+    atr = to_float(out.get("atr14"))
+    ema20 = to_float(out.get("ema20"))
+    sma50 = to_float(out.get("sma50"))
+    sma200 = to_float(out.get("sma200"))
+    if live_px is not None and atr and ema20:
+        out["extension_atr"] = (live_px - ema20) / atr
+    if live_px is not None:
+        out["above_ema20"] = live_px > ema20 if ema20 is not None else None
+        out["above_sma50"] = live_px > sma50 if sma50 is not None else None
+        out["above_sma200"] = live_px > sma200 if sma200 is not None else None
+        out["trend"] = _trend(live_px, ema20, sma50, sma200, out.get("ema20_rising"))
+    return out
+
+
+def _snapshot_from_bars(
+    upto: Sequence[dict],
+    asof: str,
+    bench_bars: Optional[Sequence[dict]] = None,
+) -> Dict[str, object]:
+    empty = {
+        "asof": asof,
+        "ok": False,
+        "reason": "missing_bars",
+        "date": upto[-1]["date"] if upto else "",
+        "stale": True,
+        "session_incomplete": False,
     }
     if not upto:
         return empty
@@ -250,7 +325,7 @@ def snapshot(bars: Sequence[dict], asof: str, bench_bars: Optional[Sequence[dict
     if ema20 is not None and ema20_prev is not None:
         ema_rising = ema20 > ema20_prev
     bench_c = closes(bars_through(bench_bars, last["date"])) if bench_bars is not None else []
-    out = {
+    return {
         "asof": asof,
         "date": last["date"],
         "ok": True,
@@ -291,8 +366,10 @@ def snapshot(bars: Sequence[dict], asof: str, bench_bars: Optional[Sequence[dict
         "above_sma50": px > sma50 if sma50 is not None else None,
         "above_sma200": px > sma200 if sma200 is not None else None,
         "trend": _trend(px, ema20, sma50, sma200, ema_rising),
+        "session_incomplete": False,
+        "structure_date": last["date"],
+        "structure_close": px,
     }
-    return out
 
 
 def _trend(px, ema20, sma50, sma200, ema_rising) -> str:

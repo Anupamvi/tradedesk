@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+import subprocess
 import time
 import urllib.error
 import urllib.parse
@@ -54,11 +56,36 @@ def _token_blob(path: Path) -> dict:
     return {"token": payload if isinstance(payload, dict) else {}}
 
 
+_SYNC = Path("/Users/anuppamvi/tradedesk/scripts/schwab_sync_gcp.sh")
+_synced = False
+
+
+def _schwab_cloud(mode: str, wait: bool = False) -> None:
+    if not _SYNC.is_file():
+        return
+    env = os.environ.copy()
+    env["PATH"] = str(Path.home() / "google-cloud-sdk" / "bin") + ":" + env.get("PATH", "")
+    cmd = ["bash", str(_SYNC), mode]
+    kw = dict(env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        if wait:
+            subprocess.run(cmd, timeout=90, **kw)
+        else:
+            subprocess.Popen(cmd, start_new_session=True, **kw)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
 def _save_token(path: Path, blob: dict) -> None:
     path.write_text(json.dumps(blob, indent=2) + "\n", encoding="utf-8")
+    _schwab_cloud("push")
 
 
 def _access_token() -> Optional[str]:
+    global _synced
+    if not _synced:
+        _synced = True
+        _schwab_cloud("reconcile", wait=True)
     creds = schwab_credentials()
     if not creds:
         return None
@@ -136,18 +163,22 @@ def _read_bars_cache(ticker: str) -> List[dict]:
 
 def price_history_bars(ticker: str, asof: str, lookback_days: int = 420, use_cache: bool = True) -> List[dict]:
     name = str(ticker).upper()
-    cached = _read_bars_cache(name) if use_cache else []
-    if cached:
-        last = cached[-1]["date"]
+    disk = _read_bars_cache(name)
+    if use_cache and disk:
+        last = disk[-1]["date"]
         if last >= asof[:10]:
-            return [b for b in cached if b["date"] <= asof[:10]]
+            return [b for b in disk if b["date"] <= asof[:10]]
+
+    def _from_disk() -> List[dict]:
+        return [b for b in disk if b["date"] <= asof[:10]]
+
     token = _access_token()
     if not token:
-        return [b for b in cached if b["date"] <= asof[:10]]
+        return _from_disk()
     try:
         asof_d = datetime.strptime(asof[:10], "%Y-%m-%d")
     except (TypeError, ValueError):
-        return cached
+        return _from_disk()
     end = asof_d + timedelta(days=1)
     start = end - timedelta(days=int(lookback_days))
     start_ms = int(start.replace(tzinfo=timezone.utc).timestamp() * 1000)
@@ -166,7 +197,7 @@ def price_history_bars(ticker: str, asof: str, lookback_days: int = 420, use_cac
     payload = _get_json("%s/pricehistory?%s" % (MARKET, query), token)
     time.sleep(0.05)
     if not isinstance(payload, dict):
-        return [b for b in cached if b["date"] <= asof[:10]]
+        return _from_disk()
     bars = []
     for candle in payload.get("candles") or []:
         if not isinstance(candle, dict):
@@ -188,7 +219,7 @@ def price_history_bars(ticker: str, asof: str, lookback_days: int = 420, use_cac
     if bars:
         _write_bars_cache(name, bars)
         return [b for b in bars if b["date"] <= asof[:10]]
-    return [b for b in cached if b["date"] <= asof[:10]]
+    return _from_disk()
 
 
 def quote_bar(ticker: str, asof: str) -> Optional[dict]:

@@ -10,7 +10,7 @@ from pathlib import Path
 from trendbook.pipeline import build_full
 from trendbook.replay import load_json_bars
 from trendbook.rs import rs_ok
-from trendbook.trend import LATE_MIN_WEEKS, current_run, current_run_from_flags, universe_replay
+from trendbook.trend import LATE_MIN_WEEKS, current_run, current_run_from_flags, from_base, universe_replay
 
 BARS = Path("/Users/anuppamvi/tradedesk/trendbook/var/schwab_bars")
 ASOF = "2026-09-04"
@@ -274,6 +274,96 @@ class TestCampaignAndGrade(unittest.TestCase):
         self.assertEqual(run["weeks_in_trend"], 1)
         self.assertEqual(run["trend_start"], flags[-1]["asof"])
 
+    def test_incomplete_week_does_not_count_as_week_two(self):
+        flags = [
+            {
+                "asof": "2026-08-28",
+                "week_end": "2026-08-28",
+                "close": 100.0,
+                "high": 101.0,
+                "on": False,
+                "stage": 1,
+                "ma30": 99.0,
+            },
+            {
+                "asof": "2026-09-04",
+                "week_end": "2026-09-04",
+                "close": 105.0,
+                "high": 106.0,
+                "on": True,
+                "stage": 2,
+                "ma30": 100.0,
+                "vol_expand": True,
+            },
+            {
+                "asof": "2026-09-07",
+                "week_end": "2026-09-11",
+                "close": 104.0,
+                "high": 105.0,
+                "on": True,
+                "stage": 2,
+                "ma30": 100.0,
+                "vol_expand": False,
+            },
+        ]
+        run = current_run_from_flags(flags)
+        self.assertEqual(run["weeks_in_trend"], 1)
+        self.assertTrue(run["from_base"])
+        self.assertEqual(run["trend_start"], "2026-09-04")
+
+    def test_long_stage3_reclaim_is_not_from_base(self):
+        flags = []
+        start = datetime(2026, 7, 3)
+        for i in range(8):
+            flags.append(
+                {
+                    "asof": (start + timedelta(weeks=i)).date().isoformat(),
+                    "week_end": (start + timedelta(weeks=i)).date().isoformat(),
+                    "close": 530.0 + i * 12,
+                    "high": 540.0 + i * 12,
+                    "on": False,
+                    "stage": 3,
+                    "ma30": 500.0,
+                }
+            )
+        flags.append(
+            {
+                "asof": "2026-09-04",
+                "week_end": "2026-09-04",
+                "close": 613.0,
+                "high": 622.0,
+                "on": True,
+                "stage": 2,
+                "ma30": 515.0,
+            }
+        )
+        self.assertFalse(from_base(flags, len(flags) - 1))
+        run = current_run_from_flags(flags)
+        self.assertFalse(run["from_base"])
+        self.assertEqual(run["prior_stage"], 3)
+
+    def test_tmo_is_not_add(self):
+        tmo_path = BARS / "TMO.json"
+        spy_path = BARS / "SPY.json"
+        if not tmo_path.is_file() or not spy_path.is_file():
+            self.skipTest("TMO/SPY cache missing")
+        tmo = load_json_bars(tmo_path)
+        spy = load_json_bars(spy_path)
+        for asof in (ASOF, "2026-09-07"):
+            with tempfile.TemporaryDirectory() as tmp:
+                info = build_full(
+                    asof,
+                    out_dir=Path(tmp),
+                    no_schwab=True,
+                    no_orats=True,
+                    persist=False,
+                    bars_map={"SPY": spy, "TMO": tmo},
+                    tickers=["SPY", "TMO"],
+                )
+            tmo_row = [r for r in info["rows"] if r["ticker"] == "TMO"][0]
+            self.assertNotEqual(tmo_row["action"], "ADD", tmo_row)
+            self.assertFalse(tmo_row.get("from_base"), tmo_row)
+
     def test_stage2_breakout_and_early_pullback(self):
         from trendbook.trend import assign_action, grade
 
@@ -288,8 +378,24 @@ class TestCampaignAndGrade(unittest.TestCase):
                 mansfield_rising=True,
                 mansfield_spy=0.08,
                 rs_63=0.12,
+                vol_expand=True,
+                from_base=True,
             ),
             "ADD",
+        )
+        self.assertEqual(
+            assign_action(
+                True,
+                False,
+                "extended",
+                weeks=2,
+                entry_reason="chase_3.0_atr",
+                hh_hl=True,
+                mansfield_rising=True,
+                mansfield_spy=0.08,
+                rs_63=0.12,
+            ),
+            "NEW",
         )
         self.assertEqual(
             assign_action(

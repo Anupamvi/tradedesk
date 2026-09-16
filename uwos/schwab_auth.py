@@ -430,12 +430,39 @@ class SchwabLiveDataService:
         token_path.parent.mkdir(parents=True, exist_ok=True)
         return token_path
 
+    def _sync_cloud_token(self, mode: str, wait: bool = False) -> None:
+        script = Path("/Users/anuppamvi/tradedesk/scripts/schwab_sync_gcp.sh")
+        if not script.is_file():
+            return
+        env = os.environ.copy()
+        env["PATH"] = str(Path.home() / "google-cloud-sdk" / "bin") + ":" + env.get("PATH", "")
+        cmd = ["bash", str(script), mode]
+        kw = dict(env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            if wait:
+                subprocess.run(cmd, timeout=90, **kw)
+            else:
+                subprocess.Popen(cmd, start_new_session=True, **kw)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
     def _load_client_from_token(self):
-        return client_from_token_file(
+        self._sync_cloud_token("reconcile", wait=True)
+        client = client_from_token_file(
             str(self.token_path),
             self.config.api_key,
             self.config.app_secret,
         )
+        sess = getattr(client, "session", None)
+        orig = getattr(sess, "update_token", None) if sess is not None else None
+        if callable(orig):
+            def _upd(token, *args, **kwargs):
+                ret = orig(token, *args, **kwargs)
+                self._sync_cloud_token("push")
+                return ret
+
+            sess.update_token = _upd
+        return client
 
     def _manual_client_from_login(self):
         try:

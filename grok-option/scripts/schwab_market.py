@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import warnings
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -38,6 +39,8 @@ def boot() -> Path:
     os.chdir(root)
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
+    # Mega-cap chains time out at the 12s uwos default during RTH.
+    os.environ.setdefault("UWOS_SCHWAB_OPTION_CHAIN_TIMEOUT_SECONDS", "45")
     return root
 
 
@@ -330,6 +333,82 @@ ALLOWED_WIDTHS = (5.0, 10.0, 2.5, 15.0)
 CREDIT_DOLLAR_FLOOR = 1.00  # $100
 # If credit/width is this much worse, do not take extra width for extra dollars.
 FRAC_EPS = 0.015
+HARD_DELTA = 0.25
+
+# Live 2026-09-09..15: Normal 0.20 + (0.20Δ OR 0.90σ) = empty set across
+# 12 names × 5 expiries. Same class as old Calm 25%+1σ. Cheap-vol Shield
+# stays 0.12 / 0.22Δ / 0.80σ until conservative 0.20 actually prints.
+REGIME_GATES = {
+    "calm": {"max_delta": 0.22, "min_sigma": 0.80, "min_frac": 0.12, "or_delta": None},
+    "normal": {"max_delta": 0.22, "min_sigma": 0.80, "min_frac": 0.12, "or_delta": None},
+    "elevated": {"max_delta": 0.25, "min_sigma": 1.00, "min_frac": 0.25, "or_delta": None},
+    "crisis": {"max_delta": 0.0, "min_sigma": 99.0, "min_frac": 1.0, "or_delta": None},
+}
+
+SCAN_UNIVERSE = [
+    "AAPL", "AMD", "AMZN", "AVGO", "GOOGL", "META", "MSFT", "NVDA", "TSLA",
+    "DELL", "HD", "NFLX", "UNH", "CRM", "ORCL", "INTC", "GE", "WMT", "ADBE",
+    "SNOW", "PANW", "COST", "JPM", "XOM", "CVX", "COP",
+]
+
+
+def vix_regime(vix: Optional[float]) -> str:
+    if vix is None:
+        return "normal"
+    if vix < 16:
+        return "calm"
+    if vix < 22:
+        return "normal"
+    if vix < 30:
+        return "elevated"
+    return "crisis"
+
+
+def resolve_gates(regime: str, *, max_delta=None, min_sigma=None, min_frac=None, or_delta=None) -> Dict[str, Any]:
+    key = (regime or "calm").strip().lower()
+    if key not in REGIME_GATES:
+        key = "calm"
+    g = dict(REGIME_GATES[key])
+    g["regime"] = key
+    g["hard_delta"] = HARD_DELTA
+    if max_delta is not None:
+        g["max_delta"] = float(max_delta)
+    if min_sigma is not None:
+        g["min_sigma"] = float(min_sigma)
+    if min_frac is not None:
+        g["min_frac"] = float(min_frac)
+    if or_delta is not None:
+        g["or_delta"] = float(or_delta)
+    return g
+
+
+def short_clears(*, delta: Optional[float], otm: Optional[float], sigma: Optional[float], gates: Dict[str, Any]) -> bool:
+    """Regime short-strike rule. or_delta set → (Δ≤or_delta OR σ≥min_sigma). Else AND."""
+    if delta is None or otm is None or sigma is None or float(sigma) <= 0 or float(otm) <= 0:
+        return False
+    absd = abs(float(delta))
+    hard = float(gates.get("hard_delta") or HARD_DELTA)
+    if absd > hard:
+        return False
+    smult = float(otm) / float(sigma)
+    min_sigma = float(gates.get("min_sigma") or 0)
+    or_delta = gates.get("or_delta")
+    if or_delta is not None:
+        return absd <= float(or_delta) or smult >= min_sigma
+    return absd <= float(gates.get("max_delta") or 0) and smult >= min_sigma
+
+
+def friday_expiries(asof: date, *, min_dte: int = 14, max_dte: int = 60) -> List[str]:
+    out: List[str] = []
+    d = asof + timedelta(days=1)
+    end = asof + timedelta(days=int(max_dte))
+    while d <= end:
+        if d.weekday() == 4:
+            dte = (d - asof).days
+            if dte >= int(min_dte):
+                out.append(d.isoformat())
+        d += timedelta(days=1)
+    return out
 
 
 def _credit_better(cand: Dict[str, Any], best: Optional[Dict[str, Any]]) -> bool:
@@ -369,16 +448,16 @@ def _listed_pair(ks: List[float], short: float, farther: str) -> List[float]:
     return out
 
 
-def _credit_put(puts: Dict[float, Dict[str, Any]], spot: float, sigma: float, max_delta: float, min_sigma: float, min_frac: float) -> Dict[str, Any]:
+def _credit_put(puts: Dict[float, Dict[str, Any]], spot: float, sigma: float, gates: Dict[str, Any]) -> Dict[str, Any]:
     ks = sorted(puts)
     best = None
     tried = 0
+    min_frac = float(gates.get("min_frac") or 0)
     for sh in ks:
         short = puts[sh]
         dlt = short.get("delta")
-        if dlt is None or abs(float(dlt)) > max_delta:
-            continue
-        if (spot - sh) < min_sigma * sigma:
+        otm = spot - sh
+        if not short_clears(delta=dlt, otm=otm, sigma=sigma, gates=gates):
             continue
         for lo in _listed_pair(ks, sh, "down"):
             long = puts[lo]
@@ -396,8 +475,8 @@ def _credit_put(puts: Dict[float, Dict[str, Any]], spot: float, sigma: float, ma
                 "long": lo,
                 "short_delta": dlt,
                 "pricing": math,
-                "otm": spot - sh,
-                "sigma_mult": (spot - sh) / sigma if sigma else None,
+                "otm": otm,
+                "sigma_mult": otm / sigma if sigma else None,
             }
             _stamp_pd(cand, short=short, long=long)
             if _credit_better(cand, best):
@@ -405,16 +484,16 @@ def _credit_put(puts: Dict[float, Dict[str, Any]], spot: float, sigma: float, ma
     return best or {"ok": False, "reason": "no put credit met delta/sigma/width", "tried": tried}
 
 
-def _credit_call(calls: Dict[float, Dict[str, Any]], spot: float, sigma: float, max_delta: float, min_sigma: float, min_frac: float) -> Dict[str, Any]:
+def _credit_call(calls: Dict[float, Dict[str, Any]], spot: float, sigma: float, gates: Dict[str, Any]) -> Dict[str, Any]:
     ks = sorted(calls)
     best = None
     tried = 0
+    min_frac = float(gates.get("min_frac") or 0)
     for sh in ks:
         short = calls[sh]
         dlt = short.get("delta")
-        if dlt is None or abs(float(dlt)) > max_delta:
-            continue
-        if (sh - spot) < min_sigma * sigma:
+        otm = sh - spot
+        if not short_clears(delta=dlt, otm=otm, sigma=sigma, gates=gates):
             continue
         for hi in _listed_pair(ks, sh, "up"):
             long = calls[hi]
@@ -432,8 +511,8 @@ def _credit_call(calls: Dict[float, Dict[str, Any]], spot: float, sigma: float, 
                 "long": hi,
                 "short_delta": dlt,
                 "pricing": math,
-                "otm": sh - spot,
-                "sigma_mult": (sh - spot) / sigma if sigma else None,
+                "otm": otm,
+                "sigma_mult": otm / sigma if sigma else None,
             }
             _stamp_pd(cand, short=short, long=long)
             if _credit_better(cand, best):
@@ -520,8 +599,15 @@ def cmd_structures(args: argparse.Namespace) -> Dict[str, Any]:
             "source": "schwab",
         }
     pmap, cmap = _index_legs(puts), _index_legs(calls)
-    put_c = _credit_put(pmap, float(spot), float(sigma), args.max_delta, args.min_sigma, args.min_frac)
-    call_c = _credit_call(cmap, float(spot), float(sigma), args.max_delta, args.min_sigma, args.min_frac)
+    gates = resolve_gates(
+        getattr(args, "regime", None) or "calm",
+        max_delta=getattr(args, "max_delta", None),
+        min_sigma=getattr(args, "min_sigma", None),
+        min_frac=getattr(args, "min_frac", None),
+        or_delta=getattr(args, "or_delta", None),
+    )
+    put_c = _credit_put(pmap, float(spot), float(sigma), gates)
+    call_c = _credit_call(cmap, float(spot), float(sigma), gates)
     condor = {"ok": False, "reason": "need both credit sides"}
     if isinstance(put_c, dict) and put_c.get("ok") and isinstance(call_c, dict) and call_c.get("ok"):
         pnet = float((put_c.get("pricing") or {}).get("net") or 0)
@@ -555,7 +641,7 @@ def cmd_structures(args: argparse.Namespace) -> Dict[str, Any]:
         "expiry": args.expiry,
         "underlying_price": spot,
         "atm_straddle": atm,
-        "gates": {"max_delta": args.max_delta, "min_sigma": args.min_sigma, "min_frac": args.min_frac},
+        "gates": gates,
         "structures": {
             "sell_put_credit": put_c,
             "sell_call_credit": call_c,
@@ -563,6 +649,64 @@ def cmd_structures(args: argparse.Namespace) -> Dict[str, Any]:
             "buy_call_debit": _debit_vertical(cmap, right="C", spot=float(spot)),
             "buy_put_debit": _debit_vertical(pmap, right="P", spot=float(spot)),
         },
+    }
+
+
+def cmd_scan(args: argparse.Namespace) -> Dict[str, Any]:
+    """Quote VIX, map regime, structures every symbol × Friday expiry in the DTE window."""
+    asof = date.fromisoformat(args.asof) if args.asof else datetime.now().date()
+    skip = {s.strip()[:10] for s in (args.skip_expiry or []) if s}
+    if args.expiry:
+        expiries = [e[:10] for e in args.expiry]
+    else:
+        expiries = [e for e in friday_expiries(asof, min_dte=args.min_dte, max_dte=args.max_dte) if e not in skip]
+    symbols = [s.upper() for s in (args.symbols or SCAN_UNIVERSE)]
+    q = cmd_quote(argparse.Namespace(symbols=["$VIX", "SPY"] + symbols[:1]))
+    quotes = (q.get("quotes") or {})
+    vix = (quotes.get("$VIX") or {}).get("last")
+    regime = args.regime if args.regime and args.regime != "auto" else vix_regime(vix)
+    gates = resolve_gates(regime)
+    structures: Dict[str, Any] = {}
+    errors: Dict[str, str] = {}
+    class One:
+        pass
+    for i, sym in enumerate(symbols, 1):
+        structures[sym] = {}
+        for exp in expiries:
+            print(f"scan {i}/{len(symbols)} {sym} {exp}", file=sys.stderr, flush=True)
+            t0 = datetime.now(timezone.utc)
+            try:
+                one = One()
+                one.symbol = sym
+                one.expiry = exp
+                one.strike_count = args.strike_count
+                one.regime = regime
+                one.max_delta = None
+                one.min_sigma = None
+                one.min_frac = None
+                one.or_delta = None
+                data = cmd_structures(one)
+                data["elapsed"] = round((datetime.now(timezone.utc) - t0).total_seconds(), 2)
+                structures[sym][exp] = data
+            except Exception as exc:
+                from uwos.schwab_auth import _redact_schwab_error_text
+
+                msg = _redact_schwab_error_text(exc)
+                errors[f"{sym}:{exp}"] = msg
+                structures[sym][exp] = {"ok": False, "error": msg}
+    return {
+        "ok": True,
+        "asof": asof.isoformat(),
+        "session": "scan",
+        "vix": vix,
+        "spy": (quotes.get("SPY") or {}).get("last"),
+        "regime": regime,
+        "gates": gates,
+        "expiries": expiries,
+        "symbols": symbols,
+        "structures": structures,
+        "errors": errors,
+        "source": "schwab",
     }
 
 
@@ -595,9 +739,21 @@ def main() -> int:
     st.add_argument("symbol")
     st.add_argument("--expiry", required=True)
     st.add_argument("--strike-count", type=int, default=40)
-    st.add_argument("--max-delta", type=float, default=0.22)
-    st.add_argument("--min-sigma", type=float, default=0.80)
-    st.add_argument("--min-frac", type=float, default=0.12)
+    st.add_argument("--regime", default="calm", choices=("calm", "normal", "elevated", "crisis"))
+    st.add_argument("--max-delta", type=float, default=None)
+    st.add_argument("--min-sigma", type=float, default=None)
+    st.add_argument("--min-frac", type=float, default=None)
+    st.add_argument("--or-delta", type=float, default=None, help="If set, short clears on Δ≤or_delta OR σ≥min_sigma")
+
+    sc = sub.add_parser("scan")
+    sc.add_argument("symbols", nargs="*")
+    sc.add_argument("--asof", default="")
+    sc.add_argument("--expiry", action="append", default=[])
+    sc.add_argument("--skip-expiry", action="append", default=[])
+    sc.add_argument("--min-dte", type=int, default=14)
+    sc.add_argument("--max-dte", type=int, default=60)
+    sc.add_argument("--regime", default="auto")
+    sc.add_argument("--strike-count", type=int, default=24)
 
     args = p.parse_args()
     try:
@@ -607,6 +763,8 @@ def main() -> int:
             data = cmd_chain(args)
         elif args.cmd == "structures":
             data = cmd_structures(args)
+        elif args.cmd == "scan":
+            data = cmd_scan(args)
         else:
             data = cmd_vertical(args)
     except Exception as exc:

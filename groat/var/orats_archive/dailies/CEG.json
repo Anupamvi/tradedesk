@@ -2663,6 +2663,69 @@
       "stkVolu": 2898472.0,
       "ticker": "CEG",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 299.05,
+      "hiPx": 305.8,
+      "loPx": 296.63,
+      "open": 303.998,
+      "stkVolu": 3832896.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 293.905,
+      "hiPx": 298.085,
+      "loPx": 292.75,
+      "open": 296.7,
+      "stkVolu": 2245481.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 285.97,
+      "hiPx": 294.84,
+      "loPx": 285.82,
+      "open": 290.16,
+      "stkVolu": 2353012.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 284.75,
+      "hiPx": 291.3,
+      "loPx": 284.08,
+      "open": 290.58,
+      "stkVolu": 1720423.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 264.57,
+      "hiPx": 276.515,
+      "loPx": 264.32,
+      "open": 276.515,
+      "stkVolu": 3712319.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 259.89,
+      "hiPx": 266.88,
+      "loPx": 259.61,
+      "open": 265.8,
+      "stkVolu": 2958151.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 260.19,
+      "hiPx": 263.26,
+      "loPx": 259.29,
+      "open": 262.6,
+      "stkVolu": 195030.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

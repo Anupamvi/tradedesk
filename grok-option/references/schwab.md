@@ -23,9 +23,12 @@ From any cwd:
 ```bash
 python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py quote AAPL XOM
 python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py chain XOM --from-date YYYY-MM-DD --to-date YYYY-MM-DD --strike-count 12
-python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py structures AMZN --expiry YYYY-MM-DD
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py structures AMZN --expiry YYYY-MM-DD --regime normal
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py scan --asof YYYY-MM-DD --regime auto --skip-expiry YYYY-MM-DD
 python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py vertical --symbol XOM --right P --expiry YYYY-MM-DD --short 110 --long 105 --kind credit
 ```
+
+`scan` quotes `$VIX`, maps Calm/Normal/Elevated, and runs `structures` on the stock universe × listed Fridays in **14–60 DTE**. `structures --regime` applies that bucket’s gates (cheap-vol Shield is 0.12 / 0.22Δ / 0.80σ in Calm **and** Normal). Do not AND a 0.20Δ with 0.90σ unless you pass `--or-delta`. Chain timeout defaults to 45s in this script (`UWOS_SCHWAB_OPTION_CHAIN_TIMEOUT_SECONDS`).
 
 `structures` prices all five actions on that expiry (put credit, call credit, iron condor, call debit, put debit). Do not skip it and only run puts.
 

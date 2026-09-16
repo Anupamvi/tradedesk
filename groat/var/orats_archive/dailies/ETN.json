@@ -2663,6 +2663,69 @@
       "stkVolu": 1890566.0,
       "ticker": "ETN",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 422.13,
+      "hiPx": 430.25,
+      "loPx": 419.5,
+      "open": 423.68,
+      "stkVolu": 2035482.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 415.22,
+      "hiPx": 424.225,
+      "loPx": 415.16,
+      "open": 420.05,
+      "stkVolu": 1775432.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 409.15,
+      "hiPx": 414.37,
+      "loPx": 405.7,
+      "open": 410.0,
+      "stkVolu": 1529518.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 425.37,
+      "hiPx": 427.14,
+      "loPx": 414.0,
+      "open": 415.4,
+      "stkVolu": 1631411.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 393.16,
+      "hiPx": 400.659,
+      "loPx": 387.0,
+      "open": 393.01,
+      "stkVolu": 3189321.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 392.4,
+      "hiPx": 400.27,
+      "loPx": 389.4,
+      "open": 398.8,
+      "stkVolu": 2689638.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 398.25,
+      "hiPx": 399.75,
+      "loPx": 396.2192,
+      "open": 397.65,
+      "stkVolu": 95250.0,
+      "ticker": "ETN",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

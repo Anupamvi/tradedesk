@@ -2663,6 +2663,69 @@
       "stkVolu": 14952020.0,
       "ticker": "RKLB",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 65.87,
+      "hiPx": 67.48,
+      "loPx": 64.15,
+      "open": 65.27,
+      "stkVolu": 24378128.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 63.07,
+      "hiPx": 67.7,
+      "loPx": 62.99,
+      "open": 67.32,
+      "stkVolu": 26478752.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 61.96,
+      "hiPx": 64.9,
+      "loPx": 61.53,
+      "open": 61.65,
+      "stkVolu": 18956207.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 62.95,
+      "hiPx": 64.89,
+      "loPx": 62.06,
+      "open": 62.32,
+      "stkVolu": 15391388.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 62.55,
+      "hiPx": 63.375,
+      "loPx": 60.51,
+      "open": 60.55,
+      "stkVolu": 14449293.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 63.55,
+      "hiPx": 65.72,
+      "loPx": 62.02,
+      "open": 63.68,
+      "stkVolu": 20448736.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 63.855,
+      "hiPx": 64.08,
+      "loPx": 62.23,
+      "open": 63.67,
+      "stkVolu": 2108080.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

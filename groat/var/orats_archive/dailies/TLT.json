@@ -2663,6 +2663,69 @@
       "stkVolu": 16591945.0,
       "ticker": "TLT",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 82.2,
+      "hiPx": 82.4599,
+      "loPx": 81.93,
+      "open": 82.44,
+      "stkVolu": 16100026.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 81.73,
+      "hiPx": 82.31,
+      "loPx": 81.36,
+      "open": 82.19,
+      "stkVolu": 40675417.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 80.78,
+      "hiPx": 81.36,
+      "loPx": 80.665,
+      "open": 80.995,
+      "stkVolu": 60481495.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 80.87,
+      "hiPx": 81.475,
+      "loPx": 80.81,
+      "open": 81.3,
+      "stkVolu": 32431033.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 80.93,
+      "hiPx": 81.355,
+      "loPx": 80.46,
+      "open": 80.82,
+      "stkVolu": 33740073.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 80.71,
+      "hiPx": 80.845,
+      "loPx": 80.51,
+      "open": 80.63,
+      "stkVolu": 35032953.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 81.0301,
+      "hiPx": 81.1,
+      "loPx": 80.94,
+      "open": 80.94,
+      "stkVolu": 3394961.0,
+      "ticker": "TLT",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

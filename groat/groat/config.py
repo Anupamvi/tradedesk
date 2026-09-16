@@ -34,6 +34,8 @@ CONTRACT_MULTIPLIER = 100
 MAX_FINAL = 10
 TRADE_SCORE_MIN = 52
 WATCH_SCORE_MIN = 38
+# Live RTH bar is not a completed session below this rvol vs prior 20d volume.
+INCOMPLETE_RVOL = 0.45
 RR_PREFER = 2.0
 RR_MIN = 1.2
 CHASE_ATR = 2.5

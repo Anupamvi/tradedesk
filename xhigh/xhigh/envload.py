@@ -102,10 +102,9 @@ def schwab_credentials(code_dir: Optional[Path] = None) -> Optional[Dict[str, st
     key = (env.get("SCHWAB_API_KEY") or "").strip()
     secret = (env.get("SCHWAB_APP_SECRET") or "").strip()
     token_path = (env.get("SCHWAB_TOKEN_PATH") or "").strip()
-    if token_path and not Path(token_path).is_file():
-        local = (Path(code_dir) if code_dir is not None else CODE_DIR) / "tokens" / "schwab_token.json"
-        if local.is_file():
-            token_path = str(local)
+    shared = TRADEDESK_ROOT / "tokens" / "schwab_token.json"
+    if (not token_path or not Path(token_path).is_file()) and shared.is_file():
+        token_path = str(shared)
     if not key or not secret or not token_path:
         return None
     return {

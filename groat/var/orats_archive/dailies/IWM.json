@@ -2663,6 +2663,69 @@
       "stkVolu": 13960290.0,
       "ticker": "IWM",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 294.67,
+      "hiPx": 296.1,
+      "loPx": 294.26,
+      "open": 295.34,
+      "stkVolu": 17332381.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 290.64,
+      "hiPx": 294.155,
+      "loPx": 290.31,
+      "open": 293.46,
+      "stkVolu": 19141732.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 287.7,
+      "hiPx": 289.83,
+      "loPx": 287.18,
+      "open": 288.48,
+      "stkVolu": 27044693.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 288.89,
+      "hiPx": 291.44,
+      "loPx": 288.77,
+      "open": 290.71,
+      "stkVolu": 26358499.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 287.91,
+      "hiPx": 289.84,
+      "loPx": 287.055,
+      "open": 287.49,
+      "stkVolu": 26060878.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 285.14,
+      "hiPx": 286.93,
+      "loPx": 284.08,
+      "open": 286.62,
+      "stkVolu": 25300508.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 286.69,
+      "hiPx": 286.98,
+      "loPx": 285.61,
+      "open": 285.63,
+      "stkVolu": 2261172.0,
+      "ticker": "IWM",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

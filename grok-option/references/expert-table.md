@@ -91,9 +91,9 @@ Then 3–5 **Assumptions in force** bullets (from the audit file). Optional cata
 
 ## Score gates (all must hold)
 
-**80** — FULL quotes; Shield in Normal/Elevated meeting that regime’s geometry (or Fire with VWAP + opening flow + not Crowded/Event; or Spike with sourced shock + VWAP + not Crowded); `expiry_date < earnings_date`; book caps OK.
+**80** — FULL quotes; Shield meeting **Elevated** geometry (0.25 / 1σ) (or Fire with VWAP + opening flow + not Crowded/Event; or Spike with sourced shock + VWAP + not Crowded); `expiry_date < earnings_date`; book caps OK.
 
-**65** — MIXED, or **Calm Shield** (thinner credit/width by design), or Spike Crowded-but-quoted. Still `expiry_date < earnings_date`.
+**65** — MIXED, or **cheap-vol Shield** (Calm or Normal at 0.12 / 0.22Δ / 0.80σ), or Spike Crowded-but-quoted. Still `expiry_date < earnings_date`.
 
 **50** — tradable but weak (wide-ish quotes, THIN sentiment). Never Prime.
 

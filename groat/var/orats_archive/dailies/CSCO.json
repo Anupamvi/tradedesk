@@ -2663,6 +2663,69 @@
       "stkVolu": 12377019.0,
       "ticker": "CSCO",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 109.17,
+      "hiPx": 109.64,
+      "loPx": 108.475,
+      "open": 109.37,
+      "stkVolu": 14687455.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 109.43,
+      "hiPx": 110.43,
+      "loPx": 108.98,
+      "open": 109.275,
+      "stkVolu": 10837245.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 107.44,
+      "hiPx": 109.89,
+      "loPx": 107.36,
+      "open": 108.74,
+      "stkVolu": 11546269.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 112.13,
+      "hiPx": 112.215,
+      "loPx": 108.36,
+      "open": 108.89,
+      "stkVolu": 14161150.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 110.06,
+      "hiPx": 111.74,
+      "loPx": 109.39,
+      "open": 109.97,
+      "stkVolu": 12547117.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 110.07,
+      "hiPx": 111.69,
+      "loPx": 109.62,
+      "open": 110.915,
+      "stkVolu": 15609253.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 110.61,
+      "hiPx": 110.99,
+      "loPx": 110.18,
+      "open": 110.66,
+      "stkVolu": 848967.0,
+      "ticker": "CSCO",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

@@ -6,8 +6,8 @@ Load from SCAN after the regime line. Do not invent VIX, SMA, or IV.
 
 | Bucket | VIX | Book |
 |--------|-----|------|
-| Calm | < 16 | Shield default at Calm geometry. Fire half-size if cheap IV, not Crowded, not name/theme Event, not Crisis. Cash only if geometry fails. |
-| Normal | 16–22 | Shield default. Fire half-size when the same gates pass. |
+| Calm | < 16 | Shield default at cheap-vol geometry (0.12 / 0.22Δ / 0.80σ). Fire half-size if cheap IV, not Crowded, not name/theme Event, not Crisis. Cash only if geometry fails. |
+| Normal | 16–22 | Same cheap-vol Shield as Calm until conservative 0.20 prints. Fire half-size when the same gates pass. Score 65. |
 | Elevated | 22–30 | Cut Fire. Shield only on liquid mega-caps, smaller size. Prefer cash over forced credits. |
 | Crisis | > 30 | No new Shield, no ordinary Fire. Cash unless Sleeve D Spike gates pass (one 0.25% debit). Hedge only if user said allow index hedge. |
 
@@ -38,7 +38,7 @@ Shock tape (WTI/Brent, one sourced geo search) is part of the regime line. If a 
 
 ## 1-sigma short-strike rule
 
-Sigma = Schwab ATM straddle ask on **that expiry** (call ask + put ask). Do not estimate. Regime table for how far OTM and how much credit lives in `structures-and-pricing.md`. Elevated still requires outside 1-sigma. Calm uses ≥0.80-sigma and \|delta\| ≤ 0.22 so the sleeve can exist when VIX is 15.
+Sigma = Schwab ATM straddle ask on **that expiry** (call ask + put ask). Do not estimate. Regime table for how far OTM and how much credit lives in `structures-and-pricing.md`. Elevated still requires outside 1-sigma. Calm **and** Normal use ≥0.80-sigma and \|delta\| ≤ 0.22 so the sleeve can exist when VIX is 15–18.
 
 ## Data flag
 

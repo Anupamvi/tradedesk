@@ -46,6 +46,7 @@ def classify_at(
         vol_expand=run.get("vol_expand"),
         break_vol_expand=run.get("break_vol_expand"),
         rs_sector_126=bundle.get("rs_sector_126"),
+        from_base=bool(run.get("from_base")),
     )
     action = info["action"]
     return {

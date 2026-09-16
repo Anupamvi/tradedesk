@@ -46,10 +46,16 @@ def _board_skip() -> set:
     return set(INDEX_TICKERS) | set(SECTOR_ETFS) | set(MACRO_TICKERS)
 
 
-def _load_bars(ticker: str, asof: str, live: bool, injected: Optional[Dict[str, list]]) -> List[dict]:
+def _load_bars(
+    ticker: str,
+    asof: str,
+    live: bool,
+    injected: Optional[Dict[str, list]],
+    use_cache: bool = True,
+) -> List[dict]:
     if injected is not None and ticker in injected:
         return [b for b in injected[ticker] if str(b.get("date") or "")[:10] <= asof[:10]]
-    return price_history_bars(ticker, asof, live=live, use_cache=True)
+    return price_history_bars(ticker, asof, live=live, use_cache=use_cache)
 
 
 def classify_row(
@@ -96,6 +102,7 @@ def classify_row(
         regime_risk=regime_risk,
         rs_sector_126=bundle.get("rs_sector_126"),
         earnings_near_flag=earnings_near(core),
+        from_base=bool(run.get("from_base")),
     )
     action = info["action"]
     setup = info.get("setup")
@@ -134,6 +141,8 @@ def classify_row(
         "residual_126": bundle.get("residual_126"),
         "vol_expand": run.get("vol_expand"),
         "break_vol_expand": run.get("break_vol_expand"),
+        "from_base": bool(run.get("from_base")),
+        "prior_stage": run.get("prior_stage"),
         "size": info.get("size"),
         "invalidation": invalidation_levels(weekly_stage) if on_board else None,
         "regime_risk": regime_risk,
@@ -193,11 +202,12 @@ def _load_universe_bars(
     live: bool,
     no_schwab: bool,
     bars_map: Optional[Dict[str, list]],
+    use_cache: bool = True,
 ) -> tuple:
     bars: Dict[str, list] = {}
     missing_bars = []
     for name in wanted:
-        series = _load_bars(name, asof, live=live, injected=bars_map)
+        series = _load_bars(name, asof, live=live, injected=bars_map, use_cache=use_cache)
         if not series:
             missing_bars.append(name)
             continue
@@ -225,7 +235,7 @@ def _load_universe_bars(
                             "high": last,
                             "low": last,
                             "close": last,
-                            "volume": q.get("volume"),
+                            "volume": None,
                         }
                     ]
     return bars, missing_bars
@@ -279,6 +289,7 @@ def build_full(
     tickers: Optional[Sequence[str]] = None,
     bars_map: Optional[Dict[str, list]] = None,
     persist: bool = True,
+    use_cache: bool = True,
 ) -> dict:
     from trendbook import outcomes, report
 
@@ -286,13 +297,13 @@ def build_full(
     live = use_live_schwab(asof, live_flag=live_schwab, no_schwab=no_schwab, today=today)
     reset_http()
     reset_process_http()
-    spy_seed = _load_bars("SPY", asof, live=live, injected=bars_map)
+    spy_seed = _load_bars("SPY", asof, live=live, injected=bars_map, use_cache=use_cache)
     wanted = _wanted_names(tickers, asof=asof, live=live and tickers is None, spy=spy_seed)
     discovered: set = set()
     if tickers is None:
         known = set(infra_tickers()) | set(load_memory())
         discovered = {n for n in wanted if n not in known}
-    bars, missing_bars = _load_universe_bars(wanted, asof, live, no_schwab, bars_map)
+    bars, missing_bars = _load_universe_bars(wanted, asof, live, no_schwab, bars_map, use_cache=use_cache)
     features, ibd_map = _features(bars, asof)
     pctiles = percentile_rank(ibd_map)
     ranked_n = sum(1 for v in ibd_map.values() if v is not None)
@@ -462,6 +473,7 @@ def build_replay(
     no_schwab: bool = False,
     tickers: Optional[Sequence[str]] = None,
     bars_map: Optional[Dict[str, list]] = None,
+    use_cache: bool = True,
 ) -> dict:
     from trendbook import report
     from trendbook.trend import universe_replay
@@ -469,9 +481,9 @@ def build_replay(
     today = today_et()
     live = use_live_schwab(asof, live_flag=live_schwab, no_schwab=no_schwab, today=today)
     reset_http()
-    spy_seed = _load_bars("SPY", asof, live=live, injected=bars_map)
+    spy_seed = _load_bars("SPY", asof, live=live, injected=bars_map, use_cache=use_cache)
     wanted = _wanted_names(tickers, asof=asof, live=live and tickers is None, spy=spy_seed)
-    bars, missing_bars = _load_universe_bars(wanted, asof, live, no_schwab, bars_map)
+    bars, missing_bars = _load_universe_bars(wanted, asof, live, no_schwab, bars_map, use_cache=use_cache)
     rows = universe_replay(bars, asof, skip=_board_skip())
     day = Path(out_dir or OUT_DIR) / asof
     day.mkdir(parents=True, exist_ok=True)

@@ -191,6 +191,7 @@ def add_signals(
             vol_expand=flag.get("vol_expand"),
             break_vol_expand=run.get("break_vol_expand"),
             regime_risk=_risk_on_day(regime_weeks or {}, day),
+            from_base=bool(run.get("from_base")),
         )
         action = info["action"]
         if action != "ADD":

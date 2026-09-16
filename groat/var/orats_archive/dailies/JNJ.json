@@ -2663,6 +2663,69 @@
       "stkVolu": 4320878.0,
       "ticker": "JNJ",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 269.12,
+      "hiPx": 271.99,
+      "loPx": 266.8828,
+      "open": 271.28,
+      "stkVolu": 8085992.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 267.08,
+      "hiPx": 270.1,
+      "loPx": 266.73,
+      "open": 268.51,
+      "stkVolu": 6125049.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 266.35,
+      "hiPx": 271.27,
+      "loPx": 265.72,
+      "open": 270.21,
+      "stkVolu": 4931607.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 265.58,
+      "hiPx": 270.4,
+      "loPx": 265.25,
+      "open": 268.03,
+      "stkVolu": 4706291.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 266.32,
+      "hiPx": 271.55,
+      "loPx": 266.19,
+      "open": 271.0,
+      "stkVolu": 4742712.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 267.2,
+      "hiPx": 267.2,
+      "loPx": 260.68,
+      "open": 265.81,
+      "stkVolu": 5284830.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 268.25,
+      "hiPx": 268.54,
+      "loPx": 266.34,
+      "open": 266.81,
+      "stkVolu": 267009.0,
+      "ticker": "JNJ",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

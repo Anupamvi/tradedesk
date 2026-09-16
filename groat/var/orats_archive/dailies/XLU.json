@@ -2663,6 +2663,69 @@
       "stkVolu": 18861522.0,
       "ticker": "XLU",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 43.45,
+      "hiPx": 43.7057,
+      "loPx": 43.035,
+      "open": 43.05,
+      "stkVolu": 19713920.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 42.94,
+      "hiPx": 43.53,
+      "loPx": 42.825,
+      "open": 43.4,
+      "stkVolu": 16905814.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 42.52,
+      "hiPx": 43.25,
+      "loPx": 42.51,
+      "open": 42.99,
+      "stkVolu": 20625289.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 42.39,
+      "hiPx": 42.96,
+      "loPx": 42.31,
+      "open": 42.89,
+      "stkVolu": 15174869.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 41.82,
+      "hiPx": 42.44,
+      "loPx": 41.75,
+      "open": 42.38,
+      "stkVolu": 23589853.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 41.32,
+      "hiPx": 41.95,
+      "loPx": 41.29,
+      "open": 41.92,
+      "stkVolu": 24212551.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 41.545,
+      "hiPx": 41.66,
+      "loPx": 41.49,
+      "open": 41.63,
+      "stkVolu": 1439942.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

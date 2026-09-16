@@ -2663,6 +2663,69 @@
       "stkVolu": 4132412.0,
       "ticker": "ARM",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 261.53,
+      "hiPx": 267.97,
+      "loPx": 254.64,
+      "open": 261.5,
+      "stkVolu": 5108549.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 264.23,
+      "hiPx": 274.8,
+      "loPx": 261.49,
+      "open": 262.275,
+      "stkVolu": 3320210.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 254.18,
+      "hiPx": 257.92,
+      "loPx": 251.29,
+      "open": 253.0,
+      "stkVolu": 3724012.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 264.79,
+      "hiPx": 267.77,
+      "loPx": 253.06,
+      "open": 257.7,
+      "stkVolu": 4271222.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 239.01,
+      "hiPx": 249.25,
+      "loPx": 238.0323,
+      "open": 242.38,
+      "stkVolu": 6490510.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 241.83,
+      "hiPx": 253.155,
+      "loPx": 240.68,
+      "open": 241.625,
+      "stkVolu": 3769666.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 252.315,
+      "hiPx": 252.6251,
+      "loPx": 246.5,
+      "open": 246.87,
+      "stkVolu": 471171.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

@@ -2663,6 +2663,69 @@
       "stkVolu": 803524.0,
       "ticker": "VRTX",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 528.9,
+      "hiPx": 535.0,
+      "loPx": 520.2,
+      "open": 529.64,
+      "stkVolu": 1121470.0,
+      "ticker": "VRTX",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 521.12,
+      "hiPx": 528.165,
+      "loPx": 520.08,
+      "open": 524.0,
+      "stkVolu": 958510.0,
+      "ticker": "VRTX",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 514.56,
+      "hiPx": 522.6,
+      "loPx": 514.32,
+      "open": 519.13,
+      "stkVolu": 815171.0,
+      "ticker": "VRTX",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 515.44,
+      "hiPx": 522.1,
+      "loPx": 511.81,
+      "open": 522.1,
+      "stkVolu": 875635.0,
+      "ticker": "VRTX",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 519.51,
+      "hiPx": 525.29,
+      "loPx": 514.655,
+      "open": 522.17,
+      "stkVolu": 837109.0,
+      "ticker": "VRTX",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 514.63,
+      "hiPx": 519.94,
+      "loPx": 511.001,
+      "open": 519.94,
+      "stkVolu": 824890.0,
+      "ticker": "VRTX",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 515.585,
+      "hiPx": 517.95,
+      "loPx": 511.9,
+      "open": 513.8,
+      "stkVolu": 39159.0,
+      "ticker": "VRTX",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

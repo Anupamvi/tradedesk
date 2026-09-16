@@ -2663,6 +2663,69 @@
       "stkVolu": 14418048.0,
       "ticker": "UBER",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 73.13,
+      "hiPx": 75.615,
+      "loPx": 72.715,
+      "open": 75.615,
+      "stkVolu": 25922797.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 71.08,
+      "hiPx": 73.1006,
+      "loPx": 71.0,
+      "open": 73.05,
+      "stkVolu": 21828779.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 72.56,
+      "hiPx": 73.48,
+      "loPx": 69.24,
+      "open": 70.38,
+      "stkVolu": 35402271.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 71.67,
+      "hiPx": 73.055,
+      "loPx": 71.035,
+      "open": 72.99,
+      "stkVolu": 25309080.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 72.63,
+      "hiPx": 72.8026,
+      "loPx": 71.26,
+      "open": 71.975,
+      "stkVolu": 19054990.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 71.43,
+      "hiPx": 72.42,
+      "loPx": 71.31,
+      "open": 72.325,
+      "stkVolu": 15515817.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 70.9,
+      "hiPx": 71.45,
+      "loPx": 70.5709,
+      "open": 71.32,
+      "stkVolu": 1517269.0,
+      "ticker": "UBER",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

@@ -11,7 +11,7 @@ description: >
 
 CODE=`/Users/anuppamvi/tradedesk/trendbook`
 
-Weekly trend book: Weinstein stage + beating SPY + campaign age with 1–2 week hysteresis. Stock first. Empty **ADD** is valid. Never submit, cancel, or replace an order.
+Weekly trend book: Weinstein Stage 2 + beating SPY. Buys a breakout from a base, or the first early pullback. A Stage 3 MA-turn after the stock already ran is not a buy. Stock first. Empty **ADD** is valid. Never submit, cancel, or replace an order.
 
 Do not treat `groat`, `RUN FULL SCAN`, `xhigh`, `grok-option`, `trend-analysis`, or `pattern` as this desk.
 
@@ -54,4 +54,4 @@ Schwab uses `SCHWAB_TOKEN_PATH` from tradedesk `.env` (do not copy the token int
 - Evidence: [evidence.md](/Users/anuppamvi/tradedesk/trendbook/out/trendbook/DATE/evidence.md)
 ```
 
-0 ADD is valid. ADD only on a 10-week or 50-day pullback in a name beating SPY by ≥15% over 6 months, and at least 8% off the campaign high. A 20 EMA pause near highs is HOLD, not a buy. NEW = just tagged. Grade A/B/C is structure, not P(win). Tightness-only is HOLD. RS percentile is never a kill switch. Probe 52-week highs / large RS so names off the static list can appear as NEW. Options overlay on ADD only when IV is cheap. Outcomes score ADD only: CAPTURE = new high within 8 weeks or still on-board at week 8; FAIL = left Stage 2 before a new high. HOLD/NEW/LATE are not trades.
+0 ADD is valid. ADD is a buy, not a tag. Breakout ADD = first Stage 2 ticket from a base (prior Stage 1/4, or a 1–2 week Stage 3 poke still within 10% of the 30-week) with break-week volume expansion, residual 3m after beta ≥ 0, not lagging sector. A Stage 3 MA-turn after the stock already ran is NEW. Incomplete mid-week bars do not create a second week. Pullback ADD = first 10-week / 50-day / 30-week dip with residual ≥ 0. A 20 EMA pause near highs is HOLD. One ADD per campaign. NEW = weak tag. LATE = old and dying. Grade A/B/C is structure, not P(win). RS percentile is never a kill switch. Probe 52-week highs / large RS so names off the static list can appear as NEW. Options overlay on ADD only when IV is cheap. Outcomes score ADD only. HOLD/NEW/LATE are not trades.

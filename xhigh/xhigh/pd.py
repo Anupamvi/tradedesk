@@ -198,6 +198,14 @@ def attach_trade_pd(row: dict, now=None) -> dict:
         explicit=row.get("quote_age_sec"),
         now=now,
     )
+    # Intel/xhot restamp is minutes later; do not clobber scan-time PD with stale-quote DATA UNAVAILABLE.
+    if (
+        age is not None
+        and age > QUOTE_MAX_AGE_SEC
+        and (row.get("pd") is not None or row.get("pd_n") is not None or row.get("pd_reason"))
+    ):
+        row.update(pd_cells(row))
+        return row
     pack = compute_pd(
         max_loss=ml,
         planned_reward=reward,

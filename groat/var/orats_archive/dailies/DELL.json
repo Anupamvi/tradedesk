@@ -2663,6 +2663,69 @@
       "stkVolu": 11118744.0,
       "ticker": "DELL",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 533.88,
+      "hiPx": 538.47,
+      "loPx": 515.5601,
+      "open": 521.15,
+      "stkVolu": 6662471.0,
+      "ticker": "DELL",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 535.25,
+      "hiPx": 562.9899,
+      "loPx": 532.3926,
+      "open": 538.47,
+      "stkVolu": 7282344.0,
+      "ticker": "DELL",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 506.62,
+      "hiPx": 530.51,
+      "loPx": 506.25,
+      "open": 523.825,
+      "stkVolu": 5917232.0,
+      "ticker": "DELL",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 567.29,
+      "hiPx": 567.75,
+      "loPx": 517.515,
+      "open": 518.07,
+      "stkVolu": 14473457.0,
+      "ticker": "DELL",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 534.28,
+      "hiPx": 546.29,
+      "loPx": 525.85,
+      "open": 538.57,
+      "stkVolu": 9173770.0,
+      "ticker": "DELL",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 543.51,
+      "hiPx": 568.67,
+      "loPx": 539.0,
+      "open": 541.55,
+      "stkVolu": 9830597.0,
+      "ticker": "DELL",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 567.72,
+      "hiPx": 575.73,
+      "loPx": 552.0,
+      "open": 553.625,
+      "stkVolu": 2662940.0,
+      "ticker": "DELL",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

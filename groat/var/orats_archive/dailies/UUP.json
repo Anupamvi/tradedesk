@@ -2663,6 +2663,69 @@
       "stkVolu": 1776288.0,
       "ticker": "UUP",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 27.99,
+      "hiPx": 28.0,
+      "loPx": 27.96,
+      "open": 27.96,
+      "stkVolu": 1091030.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 27.98,
+      "hiPx": 27.99,
+      "loPx": 27.9199,
+      "open": 27.92,
+      "stkVolu": 1378064.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 28.03,
+      "hiPx": 28.05,
+      "loPx": 27.99,
+      "open": 28.05,
+      "stkVolu": 1233366.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 28.07,
+      "hiPx": 28.07,
+      "loPx": 28.02,
+      "open": 28.03,
+      "stkVolu": 1712336.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 28.17,
+      "hiPx": 28.24,
+      "loPx": 28.14,
+      "open": 28.2,
+      "stkVolu": 1808582.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 28.22,
+      "hiPx": 28.23,
+      "loPx": 28.185,
+      "open": 28.21,
+      "stkVolu": 1848067.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 28.23,
+      "hiPx": 28.24,
+      "loPx": 28.23,
+      "open": 28.24,
+      "stkVolu": 61822.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

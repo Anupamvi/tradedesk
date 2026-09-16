@@ -24,4 +24,4 @@ CORE_FIELDS = (
     "dlt75Iv30d,dlt95Iv30d,assetType,confidence,divDate,divAmt,tkOver"
 )
 
-MOVER_INDEXES = ("$DJI", "$COMPX", "$SPX.X")
+MOVER_INDEXES = ("$DJI", "$COMPX", "$SPX")

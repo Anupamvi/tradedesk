@@ -2663,6 +2663,69 @@
       "stkVolu": 5461250.0,
       "ticker": "CVX",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 209.8,
+      "hiPx": 213.31,
+      "loPx": 209.18,
+      "open": 211.25,
+      "stkVolu": 7706480.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 213.81,
+      "hiPx": 215.28,
+      "loPx": 212.23,
+      "open": 212.875,
+      "stkVolu": 8389869.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 212.76,
+      "hiPx": 217.4,
+      "loPx": 211.34,
+      "open": 217.4,
+      "stkVolu": 9630661.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 214.06,
+      "hiPx": 215.55,
+      "loPx": 212.02,
+      "open": 212.02,
+      "stkVolu": 6573851.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 212.17,
+      "hiPx": 217.65,
+      "loPx": 211.27,
+      "open": 217.0,
+      "stkVolu": 9375725.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 217.77,
+      "hiPx": 217.78,
+      "loPx": 212.74,
+      "open": 212.885,
+      "stkVolu": 9561598.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 214.79,
+      "hiPx": 215.275,
+      "loPx": 213.36,
+      "open": 215.09,
+      "stkVolu": 688041.0,
+      "ticker": "CVX",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

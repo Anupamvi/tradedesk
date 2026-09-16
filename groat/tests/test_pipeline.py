@@ -292,6 +292,32 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("T10", names)
         self.assertEqual(watch2[0]["ticker"], "PLTR")
 
+    def test_options_below_trade_falls_back_to_stock(self):
+        from groat.pipeline import _maybe_fallback_stock
+
+        stock = {"ok": True, "instrument": "stock", "rr": 2.0, "premium_side": "debit"}
+        row = {
+            "choice": "OPTIONS",
+            "primary": "D",
+            "fire": {},
+            "rs_20": 0.20,
+            "above_sma200": True,
+            "above_sma50": True,
+            "avwap_swing_low": 100,
+            "close": 120,
+            "extension_atr": 1.0,
+            "picked": {"instrument": "debit_call_spread", "rr": 1.3},
+            "direction": "bullish",
+            "stale": False,
+            "choice_why": ["shortlisted debit_call_spread"],
+        }
+        row["score"] = score_row(row, "weak_risk_on", "mature")
+        self.assertLess(row["score"], 52)
+        self.assertTrue(_maybe_fallback_stock(row, {"stock": stock}, "weak_risk_on", "mature"))
+        self.assertEqual(row["choice"], "STOCK")
+        self.assertGreaterEqual(row["score"], 52)
+        self.assertIn("stock still clears", " ".join(row["choice_why"]))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,8 +1,15 @@
-# Assumption audit — 2026-08-26
+# Assumption audit — 2026-09-15
 
-Tape + evidence for grok-option v3.2. Unverified numbers stay unverified. Next AUDIT: when the journal's 20-trade rolling expectancy contradicts a rule, rewrite this file and bump the Assumptions-in-force footnote.
+Tape + evidence for grok-option v3.12. Unverified numbers stay unverified. Next AUDIT: when the journal's 20-trade rolling expectancy contradicts a rule, rewrite this file and bump the Assumptions-in-force footnote.
 
-## Tape + Evidence (2026-08-26)
+## Tape + Evidence (2026-09-15)
+
+Stuck-gate session. VIX live **17.06** (Schwab), last close **17.10** → **Normal**. Expert empty **9/9, 9/10, 9/14, 9/15** (9/11 RTH empty, AH printed only after close fell to Calm **15.84**).
+Live Schwab 2026-09-15: 12 names × Fri expiries 10/2–10/30. Normal spec **0.20** + (0.20Δ **or** 0.90σ) = **0** $100 wings. Same names under cheap-vol **0.12 / 0.22Δ / 0.80σ** = **40** $100 wings (AAPL Oct-16 put+call clean IC, INTC Oct-16 clean, AMD/ORCL/MSFT/GOOGL/META/AMZN/NVDA).
+Scanner was also one-monthly (Oct-16 only) and `structures` ANDed delta×sigma so it could not express an OR-gate. Default chain timeout 12s dropped mega-caps at the open.
+Journal trigger: 5+ empty sessions with non-event names. Do not restore 0.20 to “be stricter.” Elevated 0.25 / 1σ is unchanged.
+
+## Tape + Evidence (2026-08-26, kept)
 
 Date is Wednesday 2026-08-26.
 Bar is **$10k profit / month**, not a $410k desk. That number was a misread of “410k/month options.”
@@ -34,7 +41,7 @@ No invented IV/OI. $10k/month is the bar, not a promise and not a size-up. Do no
 | 2 | PCR extremes on unusual volume predict the next 0–5 day move | **KILL** | PCR without aggressor and open/close is overwrite noise (@ask_volAI 8/24; Grauer et al. 2026). Replacement: ignore raw PCR as a forecast. |
 | 3 | Dark-pool prints create tradeable walls | **KILL** | 10-second TRF prints are not walls; direction and intent are unknown. Replacement: context only, never a strike or size input. |
 | 4 | A 7- or 9-item mostly-yes checklist equals high conviction | **KILL** | Checklists mint fake 74.0 scores. Replacement: **Score** = gates (80/65/50). **Conf** = naive POP from quoted delta + book 20-trade win rate. Fail a gate = no row. |
-| 5 | Credit spreads at ≥25% of width are the default path to $10k/month | **AMEND** | 25%+1-sigma is an empty set in VIX~15. Replacement: Calm min width **0.12** with \|delta\|≤0.22. Elevated keeps 0.25. Calm 12% is **not** the $10k engine; Elevated is when options can carry a month. |
+| 5 | Credit spreads at ≥25% of width are the default path to $10k/month | **AMEND** | 25%+1-sigma is an empty set in VIX~15. Normal **0.20**+(0.20Δ or 0.90σ) is an empty set in VIX 16–18 (0/60 name-expiries 2026-09-15). Replacement: cheap-vol Shield **0.12 / 0.22Δ / 0.80σ** in Calm **and** Normal until conservative 0.20 actually prints. Elevated keeps 0.25 / 1σ. 12% is **not** the $10k engine. |
 | 6 | $10k/month is a strategy | **AMEND** | It is the **stated bar** ($120k/year), not a strategy and not a size-up. On $715k that is 1.4%/month of the **whole account**. Options in Calm cannot floor $10k every calendar month at 12% width. Replacement: year-average scoreboard; harvest first; Shield that clears; do not chase a green month. |
 | 7 | IV rank >70 is required to sell premium | **AMEND** | IVR>70 is rich, not a permission slip. Replacement: IVR selects the sleeve. Calm/Normal may sell Shield on liquid mega-caps if credit/width and sigma hold. Low IV → Fire debit or skip. Crisis → cash. |
 | 8 | Copying a whale’s exact strike/expiry is the edge | **KILL** | Multi-leg mis-tags, closing prints, hedges. Replacement: print seeds ticker/side only; build from today’s live chain. |
@@ -42,7 +49,7 @@ No invented IV/OI. $10k/month is the bar, not a promise and not a size-up. Do no
 | 10 | The scanner must always emit an executable table | **KILL** | Always-a-table is theater. Replacement: 0–7 rows. Empty is valid when **quotes or geometry** fail on names that are allowed today. Empty is invalid as a response to a later-week event. |
 | 11 | "Buy Put Credit" is a valid label | **KILL** | It names the wrong action. Replacement: Sell put credit / Sell call credit / Buy call debit / Buy put debit. |
 | 12 | Exclude all ETFs forever | **AMEND** | Primary universe is common stock. Index Shield/hedge stays **off** until the user allows it. Do not auto-enable SPX/XSP to chase $10k. |
-| 13 | Core short strike must sit outside 1-sigma | **AMEND** | Keep as Elevated default. Calm: ≥0.80-sigma and \|delta\|≤0.22 so Shield can exist. Never \|delta\| > 0.25. Do not drop these to print more rows. |
+| 13 | Core short strike must sit outside 1-sigma | **AMEND** | Keep as Elevated default. Calm **and** Normal: ≥0.80-sigma and \|delta\|≤0.22 so Shield can exist at VIX 15–18. Never \|delta\| > 0.25. Do not restore Normal 0.20 while it is an empty set. |
 | 14 | No new Core credit inside 7 days of earnings | **AMEND** | A 7-day entry window still lets a 30–45 DTE sit through the print. Replacement: skip unless a confirmed earnings date exists and **expiry_date < earnings_date**. Unknown date = skip. Open lines that would live into the print: close or roll in front of it. |
 | 15 | Take 50–70% of credit; hard-stop ~2–2.5× | **AMEND** | Default manage **60–65% / 2.0× / 2.5× ceiling** if thesis intact and DTE>14. 50% is a valid tighter take but not this book’s default. |
 | 16 | Managed OTM credit win rate is ~70% | **AMEND** | 16-delta expiration POP is often cited near 70% before costs; managed 60% + 2× stop changes the ratio. Unverified for this book. Replacement: publish the journal’s 20-trade rolling stats, never a canned 70%. |
@@ -68,4 +75,4 @@ No invented IV/OI. $10k/month is the bar, not a promise and not a size-up. Do no
 
 ## In force until the next 20-trade review
 
-Bar $10k/month ($120k/year average, not a Calm floor). Account live Schwab $715k. Score all five structures; long stock does not veto a call wing or condor. No saved ticker veto list. Score ≠ P(win). Conf = quoted-delta naive POP + book win rate. Table dollars = 1 lot; Rec lots from Conf then sleeve cap then BP. Among gates, pick **credit/width then dollars** (not 15-wide scraps). Fire without flow is not an Expert row. Shield 1.0% then BP, aggregate 6–8%, 14–60 DTE, max 4 one per sector. Event = that cluster / that expiry. Do not size up to chase. Geometry stays. Manage 60–65% / 2×.
+Bar $10k/month ($120k/year average, not a Calm floor). Account live Schwab $715k. Score all five structures; long stock does not veto a call wing or condor. No saved ticker veto list. Score ≠ P(win). Conf = quoted-delta naive POP + book win rate. Table dollars = 1 lot; Rec lots from Conf then sleeve cap then BP. Among gates, pick **credit/width then dollars** (not 15-wide scraps). Fire without flow is not an Expert row. Shield 1.0% then BP, aggregate 6–8%, **14–60 DTE** (not one monthly), max 4 one per sector. Cheap-vol Shield **0.12 / 0.22Δ / 0.80σ** in Calm and Normal. Event = that cluster / that expiry. Do not size up to chase. Do not restore empty 0.20. Manage 60–65% / 2×.

@@ -2663,6 +2663,69 @@
       "stkVolu": 8451583.0,
       "ticker": "SNOW",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 335.5,
+      "hiPx": 341.1383,
+      "loPx": 331.77,
+      "open": 333.59,
+      "stkVolu": 5287945.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 331.48,
+      "hiPx": 339.59,
+      "loPx": 331.0,
+      "open": 335.72,
+      "stkVolu": 4327437.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 329.72,
+      "hiPx": 341.45,
+      "loPx": 325.01,
+      "open": 329.7,
+      "stkVolu": 3439678.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 328.99,
+      "hiPx": 333.48,
+      "loPx": 323.42,
+      "open": 329.86,
+      "stkVolu": 4488761.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 332.35,
+      "hiPx": 336.485,
+      "loPx": 319.0,
+      "open": 329.0,
+      "stkVolu": 4780859.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 322.98,
+      "hiPx": 328.66,
+      "loPx": 318.5001,
+      "open": 324.89,
+      "stkVolu": 3985320.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 330.37,
+      "hiPx": 332.35,
+      "loPx": 317.45,
+      "open": 318.14,
+      "stkVolu": 465009.0,
+      "ticker": "SNOW",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

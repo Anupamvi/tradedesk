@@ -2663,6 +2663,69 @@
       "stkVolu": 97654325.0,
       "ticker": "INTC",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 104.47,
+      "hiPx": 106.0899,
+      "loPx": 100.35,
+      "open": 100.8,
+      "stkVolu": 140269269.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 106.24,
+      "hiPx": 106.69,
+      "loPx": 102.7,
+      "open": 102.7,
+      "stkVolu": 96891392.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 100.32,
+      "hiPx": 103.23,
+      "loPx": 99.34,
+      "open": 102.45,
+      "stkVolu": 96887071.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 102.94,
+      "hiPx": 104.9,
+      "loPx": 101.07,
+      "open": 102.47,
+      "stkVolu": 86990385.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 97.19,
+      "hiPx": 98.86,
+      "loPx": 94.5233,
+      "open": 95.82,
+      "stkVolu": 96459676.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 97.14,
+      "hiPx": 100.48,
+      "loPx": 96.5205,
+      "open": 98.83,
+      "stkVolu": 84999321.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 102.055,
+      "hiPx": 104.42,
+      "loPx": 101.19,
+      "open": 101.365,
+      "stkVolu": 26395455.0,
+      "ticker": "INTC",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

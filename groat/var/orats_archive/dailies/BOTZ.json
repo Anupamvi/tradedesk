@@ -2663,6 +2663,69 @@
       "stkVolu": 776343.0,
       "ticker": "BOTZ",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 35.61,
+      "hiPx": 35.9,
+      "loPx": 35.59,
+      "open": 35.86,
+      "stkVolu": 797717.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 35.18,
+      "hiPx": 35.63,
+      "loPx": 35.16,
+      "open": 35.57,
+      "stkVolu": 558353.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 34.76,
+      "hiPx": 35.015,
+      "loPx": 34.62,
+      "open": 34.86,
+      "stkVolu": 799649.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 35.28,
+      "hiPx": 35.49,
+      "loPx": 35.22,
+      "open": 35.22,
+      "stkVolu": 1051519.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 34.76,
+      "hiPx": 34.925,
+      "loPx": 34.53,
+      "open": 34.6,
+      "stkVolu": 665868.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 34.63,
+      "hiPx": 34.765,
+      "loPx": 34.46,
+      "open": 34.68,
+      "stkVolu": 556240.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 34.96,
+      "hiPx": 34.98,
+      "loPx": 34.875,
+      "open": 34.9,
+      "stkVolu": 42798.0,
+      "ticker": "BOTZ",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

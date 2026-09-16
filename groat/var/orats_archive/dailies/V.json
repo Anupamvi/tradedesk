@@ -2663,6 +2663,69 @@
       "stkVolu": 4646779.0,
       "ticker": "V",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 368.64,
+      "hiPx": 373.5,
+      "loPx": 367.44,
+      "open": 371.6,
+      "stkVolu": 4930372.0,
+      "ticker": "V",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 367.39,
+      "hiPx": 369.48,
+      "loPx": 365.88,
+      "open": 368.45,
+      "stkVolu": 4480828.0,
+      "ticker": "V",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 367.21,
+      "hiPx": 368.0,
+      "loPx": 365.52,
+      "open": 366.4,
+      "stkVolu": 3801040.0,
+      "ticker": "V",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 370.45,
+      "hiPx": 371.8125,
+      "loPx": 367.98,
+      "open": 368.92,
+      "stkVolu": 3492910.0,
+      "ticker": "V",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 375.28,
+      "hiPx": 377.17,
+      "loPx": 371.67,
+      "open": 375.07,
+      "stkVolu": 6198991.0,
+      "ticker": "V",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 375.62,
+      "hiPx": 376.37,
+      "loPx": 372.82,
+      "open": 374.815,
+      "stkVolu": 5015353.0,
+      "ticker": "V",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 373.21,
+      "hiPx": 376.4746,
+      "loPx": 371.76,
+      "open": 374.96,
+      "stkVolu": 409098.0,
+      "ticker": "V",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

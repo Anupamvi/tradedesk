@@ -2663,6 +2663,69 @@
       "stkVolu": 4729800.0,
       "ticker": "ABBV",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 248.78,
+      "hiPx": 254.615,
+      "loPx": 248.41,
+      "open": 251.84,
+      "stkVolu": 5572102.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 250.91,
+      "hiPx": 251.18,
+      "loPx": 246.7701,
+      "open": 247.73,
+      "stkVolu": 3866951.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 255.0,
+      "hiPx": 255.31,
+      "loPx": 249.735,
+      "open": 251.23,
+      "stkVolu": 4397653.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 257.12,
+      "hiPx": 259.61,
+      "loPx": 253.92,
+      "open": 253.92,
+      "stkVolu": 4308856.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 261.77,
+      "hiPx": 264.6499,
+      "loPx": 260.1001,
+      "open": 261.67,
+      "stkVolu": 4512420.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 263.04,
+      "hiPx": 264.81,
+      "loPx": 257.795,
+      "open": 260.0,
+      "stkVolu": 5120219.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 262.61,
+      "hiPx": 263.84,
+      "loPx": 260.975,
+      "open": 261.99,
+      "stkVolu": 230283.0,
+      "ticker": "ABBV",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

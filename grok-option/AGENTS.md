@@ -11,7 +11,8 @@ When the user says `grok-option`, `run today's scan`, `Anu table`, `bull put`, `
 Schwab: tradedesk `.env` + `SCHWAB_TOKEN_PATH`. Never print tokens.
 
 ```bash
-python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py structures TICKER --expiry YYYY-MM-DD
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py scan --asof YYYY-MM-DD --regime auto
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py structures TICKER --expiry YYYY-MM-DD --regime normal
 python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py vertical --symbol TICKER --right P --expiry YYYY-MM-DD --short STRIKE --long STRIKE --kind credit
 ```
 

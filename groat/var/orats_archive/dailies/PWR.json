@@ -2663,6 +2663,69 @@
       "stkVolu": 653847.0,
       "ticker": "PWR",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 639.05,
+      "hiPx": 648.78,
+      "loPx": 628.0006,
+      "open": 631.79,
+      "stkVolu": 832011.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 626.98,
+      "hiPx": 649.0,
+      "loPx": 626.89,
+      "open": 639.97,
+      "stkVolu": 530232.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 618.73,
+      "hiPx": 630.555,
+      "loPx": 615.465,
+      "open": 620.23,
+      "stkVolu": 553513.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 650.58,
+      "hiPx": 653.8701,
+      "loPx": 624.335,
+      "open": 627.22,
+      "stkVolu": 941194.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 622.02,
+      "hiPx": 629.57,
+      "loPx": 610.0,
+      "open": 612.53,
+      "stkVolu": 1146962.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 613.35,
+      "hiPx": 626.495,
+      "loPx": 609.53,
+      "open": 623.72,
+      "stkVolu": 761269.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 625.98,
+      "hiPx": 628.27,
+      "loPx": 619.9,
+      "open": 625.57,
+      "stkVolu": 54570.0,
+      "ticker": "PWR",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

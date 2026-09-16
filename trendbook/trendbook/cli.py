@@ -26,6 +26,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--ticker", default=None)
     parser.add_argument("--out-dir", default=str(OUT_DIR))
     parser.add_argument("--live-schwab", action="store_true")
+    parser.add_argument("--no-cache", action="store_true", help="refetch Schwab bars; do not read disk cache")
     parser.add_argument("--no-schwab", action="store_true")
     parser.add_argument("--no-orats", action="store_true")
     parser.add_argument("--orats-token-file", default=None)
@@ -86,6 +87,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             out_dir=Path(args.out_dir),
             live_schwab=args.live_schwab,
             no_schwab=args.no_schwab,
+            use_cache=not args.no_cache,
         )
         print_result(info)
         return 0
@@ -110,6 +112,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         max_orats_http=args.max_orats_http,
         orats_token_file=args.orats_token_file,
         tickers=tickers,
+        use_cache=not args.no_cache,
     )
     print_result(info)
     return 0

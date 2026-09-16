@@ -1,7 +1,7 @@
 """Tape-seeded campaign age, hysteresis, Stage-2 trades, A/B/C grade.
 
-A Stage 2 book buys the transition and the first early dip — not an 8-week
-wait for a mean-reversion. Spike/breakout is a valid young-campaign entry.
+A Stage 2 book buys a real breakout from a base, or the first early dip.
+A Stage 3 MA-turn after the stock already ran is not a breakout.
 """
 
 from __future__ import annotations
@@ -30,6 +30,8 @@ GAP_MAX = 2
 NEAR_HIGH_GRADE = 0.15
 FWD_WEEKS = (4, 8, 13)
 PULLBACK_WHY = ("pullback", "pullback_and_tight", "pullback_30w")
+STAGE3_MAX_BEFORE_BREAK = 2
+BREAK_MAX_ABOVE_MA30 = 0.10
 
 EMPTY_RUN = {
     "on_board": False,
@@ -47,6 +49,8 @@ EMPTY_RUN = {
     "gaps": 0,
     "vol_expand": None,
     "break_vol_expand": None,
+    "prior_stage": None,
+    "from_base": False,
 }
 
 TIGHT_RESIDUAL = 0.08
@@ -77,6 +81,7 @@ def week_flags(stock: Sequence[dict], spy: Sequence[dict], asof: str) -> List[di
         rows.append(
             {
                 "asof": str(bar.get("date") or "")[:10],
+                "week_end": str(bar.get("week_end") or bar.get("date") or "")[:10],
                 "close": px,
                 "high": to_float(bar.get("high")) or px,
                 "on": on,
@@ -92,6 +97,45 @@ def week_flags(stock: Sequence[dict], spy: Sequence[dict], asof: str) -> List[di
             }
         )
     return rows
+
+
+def week_is_complete(flag: dict) -> bool:
+    """Incomplete mid-week bars (quote overlay) are not another Stage 2 week."""
+    week_end = str(flag.get("week_end") or flag.get("asof") or "")[:10]
+    asof = str(flag.get("asof") or "")[:10]
+    if not week_end or not asof:
+        return True
+    return week_end <= asof
+
+
+def last_complete_index(flags: Sequence[dict], start_i: int, end_i: int) -> Optional[int]:
+    for i in range(end_i, start_i - 1, -1):
+        if week_is_complete(flags[i]):
+            return i
+    return None
+
+
+def from_base(flags: Sequence[dict], start_i: int) -> bool:
+    """Breakout = leaving Stage 1/4, or a 1–2 week Stage 3 poke still near the 30-week."""
+    if start_i <= 0 or start_i >= len(flags):
+        return False
+    prior_stage = flags[start_i - 1].get("stage")
+    if prior_stage in (1, 4):
+        return True
+    if prior_stage != 3:
+        return False
+    n3 = 0
+    j = start_i - 1
+    while j >= 0 and flags[j].get("stage") == 3:
+        n3 += 1
+        j -= 1
+    if n3 > STAGE3_MAX_BEFORE_BREAK:
+        return False
+    ma30 = to_float(flags[start_i].get("ma30"))
+    px = to_float(flags[start_i].get("close"))
+    if ma30 is None or ma30 <= 0 or px is None:
+        return False
+    return (px / ma30 - 1.0) <= BREAK_MAX_ABOVE_MA30
 
 
 def campaign_start_i(flags: Sequence[dict], end_i: int) -> int:
@@ -135,10 +179,11 @@ def _span_stats(flags: Sequence[dict], start_i: int, end_i: int) -> dict:
     off_high = None
     if campaign_high and campaign_high > 0 and px1 is not None:
         off_high = 1.0 - (px1 / campaign_high)
-    weeks = end_i - start_i + 1
+    complete_end = last_complete_index(flags, start_i, end_i)
+    weeks = (complete_end - start_i + 1) if complete_end is not None else 0
     ret_13w = None
-    if end_i >= 13:
-        ret_13w = pct_change(flags[end_i].get("close"), flags[end_i - 13].get("close"))
+    if complete_end is not None and complete_end >= 13:
+        ret_13w = pct_change(flags[complete_end].get("close"), flags[complete_end - 13].get("close"))
     late = False
     if weeks >= LATE_MIN_WEEKS:
         if ret_13w is not None and ret_13w < 0:
@@ -191,6 +236,8 @@ def current_run_from_flags(flags: Sequence[dict]) -> dict:
     out["had_trend"] = True
     out["vol_expand"] = flags[-1].get("vol_expand")
     out["break_vol_expand"] = flags[start_i].get("vol_expand")
+    out["prior_stage"] = flags[start_i - 1].get("stage") if start_i > 0 else None
+    out["from_base"] = from_base(flags, start_i)
     return out
 
 
@@ -248,11 +295,14 @@ def breakout_quality(
     residual_63: Optional[float] = None,
     vol_expand: Optional[bool] = None,
     rs_sector_126: Optional[float] = None,
+    from_base: bool = False,
 ) -> bool:
-    """Young Stage 2 with idiosyncratic RS. Week-1 needs volume expansion on the break."""
+    """Young Stage 2 from a base, with break-week volume and idiosyncratic RS."""
+    if not from_base:
+        return False
     if weeks < 1 or weeks > BREAK_MAX_WEEKS:
         return False
-    if weeks == 1 and vol_expand is False:
+    if vol_expand is not True:
         return False
     sec = to_float(rs_sector_126)
     if sec is not None and sec < 0:
@@ -266,14 +316,9 @@ def breakout_quality(
     edge = edge or 0.0
     hh = bool(hh_hl)
     rising = bool(mansfield_rising)
-    if rising:
-        if hh or edge >= 0.05 or (mans_v is not None and mans_v >= 0.03):
-            return True
-        if weeks >= 2:
-            return True
-    if hh and (edge >= 0.05 or (mans_v is not None and mans_v >= 0.05)):
+    if rising and (hh or edge >= 0.05 or (mans_v is not None and mans_v >= 0.03)):
         return True
-    if weeks >= 2 and (edge >= 0.08 or (mans_v is not None and mans_v >= 0.05)):
+    if hh and (edge >= 0.05 or (mans_v is not None and mans_v >= 0.05)):
         return True
     return False
 
@@ -290,6 +335,7 @@ def _raw_setup(
     rs_63: Optional[float],
     vol_expand: Optional[bool],
     rs_sector_126: Optional[float],
+    from_base: bool = False,
 ) -> tuple:
     dip = to_float(off_high)
     resid = to_float(residual_63)
@@ -310,6 +356,7 @@ def _raw_setup(
         residual_63=residual_63,
         vol_expand=vol_expand,
         rs_sector_126=rs_sector_126,
+        from_base=from_base,
     )
     broken = entry_state == "broken"
     if weeks <= BREAK_MAX_WEEKS and quality and not broken:
@@ -338,11 +385,11 @@ def decide(
     regime_risk: str = "on",
     rs_sector_126: Optional[float] = None,
     earnings_near_flag: bool = False,
+    from_base: bool = False,
 ) -> dict:
-    """One Stage 2 ticket per campaign. Breakout uses the *break week's* volume."""
+    """One Stage 2 ticket per campaign. Breakout = from a base + break-week volume."""
     why = str(entry_reason or "")
     weeks = int(weeks or 0)
-    hold = {"action": "HOLD", "setup": None, "size": None}
     if not on_board:
         return {"action": "OUT", "setup": None, "size": None}
     if late:
@@ -360,6 +407,7 @@ def decide(
         rs_63,
         vol,
         rs_sector_126,
+        from_base=from_base,
     )
     if action != "ADD":
         return {"action": action, "setup": setup, "size": None}
@@ -395,8 +443,9 @@ def assign_action(
     regime_risk: str = "on",
     rs_sector_126: Optional[float] = None,
     earnings_near_flag: bool = False,
+    from_base: bool = False,
 ) -> str:
-    """ADD = Stage 2 breakout (spike allowed) or early pullback. NEW = weak tag. Not a 20 EMA pause."""
+    """ADD = breakout from a base with volume, or early pullback. NEW = weak tag."""
     return decide(
         on_board,
         late,
@@ -416,6 +465,7 @@ def assign_action(
         regime_risk=regime_risk,
         rs_sector_126=rs_sector_126,
         earnings_near_flag=earnings_near_flag,
+        from_base=from_base,
     )["action"]
 
 
@@ -460,6 +510,7 @@ def week_decide(flags: Sequence[dict], i: int, stock: Sequence[dict], spy: Seque
         already_bought=bool(extra.get("already_bought")),
         regime_risk=str(extra.get("regime_risk") or "on"),
         earnings_near_flag=bool(extra.get("earnings_near_flag")),
+        from_base=bool(run.get("from_base")),
     )
 
 
@@ -525,7 +576,12 @@ def close_n_weeks_later(flags: Sequence[dict], start_idx: int, n: int) -> Option
 
 
 def replay_row(ticker: str, flags: Sequence[dict], run: dict, stock: Sequence[dict]) -> dict:
-    tagged = first_tag(flags)
+    tagged = None
+    start = run.get("trend_start") or run.get("last_trend_start")
+    if start:
+        tagged = next((row for row in flags if row.get("asof") == start), None)
+    if tagged is None:
+        tagged = first_tag(flags)
     row = {
         "ticker": ticker,
         "tagged": bool(tagged),

@@ -32,8 +32,10 @@ Shield geometry is **regime-aware**. The Calm AND of “outside 1-sigma **and** 
 | VIX regime | Short (quoted) | Min credit/width | Hard skip |
 |------------|----------------|------------------|-----------|
 | Calm <16 | \|delta\| ≤ 0.22 **and** ≥ 0.80-sigma OTM | **0.12** | \|delta\| > 0.25 |
-| Normal 16–22 | ≥ 0.90-sigma or \|delta\| ≤ 0.20 | **0.20** | \|delta\| > 0.25 |
+| Normal 16–22 | same cheap-vol short as Calm | **0.12** | \|delta\| > 0.25 |
 | Elevated 22–30 | outside **1-sigma** | **0.25** | inside 1-sigma to chase width |
+
+Normal **0.20** + (0.20Δ **or** 0.90σ) was an empty set at VIX 16–18 (live Schwab 2026-09-15: 12 names × 5 expiries, **0** $100 wings; Expert empty 9/9, 9/10, 9/14, 9/15). Same class as the retired Calm 25%+1σ skip. Cheap-vol Shield stays **0.12 / 0.22Δ / 0.80σ** in Normal until conservative 0.20 actually prints. Score **65**. Elevated is unchanged. Scan **14–60 DTE**, not one monthly.
 
 Use Schwab delta and that expiry’s ATM straddle ask for sigma. Max **4 Shield rows** in Calm, **one per sector**. Score Calm Shields **65**, not 80. Print them when they still have **edge**. Size from `book-and-target.md`. Manage **60–65% / 2.0×** — that is the winning-trade path. Max-loss 1:6 is what you get if you hold to max loss, which the plan forbids. Do not treat 1:6 as “this is a loser.”
 

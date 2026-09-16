@@ -1,0 +1,388 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-03-31",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-05-15",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-08-14",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-11-14",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-03-16",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-05-10",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-08-10",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-11-09",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-03-17",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-05-13",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-08-14",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-11-10",
+      "ticker": "APP",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-03-16",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-05-18",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-08-13",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-11-10",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-03-25",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-05-19",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-08-12",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-08-17",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-11-01",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-11-09",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-03-31",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-05-10",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-08-08",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-11-07",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-03-14",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-05-10",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-08-14",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-11-13",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-03-04",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-05-08",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-08-12",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-11-14",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-03-12",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-04-01",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-05-12",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-08-18",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-11-10",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-03-25",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-05-11",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-08-17",
+      "ticker": "APP",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-05-12",
+      "ticker": "APP",
+      "updatedAt": "2022-06-10T23:15:04Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-08-11",
+      "ticker": "APP",
+      "updatedAt": "2021-09-21T23:15:05Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-11-10",
+      "ticker": "APP",
+      "updatedAt": "2021-11-20T00:15:29Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-02-16",
+      "ticker": "APP",
+      "updatedAt": "2022-02-26T00:15:22Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-05-11",
+      "ticker": "APP",
+      "updatedAt": "2022-05-20T23:15:30Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-08-10",
+      "ticker": "APP",
+      "updatedAt": "2022-08-19T23:15:32Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-11-09",
+      "ticker": "APP",
+      "updatedAt": "2022-11-19T00:15:29Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-02-08",
+      "ticker": "APP",
+      "updatedAt": "2023-02-11T00:15:29Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-05-10",
+      "ticker": "APP",
+      "updatedAt": "2023-05-19T23:15:31Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-08-09",
+      "ticker": "APP",
+      "updatedAt": "2023-08-18T23:15:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-11-08",
+      "ticker": "APP",
+      "updatedAt": "2023-11-18T00:15:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-02-14",
+      "ticker": "APP",
+      "updatedAt": "2024-02-24T00:15:33Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-05-08",
+      "ticker": "APP",
+      "updatedAt": "2024-05-17T23:15:27Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-08-07",
+      "ticker": "APP",
+      "updatedAt": "2024-08-16T23:15:30Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-11-06",
+      "ticker": "APP",
+      "updatedAt": "2024-11-16T01:00:32Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-02-12",
+      "ticker": "APP",
+      "updatedAt": "2025-02-22T03:40:48Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-05-07",
+      "ticker": "APP",
+      "updatedAt": "2025-05-17T02:40:21Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-08-06",
+      "ticker": "APP",
+      "updatedAt": "2025-08-16T02:40:15Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-11-05",
+      "ticker": "APP",
+      "updatedAt": "2025-11-15T03:40:16Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-02-11",
+      "ticker": "APP",
+      "updatedAt": "2026-02-21T03:40:18Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-05-06",
+      "ticker": "APP",
+      "updatedAt": "2026-05-16T02:40:18Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-08-05",
+      "ticker": "APP",
+      "updatedAt": "2026-08-14T22:00:35Z"
+    }
+  ]
+}

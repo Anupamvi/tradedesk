@@ -8,4 +8,6 @@ cd /Users/anuppamvi/tradedesk/xhigh && PYTHONPATH=. python3 -m xhigh full --date
 
 Output: `out/xhigh/YYYY-MM-DD/`
 
+Schwab token is `SCHWAB_TOKEN_PATH` at tradedesk `tokens/schwab_token.json` (do not keep a private copy under `xhigh/tokens`).
+
 No orders. Empty TRADE is valid. Spot is Schwab lastPrice. CSP 8–15% OTM. Call debit long −2% to +4% vs last.

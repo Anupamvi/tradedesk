@@ -10,7 +10,7 @@ Follow this order. Skip a step only if the input cannot exist (then mark THIN or
 
 4. **Notional filter** — Prefer liquid mega-caps for Shield. Mid-caps need MIXED/FULL and never Prime on THIN. Theme clustering before sizing. Energy map is one theme.
 
-5. **Live chain** — `schwab_market.py structures SYMBOL --expiry YYYY-MM-DD` on each allowed name (put credit, call credit, condor, call debit, put debit). Then `vertical` to fill a row. Conservative net. Confirmed earnings date; **skip that structure if unknown or `earnings_date <= expiry`**. Missing Schwab leg → that structure is NO ROW, not a skip of the other four.
+5. **Live chain** — `schwab_market.py scan --asof YYYY-MM-DD --regime auto` (14–60 DTE Fridays) then `structures SYMBOL --expiry YYYY-MM-DD --regime …` on each allowed name (put credit, call credit, condor, call debit, put debit). Then `vertical` to fill a row. Conservative net. Confirmed earnings date; **skip that structure if unknown or `earnings_date <= expiry`**. Missing Schwab leg → that structure is NO ROW, not a skip of the other four. One monthly is not a full scan.
 
 6. **X on candidates** — Veto/confirm after the chain. Shock watch finder already ran in step 1. See `x-sentiment.md`.
 

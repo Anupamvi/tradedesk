@@ -2663,6 +2663,69 @@
       "stkVolu": 3807740.0,
       "ticker": "APP",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 312.01,
+      "hiPx": 322.73,
+      "loPx": 309.85,
+      "open": 319.38,
+      "stkVolu": 3915909.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 305.06,
+      "hiPx": 312.37,
+      "loPx": 304.21,
+      "open": 311.535,
+      "stkVolu": 3954573.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 314.49,
+      "hiPx": 317.66,
+      "loPx": 300.09,
+      "open": 300.84,
+      "stkVolu": 4734092.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 323.96,
+      "hiPx": 325.5999,
+      "loPx": 311.68,
+      "open": 315.54,
+      "stkVolu": 3761184.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 334.24,
+      "hiPx": 338.34,
+      "loPx": 320.4,
+      "open": 324.04,
+      "stkVolu": 5063815.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 331.46,
+      "hiPx": 334.46,
+      "loPx": 323.8025,
+      "open": 328.325,
+      "stkVolu": 6604925.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 325.37,
+      "hiPx": 336.44,
+      "loPx": 324.85,
+      "open": 333.58,
+      "stkVolu": 303789.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

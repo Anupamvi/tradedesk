@@ -3,7 +3,7 @@ name: grok-option
 description: Use when the user wants a grok-option scan, Expert Trade Table, credit or debit swing setup, unusual options review, book check, or journal update. Triggers include run today's scan, run the scanner, grok-option, Anu table, sell put credit, bull put, bear call, manage open book, revalidate assumptions, oil spike, geo event, ride the wave, playwright, logged-in x.com, and schwab chain. Applies quote-verified rules, regime gate, X veto, earnings firewall, spike path, Schwab live chain, and empty-table permission.
 metadata:
   type: workflow
-  version: "3.11"
+  version: "3.12"
   owner: Kla
 ---
 
@@ -44,7 +44,7 @@ Do not reorder. Empty table is valid when quotes or geometry fail. Empty is a **
 2. **Ingest** — **Schwab first** for ticker last/bid/ask and option chains (`references/schwab.md`, `scripts/schwab_market.py`, tradedesk `.env` + `SCHWAB_TOKEN_PATH`). User CSVs and pasted book next. Browser (`references/browser.md`) only for X, cookie-walled news, crude/geo copy, or when Schwab is down.
 3. **Stock-only universe** — common stock. If a shock is sourced, include that shock’s **written map** only. No ETFs unless the user said allow index hedge. No warrants, blanks, or unquotable names.
 4. **Notional filter** — liquid weeklies and monthlies. Cluster AI/semi/cloud as one theme; energy map is one theme.
-5. **Live chain** — Schwab `structures` per name/expiry (all five actions). Then `vertical` to fill a row. Conservative net. **Pick highest credit/width, then dollars** (1-lot credit ≥ $100 when it exists; do not 15-wide a thinner-edge scrap). Skip a **structure** if a leg is missing, earnings unknown, or `earnings_date <= expiry`. Do not skip the other four because puts printed. See `references/schwab.md` and `references/structures-and-pricing.md`.
+5. **Live chain** — Schwab `scan` (14–60 DTE Fridays, regime from live `$VIX`) or `structures` per name/expiry (all five actions). Then `vertical` to fill a row. Conservative net. **Pick highest credit/width, then dollars** (1-lot credit ≥ $100 when it exists; do not 15-wide a thinner-edge scrap). Skip a **structure** if a leg is missing, earnings unknown, or `earnings_date <= expiry`. Do not skip the other four because puts printed. Do not scan a single monthly and call it full. See `references/schwab.md` and `references/structures-and-pricing.md`.
 6. **X on candidates** — required after the chain. Veto/confirm only, never a trigger. Tag every table row `X: Quiet` / `Informed` / `Crowded veto` / `Event veto`. One regime pass (VIX, NVDA, Chair, 0DTE). Missing this pass is an incomplete scan. See `references/x-sentiment.md`.
 7. **Sleeve** — A Shield, B Fire, C cash/hedge, D Spike. Events are **name / theme / index** (`regime-and-signals.md`). Crisis kills Shield/Fire; Spike is the only Crisis debit if `spike.md` gates pass.
 8. **Book caps** — `references/book-and-target.md`. Reject rows that breach per-name, aggregate, theme, one-Fire-per-name, or one-Spike-per-scan.
@@ -73,7 +73,7 @@ Do not paste a truncated table in chat as the deliverable. The file uses 🟢/�
 
 ## Tools
 
-- Schwab: `python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py structures TICKER --expiry YYYY-MM-DD` then `vertical` for the row. See `references/schwab.md`. The `~/.grok/skills/grok-option/scripts/...` path still works (symlink).
+- Schwab: `python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py scan --asof YYYY-MM-DD --regime auto` then `structures TICKER --expiry YYYY-MM-DD --regime normal` then `vertical` for the row. See `references/schwab.md`. The `~/.grok/skills/grok-option/scripts/...` path still works (symlink).
 - Web: VIX, index, earnings date, WTI/Brent, named geo copy.
 - X keyword + semantic search: Shock watch finder (geo/oil/kinetic) at regime; then candidate veto/confirm. Never a Spike row from X alone.
 - Browser: Playwright MCP or `scripts/browser_fetch.py` for X/news when APIs miss. Not a substitute for Schwab chain. See `references/browser.md`. Never type passwords.

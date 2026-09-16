@@ -2663,6 +2663,69 @@
       "stkVolu": 4208582.0,
       "ticker": "ANET",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 194.96,
+      "hiPx": 200.675,
+      "loPx": 194.72,
+      "open": 196.82,
+      "stkVolu": 4743849.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 192.93,
+      "hiPx": 196.96,
+      "loPx": 192.05,
+      "open": 194.855,
+      "stkVolu": 3675163.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 188.99,
+      "hiPx": 193.04,
+      "loPx": 187.8926,
+      "open": 189.35,
+      "stkVolu": 2818637.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 199.59,
+      "hiPx": 200.25,
+      "loPx": 192.105,
+      "open": 192.23,
+      "stkVolu": 4641785.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 187.81,
+      "hiPx": 191.1051,
+      "loPx": 186.11,
+      "open": 189.82,
+      "stkVolu": 5677637.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 192.84,
+      "hiPx": 194.6864,
+      "loPx": 190.86,
+      "open": 191.885,
+      "stkVolu": 4913281.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 198.81,
+      "hiPx": 199.55,
+      "loPx": 195.3882,
+      "open": 197.44,
+      "stkVolu": 366891.0,
+      "ticker": "ANET",
+      "tradeDate": "2026-09-16"
     }
   ]
 }

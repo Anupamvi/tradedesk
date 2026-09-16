@@ -1,0 +1,856 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-02-04",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-01-01",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-02-03",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-04-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-07-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-10-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-02-03",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-04-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-07-19",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-10-19",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-02-03",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-04-18",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-07-15",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-10-18",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-02-14",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-04-17",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-07-18",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-10-17",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-01-30",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-04-15",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-07-16",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-10-22",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-01-27",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-04-21",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-07-23",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-10-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-01-29",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-04-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-07-22",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-10-21",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-01-28",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-04-19",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-07-21",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-10-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-01-27",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-04-17",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-07-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-10-19",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-01-25",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-04-16",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-07-19",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-18",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-01-24",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-04-15",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-18",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-23",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-23",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-04-22",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-24",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-22",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-29",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-19",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-22",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-21",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-01-26",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-18",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-21",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-01-26",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-20",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-21",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2006-10-19",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-01-31",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-04-16",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-07-24",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-18",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-01-29",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-04-21",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-24",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-23",
+      "ticker": "LLY",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-01-29",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-04-20",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-07-22",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-10-21",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-01-28",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-04-19",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-07-22",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-10-21",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-01-27",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-04-18",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-07-21",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-10-20",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-01-31",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-04-25",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-07-25",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-10-24",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-01-29",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-04-24",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-07-24",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-10-23",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-01-30",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-04-24",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-07-24",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-10-23",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-01-30",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-04-23",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-07-23",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-10-22",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-01-28",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-04-26",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-07-26",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-10-25",
+      "ticker": "LLY",
+      "updatedAt": "2017-10-11T19:06:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-01-31",
+      "ticker": "LLY",
+      "updatedAt": "2018-11-12T17:07:11Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-04-25",
+      "ticker": "LLY",
+      "updatedAt": "2018-11-12T17:07:11Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-07-25",
+      "ticker": "LLY",
+      "updatedAt": "2018-11-12T17:07:11Z"
+    },
+    {
+      "anncTod": "2359",
+      "earnDate": "2017-10-24",
+      "ticker": "LLY",
+      "updatedAt": "2018-11-12T17:07:11Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-01-31",
+      "ticker": "LLY",
+      "updatedAt": "2018-11-12T17:07:11Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-04-24",
+      "ticker": "LLY",
+      "updatedAt": "2018-11-12T17:07:11Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-07-24",
+      "ticker": "LLY",
+      "updatedAt": "2018-11-12T17:07:11Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-11-06",
+      "ticker": "LLY",
+      "updatedAt": "2018-11-16T23:03:06Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-02-06",
+      "ticker": "LLY",
+      "updatedAt": "2019-02-16T00:47:29Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-02-13",
+      "ticker": "LLY",
+      "updatedAt": "2019-01-29T18:55:17Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-04-30",
+      "ticker": "LLY",
+      "updatedAt": "2019-05-10T23:17:24Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-07-30",
+      "ticker": "LLY",
+      "updatedAt": "2019-08-09T23:17:51Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-10-23",
+      "ticker": "LLY",
+      "updatedAt": "2019-11-01T23:17:31Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-01-30",
+      "ticker": "LLY",
+      "updatedAt": "2020-02-08T00:17:28Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-04-23",
+      "ticker": "LLY",
+      "updatedAt": "2020-05-01T23:17:27Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-07-30",
+      "ticker": "LLY",
+      "updatedAt": "2020-08-07T23:17:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-10-27",
+      "ticker": "LLY",
+      "updatedAt": "2020-11-07T00:17:27Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-01-29",
+      "ticker": "LLY",
+      "updatedAt": "2021-02-09T00:17:42Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-04-27",
+      "ticker": "LLY",
+      "updatedAt": "2021-05-07T23:18:01Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-08-03",
+      "ticker": "LLY",
+      "updatedAt": "2021-08-13T23:17:50Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-10-26",
+      "ticker": "LLY",
+      "updatedAt": "2021-11-05T23:18:38Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-02-03",
+      "ticker": "LLY",
+      "updatedAt": "2022-02-12T00:17:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-04-28",
+      "ticker": "LLY",
+      "updatedAt": "2022-05-06T23:17:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-08-04",
+      "ticker": "LLY",
+      "updatedAt": "2022-08-12T23:18:49Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-11-01",
+      "ticker": "LLY",
+      "updatedAt": "2022-11-12T00:17:50Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-02-02",
+      "ticker": "LLY",
+      "updatedAt": "2023-02-11T00:17:50Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-04-27",
+      "ticker": "LLY",
+      "updatedAt": "2023-05-05T23:17:32Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-08-08",
+      "ticker": "LLY",
+      "updatedAt": "2023-08-18T23:17:47Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-11-02",
+      "ticker": "LLY",
+      "updatedAt": "2023-11-11T00:17:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-02-06",
+      "ticker": "LLY",
+      "updatedAt": "2024-02-17T00:17:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-04-30",
+      "ticker": "LLY",
+      "updatedAt": "2024-05-10T23:17:52Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-08-08",
+      "ticker": "LLY",
+      "updatedAt": "2024-08-16T23:18:06Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-10-30",
+      "ticker": "LLY",
+      "updatedAt": "2024-11-09T01:03:03Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-02-06",
+      "ticker": "LLY",
+      "updatedAt": "2025-02-15T03:43:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-05-01",
+      "ticker": "LLY",
+      "updatedAt": "2025-05-10T02:42:09Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-08-07",
+      "ticker": "LLY",
+      "updatedAt": "2025-08-16T02:41:14Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-10-30",
+      "ticker": "LLY",
+      "updatedAt": "2025-11-08T03:41:20Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-02-04",
+      "ticker": "LLY",
+      "updatedAt": "2026-02-14T03:41:33Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-04-30",
+      "ticker": "LLY",
+      "updatedAt": "2026-05-09T02:41:47Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-08-05",
+      "ticker": "LLY",
+      "updatedAt": "2026-08-14T22:02:01Z"
+    }
+  ]
+}

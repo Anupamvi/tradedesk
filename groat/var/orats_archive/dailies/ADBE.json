@@ -2663,6 +2663,69 @@
       "stkVolu": 6644829.0,
       "ticker": "ADBE",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 257.26,
+      "hiPx": 262.805,
+      "loPx": 254.25,
+      "open": 262.805,
+      "stkVolu": 5491058.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 254.86,
+      "hiPx": 259.43,
+      "loPx": 254.4,
+      "open": 258.125,
+      "stkVolu": 4165480.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 248.83,
+      "hiPx": 255.0,
+      "loPx": 247.19,
+      "open": 251.81,
+      "stkVolu": 10397169.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 252.23,
+      "hiPx": 255.3,
+      "loPx": 241.51,
+      "open": 242.17,
+      "stkVolu": 10780432.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 265.6,
+      "hiPx": 266.1,
+      "loPx": 256.66,
+      "open": 261.51,
+      "stkVolu": 5723344.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 257.76,
+      "hiPx": 264.4646,
+      "loPx": 257.25,
+      "open": 261.7,
+      "stkVolu": 4893782.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 253.42,
+      "hiPx": 254.98,
+      "loPx": 251.57,
+      "open": 253.34,
+      "stkVolu": 369367.0,
+      "ticker": "ADBE",
+      "tradeDate": "2026-09-16"
     }
   ]
 }
