@@ -6,6 +6,7 @@ from typing import List, Optional
 
 from xhigh.dates import parse_any_date
 from xhigh.num import fmt, to_float
+from xhigh.pd import PD_NOTE, SPREAD_WIDE, attach_trade_pd, economics, risk_budget, sort_by_pd
 from xhigh.score import DEFINED_CREDIT, DEBIT, csp_annualized, credit_over_width, rr_line, short_abs_delta
 
 
@@ -109,7 +110,23 @@ def debit_blockers(row: dict, gates: Optional[dict] = None) -> tuple:
     return "CLICK", []
 
 
+def credit_lot_block(row: dict) -> Optional[str]:
+    """SKIP reason when a passing credit cannot be placed. None if it can."""
+    ml, _, _ = economics(row)
+    if ml is not None and ml > risk_budget():
+        return "one lot loses $%s, above the $%s sleeve, so N=0" % (fmt(ml, 0), fmt(risk_budget(), 0))
+    liq = to_float(row.get("liquidity_lots"))
+    if liq is not None and liq < 1:
+        return "the book does not show one lot"
+    sp = to_float(row.get("spread_frac"))
+    if sp is not None and sp > SPREAD_WIDE:
+        return "bid-ask is %.0f%% of the credit (need ≤%.0f%%)" % (sp * 100, SPREAD_WIDE * 100)
+    return None
+
+
 def classify(row: dict, gates: Optional[dict] = None) -> str:
+    if row.get("intel_kill"):
+        return "WATCH"
     floor = _floor(gates)
     pop = to_float(row.get("pop_delta"))
     conf = int(row.get("conf") or 0)
@@ -141,6 +158,8 @@ def classify(row: dict, gates: Optional[dict] = None) -> str:
         if structure in ("put_credit", "iron_condor") and dividend_inside(row) is True:
             return "SKIP"
         if frac is not None and frac >= width_min and pop >= pop_min:
+            if credit_lot_block(row):
+                return "SKIP"
             return "CLICK"
         return "SKIP"
     if structure in DEBIT:
@@ -230,6 +249,8 @@ def risk_line(row: dict) -> str:
 
 
 def why_line(row: dict, gates: Optional[dict] = None) -> str:
+    if row.get("intel_kill"):
+        return "intel KILL"
     s = row.get("structure")
     action = row.get("action")
     ann = csp_annualized(row)
@@ -282,6 +303,9 @@ def why_line(row: dict, gates: Optional[dict] = None) -> str:
                 pct,
                 rr_line(row),
             )
+        block = credit_lot_block(row)
+        if block:
+            return "Paid %s. P:R %s. Not a click: %s." % (pct, rr_line(row), block)
         return "Credit is %s. P:R %s. Not a click." % (pct, rr_line(row))
     if s in DEBIT:
         _action, reasons = debit_blockers(row, gates)
@@ -328,8 +352,17 @@ def _click_block(row: dict) -> List[str]:
         "",
         "- **Need:** %s" % row.get("need_s"),
         "- **Risk:** %s" % row.get("risk_s"),
-        "- **Profit:risk:** %s · **POP (delta):** %s · **conf:** %s"
-        % (row.get("rr_s") or rr_line(row), row.get("pop_s"), row.get("conf")),
+        "- **Profit:risk:** %s · **POP (delta):** %s · **conf:** %s · **PD:** %s · **N:** %s · **R_cons:** %s · **L:** %s"
+        % (
+            row.get("rr_s") or rr_line(row),
+            row.get("pop_s"),
+            row.get("conf"),
+            row.get("pd_s") or "DATA UNAVAILABLE",
+            row.get("n_s") or "—",
+            row.get("r_cons_s") or "—",
+            row.get("l_s") or "—",
+        ),
+        "- %s" % PD_NOTE,
         "- **Why this one:** %s" % row.get("why_s"),
     ]
     if row.get("structure") == "csp":
@@ -367,18 +400,52 @@ def risk_dollars(row: dict) -> Optional[float]:
 
 
 def sort_clicks(click: List[dict]) -> List[dict]:
-    def key(row: dict):
+    stamped = [attach_trade_pd(dict(row)) for row in click]
+
+    def tie(row: dict):
         risk = risk_dollars(row)
-        return (risk is None, risk if risk is not None else 0.0)
+        return (0 if risk is not None else 1, risk if risk is not None else 0.0)
 
-    return sorted(click, key=key)
+    return sort_by_pd(stamped, tie=tie)
 
 
-def render_recommendation(date: str, click: List[dict], skip: List[dict], watch: List[dict], macro: Optional[dict] = None) -> List[str]:
+def universe_from_manifest(manifest: Optional[dict] = None) -> dict:
+    man = manifest if isinstance(manifest, dict) else {}
+    movers = man.get("movers") if isinstance(man.get("movers"), list) else []
+    shortlist = man.get("shortlist") if isinstance(man.get("shortlist"), list) else []
+    return {
+        "live_schwab": bool(man.get("live_schwab")),
+        "n_movers": len(movers),
+        "n_shortlist": len(shortlist),
+        "chain_http": int(man.get("chain_http") or 0),
+    }
+
+
+def universe_scanned(universe: Optional[dict], n_click: int, n_skip: int) -> bool:
+    u = universe if isinstance(universe, dict) else {}
+    if n_click > 0 or n_skip > 0:
+        return True
+    if int(u.get("n_shortlist") or 0) > 0:
+        return True
+    if int(u.get("chain_http") or 0) > 0:
+        return True
+    return False
+
+
+def render_recommendation(
+    date: str,
+    click: List[dict],
+    skip: List[dict],
+    watch: List[dict],
+    macro: Optional[dict] = None,
+    universe: Optional[dict] = None,
+) -> List[str]:
     lines = [
         "# xhigh %s" % date,
         "",
         "## Recommendation",
+        "",
+        PD_NOTE,
         "",
     ]
     n_c, n_s, n_w = len(click), len(skip), len(watch)
@@ -388,9 +455,21 @@ def render_recommendation(date: str, click: List[dict], skip: List[dict], watch:
     if not click:
         lines.append("**🟡 CLICK 0** · skip %s · watch %s" % (n_s, n_w))
         lines.append("")
-        lines.append(
-            "**Do nothing.** No debit with |delta| ≥ 0.50, DTE ≥ 35, long at/ITM, and no ex-div in the life — and no credit paid ≥ 10% of width with POP ≥ 70%. Empty is valid."
-        )
+        if universe_scanned(universe, n_c, n_s):
+            lines.append(
+                "**Do nothing.** No debit with |delta| ≥ 0.50, DTE ≥ 35, long at/ITM, and no ex-div in the life — and no credit paid ≥ 10% of width with POP ≥ 70%. Empty is valid."
+            )
+        else:
+            n_movers = int((universe or {}).get("n_movers") or 0)
+            if n_movers == 0:
+                lines.append(
+                    "**DATA UNAVAILABLE — universe.** Schwab movers returned no names (or Schwab was off). This is not an empty CLICK. Empty CLICK is valid only after names were chained."
+                )
+            else:
+                lines.append(
+                    "**DATA UNAVAILABLE — universe.** %s names seeded, none passed quote/ORATS/chain. This is not an empty CLICK."
+                    % n_movers
+                )
         lines.append("")
     else:
         lines.append(
@@ -408,10 +487,10 @@ def render_recommendation(date: str, click: List[dict], skip: List[dict], watch:
             "### How to read this",
             "",
             "1. **Geometry first** — strike must sit on live last. A 270-call on a $186 stock is a bug, never a trade.",
-            "2. **Sleeves are independent.** A name can have a swing debit and a defined-risk credit. Rank small dollars-at-risk first. Do not hide a passing credit because a debit also passed.",
+            "2. **Sleeves are independent.** A name can have a swing debit and a defined-risk credit. Rank CLICK by PD desc (nulls last). Keep conf. Do not hide a passing credit because a debit also passed.",
             "3. **Swing CLICK** — long at/ITM (|delta| ≥ 0.50), DTE ≥ 35, R/R ≥ 1.5, and no ex-div before expiry. A 25-DTE 0.35-delta debit is how KO lost 34% in a day. EV is not the click rule.",
             "4. **Wheel** — Naked CSP only if paid ≥ 8% annualized and the 6-month low did **not** already trade through the strike. If it did, recommend a **put credit** instead (defined-risk). A 50% drop is shown in dollars on naked puts. Not a growth forecast.",
-            "5. **Credit CLICK** — paid at least **10% of the spread width** and POP ≥ 70%. An 8–15% OTM put is naturally ~1:7; requiring 1:4 emptied the board. 1:14 still SKIP.",
+            "5. **Credit CLICK** — paid at least **10% of the spread width**, POP ≥ 70%, one lot fits in $500, and the bid-ask is ≤ 15% of the credit. N=0 or a wide market is SKIP. 1:14 still SKIP.",
             "6. **POP is delta, not a forecast.** I cannot promise profit.",
             "",
         ]

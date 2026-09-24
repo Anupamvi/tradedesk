@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compound Core dashboard</title>
+  <style>
+    :root {
+      --bg: #070b12;
+      --panel: #101826;
+      --panel-2: #162033;
+      --line: #243044;
+      --ink: #eef3fb;
+      --muted: #8b97ab;
+      --gold: #e8b84a;
+      --ok: #3dd68c;
+      --warn: #ff6b4a;
+      --blue: #4c8dff;
+      --VOO: #4c8dff;
+      --VGT: #7c5cff;
+      --SMH: #ff6b4a;
+      --VB: #3dd68c;
+      --VXUS: #3ec6d6;
+      --GLDM: #e8b84a;
+      --VGSH: #8b95a8;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+      font: 15px/1.45 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    }
+    a { color: var(--gold); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+      padding: 22px 28px 16px; border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; background: rgba(7,11,18,0.92); backdrop-filter: blur(8px); z-index: 2;
+    }
+    h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.03em; }
+    h1 span { color: var(--gold); }
+    .lede { color: var(--muted); margin: 4px 0 0; font-size: 0.92rem; }
+    .nav { display: flex; gap: 14px; font-size: 0.88rem; color: var(--muted); white-space: nowrap; align-items: center; }
+    #refresh-status { color: var(--muted); font-size: 0.82rem; }
+    button.nav-refresh { padding: 8px 14px; }
+    main { max-width: 1280px; margin: 0 auto; padding: 22px 28px 72px; }
+    section { margin: 0 0 28px; }
+    h2 { font-size: 1.05rem; margin: 0 0 12px; letter-spacing: -0.02em; }
+    h2 em { font-style: normal; color: var(--gold); }
+    .card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px 14px;
+    }
+    .inputs, .hold-grid { display: grid; gap: 12px; }
+    .inputs { grid-template-columns: repeat(3, 1fr); margin-bottom: 14px; }
+    .hold-grid { grid-template-columns: repeat(4, 1fr); }
+    label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 5px; }
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+      background: #0c1320; color: var(--ink);
+      font: 1.05rem/1.2 ui-monospace, "IBM Plex Mono", Menlo, Consolas, monospace;
+    }
+    input:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
+    .hint { color: var(--muted); font-size: 0.85rem; margin: 8px 0 0; }
+    .sleeves { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .sleeve h3 { margin: 0 0 8px; font-size: 1rem; }
+    .sleeve.default h3 { color: var(--blue); }
+    .sleeve.aggressive h3 { color: var(--warn); }
+    .bar { height: 10px; background: #0c1320; border-radius: 99px; overflow: hidden; display: flex; margin: 0 0 12px; }
+    .seg { height: 100%; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); }
+    th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    td.num, th.num { text-align: right; font-family: ui-monospace, "IBM Plex Mono", Menlo, Consolas, monospace; font-size: 0.88rem; }
+    .meta { color: var(--muted); font-size: 0.85rem; margin: 10px 0 0; }
+    .meta strong { color: var(--ink); }
+    .paths { margin-top: 12px; }
+    .book-form { display: grid; gap: 14px; }
+    .book-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    button {
+      background: var(--gold); color: #1a1406; border: 0; border-radius: 8px;
+      padding: 10px 16px; font: 650 0.95rem/1 system-ui; cursor: pointer;
+    }
+    button:hover { filter: brightness(1.05); }
+    button:disabled { opacity: 0.55; cursor: default; }
+    .radios { display: flex; gap: 14px; color: var(--muted); font-size: 0.9rem; }
+    .empty {
+      border: 1px dashed var(--line); border-radius: 12px; padding: 22px; color: var(--muted);
+      background: var(--panel-2);
+    }
+    .status { display: inline-block; min-width: 2.6rem; text-align: center; border-radius: 99px; padding: 1px 8px; font-size: 0.72rem; letter-spacing: 0.04em; }
+    .in { background: #163528; color: var(--ok); }
+    .low { background: #3a2410; color: var(--gold); }
+    .high { background: #3a1612; color: var(--warn); }
+    .flash { color: var(--ok); font-size: 0.88rem; }
+    .err { color: var(--warn); font-size: 0.88rem; }
+    .gain { color: var(--ok); }
+    .loss { color: var(--warn); }
+    .pnl {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      margin: 0 0 16px; padding: 14px; border: 1px solid var(--line); border-radius: 12px;
+      background: var(--panel-2);
+    }
+    .pnl div { display: flex; flex-direction: column; gap: 4px; }
+    .pnl span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .pnl strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+    .pos-table input { padding: 7px 8px; font-size: 0.92rem; }
+    button.ghost {
+      background: transparent; color: var(--gold); border: 1px solid var(--gold);
+    }
+    footer { margin-top: 8px; color: var(--muted); font-size: 0.82rem; }
+    .disclaimer { border-left: 3px solid var(--warn); padding: 8px 12px; color: #f0c7bc; }
+    @media (max-width: 960px) {
+      .inputs, .sleeves, .hold-grid { grid-template-columns: 1fr 1fr; }
+      header, main { padding-left: 16px; padding-right: 16px; }
+    }
+    @media (max-width: 640px) {
+      .inputs, .sleeves, .hold-grid, .pnl { grid-template-columns: 1fr; }
+      header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Compound Core <span>dashboard</span></h1>
+      <p class="lede">Both sleeves, then the book you actually hold — cost vs now, real gain or loss. No orders. As-of <span id="asof">—</span>.</p>
+    </div>
+    <div class="nav">
+      <span id="refresh-status"></span>
+      <button type="button" class="nav-refresh" id="refresh-all">Refresh</button>
+      <a href="/" id="open-dashboard" title="Open dashboard in Safari">Open in Safari</a>
+      <a href="/calculator.html">Raw calculator HTML</a>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>1. Split a <em>dollar amount</em></h2>
+      <div class="card">
+        <div class="inputs">
+          <div>
+            <label for="amount">Amount</label>
+            <input id="amount" type="text" inputmode="decimal" placeholder="e.g. 100000" autocomplete="off">
+          </div>
+          <div>
+            <label for="weekly">Weekly buy (recipe)</label>
+            <input id="weekly" type="text" inputmode="decimal" placeholder="e.g. 250" autocomplete="off">
+          </div>
+          <div>
+            <label for="monthly">Monthly add (paths)</label>
+            <input id="monthly" type="text" inputmode="decimal" placeholder="e.g. 1000" autocomplete="off">
+          </div>
+        </div>
+        <p class="hint">Typing an amount splits default 48/10/7/5/20/5/5 and aggressive 45/15/10/5/15/5/5. Last amount is saved on this machine.</p>
+        <p id="plan-msg" class="hint"></p>
+        <div class="sleeves" id="sleeves"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. My book — <em>saved allocations, real gain or loss</em></h2>
+      <div class="card">
+        <p class="hint" style="margin-top:0">Enter a <strong>total $</strong> or per-ETF <strong>Cost $</strong> — shares and Now $ fill from live Schwab quotes. Save when ready. <strong>Refresh</strong> updates marks without overwriting saved cost.</p>
+        <form id="book-form" class="book-form">
+          <div class="inputs" style="grid-template-columns: 1fr 1fr auto; align-items: end;">
+            <div>
+              <label for="book_total">Total $ to book</label>
+              <input id="book_total" type="text" inputmode="decimal" placeholder="e.g. 100000" autocomplete="off">
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <button type="button" class="ghost" id="book-from-planner">Use section 1 amount</button>
+            </div>
+          </div>
+          <p class="hint">Splits by the sleeve selected below, then calculates shares and Now $ at live prices.</p>
+          <table class="pos-table">
+            <thead>
+              <tr>
+                <th>ETF</th>
+                <th class="num">Cost $</th>
+                <th class="num">Shares</th>
+                <th class="num">Now $</th>
+              </tr>
+            </thead>
+            <tbody id="hold-inputs"></tbody>
+          </table>
+          <div class="inputs">
+            <div>
+              <label for="monthly_add">Monthly add going forward</label>
+              <input id="monthly_add" type="text" inputmode="decimal" placeholder="e.g. 1000" autocomplete="off">
+            </div>
+            <div>
+              <label>Compare mix to</label>
+              <div class="radios" style="margin-top:10px">
+                <label><input type="radio" name="compare_to" value="default" checked> Default sleeve</label>
+                <label><input type="radio" name="compare_to" value="aggressive"> Aggressive</label>
+              </div>
+            </div>
+          </div>
+          <div class="book-actions">
+            <button type="submit" id="submit-book">Save my book</button>
+            <button type="button" class="ghost" id="refresh-marks">Refresh</button>
+            <span id="book-msg" class="hint"></span>
+          </div>
+        </form>
+        <div id="book-out" style="margin-top:16px"></div>
+      </div>
+    </section>
+    <footer>
+      <p class="disclaimer">Not financial advice. CMAs are not guarantees. The 40% screenshot is a trailing year, not a forecast. This dashboard stores a JSON file on this machine only.</p>
+    </footer>
+  </main>
+  <script>
+    const TICKERS = ["VOO","VGT","SMH","VB","VXUS","GLDM","VGSH"];
+    const COLORS = {VOO:"#4c8dff",VGT:"#7c5cff",SMH:"#ff6b4a",VB:"#3dd68c",VXUS:"#3ec6d6",GLDM:"#e8b84a",VGSH:"#8b95a8"};
+    const PATHS = ["stress","bear","base","bull"];
+    let saveTimer = null;
+    let previewTimer = null;
+    let bookDeriveTimer = null;
+    let hydrating = false;
+    let stateLoaded = false;
+    let plannerDirty = false;
+    let bookTotalDirty = false;
+
+    function money(raw) {
+      const t = String(raw || "").replace(/[$,\s]/g, "").trim();
+      if (!t) return 0;
+      const n = Number(t);
+      return Number.isFinite(n) ? n : NaN;
+    }
+    function usd(n) {
+      if (!Number.isFinite(n)) return "—";
+      const abs = Math.abs(n);
+      const digits = abs >= 1000 ? 0 : 2;
+      return n.toLocaleString("en-US", {style:"currency", currency:"USD", maximumFractionDigits: digits, minimumFractionDigits: digits});
+    }
+    function signedUsd(n) {
+      if (!Number.isFinite(n)) return "—";
+      const abs = Math.abs(n);
+      const digits = abs >= 1000 ? 0 : 2;
+      const core = Math.abs(n).toLocaleString("en-US", {style:"currency", currency:"USD", maximumFractionDigits: digits, minimumFractionDigits: digits});
+      if (n > 0) return "+" + core;
+      if (n < 0) return "−" + core.replace("$-", "$").replace("-", "");
+      return core;
+    }
+    function signedPct(x) {
+      if (!Number.isFinite(x)) return "—";
+      const n = x * 100;
+      const txt = Math.abs(n).toFixed(1) + "%";
+      if (n > 0) return "+" + txt;
+      if (n < 0) return "−" + txt;
+      return txt;
+    }
+    function pnlClass(n) {
+      if (!Number.isFinite(n) || n === 0) return "";
+      return n > 0 ? "gain" : "loss";
+    }
+    function pct(x) { return (x * 100).toFixed(1) + "%"; }
+    function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+
+    function pathTable(proj) {
+      if (!proj) return "";
+      let html = `<table class="paths"><thead><tr><th>Horizon</th>`;
+      PATHS.forEach(p => html += `<th class="num">${p}</th>`);
+      html += `</tr></thead><tbody>`;
+      ["5y","10y"].forEach(h => {
+        html += `<tr><td>${h} nominal</td>`;
+        PATHS.forEach(p => html += `<td class="num">${usd(proj[h][p].nominal)}</td>`);
+        html += `</tr><tr><td>${h} real</td>`;
+        PATHS.forEach(p => html += `<td class="num">${usd(proj[h][p].real)}</td>`);
+        html += `</tr>`;
+      });
+      html += `<tr><td>10y contributed</td>`;
+      PATHS.forEach(p => html += `<td class="num">${usd(proj["10y"][p].contributed)}</td>`);
+      html += `</tr></tbody></table>`;
+      return html;
+    }
+
+    function sleeveCard(name, block, plan) {
+      const rows = block.allocation.rows || [];
+      const bar = rows.map(r => `<span class="seg" style="width:${(r.weight*100).toFixed(3)}%;background:${COLORS[r.ticker]}"></span>`).join("");
+      let body = rows.map(r => `<tr>
+        <td>${esc(r.ticker)}</td>
+        <td class="num">${pct(r.weight)}</td>
+        <td class="num">${usd(r.dollars)}</td>
+        <td class="num">${usd(r.weekly)}</td>
+      </tr>`).join("");
+      const title = name === "default" ? "Default sleeve" : "Aggressive variant";
+      return `<article class="sleeve ${esc(name)}">
+        <h3>${title}</h3>
+        <div class="bar">${bar}</div>
+        <table><thead><tr><th>ETF</th><th class="num">Wt</th><th class="num">Split</th><th class="num">Weekly</th></tr></thead><tbody>${body}</tbody></table>
+        <p class="meta">Paths on <strong>${usd(plan.amount)}</strong> + <strong>${usd(plan.monthly)}</strong>/mo</p>
+        ${pathTable(block.projections)}
+        <p class="meta">NVDA look-through <strong>${pct(block.allocation.nvda_weight)}</strong> · SMH −45% hit <strong>${usd(block.allocation.smh_crash_dollars)}</strong></p>
+      </article>`;
+    }
+
+    function renderPlan(plan) {
+      const el = document.getElementById("sleeves");
+      el.innerHTML = ["default","aggressive"].map(name => sleeveCard(name, plan.sleeves[name], plan)).join("");
+    }
+
+    function renderBook(book) {
+      const out = document.getElementById("book-out");
+      if (!book || !book.present) {
+        out.innerHTML = `<div class="empty">No book saved yet. Enter cost (what you invested) and now (what it is worth), then save. Real gain or loss shows here and stays after refresh.</div>`;
+        return;
+      }
+      const ready = book.pnl_ready && Number.isFinite(book.pnl);
+      const cls = pnlClass(book.pnl);
+      const hero = ready
+        ? `<div class="pnl">
+            <div><span>Invested</span><strong>${usd(book.invested)}</strong></div>
+            <div><span>Now</span><strong>${usd(book.market)}</strong></div>
+            <div class="${cls}"><span>${book.pnl > 0 ? "Gain" : book.pnl < 0 ? "Loss" : "Flat"}</span><strong>${signedUsd(book.pnl)} ${signedPct(book.pnl_pct)}</strong></div>
+          </div>`
+        : `<div class="empty">Book saved (invested ${usd(book.invested)}). Enter Now $ for each holding — or shares plus Refresh prices — to see real gain or loss. Unmarked cost: ${usd(book.unmarked_cost)}.</div>`;
+      const rows = book.rows.map(r => {
+        const gap = r.gap_dollars;
+        const gapTxt = gap > 0.5 ? usd(gap) + " to target" : gap < -0.5 ? usd(Math.abs(gap)) + " over" : "on target";
+        const pnlTxt = r.held && r.marked ? `${signedUsd(r.pnl)} (${signedPct(r.pnl_pct)})` : (r.held ? "unmarked" : "—");
+        return `<tr>
+          <td>${esc(r.ticker)}</td>
+          <td class="num">${r.shares ? r.shares : "—"}</td>
+          <td class="num">${usd(r.cost)}</td>
+          <td class="num">${r.marked && r.held ? usd(r.current) : "—"}</td>
+          <td class="num ${pnlClass(r.pnl)}">${pnlTxt}</td>
+          <td class="num">${pct(r.weight)}</td>
+          <td class="num">${pct(r.target)}</td>
+          <td><span class="status ${esc(r.status)}">${esc(r.status).toUpperCase()}</span></td>
+          <td class="num">${gapTxt}</td>
+        </tr>`;
+      }).join("");
+      const markedNote = book.marked_at ? ` · marked <strong>${esc(book.marked_at)}</strong>` : "";
+      out.innerHTML = `
+        ${hero}
+        <p class="meta">Saved <strong>${esc(book.submitted_at || "")}</strong>${markedNote} · mix on ${esc(book.mix_source)} · vs ${esc(book.compare_to)} sleeve</p>
+        <div class="bar">${book.rows.map(r => `<span class="seg" style="width:${(r.weight*100).toFixed(3)}%;background:${COLORS[r.ticker]}"></span>`).join("")}</div>
+        <table><thead><tr><th>ETF</th><th class="num">Shares</th><th class="num">Cost</th><th class="num">Now</th><th class="num">Gain/Loss</th><th class="num">Mix</th><th class="num">Target</th><th>Band</th><th class="num">Gap</th></tr></thead><tbody>${rows}</tbody></table>
+        <p class="meta">NVDA look-through <strong>${pct(book.nvda_weight)}</strong> · SMH −45% hit <strong>${usd(book.smh_crash_dollars)}</strong> · fee <strong>${(book.fee*100).toFixed(3)}%</strong></p>
+        <h3 style="margin:16px 0 6px;font-size:0.95rem">Forward CMA on this mix — not your P&amp;L</h3>
+        ${pathTable(book.projections)}
+      `;
+    }
+
+    function fillForm(saved, opts) {
+      opts = opts || {};
+      hydrating = true;
+      if (!opts.skipPlanner) {
+        document.getElementById("amount").value = saved.planner.amount ? String(saved.planner.amount) : "";
+        document.getElementById("weekly").value = saved.planner.weekly ? String(saved.planner.weekly) : "";
+        document.getElementById("monthly").value = saved.planner.monthly ? String(saved.planner.monthly) : "";
+        plannerDirty = false;
+      }
+      const positions = saved.book.positions || {};
+      TICKERS.forEach(t => {
+        const pos = positions[t] || {};
+        const cost = pos.cost != null ? pos.cost : (saved.book.holdings && saved.book.holdings[t]) || 0;
+        const set = (id, val) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (val === null || val === undefined || val === "") el.value = "";
+          else el.value = String(val);
+        };
+        set("h-" + t + "-shares", pos.shares);
+        set("h-" + t + "-cost", cost);
+        set("h-" + t + "-current", pos.current);
+      });
+      document.getElementById("monthly_add").value = saved.book.monthly_add ? String(saved.book.monthly_add) : "";
+      const cmp = saved.book.compare_to || "default";
+      document.querySelectorAll("input[name=compare_to]").forEach(r => { r.checked = r.value === cmp; });
+      hydrating = false;
+    }
+
+    function buildHoldInputs() {
+      document.getElementById("hold-inputs").innerHTML = TICKERS.map(t => `
+        <tr>
+          <td>${t}</td>
+          <td><input id="h-${t}-cost" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} cost"></td>
+          <td><input id="h-${t}-shares" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} shares"></td>
+          <td><input id="h-${t}-current" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="${t} now"></td>
+        </tr>
+      `).join("");
+    }
+
+    function applyPositionsToInputs(positions) {
+      hydrating = true;
+      TICKERS.forEach(t => {
+        const pos = positions[t] || {};
+        const set = (id, val) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (val === null || val === undefined || val === "") el.value = "";
+          else el.value = String(val);
+        };
+        set("h-" + t + "-shares", pos.shares);
+        set("h-" + t + "-cost", pos.cost);
+        set("h-" + t + "-current", pos.current);
+      });
+      hydrating = false;
+    }
+
+    async function refreshQuotesCache() {
+      try {
+        const res = await fetch("/api/quotes/refresh", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
+        return res.ok ? res.json() : null;
+      } catch (err) {
+        console.error(err);
+        return null;
+      }
+    }
+
+    async function deriveBook() {
+      if (hydrating || !stateLoaded) return;
+      const compare_to = (document.querySelector("input[name=compare_to]:checked") || {}).value || "default";
+      const body = {compare_to, positions: readPositions().positions};
+      const total = money(document.getElementById("book_total").value);
+      const hasTotal = Number.isFinite(total) && total > 0;
+      const hasCost = TICKERS.some(t => money(document.getElementById("h-" + t + "-cost").value) > 0);
+      if (!hasTotal && !hasCost) return;
+      if (hasTotal) body.amount = total;
+      try {
+        let res = await fetch("/api/book/derive", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(body)
+        });
+        let data = await res.json();
+        if (res.ok && hasTotal && data.quote_source === "none" && (data.missing || []).length) {
+          await refreshQuotesCache();
+          res = await fetch("/api/book/derive", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body)
+          });
+          data = await res.json();
+        }
+        if (!res.ok) {
+          document.getElementById("book-msg").textContent = data.error || "Could not derive book.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        applyPositionsToInputs(data.positions);
+        if (data.live && !(data.missing || []).length) {
+          document.getElementById("book-msg").textContent = "Filled cost, shares, and Now $ from live quotes. Save my book when ready.";
+          document.getElementById("book-msg").className = "flash";
+        } else if (!data.live && data.quote_source === "cache" && !(data.missing || []).length) {
+          document.getElementById("book-msg").textContent = "Filled from last Refresh quotes. Save my book, then Refresh for live marks.";
+          document.getElementById("book-msg").className = "flash";
+        } else if (data.live && (data.missing || []).length) {
+          document.getElementById("book-msg").textContent = "Partial quotes — missing: " + (data.missing || []).join(", ") + ". Refresh or check Schwab.";
+          document.getElementById("book-msg").className = "err";
+        } else {
+          document.getElementById("book-msg").textContent = "Cost split applied. Refresh once for Schwab quotes to fill shares and Now $.";
+          document.getElementById("book-msg").className = "err";
+        }
+      } catch (err) {
+        document.getElementById("book-msg").textContent = "Could not derive book.";
+        document.getElementById("book-msg").className = "err";
+        console.error(err);
+      }
+    }
+
+    function scheduleBookDerive() {
+      if (hydrating || !stateLoaded) return;
+      clearTimeout(bookDeriveTimer);
+      bookDeriveTimer = setTimeout(deriveBook, 320);
+    }
+
+    function readPositions() {
+      const positions = {};
+      let bad = false;
+      TICKERS.forEach(t => {
+        const shares = money(document.getElementById("h-" + t + "-shares").value);
+        const cost = money(document.getElementById("h-" + t + "-cost").value);
+        const current = money(document.getElementById("h-" + t + "-current").value);
+        if ([shares, cost, current].some(n => Number.isNaN(n) || n < 0)) bad = true;
+        positions[t] = {shares: shares || 0, cost: cost || 0, current: current || 0};
+      });
+      return {positions, bad};
+    }
+
+    function plannerBody() {
+      return {
+        amount: money(document.getElementById("amount").value),
+        weekly: money(document.getElementById("weekly").value),
+        monthly: money(document.getElementById("monthly").value)
+      };
+    }
+
+    async function previewPlanner() {
+      if (!stateLoaded || hydrating) return;
+      const body = plannerBody();
+      if ([body.amount, body.weekly, body.monthly].some(n => Number.isNaN(n))) return;
+      try {
+        const q = new URLSearchParams({
+          amount: String(body.amount),
+          weekly: String(body.weekly),
+          monthly: String(body.monthly)
+        });
+        const res = await fetch("/api/plan?" + q);
+        const plan = await res.json();
+        if (!res.ok) return;
+        renderPlan(plan);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function persistPlanner() {
+      const body = plannerBody();
+      if ([body.amount, body.weekly, body.monthly].some(n => Number.isNaN(n))) {
+        document.getElementById("plan-msg").textContent = "Use non-negative dollar amounts.";
+        document.getElementById("plan-msg").className = "err";
+        return false;
+      }
+      document.getElementById("plan-msg").textContent = "";
+      try {
+        const res = await fetch("/api/planner", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          document.getElementById("plan-msg").textContent = data.error || "Could not save.";
+          document.getElementById("plan-msg").className = "err";
+          return false;
+        }
+        plannerDirty = false;
+        renderPlan(data.planner);
+        return true;
+      } catch (err) {
+        document.getElementById("plan-msg").textContent = "Could not save planner.";
+        document.getElementById("plan-msg").className = "err";
+        console.error(err);
+        return false;
+      }
+    }
+
+    async function syncPlanner() {
+      clearTimeout(saveTimer);
+      clearTimeout(previewTimer);
+      await previewPlanner();
+      return persistPlanner();
+    }
+
+    function schedulePlannerUpdate() {
+      if (hydrating || !stateLoaded) return;
+      plannerDirty = true;
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(previewPlanner, 60);
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(persistPlanner, 350);
+      if (!bookTotalDirty) {
+        const amt = money(document.getElementById("amount").value);
+        if (Number.isFinite(amt) && amt > 0) {
+          document.getElementById("book_total").value = String(amt);
+          scheduleBookDerive();
+        }
+      }
+    }
+
+    async function loadState() {
+      const res = await fetch("/api/state");
+      const data = await res.json();
+      document.getElementById("asof").textContent = data.asof;
+      if (!plannerDirty) {
+        fillForm(data.saved);
+        renderPlan(data.planner);
+      } else {
+        fillForm(data.saved, {skipPlanner: true});
+      }
+      renderBook(data.book);
+      showRefresh(data.refresh);
+      stateLoaded = true;
+    }
+
+    function showRefresh(report) {
+      const el = document.getElementById("refresh-status");
+      if (!report || !report.at) {
+        el.textContent = "";
+        return;
+      }
+      const bits = [];
+      if (report.quote_count) bits.push(report.quote_count + " quotes");
+      if (report.position_count) bits.push(report.position_count + " positions");
+      if (!report.live) bits.push("live DATA UNAVAILABLE");
+      el.textContent = "Last refresh " + report.at + (bits.length ? " · " + bits.join(" · ") : "");
+    }
+
+    async function refreshAll(btn) {
+      const {positions, bad} = readPositions();
+      if (bad) {
+        document.getElementById("book-msg").textContent = "Cost, now, and shares must be non-negative.";
+        document.getElementById("book-msg").className = "err";
+        return;
+      }
+      const planner = plannerBody();
+      if ([planner.amount, planner.weekly, planner.monthly].some(n => Number.isNaN(n))) {
+        document.getElementById("book-msg").textContent = "Planner amounts must be non-negative.";
+        document.getElementById("book-msg").className = "err";
+        return;
+      }
+      const monthly_add = money(document.getElementById("monthly_add").value) || 0;
+      const compare_to = (document.querySelector("input[name=compare_to]:checked") || {}).value || "default";
+      const buttons = [document.getElementById("refresh-all"), document.getElementById("refresh-marks")];
+      buttons.forEach(b => { if (b) b.disabled = true; });
+      const label = btn ? btn.textContent : "Refresh";
+      if (btn) btn.textContent = "Refreshing…";
+      try {
+        await syncPlanner();
+        const res = await fetch("/api/refresh", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({positions, monthly_add, compare_to, ...planner})
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          document.getElementById("book-msg").textContent = data.error || "Refresh failed.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        fillForm(data.saved);
+        renderPlan(data.planner);
+        renderBook(data.book);
+        showRefresh(data.refresh);
+        const report = data.refresh || {};
+        if (report.live) {
+          document.getElementById("book-msg").textContent = "Refreshed from Schwab. Saved cost is unchanged.";
+          document.getElementById("book-msg").className = "flash";
+        } else {
+          document.getElementById("book-msg").textContent = "Refreshed saved book. Live quotes and positions DATA UNAVAILABLE.";
+          document.getElementById("book-msg").className = "err";
+        }
+      } catch (err) {
+        document.getElementById("book-msg").textContent = "Refresh failed.";
+        document.getElementById("book-msg").className = "err";
+        console.error(err);
+      } finally {
+        buttons.forEach(b => { if (b) b.disabled = false; });
+        if (btn) btn.textContent = label;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      buildHoldInputs();
+      TICKERS.forEach(t => {
+        document.getElementById("h-" + t + "-cost").addEventListener("input", scheduleBookDerive);
+        document.getElementById("h-" + t + "-cost").addEventListener("change", scheduleBookDerive);
+      });
+      document.getElementById("book_total").addEventListener("input", () => {
+        bookTotalDirty = true;
+        scheduleBookDerive();
+      });
+      document.getElementById("book_total").addEventListener("change", scheduleBookDerive);
+      document.querySelectorAll("input[name=compare_to]").forEach(r => {
+        r.addEventListener("change", scheduleBookDerive);
+      });
+      document.getElementById("book-from-planner").addEventListener("click", () => {
+        const amt = money(document.getElementById("amount").value);
+        if (!Number.isFinite(amt) || amt <= 0) {
+          document.getElementById("book-msg").textContent = "Enter an amount in section 1 first.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        document.getElementById("book_total").value = String(amt);
+        bookTotalDirty = true;
+        scheduleBookDerive();
+      });
+      ["amount","weekly","monthly"].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener("input", schedulePlannerUpdate);
+        el.addEventListener("change", schedulePlannerUpdate);
+      });
+      document.getElementById("book-form").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const {positions, bad} = readPositions();
+        const monthly_add = money(document.getElementById("monthly_add").value);
+        if (bad || Number.isNaN(monthly_add) || monthly_add < 0) {
+          document.getElementById("book-msg").textContent = "Cost, now, and shares must be non-negative.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        const compare_to = (document.querySelector("input[name=compare_to]:checked") || {}).value || "default";
+        const btn = document.getElementById("submit-book");
+        btn.disabled = true;
+        const res = await fetch("/api/book", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({positions, monthly_add, compare_to})
+        });
+        const data = await res.json();
+        btn.disabled = false;
+        if (!res.ok) {
+          document.getElementById("book-msg").textContent = data.error || "Could not save book.";
+          document.getElementById("book-msg").className = "err";
+          return;
+        }
+        document.getElementById("book-msg").textContent = "Saved. Refresh keeps this book and its gain or loss.";
+        document.getElementById("book-msg").className = "flash";
+        fillForm(data.saved);
+        renderBook(data.book);
+      });
+      document.getElementById("refresh-all").addEventListener("click", () => refreshAll(document.getElementById("refresh-all")));
+      document.getElementById("refresh-marks").addEventListener("click", () => refreshAll(document.getElementById("refresh-marks")));
+      const openDash = document.getElementById("open-dashboard");
+      if (openDash && navigator.userAgent.includes("Macintosh")) {
+        openDash.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          window.open(window.location.origin + "/", "_blank");
+        });
+      }
+      loadState().catch(err => {
+        document.getElementById("plan-msg").textContent = "Dashboard needs the local server: python3 -m compoundcore dashboard";
+        document.getElementById("plan-msg").className = "err";
+        console.error(err);
+      });
+    });
+  </script>
+</body>
+</html>

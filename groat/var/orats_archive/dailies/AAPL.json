@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 320.82,
+      "clsPx": 319.97,
       "hiPx": 328.93,
-      "loPx": 320.44,
+      "loPx": 317.86,
       "open": 328.305,
-      "stkVolu": 10199404.0,
+      "stkVolu": 39606884.0,
       "ticker": "AAPL",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 316.22,
+      "hiPx": 320.7,
+      "loPx": 314.9,
+      "open": 317.1,
+      "stkVolu": 35477090.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 315.34,
+      "hiPx": 319.15,
+      "loPx": 309.9,
+      "open": 315.485,
+      "stkVolu": 65639962.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 326.57,
+      "hiPx": 326.74,
+      "loPx": 316.51,
+      "open": 316.67,
+      "stkVolu": 70011913.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 332.27,
+      "hiPx": 336.22,
+      "loPx": 326.3,
+      "open": 327.45,
+      "stkVolu": 50716865.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 333.08,
+      "hiPx": 335.5,
+      "loPx": 331.34,
+      "open": 334.79,
+      "stkVolu": 39269147.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 331.34,
+      "hiPx": 331.78,
+      "loPx": 328.35,
+      "open": 330.135,
+      "stkVolu": 31748183.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 332.41,
+      "hiPx": 335.48,
+      "loPx": 330.7,
+      "open": 332.53,
+      "stkVolu": 35981000.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 337.0,
+      "hiPx": 338.34,
+      "loPx": 330.1833,
+      "open": 334.77,
+      "stkVolu": 36700225.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 336.13,
+      "hiPx": 338.49,
+      "loPx": 332.53,
+      "open": 337.905,
+      "stkVolu": 86588203.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 338.98,
+      "hiPx": 339.64,
+      "loPx": 333.05,
+      "open": 335.28,
+      "stkVolu": 34999229.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 339.75,
+      "hiPx": 345.34,
+      "loPx": 338.75,
+      "open": 340.135,
+      "stkVolu": 40711786.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 337.02,
+      "hiPx": 341.8,
+      "loPx": 335.5,
+      "open": 341.075,
+      "stkVolu": 31658823.0,
+      "ticker": "AAPL",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

@@ -10,17 +10,19 @@ Follow this order. Skip a step only if the input cannot exist (then mark THIN or
 
 4. **Notional filter** — Prefer liquid mega-caps for Shield. Mid-caps need MIXED/FULL and never Prime on THIN. Theme clustering before sizing. Energy map is one theme.
 
-5. **Live chain** — `schwab_market.py structures SYMBOL --expiry YYYY-MM-DD` on each allowed name (put credit, call credit, condor, call debit, put debit). Then `vertical` to fill a row. Conservative net. Confirmed earnings date; **skip that structure if unknown or `earnings_date <= expiry`**. Missing Schwab leg → that structure is NO ROW, not a skip of the other four.
+5. **Live chain** — `scan --asof YYYY-MM-DD --session ah|live --regime auto --out …/scan_ah.json` or `scan_live.json`, then `book --session …`. Session flags in `SKILL.md` **Date and session**. Read **stdout board**, not the `--out` file. `in_ic` wings are not a second Expert row. Do not re-run `structures` per name. `vertical` only for Expert candidates (compact stdout). Conservative net. Confirmed earnings date; **skip that structure if unknown or `earnings_date <= expiry`**. Missing Schwab leg → that structure is NO ROW, not a skip of the other four. One monthly is not a full scan.
 
-6. **X on candidates** — Veto/confirm after the chain. Shock watch finder already ran in step 1. See `x-sentiment.md`.
+6. **Name calendar** — Before Expert, web-source dated events in `(scan_date, expiry]` for every geometry-pass candidate: company IR earnings (IR beats aggregator), deliveries, product unveil, vote, named launch. Seasonality folklore is not a veto. A sourced event parks **that wing**. IC → unthreatened vertical, or skip. Missing this pass → do not Expert. See `regime-and-signals.md`.
 
-7. **Sleeve** — Calm/Normal → Shield that clears geometry is a row. Fire if cheap IV, not Crowded, not name/theme Event, not Crisis, quoted debit. Opening flow is Score 80, not a skip. Spike only if `spike.md` gates pass (max one row). Events scoped name/theme/index. Crisis → cash unless Spike qualifies. Over-gate test before skip.
+7. **X on candidates** — Veto/confirm after the chain. Shock watch finder already ran in step 1. See `x-sentiment.md`.
 
-8. **Book caps** — Live Schwab equity when pulled ($715k on 2026-08-26), else $150k fallback. Size into the per-name band, then buying power. Theme, one Fire per name, one Spike per scan. No Shield on mapped shock names. Reject overflow. Do not size up to chase $10k/month.
+8. **Sleeve** — Calm/Normal → Shield that clears geometry **and** name-calendar is a row. Fire if cheap IV, not Crowded, not name/theme Event, not Crisis, quoted debit. Opening flow is Score 80, not a skip. Spike only if `spike.md` gates pass (max one row). Events scoped name/theme/index. Crisis → cash unless Spike qualifies. Over-gate test before skip.
 
-9. **Write the card to disk** — `CODE/out/grok-option/YYYY-MM-DD/GROK_OPTION.md` from `daily-card.md`. Chat is the file link, not a substitute. Executable table first. 1-lot max profit / 1-lot max loss / Rec lots from Conf. Then Shock watch, then sleeve board, then **Cleared structures — review** with a full row for every geometry-pass (legs, net, Conf, Rec lots, Status). Plain markdown, no HTML. Never put trades under “not executable.” Never mix 1-lot P/L with N-lot dollars. Then 3–5 **Assumptions in force** bullets.
+9. **Book caps** — Live Schwab equity when pulled ($715k on 2026-08-26), else $150k fallback. Size into the per-name band, then buying power. Theme, one Fire per name, one Spike per scan. No Shield on mapped shock names. Reject overflow. Do not size up to chase $10k/month.
 
-10. **Stop** — Do not emit a second **executable** table. The review board is mandatory so parked trades stay reviewable. Watch notes go under the table, unlabeled as executable.
+10. **Write the card to disk** — `CODE/out/grok-option/YYYY-MM-DD/GROK_OPTION.md` from `daily-card.md`. Chat is the file link, not a substitute. Executable table first. 1-lot max profit / 1-lot max loss / Rec lots from Conf. Keep Conf; add PD, N, R_cons, L; sort Expert PD desc (nulls last). Print `PD sort only — conf unchanged.` Sleeve board still lists all six. Then Shock watch, then sleeve board, then **Cleared structures — review** with a full row for every geometry-pass (legs, net, Conf, Rec lots, Status). Plain markdown, no HTML. Never put trades under “not executable.” Never mix 1-lot P/L with N-lot dollars. Then 3–5 **Assumptions in force** bullets.
+
+11. **Stop** — Do not emit a second **executable** table. The review board is mandatory so parked trades stay reviewable. Watch notes go under the table, unlabeled as executable.
 
 ## MANAGE extras
 

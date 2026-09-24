@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 253.175,
+      "clsPx": 252.92,
       "hiPx": 255.0,
-      "loPx": 252.64,
+      "loPx": 251.53,
       "open": 253.0,
-      "stkVolu": 27204.0,
+      "stkVolu": 196173.0,
       "ticker": "XAR",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 253.27,
+      "hiPx": 255.26,
+      "loPx": 251.92,
+      "open": 252.63,
+      "stkVolu": 164232.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 246.7,
+      "hiPx": 252.905,
+      "loPx": 246.5,
+      "open": 252.18,
+      "stkVolu": 176690.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 244.66,
+      "hiPx": 249.52,
+      "loPx": 243.84,
+      "open": 244.42,
+      "stkVolu": 169075.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 245.96,
+      "hiPx": 247.92,
+      "loPx": 244.24,
+      "open": 247.33,
+      "stkVolu": 154610.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 242.83,
+      "hiPx": 244.96,
+      "loPx": 241.35,
+      "open": 242.53,
+      "stkVolu": 247075.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 241.53,
+      "hiPx": 244.84,
+      "loPx": 237.88,
+      "open": 243.37,
+      "stkVolu": 1732002.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 242.29,
+      "hiPx": 244.78,
+      "loPx": 239.31,
+      "open": 241.8,
+      "stkVolu": 238670.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 241.32,
+      "hiPx": 246.54,
+      "loPx": 240.51,
+      "open": 245.95,
+      "stkVolu": 160872.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 239.86,
+      "hiPx": 242.49,
+      "loPx": 238.21,
+      "open": 241.57,
+      "stkVolu": 259177.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 243.55,
+      "hiPx": 244.8813,
+      "loPx": 240.975,
+      "open": 241.82,
+      "stkVolu": 267119.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 241.51,
+      "hiPx": 245.8,
+      "loPx": 238.1301,
+      "open": 245.8,
+      "stkVolu": 390770.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 239.37,
+      "hiPx": 242.97,
+      "loPx": 239.28,
+      "open": 240.84,
+      "stkVolu": 338934.0,
+      "ticker": "XAR",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

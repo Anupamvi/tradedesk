@@ -1,0 +1,3 @@
+# Unused. Trendbook universe is generated each run into var/universe.json
+# from this desk's Stage-2 memory, live 52-week highs, and Schwab movers.
+# Do not maintain a static ticker list here.

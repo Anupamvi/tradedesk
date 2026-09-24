@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 339.1101,
+      "clsPx": 338.46,
       "hiPx": 343.53,
-      "loPx": 337.6603,
+      "loPx": 337.09,
       "open": 342.465,
-      "stkVolu": 5335650.0,
+      "stkVolu": 23189321.0,
       "ticker": "GOOGL",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 338.36,
+      "hiPx": 339.68,
+      "loPx": 333.22,
+      "open": 335.42,
+      "stkVolu": 22915839.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 330.65,
+      "hiPx": 331.85,
+      "loPx": 327.9,
+      "open": 331.65,
+      "stkVolu": 33151627.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 332.6,
+      "hiPx": 333.23,
+      "loPx": 327.74,
+      "open": 328.225,
+      "stkVolu": 23557551.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 338.5,
+      "hiPx": 342.98,
+      "loPx": 335.03,
+      "open": 335.03,
+      "stkVolu": 24708293.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 349.39,
+      "hiPx": 349.91,
+      "loPx": 342.1361,
+      "open": 343.12,
+      "stkVolu": 35905445.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 344.98,
+      "hiPx": 348.07,
+      "loPx": 342.7,
+      "open": 346.8,
+      "stkVolu": 21928572.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 342.87,
+      "hiPx": 348.4,
+      "loPx": 340.64,
+      "open": 347.08,
+      "stkVolu": 18928864.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 347.33,
+      "hiPx": 349.5,
+      "loPx": 343.8857,
+      "open": 348.675,
+      "stkVolu": 19238355.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 349.54,
+      "hiPx": 359.44,
+      "loPx": 348.445,
+      "open": 357.305,
+      "stkVolu": 47631754.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 354.97,
+      "hiPx": 357.61,
+      "loPx": 349.1,
+      "open": 350.64,
+      "stkVolu": 30455384.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 351.16,
+      "hiPx": 364.17,
+      "loPx": 350.22,
+      "open": 357.65,
+      "stkVolu": 29788597.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 337.83,
+      "hiPx": 350.0,
+      "loPx": 337.45,
+      "open": 349.86,
+      "stkVolu": 35576229.0,
+      "ticker": "GOOGL",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

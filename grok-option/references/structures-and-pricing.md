@@ -8,7 +8,7 @@ Defined-risk only. No naked shorts. No undefined-risk strangles as Core.
 |--------|-----------|--------------------|
 | Shield | Put credit vertical (bull put) | Sell put credit |
 | Shield | Call credit vertical (bear call) | Sell call credit |
-| Shield | Iron condor only if **both** credit sides independently pass **that regime’s** geometry + quotes | Sell iron condor |
+| Shield | Iron condor only if **both** credit sides independently pass **that regime’s** geometry + quotes **and** neither wing is name-calendar parked | Sell iron condor |
 | Fire | Call debit vertical | Buy call debit |
 | Fire | Put debit vertical | Buy put debit |
 | Spike | Call or put debit vertical on the written shock map | Buy call debit or Buy put debit |
@@ -16,7 +16,7 @@ Defined-risk only. No naked shorts. No undefined-risk strangles as Core.
 
 **Banned labels:** "Buy Put Credit", "Buy Call Credit", "Sell Debit", whale-copy one-liners.
 
-**Scan all five.** On every allowed name/expiry run Schwab `structures` (or price each action with `vertical`). A scan that only looks at puts is incomplete. If both credit sides pass the same name/expiry, emit **one** iron condor, not a put row and a call row. Long stock in the Schwab book does **not** skip the call wing or the condor. Fire scores call debit and put debit separately (one Fire per name).
+**Scan all five.** On every allowed name/expiry run Schwab `structures` (or price each action with `vertical`). A scan that only looks at puts is incomplete. If both credit sides pass the same name/expiry **and** neither wing is name-calendar parked, emit **one iron condor**, not a put row and a call row. A sourced dated event against one short → print the other vertical; do not Expert the IC. Long stock in the Schwab book does **not** skip the call wing or the condor. Fire scores call debit and put debit separately (one Fire per name).
 
 ## Credit / debit math (no estimates)
 
@@ -32,8 +32,10 @@ Shield geometry is **regime-aware**. The Calm AND of “outside 1-sigma **and** 
 | VIX regime | Short (quoted) | Min credit/width | Hard skip |
 |------------|----------------|------------------|-----------|
 | Calm <16 | \|delta\| ≤ 0.22 **and** ≥ 0.80-sigma OTM | **0.12** | \|delta\| > 0.25 |
-| Normal 16–22 | ≥ 0.90-sigma or \|delta\| ≤ 0.20 | **0.20** | \|delta\| > 0.25 |
+| Normal 16–22 | same cheap-vol short as Calm | **0.12** | \|delta\| > 0.25 |
 | Elevated 22–30 | outside **1-sigma** | **0.25** | inside 1-sigma to chase width |
+
+Normal **0.20** + (0.20Δ **or** 0.90σ) was an empty set at VIX 16–18 (live Schwab 2026-09-15: 12 names × 5 expiries, **0** $100 wings; Expert empty 9/9, 9/10, 9/14, 9/15). Same class as the retired Calm 25%+1σ skip. Cheap-vol Shield stays **0.12 / 0.22Δ / 0.80σ** in Normal until conservative 0.20 actually prints. Score **65**. Elevated is unchanged. Scan **14–60 DTE**, not one monthly.
 
 Use Schwab delta and that expiry’s ATM straddle ask for sigma. Max **4 Shield rows** in Calm, **one per sector**. Score Calm Shields **65**, not 80. Print them when they still have **edge**. Size from `book-and-target.md`. Manage **60–65% / 2.0×** — that is the winning-trade path. Max-loss 1:6 is what you get if you hold to max loss, which the plan forbids. Do not treat 1:6 as “this is a loser.”
 
@@ -61,7 +63,9 @@ Shield: liquid weeklies and monthlies on mega-caps. Scan **14–60 DTE**. Prefer
 Fire: match the thesis horizon; no 0–1 DTE lotto as a named sleeve without user ask. One live Fire per name.
 Spike: 7–21 DTE debit on the mapped name; no 0–1 DTE; one Spike row. See `spike.md`.
 
-**Earnings overlap (hard):** require a confirmed next earnings date and `expiry_date < earnings_date`. If the print’s calendar date is on or before expiry, or the date is unknown, **not a row**. Detail in `regime-and-signals.md`. Do not pick a later expiry to “wait out” 1-sigma if that later expiry crosses earnings — skip instead.
+**Earnings overlap (hard):** require a confirmed next earnings date and `expiry_date < earnings_date`. Company IR beats aggregator estimates. If the print’s calendar date is on or before expiry, or the date is unknown, **not a row**. Detail in `regime-and-signals.md`. Do not pick a later expiry to “wait out” 1-sigma if that later expiry crosses earnings — skip instead.
+
+**Name calendar (hard, before Expert):** web-source dated events in `(scan_date, expiry]` for every geometry-pass candidate — deliveries, product unveil, vote, named launch, plus the IR earnings date. Seasonality folklore (“TSLA always rips in October”) is not a veto and not a trigger. A sourced event parks **that wing**. Missing this pass is an incomplete scan.
 
 ## Management (default)
 

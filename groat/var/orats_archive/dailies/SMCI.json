@@ -2657,12 +2657,120 @@
     },
     {
       "clsPx": 39.59,
-      "hiPx": 39.6901,
+      "hiPx": 40.91,
       "loPx": 37.92,
       "open": 38.16,
-      "stkVolu": 13750470.0,
+      "stkVolu": 53633172.0,
       "ticker": "SMCI",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 40.26,
+      "hiPx": 41.53,
+      "loPx": 39.665,
+      "open": 39.665,
+      "stkVolu": 42400744.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 38.93,
+      "hiPx": 40.18,
+      "loPx": 38.835,
+      "open": 40.005,
+      "stkVolu": 31196990.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 37.38,
+      "hiPx": 39.26,
+      "loPx": 37.37,
+      "open": 37.905,
+      "stkVolu": 26771390.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 40.1,
+      "hiPx": 40.45,
+      "loPx": 37.56,
+      "open": 37.76,
+      "stkVolu": 46492731.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 36.74,
+      "hiPx": 38.095,
+      "loPx": 36.38,
+      "open": 37.43,
+      "stkVolu": 39892522.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 35.64,
+      "hiPx": 37.5496,
+      "loPx": 35.57,
+      "open": 36.74,
+      "stkVolu": 26725862.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 36.85,
+      "hiPx": 37.12,
+      "loPx": 35.36,
+      "open": 35.95,
+      "stkVolu": 31390538.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 40.35,
+      "hiPx": 41.005,
+      "loPx": 37.82,
+      "open": 38.035,
+      "stkVolu": 62517147.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 39.09,
+      "hiPx": 40.41,
+      "loPx": 38.32,
+      "open": 40.2,
+      "stkVolu": 48079259.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 41.2,
+      "hiPx": 41.7199,
+      "loPx": 40.0,
+      "open": 40.63,
+      "stkVolu": 48218355.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 41.54,
+      "hiPx": 41.74,
+      "loPx": 40.45,
+      "open": 41.26,
+      "stkVolu": 30249834.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 41.44,
+      "hiPx": 42.7,
+      "loPx": 40.79,
+      "open": 42.27,
+      "stkVolu": 40871514.0,
+      "ticker": "SMCI",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

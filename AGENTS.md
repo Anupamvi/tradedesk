@@ -69,16 +69,32 @@ python3 -m groat full --date YYYY-MM-DD
 - Output: `/Users/anuppamvi/tradedesk/groat/out/groat/YYYY-MM-DD/`
 - ORATS token lives in `groat/.env`. Schwab fills from `groat/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, prices, X posts, or news.
 
+## Trendbook Default
+
+- Treat `trendbook`, `trend book`, and `weekly trend` as the **trendbook** weekly Stage 2 / relative-strength desk under `trendbook/`. Not Groat, not xhigh, not grok-option, not UW `trend-analysis`.
+- Independent: `python3 -m trendbook` from `/Users/anuppamvi/tradedesk/trendbook`. Do not import other desks as the execute path. Do not steal `groat` / `RUN FULL SCAN` / `xhigh` / `grok-option` / `trend-analysis` triggers.
+- Schwab daily bars (token stays at `SCHWAB_TOKEN_PATH`). ORATS Delayed cores/strikes after Stage 2, token from `xhigh/.env` then `groat/.env` then tradedesk `.env`. No Unusual Whales. No X API. Empty ADD is valid. No order placement. ADD = Stage 2 breakout from a base (weeks 1–4, break-week volume expansion, residual 3m after beta ≥ 0) or an early pullback. A Stage 3 MA-turn after the stock already ran is NEW. Live 52-week-high probe. Five-year tape. NEW = weak tag, wait for confirmation. Grade A/B/C is structure, not P(win).
+- Default:
+
+```bash
+python3 -m trendbook full --date YYYY-MM-DD
+```
+
+- Output: `/Users/anuppamvi/tradedesk/trendbook/out/trendbook/YYYY-MM-DD/`
+- Never print the token. Never invent ORATS or Schwab numbers. Stock first; call debit only on ADD names with cheap IV.
+
 ## Xhigh Default
 
 - Treat `xhigh`, `xhigh full`, and `xhigh YYYY-MM-DD` as the **xhigh** new-setup wheel/swing scanner under `xhigh/`. Not Groat, not Wheelo, not Groko.
 - Independent: `python3 -m xhigh` from `/Users/anuppamvi/tradedesk/xhigh`. Do not import other desks as the execute path. Do not steal `groat` / `RUN FULL SCAN` / `wheelo` triggers.
-- Schwab movers + `lastPrice` only. Catalog: CSP, put credit, call debit, call credit, put debit, iron condor. No ticket cap. CLICK only if EV > 0. No harvest. No covered calls. Empty CLICK is valid. No order placement. **v1 locked** — `xhigh/docs/LOCK.md`.
+- Schwab movers + `lastPrice` only. Catalog: CSP, put credit, call debit, call credit, put debit, iron condor. No ticket cap. CLICK only if EV > 0. No harvest. No covered calls. Empty CLICK is valid only after names were chained; empty movers is DATA UNAVAILABLE. No order placement. **v1 locked** — `xhigh/docs/LOCK.md`.
 - Default:
 
 ```bash
 python3 -m xhigh full --date YYYY-MM-DD
 ```
+
+If DATE is not today America/New_York, add `--live-schwab`.
 
 - Output: `/Users/anuppamvi/tradedesk/xhigh/out/xhigh/YYYY-MM-DD/`
 - ORATS from `xhigh/.env` then `groat/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, Schwab, X, or earnings numbers.
@@ -103,6 +119,23 @@ python3 -m wheelo full --date YYYY-MM-DD --capital 35000
 - Treat `grok-option`, `Anu table`, `Expert Trade Table`, `run today's scan`, `bull put`, and `sell put credit` as the **grok-option** desk under `grok-option/`, not Groat, not Groko, not Codex Daily.
 - Canonical path: `/Users/anuppamvi/tradedesk/grok-option`. Skill + Schwab scripts live there. `.grok/skills/grok-option` and `~/.grok/skills/grok-option` are symlinks to that folder.
 - Schwab live chain first (`python3 grok-option/scripts/schwab_market.py`). No ORATS. No order placement. Empty table is valid when quotes or geometry fail.
+
+## Compound Core Default
+
+- Treat `compound core`, `compoundcore`, `core sleeve`, `core calculator`, `ToothFolio`, and VOO/VGT/SMH/VB indexing-sleeve requests as **Compound Core** under `compoundcore/`. Not Groat, not Wheelo, not Groko, not Codex Daily.
+- Independent: `python3 -m compoundcore` from `/Users/anuppamvi/tradedesk/compoundcore`. Do not import other desks as the execute path.
+- Default weights: VOO 48 / VGT 10 / SMH 7 / VB 5 / VXUS 20 / GLDM 5 / VGSH 5. Aggressive variant is 45/15/10/5/15/5/5. Weekly DCA. No stock-picking, no options, no order placement. Empty of trading-desk tickets is the point. Core is never abandoned; SMH is band-trimmed only.
+- Default:
+
+```bash
+python3 -m compoundcore 100000 --weekly 250 --monthly 1000
+compoundcore/scripts/ensure-dashboard.sh
+```
+
+- Playbook: `/Users/anuppamvi/tradedesk/compoundcore/docs/PLAYBOOK.md`
+- Persistent dashboard: agents run `compoundcore/scripts/ensure-dashboard.sh` (never ask the user to start it). Cloud Agents auto-start port **8765** via `.cursor/environment.json`; on macOS agents may run `compoundcore/scripts/install-macos-dashboard-service.sh` once for login persistence. Open `http://127.0.0.1:8765/` locally, or Cursor **Ports** on a cloud agent.
+- Raw HTML calculator: `/Users/anuppamvi/tradedesk/compoundcore/web/calculator.html`
+- Output is a dollar split plus 5-year / 10-year stress–bear–base–bull paths. Not a 40%/yr plan.
 
 ## Pattern Analysis V2 Default
 

@@ -26,12 +26,14 @@ def spot_from_quote(q: Optional[dict]) -> Optional[float]:
 
 
 def _dte(row: dict, asof: str) -> Optional[int]:
+    expiry = str(row.get("expiry") or "")[:10]
+    gap = days_between(expiry, asof)
+    if gap is not None:
+        return gap
     dte = to_float(row.get("dte"))
     if dte is not None:
         return int(dte)
-    expiry = str(row.get("expiry") or "")[:10]
-    gap = days_between(expiry, asof)
-    return gap
+    return None
 
 
 def _need(block: dict, key: str) -> Optional[float]:
@@ -156,6 +158,51 @@ def _spread_ok(bid: Optional[float], ask: Optional[float], gates: dict) -> bool:
     return (ask - bid) <= cap
 
 
+def _leg_spread(bid, ask) -> Optional[float]:
+    bid_n = to_float(bid)
+    ask_n = to_float(ask)
+    if bid_n is None or ask_n is None or ask_n <= 0:
+        return None
+    mid = (ask_n + bid_n) / 2.0
+    if mid <= 0:
+        return None
+    return (ask_n - bid_n) / mid
+
+
+def _liq_pack(*legs) -> dict:
+    ois = []
+    sizes = []
+    fracs = []
+    qms = []
+    for leg in legs:
+        if not isinstance(leg, dict):
+            continue
+        oi = to_float(leg.get("oi"))
+        if oi is not None:
+            ois.append(oi)
+        for key in ("bid_size", "ask_size"):
+            v = to_float(leg.get(key))
+            if v is not None:
+                sizes.append(v)
+        frac = _leg_spread(leg.get("bid"), leg.get("ask"))
+        if frac is not None:
+            fracs.append(frac)
+        qm = to_float(leg.get("quote_time_ms"))
+        if qm is not None:
+            qms.append(qm)
+    lots = None
+    if sizes:
+        lots = int(min(sizes))
+    elif ois:
+        lots = int(min(ois))
+    return {
+        "liquidity_lots": lots,
+        "spread_frac": max(fracs) if fracs else None,
+        "quote_time_ms": max(qms) if qms else None,
+        "oi": min(ois) if ois else None,
+    }
+
+
 def pick_csp(puts: List[dict], last: float, asof: str, earn: dict, gates: dict) -> Optional[dict]:
     g = gates.get("csp") or {}
     otm_min = _need(g, "otm_min")
@@ -202,6 +249,7 @@ def pick_csp(puts: List[dict], last: float, asof: str, earn: dict, gates: dict) 
                 "delta": to_float(row.get("delta")),
                 "short_delta": to_float(row.get("delta")),
                 "invalidation": "assignment at %s" % strike,
+                **_liq_pack(row),
             }
     return best
 
@@ -267,6 +315,7 @@ def pick_put_credit(puts: List[dict], last: float, asof: str, earn: dict, gates:
                     "short_delta": to_float(short.get("delta")),
                     "long_delta": to_float(long.get("delta")),
                     "invalidation": "short put %s" % s_strike,
+                    **_liq_pack(short, long),
                 }
     return best
 
@@ -330,6 +379,7 @@ def pick_call_credit(calls: List[dict], last: float, asof: str, earn: dict, gate
                     "short_delta": to_float(short.get("delta")),
                     "long_delta": to_float(long.get("delta")),
                     "invalidation": "short call %s" % s_strike,
+                    **_liq_pack(short, long),
                 }
     return best
 
@@ -408,6 +458,7 @@ def pick_call_debit(calls: List[dict], last: float, asof: str, earn: dict, gates
                     "otm_s": "long %+.1f%% / short %+.1f%%" % (lo * 100, so * 100),
                     "long_delta": to_float(long.get("delta")),
                     "short_delta": to_float(short.get("delta")),
+                    **_liq_pack(long, short),
                 }
     return best
 
@@ -478,6 +529,7 @@ def pick_put_debit(puts: List[dict], last: float, asof: str, earn: dict, gates: 
                     "otm_s": "long %s / short %s" % (l_strike, s_strike),
                     "long_delta": to_float(long.get("delta")),
                     "short_delta": to_float(short.get("delta")),
+                    **_liq_pack(long, short),
                 }
     return best
 
@@ -535,6 +587,15 @@ def pick_iron_condor(
                 "put_short_delta": pc.get("short_delta"),
                 "call_short_delta": cc.get("short_delta"),
                 "invalidation": "short put %s / short call %s" % (pc.get("short_strike"), cc.get("short_strike")),
+                "liquidity_lots": min(
+                    [n for n in (pc.get("liquidity_lots"), cc.get("liquidity_lots")) if n is not None],
+                    default=None,
+                ),
+                "spread_frac": max(
+                    [f for f in (pc.get("spread_frac"), cc.get("spread_frac")) if f is not None],
+                    default=None,
+                ),
+                "quote_time_ms": pc.get("quote_time_ms") or cc.get("quote_time_ms"),
             }
     return best
 

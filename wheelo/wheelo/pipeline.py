@@ -20,6 +20,7 @@ from wheelo.config import (
 from wheelo.daily import evaluate_book, load_book
 from wheelo.dates import today_et
 from wheelo.num import to_float
+from wheelo.pd import attach_trade_pd
 from wheelo.orats import (
     cap_tickers,
     fetch_cores,
@@ -180,6 +181,10 @@ def _candidate_row(ticker, core, quality, premium, sentiment, cfg, capital) -> d
             "spread_pct": premium.spread_pct,
             "dte": premium.dte,
             "expiry": premium.expiry,
+            "put_oi": premium.put_oi,
+            "put_bid_size": premium.put_bid_size,
+            "put_ask_size": premium.put_ask_size,
+            "quote_date": premium.quote_date,
             "composite": premium.composite,
         },
         "sentiment": sentiment.total,
@@ -238,6 +243,18 @@ def _reprice_allocated(cand: dict, chain: Optional[dict], cfg: dict) -> dict:
         prem["live_validated"] = True
     if ask is not None:
         prem["csp_ask"] = ask
+    oi = to_float(picked.get("openInterest"))
+    if oi is not None:
+        prem["put_oi"] = oi
+    bs = to_float(picked.get("bidSize"))
+    if bs is not None:
+        prem["put_bid_size"] = bs
+    a_s = to_float(picked.get("askSize"))
+    if a_s is not None:
+        prem["put_ask_size"] = a_s
+    qms = to_float(picked.get("quoteTimeInLong") or picked.get("quoteTime"))
+    if qms is not None:
+        prem["quote_time_ms"] = qms
     if picked_k is not None:
         prem["csp_strike"] = picked_k
     if best_dte:
@@ -432,6 +449,10 @@ def build_select(
             cand["otm_pct"] = pack.get("otm_pct")
         allocated = allocate_capital(allocated, capital, cfg)
 
+    for cand in allocated:
+        if cand.get("conf_label") == "TRADE":
+            attach_trade_pd(cand)
+
     usage = load_usage()
     planned = 0
     if short_a:
@@ -529,6 +550,10 @@ def write_select_artifacts(built: dict, out_dir: Path) -> Path:
                 "premium": prem.get("composite"),
                 "composite": cand.get("composite"),
                 "conf": cand.get("conf"),
+                "pd": cand.get("pd"),
+                "pd_n": cand.get("pd_n"),
+                "r_cons": cand.get("r_cons"),
+                "pd_l": cand.get("pd_l"),
                 "conf_label": cand.get("conf_label"),
                 "credit_pct": cand.get("credit_pct"),
                 "otm_pct": cand.get("otm_pct"),

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Sequence
 
 from groat.num import fmt, fmt_pct, to_float
+from groat.pd import PD_NOTE, pd_cells
 from groat.regime import render_regime
 from groat.rotation import render_rotation
 from groat.evidence import render_evidence_file
@@ -26,6 +27,10 @@ BOARD_COLUMNS = [
     "primary",
     "score",
     "opt_conf",
+    "pd",
+    "pd_n",
+    "r_cons",
+    "pd_l",
     "naive_pop",
     "target_debit",
     "target_credit",
@@ -108,11 +113,18 @@ def _pop_cell(row: dict) -> str:
     return fmt_pct(pop, 0)
 
 
+def _buy_what(row: dict) -> str:
+    if row.get("choice") == "STOCK":
+        return "STOCK"
+    if row.get("choice") == "OPTIONS":
+        return "OPTIONS"
+    return str(row.get("choice") or "—")
+
+
 def _premium_cell(row: dict) -> str:
     picked = _picked(row)
     if row.get("choice") == "STOCK":
-        side = picked.get("side") or "stock"
-        return "%s @ %s" % (side, fmt(picked.get("entry") or row.get("close")))
+        return "STOCK buy shares @ %s" % fmt(picked.get("entry") or row.get("close"))
     debit = picked.get("target_debit") if picked else row.get("target_debit")
     credit = picked.get("target_credit") if picked else row.get("target_credit")
     if debit is not None:
@@ -154,13 +166,13 @@ def _evidence_cell(row: dict) -> str:
 def _strategy_cell(row: dict) -> str:
     inst = str(_picked(row).get("instrument") or row.get("choice") or "")
     names = {
-        "debit_call_spread": "call debit",
-        "debit_put_spread": "put debit",
-        "put_credit_spread": "put credit",
-        "call_credit_spread": "call credit",
-        "long_call": "long call",
-        "long_put": "long put",
-        "stock": "stock",
+        "debit_call_spread": "call debit spread",
+        "debit_put_spread": "put debit spread",
+        "put_credit_spread": "put credit spread",
+        "call_credit_spread": "call credit spread",
+        "long_call": "long call (not a spread)",
+        "long_put": "long put (not a spread)",
+        "stock": "STOCK shares",
     }
     return names.get(inst, inst.replace("_", " ") or "—")
 
@@ -252,21 +264,16 @@ def _park_label(reason: str) -> str:
         "analog_fast_stop_veto": "analog fast-stop",
         "already_held_calls": "already hold calls",
         "already_held_puts": "already hold puts",
+        "already_held_shares": "already hold shares",
+        "spread_required": "no options spread",
         "below_20ema": "below 20 EMA",
         "below_trade_score": "score short",
         "score_below_watch": "score too low",
         "same_group_in_book": "same group as book",
-        "already_in_book": "already in book",
-        "already_recommended": "already recommended",
-        "crowded_no_dip": "Crowded, no dip",
-        "session_incomplete": "session incomplete",
-        "regime_unknown": "regime unknown",
-        "analog_persist": "analog persist",
         "setup_B_replay_park": "breakout parked",
         "setup_C_replay_park": "post-earnings parked",
         "setup_G_replay_park": "breakdown parked",
         "setup_H_replay_park": "FIRE parked",
-        "setup_D_post_rip": "too extended",
         "setup_E_post_rip": "too extended",
     }
     return labels.get(reason, reason.replace("_", " ") if reason else "—")
@@ -274,14 +281,18 @@ def _park_label(reason: str) -> str:
 
 def _ticket_cell(row: dict) -> str:
     if row.get("choice") == "STOCK":
-        return _premium_cell(row) or "stock"
-    return "%s %s · %s" % (_strategy_cell(row), _strikes_cell(row), _exp_cell(row))
+        return "STOCK · buy shares @ %s" % fmt(_picked(row).get("entry") or row.get("close"))
+    return "OPTIONS · %s %s · %s" % (_strategy_cell(row), _strikes_cell(row), _exp_cell(row))
 
 
 def _ticket_table(rows: List[dict], parked: bool = False) -> List[str]:
-    head = "| | ticker | setup | ticket | pay | last | click | X |"
-    rule = "|---|---|---|---|---|---:|---|---|"
-    if parked:
+    trade_cols = not parked
+    if trade_cols:
+        head = "| | ticker | buy | setup | ticket | pay | last | conf | PD | N | R_cons | L | click | X |"
+        rule = "|---|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---|---|"
+    else:
+        head = "| | ticker | buy | setup | ticket | pay | last | click | X |"
+        rule = "|---|---|---|---|---|---|---:|---|---|"
         head += " why not |"
         rule += "---|"
     lines = [head, rule]
@@ -292,13 +303,29 @@ def _ticket_table(rows: List[dict], parked: bool = False) -> List[str]:
         cells = [
             mark,
             "**%s**" % (row.get("ticker") or ""),
+            "**%s**" % _buy_what(row),
             setup_label(row.get("primary")),
             _ticket_cell(row),
-            _premium_cell(row) or ("stock" if row.get("choice") == "STOCK" else "—"),
+            _premium_cell(row) or ("STOCK shares" if row.get("choice") == "STOCK" else "—"),
             fmt(row.get("close")),
-            "%s %s" % (band["icon"], band["text"]),
-            _x_cell(row),
         ]
+        if trade_cols:
+            cells_pd = pd_cells(row)
+            cells.extend(
+                [
+                    str(row.get("opt_conf") if row.get("opt_conf") is not None else "—"),
+                    cells_pd["pd_s"],
+                    cells_pd["n_s"],
+                    cells_pd["r_cons_s"],
+                    cells_pd["l_s"],
+                ]
+            )
+        cells.extend(
+            [
+                "%s %s" % (band["icon"], band["text"]),
+                _x_cell(row),
+            ]
+        )
         if parked:
             cells.append(_park_label((row.get("reasons") or ["—"])[0]))
         lines.append("| " + " | ".join(cells) + " |")
@@ -324,31 +351,36 @@ def _card(row: dict) -> List[str]:
     lines = [
         "---",
         "",
-        "### %s %s · **%s** · %s" % (
+        "### %s %s · **BUY %s** · **%s** · %s" % (
             "🟢" if row.get("action") == "TRADE" else "🟡",
             row.get("ticker"),
+            _buy_what(row),
             _strategy_cell(row),
             _x_cell(row),
         ),
         "",
-        "%s. Last **%s**."
-        % (setup_name, fmt(row.get("close"))),
+        "%s. Last **%s**. This ticket is **%s**."
+        % (setup_name, fmt(row.get("close")), "OPTIONS (spread)" if _buy_what(row) == "OPTIONS" else "STOCK (shares)"),
         "",
     ]
     kv = [
+        ("Buy", "**%s**" % ("OPTIONS spread" if _buy_what(row) == "OPTIONS" else "STOCK shares")),
         ("Setup", setup_name),
         ("Strategy", _strategy_cell(row)),
-        ("Strikes", _strikes_cell(row)),
+        ("Strikes", _strikes_cell(row) if _buy_what(row) == "OPTIONS" else "n/a — shares"),
         ("Expiry", _exp_cell(row)),
         ("Pay", pay),
         ("Last", fmt(row.get("close"))),
         ("Don't enter", "%s %s" % (band["icon"], band["text"])),
         ("Debit max" if debit is not None else "Credit min", fmt(debit) if debit is not None else fmt(credit) if credit is not None else "—"),
         ("Naive POP / conf", "%s / %s" % (_pop_cell(row), row.get("opt_conf") if row.get("opt_conf") is not None else "—")),
+        ("PD / N / R_cons / L", "%s / %s / %s / %s" % (pd_cells(row)["pd_s"], pd_cells(row)["n_s"], pd_cells(row)["r_cons_s"], pd_cells(row)["l_s"])),
     ]
     if row.get("book_group_note"):
         kv.append(("Book overlap", row.get("book_group_note")))
     lines.extend(_kv(kv))
+    lines.append(PD_NOTE)
+    lines.append("")
     return lines
 
 
@@ -365,8 +397,10 @@ def _counts_line(built: dict) -> str:
 def _legend() -> List[str]:
     return [
         "You click every Schwab order. Empty TRADE is valid.",
+        PD_NOTE,
         "",
-        "Click: 🟢 last is clear · 🟡 within 0.5% · 🔴 already through — do not click. **Pay** is max debit / min credit.",
+        "**TRADE = OPTIONS (vertical).** STOCK on the board means **buy shares**, not a spread. Do not mix them up.",
+        "Click: 🟢 last is clear · 🟡 within 0.5% · 🔴 already through — do not click. **Pay** is max debit / min credit for OPTIONS; share price for STOCK.",
         "X: 🟢 Informed · 🟡 Quiet · 🔴 Crowded · ⚪ missing (do not treat missing as Quiet).",
         "",
         SETUP_LINE,
@@ -376,31 +410,15 @@ def _legend() -> List[str]:
 
 def _alerts(built: dict) -> List[str]:
     lines: List[str] = []
-    session = str(built.get("session") or "")
-    if session == "open":
-        lines.append("Open auction (before 9:45 ET). New TRADE is blocked. Re-run after the open.")
-        lines.append("")
-    elif built.get("session_incomplete"):
+    if built.get("session_incomplete"):
         lines.append(
-            "Session volume is incomplete (median rvol %s). FIRE / 1d ranks are not final. TRADE is still allowed."
+            "Session volume is incomplete (median rvol %s). FIRE / 1d ranks are not final."
             % (fmt(built.get("median_rvol"), 2) if built.get("median_rvol") is not None else "n/a")
         )
-        lines.append("")
-    if str((built.get("regime") or {}).get("regime") or "") == "unknown":
-        lines.append("Regime **unknown** — default NO TRADE. Names below are WATCH if they cleared structure.")
-        lines.append("")
-    if built.get("session"):
-        lines.append("Session **%s**." % built.get("session"))
         lines.append("")
     missing_x = missing_x_tickers(built.get("trades") or [])
     if missing_x:
         lines.append("⚠️ X missing on TRADE: **%s**. Search $TICKER and write `var/xintel/` before clicking." % ", ".join(missing_x))
-        lines.append("")
-    if built.get("analog_options_unpriced"):
-        lines.append("Analog option hist/strikes were not priced this run. Stock analog still stands. Do not invent option P&L.")
-        lines.append("")
-    if built.get("schwab_pos_error"):
-        lines.append("Schwab positions: %s" % built.get("schwab_pos_error"))
         lines.append("")
     empty = list(built.get("chain_empty") or [])
     if empty:
@@ -427,13 +445,6 @@ def _board_body(built: dict) -> List[str]:
         lines.append("")
     else:
         lines.extend(_ticket_table(trades))
-        overlap = [r.get("ticker") for r in trades if r.get("book_group_held") and r.get("ticker")]
-        if overlap:
-            lines.append(
-                "Caveat: **%s** — same group as an open book name. TRADE. Your call whether to add a lot."
-                % ", ".join(overlap)
-            )
-            lines.append("")
         for row in trades:
             lines.extend(_card(row))
             lines.append("")
@@ -607,17 +618,7 @@ def write_scan_artifacts(day: Path, asof: str, built: dict) -> None:
     slim = []
     for row in built.get("candidates") or []:
         slim.append({k: v for k, v in row.items() if k not in ("stock", "options") or row.get("action") != "IGNORE"})
-    write_json(
-        day / "candidates.json",
-        {
-            "asof": asof,
-            "regime": (built.get("regime") or {}).get("regime"),
-            "session": built.get("session") or "",
-            "session_incomplete": bool(built.get("session_incomplete")),
-            "candidates": slim,
-            "board": built.get("board"),
-        },
-    )
+    write_json(day / "candidates.json", {"asof": asof, "regime": (built.get("regime") or {}).get("regime"), "candidates": slim, "board": built.get("board")})
     write_csv(day / "board.csv", BOARD_COLUMNS, built.get("board") or [])
     write_csv(day / "rejections.csv", ["asof_date", "ticker", "reasons", "stage"], built.get("rejections") or [])
     write_text(day / "board.md", render_board(asof, built))

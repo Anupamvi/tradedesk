@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from xhigh.rec import decorate, render_recommendation, sort_clicks
+from xhigh.rec import decorate, render_recommendation, sort_clicks, universe_from_manifest, universe_scanned
 
 
 def _md_table(rows: List[dict], cols: List[tuple]) -> List[str]:
@@ -32,6 +32,11 @@ CLICK_COLS = [
     ("risk", "risk_s"),
     ("P:R", "rr_s"),
     ("POP", "pop_s"),
+    ("conf", "conf"),
+    ("PD", "pd_s"),
+    ("N", "n_s"),
+    ("R_cons", "r_cons_s"),
+    ("L", "l_s"),
 ]
 
 SKIP_COLS = [
@@ -86,11 +91,15 @@ def write_run(
             encoding="utf-8",
         )
     macro = macro if macro is not None else (manifest.get("macro") if isinstance(manifest, dict) else {}) or {}
-    rec = render_recommendation(date, click, skip, watch, macro)
+    universe = universe_from_manifest(manifest)
+    rec = render_recommendation(date, click, skip, watch, macro, universe=universe)
     blines = list(rec)
     blines.extend(["## 🟢 CLICK", ""])
     if not click:
-        blines.append("None. Empty is valid.")
+        if universe_scanned(universe, len(click), len(skip)):
+            blines.append("None. Empty is valid.")
+        else:
+            blines.append("None. Universe DATA UNAVAILABLE — not an empty CLICK.")
     else:
         blines.extend(_md_table(click, CLICK_COLS))
     if skip:
@@ -155,12 +164,10 @@ def _restamp(dest: Path, xhot: Optional[dict], intel: Optional[dict]) -> None:
             if iv.get("conf_delta") is not None:
                 row["conf_delta"] = iv.get("conf_delta")
             row["conf"] = confidence(row, {"source": row.get("earnings_source"), "usable": True}, gates)
-            if iv.get("kill"):
-                row["action"] = "WATCH"
+            row["intel_kill"] = bool(iv.get("kill"))
+            if row["intel_kill"]:
                 row["note"] = (row.get("note") or "") + " intel KILL"
         row.update(decorate(row, gates))
-        if iv and iv.get("kill"):
-            row["action"] = "WATCH"
     man = json.loads((dest / "manifest.json").read_text(encoding="utf-8")) if (dest / "manifest.json").is_file() else {}
     skips = _load_rows(dest, "skips.json")
     write_run(

@@ -1,0 +1,844 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-08-16",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-11-13",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-08-15",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-08-13",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-11-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-02-04",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-05-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-08-12",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-11-04",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-02-10",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-05-12",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-08-18",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-11-10",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-02-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-05-11",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-08-17",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-11-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-02-08",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-05-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-08-15",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-11-05",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-02-04",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-05-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-08-05",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-11-04",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-02-03",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-05-05",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-08-04",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-11-04",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-02-02",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-05-11",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-08-10",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-11-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-02-08",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-05-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-08-08",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-11-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-02-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-05-08",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-08-07",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-11-05",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-02-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-05-07",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-08-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-11-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-02-04",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-05-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-08-05",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-11-05",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-02-03",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-05-11",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-08-10",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-11-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-02-08",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-05-10",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-08-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-11-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-02-07",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-05-09",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-08-08",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-11-08",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-02-06",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-05-08",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-08-07",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-11-07",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-02-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-05-06",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-08-05",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-11-05",
+      "ticker": "CSCO",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-02-04",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-05-06",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-08-05",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-11-04",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-02-03",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-05-12",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-08-11",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-11-10",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-02-09",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-05-11",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-08-10",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-11-09",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-02-08",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-05-09",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-08-15",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2012-11-13",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-02-13",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-05-15",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-08-14",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-11-13",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-02-12",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-05-14",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-08-13",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2014-11-12",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-02-11",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-05-13",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-08-12",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2015-11-12",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-02-10",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-05-18",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-08-17",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2016-11-16",
+      "ticker": "CSCO",
+      "updatedAt": "2017-10-11T19:04:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-02-15",
+      "ticker": "CSCO",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-05-17",
+      "ticker": "CSCO",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-08-16",
+      "ticker": "CSCO",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2017-11-15",
+      "ticker": "CSCO",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-02-14",
+      "ticker": "CSCO",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-05-16",
+      "ticker": "CSCO",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-08-15",
+      "ticker": "CSCO",
+      "updatedAt": "2018-11-12T17:05:28Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2018-11-14",
+      "ticker": "CSCO",
+      "updatedAt": "2018-11-23T23:01:17Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-02-13",
+      "ticker": "CSCO",
+      "updatedAt": "2019-02-23T00:46:07Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-05-15",
+      "ticker": "CSCO",
+      "updatedAt": "2019-05-24T23:16:10Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-08-14",
+      "ticker": "CSCO",
+      "updatedAt": "2019-08-23T23:16:15Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2019-11-13",
+      "ticker": "CSCO",
+      "updatedAt": "2019-11-23T00:33:45Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-02-12",
+      "ticker": "CSCO",
+      "updatedAt": "2020-02-22T00:16:16Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-05-13",
+      "ticker": "CSCO",
+      "updatedAt": "2020-05-22T23:16:17Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-08-12",
+      "ticker": "CSCO",
+      "updatedAt": "2020-08-21T23:16:06Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2020-11-12",
+      "ticker": "CSCO",
+      "updatedAt": "2020-11-21T00:16:05Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-02-09",
+      "ticker": "CSCO",
+      "updatedAt": "2021-02-20T00:16:10Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-05-19",
+      "ticker": "CSCO",
+      "updatedAt": "2021-05-28T23:16:17Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-08-18",
+      "ticker": "CSCO",
+      "updatedAt": "2021-08-27T23:16:24Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2021-11-17",
+      "ticker": "CSCO",
+      "updatedAt": "2021-11-27T00:15:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-02-16",
+      "ticker": "CSCO",
+      "updatedAt": "2022-02-26T00:16:06Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-05-18",
+      "ticker": "CSCO",
+      "updatedAt": "2022-05-27T23:16:32Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-08-17",
+      "ticker": "CSCO",
+      "updatedAt": "2022-08-26T23:16:21Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2022-11-16",
+      "ticker": "CSCO",
+      "updatedAt": "2022-11-26T00:16:10Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-02-15",
+      "ticker": "CSCO",
+      "updatedAt": "2023-02-25T00:16:11Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-05-17",
+      "ticker": "CSCO",
+      "updatedAt": "2023-05-26T23:16:13Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-08-16",
+      "ticker": "CSCO",
+      "updatedAt": "2023-08-25T23:16:12Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2023-11-15",
+      "ticker": "CSCO",
+      "updatedAt": "2023-11-25T00:16:11Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-02-14",
+      "ticker": "CSCO",
+      "updatedAt": "2024-02-24T00:16:18Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-05-15",
+      "ticker": "CSCO",
+      "updatedAt": "2024-05-24T23:16:18Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-08-14",
+      "ticker": "CSCO",
+      "updatedAt": "2024-08-23T23:16:16Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2024-11-13",
+      "ticker": "CSCO",
+      "updatedAt": "2024-11-23T01:01:25Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-02-12",
+      "ticker": "CSCO",
+      "updatedAt": "2025-02-22T03:42:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-05-14",
+      "ticker": "CSCO",
+      "updatedAt": "2025-05-24T02:41:03Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-08-13",
+      "ticker": "CSCO",
+      "updatedAt": "2025-08-23T02:40:36Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2025-11-12",
+      "ticker": "CSCO",
+      "updatedAt": "2025-11-22T03:40:40Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-02-11",
+      "ticker": "CSCO",
+      "updatedAt": "2026-02-21T03:40:40Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-05-13",
+      "ticker": "CSCO",
+      "updatedAt": "2026-05-23T02:40:50Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2026-08-12",
+      "ticker": "CSCO",
+      "updatedAt": "2026-08-21T22:00:59Z"
+    }
+  ]
+}

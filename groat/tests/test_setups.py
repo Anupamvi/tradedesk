@@ -78,6 +78,80 @@ class TestSetups(unittest.TestCase):
         self.assertIn("E", setup["setups"])
         self.assertEqual(setup["primary"], "A")
 
+    def test_incomplete_stub_does_not_flip_rs_leader_to_breakout(self):
+        spy = trend_bars(220, end="2026-08-26", slope=0.05, volume=2_000_000.0)
+        bars = trend_bars(220, end="2026-08-26", slope=0.4, pullback=1.0, volume=2_000_000.0)
+        yesterday = bars[-1]
+        hi20 = max(b["close"] for b in bars[:-1][-20:])
+        stub = {
+            "date": "2026-08-27",
+            "open": yesterday["close"],
+            "high": hi20 + 2.0,
+            "low": yesterday["close"] - 0.2,
+            "close": hi20 + 1.5,
+            "volume": 90_000.0,
+        }
+        live = snapshot(bars + [stub], "2026-08-27", bench_bars=spy + [dict(spy[-1], date="2026-08-27", volume=90_000.0)])
+        self.assertTrue(live["session_incomplete"])
+        self.assertGreater(live["live_last"], live["hi20_close"])
+        self.assertLessEqual(live["close"], live["hi20_close"])
+        live["rs_20"] = 0.12
+        live["above_sma50"] = True
+        live["trend"] = "up"
+        setup = classify_setups(live, group_row={"status": "mature"}, earnings={"usable": True, "source": "exempt"})
+        self.assertNotIn("B", setup["setups"])
+        self.assertEqual(setup["primary"], "D")
+        self.assertIsNone(setup["fire"].get("kind"))
+
+    def test_incomplete_red_stub_does_not_demote_d_to_a(self):
+        snap = {
+            "ok": True,
+            "session_incomplete": True,
+            "close": 150.0,
+            "structure_close": 150.0,
+            "low": 148.8,
+            "high": 151.0,
+            "open": 150.2,
+            "ema20": 146.0,
+            "sma50": 140.0,
+            "sma200": 130.0,
+            "atr14": 6.0,
+            "trend": "strong_up",
+            "rs_20": 0.18,
+            "rvol": 0.08,
+            "above_ema20": True,
+            "above_sma50": True,
+            "above_sma200": True,
+            "avwap_swing_low": 131.0,
+            "extension_atr": 0.20,
+            "ret_1": 0.04,
+            "hi20_close": 156.0,
+            "vol_5": 1.8e6,
+            "vol_20": 2.0e6,
+        }
+        setup = classify_setups(snap, group_row={"status": "mature"}, earnings={"usable": True, "source": "exempt"})
+        self.assertIn("D", setup["setups"])
+        self.assertEqual(setup["primary"], "D")
+        self.assertIsNone(setup["fire"].get("kind"))
+
+    def test_complete_session_breakout_still_prints_b(self):
+        spy = trend_bars(80, end="2026-08-27", slope=0.15, volume=2_000_000.0)
+        bars = trend_bars(80, end="2026-08-26", slope=0.45, pullback=3.0, volume=2_000_000.0)
+        yesterday = bars[-1]
+        full = {
+            "date": "2026-08-27",
+            "open": yesterday["close"],
+            "high": yesterday["close"] + 12.0,
+            "low": yesterday["close"] - 0.3,
+            "close": yesterday["close"] + 11.0,
+            "volume": 2_200_000.0,
+        }
+        snap = snapshot(bars + [full], "2026-08-27", bench_bars=spy)
+        self.assertFalse(snap.get("session_incomplete"))
+        setup = classify_setups(snap, group_row={"status": "mature"}, earnings={"usable": True, "source": "exempt"})
+        self.assertIn("B", setup["setups"])
+        self.assertEqual(setup["primary"], "B")
+
     def test_e_requires_rs_leader_not_any_green_group(self):
         snap = {
             "ok": True,

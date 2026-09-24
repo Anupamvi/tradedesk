@@ -1,0 +1,18 @@
+{
+  "name": "tradedesk",
+  "install": "cd compoundcore && PYTHONPATH=. python3 -m unittest discover -s tests -q",
+  "start": "COMPOUNDCORE_DASHBOARD_HOST=0.0.0.0 compoundcore/scripts/ensure-dashboard.sh",
+  "ports": [
+    {
+      "name": "compoundcore-dashboard",
+      "port": 8765
+    }
+  ],
+  "terminals": [
+    {
+      "name": "compoundcore-dashboard",
+      "command": "cd compoundcore && COMPOUNDCORE_DASHBOARD_HOST=0.0.0.0 PYTHONPATH=. python3 -m compoundcore dashboard --host 0.0.0.0 --port 8765",
+      "description": "Compound Core persistent dashboard (both sleeves + my book)"
+    }
+  ]
+}

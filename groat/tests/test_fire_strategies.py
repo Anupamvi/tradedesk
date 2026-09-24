@@ -162,7 +162,7 @@ class TestDeskPicksAndXhot(unittest.TestCase):
         text = "\n".join(render_desk_picks(picks))
         self.assertIn("## Desk pick", text)
         self.assertIn("TRADE list: **NOW**", text)
-        self.assertIn("Take options: NOW", text)
+        self.assertIn("BUY OPTIONS (spread): NOW", text)
         self.assertIn("Why this one, not the others", text)
         board = render_board(
             "2026-08-27",
@@ -206,10 +206,39 @@ class TestDeskPicksAndXhot(unittest.TestCase):
         from groat.picks import render_desk_picks
 
         text = "\n".join(render_desk_picks(picks))
-        self.assertIn("Take options: SHOP", text)
+        self.assertIn("BUY OPTIONS (spread): SHOP", text)
         self.assertIn("**CVX**", text)
         self.assertIn("IN BOOK", text)
-        self.assertNotIn("Take options: CVX", text)
+        self.assertNotIn("BUY OPTIONS (spread): CVX", text)
+
+    def test_desk_pick_skips_open_option_legs(self):
+        aapl = {
+            "ticker": "AAPL",
+            "choice": "OPTIONS",
+            "in_book": False,
+            "naive_pop": 0.50,
+            "opt_conf": 80,
+            "score": 70,
+            "x": "Crowded",
+            "ret_1": 0.0,
+            "close": 336.0,
+            "schwab_legs": [{"right": "put", "quantity": 1, "expiry": "2027-03-19", "strike": 270.0}],
+            "picked": {"long_strike": 340.0, "delta": 0.15, "instrument": "debit_call_spread", "legs": "BUY 340c", "target_debit": 4.15},
+        }
+        arm = {
+            "ticker": "ARM",
+            "choice": "OPTIONS",
+            "in_book": False,
+            "naive_pop": 0.40,
+            "opt_conf": 53,
+            "score": 60,
+            "x": "Informed",
+            "ret_1": 0.02,
+            "close": 275.0,
+            "picked": {"long_strike": 280.0, "delta": 0.18, "instrument": "debit_call_spread", "legs": "BUY 280c", "target_debit": 4.40},
+        }
+        picks = desk_picks([aapl, arm])
+        self.assertEqual(picks["best_options"]["ticker"], "ARM")
 
     def test_desk_pick_prints_do_not_click_band(self):
         shop = {
@@ -236,7 +265,7 @@ class TestDeskPicksAndXhot(unittest.TestCase):
         from groat.picks import render_desk_picks
 
         text = "\n".join(render_desk_picks(picks))
-        self.assertIn("Do not click this option", text)
+        self.assertIn("Do not click this OPTIONS spread", text)
         self.assertIn("146.23", text)
         self.assertIn("4.00", text)
 
@@ -288,7 +317,7 @@ class TestDeskPicksAndXhot(unittest.TestCase):
         }
         board = render_board("2026-09-02", built)
         self.assertNotIn("How to read this", board)
-        self.assertIn("| | ticker | setup | ticket | pay | last | click | X |", board)
+        self.assertIn("| | ticker | buy | setup | ticket | pay | last | click | X |", board)
         self.assertIn("**XLP**", board)
         self.assertIn("Sector rotation", board)
         self.assertIn("Trend pullback", board)
@@ -327,7 +356,7 @@ class TestDeskPicksAndXhot(unittest.TestCase):
         text = "\n".join(render_desk_picks(picks))
         self.assertIn("in book", text.lower())
         self.assertIn("**CVX**", text)
-        self.assertNotIn("Take options: CVX", text)
+        self.assertNotIn("BUY OPTIONS (spread): CVX", text)
 
     def test_xhot_needs_tape(self):
         hot = {"bias": "bullish", "narrative": "loud on X", "tag": "Informed"}

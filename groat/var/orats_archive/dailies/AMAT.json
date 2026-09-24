@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 455.185,
+      "clsPx": 454.71,
       "hiPx": 460.2,
       "loPx": 443.36,
       "open": 452.5,
-      "stkVolu": 1912874.0,
+      "stkVolu": 6016831.0,
       "ticker": "AMAT",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 472.79,
+      "hiPx": 472.89,
+      "loPx": 458.1518,
+      "open": 464.02,
+      "stkVolu": 6312985.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 468.85,
+      "hiPx": 474.04,
+      "loPx": 463.78,
+      "open": 466.66,
+      "stkVolu": 3945491.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 454.01,
+      "hiPx": 460.86,
+      "loPx": 450.56,
+      "open": 455.4,
+      "stkVolu": 4844231.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 456.49,
+      "hiPx": 464.57,
+      "loPx": 452.7,
+      "open": 461.19,
+      "stkVolu": 4317585.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 424.21,
+      "hiPx": 432.51,
+      "loPx": 419.6,
+      "open": 422.2,
+      "stkVolu": 8064762.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 421.17,
+      "hiPx": 429.99,
+      "loPx": 416.76,
+      "open": 429.85,
+      "stkVolu": 5638863.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 415.38,
+      "hiPx": 430.74,
+      "loPx": 411.51,
+      "open": 429.73,
+      "stkVolu": 5511015.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 417.4,
+      "hiPx": 428.54,
+      "loPx": 413.56,
+      "open": 427.575,
+      "stkVolu": 6929255.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 444.57,
+      "hiPx": 445.0,
+      "loPx": 420.0,
+      "open": 421.69,
+      "stkVolu": 14302926.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 464.24,
+      "hiPx": 468.51,
+      "loPx": 452.655,
+      "open": 455.945,
+      "stkVolu": 9491072.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 472.46,
+      "hiPx": 472.49,
+      "loPx": 453.34,
+      "open": 457.9,
+      "stkVolu": 5807681.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 474.38,
+      "hiPx": 474.9,
+      "loPx": 461.0,
+      "open": 471.23,
+      "stkVolu": 4591336.0,
+      "ticker": "AMAT",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

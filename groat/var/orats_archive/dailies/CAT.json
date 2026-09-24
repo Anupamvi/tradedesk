@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 816.71,
+      "clsPx": 813.94,
       "hiPx": 821.0,
       "loPx": 801.0,
       "open": 802.38,
-      "stkVolu": 637558.0,
+      "stkVolu": 2150388.0,
       "ticker": "CAT",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 822.48,
+      "hiPx": 830.5,
+      "loPx": 817.09,
+      "open": 823.34,
+      "stkVolu": 2444423.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 815.56,
+      "hiPx": 827.96,
+      "loPx": 813.5,
+      "open": 815.68,
+      "stkVolu": 1929307.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 805.0,
+      "hiPx": 811.9476,
+      "loPx": 797.5,
+      "open": 809.75,
+      "stkVolu": 1782575.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 818.57,
+      "hiPx": 826.0,
+      "loPx": 813.51,
+      "open": 817.75,
+      "stkVolu": 1825033.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 784.0,
+      "hiPx": 794.56,
+      "loPx": 772.861,
+      "open": 783.045,
+      "stkVolu": 2429135.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 783.54,
+      "hiPx": 791.2,
+      "loPx": 776.5,
+      "open": 789.49,
+      "stkVolu": 2262764.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 782.72,
+      "hiPx": 798.39,
+      "loPx": 774.475,
+      "open": 797.0,
+      "stkVolu": 2647885.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 798.57,
+      "hiPx": 813.95,
+      "loPx": 795.0,
+      "open": 813.95,
+      "stkVolu": 2430849.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 808.99,
+      "hiPx": 809.485,
+      "loPx": 799.57,
+      "open": 800.79,
+      "stkVolu": 4790973.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 816.5,
+      "hiPx": 827.81,
+      "loPx": 805.24,
+      "open": 827.0,
+      "stkVolu": 1869362.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 808.01,
+      "hiPx": 812.4595,
+      "loPx": 802.61,
+      "open": 806.06,
+      "stkVolu": 2063731.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 812.02,
+      "hiPx": 816.76,
+      "loPx": 798.53,
+      "open": 803.97,
+      "stkVolu": 2790269.0,
+      "ticker": "CAT",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

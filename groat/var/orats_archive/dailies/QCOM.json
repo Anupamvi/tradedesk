@@ -1,0 +1,2614 @@
+{
+  "data": [
+    {
+      "clsPx": 154.3,
+      "hiPx": 156.71,
+      "loPx": 154.12,
+      "open": 156.29,
+      "stkVolu": 6467332.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-15"
+    },
+    {
+      "clsPx": 154.07,
+      "hiPx": 154.5,
+      "loPx": 151.5401,
+      "open": 154.3,
+      "stkVolu": 7106685.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-16"
+    },
+    {
+      "clsPx": 152.61,
+      "hiPx": 153.5299,
+      "loPx": 151.8,
+      "open": 153.0,
+      "stkVolu": 7018604.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-17"
+    },
+    {
+      "clsPx": 154.8,
+      "hiPx": 155.43,
+      "loPx": 152.73,
+      "open": 153.04,
+      "stkVolu": 7433858.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-18"
+    },
+    {
+      "clsPx": 158.97,
+      "hiPx": 159.93,
+      "loPx": 154.91,
+      "open": 154.92,
+      "stkVolu": 7662335.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-21"
+    },
+    {
+      "clsPx": 157.99,
+      "hiPx": 159.04,
+      "loPx": 156.17,
+      "open": 158.955,
+      "stkVolu": 6951574.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-22"
+    },
+    {
+      "clsPx": 159.88,
+      "hiPx": 160.04,
+      "loPx": 156.93,
+      "open": 158.59,
+      "stkVolu": 7296150.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-23"
+    },
+    {
+      "clsPx": 158.84,
+      "hiPx": 159.09,
+      "loPx": 156.789,
+      "open": 158.345,
+      "stkVolu": 5014820.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-24"
+    },
+    {
+      "clsPx": 158.4,
+      "hiPx": 159.2,
+      "loPx": 157.41,
+      "open": 158.9,
+      "stkVolu": 4808242.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-25"
+    },
+    {
+      "clsPx": 161.05,
+      "hiPx": 161.96,
+      "loPx": 159.16,
+      "open": 159.76,
+      "stkVolu": 9627310.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-28"
+    },
+    {
+      "clsPx": 162.08,
+      "hiPx": 163.6,
+      "loPx": 161.14,
+      "open": 162.035,
+      "stkVolu": 9460889.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-29"
+    },
+    {
+      "clsPx": 159.06,
+      "hiPx": 163.27,
+      "loPx": 158.0,
+      "open": 163.0,
+      "stkVolu": 14382464.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-30"
+    },
+    {
+      "clsPx": 146.76,
+      "hiPx": 156.8039,
+      "loPx": 145.5776,
+      "open": 153.11,
+      "stkVolu": 24440140.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-07-31"
+    },
+    {
+      "clsPx": 148.19,
+      "hiPx": 149.165,
+      "loPx": 145.79,
+      "open": 146.46,
+      "stkVolu": 12706714.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-01"
+    },
+    {
+      "clsPx": 147.51,
+      "hiPx": 150.79,
+      "loPx": 147.075,
+      "open": 148.51,
+      "stkVolu": 8150186.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-04"
+    },
+    {
+      "clsPx": 146.71,
+      "hiPx": 148.65,
+      "loPx": 145.67,
+      "open": 148.52,
+      "stkVolu": 7794509.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-05"
+    },
+    {
+      "clsPx": 145.84,
+      "hiPx": 146.71,
+      "loPx": 144.11,
+      "open": 146.645,
+      "stkVolu": 8475658.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-06"
+    },
+    {
+      "clsPx": 145.9,
+      "hiPx": 148.32,
+      "loPx": 144.81,
+      "open": 148.32,
+      "stkVolu": 6753460.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-07"
+    },
+    {
+      "clsPx": 147.56,
+      "hiPx": 148.02,
+      "loPx": 145.69,
+      "open": 146.35,
+      "stkVolu": 5028685.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-08"
+    },
+    {
+      "clsPx": 147.97,
+      "hiPx": 151.06,
+      "loPx": 147.71,
+      "open": 148.575,
+      "stkVolu": 6215927.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-11"
+    },
+    {
+      "clsPx": 153.73,
+      "hiPx": 153.9,
+      "loPx": 148.565,
+      "open": 148.795,
+      "stkVolu": 9307675.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-12"
+    },
+    {
+      "clsPx": 156.59,
+      "hiPx": 157.11,
+      "loPx": 153.63,
+      "open": 153.97,
+      "stkVolu": 7103331.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-13"
+    },
+    {
+      "clsPx": 158.09,
+      "hiPx": 158.65,
+      "loPx": 154.9,
+      "open": 154.9,
+      "stkVolu": 6294848.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-14"
+    },
+    {
+      "clsPx": 157.85,
+      "hiPx": 159.26,
+      "loPx": 156.6908,
+      "open": 158.04,
+      "stkVolu": 7583742.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-15"
+    },
+    {
+      "clsPx": 158.9,
+      "hiPx": 159.75,
+      "loPx": 157.24,
+      "open": 157.78,
+      "stkVolu": 4774409.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-18"
+    },
+    {
+      "clsPx": 156.25,
+      "hiPx": 159.43,
+      "loPx": 156.05,
+      "open": 159.07,
+      "stkVolu": 6396532.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-19"
+    },
+    {
+      "clsPx": 155.44,
+      "hiPx": 156.64,
+      "loPx": 153.46,
+      "open": 156.39,
+      "stkVolu": 7151699.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-20"
+    },
+    {
+      "clsPx": 154.13,
+      "hiPx": 155.2,
+      "loPx": 153.05,
+      "open": 154.82,
+      "stkVolu": 4997281.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-21"
+    },
+    {
+      "clsPx": 158.01,
+      "hiPx": 159.89,
+      "loPx": 154.56,
+      "open": 154.83,
+      "stkVolu": 7711478.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-22"
+    },
+    {
+      "clsPx": 156.42,
+      "hiPx": 158.05,
+      "loPx": 155.4,
+      "open": 157.61,
+      "stkVolu": 4653018.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-25"
+    },
+    {
+      "clsPx": 159.17,
+      "hiPx": 159.96,
+      "loPx": 157.41,
+      "open": 157.66,
+      "stkVolu": 9173048.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-26"
+    },
+    {
+      "clsPx": 159.77,
+      "hiPx": 159.97,
+      "loPx": 157.8,
+      "open": 158.36,
+      "stkVolu": 4549850.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-27"
+    },
+    {
+      "clsPx": 160.8,
+      "hiPx": 161.22,
+      "loPx": 159.03,
+      "open": 159.905,
+      "stkVolu": 8156289.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-28"
+    },
+    {
+      "clsPx": 160.73,
+      "hiPx": 161.595,
+      "loPx": 159.4,
+      "open": 159.53,
+      "stkVolu": 9949092.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-08-29"
+    },
+    {
+      "clsPx": 158.78,
+      "hiPx": 158.94,
+      "loPx": 154.6,
+      "open": 157.82,
+      "stkVolu": 7520324.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-02"
+    },
+    {
+      "clsPx": 157.28,
+      "hiPx": 159.57,
+      "loPx": 156.06,
+      "open": 159.395,
+      "stkVolu": 6336394.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-03"
+    },
+    {
+      "clsPx": 159.71,
+      "hiPx": 159.86,
+      "loPx": 154.47,
+      "open": 156.2,
+      "stkVolu": 7781194.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-04"
+    },
+    {
+      "clsPx": 159.84,
+      "hiPx": 163.49,
+      "loPx": 159.15,
+      "open": 160.08,
+      "stkVolu": 7954191.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-05"
+    },
+    {
+      "clsPx": 160.28,
+      "hiPx": 160.29,
+      "loPx": 158.01,
+      "open": 160.29,
+      "stkVolu": 7022109.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-08"
+    },
+    {
+      "clsPx": 158.66,
+      "hiPx": 161.605,
+      "loPx": 157.57,
+      "open": 160.37,
+      "stkVolu": 6125983.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-09"
+    },
+    {
+      "clsPx": 158.95,
+      "hiPx": 159.21,
+      "loPx": 156.6101,
+      "open": 158.62,
+      "stkVolu": 8256930.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-10"
+    },
+    {
+      "clsPx": 161.51,
+      "hiPx": 162.07,
+      "loPx": 157.96,
+      "open": 159.19,
+      "stkVolu": 8360155.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-11"
+    },
+    {
+      "clsPx": 161.83,
+      "hiPx": 162.33,
+      "loPx": 159.58,
+      "open": 161.33,
+      "stkVolu": 5430605.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-12"
+    },
+    {
+      "clsPx": 161.22,
+      "hiPx": 162.68,
+      "loPx": 160.21,
+      "open": 161.4,
+      "stkVolu": 5604785.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-15"
+    },
+    {
+      "clsPx": 164.14,
+      "hiPx": 165.0,
+      "loPx": 161.5,
+      "open": 161.82,
+      "stkVolu": 7997458.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-16"
+    },
+    {
+      "clsPx": 165.26,
+      "hiPx": 166.3688,
+      "loPx": 163.23,
+      "open": 164.68,
+      "stkVolu": 6057848.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-17"
+    },
+    {
+      "clsPx": 168.13,
+      "hiPx": 168.86,
+      "loPx": 166.225,
+      "open": 166.88,
+      "stkVolu": 10421217.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-18"
+    },
+    {
+      "clsPx": 166.85,
+      "hiPx": 169.58,
+      "loPx": 166.29,
+      "open": 169.17,
+      "stkVolu": 19444430.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-19"
+    },
+    {
+      "clsPx": 169.72,
+      "hiPx": 170.22,
+      "loPx": 165.92,
+      "open": 166.85,
+      "stkVolu": 6196606.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-22"
+    },
+    {
+      "clsPx": 169.53,
+      "hiPx": 170.8476,
+      "loPx": 168.3,
+      "open": 169.82,
+      "stkVolu": 5468356.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-23"
+    },
+    {
+      "clsPx": 173.55,
+      "hiPx": 174.44,
+      "loPx": 168.67,
+      "open": 169.05,
+      "stkVolu": 9213654.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-24"
+    },
+    {
+      "clsPx": 169.68,
+      "hiPx": 171.97,
+      "loPx": 167.935,
+      "open": 171.21,
+      "stkVolu": 8093721.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-25"
+    },
+    {
+      "clsPx": 169.2,
+      "hiPx": 170.93,
+      "loPx": 168.1325,
+      "open": 169.68,
+      "stkVolu": 4846018.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-26"
+    },
+    {
+      "clsPx": 165.3,
+      "hiPx": 169.84,
+      "loPx": 164.76,
+      "open": 169.2,
+      "stkVolu": 7523124.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-29"
+    },
+    {
+      "clsPx": 166.36,
+      "hiPx": 166.8356,
+      "loPx": 164.8796,
+      "open": 165.64,
+      "stkVolu": 5593278.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-09-30"
+    },
+    {
+      "clsPx": 166.49,
+      "hiPx": 166.77,
+      "loPx": 164.49,
+      "open": 165.8,
+      "stkVolu": 6153017.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-01"
+    },
+    {
+      "clsPx": 168.85,
+      "hiPx": 169.54,
+      "loPx": 167.18,
+      "open": 167.75,
+      "stkVolu": 5499494.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-02"
+    },
+    {
+      "clsPx": 169.18,
+      "hiPx": 171.75,
+      "loPx": 168.74,
+      "open": 168.85,
+      "stkVolu": 5137913.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-03"
+    },
+    {
+      "clsPx": 168.62,
+      "hiPx": 170.88,
+      "loPx": 167.72,
+      "open": 170.54,
+      "stkVolu": 8265822.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-06"
+    },
+    {
+      "clsPx": 165.46,
+      "hiPx": 171.98,
+      "loPx": 165.14,
+      "open": 169.9,
+      "stkVolu": 7147516.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-07"
+    },
+    {
+      "clsPx": 167.77,
+      "hiPx": 168.55,
+      "loPx": 163.885,
+      "open": 166.24,
+      "stkVolu": 7302175.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-08"
+    },
+    {
+      "clsPx": 165.66,
+      "hiPx": 167.61,
+      "loPx": 163.23,
+      "open": 167.365,
+      "stkVolu": 6928402.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-09"
+    },
+    {
+      "clsPx": 153.59,
+      "hiPx": 165.09,
+      "loPx": 153.35,
+      "open": 164.82,
+      "stkVolu": 15818649.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-10"
+    },
+    {
+      "clsPx": 161.78,
+      "hiPx": 162.39,
+      "loPx": 155.78,
+      "open": 155.95,
+      "stkVolu": 10311036.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-13"
+    },
+    {
+      "clsPx": 161.74,
+      "hiPx": 164.265,
+      "loPx": 159.265,
+      "open": 159.3,
+      "stkVolu": 8675208.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-14"
+    },
+    {
+      "clsPx": 162.97,
+      "hiPx": 164.24,
+      "loPx": 160.31,
+      "open": 164.24,
+      "stkVolu": 7334149.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-15"
+    },
+    {
+      "clsPx": 164.08,
+      "hiPx": 165.189,
+      "loPx": 162.21,
+      "open": 164.49,
+      "stkVolu": 5686686.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-16"
+    },
+    {
+      "clsPx": 163.45,
+      "hiPx": 163.79,
+      "loPx": 161.67,
+      "open": 162.86,
+      "stkVolu": 4833067.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-17"
+    },
+    {
+      "clsPx": 167.04,
+      "hiPx": 167.65,
+      "loPx": 162.06,
+      "open": 163.34,
+      "stkVolu": 8194111.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-20"
+    },
+    {
+      "clsPx": 168.83,
+      "hiPx": 169.24,
+      "loPx": 166.2,
+      "open": 166.8,
+      "stkVolu": 6176069.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-21"
+    },
+    {
+      "clsPx": 169.27,
+      "hiPx": 169.78,
+      "loPx": 166.02,
+      "open": 167.49,
+      "stkVolu": 10083801.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-22"
+    },
+    {
+      "clsPx": 170.03,
+      "hiPx": 171.25,
+      "loPx": 167.88,
+      "open": 168.33,
+      "stkVolu": 6546403.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-23"
+    },
+    {
+      "clsPx": 168.94,
+      "hiPx": 172.42,
+      "loPx": 168.47,
+      "open": 171.69,
+      "stkVolu": 6255987.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-24"
+    },
+    {
+      "clsPx": 187.68,
+      "hiPx": 205.95,
+      "loPx": 168.82,
+      "open": 168.95,
+      "stkVolu": 81799263.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-27"
+    },
+    {
+      "clsPx": 181.03,
+      "hiPx": 185.91,
+      "loPx": 179.41,
+      "open": 183.925,
+      "stkVolu": 20323130.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-28"
+    },
+    {
+      "clsPx": 178.67,
+      "hiPx": 183.49,
+      "loPx": 178.2,
+      "open": 182.0,
+      "stkVolu": 11614583.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-29"
+    },
+    {
+      "clsPx": 177.26,
+      "hiPx": 179.88,
+      "loPx": 177.19,
+      "open": 178.68,
+      "stkVolu": 7862891.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-30"
+    },
+    {
+      "clsPx": 180.9,
+      "hiPx": 182.15,
+      "loPx": 176.83,
+      "open": 178.52,
+      "stkVolu": 9452781.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-10-31"
+    },
+    {
+      "clsPx": 180.72,
+      "hiPx": 183.45,
+      "loPx": 179.09,
+      "open": 182.95,
+      "stkVolu": 8535148.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-03"
+    },
+    {
+      "clsPx": 172.84,
+      "hiPx": 179.34,
+      "loPx": 172.29,
+      "open": 177.48,
+      "stkVolu": 12323606.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-04"
+    },
+    {
+      "clsPx": 179.72,
+      "hiPx": 183.429,
+      "loPx": 174.32,
+      "open": 174.76,
+      "stkVolu": 18845528.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-05"
+    },
+    {
+      "clsPx": 173.2,
+      "hiPx": 178.51,
+      "loPx": 170.06,
+      "open": 177.8,
+      "stkVolu": 16184721.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-06"
+    },
+    {
+      "clsPx": 170.89,
+      "hiPx": 174.25,
+      "loPx": 168.25,
+      "open": 172.725,
+      "stkVolu": 10614712.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-07"
+    },
+    {
+      "clsPx": 171.57,
+      "hiPx": 174.7975,
+      "loPx": 169.5,
+      "open": 173.755,
+      "stkVolu": 10129284.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-10"
+    },
+    {
+      "clsPx": 173.98,
+      "hiPx": 175.98,
+      "loPx": 171.0,
+      "open": 171.0,
+      "stkVolu": 8419074.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-11"
+    },
+    {
+      "clsPx": 176.67,
+      "hiPx": 177.42,
+      "loPx": 174.88,
+      "open": 175.0,
+      "stkVolu": 8785819.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-12"
+    },
+    {
+      "clsPx": 174.5,
+      "hiPx": 178.83,
+      "loPx": 173.03,
+      "open": 176.63,
+      "stkVolu": 9526052.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-13"
+    },
+    {
+      "clsPx": 173.98,
+      "hiPx": 175.69,
+      "loPx": 171.4,
+      "open": 171.775,
+      "stkVolu": 7949889.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-14"
+    },
+    {
+      "clsPx": 166.75,
+      "hiPx": 174.84,
+      "loPx": 165.17,
+      "open": 172.8,
+      "stkVolu": 10211090.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-17"
+    },
+    {
+      "clsPx": 165.06,
+      "hiPx": 166.79,
+      "loPx": 161.39,
+      "open": 164.89,
+      "stkVolu": 11073247.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-18"
+    },
+    {
+      "clsPx": 166.11,
+      "hiPx": 167.51,
+      "loPx": 164.11,
+      "open": 164.69,
+      "stkVolu": 8176450.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-19"
+    },
+    {
+      "clsPx": 159.59,
+      "hiPx": 168.88,
+      "loPx": 158.85,
+      "open": 167.13,
+      "stkVolu": 12075367.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-20"
+    },
+    {
+      "clsPx": 163.3,
+      "hiPx": 165.27,
+      "loPx": 159.1,
+      "open": 160.75,
+      "stkVolu": 10815045.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-21"
+    },
+    {
+      "clsPx": 165.06,
+      "hiPx": 166.94,
+      "loPx": 163.72,
+      "open": 164.37,
+      "stkVolu": 12070083.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-24"
+    },
+    {
+      "clsPx": 163.3,
+      "hiPx": 164.97,
+      "loPx": 161.8739,
+      "open": 163.99,
+      "stkVolu": 7758117.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-25"
+    },
+    {
+      "clsPx": 165.14,
+      "hiPx": 166.25,
+      "loPx": 163.15,
+      "open": 164.12,
+      "stkVolu": 7967687.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-26"
+    },
+    {
+      "clsPx": 168.09,
+      "hiPx": 168.19,
+      "loPx": 164.13,
+      "open": 165.03,
+      "stkVolu": 5068827.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-11-28"
+    },
+    {
+      "clsPx": 168.04,
+      "hiPx": 169.03,
+      "loPx": 165.5,
+      "open": 165.91,
+      "stkVolu": 6818321.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-01"
+    },
+    {
+      "clsPx": 170.7,
+      "hiPx": 171.17,
+      "loPx": 167.64,
+      "open": 168.75,
+      "stkVolu": 9159133.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-02"
+    },
+    {
+      "clsPx": 175.07,
+      "hiPx": 175.09,
+      "loPx": 170.35,
+      "open": 170.9,
+      "stkVolu": 7624346.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-03"
+    },
+    {
+      "clsPx": 174.35,
+      "hiPx": 174.93,
+      "loPx": 173.23,
+      "open": 174.33,
+      "stkVolu": 7245026.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-04"
+    },
+    {
+      "clsPx": 174.81,
+      "hiPx": 177.25,
+      "loPx": 174.5,
+      "open": 174.63,
+      "stkVolu": 8400077.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-05"
+    },
+    {
+      "clsPx": 175.31,
+      "hiPx": 175.5,
+      "loPx": 173.72,
+      "open": 174.74,
+      "stkVolu": 6690187.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-08"
+    },
+    {
+      "clsPx": 176.0,
+      "hiPx": 176.348,
+      "loPx": 172.32,
+      "open": 174.5,
+      "stkVolu": 7719074.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-09"
+    },
+    {
+      "clsPx": 182.21,
+      "hiPx": 183.44,
+      "loPx": 175.252,
+      "open": 175.81,
+      "stkVolu": 11100123.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-10"
+    },
+    {
+      "clsPx": 181.27,
+      "hiPx": 181.64,
+      "loPx": 178.09,
+      "open": 181.37,
+      "stkVolu": 6319247.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-11"
+    },
+    {
+      "clsPx": 178.29,
+      "hiPx": 183.11,
+      "loPx": 177.87,
+      "open": 181.245,
+      "stkVolu": 8865761.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-12"
+    },
+    {
+      "clsPx": 179.26,
+      "hiPx": 180.31,
+      "loPx": 176.39,
+      "open": 179.715,
+      "stkVolu": 6954650.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-15"
+    },
+    {
+      "clsPx": 176.12,
+      "hiPx": 179.185,
+      "loPx": 174.81,
+      "open": 179.185,
+      "stkVolu": 7135986.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-16"
+    },
+    {
+      "clsPx": 172.34,
+      "hiPx": 177.48,
+      "loPx": 172.05,
+      "open": 176.12,
+      "stkVolu": 8501903.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-17"
+    },
+    {
+      "clsPx": 174.19,
+      "hiPx": 177.08,
+      "loPx": 173.525,
+      "open": 175.71,
+      "stkVolu": 8967544.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-18"
+    },
+    {
+      "clsPx": 175.25,
+      "hiPx": 177.19,
+      "loPx": 174.2,
+      "open": 174.44,
+      "stkVolu": 25223476.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-19"
+    },
+    {
+      "clsPx": 174.22,
+      "hiPx": 178.3192,
+      "loPx": 173.895,
+      "open": 177.555,
+      "stkVolu": 6422135.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-22"
+    },
+    {
+      "clsPx": 174.75,
+      "hiPx": 175.27,
+      "loPx": 173.51,
+      "open": 173.61,
+      "stkVolu": 4690449.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-23"
+    },
+    {
+      "clsPx": 174.77,
+      "hiPx": 175.49,
+      "loPx": 174.415,
+      "open": 175.04,
+      "stkVolu": 1645260.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-24"
+    },
+    {
+      "clsPx": 174.81,
+      "hiPx": 175.5,
+      "loPx": 174.35,
+      "open": 175.0,
+      "stkVolu": 2442840.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-26"
+    },
+    {
+      "clsPx": 173.43,
+      "hiPx": 175.19,
+      "loPx": 172.79,
+      "open": 174.01,
+      "stkVolu": 3978377.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-29"
+    },
+    {
+      "clsPx": 173.65,
+      "hiPx": 174.4,
+      "loPx": 173.34,
+      "open": 174.06,
+      "stkVolu": 3429263.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-30"
+    },
+    {
+      "clsPx": 171.05,
+      "hiPx": 173.775,
+      "loPx": 171.01,
+      "open": 173.61,
+      "stkVolu": 4682573.0,
+      "ticker": "QCOM",
+      "tradeDate": "2025-12-31"
+    },
+    {
+      "clsPx": 172.98,
+      "hiPx": 174.68,
+      "loPx": 172.2,
+      "open": 173.798,
+      "stkVolu": 6532243.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-02"
+    },
+    {
+      "clsPx": 176.31,
+      "hiPx": 178.85,
+      "loPx": 174.01,
+      "open": 175.46,
+      "stkVolu": 8972210.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-05"
+    },
+    {
+      "clsPx": 182.45,
+      "hiPx": 184.45,
+      "loPx": 176.62,
+      "open": 177.205,
+      "stkVolu": 11033895.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-06"
+    },
+    {
+      "clsPx": 180.19,
+      "hiPx": 184.07,
+      "loPx": 177.11,
+      "open": 182.39,
+      "stkVolu": 9853049.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-07"
+    },
+    {
+      "clsPx": 181.87,
+      "hiPx": 184.31,
+      "loPx": 176.2,
+      "open": 178.8,
+      "stkVolu": 8353491.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-08"
+    },
+    {
+      "clsPx": 177.78,
+      "hiPx": 179.44,
+      "loPx": 174.8,
+      "open": 178.12,
+      "stkVolu": 9662223.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-09"
+    },
+    {
+      "clsPx": 169.27,
+      "hiPx": 175.88,
+      "loPx": 169.24,
+      "open": 175.88,
+      "stkVolu": 13657649.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-12"
+    },
+    {
+      "clsPx": 165.29,
+      "hiPx": 168.35,
+      "loPx": 164.97,
+      "open": 166.98,
+      "stkVolu": 9993286.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-13"
+    },
+    {
+      "clsPx": 164.54,
+      "hiPx": 164.74,
+      "loPx": 162.35,
+      "open": 163.685,
+      "stkVolu": 7959944.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-14"
+    },
+    {
+      "clsPx": 161.39,
+      "hiPx": 166.5,
+      "loPx": 161.03,
+      "open": 166.45,
+      "stkVolu": 9241619.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-15"
+    },
+    {
+      "clsPx": 159.42,
+      "hiPx": 161.7,
+      "loPx": 159.21,
+      "open": 161.39,
+      "stkVolu": 11990784.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-16"
+    },
+    {
+      "clsPx": 154.07,
+      "hiPx": 157.715,
+      "loPx": 153.25,
+      "open": 154.95,
+      "stkVolu": 11971422.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-20"
+    },
+    {
+      "clsPx": 156.37,
+      "hiPx": 157.525,
+      "loPx": 154.62,
+      "open": 156.33,
+      "stkVolu": 9181864.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-21"
+    },
+    {
+      "clsPx": 157.8,
+      "hiPx": 159.43,
+      "loPx": 156.81,
+      "open": 158.47,
+      "stkVolu": 7450265.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-22"
+    },
+    {
+      "clsPx": 155.82,
+      "hiPx": 157.98,
+      "loPx": 154.8514,
+      "open": 157.04,
+      "stkVolu": 7106729.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-23"
+    },
+    {
+      "clsPx": 154.52,
+      "hiPx": 156.2,
+      "loPx": 154.3,
+      "open": 154.8,
+      "stkVolu": 8004190.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-26"
+    },
+    {
+      "clsPx": 153.04,
+      "hiPx": 156.74,
+      "loPx": 152.66,
+      "open": 156.325,
+      "stkVolu": 8354602.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-27"
+    },
+    {
+      "clsPx": 152.7,
+      "hiPx": 154.0,
+      "loPx": 150.4,
+      "open": 152.0,
+      "stkVolu": 8538968.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-28"
+    },
+    {
+      "clsPx": 152.22,
+      "hiPx": 153.23,
+      "loPx": 149.73,
+      "open": 153.09,
+      "stkVolu": 9142912.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-29"
+    },
+    {
+      "clsPx": 151.59,
+      "hiPx": 153.065,
+      "loPx": 149.83,
+      "open": 149.96,
+      "stkVolu": 9577248.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-01-30"
+    },
+    {
+      "clsPx": 152.62,
+      "hiPx": 153.64,
+      "loPx": 150.82,
+      "open": 150.97,
+      "stkVolu": 9099119.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-02"
+    },
+    {
+      "clsPx": 147.18,
+      "hiPx": 150.72,
+      "loPx": 144.3,
+      "open": 150.72,
+      "stkVolu": 11966390.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-03"
+    },
+    {
+      "clsPx": 148.89,
+      "hiPx": 153.47,
+      "loPx": 148.17,
+      "open": 148.71,
+      "stkVolu": 19249273.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-04"
+    },
+    {
+      "clsPx": 136.3,
+      "hiPx": 139.33,
+      "loPx": 132.73,
+      "open": 132.92,
+      "stkVolu": 30229556.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-05"
+    },
+    {
+      "clsPx": 137.34,
+      "hiPx": 139.15,
+      "loPx": 135.2775,
+      "open": 136.87,
+      "stkVolu": 15036844.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-06"
+    },
+    {
+      "clsPx": 138.93,
+      "hiPx": 139.94,
+      "loPx": 136.5,
+      "open": 137.1,
+      "stkVolu": 11022743.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-09"
+    },
+    {
+      "clsPx": 140.09,
+      "hiPx": 140.41,
+      "loPx": 136.79,
+      "open": 138.145,
+      "stkVolu": 9762893.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-10"
+    },
+    {
+      "clsPx": 141.04,
+      "hiPx": 142.39,
+      "loPx": 139.11,
+      "open": 140.03,
+      "stkVolu": 9379251.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-11"
+    },
+    {
+      "clsPx": 138.47,
+      "hiPx": 141.4999,
+      "loPx": 136.74,
+      "open": 140.86,
+      "stkVolu": 12416602.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-12"
+    },
+    {
+      "clsPx": 140.7,
+      "hiPx": 141.48,
+      "loPx": 136.74,
+      "open": 137.12,
+      "stkVolu": 13134422.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-13"
+    },
+    {
+      "clsPx": 142.63,
+      "hiPx": 143.5,
+      "loPx": 140.01,
+      "open": 141.0,
+      "stkVolu": 10670747.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-17"
+    },
+    {
+      "clsPx": 143.24,
+      "hiPx": 144.48,
+      "loPx": 140.72,
+      "open": 143.5,
+      "stkVolu": 9944518.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-18"
+    },
+    {
+      "clsPx": 141.27,
+      "hiPx": 142.32,
+      "loPx": 139.9,
+      "open": 141.875,
+      "stkVolu": 8219408.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-19"
+    },
+    {
+      "clsPx": 142.88,
+      "hiPx": 144.07,
+      "loPx": 140.1,
+      "open": 140.305,
+      "stkVolu": 10265141.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-20"
+    },
+    {
+      "clsPx": 140.41,
+      "hiPx": 144.06,
+      "loPx": 139.64,
+      "open": 141.97,
+      "stkVolu": 8260065.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-23"
+    },
+    {
+      "clsPx": 144.78,
+      "hiPx": 146.37,
+      "loPx": 142.06,
+      "open": 142.555,
+      "stkVolu": 11085713.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-24"
+    },
+    {
+      "clsPx": 145.82,
+      "hiPx": 146.025,
+      "loPx": 144.02,
+      "open": 145.6,
+      "stkVolu": 7358297.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-25"
+    },
+    {
+      "clsPx": 145.59,
+      "hiPx": 146.94,
+      "loPx": 144.52,
+      "open": 145.92,
+      "stkVolu": 8642078.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-26"
+    },
+    {
+      "clsPx": 142.36,
+      "hiPx": 143.91,
+      "loPx": 141.35,
+      "open": 142.855,
+      "stkVolu": 12439865.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-02-27"
+    },
+    {
+      "clsPx": 141.03,
+      "hiPx": 142.005,
+      "loPx": 136.894,
+      "open": 137.825,
+      "stkVolu": 8963863.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-02"
+    },
+    {
+      "clsPx": 138.13,
+      "hiPx": 139.2,
+      "loPx": 136.3,
+      "open": 138.265,
+      "stkVolu": 10372448.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-03"
+    },
+    {
+      "clsPx": 139.51,
+      "hiPx": 139.89,
+      "loPx": 137.42,
+      "open": 138.22,
+      "stkVolu": 9309766.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-04"
+    },
+    {
+      "clsPx": 137.0,
+      "hiPx": 139.66,
+      "loPx": 135.8,
+      "open": 137.59,
+      "stkVolu": 8980989.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-05"
+    },
+    {
+      "clsPx": 135.69,
+      "hiPx": 137.18,
+      "loPx": 133.42,
+      "open": 134.168,
+      "stkVolu": 9196954.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-06"
+    },
+    {
+      "clsPx": 138.11,
+      "hiPx": 138.58,
+      "loPx": 132.46,
+      "open": 133.49,
+      "stkVolu": 12304572.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-09"
+    },
+    {
+      "clsPx": 135.2,
+      "hiPx": 136.745,
+      "loPx": 132.16,
+      "open": 134.7,
+      "stkVolu": 10447281.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-10"
+    },
+    {
+      "clsPx": 134.12,
+      "hiPx": 138.1999,
+      "loPx": 133.96,
+      "open": 136.45,
+      "stkVolu": 7840195.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-11"
+    },
+    {
+      "clsPx": 131.15,
+      "hiPx": 134.87,
+      "loPx": 130.61,
+      "open": 133.47,
+      "stkVolu": 9162771.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-12"
+    },
+    {
+      "clsPx": 129.82,
+      "hiPx": 133.415,
+      "loPx": 129.22,
+      "open": 131.15,
+      "stkVolu": 7786744.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-13"
+    },
+    {
+      "clsPx": 129.39,
+      "hiPx": 131.8662,
+      "loPx": 128.94,
+      "open": 131.072,
+      "stkVolu": 10132856.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-16"
+    },
+    {
+      "clsPx": 131.59,
+      "hiPx": 134.05,
+      "loPx": 131.18,
+      "open": 133.52,
+      "stkVolu": 10544277.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-17"
+    },
+    {
+      "clsPx": 130.47,
+      "hiPx": 132.735,
+      "loPx": 129.93,
+      "open": 130.73,
+      "stkVolu": 9894337.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-18"
+    },
+    {
+      "clsPx": 131.28,
+      "hiPx": 132.68,
+      "loPx": 128.9,
+      "open": 129.14,
+      "stkVolu": 9846723.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-19"
+    },
+    {
+      "clsPx": 129.9,
+      "hiPx": 132.75,
+      "loPx": 129.775,
+      "open": 131.31,
+      "stkVolu": 78568037.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-20"
+    },
+    {
+      "clsPx": 128.35,
+      "hiPx": 133.97,
+      "loPx": 127.41,
+      "open": 133.15,
+      "stkVolu": 11431608.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-23"
+    },
+    {
+      "clsPx": 128.67,
+      "hiPx": 129.1799,
+      "loPx": 127.31,
+      "open": 128.34,
+      "stkVolu": 8409239.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-24"
+    },
+    {
+      "clsPx": 130.35,
+      "hiPx": 131.925,
+      "loPx": 129.95,
+      "open": 130.16,
+      "stkVolu": 6669443.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-25"
+    },
+    {
+      "clsPx": 130.54,
+      "hiPx": 132.34,
+      "loPx": 128.31,
+      "open": 128.79,
+      "stkVolu": 11912537.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-26"
+    },
+    {
+      "clsPx": 127.11,
+      "hiPx": 130.04,
+      "loPx": 126.675,
+      "open": 129.89,
+      "stkVolu": 8964912.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-27"
+    },
+    {
+      "clsPx": 127.07,
+      "hiPx": 128.5975,
+      "loPx": 126.34,
+      "open": 127.45,
+      "stkVolu": 11555924.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-30"
+    },
+    {
+      "clsPx": 128.78,
+      "hiPx": 129.29,
+      "loPx": 125.78,
+      "open": 128.395,
+      "stkVolu": 12219780.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-03-31"
+    },
+    {
+      "clsPx": 127.28,
+      "hiPx": 130.23,
+      "loPx": 126.98,
+      "open": 128.0,
+      "stkVolu": 10210654.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-01"
+    },
+    {
+      "clsPx": 126.8,
+      "hiPx": 127.0,
+      "loPx": 124.0101,
+      "open": 125.23,
+      "stkVolu": 8575338.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-02"
+    },
+    {
+      "clsPx": 125.73,
+      "hiPx": 127.43,
+      "loPx": 123.71,
+      "open": 126.56,
+      "stkVolu": 8038584.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-06"
+    },
+    {
+      "clsPx": 124.07,
+      "hiPx": 125.41,
+      "loPx": 121.99,
+      "open": 125.065,
+      "stkVolu": 8840394.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-07"
+    },
+    {
+      "clsPx": 127.51,
+      "hiPx": 128.885,
+      "loPx": 125.62,
+      "open": 128.65,
+      "stkVolu": 12535801.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-08"
+    },
+    {
+      "clsPx": 127.75,
+      "hiPx": 128.59,
+      "loPx": 126.8,
+      "open": 127.255,
+      "stkVolu": 9352747.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-09"
+    },
+    {
+      "clsPx": 128.06,
+      "hiPx": 130.61,
+      "loPx": 127.85,
+      "open": 128.8,
+      "stkVolu": 8427437.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-10"
+    },
+    {
+      "clsPx": 131.24,
+      "hiPx": 131.305,
+      "loPx": 126.46,
+      "open": 128.0,
+      "stkVolu": 8614997.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-13"
+    },
+    {
+      "clsPx": 132.84,
+      "hiPx": 132.935,
+      "loPx": 131.05,
+      "open": 132.2,
+      "stkVolu": 7608292.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-14"
+    },
+    {
+      "clsPx": 133.05,
+      "hiPx": 134.34,
+      "loPx": 132.28,
+      "open": 133.44,
+      "stkVolu": 9691504.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-15"
+    },
+    {
+      "clsPx": 134.47,
+      "hiPx": 135.7014,
+      "loPx": 131.79,
+      "open": 131.79,
+      "stkVolu": 8163727.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-16"
+    },
+    {
+      "clsPx": 136.2,
+      "hiPx": 136.965,
+      "loPx": 134.41,
+      "open": 136.69,
+      "stkVolu": 9667577.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-17"
+    },
+    {
+      "clsPx": 137.52,
+      "hiPx": 138.5,
+      "loPx": 136.08,
+      "open": 136.41,
+      "stkVolu": 7953827.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-20"
+    },
+    {
+      "clsPx": 135.56,
+      "hiPx": 138.26,
+      "loPx": 135.045,
+      "open": 138.12,
+      "stkVolu": 11874602.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-21"
+    },
+    {
+      "clsPx": 136.07,
+      "hiPx": 137.49,
+      "loPx": 135.55,
+      "open": 136.64,
+      "stkVolu": 9432669.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-22"
+    },
+    {
+      "clsPx": 133.95,
+      "hiPx": 136.99,
+      "loPx": 132.05,
+      "open": 136.0,
+      "stkVolu": 10164899.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-23"
+    },
+    {
+      "clsPx": 148.85,
+      "hiPx": 151.5399,
+      "loPx": 143.58,
+      "open": 145.61,
+      "stkVolu": 29449568.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-24"
+    },
+    {
+      "clsPx": 150.26,
+      "hiPx": 161.0,
+      "loPx": 147.05,
+      "open": 156.305,
+      "stkVolu": 41743958.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-27"
+    },
+    {
+      "clsPx": 150.0,
+      "hiPx": 151.5,
+      "loPx": 144.0001,
+      "open": 145.08,
+      "stkVolu": 22921334.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-28"
+    },
+    {
+      "clsPx": 156.0,
+      "hiPx": 157.29,
+      "loPx": 151.0,
+      "open": 151.45,
+      "stkVolu": 37571189.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-29"
+    },
+    {
+      "clsPx": 179.58,
+      "hiPx": 186.8899,
+      "loPx": 163.56,
+      "open": 172.05,
+      "stkVolu": 61132672.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-04-30"
+    },
+    {
+      "clsPx": 177.01,
+      "hiPx": 179.99,
+      "loPx": 171.15,
+      "open": 179.13,
+      "stkVolu": 21111476.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-01"
+    },
+    {
+      "clsPx": 168.38,
+      "hiPx": 180.49,
+      "loPx": 166.8305,
+      "open": 177.22,
+      "stkVolu": 23117408.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-04"
+    },
+    {
+      "clsPx": 186.55,
+      "hiPx": 187.22,
+      "loPx": 164.79,
+      "open": 167.65,
+      "stkVolu": 34274858.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-05"
+    },
+    {
+      "clsPx": 192.57,
+      "hiPx": 197.5,
+      "loPx": 188.22,
+      "open": 195.18,
+      "stkVolu": 30145048.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-06"
+    },
+    {
+      "clsPx": 202.55,
+      "hiPx": 223.66,
+      "loPx": 187.64,
+      "open": 190.67,
+      "stkVolu": 51092198.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-07"
+    },
+    {
+      "clsPx": 219.09,
+      "hiPx": 228.05,
+      "loPx": 208.63,
+      "open": 213.0,
+      "stkVolu": 37849999.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-08"
+    },
+    {
+      "clsPx": 237.53,
+      "hiPx": 247.9,
+      "loPx": 231.2,
+      "open": 232.005,
+      "stkVolu": 45473982.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-11"
+    },
+    {
+      "clsPx": 210.31,
+      "hiPx": 230.0,
+      "loPx": 202.0,
+      "open": 229.84,
+      "stkVolu": 38590144.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-12"
+    },
+    {
+      "clsPx": 213.17,
+      "hiPx": 219.49,
+      "loPx": 207.15,
+      "open": 216.625,
+      "stkVolu": 26226304.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-13"
+    },
+    {
+      "clsPx": 200.08,
+      "hiPx": 209.53,
+      "loPx": 199.66,
+      "open": 208.51,
+      "stkVolu": 24883884.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-14"
+    },
+    {
+      "clsPx": 201.49,
+      "hiPx": 207.4,
+      "loPx": 199.16,
+      "open": 201.65,
+      "stkVolu": 25876820.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-15"
+    },
+    {
+      "clsPx": 203.64,
+      "hiPx": 210.8,
+      "loPx": 193.58,
+      "open": 206.77,
+      "stkVolu": 21082525.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-18"
+    },
+    {
+      "clsPx": 195.61,
+      "hiPx": 201.5,
+      "loPx": 191.02,
+      "open": 196.855,
+      "stkVolu": 19605198.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-19"
+    },
+    {
+      "clsPx": 202.51,
+      "hiPx": 203.59,
+      "loPx": 194.0,
+      "open": 197.0,
+      "stkVolu": 19037516.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-20"
+    },
+    {
+      "clsPx": 213.41,
+      "hiPx": 214.01,
+      "loPx": 197.6,
+      "open": 202.78,
+      "stkVolu": 28163721.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-21"
+    },
+    {
+      "clsPx": 238.16,
+      "hiPx": 243.0,
+      "loPx": 214.17,
+      "open": 214.43,
+      "stkVolu": 30375674.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-22"
+    },
+    {
+      "clsPx": 248.82,
+      "hiPx": 258.0,
+      "loPx": 235.8001,
+      "open": 240.715,
+      "stkVolu": 30646375.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-26"
+    },
+    {
+      "clsPx": 233.4,
+      "hiPx": 248.265,
+      "loPx": 224.18,
+      "open": 245.43,
+      "stkVolu": 25694708.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-27"
+    },
+    {
+      "clsPx": 243.29,
+      "hiPx": 249.46,
+      "loPx": 231.52,
+      "open": 236.0,
+      "stkVolu": 21118350.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-28"
+    },
+    {
+      "clsPx": 251.02,
+      "hiPx": 259.92,
+      "loPx": 247.5101,
+      "open": 250.19,
+      "stkVolu": 28781844.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-05-29"
+    },
+    {
+      "clsPx": 228.99,
+      "hiPx": 238.02,
+      "loPx": 226.8118,
+      "open": 233.33,
+      "stkVolu": 21185169.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-01"
+    },
+    {
+      "clsPx": 240.84,
+      "hiPx": 245.187,
+      "loPx": 226.05,
+      "open": 232.0,
+      "stkVolu": 18508464.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-02"
+    },
+    {
+      "clsPx": 250.01,
+      "hiPx": 255.09,
+      "loPx": 233.02,
+      "open": 235.02,
+      "stkVolu": 19466983.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-03"
+    },
+    {
+      "clsPx": 242.57,
+      "hiPx": 246.7,
+      "loPx": 235.32,
+      "open": 239.45,
+      "stkVolu": 14185629.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-04"
+    },
+    {
+      "clsPx": 215.94,
+      "hiPx": 238.44,
+      "loPx": 215.0,
+      "open": 237.65,
+      "stkVolu": 24189155.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-05"
+    },
+    {
+      "clsPx": 217.77,
+      "hiPx": 221.93,
+      "loPx": 214.63,
+      "open": 221.03,
+      "stkVolu": 17180586.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-08"
+    },
+    {
+      "clsPx": 205.42,
+      "hiPx": 219.64,
+      "loPx": 192.67,
+      "open": 216.46,
+      "stkVolu": 29906286.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-09"
+    },
+    {
+      "clsPx": 191.2,
+      "hiPx": 204.895,
+      "loPx": 190.1,
+      "open": 199.455,
+      "stkVolu": 18426634.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-10"
+    },
+    {
+      "clsPx": 202.96,
+      "hiPx": 203.84,
+      "loPx": 190.745,
+      "open": 190.92,
+      "stkVolu": 18933064.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-11"
+    },
+    {
+      "clsPx": 211.72,
+      "hiPx": 215.01,
+      "loPx": 200.1,
+      "open": 201.85,
+      "stkVolu": 14134861.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-12"
+    },
+    {
+      "clsPx": 220.81,
+      "hiPx": 226.46,
+      "loPx": 216.28,
+      "open": 219.77,
+      "stkVolu": 13993753.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-15"
+    },
+    {
+      "clsPx": 214.07,
+      "hiPx": 231.19,
+      "loPx": 213.8,
+      "open": 225.83,
+      "stkVolu": 19629555.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-16"
+    },
+    {
+      "clsPx": 212.97,
+      "hiPx": 221.32,
+      "loPx": 212.68,
+      "open": 219.04,
+      "stkVolu": 11955847.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-17"
+    },
+    {
+      "clsPx": 226.11,
+      "hiPx": 229.42,
+      "loPx": 214.73,
+      "open": 220.71,
+      "stkVolu": 47081544.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-18"
+    },
+    {
+      "clsPx": 221.9,
+      "hiPx": 233.444,
+      "loPx": 215.5,
+      "open": 222.93,
+      "stkVolu": 18203387.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-22"
+    },
+    {
+      "clsPx": 204.13,
+      "hiPx": 209.18,
+      "loPx": 198.44,
+      "open": 207.34,
+      "stkVolu": 23781891.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-23"
+    },
+    {
+      "clsPx": 197.41,
+      "hiPx": 202.9704,
+      "loPx": 191.02,
+      "open": 202.57,
+      "stkVolu": 25519633.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-24"
+    },
+    {
+      "clsPx": 204.9,
+      "hiPx": 219.43,
+      "loPx": 199.82,
+      "open": 219.43,
+      "stkVolu": 34879266.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-25"
+    },
+    {
+      "clsPx": 189.39,
+      "hiPx": 208.86,
+      "loPx": 186.18,
+      "open": 201.7,
+      "stkVolu": 37128917.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-26"
+    },
+    {
+      "clsPx": 188.72,
+      "hiPx": 194.59,
+      "loPx": 183.58,
+      "open": 193.03,
+      "stkVolu": 21599518.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-29"
+    },
+    {
+      "clsPx": 184.79,
+      "hiPx": 193.5,
+      "loPx": 183.5,
+      "open": 188.99,
+      "stkVolu": 22056133.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-06-30"
+    },
+    {
+      "clsPx": 181.92,
+      "hiPx": 190.99,
+      "loPx": 181.6,
+      "open": 183.585,
+      "stkVolu": 23313178.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-01"
+    },
+    {
+      "clsPx": 176.25,
+      "hiPx": 185.799,
+      "loPx": 172.12,
+      "open": 182.17,
+      "stkVolu": 18682459.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-02"
+    },
+    {
+      "clsPx": 186.48,
+      "hiPx": 188.67,
+      "loPx": 177.1,
+      "open": 178.13,
+      "stkVolu": 15510547.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-06"
+    },
+    {
+      "clsPx": 182.97,
+      "hiPx": 185.88,
+      "loPx": 179.0,
+      "open": 179.0,
+      "stkVolu": 16253634.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-07"
+    },
+    {
+      "clsPx": 186.56,
+      "hiPx": 187.12,
+      "loPx": 180.505,
+      "open": 180.52,
+      "stkVolu": 10306835.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-08"
+    },
+    {
+      "clsPx": 191.11,
+      "hiPx": 196.09,
+      "loPx": 187.44,
+      "open": 192.465,
+      "stkVolu": 12895171.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-09"
+    },
+    {
+      "clsPx": 189.16,
+      "hiPx": 190.19,
+      "loPx": 185.72,
+      "open": 187.508,
+      "stkVolu": 7063957.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-10"
+    },
+    {
+      "clsPx": 183.98,
+      "hiPx": 188.16,
+      "loPx": 181.81,
+      "open": 185.06,
+      "stkVolu": 13007255.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-13"
+    },
+    {
+      "clsPx": 178.1,
+      "hiPx": 189.99,
+      "loPx": 177.45,
+      "open": 189.33,
+      "stkVolu": 13090378.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-14"
+    },
+    {
+      "clsPx": 177.98,
+      "hiPx": 180.71,
+      "loPx": 174.76,
+      "open": 180.0,
+      "stkVolu": 9440875.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-15"
+    },
+    {
+      "clsPx": 170.61,
+      "hiPx": 173.96,
+      "loPx": 168.99,
+      "open": 173.08,
+      "stkVolu": 15951600.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-16"
+    },
+    {
+      "clsPx": 171.78,
+      "hiPx": 172.39,
+      "loPx": 164.774,
+      "open": 166.64,
+      "stkVolu": 16291099.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-17"
+    },
+    {
+      "clsPx": 170.32,
+      "hiPx": 176.25,
+      "loPx": 169.9,
+      "open": 175.55,
+      "stkVolu": 9649579.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-20"
+    },
+    {
+      "clsPx": 173.5,
+      "hiPx": 175.49,
+      "loPx": 170.14,
+      "open": 175.49,
+      "stkVolu": 13243154.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-21"
+    },
+    {
+      "clsPx": 175.63,
+      "hiPx": 178.65,
+      "loPx": 170.595,
+      "open": 170.71,
+      "stkVolu": 7777610.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-22"
+    },
+    {
+      "clsPx": 171.11,
+      "hiPx": 173.9495,
+      "loPx": 168.31,
+      "open": 171.18,
+      "stkVolu": 10827502.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-23"
+    },
+    {
+      "clsPx": 166.97,
+      "hiPx": 171.1,
+      "loPx": 165.77,
+      "open": 169.69,
+      "stkVolu": 9997963.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-24"
+    },
+    {
+      "clsPx": 170.04,
+      "hiPx": 171.19,
+      "loPx": 165.29,
+      "open": 169.77,
+      "stkVolu": 12487074.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-27"
+    },
+    {
+      "clsPx": 162.88,
+      "hiPx": 167.92,
+      "loPx": 162.16,
+      "open": 164.896,
+      "stkVolu": 16147497.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-28"
+    },
+    {
+      "clsPx": 155.68,
+      "hiPx": 164.56,
+      "loPx": 155.0,
+      "open": 162.575,
+      "stkVolu": 19240744.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-29"
+    },
+    {
+      "clsPx": 151.6,
+      "hiPx": 154.1595,
+      "loPx": 146.0,
+      "open": 146.55,
+      "stkVolu": 24336846.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-30"
+    },
+    {
+      "clsPx": 147.61,
+      "hiPx": 153.73,
+      "loPx": 146.15,
+      "open": 152.96,
+      "stkVolu": 13811248.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-07-31"
+    },
+    {
+      "clsPx": 151.57,
+      "hiPx": 151.68,
+      "loPx": 142.89,
+      "open": 146.2,
+      "stkVolu": 13700731.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-03"
+    },
+    {
+      "clsPx": 162.67,
+      "hiPx": 163.48,
+      "loPx": 155.3123,
+      "open": 156.975,
+      "stkVolu": 16351486.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-04"
+    },
+    {
+      "clsPx": 157.53,
+      "hiPx": 162.8,
+      "loPx": 157.1,
+      "open": 161.3,
+      "stkVolu": 9725677.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-05"
+    },
+    {
+      "clsPx": 160.39,
+      "hiPx": 162.6,
+      "loPx": 155.22,
+      "open": 155.42,
+      "stkVolu": 7232783.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-06"
+    },
+    {
+      "clsPx": 167.86,
+      "hiPx": 167.99,
+      "loPx": 162.3,
+      "open": 163.07,
+      "stkVolu": 9723292.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-07"
+    },
+    {
+      "clsPx": 162.17,
+      "hiPx": 168.87,
+      "loPx": 162.08,
+      "open": 168.155,
+      "stkVolu": 9259983.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-10"
+    },
+    {
+      "clsPx": 162.68,
+      "hiPx": 164.605,
+      "loPx": 161.43,
+      "open": 163.75,
+      "stkVolu": 6326722.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-11"
+    },
+    {
+      "clsPx": 163.07,
+      "hiPx": 166.94,
+      "loPx": 161.07,
+      "open": 166.889,
+      "stkVolu": 7731711.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-12"
+    },
+    {
+      "clsPx": 164.79,
+      "hiPx": 166.77,
+      "loPx": 162.51,
+      "open": 163.34,
+      "stkVolu": 7716553.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-13"
+    },
+    {
+      "clsPx": 165.79,
+      "hiPx": 166.965,
+      "loPx": 163.18,
+      "open": 165.63,
+      "stkVolu": 5807737.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-14"
+    },
+    {
+      "clsPx": 162.18,
+      "hiPx": 166.34,
+      "loPx": 161.45,
+      "open": 166.25,
+      "stkVolu": 8967659.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-17"
+    },
+    {
+      "clsPx": 160.19,
+      "hiPx": 161.81,
+      "loPx": 156.725,
+      "open": 157.89,
+      "stkVolu": 11069527.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-18"
+    },
+    {
+      "clsPx": 161.91,
+      "hiPx": 166.4999,
+      "loPx": 160.19,
+      "open": 163.025,
+      "stkVolu": 8099520.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-19"
+    },
+    {
+      "clsPx": 160.74,
+      "hiPx": 165.11,
+      "loPx": 159.41,
+      "open": 163.15,
+      "stkVolu": 8509930.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-20"
+    },
+    {
+      "clsPx": 160.75,
+      "hiPx": 163.33,
+      "loPx": 159.17,
+      "open": 162.92,
+      "stkVolu": 8523097.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-21"
+    },
+    {
+      "clsPx": 158.53,
+      "hiPx": 160.24,
+      "loPx": 156.225,
+      "open": 159.395,
+      "stkVolu": 10517619.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-24"
+    },
+    {
+      "clsPx": 160.56,
+      "hiPx": 161.79,
+      "loPx": 159.08,
+      "open": 160.34,
+      "stkVolu": 11424247.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-25"
+    },
+    {
+      "clsPx": 163.72,
+      "hiPx": 163.87,
+      "loPx": 159.889,
+      "open": 160.1,
+      "stkVolu": 10480308.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-26"
+    },
+    {
+      "clsPx": 164.78,
+      "hiPx": 166.95,
+      "loPx": 161.9234,
+      "open": 165.155,
+      "stkVolu": 15074244.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-27"
+    },
+    {
+      "clsPx": 164.19,
+      "hiPx": 165.49,
+      "loPx": 161.9,
+      "open": 164.59,
+      "stkVolu": 7754515.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-28"
+    },
+    {
+      "clsPx": 170.48,
+      "hiPx": 171.38,
+      "loPx": 164.19,
+      "open": 164.79,
+      "stkVolu": 12740709.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-08-31"
+    },
+    {
+      "clsPx": 166.61,
+      "hiPx": 167.29,
+      "loPx": 162.21,
+      "open": 165.47,
+      "stkVolu": 8908364.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-09-01"
+    },
+    {
+      "clsPx": 169.96,
+      "hiPx": 170.6,
+      "loPx": 165.08,
+      "open": 166.04,
+      "stkVolu": 7531030.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-09-02"
+    },
+    {
+      "clsPx": 168.57,
+      "hiPx": 170.03,
+      "loPx": 164.8756,
+      "open": 168.5,
+      "stkVolu": 6994984.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-09-03"
+    },
+    {
+      "clsPx": 168.74,
+      "hiPx": 170.63,
+      "loPx": 167.04,
+      "open": 169.98,
+      "stkVolu": 8537131.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 174.38,
+      "hiPx": 183.49,
+      "loPx": 172.0352,
+      "open": 180.4,
+      "stkVolu": 26129191.0,
+      "ticker": "QCOM",
+      "tradeDate": "2026-09-08"
+    }
+  ]
+}

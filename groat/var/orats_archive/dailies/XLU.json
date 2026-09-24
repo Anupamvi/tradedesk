@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 43.11,
-      "hiPx": 43.18,
+      "clsPx": 43.08,
+      "hiPx": 43.23,
       "loPx": 42.75,
       "open": 42.77,
-      "stkVolu": 4408254.0,
+      "stkVolu": 18861522.0,
       "ticker": "XLU",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 43.45,
+      "hiPx": 43.7057,
+      "loPx": 43.035,
+      "open": 43.05,
+      "stkVolu": 19713920.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 42.94,
+      "hiPx": 43.53,
+      "loPx": 42.825,
+      "open": 43.4,
+      "stkVolu": 16905814.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 42.52,
+      "hiPx": 43.25,
+      "loPx": 42.51,
+      "open": 42.99,
+      "stkVolu": 20625289.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 42.39,
+      "hiPx": 42.96,
+      "loPx": 42.31,
+      "open": 42.89,
+      "stkVolu": 15174869.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 41.82,
+      "hiPx": 42.44,
+      "loPx": 41.75,
+      "open": 42.38,
+      "stkVolu": 23589853.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 41.32,
+      "hiPx": 41.95,
+      "loPx": 41.29,
+      "open": 41.92,
+      "stkVolu": 24212551.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 41.32,
+      "hiPx": 41.66,
+      "loPx": 41.15,
+      "open": 41.63,
+      "stkVolu": 23577404.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 41.69,
+      "hiPx": 41.755,
+      "loPx": 41.32,
+      "open": 41.5,
+      "stkVolu": 20995818.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 41.1,
+      "hiPx": 41.5,
+      "loPx": 41.08,
+      "open": 41.375,
+      "stkVolu": 22574356.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 40.66,
+      "hiPx": 40.93,
+      "loPx": 40.575,
+      "open": 40.77,
+      "stkVolu": 20935323.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 40.53,
+      "hiPx": 40.82,
+      "loPx": 40.45,
+      "open": 40.59,
+      "stkVolu": 18877919.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 39.75,
+      "hiPx": 40.41,
+      "loPx": 39.71,
+      "open": 40.38,
+      "stkVolu": 27882441.0,
+      "ticker": "XLU",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

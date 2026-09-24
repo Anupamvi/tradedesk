@@ -162,10 +162,21 @@ def classify_setups(
             notes.append("failed to hold the 20-day high with negative RS")
 
     # H — FIRE spike / dip (volume + 1–2 day shock). X is confirm, not the trigger.
-    fire = _fire(snap, rvol, ext, trend)
-    if fire.get("kind"):
-        hits.append("H")
-        notes.append(fire.get("note") or "FIRE tape")
+    # A live stub bar is not a 1d shock — wait for a completed session.
+    if snap.get("session_incomplete"):
+        fire = {
+            "kind": None,
+            "ret_1": to_float(snap.get("ret_1")),
+            "ret_2": to_float(snap.get("ret_2")),
+            "rvol": rvol,
+            "chase": False,
+            "note": "FIRE off until the session bar is complete",
+        }
+    else:
+        fire = _fire(snap, rvol, ext, trend)
+        if fire.get("kind"):
+            hits.append("H")
+            notes.append(fire.get("note") or "FIRE tape")
 
     # Red-day tag of the 20 is a pullback. Keep E/D in setups; don't let them outrank A.
     ret1 = to_float(snap.get("ret_1"))

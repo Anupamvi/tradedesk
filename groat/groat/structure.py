@@ -15,6 +15,7 @@ from groat.config import (
     DTE_LONG_PREF,
     DTE_MAX,
     DTE_MIN,
+    DTE_WEEKLY_FLOOR,
     HOLD_SESSIONS,
     MIN_OI,
     MIN_OI_SHORT,
@@ -54,6 +55,11 @@ def parse_strike(row: dict) -> Optional[dict]:
         "smv": to_float(row.get("smvVol")),
         "quote_source": str(row.get("quoteSource") or "") or None,
         "quote_asof": row.get("quoteAsof") or row.get("quote_asof"),
+        "quote_time_ms": to_float(row.get("quoteTimeMs") or row.get("quote_time_ms")),
+        "call_bid_size": to_float(row.get("callBidSize")),
+        "call_ask_size": to_float(row.get("callAskSize")),
+        "put_bid_size": to_float(row.get("putBidSize")),
+        "put_ask_size": to_float(row.get("putAskSize")),
     }
 
 
@@ -63,13 +69,15 @@ def quote_fail(bid, ask, oi, min_oi=MIN_OI, quote_source=None) -> Optional[str]:
     mid = (bid + ask) / 2.0
     width = ask - bid
     src = str(quote_source or "")
-    if src == "schwab_quote":
-        cap = max(QUOTE_WIDTH_ABS, 0.20 * mid)
+    if src.startswith("schwab"):
+        cap = max(QUOTE_WIDTH_ABS, 0.30 * mid)
     else:
         cap = quote_width_cap(mid)
     if cap is None or round(width, 2) > round(cap, 2):
         return "wide_quote"
     if oi is None or oi < min_oi:
+        if src.startswith("schwab"):
+            return None
         return "thin_oi"
     return None
 
@@ -111,6 +119,36 @@ def _mid(bid, ask) -> Optional[float]:
     if bid is None or ask is None:
         return None
     return (bid + ask) / 2.0
+
+
+def _spread_frac(bid, ask) -> Optional[float]:
+    mid = _mid(bid, ask)
+    bid_n = to_float(bid)
+    ask_n = to_float(ask)
+    if mid is None or mid <= 0 or bid_n is None or ask_n is None:
+        return None
+    return (ask_n - bid_n) / mid
+
+
+def _lots(*values) -> Optional[int]:
+    nums = [to_float(v) for v in values]
+    nums = [n for n in nums if n is not None]
+    if not nums:
+        return None
+    return int(min(nums))
+
+
+def _pd_econ(*, max_loss_1lot, planned_reward, planned_risk, liquidity_lots, spread_frac, quote_time_ms=None, fill_asof=None, pd_size=None) -> dict:
+    return {
+        "max_loss_1lot": max_loss_1lot,
+        "planned_reward": planned_reward,
+        "planned_risk": planned_risk,
+        "liquidity_lots": liquidity_lots,
+        "spread_frac": spread_frac,
+        "quote_time_ms": quote_time_ms,
+        "fill_asof": fill_asof,
+        "pd_size": pd_size,
+    }
 
 
 def _clamp01(value) -> Optional[float]:
@@ -214,19 +252,45 @@ def stock_plan(snap: dict, direction: str) -> Dict[str, object]:
         "notional": shares * px,
         "hold_sessions": HOLD_SESSIONS,
         "invalidation": "close beyond stop %.2f" % stop,
+        **_pd_econ(
+            max_loss_1lot=risk,
+            planned_reward=reward,
+            planned_risk=risk,
+            liquidity_lots=shares,
+            spread_frac=None,
+            pd_size=shares,
+        ),
     }
 
 
-def _by_expiry(rows: Sequence[dict]) -> Dict[str, list]:
+def _dte_ok(dte, expiry: str, earnings: Optional[dict] = None) -> bool:
+    if dte is None or dte > DTE_MAX:
+        return False
+    if dte >= DTE_MIN:
+        return True
+    if dte < DTE_WEEKLY_FLOOR:
+        return False
+    earn = str((earnings or {}).get("date") or "")[:10]
+    if not earn or not expiry or expiry >= earn:
+        return False
+    days = to_float((earnings or {}).get("days"))
+    if days is None:
+        return False
+    # 7–20 DTE only to get out before an earnings date that would sit inside a 21–75 hold.
+    return days <= 40
+
+
+def _by_expiry(rows: Sequence[dict], earnings: Optional[dict] = None) -> Dict[str, list]:
     out = {}
     for raw in rows or []:
         parsed = parse_strike(raw)
         if not parsed:
             continue
         dte = parsed.get("dte")
-        if dte is None or not (DTE_MIN <= dte <= DTE_MAX):
+        expiry = str(parsed.get("expiry") or "")[:10]
+        if not _dte_ok(dte, expiry, earnings):
             continue
-        out.setdefault(parsed["expiry"], []).append(parsed)
+        out.setdefault(expiry, []).append(parsed)
     return out
 
 
@@ -251,7 +315,7 @@ def _closest(rows: List[dict], target_delta: float, side: str) -> Optional[dict]
 
 
 def long_option(rows: Sequence[dict], direction: str, earnings: dict) -> Optional[dict]:
-    chain = _by_expiry(rows)
+    chain = _by_expiry(rows, earnings)
     if not chain:
         return {"ok": False, "reason": "option chain empty in 21-75 DTE"}
     side = "call" if direction == "bullish" else "put"
@@ -324,6 +388,19 @@ def long_option(rows: Sequence[dict], direction: str, earnings: dict) -> Optiona
                     "legs": "BUY %s %s %s %s @ %.2f ask"
                     % (contracts, expiry, pick["strike"], side[0].upper(), debit),
                     "reason": "cheap-to-fair vol directional with 21-75 DTE",
+                    **_pd_econ(
+                        max_loss_1lot=debit * CONTRACT_MULTIPLIER,
+                        planned_reward=debit * CONTRACT_MULTIPLIER,
+                        planned_risk=debit * CONTRACT_MULTIPLIER,
+                        liquidity_lots=_lots(
+                            pick.get("call_oi") if side == "call" else pick.get("put_oi"),
+                            pick.get("call_ask_size") if side == "call" else pick.get("put_ask_size"),
+                        ),
+                        spread_frac=_spread_frac(bid, ask),
+                        quote_time_ms=pick.get("quote_time_ms"),
+                        fill_asof=pick.get("quote_asof"),
+                        pd_size=contracts,
+                    ),
                 },
             )
         )
@@ -341,7 +418,7 @@ def _vertical_width_ok(gap) -> bool:
 
 
 def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Optional[dict]:
-    chain = _by_expiry(rows)
+    chain = _by_expiry(rows, earnings)
     side = "call" if direction == "bullish" else "put"
     ranked = []
     kills = Counter()
@@ -379,7 +456,7 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
                 short_bid = short_leg["call_bid"] if side == "call" else short_leg["put_bid"]
                 short_ask = short_leg["call_ask"] if side == "call" else short_leg["put_ask"]
                 short_oi = short_leg["call_oi"] if side == "call" else short_leg["put_oi"]
-                fail = quote_fail(short_bid, short_ask, short_oi, MIN_OI_SHORT, short_leg.get("quote_source"))
+                fail = quote_fail(short_bid, short_ask, short_oi, MIN_OI, short_leg.get("quote_source"))
                 if fail:
                     kills[fail] += 1
                     continue
@@ -393,7 +470,11 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
                     continue
                 max_gain = width - debit
                 rr = max_gain / debit if debit else 0
-                contracts = int(math.floor((ACCOUNT_DOLLARS * RISK_PCT) / (debit * CONTRACT_MULTIPLIER)))
+                risk_1lot = debit * CONTRACT_MULTIPLIER
+                budget = ACCOUNT_DOLLARS * RISK_PCT
+                contracts = int(math.floor(budget / risk_1lot)) if risk_1lot else 0
+                if contracts < 1 and risk_1lot <= budget * 1.5:
+                    contracts = 1
                 if contracts < 1:
                     kills["size_zero"] += 1
                     continue
@@ -408,7 +489,10 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
                         otm = (long_leg["strike"] / spot) - 1.0
                     else:
                         otm = 1.0 - (long_leg["strike"] / spot)
-                if otm is not None and otm > 0.03:
+                if net_d < 0.10:
+                    kills["lottery_otm"] += 1
+                    continue
+                if otm is not None and (otm > 0.05 or (otm > 0.03 and (abs(use) < 0.38 or net_d < 0.12))):
                     kills["lottery_otm"] += 1
                     continue
                 pop, pop_note = naive_pop_debit_vertical(long_leg, short_leg, debit, side)
@@ -454,6 +538,24 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
                     "legs": "BUY %s %s / SELL %s %s %s"
                     % (long_leg["strike"], side, short_leg["strike"], side, expiry),
                     "reason": "defined-risk directional; better than naked long when IV is not cheap",
+                    **_pd_econ(
+                        max_loss_1lot=debit * CONTRACT_MULTIPLIER,
+                        planned_reward=max_gain * CONTRACT_MULTIPLIER,
+                        planned_risk=debit * CONTRACT_MULTIPLIER,
+                        liquidity_lots=_lots(
+                            long_oi,
+                            short_oi,
+                            long_leg.get("call_ask_size") if side == "call" else long_leg.get("put_ask_size"),
+                            short_leg.get("call_bid_size") if side == "call" else short_leg.get("put_bid_size"),
+                        ),
+                        spread_frac=max(
+                            [f for f in (_spread_frac(long_bid, long_ask), _spread_frac(short_bid, short_ask)) if f is not None],
+                            default=None,
+                        ),
+                        quote_time_ms=long_leg.get("quote_time_ms") or short_leg.get("quote_time_ms"),
+                        fill_asof=long_leg.get("quote_asof") or short_leg.get("quote_asof"),
+                        pd_size=contracts,
+                    ),
                 }
                 quality = 0
                 if otm is not None and otm > 0.05:
@@ -481,7 +583,7 @@ def debit_spread(rows: Sequence[dict], direction: str, earnings: dict) -> Option
 
 
 def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich: bool) -> Optional[dict]:
-    chain = _by_expiry(rows)
+    chain = _by_expiry(rows, earnings)
     # bullish → put credit; bearish → call credit
     side = "put" if direction == "bullish" else "call"
     best = None
@@ -507,6 +609,7 @@ def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich:
                 continue
             short_bid = short["put_bid"] if side == "put" else short["call_bid"]
             long_ask = long_leg["put_ask"] if side == "put" else long_leg["call_ask"]
+            long_bid = long_leg["put_bid"] if side == "put" else long_leg["call_bid"]
             short_ask = short["put_ask"] if side == "put" else short["call_ask"]
             short_oi = short["put_oi"] if side == "put" else short["call_oi"]
             long_oi = long_leg["put_oi"] if side == "put" else long_leg["call_oi"]
@@ -558,8 +661,27 @@ def credit_spread(rows: Sequence[dict], direction: str, earnings: dict, iv_rich:
                     if (short.get("quote_source") or long_leg.get("quote_source"))
                     else ""
                 ),
+                "fill_asof": short.get("quote_asof") or long_leg.get("quote_asof"),
                 "legs": "SELL %s %s / BUY %s %s %s" % (short["strike"], side, long_leg["strike"], side, expiry),
                 "reason": "IV rich vs realized; defined-risk short premium. R/R is credit/width, not 2:1 directional.",
+                **_pd_econ(
+                    max_loss_1lot=max_loss * CONTRACT_MULTIPLIER,
+                    planned_reward=credit * CONTRACT_MULTIPLIER,
+                    planned_risk=max_loss * CONTRACT_MULTIPLIER,
+                    liquidity_lots=_lots(
+                        short_oi,
+                        long_oi,
+                        short.get("put_bid_size") if side == "put" else short.get("call_bid_size"),
+                        long_leg.get("put_ask_size") if side == "put" else long_leg.get("call_ask_size"),
+                    ),
+                    spread_frac=max(
+                        [f for f in (_spread_frac(short_bid, short_ask), _spread_frac(long_bid, long_ask)) if f is not None],
+                        default=None,
+                    ),
+                    quote_time_ms=short.get("quote_time_ms") or long_leg.get("quote_time_ms"),
+                    fill_asof=short.get("quote_asof") or long_leg.get("quote_asof"),
+                    pd_size=contracts,
+                ),
             }
             key = cand["credit_pct"]
             if best is None or key > best.get("credit_pct", 0):
@@ -581,10 +703,8 @@ def _earnings_blocks(expiry: str, earnings: dict) -> bool:
         return False
     if not earnings.get("usable"):
         return True
-    earn = earnings.get("date")
+    earn = str(earnings.get("date") or "")[:10]
     if not earn:
-        return True
-    if earnings.get("overlaps_hold"):
         return True
     return earn <= expiry
 
@@ -646,8 +766,6 @@ def choose(
     options_block = None
     if not earnings.get("usable") and earnings.get("source") != "exempt":
         options_block = "earnings DATA UNAVAILABLE — ordinary options rejected"
-    elif earnings.get("overlaps_hold") and earnings.get("source") != "exempt":
-        options_block = "earnings inside intended hold — ordinary options rejected (not an EVENT TRADE)"
     elif not strikes:
         if chain_status == "not_requested":
             options_block = "option chain not requested (outside today's 40 — not a fetch fail)"
@@ -699,8 +817,9 @@ def choose(
     if credit and not credit.get("ok"):
         credit = None
 
+    # Spreads only as the click ticket. Naked long call/put stay in reviews, not the board.
     best_opt = None
-    for cand in (debit, long, credit):
+    for cand in (debit, credit):
         if not cand or not cand.get("ok"):
             continue
         if best_opt is None:
@@ -735,7 +854,10 @@ def choose(
     elif stock.get("ok"):
         choice = "STOCK"
         picked = stock
-        why.append("stock won the shortlist versus priced option structures")
+        if chain_status == "not_requested":
+            why.append("stock ticket — option chain not requested (outside today's 40)")
+        else:
+            why.append("stock won the shortlist versus priced option structures")
     else:
         why.append(stock.get("reason") or "neither stock nor options cleared gates")
 

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from wheelo.num import fmt
+from wheelo.pd import PD_NOTE, attach_trade_pd, pd_cells, sort_by_pd
 
 
 def day_dir(out_dir: Path, date: str) -> Path:
@@ -65,6 +66,10 @@ BOARD_COLUMNS = [
     "premium",
     "composite",
     "conf",
+    "pd",
+    "pd_n",
+    "r_cons",
+    "pd_l",
     "conf_label",
     "credit_pct",
     "otm_pct",
@@ -74,24 +79,32 @@ BOARD_COLUMNS = [
 ]
 
 
-def _conf_row(cand: dict) -> str:
+def _conf_row(cand: dict, with_pd: bool = False) -> str:
     prem = cand.get("premium") or {}
     cr = cand.get("credit_pct")
     otm = cand.get("otm_pct")
-    return "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % (
+    cells = [
         cand.get("conf") if cand.get("conf") is not None else "",
         cand.get("conf_label") or "",
-        cand.get("ticker"),
-        fmt(cand.get("spot")),
-        fmt(prem.get("csp_strike")),
-        fmt(prem.get("csp_bid")),
-        (fmt(100.0 * cr, 2) + "%") if cr is not None else "",
-        (fmt(100.0 * otm, 1) + "%") if otm is not None else "",
-        prem.get("expiry") or "",
-        prem.get("dte") or "",
-        fmt(prem.get("iv_rank"), 0),
-        cand.get("x_status") or "DATA UNAVAILABLE",
+    ]
+    if with_pd:
+        pd = pd_cells(cand)
+        cells.extend([pd["pd_s"], pd["n_s"], pd["r_cons_s"], pd["l_s"]])
+    cells.extend(
+        [
+            cand.get("ticker"),
+            fmt(cand.get("spot")),
+            fmt(prem.get("csp_strike")),
+            fmt(prem.get("csp_bid")),
+            (fmt(100.0 * cr, 2) + "%") if cr is not None else "",
+            (fmt(100.0 * otm, 1) + "%") if otm is not None else "",
+            prem.get("expiry") or "",
+            prem.get("dte") or "",
+            fmt(prem.get("iv_rank"), 0),
+            cand.get("x_status") or "DATA UNAVAILABLE",
+        ]
     )
+    return "| " + " | ".join(str(c) for c in cells) + " |"
 
 
 def rotation_pick(candidates: List[dict]) -> Optional[dict]:
@@ -116,6 +129,7 @@ def render_board(asof: str, candidates: List[dict], capital: float, manifest: di
         ),
         "",
         "Credits are **put bid**. **conf** is structure/research quality 0-85, not P(win). TRADE requires known earnings after expiry, 2-15% OTM, credit >=1.5% of strike, and not cheap vol.",
+        PD_NOTE,
         "",
     ]
     if pick:
@@ -150,14 +164,26 @@ def render_board(asof: str, candidates: List[dict], capital: float, manifest: di
         by_label[label].append(cand)
     for label in ("TRADE", "WATCH", "NO_TRADE"):
         rows = by_label.get(label) or []
-        rows.sort(key=lambda c: (c.get("conf") or 0, c.get("credit_pct") or 0), reverse=True)
+        if label == "TRADE":
+            for cand in rows:
+                if cand.get("pd") is None and cand.get("pd_reason") is None:
+                    attach_trade_pd(cand)
+            rows = sort_by_pd(rows, tie=lambda c: (-(c.get("conf") or 0), -(c.get("credit_pct") or 0)))
+        else:
+            rows.sort(key=lambda c: (c.get("conf") or 0, c.get("credit_pct") or 0), reverse=True)
         if not rows:
             continue
         lines.append("## %s" % label)
-        lines.append("| Conf | Label | Ticker | Spot | Put | Bid | Cr% | OTM | Expiry | DTE | IVR | X |")
-        lines.append("|------|-------|--------|------|-----|-----|-----|-----|--------|-----|-----|---|")
-        for cand in rows:
-            lines.append(_conf_row(cand))
+        if label == "TRADE":
+            lines.append("| Conf | Label | PD | N | R_cons | L | Ticker | Spot | Put | Bid | Cr% | OTM | Expiry | DTE | IVR | X |")
+            lines.append("|------|-------|----|---|--------|---|--------|------|-----|-----|-----|-----|--------|-----|-----|---|")
+            for cand in rows:
+                lines.append(_conf_row(cand, with_pd=True))
+        else:
+            lines.append("| Conf | Label | Ticker | Spot | Put | Bid | Cr% | OTM | Expiry | DTE | IVR | X |")
+            lines.append("|------|-------|--------|------|-----|-----|-----|-----|--------|-----|-----|---|")
+            for cand in rows:
+                lines.append(_conf_row(cand))
         lines.append("")
     return "\n".join(lines)
 

@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 187.35,
+      "clsPx": 187.28,
       "hiPx": 188.2,
       "loPx": 186.42,
       "open": 187.19,
-      "stkVolu": 1681318.0,
+      "stkVolu": 5105560.0,
       "ticker": "XLK",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 187.87,
+      "hiPx": 189.08,
+      "loPx": 187.02,
+      "open": 188.64,
+      "stkVolu": 8425293.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 187.87,
+      "hiPx": 188.83,
+      "loPx": 187.15,
+      "open": 187.53,
+      "stkVolu": 5993489.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 185.22,
+      "hiPx": 186.52,
+      "loPx": 184.565,
+      "open": 185.24,
+      "stkVolu": 5571344.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 187.67,
+      "hiPx": 188.64,
+      "loPx": 186.88,
+      "open": 187.35,
+      "stkVolu": 6535157.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 184.28,
+      "hiPx": 185.6,
+      "loPx": 182.08,
+      "open": 183.0,
+      "stkVolu": 8537788.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 183.74,
+      "hiPx": 185.07,
+      "loPx": 183.46,
+      "open": 184.5,
+      "stkVolu": 6148635.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 183.93,
+      "hiPx": 186.13,
+      "loPx": 182.42,
+      "open": 184.93,
+      "stkVolu": 8068958.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 188.06,
+      "hiPx": 188.53,
+      "loPx": 186.73,
+      "open": 187.3,
+      "stkVolu": 7392633.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 189.6,
+      "hiPx": 189.81,
+      "loPx": 187.52,
+      "open": 189.23,
+      "stkVolu": 6999752.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 194.85,
+      "hiPx": 195.09,
+      "loPx": 190.97,
+      "open": 191.79,
+      "stkVolu": 9047358.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 196.27,
+      "hiPx": 196.505,
+      "loPx": 194.47,
+      "open": 194.59,
+      "stkVolu": 8737052.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 195.34,
+      "hiPx": 196.68,
+      "loPx": 193.82,
+      "open": 196.66,
+      "stkVolu": 5854181.0,
+      "ticker": "XLK",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

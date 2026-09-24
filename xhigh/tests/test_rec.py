@@ -40,6 +40,20 @@ class TestRec(unittest.TestCase):
         }
         self.assertEqual(classify(row, GATES), "SKIP")
 
+    def test_intel_kill_is_watch(self):
+        row = {
+            "ev_proxy": 20.0,
+            "pop_delta": 0.75,
+            "conf": 60,
+            "structure": "put_credit",
+            "credit": 1.25,
+            "width": 5.0,
+            "intel_kill": True,
+        }
+        self.assertEqual(classify(row, GATES), "WATCH")
+        self.assertEqual(decorate(row, GATES)["action"], "WATCH")
+        self.assertEqual(decorate(row, GATES)["why_s"], "intel KILL")
+
     def test_fat_put_credit_can_click(self):
         row = {
             "ev_proxy": 20.0,
@@ -127,7 +141,21 @@ class TestRec(unittest.TestCase):
             "last": 217.87,
             "low_126": 164.27,
         }
-        self.assertEqual(classify(row, GATES), "CLICK")
+        self.assertEqual(classify(row, GATES), "SKIP")
+        self.assertIn("N=0", decorate(row, GATES)["why_s"])
+
+    def test_wide_market_credit_is_skip(self):
+        row = {
+            "structure": "put_credit",
+            "pop_delta": 0.77,
+            "conf": 60,
+            "credit": 1.20,
+            "width": 5.0,
+            "spread_frac": 0.27,
+            "liquidity_lots": 10,
+        }
+        self.assertEqual(classify(row, GATES), "SKIP")
+        self.assertIn("bid-ask", decorate(row, GATES)["why_s"])
 
     def test_near_atm_debit_clicks(self):
         row = {
@@ -350,7 +378,8 @@ class TestRec(unittest.TestCase):
             GATES,
         )
         self.assertEqual(debit["action"], "SKIP")
-        self.assertEqual(credit["action"], "CLICK")
+        self.assertEqual(credit["action"], "SKIP")
+        self.assertIn("N=0", credit["why_s"])
 
     def test_debit_skip_why_does_not_blame_passing_rr(self):
         row = decorate(

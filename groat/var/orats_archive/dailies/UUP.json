@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 28.045,
-      "hiPx": 28.0598,
+      "clsPx": 28.08,
+      "hiPx": 28.08,
       "loPx": 28.03,
       "open": 28.04,
-      "stkVolu": 141911.0,
+      "stkVolu": 1776288.0,
       "ticker": "UUP",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 27.99,
+      "hiPx": 28.0,
+      "loPx": 27.96,
+      "open": 27.96,
+      "stkVolu": 1091030.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 27.98,
+      "hiPx": 27.99,
+      "loPx": 27.9199,
+      "open": 27.92,
+      "stkVolu": 1378064.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 28.03,
+      "hiPx": 28.05,
+      "loPx": 27.99,
+      "open": 28.05,
+      "stkVolu": 1233366.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 28.07,
+      "hiPx": 28.07,
+      "loPx": 28.02,
+      "open": 28.03,
+      "stkVolu": 1712336.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 28.17,
+      "hiPx": 28.24,
+      "loPx": 28.14,
+      "open": 28.2,
+      "stkVolu": 1808582.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 28.22,
+      "hiPx": 28.23,
+      "loPx": 28.185,
+      "open": 28.21,
+      "stkVolu": 1848067.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 28.4,
+      "hiPx": 28.419,
+      "loPx": 28.2101,
+      "open": 28.24,
+      "stkVolu": 2323657.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 28.38,
+      "hiPx": 28.4,
+      "loPx": 28.34,
+      "open": 28.37,
+      "stkVolu": 1594272.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 28.39,
+      "hiPx": 28.475,
+      "loPx": 28.37,
+      "open": 28.45,
+      "stkVolu": 979606.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 28.48,
+      "hiPx": 28.48,
+      "loPx": 28.4,
+      "open": 28.4,
+      "stkVolu": 4438316.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 28.48,
+      "hiPx": 28.535,
+      "loPx": 28.455,
+      "open": 28.47,
+      "stkVolu": 1286515.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 28.65,
+      "hiPx": 28.68,
+      "loPx": 28.565,
+      "open": 28.57,
+      "stkVolu": 1228685.0,
+      "ticker": "UUP",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 950.395,
+      "clsPx": 941.95,
       "hiPx": 959.0,
-      "loPx": 945.33,
+      "loPx": 939.315,
       "open": 950.0,
-      "stkVolu": 392171.0,
+      "stkVolu": 1238000.0,
       "ticker": "GEV",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 971.31,
+      "hiPx": 974.2,
+      "loPx": 945.02,
+      "open": 950.56,
+      "stkVolu": 1700696.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 951.04,
+      "hiPx": 983.34,
+      "loPx": 949.06,
+      "open": 964.0,
+      "stkVolu": 1474468.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 923.91,
+      "hiPx": 951.6059,
+      "loPx": 918.6,
+      "open": 941.7,
+      "stkVolu": 1463279.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 957.27,
+      "hiPx": 962.21,
+      "loPx": 938.0,
+      "open": 941.63,
+      "stkVolu": 1178798.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 874.76,
+      "hiPx": 892.81,
+      "loPx": 868.25,
+      "open": 881.51,
+      "stkVolu": 3308811.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 882.81,
+      "hiPx": 894.79,
+      "loPx": 875.24,
+      "open": 889.5,
+      "stkVolu": 2047851.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 925.09,
+      "hiPx": 937.535,
+      "loPx": 890.99,
+      "open": 898.0,
+      "stkVolu": 3565175.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 924.93,
+      "hiPx": 971.34,
+      "loPx": 924.0901,
+      "open": 962.045,
+      "stkVolu": 3239996.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 940.33,
+      "hiPx": 949.51,
+      "loPx": 926.2,
+      "open": 934.97,
+      "stkVolu": 4108212.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 946.22,
+      "hiPx": 962.85,
+      "loPx": 945.42,
+      "open": 955.0,
+      "stkVolu": 2596003.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 950.28,
+      "hiPx": 958.99,
+      "loPx": 932.19,
+      "open": 935.0,
+      "stkVolu": 2134904.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 951.82,
+      "hiPx": 954.77,
+      "loPx": 934.47,
+      "open": 950.0,
+      "stkVolu": 1681196.0,
+      "ticker": "GEV",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

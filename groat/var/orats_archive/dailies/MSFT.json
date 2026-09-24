@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 502.4351,
+      "clsPx": 499.7,
       "hiPx": 511.0,
-      "loPx": 501.44,
+      "loPx": 499.36,
       "open": 510.0,
-      "stkVolu": 4017508.0,
+      "stkVolu": 18101758.0,
       "ticker": "MSFT",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 493.95,
+      "hiPx": 495.19,
+      "loPx": 490.15,
+      "open": 493.01,
+      "stkVolu": 18882338.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 491.65,
+      "hiPx": 494.39,
+      "loPx": 489.8,
+      "open": 493.07,
+      "stkVolu": 12889572.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 492.44,
+      "hiPx": 494.52,
+      "loPx": 486.0,
+      "open": 488.32,
+      "stkVolu": 16038805.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 495.63,
+      "hiPx": 498.97,
+      "loPx": 492.58,
+      "open": 495.65,
+      "stkVolu": 14518435.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 505.41,
+      "hiPx": 509.95,
+      "loPx": 495.3416,
+      "open": 497.06,
+      "stkVolu": 23091892.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 497.12,
+      "hiPx": 505.9,
+      "loPx": 495.54,
+      "open": 500.06,
+      "stkVolu": 17794612.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 490.3,
+      "hiPx": 495.97,
+      "loPx": 487.23,
+      "open": 493.03,
+      "stkVolu": 16670285.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 497.75,
+      "hiPx": 501.47,
+      "loPx": 493.17,
+      "open": 497.795,
+      "stkVolu": 17841640.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 493.78,
+      "hiPx": 498.65,
+      "loPx": 491.1,
+      "open": 497.965,
+      "stkVolu": 39622288.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 501.61,
+      "hiPx": 501.87,
+      "loPx": 491.33,
+      "open": 494.945,
+      "stkVolu": 27959944.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 498.0,
+      "hiPx": 508.5,
+      "loPx": 493.65,
+      "open": 507.32,
+      "stkVolu": 21652838.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 500.59,
+      "hiPx": 509.44,
+      "loPx": 495.88,
+      "open": 500.755,
+      "stkVolu": 19445555.0,
+      "ticker": "MSFT",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

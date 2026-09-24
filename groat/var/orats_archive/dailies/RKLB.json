@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 63.8192,
+      "clsPx": 64.26,
       "hiPx": 65.0,
       "loPx": 63.2,
       "open": 64.76,
-      "stkVolu": 6463390.0,
+      "stkVolu": 14952020.0,
       "ticker": "RKLB",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 65.87,
+      "hiPx": 67.48,
+      "loPx": 64.15,
+      "open": 65.27,
+      "stkVolu": 24378128.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 63.07,
+      "hiPx": 67.7,
+      "loPx": 62.99,
+      "open": 67.32,
+      "stkVolu": 26478752.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 61.96,
+      "hiPx": 64.9,
+      "loPx": 61.53,
+      "open": 61.65,
+      "stkVolu": 18956207.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 62.95,
+      "hiPx": 64.89,
+      "loPx": 62.06,
+      "open": 62.32,
+      "stkVolu": 15391388.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 62.55,
+      "hiPx": 63.375,
+      "loPx": 60.51,
+      "open": 60.55,
+      "stkVolu": 14449293.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 63.55,
+      "hiPx": 65.72,
+      "loPx": 62.02,
+      "open": 63.68,
+      "stkVolu": 20448736.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 63.7,
+      "hiPx": 64.56,
+      "loPx": 61.74,
+      "open": 63.67,
+      "stkVolu": 17743620.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 67.82,
+      "hiPx": 68.3307,
+      "loPx": 65.26,
+      "open": 65.55,
+      "stkVolu": 21956027.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 64.57,
+      "hiPx": 68.64,
+      "loPx": 63.79,
+      "open": 68.43,
+      "stkVolu": 32298576.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 69.89,
+      "hiPx": 70.01,
+      "loPx": 65.275,
+      "open": 65.285,
+      "stkVolu": 26038712.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 71.98,
+      "hiPx": 72.5,
+      "loPx": 70.1,
+      "open": 71.645,
+      "stkVolu": 22048757.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 70.31,
+      "hiPx": 73.57,
+      "loPx": 70.08,
+      "open": 72.87,
+      "stkVolu": 19258665.0,
+      "ticker": "RKLB",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

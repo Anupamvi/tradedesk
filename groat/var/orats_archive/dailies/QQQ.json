@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 719.18,
+      "clsPx": 718.96,
       "hiPx": 721.86,
-      "loPx": 718.525,
+      "loPx": 716.56,
       "open": 719.345,
-      "stkVolu": 9040837.0,
+      "stkVolu": 32871076.0,
       "ticker": "QQQ",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 718.36,
+      "hiPx": 721.886,
+      "loPx": 715.57,
+      "open": 720.909,
+      "stkVolu": 28341416.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 716.31,
+      "hiPx": 719.7,
+      "loPx": 714.02,
+      "open": 716.4,
+      "stkVolu": 26763377.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 708.69,
+      "hiPx": 712.06,
+      "loPx": 706.855,
+      "open": 707.55,
+      "stkVolu": 31414409.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 714.88,
+      "hiPx": 717.63,
+      "loPx": 713.63,
+      "open": 715.68,
+      "stkVolu": 26649142.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 709.18,
+      "hiPx": 712.95,
+      "loPx": 702.74,
+      "open": 703.325,
+      "stkVolu": 35218978.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 704.54,
+      "hiPx": 709.5299,
+      "loPx": 703.635,
+      "open": 708.8,
+      "stkVolu": 26631661.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 704.72,
+      "hiPx": 711.88,
+      "loPx": 700.0,
+      "open": 708.0,
+      "stkVolu": 35687958.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 716.92,
+      "hiPx": 718.0401,
+      "loPx": 713.32,
+      "open": 715.95,
+      "stkVolu": 37270287.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 721.45,
+      "hiPx": 721.73,
+      "loPx": 715.08,
+      "open": 718.83,
+      "stkVolu": 48478713.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 741.47,
+      "hiPx": 743.22,
+      "loPx": 727.81,
+      "open": 727.89,
+      "stkVolu": 46730629.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 747.46,
+      "hiPx": 748.349,
+      "loPx": 740.93,
+      "open": 740.98,
+      "stkVolu": 40128841.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 741.21,
+      "hiPx": 747.13,
+      "loPx": 738.191,
+      "open": 746.97,
+      "stkVolu": 33191777.0,
+      "ticker": "QQQ",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

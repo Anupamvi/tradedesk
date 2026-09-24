@@ -1,0 +1,904 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1987-12-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1988-12-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1989-12-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-03-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-06-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-09-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-12-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-03-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-06-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-09-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-12-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-03-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-08-12",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-11-12",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-03-18",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-05-17",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-08-11",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-11-04",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-03-15",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-05-12",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-08-11",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-11-08",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-02-23",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-05-11",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-08-14",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-11-10",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-03-01",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-05-13",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-08-12",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-11-04",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-02-21",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-05-12",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-08-11",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-11-10",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-02-23",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-05-12",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-08-13",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-11-09",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-02-22",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-05-10",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-08-09",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-11-08",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-02-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-05-02",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-08-07",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-11-06",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-02-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-05-08",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-08-01",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-02-06",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-05-01",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-08-01",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-02-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-05-08",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-02-11",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-02-03",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-08-02",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-11-03",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-02-02",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-10-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-02-01",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-04-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-07-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-25",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-02-14",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-05-01",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-29",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-02-18",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-04-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-08-06",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-11-04",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-02-03",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-04-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-07-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-10-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-02-16",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2011-05-03",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-08-03",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-11-02",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-02-15",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-05-02",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-08-01",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-10-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2013-02-12",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-02-13",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-05-01",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-07-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-10-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-01-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-04-22",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-07-22",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-10-23",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-02-24",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-05-04",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-07-23",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-10-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-02-03",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-04-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-07-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-10-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2017-10-11T19:03:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-01-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-11-12T17:05:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-04-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-11-12T17:05:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-07-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-11-12T17:05:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-10-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-11-12T17:05:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-01-24",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-11-12T17:05:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-04-25",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-11-12T17:05:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-07-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-11-12T17:05:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-10-25",
+      "ticker": "CMCSA",
+      "updatedAt": "2018-11-12T17:05:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-01-23",
+      "ticker": "CMCSA",
+      "updatedAt": "2019-02-02T00:46:15Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-04-25",
+      "ticker": "CMCSA",
+      "updatedAt": "2019-05-03T23:16:02Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-07-25",
+      "ticker": "CMCSA",
+      "updatedAt": "2019-08-02T23:16:00Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-10-24",
+      "ticker": "CMCSA",
+      "updatedAt": "2019-11-01T23:16:04Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-01-23",
+      "ticker": "CMCSA",
+      "updatedAt": "2020-02-01T00:16:08Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-04-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2020-05-08T23:15:58Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-07-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2020-08-07T23:15:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-10-29",
+      "ticker": "CMCSA",
+      "updatedAt": "2020-11-07T00:15:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-01-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2021-02-06T00:16:03Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-04-29",
+      "ticker": "CMCSA",
+      "updatedAt": "2021-05-07T23:16:09Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-07-29",
+      "ticker": "CMCSA",
+      "updatedAt": "2021-08-06T23:16:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-10-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2021-11-05T23:16:20Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-01-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2022-02-05T00:16:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-04-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2022-05-06T23:16:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-07-28",
+      "ticker": "CMCSA",
+      "updatedAt": "2022-08-06T02:59:06Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-10-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2022-11-04T23:16:02Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-01-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2023-02-04T00:16:09Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-04-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2023-05-05T23:16:01Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-07-27",
+      "ticker": "CMCSA",
+      "updatedAt": "2023-08-04T23:16:01Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-10-26",
+      "ticker": "CMCSA",
+      "updatedAt": "2023-11-03T23:16:02Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-01-25",
+      "ticker": "CMCSA",
+      "updatedAt": "2024-02-03T00:16:06Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-04-25",
+      "ticker": "CMCSA",
+      "updatedAt": "2024-05-03T23:16:10Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-07-23",
+      "ticker": "CMCSA",
+      "updatedAt": "2024-08-02T23:16:10Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-10-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2024-11-09T01:01:13Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-01-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2025-02-08T03:41:19Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-04-24",
+      "ticker": "CMCSA",
+      "updatedAt": "2025-05-03T02:40:49Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-07-31",
+      "ticker": "CMCSA",
+      "updatedAt": "2025-08-09T02:40:45Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-10-30",
+      "ticker": "CMCSA",
+      "updatedAt": "2025-11-08T03:40:33Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-01-29",
+      "ticker": "CMCSA",
+      "updatedAt": "2026-02-07T03:40:39Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-04-23",
+      "ticker": "CMCSA",
+      "updatedAt": "2026-05-02T02:40:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-07-23",
+      "ticker": "CMCSA",
+      "updatedAt": "2026-07-31T22:00:52Z"
+    }
+  ]
+}

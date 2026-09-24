@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 314.885,
-      "hiPx": 315.94,
+      "clsPx": 320.56,
+      "hiPx": 323.8,
       "loPx": 310.45,
-      "open": 310.46,
-      "stkVolu": 577759.0,
+      "open": 310.5,
+      "stkVolu": 3807740.0,
       "ticker": "APP",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 312.01,
+      "hiPx": 322.73,
+      "loPx": 309.85,
+      "open": 319.38,
+      "stkVolu": 3915909.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 305.06,
+      "hiPx": 312.37,
+      "loPx": 304.21,
+      "open": 311.535,
+      "stkVolu": 3954573.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 314.49,
+      "hiPx": 317.66,
+      "loPx": 300.09,
+      "open": 300.84,
+      "stkVolu": 4734092.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 323.96,
+      "hiPx": 325.5999,
+      "loPx": 311.68,
+      "open": 315.54,
+      "stkVolu": 3761184.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 334.24,
+      "hiPx": 338.34,
+      "loPx": 320.4,
+      "open": 324.04,
+      "stkVolu": 5063815.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 331.46,
+      "hiPx": 334.46,
+      "loPx": 323.8025,
+      "open": 328.325,
+      "stkVolu": 6604925.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 326.56,
+      "hiPx": 336.44,
+      "loPx": 322.01,
+      "open": 333.62,
+      "stkVolu": 3526893.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 321.6,
+      "hiPx": 333.4309,
+      "loPx": 314.82,
+      "open": 331.86,
+      "stkVolu": 4543471.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 308.06,
+      "hiPx": 328.15,
+      "loPx": 307.76,
+      "open": 323.39,
+      "stkVolu": 10960499.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 330.17,
+      "hiPx": 336.94,
+      "loPx": 306.8,
+      "open": 309.69,
+      "stkVolu": 5999097.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 328.73,
+      "hiPx": 333.605,
+      "loPx": 323.68,
+      "open": 333.0,
+      "stkVolu": 3431727.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 315.25,
+      "hiPx": 316.5,
+      "loPx": 304.77,
+      "open": 315.9,
+      "stkVolu": 6813489.0,
+      "ticker": "APP",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

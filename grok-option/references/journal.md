@@ -21,7 +21,7 @@ Compute:
 
 If **20-trade expectancy < 0**: freeze Fire and Spike, cut size 50%, open AUDIT, rewrite `assumption-audit.md` for any contradicted rule.
 
-If **5+ consecutive empty sessions** while non-event names exist and VIX is still Calm: that is a stuck gate or a dead Calm regime — rescan 14–60 DTE, do **not** drop below 0.22-delta / 0.80-sigma. If still empty, cash is the trade.
+If **5+ consecutive empty sessions** while non-event names exist and VIX is still Calm **or Normal**: that is a stuck gate — rescan **14–60 DTE** with cheap-vol Shield (0.12 / 0.22Δ / 0.80σ). Do **not** restore Normal 0.20 or drop below 0.22-delta / 0.80-sigma. If still empty after that rescan, cash is the trade.
 
 If expectancy > 0 but theme cap was breached: keep size, tighten clustering — do not celebrate.
 

@@ -15,7 +15,7 @@ Wheelo sells CSPs only on `configs/own_list.txt` (holdable multi-year growth). S
 
 Never invent ORATS numbers, Schwab quotes, or X posts. Missing source → **DATA UNAVAILABLE**.
 
-**conf** is structure/research quality 0-85, not P(win). Labels: TRADE / WATCH / NO_TRADE. Hard fails (NO_TRADE): no bid, credit < 1.5% of strike, ATM (<2% OTM), cheap vol (IV/HV < 0.90 and IVR < 50), earnings ≤7d, earnings inside the put's DTE (plus 3d buffer), earnings unknown. Lead the reply with the rotation pick (highest-conf TRADE). Do not casually omit `universe.priority` names (PLTR, MU, HOOD, SPCX, SOFI, ORCL, …); if a keeper has no quote or fails a gate, say why.
+**conf** is structure/research quality 0-85, not P(win). Labels: TRADE / WATCH / NO_TRADE. After TRADE, also write **PD, N, R_cons, L**. Sort TRADE **PD desc, nulls last**; WATCH sort unchanged. Print `PD sort only — conf unchanged.` Rotation pick stays highest-conf TRADE. Hard fails (NO_TRADE): no bid, credit < 1.5% of strike, ATM (<2% OTM), cheap vol (IV/HV < 0.90 and IVR < 50), earnings ≤7d, earnings inside the put's DTE (plus 3d buffer), earnings unknown. Lead the reply with the rotation pick (highest-conf TRADE). Do not casually omit `universe.priority` names (PLTR, MU, HOOD, SPCX, SOFI, ORCL, …); if a keeper has no quote or fails a gate, say why.
 
 ## Parse
 

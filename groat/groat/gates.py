@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
-from groat.config import CHASE_ATR
+from groat.config import CHASE_ATR, GROUP_TRADE_CAP
 from groat.num import fmt, to_float
 
 # Stock replay 2025-07-03→2026-08-27: B −0.15R, C −0.12R (4% win), G −0.18R.
@@ -12,9 +12,6 @@ from groat.num import fmt, to_float
 # Replay: B −0.15R, C −0.12R, G −0.18R, H −0.22R. A ≈ 0R is scored below TRADE, not blocked.
 TRADE_SETUPS_BLOCKED = ("B", "C", "G", "H")
 E_RIP_RET1 = 0.12
-D_RIP_RET1 = 0.03
-CROWDED_DIP_RET1 = -0.025
-CROWDED_DIP_RVOL = 1.2
 # Same-ticker analog: park TRADE→WATCH only when the sample is large enough
 # and there is no win. n=1 0-win and mixed 1W/3L stay TRADE (caution only).
 ANALOG_VETO_MIN_N = 4
@@ -29,21 +26,19 @@ def trade_park_reason(primary: Optional[str], snap: Optional[dict] = None, setup
     code = str(primary or "")
     if code in TRADE_SETUPS_BLOCKED:
         return "setup_%s_replay_park" % code
-    if code not in ("D", "E"):
+    if code != "E":
         return None
     snap = snap or {}
     setup = setup or {}
     fire = setup.get("fire") if isinstance(setup.get("fire"), dict) else {}
     ret1 = to_float(snap.get("ret_1"))
     ext = to_float(snap.get("extension_atr"))
-    tag = "setup_%s_post_rip" % code
     if fire.get("chase"):
-        return tag
+        return "setup_E_post_rip"
     if ext is not None and ext > CHASE_ATR:
-        return tag
-    rip = E_RIP_RET1 if code == "E" else D_RIP_RET1
-    if ret1 is not None and ret1 >= rip:
-        return tag
+        return "setup_E_post_rip"
+    if ret1 is not None and ret1 >= E_RIP_RET1:
+        return "setup_E_post_rip"
     return None
 
 
@@ -87,18 +82,16 @@ def analog_park_reason(evidence: Optional[dict] = None) -> Optional[str]:
 
 
 def analog_0win_reason(evidence: Optional[dict] = None) -> Optional[str]:
-    """Park when this ticker+setup has n≥4 analogs, 0 target hits, and avg R<0.
+    """Park when this ticker+setup has n≥4 analogs and 0 target hits.
 
-    Time exits that print positive R are not wins and do not veto when avg R≥0.
-    Missing analog is not a veto.
+    Time exits that print positive R are not wins. Missing analog is not a veto.
     """
     if not isinstance(evidence, dict):
         return None
     stock = evidence.get("stock") if isinstance(evidence.get("stock"), dict) else evidence
     n = int(stock.get("n") or 0)
     wins = int(stock.get("wins") or 0)
-    avg_r = to_float(stock.get("avg_r"))
-    if n >= ANALOG_VETO_MIN_N and wins <= 0 and avg_r is not None and avg_r < 0:
+    if n >= ANALOG_VETO_MIN_N and wins <= 0:
         return "analog_0win_veto"
     return None
 
@@ -111,6 +104,23 @@ def ticket_right(picked: Optional[dict] = None) -> Optional[str]:
         return "call"
     if "put" in inst:
         return "put"
+    return None
+
+
+def already_held_shares_reason(legs: Optional[Sequence[dict]] = None) -> Optional[str]:
+    """Park a new STOCK ticket when Schwab already has shares of the name."""
+    for leg in legs or []:
+        if not isinstance(leg, dict):
+            continue
+        if str(leg.get("right") or "").lower() in ("call", "put"):
+            continue
+        qty = to_float(leg.get("quantity"))
+        if qty is not None and qty == 0:
+            continue
+        asset = str(leg.get("asset") or "").upper()
+        if asset == "OPTION":
+            continue
+        return "already_held_shares"
     return None
 
 
@@ -149,10 +159,7 @@ def park_trade(row: dict, reason: str) -> bool:
 
 
 def apply_same_group_book_park(row: dict, open_groups=None, open_tickers=None) -> Optional[str]:
-    """Caveat on TRADE when another name in the same industry group is already open.
-
-    Does not demote TRADE → WATCH. Desk pick may still take it; overlap is a caveat, not a veto.
-    """
+    """Flag overlap with an open book group. Does not hide the TRADE row."""
     if not isinstance(row, dict):
         return None
     ticker = str(row.get("ticker") or "").upper()
@@ -164,205 +171,27 @@ def apply_same_group_book_park(row: dict, open_groups=None, open_tickers=None) -
     if group not in (open_groups or set()):
         return None
     row["book_group_held"] = True
-    row["book_group_note"] = (
-        "CAVEAT: open book already has %s — size down or skip; not a second lot unless you want that group." % group
-    )
+    row["book_group_note"] = "Open book already has %s — size down or skip if you do not want another lot in that group." % group
     return "same_group_in_book"
 
 
-def already_in_book_reason(row: Optional[dict] = None) -> Optional[str]:
-    """Park a new OPTIONS ticket when book.json already has this underlying (not the same ticket)."""
-    if not isinstance(row, dict):
-        return None
-    if row.get("action") != "TRADE" or row.get("choice") != "OPTIONS":
-        return None
-    if not row.get("in_book"):
-        return None
-    if row.get("same_ticket"):
-        return None
-    return "already_in_book"
-
-
-def apply_already_in_book_park(row: dict) -> Optional[str]:
-    reason = already_in_book_reason(row)
-    if not reason:
-        return None
-    park_trade(row, reason)
-    return reason
-
-
-def crowded_park_reason(row: Optional[dict] = None) -> Optional[str]:
-    """Crowded X is WATCH unless the tape already dumped."""
-    if not isinstance(row, dict):
-        return None
-    if str(row.get("x") or "") != "Crowded":
-        return None
-    ret1 = to_float(row.get("ret_1"))
-    rvol = to_float(row.get("rvol"))
-    if ret1 is not None and ret1 <= CROWDED_DIP_RET1 and (rvol is None or rvol >= CROWDED_DIP_RVOL):
-        return None
-    return "crowded_no_dip"
-
-
-def apply_crowded_park(row: dict) -> Optional[str]:
-    if not isinstance(row, dict) or row.get("action") != "TRADE":
-        return None
-    reason = crowded_park_reason(row)
-    if not reason:
-        return None
-    park_trade(row, reason)
-    return reason
-
-
-def pullback_reset(row: Optional[dict] = None) -> bool:
-    """Red day into 20 EMA / AVWAP — freshness may reprint."""
-    if not isinstance(row, dict):
-        return False
-    ret1 = to_float(row.get("ret_1"))
-    if ret1 is None or ret1 >= 0:
-        return False
-    ext = to_float(row.get("extension_atr"))
-    if ext is not None and ext < 0.5:
-        return True
-    close = to_float(row.get("close"))
-    ema = to_float(row.get("ema20"))
-    atr = to_float(row.get("atr14"))
-    av = to_float(row.get("avwap_swing_low"))
-    if close is not None and atr is not None and atr > 0:
-        if ema is not None and abs(close - ema) <= 0.6 * atr:
-            return True
-        if av is not None and abs(close - av) <= 0.6 * atr:
-            return True
-    return False
-
-
-def freshness_park_reason(row: Optional[dict] = None, prior_trades: Optional[Sequence[dict]] = None) -> Optional[str]:
-    """Same ticker+setup that was TRADE last session stays WATCH until a pullback or group change."""
-    if not isinstance(row, dict) or not prior_trades:
-        return None
-    ticker = str(row.get("ticker") or "").upper()
-    primary = str(row.get("primary") or "")
-    if not ticker or not primary:
-        return None
-    prior = None
-    for item in prior_trades:
-        if not isinstance(item, dict):
-            continue
-        if str(item.get("ticker") or "").upper() == ticker and str(item.get("primary") or "") == primary:
-            prior = item
-            break
-    if prior is None:
-        return None
-    real_status = {"accelerating", "emerging", "mature", "deteriorating"}
-    prior_status = str(prior.get("group_status") or "")
-    status = str(row.get("group_status") or "")
-    if prior_status in real_status and status in real_status and prior_status != status:
-        return None
-    if pullback_reset(row):
-        return None
-    # Skipped tickets reprint. Only hide a leftover if it is still a chase.
-    ret1 = to_float(row.get("ret_1"))
-    ext = to_float(row.get("extension_atr"))
-    if (ret1 is not None and ret1 >= 0.03) or (ext is not None and ext > 1.8):
-        return "already_recommended"
-    return None
-
-
-def apply_freshness_park(row: dict, prior_trades=None) -> Optional[str]:
-    if not isinstance(row, dict) or row.get("action") != "TRADE":
-        return None
-    reason = freshness_park_reason(row, prior_trades)
-    if not reason:
-        return None
-    park_trade(row, reason)
-    return reason
-
-
-def analog_sample_improved(prior: Optional[dict], current: Optional[dict]) -> bool:
-    """Un-park only if the book got better without shrinking n."""
-    if not isinstance(prior, dict) or not isinstance(current, dict):
-        return False
-    p = prior.get("stock") if isinstance(prior.get("stock"), dict) else prior
-    c = current.get("stock") if isinstance(current.get("stock"), dict) else current
-    pn = int(p.get("n") or 0)
-    cn = int(c.get("n") or 0)
-    if cn < pn:
-        return False
-    pw = int(p.get("wins") or 0)
-    cw = int(c.get("wins") or 0)
-    if cw > pw:
-        return True
-    pa = to_float(p.get("avg_r"))
-    ca = to_float(c.get("avg_r"))
-    if pa is not None and ca is not None and ca > pa and ca > 0 and cw >= pw:
-        return True
-    return False
-
-
-def analog_persist_reason(row: Optional[dict] = None, prior_analog: Optional[dict] = None) -> Optional[str]:
-    """Keep yesterday's analog veto if n merely shrank. Do not un-park because the sample got smaller."""
-    if not isinstance(row, dict) or not prior_analog:
-        return None
-    ticker = str(row.get("ticker") or "").upper()
-    primary = str(row.get("primary") or "")
-    prior = prior_analog.get((ticker, primary))
-    if not isinstance(prior, dict):
-        return None
-    current = row.get("evidence") if isinstance(row.get("evidence"), dict) else {}
-    live = analog_park_reason(current)
-    if live:
-        return live
-    if analog_sample_improved(prior, current):
-        return None
-    p = prior.get("stock") if isinstance(prior.get("stock"), dict) else prior
-    c = current.get("stock") if isinstance(current.get("stock"), dict) else current
-    pn = int(p.get("n") or 0)
-    cn = int(c.get("n") or 0)
-    if cn < pn:
-        return str(prior.get("veto") or "analog_persist")
-    return None
-
-
-def apply_analog_persist_park(row: dict, prior_analog=None) -> Optional[str]:
-    if not isinstance(row, dict) or row.get("action") != "TRADE":
-        return None
-    reason = analog_persist_reason(row, prior_analog)
-    if not reason:
-        return None
-    park_trade(row, reason)
-    ev = row.get("evidence")
-    if isinstance(ev, dict):
-        ev["weak"] = True
-        ev["analog_veto"] = reason
-        ev["analog_persist"] = True
-    return reason
-
-
-def regime_trade_block(regime: Optional[str] = None, session_incomplete: bool = False) -> Optional[str]:
-    if session_incomplete:
-        return "session_incomplete"
-    if str(regime or "") == "unknown":
-        return "regime_unknown"
-    return None
-
-
-def apply_regime_trade_block(row: dict, regime: Optional[str] = None, session_incomplete: bool = False) -> Optional[str]:
-    if not isinstance(row, dict) or row.get("action") != "TRADE":
-        return None
-    reason = regime_trade_block(regime, session_incomplete)
-    if not reason:
-        return None
-    park_trade(row, reason)
-    return reason
-
-
 def apply_already_held_park(row: dict) -> Optional[str]:
-    """TRADE OPTIONS → WATCH when Schwab holds the same right. Exact open ticket stays TRADE."""
+    """TRADE → WATCH when Schwab already has the same exposure.
+
+    STOCK parks if shares are held. OPTIONS parks on the same call/put right.
+    Exact open book ticket stays TRADE.
+    """
     if not isinstance(row, dict) or row.get("action") != "TRADE":
         return None
-    if row.get("choice") != "OPTIONS":
-        return None
     if row.get("same_ticket"):
+        return None
+    if row.get("choice") == "STOCK":
+        reason = already_held_shares_reason(row.get("schwab_legs"))
+        if not reason:
+            return None
+        park_trade(row, reason)
+        return reason
+    if row.get("choice") != "OPTIONS":
         return None
     reason = already_held_same_right_reason(row.get("picked") if isinstance(row.get("picked"), dict) else None, row.get("schwab_legs"))
     if not reason:
@@ -386,12 +215,18 @@ def apply_analog_0win_park(row: dict) -> Optional[str]:
 
 
 def below_ema_reason(row: Optional[dict] = None) -> Optional[str]:
-    """Bullish OPTIONS whose last is already through 20 EMA are not a new TRADE."""
+    """Bullish last already through 20 EMA is not a new TRADE.
+
+    Setup A/F stock is a dip into the 20 — leave those. OPTIONS and D/E stock park.
+    """
     if not isinstance(row, dict):
         return None
-    if row.get("choice") != "OPTIONS":
+    choice = str(row.get("choice") or "")
+    if choice not in ("OPTIONS", "STOCK"):
         return None
     if str(row.get("direction") or "") != "bullish":
+        return None
+    if choice == "STOCK" and str(row.get("primary") or "") in ("A", "F"):
         return None
     close = to_float(row.get("close"))
     ema = to_float(row.get("ema20"))
@@ -410,6 +245,28 @@ def apply_below_ema_park(row: dict) -> Optional[str]:
         return None
     park_trade(row, reason)
     return reason
+
+
+def apply_group_trade_cap(rows: Optional[Sequence[dict]] = None, cap: Optional[int] = None) -> list:
+    """Keep the first `cap` TRADE rows per industry group (caller must PD-sort first)."""
+    limit = GROUP_TRADE_CAP if cap is None else int(cap)
+    counts = {}
+    parked = []
+    for row in rows or []:
+        if not isinstance(row, dict) or row.get("action") != "TRADE":
+            continue
+        group = str(row.get("group") or "")
+        if not group or group in ("other", "index", "macro"):
+            continue
+        n = counts.get(group, 0)
+        if n >= limit:
+            ticker = str(row.get("ticker") or "")
+            park_trade(row, "group_cap")
+            if ticker:
+                parked.append(ticker)
+        else:
+            counts[group] = n + 1
+    return parked
 
 
 def stamp_fill_guard(row: dict) -> dict:
@@ -435,21 +292,15 @@ def stamp_fill_guard(row: dict) -> dict:
         "note": "",
     }
     if choice == "OPTIONS" and direction == "bullish":
-        floors = [x for x in (ema, av) if x is not None]
-        guard["stock_min"] = max(floors) if floors else None
+        guard["stock_min"] = ema
         if ema is not None:
             bits.append("Do not click if last < **%s** (20 EMA)" % fmt(ema))
-        if av is not None:
-            bits.append("Do not click if last < **%s** (swing-low AVWAP)" % fmt(av))
         if debit is not None:
             bits.append("Do not pay more than debit **%s**" % fmt(debit))
         elif credit is not None:
             bits.append("Do not collect less than credit **%s**" % fmt(credit))
         if ema is not None:
             bits.append("Skip the open if last gaps through **%s**" % fmt(ema))
-        ret1 = to_float(row.get("ret_1"))
-        if ret1 is not None and ret1 >= 0.03:
-            bits.append("Already ran today — do not chase; wait for 20 EMA / AVWAP")
         if picked and not picked.get("invalidation"):
             picked["invalidation"] = "close back below 20 EMA %s / swing-low AVWAP %s" % (
                 fmt(ema),

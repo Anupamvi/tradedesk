@@ -5,14 +5,14 @@ description: >
   groat, gorat, groat YYYY-MM-DD, gorat 2026-08-27, groat 2026-08-27, groat full,
   groat today, groat morning, groat replay, groat replay YYYY-MM-DD, RUN FULL SCAN, RUN DELTA SCAN, ANALYZE TICKER,
   groat analyze, REVIEW OPEN TRADES, groat review, /groat. Independent of groki,
-  groko, and Codex Daily. Stock first, then options. No order placement.
+  groko, and Codex Daily. Thesis first; TRADE is the vertical. No order placement.
 ---
 
 # Groat
 
 CODE=`/Users/anuppamvi/tradedesk/groat`
 
-Groat finds a **small** number of high-quality **stock and options** swing trades. Empty board is valid. The user clicks every Schwab order. Never submit, cancel, or replace.
+Groat finds a **small** number of high-quality **defined-risk verticals**. Empty board is valid. The user clicks every Schwab order. Never submit, cancel, or replace.
 
 Never invent ORATS numbers, prices, X posts, news, or win probabilities. Missing source → **DATA UNAVAILABLE**.
 
@@ -26,6 +26,7 @@ Never invent ORATS numbers, prices, X posts, news, or win probabilities. Missing
 | `groat delta` | delta; DATE as above |
 | `groat analyze NVDA` / `ANALYZE NVDA` | analyze; DATE as above |
 | `groat review` | review; DATE as above |
+| `groat xintel` / `groat xintel YYYY-MM-DD` | overlay X tags on that date's scan; no ORATS refresh |
 | `groat replay` / `groat replay 2026-08-27` | replay; DATE as above |
 
 Typo `gorat` = `groat`.
@@ -44,10 +45,11 @@ python3 -m groat full --date DATE
 python3 -m groat delta --date DATE
 python3 -m groat analyze TICKER --date DATE
 python3 -m groat review --date DATE
+python3 -m groat xintel --date DATE
 python3 -m groat replay --date DATE --option-slices 3 --max-strike-http 40
 ```
 
-`groat replay` / `groat replay YYYY-MM-DD` is **Python on cached tape**, not an LLM mode. Surviving setups only (park B/C/G/H; park post-rip D at 3% 1d and E at 12% 1d). Stock walk is free; `--option-slices N --max-strike-http 40` prices options on those hits only.
+`groat replay` / `groat replay YYYY-MM-DD` is **Python on cached tape**, not an LLM mode. Surviving setups only (park B/C/G; park post-rip E). Stock walk is free; `--option-slices N --max-strike-http 40` prices options on those hits only.
 
 If `ORATS_TOKEN` is missing (exit 2), tell the user to edit `CODE/.env` or run `read -s ORATS_TOKEN && export ORATS_TOKEN`. Do not ask them to paste the token. Never print it.
 
@@ -59,14 +61,12 @@ Every `full` / `delta` / `analyze` **always refreshes**: ORATS cores, ORATS stri
 
 **Do not place last evening’s option ticket blindly at 9:30 ET.**
 
-- **Evening (after 16:00 ET)** is the **daily list**: official close only (no AH last overwrite, no mark-padded fills labeled as close). Writes `out/groat/DATE/` and copies to `out/groat/DATE/close/`.
-- **Morning / open auction (before 9:45 ET)** is incomplete: new TRADE is blocked. After ~9:45–10:15 ET, re-run if placing. Copies to `out/groat/DATE/open/`. Do not overwrite close with open or vice versa.
-- Same ticker+setup that was TRADE last **complete** session stays WATCH unless it pulled back into 20 EMA / AVWAP or group_status changed. Incomplete morning `open/` is not the TRADE prior — evening still uses yesterday close.
-- Same-group as an open book name (e.g. XOM while CVX energy is open) stays TRADE with a caveat. Your decision whether to add a lot.
-- Crowded leftover and >3% OTM lottery are not a desk pick. Empty desk pick is valid.
-- Regime **unknown** and incomplete session block new TRADE.
+- **Evening (16:30–18:00 ET)** is the **daily list**: full session 1d/rvol/FIRE, Delayed ORATS cores/strikes for that close, analog evidence. That is the default daily `groat`.
+- **Overnight / open can change the setup materially:** gap through stop or AVWAP, IV/ask on the debit, chase if the name rips again, news/AH earnings. Stock thesis often survives a quiet open. **Option fills from last night are stale.**
+- **Morning:** if they want to **click orders**, re-run `groat full --date TODAY` after **~9:45–10:15 ET** (open auction done). Then work **today’s** debit/credit, not last night’s print. Skip names that gapped >1 ATR against the stop or are now extended >2.5 ATR.
+- Do **not** make morning the only daily run. Delayed ORATS + incomplete 1d bars at 9:30 will mis-rank FIRE/X-HOT.
 
-Cadence: evening full scan → watchlist. Next session: morning revalidate only if placing. Do **not** place last evening’s option ticket blindly at 9:30 ET.
+Cadence: evening full scan → watchlist. Next session: morning revalidate only if placing.
 
 ## X before / after the Python scan
 
@@ -88,10 +88,8 @@ CLI prints `x_missing_on_trade=...` and exits **3** if any TRADE row has no X ta
 
 1. Read `x_queue.json` and every TRADE ticker (WATCH after that).
 2. Search X for each. Write `CODE/var/xintel/DATE/TICKER.json` (`tag` Quiet|Informed|Crowded). Promo spam = Crowded.
-3. If `x_missing_on_trade` is not `none`, re-run `python3 -m groat full --date DATE` and only then reply.
-- Do not invent posts. Do not change ORATS/price/debit/credit numbers. Missing X stays **DATA UNAVAILABLE** — never map it to Quiet.
-- X-HOT `hot.json` is a heat lane. It does **not** satisfy `var/xintel/DATE/TICKER.json`. Exit 3 still applies.
-- Optional catalysts: `var/news/DATE/TICKER.json` and `var/filings/DATE/TICKER.json` (`summary`). Missing stays **DATA UNAVAILABLE**. Do not invent news.
+3. If `x_missing_on_trade` is not `none`, run `python3 -m groat xintel --date DATE` (re-tags and re-renders; no ORATS/Schwab refresh). Do **not** re-run `full`.
+4. Do not invent posts. Do not change ORATS/price/debit/credit numbers. Missing X stays **DATA UNAVAILABLE** — never map it to Quiet.
 
 ## Reply shape
 
@@ -119,14 +117,16 @@ CLI prints `x_missing_on_trade=...` and exits **3** if any TRADE row has no X ta
 
 ## Hard rules
 
-- Underlying thesis first. Options serve the thesis.
+- Underlying thesis first. The **TRADE click is the vertical** (call debit, put debit, put credit, call credit). Never list shares as TRADE.
+- Stock is the thesis and a WATCH fallback when no vertical fills. Empty TRADE is valid. Do not invent a share ticket to fill the table.
+- Width ~5–10 (max 11). DTE ~21–75. No 0DTE. No naked long call/put as the ticket.
+- A 7–20 DTE weekly is allowed **only** to expire before earnings that would sit inside a 21–75 hold. Not a general short-dated ticket.
 - Ordinary options: do not hold through earnings. Missing earnings date → options rejected.
 - EVENT TRADE — EARNINGS is never auto-selected.
-- DTE ~21–75. No 0DTE.
 - Conservative fills: debit at ask, credit at short bid − long ask. Never mid. Report **target debit/credit**.
-- Review stock, long call, long put, call debit, put debit, put credit, call credit, then shortlist.
+- Review stock, long call, long put, call debit, put debit, put credit, call credit, then shortlist the **spread**.
 - **conf** is structure quality 0–85, not P(win).
-- Prefer 2:1 R/R. Risk 0.5–1% of the 50k research account.
+- After TRADE, also write **PD, N, R_cons, L**. Sort TRADE PD desc (nulls last). Conf unchanged. Print `PD sort only — conf unchanged.`
+- Prefer 2:1 R/R on the stock plan; debit R/R ≥ 1.2 is normal for a vertical. Risk 0.5–1% of the 50k research account.
 - Do not chase >2.5 ATR above 20 EMA.
-- D post-rip parks at ≥3% 1d; E at ≥12% 1d.
 - Do not import other desks as the execute path.

@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 612.92,
-      "hiPx": 616.33,
+      "clsPx": 616.77,
+      "hiPx": 617.46,
       "loPx": 605.27,
       "open": 612.35,
-      "stkVolu": 4086106.0,
+      "stkVolu": 15966213.0,
       "ticker": "META",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 613.48,
+      "hiPx": 624.8,
+      "loPx": 609.74,
+      "open": 616.205,
+      "stkVolu": 18909714.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 653.69,
+      "hiPx": 657.86,
+      "loPx": 638.56,
+      "open": 648.64,
+      "stkVolu": 35900728.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 644.38,
+      "hiPx": 663.5,
+      "loPx": 642.14,
+      "open": 653.705,
+      "stkVolu": 21531853.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 648.03,
+      "hiPx": 664.24,
+      "loPx": 646.2,
+      "open": 653.51,
+      "stkVolu": 16924953.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 665.6,
+      "hiPx": 668.6,
+      "loPx": 649.22,
+      "open": 657.83,
+      "stkVolu": 19332324.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 670.24,
+      "hiPx": 678.87,
+      "loPx": 656.2,
+      "open": 659.3,
+      "stkVolu": 19502840.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 673.31,
+      "hiPx": 685.31,
+      "loPx": 671.9142,
+      "open": 679.905,
+      "stkVolu": 17217834.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 682.31,
+      "hiPx": 683.2,
+      "loPx": 667.05,
+      "open": 682.44,
+      "stkVolu": 15927993.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 665.75,
+      "hiPx": 690.15,
+      "loPx": 660.8,
+      "open": 688.62,
+      "stkVolu": 27596431.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 741.245,
+      "hiPx": 753.0,
+      "loPx": 679.6,
+      "open": 680.295,
+      "stkVolu": 48720457.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 736.595,
+      "hiPx": 757.27,
+      "loPx": 730.0,
+      "open": 731.4,
+      "stkVolu": 28122126.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 744.1,
+      "hiPx": 763.9,
+      "loPx": 739.51,
+      "open": 747.6,
+      "stkVolu": 30829235.0,
+      "ticker": "META",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

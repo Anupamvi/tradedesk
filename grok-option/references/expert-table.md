@@ -8,11 +8,25 @@ Write the full card to `out/grok-option/YYYY-MM-DD/GROK_OPTION.md`. An inline-on
 
 **Sleeve board** is scored-but-not-traded. Print it **below** the table. Status is **YES** / no. A put-only executable table with no board is incomplete.
 
-**Cleared structures — review** uses the same dollar/leg columns plus **●** (`🟢` / `🟡` / `🔴` / `⚡`) and **Why**. Every structure that met Calm/Normal geometry + quotes gets a row here even if sector cap, overlay, Crowded Fire, missing flow, wide AH, or “do not add” kept it off the Expert table. Do not one-line those trades. This is not a second executable table. Icons in `assets/report-style.md`.
+**Cleared structures — review** uses the same dollar/leg columns plus **●** (`🟢` / `🟡` / `🔴` / `⚡`) and **Why**. Every structure that met Calm/Normal geometry + quotes gets a row here even if sector cap, overlay, Crowded Fire, missing flow, wide AH, name-calendar wing park, or “do not add” kept it off the Expert table. Do not one-line those trades. This is not a second executable table. Icons in `assets/report-style.md`.
 
 ## Columns
 
-Card table: `Ticker | Sleeve | Action | Expiry | Buy (long) | Sell (short) | Max profit $ | Max loss $ | Rec lots | Score | Conf | Data`
+Card table: `Ticker | Sleeve | Action | Expiry | Buy (long) | Sell (short) | Max profit $ | Max loss $ | Rec lots | Score | Conf | PD | N | R_cons | L | Data`
+
+Keep **Conf**. After a row is already Expert/TRADE, also compute **PD** (does not change Conf, Rec lots, or sleeves):
+
+```
+risk_budget = 0.01 * 50000
+max_loss = 1-lot contractual max loss at conservative Schwab prices
+N = floor(min(risk_budget / max_loss, liquidity_lots))
+R_cons = planned_reward / planned_risk, cap 3
+L = 1 / 0.5 / 0 from size vs N and spread
+PD = N * R_cons * L   if N >= 1 and quote age <= 120s
+else PD = null (DATA UNAVAILABLE or N=0)
+```
+
+Sort the Expert table **PD desc, nulls last**. Print `PD sort only — conf unchanged.` Sleeve board still lists every structure.
 
 **Buy** and **Sell** must name every leg with the word Buy/Sell, the strike, and Put or Call. Never `P 445 / C 550` with no verb.
 
@@ -32,6 +46,7 @@ Condor lists **all four** legs. Missing a wing is incomplete.
 - **Max profit $** (1 lot): credit = `net × 100`. Debit = `(width − net) × 100`. Condor = `(put net + call net) × 100`. Conservative fill: short bid − long ask, or long ask − short bid.
 - **Max loss $** (1 lot): credit = `(width − net) × 100`. Debit = `net × 100`. Condor = `(max(put width, call width) − total net) × 100`. Mark `worse-fill` in Notes if mids disagree >5%.
 - Among structures that already clear gates, pick **highest credit/width**, then dollars. Prefer 1-lot credit ≥ $100. Do not take a 15-wide that is more than 1.5 pts worse on credit/width. Fire skip debit/width < 0.25. Fire is an Expert row only with opening flow; otherwise sleeve board.
+- **Highest frac in an empty sector is not automatically Expert.** Geometry-pass ⚠️ names that just printed a sourced vertical squeeze (earnings gap still running, name ATM straddle >> VIX) stay Review. Empty sector is valid. Do not pad.
 - **Conf** is trade-success confidence. Two parts, both required:
   1. **naive POP** from **quoted Schwab delta** (integer %). Credits: `round(100 × (1 − |short Δ|))`. Debits: `round(100 × |long Δ|)`. Condor: `round(100 × (1 − max(|put short Δ|, |call short Δ|)))` and tag `wing` — true condor POP is lower. Missing delta → Conf blank, no Prime, Rec lots = 1.
   2. **book** = this sleeve’s rolling 20-trade win rate from the journal. If n < 20: `book n/a`.
@@ -57,7 +72,8 @@ N-lot dollars (rec lots × 1-lot P/L) belong in **Notes**, never in the dollar c
 
 - Invented IV, IV rank, OI, OI%, volume multiple, delta, or “est.”
 - "Buy Put Credit"
-- Rows that failed 1-sigma, width, earnings overlap (`earnings_date <= expiry` or date unknown), or book caps
+- Rows that failed 1-sigma, width, earnings overlap (`earnings_date <= expiry` or date unknown), name-calendar (sourced dated event in the short’s life), or book caps
+- An iron condor whose call or put wing is name-calendar parked (print the other vertical, or Review the IC)
 - ETF/index rows unless the user allowed index hedge
 - More than one live Fire per name
 - More than one Spike row
@@ -77,9 +93,9 @@ Then 3–5 **Assumptions in force** bullets (from the audit file). Optional cata
 
 ## Score gates (all must hold)
 
-**80** — FULL quotes; Shield in Normal/Elevated meeting that regime’s geometry (or Fire with VWAP + opening flow + not Crowded/Event; or Spike with sourced shock + VWAP + not Crowded); `expiry_date < earnings_date`; book caps OK.
+**80** — FULL quotes; Shield meeting **Elevated** geometry (0.25 / 1σ) (or Fire with VWAP + opening flow + not Crowded/Event; or Spike with sourced shock + VWAP + not Crowded); `expiry_date < earnings_date`; name-calendar wing clear; book caps OK.
 
-**65** — MIXED, or **Calm Shield** (thinner credit/width by design), or Spike Crowded-but-quoted. Still `expiry_date < earnings_date`.
+**65** — MIXED, or **cheap-vol Shield** (Calm or Normal at 0.12 / 0.22Δ / 0.80σ), or Spike Crowded-but-quoted. Still `expiry_date < earnings_date` and name-calendar wing clear.
 
 **50** — tradable but weak (wide-ish quotes, THIN sentiment). Never Prime.
 

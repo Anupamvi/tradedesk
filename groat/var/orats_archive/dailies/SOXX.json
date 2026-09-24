@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 517.485,
-      "hiPx": 520.11,
+      "clsPx": 519.86,
+      "hiPx": 520.56,
       "loPx": 507.25,
       "open": 509.31,
-      "stkVolu": 3392969.0,
+      "stkVolu": 9234036.0,
       "ticker": "SOXX",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 528.4,
+      "hiPx": 534.28,
+      "loPx": 525.49,
+      "open": 530.495,
+      "stkVolu": 8833136.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 532.0,
+      "hiPx": 535.48,
+      "loPx": 524.85,
+      "open": 524.85,
+      "stkVolu": 6436936.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 517.43,
+      "hiPx": 522.5,
+      "loPx": 514.31,
+      "open": 518.32,
+      "stkVolu": 6651714.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 527.07,
+      "hiPx": 531.04,
+      "loPx": 521.13,
+      "open": 525.235,
+      "stkVolu": 5665978.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 497.4,
+      "hiPx": 503.18,
+      "loPx": 495.15,
+      "open": 497.17,
+      "stkVolu": 11265548.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 498.85,
+      "hiPx": 504.74,
+      "loPx": 496.58,
+      "open": 502.55,
+      "stkVolu": 6014198.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 502.06,
+      "hiPx": 510.37,
+      "loPx": 496.81,
+      "open": 506.71,
+      "stkVolu": 8358894.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 519.1,
+      "hiPx": 520.4192,
+      "loPx": 514.8,
+      "open": 517.09,
+      "stkVolu": 6790710.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 533.07,
+      "hiPx": 533.32,
+      "loPx": 522.38,
+      "open": 522.71,
+      "stkVolu": 6348602.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 559.34,
+      "hiPx": 562.2,
+      "loPx": 541.47,
+      "open": 545.08,
+      "stkVolu": 7966135.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 572.78,
+      "hiPx": 573.52,
+      "loPx": 553.36,
+      "open": 553.76,
+      "stkVolu": 6322839.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 565.72,
+      "hiPx": 571.55,
+      "loPx": 557.05,
+      "open": 570.4,
+      "stkVolu": 9984393.0,
+      "ticker": "SOXX",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

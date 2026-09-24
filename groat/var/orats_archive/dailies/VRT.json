@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 274.59,
-      "hiPx": 277.82,
+      "clsPx": 280.53,
+      "hiPx": 280.99,
       "loPx": 271.2,
       "open": 273.945,
-      "stkVolu": 895975.0,
+      "stkVolu": 3322736.0,
       "ticker": "VRT",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 290.83,
+      "hiPx": 295.34,
+      "loPx": 282.0,
+      "open": 285.0,
+      "stkVolu": 4755582.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 262.89,
+      "hiPx": 290.23,
+      "loPx": 260.0,
+      "open": 288.69,
+      "stkVolu": 9798806.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 248.13,
+      "hiPx": 262.0,
+      "loPx": 244.77,
+      "open": 259.1,
+      "stkVolu": 10055159.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 257.06,
+      "hiPx": 258.7799,
+      "loPx": 251.84,
+      "open": 252.5,
+      "stkVolu": 4774088.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 237.39,
+      "hiPx": 241.3,
+      "loPx": 226.94,
+      "open": 228.0,
+      "stkVolu": 10904955.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 234.61,
+      "hiPx": 245.41,
+      "loPx": 233.9,
+      "open": 243.02,
+      "stkVolu": 5737183.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 239.41,
+      "hiPx": 244.76,
+      "loPx": 237.64,
+      "open": 240.0,
+      "stkVolu": 5514636.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 241.49,
+      "hiPx": 252.34,
+      "loPx": 241.25,
+      "open": 249.75,
+      "stkVolu": 4967158.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 249.39,
+      "hiPx": 250.15,
+      "loPx": 242.43,
+      "open": 246.19,
+      "stkVolu": 7837060.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 250.86,
+      "hiPx": 254.8757,
+      "loPx": 247.6055,
+      "open": 254.67,
+      "stkVolu": 4867546.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 253.46,
+      "hiPx": 255.4,
+      "loPx": 249.14,
+      "open": 250.3,
+      "stkVolu": 3524594.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 248.78,
+      "hiPx": 255.02,
+      "loPx": 248.505,
+      "open": 253.675,
+      "stkVolu": 3556464.0,
+      "ticker": "VRT",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

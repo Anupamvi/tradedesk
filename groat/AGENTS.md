@@ -12,6 +12,7 @@ When the user says the phrases below, read the matching skill and run it. Do not
 - `groat delta`, `RUN DELTA SCAN` → same skill, delta mode
 - `ANALYZE TICKER`, `groat analyze TICKER` → same skill, analyze mode
 - `REVIEW OPEN TRADES`, `groat review` → same skill, review mode
+- `groat xintel` → overlay X tags on that date's scan; no ORATS/Schwab refresh
 
 If `ORATS_TOKEN` is missing, tell the user to edit `CODE/.env` or run `read -s ORATS_TOKEN && export ORATS_TOKEN`. Do not ask them to paste the token. Never print the token.
 

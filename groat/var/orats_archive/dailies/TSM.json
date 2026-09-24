@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 426.65,
-      "hiPx": 426.98,
+      "clsPx": 428.91,
+      "hiPx": 429.82,
       "loPx": 419.42,
       "open": 421.88,
-      "stkVolu": 3405333.0,
+      "stkVolu": 12283895.0,
       "ticker": "TSM",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 439.0,
+      "hiPx": 444.29,
+      "loPx": 433.72,
+      "open": 438.02,
+      "stkVolu": 13088876.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 435.36,
+      "hiPx": 439.4,
+      "loPx": 431.87,
+      "open": 434.46,
+      "stkVolu": 7499342.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 428.03,
+      "hiPx": 432.5299,
+      "loPx": 424.05,
+      "open": 426.44,
+      "stkVolu": 8368064.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 433.24,
+      "hiPx": 435.37,
+      "loPx": 428.9,
+      "open": 431.55,
+      "stkVolu": 10638194.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 418.01,
+      "hiPx": 424.45,
+      "loPx": 416.01,
+      "open": 416.01,
+      "stkVolu": 14305935.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 413.75,
+      "hiPx": 421.94,
+      "loPx": 412.55,
+      "open": 421.94,
+      "stkVolu": 9462223.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 417.72,
+      "hiPx": 419.85,
+      "loPx": 413.88,
+      "open": 418.2,
+      "stkVolu": 10490910.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 430.26,
+      "hiPx": 430.53,
+      "loPx": 423.39,
+      "open": 424.4,
+      "stkVolu": 12447741.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 434.67,
+      "hiPx": 434.8165,
+      "loPx": 428.98,
+      "open": 429.04,
+      "stkVolu": 12905093.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 445.14,
+      "hiPx": 445.72,
+      "loPx": 437.06,
+      "open": 440.8,
+      "stkVolu": 9943057.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 452.0,
+      "hiPx": 452.88,
+      "loPx": 441.2,
+      "open": 441.22,
+      "stkVolu": 11255993.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 446.57,
+      "hiPx": 450.88,
+      "loPx": 442.87,
+      "open": 449.79,
+      "stkVolu": 10181332.0,
+      "ticker": "TSM",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

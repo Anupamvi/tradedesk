@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+import subprocess
 import time
 import urllib.error
 import urllib.parse
@@ -13,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from groat.config import CODE_DIR
-from groat.dates import today_et, session_phase
+from groat.dates import today_et
 from groat.envload import schwab_credentials
 from groat.num import to_float
 
@@ -54,11 +56,36 @@ def _token_blob(path: Path) -> dict:
     return {"token": payload if isinstance(payload, dict) else {}}
 
 
+_SYNC = Path("/Users/anuppamvi/tradedesk/scripts/schwab_sync_gcp.sh")
+_synced = False
+
+
+def _schwab_cloud(mode: str, wait: bool = False) -> None:
+    if not _SYNC.is_file():
+        return
+    env = os.environ.copy()
+    env["PATH"] = str(Path.home() / "google-cloud-sdk" / "bin") + ":" + env.get("PATH", "")
+    cmd = ["bash", str(_SYNC), mode]
+    kw = dict(env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        if wait:
+            subprocess.run(cmd, timeout=90, **kw)
+        else:
+            subprocess.Popen(cmd, start_new_session=True, **kw)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
 def _save_token(path: Path, blob: dict) -> None:
     path.write_text(json.dumps(blob, indent=2) + "\n", encoding="utf-8")
+    _schwab_cloud("push")
 
 
 def _access_token() -> Optional[str]:
+    global _synced
+    if not _synced:
+        _synced = True
+        _schwab_cloud("reconcile", wait=True)
     creds = schwab_credentials()
     if not creds:
         return None
@@ -136,18 +163,22 @@ def _read_bars_cache(ticker: str) -> List[dict]:
 
 def price_history_bars(ticker: str, asof: str, lookback_days: int = 420, use_cache: bool = True) -> List[dict]:
     name = str(ticker).upper()
-    cached = _read_bars_cache(name) if use_cache else []
-    if cached:
-        last = cached[-1]["date"]
+    disk = _read_bars_cache(name)
+    if use_cache and disk:
+        last = disk[-1]["date"]
         if last >= asof[:10]:
-            return [b for b in cached if b["date"] <= asof[:10]]
+            return [b for b in disk if b["date"] <= asof[:10]]
+
+    def _from_disk() -> List[dict]:
+        return [b for b in disk if b["date"] <= asof[:10]]
+
     token = _access_token()
     if not token:
-        return [b for b in cached if b["date"] <= asof[:10]]
+        return _from_disk()
     try:
         asof_d = datetime.strptime(asof[:10], "%Y-%m-%d")
     except (TypeError, ValueError):
-        return cached
+        return _from_disk()
     end = asof_d + timedelta(days=1)
     start = end - timedelta(days=int(lookback_days))
     start_ms = int(start.replace(tzinfo=timezone.utc).timestamp() * 1000)
@@ -166,7 +197,7 @@ def price_history_bars(ticker: str, asof: str, lookback_days: int = 420, use_cac
     payload = _get_json("%s/pricehistory?%s" % (MARKET, query), token)
     time.sleep(0.05)
     if not isinstance(payload, dict):
-        return [b for b in cached if b["date"] <= asof[:10]]
+        return _from_disk()
     bars = []
     for candle in payload.get("candles") or []:
         if not isinstance(candle, dict):
@@ -188,13 +219,11 @@ def price_history_bars(ticker: str, asof: str, lookback_days: int = 420, use_cac
     if bars:
         _write_bars_cache(name, bars)
         return [b for b in bars if b["date"] <= asof[:10]]
-    return [b for b in cached if b["date"] <= asof[:10]]
+    return _from_disk()
 
 
 def quote_bar(ticker: str, asof: str) -> Optional[dict]:
     if asof != today_et():
-        return None
-    if session_phase(asof, asof) != "rth":
         return None
     token = _access_token()
     if not token:
@@ -219,9 +248,7 @@ def quote_bar(ticker: str, asof: str) -> Optional[dict]:
                 return val
         return None
 
-    last = num("regularMarketLastPrice", "lastPrice", "mark")
-    if last is None:
-        last = num("closePrice")
+    last = num("lastPrice", "regularMarketLastPrice", "mark", "closePrice")
     if last is None:
         return None
     high = num("highPrice", "regularMarketDayHigh") or last
@@ -233,8 +260,6 @@ def quote_bar(ticker: str, asof: str) -> Optional[dict]:
 
 def quotes_many(tickers, asof: str) -> Dict[str, dict]:
     if asof != today_et():
-        return {}
-    if session_phase(asof, asof) != "rth":
         return {}
     token = _access_token()
     if not token:
@@ -252,12 +277,7 @@ def quotes_many(tickers, asof: str) -> Dict[str, dict]:
             if not isinstance(wrap, dict):
                 continue
             q = wrap.get("quote") if isinstance(wrap.get("quote"), dict) else wrap
-            last = (
-                to_float(q.get("regularMarketLastPrice"))
-                or to_float(q.get("lastPrice"))
-                or to_float(q.get("mark"))
-                or to_float(q.get("closePrice"))
-            )
+            last = to_float(q.get("lastPrice")) or to_float(q.get("mark")) or to_float(q.get("closePrice"))
             if last is None:
                 continue
             out[str(key).upper()] = {
@@ -289,18 +309,11 @@ def option_chain(ticker: str, from_date: str, to_date: str) -> Optional[dict]:
     return _get_json("%s/chains?%s" % (MARKET, query), token, timeout=60.0)
 
 
-def load_positions() -> tuple:
-    """Return (rows, error). Empty rows with no error means a real empty book. Failed fetch is an error."""
-    from groat.book import underlying_symbol
-
-    if not schwab_credentials():
-        return [], ""
+def positions_all() -> List[dict]:
     token = _access_token()
     if not token:
-        return [], "schwab_positions: token unusable"
+        return []
     payload = _get_json("%s/accounts?fields=positions" % TRADER, token, timeout=45.0)
-    if payload is None:
-        return [], "schwab_positions: DATA UNAVAILABLE"
     rows = []
     accounts = payload if isinstance(payload, list) else []
     if isinstance(payload, dict):
@@ -313,26 +326,13 @@ def load_positions() -> tuple:
             if not isinstance(pos, dict):
                 continue
             inst = pos.get("instrument") or {}
-            raw = str(inst.get("symbol") or "").upper()
-            asset = str(inst.get("assetType") or "")
-            under = str(inst.get("underlyingSymbol") or "").upper()
-            if asset.upper() == "OPTION" and under:
-                ticker = under
-            else:
-                ticker = underlying_symbol(raw) or under or raw
             rows.append(
                 {
-                    "ticker": ticker,
-                    "symbol": raw,
-                    "asset": asset,
+                    "ticker": str(inst.get("symbol") or "").upper(),
+                    "asset": str(inst.get("assetType") or ""),
                     "quantity": pos.get("longQuantity") or pos.get("shortQuantity"),
                     "average_price": pos.get("averagePrice"),
                     "market_value": pos.get("marketValue"),
                 }
             )
-    return rows, ""
-
-
-def positions_all() -> List[dict]:
-    rows, _err = load_positions()
     return rows

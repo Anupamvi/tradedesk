@@ -1,0 +1,958 @@
+{
+  "data": [
+    {
+      "anncTod": "1630",
+      "earnDate": "1988-04-13",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1989-04-14",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-04-16",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-05-07",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-07-20",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1990-10-22",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-04-15",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-05-06",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-07-22",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1991-10-21",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-04-13",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-05-05",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-08-05",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1992-11-04",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-04-14",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-05-05",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-08-05",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1993-11-04",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-02-14",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-04-15",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-05-05",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-08-04",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1994-11-03",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-02-14",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-05-04",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-08-03",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1995-11-02",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-02-29",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-05-07",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-08-08",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1996-11-07",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-02-13",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-05-08",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-08-07",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1997-11-06",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-02-12",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-05-07",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-08-06",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1998-11-05",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-02-18",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-05-06",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-08-05",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "1999-11-03",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-02-10",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-05-04",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-08-03",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2000-10-27",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-02-02",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-04-27",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-07-27",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2001-10-26",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-01-24",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-04-18",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-07-18",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2002-10-17",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-01-23",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-04-16",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-07-17",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2003-10-16",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-01-22",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-04-15",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-07-15",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2004-10-14",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-01-20",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-04-14",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-07-14",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2005-10-14",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-01-19",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-04-18",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-07-19",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-10-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2006-10-20",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2006-11-01",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-01-18",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-02-27",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-04-19",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-05-03",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-05-04",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2007-07-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-08-06",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2007-10-18",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-01-22",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-04-22",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-07-22",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2008-10-16",
+      "ticker": "UNH",
+      "updatedAt": "2018-01-12T17:31:59Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-01-22",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-04-21",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-07-21",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2009-10-20",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2009-10-28",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-01-21",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-02-24",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-04-20",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "1630",
+      "earnDate": "2010-04-30",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-07-20",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2010-10-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-01-20",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-04-21",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-07-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2011-10-18",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-01-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-04-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-07-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:36:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2012-10-16",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-01-17",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-04-18",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-07-18",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2013-10-17",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-01-16",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-04-17",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-07-17",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2014-10-16",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-01-21",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-04-16",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-07-16",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2015-10-15",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-01-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-04-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-07-19",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2016-10-18",
+      "ticker": "UNH",
+      "updatedAt": "2017-10-11T19:08:57Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-01-17",
+      "ticker": "UNH",
+      "updatedAt": "2018-11-12T17:09:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-04-18",
+      "ticker": "UNH",
+      "updatedAt": "2018-11-12T17:09:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-07-18",
+      "ticker": "UNH",
+      "updatedAt": "2018-11-12T17:09:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2017-10-17",
+      "ticker": "UNH",
+      "updatedAt": "2018-11-12T17:09:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-01-16",
+      "ticker": "UNH",
+      "updatedAt": "2018-11-12T17:09:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-04-17",
+      "ticker": "UNH",
+      "updatedAt": "2018-11-12T17:09:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-07-17",
+      "ticker": "UNH",
+      "updatedAt": "2018-11-12T17:09:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2018-10-16",
+      "ticker": "UNH",
+      "updatedAt": "2018-11-12T17:09:05Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-01-15",
+      "ticker": "UNH",
+      "updatedAt": "2019-01-25T23:03:58Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-04-16",
+      "ticker": "UNH",
+      "updatedAt": "2019-04-26T23:19:20Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-07-18",
+      "ticker": "UNH",
+      "updatedAt": "2019-07-26T23:18:44Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2019-10-15",
+      "ticker": "UNH",
+      "updatedAt": "2019-10-25T23:19:50Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-01-15",
+      "ticker": "UNH",
+      "updatedAt": "2020-01-25T00:20:26Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-04-15",
+      "ticker": "UNH",
+      "updatedAt": "2020-04-24T23:19:03Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-07-15",
+      "ticker": "UNH",
+      "updatedAt": "2020-07-24T23:20:07Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2020-10-14",
+      "ticker": "UNH",
+      "updatedAt": "2020-10-23T23:19:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-01-20",
+      "ticker": "UNH",
+      "updatedAt": "2021-01-30T00:19:35Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-04-15",
+      "ticker": "UNH",
+      "updatedAt": "2021-04-23T23:19:45Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-07-15",
+      "ticker": "UNH",
+      "updatedAt": "2021-07-23T23:21:22Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2021-10-14",
+      "ticker": "UNH",
+      "updatedAt": "2021-10-22T23:20:20Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-01-19",
+      "ticker": "UNH",
+      "updatedAt": "2022-01-29T00:18:54Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-04-14",
+      "ticker": "UNH",
+      "updatedAt": "2022-04-22T23:19:50Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-07-15",
+      "ticker": "UNH",
+      "updatedAt": "2022-07-25T23:20:03Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2022-10-14",
+      "ticker": "UNH",
+      "updatedAt": "2022-10-24T23:19:21Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-01-13",
+      "ticker": "UNH",
+      "updatedAt": "2023-01-24T00:20:12Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-04-14",
+      "ticker": "UNH",
+      "updatedAt": "2023-04-24T23:19:18Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-07-14",
+      "ticker": "UNH",
+      "updatedAt": "2023-07-24T23:19:24Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2023-10-13",
+      "ticker": "UNH",
+      "updatedAt": "2023-10-23T23:19:46Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-01-12",
+      "ticker": "UNH",
+      "updatedAt": "2024-01-23T00:19:40Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-04-16",
+      "ticker": "UNH",
+      "updatedAt": "2024-04-26T23:19:42Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-07-16",
+      "ticker": "UNH",
+      "updatedAt": "2024-07-26T23:20:01Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2024-10-15",
+      "ticker": "UNH",
+      "updatedAt": "2024-10-25T23:20:03Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-01-16",
+      "ticker": "UNH",
+      "updatedAt": "2025-01-25T03:44:56Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-04-17",
+      "ticker": "UNH",
+      "updatedAt": "2025-04-26T02:43:21Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-07-29",
+      "ticker": "UNH",
+      "updatedAt": "2025-08-09T02:42:53Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2025-10-28",
+      "ticker": "UNH",
+      "updatedAt": "2025-11-08T03:42:06Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-01-27",
+      "ticker": "UNH",
+      "updatedAt": "2026-02-07T03:42:36Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-04-21",
+      "ticker": "UNH",
+      "updatedAt": "2026-05-02T02:43:16Z"
+    },
+    {
+      "anncTod": "0900",
+      "earnDate": "2026-07-16",
+      "ticker": "UNH",
+      "updatedAt": "2026-07-24T22:03:10Z"
+    }
+  ]
+}

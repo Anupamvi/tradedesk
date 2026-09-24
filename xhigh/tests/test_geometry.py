@@ -3,12 +3,21 @@ import unittest
 from pathlib import Path
 
 from xhigh.gates import load_gates
-from xhigh.geometry import pick_call_debit, pick_csp, pick_iron_condor, pick_put_credit, spot_from_quote, ticket_legal
+from xhigh.geometry import _dte, pick_call_debit, pick_csp, pick_iron_condor, pick_put_credit, spot_from_quote, ticket_legal
 from xhigh.score import ev_proxy, pop_delta
 
 GATES = load_gates()
 EARN = {"usable": True, "date": "2026-11-15"}
 ASOF = "2026-08-31"
+
+
+class TestSessionDte(unittest.TestCase):
+    def test_asof_beats_schwab_today_count(self):
+        row = {"dte": 34, "expiry": "2026-10-23"}
+        self.assertEqual(_dte(row, "2026-09-18"), 35)
+
+    def test_falls_back_to_chain_dte(self):
+        self.assertEqual(_dte({"dte": 34, "expiry": ""}, "2026-09-18"), 34)
 
 
 class TestSpot(unittest.TestCase):

@@ -36,6 +36,28 @@ class TestTechnicals(unittest.TestCase):
         snap = snapshot(bars, "2026-08-27")
         self.assertTrue(snap["ok"])
         self.assertTrue(snap["stale"])
+        self.assertFalse(snap.get("session_incomplete"))
+
+    def test_incomplete_stub_does_not_replace_structure_close(self):
+        complete = trend_bars(60, end="2026-08-26", slope=0.4, volume=2_000_000.0)
+        yesterday = complete[-1]
+        stub = {
+            "date": "2026-08-27",
+            "open": yesterday["close"],
+            "high": yesterday["close"] + 8.0,
+            "low": yesterday["close"] - 0.2,
+            "close": yesterday["close"] + 7.5,
+            "volume": 80_000.0,
+        }
+        snap = snapshot(complete + [stub], "2026-08-27")
+        self.assertTrue(snap["ok"])
+        self.assertFalse(snap["stale"])
+        self.assertTrue(snap["session_incomplete"])
+        self.assertAlmostEqual(snap["structure_close"], yesterday["close"])
+        self.assertAlmostEqual(snap["close"], yesterday["close"])
+        self.assertAlmostEqual(snap["live_last"], stub["close"])
+        self.assertLess(snap["rvol"], 0.2)
+        self.assertGreater(snap["live_last"], snap["close"])
 
 
 if __name__ == "__main__":

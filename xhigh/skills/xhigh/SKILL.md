@@ -11,7 +11,7 @@ description: >
 
 CODE=`/Users/anuppamvi/tradedesk/xhigh`
 
-New opportunistic tickets only. **No ticket cap.** Empty **CLICK** is valid. Never submit, cancel, or replace an order. v1 is locked (`docs/LOCK.md`).
+New opportunistic tickets only. **No ticket cap.** Empty **CLICK** is valid only after names were chained. Empty movers is **DATA UNAVAILABLE**, not a no-trade. Never submit, cancel, or replace an order. v1 is locked (`docs/LOCK.md`).
 
 Never invent ORATS, Schwab, X, news, SEC, or earnings numbers. Missing source → **DATA UNAVAILABLE**.
 
@@ -34,9 +34,11 @@ From CODE, timeout 300000ms.
 python3 -m xhigh full --date DATE
 ```
 
+If DATE is not today America/New_York, add `--live-schwab` (weekend / next-day after-market). Quotes are still Schwab lastPrice; movers may be empty off-session.
+
 Analyze: `python3 -m xhigh analyze TICKER --date DATE`.
 
-If `orats=missing`, say so. Do not print the token.
+If `orats=missing`, say so. Do not print the token. Schwab uses tradedesk `tokens/schwab_token.json`, not `xhigh/tokens`.
 
 ## Intel after the scan
 
@@ -48,7 +50,7 @@ For SPY (macro) and every **CLICK** ticker:
 4. Write `CODE/var/intel/DATE/macro.json` and `CODE/var/intel/DATE/TICKER.json`. Also `var/xhot/DATE/hot.json` for X.
 5. `python3 -m xhigh intel --date DATE` then `python3 -m xhigh xhot --date DATE`.
 
-Intel never creates a trade or changes last/bid/ask.
+Intel never creates a trade or changes last/bid/ask. `kill: true` stamps **WATCH** (survives restamp). Do not treat an empty-movers board as empty CLICK.
 
 ## Disprove (CLICK rows only)
 
@@ -56,6 +58,6 @@ KILL / SURVIVE / INSUFFICIENT DATA. Naked CSP only if you want the shares at the
 
 ## Reply
 
-Copy **Recommendation** from `out/xhigh/DATE/recommendation.md` (also the top of `board.md`) **verbatim at the top**. Then the CLICK table. Do not lead with a 20-row dump. 🟢 CLICK / 🔴 SKIP / 🟡 WATCH. 0 CLICK is valid.
+Copy **Recommendation** from `out/xhigh/DATE/recommendation.md` (also the top of `board.md`) **verbatim at the top**. Then the CLICK table. Do not lead with a 20-row dump. 🟢 CLICK / 🔴 SKIP / 🟡 WATCH. 0 CLICK is valid only after a scan with a shortlist.
 
-Credits are **bid**. Debits are **ask − short bid**. A 270-call on a $186 stock is a bug. Do not promise profit. POP is delta, not a forecast.
+Credits are **bid**. Debits are **ask − short bid**. A 270-call on a $186 stock is a bug. Do not promise profit. POP is delta, not a forecast. Keep **conf**. After CLICK, also write **PD, N, R_cons, L** and sort CLICK **PD desc, nulls last**. Print `PD sort only — conf unchanged.` Every sleeve that passes is still listed.

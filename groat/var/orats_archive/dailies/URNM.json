@@ -2656,13 +2656,121 @@
       "tradeDate": "2026-09-03"
     },
     {
-      "clsPx": 57.01,
+      "clsPx": 57.07,
       "hiPx": 57.36,
       "loPx": 56.29,
       "open": 56.56,
-      "stkVolu": 79854.0,
+      "stkVolu": 331485.0,
       "ticker": "URNM",
       "tradeDate": "2026-09-04"
+    },
+    {
+      "clsPx": 57.38,
+      "hiPx": 58.556,
+      "loPx": 56.765,
+      "open": 57.25,
+      "stkVolu": 484104.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-08"
+    },
+    {
+      "clsPx": 56.98,
+      "hiPx": 57.93,
+      "loPx": 56.6,
+      "open": 57.01,
+      "stkVolu": 628313.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-09"
+    },
+    {
+      "clsPx": 54.63,
+      "hiPx": 55.94,
+      "loPx": 54.6039,
+      "open": 55.36,
+      "stkVolu": 521294.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-10"
+    },
+    {
+      "clsPx": 52.38,
+      "hiPx": 54.54,
+      "loPx": 52.35,
+      "open": 54.37,
+      "stkVolu": 980502.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-11"
+    },
+    {
+      "clsPx": 50.63,
+      "hiPx": 51.2899,
+      "loPx": 49.8,
+      "open": 51.18,
+      "stkVolu": 663802.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-14"
+    },
+    {
+      "clsPx": 50.4,
+      "hiPx": 51.12,
+      "loPx": 50.0101,
+      "open": 50.84,
+      "stkVolu": 513879.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-15"
+    },
+    {
+      "clsPx": 50.22,
+      "hiPx": 51.42,
+      "loPx": 49.45,
+      "open": 50.98,
+      "stkVolu": 496542.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 51.31,
+      "hiPx": 51.8,
+      "loPx": 51.12,
+      "open": 51.575,
+      "stkVolu": 547698.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 50.32,
+      "hiPx": 51.67,
+      "loPx": 50.04,
+      "open": 51.61,
+      "stkVolu": 423234.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 52.0,
+      "hiPx": 52.375,
+      "loPx": 51.3222,
+      "open": 51.66,
+      "stkVolu": 501889.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 52.79,
+      "hiPx": 53.025,
+      "loPx": 51.5874,
+      "open": 52.36,
+      "stkVolu": 399099.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 50.62,
+      "hiPx": 52.01,
+      "loPx": 50.6,
+      "open": 51.96,
+      "stkVolu": 333412.0,
+      "ticker": "URNM",
+      "tradeDate": "2026-09-23"
     }
   ]
 }
