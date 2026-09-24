@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 144.07,
-      "hiPx": 144.32,
+      "clsPx": 143.16,
+      "hiPx": 146.52,
       "loPx": 139.0,
       "open": 140.03,
-      "stkVolu": 4977140.0,
+      "stkVolu": 34366403.0,
       "ticker": "ORCL",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 150.59,
+      "hiPx": 152.0,
+      "loPx": 146.15,
+      "open": 146.75,
+      "stkVolu": 27742388.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 147.61,
+      "hiPx": 150.9,
+      "loPx": 144.4,
+      "open": 150.47,
+      "stkVolu": 39324905.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 148.56,
+      "hiPx": 149.98,
+      "loPx": 146.16,
+      "open": 148.93,
+      "stkVolu": 22418310.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 149.2,
+      "hiPx": 153.6,
+      "loPx": 148.6,
+      "open": 151.25,
+      "stkVolu": 31259962.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 144.56,
+      "hiPx": 148.662,
+      "loPx": 144.23,
+      "open": 148.3,
+      "stkVolu": 22682254.0,
+      "ticker": "ORCL",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

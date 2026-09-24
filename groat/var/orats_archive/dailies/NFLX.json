@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 77.54,
+      "clsPx": 76.41,
       "hiPx": 77.8,
-      "loPx": 77.17,
-      "open": 77.725,
-      "stkVolu": 1711779.0,
+      "loPx": 76.31,
+      "open": 77.8,
+      "stkVolu": 25376274.0,
       "ticker": "NFLX",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 75.31,
+      "hiPx": 76.96,
+      "loPx": 75.3,
+      "open": 76.905,
+      "stkVolu": 28167550.0,
+      "ticker": "NFLX",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 71.79,
+      "hiPx": 72.38,
+      "loPx": 70.11,
+      "open": 71.27,
+      "stkVolu": 114413541.0,
+      "ticker": "NFLX",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 73.36,
+      "hiPx": 73.87,
+      "loPx": 71.79,
+      "open": 71.82,
+      "stkVolu": 36947998.0,
+      "ticker": "NFLX",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 72.16,
+      "hiPx": 73.76,
+      "loPx": 71.58,
+      "open": 73.69,
+      "stkVolu": 34372510.0,
+      "ticker": "NFLX",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 71.36,
+      "hiPx": 72.3695,
+      "loPx": 71.07,
+      "open": 72.075,
+      "stkVolu": 32807457.0,
+      "ticker": "NFLX",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

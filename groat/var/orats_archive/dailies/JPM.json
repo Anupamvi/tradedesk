@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 350.78,
+      "clsPx": 348.92,
       "hiPx": 355.6,
-      "loPx": 350.36,
+      "loPx": 344.685,
       "open": 353.38,
-      "stkVolu": 718788.0,
+      "stkVolu": 8307796.0,
       "ticker": "JPM",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 349.31,
+      "hiPx": 353.49,
+      "loPx": 345.27,
+      "open": 352.245,
+      "stkVolu": 6485120.0,
+      "ticker": "JPM",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 349.67,
+      "hiPx": 349.67,
+      "loPx": 345.01,
+      "open": 347.89,
+      "stkVolu": 18312433.0,
+      "ticker": "JPM",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 352.04,
+      "hiPx": 354.5,
+      "loPx": 350.08,
+      "open": 353.67,
+      "stkVolu": 6414673.0,
+      "ticker": "JPM",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 340.0,
+      "hiPx": 352.1025,
+      "loPx": 337.3,
+      "open": 352.0,
+      "stkVolu": 11485583.0,
+      "ticker": "JPM",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 337.53,
+      "hiPx": 341.44,
+      "loPx": 336.981,
+      "open": 337.61,
+      "stkVolu": 7078381.0,
+      "ticker": "JPM",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

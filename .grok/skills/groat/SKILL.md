@@ -5,14 +5,14 @@ description: >
   groat, gorat, groat YYYY-MM-DD, gorat 2026-08-27, groat 2026-08-27, groat full,
   groat today, groat morning, groat replay, groat replay YYYY-MM-DD, RUN FULL SCAN, RUN DELTA SCAN, ANALYZE TICKER,
   groat analyze, REVIEW OPEN TRADES, groat review, /groat. Independent of groki,
-  groko, and Codex Daily. Stock first, then options. No order placement.
+  groko, and Codex Daily. Thesis first; TRADE is the vertical. No order placement.
 ---
 
 # Groat
 
 CODE=`/Users/anuppamvi/tradedesk/groat`
 
-Groat finds a **small** number of high-quality **stock and options** swing trades. Empty board is valid. The user clicks every Schwab order. Never submit, cancel, or replace.
+Groat finds a **small** number of high-quality **defined-risk verticals**. Empty board is valid. The user clicks every Schwab order. Never submit, cancel, or replace.
 
 Never invent ORATS numbers, prices, X posts, news, or win probabilities. Missing source → **DATA UNAVAILABLE**.
 
@@ -26,6 +26,7 @@ Never invent ORATS numbers, prices, X posts, news, or win probabilities. Missing
 | `groat delta` | delta; DATE as above |
 | `groat analyze NVDA` / `ANALYZE NVDA` | analyze; DATE as above |
 | `groat review` | review; DATE as above |
+| `groat xintel` / `groat xintel YYYY-MM-DD` | overlay X tags on that date's scan; no ORATS refresh |
 | `groat replay` / `groat replay 2026-08-27` | replay; DATE as above |
 
 Typo `gorat` = `groat`.
@@ -44,6 +45,7 @@ python3 -m groat full --date DATE
 python3 -m groat delta --date DATE
 python3 -m groat analyze TICKER --date DATE
 python3 -m groat review --date DATE
+python3 -m groat xintel --date DATE
 python3 -m groat replay --date DATE --option-slices 3 --max-strike-http 40
 ```
 
@@ -86,7 +88,7 @@ CLI prints `x_missing_on_trade=...` and exits **3** if any TRADE row has no X ta
 
 1. Read `x_queue.json` and every TRADE ticker (WATCH after that).
 2. Search X for each. Write `CODE/var/xintel/DATE/TICKER.json` (`tag` Quiet|Informed|Crowded). Promo spam = Crowded.
-3. If `x_missing_on_trade` is not `none`, re-run `python3 -m groat full --date DATE` and only then reply.
+3. If `x_missing_on_trade` is not `none`, run `python3 -m groat xintel --date DATE` (re-tags and re-renders; no ORATS/Schwab refresh). Do **not** re-run `full`.
 4. Do not invent posts. Do not change ORATS/price/debit/credit numbers. Missing X stays **DATA UNAVAILABLE** — never map it to Quiet.
 
 ## Reply shape
@@ -115,14 +117,16 @@ CLI prints `x_missing_on_trade=...` and exits **3** if any TRADE row has no X ta
 
 ## Hard rules
 
-- Underlying thesis first. Options serve the thesis.
+- Underlying thesis first. The **TRADE click is the vertical** (call debit, put debit, put credit, call credit). Never list shares as TRADE.
+- Stock is the thesis and a WATCH fallback when no vertical fills. Empty TRADE is valid. Do not invent a share ticket to fill the table.
+- Width ~5–10 (max 11). DTE ~21–75. No 0DTE. No naked long call/put as the ticket.
+- A 7–20 DTE weekly is allowed **only** to expire before earnings that would sit inside a 21–75 hold. Not a general short-dated ticket.
 - Ordinary options: do not hold through earnings. Missing earnings date → options rejected.
 - EVENT TRADE — EARNINGS is never auto-selected.
-- DTE ~21–75. No 0DTE.
 - Conservative fills: debit at ask, credit at short bid − long ask. Never mid. Report **target debit/credit**.
-- Review stock, long call, long put, call debit, put debit, put credit, call credit, then shortlist.
+- Review stock, long call, long put, call debit, put debit, put credit, call credit, then shortlist the **spread**.
 - **conf** is structure quality 0–85, not P(win).
 - After TRADE, also write **PD, N, R_cons, L**. Sort TRADE PD desc (nulls last). Conf unchanged. Print `PD sort only — conf unchanged.`
-- Prefer 2:1 R/R. Risk 0.5–1% of the 50k research account.
+- Prefer 2:1 R/R on the stock plan; debit R/R ≥ 1.2 is normal for a vertical. Risk 0.5–1% of the 50k research account.
 - Do not chase >2.5 ATR above 20 EMA.
 - Do not import other desks as the execute path.

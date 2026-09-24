@@ -113,11 +113,18 @@ def _pop_cell(row: dict) -> str:
     return fmt_pct(pop, 0)
 
 
+def _buy_what(row: dict) -> str:
+    if row.get("choice") == "STOCK":
+        return "STOCK"
+    if row.get("choice") == "OPTIONS":
+        return "OPTIONS"
+    return str(row.get("choice") or "—")
+
+
 def _premium_cell(row: dict) -> str:
     picked = _picked(row)
     if row.get("choice") == "STOCK":
-        side = picked.get("side") or "stock"
-        return "%s @ %s" % (side, fmt(picked.get("entry") or row.get("close")))
+        return "STOCK buy shares @ %s" % fmt(picked.get("entry") or row.get("close"))
     debit = picked.get("target_debit") if picked else row.get("target_debit")
     credit = picked.get("target_credit") if picked else row.get("target_credit")
     if debit is not None:
@@ -159,13 +166,13 @@ def _evidence_cell(row: dict) -> str:
 def _strategy_cell(row: dict) -> str:
     inst = str(_picked(row).get("instrument") or row.get("choice") or "")
     names = {
-        "debit_call_spread": "call debit",
-        "debit_put_spread": "put debit",
-        "put_credit_spread": "put credit",
-        "call_credit_spread": "call credit",
-        "long_call": "long call",
-        "long_put": "long put",
-        "stock": "stock",
+        "debit_call_spread": "call debit spread",
+        "debit_put_spread": "put debit spread",
+        "put_credit_spread": "put credit spread",
+        "call_credit_spread": "call credit spread",
+        "long_call": "long call (not a spread)",
+        "long_put": "long put (not a spread)",
+        "stock": "STOCK shares",
     }
     return names.get(inst, inst.replace("_", " ") or "—")
 
@@ -257,6 +264,8 @@ def _park_label(reason: str) -> str:
         "analog_fast_stop_veto": "analog fast-stop",
         "already_held_calls": "already hold calls",
         "already_held_puts": "already hold puts",
+        "already_held_shares": "already hold shares",
+        "spread_required": "no options spread",
         "below_20ema": "below 20 EMA",
         "below_trade_score": "score short",
         "score_below_watch": "score too low",
@@ -272,18 +281,18 @@ def _park_label(reason: str) -> str:
 
 def _ticket_cell(row: dict) -> str:
     if row.get("choice") == "STOCK":
-        return _premium_cell(row) or "stock"
-    return "%s %s · %s" % (_strategy_cell(row), _strikes_cell(row), _exp_cell(row))
+        return "STOCK · buy shares @ %s" % fmt(_picked(row).get("entry") or row.get("close"))
+    return "OPTIONS · %s %s · %s" % (_strategy_cell(row), _strikes_cell(row), _exp_cell(row))
 
 
 def _ticket_table(rows: List[dict], parked: bool = False) -> List[str]:
     trade_cols = not parked
     if trade_cols:
-        head = "| | ticker | setup | ticket | pay | last | conf | PD | N | R_cons | L | click | X |"
-        rule = "|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---|---|"
+        head = "| | ticker | buy | setup | ticket | pay | last | conf | PD | N | R_cons | L | click | X |"
+        rule = "|---|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---|---|"
     else:
-        head = "| | ticker | setup | ticket | pay | last | click | X |"
-        rule = "|---|---|---|---|---|---:|---|---|"
+        head = "| | ticker | buy | setup | ticket | pay | last | click | X |"
+        rule = "|---|---|---|---|---|---|---:|---|---|"
         head += " why not |"
         rule += "---|"
     lines = [head, rule]
@@ -294,9 +303,10 @@ def _ticket_table(rows: List[dict], parked: bool = False) -> List[str]:
         cells = [
             mark,
             "**%s**" % (row.get("ticker") or ""),
+            "**%s**" % _buy_what(row),
             setup_label(row.get("primary")),
             _ticket_cell(row),
-            _premium_cell(row) or ("stock" if row.get("choice") == "STOCK" else "—"),
+            _premium_cell(row) or ("STOCK shares" if row.get("choice") == "STOCK" else "—"),
             fmt(row.get("close")),
         ]
         if trade_cols:
@@ -341,21 +351,23 @@ def _card(row: dict) -> List[str]:
     lines = [
         "---",
         "",
-        "### %s %s · **%s** · %s" % (
+        "### %s %s · **BUY %s** · **%s** · %s" % (
             "🟢" if row.get("action") == "TRADE" else "🟡",
             row.get("ticker"),
+            _buy_what(row),
             _strategy_cell(row),
             _x_cell(row),
         ),
         "",
-        "%s. Last **%s**."
-        % (setup_name, fmt(row.get("close"))),
+        "%s. Last **%s**. This ticket is **%s**."
+        % (setup_name, fmt(row.get("close")), "OPTIONS (spread)" if _buy_what(row) == "OPTIONS" else "STOCK (shares)"),
         "",
     ]
     kv = [
+        ("Buy", "**%s**" % ("OPTIONS spread" if _buy_what(row) == "OPTIONS" else "STOCK shares")),
         ("Setup", setup_name),
         ("Strategy", _strategy_cell(row)),
-        ("Strikes", _strikes_cell(row)),
+        ("Strikes", _strikes_cell(row) if _buy_what(row) == "OPTIONS" else "n/a — shares"),
         ("Expiry", _exp_cell(row)),
         ("Pay", pay),
         ("Last", fmt(row.get("close"))),
@@ -387,7 +399,8 @@ def _legend() -> List[str]:
         "You click every Schwab order. Empty TRADE is valid.",
         PD_NOTE,
         "",
-        "Click: 🟢 last is clear · 🟡 within 0.5% · 🔴 already through — do not click. **Pay** is max debit / min credit.",
+        "**TRADE = OPTIONS (vertical).** STOCK on the board means **buy shares**, not a spread. Do not mix them up.",
+        "Click: 🟢 last is clear · 🟡 within 0.5% · 🔴 already through — do not click. **Pay** is max debit / min credit for OPTIONS; share price for STOCK.",
         "X: 🟢 Informed · 🟡 Quiet · 🔴 Crowded · ⚪ missing (do not treat missing as Quiet).",
         "",
         SETUP_LINE,

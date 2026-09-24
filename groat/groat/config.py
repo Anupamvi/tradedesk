@@ -23,6 +23,7 @@ STOP_ATR_MULT = 2.0
 HOLD_SESSIONS = 15
 DTE_MIN = 21
 DTE_MAX = 75
+DTE_WEEKLY_FLOOR = 7
 DTE_LONG_PREF = (35, 60)
 DTE_CREDIT_PREF = (30, 45)
 QUOTE_WIDTH_ABS = 0.20
@@ -34,6 +35,7 @@ CONTRACT_MULTIPLIER = 100
 MAX_FINAL = 10
 TRADE_SCORE_MIN = 52
 WATCH_SCORE_MIN = 38
+GROUP_TRADE_CAP = 2
 # Live RTH bar is not a completed session below this rvol vs prior 20d volume.
 INCOMPLETE_RVOL = 0.45
 RR_PREFER = 2.0
@@ -41,7 +43,8 @@ RR_MIN = 1.2
 CHASE_ATR = 2.5
 EARNINGS_HOLD_DAYS = 21
 # ORATS /strikes `dte` is a min,max RANGE (not a list of target slices).
-STRIKE_DTE = "21,75"
+# Floor 7 so we can price a vertical that expires before earnings.
+STRIKE_DTE = "7,75"
 SLEEVE = "groat_swing"
 EVIDENCE_MAX_ANALOGS = 12
 EVIDENCE_MAX_STRIKE_HTTP = 16

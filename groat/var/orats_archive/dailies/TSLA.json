@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 359.6526,
-      "hiPx": 359.75,
+      "clsPx": 358.08,
+      "hiPx": 365.1,
       "loPx": 354.8913,
       "open": 357.925,
-      "stkVolu": 3068674.0,
+      "stkVolu": 32177388.0,
       "ticker": "TSLA",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 366.2,
+      "hiPx": 374.12,
+      "loPx": 363.22,
+      "open": 367.48,
+      "stkVolu": 38924057.0,
+      "ticker": "TSLA",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 364.27,
+      "hiPx": 370.9,
+      "loPx": 360.751,
+      "open": 369.0,
+      "stkVolu": 51922256.0,
+      "ticker": "TSLA",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 375.3,
+      "hiPx": 378.36,
+      "loPx": 371.07,
+      "open": 371.635,
+      "stkVolu": 36599609.0,
+      "ticker": "TSLA",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 378.9,
+      "hiPx": 380.42,
+      "loPx": 372.88,
+      "open": 379.069,
+      "stkVolu": 28229908.0,
+      "ticker": "TSLA",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 380.12,
+      "hiPx": 386.7,
+      "loPx": 377.575,
+      "open": 380.1,
+      "stkVolu": 33522492.0,
+      "ticker": "TSLA",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

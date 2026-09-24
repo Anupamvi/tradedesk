@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 195.105,
-      "hiPx": 195.79,
+      "clsPx": 196.83,
+      "hiPx": 197.67,
       "loPx": 194.78,
       "open": 195.39,
-      "stkVolu": 174364.0,
+      "stkVolu": 3485674.0,
       "ticker": "RTX",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 193.54,
+      "hiPx": 197.5,
+      "loPx": 191.84,
+      "open": 197.5,
+      "stkVolu": 3549581.0,
+      "ticker": "RTX",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 194.0,
+      "hiPx": 194.0,
+      "loPx": 191.175,
+      "open": 193.0,
+      "stkVolu": 9843426.0,
+      "ticker": "RTX",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 194.34,
+      "hiPx": 195.19,
+      "loPx": 192.86,
+      "open": 193.75,
+      "stkVolu": 2930277.0,
+      "ticker": "RTX",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 190.99,
+      "hiPx": 194.87,
+      "loPx": 187.04,
+      "open": 194.74,
+      "stkVolu": 4686232.0,
+      "ticker": "RTX",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 192.19,
+      "hiPx": 195.07,
+      "loPx": 190.7,
+      "open": 191.88,
+      "stkVolu": 4222436.0,
+      "ticker": "RTX",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

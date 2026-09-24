@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 247.74,
+      "clsPx": 245.96,
       "hiPx": 249.26,
-      "loPx": 246.69,
+      "loPx": 244.3,
       "open": 248.1,
-      "stkVolu": 3226732.0,
+      "stkVolu": 33488488.0,
       "ticker": "AMZN",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 251.19,
+      "hiPx": 252.73,
+      "loPx": 249.24,
+      "open": 251.065,
+      "stkVolu": 30438790.0,
+      "ticker": "AMZN",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 253.71,
+      "hiPx": 255.43,
+      "loPx": 251.88,
+      "open": 252.92,
+      "stkVolu": 52274713.0,
+      "ticker": "AMZN",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 258.45,
+      "hiPx": 259.49,
+      "loPx": 253.6,
+      "open": 256.4,
+      "stkVolu": 42979407.0,
+      "ticker": "AMZN",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 254.98,
+      "hiPx": 259.0,
+      "loPx": 253.78,
+      "open": 255.11,
+      "stkVolu": 41982569.0,
+      "ticker": "AMZN",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 249.27,
+      "hiPx": 253.99,
+      "loPx": 247.76,
+      "open": 253.0,
+      "stkVolu": 44209157.0,
+      "ticker": "AMZN",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

@@ -104,9 +104,26 @@ def _opt_why(row: dict) -> List[str]:
     return notes
 
 
+def _open_option_legs(row: dict) -> bool:
+    for leg in row.get("schwab_legs") or []:
+        if not isinstance(leg, dict):
+            continue
+        if str(leg.get("right") or "").lower() not in ("call", "put"):
+            continue
+        qty = to_float(leg.get("quantity"))
+        if qty is not None and qty == 0:
+            continue
+        return True
+    return False
+
+
 def _fresh(row: dict) -> bool:
-    """Desk pick 'take this' skips in-book names. Same-right Schwab holds are already WATCH."""
-    return not row.get("in_book")
+    """Desk pick 'take this' skips in-book names and names with open option legs."""
+    if row.get("in_book"):
+        return False
+    if _open_option_legs(row):
+        return False
+    return True
 
 
 def desk_picks(trades: List[dict]) -> Dict[str, object]:
@@ -160,10 +177,10 @@ def render_desk_picks(picks: dict) -> List[str]:
             x_line = "🟢 Informed"
         else:
             x_line = "🟡 %s" % x_tag
-        lines.append("🎯 **Take options: %s**" % best_opt.get("ticker"))
+        lines.append("🎯 **BUY OPTIONS (spread): %s** — not shares" % best_opt.get("ticker"))
         lines.append("")
         lines.append(
-            "**%s** · %s"
+            "**OPTIONS** · %s · %s"
             % (
                 SETUP_NAMES.get(best_opt.get("primary") or "", best_opt.get("primary") or "—"),
                 p.get("legs") or best_opt.get("choice"),
@@ -195,7 +212,7 @@ def render_desk_picks(picks: dict) -> List[str]:
         fill_note = best_opt.get("fill_note") or p.get("fill_note")
         if fill_note:
             lines.append("")
-            lines.append("**Do not click this option** if: %s" % fill_note)
+            lines.append("**Do not click this OPTIONS spread** if: %s" % fill_note)
         if best_opt.get("book_group_note"):
             lines.append("")
             lines.append(best_opt.get("book_group_note"))
@@ -205,9 +222,9 @@ def render_desk_picks(picks: dict) -> List[str]:
         lines.append("")
     else:
         if ranked:
-            lines.append("**Options:** TRADE names are in book. Shown below for visibility — do not add.")
+            lines.append("**OPTIONS:** TRADE names are in book. Shown below for visibility — do not add.")
         else:
-            lines.append("**Options:** none cleared. Valid.")
+            lines.append("**OPTIONS spreads:** none cleared. Valid. Do not buy shares just to fill TRADE.")
         lines.append("")
     if ranked:
         lines.append("Why this one, not the others:")
@@ -220,13 +237,13 @@ def render_desk_picks(picks: dict) -> List[str]:
     if best_stk:
         p = _picked(best_stk)
         lines.append(
-            "**Stock if you want one: %s** — buy ~%s, stop **%s**, target **%s**, %s shares. Setup %s."
+            "**STOCK (shares, not the TRADE click): %s** — buy ~%s shares @ ~%s, stop **%s**, target **%s**. Setup %s. Only if you want equity, not a spread."
             % (
                 best_stk.get("ticker"),
+                p.get("shares") or "",
                 fmt(p.get("entry") or best_stk.get("close")),
                 fmt(p.get("stop")),
                 fmt(p.get("target")),
-                p.get("shares") or "",
                 SETUP_NAMES.get(best_stk.get("primary") or "", best_stk.get("primary") or ""),
             )
         )

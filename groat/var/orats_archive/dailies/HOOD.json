@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 107.1688,
+      "clsPx": 104.42,
       "hiPx": 111.05,
-      "loPx": 106.55,
+      "loPx": 101.7045,
       "open": 110.27,
-      "stkVolu": 3172699.0,
+      "stkVolu": 33627286.0,
       "ticker": "HOOD",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 109.81,
+      "hiPx": 110.55,
+      "loPx": 106.08,
+      "open": 110.1,
+      "stkVolu": 21913211.0,
+      "ticker": "HOOD",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 119.82,
+      "hiPx": 120.5699,
+      "loPx": 111.06,
+      "open": 113.34,
+      "stkVolu": 39358821.0,
+      "ticker": "HOOD",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 123.3,
+      "hiPx": 126.41,
+      "loPx": 121.505,
+      "open": 125.045,
+      "stkVolu": 28301532.0,
+      "ticker": "HOOD",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 124.25,
+      "hiPx": 126.16,
+      "loPx": 122.46,
+      "open": 123.0,
+      "stkVolu": 16047619.0,
+      "ticker": "HOOD",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 122.7,
+      "hiPx": 126.74,
+      "loPx": 122.24,
+      "open": 122.78,
+      "stkVolu": 19079854.0,
+      "ticker": "HOOD",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

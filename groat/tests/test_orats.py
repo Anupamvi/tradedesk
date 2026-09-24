@@ -162,7 +162,7 @@ class TestStrikesDteRange(unittest.TestCase):
         self.assertTrue(pack["ok"])
         self.assertEqual(calls[0][0], "/strikes")
         self.assertEqual(calls[0][1]["dte"], STRIKE_DTE)
-        self.assertEqual(STRIKE_DTE, "21,75")
+        self.assertEqual(STRIKE_DTE, "7,75")
 
 
 class TestTapeRefresh(unittest.TestCase):

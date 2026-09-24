@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 209.545,
-      "hiPx": 211.0,
-      "loPx": 208.89,
+      "clsPx": 201.96,
+      "hiPx": 212.22,
+      "loPx": 197.01,
       "open": 210.19,
-      "stkVolu": 240006.0,
+      "stkVolu": 12877405.0,
       "ticker": "BA",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 197.0,
+      "hiPx": 203.6426,
+      "loPx": 197.0,
+      "open": 202.25,
+      "stkVolu": 11790485.0,
+      "ticker": "BA",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 198.2,
+      "hiPx": 199.63,
+      "loPx": 195.46,
+      "open": 196.83,
+      "stkVolu": 9834402.0,
+      "ticker": "BA",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 201.15,
+      "hiPx": 202.2,
+      "loPx": 198.13,
+      "open": 200.45,
+      "stkVolu": 6351805.0,
+      "ticker": "BA",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 197.72,
+      "hiPx": 203.3293,
+      "loPx": 197.14,
+      "open": 203.0,
+      "stkVolu": 7837116.0,
+      "ticker": "BA",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 199.93,
+      "hiPx": 204.065,
+      "loPx": 197.975,
+      "open": 197.975,
+      "stkVolu": 10022932.0,
+      "ticker": "BA",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

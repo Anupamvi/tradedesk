@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 374.665,
-      "hiPx": 379.0,
+      "clsPx": 375.65,
+      "hiPx": 381.96,
       "loPx": 367.2958,
-      "open": 367.51,
-      "stkVolu": 519708.0,
+      "open": 367.68,
+      "stkVolu": 5251586.0,
       "ticker": "PANW",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 375.06,
+      "hiPx": 383.12,
+      "loPx": 360.66,
+      "open": 365.465,
+      "stkVolu": 6294771.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 363.58,
+      "hiPx": 376.01,
+      "loPx": 356.0,
+      "open": 375.075,
+      "stkVolu": 13800753.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 371.76,
+      "hiPx": 374.56,
+      "loPx": 357.59,
+      "open": 364.09,
+      "stkVolu": 5385833.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 374.57,
+      "hiPx": 377.91,
+      "loPx": 363.58,
+      "open": 374.8,
+      "stkVolu": 8110523.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 393.3,
+      "hiPx": 393.52,
+      "loPx": 374.2,
+      "open": 379.8,
+      "stkVolu": 6281301.0,
+      "ticker": "PANW",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 171.0999,
-      "hiPx": 172.23,
-      "loPx": 169.3,
+      "clsPx": 174.34,
+      "hiPx": 174.7651,
+      "loPx": 168.96,
       "open": 170.39,
-      "stkVolu": 2381748.0,
+      "stkVolu": 20983996.0,
       "ticker": "PLTR",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 176.24,
+      "hiPx": 177.88,
+      "loPx": 172.607,
+      "open": 175.95,
+      "stkVolu": 23776077.0,
+      "ticker": "PLTR",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 177.64,
+      "hiPx": 177.75,
+      "loPx": 172.0,
+      "open": 177.18,
+      "stkVolu": 39302689.0,
+      "ticker": "PLTR",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 183.09,
+      "hiPx": 183.38,
+      "loPx": 176.76,
+      "open": 178.725,
+      "stkVolu": 22006697.0,
+      "ticker": "PLTR",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 184.99,
+      "hiPx": 185.54,
+      "loPx": 182.03,
+      "open": 185.125,
+      "stkVolu": 21991714.0,
+      "ticker": "PLTR",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 191.79,
+      "hiPx": 193.79,
+      "loPx": 182.94,
+      "open": 186.29,
+      "stkVolu": 35119608.0,
+      "ticker": "PLTR",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

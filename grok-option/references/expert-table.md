@@ -46,6 +46,7 @@ Condor lists **all four** legs. Missing a wing is incomplete.
 - **Max profit $** (1 lot): credit = `net × 100`. Debit = `(width − net) × 100`. Condor = `(put net + call net) × 100`. Conservative fill: short bid − long ask, or long ask − short bid.
 - **Max loss $** (1 lot): credit = `(width − net) × 100`. Debit = `net × 100`. Condor = `(max(put width, call width) − total net) × 100`. Mark `worse-fill` in Notes if mids disagree >5%.
 - Among structures that already clear gates, pick **highest credit/width**, then dollars. Prefer 1-lot credit ≥ $100. Do not take a 15-wide that is more than 1.5 pts worse on credit/width. Fire skip debit/width < 0.25. Fire is an Expert row only with opening flow; otherwise sleeve board.
+- **Highest frac in an empty sector is not automatically Expert.** Geometry-pass ⚠️ names that just printed a sourced vertical squeeze (earnings gap still running, name ATM straddle >> VIX) stay Review. Empty sector is valid. Do not pad.
 - **Conf** is trade-success confidence. Two parts, both required:
   1. **naive POP** from **quoted Schwab delta** (integer %). Credits: `round(100 × (1 − |short Δ|))`. Debits: `round(100 × |long Δ|)`. Condor: `round(100 × (1 − max(|put short Δ|, |call short Δ|)))` and tag `wing` — true condor POP is lower. Missing delta → Conf blank, no Prime, Rec lots = 1.
   2. **book** = this sleeve’s rolling 20-trade win rate from the journal. If n < 20: `book n/a`.

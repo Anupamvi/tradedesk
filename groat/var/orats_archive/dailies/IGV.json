@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 105.32,
-      "hiPx": 105.645,
+      "clsPx": 104.96,
+      "hiPx": 105.94,
       "loPx": 104.0987,
       "open": 104.37,
-      "stkVolu": 728768.0,
+      "stkVolu": 7608502.0,
       "ticker": "IGV",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 105.78,
+      "hiPx": 106.5099,
+      "loPx": 104.08,
+      "open": 105.08,
+      "stkVolu": 6142420.0,
+      "ticker": "IGV",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 104.35,
+      "hiPx": 106.4,
+      "loPx": 103.48,
+      "open": 106.4,
+      "stkVolu": 6990264.0,
+      "ticker": "IGV",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 107.13,
+      "hiPx": 107.145,
+      "loPx": 104.62,
+      "open": 105.02,
+      "stkVolu": 8777924.0,
+      "ticker": "IGV",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 106.75,
+      "hiPx": 108.44,
+      "loPx": 105.81,
+      "open": 108.29,
+      "stkVolu": 8136895.0,
+      "ticker": "IGV",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 108.1,
+      "hiPx": 108.325,
+      "loPx": 106.49,
+      "open": 107.06,
+      "stkVolu": 6869735.0,
+      "ticker": "IGV",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

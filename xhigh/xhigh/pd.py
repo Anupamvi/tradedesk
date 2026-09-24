@@ -98,14 +98,16 @@ def compute_pd(
     out["N"] = n
     l = liquidity_factor(size if size is not None else n, n, spread_frac)
     out["L"] = l
-    if age > QUOTE_MAX_AGE_SEC:
-        return out
     if n < 1:
         out["reason"] = "N=0"
         return out
     if l is None:
         return out
     out["pd"] = n * r_cons * l
+    if age > QUOTE_MAX_AGE_SEC:
+        out["reason"] = "stale_quote"
+        out["stale"] = True
+        return out
     out["reason"] = ""
     return out
 
@@ -127,6 +129,7 @@ def stamp_pd(row: dict, pack: dict) -> dict:
     row["r_cons"] = pack.get("R_cons")
     row["pd_l"] = pack.get("L")
     row["pd_reason"] = pack.get("reason") or ""
+    row["pd_stale"] = bool(pack.get("stale"))
     return row
 
 
@@ -198,14 +201,8 @@ def attach_trade_pd(row: dict, now=None) -> dict:
         explicit=row.get("quote_age_sec"),
         now=now,
     )
-    # Intel/xhot restamp is minutes later; do not clobber scan-time PD with stale-quote DATA UNAVAILABLE.
-    if (
-        age is not None
-        and age > QUOTE_MAX_AGE_SEC
-        and (row.get("pd") is not None or row.get("pd_n") is not None or row.get("pd_reason"))
-    ):
-        row.update(pd_cells(row))
-        return row
+    if age is not None:
+        row["quote_age_sec"] = age
     pack = compute_pd(
         max_loss=ml,
         planned_reward=reward,

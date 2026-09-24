@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
-from groat.config import CHASE_ATR
+from groat.config import CHASE_ATR, GROUP_TRADE_CAP
 from groat.num import fmt, to_float
 
 # Stock replay 2025-07-03→2026-08-27: B −0.15R, C −0.12R (4% win), G −0.18R.
@@ -107,6 +107,23 @@ def ticket_right(picked: Optional[dict] = None) -> Optional[str]:
     return None
 
 
+def already_held_shares_reason(legs: Optional[Sequence[dict]] = None) -> Optional[str]:
+    """Park a new STOCK ticket when Schwab already has shares of the name."""
+    for leg in legs or []:
+        if not isinstance(leg, dict):
+            continue
+        if str(leg.get("right") or "").lower() in ("call", "put"):
+            continue
+        qty = to_float(leg.get("quantity"))
+        if qty is not None and qty == 0:
+            continue
+        asset = str(leg.get("asset") or "").upper()
+        if asset == "OPTION":
+            continue
+        return "already_held_shares"
+    return None
+
+
 def already_held_same_right_reason(
     picked: Optional[dict] = None,
     legs: Optional[Sequence[dict]] = None,
@@ -159,12 +176,22 @@ def apply_same_group_book_park(row: dict, open_groups=None, open_tickers=None) -
 
 
 def apply_already_held_park(row: dict) -> Optional[str]:
-    """TRADE OPTIONS → WATCH when Schwab holds the same right. Exact open ticket stays TRADE."""
+    """TRADE → WATCH when Schwab already has the same exposure.
+
+    STOCK parks if shares are held. OPTIONS parks on the same call/put right.
+    Exact open book ticket stays TRADE.
+    """
     if not isinstance(row, dict) or row.get("action") != "TRADE":
         return None
-    if row.get("choice") != "OPTIONS":
-        return None
     if row.get("same_ticket"):
+        return None
+    if row.get("choice") == "STOCK":
+        reason = already_held_shares_reason(row.get("schwab_legs"))
+        if not reason:
+            return None
+        park_trade(row, reason)
+        return reason
+    if row.get("choice") != "OPTIONS":
         return None
     reason = already_held_same_right_reason(row.get("picked") if isinstance(row.get("picked"), dict) else None, row.get("schwab_legs"))
     if not reason:
@@ -188,12 +215,18 @@ def apply_analog_0win_park(row: dict) -> Optional[str]:
 
 
 def below_ema_reason(row: Optional[dict] = None) -> Optional[str]:
-    """Bullish OPTIONS whose last is already through 20 EMA are not a new TRADE."""
+    """Bullish last already through 20 EMA is not a new TRADE.
+
+    Setup A/F stock is a dip into the 20 — leave those. OPTIONS and D/E stock park.
+    """
     if not isinstance(row, dict):
         return None
-    if row.get("choice") != "OPTIONS":
+    choice = str(row.get("choice") or "")
+    if choice not in ("OPTIONS", "STOCK"):
         return None
     if str(row.get("direction") or "") != "bullish":
+        return None
+    if choice == "STOCK" and str(row.get("primary") or "") in ("A", "F"):
         return None
     close = to_float(row.get("close"))
     ema = to_float(row.get("ema20"))
@@ -212,6 +245,28 @@ def apply_below_ema_park(row: dict) -> Optional[str]:
         return None
     park_trade(row, reason)
     return reason
+
+
+def apply_group_trade_cap(rows: Optional[Sequence[dict]] = None, cap: Optional[int] = None) -> list:
+    """Keep the first `cap` TRADE rows per industry group (caller must PD-sort first)."""
+    limit = GROUP_TRADE_CAP if cap is None else int(cap)
+    counts = {}
+    parked = []
+    for row in rows or []:
+        if not isinstance(row, dict) or row.get("action") != "TRADE":
+            continue
+        group = str(row.get("group") or "")
+        if not group or group in ("other", "index", "macro"):
+            continue
+        n = counts.get(group, 0)
+        if n >= limit:
+            ticker = str(row.get("ticker") or "")
+            park_trade(row, "group_cap")
+            if ticker:
+                parked.append(ticker)
+        else:
+            counts[group] = n + 1
+    return parked
 
 
 def stamp_fill_guard(row: dict) -> dict:

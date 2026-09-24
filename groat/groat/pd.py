@@ -45,12 +45,12 @@ def quote_age_seconds(quote_time_ms=None, quote_date=None, explicit=None, now=No
     return None
 
 
-def liquidity_factor(size, n: int, spread_frac) -> Optional[float]:
+def liquidity_factor(size, n: int, spread_frac, stock: bool = False) -> Optional[float]:
     if n < 1:
         return 0.0
     sp = to_float(spread_frac)
     if sp is None:
-        return None
+        return 1.0 if stock else None
     if sp > SPREAD_WIDE:
         return 0.0
     sz = to_float(size)
@@ -72,6 +72,8 @@ def compute_pd(
     quote_age_sec: Optional[float],
     spread_frac: Optional[float],
     size: Optional[float] = None,
+    session_ok: bool = False,
+    stock: bool = False,
 ) -> Dict[str, Any]:
     out = {
         "pd": None,
@@ -86,6 +88,8 @@ def compute_pd(
     risk = to_float(planned_risk)
     liq = to_float(liquidity_lots)
     age = to_float(quote_age_sec)
+    if age is None and (session_ok or stock):
+        age = 0.0
     if ml is None or ml <= 0 or reward is None or risk is None or risk <= 0 or liq is None or age is None:
         return out
     r_cons = min(reward / risk, R_CAP)
@@ -94,9 +98,9 @@ def compute_pd(
     if n < 0:
         n = 0
     out["N"] = n
-    l = liquidity_factor(size if size is not None else n, n, spread_frac)
+    l = liquidity_factor(size if size is not None else n, n, spread_frac, stock=stock)
     out["L"] = l
-    if age > QUOTE_MAX_AGE_SEC:
+    if (not session_ok) and (not stock) and age > QUOTE_MAX_AGE_SEC:
         return out
     if n < 1:
         out["reason"] = "N=0"
@@ -150,8 +154,12 @@ def _picked(row: dict) -> dict:
     return p if isinstance(p, dict) else {}
 
 
-def attach_trade_pd(row: dict, now=None) -> dict:
-    """Stamp PD on a row that is already TRADE. No-op for other actions."""
+def attach_trade_pd(row: dict, now=None, eod: bool = False) -> dict:
+    """Stamp PD on a row that is already TRADE. No-op for other actions.
+
+    Live RTH options still need a quote ≤120s old. Evening delayed / session-close
+    (`eod=True`) and stock last from the asof bar skip the live-age gate.
+    """
     if not isinstance(row, dict) or row.get("action") != "TRADE":
         return row
     picked = _picked(row)
@@ -165,7 +173,8 @@ def attach_trade_pd(row: dict, now=None) -> dict:
     max_loss = to_float(src.get("max_loss_1lot") or row.get("max_loss_1lot"))
     reward = to_float(src.get("planned_reward") or row.get("planned_reward"))
     risk = to_float(src.get("planned_risk") or row.get("planned_risk"))
-    if max_loss is None and row.get("choice") == "STOCK":
+    stock = str(row.get("choice") or "") == "STOCK"
+    if max_loss is None and stock:
         entry = to_float(src.get("entry"))
         stop = to_float(src.get("stop"))
         target = to_float(src.get("target"))
@@ -182,6 +191,8 @@ def attach_trade_pd(row: dict, now=None) -> dict:
         quote_age_sec=age,
         spread_frac=src.get("spread_frac") if src.get("spread_frac") is not None else row.get("spread_frac"),
         size=src.get("pd_size") if src.get("pd_size") is not None else (src.get("contracts") or src.get("shares") or row.get("contracts")),
+        session_ok=bool(eod),
+        stock=stock,
     )
     stamp_pd(row, pack)
     row.update(pd_cells(row))

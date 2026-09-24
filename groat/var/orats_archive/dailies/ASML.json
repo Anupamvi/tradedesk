@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 1607.01,
+      "clsPx": 1602.22,
       "hiPx": 1629.85,
-      "loPx": 1605.88,
+      "loPx": 1584.54,
       "open": 1629.85,
-      "stkVolu": 282778.0,
+      "stkVolu": 1338744.0,
       "ticker": "ASML",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 1629.67,
+      "hiPx": 1638.7,
+      "loPx": 1614.015,
+      "open": 1637.07,
+      "stkVolu": 1396255.0,
+      "ticker": "ASML",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 1679.92,
+      "hiPx": 1681.61,
+      "loPx": 1628.27,
+      "open": 1630.0,
+      "stkVolu": 2527195.0,
+      "ticker": "ASML",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 1711.32,
+      "hiPx": 1722.33,
+      "loPx": 1677.09,
+      "open": 1693.07,
+      "stkVolu": 1316173.0,
+      "ticker": "ASML",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 1747.9,
+      "hiPx": 1749.7,
+      "loPx": 1694.29,
+      "open": 1696.0,
+      "stkVolu": 1175553.0,
+      "ticker": "ASML",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 1744.61,
+      "hiPx": 1746.605,
+      "loPx": 1704.3,
+      "open": 1731.2,
+      "stkVolu": 1255345.0,
+      "ticker": "ASML",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

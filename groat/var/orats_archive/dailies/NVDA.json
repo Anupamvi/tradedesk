@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 214.55,
-      "hiPx": 214.55,
-      "loPx": 213.31,
+      "clsPx": 213.9,
+      "hiPx": 216.76,
+      "loPx": 212.5,
       "open": 214.14,
-      "stkVolu": 11250724.0,
+      "stkVolu": 96563590.0,
       "ticker": "NVDA",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 219.34,
+      "hiPx": 219.905,
+      "loPx": 217.145,
+      "open": 218.375,
+      "stkVolu": 94191263.0,
+      "ticker": "NVDA",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 222.27,
+      "hiPx": 222.73,
+      "loPx": 218.03,
+      "open": 219.35,
+      "stkVolu": 190287428.0,
+      "ticker": "NVDA",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 227.38,
+      "hiPx": 228.5,
+      "loPx": 221.56,
+      "open": 222.935,
+      "stkVolu": 109806067.0,
+      "ticker": "NVDA",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 228.87,
+      "hiPx": 229.98,
+      "loPx": 226.5,
+      "open": 226.85,
+      "stkVolu": 95746745.0,
+      "ticker": "NVDA",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 225.51,
+      "hiPx": 228.95,
+      "loPx": 224.02,
+      "open": 228.03,
+      "stkVolu": 89547290.0,
+      "ticker": "NVDA",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

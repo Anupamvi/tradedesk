@@ -87,12 +87,14 @@ python3 -m trendbook full --date YYYY-MM-DD
 
 - Treat `xhigh`, `xhigh full`, and `xhigh YYYY-MM-DD` as the **xhigh** new-setup wheel/swing scanner under `xhigh/`. Not Groat, not Wheelo, not Groko.
 - Independent: `python3 -m xhigh` from `/Users/anuppamvi/tradedesk/xhigh`. Do not import other desks as the execute path. Do not steal `groat` / `RUN FULL SCAN` / `wheelo` triggers.
-- Schwab movers + `lastPrice` only. Catalog: CSP, put credit, call debit, call credit, put debit, iron condor. No ticket cap. CLICK only if EV > 0. No harvest. No covered calls. Empty CLICK is valid. No order placement. **v1 locked** — `xhigh/docs/LOCK.md`.
+- Schwab movers + `lastPrice` only. Catalog: CSP, put credit, call debit, call credit, put debit, iron condor. No ticket cap. CLICK only if EV > 0. No harvest. No covered calls. Empty CLICK is valid only after names were chained; empty movers is DATA UNAVAILABLE. No order placement. **v1 locked** — `xhigh/docs/LOCK.md`.
 - Default:
 
 ```bash
 python3 -m xhigh full --date YYYY-MM-DD
 ```
+
+If DATE is not today America/New_York, add `--live-schwab`.
 
 - Output: `/Users/anuppamvi/tradedesk/xhigh/out/xhigh/YYYY-MM-DD/`
 - ORATS from `xhigh/.env` then `groat/.env` then tradedesk `.env`. Never print the token. Never invent ORATS, Schwab, X, or earnings numbers.

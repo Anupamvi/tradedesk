@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 381.0,
-      "hiPx": 382.26,
+      "clsPx": 382.29,
+      "hiPx": 387.29,
       "loPx": 377.16,
       "open": 378.0,
-      "stkVolu": 189576.0,
+      "stkVolu": 2135004.0,
       "ticker": "ISRG",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 383.54,
+      "hiPx": 388.2,
+      "loPx": 378.2801,
+      "open": 385.57,
+      "stkVolu": 2394062.0,
+      "ticker": "ISRG",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 393.33,
+      "hiPx": 394.91,
+      "loPx": 379.5,
+      "open": 381.51,
+      "stkVolu": 4930004.0,
+      "ticker": "ISRG",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 401.65,
+      "hiPx": 403.48,
+      "loPx": 391.04,
+      "open": 393.89,
+      "stkVolu": 2972891.0,
+      "ticker": "ISRG",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 402.09,
+      "hiPx": 403.97,
+      "loPx": 397.72,
+      "open": 403.0,
+      "stkVolu": 1864523.0,
+      "ticker": "ISRG",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 398.3,
+      "hiPx": 404.44,
+      "loPx": 396.05,
+      "open": 400.88,
+      "stkVolu": 1686519.0,
+      "ticker": "ISRG",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

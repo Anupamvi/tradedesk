@@ -15,13 +15,13 @@ from groat.envload import ORATS_TOKEN_MISSING, load_orats_token
 from groat.gates import open_trade_verdict
 from groat.num import to_float
 from groat.orats import map_line, redact
-from groat.pipeline import build_analyze, build_delta, build_full
+from groat.pipeline import build_analyze, build_delta, build_full, overlay_xintel
 from groat.schwab import live_note, use_live_schwab
 from groat.xintel import missing_x_tickers
 
 
 _YMD = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-_CMDS = ("full", "delta", "analyze", "review", "replay")
+_CMDS = ("full", "delta", "analyze", "review", "replay", "xintel")
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
@@ -34,7 +34,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "cmd",
         nargs="?",
         default=None,
-        help="full | delta | analyze | review | replay | YYYY-MM-DD (full scan that date)",
+        help="full | delta | analyze | review | replay | xintel | YYYY-MM-DD (full scan that date)",
     )
     parser.add_argument("ticker", nargs="?", default=None, help="ticker for analyze, or YYYY-MM-DD")
     parser.add_argument("--date", default=None, help="session date YYYY-MM-DD (default: today ET)")
@@ -62,14 +62,14 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
             parser.error("conflicting dates")
         args.date = args.cmd
         args.cmd = "full"
-    if args.ticker and _YMD.match(args.ticker) and (args.cmd or "full") in ("full", "delta", "review", "replay"):
+    if args.ticker and _YMD.match(args.ticker) and (args.cmd or "full") in ("full", "delta", "review", "replay", "xintel"):
         if args.date and args.date != args.ticker:
             parser.error("conflicting dates")
         args.date = args.ticker
         args.ticker = None
     args.cmd = args.cmd or "full"
     if args.cmd not in _CMDS:
-        parser.error("cmd must be full, delta, analyze, review, replay, or a YYYY-MM-DD date")
+        parser.error("cmd must be full, delta, analyze, review, replay, xintel, or a YYYY-MM-DD date")
     if not args.date:
         args.date = today_et()
     return args
@@ -112,7 +112,7 @@ def print_result(info: Dict[str, object]) -> None:
         missing_x = []
     print("x_missing_on_trade=%s" % (",".join(str(t) for t in missing_x) if missing_x else "none"))
     if missing_x:
-        print("x_incomplete=1 search_$TICKER_and_rerun")
+        print("x_incomplete=1 search_$TICKER_then_groat_xintel")
     if int(info.get("trade_count") or 0) == 0:
         print("blocker=%s" % (info.get("blocker") or "empty_board"))
     ev = info.get("evidence") if isinstance(info.get("evidence"), dict) else {}
@@ -166,6 +166,93 @@ def _review_rows(asof: str, built: dict) -> List[dict]:
     return rows
 
 
+def run_xintel(
+    date: str,
+    out_dir: Path,
+    live_schwab: bool = False,
+    no_schwab: bool = False,
+    today: Optional[str] = None,
+) -> Dict[str, object]:
+    """Re-tag an existing full scan from var/xintel. No ORATS/Schwab refresh."""
+    today = today or today_et()
+    day = report.day_dir(out_dir, date)
+    path = day / "candidates.json"
+    if not path.is_file():
+        raise SystemExit("xintel needs %s — run groat full --date %s first" % (path, date))
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    candidates = payload.get("candidates") or []
+    live = use_live_schwab(date, live_flag=live_schwab, no_schwab=no_schwab, today=today)
+    built = overlay_xintel(date, candidates, live=live)
+    regime_label = payload.get("regime")
+    if isinstance(regime_label, dict):
+        regime_label = regime_label.get("regime")
+    built["regime"] = {"regime": regime_label or "unknown"}
+    built["orats_ok"] = 1
+    built["orats_rows"] = 0
+    built["orats_error"] = ""
+    built["orats_http"] = 0
+    built["option_names"] = []
+    built["chain_empty"] = []
+    built["chain_not_requested"] = []
+    built["schwab_chain_errors"] = []
+    built["tapes"] = {}
+    report.write_json(day / "candidates.json", {"asof": date, "regime": regime_label, "candidates": built.get("candidates"), "board": built.get("board")})
+    report.write_csv(day / "board.csv", report.BOARD_COLUMNS, built.get("board") or [])
+    report.write_text(day / "board.md", report.render_board(date, built))
+    queue = []
+    for row in list(built.get("trades") or []) + list(built.get("fire") or []) + list(built.get("xhot") or []):
+        t = row.get("ticker")
+        if t and t not in queue:
+            queue.append(t)
+    report.write_json(
+        day / "x_queue.json",
+        {
+            "asof": date,
+            "tickers": queue,
+            "note": "1) Market heat → var/xhot/DATE/hot.json. 2) $TICKER → var/xintel/DATE/TICKER.json tag Quiet|Informed|Crowded. Do not invent posts.",
+        },
+    )
+    report.write_text(day / "report.md", report.render_report(date, built))
+    missing = missing_x_tickers(built.get("trades") or [])
+    manifest = {
+        "date": date,
+        "mode": "xintel",
+        "selector": "groat_swing",
+        "regime": regime_label,
+        "trade_count": int(built.get("trade_count") or 0),
+        "watch_count": int(built.get("watch_count") or 0),
+        "trades": [r.get("ticker") for r in (built.get("trades") or [])],
+        "live_schwab": live,
+        "orats_ok": 1,
+        "orats_http": 0,
+        "orats_rows": 0,
+        "orats_requests_used": 0,
+        "orats_requests_left": 0,
+        "orats_error": "",
+        "option_names": [],
+        "chain_empty": [],
+        "chain_not_requested": [],
+        "schwab_chain_errors": [],
+        "blocker": "",
+        "x_missing_on_trade": missing,
+        "tapes": {},
+        "evidence_http": 0,
+        "overlay": True,
+    }
+    report.write_json(day / "manifest.json", manifest)
+    built["date"] = date
+    built["out_dir"] = str(day)
+    built["live_schwab"] = live
+    built["mode"] = "xintel"
+    built["regime_label"] = regime_label or "unknown"
+    built["trade_tickers"] = [r.get("ticker") for r in (built.get("trades") or [])]
+    built["x_missing_on_trade"] = missing
+    built["blocker"] = ""
+    built["orats_map"] = {}
+    built["error"] = ""
+    return built
+
+
 def run(
     date: str,
     out_dir: Path,
@@ -186,6 +273,14 @@ def run(
     vix_bars=None,
 ) -> Dict[str, object]:
     today = today or today_et()
+    if cmd == "xintel":
+        return run_xintel(
+            date,
+            out_dir,
+            live_schwab=live_schwab,
+            no_schwab=no_schwab,
+            today=today,
+        )
     if cmd == "replay":
         from groat.replay import render_replay, run_replay
 
@@ -300,12 +395,28 @@ def run(
 
 def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
+    if args.cmd == "analyze" and not args.ticker:
+        print("analyze requires a ticker", file=sys.stderr)
+        return 2
+    if args.cmd == "xintel":
+        try:
+            result = run_xintel(
+                date=args.date,
+                out_dir=Path(args.out_dir),
+                live_schwab=args.live_schwab,
+                no_schwab=args.no_schwab,
+            )
+        except Exception as exc:
+            print("orats_ok=0", file=sys.stderr)
+            print(redact(str(exc), None), file=sys.stderr)
+            return 1
+        print_result(result)
+        if result.get("x_missing_on_trade"):
+            return 3
+        return 0
     token = load_orats_token(token_file=args.orats_token_file)
     if not token:
         print(ORATS_TOKEN_MISSING, file=sys.stderr)
-        return 2
-    if args.cmd == "analyze" and not args.ticker:
-        print("analyze requires a ticker", file=sys.stderr)
         return 2
     try:
         result = run(

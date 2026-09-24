@@ -1,5 +1,7 @@
 # grok-option — YYYY-MM-DD
 
+**RTH / market-open SCAN** or **EOD / after-market SCAN** · `--session live|ah` · `--asof YYYY-MM-DD` · do not send AH
+
 🟢 send-list · 🟡 review · 🔴 blocked · 🔵 Fire · ⚡ Spike
 
 **Equity:** … · **Cash:** … · **Bar:** $10k/month

@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 1144.81,
-      "hiPx": 1149.05,
-      "loPx": 1134.72,
+      "clsPx": 1137.82,
+      "hiPx": 1151.23,
+      "loPx": 1132.63,
       "open": 1137.31,
-      "stkVolu": 145675.0,
+      "stkVolu": 1476270.0,
       "ticker": "LLY",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 1152.44,
+      "hiPx": 1159.75,
+      "loPx": 1138.26,
+      "open": 1150.27,
+      "stkVolu": 1898237.0,
+      "ticker": "LLY",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 1152.93,
+      "hiPx": 1157.6,
+      "loPx": 1140.27,
+      "open": 1150.0,
+      "stkVolu": 4549953.0,
+      "ticker": "LLY",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 1164.89,
+      "hiPx": 1170.8999,
+      "loPx": 1134.41,
+      "open": 1144.495,
+      "stkVolu": 2480051.0,
+      "ticker": "LLY",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 1170.14,
+      "hiPx": 1180.53,
+      "loPx": 1139.26,
+      "open": 1146.15,
+      "stkVolu": 2454096.0,
+      "ticker": "LLY",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 1150.99,
+      "hiPx": 1188.88,
+      "loPx": 1145.98,
+      "open": 1174.71,
+      "stkVolu": 2156320.0,
+      "ticker": "LLY",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

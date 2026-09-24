@@ -6,15 +6,22 @@ grok-option is the Expert Trade Table / defined-risk swing scanner. Independent 
 
 The skill lives in `CODE/SKILL.md` (plus `references/`, `assets/`, `scripts/`). tradedesk `.grok/skills/grok-option` and `.claude/skills/grok-option` are **symlinks to CODE**. `~/.grok/skills/grok-option` is also a symlink to CODE so the TUI default path does not break.
 
-When the user says `grok-option`, `run today's scan`, `Anu table`, `bull put`, `sell put credit`, `manage open book`, read `SKILL.md` and run it. Do not tell the user to type `python3`.
+When the user says `grok-option`, `grok-option YYYY-MM-DD`, `after market`, `market live`, `run today's scan`, `Anu table`, `bull put`, `sell put credit`, `manage open book`, read `SKILL.md` and run it. Do not tell the user to type `python3`.
+
+`--asof` is the date they typed. `--session ah` if they said after market / post market / AH / EOD; `--session live` if they said market live / RTH / market-open, or date only.
 
 Schwab: tradedesk `.env` + `SCHWAB_TOKEN_PATH`. Never print tokens.
 
 ```bash
-python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py scan --asof YYYY-MM-DD --regime auto
-python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py structures TICKER --expiry YYYY-MM-DD --regime normal
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py scan \
+  --asof YYYY-MM-DD --session ah --regime auto --workers 4 \
+  --out /Users/anuppamvi/tradedesk/grok-option/out/grok-option/YYYY-MM-DD/scan_ah.json
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py book \
+  --session ah --out /Users/anuppamvi/tradedesk/grok-option/out/grok-option/YYYY-MM-DD/book_ah.json
 python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py vertical --symbol TICKER --right P --expiry YYYY-MM-DD --short STRIKE --long STRIKE --kind credit
 ```
+
+Use `--session live` and `scan_live.json` / `book_live.json` for RTH. `--workers 4` is parallel **names**, one chain per name for the 14–60 DTE Friday window.
 
 The user places every Schwab order. Empty table is valid when quotes or geometry fail.
 Never invent quotes, IV, OI, or delta. Missing source → skip the structure.

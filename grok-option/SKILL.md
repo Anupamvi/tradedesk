@@ -1,9 +1,9 @@
 ---
 name: grok-option
-description: Use when the user wants a grok-option scan, Expert Trade Table, credit or debit swing setup, unusual options review, book check, or journal update. Triggers include run today's scan, run the scanner, grok-option, Anu table, sell put credit, bull put, bear call, manage open book, revalidate assumptions, oil spike, geo event, ride the wave, playwright, logged-in x.com, and schwab chain. Applies quote-verified rules, regime gate, X veto, earnings firewall, name calendar before Expert, spike path, Schwab live chain, and empty-table permission.
+description: Use when the user wants a grok-option scan, Expert Trade Table, credit or debit swing setup, unusual options review, book check, or journal update. Triggers include grok-option YYYY-MM-DD, after market, post market, market live, RTH, run today's scan, grok-option, Anu table, sell put credit, bull put, bear call, manage open book, revalidate assumptions, oil spike, geo event, ride the wave, playwright, logged-in x.com, and schwab chain. Applies quote-verified rules, date+session flags, regime gate, X veto, earnings firewall, name calendar before Expert, spike path, Schwab live chain, and empty-table permission.
 metadata:
   type: workflow
-  version: "3.13"
+  version: "3.16"
   owner: Kla
 ---
 
@@ -36,6 +36,26 @@ Equity is live Schwab when pulled (**$715k** on 2026-08-26). $150k only if unkno
 
 Default is SCAN. MANAGE if the user pastes open defined-risk lines. JOURNAL if they paste closes. AUDIT only when asked or when the journal trips the freeze.
 
+## Date and session (do not guess)
+
+`--asof` is the date the user typed (`grok-option 2026-09-18`). Never substitute today. `--session` is the tape they named:
+
+| User says | `--session` | `--out` scan | `--out` book | Card |
+|-----------|-------------|--------------|--------------|------|
+| after market, post market, AH, EOD, after-hours | `ah` | `…/YYYY-MM-DD/scan_ah.json` | `book_ah.json` | **EOD / after-market**. Do not send AH. Expert **clean-fill only** (⚠️ → Review). Re-quote 9:35 next RTH. |
+| market live, live, RTH, market-open, open | `live` | `…/YYYY-MM-DD/scan_live.json` | `book_live.json` | **RTH / market-open**. Re-quote 9:35 before send. |
+| date only | `live` | `scan_live.json` | `book_live.json` | same as live |
+
+```bash
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py scan \
+  --asof YYYY-MM-DD --session ah --regime auto --workers 4 \
+  --out /Users/anuppamvi/tradedesk/grok-option/out/grok-option/YYYY-MM-DD/scan_ah.json
+python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py book \
+  --session ah --out /Users/anuppamvi/tradedesk/grok-option/out/grok-option/YYYY-MM-DD/book_ah.json
+```
+
+Swap `ah` → `live` and `scan_ah.json` → `scan_live.json` (same for book) for RTH. Then `vertical` only for Expert rows. `--asof` still sets the 14–60 DTE Friday window. Schwab quotes are the live chain at run time (AH last / RTH last). Do not poll the scan log. Do not `cat` `--out`.
+
 ## SCAN order
 
 Do not reorder. Empty table is valid when quotes or geometry fail. Empty is a **bug** if a non-event name would still be quoted today. Run the over-gate test in `regime-and-signals.md` before skip. Do not loosen delta/width to avoid empty days.
@@ -44,8 +64,8 @@ Do not reorder. Empty table is valid when quotes or geometry fail. Empty is a **
 2. **Ingest** — **Schwab first** for ticker last/bid/ask and option chains (`references/schwab.md`, `scripts/schwab_market.py`, tradedesk `.env` + `SCHWAB_TOKEN_PATH`). User CSVs and pasted book next. Browser (`references/browser.md`) only for X, cookie-walled news, crude/geo copy, or when Schwab is down.
 3. **Stock-only universe** — common stock. If a shock is sourced, include that shock’s **written map** only. No ETFs unless the user said allow index hedge. No warrants, blanks, or unquotable names.
 4. **Notional filter** — liquid weeklies and monthlies. Cluster AI/semi/cloud as one theme; energy map is one theme.
-5. **Live chain** — Schwab `scan` (14–60 DTE Fridays, regime from live `$VIX`) or `structures` per name/expiry (all five actions). Then `vertical` to fill a row. Conservative net. **Pick highest credit/width, then dollars** (1-lot credit ≥ $100 when it exists; do not 15-wide a thinner-edge scrap). Skip a **structure** if a leg is missing, earnings unknown, or `earnings_date <= expiry`. Do not skip the other four because puts printed. Do not scan a single monthly and call it full. See `references/schwab.md` and `references/structures-and-pricing.md`.
-6. **Name calendar** — required **before Expert**. For every geometry-pass candidate, web-source dated events in `(scan_date, expiry]`: company IR earnings (IR beats aggregator estimates), deliveries, product unveil, shareholder vote, named launch. One search per Expert-candidate ticker. Do not invent. **Seasonality folklore is not a veto and not a trigger.** A sourced dated event in the short’s life parks **that wing**. If that breaks an IC, print the unthreatened vertical or skip the name. Company IR date in the life is overlap, even if calendars still show a later estimate. Missing this pass is an incomplete scan — do not Expert. See `references/regime-and-signals.md`.
+5. **Live chain** — Schwab `scan --out FILE` (14–60 DTE Fridays, regime from live `$VIX`). Stdout is the compact **board** (credits, Fire, tape/straddle, `in_ic`, naive `pop`). Full JSON stays on disk. `book` for overlay. Then `vertical` **only** for Expert candidates (compact by default). Conservative net. **Pick highest credit/width, then dollars** (1-lot credit ≥ $100 when it exists; do not 15-wide a thinner-edge scrap). An `in_ic` put/call is not a second Expert row — print the IC. Skip a **structure** if a leg is missing, earnings unknown, or `earnings_date <= expiry`. Do not skip the other four because puts printed. Do not scan a single monthly and call it full. See `references/schwab.md`.
+6. **Name calendar** — required **before Expert**. For every geometry-pass candidate, web-source dated events in `(scan_date, expiry]`: company IR earnings (IR beats aggregator estimates), deliveries, product unveil, shareholder vote, named launch. One search per Expert-candidate ticker. Do not invent. **Seasonality folklore is not a veto and not a trigger.** A sourced dated event in the short’s life parks **that wing**. If that breaks an IC, print the unthreatened vertical or skip the name. Company IR date in the life is overlap, even if calendars still show a later estimate. **Tape quality:** a ⚠️ name that just printed a sourced vertical squeeze (earnings gap still in the move, name straddle >> VIX) stays **Review**. Do not Expert it to fill a sector slot. Empty sector is valid. Missing this pass is an incomplete scan — do not Expert. See `references/regime-and-signals.md`.
 7. **X on candidates** — required after the chain. Veto/confirm only, never a trigger. Tag every table row `X: Quiet` / `Informed` / `Crowded veto` / `Event veto`. One regime pass (VIX, NVDA, Chair, 0DTE). Missing this pass is an incomplete scan. See `references/x-sentiment.md`.
 8. **Sleeve** — A Shield, B Fire, C cash/hedge, D Spike. Events are **name / theme / index** (`regime-and-signals.md`). Crisis kills Shield/Fire; Spike is the only Crisis debit if `spike.md` gates pass.
 9. **Book caps** — `references/book-and-target.md`. Reject rows that breach per-name, aggregate, theme, one-Fire-per-name, or one-Spike-per-scan.
@@ -74,7 +94,7 @@ Do not paste a truncated table in chat as the deliverable. The file uses 🟢/�
 
 ## Tools
 
-- Schwab: `python3 /Users/anuppamvi/tradedesk/grok-option/scripts/schwab_market.py scan --asof YYYY-MM-DD --regime auto` then `structures TICKER --expiry YYYY-MM-DD --regime normal` then `vertical` for the row. See `references/schwab.md`. The `~/.grok/skills/grok-option/scripts/...` path still works (symlink).
+- Schwab: `scan --asof YYYY-MM-DD --session ah|live --regime auto --out …/scan_ah.json` or `scan_live.json`, then `book --session …`, then `vertical` for Expert rows only. Exact flags in **Date and session**. See `references/schwab.md`.
 - Web: VIX, index, **company IR earnings date** (beats aggregator estimates), WTI/Brent, named geo copy, and **name calendar** (deliveries, product unveil, vote, named launch) for every Expert candidate.
 - X keyword + semantic search: Shock watch finder (geo/oil/kinetic) at regime; then candidate veto/confirm. Never a Spike row from X alone.
 - Browser: Playwright MCP or `scripts/browser_fetch.py` for X/news when APIs miss. Not a substitute for Schwab chain. See `references/browser.md`. Never type passwords.
@@ -99,6 +119,7 @@ Do not paste a truncated table in chat as the deliverable. The file uses 🟢/�
 - Any expiry on or after the name’s next earnings date (overlap); missing earnings date is a skip, not a pass
 - Using an aggregator “est.” earnings date when company IR already printed a date
 - Expert a call, put, or iron-condor wing when a sourced dated event in `(scan, expiry]` threatens that short
+- Expert a ⚠️ name to fill a sector slot after a sourced vertical squeeze (DELL 9/17 class)
 - Naked / undefined risk
 - Skipping a passing call credit or iron condor because of a saved ticker list or because Schwab shows long shares (tag assignment in Notes; do not veto). Name-calendar park is not a ticker blacklist.
 - Treating PCR, dark-pool prints, or X as entries (X may start Shock watch, not a Spike row)
@@ -106,6 +127,13 @@ Do not paste a truncated table in chat as the deliverable. The file uses 🟢/�
 - Spike off the written map, a fade unless the user said fade, or a calendar Event dressed as a shock
 - Chat-only SCAN with no dated `GROK_OPTION.md` on disk
 - Hiding a geometry-pass trade in a one-line sleeve dump so it cannot be reviewed
+- Printing `scan --full`, `cat` of scan JSON, or a 100-row structures dump into chat
+- Re-running `structures` on every name after `scan` already priced all five
+- Polling the scan process log (wait on exit; stderr is one line per name)
+- Using today's date when the user passed `YYYY-MM-DD`
+- Writing `scan.json` instead of `scan_ah.json` / `scan_live.json`
+- Expert ⚠️ on an AH scan (clean-fill only)
+- Sending AH prints without a 9:35 RTH re-quote
 
 ## AUDIT
 

@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 100.99,
-      "hiPx": 101.435,
-      "loPx": 99.535,
+      "clsPx": 100.3,
+      "hiPx": 101.46,
+      "loPx": 99.5,
       "open": 99.795,
-      "stkVolu": 203510.0,
+      "stkVolu": 2046652.0,
       "ticker": "CIBR",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 101.66,
+      "hiPx": 102.81,
+      "loPx": 99.08,
+      "open": 100.0,
+      "stkVolu": 1860590.0,
+      "ticker": "CIBR",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 99.87,
+      "hiPx": 102.26,
+      "loPx": 98.86,
+      "open": 102.245,
+      "stkVolu": 1611978.0,
+      "ticker": "CIBR",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 103.09,
+      "hiPx": 103.13,
+      "loPx": 99.5241,
+      "open": 100.035,
+      "stkVolu": 2094731.0,
+      "ticker": "CIBR",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 102.575,
+      "hiPx": 103.66,
+      "loPx": 101.3134,
+      "open": 103.66,
+      "stkVolu": 1746650.0,
+      "ticker": "CIBR",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 104.01,
+      "hiPx": 104.25,
+      "loPx": 102.23,
+      "open": 103.01,
+      "stkVolu": 2405492.0,
+      "ticker": "CIBR",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

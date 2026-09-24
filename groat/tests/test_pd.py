@@ -34,6 +34,34 @@ class TestPdFormula(unittest.TestCase):
         self.assertEqual(pack["reason"], "DATA UNAVAILABLE")
         self.assertEqual(pack["N"], 5)
 
+    def test_session_ok_allows_stale_quote(self):
+        pack = compute_pd(
+            max_loss=100,
+            planned_reward=200,
+            planned_risk=100,
+            liquidity_lots=10,
+            quote_age_sec=121,
+            spread_frac=0.02,
+            size=5,
+            session_ok=True,
+        )
+        self.assertEqual(pack["pd"], 10.0)
+
+    def test_stock_without_spread_or_age(self):
+        pack = compute_pd(
+            max_loss=5,
+            planned_reward=10,
+            planned_risk=5,
+            liquidity_lots=10,
+            quote_age_sec=None,
+            spread_frac=None,
+            size=10,
+            stock=True,
+        )
+        self.assertEqual(pack["N"], 10)
+        self.assertEqual(pack["L"], 1.0)
+        self.assertEqual(pack["pd"], 20.0)
+
     def test_n_zero(self):
         pack = compute_pd(
             max_loss=1000,
@@ -143,6 +171,31 @@ class TestPdBoard(unittest.TestCase):
         self.assertIn("## WATCH", text)
         # stock vs options still reviewed in structure path; board lists TRADE tickets
         self.assertIn("call debit", text)
+        self.assertIn("**OPTIONS**", text)
+        self.assertIn("TRADE = OPTIONS", text)
+
+    def test_attach_stock_eod_prints_pd(self):
+        row = {
+            "ticker": "DELL",
+            "action": "TRADE",
+            "choice": "STOCK",
+            "asof_date": "2026-09-18",
+            "picked": {
+                "instrument": "stock",
+                "entry": 100.0,
+                "stop": 95.0,
+                "target": 110.0,
+                "max_loss_1lot": 5.0,
+                "planned_reward": 10.0,
+                "planned_risk": 5.0,
+                "liquidity_lots": 100,
+                "pd_size": 10,
+                "shares": 10,
+            },
+        }
+        attach_trade_pd(row, eod=True)
+        self.assertIsNotNone(row["pd"])
+        self.assertGreater(row["pd"], 0)
 
 
 if __name__ == "__main__":

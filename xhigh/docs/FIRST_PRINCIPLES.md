@@ -1,6 +1,6 @@
 # xhigh first principles
 
-Job: **every** legal ticket is listed; **CLICK** only if the sleeve rule passes. Sleeves are independent — do not hide a passing credit because a debit also passed. Rank CLICK by dollars at risk, small first. No count cap on the catalog. Human clicks Schwab. Empty CLICK is success.
+Job: **every** legal ticket is listed; **CLICK** only if the sleeve rule passes. Sleeves are independent — do not hide a passing credit because a debit also passed. Rank CLICK by PD desc (nulls last; after hours PD is computed and tagged stale). No count cap on the catalog. Human clicks Schwab. Empty CLICK is success only after names were chained. Empty movers / no chains is **DATA UNAVAILABLE**, not a no-trade.
 
 1. **Spot is Schwab `lastPrice`.** After hours, `closePrice` if last is missing or ≤0. Never mark, bid, ask, or ORATS `pxAtmIv`.
 2. **Universe is movers** (or `analyze TICKER`). Never positions. No harvest. No covered calls. No OCC on the board.

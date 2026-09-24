@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 233.31,
-      "hiPx": 236.0,
+      "clsPx": 230.79,
+      "hiPx": 236.86,
       "loPx": 227.0,
       "open": 229.13,
-      "stkVolu": 206197.0,
+      "stkVolu": 2773594.0,
       "ticker": "DDOG",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 236.0,
+      "hiPx": 239.045,
+      "loPx": 227.365,
+      "open": 229.62,
+      "stkVolu": 2804705.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 229.92,
+      "hiPx": 238.96,
+      "loPx": 228.6001,
+      "open": 238.46,
+      "stkVolu": 5193592.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 245.05,
+      "hiPx": 245.31,
+      "loPx": 226.8325,
+      "open": 229.73,
+      "stkVolu": 2928022.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 247.475,
+      "hiPx": 249.91,
+      "loPx": 244.13,
+      "open": 245.67,
+      "stkVolu": 2834594.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 251.49,
+      "hiPx": 256.71,
+      "loPx": 247.6,
+      "open": 251.61,
+      "stkVolu": 2828496.0,
+      "ticker": "DDOG",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

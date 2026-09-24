@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 171.03,
+      "clsPx": 167.36,
       "hiPx": 171.72,
-      "loPx": 169.64,
+      "loPx": 165.892,
       "open": 171.52,
-      "stkVolu": 394525.0,
+      "stkVolu": 6711318.0,
       "ticker": "KLAC",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 168.98,
+      "hiPx": 173.79,
+      "loPx": 167.26,
+      "open": 172.995,
+      "stkVolu": 9897910.0,
+      "ticker": "KLAC",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 176.99,
+      "hiPx": 177.14,
+      "loPx": 169.72,
+      "open": 170.5,
+      "stkVolu": 20072505.0,
+      "ticker": "KLAC",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 183.97,
+      "hiPx": 185.94,
+      "loPx": 178.31,
+      "open": 179.3,
+      "stkVolu": 9649857.0,
+      "ticker": "KLAC",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 188.32,
+      "hiPx": 188.6,
+      "loPx": 179.7,
+      "open": 180.71,
+      "stkVolu": 9312547.0,
+      "ticker": "KLAC",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 187.86,
+      "hiPx": 188.0,
+      "loPx": 181.73,
+      "open": 186.25,
+      "stkVolu": 8856687.0,
+      "ticker": "KLAC",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

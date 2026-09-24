@@ -25,6 +25,7 @@ from groat.gates import (
     apply_already_held_park,
     apply_analog_0win_park,
     apply_below_ema_park,
+    apply_group_trade_cap,
     apply_same_group_book_park,
     stamp_fill_guard,
     trade_park_reason,
@@ -106,8 +107,14 @@ def score_row(row: dict, regime: str, group_status: str) -> float:
     rr = picked.get("rr") if isinstance(picked, dict) else None
     inst = str((picked or {}).get("instrument") or row.get("choice") or "")
     if rr is not None:
-        defined = "spread" in inst or inst.startswith("long_") or row.get("choice") == "OPTIONS"
+        defined = "spread" in inst
         if defined:
+            # Defined-risk debit/credit is the click ticket. Do not haircut vs stock 2:1.
+            if rr >= 1.2:
+                s += 10
+            elif rr < 1:
+                s -= 10
+        elif inst.startswith("long_") or row.get("choice") == "OPTIONS":
             if rr >= 1.5:
                 s += 10
             elif rr >= 1.2:
@@ -136,13 +143,17 @@ def score_row(row: dict, regime: str, group_status: str) -> float:
 
 
 def _maybe_fallback_stock(row: dict, chosen: dict, regime: str, group_status: str) -> bool:
-    """Keep STOCK when a live OPTIONS ticket would miss TRADE_SCORE_MIN and stock still clears.
+    """STOCK fallback only when the options ticket is a naked long, not a vertical.
 
-    Morning chains can print a debit with RR 1.2–1.5 that scores 49 while the stock
-    ticket at 2:1 still scores 53. Do not silently demote a TRADE stock to WATCH options.
+    A priced debit/credit spread is the working ticket. Do not swap it for shares
+    because the spread RR is 1.2–1.5 vs stock 2:1.
     """
     stock = chosen.get("stock") if isinstance(chosen, dict) else None
     if row.get("choice") != "OPTIONS" or not isinstance(stock, dict) or not stock.get("ok"):
+        return False
+    picked = row.get("picked") if isinstance(row.get("picked"), dict) else {}
+    inst = str(picked.get("instrument") or "")
+    if "spread" in inst:
         return False
     if (to_float(row.get("score")) or 0) >= TRADE_SCORE_MIN:
         return False
@@ -207,8 +218,12 @@ def _prelim_key(item):
     return (1 if setup.get("primary") else 0, hits, rs_n)
 
 
+# Setups that can still become TRADE after replay parks. Price these before X-HOT fillers.
+TRADE_CHAIN_SETUPS = ("A", "D", "E", "F")
+
+
 def select_option_names(prelim, hot_map=None, cap: int = 40) -> list:
-    """FIRE and X-HOT first, then ranked theses. Cap must not drop a hot name already in the list."""
+    """FIRE, then TRADE-eligible theses, then X-HOT, then remaining ranked names."""
     ordered = []
     seen = set()
 
@@ -222,9 +237,12 @@ def select_option_names(prelim, hot_map=None, cap: int = 40) -> list:
     for name, setup, snap in prelim or []:
         if (setup.get("fire") or {}).get("kind"):
             add(name)
+    ranked = sorted(list(prelim or []), key=_prelim_key, reverse=True)
+    for name, setup, snap in ranked:
+        if setup.get("primary") in TRADE_CHAIN_SETUPS and setup.get("direction") in ("bullish", "bearish"):
+            add(name)
     for ticker in hot_map or {}:
         add(ticker)
-    ranked = sorted(list(prelim or []), key=_prelim_key, reverse=True)
     for name, setup, snap in ranked:
         if setup.get("primary") and setup.get("direction") in ("bullish", "bearish"):
             add(name)
@@ -359,7 +377,11 @@ def build_candidate(
             reasons = ["score_below_watch"]
         if not row.get("primary"):
             reasons.append("no_setup")
-    elif row["choice"] in ("STOCK", "OPTIONS") and row["score"] >= TRADE_SCORE_MIN:
+    elif (
+        row["choice"] == "OPTIONS"
+        and "spread" in str((row.get("picked") or {}).get("instrument") or "")
+        and row["score"] >= TRADE_SCORE_MIN
+    ):
         park = trade_park_reason(row.get("primary"), snap, setup)
         if park:
             action = "WATCH"
@@ -369,7 +391,11 @@ def build_candidate(
             reasons = []
     else:
         action = "WATCH"
-        reasons = ["below_trade_score"] if row["score"] < TRADE_SCORE_MIN else []
+        reasons = []
+        if row["choice"] == "STOCK":
+            reasons.append("spread_required")
+        elif row["score"] < TRADE_SCORE_MIN:
+            reasons.append("below_trade_score")
     row["action"] = action
     row["reasons"] = reasons
     apply_below_ema_park(row)
@@ -386,6 +412,183 @@ def _rank_actionable(candidates: Sequence[dict]) -> tuple:
     watch = [c for c in ranked if c.get("action") == "WATCH"][:MAX_FINAL]
     board = (trades + watch)[:MAX_FINAL]
     return ranked, trades, watch, board
+
+
+def _attach_holdings(row: dict, held: dict, schwab_held: dict, open_groups=None, open_tickers=None) -> dict:
+    name = str(row.get("ticker") or "").upper()
+    book_pos = held.get(name) or {}
+    schwab_pos = schwab_held.get(name) or {}
+    row["in_book"] = bool(book_pos.get("in_book"))
+    row["held_schwab"] = bool(schwab_pos.get("held_schwab"))
+    row["held"] = bool(row["in_book"] or row["held_schwab"])
+    row["schwab_legs"] = list(schwab_pos.get("legs") or [])
+    notes = []
+    picked = row.get("picked") if isinstance(row.get("picked"), dict) else {}
+    row["same_ticket"] = bool(row["in_book"] and same_ticket(book_pos, picked))
+    if row["in_book"]:
+        open_line = str(book_pos.get("structure") or "")
+        if book_pos.get("entry") is not None:
+            open_line += " @ %s" % book_pos.get("entry")
+        if book_pos.get("expiry"):
+            open_line += " exp %s" % book_pos.get("expiry")
+        if row["same_ticket"]:
+            notes.append("IN BOOK — this is the open ticket (%s). Do not add." % open_line.strip(" —"))
+        else:
+            notes.append(
+                "IN BOOK open: %s. Board structure is different — visibility only, not a roll/add."
+                % (open_line or "see book.json")
+            )
+    if row["held_schwab"]:
+        legs = schwab_pos.get("legs") or []
+        bits = []
+        for leg in legs[:4]:
+            if leg.get("right"):
+                bits.append(
+                    "%s %s %s"
+                    % (str(leg.get("right") or "").upper(), leg.get("expiry") or "", leg.get("strike") or "")
+                )
+            elif leg.get("symbol"):
+                bits.append(str(leg.get("symbol")))
+        notes.append("Schwab holds: %s" % (", ".join(bits) if bits else "this underlying"))
+    row["held_note"] = "; ".join(notes)
+    if row["held_note"]:
+        thesis = dict(row.get("thesis") or {})
+        paras = list(thesis.get("paragraphs") or [])
+        extra = row["held_note"] + " Shown for visibility — do not add a second lot unless you have a scale plan."
+        if extra not in paras:
+            paras.append(extra)
+        thesis["paragraphs"] = paras
+        row["thesis"] = thesis
+    apply_already_held_park(row)
+    apply_same_group_book_park(row, open_groups, open_tickers)
+    return row
+
+
+def _board_from_candidates(candidates: Sequence[dict], live: bool = False, evidence_line: str = "") -> dict:
+    ranked, trades, watch, board = _rank_actionable(candidates)
+    for row in trades:
+        attach_trade_pd(row, eod=not live)
+    trades = sort_by_pd(
+        trades,
+        tie=lambda r: (-(r.get("score") or 0), -(to_float(r.get("rs_20")) or -9)),
+    )
+    group_parked = apply_group_trade_cap(trades)
+    extra = str(evidence_line or "").strip()
+    if group_parked:
+        ranked, trades, watch, board = _rank_actionable(candidates)
+        for row in trades:
+            attach_trade_pd(row, eod=not live)
+        trades = sort_by_pd(
+            trades,
+            tie=lambda r: (-(r.get("score") or 0), -(to_float(r.get("rs_20")) or -9)),
+        )
+        cap_line = "Group cap parked to WATCH: " + ", ".join(group_parked) + "."
+        extra = (" ".join(x for x in (extra, cap_line) if x)).strip()
+    picks = desk_picks(trades)
+    if isinstance(picks, dict):
+        picks["trade_names"] = [r.get("ticker") for r in trades if r.get("ticker")]
+        picks["evidence_line"] = extra
+    board = (list(trades) + list(watch))[:MAX_FINAL]
+    return {
+        "ranked": ranked,
+        "trades": trades,
+        "watch": watch,
+        "board": board,
+        "picks": picks,
+        "group_parked": group_parked,
+    }
+
+
+def apply_xintel_row(asof: str, row: dict) -> dict:
+    ticker = str(row.get("ticker") or "").upper()
+    if not ticker:
+        return row
+    xinfo = load_xintel(asof, ticker)
+    tag = str(xinfo.get("tag") or "DATA UNAVAILABLE")
+    if tag in ("Quiet", "Informed", "Crowded"):
+        row["x"] = tag
+        row["x_notes"] = xinfo.get("notes") or row.get("x_notes") or ""
+    elif row.get("x") in (None, "", "DATA UNAVAILABLE"):
+        row["x"] = "DATA UNAVAILABLE"
+    if row.get("choice") == "OPTIONS" and isinstance(row.get("picked"), dict):
+        vol = {"vrp": row.get("vrp"), "iv30": row.get("iv30"), "hv20": row.get("hv20")}
+        conf = options_confidence(
+            row.get("picked"),
+            vol,
+            row.get("earnings") or {},
+            row,
+            setup={"primary": row.get("primary"), "direction": row.get("direction")},
+            x_tag=row.get("x"),
+        )
+        row["opt_conf"] = conf.get("conf")
+        row["opt_conf_label"] = conf.get("label")
+        row["opt_conf_note"] = conf.get("note")
+        row["opt_conf_drivers"] = conf.get("drivers") or []
+    return row
+
+
+def overlay_xintel(asof: str, candidates: Sequence[dict], live: bool = False, hot_map=None) -> Dict[str, Any]:
+    """Re-tag TRADE/WATCH from var/xintel and re-render. No ORATS/Schwab refresh."""
+    rows = list(candidates or [])
+    hot_map = hot_map if hot_map is not None else load_hot(asof)
+    for row in rows:
+        apply_xintel_row(asof, row)
+    analog = [
+        str(r.get("ticker") or "")
+        for r in rows
+        if r.get("action") == "WATCH" and any("analog" in str(x) for x in (r.get("reasons") or []))
+    ]
+    evidence_line = ("Analog veto parked to WATCH: " + ", ".join(x for x in analog if x) + ".") if analog else ""
+    fire_rows = [
+        c
+        for c in rows
+        if (c.get("fire") or {}).get("kind")
+        and not (c.get("fire") or {}).get("chase")
+        and c.get("choice") in ("STOCK", "OPTIONS")
+    ]
+    fire_rows.sort(
+        key=lambda r: abs(to_float(r.get("ret_1")) or 0) * (to_float(r.get("rvol")) or 1.0),
+        reverse=True,
+    )
+    fire_rows = fire_rows[:5]
+    xhot_rows = []
+    for row in rows:
+        hot = hot_map.get(str(row.get("ticker") or "").upper())
+        if not hot:
+            continue
+        info = classify_xhot(hot, row)
+        row["xhot"] = info
+        if info.get("tag") and (row.get("x") in (None, "", "DATA UNAVAILABLE")):
+            row["x"] = info.get("tag")
+            row["x_notes"] = info.get("narrative") or row.get("x_notes")
+        xhot_rows.append(row)
+    move_rank = {"dipped": 3, "will_rise": 2, "will_dip": 2, "noise": 0}
+    xhot_rows.sort(
+        key=lambda r: (
+            1 if (r.get("xhot") or {}).get("playable") else 0,
+            move_rank.get((r.get("xhot") or {}).get("move") or "", 0),
+            abs(to_float(r.get("ret_1")) or 0),
+        ),
+        reverse=True,
+    )
+    xhot_rows = xhot_rows[:10]
+    finished = _board_from_candidates(rows, live=live, evidence_line=evidence_line)
+    return {
+        "asof": asof,
+        "candidates": rows,
+        "trades": finished["trades"],
+        "watch": finished["watch"],
+        "board": finished["board"],
+        "picks": finished["picks"],
+        "fire": fire_rows,
+        "fire_count": len(fire_rows),
+        "xhot": xhot_rows,
+        "xhot_count": len(xhot_rows),
+        "trade_count": len(finished["trades"]),
+        "watch_count": len(finished["watch"]),
+        "orats_http": 0,
+        "overlay": True,
+    }
 
 
 def _wanted_tickers(universe: Sequence[str]) -> List[str]:
@@ -558,49 +761,7 @@ def build_full(
             chain_status=chain_status,
         )
         row["chain_status"] = chain_status
-        book_pos = held.get(name) or {}
-        schwab_pos = schwab_held.get(name) or {}
-        row["in_book"] = bool(book_pos.get("in_book"))
-        row["held_schwab"] = bool(schwab_pos.get("held_schwab"))
-        row["held"] = bool(row["in_book"] or row["held_schwab"])
-        row["schwab_legs"] = list(schwab_pos.get("legs") or [])
-        notes = []
-        picked = row.get("picked") if isinstance(row.get("picked"), dict) else {}
-        row["same_ticket"] = bool(row["in_book"] and same_ticket(book_pos, picked))
-        if row["in_book"]:
-            open_line = str(book_pos.get("structure") or "")
-            if book_pos.get("entry") is not None:
-                open_line += " @ %s" % book_pos.get("entry")
-            if book_pos.get("expiry"):
-                open_line += " exp %s" % book_pos.get("expiry")
-            if row["same_ticket"]:
-                notes.append("IN BOOK — this is the open ticket (%s). Do not add." % open_line.strip(" —"))
-            else:
-                notes.append(
-                    "IN BOOK open: %s. Board structure is different — visibility only, not a roll/add."
-                    % (open_line or "see book.json")
-                )
-        if row["held_schwab"]:
-            legs = schwab_pos.get("legs") or []
-            bits = []
-            for leg in legs[:4]:
-                if leg.get("right"):
-                    bits.append(
-                        "%s %s %s"
-                        % (str(leg.get("right") or "").upper(), leg.get("expiry") or "", leg.get("strike") or "")
-                    )
-                elif leg.get("symbol"):
-                    bits.append(str(leg.get("symbol")))
-            notes.append("Schwab holds: %s" % (", ".join(bits) if bits else "this underlying"))
-        row["held_note"] = "; ".join(notes)
-        if row["held_note"]:
-            thesis = dict(row.get("thesis") or {})
-            paras = list(thesis.get("paragraphs") or [])
-            paras.append(row["held_note"] + " Shown for visibility — do not add a second lot unless you have a scale plan.")
-            thesis["paragraphs"] = paras
-            row["thesis"] = thesis
-        apply_already_held_park(row)
-        apply_same_group_book_park(row, open_groups, open_tickers)
+        _attach_holdings(row, held, schwab_held, open_groups, open_tickers)
         candidates.append(row)
         if row["action"] == "IGNORE":
             rejections.append(
@@ -611,6 +772,54 @@ def build_full(
                     "stage": "screen",
                 }
             )
+
+    need_chain = [
+        str(c.get("ticker") or "").upper()
+        for c in candidates
+        if c.get("action") == "TRADE"
+        and c.get("chain_status") == "not_requested"
+        and c.get("direction") in ("bullish", "bearish")
+        and c.get("ticker")
+    ]
+    if need_chain and strikes_by_ticker is None and token and bars_by_ticker is None:
+        pack_s2 = fetch_strikes(
+            asof,
+            need_chain,
+            token,
+            today,
+            getter=getter,
+            max_requests=max_requests,
+            dte=STRIKE_DTE,
+            refresh=False,
+        )
+        extra_strikes = pack_s2.get("rows") or {}
+        orats_http += int(pack_s2.get("http") or 0)
+        if live or bars_by_ticker is None:
+            extra_strikes = overlay_strikes(asof, need_chain, extra_strikes, errors=chain_errors)
+        strikes.update(extra_strikes)
+        for name in need_chain:
+            if name not in option_names:
+                option_names.append(name)
+            chain_status = "ok" if (strikes.get(name) or []) else "empty"
+            rebuilt = build_candidate(
+                asof,
+                name,
+                snaps.get(name) or {"ok": False, "reason": "missing_bars", "stale": True},
+                cores.get(name),
+                name_group_row(name, groups),
+                regime,
+                strikes.get(name) or [],
+                bars_map.get(name) or [],
+                earn=earn_map.get(name),
+                hist_rows=hist_e.get(name),
+                chain_status=chain_status,
+            )
+            rebuilt["chain_status"] = chain_status
+            _attach_holdings(rebuilt, held, schwab_held, open_groups, open_tickers)
+            for i, old in enumerate(candidates):
+                if str(old.get("ticker") or "").upper() == name:
+                    candidates[i] = rebuilt
+                    break
 
     fire_rows = [
         c
@@ -671,21 +880,13 @@ def build_full(
                 analog_parked.append(ticker)
     evidence_line = str(picks.get("evidence_line") or "").strip()
     if analog_parked:
-        ranked, trades, watch, board = _rank_actionable(candidates)
-        picks = desk_picks(trades)
         veto_line = "Analog veto parked to WATCH: " + ", ".join(analog_parked) + "."
-        picks["evidence_line"] = (" ".join(x for x in (evidence_line, veto_line) if x)).strip()
-    else:
-        picks["evidence_line"] = evidence_line
-    for row in trades:
-        attach_trade_pd(row)
-    trades = sort_by_pd(
-        trades,
-        tie=lambda r: (-(r.get("score") or 0), -(to_float(r.get("rs_20")) or -9)),
-    )
-    if isinstance(picks, dict):
-        picks["trade_names"] = [r.get("ticker") for r in trades if r.get("ticker")]
-    board = (list(trades) + list(watch))[:MAX_FINAL]
+        evidence_line = (" ".join(x for x in (evidence_line, veto_line) if x)).strip()
+    finished = _board_from_candidates(candidates, live=live, evidence_line=evidence_line)
+    trades = finished["trades"]
+    watch = finished["watch"]
+    board = finished["board"]
+    picks = finished["picks"]
     usage = load_usage()
     tape_summary = {k: (tapes[k].get("tape") if k in tapes else "") for k in list(INDEX_TICKERS)}
     rvols = [to_float(s.get("rvol")) for s in snaps.values()]

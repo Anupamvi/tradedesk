@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 341.5025,
-      "hiPx": 343.25,
-      "loPx": 339.25,
+      "clsPx": 339.51,
+      "hiPx": 344.15,
+      "loPx": 335.8147,
       "open": 342.365,
-      "stkVolu": 2486179.0,
+      "stkVolu": 23152533.0,
       "ticker": "AVGO",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 347.3,
+      "hiPx": 350.94,
+      "loPx": 345.31,
+      "open": 346.615,
+      "stkVolu": 24389566.0,
+      "ticker": "AVGO",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 357.61,
+      "hiPx": 363.2817,
+      "loPx": 351.33,
+      "open": 352.08,
+      "stkVolu": 44032802.0,
+      "ticker": "AVGO",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 362.66,
+      "hiPx": 363.97,
+      "loPx": 353.5,
+      "open": 358.655,
+      "stkVolu": 26498591.0,
+      "ticker": "AVGO",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 364.54,
+      "hiPx": 366.55,
+      "loPx": 359.2901,
+      "open": 363.23,
+      "stkVolu": 20570790.0,
+      "ticker": "AVGO",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 354.99,
+      "hiPx": 362.9,
+      "loPx": 354.01,
+      "open": 362.2,
+      "stkVolu": 23387653.0,
+      "ticker": "AVGO",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

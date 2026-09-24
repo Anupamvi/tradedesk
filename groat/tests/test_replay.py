@@ -4,9 +4,11 @@ from groat.gates import (
     analog_0win_reason,
     analog_fast_stop_reason,
     already_held_same_right_reason,
+    already_held_shares_reason,
     apply_already_held_park,
     apply_analog_0win_park,
     apply_below_ema_park,
+    apply_group_trade_cap,
     apply_same_group_book_park,
     open_trade_verdict,
     stamp_fill_guard,
@@ -154,6 +156,18 @@ class TestGates(unittest.TestCase):
         self.assertIsNone(apply_already_held_park(stock))
         self.assertEqual(stock["action"], "TRADE")
 
+        shares = {
+            "ticker": "CRM",
+            "action": "TRADE",
+            "choice": "STOCK",
+            "picked": {"instrument": "stock"},
+            "schwab_legs": [{"right": None, "asset": "EQUITY", "quantity": 40, "symbol": "CRM"}],
+            "reasons": [],
+        }
+        self.assertEqual(already_held_shares_reason(shares["schwab_legs"]), "already_held_shares")
+        self.assertEqual(apply_already_held_park(shares), "already_held_shares")
+        self.assertEqual(shares["action"], "WATCH")
+
         analog_row = {
             "ticker": "PLTR",
             "action": "TRADE",
@@ -214,17 +228,30 @@ class TestGates(unittest.TestCase):
         }
         self.assertEqual(apply_below_ema_park(opt), "below_20ema")
         self.assertEqual(opt["action"], "WATCH")
-        stock = {
+        pullback = {
             "ticker": "ADBE",
             "action": "TRADE",
             "choice": "STOCK",
+            "primary": "A",
             "direction": "bullish",
             "close": 142.61,
             "ema20": 145.88,
             "reasons": [],
         }
-        self.assertIsNone(apply_below_ema_park(stock))
-        self.assertEqual(stock["action"], "TRADE")
+        self.assertIsNone(apply_below_ema_park(pullback))
+        self.assertEqual(pullback["action"], "TRADE")
+        rs_stock = {
+            "ticker": "CRM",
+            "action": "TRADE",
+            "choice": "STOCK",
+            "primary": "D",
+            "direction": "bullish",
+            "close": 237.92,
+            "ema20": 239.33,
+            "reasons": [],
+        }
+        self.assertEqual(apply_below_ema_park(rs_stock), "below_20ema")
+        self.assertEqual(rs_stock["action"], "WATCH")
         above = {
             "ticker": "XOM",
             "action": "TRADE",
@@ -236,6 +263,19 @@ class TestGates(unittest.TestCase):
         }
         self.assertIsNone(apply_below_ema_park(above))
         self.assertEqual(above["action"], "TRADE")
+
+    def test_group_cap_keeps_two(self):
+        rows = [
+            {"ticker": "INTC", "action": "TRADE", "group": "semiconductors", "reasons": []},
+            {"ticker": "ARM", "action": "TRADE", "group": "semiconductors", "reasons": []},
+            {"ticker": "MU", "action": "TRADE", "group": "semiconductors", "reasons": []},
+            {"ticker": "CRM", "action": "TRADE", "group": "software", "reasons": []},
+        ]
+        parked = apply_group_trade_cap(rows, cap=2)
+        self.assertEqual(parked, ["MU"])
+        self.assertEqual(rows[2]["action"], "WATCH")
+        self.assertEqual(rows[0]["action"], "TRADE")
+        self.assertEqual(rows[3]["action"], "TRADE")
 
     def test_fill_guard_names_ema_and_debit(self):
         row = {

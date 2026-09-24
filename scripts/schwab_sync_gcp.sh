@@ -29,17 +29,17 @@ push_now() {
   cp "$SRC" "$UW"
   chmod 600 "$UW" 2>/dev/null || true
   gcloud_ok || { echo "SYNC_FAIL gcloud_missing" >&2; return 1; }
-  gcloud compute scp "${IAP[@]}" "$SRC" "$VM:/tmp/schwab_token.json" --zone "$ZONE" --quiet
-  ssh_iap "sudo install -o tradedesk -g tradedesk -m 600 /tmp/schwab_token.json $DEST && rm -f /tmp/schwab_token.json"
+  gcloud compute scp "${IAP[@]}" "$SRC" "$VM:~/schwab_token.json" --zone "$ZONE" --quiet
+  ssh_iap "sudo install -o tradedesk -g tradedesk -m 600 \$HOME/schwab_token.json $DEST && rm -f \$HOME/schwab_token.json"
   echo "SYNC_OK push"
 }
 
 pull_now() {
   gcloud_ok || { echo "SYNC_FAIL gcloud_missing" >&2; return 1; }
-  ssh_iap "sudo cp $DEST /tmp/schwab_token.json && sudo chmod 644 /tmp/schwab_token.json"
+  ssh_iap "sudo cp $DEST \$HOME/schwab_token.json && sudo chown \$USER:\$USER \$HOME/schwab_token.json && chmod 600 \$HOME/schwab_token.json"
   mkdir -p "$(dirname "$SRC")"
-  gcloud compute scp "${IAP[@]}" "$VM:/tmp/schwab_token.json" "$SRC" --zone "$ZONE" --quiet
-  ssh_iap "rm -f /tmp/schwab_token.json"
+  gcloud compute scp "${IAP[@]}" "$VM:~/schwab_token.json" "$SRC" --zone "$ZONE" --quiet
+  ssh_iap "rm -f \$HOME/schwab_token.json"
   chmod 600 "$SRC"
   mkdir -p "$(dirname "$UW")"
   cp "$SRC" "$UW"

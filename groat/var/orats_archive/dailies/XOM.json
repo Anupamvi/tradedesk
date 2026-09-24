@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 166.22,
+      "clsPx": 163.32,
       "hiPx": 167.495,
-      "loPx": 165.5,
+      "loPx": 162.56,
       "open": 167.23,
-      "stkVolu": 1362497.0,
+      "stkVolu": 13445534.0,
       "ticker": "XOM",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 163.27,
+      "hiPx": 163.385,
+      "loPx": 161.445,
+      "open": 161.83,
+      "stkVolu": 10976538.0,
+      "ticker": "XOM",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 163.54,
+      "hiPx": 163.54,
+      "loPx": 161.31,
+      "open": 162.5,
+      "stkVolu": 37640556.0,
+      "ticker": "XOM",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 158.3,
+      "hiPx": 161.9499,
+      "loPx": 157.94,
+      "open": 160.96,
+      "stkVolu": 15752488.0,
+      "ticker": "XOM",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 158.71,
+      "hiPx": 159.97,
+      "loPx": 155.85,
+      "open": 157.53,
+      "stkVolu": 14191172.0,
+      "ticker": "XOM",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 161.23,
+      "hiPx": 162.1199,
+      "loPx": 159.4206,
+      "open": 159.62,
+      "stkVolu": 12577362.0,
+      "ticker": "XOM",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

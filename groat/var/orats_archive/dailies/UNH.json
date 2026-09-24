@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 377.095,
-      "hiPx": 378.64,
+      "clsPx": 375.26,
+      "hiPx": 380.22,
       "loPx": 373.63,
       "open": 375.9,
-      "stkVolu": 708762.0,
+      "stkVolu": 4418329.0,
       "ticker": "UNH",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 375.21,
+      "hiPx": 380.5,
+      "loPx": 374.2,
+      "open": 376.45,
+      "stkVolu": 4837672.0,
+      "ticker": "UNH",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 376.9,
+      "hiPx": 378.49,
+      "loPx": 372.42,
+      "open": 375.29,
+      "stkVolu": 8616225.0,
+      "ticker": "UNH",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 377.56,
+      "hiPx": 378.95,
+      "loPx": 373.82,
+      "open": 377.87,
+      "stkVolu": 5712251.0,
+      "ticker": "UNH",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 372.95,
+      "hiPx": 381.39,
+      "loPx": 372.41,
+      "open": 381.39,
+      "stkVolu": 4501106.0,
+      "ticker": "UNH",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 371.29,
+      "hiPx": 372.61,
+      "loPx": 366.0,
+      "open": 370.89,
+      "stkVolu": 3862804.0,
+      "ticker": "UNH",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

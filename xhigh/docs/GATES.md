@@ -17,9 +17,9 @@ Units: ORATS vol fields are **percent**. Schwab last is dollars. Delta is Schwab
 | EV debit / defined credit | Display only. `100 * [win * pop − max_loss * (1 − pop)]`. **Not** the CLICK rule. |
 | Wheel CSP rank | annualized `(credit/strike)*(365/dte)` as percent. **Not** strike × 100. |
 | Wheel naked CSP | annualized ≥ 8%, \|delta\| ≤ 0.25, and 6-month low is **not** already < 85% of strike |
-| Defined-credit CLICK | credit ≥ **10% of width** and POP ≥ 70%. Put credit SKIP if a known ex-div sits before expiry (stock drop attacks the short put). 8–15% OTM is naturally ~1:7; 1:14 still SKIP. |
+| Defined-credit CLICK | credit ≥ **10% of width**, POP ≥ 70%, one-lot max loss ≤ **$500**, and bid-ask ≤ **15% of the credit**. N=0 or a wide market is SKIP. Put credit SKIP if a known ex-div sits before expiry. 1:14 still SKIP. |
 | Swing debit CLICK | long at/ITM (\|delta\| ≥ **0.50**), DTE ≥ **35**, R/R ≥ 1.5, no ex-div before expiry. Put-debit max must not sit below the 6-month low. 25-DTE 0.35-delta is SKIP (KO). Positive EV is not enough. |
-| Board | Every sleeve that passes its CLICK rule is listed. Rank CLICK by PD desc (nulls last). Keep conf. |
+| Board | Every sleeve that passes its CLICK rule is listed. Rank CLICK by PD desc (nulls last; stale quotes still get a PD). Keep conf. Empty movers is DATA UNAVAILABLE, not empty CLICK. DTE is expiry − session asof. |
 | Wheel stress (display) | If last halves in 6 months, P&L vs (strike − credit) × 100. Scenario, not a forecast |
 | Ticket cap | none |
 

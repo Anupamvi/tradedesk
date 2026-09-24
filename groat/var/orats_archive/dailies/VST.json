@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 141.66,
+      "clsPx": 140.39,
       "hiPx": 143.6999,
-      "loPx": 141.15,
+      "loPx": 139.62,
       "open": 143.38,
-      "stkVolu": 311893.0,
+      "stkVolu": 3832556.0,
       "ticker": "VST",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 143.56,
+      "hiPx": 146.11,
+      "loPx": 141.53,
+      "open": 144.1,
+      "stkVolu": 3957497.0,
+      "ticker": "VST",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 140.67,
+      "hiPx": 144.45,
+      "loPx": 140.21,
+      "open": 143.395,
+      "stkVolu": 5268950.0,
+      "ticker": "VST",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 140.78,
+      "hiPx": 142.44,
+      "loPx": 138.95,
+      "open": 142.0,
+      "stkVolu": 4506495.0,
+      "ticker": "VST",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 140.41,
+      "hiPx": 142.64,
+      "loPx": 140.0,
+      "open": 141.44,
+      "stkVolu": 4771307.0,
+      "ticker": "VST",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 137.97,
+      "hiPx": 140.5,
+      "loPx": 137.62,
+      "open": 139.57,
+      "stkVolu": 4412191.0,
+      "ticker": "VST",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

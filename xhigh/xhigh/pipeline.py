@@ -25,7 +25,9 @@ def _junk_symbol(name: str) -> bool:
     u = str(name or "").upper()
     if not u or len(u) > 5:
         return True
-    if u.endswith(("W", "U", "R", "WS", "WT")):
+    if u.endswith(("WS", "WT")):
+        return True
+    if len(u) == 5 and u.endswith("W"):
         return True
     return False
 

@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 155.82,
+      "clsPx": 154.18,
       "hiPx": 156.04,
-      "loPx": 154.26,
+      "loPx": 152.5,
       "open": 154.37,
-      "stkVolu": 1416830.0,
+      "stkVolu": 8853484.0,
       "ticker": "XBI",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 158.25,
+      "hiPx": 160.33,
+      "loPx": 156.94,
+      "open": 157.31,
+      "stkVolu": 10018289.0,
+      "ticker": "XBI",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 156.72,
+      "hiPx": 159.19,
+      "loPx": 155.89,
+      "open": 158.21,
+      "stkVolu": 9881367.0,
+      "ticker": "XBI",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 158.23,
+      "hiPx": 159.57,
+      "loPx": 156.58,
+      "open": 158.49,
+      "stkVolu": 7846922.0,
+      "ticker": "XBI",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 161.87,
+      "hiPx": 162.48,
+      "loPx": 158.42,
+      "open": 159.11,
+      "stkVolu": 7642528.0,
+      "ticker": "XBI",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 155.2,
+      "hiPx": 162.68,
+      "loPx": 154.44,
+      "open": 161.94,
+      "stkVolu": 13326877.0,
+      "ticker": "XBI",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

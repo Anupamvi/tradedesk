@@ -110,6 +110,8 @@ if [[ "$DIR_NAME" == "grok-option" ]]; then
     assets/daily-card.md
     assets/report-style.md
     assets/playwright-mcp.json
+    scripts/schwab_market.py
+    tests/test_structures.py
   )
   for f in "${req[@]}"; do
     if [[ ! -f "$SKILL_DIR/$f" ]]; then

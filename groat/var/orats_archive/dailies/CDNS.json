@@ -2719,13 +2719,58 @@
       "tradeDate": "2026-09-15"
     },
     {
-      "clsPx": 278.26,
-      "hiPx": 278.54,
+      "clsPx": 279.9,
+      "hiPx": 282.0,
       "loPx": 274.16,
       "open": 274.25,
-      "stkVolu": 180223.0,
+      "stkVolu": 2496926.0,
       "ticker": "CDNS",
       "tradeDate": "2026-09-16"
+    },
+    {
+      "clsPx": 280.76,
+      "hiPx": 285.55,
+      "loPx": 278.3,
+      "open": 285.55,
+      "stkVolu": 2095941.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-09-17"
+    },
+    {
+      "clsPx": 282.9,
+      "hiPx": 284.98,
+      "loPx": 280.49,
+      "open": 281.93,
+      "stkVolu": 4134919.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-09-18"
+    },
+    {
+      "clsPx": 294.9,
+      "hiPx": 295.8,
+      "loPx": 283.39,
+      "open": 285.73,
+      "stkVolu": 2344648.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-09-21"
+    },
+    {
+      "clsPx": 302.95,
+      "hiPx": 303.85,
+      "loPx": 294.0,
+      "open": 298.65,
+      "stkVolu": 2901710.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-09-22"
+    },
+    {
+      "clsPx": 309.09,
+      "hiPx": 315.7,
+      "loPx": 305.63,
+      "open": 305.63,
+      "stkVolu": 3590190.0,
+      "ticker": "CDNS",
+      "tradeDate": "2026-09-23"
     }
   ]
 }

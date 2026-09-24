@@ -26,12 +26,14 @@ def spot_from_quote(q: Optional[dict]) -> Optional[float]:
 
 
 def _dte(row: dict, asof: str) -> Optional[int]:
+    expiry = str(row.get("expiry") or "")[:10]
+    gap = days_between(expiry, asof)
+    if gap is not None:
+        return gap
     dte = to_float(row.get("dte"))
     if dte is not None:
         return int(dte)
-    expiry = str(row.get("expiry") or "")[:10]
-    gap = days_between(expiry, asof)
-    return gap
+    return None
 
 
 def _need(block: dict, key: str) -> Optional[float]:

@@ -6,7 +6,7 @@ from unittest import mock
 
 from groat.cli import run
 from groat.gates import apply_analog_0win_park
-from groat.pipeline import _rank_actionable, build_full, score_row, select_option_names
+from groat.pipeline import _rank_actionable, build_full, overlay_xintel, score_row, select_option_names
 from groat.xintel import missing_x_tickers
 from groat.structure import choose
 from tests.barsutil import flat_bars, trend_bars
@@ -168,6 +168,27 @@ class TestPipeline(unittest.TestCase):
         self.assertEqual(names[0], "DELL")
         self.assertEqual(len(names), 40)
 
+    def test_select_option_names_thesis_before_xhot_fillers(self):
+        prelim = []
+        for i in range(40):
+            prelim.append(
+                (
+                    "G%s" % i,
+                    {"primary": "G", "direction": "bearish", "setups": ["G"], "fire": {}},
+                    {"rs_20": 0.20 - i * 0.001},
+                )
+            )
+        prelim.append(
+            (
+                "CRM",
+                {"primary": "D", "direction": "bullish", "setups": ["D"], "fire": {}},
+                {"rs_20": 0.08},
+            )
+        )
+        hot = {"X%s" % i: {"heat": "hot"} for i in range(40)}
+        names = select_option_names(prelim, hot, cap=40)
+        self.assertIn("CRM", names)
+
     def test_choose_says_not_requested_not_fetch_fail(self):
         snap = {"close": 100, "atr14": 2, "ema20": 99, "extension_atr": 0.2, "primary": "A"}
         vol = {"iv30": 20, "hv20": 25, "vrp": -5}
@@ -292,7 +313,7 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("T10", names)
         self.assertEqual(watch2[0]["ticker"], "PLTR")
 
-    def test_options_below_trade_falls_back_to_stock(self):
+    def test_debit_spread_does_not_fall_back_to_stock(self):
         from groat.pipeline import _maybe_fallback_stock
 
         stock = {"ok": True, "instrument": "stock", "rr": 2.0, "premium_side": "debit"}
@@ -312,11 +333,82 @@ class TestPipeline(unittest.TestCase):
             "choice_why": ["shortlisted debit_call_spread"],
         }
         row["score"] = score_row(row, "weak_risk_on", "mature")
-        self.assertLess(row["score"], 52)
+        self.assertGreaterEqual(row["score"], 52)
+        self.assertFalse(_maybe_fallback_stock(row, {"stock": stock}, "weak_risk_on", "mature"))
+        self.assertEqual(row["choice"], "OPTIONS")
+
+    def test_naked_long_below_trade_falls_back_to_stock(self):
+        from groat.pipeline import _maybe_fallback_stock
+
+        stock = {"ok": True, "instrument": "stock", "rr": 2.0, "premium_side": "debit"}
+        row = {
+            "choice": "OPTIONS",
+            "primary": "D",
+            "fire": {},
+            "rs_20": 0.20,
+            "above_sma200": True,
+            "above_sma50": True,
+            "avwap_swing_low": 100,
+            "close": 120,
+            "extension_atr": 1.0,
+            "picked": {"instrument": "long_call", "rr": 1.3, "ok": True},
+            "direction": "bullish",
+            "stale": False,
+            "choice_why": ["shortlisted long_call"],
+        }
+        row["score"] = score_row(row, "weak_risk_on", "mature")
         self.assertTrue(_maybe_fallback_stock(row, {"stock": stock}, "weak_risk_on", "mature"))
         self.assertEqual(row["choice"], "STOCK")
-        self.assertGreaterEqual(row["score"], 52)
-        self.assertIn("stock still clears", " ".join(row["choice_why"]))
+
+    def test_overlay_xintel_retags_without_orats(self):
+        from groat.xintel import write_xintel
+
+        rows = [
+            {
+                "ticker": "AAPL",
+                "action": "TRADE",
+                "choice": "OPTIONS",
+                "group": "megacap",
+                "score": 60,
+                "rs_20": 0.08,
+                "x": "DATA UNAVAILABLE",
+                "opt_conf": 62,
+                "close": 336.0,
+                "ema20": 325.0,
+                "direction": "bullish",
+                "primary": "E",
+                "picked": {
+                    "ok": True,
+                    "instrument": "debit_call_spread",
+                    "target_debit": 4.15,
+                    "oi": 200,
+                    "dte": 35,
+                    "rr": 1.4,
+                    "delta": 0.15,
+                    "long_strike": 340.0,
+                    "max_loss_1lot": 415,
+                    "planned_reward": 585,
+                    "planned_risk": 415,
+                    "liquidity_lots": 5,
+                    "spread_frac": 0.04,
+                    "pd_size": 1,
+                },
+                "earnings": {"usable": True, "days": 41, "overlaps_hold": False, "source": "web"},
+                "vrp": -3.0,
+                "iv30": 22.0,
+                "hv20": 26.0,
+                "fire": {},
+                "reasons": [],
+            }
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch("groat.xintel.CODE_DIR", Path(tmp)):
+                write_xintel("2026-09-18", "AAPL", {"tag": "Crowded", "posts_24h": 55, "notes": "launch tape"})
+                built = overlay_xintel("2026-09-18", rows, live=False, hot_map={})
+        self.assertEqual(built["trades"][0]["x"], "Crowded")
+        self.assertEqual(built["orats_http"], 0)
+        self.assertTrue(built.get("overlay"))
+        self.assertIn("X Crowded", built["trades"][0].get("opt_conf_drivers") or [])
 
 
 if __name__ == "__main__":

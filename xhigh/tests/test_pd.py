@@ -21,7 +21,7 @@ class TestPdFormula(unittest.TestCase):
         self.assertEqual(pack["R_cons"], 3.0)
         self.assertEqual(pack["pd"], 15.0)
 
-    def test_stale_quote_pd_null(self):
+    def test_stale_quote_still_ranks(self):
         pack = compute_pd(
             max_loss=100,
             planned_reward=200,
@@ -31,8 +31,9 @@ class TestPdFormula(unittest.TestCase):
             spread_frac=0.02,
             size=5,
         )
-        self.assertIsNone(pack["pd"])
-        self.assertEqual(pack["reason"], "DATA UNAVAILABLE")
+        self.assertEqual(pack["pd"], 10.0)
+        self.assertTrue(pack.get("stale"))
+        self.assertEqual(pack["reason"], "stale_quote")
 
 
 class TestPdClick(unittest.TestCase):
