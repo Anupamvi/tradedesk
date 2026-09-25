@@ -48,13 +48,14 @@ def quote_age_seconds(quote_time_ms=None, quote_date=None, explicit=None, now=No
 
 
 def liquidity_factor(size, n: int, spread_frac) -> Optional[float]:
-    if n < 1:
-        return 0.0
     sp = to_float(spread_frac)
     if sp is None:
         return None
     if sp > SPREAD_WIDE:
         return 0.0
+    # N is how many lots fit the dollar budget. It must not wipe the market read.
+    if n < 1:
+        return 1.0 if sp <= SPREAD_TIGHT else 0.5
     sz = to_float(size)
     if sz is None:
         sz = float(n)
@@ -96,10 +97,13 @@ def compute_pd(
     if n < 0:
         n = 0
     out["N"] = n
-    l = liquidity_factor(size if size is not None else n, n, spread_frac)
+    l_size = size if size is not None else (liq if n < 1 else n)
+    l = liquidity_factor(l_size, n, spread_frac)
     out["L"] = l
     if n < 1:
         out["reason"] = "N=0"
+        if age > QUOTE_MAX_AGE_SEC:
+            out["stale"] = True
         return out
     if l is None:
         return out

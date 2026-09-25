@@ -1,164 +1,7958 @@
 {
   "data": [
     {
-      "clsPx": 311.88,
-      "hiPx": 313.94,
-      "loPx": 306.4476,
-      "open": 308.2,
-      "stkVolu": 1465816.0,
+      "clsPx": 40.43,
+      "hiPx": 41.39,
+      "loPx": 36.58,
+      "open": 36.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-01-19"
+    },
+    {
+      "clsPx": 43.32,
+      "hiPx": 46.56,
+      "loPx": 39.42,
+      "open": 39.42,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-01-20"
+    },
+    {
+      "clsPx": 43.32,
+      "hiPx": 48.08,
+      "loPx": 41.35,
+      "open": 41.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-01-21"
+    },
+    {
+      "clsPx": 41.2,
+      "hiPx": 43.32,
+      "loPx": 40.32,
+      "open": 43.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-01-24"
+    },
+    {
+      "clsPx": 40.33,
+      "hiPx": 43.24,
+      "loPx": 39.79,
+      "open": 40.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-01-25"
+    },
+    {
+      "clsPx": 41.61,
+      "hiPx": 43.38,
+      "loPx": 40.67,
+      "open": 43.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-01-26"
+    },
+    {
+      "clsPx": 44.05,
+      "hiPx": 47.77,
+      "loPx": 42.12,
+      "open": 45.5,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-01-27"
+    },
+    {
+      "clsPx": 45.0,
+      "hiPx": 45.82,
+      "loPx": 42.5,
+      "open": 42.89,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-01-28"
+    },
+    {
+      "clsPx": 46.21,
+      "hiPx": 46.21,
+      "loPx": 44.28,
+      "open": 44.28,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-01-31"
+    },
+    {
+      "clsPx": 47.92,
+      "hiPx": 48.13,
+      "loPx": 45.29,
+      "open": 45.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-01"
+    },
+    {
+      "clsPx": 51.03,
+      "hiPx": 54.13,
+      "loPx": 47.94,
+      "open": 48.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-02"
+    },
+    {
+      "clsPx": 51.62,
+      "hiPx": 54.46,
+      "loPx": 48.42,
+      "open": 50.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-03"
+    },
+    {
+      "clsPx": 48.27,
+      "hiPx": 52.3,
+      "loPx": 48.25,
+      "open": 50.64,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-04"
+    },
+    {
+      "clsPx": 44.35,
+      "hiPx": 48.17,
+      "loPx": 44.28,
+      "open": 48.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-07"
+    },
+    {
+      "clsPx": 43.8,
+      "hiPx": 45.78,
+      "loPx": 42.52,
+      "open": 43.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-08"
+    },
+    {
+      "clsPx": 45.54,
+      "hiPx": 45.68,
+      "loPx": 42.24,
+      "open": 43.08,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-09"
+    },
+    {
+      "clsPx": 45.29,
+      "hiPx": 46.69,
+      "loPx": 43.69,
+      "open": 43.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-10"
+    },
+    {
+      "clsPx": 46.29,
+      "hiPx": 47.08,
+      "loPx": 44.34,
+      "open": 45.01,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-11"
+    },
+    {
+      "clsPx": 46.31,
+      "hiPx": 47.17,
+      "loPx": 45.24,
+      "open": 46.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-14"
+    },
+    {
+      "clsPx": 46.21,
+      "hiPx": 46.64,
+      "loPx": 45.44,
+      "open": 45.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-15"
+    },
+    {
+      "clsPx": 45.44,
+      "hiPx": 46.66,
+      "loPx": 45.2,
+      "open": 45.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-16"
+    },
+    {
+      "clsPx": 43.6,
+      "hiPx": 45.32,
+      "loPx": 43.5,
+      "open": 44.59,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-17"
+    },
+    {
+      "clsPx": 43.71,
+      "hiPx": 44.19,
+      "loPx": 43.13,
+      "open": 43.46,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-18"
+    },
+    {
+      "clsPx": 41.91,
+      "hiPx": 43.97,
+      "loPx": 41.87,
+      "open": 43.71,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-22"
+    },
+    {
+      "clsPx": 41.48,
+      "hiPx": 42.35,
+      "loPx": 40.6,
+      "open": 42.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-23"
+    },
+    {
+      "clsPx": 42.8,
+      "hiPx": 43.07,
+      "loPx": 40.78,
+      "open": 41.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-24"
+    },
+    {
+      "clsPx": 42.41,
+      "hiPx": 43.39,
+      "loPx": 42.24,
+      "open": 42.79,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-25"
+    },
+    {
+      "clsPx": 44.41,
+      "hiPx": 45.03,
+      "loPx": 41.01,
+      "open": 41.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-02-28"
+    },
+    {
+      "clsPx": 46.16,
+      "hiPx": 46.41,
+      "loPx": 43.8,
+      "open": 44.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-01"
+    },
+    {
+      "clsPx": 47.77,
+      "hiPx": 48.58,
+      "loPx": 45.71,
+      "open": 46.36,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-02"
+    },
+    {
+      "clsPx": 47.83,
+      "hiPx": 48.61,
+      "loPx": 45.92,
+      "open": 48.12,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-03"
+    },
+    {
+      "clsPx": 49.26,
+      "hiPx": 49.3,
+      "loPx": 46.6,
+      "open": 47.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-04"
+    },
+    {
+      "clsPx": 49.88,
+      "hiPx": 50.78,
+      "loPx": 48.17,
+      "open": 49.31,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-07"
+    },
+    {
+      "clsPx": 50.53,
+      "hiPx": 53.43,
+      "loPx": 49.11,
+      "open": 49.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-08"
+    },
+    {
+      "clsPx": 49.57,
+      "hiPx": 51.85,
+      "loPx": 48.86,
+      "open": 50.65,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-09"
+    },
+    {
+      "clsPx": 49.57,
+      "hiPx": 49.87,
+      "loPx": 47.59,
+      "open": 48.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-10"
+    },
+    {
+      "clsPx": 47.63,
+      "hiPx": 50.07,
+      "loPx": 46.64,
+      "open": 49.66,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-11"
+    },
+    {
+      "clsPx": 49.21,
+      "hiPx": 50.09,
+      "loPx": 46.93,
+      "open": 50.09,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-14"
+    },
+    {
+      "clsPx": 49.54,
+      "hiPx": 49.83,
+      "loPx": 48.19,
+      "open": 49.59,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-15"
+    },
+    {
+      "clsPx": 50.0,
+      "hiPx": 50.61,
+      "loPx": 48.63,
+      "open": 49.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-16"
+    },
+    {
+      "clsPx": 49.25,
+      "hiPx": 50.91,
+      "loPx": 49.17,
+      "open": 50.11,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-17"
+    },
+    {
+      "clsPx": 47.33,
+      "hiPx": 49.65,
+      "loPx": 47.21,
+      "open": 48.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-18"
+    },
+    {
+      "clsPx": 47.54,
+      "hiPx": 47.74,
+      "loPx": 46.94,
+      "open": 47.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-21"
+    },
+    {
+      "clsPx": 49.39,
+      "hiPx": 50.27,
+      "loPx": 48.3,
+      "open": 48.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-22"
+    },
+    {
+      "clsPx": 49.25,
+      "hiPx": 50.0,
+      "loPx": 48.97,
+      "open": 48.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-23"
+    },
+    {
+      "clsPx": 50.62,
+      "hiPx": 50.78,
+      "loPx": 49.03,
+      "open": 49.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-24"
+    },
+    {
+      "clsPx": 51.96,
+      "hiPx": 51.98,
+      "loPx": 50.25,
+      "open": 50.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-25"
+    },
+    {
+      "clsPx": 54.84,
+      "hiPx": 54.91,
+      "loPx": 52.2,
+      "open": 52.52,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-28"
+    },
+    {
+      "clsPx": 54.4,
+      "hiPx": 55.43,
+      "loPx": 52.76,
+      "open": 55.05,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-29"
+    },
+    {
+      "clsPx": 55.53,
+      "hiPx": 55.81,
+      "loPx": 53.8,
+      "open": 54.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-30"
+    },
+    {
+      "clsPx": 54.33,
+      "hiPx": 57.06,
+      "loPx": 53.87,
+      "open": 56.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-03-31"
+    },
+    {
+      "clsPx": 56.04,
+      "hiPx": 56.31,
+      "loPx": 53.8,
+      "open": 54.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-01"
+    },
+    {
+      "clsPx": 56.38,
+      "hiPx": 56.69,
+      "loPx": 55.56,
+      "open": 56.37,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-04"
+    },
+    {
+      "clsPx": 56.98,
+      "hiPx": 58.26,
+      "loPx": 56.45,
+      "open": 56.65,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-05"
+    },
+    {
+      "clsPx": 57.56,
+      "hiPx": 58.03,
+      "loPx": 56.37,
+      "open": 56.89,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-06"
+    },
+    {
+      "clsPx": 58.83,
+      "hiPx": 58.98,
+      "loPx": 57.32,
+      "open": 57.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-07"
+    },
+    {
+      "clsPx": 61.83,
+      "hiPx": 62.68,
+      "loPx": 58.82,
+      "open": 59.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-08"
+    },
+    {
+      "clsPx": 58.61,
+      "hiPx": 62.45,
+      "loPx": 58.34,
+      "open": 61.99,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-11"
+    },
+    {
+      "clsPx": 59.75,
+      "hiPx": 61.05,
+      "loPx": 58.8,
+      "open": 58.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-12"
+    },
+    {
+      "clsPx": 62.0,
+      "hiPx": 62.34,
+      "loPx": 59.64,
+      "open": 59.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-13"
+    },
+    {
+      "clsPx": 60.41,
+      "hiPx": 62.51,
+      "loPx": 60.06,
+      "open": 61.93,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-14"
+    },
+    {
+      "clsPx": 61.15,
+      "hiPx": 61.98,
+      "loPx": 60.16,
+      "open": 60.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-18"
+    },
+    {
+      "clsPx": 64.43,
+      "hiPx": 64.6,
+      "loPx": 60.73,
+      "open": 61.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-19"
+    },
+    {
+      "clsPx": 63.17,
+      "hiPx": 66.33,
+      "loPx": 62.84,
+      "open": 65.5,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-20"
+    },
+    {
+      "clsPx": 60.53,
+      "hiPx": 64.03,
+      "loPx": 60.03,
+      "open": 62.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-21"
+    },
+    {
+      "clsPx": 60.3,
+      "hiPx": 62.25,
+      "loPx": 60.16,
+      "open": 60.36,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-22"
+    },
+    {
+      "clsPx": 60.14,
+      "hiPx": 60.69,
+      "loPx": 57.41,
+      "open": 60.23,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-25"
+    },
+    {
+      "clsPx": 57.9,
+      "hiPx": 60.09,
+      "loPx": 57.86,
+      "open": 59.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-26"
+    },
+    {
+      "clsPx": 58.04,
+      "hiPx": 59.1,
+      "loPx": 57.69,
+      "open": 57.96,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-27"
+    },
+    {
+      "clsPx": 59.21,
+      "hiPx": 59.25,
+      "loPx": 56.79,
+      "open": 58.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-28"
+    },
+    {
+      "clsPx": 57.19,
+      "hiPx": 59.75,
+      "loPx": 57.13,
+      "open": 59.4,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-04-29"
+    },
+    {
+      "clsPx": 56.21,
+      "hiPx": 57.94,
+      "loPx": 54.96,
+      "open": 57.27,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-02"
+    },
+    {
+      "clsPx": 57.66,
+      "hiPx": 58.38,
+      "loPx": 56.45,
+      "open": 56.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-03"
+    },
+    {
+      "clsPx": 59.7,
+      "hiPx": 60.17,
+      "loPx": 57.8,
+      "open": 58.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-04"
+    },
+    {
+      "clsPx": 58.1,
+      "hiPx": 59.87,
+      "loPx": 57.15,
+      "open": 59.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-05"
+    },
+    {
+      "clsPx": 58.21,
+      "hiPx": 59.14,
+      "loPx": 56.69,
+      "open": 58.2,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-06"
+    },
+    {
+      "clsPx": 55.65,
+      "hiPx": 58.5,
+      "loPx": 54.64,
+      "open": 58.5,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-09"
+    },
+    {
+      "clsPx": 55.09,
+      "hiPx": 57.82,
+      "loPx": 54.8,
+      "open": 56.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-10"
+    },
+    {
+      "clsPx": 55.41,
+      "hiPx": 57.01,
+      "loPx": 54.6,
+      "open": 55.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-11"
+    },
+    {
+      "clsPx": 51.77,
+      "hiPx": 56.01,
+      "loPx": 51.39,
+      "open": 55.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-12"
+    },
+    {
+      "clsPx": 52.87,
+      "hiPx": 54.12,
+      "loPx": 51.92,
+      "open": 52.8,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-13"
+    },
+    {
+      "clsPx": 54.79,
+      "hiPx": 55.31,
+      "loPx": 52.61,
+      "open": 52.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-16"
+    },
+    {
+      "clsPx": 57.43,
+      "hiPx": 57.59,
+      "loPx": 54.2,
+      "open": 55.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-17"
+    },
+    {
+      "clsPx": 55.46,
+      "hiPx": 58.34,
+      "loPx": 55.12,
+      "open": 57.53,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-18"
+    },
+    {
+      "clsPx": 55.41,
+      "hiPx": 55.68,
+      "loPx": 53.17,
+      "open": 55.31,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-19"
+    },
+    {
+      "clsPx": 54.85,
+      "hiPx": 57.07,
+      "loPx": 53.73,
+      "open": 55.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-20"
+    },
+    {
+      "clsPx": 54.8,
+      "hiPx": 55.76,
+      "loPx": 54.08,
+      "open": 55.67,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-23"
+    },
+    {
+      "clsPx": 54.97,
+      "hiPx": 55.54,
+      "loPx": 53.32,
+      "open": 54.75,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-24"
+    },
+    {
+      "clsPx": 57.29,
+      "hiPx": 57.45,
+      "loPx": 55.07,
+      "open": 55.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-25"
+    },
+    {
+      "clsPx": 60.48,
+      "hiPx": 61.04,
+      "loPx": 57.29,
+      "open": 57.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-26"
+    },
+    {
+      "clsPx": 64.48,
+      "hiPx": 64.52,
+      "loPx": 60.03,
+      "open": 60.42,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-27"
+    },
+    {
+      "clsPx": 60.11,
+      "hiPx": 64.28,
+      "loPx": 59.42,
+      "open": 63.46,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-05-31"
+    },
+    {
+      "clsPx": 61.63,
+      "hiPx": 61.89,
+      "loPx": 60.17,
+      "open": 60.4,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-01"
+    },
+    {
+      "clsPx": 61.72,
+      "hiPx": 62.08,
+      "loPx": 60.01,
+      "open": 61.66,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-02"
+    },
+    {
+      "clsPx": 63.1,
+      "hiPx": 63.73,
+      "loPx": 61.11,
+      "open": 61.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-03"
+    },
+    {
+      "clsPx": 64.28,
+      "hiPx": 64.81,
+      "loPx": 63.31,
+      "open": 63.48,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-06"
+    },
+    {
+      "clsPx": 64.43,
+      "hiPx": 64.58,
+      "loPx": 63.09,
+      "open": 63.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-07"
+    },
+    {
+      "clsPx": 62.71,
+      "hiPx": 64.36,
+      "loPx": 61.12,
+      "open": 64.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-08"
+    },
+    {
+      "clsPx": 59.26,
+      "hiPx": 62.41,
+      "loPx": 59.21,
+      "open": 62.22,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-09"
+    },
+    {
+      "clsPx": 57.89,
+      "hiPx": 59.12,
+      "loPx": 57.33,
+      "open": 57.95,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-10"
+    },
+    {
+      "clsPx": 53.72,
+      "hiPx": 57.11,
+      "loPx": 53.44,
+      "open": 56.42,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-13"
+    },
+    {
+      "clsPx": 52.71,
+      "hiPx": 54.68,
+      "loPx": 51.62,
+      "open": 54.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-14"
+    },
+    {
+      "clsPx": 56.35,
+      "hiPx": 57.66,
+      "loPx": 53.91,
+      "open": 53.93,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-15"
+    },
+    {
+      "clsPx": 56.41,
+      "hiPx": 56.49,
+      "loPx": 54.3,
+      "open": 54.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-16"
+    },
+    {
+      "clsPx": 56.25,
+      "hiPx": 57.61,
+      "loPx": 53.72,
+      "open": 56.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-17"
+    },
+    {
+      "clsPx": 58.46,
+      "hiPx": 59.0,
+      "loPx": 56.25,
+      "open": 56.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-21"
+    },
+    {
+      "clsPx": 57.33,
+      "hiPx": 58.51,
+      "loPx": 56.99,
+      "open": 57.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-22"
+    },
+    {
+      "clsPx": 56.78,
+      "hiPx": 59.28,
+      "loPx": 55.95,
+      "open": 57.98,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-23"
+    },
+    {
+      "clsPx": 57.39,
+      "hiPx": 58.42,
+      "loPx": 56.14,
+      "open": 56.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-24"
+    },
+    {
+      "clsPx": 57.53,
+      "hiPx": 57.97,
+      "loPx": 56.56,
+      "open": 57.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-27"
+    },
+    {
+      "clsPx": 56.23,
+      "hiPx": 58.97,
+      "loPx": 55.99,
+      "open": 57.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-28"
+    },
+    {
+      "clsPx": 55.49,
+      "hiPx": 56.31,
+      "loPx": 54.53,
+      "open": 56.12,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-29"
+    },
+    {
+      "clsPx": 55.44,
+      "hiPx": 56.96,
+      "loPx": 54.75,
+      "open": 55.09,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-06-30"
+    },
+    {
+      "clsPx": 55.77,
+      "hiPx": 56.24,
+      "loPx": 54.82,
+      "open": 54.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-01"
+    },
+    {
+      "clsPx": 53.19,
+      "hiPx": 55.55,
+      "loPx": 51.21,
+      "open": 55.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-05"
+    },
+    {
+      "clsPx": 54.95,
+      "hiPx": 55.4,
+      "loPx": 52.82,
+      "open": 53.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-06"
+    },
+    {
+      "clsPx": 57.23,
+      "hiPx": 57.99,
+      "loPx": 55.74,
+      "open": 55.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-07"
+    },
+    {
+      "clsPx": 57.75,
+      "hiPx": 57.91,
+      "loPx": 55.59,
+      "open": 57.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-08"
+    },
+    {
+      "clsPx": 57.94,
+      "hiPx": 58.23,
+      "loPx": 56.55,
+      "open": 57.75,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-11"
+    },
+    {
+      "clsPx": 57.35,
+      "hiPx": 59.17,
+      "loPx": 57.05,
+      "open": 57.52,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-12"
+    },
+    {
+      "clsPx": 57.92,
+      "hiPx": 58.36,
+      "loPx": 56.3,
+      "open": 56.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-13"
+    },
+    {
+      "clsPx": 56.08,
+      "hiPx": 57.09,
+      "loPx": 55.27,
+      "open": 56.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-14"
+    },
+    {
+      "clsPx": 53.89,
+      "hiPx": 54.84,
+      "loPx": 50.97,
+      "open": 53.21,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-15"
+    },
+    {
+      "clsPx": 53.07,
+      "hiPx": 54.87,
+      "loPx": 52.85,
+      "open": 54.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-18"
+    },
+    {
+      "clsPx": 53.25,
+      "hiPx": 53.73,
+      "loPx": 52.45,
+      "open": 53.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-19"
+    },
+    {
+      "clsPx": 52.35,
+      "hiPx": 53.58,
+      "loPx": 51.67,
+      "open": 53.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-20"
+    },
+    {
+      "clsPx": 52.44,
+      "hiPx": 53.11,
+      "loPx": 51.61,
+      "open": 52.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-21"
+    },
+    {
+      "clsPx": 52.28,
+      "hiPx": 53.83,
+      "loPx": 51.72,
+      "open": 53.05,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-22"
+    },
+    {
+      "clsPx": 53.21,
+      "hiPx": 53.31,
+      "loPx": 51.67,
+      "open": 52.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-25"
+    },
+    {
+      "clsPx": 53.73,
+      "hiPx": 54.87,
+      "loPx": 53.14,
+      "open": 53.64,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-26"
+    },
+    {
+      "clsPx": 53.76,
+      "hiPx": 53.99,
+      "loPx": 52.46,
+      "open": 53.28,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-27"
+    },
+    {
+      "clsPx": 62.54,
+      "hiPx": 63.84,
+      "loPx": 60.21,
+      "open": 60.59,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-28"
+    },
+    {
+      "clsPx": 64.0,
+      "hiPx": 64.48,
+      "loPx": 61.62,
+      "open": 61.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-07-29"
+    },
+    {
+      "clsPx": 63.22,
+      "hiPx": 64.48,
+      "loPx": 62.09,
+      "open": 63.95,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-01"
+    },
+    {
+      "clsPx": 63.75,
+      "hiPx": 64.67,
+      "loPx": 62.92,
+      "open": 63.22,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-02"
+    },
+    {
+      "clsPx": 65.03,
+      "hiPx": 65.24,
+      "loPx": 63.46,
+      "open": 64.51,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-03"
+    },
+    {
+      "clsPx": 65.31,
+      "hiPx": 66.19,
+      "loPx": 63.43,
+      "open": 63.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-04"
+    },
+    {
+      "clsPx": 71.94,
+      "hiPx": 73.56,
+      "loPx": 67.53,
+      "open": 67.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-05"
+    },
+    {
+      "clsPx": 73.48,
+      "hiPx": 75.16,
+      "loPx": 72.58,
+      "open": 74.56,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-08"
+    },
+    {
+      "clsPx": 73.31,
+      "hiPx": 74.33,
+      "loPx": 72.63,
+      "open": 73.34,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-09"
+    },
+    {
+      "clsPx": 74.67,
+      "hiPx": 74.74,
+      "loPx": 73.1,
+      "open": 73.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-10"
+    },
+    {
+      "clsPx": 76.32,
+      "hiPx": 77.51,
+      "loPx": 74.24,
+      "open": 74.67,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-11"
+    },
+    {
+      "clsPx": 79.05,
+      "hiPx": 79.22,
+      "loPx": 76.66,
+      "open": 77.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-12"
+    },
+    {
+      "clsPx": 78.76,
+      "hiPx": 79.95,
+      "loPx": 77.84,
+      "open": 77.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-15"
+    },
+    {
+      "clsPx": 78.95,
+      "hiPx": 79.64,
+      "loPx": 78.47,
+      "open": 78.66,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-16"
+    },
+    {
+      "clsPx": 77.3,
+      "hiPx": 79.0,
+      "loPx": 76.72,
+      "open": 78.0,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-17"
+    },
+    {
+      "clsPx": 79.15,
+      "hiPx": 79.67,
+      "loPx": 77.03,
+      "open": 77.03,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-18"
+    },
+    {
+      "clsPx": 78.41,
+      "hiPx": 78.83,
+      "loPx": 77.45,
+      "open": 77.89,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-19"
+    },
+    {
+      "clsPx": 77.25,
+      "hiPx": 78.32,
+      "loPx": 77.13,
+      "open": 78.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-22"
+    },
+    {
+      "clsPx": 77.35,
+      "hiPx": 78.46,
+      "loPx": 77.21,
+      "open": 77.86,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-23"
+    },
+    {
+      "clsPx": 77.95,
+      "hiPx": 78.39,
+      "loPx": 76.93,
+      "open": 77.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-24"
+    },
+    {
+      "clsPx": 80.25,
+      "hiPx": 80.34,
+      "loPx": 77.37,
+      "open": 77.6,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-25"
+    },
+    {
+      "clsPx": 78.4,
+      "hiPx": 80.73,
+      "loPx": 78.18,
+      "open": 80.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-26"
+    },
+    {
+      "clsPx": 78.56,
+      "hiPx": 79.52,
+      "loPx": 76.77,
+      "open": 77.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-29"
+    },
+    {
+      "clsPx": 77.29,
+      "hiPx": 79.13,
+      "loPx": 76.61,
+      "open": 79.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-30"
+    },
+    {
+      "clsPx": 79.14,
+      "hiPx": 79.91,
+      "loPx": 77.18,
+      "open": 77.85,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-08-31"
+    },
+    {
+      "clsPx": 80.04,
+      "hiPx": 80.44,
+      "loPx": 78.72,
+      "open": 79.14,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-01"
+    },
+    {
+      "clsPx": 78.63,
+      "hiPx": 81.17,
+      "loPx": 78.53,
+      "open": 80.1,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-02"
+    },
+    {
+      "clsPx": 79.79,
+      "hiPx": 80.21,
+      "loPx": 78.64,
+      "open": 79.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-06"
+    },
+    {
+      "clsPx": 80.41,
+      "hiPx": 81.92,
+      "loPx": 79.23,
+      "open": 80.12,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-07"
+    },
+    {
+      "clsPx": 83.21,
+      "hiPx": 83.37,
+      "loPx": 80.38,
+      "open": 80.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-08"
+    },
+    {
+      "clsPx": 84.88,
+      "hiPx": 85.17,
+      "loPx": 82.87,
+      "open": 83.9,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-09"
+    },
+    {
+      "clsPx": 85.48,
+      "hiPx": 85.99,
+      "loPx": 84.83,
+      "open": 85.9,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-12"
+    },
+    {
+      "clsPx": 83.78,
+      "hiPx": 85.38,
+      "loPx": 83.19,
+      "open": 84.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-13"
+    },
+    {
+      "clsPx": 85.4,
+      "hiPx": 85.87,
+      "loPx": 83.67,
+      "open": 83.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-14"
+    },
+    {
+      "clsPx": 84.19,
+      "hiPx": 85.61,
+      "loPx": 83.71,
+      "open": 85.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-15"
+    },
+    {
+      "clsPx": 83.0,
+      "hiPx": 84.25,
+      "loPx": 82.34,
+      "open": 84.01,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-16"
+    },
+    {
+      "clsPx": 86.67,
+      "hiPx": 87.0,
+      "loPx": 82.69,
+      "open": 82.83,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-19"
+    },
+    {
+      "clsPx": 85.11,
+      "hiPx": 87.47,
+      "loPx": 84.93,
+      "open": 85.75,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-20"
+    },
+    {
+      "clsPx": 84.65,
+      "hiPx": 87.38,
+      "loPx": 84.61,
+      "open": 86.12,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-21"
+    },
+    {
+      "clsPx": 82.81,
+      "hiPx": 85.35,
+      "loPx": 82.09,
+      "open": 85.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-22"
+    },
+    {
+      "clsPx": 81.33,
+      "hiPx": 81.8,
+      "loPx": 79.68,
+      "open": 81.27,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-23"
+    },
+    {
+      "clsPx": 80.43,
+      "hiPx": 82.4,
+      "loPx": 79.19,
+      "open": 81.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-26"
+    },
+    {
+      "clsPx": 81.44,
+      "hiPx": 82.85,
+      "loPx": 80.58,
+      "open": 81.17,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-27"
+    },
+    {
+      "clsPx": 82.46,
+      "hiPx": 82.96,
+      "loPx": 80.68,
+      "open": 81.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-28"
+    },
+    {
+      "clsPx": 80.54,
+      "hiPx": 83.62,
+      "loPx": 79.6,
+      "open": 82.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-29"
+    },
+    {
+      "clsPx": 80.69,
+      "hiPx": 81.91,
+      "loPx": 79.75,
+      "open": 80.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-09-30"
+    },
+    {
+      "clsPx": 83.99,
+      "hiPx": 84.3,
+      "loPx": 81.35,
+      "open": 82.47,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-03"
+    },
+    {
+      "clsPx": 86.65,
+      "hiPx": 86.77,
+      "loPx": 84.54,
+      "open": 85.64,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-04"
+    },
+    {
+      "clsPx": 85.52,
+      "hiPx": 86.78,
+      "loPx": 83.02,
+      "open": 85.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-05"
+    },
+    {
+      "clsPx": 83.68,
+      "hiPx": 87.21,
+      "loPx": 83.37,
+      "open": 85.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-06"
+    },
+    {
+      "clsPx": 81.85,
+      "hiPx": 83.17,
+      "loPx": 80.86,
+      "open": 83.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-07"
+    },
+    {
+      "clsPx": 82.17,
+      "hiPx": 83.06,
+      "loPx": 81.41,
+      "open": 82.4,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-10"
+    },
+    {
+      "clsPx": 80.39,
+      "hiPx": 82.75,
+      "loPx": 80.07,
+      "open": 81.87,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-11"
+    },
+    {
+      "clsPx": 79.69,
+      "hiPx": 81.08,
+      "loPx": 79.22,
+      "open": 80.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-12"
+    },
+    {
+      "clsPx": 81.3,
+      "hiPx": 81.78,
+      "loPx": 76.92,
+      "open": 78.14,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-13"
+    },
+    {
+      "clsPx": 78.82,
+      "hiPx": 82.21,
+      "loPx": 78.28,
+      "open": 81.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-14"
+    },
+    {
+      "clsPx": 82.63,
+      "hiPx": 83.7,
+      "loPx": 80.64,
+      "open": 80.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-17"
+    },
+    {
+      "clsPx": 83.91,
+      "hiPx": 84.77,
+      "loPx": 81.97,
+      "open": 83.9,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-18"
+    },
+    {
+      "clsPx": 83.11,
+      "hiPx": 83.64,
+      "loPx": 82.02,
+      "open": 82.53,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-19"
+    },
+    {
+      "clsPx": 82.02,
+      "hiPx": 84.12,
+      "loPx": 81.65,
+      "open": 83.77,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-20"
+    },
+    {
+      "clsPx": 84.65,
+      "hiPx": 84.83,
+      "loPx": 81.14,
+      "open": 82.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-21"
+    },
+    {
+      "clsPx": 84.95,
+      "hiPx": 85.07,
+      "loPx": 83.0,
+      "open": 84.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-24"
+    },
+    {
+      "clsPx": 85.5,
+      "hiPx": 85.9,
+      "loPx": 84.14,
+      "open": 84.87,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-25"
+    },
+    {
+      "clsPx": 86.11,
+      "hiPx": 86.98,
+      "loPx": 84.7,
+      "open": 86.98,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-26"
+    },
+    {
+      "clsPx": 90.24,
+      "hiPx": 90.34,
+      "loPx": 87.1,
+      "open": 87.11,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-27"
+    },
+    {
+      "clsPx": 90.93,
+      "hiPx": 92.39,
+      "loPx": 89.06,
+      "open": 90.1,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-28"
+    },
+    {
+      "clsPx": 91.7,
+      "hiPx": 92.55,
+      "loPx": 90.57,
+      "open": 91.31,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-10-31"
+    },
+    {
+      "clsPx": 92.65,
+      "hiPx": 93.35,
+      "loPx": 91.18,
+      "open": 92.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-01"
+    },
+    {
+      "clsPx": 90.29,
+      "hiPx": 93.39,
+      "loPx": 90.18,
+      "open": 91.83,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-02"
+    },
+    {
+      "clsPx": 91.57,
+      "hiPx": 92.58,
+      "loPx": 89.39,
+      "open": 89.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-03"
+    },
+    {
+      "clsPx": 91.48,
+      "hiPx": 93.32,
+      "loPx": 89.96,
+      "open": 92.23,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-04"
+    },
+    {
+      "clsPx": 90.69,
+      "hiPx": 92.2,
+      "loPx": 90.16,
+      "open": 92.2,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-07"
+    },
+    {
+      "clsPx": 84.91,
+      "hiPx": 90.31,
+      "loPx": 83.49,
+      "open": 86.87,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-08"
+    },
+    {
+      "clsPx": 84.72,
+      "hiPx": 87.22,
+      "loPx": 83.73,
+      "open": 84.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-09"
+    },
+    {
+      "clsPx": 92.28,
+      "hiPx": 92.96,
+      "loPx": 85.55,
+      "open": 87.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-10"
+    },
+    {
+      "clsPx": 89.53,
+      "hiPx": 92.99,
+      "loPx": 88.85,
+      "open": 92.42,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-11"
+    },
+    {
+      "clsPx": 91.23,
+      "hiPx": 92.01,
+      "loPx": 89.37,
+      "open": 89.37,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-14"
+    },
+    {
+      "clsPx": 90.83,
+      "hiPx": 92.04,
+      "loPx": 90.0,
+      "open": 91.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-15"
+    },
+    {
+      "clsPx": 89.06,
+      "hiPx": 91.82,
+      "loPx": 88.67,
+      "open": 91.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-16"
+    },
+    {
+      "clsPx": 87.48,
+      "hiPx": 88.85,
+      "loPx": 86.33,
+      "open": 87.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-17"
+    },
+    {
+      "clsPx": 90.63,
+      "hiPx": 90.77,
+      "loPx": 87.45,
+      "open": 87.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-18"
+    },
+    {
+      "clsPx": 90.72,
+      "hiPx": 91.53,
+      "loPx": 90.11,
+      "open": 91.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-21"
+    },
+    {
+      "clsPx": 93.52,
+      "hiPx": 93.61,
+      "loPx": 91.4,
+      "open": 91.86,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-22"
+    },
+    {
+      "clsPx": 93.86,
+      "hiPx": 95.09,
+      "loPx": 91.72,
+      "open": 93.28,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-23"
+    },
+    {
+      "clsPx": 94.38,
+      "hiPx": 94.66,
+      "loPx": 93.26,
+      "open": 93.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-25"
+    },
+    {
+      "clsPx": 92.1,
+      "hiPx": 93.83,
+      "loPx": 91.68,
+      "open": 93.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-28"
+    },
+    {
+      "clsPx": 91.73,
+      "hiPx": 92.39,
+      "loPx": 90.65,
+      "open": 91.98,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-29"
+    },
+    {
+      "clsPx": 93.37,
+      "hiPx": 94.17,
+      "loPx": 91.08,
+      "open": 91.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-11-30"
+    },
+    {
+      "clsPx": 91.77,
+      "hiPx": 94.98,
+      "loPx": 91.2,
+      "open": 94.23,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-01"
+    },
+    {
+      "clsPx": 89.41,
+      "hiPx": 90.82,
+      "loPx": 88.44,
+      "open": 90.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-02"
+    },
+    {
+      "clsPx": 87.48,
+      "hiPx": 88.99,
+      "loPx": 87.23,
+      "open": 88.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-05"
+    },
+    {
+      "clsPx": 88.18,
+      "hiPx": 88.28,
+      "loPx": 87.23,
+      "open": 87.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-06"
+    },
+    {
+      "clsPx": 89.34,
+      "hiPx": 90.54,
+      "loPx": 88.0,
+      "open": 88.28,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-07"
+    },
+    {
+      "clsPx": 88.8,
+      "hiPx": 90.33,
+      "loPx": 88.33,
+      "open": 89.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-08"
+    },
+    {
+      "clsPx": 87.15,
+      "hiPx": 89.23,
+      "loPx": 87.13,
+      "open": 88.75,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-09"
+    },
+    {
+      "clsPx": 88.28,
+      "hiPx": 88.32,
+      "loPx": 86.52,
+      "open": 87.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-12"
+    },
+    {
+      "clsPx": 88.24,
+      "hiPx": 90.06,
+      "loPx": 87.81,
+      "open": 89.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-13"
+    },
+    {
+      "clsPx": 88.25,
+      "hiPx": 89.65,
+      "loPx": 87.31,
+      "open": 88.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-14"
+    },
+    {
+      "clsPx": 87.14,
+      "hiPx": 88.25,
+      "loPx": 86.87,
+      "open": 88.21,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-15"
+    },
+    {
+      "clsPx": 85.68,
+      "hiPx": 86.07,
+      "loPx": 83.47,
+      "open": 85.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-16"
+    },
+    {
+      "clsPx": 85.22,
+      "hiPx": 86.14,
+      "loPx": 84.51,
+      "open": 85.85,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-19"
+    },
+    {
+      "clsPx": 85.06,
+      "hiPx": 85.6,
+      "loPx": 84.63,
+      "open": 85.48,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-20"
+    },
+    {
+      "clsPx": 87.09,
+      "hiPx": 87.59,
+      "loPx": 84.23,
+      "open": 85.47,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-21"
+    },
+    {
+      "clsPx": 84.83,
+      "hiPx": 86.82,
+      "loPx": 84.06,
+      "open": 86.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-22"
+    },
+    {
+      "clsPx": 85.52,
+      "hiPx": 85.71,
+      "loPx": 84.64,
+      "open": 85.02,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-23"
+    },
+    {
+      "clsPx": 85.13,
+      "hiPx": 86.37,
+      "loPx": 84.78,
+      "open": 85.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-27"
+    },
+    {
+      "clsPx": 84.13,
+      "hiPx": 85.81,
+      "loPx": 83.95,
+      "open": 85.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-28"
+    },
+    {
+      "clsPx": 84.29,
+      "hiPx": 85.18,
+      "loPx": 83.81,
+      "open": 84.67,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-29"
+    },
+    {
+      "clsPx": 83.74,
+      "hiPx": 84.12,
+      "loPx": 82.69,
+      "open": 84.12,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2022-12-30"
+    },
+    {
+      "clsPx": 79.57,
+      "hiPx": 83.66,
+      "loPx": 78.48,
+      "open": 83.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-03"
+    },
+    {
+      "clsPx": 81.03,
+      "hiPx": 81.35,
+      "loPx": 78.97,
+      "open": 79.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-04"
+    },
+    {
+      "clsPx": 80.05,
+      "hiPx": 81.52,
+      "loPx": 79.54,
+      "open": 80.55,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-05"
+    },
+    {
+      "clsPx": 81.11,
+      "hiPx": 82.73,
+      "loPx": 80.7,
+      "open": 81.23,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-06"
+    },
+    {
+      "clsPx": 81.6,
+      "hiPx": 82.77,
+      "loPx": 81.19,
+      "open": 81.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-09"
+    },
+    {
+      "clsPx": 80.7,
+      "hiPx": 81.1,
+      "loPx": 79.25,
+      "open": 81.02,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-10"
+    },
+    {
+      "clsPx": 81.71,
+      "hiPx": 81.96,
+      "loPx": 80.08,
+      "open": 80.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-11"
+    },
+    {
+      "clsPx": 81.93,
+      "hiPx": 82.38,
+      "loPx": 80.4,
+      "open": 81.48,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-12"
+    },
+    {
+      "clsPx": 82.73,
+      "hiPx": 83.25,
+      "loPx": 81.06,
+      "open": 81.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-13"
+    },
+    {
+      "clsPx": 80.99,
+      "hiPx": 82.59,
+      "loPx": 80.63,
+      "open": 81.53,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-17"
+    },
+    {
+      "clsPx": 79.51,
+      "hiPx": 82.09,
+      "loPx": 79.43,
+      "open": 80.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-18"
+    },
+    {
+      "clsPx": 78.53,
+      "hiPx": 79.45,
+      "loPx": 78.45,
+      "open": 79.27,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-19"
+    },
+    {
+      "clsPx": 80.63,
+      "hiPx": 80.72,
+      "loPx": 78.15,
+      "open": 78.8,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-20"
+    },
+    {
+      "clsPx": 81.73,
+      "hiPx": 81.88,
+      "loPx": 80.2,
+      "open": 80.56,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-23"
+    },
+    {
+      "clsPx": 81.51,
+      "hiPx": 81.82,
+      "loPx": 80.61,
+      "open": 81.6,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-24"
+    },
+    {
+      "clsPx": 81.02,
+      "hiPx": 81.17,
+      "loPx": 80.13,
+      "open": 81.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-25"
+    },
+    {
+      "clsPx": 83.42,
+      "hiPx": 83.61,
+      "loPx": 80.9,
+      "open": 81.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-26"
+    },
+    {
+      "clsPx": 84.1,
+      "hiPx": 84.18,
+      "loPx": 82.41,
+      "open": 83.42,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-27"
+    },
+    {
+      "clsPx": 80.04,
+      "hiPx": 84.37,
+      "loPx": 79.9,
+      "open": 83.46,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-30"
+    },
+    {
+      "clsPx": 82.92,
+      "hiPx": 83.06,
+      "loPx": 80.02,
+      "open": 80.51,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-01-31"
+    },
+    {
+      "clsPx": 82.97,
+      "hiPx": 83.42,
+      "loPx": 80.51,
+      "open": 83.01,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-01"
+    },
+    {
+      "clsPx": 82.89,
+      "hiPx": 84.2,
+      "loPx": 81.36,
+      "open": 83.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-02"
+    },
+    {
+      "clsPx": 80.82,
+      "hiPx": 82.73,
+      "loPx": 80.68,
+      "open": 81.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-03"
+    },
+    {
+      "clsPx": 80.88,
+      "hiPx": 81.45,
+      "loPx": 80.15,
+      "open": 80.64,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-06"
+    },
+    {
+      "clsPx": 83.47,
+      "hiPx": 83.8,
+      "loPx": 79.98,
+      "open": 80.95,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-07"
+    },
+    {
+      "clsPx": 81.93,
+      "hiPx": 82.57,
+      "loPx": 81.73,
+      "open": 82.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-08"
+    },
+    {
+      "clsPx": 82.01,
+      "hiPx": 83.02,
+      "loPx": 81.53,
+      "open": 82.5,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-09"
+    },
+    {
+      "clsPx": 84.33,
+      "hiPx": 84.51,
+      "loPx": 81.76,
+      "open": 81.8,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-10"
+    },
+    {
+      "clsPx": 83.92,
+      "hiPx": 84.8,
+      "loPx": 83.48,
+      "open": 84.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-13"
+    },
+    {
+      "clsPx": 83.6,
+      "hiPx": 85.1,
+      "loPx": 82.72,
+      "open": 83.46,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-14"
+    },
+    {
+      "clsPx": 83.55,
+      "hiPx": 84.01,
+      "loPx": 81.95,
+      "open": 82.08,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-15"
+    },
+    {
+      "clsPx": 83.18,
+      "hiPx": 85.41,
+      "loPx": 82.5,
+      "open": 82.57,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-16"
+    },
+    {
+      "clsPx": 82.13,
+      "hiPx": 83.58,
+      "loPx": 79.56,
+      "open": 82.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-17"
+    },
+    {
+      "clsPx": 78.07,
+      "hiPx": 80.64,
+      "loPx": 77.61,
+      "open": 79.28,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-21"
+    },
+    {
+      "clsPx": 75.58,
+      "hiPx": 77.04,
+      "loPx": 74.22,
+      "open": 77.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-22"
+    },
+    {
+      "clsPx": 76.95,
+      "hiPx": 77.17,
+      "loPx": 75.77,
+      "open": 75.77,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-23"
+    },
+    {
+      "clsPx": 77.28,
+      "hiPx": 77.42,
+      "loPx": 75.53,
+      "open": 75.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-24"
+    },
+    {
+      "clsPx": 76.4,
+      "hiPx": 78.09,
+      "loPx": 76.04,
+      "open": 77.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-27"
+    },
+    {
+      "clsPx": 73.01,
+      "hiPx": 76.03,
+      "loPx": 72.53,
+      "open": 75.86,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-02-28"
+    },
+    {
+      "clsPx": 72.48,
+      "hiPx": 73.5,
+      "loPx": 71.0,
+      "open": 72.27,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-01"
+    },
+    {
+      "clsPx": 74.27,
+      "hiPx": 74.8,
+      "loPx": 72.14,
+      "open": 72.27,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-02"
+    },
+    {
+      "clsPx": 77.0,
+      "hiPx": 77.21,
+      "loPx": 74.09,
+      "open": 74.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-03"
+    },
+    {
+      "clsPx": 76.82,
+      "hiPx": 76.9,
+      "loPx": 75.41,
+      "open": 76.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-06"
+    },
+    {
+      "clsPx": 75.94,
+      "hiPx": 77.08,
+      "loPx": 75.38,
+      "open": 77.08,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-07"
+    },
+    {
+      "clsPx": 76.11,
+      "hiPx": 76.48,
+      "loPx": 75.16,
+      "open": 75.8,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-08"
+    },
+    {
+      "clsPx": 76.66,
+      "hiPx": 78.18,
+      "loPx": 75.46,
+      "open": 76.08,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-09"
+    },
+    {
+      "clsPx": 75.6,
+      "hiPx": 77.78,
+      "loPx": 75.3,
+      "open": 77.2,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-10"
+    },
+    {
+      "clsPx": 75.16,
+      "hiPx": 76.63,
+      "loPx": 74.57,
+      "open": 75.0,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-13"
+    },
+    {
+      "clsPx": 75.97,
+      "hiPx": 77.11,
+      "loPx": 75.23,
+      "open": 75.55,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-14"
+    },
+    {
+      "clsPx": 75.39,
+      "hiPx": 75.92,
+      "loPx": 74.43,
+      "open": 75.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-15"
+    },
+    {
+      "clsPx": 76.46,
+      "hiPx": 77.05,
+      "loPx": 74.12,
+      "open": 74.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-16"
+    },
+    {
+      "clsPx": 74.84,
+      "hiPx": 76.49,
+      "loPx": 74.08,
+      "open": 75.77,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-17"
+    },
+    {
+      "clsPx": 75.07,
+      "hiPx": 76.46,
+      "loPx": 74.98,
+      "open": 75.12,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-20"
+    },
+    {
+      "clsPx": 74.6,
+      "hiPx": 76.15,
+      "loPx": 74.06,
+      "open": 75.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-21"
+    },
+    {
+      "clsPx": 72.55,
+      "hiPx": 74.41,
+      "loPx": 72.53,
+      "open": 74.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-22"
+    },
+    {
+      "clsPx": 71.56,
+      "hiPx": 73.24,
+      "loPx": 70.94,
+      "open": 72.79,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-23"
+    },
+    {
+      "clsPx": 71.59,
+      "hiPx": 71.67,
+      "loPx": 69.37,
+      "open": 70.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-24"
+    },
+    {
+      "clsPx": 73.38,
+      "hiPx": 73.53,
+      "loPx": 71.6,
+      "open": 71.6,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-27"
+    },
+    {
+      "clsPx": 73.61,
+      "hiPx": 74.88,
+      "loPx": 72.97,
+      "open": 73.18,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-28"
+    },
+    {
+      "clsPx": 73.97,
+      "hiPx": 74.64,
+      "loPx": 73.53,
+      "open": 74.37,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-29"
+    },
+    {
+      "clsPx": 74.89,
+      "hiPx": 75.49,
+      "loPx": 74.09,
+      "open": 74.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-30"
+    },
+    {
+      "clsPx": 76.53,
+      "hiPx": 76.63,
+      "loPx": 74.8,
+      "open": 74.89,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-03-31"
+    },
+    {
+      "clsPx": 74.69,
+      "hiPx": 76.58,
+      "loPx": 74.56,
+      "open": 76.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-03"
+    },
+    {
+      "clsPx": 74.11,
+      "hiPx": 75.04,
+      "loPx": 73.23,
+      "open": 74.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-04"
+    },
+    {
+      "clsPx": 74.58,
+      "hiPx": 75.18,
+      "loPx": 73.78,
+      "open": 73.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-05"
+    },
+    {
+      "clsPx": 75.03,
+      "hiPx": 75.05,
+      "loPx": 74.25,
+      "open": 74.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-06"
+    },
+    {
+      "clsPx": 75.39,
+      "hiPx": 75.43,
+      "loPx": 73.95,
+      "open": 74.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-10"
+    },
+    {
+      "clsPx": 75.47,
+      "hiPx": 75.86,
+      "loPx": 75.24,
+      "open": 75.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-11"
+    },
+    {
+      "clsPx": 74.88,
+      "hiPx": 75.99,
+      "loPx": 74.73,
+      "open": 75.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-12"
+    },
+    {
+      "clsPx": 75.2,
+      "hiPx": 75.64,
+      "loPx": 74.26,
+      "open": 74.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-13"
+    },
+    {
+      "clsPx": 74.51,
+      "hiPx": 74.71,
+      "loPx": 73.6,
+      "open": 74.4,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-14"
+    },
+    {
+      "clsPx": 73.15,
+      "hiPx": 74.9,
+      "loPx": 72.78,
+      "open": 74.66,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-17"
+    },
+    {
+      "clsPx": 72.61,
+      "hiPx": 74.04,
+      "loPx": 72.31,
+      "open": 73.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-18"
+    },
+    {
+      "clsPx": 72.87,
+      "hiPx": 73.51,
+      "loPx": 72.63,
+      "open": 73.09,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-19"
+    },
+    {
+      "clsPx": 74.55,
+      "hiPx": 74.65,
+      "loPx": 72.81,
+      "open": 72.86,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-20"
+    },
+    {
+      "clsPx": 74.63,
+      "hiPx": 75.03,
+      "loPx": 74.05,
+      "open": 74.89,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-21"
+    },
+    {
+      "clsPx": 75.35,
+      "hiPx": 75.39,
+      "loPx": 73.7,
+      "open": 74.51,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-24"
+    },
+    {
+      "clsPx": 75.0,
+      "hiPx": 75.2,
+      "loPx": 73.94,
+      "open": 74.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-25"
+    },
+    {
+      "clsPx": 73.95,
+      "hiPx": 75.04,
+      "loPx": 73.56,
+      "open": 74.59,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-26"
+    },
+    {
+      "clsPx": 74.82,
+      "hiPx": 75.3,
+      "loPx": 74.07,
+      "open": 74.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-27"
+    },
+    {
+      "clsPx": 75.46,
+      "hiPx": 75.52,
+      "loPx": 74.38,
+      "open": 74.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-04-28"
+    },
+    {
+      "clsPx": 75.11,
+      "hiPx": 75.7,
+      "loPx": 74.83,
+      "open": 75.57,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-01"
+    },
+    {
+      "clsPx": 74.86,
+      "hiPx": 75.46,
+      "loPx": 74.04,
+      "open": 74.8,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-02"
+    },
+    {
+      "clsPx": 74.59,
+      "hiPx": 75.65,
+      "loPx": 74.24,
+      "open": 75.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-03"
+    },
+    {
+      "clsPx": 76.62,
+      "hiPx": 78.35,
+      "loPx": 73.03,
+      "open": 75.05,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-04"
+    },
+    {
+      "clsPx": 77.49,
+      "hiPx": 78.43,
+      "loPx": 76.31,
+      "open": 77.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-05"
+    },
+    {
+      "clsPx": 76.73,
+      "hiPx": 77.84,
+      "loPx": 76.12,
+      "open": 77.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-08"
+    },
+    {
+      "clsPx": 76.97,
+      "hiPx": 77.11,
+      "loPx": 75.86,
+      "open": 76.02,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-09"
+    },
+    {
+      "clsPx": 77.46,
+      "hiPx": 78.11,
+      "loPx": 76.77,
+      "open": 77.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-10"
+    },
+    {
+      "clsPx": 77.41,
+      "hiPx": 77.83,
+      "loPx": 76.55,
+      "open": 76.88,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-11"
+    },
+    {
+      "clsPx": 78.12,
+      "hiPx": 78.65,
+      "loPx": 77.15,
+      "open": 77.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-12"
+    },
+    {
+      "clsPx": 78.53,
+      "hiPx": 79.33,
+      "loPx": 77.47,
+      "open": 78.88,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-15"
+    },
+    {
+      "clsPx": 77.29,
+      "hiPx": 78.45,
+      "loPx": 76.63,
+      "open": 78.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-16"
+    },
+    {
+      "clsPx": 78.65,
+      "hiPx": 78.88,
+      "loPx": 77.01,
+      "open": 77.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-17"
+    },
+    {
+      "clsPx": 79.64,
+      "hiPx": 79.71,
+      "loPx": 77.84,
+      "open": 78.53,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-18"
+    },
+    {
+      "clsPx": 80.52,
+      "hiPx": 81.43,
+      "loPx": 79.77,
+      "open": 79.96,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-19"
+    },
+    {
+      "clsPx": 81.72,
+      "hiPx": 82.14,
+      "loPx": 80.53,
+      "open": 80.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-22"
+    },
+    {
+      "clsPx": 82.22,
+      "hiPx": 82.73,
+      "loPx": 81.36,
+      "open": 81.56,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-23"
+    },
+    {
+      "clsPx": 81.51,
+      "hiPx": 82.54,
+      "loPx": 80.76,
+      "open": 82.22,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-24"
+    },
+    {
+      "clsPx": 80.96,
+      "hiPx": 81.4,
+      "loPx": 80.13,
+      "open": 81.4,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-25"
+    },
+    {
+      "clsPx": 82.03,
+      "hiPx": 82.13,
+      "loPx": 80.53,
+      "open": 81.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-26"
+    },
+    {
+      "clsPx": 81.89,
+      "hiPx": 83.2,
+      "loPx": 81.33,
+      "open": 82.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-30"
+    },
+    {
+      "clsPx": 82.2,
+      "hiPx": 82.72,
+      "loPx": 80.67,
+      "open": 81.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-05-31"
+    },
+    {
+      "clsPx": 86.96,
+      "hiPx": 87.23,
+      "loPx": 82.95,
+      "open": 83.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-01"
+    },
+    {
+      "clsPx": 85.64,
+      "hiPx": 87.12,
+      "loPx": 85.38,
+      "open": 86.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-02"
+    },
+    {
+      "clsPx": 85.62,
+      "hiPx": 86.89,
+      "loPx": 85.29,
+      "open": 85.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-05"
+    },
+    {
+      "clsPx": 87.61,
+      "hiPx": 87.94,
+      "loPx": 85.25,
+      "open": 85.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-06"
+    },
+    {
+      "clsPx": 88.84,
+      "hiPx": 88.91,
+      "loPx": 87.2,
+      "open": 87.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-07"
+    },
+    {
+      "clsPx": 90.3,
+      "hiPx": 90.47,
+      "loPx": 89.09,
+      "open": 89.51,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-08"
+    },
+    {
+      "clsPx": 91.27,
+      "hiPx": 91.74,
+      "loPx": 90.1,
+      "open": 90.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-09"
+    },
+    {
+      "clsPx": 91.72,
+      "hiPx": 91.98,
+      "loPx": 90.87,
+      "open": 90.99,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-12"
+    },
+    {
+      "clsPx": 92.21,
+      "hiPx": 93.27,
+      "loPx": 91.56,
+      "open": 91.93,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-13"
+    },
+    {
+      "clsPx": 91.18,
+      "hiPx": 92.94,
+      "loPx": 90.76,
+      "open": 92.48,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-14"
+    },
+    {
+      "clsPx": 91.44,
+      "hiPx": 91.72,
+      "loPx": 90.95,
+      "open": 91.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-15"
+    },
+    {
+      "clsPx": 90.88,
+      "hiPx": 92.47,
+      "loPx": 90.73,
+      "open": 91.56,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-16"
+    },
+    {
+      "clsPx": 90.0,
+      "hiPx": 91.34,
+      "loPx": 89.9,
+      "open": 91.11,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-20"
+    },
+    {
+      "clsPx": 88.54,
+      "hiPx": 89.06,
+      "loPx": 87.25,
+      "open": 88.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-21"
+    },
+    {
+      "clsPx": 87.32,
+      "hiPx": 88.72,
+      "loPx": 85.96,
+      "open": 88.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-22"
+    },
+    {
+      "clsPx": 88.4,
+      "hiPx": 88.74,
+      "loPx": 87.19,
+      "open": 87.7,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-23"
+    },
+    {
+      "clsPx": 88.67,
+      "hiPx": 89.23,
+      "loPx": 87.75,
+      "open": 88.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-26"
+    },
+    {
+      "clsPx": 88.88,
+      "hiPx": 89.04,
+      "loPx": 88.03,
+      "open": 89.0,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-27"
+    },
+    {
+      "clsPx": 88.59,
+      "hiPx": 88.93,
+      "loPx": 87.77,
+      "open": 88.93,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-28"
+    },
+    {
+      "clsPx": 88.9,
+      "hiPx": 89.37,
+      "loPx": 88.19,
+      "open": 88.55,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-29"
+    },
+    {
+      "clsPx": 89.57,
+      "hiPx": 90.29,
+      "loPx": 89.07,
+      "open": 90.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-06-30"
+    },
+    {
+      "clsPx": 89.62,
+      "hiPx": 89.75,
+      "loPx": 88.37,
+      "open": 89.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-03"
+    },
+    {
+      "clsPx": 90.15,
+      "hiPx": 91.19,
+      "loPx": 89.37,
+      "open": 89.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-05"
+    },
+    {
+      "clsPx": 89.03,
+      "hiPx": 89.49,
+      "loPx": 87.91,
+      "open": 89.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-06"
+    },
+    {
+      "clsPx": 89.35,
+      "hiPx": 89.72,
+      "loPx": 88.7,
+      "open": 89.03,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-07"
+    },
+    {
+      "clsPx": 91.57,
+      "hiPx": 91.6,
+      "loPx": 89.4,
+      "open": 89.4,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-10"
+    },
+    {
+      "clsPx": 92.32,
+      "hiPx": 92.39,
+      "loPx": 90.85,
+      "open": 91.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-11"
+    },
+    {
+      "clsPx": 93.98,
+      "hiPx": 94.08,
+      "loPx": 92.04,
+      "open": 92.88,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-12"
+    },
+    {
+      "clsPx": 93.21,
+      "hiPx": 93.99,
+      "loPx": 92.83,
+      "open": 93.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-13"
+    },
+    {
+      "clsPx": 92.94,
+      "hiPx": 93.47,
+      "loPx": 92.65,
+      "open": 92.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-14"
+    },
+    {
+      "clsPx": 94.1,
+      "hiPx": 94.82,
+      "loPx": 92.43,
+      "open": 92.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-17"
+    },
+    {
+      "clsPx": 93.31,
+      "hiPx": 94.56,
+      "loPx": 91.86,
+      "open": 93.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-18"
+    },
+    {
+      "clsPx": 92.68,
+      "hiPx": 93.47,
+      "loPx": 91.9,
+      "open": 92.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-19"
+    },
+    {
+      "clsPx": 94.79,
+      "hiPx": 95.21,
+      "loPx": 93.18,
+      "open": 93.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-20"
+    },
+    {
+      "clsPx": 94.51,
+      "hiPx": 96.03,
+      "loPx": 94.23,
+      "open": 95.47,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-21"
+    },
+    {
+      "clsPx": 94.46,
+      "hiPx": 94.71,
+      "loPx": 93.69,
+      "open": 94.51,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-24"
+    },
+    {
+      "clsPx": 95.41,
+      "hiPx": 96.04,
+      "loPx": 93.82,
+      "open": 93.87,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-25"
+    },
+    {
+      "clsPx": 95.23,
+      "hiPx": 96.11,
+      "loPx": 94.58,
+      "open": 94.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-26"
+    },
+    {
+      "clsPx": 93.35,
+      "hiPx": 95.63,
+      "loPx": 93.14,
+      "open": 95.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-27"
+    },
+    {
+      "clsPx": 93.67,
+      "hiPx": 94.57,
+      "loPx": 93.2,
+      "open": 94.18,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-28"
+    },
+    {
+      "clsPx": 94.56,
+      "hiPx": 94.6,
+      "loPx": 93.34,
+      "open": 93.77,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-07-31"
+    },
+    {
+      "clsPx": 94.22,
+      "hiPx": 94.99,
+      "loPx": 93.99,
+      "open": 94.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-01"
+    },
+    {
+      "clsPx": 93.48,
+      "hiPx": 93.95,
+      "loPx": 92.39,
+      "open": 93.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-02"
+    },
+    {
+      "clsPx": 98.95,
+      "hiPx": 101.33,
+      "loPx": 93.69,
+      "open": 93.89,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-03"
+    },
+    {
+      "clsPx": 101.69,
+      "hiPx": 102.44,
+      "loPx": 99.59,
+      "open": 99.71,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-04"
+    },
+    {
+      "clsPx": 101.5,
+      "hiPx": 102.38,
+      "loPx": 100.55,
+      "open": 102.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-07"
+    },
+    {
+      "clsPx": 102.54,
+      "hiPx": 102.66,
+      "loPx": 100.73,
+      "open": 100.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-08"
+    },
+    {
+      "clsPx": 102.83,
+      "hiPx": 103.61,
+      "loPx": 102.05,
+      "open": 102.36,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-09"
+    },
+    {
+      "clsPx": 103.43,
+      "hiPx": 104.54,
+      "loPx": 102.83,
+      "open": 103.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-10"
+    },
+    {
+      "clsPx": 104.53,
+      "hiPx": 104.69,
+      "loPx": 102.99,
+      "open": 103.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-11"
+    },
+    {
+      "clsPx": 104.96,
+      "hiPx": 105.55,
+      "loPx": 103.7,
+      "open": 104.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-14"
+    },
+    {
+      "clsPx": 104.22,
+      "hiPx": 104.56,
+      "loPx": 103.61,
+      "open": 104.37,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-15"
+    },
+    {
+      "clsPx": 103.1,
+      "hiPx": 104.42,
+      "loPx": 103.0,
+      "open": 104.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-16"
+    },
+    {
+      "clsPx": 102.82,
+      "hiPx": 104.13,
+      "loPx": 102.58,
+      "open": 103.47,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-17"
+    },
+    {
+      "clsPx": 102.78,
+      "hiPx": 103.53,
+      "loPx": 102.52,
+      "open": 102.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-18"
+    },
+    {
+      "clsPx": 104.09,
+      "hiPx": 104.43,
+      "loPx": 102.3,
+      "open": 102.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-21"
+    },
+    {
+      "clsPx": 104.24,
+      "hiPx": 104.52,
+      "loPx": 103.5,
+      "open": 103.65,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-22"
+    },
+    {
+      "clsPx": 106.38,
+      "hiPx": 107.18,
+      "loPx": 104.91,
+      "open": 104.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-23"
+    },
+    {
+      "clsPx": 104.88,
+      "hiPx": 108.15,
+      "loPx": 104.81,
+      "open": 106.83,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-24"
+    },
+    {
+      "clsPx": 103.85,
+      "hiPx": 105.4,
+      "loPx": 103.56,
+      "open": 104.79,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-25"
+    },
+    {
+      "clsPx": 103.36,
+      "hiPx": 105.31,
+      "loPx": 103.23,
+      "open": 104.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-28"
+    },
+    {
+      "clsPx": 103.53,
+      "hiPx": 104.15,
+      "loPx": 102.81,
+      "open": 103.23,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-29"
+    },
+    {
+      "clsPx": 103.73,
+      "hiPx": 104.25,
+      "loPx": 103.09,
+      "open": 103.34,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-30"
+    },
+    {
+      "clsPx": 102.18,
+      "hiPx": 104.07,
+      "loPx": 101.8,
+      "open": 103.93,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-08-31"
+    },
+    {
+      "clsPx": 105.25,
+      "hiPx": 105.37,
+      "loPx": 103.2,
+      "open": 103.62,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-01"
+    },
+    {
+      "clsPx": 104.03,
+      "hiPx": 104.7,
+      "loPx": 103.15,
+      "open": 104.52,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-05"
+    },
+    {
+      "clsPx": 104.61,
+      "hiPx": 105.74,
+      "loPx": 103.97,
+      "open": 104.31,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-06"
+    },
+    {
+      "clsPx": 106.47,
+      "hiPx": 108.84,
+      "loPx": 105.14,
+      "open": 105.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-07"
+    },
+    {
+      "clsPx": 106.57,
+      "hiPx": 107.57,
+      "loPx": 106.17,
+      "open": 106.17,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-08"
+    },
+    {
+      "clsPx": 107.89,
+      "hiPx": 108.3,
+      "loPx": 106.58,
+      "open": 106.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-11"
+    },
+    {
+      "clsPx": 106.43,
+      "hiPx": 108.0,
+      "loPx": 106.09,
+      "open": 107.46,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-12"
+    },
+    {
+      "clsPx": 107.19,
+      "hiPx": 108.0,
+      "loPx": 106.45,
+      "open": 106.71,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-13"
+    },
+    {
+      "clsPx": 110.32,
+      "hiPx": 110.48,
+      "loPx": 107.44,
+      "open": 107.67,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-14"
+    },
+    {
+      "clsPx": 107.84,
+      "hiPx": 110.54,
+      "loPx": 107.71,
+      "open": 110.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-15"
+    },
+    {
+      "clsPx": 108.63,
+      "hiPx": 110.11,
+      "loPx": 108.31,
+      "open": 108.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-18"
+    },
+    {
+      "clsPx": 108.44,
+      "hiPx": 109.26,
+      "loPx": 108.2,
+      "open": 108.98,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-19"
+    },
+    {
+      "clsPx": 108.03,
+      "hiPx": 109.06,
+      "loPx": 107.82,
+      "open": 108.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-20"
+    },
+    {
+      "clsPx": 107.85,
+      "hiPx": 108.53,
+      "loPx": 107.43,
+      "open": 107.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-21"
+    },
+    {
+      "clsPx": 108.26,
+      "hiPx": 108.63,
+      "loPx": 106.55,
+      "open": 107.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-22"
+    },
+    {
+      "clsPx": 110.07,
+      "hiPx": 110.77,
+      "loPx": 107.41,
+      "open": 107.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-25"
+    },
+    {
+      "clsPx": 106.42,
+      "hiPx": 109.59,
+      "loPx": 105.88,
+      "open": 109.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-26"
+    },
+    {
+      "clsPx": 108.64,
+      "hiPx": 109.17,
+      "loPx": 106.91,
+      "open": 106.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-27"
+    },
+    {
+      "clsPx": 107.24,
+      "hiPx": 108.87,
+      "loPx": 106.76,
+      "open": 108.66,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-28"
+    },
+    {
+      "clsPx": 107.0,
+      "hiPx": 108.6,
+      "loPx": 106.57,
+      "open": 107.95,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-09-29"
+    },
+    {
+      "clsPx": 102.74,
+      "hiPx": 106.24,
+      "loPx": 100.8,
+      "open": 106.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-02"
+    },
+    {
+      "clsPx": 102.89,
+      "hiPx": 102.92,
+      "loPx": 100.46,
+      "open": 101.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-03"
+    },
+    {
+      "clsPx": 104.14,
+      "hiPx": 104.57,
+      "loPx": 102.24,
+      "open": 102.65,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-04"
+    },
+    {
+      "clsPx": 105.83,
+      "hiPx": 106.44,
+      "loPx": 104.58,
+      "open": 104.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-05"
+    },
+    {
+      "clsPx": 108.07,
+      "hiPx": 108.48,
+      "loPx": 103.13,
+      "open": 104.52,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-06"
+    },
+    {
+      "clsPx": 109.26,
+      "hiPx": 109.37,
+      "loPx": 107.88,
+      "open": 108.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-09"
+    },
+    {
+      "clsPx": 110.85,
+      "hiPx": 111.33,
+      "loPx": 108.85,
+      "open": 108.85,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-10"
+    },
+    {
+      "clsPx": 112.88,
+      "hiPx": 112.99,
+      "loPx": 111.15,
+      "open": 111.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-11"
+    },
+    {
+      "clsPx": 113.52,
+      "hiPx": 113.95,
+      "loPx": 112.28,
+      "open": 112.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-12"
+    },
+    {
+      "clsPx": 111.53,
+      "hiPx": 115.16,
+      "loPx": 110.84,
+      "open": 114.55,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-13"
+    },
+    {
+      "clsPx": 114.61,
+      "hiPx": 114.89,
+      "loPx": 112.43,
+      "open": 112.59,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-16"
+    },
+    {
+      "clsPx": 114.92,
+      "hiPx": 115.74,
+      "loPx": 113.51,
+      "open": 113.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-17"
+    },
+    {
+      "clsPx": 113.86,
+      "hiPx": 116.39,
+      "loPx": 113.61,
+      "open": 115.1,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-18"
+    },
+    {
+      "clsPx": 112.11,
+      "hiPx": 114.39,
+      "loPx": 111.94,
+      "open": 113.79,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-19"
+    },
+    {
+      "clsPx": 109.97,
+      "hiPx": 112.61,
+      "loPx": 109.79,
+      "open": 111.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-20"
+    },
+    {
+      "clsPx": 109.98,
+      "hiPx": 110.88,
+      "loPx": 108.3,
+      "open": 109.7,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-23"
+    },
+    {
+      "clsPx": 112.09,
+      "hiPx": 113.11,
+      "loPx": 111.1,
+      "open": 111.1,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-24"
+    },
+    {
+      "clsPx": 109.9,
+      "hiPx": 112.1,
+      "loPx": 109.54,
+      "open": 112.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-25"
+    },
+    {
+      "clsPx": 110.57,
+      "hiPx": 110.88,
+      "loPx": 109.03,
+      "open": 109.87,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-26"
+    },
+    {
+      "clsPx": 108.67,
+      "hiPx": 111.2,
+      "loPx": 107.8,
+      "open": 110.85,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-27"
+    },
+    {
+      "clsPx": 110.88,
+      "hiPx": 111.08,
+      "loPx": 109.38,
+      "open": 109.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-30"
+    },
+    {
+      "clsPx": 110.77,
+      "hiPx": 111.35,
+      "loPx": 109.05,
+      "open": 110.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-10-31"
+    },
+    {
+      "clsPx": 112.66,
+      "hiPx": 113.18,
+      "loPx": 110.68,
+      "open": 111.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-01"
+    },
+    {
+      "clsPx": 114.96,
+      "hiPx": 115.66,
+      "loPx": 112.2,
+      "open": 112.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-02"
+    },
+    {
+      "clsPx": 114.84,
+      "hiPx": 116.41,
+      "loPx": 114.63,
+      "open": 116.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-03"
+    },
+    {
+      "clsPx": 122.36,
+      "hiPx": 123.23,
+      "loPx": 115.81,
+      "open": 116.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-06"
+    },
+    {
+      "clsPx": 117.59,
+      "hiPx": 122.6,
+      "loPx": 116.4,
+      "open": 122.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-07"
+    },
+    {
+      "clsPx": 118.87,
+      "hiPx": 119.17,
+      "loPx": 116.7,
+      "open": 118.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-08"
+    },
+    {
+      "clsPx": 118.33,
+      "hiPx": 121.99,
+      "loPx": 118.23,
+      "open": 119.28,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-09"
+    },
+    {
+      "clsPx": 119.45,
+      "hiPx": 120.39,
+      "loPx": 119.07,
+      "open": 119.14,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-10"
+    },
+    {
+      "clsPx": 119.4,
+      "hiPx": 119.91,
+      "loPx": 118.61,
+      "open": 119.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-13"
+    },
+    {
+      "clsPx": 124.11,
+      "hiPx": 124.3,
+      "loPx": 121.03,
+      "open": 121.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-14"
+    },
+    {
+      "clsPx": 119.67,
+      "hiPx": 124.82,
+      "loPx": 119.37,
+      "open": 124.17,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-15"
+    },
+    {
+      "clsPx": 119.63,
+      "hiPx": 121.75,
+      "loPx": 119.47,
+      "open": 120.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-16"
+    },
+    {
+      "clsPx": 119.65,
+      "hiPx": 121.45,
+      "loPx": 119.56,
+      "open": 120.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-17"
+    },
+    {
+      "clsPx": 120.23,
+      "hiPx": 120.79,
+      "loPx": 119.44,
+      "open": 120.4,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-20"
+    },
+    {
+      "clsPx": 120.46,
+      "hiPx": 121.12,
+      "loPx": 119.81,
+      "open": 120.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-21"
+    },
+    {
+      "clsPx": 121.18,
+      "hiPx": 121.76,
+      "loPx": 119.93,
+      "open": 120.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-22"
+    },
+    {
+      "clsPx": 121.78,
+      "hiPx": 122.22,
+      "loPx": 120.99,
+      "open": 121.01,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-24"
+    },
+    {
+      "clsPx": 123.0,
+      "hiPx": 123.28,
+      "loPx": 121.3,
+      "open": 121.85,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-27"
+    },
+    {
+      "clsPx": 122.36,
+      "hiPx": 124.38,
+      "loPx": 121.69,
+      "open": 122.89,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-28"
+    },
+    {
+      "clsPx": 118.56,
+      "hiPx": 121.86,
+      "loPx": 117.75,
+      "open": 121.48,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-29"
+    },
+    {
+      "clsPx": 119.01,
+      "hiPx": 119.82,
+      "loPx": 118.5,
+      "open": 118.57,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-11-30"
+    },
+    {
+      "clsPx": 117.87,
+      "hiPx": 118.91,
+      "loPx": 117.64,
+      "open": 118.6,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-01"
+    },
+    {
+      "clsPx": 116.93,
+      "hiPx": 117.55,
+      "loPx": 116.07,
+      "open": 117.01,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-04"
+    },
+    {
+      "clsPx": 116.33,
+      "hiPx": 116.95,
+      "loPx": 113.94,
+      "open": 116.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-05"
+    },
+    {
+      "clsPx": 110.74,
+      "hiPx": 117.66,
+      "loPx": 110.34,
+      "open": 117.34,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-06"
+    },
+    {
+      "clsPx": 108.68,
+      "hiPx": 111.54,
+      "loPx": 107.62,
+      "open": 111.36,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-07"
+    },
+    {
+      "clsPx": 109.35,
+      "hiPx": 109.74,
+      "loPx": 107.81,
+      "open": 108.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-08"
+    },
+    {
+      "clsPx": 114.2,
+      "hiPx": 114.35,
+      "loPx": 108.82,
+      "open": 109.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-11"
+    },
+    {
+      "clsPx": 112.57,
+      "hiPx": 114.45,
+      "loPx": 111.94,
+      "open": 114.21,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-12"
+    },
+    {
+      "clsPx": 114.48,
+      "hiPx": 114.79,
+      "loPx": 111.63,
+      "open": 112.67,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-13"
+    },
+    {
+      "clsPx": 113.66,
+      "hiPx": 115.84,
+      "loPx": 113.44,
+      "open": 114.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-14"
+    },
+    {
+      "clsPx": 116.76,
+      "hiPx": 118.84,
+      "loPx": 113.67,
+      "open": 113.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-15"
+    },
+    {
+      "clsPx": 117.36,
+      "hiPx": 119.5,
+      "loPx": 116.92,
+      "open": 117.57,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-18"
+    },
+    {
+      "clsPx": 118.79,
+      "hiPx": 119.02,
+      "loPx": 117.26,
+      "open": 117.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-19"
+    },
+    {
+      "clsPx": 115.05,
+      "hiPx": 118.11,
+      "loPx": 115.04,
+      "open": 117.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-20"
+    },
+    {
+      "clsPx": 116.33,
+      "hiPx": 116.45,
+      "loPx": 114.85,
+      "open": 115.52,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-21"
+    },
+    {
+      "clsPx": 113.4,
+      "hiPx": 116.0,
+      "loPx": 112.11,
+      "open": 113.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-22"
+    },
+    {
+      "clsPx": 115.6,
+      "hiPx": 115.87,
+      "loPx": 113.65,
+      "open": 113.65,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-26"
+    },
+    {
+      "clsPx": 115.45,
+      "hiPx": 115.79,
+      "loPx": 114.92,
+      "open": 115.31,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-27"
+    },
+    {
+      "clsPx": 115.15,
+      "hiPx": 116.79,
+      "loPx": 114.99,
+      "open": 116.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-28"
+    },
+    {
+      "clsPx": 114.93,
+      "hiPx": 115.3,
+      "loPx": 113.99,
+      "open": 114.77,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2023-12-29"
+    },
+    {
+      "clsPx": 113.32,
+      "hiPx": 115.27,
+      "loPx": 113.04,
+      "open": 114.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-02"
+    },
+    {
+      "clsPx": 113.91,
+      "hiPx": 115.2,
+      "loPx": 113.56,
+      "open": 113.56,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-03"
+    },
+    {
+      "clsPx": 113.43,
+      "hiPx": 115.15,
+      "loPx": 113.07,
+      "open": 114.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-04"
+    },
+    {
+      "clsPx": 114.29,
+      "hiPx": 115.69,
+      "loPx": 113.18,
+      "open": 113.18,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-05"
+    },
+    {
+      "clsPx": 115.07,
+      "hiPx": 115.2,
+      "loPx": 113.1,
+      "open": 114.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-08"
+    },
+    {
+      "clsPx": 114.54,
+      "hiPx": 114.97,
+      "loPx": 113.24,
+      "open": 114.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-09"
+    },
+    {
+      "clsPx": 113.91,
+      "hiPx": 114.48,
+      "loPx": 113.04,
+      "open": 114.08,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-10"
+    },
+    {
+      "clsPx": 111.02,
+      "hiPx": 113.36,
+      "loPx": 109.61,
+      "open": 113.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-11"
+    },
+    {
+      "clsPx": 111.02,
+      "hiPx": 112.5,
+      "loPx": 110.85,
+      "open": 112.03,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-12"
+    },
+    {
+      "clsPx": 109.94,
+      "hiPx": 110.94,
+      "loPx": 109.43,
+      "open": 110.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-16"
+    },
+    {
+      "clsPx": 110.04,
+      "hiPx": 110.12,
+      "loPx": 107.61,
+      "open": 109.37,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-17"
+    },
+    {
+      "clsPx": 109.54,
+      "hiPx": 110.02,
+      "loPx": 108.4,
+      "open": 109.5,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-18"
+    },
+    {
+      "clsPx": 112.53,
+      "hiPx": 112.69,
+      "loPx": 109.58,
+      "open": 109.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-19"
+    },
+    {
+      "clsPx": 115.25,
+      "hiPx": 115.41,
+      "loPx": 112.41,
+      "open": 112.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-22"
+    },
+    {
+      "clsPx": 116.7,
+      "hiPx": 118.54,
+      "loPx": 115.2,
+      "open": 115.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-23"
+    },
+    {
+      "clsPx": 113.73,
+      "hiPx": 117.52,
+      "loPx": 113.41,
+      "open": 117.14,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-24"
+    },
+    {
+      "clsPx": 118.53,
+      "hiPx": 118.57,
+      "loPx": 115.08,
+      "open": 115.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-25"
+    },
+    {
+      "clsPx": 119.24,
+      "hiPx": 120.36,
+      "loPx": 118.06,
+      "open": 118.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-26"
+    },
+    {
+      "clsPx": 118.98,
+      "hiPx": 119.7,
+      "loPx": 117.99,
+      "open": 119.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-29"
+    },
+    {
+      "clsPx": 119.84,
+      "hiPx": 120.26,
+      "loPx": 118.68,
+      "open": 119.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-30"
+    },
+    {
+      "clsPx": 119.96,
+      "hiPx": 122.1,
+      "loPx": 119.33,
+      "open": 120.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-01-31"
+    },
+    {
+      "clsPx": 125.49,
+      "hiPx": 125.56,
+      "loPx": 119.96,
+      "open": 119.96,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-01"
+    },
+    {
+      "clsPx": 127.54,
+      "hiPx": 130.84,
+      "loPx": 124.31,
+      "open": 124.88,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-02"
+    },
+    {
+      "clsPx": 124.9,
+      "hiPx": 126.27,
+      "loPx": 123.74,
+      "open": 125.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-05"
+    },
+    {
+      "clsPx": 128.81,
+      "hiPx": 129.29,
+      "loPx": 125.06,
+      "open": 125.62,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-06"
+    },
+    {
+      "clsPx": 130.28,
+      "hiPx": 131.56,
+      "loPx": 128.62,
+      "open": 129.75,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-07"
+    },
+    {
+      "clsPx": 128.53,
+      "hiPx": 131.73,
+      "loPx": 127.99,
+      "open": 130.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-08"
+    },
+    {
+      "clsPx": 129.95,
+      "hiPx": 130.29,
+      "loPx": 127.82,
+      "open": 127.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-09"
+    },
+    {
+      "clsPx": 126.36,
+      "hiPx": 129.97,
+      "loPx": 125.82,
+      "open": 129.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-12"
+    },
+    {
+      "clsPx": 125.77,
+      "hiPx": 126.65,
+      "loPx": 124.61,
+      "open": 125.77,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-13"
+    },
+    {
+      "clsPx": 126.51,
+      "hiPx": 127.27,
+      "loPx": 125.55,
+      "open": 126.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-14"
+    },
+    {
+      "clsPx": 129.3,
+      "hiPx": 129.41,
+      "loPx": 126.67,
+      "open": 127.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-15"
+    },
+    {
+      "clsPx": 128.96,
+      "hiPx": 130.44,
+      "loPx": 128.3,
+      "open": 129.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-16"
+    },
+    {
+      "clsPx": 129.59,
+      "hiPx": 129.85,
+      "loPx": 127.22,
+      "open": 128.8,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-20"
+    },
+    {
+      "clsPx": 129.2,
+      "hiPx": 130.36,
+      "loPx": 127.96,
+      "open": 130.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-21"
+    },
+    {
+      "clsPx": 131.15,
+      "hiPx": 131.81,
+      "loPx": 129.44,
+      "open": 130.18,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-22"
+    },
+    {
+      "clsPx": 131.74,
+      "hiPx": 131.9,
+      "loPx": 129.15,
+      "open": 131.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-23"
+    },
+    {
+      "clsPx": 130.99,
+      "hiPx": 132.93,
+      "loPx": 130.7,
+      "open": 132.42,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-26"
+    },
+    {
+      "clsPx": 153.15,
+      "hiPx": 154.04,
+      "loPx": 132.74,
+      "open": 132.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-27"
+    },
+    {
+      "clsPx": 167.97,
+      "hiPx": 168.11,
+      "loPx": 153.88,
+      "open": 155.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-28"
+    },
+    {
+      "clsPx": 165.63,
+      "hiPx": 168.44,
+      "loPx": 160.63,
+      "open": 168.31,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-02-29"
+    },
+    {
+      "clsPx": 167.14,
+      "hiPx": 167.46,
+      "loPx": 162.28,
+      "open": 164.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-01"
+    },
+    {
+      "clsPx": 173.04,
+      "hiPx": 174.07,
+      "loPx": 166.78,
+      "open": 170.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-04"
+    },
+    {
+      "clsPx": 173.81,
+      "hiPx": 182.47,
+      "loPx": 172.48,
+      "open": 174.42,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-05"
+    },
+    {
+      "clsPx": 176.96,
+      "hiPx": 177.78,
+      "loPx": 172.08,
+      "open": 173.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-06"
+    },
+    {
+      "clsPx": 176.92,
+      "hiPx": 179.35,
+      "loPx": 173.6,
+      "open": 179.05,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-07"
+    },
+    {
+      "clsPx": 168.04,
+      "hiPx": 177.16,
+      "loPx": 165.96,
+      "open": 176.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-08"
+    },
+    {
+      "clsPx": 165.42,
+      "hiPx": 168.42,
+      "loPx": 163.93,
+      "open": 167.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-11"
+    },
+    {
+      "clsPx": 165.87,
+      "hiPx": 166.55,
+      "loPx": 161.76,
+      "open": 164.1,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-12"
+    },
+    {
+      "clsPx": 165.37,
+      "hiPx": 168.77,
+      "loPx": 163.97,
+      "open": 168.7,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-13"
+    },
+    {
+      "clsPx": 162.2,
+      "hiPx": 165.89,
+      "loPx": 160.85,
+      "open": 165.36,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-14"
+    },
+    {
+      "clsPx": 163.06,
+      "hiPx": 165.89,
+      "loPx": 160.26,
+      "open": 161.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-15"
+    },
+    {
+      "clsPx": 166.34,
+      "hiPx": 168.54,
+      "loPx": 163.73,
+      "open": 165.2,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-18"
+    },
+    {
+      "clsPx": 169.85,
+      "hiPx": 171.43,
+      "loPx": 165.76,
+      "open": 166.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-19"
+    },
+    {
+      "clsPx": 173.1,
+      "hiPx": 174.15,
+      "loPx": 170.09,
+      "open": 170.36,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-20"
+    },
+    {
+      "clsPx": 171.55,
+      "hiPx": 175.17,
+      "loPx": 169.81,
+      "open": 174.83,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-21"
+    },
+    {
+      "clsPx": 175.6,
+      "hiPx": 175.72,
+      "loPx": 171.63,
+      "open": 172.4,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-22"
+    },
+    {
+      "clsPx": 184.48,
+      "hiPx": 186.25,
+      "loPx": 176.88,
+      "open": 177.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-25"
+    },
+    {
+      "clsPx": 182.66,
+      "hiPx": 195.88,
+      "loPx": 181.74,
+      "open": 187.08,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-26"
+    },
+    {
+      "clsPx": 182.15,
+      "hiPx": 187.3,
+      "loPx": 179.64,
+      "open": 185.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-27"
+    },
+    {
+      "clsPx": 182.11,
+      "hiPx": 184.06,
+      "loPx": 180.62,
+      "open": 182.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-03-28"
+    },
+    {
+      "clsPx": 183.22,
+      "hiPx": 186.01,
+      "loPx": 180.68,
+      "open": 183.27,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-01"
+    },
+    {
+      "clsPx": 185.34,
+      "hiPx": 185.58,
+      "loPx": 181.39,
+      "open": 181.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-02"
+    },
+    {
+      "clsPx": 187.44,
+      "hiPx": 190.34,
+      "loPx": 184.1,
+      "open": 185.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-03"
+    },
+    {
+      "clsPx": 180.39,
+      "hiPx": 192.6,
+      "loPx": 180.25,
+      "open": 190.57,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-04"
+    },
+    {
+      "clsPx": 190.22,
+      "hiPx": 191.96,
+      "loPx": 178.73,
+      "open": 179.62,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-05"
+    },
+    {
+      "clsPx": 189.13,
+      "hiPx": 194.71,
+      "loPx": 185.32,
+      "open": 191.98,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-08"
+    },
+    {
+      "clsPx": 185.31,
+      "hiPx": 191.95,
+      "loPx": 182.31,
+      "open": 189.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-09"
+    },
+    {
+      "clsPx": 188.25,
+      "hiPx": 190.96,
+      "loPx": 179.79,
+      "open": 180.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-10"
+    },
+    {
+      "clsPx": 190.02,
+      "hiPx": 191.4,
+      "loPx": 187.18,
+      "open": 188.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-11"
+    },
+    {
+      "clsPx": 188.83,
+      "hiPx": 190.38,
+      "loPx": 187.53,
+      "open": 189.11,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-12"
+    },
+    {
+      "clsPx": 182.65,
+      "hiPx": 193.09,
+      "loPx": 182.04,
+      "open": 191.21,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-15"
+    },
+    {
+      "clsPx": 183.88,
+      "hiPx": 185.48,
+      "loPx": 180.39,
+      "open": 182.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-16"
+    },
+    {
+      "clsPx": 182.65,
+      "hiPx": 186.24,
+      "loPx": 179.92,
+      "open": 185.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-17"
+    },
+    {
+      "clsPx": 181.13,
+      "hiPx": 185.48,
+      "loPx": 180.37,
+      "open": 183.37,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-18"
+    },
+    {
+      "clsPx": 178.22,
+      "hiPx": 183.2,
+      "loPx": 175.02,
+      "open": 180.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-19"
+    },
+    {
+      "clsPx": 180.5,
+      "hiPx": 181.12,
+      "loPx": 175.57,
+      "open": 178.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-22"
+    },
+    {
+      "clsPx": 185.46,
+      "hiPx": 186.94,
+      "loPx": 181.24,
+      "open": 181.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-23"
+    },
+    {
+      "clsPx": 183.4,
+      "hiPx": 191.49,
+      "loPx": 180.92,
+      "open": 183.96,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-24"
+    },
+    {
+      "clsPx": 185.22,
+      "hiPx": 187.7,
+      "loPx": 182.66,
+      "open": 182.85,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-25"
+    },
+    {
+      "clsPx": 185.58,
+      "hiPx": 186.57,
+      "loPx": 182.88,
+      "open": 184.14,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-26"
+    },
+    {
+      "clsPx": 185.81,
+      "hiPx": 187.6,
+      "loPx": 183.38,
+      "open": 185.64,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-29"
+    },
+    {
+      "clsPx": 183.18,
+      "hiPx": 186.59,
+      "loPx": 182.96,
+      "open": 185.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-04-30"
+    },
+    {
+      "clsPx": 181.82,
+      "hiPx": 185.41,
+      "loPx": 181.19,
+      "open": 183.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-01"
+    },
+    {
+      "clsPx": 183.42,
+      "hiPx": 184.4,
+      "loPx": 180.88,
+      "open": 182.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-02"
+    },
+    {
+      "clsPx": 191.97,
+      "hiPx": 194.34,
+      "loPx": 185.21,
+      "open": 186.52,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-03"
+    },
+    {
+      "clsPx": 194.77,
+      "hiPx": 195.96,
+      "loPx": 191.24,
+      "open": 194.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-06"
+    },
+    {
+      "clsPx": 197.58,
+      "hiPx": 202.04,
+      "loPx": 194.42,
+      "open": 195.75,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-07"
+    },
+    {
+      "clsPx": 204.91,
+      "hiPx": 205.18,
+      "loPx": 195.17,
+      "open": 195.6,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-08"
+    },
+    {
+      "clsPx": 212.71,
+      "hiPx": 212.75,
+      "loPx": 199.99,
+      "open": 202.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-09"
+    },
+    {
+      "clsPx": 211.74,
+      "hiPx": 217.25,
+      "loPx": 208.72,
+      "open": 217.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-10"
+    },
+    {
+      "clsPx": 210.42,
+      "hiPx": 215.43,
+      "loPx": 209.44,
+      "open": 213.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-13"
+    },
+    {
+      "clsPx": 214.51,
+      "hiPx": 214.68,
+      "loPx": 207.64,
+      "open": 211.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-14"
+    },
+    {
+      "clsPx": 220.0,
+      "hiPx": 221.39,
+      "loPx": 216.5,
+      "open": 216.87,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-15"
+    },
+    {
+      "clsPx": 213.13,
+      "hiPx": 221.47,
+      "loPx": 213.03,
+      "open": 220.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-16"
+    },
+    {
+      "clsPx": 209.95,
+      "hiPx": 214.48,
+      "loPx": 206.8,
+      "open": 213.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-17"
+    },
+    {
+      "clsPx": 211.88,
+      "hiPx": 212.05,
+      "loPx": 208.02,
+      "open": 210.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-20"
+    },
+    {
+      "clsPx": 219.29,
+      "hiPx": 219.37,
+      "loPx": 212.3,
+      "open": 212.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-21"
+    },
+    {
+      "clsPx": 216.84,
+      "hiPx": 221.08,
+      "loPx": 214.63,
+      "open": 218.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-22"
+    },
+    {
+      "clsPx": 217.88,
+      "hiPx": 224.67,
+      "loPx": 217.47,
+      "open": 220.46,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-23"
+    },
+    {
+      "clsPx": 227.21,
+      "hiPx": 232.8,
+      "loPx": 218.35,
+      "open": 220.0,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-24"
+    },
+    {
+      "clsPx": 227.84,
+      "hiPx": 231.3,
+      "loPx": 218.53,
+      "open": 229.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-28"
+    },
+    {
+      "clsPx": 217.8,
+      "hiPx": 225.83,
+      "loPx": 215.97,
+      "open": 223.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-29"
+    },
+    {
+      "clsPx": 221.96,
+      "hiPx": 222.29,
+      "loPx": 217.07,
+      "open": 219.37,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-30"
+    },
+    {
+      "clsPx": 214.35,
+      "hiPx": 221.49,
+      "loPx": 205.23,
+      "open": 221.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-05-31"
+    },
+    {
+      "clsPx": 205.48,
+      "hiPx": 214.3,
+      "loPx": 201.33,
+      "open": 212.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-03"
+    },
+    {
+      "clsPx": 200.43,
+      "hiPx": 205.72,
+      "loPx": 194.22,
+      "open": 204.23,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-04"
+    },
+    {
+      "clsPx": 206.54,
+      "hiPx": 210.01,
+      "loPx": 201.72,
+      "open": 201.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-05"
+    },
+    {
+      "clsPx": 199.9,
+      "hiPx": 207.01,
+      "loPx": 193.59,
+      "open": 206.71,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-06"
+    },
+    {
+      "clsPx": 195.36,
+      "hiPx": 201.28,
+      "loPx": 194.89,
+      "open": 199.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-07"
+    },
+    {
+      "clsPx": 211.77,
+      "hiPx": 211.91,
+      "loPx": 195.49,
+      "open": 196.87,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-10"
+    },
+    {
+      "clsPx": 215.4,
+      "hiPx": 216.63,
+      "loPx": 207.64,
+      "open": 208.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-11"
+    },
+    {
+      "clsPx": 215.22,
+      "hiPx": 218.81,
+      "loPx": 209.32,
+      "open": 218.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-12"
+    },
+    {
+      "clsPx": 217.0,
+      "hiPx": 217.42,
+      "loPx": 211.27,
+      "open": 217.37,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-13"
+    },
+    {
+      "clsPx": 212.03,
+      "hiPx": 215.95,
+      "loPx": 208.15,
+      "open": 215.88,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-14"
+    },
+    {
+      "clsPx": 209.19,
+      "hiPx": 211.86,
+      "loPx": 205.93,
+      "open": 211.02,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-17"
+    },
+    {
+      "clsPx": 217.47,
+      "hiPx": 218.25,
+      "loPx": 206.33,
+      "open": 209.95,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-18"
+    },
+    {
+      "clsPx": 219.35,
+      "hiPx": 224.73,
+      "loPx": 216.37,
+      "open": 220.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-20"
+    },
+    {
+      "clsPx": 215.22,
+      "hiPx": 221.59,
+      "loPx": 212.86,
+      "open": 220.03,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-21"
+    },
+    {
+      "clsPx": 213.22,
+      "hiPx": 217.91,
+      "loPx": 212.48,
+      "open": 215.09,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-24"
+    },
+    {
+      "clsPx": 219.41,
+      "hiPx": 219.49,
+      "loPx": 211.32,
+      "open": 213.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-25"
+    },
+    {
+      "clsPx": 207.51,
+      "hiPx": 219.24,
+      "loPx": 204.68,
+      "open": 217.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-26"
+    },
+    {
+      "clsPx": 202.05,
+      "hiPx": 205.15,
+      "loPx": 198.58,
+      "open": 204.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-27"
+    },
+    {
+      "clsPx": 197.6,
+      "hiPx": 204.54,
+      "loPx": 196.78,
+      "open": 202.51,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-06-28"
+    },
+    {
+      "clsPx": 202.32,
+      "hiPx": 210.74,
+      "loPx": 200.43,
+      "open": 205.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-01"
+    },
+    {
+      "clsPx": 203.4,
+      "hiPx": 208.98,
+      "loPx": 200.39,
+      "open": 200.75,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-02"
+    },
+    {
+      "clsPx": 207.27,
+      "hiPx": 209.6,
+      "loPx": 199.32,
+      "open": 202.57,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-03"
+    },
+    {
+      "clsPx": 208.47,
+      "hiPx": 209.92,
+      "loPx": 205.3,
+      "open": 207.2,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-05"
+    },
+    {
+      "clsPx": 212.85,
+      "hiPx": 213.54,
+      "loPx": 208.43,
+      "open": 209.01,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-08"
+    },
+    {
+      "clsPx": 213.08,
+      "hiPx": 219.41,
+      "loPx": 212.19,
+      "open": 214.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-09"
+    },
+    {
+      "clsPx": 216.62,
+      "hiPx": 217.03,
+      "loPx": 210.89,
+      "open": 215.27,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-10"
+    },
+    {
+      "clsPx": 213.95,
+      "hiPx": 217.6,
+      "loPx": 212.32,
+      "open": 216.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-11"
+    },
+    {
+      "clsPx": 214.24,
+      "hiPx": 218.19,
+      "loPx": 209.48,
+      "open": 213.38,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-12"
+    },
+    {
+      "clsPx": 210.04,
+      "hiPx": 216.72,
+      "loPx": 208.82,
+      "open": 214.11,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-15"
+    },
+    {
+      "clsPx": 202.15,
+      "hiPx": 212.14,
+      "loPx": 201.34,
+      "open": 211.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-16"
+    },
+    {
+      "clsPx": 184.18,
+      "hiPx": 200.35,
+      "loPx": 183.29,
+      "open": 199.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-17"
+    },
+    {
+      "clsPx": 184.78,
+      "hiPx": 190.27,
+      "loPx": 175.7,
+      "open": 187.83,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-18"
+    },
+    {
+      "clsPx": 186.78,
+      "hiPx": 187.41,
+      "loPx": 183.92,
+      "open": 185.51,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-19"
+    },
+    {
+      "clsPx": 187.88,
+      "hiPx": 194.2,
+      "loPx": 186.1,
+      "open": 189.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-22"
+    },
+    {
+      "clsPx": 187.34,
+      "hiPx": 189.6,
+      "loPx": 185.79,
+      "open": 187.14,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-23"
+    },
+    {
+      "clsPx": 172.75,
+      "hiPx": 185.78,
+      "loPx": 172.37,
+      "open": 185.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-24"
+    },
+    {
+      "clsPx": 168.16,
+      "hiPx": 174.48,
+      "loPx": 163.66,
+      "open": 174.34,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-25"
+    },
+    {
+      "clsPx": 172.71,
+      "hiPx": 174.71,
+      "loPx": 169.15,
+      "open": 174.19,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-26"
+    },
+    {
+      "clsPx": 170.38,
+      "hiPx": 174.79,
+      "loPx": 168.85,
+      "open": 173.7,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-29"
+    },
+    {
+      "clsPx": 166.44,
+      "hiPx": 172.7,
+      "loPx": 163.54,
+      "open": 171.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-30"
+    },
+    {
+      "clsPx": 187.27,
+      "hiPx": 193.88,
+      "loPx": 180.56,
+      "open": 190.7,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-07-31"
+    },
+    {
+      "clsPx": 175.2,
+      "hiPx": 191.68,
+      "loPx": 174.27,
+      "open": 185.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-01"
+    },
+    {
+      "clsPx": 164.85,
+      "hiPx": 172.99,
+      "loPx": 159.29,
+      "open": 172.14,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-02"
+    },
+    {
+      "clsPx": 167.7,
+      "hiPx": 170.46,
+      "loPx": 153.53,
+      "open": 154.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-05"
+    },
+    {
+      "clsPx": 178.63,
+      "hiPx": 181.38,
+      "loPx": 166.15,
+      "open": 171.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-06"
+    },
+    {
+      "clsPx": 177.26,
+      "hiPx": 187.56,
+      "loPx": 174.54,
+      "open": 187.56,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-07"
+    },
+    {
+      "clsPx": 184.54,
+      "hiPx": 185.13,
+      "loPx": 174.07,
+      "open": 180.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-08"
+    },
+    {
+      "clsPx": 187.34,
+      "hiPx": 187.57,
+      "loPx": 180.63,
+      "open": 184.59,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-09"
+    },
+    {
+      "clsPx": 185.18,
+      "hiPx": 188.64,
+      "loPx": 181.59,
+      "open": 187.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-12"
+    },
+    {
+      "clsPx": 187.23,
+      "hiPx": 188.66,
+      "loPx": 184.92,
+      "open": 187.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-13"
+    },
+    {
+      "clsPx": 184.01,
+      "hiPx": 187.71,
+      "loPx": 180.11,
+      "open": 186.79,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-14"
+    },
+    {
+      "clsPx": 188.2,
+      "hiPx": 190.37,
+      "loPx": 183.36,
+      "open": 184.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-15"
+    },
+    {
+      "clsPx": 187.8,
+      "hiPx": 189.16,
+      "loPx": 183.69,
+      "open": 189.02,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-16"
+    },
+    {
+      "clsPx": 190.56,
+      "hiPx": 190.66,
+      "loPx": 183.43,
+      "open": 187.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-19"
+    },
+    {
+      "clsPx": 188.53,
+      "hiPx": 191.28,
+      "loPx": 187.46,
+      "open": 190.78,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-20"
+    },
+    {
+      "clsPx": 194.48,
+      "hiPx": 195.06,
+      "loPx": 188.78,
+      "open": 189.28,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-21"
+    },
+    {
+      "clsPx": 192.71,
+      "hiPx": 196.52,
+      "loPx": 192.47,
+      "open": 193.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-22"
+    },
+    {
+      "clsPx": 192.75,
+      "hiPx": 195.06,
+      "loPx": 190.31,
+      "open": 192.77,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-23"
+    },
+    {
+      "clsPx": 192.65,
+      "hiPx": 195.71,
+      "loPx": 190.86,
+      "open": 193.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-26"
+    },
+    {
+      "clsPx": 193.88,
+      "hiPx": 196.02,
+      "loPx": 191.34,
+      "open": 192.65,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-27"
+    },
+    {
+      "clsPx": 191.54,
+      "hiPx": 195.18,
+      "loPx": 190.2,
+      "open": 194.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-28"
+    },
+    {
+      "clsPx": 192.2,
+      "hiPx": 196.82,
+      "loPx": 190.1,
+      "open": 193.66,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-29"
+    },
+    {
+      "clsPx": 194.44,
+      "hiPx": 195.54,
+      "loPx": 192.91,
+      "open": 193.01,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-08-30"
+    },
+    {
+      "clsPx": 175.74,
+      "hiPx": 193.55,
+      "loPx": 175.14,
+      "open": 193.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-03"
+    },
+    {
+      "clsPx": 175.48,
+      "hiPx": 180.65,
+      "loPx": 173.98,
+      "open": 175.64,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-04"
+    },
+    {
+      "clsPx": 174.05,
+      "hiPx": 177.68,
+      "loPx": 173.1,
+      "open": 175.92,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-05"
+    },
+    {
+      "clsPx": 171.12,
+      "hiPx": 174.61,
+      "loPx": 169.96,
+      "open": 173.79,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-06"
+    },
+    {
+      "clsPx": 172.91,
+      "hiPx": 174.32,
+      "loPx": 169.07,
+      "open": 174.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-09"
+    },
+    {
+      "clsPx": 178.18,
+      "hiPx": 179.12,
+      "loPx": 171.86,
+      "open": 174.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-10"
+    },
+    {
+      "clsPx": 185.1,
+      "hiPx": 185.99,
+      "loPx": 177.09,
+      "open": 179.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-11"
+    },
+    {
+      "clsPx": 187.75,
+      "hiPx": 189.48,
+      "loPx": 182.07,
+      "open": 184.85,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-12"
+    },
+    {
+      "clsPx": 193.73,
+      "hiPx": 195.54,
+      "loPx": 187.0,
+      "open": 189.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-13"
+    },
+    {
+      "clsPx": 196.96,
+      "hiPx": 197.24,
+      "loPx": 190.47,
+      "open": 192.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-16"
+    },
+    {
+      "clsPx": 198.92,
+      "hiPx": 202.35,
+      "loPx": 195.97,
+      "open": 197.7,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-17"
+    },
+    {
+      "clsPx": 198.03,
+      "hiPx": 202.6,
+      "loPx": 196.14,
+      "open": 199.64,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-18"
+    },
+    {
+      "clsPx": 206.1,
+      "hiPx": 206.24,
+      "loPx": 200.14,
+      "open": 202.75,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-19"
+    },
+    {
+      "clsPx": 252.05,
+      "hiPx": 252.31,
+      "loPx": 230.32,
+      "open": 232.46,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-20"
+    },
+    {
+      "clsPx": 254.16,
+      "hiPx": 268.72,
+      "loPx": 249.21,
+      "open": 256.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-23"
+    },
+    {
+      "clsPx": 250.57,
+      "hiPx": 256.46,
+      "loPx": 248.2,
+      "open": 251.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-24"
+    },
+    {
+      "clsPx": 259.84,
+      "hiPx": 264.02,
+      "loPx": 250.33,
+      "open": 251.51,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-25"
+    },
+    {
+      "clsPx": 253.82,
+      "hiPx": 267.01,
+      "loPx": 251.57,
+      "open": 260.8,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-26"
+    },
+    {
+      "clsPx": 254.04,
+      "hiPx": 259.38,
+      "loPx": 252.4,
+      "open": 254.22,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-27"
+    },
+    {
+      "clsPx": 257.03,
+      "hiPx": 258.12,
+      "loPx": 248.39,
+      "open": 254.79,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-09-30"
+    },
+    {
+      "clsPx": 262.56,
+      "hiPx": 262.94,
+      "loPx": 251.04,
+      "open": 256.12,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-01"
+    },
+    {
+      "clsPx": 262.33,
+      "hiPx": 266.62,
+      "loPx": 258.64,
+      "open": 261.86,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-02"
+    },
+    {
+      "clsPx": 274.18,
+      "hiPx": 276.3,
+      "loPx": 264.92,
+      "open": 269.02,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-03"
+    },
+    {
+      "clsPx": 282.24,
+      "hiPx": 282.71,
+      "loPx": 272.43,
+      "open": 274.71,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-04"
+    },
+    {
+      "clsPx": 275.36,
+      "hiPx": 285.43,
+      "loPx": 270.85,
+      "open": 281.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-07"
+    },
+    {
+      "clsPx": 276.18,
+      "hiPx": 278.16,
+      "loPx": 269.96,
+      "open": 275.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-08"
+    },
+    {
+      "clsPx": 259.26,
+      "hiPx": 272.88,
+      "loPx": 254.54,
+      "open": 272.88,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-09"
+    },
+    {
+      "clsPx": 259.29,
+      "hiPx": 264.68,
+      "loPx": 256.05,
+      "open": 258.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-10"
+    },
+    {
+      "clsPx": 263.16,
+      "hiPx": 263.83,
+      "loPx": 246.19,
+      "open": 253.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-11"
+    },
+    {
+      "clsPx": 268.61,
+      "hiPx": 269.68,
+      "loPx": 262.16,
+      "open": 264.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-14"
+    },
+    {
+      "clsPx": 263.09,
+      "hiPx": 266.7,
+      "loPx": 259.32,
+      "open": 266.7,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-15"
+    },
+    {
+      "clsPx": 276.58,
+      "hiPx": 277.02,
+      "loPx": 261.08,
+      "open": 265.14,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-16"
+    },
+    {
+      "clsPx": 268.08,
+      "hiPx": 281.72,
+      "loPx": 267.43,
+      "open": 281.72,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-17"
+    },
+    {
+      "clsPx": 267.05,
+      "hiPx": 269.45,
+      "loPx": 261.95,
+      "open": 264.7,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-18"
+    },
+    {
+      "clsPx": 270.57,
+      "hiPx": 270.97,
+      "loPx": 264.93,
+      "open": 269.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-21"
+    },
+    {
+      "clsPx": 262.94,
+      "hiPx": 268.3,
+      "loPx": 262.79,
+      "open": 267.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-22"
+    },
+    {
+      "clsPx": 262.99,
+      "hiPx": 264.84,
+      "loPx": 259.59,
+      "open": 261.95,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-23"
+    },
+    {
+      "clsPx": 261.46,
+      "hiPx": 264.72,
+      "loPx": 259.55,
+      "open": 264.71,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-24"
+    },
+    {
+      "clsPx": 261.37,
+      "hiPx": 266.64,
+      "loPx": 260.06,
+      "open": 265.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-25"
+    },
+    {
+      "clsPx": 263.91,
+      "hiPx": 268.07,
+      "loPx": 261.96,
+      "open": 263.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-28"
+    },
+    {
+      "clsPx": 261.95,
+      "hiPx": 264.16,
+      "loPx": 258.69,
+      "open": 263.22,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-29"
+    },
+    {
+      "clsPx": 258.77,
+      "hiPx": 264.92,
+      "loPx": 258.42,
+      "open": 263.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-30"
+    },
+    {
+      "clsPx": 259.94,
+      "hiPx": 261.15,
+      "loPx": 256.37,
+      "open": 258.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-10-31"
+    },
+    {
+      "clsPx": 255.13,
+      "hiPx": 261.73,
+      "loPx": 253.87,
+      "open": 259.71,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-01"
+    },
+    {
+      "clsPx": 223.35,
+      "hiPx": 232.79,
+      "loPx": 222.1,
+      "open": 229.83,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-04"
+    },
+    {
+      "clsPx": 231.06,
+      "hiPx": 234.14,
+      "loPx": 224.39,
+      "open": 227.7,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-05"
+    },
+    {
+      "clsPx": 232.29,
+      "hiPx": 239.22,
+      "loPx": 231.07,
+      "open": 236.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-06"
+    },
+    {
+      "clsPx": 238.81,
+      "hiPx": 245.49,
+      "loPx": 235.66,
+      "open": 239.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-07"
+    },
+    {
+      "clsPx": 236.62,
+      "hiPx": 245.15,
+      "loPx": 234.11,
+      "open": 240.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-08"
+    },
+    {
+      "clsPx": 234.54,
+      "hiPx": 241.11,
+      "loPx": 231.6,
+      "open": 239.21,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-11"
+    },
+    {
+      "clsPx": 226.07,
+      "hiPx": 233.27,
+      "loPx": 223.1,
+      "open": 232.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-12"
+    },
+    {
+      "clsPx": 223.36,
+      "hiPx": 230.09,
+      "loPx": 223.02,
+      "open": 228.34,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-13"
+    },
+    {
+      "clsPx": 222.79,
+      "hiPx": 228.88,
+      "loPx": 222.53,
+      "open": 225.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-14"
+    },
+    {
+      "clsPx": 222.05,
+      "hiPx": 225.48,
+      "loPx": 219.45,
+      "open": 222.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-15"
+    },
+    {
+      "clsPx": 227.99,
+      "hiPx": 229.73,
+      "loPx": 218.98,
+      "open": 223.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-18"
+    },
+    {
+      "clsPx": 232.25,
+      "hiPx": 232.55,
+      "loPx": 223.85,
+      "open": 224.05,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-19"
+    },
+    {
+      "clsPx": 233.08,
+      "hiPx": 239.08,
+      "loPx": 229.83,
+      "open": 235.77,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-20"
+    },
+    {
+      "clsPx": 249.33,
+      "hiPx": 249.68,
+      "loPx": 231.78,
+      "open": 234.95,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-21"
+    },
+    {
+      "clsPx": 247.4,
+      "hiPx": 250.71,
+      "loPx": 242.59,
+      "open": 248.71,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-22"
+    },
+    {
+      "clsPx": 246.45,
+      "hiPx": 253.07,
+      "loPx": 240.58,
+      "open": 250.98,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-25"
+    },
+    {
+      "clsPx": 264.07,
+      "hiPx": 264.47,
+      "loPx": 246.72,
+      "open": 247.07,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-26"
+    },
+    {
+      "clsPx": 250.87,
+      "hiPx": 263.35,
+      "loPx": 248.35,
+      "open": 262.36,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-27"
+    },
+    {
+      "clsPx": 254.01,
+      "hiPx": 258.19,
+      "loPx": 252.66,
+      "open": 255.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-11-29"
+    },
+    {
+      "clsPx": 247.1,
+      "hiPx": 255.87,
+      "loPx": 247.03,
+      "open": 254.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-02"
+    },
+    {
+      "clsPx": 245.05,
+      "hiPx": 251.65,
+      "loPx": 244.13,
+      "open": 248.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-03"
+    },
+    {
+      "clsPx": 251.67,
+      "hiPx": 255.1,
+      "loPx": 248.5,
+      "open": 250.17,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-04"
+    },
+    {
+      "clsPx": 253.54,
+      "hiPx": 257.17,
+      "loPx": 250.58,
+      "open": 251.19,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-05"
+    },
+    {
+      "clsPx": 251.11,
+      "hiPx": 256.0,
+      "loPx": 247.93,
+      "open": 253.9,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-06"
+    },
+    {
+      "clsPx": 237.46,
+      "hiPx": 251.47,
+      "loPx": 233.98,
+      "open": 251.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-09"
+    },
+    {
+      "clsPx": 230.03,
+      "hiPx": 237.12,
+      "loPx": 228.41,
+      "open": 235.51,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-10"
+    },
+    {
+      "clsPx": 234.24,
+      "hiPx": 237.07,
+      "loPx": 229.81,
+      "open": 232.43,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-11"
+    },
+    {
+      "clsPx": 236.64,
+      "hiPx": 245.66,
+      "loPx": 236.54,
+      "open": 240.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-12"
+    },
+    {
+      "clsPx": 236.69,
+      "hiPx": 241.0,
+      "loPx": 234.15,
+      "open": 239.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-13"
+    },
+    {
+      "clsPx": 236.92,
+      "hiPx": 241.27,
+      "loPx": 234.89,
+      "open": 237.66,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-16"
+    },
+    {
+      "clsPx": 231.91,
+      "hiPx": 235.71,
+      "loPx": 226.58,
+      "open": 235.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-17"
+    },
+    {
+      "clsPx": 223.51,
+      "hiPx": 234.63,
+      "loPx": 222.53,
+      "open": 231.99,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-18"
+    },
+    {
+      "clsPx": 222.93,
+      "hiPx": 231.46,
+      "loPx": 222.74,
+      "open": 226.58,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-19"
+    },
+    {
+      "clsPx": 224.76,
+      "hiPx": 229.39,
+      "loPx": 217.45,
+      "open": 219.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-20"
+    },
+    {
+      "clsPx": 226.01,
+      "hiPx": 227.08,
+      "loPx": 219.49,
+      "open": 224.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-23"
+    },
+    {
+      "clsPx": 227.5,
+      "hiPx": 227.82,
+      "loPx": 224.9,
+      "open": 226.96,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-24"
+    },
+    {
+      "clsPx": 226.36,
+      "hiPx": 227.94,
+      "loPx": 225.06,
+      "open": 226.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-26"
+    },
+    {
+      "clsPx": 224.29,
+      "hiPx": 225.91,
+      "loPx": 220.52,
+      "open": 225.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-27"
+    },
+    {
+      "clsPx": 224.07,
+      "hiPx": 226.72,
+      "loPx": 220.04,
+      "open": 221.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-30"
+    },
+    {
+      "clsPx": 221.48,
+      "hiPx": 224.77,
+      "loPx": 220.66,
+      "open": 224.1,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2024-12-31"
+    },
+    {
+      "clsPx": 240.19,
+      "hiPx": 241.29,
+      "loPx": 222.9,
+      "open": 224.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-02"
+    },
+    {
+      "clsPx": 249.89,
+      "hiPx": 251.65,
+      "loPx": 241.92,
+      "open": 248.01,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-03"
+    },
+    {
+      "clsPx": 261.65,
+      "hiPx": 265.15,
+      "loPx": 249.01,
+      "open": 255.31,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-06"
+    },
+    {
+      "clsPx": 253.09,
+      "hiPx": 262.84,
+      "loPx": 247.08,
+      "open": 260.88,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-07"
+    },
+    {
+      "clsPx": 241.41,
+      "hiPx": 253.44,
+      "loPx": 225.78,
+      "open": 252.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-08"
+    },
+    {
+      "clsPx": 302.15,
+      "hiPx": 306.91,
+      "loPx": 277.34,
+      "open": 279.68,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-10"
+    },
+    {
+      "clsPx": 276.46,
+      "hiPx": 297.47,
+      "loPx": 276.08,
+      "open": 294.53,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-13"
+    },
+    {
+      "clsPx": 285.99,
+      "hiPx": 291.47,
+      "loPx": 278.6,
+      "open": 281.06,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-14"
+    },
+    {
+      "clsPx": 297.78,
+      "hiPx": 302.07,
+      "loPx": 290.1,
+      "open": 294.13,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-15"
+    },
+    {
+      "clsPx": 312.1,
+      "hiPx": 317.32,
+      "loPx": 299.46,
+      "open": 299.46,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-16"
+    },
+    {
+      "clsPx": 313.21,
+      "hiPx": 316.97,
+      "loPx": 307.94,
+      "open": 316.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-17"
+    },
+    {
+      "clsPx": 320.42,
+      "hiPx": 327.05,
+      "loPx": 315.16,
+      "open": 322.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-21"
+    },
+    {
+      "clsPx": 329.16,
+      "hiPx": 333.1,
+      "loPx": 315.83,
+      "open": 325.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-22"
+    },
+    {
+      "clsPx": 342.77,
+      "hiPx": 348.5,
+      "loPx": 329.69,
+      "open": 329.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-23"
+    },
+    {
+      "clsPx": 343.98,
+      "hiPx": 346.52,
+      "loPx": 338.55,
+      "open": 344.29,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-24"
+    },
+    {
+      "clsPx": 272.26,
+      "hiPx": 299.66,
+      "loPx": 267.75,
+      "open": 289.55,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-27"
+    },
+    {
+      "clsPx": 276.02,
+      "hiPx": 281.54,
+      "loPx": 256.51,
+      "open": 278.75,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-28"
+    },
+    {
+      "clsPx": 288.98,
+      "hiPx": 291.26,
+      "loPx": 273.31,
+      "open": 276.25,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-29"
+    },
+    {
+      "clsPx": 305.48,
+      "hiPx": 307.6,
+      "loPx": 295.82,
+      "open": 298.0,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-30"
+    },
+    {
+      "clsPx": 296.99,
+      "hiPx": 308.89,
+      "loPx": 294.98,
+      "open": 308.89,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-01-31"
+    },
+    {
+      "clsPx": 303.26,
+      "hiPx": 305.58,
+      "loPx": 281.19,
+      "open": 282.56,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-03"
+    },
+    {
+      "clsPx": 303.28,
+      "hiPx": 304.03,
+      "loPx": 290.58,
+      "open": 295.26,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-04"
+    },
+    {
+      "clsPx": 310.71,
+      "hiPx": 315.2,
+      "loPx": 299.83,
+      "open": 307.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-05"
+    },
+    {
+      "clsPx": 308.7,
+      "hiPx": 313.43,
+      "loPx": 302.83,
+      "open": 312.19,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-06"
+    },
+    {
+      "clsPx": 306.71,
+      "hiPx": 316.43,
+      "loPx": 306.23,
+      "open": 311.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-07"
+    },
+    {
+      "clsPx": 318.63,
+      "hiPx": 318.8,
+      "loPx": 309.46,
+      "open": 309.52,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-10"
+    },
+    {
+      "clsPx": 310.46,
+      "hiPx": 315.98,
+      "loPx": 306.36,
+      "open": 314.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-11"
+    },
+    {
+      "clsPx": 310.68,
+      "hiPx": 314.27,
+      "loPx": 300.77,
+      "open": 302.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-12"
+    },
+    {
+      "clsPx": 308.39,
+      "hiPx": 314.58,
+      "loPx": 302.05,
+      "open": 313.21,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-13"
+    },
+    {
+      "clsPx": 314.14,
+      "hiPx": 315.02,
+      "loPx": 303.17,
+      "open": 308.09,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-14"
+    },
+    {
+      "clsPx": 322.36,
+      "hiPx": 326.29,
+      "loPx": 312.67,
+      "open": 320.62,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-18"
+    },
+    {
+      "clsPx": 318.46,
+      "hiPx": 326.6,
+      "loPx": 314.96,
+      "open": 320.59,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-19"
+    },
+    {
+      "clsPx": 306.34,
+      "hiPx": 318.8,
+      "loPx": 301.15,
+      "open": 314.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-20"
+    },
+    {
+      "clsPx": 281.61,
+      "hiPx": 307.37,
+      "loPx": 275.01,
+      "open": 306.91,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-21"
+    },
+    {
+      "clsPx": 265.06,
+      "hiPx": 287.12,
+      "loPx": 260.04,
+      "open": 287.12,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-24"
+    },
+    {
+      "clsPx": 261.68,
+      "hiPx": 265.38,
+      "loPx": 246.09,
+      "open": 262.14,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-25"
+    },
+    {
+      "clsPx": 267.45,
+      "hiPx": 277.16,
+      "loPx": 265.38,
+      "open": 270.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-26"
+    },
+    {
+      "clsPx": 247.25,
+      "hiPx": 277.81,
+      "loPx": 246.31,
+      "open": 273.64,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-27"
+    },
+    {
+      "clsPx": 248.05,
+      "hiPx": 249.04,
+      "loPx": 239.21,
+      "open": 243.97,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-02-28"
+    },
+    {
+      "clsPx": 229.98,
+      "hiPx": 247.23,
+      "loPx": 226.96,
+      "open": 246.9,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-03"
+    },
+    {
+      "clsPx": 229.34,
+      "hiPx": 237.25,
+      "loPx": 219.05,
+      "open": 225.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-04"
+    },
+    {
+      "clsPx": 227.04,
+      "hiPx": 231.22,
+      "loPx": 221.2,
+      "open": 228.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-05"
+    },
+    {
+      "clsPx": 205.62,
+      "hiPx": 220.56,
+      "loPx": 202.67,
+      "open": 218.0,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-06"
+    },
+    {
+      "clsPx": 210.82,
+      "hiPx": 214.39,
+      "loPx": 201.46,
+      "open": 206.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-07"
+    },
+    {
+      "clsPx": 200.57,
+      "hiPx": 206.55,
+      "loPx": 193.98,
+      "open": 201.96,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-10"
+    },
+    {
+      "clsPx": 206.89,
+      "hiPx": 209.93,
+      "loPx": 198.31,
+      "open": 202.34,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-11"
+    },
+    {
+      "clsPx": 213.61,
+      "hiPx": 222.51,
+      "loPx": 208.3,
+      "open": 217.64,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-12"
+    },
+    {
+      "clsPx": 208.17,
+      "hiPx": 215.01,
+      "loPx": 202.07,
+      "open": 215.01,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-13"
+    },
+    {
+      "clsPx": 214.71,
+      "hiPx": 215.74,
+      "loPx": 207.34,
+      "open": 212.1,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-14"
+    },
+    {
+      "clsPx": 216.77,
+      "hiPx": 220.27,
+      "loPx": 212.62,
+      "open": 215.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-17"
+    },
+    {
+      "clsPx": 209.14,
+      "hiPx": 216.37,
+      "loPx": 207.56,
+      "open": 216.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-18"
+    },
+    {
+      "clsPx": 216.28,
+      "hiPx": 218.59,
+      "loPx": 209.41,
+      "open": 209.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-19"
+    },
+    {
+      "clsPx": 217.66,
+      "hiPx": 220.63,
+      "loPx": 212.27,
+      "open": 215.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-20"
+    },
+    {
+      "clsPx": 220.68,
+      "hiPx": 221.02,
+      "loPx": 210.83,
+      "open": 214.02,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-21"
+    },
+    {
+      "clsPx": 226.77,
+      "hiPx": 229.28,
+      "loPx": 224.76,
+      "open": 226.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-24"
+    },
+    {
+      "clsPx": 225.03,
+      "hiPx": 229.0,
+      "loPx": 220.2,
+      "open": 227.45,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-25"
+    },
+    {
+      "clsPx": 215.21,
+      "hiPx": 224.27,
+      "loPx": 212.27,
+      "open": 222.19,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-26"
+    },
+    {
+      "clsPx": 207.51,
+      "hiPx": 215.79,
+      "loPx": 205.84,
+      "open": 210.24,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-27"
+    },
+    {
+      "clsPx": 203.73,
+      "hiPx": 213.67,
+      "loPx": 202.24,
+      "open": 208.2,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-28"
+    },
+    {
+      "clsPx": 200.0,
+      "hiPx": 201.91,
+      "loPx": 193.97,
+      "open": 197.37,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-03-31"
+    },
+    {
+      "clsPx": 205.26,
+      "hiPx": 206.08,
+      "loPx": 196.49,
+      "open": 199.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-01"
+    },
+    {
+      "clsPx": 212.72,
+      "hiPx": 213.6,
+      "loPx": 200.63,
+      "open": 201.19,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-02"
+    },
+    {
+      "clsPx": 188.7,
+      "hiPx": 202.39,
+      "loPx": 188.24,
+      "open": 198.85,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-03"
+    },
+    {
+      "clsPx": 169.58,
+      "hiPx": 181.51,
+      "loPx": 163.74,
+      "open": 178.61,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-04"
+    },
+    {
+      "clsPx": 178.33,
+      "hiPx": 188.25,
+      "loPx": 160.04,
+      "open": 160.22,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-07"
+    },
+    {
+      "clsPx": 183.44,
+      "hiPx": 191.73,
+      "loPx": 180.52,
+      "open": 187.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-08"
+    },
+    {
+      "clsPx": 213.7,
+      "hiPx": 216.14,
+      "loPx": 181.13,
+      "open": 184.62,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-09"
+    },
+    {
+      "clsPx": 202.83,
+      "hiPx": 209.77,
+      "loPx": 197.93,
+      "open": 207.31,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-10"
+    },
+    {
+      "clsPx": 206.56,
+      "hiPx": 206.84,
+      "loPx": 196.4,
+      "open": 202.83,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-11"
+    },
+    {
+      "clsPx": 205.03,
+      "hiPx": 215.45,
+      "loPx": 202.22,
+      "open": 213.23,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-14"
+    },
+    {
+      "clsPx": 206.73,
+      "hiPx": 210.28,
+      "loPx": 204.68,
+      "open": 204.93,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-15"
+    },
+    {
+      "clsPx": 202.54,
+      "hiPx": 205.72,
+      "loPx": 199.81,
+      "open": 203.39,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-16"
+    },
+    {
+      "clsPx": 205.01,
+      "hiPx": 207.13,
+      "loPx": 201.95,
+      "open": 206.66,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-17"
+    },
+    {
+      "clsPx": 191.05,
+      "hiPx": 203.21,
+      "loPx": 186.48,
+      "open": 201.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-21"
+    },
+    {
+      "clsPx": 199.25,
+      "hiPx": 200.78,
+      "loPx": 194.26,
+      "open": 195.95,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-22"
+    },
+    {
+      "clsPx": 208.1,
+      "hiPx": 215.58,
+      "loPx": 206.58,
+      "open": 211.52,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-23"
+    },
+    {
+      "clsPx": 216.3,
+      "hiPx": 218.41,
+      "loPx": 207.87,
+      "open": 207.87,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-24"
+    },
+    {
+      "clsPx": 221.18,
+      "hiPx": 222.13,
+      "loPx": 214.75,
+      "open": 216.34,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-25"
+    },
+    {
+      "clsPx": 223.0,
+      "hiPx": 223.66,
+      "loPx": 217.91,
+      "open": 220.54,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-28"
+    },
+    {
+      "clsPx": 224.62,
+      "hiPx": 225.52,
+      "loPx": 218.71,
+      "open": 222.49,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-29"
+    },
+    {
+      "clsPx": 221.63,
+      "hiPx": 222.06,
+      "loPx": 214.99,
+      "open": 217.77,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-04-30"
+    },
+    {
+      "clsPx": 238.67,
+      "hiPx": 242.0,
+      "loPx": 228.44,
+      "open": 230.32,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-01"
+    },
+    {
+      "clsPx": 245.26,
+      "hiPx": 248.61,
+      "loPx": 239.61,
+      "open": 242.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-02"
+    },
+    {
+      "clsPx": 246.26,
+      "hiPx": 247.98,
+      "loPx": 239.5,
+      "open": 241.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-05"
+    },
+    {
+      "clsPx": 271.6,
+      "hiPx": 277.62,
+      "loPx": 254.05,
+      "open": 256.73,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-06"
+    },
+    {
+      "clsPx": 265.95,
+      "hiPx": 276.26,
+      "loPx": 262.52,
+      "open": 275.11,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-07"
+    },
+    {
+      "clsPx": 268.4,
+      "hiPx": 271.76,
+      "loPx": 262.92,
+      "open": 269.55,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-08"
+    },
+    {
+      "clsPx": 269.17,
+      "hiPx": 272.72,
+      "loPx": 263.9,
+      "open": 269.87,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-09"
+    },
+    {
+      "clsPx": 282.97,
+      "hiPx": 289.63,
+      "loPx": 281.15,
+      "open": 284.04,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-12"
+    },
+    {
+      "clsPx": 289.16,
+      "hiPx": 293.77,
+      "loPx": 276.93,
+      "open": 278.2,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-13"
+    },
+    {
+      "clsPx": 285.82,
+      "hiPx": 289.63,
+      "loPx": 280.64,
+      "open": 289.16,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-14"
+    },
+    {
+      "clsPx": 282.1,
+      "hiPx": 286.38,
+      "loPx": 280.99,
+      "open": 282.3,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-15"
+    },
+    {
+      "clsPx": 289.16,
+      "hiPx": 289.21,
+      "loPx": 282.28,
+      "open": 284.66,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-16"
+    },
+    {
+      "clsPx": 292.04,
+      "hiPx": 292.38,
+      "loPx": 280.1,
+      "open": 281.44,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-19"
+    },
+    {
+      "clsPx": 290.43,
+      "hiPx": 291.05,
+      "loPx": 287.72,
+      "open": 290.59,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-20"
+    },
+    {
+      "clsPx": 285.17,
+      "hiPx": 290.24,
+      "loPx": 283.29,
+      "open": 286.33,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-21"
+    },
+    {
+      "clsPx": 289.5,
+      "hiPx": 293.21,
+      "loPx": 280.81,
+      "open": 283.27,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-22"
+    },
+    {
+      "clsPx": 295.48,
+      "hiPx": 300.56,
+      "loPx": 291.13,
+      "open": 296.63,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-23"
+    },
+    {
+      "clsPx": 306.98,
+      "hiPx": 308.17,
+      "loPx": 294.27,
+      "open": 301.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-27"
+    },
+    {
+      "clsPx": 305.97,
+      "hiPx": 310.97,
+      "loPx": 304.59,
+      "open": 307.36,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-28"
+    },
+    {
+      "clsPx": 301.32,
+      "hiPx": 312.38,
+      "loPx": 298.08,
+      "open": 311.76,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-29"
+    },
+    {
+      "clsPx": 304.08,
+      "hiPx": 304.43,
+      "loPx": 297.24,
+      "open": 299.41,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-05-30"
+    },
+    {
+      "clsPx": 311.32,
+      "hiPx": 311.78,
+      "loPx": 302.52,
+      "open": 304.82,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-02"
+    },
+    {
+      "clsPx": 310.92,
+      "hiPx": 339.69,
+      "loPx": 307.41,
+      "open": 339.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-03"
+    },
+    {
+      "clsPx": 297.52,
+      "hiPx": 308.32,
+      "loPx": 296.92,
+      "open": 301.95,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-04"
+    },
+    {
+      "clsPx": 287.92,
+      "hiPx": 299.96,
+      "loPx": 287.41,
+      "open": 297.21,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-05"
+    },
+    {
+      "clsPx": 296.78,
+      "hiPx": 297.75,
+      "loPx": 284.07,
+      "open": 291.6,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-06"
+    },
+    {
+      "clsPx": 297.64,
+      "hiPx": 306.74,
+      "loPx": 295.01,
+      "open": 298.67,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-09"
+    },
+    {
+      "clsPx": 289.06,
+      "hiPx": 298.47,
+      "loPx": 285.77,
+      "open": 297.98,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-10"
+    },
+    {
+      "clsPx": 290.22,
+      "hiPx": 296.46,
+      "loPx": 287.85,
+      "open": 294.83,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-11"
+    },
+    {
+      "clsPx": 298.35,
+      "hiPx": 299.29,
+      "loPx": 287.13,
+      "open": 288.15,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-12"
+    },
+    {
+      "clsPx": 294.89,
+      "hiPx": 297.93,
+      "loPx": 292.11,
+      "open": 295.35,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-13"
+    },
+    {
+      "clsPx": 305.93,
+      "hiPx": 307.87,
+      "loPx": 297.98,
+      "open": 297.98,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-16"
+    },
+    {
+      "clsPx": 303.64,
+      "hiPx": 311.43,
+      "loPx": 300.66,
+      "open": 305.74,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-17"
+    },
+    {
+      "clsPx": 304.36,
+      "hiPx": 307.45,
+      "loPx": 301.2,
+      "open": 302.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-18"
+    },
+    {
+      "clsPx": 302.86,
+      "hiPx": 306.12,
+      "loPx": 300.65,
+      "open": 305.46,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-20"
+    },
+    {
+      "clsPx": 313.08,
+      "hiPx": 313.66,
+      "loPx": 302.64,
+      "open": 303.94,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-23"
+    },
+    {
+      "clsPx": 318.5,
+      "hiPx": 322.12,
+      "loPx": 314.71,
+      "open": 315.8,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-24"
+    },
+    {
+      "clsPx": 313.01,
+      "hiPx": 321.46,
+      "loPx": 312.73,
+      "open": 319.84,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-25"
+    },
+    {
+      "clsPx": 320.33,
+      "hiPx": 321.42,
+      "loPx": 312.61,
+      "open": 314.86,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-26"
+    },
+    {
+      "clsPx": 318.01,
+      "hiPx": 326.22,
+      "loPx": 315.66,
+      "open": 325.69,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-27"
+    },
+    {
+      "clsPx": 320.58,
+      "hiPx": 322.55,
+      "loPx": 316.07,
+      "open": 321.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-06-30"
+    },
+    {
+      "clsPx": 305.84,
+      "hiPx": 318.56,
+      "loPx": 300.21,
+      "open": 318.56,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-07-01"
+    },
+    {
+      "clsPx": 304.56,
+      "hiPx": 308.23,
+      "loPx": 300.97,
+      "open": 304.81,
+      "stkVolu": null,
+      "ticker": "CEG",
+      "tradeDate": "2025-07-02"
+    },
+    {
+      "clsPx": 309.78,
+      "hiPx": 311.82,
+      "loPx": 304.38,
+      "open": 306.12,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-03"
     },
     {
-      "clsPx": 318.25,
-      "hiPx": 320.41,
-      "loPx": 309.09,
-      "open": 310.0,
-      "stkVolu": 2002122.0,
+      "clsPx": 316.1,
+      "hiPx": 318.25,
+      "loPx": 307.01,
+      "open": 307.91,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-07"
     },
     {
-      "clsPx": 312.84,
-      "hiPx": 320.685,
-      "loPx": 307.75,
-      "open": 320.685,
-      "stkVolu": 1793002.0,
+      "clsPx": 310.73,
+      "hiPx": 318.52,
+      "loPx": 305.67,
+      "open": 318.52,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-08"
     },
     {
-      "clsPx": 317.11,
-      "hiPx": 319.755,
-      "loPx": 310.25,
-      "open": 313.22,
-      "stkVolu": 1685724.0,
+      "clsPx": 314.97,
+      "hiPx": 317.6,
+      "loPx": 308.16,
+      "open": 311.11,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-09"
     },
     {
-      "clsPx": 313.62,
-      "hiPx": 317.36,
-      "loPx": 307.235,
-      "open": 316.26,
-      "stkVolu": 1746508.0,
+      "clsPx": 311.5,
+      "hiPx": 315.22,
+      "loPx": 305.16,
+      "open": 314.13,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-10"
     },
     {
-      "clsPx": 321.54,
-      "hiPx": 323.0,
-      "loPx": 309.7449,
-      "open": 310.81,
-      "stkVolu": 2015620.0,
+      "clsPx": 319.37,
+      "hiPx": 320.82,
+      "loPx": 307.65,
+      "open": 308.71,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-11"
     },
     {
-      "clsPx": 325.99,
-      "hiPx": 326.55,
-      "loPx": 313.885,
-      "open": 322.08,
-      "stkVolu": 2000133.0,
+      "clsPx": 323.79,
+      "hiPx": 324.35,
+      "loPx": 311.77,
+      "open": 319.91,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-14"
     },
     {
-      "clsPx": 317.99,
-      "hiPx": 327.99,
-      "loPx": 314.2,
-      "open": 327.58,
-      "stkVolu": 2742440.0,
+      "clsPx": 315.84,
+      "hiPx": 325.78,
+      "loPx": 312.08,
+      "open": 325.37,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-15"
     },
     {
-      "clsPx": 308.2,
-      "hiPx": 322.0,
-      "loPx": 301.37,
-      "open": 318.63,
-      "stkVolu": 2956751.0,
+      "clsPx": 306.12,
+      "hiPx": 319.83,
+      "loPx": 299.34,
+      "open": 316.48,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-16"
     },
     {
-      "clsPx": 308.08,
-      "hiPx": 314.82,
-      "loPx": 305.01,
-      "open": 311.82,
-      "stkVolu": 1984949.0,
+      "clsPx": 306.0,
+      "hiPx": 312.7,
+      "loPx": 302.95,
+      "open": 309.72,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-17"
     },
     {
-      "clsPx": 321.42,
-      "hiPx": 327.01,
-      "loPx": 310.92,
-      "open": 311.78,
-      "stkVolu": 3532937.0,
+      "clsPx": 319.25,
+      "hiPx": 324.8,
+      "loPx": 308.82,
+      "open": 309.68,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-18"
     },
     {
-      "clsPx": 317.88,
-      "hiPx": 325.64,
-      "loPx": 316.65,
-      "open": 324.42,
-      "stkVolu": 1937555.0,
+      "clsPx": 315.74,
+      "hiPx": 323.44,
+      "loPx": 314.51,
+      "open": 322.23,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-21"
     },
     {
-      "clsPx": 317.79,
-      "hiPx": 318.7424,
-      "loPx": 311.395,
-      "open": 318.0,
-      "stkVolu": 1780119.0,
+      "clsPx": 315.65,
+      "hiPx": 316.59,
+      "loPx": 309.29,
+      "open": 315.86,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-22"
     },
     {
-      "clsPx": 323.7,
-      "hiPx": 343.23,
-      "loPx": 322.8,
-      "open": 329.39,
-      "stkVolu": 3821438.0,
+      "clsPx": 321.52,
+      "hiPx": 340.92,
+      "loPx": 320.62,
+      "open": 327.17,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-23"
     },
     {
-      "clsPx": 321.67,
-      "hiPx": 326.92,
-      "loPx": 320.8958,
-      "open": 325.08,
-      "stkVolu": 1818050.0,
+      "clsPx": 319.5,
+      "hiPx": 324.71,
+      "loPx": 318.73,
+      "open": 322.89,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-24"
     },
     {
-      "clsPx": 327.35,
-      "hiPx": 328.28,
-      "loPx": 321.03,
-      "open": 322.5,
-      "stkVolu": 1383945.0,
+      "clsPx": 325.14,
+      "hiPx": 326.07,
+      "loPx": 318.86,
+      "open": 320.32,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-25"
     },
     {
-      "clsPx": 328.66,
-      "hiPx": 331.9999,
-      "loPx": 322.5,
-      "open": 330.085,
-      "stkVolu": 1701437.0,
+      "clsPx": 326.44,
+      "hiPx": 329.76,
+      "loPx": 320.32,
+      "open": 327.85,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-28"
     },
     {
-      "clsPx": 330.52,
-      "hiPx": 339.24,
-      "loPx": 328.7,
-      "open": 332.0,
-      "stkVolu": 2695980.0,
+      "clsPx": 328.29,
+      "hiPx": 336.95,
+      "loPx": 326.48,
+      "open": 329.76,
+      "stkVolu": null,
       "ticker": "CEG",
       "tradeDate": "2025-07-29"
     },
@@ -2771,6 +10565,15 @@
       "stkVolu": 2984182.0,
       "ticker": "CEG",
       "tradeDate": "2026-09-23"
+    },
+    {
+      "clsPx": 261.0,
+      "hiPx": 263.83,
+      "loPx": 258.5,
+      "open": 261.7,
+      "stkVolu": 1686884.0,
+      "ticker": "CEG",
+      "tradeDate": "2026-09-24"
     }
   ]
 }

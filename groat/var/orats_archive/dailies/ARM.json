@@ -1,11 +1,4052 @@
 {
   "data": [
     {
+      "clsPx": 58.0,
+      "hiPx": 58.74,
+      "loPx": 55.02,
+      "open": 57.95,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-18"
+    },
+    {
+      "clsPx": 55.17,
+      "hiPx": 56.78,
+      "loPx": 53.88,
+      "open": 56.25,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-19"
+    },
+    {
+      "clsPx": 52.91,
+      "hiPx": 55.4,
+      "loPx": 51.52,
+      "open": 55.17,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-20"
+    },
+    {
+      "clsPx": 52.16,
+      "hiPx": 52.8,
+      "loPx": 49.85,
+      "open": 51.78,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-21"
+    },
+    {
+      "clsPx": 51.32,
+      "hiPx": 52.9,
+      "loPx": 50.35,
+      "open": 52.9,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-22"
+    },
+    {
+      "clsPx": 54.44,
+      "hiPx": 54.5,
+      "loPx": 50.02,
+      "open": 51.12,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-25"
+    },
+    {
+      "clsPx": 53.52,
+      "hiPx": 54.53,
+      "loPx": 52.7,
+      "open": 53.93,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-26"
+    },
+    {
+      "clsPx": 52.99,
+      "hiPx": 54.41,
+      "loPx": 51.79,
+      "open": 54.4,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-27"
+    },
+    {
+      "clsPx": 55.49,
+      "hiPx": 56.5,
+      "loPx": 52.86,
+      "open": 53.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-28"
+    },
+    {
+      "clsPx": 53.52,
+      "hiPx": 56.79,
+      "loPx": 53.08,
+      "open": 56.21,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-09-29"
+    },
+    {
+      "clsPx": 52.26,
+      "hiPx": 54.19,
+      "loPx": 51.91,
+      "open": 53.47,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-02"
+    },
+    {
+      "clsPx": 51.57,
+      "hiPx": 52.24,
+      "loPx": 50.8,
+      "open": 51.96,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-03"
+    },
+    {
+      "clsPx": 53.46,
+      "hiPx": 53.81,
+      "loPx": 51.31,
+      "open": 51.97,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-04"
+    },
+    {
+      "clsPx": 52.51,
+      "hiPx": 53.9,
+      "loPx": 52.09,
+      "open": 53.9,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-05"
+    },
+    {
+      "clsPx": 54.08,
+      "hiPx": 54.21,
+      "loPx": 51.55,
+      "open": 52.72,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-06"
+    },
+    {
+      "clsPx": 54.25,
+      "hiPx": 55.8,
+      "loPx": 53.37,
+      "open": 54.4,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-09"
+    },
+    {
+      "clsPx": 55.71,
+      "hiPx": 55.86,
+      "loPx": 54.2,
+      "open": 55.24,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-10"
+    },
+    {
+      "clsPx": 54.68,
+      "hiPx": 56.33,
+      "loPx": 54.38,
+      "open": 56.17,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-11"
+    },
+    {
+      "clsPx": 51.85,
+      "hiPx": 54.75,
+      "loPx": 51.41,
+      "open": 54.75,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-12"
+    },
+    {
+      "clsPx": 50.78,
+      "hiPx": 52.56,
+      "loPx": 50.0,
+      "open": 52.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-13"
+    },
+    {
+      "clsPx": 52.09,
+      "hiPx": 52.35,
+      "loPx": 51.04,
+      "open": 51.04,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-16"
+    },
+    {
+      "clsPx": 52.29,
+      "hiPx": 52.76,
+      "loPx": 50.65,
+      "open": 51.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-17"
+    },
+    {
+      "clsPx": 51.9,
+      "hiPx": 52.7,
+      "loPx": 51.28,
+      "open": 52.28,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-18"
+    },
+    {
+      "clsPx": 49.74,
+      "hiPx": 52.7,
+      "loPx": 49.53,
+      "open": 52.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-19"
+    },
+    {
+      "clsPx": 47.87,
+      "hiPx": 49.74,
+      "loPx": 46.5,
+      "open": 49.74,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-20"
+    },
+    {
+      "clsPx": 50.21,
+      "hiPx": 51.88,
+      "loPx": 46.5,
+      "open": 47.22,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-23"
+    },
+    {
+      "clsPx": 52.37,
+      "hiPx": 52.89,
+      "loPx": 51.05,
+      "open": 52.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-24"
+    },
+    {
+      "clsPx": 49.44,
+      "hiPx": 52.79,
+      "loPx": 49.31,
+      "open": 52.7,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-25"
+    },
+    {
+      "clsPx": 50.17,
+      "hiPx": 51.11,
+      "loPx": 49.5,
+      "open": 50.06,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-26"
+    },
+    {
+      "clsPx": 49.09,
+      "hiPx": 51.33,
+      "loPx": 48.81,
+      "open": 51.26,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-27"
+    },
+    {
+      "clsPx": 47.9,
+      "hiPx": 49.9,
+      "loPx": 47.28,
+      "open": 49.51,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-30"
+    },
+    {
+      "clsPx": 49.29,
+      "hiPx": 49.66,
+      "loPx": 47.12,
+      "open": 47.9,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-10-31"
+    },
+    {
+      "clsPx": 50.52,
+      "hiPx": 50.52,
+      "loPx": 48.3,
+      "open": 49.61,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-01"
+    },
+    {
+      "clsPx": 52.82,
+      "hiPx": 53.56,
+      "loPx": 51.3,
+      "open": 51.4,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-02"
+    },
+    {
+      "clsPx": 53.49,
+      "hiPx": 53.86,
+      "loPx": 52.25,
+      "open": 52.82,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-03"
+    },
+    {
+      "clsPx": 53.1,
+      "hiPx": 54.46,
+      "loPx": 52.52,
+      "open": 53.98,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-06"
+    },
+    {
+      "clsPx": 55.27,
+      "hiPx": 56.1,
+      "loPx": 53.26,
+      "open": 53.45,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-07"
+    },
+    {
+      "clsPx": 54.4,
+      "hiPx": 55.56,
+      "loPx": 53.39,
+      "open": 55.27,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-08"
+    },
+    {
+      "clsPx": 51.58,
+      "hiPx": 52.05,
+      "loPx": 49.82,
+      "open": 51.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-09"
+    },
+    {
+      "clsPx": 52.27,
+      "hiPx": 52.5,
+      "loPx": 51.01,
+      "open": 52.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-10"
+    },
+    {
+      "clsPx": 51.69,
+      "hiPx": 52.5,
+      "loPx": 50.57,
+      "open": 52.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-13"
+    },
+    {
+      "clsPx": 53.43,
+      "hiPx": 53.5,
+      "loPx": 52.28,
+      "open": 53.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-14"
+    },
+    {
+      "clsPx": 55.43,
+      "hiPx": 56.03,
+      "loPx": 54.08,
+      "open": 54.4,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-15"
+    },
+    {
+      "clsPx": 54.23,
+      "hiPx": 55.68,
+      "loPx": 53.47,
+      "open": 55.51,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-16"
+    },
+    {
+      "clsPx": 54.99,
+      "hiPx": 55.74,
+      "loPx": 54.26,
+      "open": 55.11,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-17"
+    },
+    {
+      "clsPx": 58.68,
+      "hiPx": 59.24,
+      "loPx": 55.27,
+      "open": 55.35,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-20"
+    },
+    {
+      "clsPx": 58.66,
+      "hiPx": 58.9,
+      "loPx": 56.43,
+      "open": 58.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-21"
+    },
+    {
+      "clsPx": 61.76,
+      "hiPx": 64.92,
+      "loPx": 59.0,
+      "open": 59.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-22"
+    },
+    {
+      "clsPx": 63.88,
+      "hiPx": 64.2,
+      "loPx": 61.41,
+      "open": 61.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-24"
+    },
+    {
+      "clsPx": 61.0,
+      "hiPx": 63.69,
+      "loPx": 60.99,
+      "open": 63.05,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-27"
+    },
+    {
+      "clsPx": 61.92,
+      "hiPx": 62.68,
+      "loPx": 60.79,
+      "open": 60.84,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-28"
+    },
+    {
+      "clsPx": 62.21,
+      "hiPx": 63.41,
+      "loPx": 61.69,
+      "open": 62.52,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-29"
+    },
+    {
+      "clsPx": 61.5,
+      "hiPx": 63.5,
+      "loPx": 60.91,
+      "open": 62.58,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-11-30"
+    },
+    {
+      "clsPx": 63.9,
+      "hiPx": 64.43,
+      "loPx": 60.91,
+      "open": 61.51,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-01"
+    },
+    {
+      "clsPx": 61.93,
+      "hiPx": 63.9,
+      "loPx": 60.8,
+      "open": 63.9,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-04"
+    },
+    {
+      "clsPx": 63.59,
+      "hiPx": 64.35,
+      "loPx": 60.37,
+      "open": 61.73,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-05"
+    },
+    {
+      "clsPx": 61.06,
+      "hiPx": 64.69,
+      "loPx": 60.89,
+      "open": 64.35,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-06"
+    },
+    {
+      "clsPx": 62.44,
+      "hiPx": 62.97,
+      "loPx": 61.2,
+      "open": 61.52,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-07"
+    },
+    {
+      "clsPx": 67.23,
+      "hiPx": 67.44,
+      "loPx": 62.24,
+      "open": 62.44,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-08"
+    },
+    {
+      "clsPx": 64.89,
+      "hiPx": 67.26,
+      "loPx": 64.29,
+      "open": 67.26,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-11"
+    },
+    {
+      "clsPx": 64.71,
+      "hiPx": 66.25,
+      "loPx": 63.28,
+      "open": 65.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-12"
+    },
+    {
+      "clsPx": 65.61,
+      "hiPx": 66.5,
+      "loPx": 62.75,
+      "open": 65.41,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-13"
+    },
+    {
+      "clsPx": 70.74,
+      "hiPx": 71.79,
+      "loPx": 66.37,
+      "open": 66.52,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-14"
+    },
+    {
+      "clsPx": 71.03,
+      "hiPx": 71.89,
+      "loPx": 69.29,
+      "open": 70.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-15"
+    },
+    {
+      "clsPx": 68.87,
+      "hiPx": 70.09,
+      "loPx": 68.02,
+      "open": 69.96,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-18"
+    },
+    {
+      "clsPx": 69.43,
+      "hiPx": 70.55,
+      "loPx": 68.81,
+      "open": 69.23,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-19"
+    },
+    {
+      "clsPx": 68.4,
+      "hiPx": 72.99,
+      "loPx": 68.38,
+      "open": 69.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-20"
+    },
+    {
+      "clsPx": 71.2,
+      "hiPx": 71.95,
+      "loPx": 69.3,
+      "open": 70.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-21"
+    },
+    {
+      "clsPx": 72.29,
+      "hiPx": 73.44,
+      "loPx": 71.48,
+      "open": 72.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-22"
+    },
+    {
+      "clsPx": 73.41,
+      "hiPx": 74.0,
+      "loPx": 71.76,
+      "open": 73.27,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-26"
+    },
+    {
+      "clsPx": 74.25,
+      "hiPx": 74.76,
+      "loPx": 73.41,
+      "open": 74.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-27"
+    },
+    {
+      "clsPx": 77.47,
+      "hiPx": 78.35,
+      "loPx": 74.5,
+      "open": 74.79,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-28"
+    },
+    {
+      "clsPx": 75.14,
+      "hiPx": 78.66,
+      "loPx": 74.6,
+      "open": 78.36,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2023-12-29"
+    },
+    {
+      "clsPx": 68.92,
+      "hiPx": 73.52,
+      "loPx": 68.24,
+      "open": 73.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-02"
+    },
+    {
+      "clsPx": 67.91,
+      "hiPx": 68.5,
+      "loPx": 65.11,
+      "open": 67.07,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-03"
+    },
+    {
+      "clsPx": 68.39,
+      "hiPx": 69.6,
+      "loPx": 67.14,
+      "open": 68.99,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-04"
+    },
+    {
+      "clsPx": 67.05,
+      "hiPx": 70.39,
+      "loPx": 66.52,
+      "open": 69.12,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-05"
+    },
+    {
+      "clsPx": 72.84,
+      "hiPx": 73.18,
+      "loPx": 67.52,
+      "open": 67.76,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-08"
+    },
+    {
+      "clsPx": 71.88,
+      "hiPx": 72.98,
+      "loPx": 70.91,
+      "open": 72.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-09"
+    },
+    {
+      "clsPx": 70.77,
+      "hiPx": 74.38,
+      "loPx": 69.86,
+      "open": 73.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-10"
+    },
+    {
+      "clsPx": 69.77,
+      "hiPx": 71.87,
+      "loPx": 68.19,
+      "open": 71.67,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-11"
+    },
+    {
+      "clsPx": 70.0,
+      "hiPx": 70.91,
+      "loPx": 69.01,
+      "open": 70.85,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-12"
+    },
+    {
+      "clsPx": 68.48,
+      "hiPx": 70.0,
+      "loPx": 67.55,
+      "open": 70.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-16"
+    },
+    {
+      "clsPx": 69.86,
+      "hiPx": 69.96,
+      "loPx": 66.66,
+      "open": 68.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-17"
+    },
+    {
+      "clsPx": 74.23,
+      "hiPx": 74.8,
+      "loPx": 71.41,
+      "open": 72.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-18"
+    },
+    {
+      "clsPx": 78.58,
+      "hiPx": 78.97,
+      "loPx": 74.43,
+      "open": 75.07,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-19"
+    },
+    {
+      "clsPx": 77.11,
+      "hiPx": 79.94,
+      "loPx": 76.5,
+      "open": 78.58,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-22"
+    },
+    {
+      "clsPx": 76.35,
+      "hiPx": 77.59,
+      "loPx": 75.46,
+      "open": 77.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-23"
+    },
+    {
+      "clsPx": 75.74,
+      "hiPx": 77.67,
+      "loPx": 74.8,
+      "open": 77.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-24"
+    },
+    {
+      "clsPx": 73.91,
+      "hiPx": 79.65,
+      "loPx": 73.26,
+      "open": 76.49,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-25"
+    },
+    {
+      "clsPx": 71.17,
+      "hiPx": 73.89,
+      "loPx": 70.8,
+      "open": 73.14,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-26"
+    },
+    {
+      "clsPx": 72.93,
+      "hiPx": 72.95,
+      "loPx": 71.2,
+      "open": 72.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-29"
+    },
+    {
+      "clsPx": 71.97,
+      "hiPx": 74.15,
+      "loPx": 70.85,
+      "open": 73.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-30"
+    },
+    {
+      "clsPx": 70.67,
+      "hiPx": 72.54,
+      "loPx": 69.62,
+      "open": 70.66,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-01-31"
+    },
+    {
+      "clsPx": 70.52,
+      "hiPx": 72.55,
+      "loPx": 69.32,
+      "open": 71.87,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-01"
+    },
+    {
+      "clsPx": 71.0,
+      "hiPx": 71.95,
+      "loPx": 70.0,
+      "open": 71.1,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-02"
+    },
+    {
+      "clsPx": 73.27,
+      "hiPx": 74.28,
+      "loPx": 71.6,
+      "open": 71.99,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-05"
+    },
+    {
+      "clsPx": 72.98,
+      "hiPx": 75.45,
+      "loPx": 71.8,
+      "open": 75.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-06"
+    },
+    {
+      "clsPx": 77.01,
+      "hiPx": 77.71,
+      "loPx": 72.25,
+      "open": 73.07,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-07"
+    },
+    {
+      "clsPx": 113.89,
+      "hiPx": 126.58,
+      "loPx": 94.0,
+      "open": 94.41,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-08"
+    },
+    {
+      "clsPx": 115.21,
+      "hiPx": 117.82,
+      "loPx": 102.09,
+      "open": 105.99,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-09"
+    },
+    {
+      "clsPx": 148.97,
+      "hiPx": 164.0,
+      "loPx": 118.69,
+      "open": 120.16,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-12"
+    },
+    {
+      "clsPx": 119.98,
+      "hiPx": 137.5,
+      "loPx": 117.0,
+      "open": 128.12,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-13"
+    },
+    {
+      "clsPx": 126.4,
+      "hiPx": 134.84,
+      "loPx": 121.02,
+      "open": 133.81,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-14"
+    },
+    {
+      "clsPx": 133.68,
+      "hiPx": 135.0,
+      "loPx": 123.51,
+      "open": 131.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-15"
+    },
+    {
+      "clsPx": 128.34,
+      "hiPx": 135.98,
+      "loPx": 123.05,
+      "open": 129.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-16"
+    },
+    {
+      "clsPx": 121.77,
+      "hiPx": 123.8,
+      "loPx": 115.49,
+      "open": 123.78,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-20"
+    },
+    {
+      "clsPx": 123.39,
+      "hiPx": 125.5,
+      "loPx": 116.81,
+      "open": 117.76,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-21"
+    },
+    {
+      "clsPx": 128.53,
+      "hiPx": 138.5,
+      "loPx": 128.51,
+      "open": 132.87,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-22"
+    },
+    {
+      "clsPx": 133.34,
+      "hiPx": 136.0,
+      "loPx": 128.86,
+      "open": 129.1,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-23"
+    },
+    {
+      "clsPx": 146.2,
+      "hiPx": 149.92,
+      "loPx": 138.18,
+      "open": 139.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-26"
+    },
+    {
+      "clsPx": 137.95,
+      "hiPx": 147.33,
+      "loPx": 137.0,
+      "open": 144.9,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-27"
+    },
+    {
+      "clsPx": 133.86,
+      "hiPx": 136.29,
+      "loPx": 131.31,
+      "open": 136.15,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-28"
+    },
+    {
+      "clsPx": 141.04,
+      "hiPx": 141.22,
+      "loPx": 135.45,
+      "open": 136.28,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-02-29"
+    },
+    {
+      "clsPx": 141.62,
+      "hiPx": 144.98,
+      "loPx": 139.04,
+      "open": 141.48,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-01"
+    },
+    {
+      "clsPx": 138.01,
+      "hiPx": 148.48,
+      "loPx": 137.75,
+      "open": 145.39,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-04"
+    },
+    {
+      "clsPx": 134.07,
+      "hiPx": 136.37,
+      "loPx": 130.0,
+      "open": 135.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-05"
+    },
+    {
+      "clsPx": 136.99,
+      "hiPx": 139.34,
+      "loPx": 133.26,
+      "open": 138.09,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-06"
+    },
+    {
+      "clsPx": 140.85,
+      "hiPx": 146.54,
+      "loPx": 138.81,
+      "open": 140.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-07"
+    },
+    {
+      "clsPx": 131.48,
+      "hiPx": 142.9,
+      "loPx": 131.2,
+      "open": 139.69,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-08"
+    },
+    {
+      "clsPx": 126.74,
+      "hiPx": 130.74,
+      "loPx": 124.12,
+      "open": 126.6,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-11"
+    },
+    {
+      "clsPx": 129.5,
+      "hiPx": 129.99,
+      "loPx": 121.38,
+      "open": 125.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-12"
+    },
+    {
+      "clsPx": 131.27,
+      "hiPx": 132.7,
+      "loPx": 125.8,
+      "open": 129.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-13"
+    },
+    {
+      "clsPx": 130.96,
+      "hiPx": 136.29,
+      "loPx": 127.59,
+      "open": 130.13,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-14"
+    },
+    {
+      "clsPx": 126.97,
+      "hiPx": 134.2,
+      "loPx": 126.12,
+      "open": 128.71,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-15"
+    },
+    {
+      "clsPx": 129.75,
+      "hiPx": 132.8,
+      "loPx": 127.73,
+      "open": 128.17,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-18"
+    },
+    {
+      "clsPx": 124.59,
+      "hiPx": 127.1,
+      "loPx": 121.52,
+      "open": 125.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-19"
+    },
+    {
+      "clsPx": 131.33,
+      "hiPx": 131.98,
+      "loPx": 125.23,
+      "open": 126.53,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-20"
+    },
+    {
+      "clsPx": 133.6,
+      "hiPx": 137.0,
+      "loPx": 132.01,
+      "open": 134.7,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-21"
+    },
+    {
+      "clsPx": 134.15,
+      "hiPx": 136.1,
+      "loPx": 132.5,
+      "open": 133.81,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-22"
+    },
+    {
+      "clsPx": 138.31,
+      "hiPx": 143.75,
+      "loPx": 137.15,
+      "open": 137.15,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-25"
+    },
+    {
+      "clsPx": 127.96,
+      "hiPx": 145.0,
+      "loPx": 126.91,
+      "open": 141.1,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-26"
+    },
+    {
+      "clsPx": 125.62,
+      "hiPx": 130.86,
+      "loPx": 122.83,
+      "open": 130.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-27"
+    },
+    {
+      "clsPx": 124.99,
+      "hiPx": 128.32,
+      "loPx": 124.16,
+      "open": 125.68,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-03-28"
+    },
+    {
+      "clsPx": 126.91,
+      "hiPx": 128.73,
+      "loPx": 124.64,
+      "open": 126.36,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-01"
+    },
+    {
+      "clsPx": 124.28,
+      "hiPx": 125.63,
+      "loPx": 121.12,
+      "open": 125.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-02"
+    },
+    {
+      "clsPx": 125.31,
+      "hiPx": 125.98,
+      "loPx": 122.62,
+      "open": 123.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-03"
+    },
+    {
+      "clsPx": 122.01,
+      "hiPx": 127.98,
+      "loPx": 121.82,
+      "open": 126.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-04"
+    },
+    {
+      "clsPx": 124.82,
+      "hiPx": 125.72,
+      "loPx": 120.02,
+      "open": 122.6,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-05"
+    },
+    {
+      "clsPx": 129.25,
+      "hiPx": 130.5,
+      "loPx": 123.39,
+      "open": 124.82,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-08"
+    },
+    {
+      "clsPx": 126.81,
+      "hiPx": 135.41,
+      "loPx": 124.5,
+      "open": 133.51,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-09"
+    },
+    {
+      "clsPx": 125.18,
+      "hiPx": 127.6,
+      "loPx": 123.89,
+      "open": 124.99,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-10"
+    },
+    {
+      "clsPx": 131.13,
+      "hiPx": 131.2,
+      "loPx": 125.51,
+      "open": 126.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-11"
+    },
+    {
+      "clsPx": 126.33,
+      "hiPx": 130.34,
+      "loPx": 125.37,
+      "open": 128.99,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-12"
+    },
+    {
+      "clsPx": 122.32,
+      "hiPx": 126.87,
+      "loPx": 120.95,
+      "open": 126.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-15"
+    },
+    {
+      "clsPx": 122.22,
+      "hiPx": 124.24,
+      "loPx": 120.91,
+      "open": 122.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-16"
+    },
+    {
+      "clsPx": 107.56,
+      "hiPx": 122.68,
+      "loPx": 107.01,
+      "open": 121.87,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-17"
+    },
+    {
+      "clsPx": 104.92,
+      "hiPx": 107.3,
+      "loPx": 102.58,
+      "open": 106.32,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-18"
+    },
+    {
+      "clsPx": 87.19,
+      "hiPx": 103.01,
+      "loPx": 85.61,
+      "open": 100.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-19"
+    },
+    {
+      "clsPx": 93.11,
+      "hiPx": 94.32,
+      "loPx": 89.06,
+      "open": 89.94,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-22"
+    },
+    {
+      "clsPx": 96.04,
+      "hiPx": 98.37,
+      "loPx": 95.05,
+      "open": 97.32,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-23"
+    },
+    {
+      "clsPx": 99.88,
+      "hiPx": 103.75,
+      "loPx": 97.24,
+      "open": 102.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-24"
+    },
+    {
+      "clsPx": 97.93,
+      "hiPx": 99.67,
+      "loPx": 95.5,
+      "open": 96.05,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-25"
+    },
+    {
+      "clsPx": 101.95,
+      "hiPx": 102.3,
+      "loPx": 98.22,
+      "open": 101.4,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-26"
+    },
+    {
+      "clsPx": 103.24,
+      "hiPx": 103.4,
+      "loPx": 99.05,
+      "open": 102.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-29"
+    },
+    {
+      "clsPx": 101.21,
+      "hiPx": 105.19,
+      "loPx": 100.85,
+      "open": 103.02,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-04-30"
+    },
+    {
+      "clsPx": 95.29,
+      "hiPx": 100.6,
+      "loPx": 95.24,
+      "open": 99.98,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-01"
+    },
+    {
+      "clsPx": 98.0,
+      "hiPx": 100.3,
+      "loPx": 96.13,
+      "open": 98.99,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-02"
+    },
+    {
+      "clsPx": 101.7,
+      "hiPx": 104.36,
+      "loPx": 100.45,
+      "open": 101.62,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-03"
+    },
+    {
+      "clsPx": 106.98,
+      "hiPx": 107.92,
+      "loPx": 103.6,
+      "open": 103.82,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-06"
+    },
+    {
+      "clsPx": 107.8,
+      "hiPx": 109.69,
+      "loPx": 106.54,
+      "open": 109.3,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-07"
+    },
+    {
+      "clsPx": 106.07,
+      "hiPx": 109.94,
+      "loPx": 104.65,
+      "open": 107.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-08"
+    },
+    {
+      "clsPx": 103.59,
+      "hiPx": 106.9,
+      "loPx": 97.76,
+      "open": 99.27,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-09"
+    },
+    {
+      "clsPx": 108.84,
+      "hiPx": 110.37,
+      "loPx": 106.2,
+      "open": 106.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-10"
+    },
+    {
+      "clsPx": 117.23,
+      "hiPx": 117.58,
+      "loPx": 110.86,
+      "open": 114.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-13"
+    },
+    {
+      "clsPx": 116.65,
+      "hiPx": 117.41,
+      "loPx": 114.35,
+      "open": 115.82,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-14"
+    },
+    {
+      "clsPx": 113.67,
+      "hiPx": 118.5,
+      "loPx": 112.52,
+      "open": 118.4,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-15"
+    },
+    {
+      "clsPx": 114.27,
+      "hiPx": 116.87,
+      "loPx": 113.89,
+      "open": 115.69,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-16"
+    },
+    {
+      "clsPx": 110.35,
+      "hiPx": 115.68,
+      "loPx": 109.61,
+      "open": 115.6,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-17"
+    },
+    {
+      "clsPx": 110.46,
+      "hiPx": 111.33,
+      "loPx": 108.69,
+      "open": 111.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-20"
+    },
+    {
+      "clsPx": 114.77,
+      "hiPx": 115.78,
+      "loPx": 109.5,
+      "open": 110.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-21"
+    },
+    {
+      "clsPx": 112.43,
+      "hiPx": 117.36,
+      "loPx": 111.65,
+      "open": 115.01,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-22"
+    },
+    {
+      "clsPx": 112.53,
+      "hiPx": 117.33,
+      "loPx": 110.38,
+      "open": 117.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-23"
+    },
+    {
+      "clsPx": 114.64,
+      "hiPx": 115.56,
+      "loPx": 111.6,
+      "open": 112.77,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-24"
+    },
+    {
+      "clsPx": 124.94,
+      "hiPx": 125.98,
+      "loPx": 115.32,
+      "open": 115.46,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-28"
+    },
+    {
+      "clsPx": 120.65,
+      "hiPx": 123.7,
+      "loPx": 119.05,
+      "open": 123.7,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-29"
+    },
+    {
+      "clsPx": 120.73,
+      "hiPx": 123.5,
+      "loPx": 117.77,
+      "open": 121.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-30"
+    },
+    {
+      "clsPx": 120.52,
+      "hiPx": 123.88,
+      "loPx": 116.01,
+      "open": 119.92,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-05-31"
+    },
+    {
+      "clsPx": 127.12,
+      "hiPx": 129.85,
+      "loPx": 122.54,
+      "open": 125.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-03"
+    },
+    {
+      "clsPx": 125.86,
+      "hiPx": 127.67,
+      "loPx": 122.89,
+      "open": 126.88,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-04"
+    },
+    {
+      "clsPx": 136.67,
+      "hiPx": 136.85,
+      "loPx": 126.72,
+      "open": 126.83,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-05"
+    },
+    {
+      "clsPx": 137.13,
+      "hiPx": 138.41,
+      "loPx": 132.41,
+      "open": 134.79,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-06"
+    },
+    {
+      "clsPx": 136.57,
+      "hiPx": 140.97,
+      "loPx": 135.31,
+      "open": 136.93,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-07"
+    },
+    {
+      "clsPx": 139.91,
+      "hiPx": 142.09,
+      "loPx": 132.5,
+      "open": 134.79,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-10"
+    },
+    {
+      "clsPx": 143.92,
+      "hiPx": 147.5,
+      "loPx": 139.0,
+      "open": 139.08,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-11"
+    },
+    {
+      "clsPx": 155.59,
+      "hiPx": 158.71,
+      "loPx": 145.2,
+      "open": 146.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-12"
+    },
+    {
+      "clsPx": 158.05,
+      "hiPx": 161.49,
+      "loPx": 150.67,
+      "open": 157.34,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-13"
+    },
+    {
+      "clsPx": 157.89,
+      "hiPx": 167.69,
+      "loPx": 153.5,
+      "open": 159.9,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-14"
+    },
+    {
+      "clsPx": 160.29,
+      "hiPx": 162.7,
+      "loPx": 153.62,
+      "open": 160.17,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-17"
+    },
+    {
+      "clsPx": 174.13,
+      "hiPx": 177.31,
+      "loPx": 159.32,
+      "open": 160.03,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-18"
+    },
+    {
+      "clsPx": 160.77,
+      "hiPx": 173.85,
+      "loPx": 156.0,
+      "open": 173.13,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-20"
+    },
+    {
+      "clsPx": 160.3,
+      "hiPx": 162.2,
+      "loPx": 151.37,
+      "open": 156.56,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-21"
+    },
+    {
+      "clsPx": 151.07,
+      "hiPx": 157.77,
+      "loPx": 150.6,
+      "open": 156.87,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-24"
+    },
+    {
+      "clsPx": 160.61,
+      "hiPx": 161.95,
+      "loPx": 149.5,
+      "open": 151.57,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-25"
+    },
+    {
+      "clsPx": 164.72,
+      "hiPx": 166.8,
+      "loPx": 159.51,
+      "open": 161.63,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-26"
+    },
+    {
+      "clsPx": 166.93,
+      "hiPx": 168.82,
+      "loPx": 160.79,
+      "open": 162.56,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-27"
+    },
+    {
+      "clsPx": 163.62,
+      "hiPx": 170.88,
+      "loPx": 162.33,
+      "open": 167.25,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-06-28"
+    },
+    {
+      "clsPx": 158.83,
+      "hiPx": 163.85,
+      "loPx": 152.55,
+      "open": 163.43,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-01"
+    },
+    {
+      "clsPx": 163.46,
+      "hiPx": 163.62,
+      "loPx": 155.27,
+      "open": 156.85,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-02"
+    },
+    {
+      "clsPx": 168.24,
+      "hiPx": 170.66,
+      "loPx": 159.31,
+      "open": 162.42,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-03"
+    },
+    {
+      "clsPx": 181.19,
+      "hiPx": 182.65,
+      "loPx": 169.6,
+      "open": 172.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-05"
+    },
+    {
+      "clsPx": 184.7,
+      "hiPx": 186.38,
+      "loPx": 179.51,
+      "open": 181.04,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-08"
+    },
+    {
+      "clsPx": 182.28,
+      "hiPx": 188.75,
+      "loPx": 179.11,
+      "open": 186.1,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-09"
+    },
+    {
+      "clsPx": 186.46,
+      "hiPx": 187.47,
+      "loPx": 178.5,
+      "open": 183.39,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-10"
+    },
+    {
+      "clsPx": 173.19,
+      "hiPx": 187.28,
+      "loPx": 173.03,
+      "open": 186.84,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-11"
+    },
+    {
+      "clsPx": 181.18,
+      "hiPx": 183.05,
+      "loPx": 173.5,
+      "open": 174.07,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-12"
+    },
+    {
+      "clsPx": 177.53,
+      "hiPx": 183.74,
+      "loPx": 176.86,
+      "open": 182.11,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-15"
+    },
+    {
+      "clsPx": 178.77,
+      "hiPx": 180.95,
+      "loPx": 172.54,
+      "open": 180.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-16"
+    },
+    {
+      "clsPx": 161.7,
+      "hiPx": 172.36,
+      "loPx": 161.53,
+      "open": 169.98,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-17"
+    },
+    {
+      "clsPx": 158.33,
+      "hiPx": 166.66,
+      "loPx": 152.22,
+      "open": 165.85,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-18"
+    },
+    {
+      "clsPx": 163.4,
+      "hiPx": 165.05,
+      "loPx": 160.63,
+      "open": 162.85,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-19"
+    },
+    {
+      "clsPx": 163.55,
+      "hiPx": 168.79,
+      "loPx": 162.68,
+      "open": 165.47,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-22"
+    },
+    {
+      "clsPx": 171.7,
+      "hiPx": 173.23,
+      "loPx": 161.87,
+      "open": 163.24,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-23"
+    },
+    {
+      "clsPx": 157.68,
+      "hiPx": 167.15,
+      "loPx": 157.18,
+      "open": 167.15,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-24"
+    },
+    {
+      "clsPx": 149.14,
+      "hiPx": 155.63,
+      "loPx": 140.0,
+      "open": 151.68,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-25"
+    },
+    {
+      "clsPx": 149.0,
+      "hiPx": 155.51,
+      "loPx": 145.61,
+      "open": 155.36,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-26"
+    },
+    {
+      "clsPx": 141.44,
+      "hiPx": 149.95,
+      "loPx": 138.71,
+      "open": 146.38,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-29"
+    },
+    {
+      "clsPx": 132.96,
+      "hiPx": 142.07,
+      "loPx": 129.1,
+      "open": 140.73,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-30"
+    },
+    {
+      "clsPx": 144.17,
+      "hiPx": 145.48,
+      "loPx": 138.94,
+      "open": 143.41,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-07-31"
+    },
+    {
+      "clsPx": 121.51,
+      "hiPx": 134.87,
+      "loPx": 118.18,
+      "open": 128.71,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-01"
+    },
+    {
+      "clsPx": 113.45,
+      "hiPx": 115.63,
+      "loPx": 108.73,
+      "open": 114.74,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-02"
+    },
+    {
+      "clsPx": 110.45,
+      "hiPx": 113.5,
+      "loPx": 96.66,
+      "open": 98.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-05"
+    },
+    {
+      "clsPx": 113.39,
+      "hiPx": 117.97,
+      "loPx": 109.5,
+      "open": 115.53,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-06"
+    },
+    {
+      "clsPx": 107.09,
+      "hiPx": 120.09,
+      "loPx": 106.53,
+      "open": 117.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-07"
+    },
+    {
+      "clsPx": 118.43,
+      "hiPx": 118.68,
+      "loPx": 107.94,
+      "open": 111.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-08"
+    },
+    {
+      "clsPx": 117.0,
+      "hiPx": 120.29,
+      "loPx": 115.77,
+      "open": 118.98,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-09"
+    },
+    {
+      "clsPx": 117.13,
+      "hiPx": 122.0,
+      "loPx": 115.32,
+      "open": 117.66,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-12"
+    },
+    {
+      "clsPx": 123.79,
+      "hiPx": 125.7,
+      "loPx": 118.3,
+      "open": 119.7,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-13"
+    },
+    {
+      "clsPx": 125.92,
+      "hiPx": 130.7,
+      "loPx": 123.79,
+      "open": 128.82,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-14"
+    },
+    {
+      "clsPx": 130.44,
+      "hiPx": 132.05,
+      "loPx": 128.43,
+      "open": 129.76,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-15"
+    },
+    {
+      "clsPx": 130.3,
+      "hiPx": 133.1,
+      "loPx": 129.8,
+      "open": 131.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-16"
+    },
+    {
+      "clsPx": 132.31,
+      "hiPx": 132.44,
+      "loPx": 126.29,
+      "open": 130.62,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-19"
+    },
+    {
+      "clsPx": 129.95,
+      "hiPx": 135.6,
+      "loPx": 128.02,
+      "open": 132.21,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-20"
+    },
+    {
+      "clsPx": 131.2,
+      "hiPx": 131.46,
+      "loPx": 127.79,
+      "open": 131.41,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-21"
+    },
+    {
+      "clsPx": 129.72,
+      "hiPx": 133.63,
+      "loPx": 128.55,
+      "open": 132.43,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-22"
+    },
+    {
+      "clsPx": 135.63,
+      "hiPx": 138.05,
+      "loPx": 129.74,
+      "open": 130.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-23"
+    },
+    {
+      "clsPx": 128.9,
+      "hiPx": 135.3,
+      "loPx": 127.36,
+      "open": 134.51,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-26"
+    },
+    {
+      "clsPx": 131.2,
+      "hiPx": 131.62,
+      "loPx": 125.49,
+      "open": 127.46,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-27"
+    },
+    {
+      "clsPx": 125.32,
+      "hiPx": 131.3,
+      "loPx": 121.88,
+      "open": 130.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-28"
+    },
+    {
+      "clsPx": 131.93,
+      "hiPx": 134.94,
+      "loPx": 125.37,
+      "open": 125.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-29"
+    },
+    {
+      "clsPx": 132.88,
+      "hiPx": 137.1,
+      "loPx": 131.84,
+      "open": 133.32,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-08-30"
+    },
+    {
+      "clsPx": 123.74,
+      "hiPx": 130.39,
+      "loPx": 122.04,
+      "open": 129.87,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-03"
+    },
+    {
+      "clsPx": 120.95,
+      "hiPx": 123.4,
+      "loPx": 117.42,
+      "open": 121.7,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-04"
+    },
+    {
+      "clsPx": 123.09,
+      "hiPx": 124.47,
+      "loPx": 118.63,
+      "open": 118.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-05"
+    },
+    {
+      "clsPx": 117.29,
+      "hiPx": 122.17,
+      "loPx": 114.91,
+      "open": 122.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-06"
+    },
+    {
+      "clsPx": 125.54,
+      "hiPx": 126.24,
+      "loPx": 120.08,
+      "open": 122.64,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-09"
+    },
+    {
+      "clsPx": 127.22,
+      "hiPx": 128.47,
+      "loPx": 123.02,
+      "open": 128.04,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-10"
+    },
+    {
+      "clsPx": 140.32,
+      "hiPx": 140.63,
+      "loPx": 128.18,
+      "open": 129.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-11"
+    },
+    {
+      "clsPx": 139.18,
+      "hiPx": 141.38,
+      "loPx": 135.7,
+      "open": 136.32,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-12"
+    },
+    {
+      "clsPx": 147.37,
+      "hiPx": 149.93,
+      "loPx": 141.37,
+      "open": 142.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-13"
+    },
+    {
+      "clsPx": 138.4,
+      "hiPx": 143.76,
+      "loPx": 136.55,
+      "open": 143.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-16"
+    },
+    {
+      "clsPx": 136.84,
+      "hiPx": 142.5,
+      "loPx": 136.28,
+      "open": 140.4,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-17"
+    },
+    {
+      "clsPx": 138.36,
+      "hiPx": 143.1,
+      "loPx": 136.7,
+      "open": 137.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-18"
+    },
+    {
+      "clsPx": 140.59,
+      "hiPx": 147.42,
+      "loPx": 140.14,
+      "open": 144.99,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-19"
+    },
+    {
+      "clsPx": 138.9,
+      "hiPx": 140.85,
+      "loPx": 137.41,
+      "open": 140.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-20"
+    },
+    {
+      "clsPx": 141.72,
+      "hiPx": 143.6,
+      "loPx": 139.8,
+      "open": 139.96,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-23"
+    },
+    {
+      "clsPx": 143.3,
+      "hiPx": 144.7,
+      "loPx": 139.72,
+      "open": 142.28,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-24"
+    },
+    {
+      "clsPx": 146.43,
+      "hiPx": 149.74,
+      "loPx": 143.16,
+      "open": 143.3,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-25"
+    },
+    {
+      "clsPx": 149.16,
+      "hiPx": 152.39,
+      "loPx": 144.0,
+      "open": 152.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-26"
+    },
+    {
+      "clsPx": 145.58,
+      "hiPx": 150.75,
+      "loPx": 144.3,
+      "open": 150.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-27"
+    },
+    {
+      "clsPx": 143.01,
+      "hiPx": 145.0,
+      "loPx": 140.62,
+      "open": 140.96,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-09-30"
+    },
+    {
+      "clsPx": 136.08,
+      "hiPx": 144.39,
+      "loPx": 135.85,
+      "open": 142.84,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-01"
+    },
+    {
+      "clsPx": 137.03,
+      "hiPx": 139.3,
+      "loPx": 132.8,
+      "open": 136.61,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-02"
+    },
+    {
+      "clsPx": 138.24,
+      "hiPx": 141.44,
+      "loPx": 136.0,
+      "open": 136.23,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-03"
+    },
+    {
+      "clsPx": 140.55,
+      "hiPx": 142.0,
+      "loPx": 137.6,
+      "open": 141.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-04"
+    },
+    {
+      "clsPx": 141.34,
+      "hiPx": 144.89,
+      "loPx": 139.11,
+      "open": 139.48,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-07"
+    },
+    {
+      "clsPx": 143.6,
+      "hiPx": 144.25,
+      "loPx": 140.88,
+      "open": 141.56,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-08"
+    },
+    {
+      "clsPx": 148.43,
+      "hiPx": 148.64,
+      "loPx": 142.15,
+      "open": 144.77,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-09"
+    },
+    {
+      "clsPx": 149.33,
+      "hiPx": 152.0,
+      "loPx": 145.02,
+      "open": 146.24,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-10"
+    },
+    {
+      "clsPx": 151.46,
+      "hiPx": 152.3,
+      "loPx": 148.3,
+      "open": 149.1,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-11"
+    },
+    {
+      "clsPx": 161.82,
+      "hiPx": 164.16,
+      "loPx": 153.1,
+      "open": 153.1,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-14"
+    },
+    {
+      "clsPx": 150.67,
+      "hiPx": 160.62,
+      "loPx": 147.0,
+      "open": 160.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-15"
+    },
+    {
+      "clsPx": 152.5,
+      "hiPx": 155.2,
+      "loPx": 151.29,
+      "open": 154.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-16"
+    },
+    {
+      "clsPx": 154.6,
+      "hiPx": 158.8,
+      "loPx": 154.09,
+      "open": 157.71,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-17"
+    },
+    {
+      "clsPx": 153.03,
+      "hiPx": 155.74,
+      "loPx": 151.96,
+      "open": 155.57,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-18"
+    },
+    {
+      "clsPx": 152.35,
+      "hiPx": 154.11,
+      "loPx": 149.4,
+      "open": 152.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-21"
+    },
+    {
+      "clsPx": 152.58,
+      "hiPx": 152.94,
+      "loPx": 149.83,
+      "open": 150.46,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-22"
+    },
+    {
+      "clsPx": 142.41,
+      "hiPx": 148.44,
+      "loPx": 140.7,
+      "open": 147.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-23"
+    },
+    {
+      "clsPx": 141.04,
+      "hiPx": 143.59,
+      "loPx": 138.4,
+      "open": 143.3,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-24"
+    },
+    {
+      "clsPx": 143.75,
+      "hiPx": 145.56,
+      "loPx": 141.5,
+      "open": 142.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-25"
+    },
+    {
+      "clsPx": 150.02,
+      "hiPx": 152.58,
+      "loPx": 144.2,
+      "open": 145.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-28"
+    },
+    {
+      "clsPx": 157.17,
+      "hiPx": 157.69,
+      "loPx": 148.28,
+      "open": 150.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-29"
+    },
+    {
+      "clsPx": 154.4,
+      "hiPx": 155.48,
+      "loPx": 150.48,
+      "open": 152.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-30"
+    },
+    {
+      "clsPx": 141.3,
+      "hiPx": 146.23,
+      "loPx": 140.25,
+      "open": 145.26,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-10-31"
+    },
+    {
+      "clsPx": 141.48,
+      "hiPx": 146.78,
+      "loPx": 140.62,
+      "open": 144.17,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-01"
+    },
+    {
+      "clsPx": 137.53,
+      "hiPx": 142.5,
+      "loPx": 137.29,
+      "open": 140.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-04"
+    },
+    {
+      "clsPx": 140.65,
+      "hiPx": 141.3,
+      "loPx": 138.33,
+      "open": 139.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-05"
+    },
+    {
+      "clsPx": 144.68,
+      "hiPx": 146.06,
+      "loPx": 141.01,
+      "open": 143.73,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-06"
+    },
+    {
+      "clsPx": 150.65,
+      "hiPx": 154.65,
+      "loPx": 139.51,
+      "open": 140.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-07"
+    },
+    {
+      "clsPx": 147.48,
+      "hiPx": 149.12,
+      "loPx": 144.42,
+      "open": 148.7,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-08"
+    },
+    {
+      "clsPx": 141.96,
+      "hiPx": 145.95,
+      "loPx": 138.7,
+      "open": 145.95,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-11"
+    },
+    {
+      "clsPx": 139.92,
+      "hiPx": 143.12,
+      "loPx": 137.3,
+      "open": 141.52,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-12"
+    },
+    {
+      "clsPx": 135.09,
+      "hiPx": 140.54,
+      "loPx": 135.07,
+      "open": 139.57,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-13"
+    },
+    {
+      "clsPx": 136.35,
+      "hiPx": 138.79,
+      "loPx": 134.8,
+      "open": 137.25,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-14"
+    },
+    {
+      "clsPx": 128.73,
+      "hiPx": 133.3,
+      "loPx": 126.81,
+      "open": 133.17,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-15"
+    },
+    {
+      "clsPx": 128.66,
+      "hiPx": 130.11,
+      "loPx": 126.36,
+      "open": 127.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-18"
+    },
+    {
+      "clsPx": 133.06,
+      "hiPx": 133.7,
+      "loPx": 127.89,
+      "open": 128.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-19"
+    },
+    {
+      "clsPx": 133.7,
+      "hiPx": 133.77,
+      "loPx": 130.08,
+      "open": 131.02,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-20"
+    },
+    {
+      "clsPx": 133.14,
+      "hiPx": 138.2,
+      "loPx": 131.13,
+      "open": 136.25,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-21"
+    },
+    {
+      "clsPx": 138.4,
+      "hiPx": 136.27,
+      "loPx": 131.45,
+      "open": 132.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-22"
+    },
+    {
+      "clsPx": 139.68,
+      "hiPx": 142.24,
+      "loPx": 138.09,
+      "open": 138.67,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-25"
+    },
+    {
+      "clsPx": 136.72,
+      "hiPx": 140.2,
+      "loPx": 135.6,
+      "open": 139.51,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-26"
+    },
+    {
+      "clsPx": 133.37,
+      "hiPx": 135.35,
+      "loPx": 129.6,
+      "open": 134.85,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-27"
+    },
+    {
+      "clsPx": 134.29,
+      "hiPx": 137.28,
+      "loPx": 132.59,
+      "open": 133.04,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-11-29"
+    },
+    {
+      "clsPx": 140.34,
+      "hiPx": 141.4,
+      "loPx": 134.2,
+      "open": 134.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-02"
+    },
+    {
+      "clsPx": 140.38,
+      "hiPx": 142.3,
+      "loPx": 139.44,
+      "open": 139.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-03"
+    },
+    {
+      "clsPx": 141.3,
+      "hiPx": 144.54,
+      "loPx": 141.06,
+      "open": 142.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-04"
+    },
+    {
+      "clsPx": 137.95,
+      "hiPx": 142.46,
+      "loPx": 137.56,
+      "open": 140.86,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-05"
+    },
+    {
+      "clsPx": 140.89,
+      "hiPx": 142.42,
+      "loPx": 136.63,
+      "open": 138.15,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-06"
+    },
+    {
+      "clsPx": 139.64,
+      "hiPx": 143.2,
+      "loPx": 136.26,
+      "open": 140.15,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-09"
+    },
+    {
+      "clsPx": 137.29,
+      "hiPx": 140.72,
+      "loPx": 135.83,
+      "open": 138.65,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-10"
+    },
+    {
+      "clsPx": 143.16,
+      "hiPx": 144.31,
+      "loPx": 136.76,
+      "open": 137.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-11"
+    },
+    {
+      "clsPx": 148.0,
+      "hiPx": 150.0,
+      "loPx": 140.7,
+      "open": 142.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-12"
+    },
+    {
+      "clsPx": 151.91,
+      "hiPx": 156.4,
+      "loPx": 150.95,
+      "open": 151.51,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-13"
+    },
+    {
+      "clsPx": 145.0,
+      "hiPx": 153.0,
+      "loPx": 142.04,
+      "open": 153.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-16"
+    },
+    {
+      "clsPx": 142.8,
+      "hiPx": 144.0,
+      "loPx": 137.82,
+      "open": 143.61,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-17"
+    },
+    {
+      "clsPx": 136.56,
+      "hiPx": 146.64,
+      "loPx": 134.35,
+      "open": 143.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-18"
+    },
+    {
+      "clsPx": 132.1,
+      "hiPx": 140.21,
+      "loPx": 131.95,
+      "open": 137.01,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-19"
+    },
+    {
+      "clsPx": 132.15,
+      "hiPx": 135.79,
+      "loPx": 128.3,
+      "open": 129.66,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-20"
+    },
+    {
+      "clsPx": 126.87,
+      "hiPx": 130.25,
+      "loPx": 123.26,
+      "open": 129.89,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-23"
+    },
+    {
+      "clsPx": 131.79,
+      "hiPx": 133.11,
+      "loPx": 127.2,
+      "open": 127.46,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-24"
+    },
+    {
+      "clsPx": 129.69,
+      "hiPx": 133.3,
+      "loPx": 129.63,
+      "open": 130.9,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-26"
+    },
+    {
+      "clsPx": 129.2,
+      "hiPx": 130.26,
+      "loPx": 126.7,
+      "open": 128.99,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-27"
+    },
+    {
+      "clsPx": 125.91,
+      "hiPx": 127.71,
+      "loPx": 124.82,
+      "open": 126.65,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-30"
+    },
+    {
+      "clsPx": 123.36,
+      "hiPx": 126.54,
+      "loPx": 123.11,
+      "open": 125.52,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2024-12-31"
+    },
+    {
+      "clsPx": 128.2,
+      "hiPx": 129.4,
+      "loPx": 125.0,
+      "open": 125.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-02"
+    },
+    {
+      "clsPx": 141.08,
+      "hiPx": 141.45,
+      "loPx": 129.51,
+      "open": 129.64,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-03"
+    },
+    {
+      "clsPx": 147.41,
+      "hiPx": 150.14,
+      "loPx": 142.79,
+      "open": 142.79,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-06"
+    },
+    {
+      "clsPx": 144.38,
+      "hiPx": 148.45,
+      "loPx": 140.17,
+      "open": 147.84,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-07"
+    },
+    {
+      "clsPx": 145.2,
+      "hiPx": 148.25,
+      "loPx": 142.23,
+      "open": 142.34,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-08"
+    },
+    {
+      "clsPx": 140.49,
+      "hiPx": 141.88,
+      "loPx": 138.02,
+      "open": 140.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-10"
+    },
+    {
+      "clsPx": 137.07,
+      "hiPx": 138.02,
+      "loPx": 134.63,
+      "open": 137.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-13"
+    },
+    {
+      "clsPx": 140.06,
+      "hiPx": 143.13,
+      "loPx": 138.05,
+      "open": 139.79,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-14"
+    },
+    {
+      "clsPx": 147.4,
+      "hiPx": 148.25,
+      "loPx": 142.83,
+      "open": 143.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-15"
+    },
+    {
+      "clsPx": 147.52,
+      "hiPx": 150.01,
+      "loPx": 144.23,
+      "open": 148.24,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-16"
+    },
+    {
+      "clsPx": 149.26,
+      "hiPx": 151.6,
+      "loPx": 147.77,
+      "open": 149.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-17"
+    },
+    {
+      "clsPx": 155.2,
+      "hiPx": 156.97,
+      "loPx": 147.01,
+      "open": 149.85,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-21"
+    },
+    {
+      "clsPx": 179.93,
+      "hiPx": 182.88,
+      "loPx": 159.95,
+      "open": 160.37,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-22"
+    },
+    {
+      "clsPx": 166.56,
+      "hiPx": 170.39,
+      "loPx": 162.5,
+      "open": 170.39,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-23"
+    },
+    {
+      "clsPx": 162.52,
+      "hiPx": 168.73,
+      "loPx": 162.45,
+      "open": 166.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-24"
+    },
+    {
+      "clsPx": 145.96,
+      "hiPx": 152.27,
+      "loPx": 142.32,
+      "open": 148.9,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-27"
+    },
+    {
+      "clsPx": 149.47,
+      "hiPx": 150.5,
+      "loPx": 145.96,
+      "open": 148.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-28"
+    },
+    {
+      "clsPx": 147.6,
+      "hiPx": 151.75,
+      "loPx": 145.21,
+      "open": 150.66,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-29"
+    },
+    {
+      "clsPx": 153.23,
+      "hiPx": 154.88,
+      "loPx": 149.5,
+      "open": 150.3,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-30"
+    },
+    {
+      "clsPx": 159.55,
+      "hiPx": 162.96,
+      "loPx": 153.55,
+      "open": 154.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-01-31"
+    },
+    {
+      "clsPx": 155.65,
+      "hiPx": 159.36,
+      "loPx": 152.0,
+      "open": 153.55,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-03"
+    },
+    {
+      "clsPx": 162.2,
+      "hiPx": 163.65,
+      "loPx": 155.8,
+      "open": 157.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-04"
+    },
+    {
+      "clsPx": 173.26,
+      "hiPx": 173.95,
+      "loPx": 162.5,
+      "open": 162.94,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-05"
+    },
+    {
+      "clsPx": 167.47,
+      "hiPx": 170.45,
+      "loPx": 158.7,
+      "open": 162.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-06"
+    },
+    {
+      "clsPx": 162.51,
+      "hiPx": 170.74,
+      "loPx": 160.87,
+      "open": 166.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-07"
+    },
+    {
+      "clsPx": 160.84,
+      "hiPx": 163.4,
+      "loPx": 158.58,
+      "open": 162.96,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-10"
+    },
+    {
+      "clsPx": 157.74,
+      "hiPx": 163.11,
+      "loPx": 157.29,
+      "open": 160.07,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-11"
+    },
+    {
+      "clsPx": 155.41,
+      "hiPx": 157.9,
+      "loPx": 154.01,
+      "open": 155.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-12"
+    },
+    {
+      "clsPx": 164.83,
+      "hiPx": 168.39,
+      "loPx": 153.8,
+      "open": 154.97,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-13"
+    },
+    {
+      "clsPx": 159.54,
+      "hiPx": 161.34,
+      "loPx": 156.12,
+      "open": 160.16,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-14"
+    },
+    {
+      "clsPx": 160.32,
+      "hiPx": 161.15,
+      "loPx": 155.65,
+      "open": 160.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-18"
+    },
+    {
+      "clsPx": 154.36,
+      "hiPx": 160.94,
+      "loPx": 152.29,
+      "open": 157.56,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-19"
+    },
+    {
+      "clsPx": 150.85,
+      "hiPx": 154.05,
+      "loPx": 147.53,
+      "open": 153.2,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-20"
+    },
+    {
+      "clsPx": 144.84,
+      "hiPx": 151.99,
+      "loPx": 143.8,
+      "open": 151.24,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-21"
+    },
+    {
+      "clsPx": 140.53,
+      "hiPx": 145.61,
+      "loPx": 138.05,
+      "open": 145.05,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-24"
+    },
+    {
+      "clsPx": 136.7,
+      "hiPx": 139.5,
+      "loPx": 133.16,
+      "open": 139.32,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-25"
+    },
+    {
+      "clsPx": 138.97,
+      "hiPx": 141.57,
+      "loPx": 137.91,
+      "open": 139.43,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-26"
+    },
+    {
+      "clsPx": 130.34,
+      "hiPx": 144.41,
+      "loPx": 130.15,
+      "open": 142.01,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-27"
+    },
+    {
+      "clsPx": 131.69,
+      "hiPx": 133.98,
+      "loPx": 127.43,
+      "open": 129.3,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-02-28"
+    },
+    {
+      "clsPx": 121.1,
+      "hiPx": 133.94,
+      "loPx": 120.07,
+      "open": 133.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-03"
+    },
+    {
+      "clsPx": 122.49,
+      "hiPx": 125.91,
+      "loPx": 117.89,
+      "open": 121.91,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-04"
+    },
+    {
+      "clsPx": 124.78,
+      "hiPx": 125.49,
+      "loPx": 120.36,
+      "open": 124.63,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-05"
+    },
+    {
+      "clsPx": 117.92,
+      "hiPx": 123.4,
+      "loPx": 117.75,
+      "open": 120.7,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-06"
+    },
+    {
+      "clsPx": 125.55,
+      "hiPx": 127.58,
+      "loPx": 117.52,
+      "open": 118.52,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-07"
+    },
+    {
+      "clsPx": 116.38,
+      "hiPx": 121.8,
+      "loPx": 114.38,
+      "open": 120.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-10"
+    },
+    {
+      "clsPx": 111.49,
+      "hiPx": 118.5,
+      "loPx": 110.25,
+      "open": 116.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-11"
+    },
+    {
+      "clsPx": 112.7,
+      "hiPx": 117.98,
+      "loPx": 112.0,
+      "open": 116.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-12"
+    },
+    {
+      "clsPx": 112.05,
+      "hiPx": 114.78,
+      "loPx": 109.9,
+      "open": 114.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-13"
+    },
+    {
+      "clsPx": 117.94,
+      "hiPx": 118.62,
+      "loPx": 115.21,
+      "open": 115.79,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-14"
+    },
+    {
+      "clsPx": 121.37,
+      "hiPx": 123.7,
+      "loPx": 118.05,
+      "open": 118.06,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-17"
+    },
+    {
+      "clsPx": 119.72,
+      "hiPx": 120.65,
+      "loPx": 116.36,
+      "open": 120.56,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-18"
+    },
+    {
+      "clsPx": 117.91,
+      "hiPx": 120.49,
+      "loPx": 116.24,
+      "open": 119.44,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-19"
+    },
+    {
+      "clsPx": 119.07,
+      "hiPx": 120.44,
+      "loPx": 115.81,
+      "open": 116.82,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-20"
+    },
+    {
+      "clsPx": 119.07,
+      "hiPx": 119.43,
+      "loPx": 115.5,
+      "open": 116.38,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-21"
+    },
+    {
+      "clsPx": 124.85,
+      "hiPx": 126.27,
+      "loPx": 122.0,
+      "open": 122.06,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-24"
+    },
+    {
+      "clsPx": 124.28,
+      "hiPx": 125.5,
+      "loPx": 123.1,
+      "open": 124.92,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-25"
+    },
+    {
+      "clsPx": 114.93,
+      "hiPx": 123.45,
+      "loPx": 114.17,
+      "open": 123.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-26"
+    },
+    {
+      "clsPx": 112.47,
+      "hiPx": 114.04,
+      "loPx": 109.25,
+      "open": 114.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-27"
+    },
+    {
+      "clsPx": 107.8,
+      "hiPx": 113.18,
+      "loPx": 106.73,
+      "open": 111.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-28"
+    },
+    {
+      "clsPx": 106.79,
+      "hiPx": 106.93,
+      "loPx": 101.36,
+      "open": 104.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-03-31"
+    },
+    {
+      "clsPx": 106.98,
+      "hiPx": 108.47,
+      "loPx": 103.58,
+      "open": 105.72,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-01"
+    },
+    {
+      "clsPx": 108.14,
+      "hiPx": 110.13,
+      "loPx": 104.38,
+      "open": 104.38,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-02"
+    },
+    {
+      "clsPx": 97.72,
+      "hiPx": 103.24,
+      "loPx": 97.33,
+      "open": 101.16,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-03"
+    },
+    {
+      "clsPx": 87.71,
+      "hiPx": 95.38,
+      "loPx": 84.39,
+      "open": 91.65,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-04"
+    },
+    {
+      "clsPx": 88.63,
+      "hiPx": 94.14,
+      "loPx": 80.0,
+      "open": 80.92,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-07"
+    },
+    {
+      "clsPx": 85.82,
+      "hiPx": 96.55,
+      "loPx": 84.12,
+      "open": 94.38,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-08"
+    },
+    {
+      "clsPx": 106.59,
+      "hiPx": 107.94,
+      "loPx": 85.19,
+      "open": 85.61,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-09"
+    },
+    {
+      "clsPx": 100.46,
+      "hiPx": 102.0,
+      "loPx": 95.35,
+      "open": 98.9,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-10"
+    },
+    {
+      "clsPx": 103.99,
+      "hiPx": 105.67,
+      "loPx": 98.8,
+      "open": 100.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-11"
+    },
+    {
+      "clsPx": 105.06,
+      "hiPx": 109.46,
+      "loPx": 102.86,
+      "open": 108.21,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-14"
+    },
+    {
+      "clsPx": 103.8,
+      "hiPx": 106.31,
+      "loPx": 102.66,
+      "open": 104.81,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-15"
+    },
+    {
+      "clsPx": 101.0,
+      "hiPx": 101.71,
+      "loPx": 97.89,
+      "open": 98.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-16"
+    },
+    {
+      "clsPx": 100.73,
+      "hiPx": 102.26,
+      "loPx": 98.84,
+      "open": 102.26,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-17"
+    },
+    {
+      "clsPx": 96.83,
+      "hiPx": 100.23,
+      "loPx": 95.32,
+      "open": 99.79,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-21"
+    },
+    {
+      "clsPx": 100.55,
+      "hiPx": 101.85,
+      "loPx": 97.9,
+      "open": 98.22,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-22"
+    },
+    {
+      "clsPx": 105.16,
+      "hiPx": 109.86,
+      "loPx": 104.67,
+      "open": 106.4,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-23"
+    },
+    {
+      "clsPx": 112.01,
+      "hiPx": 112.5,
+      "loPx": 106.98,
+      "open": 107.36,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-24"
+    },
+    {
+      "clsPx": 113.34,
+      "hiPx": 114.83,
+      "loPx": 110.56,
+      "open": 112.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-25"
+    },
+    {
+      "clsPx": 112.08,
+      "hiPx": 114.18,
+      "loPx": 110.01,
+      "open": 112.53,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-28"
+    },
+    {
+      "clsPx": 111.65,
+      "hiPx": 113.59,
+      "loPx": 111.49,
+      "open": 112.6,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-29"
+    },
+    {
+      "clsPx": 114.05,
+      "hiPx": 114.24,
+      "loPx": 107.54,
+      "open": 108.6,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-04-30"
+    },
+    {
+      "clsPx": 115.4,
+      "hiPx": 119.57,
+      "loPx": 115.23,
+      "open": 117.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-01"
+    },
+    {
+      "clsPx": 123.27,
+      "hiPx": 123.98,
+      "loPx": 118.46,
+      "open": 118.57,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-02"
+    },
+    {
+      "clsPx": 121.95,
+      "hiPx": 123.43,
+      "loPx": 120.5,
+      "open": 121.09,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-05"
+    },
+    {
+      "clsPx": 122.44,
+      "hiPx": 123.58,
+      "loPx": 118.0,
+      "open": 118.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-06"
+    },
+    {
+      "clsPx": 124.19,
+      "hiPx": 124.44,
+      "loPx": 120.19,
+      "open": 123.11,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-07"
+    },
+    {
+      "clsPx": 116.52,
+      "hiPx": 119.8,
+      "loPx": 114.33,
+      "open": 119.19,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-08"
+    },
+    {
+      "clsPx": 115.8,
+      "hiPx": 118.82,
+      "loPx": 114.8,
+      "open": 117.56,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-09"
+    },
+    {
+      "clsPx": 124.81,
+      "hiPx": 125.45,
+      "loPx": 121.3,
+      "open": 121.64,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-12"
+    },
+    {
+      "clsPx": 126.68,
+      "hiPx": 128.9,
+      "loPx": 124.2,
+      "open": 125.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-13"
+    },
+    {
+      "clsPx": 133.45,
+      "hiPx": 134.97,
+      "loPx": 128.81,
+      "open": 128.97,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-14"
+    },
+    {
+      "clsPx": 133.07,
+      "hiPx": 135.18,
+      "loPx": 129.0,
+      "open": 133.01,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-15"
+    },
+    {
+      "clsPx": 135.96,
+      "hiPx": 136.15,
+      "loPx": 132.9,
+      "open": 133.35,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-16"
+    },
+    {
+      "clsPx": 132.05,
+      "hiPx": 133.28,
+      "loPx": 129.53,
+      "open": 130.35,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-19"
+    },
+    {
+      "clsPx": 131.04,
+      "hiPx": 132.04,
+      "loPx": 129.7,
+      "open": 131.84,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-20"
+    },
+    {
+      "clsPx": 130.45,
+      "hiPx": 135.34,
+      "loPx": 128.6,
+      "open": 128.92,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-21"
+    },
+    {
+      "clsPx": 129.28,
+      "hiPx": 131.14,
+      "loPx": 128.96,
+      "open": 129.6,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-22"
+    },
+    {
+      "clsPx": 127.18,
+      "hiPx": 127.66,
+      "loPx": 124.9,
+      "open": 126.14,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-23"
+    },
+    {
+      "clsPx": 133.96,
+      "hiPx": 135.99,
+      "loPx": 129.73,
+      "open": 130.05,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-27"
+    },
+    {
+      "clsPx": 135.54,
+      "hiPx": 138.5,
+      "loPx": 133.95,
+      "open": 134.82,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-28"
+    },
+    {
+      "clsPx": 128.1,
+      "hiPx": 138.59,
+      "loPx": 126.75,
+      "open": 138.5,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-29"
+    },
+    {
+      "clsPx": 124.54,
+      "hiPx": 127.8,
+      "loPx": 121.56,
+      "open": 127.61,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-05-30"
+    },
+    {
+      "clsPx": 126.06,
+      "hiPx": 127.48,
+      "loPx": 123.59,
+      "open": 124.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-02"
+    },
+    {
+      "clsPx": 128.78,
+      "hiPx": 130.64,
+      "loPx": 126.93,
+      "open": 127.53,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-03"
+    },
+    {
+      "clsPx": 130.36,
+      "hiPx": 130.68,
+      "loPx": 127.33,
+      "open": 129.4,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-04"
+    },
+    {
+      "clsPx": 129.55,
+      "hiPx": 134.25,
+      "loPx": 128.49,
+      "open": 131.09,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-05"
+    },
+    {
+      "clsPx": 133.11,
+      "hiPx": 135.16,
+      "loPx": 129.93,
+      "open": 129.93,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-06"
+    },
+    {
+      "clsPx": 138.61,
+      "hiPx": 141.32,
+      "loPx": 134.82,
+      "open": 135.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-09"
+    },
+    {
+      "clsPx": 140.63,
+      "hiPx": 141.58,
+      "loPx": 135.87,
+      "open": 138.8,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-10"
+    },
+    {
+      "clsPx": 140.38,
+      "hiPx": 144.3,
+      "loPx": 138.94,
+      "open": 140.99,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-11"
+    },
+    {
+      "clsPx": 138.62,
+      "hiPx": 140.63,
+      "loPx": 137.21,
+      "open": 137.44,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-12"
+    },
+    {
+      "clsPx": 135.55,
+      "hiPx": 138.52,
+      "loPx": 134.57,
+      "open": 135.81,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-13"
+    },
+    {
+      "clsPx": 142.04,
+      "hiPx": 143.58,
+      "loPx": 137.25,
+      "open": 137.25,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-16"
+    },
+    {
+      "clsPx": 144.72,
+      "hiPx": 149.25,
+      "loPx": 140.5,
+      "open": 140.83,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-17"
+    },
+    {
+      "clsPx": 146.05,
+      "hiPx": 147.98,
+      "loPx": 143.18,
+      "open": 145.16,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-18"
+    },
+    {
+      "clsPx": 145.04,
+      "hiPx": 148.48,
+      "loPx": 143.26,
+      "open": 146.71,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-20"
+    },
+    {
+      "clsPx": 149.33,
+      "hiPx": 149.59,
+      "loPx": 142.6,
+      "open": 143.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-23"
+    },
+    {
+      "clsPx": 156.41,
+      "hiPx": 157.23,
+      "loPx": 150.9,
+      "open": 151.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-24"
+    },
+    {
+      "clsPx": 157.31,
+      "hiPx": 159.88,
+      "loPx": 156.68,
+      "open": 157.11,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-25"
+    },
+    {
+      "clsPx": 158.15,
+      "hiPx": 160.4,
+      "loPx": 157.24,
+      "open": 158.54,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-26"
+    },
+    {
+      "clsPx": 165.46,
+      "hiPx": 166.36,
+      "loPx": 158.76,
+      "open": 159.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-27"
+    },
+    {
+      "clsPx": 161.74,
+      "hiPx": 168.31,
+      "loPx": 161.22,
+      "open": 166.96,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-06-30"
+    },
+    {
+      "clsPx": 156.33,
+      "hiPx": 161.75,
+      "loPx": 153.52,
+      "open": 160.0,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-07-01"
+    },
+    {
+      "clsPx": 154.63,
+      "hiPx": 155.24,
+      "loPx": 152.03,
+      "open": 154.21,
+      "stkVolu": null,
+      "ticker": "ARM",
+      "tradeDate": "2025-07-02"
+    },
+    {
       "clsPx": 155.09,
       "hiPx": 157.42,
-      "loPx": 154.1601,
+      "loPx": 154.16,
       "open": 155.86,
-      "stkVolu": 2499259.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-03"
     },
@@ -14,7 +4055,7 @@
       "hiPx": 154.0,
       "loPx": 145.4,
       "open": 154.0,
-      "stkVolu": 6964769.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-07"
     },
@@ -23,7 +4064,7 @@
       "hiPx": 150.0,
       "loPx": 147.05,
       "open": 148.93,
-      "stkVolu": 4150262.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-08"
     },
@@ -32,16 +4073,16 @@
       "hiPx": 152.78,
       "loPx": 147.8,
       "open": 149.59,
-      "stkVolu": 3848507.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-09"
     },
     {
       "clsPx": 148.55,
       "hiPx": 149.0,
-      "loPx": 145.6181,
+      "loPx": 145.62,
       "open": 149.0,
-      "stkVolu": 3652380.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-10"
     },
@@ -50,7 +4091,7 @@
       "hiPx": 151.1,
       "loPx": 144.28,
       "open": 146.68,
-      "stkVolu": 3954206.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-11"
     },
@@ -59,16 +4100,16 @@
       "hiPx": 145.96,
       "loPx": 140.7,
       "open": 145.94,
-      "stkVolu": 5882783.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-14"
     },
     {
       "clsPx": 147.11,
       "hiPx": 150.15,
-      "loPx": 146.3501,
-      "open": 148.375,
-      "stkVolu": 4182225.0,
+      "loPx": 146.35,
+      "open": 148.38,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-15"
     },
@@ -76,53 +4117,53 @@
       "clsPx": 153.9,
       "hiPx": 155.04,
       "loPx": 148.21,
-      "open": 151.325,
-      "stkVolu": 7451580.0,
+      "open": 151.32,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-16"
     },
     {
       "clsPx": 157.18,
-      "hiPx": 159.4998,
-      "loPx": 153.5404,
+      "hiPx": 159.5,
+      "loPx": 153.54,
       "open": 157.11,
-      "stkVolu": 4891514.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-17"
     },
     {
       "clsPx": 156.74,
       "hiPx": 161.95,
-      "loPx": 156.385,
+      "loPx": 156.38,
       "open": 158.5,
-      "stkVolu": 4869474.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-18"
     },
     {
       "clsPx": 161.92,
       "hiPx": 164.58,
-      "loPx": 158.1891,
+      "loPx": 158.19,
       "open": 159.15,
-      "stkVolu": 5462802.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-21"
     },
     {
       "clsPx": 156.5,
-      "hiPx": 162.1318,
+      "hiPx": 162.13,
       "loPx": 153.24,
       "open": 161.0,
-      "stkVolu": 5167949.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-22"
     },
     {
       "clsPx": 159.28,
-      "hiPx": 159.7499,
-      "loPx": 155.714164,
+      "hiPx": 159.75,
+      "loPx": 155.71,
       "open": 156.96,
-      "stkVolu": 3398613.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-23"
     },
@@ -131,7 +4172,7 @@
       "hiPx": 161.75,
       "loPx": 157.9,
       "open": 160.0,
-      "stkVolu": 2228382.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-24"
     },
@@ -140,25 +4181,25 @@
       "hiPx": 164.58,
       "loPx": 159.14,
       "open": 160.0,
-      "stkVolu": 3151871.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-25"
     },
     {
       "clsPx": 164.37,
       "hiPx": 166.88,
-      "loPx": 162.0368,
+      "loPx": 162.04,
       "open": 165.02,
-      "stkVolu": 4027941.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-28"
     },
     {
       "clsPx": 163.47,
-      "hiPx": 166.2475,
+      "hiPx": 166.25,
       "loPx": 160.78,
       "open": 164.0,
-      "stkVolu": 3546455.0,
+      "stkVolu": null,
       "ticker": "ARM",
       "tradeDate": "2025-07-29"
     },
@@ -2771,6 +6812,15 @@
       "stkVolu": 6982294.0,
       "ticker": "ARM",
       "tradeDate": "2026-09-23"
+    },
+    {
+      "clsPx": 309.0,
+      "hiPx": 326.0,
+      "loPx": 303.65,
+      "open": 319.23,
+      "stkVolu": 9559476.0,
+      "ticker": "ARM",
+      "tradeDate": "2026-09-24"
     }
   ]
 }

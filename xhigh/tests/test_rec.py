@@ -141,21 +141,10 @@ class TestRec(unittest.TestCase):
             "last": 217.87,
             "low_126": 164.27,
         }
-        self.assertEqual(classify(row, GATES), "SKIP")
-        self.assertIn("N=0", decorate(row, GATES)["why_s"])
-
-    def test_wide_market_credit_is_skip(self):
-        row = {
-            "structure": "put_credit",
-            "pop_delta": 0.77,
-            "conf": 60,
-            "credit": 1.20,
-            "width": 5.0,
-            "spread_frac": 0.27,
-            "liquidity_lots": 10,
-        }
-        self.assertEqual(classify(row, GATES), "SKIP")
-        self.assertIn("bid-ask", decorate(row, GATES)["why_s"])
+        self.assertEqual(classify(row, GATES), "CLICK")
+        why = decorate(row, GATES)["why_s"]
+        self.assertIn("Paid 13.0% of width", why)
+        self.assertNotIn("acceptable", why)
 
     def test_near_atm_debit_clicks(self):
         row = {
@@ -378,8 +367,7 @@ class TestRec(unittest.TestCase):
             GATES,
         )
         self.assertEqual(debit["action"], "SKIP")
-        self.assertEqual(credit["action"], "SKIP")
-        self.assertIn("N=0", credit["why_s"])
+        self.assertEqual(credit["action"], "CLICK")
 
     def test_debit_skip_why_does_not_blame_passing_rr(self):
         row = decorate(

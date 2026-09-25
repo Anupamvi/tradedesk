@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from xhigh.dates import parse_any_date
 from xhigh.num import fmt, to_float
-from xhigh.pd import PD_NOTE, SPREAD_WIDE, attach_trade_pd, economics, risk_budget, sort_by_pd
+from xhigh.pd import PD_NOTE, attach_trade_pd, sort_by_pd
 from xhigh.score import DEFINED_CREDIT, DEBIT, csp_annualized, credit_over_width, rr_line, short_abs_delta
 
 
@@ -110,20 +110,6 @@ def debit_blockers(row: dict, gates: Optional[dict] = None) -> tuple:
     return "CLICK", []
 
 
-def credit_lot_block(row: dict) -> Optional[str]:
-    """SKIP reason when a passing credit cannot be placed. None if it can."""
-    ml, _, _ = economics(row)
-    if ml is not None and ml > risk_budget():
-        return "one lot loses $%s, above the $%s sleeve, so N=0" % (fmt(ml, 0), fmt(risk_budget(), 0))
-    liq = to_float(row.get("liquidity_lots"))
-    if liq is not None and liq < 1:
-        return "the book does not show one lot"
-    sp = to_float(row.get("spread_frac"))
-    if sp is not None and sp > SPREAD_WIDE:
-        return "bid-ask is %.0f%% of the credit (need ≤%.0f%%)" % (sp * 100, SPREAD_WIDE * 100)
-    return None
-
-
 def classify(row: dict, gates: Optional[dict] = None) -> str:
     if row.get("intel_kill"):
         return "WATCH"
@@ -158,8 +144,6 @@ def classify(row: dict, gates: Optional[dict] = None) -> str:
         if structure in ("put_credit", "iron_condor") and dividend_inside(row) is True:
             return "SKIP"
         if frac is not None and frac >= width_min and pop >= pop_min:
-            if credit_lot_block(row):
-                return "SKIP"
             return "CLICK"
         return "SKIP"
     if structure in DEBIT:
@@ -274,7 +258,12 @@ def why_line(row: dict, gates: Optional[dict] = None) -> str:
         return "Wheel credit too thin vs cash tied up."
     if action == "CLICK":
         if s == "put_credit" and six_month_through_short(row, gates):
-            return "Naked CSP skipped (6-month low through the strike). Spread R/R is acceptable and loss is capped."
+            frac = credit_over_width(row)
+            pct = "n/a" if frac is None else "%.1f%% of width" % (frac * 100)
+            return (
+                "Naked CSP skipped (6-month low through the strike). Paid %s. P:R %s. Loss is capped."
+                % (pct, rr_line(row))
+            )
         if s in DEBIT:
             return "Long is at/ITM, DTE ≥ 35, no ex-div in the life. Typical win still bigger than typical loss. Hit rate is modest. Size small."
         if s in DEFINED_CREDIT:
@@ -303,9 +292,6 @@ def why_line(row: dict, gates: Optional[dict] = None) -> str:
                 pct,
                 rr_line(row),
             )
-        block = credit_lot_block(row)
-        if block:
-            return "Paid %s. P:R %s. Not a click: %s." % (pct, rr_line(row), block)
         return "Credit is %s. P:R %s. Not a click." % (pct, rr_line(row))
     if s in DEBIT:
         _action, reasons = debit_blockers(row, gates)
@@ -338,6 +324,17 @@ def decorate(row: dict, gates: Optional[dict] = None) -> dict:
     return out
 
 
+def _market_line(row: dict) -> str:
+    sp = to_float(row.get("spread_frac"))
+    if sp is None:
+        text = "unknown"
+    else:
+        text = "%.1f%% of the option price" % (sp * 100.0)
+    if row.get("pd_stale"):
+        text += ". Quote is old"
+    return text
+
+
 def _click_block(row: dict) -> List[str]:
     sleeve = row.get("sleeve") or ""
     label = {"wheel": "WHEEL", "swing": "SWING", "credit": "CREDIT"}.get(sleeve, "")
@@ -362,6 +359,7 @@ def _click_block(row: dict) -> List[str]:
             row.get("r_cons_s") or "—",
             row.get("l_s") or "—",
         ),
+        "- **Market:** %s" % _market_line(row),
         "- %s" % PD_NOTE,
         "- **Why this one:** %s" % row.get("why_s"),
     ]
@@ -490,7 +488,7 @@ def render_recommendation(
             "2. **Sleeves are independent.** A name can have a swing debit and a defined-risk credit. Rank CLICK by PD desc (nulls last). Keep conf. Do not hide a passing credit because a debit also passed.",
             "3. **Swing CLICK** — long at/ITM (|delta| ≥ 0.50), DTE ≥ 35, R/R ≥ 1.5, and no ex-div before expiry. A 25-DTE 0.35-delta debit is how KO lost 34% in a day. EV is not the click rule.",
             "4. **Wheel** — Naked CSP only if paid ≥ 8% annualized and the 6-month low did **not** already trade through the strike. If it did, recommend a **put credit** instead (defined-risk). A 50% drop is shown in dollars on naked puts. Not a growth forecast.",
-            "5. **Credit CLICK** — paid at least **10% of the spread width**, POP ≥ 70%, one lot fits in $500, and the bid-ask is ≤ 15% of the credit. N=0 or a wide market is SKIP. 1:14 still SKIP.",
+            "5. **Credit CLICK** — paid at least **10% of the spread width** and POP ≥ 70%. An 8–15% OTM put is naturally ~1:7; requiring 1:4 emptied the board. 1:14 still SKIP.",
             "6. **POP is delta, not a forecast.** I cannot promise profit.",
             "",
         ]

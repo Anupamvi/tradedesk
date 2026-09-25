@@ -35,6 +35,30 @@ class TestPdFormula(unittest.TestCase):
         self.assertTrue(pack.get("stale"))
         self.assertEqual(pack["reason"], "stale_quote")
 
+    def test_wide_loss_keeps_market_and_stale(self):
+        tight = compute_pd(
+            max_loss=1300,
+            planned_reward=200,
+            planned_risk=1300,
+            liquidity_lots=68,
+            quote_age_sec=800,
+            spread_frac=0.095,
+        )
+        wide = compute_pd(
+            max_loss=1300,
+            planned_reward=150,
+            planned_risk=1300,
+            liquidity_lots=20,
+            quote_age_sec=800,
+            spread_frac=0.64,
+        )
+        self.assertEqual(tight["N"], 0)
+        self.assertIsNone(tight["pd"])
+        self.assertEqual(tight["L"], 0.5)
+        self.assertTrue(tight.get("stale"))
+        self.assertEqual(wide["L"], 0.0)
+        self.assertTrue(wide.get("stale"))
+
 
 class TestPdClick(unittest.TestCase):
     def test_pd_next_to_conf_and_sleeves_listed(self):
